@@ -7,7 +7,7 @@ from inspect import isasyncgen, isawaitable, isgenerator
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from typing import (
-    Any, BinaryIO, ClassVar, Dict, List, Optional, Type, Union,
+    Any, BinaryIO, ClassVar, List, Optional, Type, Union,
 )
 
 import param
@@ -17,6 +17,7 @@ from ..layout import (
     Column, ListPanel, Row, Tabs,
 )
 from ..layout.card import Card
+from ..layout.spacer import VSpacer
 from ..pane.base import panel as _panel
 from ..pane.image import PDF, Image, ImageBase
 from ..pane.markup import HTML, DataFrame, Markdown
@@ -526,9 +527,13 @@ class ChatFeed(CompositeWidget):
             "css_classes": ["chat-feed"],
             "header_css_classes": ["chat-feed-header"],
             "title_css_classes": ["chat-feed-title"],
+            "sizing_mode": self.sizing_mode,
         }
         card_params.update(**self.card_params)
+        if self.sizing_mode is None:
+            card_params["height"] = card_params.get("height", 500)
         self._composite.param.update(**card_params)
+        self._composite._stylesheets = self._stylesheets
 
         # instantiate the card's column
         chat_log_params = {
@@ -542,9 +547,10 @@ class ChatFeed(CompositeWidget):
         }
         chat_log_params["css_classes"] = ["chat-feed-log"]
         chat_log_params["stylesheets"] = self._stylesheets
-        chat_log_params = self._configure_log_sizing(chat_log_params)
+        chat_log_params["objects"] = self.value
+        chat_log_params["margin"] = 0
         self._chat_log = Column(**chat_log_params)
-        self._composite[:] = [self._chat_log]
+        self._composite[:] = [self._chat_log, VSpacer()]
 
         # handle async callbacks using this trick
         self._callback_trigger = Button(visible=False)
@@ -558,19 +564,6 @@ class ChatFeed(CompositeWidget):
                 height=40,
                 margin=25
             )
-
-    def _configure_log_sizing(self, chat_log_params: Dict[str, Any]) -> Dict[str, Any]:
-        sizing_mode = chat_log_params.get("sizing_mode", "stretch_width")
-        chat_log_params["sizing_mode"] = sizing_mode
-        chat_log_params["objects"] = self.value
-        chat_log_height = (
-            chat_log_params.get("max_height") or
-            chat_log_params.get("height", 450)
-        )
-        if "height" not in sizing_mode and "both" not in sizing_mode:
-            chat_log_params["height"] = chat_log_height
-        chat_log_params["margin"] = 0
-        return chat_log_params
 
     @param.depends("header", watch=True)
     def _hide_header(self):
@@ -932,6 +925,9 @@ class ChatInterface(ChatFeed):
     show_clear = param.Boolean(default=True, doc="""
         Whether to show the clear button.""")
 
+    show_button_name = param.Boolean(default=True, doc="""
+        Whether to show the button name.""")
+
     _button_data = param.Dict(default={}, doc="""
         Metadata and data related to the buttons.""")
 
@@ -959,7 +955,7 @@ class ChatInterface(ChatFeed):
             ) for index, (name, icon) in enumerate(button_icons.items())
         }
         self._input_layout = self._init_widgets()
-        self._composite[:] = [self._chat_log, self._input_layout]
+        self._composite[:] = [*self._composite[:], self._input_layout]
 
     def _link_disabled_loading(self, obj: Viewable):
         """
@@ -985,21 +981,24 @@ class ChatInterface(ChatFeed):
                 widget = widget()
             self._widgets[key] = widget
 
-        input_layout = Tabs()
+        sizing_mode = self.sizing_mode
+        if sizing_mode is not None:
+            if "both" in sizing_mode or "scale_height" in sizing_mode:
+                sizing_mode = "stretch_width"
+            elif "height" in sizing_mode:
+                sizing_mode = None
+        input_layout = Tabs(sizing_mode=sizing_mode)
         for name, widget in self._widgets.items():
-            widget.sizing_mode = "stretch_width"
             # for longer form messages, like TextArea / Ace, don't
             # submit when clicking away; only if they manually click
             # the send button
             if isinstance(widget, TextInput):
                 widget.param.watch(self._click_send, "value")
+            widget.sizing_mode = sizing_mode
 
             buttons = []
             for button_data in self._button_data.values():
-                if button_data.name == "send":
-                    name = ""
-                else:
-                    name = button_data.name.title()
+                name = button_data.name.title() if self.show_button_name else ""
                 button = Button(
                     name=name,
                     icon=button_data.icon,
@@ -1012,7 +1011,7 @@ class ChatInterface(ChatFeed):
                 buttons.append(button)
                 button_data.buttons.append(button)
 
-            message_row = Row(widget, *buttons, sizing_mode="stretch_width", align="end")
+            message_row = Row(widget, *buttons, sizing_mode=sizing_mode)
             input_layout.append((name, message_row))
 
         # if only a single input, don't use tabs

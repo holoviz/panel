@@ -1,5 +1,5 @@
 @import url('chat_feed.css');
 
 .chat-feed-log {
-  height: 88%;
+  height: 95%; /* prevent from overflowing and pushing down element */
 }

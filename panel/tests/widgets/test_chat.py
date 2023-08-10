@@ -10,7 +10,7 @@ from panel.layout import Row
 from panel.pane.image import Image
 from panel.pane.markup import HTML, Markdown
 from panel.widgets.chat import (
-    ChatEntry, ChatFeed, ChatReactionIcons, _FileInputMessage,
+    ChatEntry, ChatFeed, ChatInterface, ChatReactionIcons, _FileInputMessage,
 )
 from panel.widgets.input import TextInput
 
@@ -510,3 +510,62 @@ class TestChatFeedCallback:
         chat_feed.send("Message", respond=True)
         # append sent message and placeholder
         assert chat_log_mock.append.call_count == 2
+
+
+class TestChatInterfaceWidgetsSizingMode:
+
+    def test_none(self):
+        chat_interface = ChatInterface()
+        assert chat_interface.sizing_mode is None
+        assert chat_interface._chat_log.sizing_mode is None
+        assert chat_interface._input_layout.sizing_mode is None
+        assert chat_interface._input_layout[0].sizing_mode is None
+
+    def test_fixed(self):
+        chat_interface = ChatInterface(sizing_mode="fixed")
+        assert chat_interface.sizing_mode == "fixed"
+        assert chat_interface._chat_log.sizing_mode == "fixed"
+        assert chat_interface._input_layout.sizing_mode == "fixed"
+        assert chat_interface._input_layout[0].sizing_mode == "fixed"
+
+    def test_stretch_both(self):
+        chat_interface = ChatInterface(sizing_mode="stretch_both")
+        assert chat_interface.sizing_mode == "stretch_both"
+        assert chat_interface._chat_log.sizing_mode == "stretch_both"
+        assert chat_interface._input_layout.sizing_mode == "stretch_width"
+        assert chat_interface._input_layout[0].sizing_mode == "stretch_width"
+
+    def test_stretch_width(self):
+        chat_interface = ChatInterface(sizing_mode="stretch_width")
+        assert chat_interface.sizing_mode == "stretch_width"
+        assert chat_interface._chat_log.sizing_mode == "stretch_width"
+        assert chat_interface._input_layout.sizing_mode == "stretch_width"
+        assert chat_interface._input_layout[0].sizing_mode == "stretch_width"
+
+    def test_stretch_height(self):
+        chat_interface = ChatInterface(sizing_mode="stretch_height")
+        assert chat_interface.sizing_mode == "stretch_height"
+        assert chat_interface._chat_log.sizing_mode == "stretch_height"
+        assert chat_interface._input_layout.sizing_mode is None
+        assert chat_interface._input_layout[0].sizing_mode is None
+
+    def test_scale_both(self):
+        chat_interface = ChatInterface(sizing_mode="scale_both")
+        assert chat_interface.sizing_mode == "scale_both"
+        assert chat_interface._chat_log.sizing_mode == "scale_both"
+        assert chat_interface._input_layout.sizing_mode == "stretch_width"
+        assert chat_interface._input_layout[0].sizing_mode == "stretch_width"
+
+    def test_scale_width(self):
+        chat_interface = ChatInterface(sizing_mode="scale_width")
+        assert chat_interface.sizing_mode == "scale_width"
+        assert chat_interface._chat_log.sizing_mode == "scale_width"
+        assert chat_interface._input_layout.sizing_mode == "scale_width"
+        assert chat_interface._input_layout[0].sizing_mode == "scale_width"
+
+    def test_scale_height(self):
+        chat_interface = ChatInterface(sizing_mode="scale_height")
+        assert chat_interface.sizing_mode == "scale_height"
+        assert chat_interface._chat_log.sizing_mode == "scale_height"
+        assert chat_interface._input_layout.sizing_mode == "stretch_width"
+        assert chat_interface._input_layout[0].sizing_mode == "stretch_width"
