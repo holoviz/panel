@@ -433,8 +433,8 @@ class ChatFeed(CompositeWidget):
         If placeholder is the default LoadingSpinner,
         the text to display next to it.
     placeholder_threshold : int
-        Min duration in seconds to display the placeholder. If 0, the placeholder
-        will be disabled.
+        Min duration in seconds of buffering before displaying the placeholder.
+        If 0, the placeholder will be disabled.
     auto_scroll_limit : int
         Max pixel distance from the latest object in the Column to
         activate automatic scrolling upon update. Setting to 0
@@ -480,8 +480,8 @@ class ChatFeed(CompositeWidget):
         the text to display next to it.""")
 
     placeholder_threshold = param.Number(default=0.2, bounds=(0, None), doc="""
-        Min duration in seconds to display the placeholder. If 0, the placeholder
-        will be disabled.""")
+        Min duration in seconds of buffering before displaying the placeholder.
+        If 0, the placeholder will be disabled.""")
 
     auto_scroll_limit = param.Integer(default=200, bounds=(0, None), doc="""
         Max pixel distance from the latest object in the Column to
@@ -577,7 +577,7 @@ class ChatFeed(CompositeWidget):
         """
         Hide the header if there is no title or header.
         """
-        self._composite.hide_header = self.header is None
+        self._composite.hide_header = not self.header
 
     def _replace_placeholder(self, entry: Optional[ChatEntry] = None) -> None:
         """
@@ -625,7 +625,7 @@ class ChatFeed(CompositeWidget):
             if "value" not in value:
                 raise ValueError(
                     f"If 'value' is a dict, it must contain a 'value' key, "
-                    f"e.g. {'value': 'Hello World'}; got {value!r}"
+                    f"e.g. {{'value': 'Hello World'}}; got {value!r}"
                 )
             value.update(**new_params)
             entry = ChatEntry(**value, **self.entry_params)
@@ -736,7 +736,8 @@ class ChatFeed(CompositeWidget):
                 await task
                 task.result()
             else:
-                self._chat_log.append(self.placeholder)
+                if self.placeholder_threshold > 0:
+                    self._chat_log.append(self.placeholder)
                 await self._handle_callback(entry)
         finally:
             self._replace_placeholder(None)
@@ -760,6 +761,7 @@ class ChatFeed(CompositeWidget):
                 parent_panel = value
                 attr = "objects"
                 value = value.objects[i]
+                i = -1
             elif hasattr(value, "object"):
                 attr = "object"
                 value = value.object
@@ -1010,7 +1012,7 @@ class ChatInterface(ChatFeed):
                 buttons.append(button)
                 button_data.buttons.append(button)
 
-            message_row = Row(widget, *buttons, sizing_mode="stretch_width")
+            message_row = Row(widget, *buttons, sizing_mode="stretch_width", align="end")
             input_layout.append((name, message_row))
 
         # if only a single input, don't use tabs
