@@ -6,13 +6,13 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from panel.layout import Row
+from panel.layout import Row, Tabs
 from panel.pane.image import Image
 from panel.pane.markup import HTML, Markdown
 from panel.widgets.chat import (
     ChatEntry, ChatFeed, ChatInterface, ChatReactionIcons, _FileInputMessage,
 )
-from panel.widgets.input import TextInput
+from panel.widgets.input import FileInput, TextAreaInput, TextInput
 
 
 class TestChatEntry:
@@ -411,8 +411,20 @@ class TestChatFeed:
 
 class TestChatFeedCallback:
     @pytest.fixture
-    def chat_feed(self):
+    def chat_feed(self) -> ChatFeed:
         return ChatFeed()
+
+    def test_user_avatar(self, chat_feed):
+        def echo(contents, user, instance):
+            return f"{user}: {contents}"
+
+        chat_feed.callback = echo
+        chat_feed.callback_user = "Bob"
+        chat_feed.callback_avatar = "👨"
+        chat_feed.send("Message", respond=True)
+        assert len(chat_feed.entries) == 2
+        assert chat_feed.entries[1].user == "Bob"
+        assert chat_feed.entries[1].avatar == "👨"
 
     def test_return(self, chat_feed):
         def echo(contents, user, instance):
@@ -513,7 +525,6 @@ class TestChatFeedCallback:
 
 
 class TestChatInterfaceWidgetsSizingMode:
-
     def test_none(self):
         chat_interface = ChatInterface()
         assert chat_interface.sizing_mode is None
@@ -569,3 +580,87 @@ class TestChatInterfaceWidgetsSizingMode:
         assert chat_interface._chat_log.sizing_mode == "scale_height"
         assert chat_interface._input_layout.sizing_mode == "stretch_width"
         assert chat_interface._input_layout[0].sizing_mode == "stretch_width"
+
+
+class TestChatInterface:
+    @pytest.fixture
+    def chat_interface(self):
+        return ChatInterface()
+
+    def test_init(self, chat_interface):
+        assert len(chat_interface._button_data) == 4
+        assert len(chat_interface._widgets) == 1
+        assert isinstance(chat_interface._input_layout, Row)
+        assert isinstance(chat_interface._widgets["TextInput"], TextInput)
+
+    def test_init_custom_widgets(self):
+        widgets = [TextInput(name="Text"), FileInput()]
+        chat_interface = ChatInterface(widgets=widgets)
+        assert len(chat_interface._widgets) == 2
+        assert isinstance(chat_interface._input_layout, Tabs)
+        assert isinstance(chat_interface._widgets["Text"], TextInput)
+        assert isinstance(chat_interface._widgets["FileInput"], FileInput)
+
+    def test_active_widget(self, chat_interface):
+        active_widget = chat_interface.active_widget
+        assert isinstance(active_widget, TextInput)
+
+    def test_active_tab(self):
+        widget = TextInput(name="input")
+        chat_interface = ChatInterface(widgets=[widget])
+        assert chat_interface.active_tab == -1
+
+    def test_active_tab_multiple_widgets(self, chat_interface):
+        widget1 = TextInput(name="input1")
+        widget2 = TextInput(name="input2")
+        chat_interface.widgets = [widget1, widget2]
+        assert chat_interface.active_tab == 0
+
+        chat_interface.active_tab = 1
+        assert chat_interface.active_tab == 1
+        assert isinstance(chat_interface.active_widget, TextInput)
+
+    def test_click_send(self, chat_interface):
+        chat_interface.widgets = [TextAreaInput()]
+        chat_interface.active_widget.value = "Message"
+        chat_interface._click_send(None)
+        assert len(chat_interface.entries) == 1
+        assert chat_interface.entries[0].value == "Message"
+
+    def test_click_undo(self, chat_interface):
+        chat_interface.user = "User"
+        chat_interface.send("Message 1")
+        chat_interface.send("Message 2")
+        chat_interface.send("Message 3", user="Assistant")
+        expected = chat_interface.entries[-2:].copy()
+        chat_interface._click_undo(None)
+        assert len(chat_interface.entries) == 1
+        assert chat_interface.entries[0].value == "Message 1"
+        assert chat_interface._button_data["undo"].objects == expected
+
+        # revert
+        chat_interface._click_undo(None)
+        assert len(chat_interface.entries) == 3
+        assert chat_interface.entries[0].value == "Message 1"
+        assert chat_interface.entries[1].value == "Message 2"
+        assert chat_interface.entries[2].value == "Message 3"
+
+    def test_click_clear(self, chat_interface):
+        chat_interface.send("Message 1")
+        chat_interface.send("Message 2")
+        chat_interface.send("Message 3")
+        expected = chat_interface.entries.copy()
+        chat_interface._click_clear(None)
+        assert len(chat_interface.entries) == 0
+        assert chat_interface._button_data["clear"].objects == expected
+
+    def test_click_rerun(self, chat_interface):
+        self.count = 0
+        def callback(contents, user, instance):
+            self.count += 1
+            return self.count
+        chat_interface.callback = callback
+        chat_interface.send("Message 1")
+        assert chat_interface.entries[1].value == 1
+        chat_interface._click_rerun(None)
+        assert chat_interface.entries[1].value == 2

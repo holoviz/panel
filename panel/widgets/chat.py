@@ -928,6 +928,9 @@ class ChatInterface(ChatFeed):
     show_button_name = param.Boolean(default=True, doc="""
         Whether to show the button name.""")
 
+    _input_layout = param.ClassSelector(class_=Viewable, doc="""
+        The input layout.""")
+
     _button_data = param.Dict(default={}, doc="""
         Metadata and data related to the buttons.""")
 
@@ -954,7 +957,6 @@ class ChatInterface(ChatFeed):
                 index=index, name=name, icon=icon, objects=[], buttons=[]
             ) for index, (name, icon) in enumerate(button_icons.items())
         }
-        self._input_layout = self._init_widgets()
         self._composite[:] = [*self._composite[:], self._input_layout]
 
     def _link_disabled_loading(self, obj: Viewable):
@@ -966,6 +968,7 @@ class ChatInterface(ChatFeed):
             setattr(obj, attr, getattr(self, attr))
             self.link(obj, **{attr: attr})
 
+    @param.depends("widgets", watch=True, on_init=True)
     def _init_widgets(self) -> Union[Tabs, Row]:
         """
         Initialize the input widgets.
@@ -1017,10 +1020,9 @@ class ChatInterface(ChatFeed):
         # if only a single input, don't use tabs
         if len(self._widgets) == 1:
             input_layout = input_layout[0]
+        self._input_layout = input_layout
 
-        return input_layout
-
-    async def _click_send(self, _: Optional[param.parameterized.Event] = None) -> None:
+    def _click_send(self, _: Optional[param.parameterized.Event] = None) -> None:
         """
         Send the input when the user presses Enter.
         """
@@ -1088,7 +1090,7 @@ class ChatInterface(ChatFeed):
         entries = self.undo(count)
         if not entries:
             return
-        self.active_widget.value = entries[0].value
+        self.send(value=entries[0], respond=True)
 
     def _click_undo(self, _):
         """
