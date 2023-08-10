@@ -427,6 +427,7 @@ class TestChatFeedCallback:
         chat_feed.callback_avatar = "👨"
         chat_feed.send("Message", respond=True)
         assert len(chat_feed.entries) == 2
+        time.sleep(0.5)
         assert chat_feed.entries[1].user == "Bob"
         assert chat_feed.entries[1].avatar == "👨"
 
@@ -436,6 +437,7 @@ class TestChatFeedCallback:
 
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
+        time.sleep(0.5)
         assert len(chat_feed.entries) == 2
         assert chat_feed.entries[1].value == "Message"
 
@@ -445,6 +447,7 @@ class TestChatFeedCallback:
 
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
+        time.sleep(0.5)
         assert len(chat_feed.entries) == 2
         assert chat_feed.entries[1].value == "Message"
 
