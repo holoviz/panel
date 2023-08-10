@@ -605,6 +605,9 @@ class ChatFeed(CompositeWidget):
             user: Optional[str] = None,
             avatar: Optional[Union[str, BinaryIO]] = None,
         ) -> ChatEntry:
+        """
+        Builds a ChatEntry from the value.
+        """
         if value is None:
             return
 
@@ -667,6 +670,10 @@ class ChatFeed(CompositeWidget):
         return contents
 
     async def _serialize_response(self, response: Any) -> Optional[ChatEntry]:
+        """
+        Serializes the response by iterating over it and
+        updating the entry's value.
+        """
         response_entry = None
         if hasattr(response, "__aiter__"):
             async for token in response:
@@ -691,6 +698,10 @@ class ChatFeed(CompositeWidget):
         task: asyncio.Task,
         num_entries: int,
     ) -> None:
+        """
+        Schedules the placeholder to be added to the chat log
+        if the callback takes longer than the placeholder threshold.
+        """
         if self.placeholder_threshold == 0:
             return
 
@@ -703,6 +714,10 @@ class ChatFeed(CompositeWidget):
             await asyncio.sleep(0.05)
 
     async def _prepare_response(self, _) -> None:
+        """
+        Prepares the response by scheduling the placeholder and
+        executing the callback.
+        """
         if self.callback is None:
             return
 
@@ -1105,9 +1120,13 @@ class ChatInterface(ChatFeed):
             self._reset_button_data()
 
     @property
-    def active_widget(self):
+    def active_widget(self) -> Widget:
         """
         The currently active widget.
+
+        Returns
+        -------
+        The active widget.
         """
         if isinstance(self._input_layout, Tabs):
             active = self._input_layout.active
@@ -1116,19 +1135,30 @@ class ChatInterface(ChatFeed):
             return self._input_layout.objects[0]
 
     @property
-    def active_tab(self):
+    def active_tab(self) -> int:
         """
-        The currently active input widget tab index.
+        The currently active input widget tab index;
+        -1 if there is only one widget available
+        which is not in a tab.
+
+        Returns
+        -------
+        The active input widget tab index.
         """
         if isinstance(self._input_layout, Tabs):
             return self._input_layout.active
         else:
-            return 0
+            return -1
 
     @active_tab.setter
-    def active_tab(self, tab: int):
+    def active_tab(self, tab: int) -> None:
         """
         Set the active input widget tab index.
+
+        Parameters
+        ----------
+        tab : int
+            The tab index to set.
         """
         if isinstance(self._input_layout, Tabs):
             self._input_layout.active = tab
