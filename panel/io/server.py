@@ -485,7 +485,7 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
                 token = session.token
             logger.info(LOG_SESSION_CREATED, id(session.document))
             with set_curdoc(session.document):
-                if config.authorize_callback and not config.authorize_callback(state.user_info):
+                if config.authorize_callback and not config.authorize_callback(state.user_info, self.request.path):
                     if config.auth_template:
                         with open(config.auth_template) as f:
                             template = _env.from_string(f.read())
