@@ -44,15 +44,14 @@
 .message {
   display: flex;
   align-items: center;
-  padding-inline: 10px;
-  padding-block: 10px;
   border-radius: 5px;
   font-size: 1.25em;
   min-width: 50px;
   min-height: 50px;
   max-height: 400px;
   overflow-y: auto;
-  margin-left: 10px; /* Space for avatar */
+  margin-block: 0px;
+  margin-inline: 10px; /* Space for avatar */
   background-color: var(--neutral-fill-active, #f1f1f1);
 }
 
