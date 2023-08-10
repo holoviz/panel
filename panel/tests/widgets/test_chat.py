@@ -234,11 +234,13 @@ class TestChatFeed:
 
         chat_feed.callback = callback
         chat_feed.send("Question", respond=True)
+        time.sleep(0.5)
 
         assert len(chat_feed.entries) == 2
         assert chat_feed.entries[1].value == "Response to: Question"
 
         chat_feed.respond()
+        time.sleep(0.5)
 
         assert len(chat_feed.entries) == 3
         assert chat_feed.entries[2].value == "Response to: Response to: Question"
@@ -249,10 +251,12 @@ class TestChatFeed:
 
         chat_feed.callback = callback
         chat_feed.send("Question", respond=False)
+        time.sleep(0.5)
 
         assert len(chat_feed.entries) == 1
 
         chat_feed.respond()
+        time.sleep(0.5)
 
         assert len(chat_feed.entries) == 2
         assert chat_feed.entries[1].value == "Response to: Question"
@@ -664,3 +668,7 @@ class TestChatInterface:
         assert chat_interface.entries[1].value == 1
         chat_interface._click_rerun(None)
         assert chat_interface.entries[1].value == 2
+
+    def test_click_rerun_null(self, chat_interface):
+        chat_interface._click_rerun(None)
+        assert len(chat_interface.entries) == 0
