@@ -3,7 +3,7 @@ import datetime
 
 from contextlib import ExitStack
 from dataclasses import dataclass
-from inspect import isawaitable
+from inspect import isasyncgen, isawaitable, isgenerator
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from typing import (
@@ -675,10 +675,10 @@ class ChatFeed(CompositeWidget):
         updating the entry's value.
         """
         response_entry = None
-        if hasattr(response, "__aiter__"):
+        if isasyncgen(response):
             async for token in response:
                 response_entry = self._upsert_entry(token, response_entry)
-        elif hasattr(response, "__iter__"):
+        elif isgenerator(response):
             for token in response:
                 response_entry = self._upsert_entry(token, response_entry)
         elif isawaitable(response):
