@@ -423,6 +423,12 @@ class ChatFeed(CompositeWidget):
         the previous message value `contents`, the previous `user` name,
         and the component `instance`.""")
 
+    callback_user = param.String(default="Assistant", doc="""
+        The default user name to use for the entry provided by the callback.""")
+
+    callback_avatar = param.ClassSelector(class_=(str, BinaryIO), doc="""
+        The default avatar to use for the entry provided by the callback.""")
+
     placeholder = param.Parameter(doc="""
         Placeholder to display while the callback is running.
         If not set, defaults to a LoadingSpinner.""")
@@ -591,7 +597,16 @@ class ChatFeed(CompositeWidget):
         Replace the placeholder entry with the response or update
         the entry's value with the response.
         """
-        updated_entry = self._build_entry(value)
+        user = self.callback_user
+        avatar = self.callback_avatar
+        if isinstance(value, ChatEntry):
+            user = value.user
+            avatar = value.avatar
+        elif isinstance(value, dict):
+            user = value.get("user", user)
+            avatar = value.get("avatar", avatar)
+
+        updated_entry = self._build_entry(value, user=user, avatar=avatar)
         if entry is None:
             self._replace_placeholder(updated_entry)
             return updated_entry
@@ -846,7 +861,7 @@ class ChatInterface(ChatFeed):
         Widgets to use for the input. If not provided, defaults to
         `[TextInput]`.""")
 
-    user = param.String(default="You", doc="Name of the ChatInterface user.")
+    user = param.String(default="User", doc="Name of the ChatInterface user.")
 
     avatar = param.ClassSelector(class_=(str, BinaryIO), doc="""
         The avatar to use for the user. Can be a single character text, an emoji,
@@ -930,8 +945,15 @@ class ChatInterface(ChatFeed):
 
             buttons = []
             for button_data in self._button_data.values():
+                if button_data.name == "send":
+                    name = ""
+                else:
+                    name = button_data.name.title()
                 button = Button(
-                    icon=button_data.icon, sizing_mode=None, margin=5
+                    name=name,
+                    icon=button_data.icon,
+                    sizing_mode=None,
+                    margin=(5, 2)
                 )
                 self._link_disabled_loading(button)
                 action = button_data.name
@@ -973,10 +995,7 @@ class ChatInterface(ChatFeed):
         else:
             return  # no message entered
         self._reset_button_data()
-        value = ChatEntry(
-            value=value, user=self.user, avatar=self.avatar
-        )
-        self.send(value=value)
+        self.send(value=value, user=self.user, avatar=self.avatar, respond=True)
 
     def _get_last_user_entry_index(self) -> int:
         """
@@ -995,11 +1014,11 @@ class ChatInterface(ChatFeed):
         """
         for button in button_data.buttons:
             if active and button_data.objects:
-                button.button_type = "success"
-                button.name = "🔙"
+                button.button_type = "warning"
+                button.name = f"Revert {button.name}"
             else:
                 button.button_type = "default"
-                button.name = ""
+                button.name = button.name.replace("Revert ", "")
 
     def _reset_button_data(self):
         """
