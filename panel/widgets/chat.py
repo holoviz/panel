@@ -128,17 +128,18 @@ class ChatReactionIcons(ReactiveHTML):
         "update_value": """
             const reaction = event.target.alt;
             const icon_name = data.options[reaction];
+
+            let src;
             if (data.value.includes(reaction)) {
+                src = `${data._icon_base_url}${icon_name}.svg`;
                 data.value = data.value.filter(r => r !== reaction);
-                event.target.src = data._icon_base_url + icon_name + ".svg";
             } else {
+                src = reaction in data.active_icons
+                    ? `${data._icon_base_url}${data.active_icons[reaction]}.svg`
+                    : `${data._icon_base_url}${icon_name}-filled.svg`;
                 data.value = [...data.value, reaction];
-                if (reaction in data.active_icons) {
-                    event.target.src = data._icon_base_url + data.active_icons[reaction] + ".svg";
-                } else {
-                    event.target.src = data._icon_base_url + icon_name + "-filled.svg";
-                }
             }
+            event.target.src = src;
         """
     }
 
