@@ -106,8 +106,6 @@ class ChatReactionIcons(ReactiveHTML):
 
     _icon_base_url = param.String("https://tabler-icons.io/static/tabler-icons/icons/")
 
-    _stylesheets = [f"{CDN_DIST}css/chat_reaction_icons.css"]
-
     _template = """
         <div id="reaction-icons" class="reaction-icons">
             {% for reaction, icon_name in options.items() %}
@@ -156,7 +154,8 @@ class ChatReactionIcons(ReactiveHTML):
 
 class ChatEntry(CompositeWidget):
     """
-    A widget to display a chat entry.
+    A widget to display a chat entry with an avatar, user, timestamp,
+    and reactions.
 
     Parameters
     ----------
@@ -409,7 +408,49 @@ class ChatEntry(CompositeWidget):
 
 class ChatFeed(CompositeWidget):
     """
+    A widget to display a chat feed with a header and a chat log.
 
+    Parameters
+    ----------
+    value : List[ChatEntry]
+        The entries to add to the chat feed.
+    header : str | Widget
+        The header of the chat feed. Can be a string, pane, or widget.
+    callback : Callable
+        Callback to execute when a user sends a message or
+        when `respond` is called. The signature must include
+        the previous message value `contents`, the previous `user` name,
+        and the component `instance`.
+    callback_user : str
+        The default user name to use for the entry provided by the callback.
+    callback_avatar : str | BinaryIO
+        The default avatar to use for the entry provided by the callback.
+    placeholder : Any
+        Placeholder to display while the callback is running.
+        If not set, defaults to a LoadingSpinner.
+    placeholder_text : str
+        If placeholder is the default LoadingSpinner,
+        the text to display next to it.
+    placeholder_threshold : int
+        Min duration in seconds to display the placeholder. If 0, the placeholder
+        will be disabled.
+    auto_scroll_limit : int
+        Max pixel distance from the latest object in the Column to
+        activate automatic scrolling upon update. Setting to 0
+        disables auto-scrolling.
+    scroll_button_threshold : int
+        Min pixel distance from the latest object in the Column to
+        display the scroll button. Setting to 0
+        disables the scroll button.
+    view_latest : bool
+        Whether to scroll to the latest object on init. If not
+        enabled the view will be on the first object.
+    card_params : Dict
+        Params to pass to Card, like `header`,
+        `header_background`, `header_color`, etc.
+    entry_params : Dict
+        Params to pass to each ChatEntry, like `reaction_icons`, `timestamp_format`,
+        `show_avatar`, `show_user`, and `show_timestamp`.
     """
     value = param.List(item_type=ChatEntry, doc="""
         The entries to add to the chat feed.""")
@@ -465,9 +506,6 @@ class ChatFeed(CompositeWidget):
 
     _disabled = param.Boolean(default=False, doc="""
         Whether the chat feed is disabled.""")
-
-    _previous_user = param.String(default="", doc="""
-        The previous user name.""")
 
     _stylesheets: ClassVar[List[str]] = [
         f"{CDN_DIST}css/chat_feed.css"
@@ -680,15 +718,10 @@ class ChatFeed(CompositeWidget):
                 task = asyncio.create_task(self._handle_callback(entry))
                 await self._schedule_placeholder(task, num_entries)
                 await task
-                response_entry = task.result()
+                task.result()
             else:
                 self._chat_log.append(self.placeholder)
-                response_entry = await self._handle_callback(entry)
-
-            if response_entry is None:
-                return
-            elif response_entry.user != entry.user:
-                self._previous_user = response_entry.user
+                await self._handle_callback(entry)
         finally:
             self._replace_placeholder(None)
             self.disabled = disabled
