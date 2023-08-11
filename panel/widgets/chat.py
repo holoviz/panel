@@ -421,7 +421,7 @@ class ChatFeed(CompositeWidget):
     Parameters
     ----------
     value : List[ChatEntry]
-        The entries to add to the chat feed.
+        The entries added to the chat feed.
     header : str | Widget
         The header of the chat feed. Can be a string, pane, or widget.
     callback : Callable
@@ -461,7 +461,7 @@ class ChatFeed(CompositeWidget):
         `show_avatar`, `show_user`, and `show_timestamp`.
     """
     value = param.List(item_type=ChatEntry, doc="""
-        The entries to add to the chat feed.""")
+        The entries added to the chat feed.""")
 
     header = param.Parameter(doc="""
         The header of the chat feed. Can be a string, pane, or widget.""")
