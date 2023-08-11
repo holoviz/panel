@@ -24,7 +24,7 @@ class TestChatEntry:
 
         avatar_pane = columns[0][0].object()
         assert isinstance(avatar_pane, HTML)
-        assert avatar_pane.object == "U"
+        assert avatar_pane.object == "👤"
 
         user_pane = columns[1][0].object()
         assert isinstance(user_pane, HTML)

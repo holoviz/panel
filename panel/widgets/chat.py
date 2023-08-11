@@ -156,8 +156,14 @@ class ChatReactionIcons(ReactiveHTML):
 
 class ChatEntry(CompositeWidget):
     """
-    A widget to display a chat entry with an avatar, user, timestamp,
-    and reactions.
+    A widget for displaying chat messages with support for various content types.
+
+    This widget provides a structured view of chat messages, including features like:
+    - Displaying user avatars, which can be text, emoji, or images.
+    - Showing the user's name.
+    - Displaying the message timestamp in a customizable format.
+    - Associating reactions with messages and mapping them to icons.
+    - Rendering various content types including text, images, audio, video, and more.
 
     Parameters
     ----------
@@ -179,11 +185,11 @@ class ChatEntry(CompositeWidget):
     timestamp_format : str
         The timestamp format.
     show_avatar : bool
-        Whether to show the avatar.
+        Whether to display the avatar of the user.
     show_user : bool
-        Whether to show the name.
+        Whether to display the name of the user.
     show_timestamp : bool
-        Whether to show the timestamp.
+        Whether to display the timestamp of the message.
     """
 
     value = param.ClassSelector(class_=object, doc="""
@@ -209,11 +215,11 @@ class ChatEntry(CompositeWidget):
 
     timestamp_format = param.String(default="%H:%M", doc="The timestamp format.")
 
-    show_avatar = param.Boolean(default=True, doc="Whether to show the avatar.")
+    show_avatar = param.Boolean(default=True, doc="Whether to display the avatar of the user.")
 
-    show_user = param.Boolean(default=True, doc="Whether to show the name.")
+    show_user = param.Boolean(default=True, doc="Whether to display the name of the user.")
 
-    show_timestamp = param.Boolean(default=True, doc="Whether to show the timestamp.")
+    show_timestamp = param.Boolean(default=True, doc="Whether to display the timestamp of the message.")
 
     _value_panel = param.Parameter(doc="The rendered value panel.")
 
