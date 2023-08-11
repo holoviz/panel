@@ -957,6 +957,7 @@ class ChatInterface(ChatFeed):
                 index=index, name=name, icon=icon, objects=[], buttons=[]
             ) for index, (name, icon) in enumerate(button_icons.items())
         }
+        self._init_widgets()
         self._composite[:] = [*self._composite[:], self._input_layout]
 
     def _link_disabled_loading(self, obj: Viewable):
@@ -968,7 +969,7 @@ class ChatInterface(ChatFeed):
             setattr(obj, attr, getattr(self, attr))
             self.link(obj, **{attr: attr})
 
-    @param.depends("widgets", watch=True, on_init=True)
+    @param.depends("widgets", watch=True)
     def _init_widgets(self) -> Union[Tabs, Row]:
         """
         Initialize the input widgets.
