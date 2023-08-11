@@ -439,7 +439,7 @@ class ChatFeed(CompositeWidget):
     placeholder_text : str
         If placeholder is the default LoadingSpinner,
         the text to display next to it.
-    placeholder_threshold : int
+    placeholder_threshold : float
         Min duration in seconds of buffering before displaying the placeholder.
         If 0, the placeholder will be disabled.
     auto_scroll_limit : int
