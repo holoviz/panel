@@ -192,7 +192,7 @@ class ChatEntry(CompositeWidget):
     user = param.Parameter(default="User", doc="""
         Name of the user who sent the message.""")
 
-    avatar = param.ClassSelector(class_=(str, BinaryIO), doc="""
+    avatar = param.ClassSelector(default="👤", class_=(str, BinaryIO), doc="""
         The avatar to use for the user. Can be a single character text, an emoji,
         or anything supported by `pn.pane.Image`. If not set, uses the
         first character of the name.""")
@@ -469,7 +469,7 @@ class ChatFeed(CompositeWidget):
     callback_user = param.String(default="Assistant", doc="""
         The default user name to use for the entry provided by the callback.""")
 
-    callback_avatar = param.ClassSelector(class_=(str, BinaryIO), doc="""
+    callback_avatar = param.ClassSelector(default="🤖", class_=(str, BinaryIO), doc="""
         The default avatar to use for the entry provided by the callback.""")
 
     placeholder = param.Parameter(doc="""
@@ -515,7 +515,7 @@ class ChatFeed(CompositeWidget):
 
     _composite_type: ClassVar[Type[ListPanel]] = Card
 
-    def __init__(self, **params: Any):
+    def __init__(self, **params):
         super().__init__(**params)
 
         # instantiate the card

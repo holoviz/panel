@@ -427,8 +427,8 @@ class TestChatFeedCallback:
         chat_feed.callback_user = "Bob"
         chat_feed.callback_avatar = "👨"
         chat_feed.send("Message", respond=True)
-        assert len(chat_feed.entries) == 2
         time.sleep(0.5)
+        assert len(chat_feed.entries) == 2
         assert chat_feed.entries[1].user == "Bob"
         assert chat_feed.entries[1].avatar == "👨"
 
