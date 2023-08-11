@@ -9,6 +9,7 @@ import pytest
 from panel.layout import Row, Tabs
 from panel.pane.image import Image
 from panel.pane.markup import HTML, Markdown
+from panel.widgets.button import Button
 from panel.widgets.chat import (
     ChatEntry, ChatFeed, ChatInterface, ChatReactionIcons, _FileInputMessage,
 )
@@ -599,6 +600,13 @@ class TestChatInterface:
         assert len(chat_interface._widgets) == 1
         assert isinstance(chat_interface._input_layout, Row)
         assert isinstance(chat_interface._widgets["TextInput"], TextInput)
+
+        # Buttons added to input layout
+        inputs = chat_interface._input_layout
+        for index, button_data in enumerate(chat_interface._button_data.values()):
+            widget = inputs[index+1]
+            assert isinstance(widget, Button)
+            assert widget.name == button_data.name.title()
 
     def test_init_custom_widgets(self):
         widgets = [TextInput(name="Text"), FileInput()]
