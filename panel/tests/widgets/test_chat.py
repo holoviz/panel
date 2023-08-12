@@ -166,9 +166,13 @@ class TestChatFeed:
 
     def test_send(self, chat_feed):
         entry = chat_feed.send("Message")
-        assert len(chat_feed.entries) == 1
-        assert chat_feed.entries[0] is entry
-        assert chat_feed.entries[0].value == "Message"
+        assert len(chat_feed.value) == 1
+        assert chat_feed.value[0] is entry
+        assert chat_feed.value[0].value == "Message"
+
+    def test_link_chat_log_objects(self, chat_feed):
+        chat_feed.send("Message")
+        assert chat_feed._chat_log.objects[0] is chat_feed.value[0]
 
     def test_send_with_user_avatar(self, chat_feed):
         user = "Bob"
@@ -179,17 +183,17 @@ class TestChatFeed:
 
     def test_send_dict(self, chat_feed):
         entry = chat_feed.send({"value": "Message", "user": "Bob", "avatar": "👨"})
-        assert len(chat_feed.entries) == 1
-        assert chat_feed.entries[0] is entry
-        assert chat_feed.entries[0].value == "Message"
-        assert chat_feed.entries[0].user == "Bob"
-        assert chat_feed.entries[0].avatar == "👨"
+        assert len(chat_feed.value) == 1
+        assert chat_feed.value[0] is entry
+        assert chat_feed.value[0].value == "Message"
+        assert chat_feed.value[0].user == "Bob"
+        assert chat_feed.value[0].avatar == "👨"
 
     def test_send_dict_minimum(self, chat_feed):
         entry = chat_feed.send({"value": "Message"})
-        assert len(chat_feed.entries) == 1
-        assert chat_feed.entries[0] is entry
-        assert chat_feed.entries[0].value == "Message"
+        assert len(chat_feed.value) == 1
+        assert chat_feed.value[0] is entry
+        assert chat_feed.value[0].value == "Message"
 
     def test_send_dict_without_value(self, chat_feed):
         with pytest.raises(ValueError, match="it must contain a 'value' key"):
@@ -203,31 +207,31 @@ class TestChatFeed:
             user=user,
             avatar=avatar,
         )
-        assert len(chat_feed.entries) == 1
-        assert chat_feed.entries[0] is entry
-        assert chat_feed.entries[0].value == "Message"
-        assert chat_feed.entries[0].user == user
-        assert chat_feed.entries[0].avatar == avatar
+        assert len(chat_feed.value) == 1
+        assert chat_feed.value[0] is entry
+        assert chat_feed.value[0].value == "Message"
+        assert chat_feed.value[0].user == user
+        assert chat_feed.value[0].avatar == avatar
 
     def test_send_entry(self, chat_feed):
         entry = ChatEntry(value="Message", user="Bob", avatar="👨")
         chat_feed.send(entry)
-        assert len(chat_feed.entries) == 1
-        assert chat_feed.entries[0] is entry
-        assert chat_feed.entries[0].value == "Message"
-        assert chat_feed.entries[0].user == "Bob"
-        assert chat_feed.entries[0].avatar == "👨"
+        assert len(chat_feed.value) == 1
+        assert chat_feed.value[0] is entry
+        assert chat_feed.value[0].value == "Message"
+        assert chat_feed.value[0].user == "Bob"
+        assert chat_feed.value[0].avatar == "👨"
 
     def test_send_entry_with_user_avatar_override(self, chat_feed):
         user = "August"
         avatar = "👩"
         entry = ChatEntry(value="Message", user="Bob", avatar="👨")
         chat_feed.send(entry, user=user, avatar=avatar)
-        assert len(chat_feed.entries) == 1
-        assert chat_feed.entries[0] is entry
-        assert chat_feed.entries[0].value == "Message"
-        assert chat_feed.entries[0].user == user
-        assert chat_feed.entries[0].avatar == avatar
+        assert len(chat_feed.value) == 1
+        assert chat_feed.value[0] is entry
+        assert chat_feed.value[0].value == "Message"
+        assert chat_feed.value[0].user == user
+        assert chat_feed.value[0].avatar == avatar
 
     def test_send_with_respond(self, chat_feed):
         def callback(contents, user, instance):
@@ -237,14 +241,14 @@ class TestChatFeed:
         chat_feed.send("Question", respond=True)
         time.sleep(0.5)
 
-        assert len(chat_feed.entries) == 2
-        assert chat_feed.entries[1].value == "Response to: Question"
+        assert len(chat_feed.value) == 2
+        assert chat_feed.value[1].value == "Response to: Question"
 
         chat_feed.respond()
         time.sleep(0.5)
 
-        assert len(chat_feed.entries) == 3
-        assert chat_feed.entries[2].value == "Response to: Response to: Question"
+        assert len(chat_feed.value) == 3
+        assert chat_feed.value[2].value == "Response to: Response to: Question"
 
     def test_send_without_respond(self, chat_feed):
         def callback(contents, user, instance):
@@ -254,38 +258,38 @@ class TestChatFeed:
         chat_feed.send("Question", respond=False)
         time.sleep(0.5)
 
-        assert len(chat_feed.entries) == 1
+        assert len(chat_feed.value) == 1
 
         chat_feed.respond()
         time.sleep(0.5)
 
-        assert len(chat_feed.entries) == 2
-        assert chat_feed.entries[1].value == "Response to: Question"
+        assert len(chat_feed.value) == 2
+        assert chat_feed.value[1].value == "Response to: Question"
 
     def test_respond_without_callback(self, chat_feed):
         chat_feed.respond()  # Should not raise any errors
 
     def test_stream(self, chat_feed):
         entry = chat_feed.stream("Streaming message", user="Person", avatar="P")
-        assert len(chat_feed.entries) == 1
-        assert chat_feed.entries[0] is entry
-        assert chat_feed.entries[0].value == "Streaming message"
-        assert chat_feed.entries[0].user == "Person"
-        assert chat_feed.entries[0].avatar == "P"
+        assert len(chat_feed.value) == 1
+        assert chat_feed.value[0] is entry
+        assert chat_feed.value[0].value == "Streaming message"
+        assert chat_feed.value[0].user == "Person"
+        assert chat_feed.value[0].avatar == "P"
 
         updated_entry = chat_feed.stream(
             " Appended message", user="New Person", entry=entry, avatar="N"
         )
-        assert len(chat_feed.entries) == 1
-        assert chat_feed.entries[0] is updated_entry
-        assert chat_feed.entries[0].value == "Streaming message Appended message"
-        assert chat_feed.entries[0].user == "New Person"
-        assert chat_feed.entries[0].avatar == "N"
+        assert len(chat_feed.value) == 1
+        assert chat_feed.value[0] is updated_entry
+        assert chat_feed.value[0].value == "Streaming message Appended message"
+        assert chat_feed.value[0].user == "New Person"
+        assert chat_feed.value[0].avatar == "N"
 
         new_entry = chat_feed.stream("New message")
-        assert len(chat_feed.entries) == 2
-        assert chat_feed.entries[1] is new_entry
-        assert chat_feed.entries[1].value == "New message"
+        assert len(chat_feed.value) == 2
+        assert chat_feed.value[1] is new_entry
+        assert chat_feed.value[1].value == "New message"
 
     def test_stream_with_user_avatar(self, chat_feed):
         user = "Bob"
@@ -300,17 +304,17 @@ class TestChatFeed:
         entry = chat_feed.stream(
             {"value": "Streaming message", "user": "Person", "avatar": "P"}
         )
-        assert len(chat_feed.entries) == 1
-        assert chat_feed.entries[0] is entry
-        assert chat_feed.entries[0].value == "Streaming message"
-        assert chat_feed.entries[0].user == "Person"
-        assert chat_feed.entries[0].avatar == "P"
+        assert len(chat_feed.value) == 1
+        assert chat_feed.value[0] is entry
+        assert chat_feed.value[0].value == "Streaming message"
+        assert chat_feed.value[0].user == "Person"
+        assert chat_feed.value[0].avatar == "P"
 
     def test_stream_dict_minimum(self, chat_feed):
         entry = chat_feed.stream({"value": "Streaming message"})
-        assert len(chat_feed.entries) == 1
-        assert chat_feed.entries[0] is entry
-        assert chat_feed.entries[0].value == "Streaming message"
+        assert len(chat_feed.value) == 1
+        assert chat_feed.value[0] is entry
+        assert chat_feed.value[0].value == "Streaming message"
 
     def test_stream_dict_without_value(self, chat_feed):
         with pytest.raises(ValueError, match="it must contain a 'value' key"):
@@ -324,31 +328,31 @@ class TestChatFeed:
             user=user,
             avatar=avatar,
         )
-        assert len(chat_feed.entries) == 1
-        assert chat_feed.entries[0] is entry
-        assert chat_feed.entries[0].value == "Streaming message"
-        assert chat_feed.entries[0].user == user
-        assert chat_feed.entries[0].avatar == avatar
+        assert len(chat_feed.value) == 1
+        assert chat_feed.value[0] is entry
+        assert chat_feed.value[0].value == "Streaming message"
+        assert chat_feed.value[0].user == user
+        assert chat_feed.value[0].avatar == avatar
 
     def test_stream_entry(self, chat_feed):
         entry = ChatEntry(value="Streaming message", user="Person", avatar="P")
         chat_feed.stream(entry)
-        assert len(chat_feed.entries) == 1
-        assert chat_feed.entries[0] is entry
-        assert chat_feed.entries[0].value == "Streaming message"
-        assert chat_feed.entries[0].user == "Person"
-        assert chat_feed.entries[0].avatar == "P"
+        assert len(chat_feed.value) == 1
+        assert chat_feed.value[0] is entry
+        assert chat_feed.value[0].value == "Streaming message"
+        assert chat_feed.value[0].user == "Person"
+        assert chat_feed.value[0].avatar == "P"
 
     def test_stream_entry_with_user_avatar_override(self, chat_feed):
         user = "Bob"
         avatar = "👨"
         entry = ChatEntry(value="Streaming message", user="Person", avatar="P")
         chat_feed.stream(entry, user=user, avatar=avatar)
-        assert len(chat_feed.entries) == 1
-        assert chat_feed.entries[0] is entry
-        assert chat_feed.entries[0].value == "Streaming message"
-        assert chat_feed.entries[0].user == user
-        assert chat_feed.entries[0].avatar == avatar
+        assert len(chat_feed.value) == 1
+        assert chat_feed.value[0] is entry
+        assert chat_feed.value[0].value == "Streaming message"
+        assert chat_feed.value[0].user == user
+        assert chat_feed.value[0].avatar == avatar
 
     @pytest.mark.parametrize(
         "obj",
@@ -367,9 +371,9 @@ class TestChatFeed:
             )
         )
         chat_feed.stream(" Added", entry=entry)
-        assert len(chat_feed.entries) == 1
-        assert chat_feed.entries[0] is entry
-        entry_obj = chat_feed.entries[0].value[0]
+        assert len(chat_feed.value) == 1
+        assert chat_feed.value[0] is entry
+        entry_obj = chat_feed.value[0].value[0]
         if isinstance(entry_obj, Row):
             entry_obj = entry_obj[0]
 
@@ -383,23 +387,23 @@ class TestChatFeed:
         chat_feed.send("Message 2")
         entry3 = chat_feed.send("Message 3")
 
-        assert len(chat_feed.entries) == 3
+        assert len(chat_feed.value) == 3
 
         undone_entries = chat_feed.undo()
-        assert len(chat_feed.entries) == 2
+        assert len(chat_feed.value) == 2
         assert undone_entries == [entry3]
 
         chat_feed.undo(2)
-        assert len(chat_feed.entries) == 0
+        assert len(chat_feed.value) == 0
 
     def test_clear(self, chat_feed):
         chat_feed.send("Message 1")
         chat_feed.send("Message 2")
 
-        assert len(chat_feed.entries) == 2
+        assert len(chat_feed.value) == 2
 
         cleared_entries = chat_feed.clear()
-        assert len(chat_feed.entries) == 0
+        assert len(chat_feed.value) == 0
         assert cleared_entries[0].value == "Message 1"
         assert cleared_entries[1].value == "Message 2"
 
@@ -407,11 +411,11 @@ class TestChatFeed:
         chat_feed.send("Message 1")
         chat_feed.send("Message 2")
 
-        assert len(chat_feed.entries) == 2
+        assert len(chat_feed.value) == 2
 
-        chat_feed.entries = [ChatEntry(value="Message 3")]
-        assert len(chat_feed.entries) == 1
-        assert chat_feed.entries[0].value == "Message 3"
+        chat_feed.value = [ChatEntry(value="Message 3")]
+        assert len(chat_feed.value) == 1
+        assert chat_feed.value[0].value == "Message 3"
 
 
 class TestChatFeedCallback:
@@ -428,9 +432,9 @@ class TestChatFeedCallback:
         chat_feed.callback_avatar = "👨"
         chat_feed.send("Message", respond=True)
         time.sleep(0.5)
-        assert len(chat_feed.entries) == 2
-        assert chat_feed.entries[1].user == "Bob"
-        assert chat_feed.entries[1].avatar == "👨"
+        assert len(chat_feed.value) == 2
+        assert chat_feed.value[1].user == "Bob"
+        assert chat_feed.value[1].avatar == "👨"
 
     def test_return(self, chat_feed):
         def echo(contents, user, instance):
@@ -439,8 +443,8 @@ class TestChatFeedCallback:
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
         time.sleep(0.5)
-        assert len(chat_feed.entries) == 2
-        assert chat_feed.entries[1].value == "Message"
+        assert len(chat_feed.value) == 2
+        assert chat_feed.value[1].value == "Message"
 
     def test_yield(self, chat_feed):
         def echo(contents, user, instance):
@@ -449,8 +453,8 @@ class TestChatFeedCallback:
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
         time.sleep(0.5)
-        assert len(chat_feed.entries) == 2
-        assert chat_feed.entries[1].value == "Message"
+        assert len(chat_feed.value) == 2
+        assert chat_feed.value[1].value == "Message"
 
     @pytest.mark.asyncio
     async def test_async_return(self, chat_feed):
@@ -460,8 +464,8 @@ class TestChatFeedCallback:
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
         await asyncio.sleep(0.25)
-        assert len(chat_feed.entries) == 2
-        assert chat_feed.entries[1].value == "Message"
+        assert len(chat_feed.value) == 2
+        assert chat_feed.value[1].value == "Message"
 
     @pytest.mark.asyncio
     async def test_async_yield(self, chat_feed):
@@ -471,8 +475,8 @@ class TestChatFeedCallback:
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
         await asyncio.sleep(0.25)
-        assert len(chat_feed.entries) == 2
-        assert chat_feed.entries[1].value == "Message"
+        assert len(chat_feed.value) == 2
+        assert chat_feed.value[1].value == "Message"
 
     @pytest.mark.asyncio
     async def test_generator(self, chat_feed):
@@ -485,8 +489,8 @@ class TestChatFeedCallback:
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
         await asyncio.sleep(0.25)
-        assert len(chat_feed.entries) == 2
-        assert chat_feed.entries[1].value == "Message"
+        assert len(chat_feed.value) == 2
+        assert chat_feed.value[1].value == "Message"
 
     @pytest.mark.asyncio
     async def test_async_generator(self, chat_feed):
@@ -503,8 +507,8 @@ class TestChatFeedCallback:
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
         await asyncio.sleep(0.25)
-        assert len(chat_feed.entries) == 2
-        assert chat_feed.entries[1].value == "Message"
+        assert len(chat_feed.value) == 2
+        assert chat_feed.value[1].value == "Message"
 
     def test_placeholder_disabled(self, chat_feed):
         def echo(contents, user, instance):
@@ -639,34 +643,34 @@ class TestChatInterface:
         chat_interface.widgets = [TextAreaInput()]
         chat_interface.active_widget.value = "Message"
         chat_interface._click_send(None)
-        assert len(chat_interface.entries) == 1
-        assert chat_interface.entries[0].value == "Message"
+        assert len(chat_interface.value) == 1
+        assert chat_interface.value[0].value == "Message"
 
     def test_click_undo(self, chat_interface):
         chat_interface.user = "User"
         chat_interface.send("Message 1")
         chat_interface.send("Message 2")
         chat_interface.send("Message 3", user="Assistant")
-        expected = chat_interface.entries[-2:].copy()
+        expected = chat_interface.value[-2:].copy()
         chat_interface._click_undo(None)
-        assert len(chat_interface.entries) == 1
-        assert chat_interface.entries[0].value == "Message 1"
+        assert len(chat_interface.value) == 1
+        assert chat_interface.value[0].value == "Message 1"
         assert chat_interface._button_data["undo"].objects == expected
 
         # revert
         chat_interface._click_undo(None)
-        assert len(chat_interface.entries) == 3
-        assert chat_interface.entries[0].value == "Message 1"
-        assert chat_interface.entries[1].value == "Message 2"
-        assert chat_interface.entries[2].value == "Message 3"
+        assert len(chat_interface.value) == 3
+        assert chat_interface.value[0].value == "Message 1"
+        assert chat_interface.value[1].value == "Message 2"
+        assert chat_interface.value[2].value == "Message 3"
 
     def test_click_clear(self, chat_interface):
         chat_interface.send("Message 1")
         chat_interface.send("Message 2")
         chat_interface.send("Message 3")
-        expected = chat_interface.entries.copy()
+        expected = chat_interface.value.copy()
         chat_interface._click_clear(None)
-        assert len(chat_interface.entries) == 0
+        assert len(chat_interface.value) == 0
         assert chat_interface._button_data["clear"].objects == expected
 
     def test_click_rerun(self, chat_interface):
@@ -676,10 +680,10 @@ class TestChatInterface:
             return self.count
         chat_interface.callback = callback
         chat_interface.send("Message 1")
-        assert chat_interface.entries[1].value == 1
+        assert chat_interface.value[1].value == 1
         chat_interface._click_rerun(None)
-        assert chat_interface.entries[1].value == 2
+        assert chat_interface.value[1].value == 2
 
     def test_click_rerun_null(self, chat_interface):
         chat_interface._click_rerun(None)
-        assert len(chat_interface.entries) == 0
+        assert len(chat_interface.value) == 0
