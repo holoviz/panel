@@ -416,7 +416,14 @@ class ChatEntry(CompositeWidget):
 
 class ChatFeed(CompositeWidget):
     """
-    A widget to display a chat feed with a header and a chat log.
+    A widget to display a list of `ChatEntry` objects and interact with them.
+
+    This widget provides methods to:
+    - Send (append) messages to the chat log.
+    - Stream tokens to the latest `ChatEntry` in the chat log.
+    - Execute callbacks when a user sends a message.
+    - Undo a number of sent `ChatEntry` objects.
+    - Clear the chat log of all `ChatEntry` objects.
 
     Parameters
     ----------
