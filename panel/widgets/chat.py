@@ -573,13 +573,20 @@ class ChatFeed(CompositeWidget):
         self._callback_trigger.on_click(self._prepare_response)
 
         if self.placeholder is None:
-            self.placeholder = LoadingSpinner(
-                name=self.param.placeholder_text,
-                value=True,
-                width=40,
-                height=40,
-                margin=25
+            self.placeholder = ChatEntry(
+                value=LoadingSpinner(
+                    name=self.param.placeholder_text,
+                    margin=(25, 30),
+                    value=True,
+                    width=40,
+                    height=40,
+                ),
+                show_avatar=False,
+                show_user=False,
+                show_timestamp=False,
+                reaction_icons={},
             )
+        self.link(self._chat_log, value="objects", bidirectional=True)
 
     @param.depends("header", watch=True)
     def _hide_header(self):
@@ -597,7 +604,7 @@ class ChatFeed(CompositeWidget):
         index = None
         if self.placeholder_threshold > 0:
             try:
-                index = self.entries.index(self.placeholder)
+                index = self.value.index(self.placeholder)
             except ValueError:
                 pass
 
@@ -898,20 +905,6 @@ class ChatFeed(CompositeWidget):
         self._chat_log.clear()
         return cleared_entries
 
-    @property
-    def entries(self) -> List[ChatEntry]:
-        """
-        Returns the entries in the chat log.
-        """
-        return self._chat_log.objects
-
-    @entries.setter
-    def entries(self, entries: List[ChatEntry]) -> None:
-        """
-        Sets the entries in the chat log.
-        """
-        self._chat_log.objects = entries
-
 
 class ChatInterface(ChatFeed):
     """
@@ -1071,7 +1064,7 @@ class ChatInterface(ChatFeed):
         """
         Get the index of the last user entry.
         """
-        entries = self.entries[::-1]
+        entries = self.value[::-1]
         for index, entry in enumerate(entries, 1):
             if entry.user == self.user:
                 return index
@@ -1123,7 +1116,7 @@ class ChatInterface(ChatFeed):
             undo_data.objects = self.undo(count)
             self._toggle_revert(undo_data, True)
         else:
-            self.entries = [*self.entries, *undo_objects.copy()]
+            self.value = [*self.value, *undo_objects.copy()]
             self._reset_button_data()
 
     def _click_clear(self, _):
@@ -1138,7 +1131,7 @@ class ChatInterface(ChatFeed):
             clear_data.objects = self.clear()
             self._toggle_revert(clear_data, True)
         else:
-            self.entries = clear_objects.copy()
+            self.value = clear_objects.copy()
             self._reset_button_data()
 
     @property
