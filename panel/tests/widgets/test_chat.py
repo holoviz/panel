@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from panel import Param
 from panel.layout import Row, Tabs
 from panel.pane.image import Image
 from panel.pane.markup import HTML, Markdown
@@ -15,6 +16,13 @@ from panel.widgets.chat import (
 )
 from panel.widgets.input import FileInput, TextAreaInput, TextInput
 
+LAYOUT_PARAMETERS = {
+        "sizing_mode": "stretch_height",
+        "height": 201,
+        "max_height": 301,
+        "width": 101,
+        "max_width": 201,
+    }
 
 class TestChatEntry:
     def test_layout(self):
@@ -145,6 +153,10 @@ class TestChatEntry:
         entry.show_timestamp = False
         timestamp_pane = columns[1][2].object()
         assert not timestamp_pane.visible
+
+    def test_can_use_pn_param_without_raising_exceptions(self):
+        entry = ChatEntry()
+        Param(entry)
 
 
 class TestChatFeed:
@@ -412,6 +424,13 @@ class TestChatFeed:
         chat_feed.entries = [ChatEntry(value="Message 3")]
         assert len(chat_feed.entries) == 1
         assert chat_feed.entries[0].value == "Message 3"
+
+    @pytest.mark.parametrize(["key", "value"], LAYOUT_PARAMETERS.items())
+    def test_layout_parameters_are_propogated_to_composite(self, key, value):
+        chat_feed = ChatFeed(**{key: value})
+        assert getattr(chat_feed, key)==value
+        assert getattr(chat_feed._composite, key)==value
+
 
 
 class TestChatFeedCallback:

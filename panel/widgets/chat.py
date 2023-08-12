@@ -192,7 +192,7 @@ class ChatEntry(CompositeWidget):
         Whether to display the timestamp of the message.
     """
 
-    value = param.ClassSelector(class_=object, doc="""
+    value = param.Parameter(doc="""
         The message contents. Can be a string, pane, widget, layout, etc.""")
 
     user = param.Parameter(default="User", doc="""
@@ -461,7 +461,7 @@ class ChatFeed(CompositeWidget):
         `show_avatar`, `show_user`, and `show_timestamp`.
     """
     value = param.List(item_type=ChatEntry, doc="""
-        The entries added to the chat feed.""")
+        The list of entries in the feed.""")
 
     header = param.Parameter(doc="""
         The header of the chat feed. Can be a string, pane, or widget.""")
@@ -523,7 +523,6 @@ class ChatFeed(CompositeWidget):
 
     def __init__(self, **params):
         super().__init__(**params)
-
         # instantiate the card
         card_params = {
             "header": self.header,
@@ -534,6 +533,10 @@ class ChatFeed(CompositeWidget):
             "header_css_classes": ["chat-feed-header"],
             "title_css_classes": ["chat-feed-title"],
             "sizing_mode": self.sizing_mode,
+            "height": self.height,
+            "width": self.width,
+            "max_width": self.max_width,
+            "max_height": self.max_height,
         }
         card_params.update(**self.card_params)
         if self.sizing_mode is None:
@@ -783,8 +786,9 @@ class ChatFeed(CompositeWidget):
         respond: bool = True,
     ) -> ChatEntry:
         """
-        Send a value and creates a new entry in the chat log.
-        If respond, additionally executes the callback, if provided.
+        Sends a value and creates a new entry in the chat log.
+
+        If `respond` is `True`, additionally executes the callback, if provided.
 
         Parameters
         ----------
@@ -855,7 +859,7 @@ class ChatFeed(CompositeWidget):
 
     def undo(self, count: Optional[int] = 1) -> List[Any]:
         """
-        Remove the last `count` of entries from
+        Removes the last `count` of entries from
         the chat log and returns them.
 
         Parameters
