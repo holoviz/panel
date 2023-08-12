@@ -221,6 +221,10 @@ class ChatEntry(CompositeWidget):
 
     show_timestamp = param.Boolean(default=True, doc="Whether to display the timestamp of the message.")
 
+    _placeholder = param.Parameter(doc="""
+        The placeholder wrapped in a ChatEntry object;
+        primarily to prevent recursion error in _update_placeholder.""")
+
     _value_panel = param.Parameter(doc="The rendered value panel.")
 
     _stylesheets: ClassVar[List[str]] = [
@@ -572,21 +576,29 @@ class ChatFeed(CompositeWidget):
         self._callback_trigger = Button(visible=False)
         self._callback_trigger.on_click(self._prepare_response)
 
+        self.link(self._chat_log, value="objects", bidirectional=True)
+
+    @param.depends("placeholder", watch=True, on_init=True)
+    def _update_placeholder(self):
+        plain_entry = dict(
+            show_avatar=False,
+            show_user=False,
+            show_timestamp=False,
+            reaction_icons={},
+        )
         if self.placeholder is None:
-            self.placeholder = ChatEntry(
+            self._placeholder = ChatEntry(
                 value=LoadingSpinner(
                     name=self.param.placeholder_text,
-                    margin=(25, 30),
                     value=True,
                     width=40,
                     height=40,
                 ),
-                show_avatar=False,
-                show_user=False,
-                show_timestamp=False,
-                reaction_icons={},
+                **plain_entry,
             )
-        self.link(self._chat_log, value="objects", bidirectional=True)
+        else:
+            self._placeholder = ChatEntry(value=self.placeholder, **plain_entry)
+        self._placeholder.margin = (25, 30)
 
     @param.depends("header", watch=True)
     def _hide_header(self):
@@ -604,7 +616,7 @@ class ChatFeed(CompositeWidget):
         index = None
         if self.placeholder_threshold > 0:
             try:
-                index = self.value.index(self.placeholder)
+                index = self.value.index(self._placeholder)
             except ValueError:
                 pass
 
@@ -612,7 +624,7 @@ class ChatFeed(CompositeWidget):
             if entry is not None:
                 self._chat_log[index] = entry
             elif entry is None:
-                self._chat_log.remove(self.placeholder)
+                self._chat_log.remove(self._placeholder)
         elif entry is not None and entry.value:
             self._chat_log.append(entry)
 
@@ -726,7 +738,7 @@ class ChatFeed(CompositeWidget):
         while not task.done() and num_entries == len(self._chat_log):
             duration = asyncio.get_event_loop().time() - start
             if duration > self.placeholder_threshold:
-                self._chat_log.append(self.placeholder)
+                self._chat_log.append(self._placeholder)
                 return
             await asyncio.sleep(0.05)
 
@@ -753,7 +765,7 @@ class ChatFeed(CompositeWidget):
                 task.result()
             else:
                 if self.placeholder_threshold > 0:
-                    self._chat_log.append(self.placeholder)
+                    self._chat_log.append(self._placeholder)
                 await self._handle_callback(entry)
         finally:
             self._replace_placeholder(None)
