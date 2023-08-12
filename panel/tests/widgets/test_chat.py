@@ -174,6 +174,10 @@ class TestChatFeed:
         chat_feed.send("Message")
         assert chat_feed._chat_log.objects[0] is chat_feed.value[0]
 
+    def test_link_chat_log_objects(self, chat_feed):
+        chat_feed.send("Message")
+        assert chat_feed._chat_log.objects[0] is chat_feed.value[0]
+
     def test_send_with_user_avatar(self, chat_feed):
         user = "Bob"
         avatar = "👨"
@@ -535,6 +539,12 @@ class TestChatFeedCallback:
         # append sent message and placeholder
         assert chat_log_mock.append.call_count == 2
 
+    def test_custom_placeholder(self, chat_feed):
+        chat_feed.placeholder = "Loading..."
+        placeholder = chat_feed._placeholder
+        assert isinstance(placeholder, ChatEntry)
+        assert placeholder.value == "Loading..."
+        assert placeholder.margin == (25, 30)
 
 class TestChatInterfaceWidgetsSizingMode:
     def test_none(self):
