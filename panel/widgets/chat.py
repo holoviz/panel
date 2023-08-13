@@ -91,6 +91,12 @@ class ChatReactionIcons(ReactiveHTML):
     active_icons : Dict
         The mapping of reactions to their corresponding active icon names;
         if not set, the active icon name will default to its "filled" version.
+
+    Reference: https://panel.holoviz.org/reference/widgets/ChatReactionIcons.html
+
+    :Example:
+
+    >>> ChatReactionIcons(value=["like"], options={"like": "thumb-up", "dislike": "thumb-down"})
     """
 
     value = param.List(doc="The selected reactions.")
@@ -164,6 +170,12 @@ class ChatEntry(CompositeWidget):
     - Displaying the message timestamp in a customizable format.
     - Associating reactions with messages and mapping them to icons.
     - Rendering various content types including text, images, audio, video, and more.
+
+    Reference: https://panel.holoviz.org/reference/widgets/ChatEntry.html
+
+    :Example:
+
+    >>> ChatEntry(value="Hello world!", user="New User", avatar="😊")
 
     Parameters
     ----------
@@ -427,6 +439,17 @@ class ChatFeed(CompositeWidget):
     - Execute callbacks when a user sends a message.
     - Undo a number of sent `ChatEntry` objects.
     - Clear the chat log of all `ChatEntry` objects.
+
+    Reference: https://panel.holoviz.org/reference/widgets/ChatFeed.html
+
+    :Example:
+
+    >>> async def say_welcome(contents, user, instance):
+    >>>    yield "Welcome!"
+    >>>    yield "Glad you're here!"
+
+    >>> chat_feed = ChatFeed(callback=say_welcome, header="Welcome Feed")
+    >>> chat_feed.send("Hello World!", user="New User", avatar="😊")
 
     Parameters
     ----------
@@ -927,6 +950,17 @@ class ChatFeed(CompositeWidget):
 class ChatInterface(ChatFeed):
     """
     High level widget that contains the chat log and the chat input.
+
+    Reference: https://panel.holoviz.org/reference/widgets/ChatInterface.html
+
+    :Example:
+
+    >>> async def repeat_contents(contents, user, instance):
+    >>>     yield contents
+
+    >>> chat_interface = ChatInterface(
+        callback=repeat_contents, widgets=[TextInput(), FileInput()]
+    )
     """
 
     widgets = param.List(doc="""
