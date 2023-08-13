@@ -10,6 +10,7 @@ from panel import Param
 from panel.layout import Row, Tabs
 from panel.pane.image import Image
 from panel.pane.markup import HTML, Markdown
+from panel.tests.util import mpl_figure
 from panel.widgets.button import Button
 from panel.widgets.chat import (
     ChatEntry, ChatFeed, ChatInterface, ChatReactionIcons, _FileInputMessage,
@@ -154,6 +155,20 @@ class TestChatEntry:
         entry.show_timestamp = False
         timestamp_pane = columns[1][2].object()
         assert not timestamp_pane.visible
+
+    def test_can_display_any_python_object_that_panel_can_display(self):
+        # For example matplotlib figures
+        ChatEntry(value=mpl_figure())
+        # For example async functions
+        async def async_func():
+            return "hello"
+        ChatEntry(value=async_func)
+        # For example async generators
+        async def async_generator():
+            yield "hello"
+            yield "world"
+        ChatEntry(value=async_generator)
+
 
     def test_can_use_pn_param_without_raising_exceptions(self):
         entry = ChatEntry()

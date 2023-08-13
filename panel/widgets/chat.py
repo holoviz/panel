@@ -204,8 +204,8 @@ class ChatEntry(CompositeWidget):
         Whether to display the timestamp of the message.
     """
 
-    value = param.ClassSelector(class_=(Viewable, str, int, float, _FileInputMessage), doc="""
-        The message contents. Can be a string, pane, widget, layout, etc.""")
+    value = param.Parameter(doc="""
+        The message contents. Can be any Python object that panel can display.""")
 
     user = param.Parameter(default="User", doc="""
         Name of the user who sent the message.""")
