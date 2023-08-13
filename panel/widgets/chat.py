@@ -192,7 +192,7 @@ class ChatEntry(CompositeWidget):
         Whether to display the timestamp of the message.
     """
 
-    value = param.Parameter(doc="""
+    value = param.ClassSelector(class_=(Viewable, str, int, float, _FileInputMessage), doc="""
         The message contents. Can be a string, pane, widget, layout, etc.""")
 
     user = param.Parameter(default="User", doc="""
@@ -220,10 +220,6 @@ class ChatEntry(CompositeWidget):
     show_user = param.Boolean(default=True, doc="Whether to display the name of the user.")
 
     show_timestamp = param.Boolean(default=True, doc="Whether to display the timestamp of the message.")
-
-    _placeholder = param.Parameter(doc="""
-        The placeholder wrapped in a ChatEntry object;
-        primarily to prevent recursion error in _update_placeholder.""")
 
     _value_panel = param.Parameter(doc="The rendered value panel.")
 
@@ -324,6 +320,9 @@ class ChatEntry(CompositeWidget):
         """
         Create a panel object from the value.
         """
+        if isinstance(value, Viewable):
+            return value
+
         if isinstance(value, _FileInputMessage):
             contents = value.contents
             mime_type = value.mime_type
@@ -524,6 +523,10 @@ class ChatFeed(CompositeWidget):
     entry_params = param.Dict(default={}, doc="""
         Params to pass to each ChatEntry, like `reaction_icons`, `timestamp_format`,
         `show_avatar`, `show_user`, and `show_timestamp`.""")
+
+    _placeholder = param.ClassSelector(class_=ChatEntry, doc="""
+        The placeholder wrapped in a ChatEntry object;
+        primarily to prevent recursion error in _update_placeholder.""")
 
     _disabled = param.Boolean(default=False, doc="""
         Whether the chat feed is disabled.""")
@@ -767,6 +770,7 @@ class ChatFeed(CompositeWidget):
                 task.result()
             else:
                 if self.placeholder_threshold > 0:
+                    print(self._placeholder)
                     self._chat_log.append(self._placeholder)
                 await self._handle_callback(entry)
         finally:
