@@ -20,8 +20,9 @@ from ..layout.card import Card
 from ..layout.spacer import VSpacer
 from ..pane.base import panel as _panel
 from ..pane.image import PDF, Image, ImageBase
-from ..pane.markup import HTML, DataFrame, Markdown
+from ..pane.markup import HTML, Markdown
 from ..pane.media import Audio, Video
+from ..pane.perspective import Perspective
 from ..reactive import ReactiveHTML
 from ..viewable import Viewable
 from .base import CompositeWidget, Widget
@@ -29,6 +30,14 @@ from .button import Button
 from .indicators import LoadingSpinner
 from .input import FileInput, TextInput
 
+
+def dataframe_renderer(value):
+    layout = Column(f"{len(value)} rows was uploaded")
+    if len(value)>1000:
+        value = value.sample(1000)
+        layout.insert(-1, "The data was downsampled to 1000 rows")
+    # Todo: We need to figure out how to tell users to add "perspective" to pn.extension
+    return layout.insert(-1, Perspective(object=value, sizing_mode="stretch_width", max_height=500))
 
 @dataclass
 class _FileInputMessage:
@@ -321,7 +330,7 @@ class ChatEntry(CompositeWidget):
             import pandas as pd
             with BytesIO(contents) as buf:
                 contents = pd.read_csv(buf)
-            renderer = DataFrame
+            renderer = dataframe_renderer
         elif mime_type.startswith("text"):
             if isinstance(contents, bytes):
                 contents = contents.decode("utf-8")
