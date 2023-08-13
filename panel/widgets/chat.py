@@ -433,8 +433,9 @@ class ChatFeed(CompositeWidget):
     ----------
     value : List[ChatEntry]
         The entries added to the chat feed.
-    header : str | Widget
-        The header of the chat feed. Can be a string, pane, or widget.
+    header : Any
+        The header of the chat feed; commonly used for the title.
+        Can be a string, pane, or widget.
     callback : Callable
         Callback to execute when a user sends a message or
         when `respond` is called. The signature must include
@@ -475,7 +476,8 @@ class ChatFeed(CompositeWidget):
         The list of entries in the feed.""")
 
     header = param.Parameter(doc="""
-        The header of the chat feed. Can be a string, pane, or widget.""")
+        The header of the chat feed; commonly used for the title.
+        Can be a string, pane, or widget.""")
 
     callback = param.Callable(doc="""
         Callback to execute when a user sends a message or
