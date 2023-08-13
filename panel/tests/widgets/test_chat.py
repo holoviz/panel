@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from panel import Param
 from panel.layout import Row, Tabs
 from panel.pane.image import Image
 from panel.pane.markup import HTML, Markdown
@@ -14,6 +15,14 @@ from panel.widgets.chat import (
     ChatEntry, ChatFeed, ChatInterface, ChatReactionIcons, _FileInputMessage,
 )
 from panel.widgets.input import FileInput, TextAreaInput, TextInput
+
+LAYOUT_PARAMETERS = {
+    "sizing_mode": "stretch_height",
+    "height": 201,
+    "max_height": 301,
+    "width": 101,
+    "max_width": 201,
+}
 
 
 class TestChatEntry:
@@ -145,6 +154,10 @@ class TestChatEntry:
         entry.show_timestamp = False
         timestamp_pane = columns[1][2].object()
         assert not timestamp_pane.visible
+
+    def test_can_use_pn_param_without_raising_exceptions(self):
+        entry = ChatEntry()
+        Param(entry)
 
 
 class TestChatFeed:
@@ -421,6 +434,12 @@ class TestChatFeed:
         assert len(chat_feed.value) == 1
         assert chat_feed.value[0].value == "Message 3"
 
+    @pytest.mark.parametrize(["key", "value"], LAYOUT_PARAMETERS.items())
+    def test_layout_parameters_are_propogated_to_composite(self, key, value):
+        chat_feed = ChatFeed(**{key: value})
+        assert getattr(chat_feed, key) == value
+        assert getattr(chat_feed._composite, key) == value
+
 
 class TestChatFeedCallback:
     @pytest.fixture
@@ -618,7 +637,7 @@ class TestChatInterface:
         # Buttons added to input layout
         inputs = chat_interface._input_layout
         for index, button_data in enumerate(chat_interface._button_data.values()):
-            widget = inputs[index+1]
+            widget = inputs[index + 1]
             assert isinstance(widget, Button)
             assert widget.name == button_data.name.title()
 
@@ -685,9 +704,11 @@ class TestChatInterface:
 
     def test_click_rerun(self, chat_interface):
         self.count = 0
+
         def callback(contents, user, instance):
             self.count += 1
             return self.count
+
         chat_interface.callback = callback
         chat_interface.send("Message 1")
         assert chat_interface.value[1].value == 1

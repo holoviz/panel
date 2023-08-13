@@ -192,7 +192,7 @@ class ChatEntry(CompositeWidget):
         Whether to display the timestamp of the message.
     """
 
-    value = param.ClassSelector(class_=object, doc="""
+    value = param.Parameter(doc="""
         The message contents. Can be a string, pane, widget, layout, etc.""")
 
     user = param.Parameter(default="User", doc="""
@@ -420,14 +420,22 @@ class ChatEntry(CompositeWidget):
 
 class ChatFeed(CompositeWidget):
     """
-    A widget to display a chat feed with a header and a chat log.
+    A widget to display a list of `ChatEntry` objects and interact with them.
+
+    This widget provides methods to:
+    - Send (append) messages to the chat log.
+    - Stream tokens to the latest `ChatEntry` in the chat log.
+    - Execute callbacks when a user sends a message.
+    - Undo a number of sent `ChatEntry` objects.
+    - Clear the chat log of all `ChatEntry` objects.
 
     Parameters
     ----------
     value : List[ChatEntry]
-        The entries to add to the chat feed.
-    header : str | Widget
-        The header of the chat feed. Can be a string, pane, or widget.
+        The entries added to the chat feed.
+    header : Any
+        The header of the chat feed; commonly used for the title.
+        Can be a string, pane, or widget.
     callback : Callable
         Callback to execute when a user sends a message or
         when `respond` is called. The signature must include
@@ -443,7 +451,7 @@ class ChatFeed(CompositeWidget):
     placeholder_text : str
         If placeholder is the default LoadingSpinner,
         the text to display next to it.
-    placeholder_threshold : int
+    placeholder_threshold : float
         Min duration in seconds of buffering before displaying the placeholder.
         If 0, the placeholder will be disabled.
     auto_scroll_limit : int
@@ -465,10 +473,11 @@ class ChatFeed(CompositeWidget):
         `show_avatar`, `show_user`, and `show_timestamp`.
     """
     value = param.List(item_type=ChatEntry, doc="""
-        The entries to add to the chat feed.""")
+        The list of entries in the feed.""")
 
     header = param.Parameter(doc="""
-        The header of the chat feed. Can be a string, pane, or widget.""")
+        The header of the chat feed; commonly used for the title.
+        Can be a string, pane, or widget.""")
 
     callback = param.Callable(doc="""
         Callback to execute when a user sends a message or
@@ -527,7 +536,6 @@ class ChatFeed(CompositeWidget):
 
     def __init__(self, **params):
         super().__init__(**params)
-
         # instantiate the card
         card_params = {
             "header": self.header,
@@ -538,6 +546,10 @@ class ChatFeed(CompositeWidget):
             "header_css_classes": ["chat-feed-header"],
             "title_css_classes": ["chat-feed-title"],
             "sizing_mode": self.sizing_mode,
+            "height": self.height,
+            "width": self.width,
+            "max_width": self.max_width,
+            "max_height": self.max_height,
         }
         card_params.update(**self.card_params)
         if self.sizing_mode is None:
@@ -802,8 +814,9 @@ class ChatFeed(CompositeWidget):
         respond: bool = True,
     ) -> ChatEntry:
         """
-        Send a value and creates a new entry in the chat log.
-        If respond, additionally executes the callback, if provided.
+        Sends a value and creates a new entry in the chat log.
+
+        If `respond` is `True`, additionally executes the callback, if provided.
 
         Parameters
         ----------
@@ -874,7 +887,7 @@ class ChatFeed(CompositeWidget):
 
     def undo(self, count: Optional[int] = 1) -> List[Any]:
         """
-        Remove the last `count` of entries from
+        Removes the last `count` of entries from
         the chat log and returns them.
 
         Parameters
