@@ -793,7 +793,6 @@ class ChatFeed(CompositeWidget):
                 task.result()
             else:
                 if self.placeholder_threshold > 0:
-                    print(self._placeholder)
                     self._chat_log.append(self._placeholder)
                 await self._handle_callback(entry)
         finally:
