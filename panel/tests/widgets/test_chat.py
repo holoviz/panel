@@ -565,7 +565,6 @@ class TestChatFeedCallback:
         assert placeholder.value == "Loading..."
         assert placeholder.margin == (25, 30)
 
-
 class TestChatInterfaceWidgetsSizingMode:
     def test_none(self):
         chat_interface = ChatInterface()
