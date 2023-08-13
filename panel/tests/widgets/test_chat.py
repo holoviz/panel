@@ -156,6 +156,11 @@ class TestChatEntry:
         timestamp_pane = columns[1][2].object()
         assert not timestamp_pane.visible
 
+    def test_does_not_turn_widget_into_str(self):
+        button = Button()
+        entry = ChatEntry(value=button)
+        assert entry.value==button
+
     def test_can_display_any_python_object_that_panel_can_display(self):
         # For example matplotlib figures
         ChatEntry(value=mpl_figure())

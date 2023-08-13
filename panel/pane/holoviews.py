@@ -678,7 +678,7 @@ class Interactive(PaneBase):
 
     priority: ClassVar[float | bool | None] = None
 
-    _ignored_refs: ClassVar[Tuple[str]] = ['object']
+    _ignored_refs: ClassVar[Tuple[str,...]] = ('object',)
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)

@@ -7,7 +7,7 @@ from inspect import isasyncgen, isawaitable, isgenerator
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from typing import (
-    Any, BinaryIO, ClassVar, List, Optional, Type, Union,
+    Any, BinaryIO, ClassVar, List, Optional, Tuple, Type, Union,
 )
 
 import param
@@ -203,6 +203,7 @@ class ChatEntry(CompositeWidget):
     show_timestamp : bool
         Whether to display the timestamp of the message.
     """
+    _ignored_refs: ClassVar[Tuple[str,...]] = ('value',)
 
     value = param.Parameter(doc="""
         The message contents. Can be any Python object that panel can display.""")
@@ -254,7 +255,6 @@ class ChatEntry(CompositeWidget):
             params["reaction_icons"] = ChatReactionIcons(
                 options=params["reaction_icons"])
         super().__init__(**params)
-
         self.reaction_icons.link(self, value="reactions", bidirectional=True)
         self.param.trigger("reactions")
 
