@@ -210,7 +210,7 @@ class ChatEntry(CompositeWidget):
     user = param.Parameter(default="User", doc="""
         Name of the user who sent the message.""")
 
-    avatar = param.ClassSelector(default="👤", class_=(str, BinaryIO), doc="""
+    avatar = param.ClassSelector(default="😊", class_=(str, BinaryIO), doc="""
         The avatar to use for the user. Can be a single character text, an emoji,
         or anything supported by `pn.pane.Image`. If not set, uses the
         first character of the name.""")
@@ -793,7 +793,6 @@ class ChatFeed(CompositeWidget):
                 task.result()
             else:
                 if self.placeholder_threshold > 0:
-                    print(self._placeholder)
                     self._chat_log.append(self._placeholder)
                 await self._handle_callback(entry)
         finally:
