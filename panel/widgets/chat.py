@@ -29,8 +29,6 @@ from .button import Button
 from .indicators import LoadingSpinner
 from .input import FileInput, TextInput
 
-USER_AVATAR = "🧑"
-ASSISTANT_AVATAR="https://upload.wikimedia.org/wikipedia/commons/6/63/Yumi_UBports.png"
 
 @dataclass
 class _FileInputMessage:
@@ -212,7 +210,7 @@ class ChatEntry(CompositeWidget):
     user = param.Parameter(default="User", doc="""
         Name of the user who sent the message.""")
 
-    avatar = param.ClassSelector(default=USER_AVATAR, class_=(str, BinaryIO), doc="""
+    avatar = param.ClassSelector(default="😊", class_=(str, BinaryIO), doc="""
         The avatar to use for the user. Can be a single character text, an emoji,
         or anything supported by `pn.pane.Image`. If not set, uses the
         first character of the name.""")
@@ -512,7 +510,7 @@ class ChatFeed(CompositeWidget):
     callback_user = param.String(default="Assistant", doc="""
         The default user name to use for the entry provided by the callback.""")
 
-    callback_avatar = param.ClassSelector(default=ASSISTANT_AVATAR, class_=(str, BinaryIO), doc="""
+    callback_avatar = param.ClassSelector(default="🤖", class_=(str, BinaryIO), doc="""
         The default avatar to use for the entry provided by the callback.""")
 
     placeholder = param.Parameter(doc="""
@@ -789,6 +787,7 @@ class ChatFeed(CompositeWidget):
 
             num_entries = len(self._chat_log)
             if isawaitable(self.callback):
+                print("hello")
                 task = asyncio.create_task(self._handle_callback(entry))
                 await self._schedule_placeholder(task, num_entries)
                 await task
