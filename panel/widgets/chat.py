@@ -787,7 +787,6 @@ class ChatFeed(CompositeWidget):
 
             num_entries = len(self._chat_log)
             if isawaitable(self.callback):
-                print("hello")
                 task = asyncio.create_task(self._handle_callback(entry))
                 await self._schedule_placeholder(task, num_entries)
                 await task
