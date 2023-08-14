@@ -165,7 +165,7 @@ class Pipeline(Viewer):
 
     previous = param.Action(default=lambda x: x.param.trigger('previous'))
 
-    _ignored_refs: ClassVar[Tuple[str,...]] = ('next_parameter', 'ready_parameter')
+    _ignored_refs: ClassVar[Tuple[str, ...]] = ('next_parameter', 'ready_parameter')
 
     def __init__(self, stages=[], graph={}, **params):
         try:
