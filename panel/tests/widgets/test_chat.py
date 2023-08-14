@@ -34,7 +34,7 @@ class TestChatEntry:
 
         avatar_pane = columns[0][0].object()
         assert isinstance(avatar_pane, HTML)
-        assert avatar_pane.object == "👤"
+        assert avatar_pane.object == "😊"
 
         user_pane = columns[1][0].object()
         assert isinstance(user_pane, HTML)
@@ -159,21 +159,24 @@ class TestChatEntry:
     def test_does_not_turn_widget_into_str(self):
         button = Button()
         entry = ChatEntry(value=button)
-        assert entry.value==button
+        assert entry.value == button
 
     def test_can_display_any_python_object_that_panel_can_display(self):
         # For example matplotlib figures
         ChatEntry(value=mpl_figure())
+
         # For example async functions
         async def async_func():
             return "hello"
+
         ChatEntry(value=async_func)
+
         # For example async generators
         async def async_generator():
             yield "hello"
             yield "world"
-        ChatEntry(value=async_generator)
 
+        ChatEntry(value=async_generator)
 
     def test_can_use_pn_param_without_raising_exceptions(self):
         entry = ChatEntry()
@@ -584,6 +587,7 @@ class TestChatFeedCallback:
         assert isinstance(placeholder, ChatEntry)
         assert placeholder.value == "Loading..."
         assert placeholder.margin == (25, 30)
+
 
 class TestChatInterfaceWidgetsSizingMode:
     def test_none(self):
