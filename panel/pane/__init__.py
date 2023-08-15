@@ -57,8 +57,6 @@ __all__ = (
     "Alert",
     "Audio",
     "Bokeh",
-    "ChatEntry",
-    "ChatReactionIcons",
     "DataFrame",
     "DeckGL",
     "ECharts",

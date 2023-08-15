@@ -20,14 +20,25 @@ from ..layout.card import Card
 from ..layout.spacer import VSpacer
 from ..pane.base import panel as _panel
 from ..pane.image import PDF, Image, ImageBase
-from ..pane.markup import HTML, DataFrame, Markdown
+from ..pane.markup import HTML, Markdown
 from ..pane.media import Audio, Video
+from ..pane.perspective import Perspective
 from ..reactive import ReactiveHTML
 from ..viewable import Viewable
 from .base import CompositeWidget, Widget
 from .button import Button
 from .indicators import LoadingSpinner
 from .input import FileInput, TextInput
+
+
+def _dataframe_renderer(value):
+    layout = Column(f"{len(value)} rows was uploaded")
+    if len(value) > 1000:
+        value = value.sample(1000)
+        layout.insert(-1, "The data was downsampled to 1000 rows")
+    return layout.insert(-1, Perspective(
+        object=value, sizing_mode="stretch_width", max_height=500)
+    )
 
 
 @dataclass
@@ -321,7 +332,7 @@ class ChatEntry(CompositeWidget):
             import pandas as pd
             with BytesIO(contents) as buf:
                 contents = pd.read_csv(buf)
-            renderer = DataFrame
+            renderer = _dataframe_renderer
         elif mime_type.startswith("text"):
             if isinstance(contents, bytes):
                 contents = contents.decode("utf-8")
@@ -965,10 +976,44 @@ class ChatInterface(ChatFeed):
     >>> chat_interface = ChatInterface(
         callback=repeat_contents, widgets=[TextInput(), FileInput()]
     )
+
+    Parameters
+    ----------
+    widgets : List[Widget]
+        Widgets to use for the input. If not provided, defaults to
+        `[TextInput]`.
+    auto_send_types : Tuple[Widget]
+        The widget types to automatically send when the user presses enter
+        or clicks away from the widget. If not provided, defaults to
+        `[TextInput]`.
+    user : str
+        Name of the ChatInterface user.
+    avatar : str | BinaryIO
+        The avatar to use for the user. Can be a single character text, an emoji,
+        or anything supported by `pn.pane.Image`. If not set, uses the
+        first character of the name.
+    reset_on_send : bool
+        Whether to reset the widget's value after sending a message;
+        has no effect for `TextInput` and non string-based inputs.
+    show_send : bool
+        Whether to show the send button.
+    show_rerun : bool
+        Whether to show the rerun button.
+    show_undo : bool
+        Whether to show the undo button.
+    show_clear : bool
+        Whether to show the clear button.
+    show_button_name : bool
+        Whether to show the button name.
     """
 
     widgets = param.List(doc="""
         Widgets to use for the input. If not provided, defaults to
+        `[TextInput]`.""")
+
+    auto_send_types = param.List(doc="""
+        The widget types to automatically send when the user presses enter
+        or clicks away from the widget. If not provided, defaults to
         `[TextInput]`.""")
 
     user = param.String(default="User", doc="Name of the ChatInterface user.")
@@ -982,6 +1027,9 @@ class ChatInterface(ChatFeed):
         Whether to reset the widget's value after sending a message;
         has no effect for `TextInput`.""")
 
+    show_send = param.Boolean(default=True, doc="""
+        Whether to show the send button.""")
+
     show_rerun = param.Boolean(default=True, doc="""
         Whether to show the rerun button.""")
 
@@ -994,8 +1042,13 @@ class ChatInterface(ChatFeed):
     show_button_name = param.Boolean(default=True, doc="""
         Whether to show the button name.""")
 
-    _input_layout = param.ClassSelector(class_=Viewable, doc="""
-        The input layout.""")
+    _input_container = param.ClassSelector(class_=Row, doc="""
+        The input message row that wraps the input layout (Tabs / Row)
+        to easily swap between Tabs and Rows, depending on
+        number of widgets.""")
+
+    _input_layout = param.ClassSelector(class_=(Row, Tabs), doc="""
+        The input layout that contains the input widgets.""")
 
     _button_data = param.Dict(default={}, doc="""
         Metadata and data related to the buttons.""")
@@ -1023,8 +1076,12 @@ class ChatInterface(ChatFeed):
                 index=index, name=name, icon=icon, objects=[], buttons=[]
             ) for index, (name, icon) in enumerate(button_icons.items())
         }
+        self._input_container = Row(
+            css_classes=["chat-interface-input-container"],
+            stylesheets=self._stylesheets
+        )
         self._init_widgets()
-        self._composite[:] = [*self._composite[:], self._input_layout]
+        self._composite[:] = [*self._composite[:], self._input_container]
 
     def _link_disabled_loading(self, obj: Viewable):
         """
@@ -1035,8 +1092,16 @@ class ChatInterface(ChatFeed):
             setattr(obj, attr, getattr(self, attr))
             self.link(obj, **{attr: attr})
 
-    @param.depends("widgets", watch=True)
-    def _init_widgets(self) -> Union[Tabs, Row]:
+    @param.depends(
+        "widgets",
+        "show_send",
+        "show_rerun",
+        "show_undo",
+        "show_clear",
+        "show_button_name",
+        watch=True,
+    )
+    def _init_widgets(self):
         """
         Initialize the input widgets.
 
@@ -1057,22 +1122,31 @@ class ChatInterface(ChatFeed):
                 sizing_mode = "stretch_width"
             elif "height" in sizing_mode:
                 sizing_mode = None
-        input_layout = Tabs(sizing_mode=sizing_mode)
+        input_layout = Tabs(
+            sizing_mode=sizing_mode,
+            css_classes=["chat-interface-input-tabs"],
+            stylesheets=self._stylesheets,
+        )
         for name, widget in self._widgets.items():
             # for longer form messages, like TextArea / Ace, don't
             # submit when clicking away; only if they manually click
             # the send button
-            if isinstance(widget, TextInput):
+            if isinstance(widget, tuple(self.auto_send_types)):
                 widget.param.watch(self._click_send, "value")
-            widget.sizing_mode = sizing_mode
+            widget.sizing_mode = "stretch_width"
+            widget.css_classes = ["chat-interface-input-widget"]
 
             buttons = []
             for button_data in self._button_data.values():
-                name = button_data.name.title() if self.show_button_name else ""
+                if self.show_button_name:
+                    button_name = button_data.name.title()
+                else:
+                    button_name = ""
                 button = Button(
-                    name=name,
+                    name=button_name,
                     icon=button_data.icon,
-                    sizing_mode=None,
+                    sizing_mode="stretch_width",
+                    max_width=75 if self.show_button_name else 45,
                     margin=(5, 2)
                 )
                 self._link_disabled_loading(button)
@@ -1081,12 +1155,20 @@ class ChatInterface(ChatFeed):
                 buttons.append(button)
                 button_data.buttons.append(button)
 
-            message_row = Row(widget, *buttons, sizing_mode=sizing_mode)
+            message_row = Row(
+                widget,
+                *buttons,
+                sizing_mode="stretch_width",
+                css_classes=["chat-interface-input-row"],
+                stylesheets=self._stylesheets,
+            )
             input_layout.append((name, message_row))
 
         # if only a single input, don't use tabs
         if len(self._widgets) == 1:
             input_layout = input_layout[0]
+
+        self._input_container.objects = [input_layout]
         self._input_layout = input_layout
 
     def _click_send(self, _: Optional[param.parameterized.Event] = None) -> None:
@@ -1107,10 +1189,14 @@ class ChatInterface(ChatFeed):
                     mime_type=active_widget.mime_type,
                     file_name=active_widget.filename,
                 )
-            if isinstance(active_widget, TextInput) or self.reset_on_send:
+            # don't use isinstance here; TextAreaInput subclasses TextInput
+            if type(active_widget) == TextInput or self.reset_on_send:
                 if hasattr(active_widget, "value_input"):
                     active_widget.value_input = ""
-                active_widget.value = ""
+                try:
+                    active_widget.value = ""
+                except ValueError:
+                    pass
         else:
             return  # no message entered
         self._reset_button_data()
@@ -1134,10 +1220,15 @@ class ChatInterface(ChatFeed):
         for button in button_data.buttons:
             if active and button_data.objects:
                 button.button_type = "warning"
-                button.name = f"Revert {button.name}"
+                button.name = "Revert"
+                button.max_width = 75
             else:
                 button.button_type = "default"
-                button.name = button.name.replace("Revert ", "")
+                if self.show_button_name:
+                    button.name = button_data.name.title()
+                else:
+                    button.name = ""
+                button.max_width = 45
 
     def _reset_button_data(self):
         """
@@ -1168,6 +1259,7 @@ class ChatInterface(ChatFeed):
         undo_data = self._button_data["undo"]
         undo_objects = undo_data.objects
         if not undo_objects:
+            self._reset_button_data()
             count = self._get_last_user_entry_index()
             undo_data.objects = self.undo(count)
             self._toggle_revert(undo_data, True)
@@ -1184,6 +1276,7 @@ class ChatInterface(ChatFeed):
         clear_data = self._button_data["clear"]
         clear_objects = clear_data.objects
         if not clear_objects:
+            self._reset_button_data()
             clear_data.objects = self.clear()
             self._toggle_revert(clear_data, True)
         else:
