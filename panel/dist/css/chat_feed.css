@@ -1,3 +1,7 @@
 .chat-feed-header {
   margin-left: 15px;
 }
+
+.chat-feed-log {
+  height: 95%; /* prevent from overflowing and pushing down element */
+}
