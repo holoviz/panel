@@ -761,3 +761,16 @@ class TestChatInterface:
         assert isinstance(chat_interface._input_layout, Tabs)
         assert isinstance(chat_interface._widgets["TextAreaInput"], TextAreaInput)
         assert isinstance(chat_interface._widgets["FileInput"], FileInput)
+
+    def test_reset_on_send(self, chat_interface):
+        chat_interface.active_widget.value = "Hello"
+        chat_interface.reset_on_send = True
+        chat_interface._click_send(None)
+        assert chat_interface.active_widget.value == ""
+
+    def test_reset_on_send_text_area(self, chat_interface):
+        chat_interface.widgets = [TextAreaInput]
+        chat_interface.active_widget.value = "Hello"
+        chat_interface.reset_on_send = False
+        chat_interface._click_send(None)
+        assert chat_interface.active_widget.value == "Hello"

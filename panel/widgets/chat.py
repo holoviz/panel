@@ -994,7 +994,7 @@ class ChatInterface(ChatFeed):
         first character of the name.
     reset_on_send : bool
         Whether to reset the widget's value after sending a message;
-        has no effect for `TextInput`.
+        has no effect for `TextInput` and non string-based inputs.
     show_send : bool
         Whether to show the send button.
     show_rerun : bool
@@ -1189,10 +1189,14 @@ class ChatInterface(ChatFeed):
                     mime_type=active_widget.mime_type,
                     file_name=active_widget.filename,
                 )
-            if isinstance(active_widget, TextInput) or self.reset_on_send:
+            # don't use isinstance here; TextAreaInput subclasses TextInput
+            if type(active_widget) == TextInput or self.reset_on_send:
                 if hasattr(active_widget, "value_input"):
                     active_widget.value_input = ""
-                active_widget.value = ""
+                try:
+                    active_widget.value = ""
+                except ValueError:
+                    pass
         else:
             return  # no message entered
         self._reset_button_data()
