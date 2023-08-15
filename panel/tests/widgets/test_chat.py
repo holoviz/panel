@@ -604,15 +604,15 @@ class TestChatInterfaceWidgetsSizingMode:
         chat_interface = ChatInterface()
         assert chat_interface.sizing_mode is None
         assert chat_interface._chat_log.sizing_mode is None
-        assert chat_interface._input_layout.sizing_mode is None
-        assert chat_interface._input_layout[0].sizing_mode is None
+        assert chat_interface._input_layout.sizing_mode == "stretch_width"
+        assert chat_interface._input_layout[0].sizing_mode == "stretch_width"
 
     def test_fixed(self):
         chat_interface = ChatInterface(sizing_mode="fixed")
         assert chat_interface.sizing_mode == "fixed"
         assert chat_interface._chat_log.sizing_mode == "fixed"
-        assert chat_interface._input_layout.sizing_mode == "fixed"
-        assert chat_interface._input_layout[0].sizing_mode == "fixed"
+        assert chat_interface._input_layout.sizing_mode == "stretch_width"
+        assert chat_interface._input_layout[0].sizing_mode == "stretch_width"
 
     def test_stretch_both(self):
         chat_interface = ChatInterface(sizing_mode="stretch_both")
@@ -632,8 +632,8 @@ class TestChatInterfaceWidgetsSizingMode:
         chat_interface = ChatInterface(sizing_mode="stretch_height")
         assert chat_interface.sizing_mode == "stretch_height"
         assert chat_interface._chat_log.sizing_mode == "stretch_height"
-        assert chat_interface._input_layout.sizing_mode is None
-        assert chat_interface._input_layout[0].sizing_mode is None
+        assert chat_interface._input_layout.sizing_mode == "stretch_width"
+        assert chat_interface._input_layout[0].sizing_mode == "stretch_width"
 
     def test_scale_both(self):
         chat_interface = ChatInterface(sizing_mode="scale_both")
@@ -646,8 +646,8 @@ class TestChatInterfaceWidgetsSizingMode:
         chat_interface = ChatInterface(sizing_mode="scale_width")
         assert chat_interface.sizing_mode == "scale_width"
         assert chat_interface._chat_log.sizing_mode == "scale_width"
-        assert chat_interface._input_layout.sizing_mode == "scale_width"
-        assert chat_interface._input_layout[0].sizing_mode == "scale_width"
+        assert chat_interface._input_layout.sizing_mode == "stretch_width"
+        assert chat_interface._input_layout[0].sizing_mode == "stretch_width"
 
     def test_scale_height(self):
         chat_interface = ChatInterface(sizing_mode="scale_height")
@@ -752,3 +752,25 @@ class TestChatInterface:
     def test_click_rerun_null(self, chat_interface):
         chat_interface._click_rerun(None)
         assert len(chat_interface.value) == 0
+
+    def test_replace_widgets(self, chat_interface):
+        assert isinstance(chat_interface._input_layout, Row)
+
+        chat_interface.widgets = [TextAreaInput(), FileInput()]
+        assert len(chat_interface._widgets) == 2
+        assert isinstance(chat_interface._input_layout, Tabs)
+        assert isinstance(chat_interface._widgets["TextAreaInput"], TextAreaInput)
+        assert isinstance(chat_interface._widgets["FileInput"], FileInput)
+
+    def test_reset_on_send(self, chat_interface):
+        chat_interface.active_widget.value = "Hello"
+        chat_interface.reset_on_send = True
+        chat_interface._click_send(None)
+        assert chat_interface.active_widget.value == ""
+
+    def test_reset_on_send_text_area(self, chat_interface):
+        chat_interface.widgets = [TextAreaInput]
+        chat_interface.active_widget.value = "Hello"
+        chat_interface.reset_on_send = False
+        chat_interface._click_send(None)
+        assert chat_interface.active_widget.value == "Hello"
