@@ -459,13 +459,15 @@ class TestChatFeed:
         assert getattr(chat_feed, key) == value
         assert getattr(chat_feed._composite, key) == value
 
-    def test_width_entry_90_percent(self, chat_feed):
+    def test_width_entry_offset_80(self, chat_feed):
         """
-        Prevent horizontal scroll bars
+        Prevent horizontal scroll bars by subtracting 80px
+        which is about the width of the avatar
+        and reactions.
         """
         chat_feed.width = 500
         chat_feed.send("Message 1")
-        assert chat_feed.value[0].width == 450
+        assert chat_feed.value[0].width == 420
 
 
 class TestChatFeedCallback:

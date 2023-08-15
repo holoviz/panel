@@ -686,7 +686,7 @@ class ChatFeed(CompositeWidget):
                 )
             value.update(**new_params)
             if self.width:
-                entry_params = {"width": int(self.width * 0.9), **self.entry_params}
+                entry_params = {"width": int(self.width - 80), **self.entry_params}
             else:
                 entry_params = self.entry_params
             entry = ChatEntry(**value, **entry_params)
