@@ -459,6 +459,14 @@ class TestChatFeed:
         assert getattr(chat_feed, key) == value
         assert getattr(chat_feed._composite, key) == value
 
+    def test_width_entry_90_percent(self, chat_feed):
+        """
+        Prevent horizontal scroll bars
+        """
+        chat_feed.width = 500
+        chat_feed.send("Message 1")
+        assert chat_feed.value[0].width == 450
+
 
 class TestChatFeedCallback:
     @pytest.fixture
