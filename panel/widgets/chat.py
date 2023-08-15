@@ -982,6 +982,10 @@ class ChatInterface(ChatFeed):
     widgets : List[Widget]
         Widgets to use for the input. If not provided, defaults to
         `[TextInput]`.
+    auto_send_types : Tuple[Widget]
+        The widget types to automatically send when the user presses enter
+        or clicks away from the widget. If not provided, defaults to
+        `[TextInput]`.
     user : str
         Name of the ChatInterface user.
     avatar : str | BinaryIO
@@ -991,6 +995,8 @@ class ChatInterface(ChatFeed):
     reset_on_send : bool
         Whether to reset the widget's value after sending a message;
         has no effect for `TextInput`.
+    show_send : bool
+        Whether to show the send button.
     show_rerun : bool
         Whether to show the rerun button.
     show_undo : bool
@@ -1005,6 +1011,11 @@ class ChatInterface(ChatFeed):
         Widgets to use for the input. If not provided, defaults to
         `[TextInput]`.""")
 
+    auto_send_types = param.List(doc="""
+        The widget types to automatically send when the user presses enter
+        or clicks away from the widget. If not provided, defaults to
+        `[TextInput]`.""")
+
     user = param.String(default="User", doc="Name of the ChatInterface user.")
 
     avatar = param.ClassSelector(class_=(str, BinaryIO), doc="""
@@ -1015,6 +1026,9 @@ class ChatInterface(ChatFeed):
     reset_on_send = param.Boolean(default=False, doc="""
         Whether to reset the widget's value after sending a message;
         has no effect for `TextInput`.""")
+
+    show_send = param.Boolean(default=True, doc="""
+        Whether to show the send button.""")
 
     show_rerun = param.Boolean(default=True, doc="""
         Whether to show the rerun button.""")
@@ -1080,6 +1094,7 @@ class ChatInterface(ChatFeed):
 
     @param.depends(
         "widgets",
+        "show_send",
         "show_rerun",
         "show_undo",
         "show_clear",
@@ -1116,19 +1131,22 @@ class ChatInterface(ChatFeed):
             # for longer form messages, like TextArea / Ace, don't
             # submit when clicking away; only if they manually click
             # the send button
-            if isinstance(widget, TextInput):
+            if isinstance(widget, tuple(self.auto_send_types)):
                 widget.param.watch(self._click_send, "value")
             widget.sizing_mode = "stretch_width"
             widget.css_classes = ["chat-interface-input-widget"]
 
             buttons = []
             for button_data in self._button_data.values():
-                name = button_data.name.title() if self.show_button_name else ""
+                if self.show_button_name:
+                    button_name = button_data.name.title()
+                else:
+                    button_name = ""
                 button = Button(
-                    name=name,
+                    name=button_name,
                     icon=button_data.icon,
                     sizing_mode="stretch_width",
-                    max_width=75,
+                    max_width=75 if self.show_button_name else 45,
                     margin=(5, 2)
                 )
                 self._link_disabled_loading(button)
@@ -1199,12 +1217,14 @@ class ChatInterface(ChatFeed):
             if active and button_data.objects:
                 button.button_type = "warning"
                 button.name = "Revert"
+                button.max_width = 75
             else:
                 button.button_type = "default"
                 if self.show_button_name:
                     button.name = button_data.name.title()
                 else:
                     button.name = ""
+                button.max_width = 45
 
     def _reset_button_data(self):
         """
