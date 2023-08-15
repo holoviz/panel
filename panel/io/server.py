@@ -804,7 +804,7 @@ def serve(
     threaded: bool = False,
     admin: bool = False,
     **kwargs
-) -> threading.Thread | Server:
+) -> StoppableThread | Server:
     """
     Allows serving one or more panel objects on a single server.
     The panels argument should be either a Panel object or a function
