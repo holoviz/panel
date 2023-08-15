@@ -281,6 +281,7 @@ class ChatEntry(CompositeWidget):
             css_classes=["right"],
             stylesheets=self._stylesheets,
         )
+        self._composite._stylesheets = self._stylesheets
         self._composite[:] = [left_col, right_col]
 
     def _select_renderer(
@@ -684,7 +685,11 @@ class ChatFeed(CompositeWidget):
                     f"e.g. {{'value': 'Hello World'}}; got {value!r}"
                 )
             value.update(**new_params)
-            entry = ChatEntry(**value, **self.entry_params)
+            if self.width:
+                entry_params = {"width": int(self.width * 0.9), **self.entry_params}
+            else:
+                entry_params = self.entry_params
+            entry = ChatEntry(**value, **entry_params)
         else:
             value.param.update(**new_params)
             entry = value
