@@ -1060,6 +1060,8 @@ class ChatInterface(ChatFeed):
     def __init__(self, **params):
         if params.get("widgets") is None:
             params["widgets"] = [TextInput(placeholder="Send a message")]
+        active_tab = params.pop("active_tab", None)
+
         super().__init__(**params)
 
         button_icons = {
@@ -1082,6 +1084,8 @@ class ChatInterface(ChatFeed):
         )
         self._init_widgets()
         self._composite[:] = [*self._composite[:], self._input_container]
+        if active_tab:
+            self.active_tab = active_tab
 
     def _link_disabled_loading(self, obj: Viewable):
         """
