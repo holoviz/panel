@@ -9,14 +9,21 @@ export class ColumnView extends BkColumnView {
   connect_signals(): void {
     super.connect_signals();
 
-    const { children, scroll_button_threshold } = this.model.properties;
+    const { children, scroll_position, scroll_button_threshold } = this.model.properties;
 
     this.on_change(children, () => this.trigger_auto_scroll());
+    this.on_change(scroll_position, () => this.scroll_to_position());
     this.on_change(scroll_button_threshold, () => this.toggle_scroll_button())
   }
 
   get distance_from_latest(): number {
     return this.el.scrollHeight - this.el.scrollTop - this.el.clientHeight;
+  }
+
+  scroll_to_position(): void {
+    requestAnimationFrame(() => {
+      this.el.scrollTop = this.model.scroll_position;
+    });
   }
 
   scroll_to_latest(): void {
@@ -33,6 +40,10 @@ export class ColumnView extends BkColumnView {
       return
 
     this.scroll_to_latest()
+  }
+
+  record_scroll_position(): void {
+    this.model.scroll_position = this.el.scrollTop;
   }
 
   toggle_scroll_button(): void {
@@ -58,6 +69,7 @@ export class ColumnView extends BkColumnView {
     this.shadow_el.appendChild(this.scroll_down_button_el);
 
     this.el.addEventListener("scroll", () => {
+      this.record_scroll_position();
       this.toggle_scroll_button();
     });
     this.scroll_down_button_el.addEventListener("click", () => {
@@ -74,6 +86,9 @@ export class ColumnView extends BkColumnView {
   after_render(): void {
     super.after_render()
     requestAnimationFrame(() => {
+      if (this.model.scroll_position) {
+        this.scroll_to_position();
+      }
       if (this.model.view_latest) {
         this.scroll_to_latest();
       }
@@ -85,6 +100,7 @@ export class ColumnView extends BkColumnView {
 export namespace Column {
   export type Attrs = p.AttrsOf<Props>;
   export type Props = BkColumn.Props & {
+    scroll_position: p.Property<number>;
     auto_scroll_limit: p.Property<number>;
     scroll_button_threshold: p.Property<number>;
     view_latest: p.Property<boolean>;
@@ -106,6 +122,7 @@ export class Column extends BkColumn {
     this.prototype.default_view = ColumnView;
 
     this.define<Column.Props>(({ Int, Boolean }) => ({
+      scroll_position: [Int, 0],
       auto_scroll_limit: [Int, 0],
       scroll_button_threshold: [Int, 0],
       view_latest: [Boolean, false],

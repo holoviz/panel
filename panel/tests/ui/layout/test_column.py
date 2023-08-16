@@ -204,3 +204,72 @@ def test_column_view_latest(page, port):
     # assert scroll location does not start at top
     scroll_loc = column.evaluate('(el) => el.scrollTop')
     assert scroll_loc != 0
+
+def test_column_scroll_position_init(page, port):
+    col = Column(
+        Spacer(styles=dict(background='red'), width=200, height=200),
+        Spacer(styles=dict(background='green'), width=200, height=200),
+        Spacer(styles=dict(background='blue'), width=200, height=200),
+        scroll=True, scroll_position=100, height=420
+    )
+
+    serve(col, port=port, threaded=True, show=False)
+
+    time.sleep(0.5)
+
+    page.goto(f"http://localhost:{port}")
+
+    column = page.locator(".bk-panel-models-layout-Column")
+
+    # assert scroll position can be used to initialize scroll location
+    scroll_loc = column.evaluate('(el) => el.scrollTop')
+    assert scroll_loc == 100
+
+
+def test_column_scroll_position_recorded(page, port):
+    col = Column(
+        Spacer(styles=dict(background='red'), width=200, height=200),
+        Spacer(styles=dict(background='green'), width=200, height=200),
+        Spacer(styles=dict(background='blue'), width=200, height=200),
+        scroll=True, height=420
+    )
+
+    serve(col, port=port, threaded=True, show=False)
+
+    time.sleep(0.5)
+
+    page.goto(f"http://localhost:{port}")
+
+    column = page.locator(".bk-panel-models-layout-Column")
+
+    # change scroll location thru scrolling
+    column.evaluate('(el) => el.scrollTop = 150')
+    time.sleep(0.5)
+
+    # assert scroll position is synced and recorded at 150
+    assert col.scroll_position == 150
+
+
+def test_column_scroll_position_param_updated(page, port):
+    col = Column(
+        Spacer(styles=dict(background='red'), width=200, height=200),
+        Spacer(styles=dict(background='green'), width=200, height=200),
+        Spacer(styles=dict(background='blue'), width=200, height=200),
+        scroll=True, height=420
+    )
+
+    serve(col, port=port, threaded=True, show=False)
+
+    time.sleep(0.5)
+
+    page.goto(f"http://localhost:{port}")
+
+    column = page.locator(".bk-panel-models-layout-Column")
+
+    # change scroll location thru param
+    col.scroll_position = 175
+    time.sleep(0.5)
+
+    # assert scroll location is synced and recorded at 175
+    scroll_loc = column.evaluate('(el) => el.scrollTop')
+    assert scroll_loc == 175

@@ -886,6 +886,11 @@ class Column(ListPanel):
     >>> pn.Column(some_widget, some_pane, some_python_object)
     """
 
+    scroll_position = param.Integer(default=None, doc="""
+        Current scroll position of the Column. Setting this value
+        will update the scroll position of the Column. Setting to
+        0 will scroll to the top.""")
+
     auto_scroll_limit = param.Integer(bounds=(0, None), doc="""
         Max pixel distance from the latest object in the Column to
         activate automatic scrolling upon update. Setting to 0
@@ -906,10 +911,18 @@ class Column(ListPanel):
 
     _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/listpanel.css']
 
-    @param.depends("auto_scroll_limit", "scroll_button_threshold", "view_latest", watch=True, on_init=True)
+    @param.depends(
+        "scroll_position",
+        "auto_scroll_limit",
+        "scroll_button_threshold",
+        "view_latest",
+        watch=True,
+        on_init=True
+    )
     def _set_scrollable(self):
         self.scroll = (
             self.scroll or
+            bool(self.scroll_position) or
             bool(self.auto_scroll_limit) or
             bool(self.scroll_button_threshold) or
             self.view_latest

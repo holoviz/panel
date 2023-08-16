@@ -17,6 +17,15 @@ class HTMLBox(LayoutDOM):
 
 class Column(BkColumn):
 
+    scroll_position = Int(
+        default=0,
+        help="""
+        Current scroll position of the Column. Setting this value
+        will update the scroll position of the Column. Setting to
+        0 will scroll to the top."""
+    )
+
+
     auto_scroll_limit = Int(
         default=0,
         help="""
