@@ -668,7 +668,7 @@ class TestChatInterface:
         assert isinstance(chat_interface._input_layout, Row)
         assert isinstance(chat_interface._widgets["TextInput"], TextInput)
 
-        assert chat_interface.active_tab==-1
+        assert chat_interface.active == -1
 
         # Buttons added to input layout
         inputs = chat_interface._input_layout
@@ -684,35 +684,33 @@ class TestChatInterface:
         assert isinstance(chat_interface._input_layout, Tabs)
         assert isinstance(chat_interface._widgets["Text"], TextInput)
         assert isinstance(chat_interface._widgets["FileInput"], FileInput)
-        assert chat_interface.active_tab==0
+        assert chat_interface.active == 0
 
-    def test_active_tab_in_constructor(self):
+    def test_active_in_constructor(self):
         widgets = [TextInput(name="Text"), FileInput()]
-        chat_interface = ChatInterface(widgets=widgets, active_tab=1)
-        assert chat_interface.active_tab==1
+        chat_interface = ChatInterface(widgets=widgets, active=1)
+        assert chat_interface.active == 1
 
     def test_file_input_only(self):
-        ChatInterface(
-            widgets=[FileInput(name="CSV File", accept=".csv")]
-        )
+        ChatInterface(widgets=[FileInput(name="CSV File", accept=".csv")])
 
     def test_active_widget(self, chat_interface):
         active_widget = chat_interface.active_widget
         assert isinstance(active_widget, TextInput)
 
-    def test_active_tab(self):
+    def test_active(self):
         widget = TextInput(name="input")
         chat_interface = ChatInterface(widgets=[widget])
-        assert chat_interface.active_tab == -1
+        assert chat_interface.active == -1
 
-    def test_active_tab_multiple_widgets(self, chat_interface):
+    def test_active_multiple_widgets(self, chat_interface):
         widget1 = TextInput(name="input1")
         widget2 = TextInput(name="input2")
         chat_interface.widgets = [widget1, widget2]
-        assert chat_interface.active_tab == 0
+        assert chat_interface.active == 0
 
-        chat_interface.active_tab = 1
-        assert chat_interface.active_tab == 1
+        chat_interface.active = 1
+        assert chat_interface.active == 1
         assert isinstance(chat_interface.active_widget, TextInput)
 
     def test_click_send(self, chat_interface):
