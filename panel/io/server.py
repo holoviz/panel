@@ -485,7 +485,15 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
                 token = session.token
             logger.info(LOG_SESSION_CREATED, id(session.document))
             with set_curdoc(session.document):
-                if config.authorize_callback and not config.authorize_callback(state.user_info, self.request.path):
+                import inspect
+                authorize_callback_signature = inspect.signature(config.authorize_callback)
+                authorize_callback_parameters = authorize_callback_signature.parameters
+                authorized = False
+                if len(authorize_callback_parameters) == 1:
+                    authorized = config.authorize_callback(state.user_info)
+                if len(authorize_callback_parameters) == 2:
+                    authorized = config.authorize_callback(state.user_info, self.request.path)
+                if config.authorize_callback and not authorized:
                     if config.auth_template:
                         with open(config.auth_template) as f:
                             template = _env.from_string(f.read())

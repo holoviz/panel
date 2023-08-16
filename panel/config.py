@@ -110,7 +110,11 @@ class _config(_base_config):
         is enabled. The callback is given the user information returned
         by the configured Auth provider and should return True or False
         depending on whether the user is authorized to access the
-        application.""")
+        application. The callback may also contain a second parameter,
+        which is the requested path the user is making. If the user
+        is authenticated and has explicit access to the path, then
+        the callback should return True otherwise it should return
+        False.""")
 
     auth_template = param.Path(default=None, doc="""
         A jinja2 template rendered when the authorize_callback determines
