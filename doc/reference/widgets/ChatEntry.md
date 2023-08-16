@@ -36,6 +36,7 @@ For layout and styling related parameters see the [customization user guide](../
 * **`reaction_icons`** (ChatReactionIcons | dict): A mapping of reactions to their reaction icons; if not provided defaults to `{"favorite": "heart"}`. Provides a visual representation of reactions.
 * **`timestamp`** (datetime): Timestamp of the message. Defaults to the instantiation time.
 * **`timestamp_format`** (str): The format in which the timestamp should be displayed.
+* **`renderers`** (List[Callable]): A callable or list of callables that accept the value and return a Panel object to render the value. If a list is provided, will attempt to use the first renderer that does not raise an exception. If None, will attempt to infer the renderer from the value.
 
 ##### Display
 

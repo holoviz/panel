@@ -42,12 +42,14 @@
 }
 
 .message {
+  width: fit-content;
   display: flex;
   align-items: center;
   border-radius: 5px;
   font-size: 1.25em;
   min-width: 50px;
   min-height: 50px;
+  max-height: 600px;
   margin-block: 0px;
   margin-inline: 10px; /* Space for avatar */
   background-color: var(--neutral-fill-active, #f1f1f1);

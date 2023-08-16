@@ -19,27 +19,17 @@ from ..layout import (
 from ..layout.card import Card
 from ..layout.spacer import VSpacer
 from ..pane.base import panel as _panel
-from ..pane.image import PDF, Image, ImageBase
-from ..pane.markup import HTML, Markdown
+from ..pane.image import (
+    PDF, FileBase, Image, ImageBase,
+)
+from ..pane.markup import HTML, DataFrame, HTMLBasePane
 from ..pane.media import Audio, Video
-from ..pane.perspective import Perspective
 from ..reactive import ReactiveHTML
 from ..viewable import Viewable
 from .base import CompositeWidget, Widget
 from .button import Button
 from .indicators import LoadingSpinner
 from .input import FileInput, TextInput
-
-
-def _dataframe_renderer(value):
-    layout = Column(f"{len(value)} rows was uploaded")
-    if len(value) > 1000:
-        value = value.sample(1000)
-        layout.insert(-1, "The data was downsampled to 1000 rows")
-    layout.insert(-1, Perspective(
-        object=value, sizing_mode="stretch_width", max_height=500)
-    )
-    return layout
 
 
 @dataclass
@@ -246,6 +236,13 @@ class ChatEntry(CompositeWidget):
 
     show_timestamp = param.Boolean(default=True, doc="Whether to display the timestamp of the message.")
 
+    renderers = param.HookList(doc="""
+        A callable or list of callables that accept the value and return a
+        Panel object to render the value. If a list is provided, will
+        attempt to use the first renderer that does not raise an
+        exception. If None, will attempt to infer the renderer
+        from the value.""")
+
     _value_panel = param.Parameter(doc="The rendered value panel.")
 
     _stylesheets: ClassVar[List[str]] = [
@@ -300,7 +297,6 @@ class ChatEntry(CompositeWidget):
             self,
             contents: Any,
             mime_type: str,
-            file_name: str = None,
         ):
         """
         Determine the renderer to use based on the mime type.
@@ -333,13 +329,39 @@ class ChatEntry(CompositeWidget):
             import pandas as pd
             with BytesIO(contents) as buf:
                 contents = pd.read_csv(buf)
-            renderer = _dataframe_renderer
+            renderer = DataFrame
         elif mime_type.startswith("text"):
             if isinstance(contents, bytes):
                 contents = contents.decode("utf-8")
-        elif file_name is not None:
-            contents = f"`{file_name}`"
         return contents, renderer
+
+    def _set_default_attrs(self, obj):
+        """
+        Set the sizing mode and height of the object.
+        """
+        if hasattr(obj, "objects"):
+            for obj in obj.objects:
+                self._set_default_attrs(obj)
+            return
+
+        is_markup = (
+            isinstance(obj, HTMLBasePane) and
+            not isinstance(obj, FileBase)
+        )
+        if is_markup:
+            obj.css_classes = [*obj.css_classes, "message"]
+        else:
+            if obj.sizing_mode is None and not obj.width:
+                obj.sizing_mode = "stretch_width"
+
+            if obj.height is None:
+                obj.height = 400
+
+        return obj
+
+    @staticmethod
+    def _is_widget_renderer(renderer):
+        return isinstance(renderer, type) and issubclass(renderer, Widget)
 
     def _create_panel(self, value):
         """
@@ -348,30 +370,39 @@ class ChatEntry(CompositeWidget):
         if isinstance(value, Viewable):
             return value
 
+        renderer = _panel
         if isinstance(value, _FileInputMessage):
             contents = value.contents
             mime_type = value.mime_type
-            file_name = value.file_name
             value, renderer = self._select_renderer(
-                contents, mime_type, file_name=file_name
+                contents, mime_type
             )
         else:
             try:
                 import magic
                 mime_type = magic.from_buffer(value, mime=True)
                 value, renderer = self._select_renderer(
-                    value, mime_type, file_name=None
+                    value, mime_type
                 )
             except Exception:
-                renderer = _panel
+                pass
 
-        try:
-            if isinstance(renderer, Widget):
-                value_panel = renderer(value=value)
-            else:
-                value_panel = renderer(value)
-        except ValueError:
+        renderers = self.renderers.copy() or []
+        renderers.append(renderer)
+        for renderer in renderers:
+            try:
+                if self._is_widget_renderer(renderer):
+                    value_panel = renderer(value=value)
+                else:
+                    value_panel = renderer(value)
+                if isinstance(value_panel, Viewable):
+                    break
+            except Exception:
+                pass
+        else:
             value_panel = _panel(value)
+
+        self._set_default_attrs(value_panel)
         return value_panel
 
     @param.depends("avatar", "show_avatar")
@@ -409,13 +440,7 @@ class ChatEntry(CompositeWidget):
         Renders value as a panel object.
         """
         value = self.value
-        if isinstance(value, str):
-            value_panel = Markdown(value)
-        elif isinstance(value, Viewable):
-            value_panel = value
-        else:
-            value_panel = self._create_panel(value)
-        value_panel.css_classes = [*value_panel.css_classes, "message"]
+        value_panel = self._create_panel(value)
 
         # used in ChatFeed to extract its contents
         self._value_panel = value_panel
@@ -510,6 +535,13 @@ class ChatFeed(CompositeWidget):
     value = param.List(item_type=ChatEntry, doc="""
         The list of entries in the feed.""")
 
+    renderers = param.HookList(doc="""
+        A callable or list of callables that accept the value and return a
+        Panel object to render the value. If a list is provided, will
+        attempt to use the first renderer that does not raise an
+        exception. If None, will attempt to infer the renderer
+        from the value.""")
+
     header = param.Parameter(doc="""
         The header of the chat feed; commonly used for the title.
         Can be a string, pane, or widget.""")
@@ -574,6 +606,8 @@ class ChatFeed(CompositeWidget):
     _composite_type: ClassVar[Type[ListPanel]] = Card
 
     def __init__(self, **params):
+        if params.get("renderers") and not isinstance(params["renderers"], list):
+            params["renderers"] = [params["renderers"]]
         super().__init__(**params)
         # instantiate the card
         card_params = {
@@ -701,6 +735,7 @@ class ChatFeed(CompositeWidget):
                 entry_params = {"width": int(self.width - 80), **self.entry_params}
             else:
                 entry_params = self.entry_params
+            entry_params.update(renderers=self.renderers)
             entry = ChatEntry(**value, **entry_params)
         else:
             value.param.update(**new_params)
@@ -983,7 +1018,7 @@ class ChatInterface(ChatFeed):
     widgets : Widget | List[Widget]
         Widgets to use for the input. If not provided, defaults to
         `[TextInput]`.
-    auto_send_types : Tuple[Widget]
+    auto_send_types : List[Widget]
         The widget types to automatically send when the user presses enter
         or clicks away from the widget. If not provided, defaults to
         `[TextInput]`.
@@ -1042,6 +1077,9 @@ class ChatInterface(ChatFeed):
 
     show_button_name = param.Boolean(default=True, doc="""
         Whether to show the button name.""")
+
+    _widgets = param.Dict(default={}, doc="""
+        The input widgets.""")
 
     _input_container = param.ClassSelector(class_=Row, doc="""
         The input message row that wraps the input layout (Tabs / Row)
@@ -1139,7 +1177,8 @@ class ChatInterface(ChatFeed):
             # for longer form messages, like TextArea / Ace, don't
             # submit when clicking away; only if they manually click
             # the send button
-            if isinstance(widget, tuple(self.auto_send_types)):
+            auto_send_types = tuple(self.auto_send_types) or (TextInput,)
+            if isinstance(widget, auto_send_types):
                 widget.param.watch(self._click_send, "value")
             widget.sizing_mode = "stretch_width"
             widget.css_classes = ["chat-interface-input-widget"]
@@ -1153,8 +1192,9 @@ class ChatInterface(ChatFeed):
                 button = Button(
                     name=button_name,
                     icon=button_data.icon,
-                    sizing_mode="stretch_width",
-                    max_width=75 if self.show_button_name else 45,
+                    sizing_mode="fixed",
+                    width=75 if self.show_button_name else 45,
+                    height=30,
                     margin=(5, 2)
                 )
                 self._link_disabled_loading(button)
@@ -1229,14 +1269,14 @@ class ChatInterface(ChatFeed):
             if active and button_data.objects:
                 button.button_type = "warning"
                 button.name = "Revert"
-                button.max_width = 75
+                button.width = 75
             else:
                 button.button_type = "default"
                 if self.show_button_name:
                     button.name = button_data.name.title()
                 else:
                     button.name = ""
-                button.max_width = 45
+                button.width = 75 if self.show_button_name else 45
 
     def _reset_button_data(self):
         """
@@ -1301,8 +1341,7 @@ class ChatInterface(ChatFeed):
         The active widget.
         """
         if isinstance(self._input_layout, Tabs):
-            active = self._input_layout.active
-            return self._input_layout[active].objects[0]
+            return self._input_layout[self.active].objects[0]
         else:
             return self._input_layout.objects[0]
 
