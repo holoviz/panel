@@ -36,9 +36,10 @@ def _dataframe_renderer(value):
     if len(value) > 1000:
         value = value.sample(1000)
         layout.insert(-1, "The data was downsampled to 1000 rows")
-    return layout.insert(-1, Perspective(
+    layout.insert(-1, Perspective(
         object=value, sizing_mode="stretch_width", max_height=500)
     )
+    return layout
 
 
 @dataclass
@@ -1016,6 +1017,9 @@ class ChatInterface(ChatFeed):
         or clicks away from the widget. If not provided, defaults to
         `[TextInput]`.""")
 
+    active = param.Integer(default=-1, doc="""
+        The index of the active widget.""")
+
     user = param.String(default="User", doc="Name of the ChatInterface user.")
 
     avatar = param.ClassSelector(class_=(str, BinaryIO), doc="""
@@ -1060,9 +1064,10 @@ class ChatInterface(ChatFeed):
     def __init__(self, **params):
         if params.get("widgets") is None:
             params["widgets"] = [TextInput(placeholder="Send a message")]
-        active_tab = params.pop("active_tab", None)
-
+        active = params.pop("active", None)
         super().__init__(**params)
+        if active is not None:
+            self.active = active
 
         button_icons = {
             "send": "send",
@@ -1084,8 +1089,6 @@ class ChatInterface(ChatFeed):
         )
         self._init_widgets()
         self._composite[:] = [*self._composite[:], self._input_container]
-        if active_tab:
-            self.active_tab = active_tab
 
     def _link_disabled_loading(self, obj: Viewable):
         """
@@ -1303,7 +1306,7 @@ class ChatInterface(ChatFeed):
             return self._input_layout.objects[0]
 
     @property
-    def active_tab(self) -> int:
+    def active(self) -> int:
         """
         The currently active input widget tab index;
         -1 if there is only one widget available
@@ -1318,15 +1321,15 @@ class ChatInterface(ChatFeed):
         else:
             return -1
 
-    @active_tab.setter
-    def active_tab(self, tab: int) -> None:
+    @active.setter
+    def active(self, index: int) -> None:
         """
         Set the active input widget tab index.
 
         Parameters
         ----------
-        tab : int
-            The tab index to set.
+        index : int
+            The active index to set.
         """
         if isinstance(self._input_layout, Tabs):
-            self._input_layout.active = tab
+            self._input_layout.active = index

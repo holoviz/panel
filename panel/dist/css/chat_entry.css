@@ -36,14 +36,12 @@
 }
 
 .center {
-  width: fit-content;
   margin-right: 10px; /* Space for reaction icons */
   max-width: 1000px;
   padding: 0px;
 }
 
 .message {
-  width: inherit;
   display: flex;
   align-items: center;
   border-radius: 5px;
