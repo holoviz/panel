@@ -183,6 +183,12 @@ class ChatEntry(CompositeWidget):
     ----------
     value : object
         The message contents. Can be a string, pane, widget, layout, etc.
+    renderers : Callable | List[Callable]
+        A callable or list of callables that accept the value and return a
+        Panel object to render the value. If a list is provided, will
+        attempt to use the first renderer that does not raise an
+        exception. If None, will attempt to infer the renderer
+        from the value.
     user : str
         Name of the user who sent the message.
     avatar : str | BinaryIO
@@ -210,6 +216,13 @@ class ChatEntry(CompositeWidget):
     value = param.Parameter(doc="""
         The message contents. Can be any Python object that panel can display.""")
 
+    renderers = param.HookList(doc="""
+        A callable or list of callables that accept the value and return a
+        Panel object to render the value. If a list is provided, will
+        attempt to use the first renderer that does not raise an
+        exception. If None, will attempt to infer the renderer
+        from the value.""")
+
     user = param.Parameter(default="User", doc="""
         Name of the user who sent the message.""")
 
@@ -235,13 +248,6 @@ class ChatEntry(CompositeWidget):
     show_user = param.Boolean(default=True, doc="Whether to display the name of the user.")
 
     show_timestamp = param.Boolean(default=True, doc="Whether to display the timestamp of the message.")
-
-    renderers = param.HookList(doc="""
-        A callable or list of callables that accept the value and return a
-        Panel object to render the value. If a list is provided, will
-        attempt to use the first renderer that does not raise an
-        exception. If None, will attempt to infer the renderer
-        from the value.""")
 
     _value_panel = param.Parameter(doc="The rendered value panel.")
 
@@ -493,6 +499,12 @@ class ChatFeed(CompositeWidget):
     ----------
     value : List[ChatEntry]
         The entries added to the chat feed.
+    renderers : Callable | List[Callable]
+        A callable or list of callables that accept the value and return a
+        Panel object to render the value. If a list is provided, will
+        attempt to use the first renderer that does not raise an
+        exception. If None, will attempt to infer the renderer
+        from the value.
     header : Any
         The header of the chat feed; commonly used for the title.
         Can be a string, pane, or widget.
