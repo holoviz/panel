@@ -6,8 +6,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from panel import Param
-from panel.layout import Row, Tabs
+from panel import Param, bind
+from panel.layout import Column, Row, Tabs
 from panel.pane.image import Image
 from panel.pane.markup import HTML, Markdown
 from panel.tests.util import mpl_figure
@@ -15,6 +15,7 @@ from panel.widgets.button import Button
 from panel.widgets.chat import (
     ChatEntry, ChatFeed, ChatInterface, ChatReactionIcons, _FileInputMessage,
 )
+from panel.widgets.indicators import LinearGauge
 from panel.widgets.input import FileInput, TextAreaInput, TextInput
 
 LAYOUT_PARAMETERS = {
@@ -182,6 +183,14 @@ class TestChatEntry:
         entry = ChatEntry()
         Param(entry)
 
+    def test_bind_reactions(self):
+        def callback(reactions):
+            entry.value = " ".join(reactions)
+
+        entry = ChatEntry(value="Hello")
+        bind(callback, entry.param.reactions, watch=True)
+        entry.reactions = ["favorite"]
+        assert entry.value == "favorite"
 
 class TestChatFeed:
     @pytest.fixture
@@ -594,6 +603,41 @@ class TestChatFeedCallback:
         assert placeholder.value == "Loading..."
         assert placeholder.margin == (25, 30)
 
+    def test_renderers_pane(self, chat_feed):
+        chat_feed.renderers = [HTML]
+        chat_feed.send("Hello!")
+        html = chat_feed.value[0]._value_panel
+        assert isinstance(html, HTML)
+        assert html.object == "Hello!"
+        assert html.sizing_mode is None
+
+    def test_renderers_widget(self, chat_feed):
+        chat_feed.renderers = [TextAreaInput]
+        chat_feed.send("Hello!")
+        area_input = chat_feed.value[0]._value_panel
+        assert isinstance(area_input, TextAreaInput)
+        assert area_input.value == "Hello!"
+        assert area_input.height == 400
+        assert area_input.sizing_mode is None
+
+    def test_renderers_custom_callable(self, chat_feed):
+        def renderer(value):
+            return Column(
+                value,
+                LinearGauge(value=int(value), width=100)
+            )
+        chat_feed.renderers = [renderer]
+        chat_feed.send(1)
+        column = chat_feed.value[0]._value_panel
+        assert isinstance(column, Column)
+        number = column[0]
+        gauge = column[1]
+        assert number.object == 1
+        assert number.sizing_mode is None
+        assert isinstance(gauge, LinearGauge)
+        assert gauge.value == 1
+        assert gauge.width == 100
+        assert gauge.sizing_mode == "fixed"
 
 class TestChatInterfaceWidgetsSizingMode:
     def test_none(self):

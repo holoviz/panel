@@ -3,5 +3,5 @@
 }
 
 .chat-feed-log {
-  height: 95%; /* prevent from overflowing and pushing down element */
+  height: 90%; /* prevent from overflowing and pushing down element */
 }
