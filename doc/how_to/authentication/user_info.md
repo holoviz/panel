@@ -55,10 +55,10 @@ authorized_user_paths = {
 def authorize(user_info, request_path):
     current_user = user_info['username']
     current_path = parse.urlparse(request_path).path
-    with open('users.txt') as f:
-        valid_users = f.readlines()
-    user_paths = authorized_user_paths[current_user]
-    if current_user in valid_users and current_path in user_paths:
+    if current_user not in authorized_user_paths:
+        return False
+    current_user_paths = authorized_user_paths[current_user]
+    if current_path in current_user_paths:
         return True
     return False
 
