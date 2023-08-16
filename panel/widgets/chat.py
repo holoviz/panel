@@ -980,7 +980,7 @@ class ChatInterface(ChatFeed):
 
     Parameters
     ----------
-    widgets : List[Widget]
+    widgets : Widget | List[Widget]
         Widgets to use for the input. If not provided, defaults to
         `[TextInput]`.
     auto_send_types : Tuple[Widget]
@@ -1008,7 +1008,7 @@ class ChatInterface(ChatFeed):
         Whether to show the button name.
     """
 
-    widgets = param.List(doc="""
+    widgets = param.ClassSelector(class_=(Widget, list), doc="""
         Widgets to use for the input. If not provided, defaults to
         `[TextInput]`.""")
 
@@ -1016,9 +1016,6 @@ class ChatInterface(ChatFeed):
         The widget types to automatically send when the user presses enter
         or clicks away from the widget. If not provided, defaults to
         `[TextInput]`.""")
-
-    active = param.Integer(default=-1, doc="""
-        The index of the active widget.""")
 
     user = param.String(default="User", doc="Name of the ChatInterface user.")
 
@@ -1066,8 +1063,6 @@ class ChatInterface(ChatFeed):
             params["widgets"] = [TextInput(placeholder="Send a message")]
         active = params.pop("active", None)
         super().__init__(**params)
-        if active is not None:
-            self.active = active
 
         button_icons = {
             "send": "send",
@@ -1088,6 +1083,8 @@ class ChatInterface(ChatFeed):
             stylesheets=self._stylesheets
         )
         self._init_widgets()
+        if active is not None:
+            self.active = active
         self._composite[:] = [*self._composite[:], self._input_container]
 
     def _link_disabled_loading(self, obj: Viewable):
@@ -1116,8 +1113,12 @@ class ChatInterface(ChatFeed):
         -------
         The input widgets.
         """
+        widgets = self.widgets
+        if isinstance(self.widgets, Widget):
+            widgets = [self.widgets]
+
         self._widgets = {}
-        for widget in self.widgets:
+        for widget in widgets:
             key = widget.name or widget.__class__.__name__
             if isinstance(widget, type):  # check if instantiated
                 widget = widget()
