@@ -1,3 +1,7 @@
+"""The chat module provides components for building and using chat interfaces
+
+For example `ChatEntry`, `ChatFeed` and `ChatInterface`.
+"""
 import asyncio
 import datetime
 
@@ -7,7 +11,7 @@ from inspect import isasyncgen, isawaitable, isgenerator
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from typing import (
-    Any, BinaryIO, ClassVar, List, Optional, Tuple, Type, Union,
+    Any, BinaryIO, ClassVar, List, Optional, Type, Union,
 )
 
 import param
@@ -211,7 +215,7 @@ class ChatEntry(CompositeWidget):
     show_timestamp : bool
         Whether to display the timestamp of the message.
     """
-    _ignored_refs: ClassVar[Tuple[str,...]] = ('value',)
+    _ignored_refs: ClassVar[List[str]] = ['value']
 
     value = param.Parameter(doc="""
         The message contents. Can be any Python object that panel can display.""")
@@ -273,9 +277,9 @@ class ChatEntry(CompositeWidget):
         self.reaction_icons.link(self, value="reactions", bidirectional=True)
         self.param.trigger("reactions")
 
-        render_kwargs = dict(
-            inplace=True, stylesheets=self._stylesheets
-        )
+        render_kwargs = {
+            "inplace": True, "stylesheets": self._stylesheets
+        }
         left_col = Column(
             ParamMethod(self._render_avatar, **render_kwargs),
             max_width=60,
@@ -314,12 +318,12 @@ class ChatEntry(CompositeWidget):
             )
             renderer = PDF
         elif mime_type.startswith("audio/"):
-            f = self._exit_stack.enter_context(
+            file = self._exit_stack.enter_context(
                 NamedTemporaryFile(suffix=".mp3", delete=False)
             )
-            f.write(contents)
-            f.seek(0)
-            contents = f.name
+            file.write(contents)
+            file.seek(0)
+            contents = file.name
             renderer = Audio
         elif mime_type.startswith("video/"):
             contents = self._exit_stack.enter_context(
@@ -346,9 +350,9 @@ class ChatEntry(CompositeWidget):
         Set the sizing mode and height of the object.
         """
         if hasattr(obj, "objects"):
-            for obj in obj.objects:
-                self._set_default_attrs(obj)
-            return
+            for _obj in obj.objects:
+                self._set_default_attrs(_obj)
+            return None
 
         is_markup = (
             isinstance(obj, HTMLBasePane) and
@@ -667,12 +671,12 @@ class ChatFeed(CompositeWidget):
 
     @param.depends("placeholder", watch=True, on_init=True)
     def _update_placeholder(self):
-        plain_entry = dict(
-            show_avatar=False,
-            show_user=False,
-            show_timestamp=False,
-            reaction_icons={},
-        )
+        plain_entry = {
+            "show_avatar": False,
+            "show_user": False,
+            "show_timestamp": False,
+            "reaction_icons": {},
+        }
         if self.placeholder is None:
             self._placeholder = ChatEntry(
                 value=LoadingSpinner(
@@ -725,7 +729,7 @@ class ChatFeed(CompositeWidget):
         Builds a ChatEntry from the value.
         """
         if value is None:
-            return
+            return None
 
         if not isinstance(value, (ChatEntry, dict)):
             value = {"value": value}
@@ -863,7 +867,7 @@ class ChatFeed(CompositeWidget):
             self._replace_placeholder(None)
             self.disabled = disabled
 
-    def _stream(self, token: str, entry: ChatEntry) -> Optional[ChatEntry]:
+    def _stream(self, token: str, entry: ChatEntry):
         """
         Updates the entry with the token and handles nested
         objects by traversing the entry's value and updating the
@@ -1355,8 +1359,7 @@ class ChatInterface(ChatFeed):
         """
         if isinstance(self._input_layout, Tabs):
             return self._input_layout[self.active].objects[0]
-        else:
-            return self._input_layout.objects[0]
+        return self._input_layout.objects[0]
 
     @property
     def active(self) -> int:
@@ -1371,8 +1374,7 @@ class ChatInterface(ChatFeed):
         """
         if isinstance(self._input_layout, Tabs):
             return self._input_layout.active
-        else:
-            return -1
+        return -1
 
     @active.setter
     def active(self, index: int) -> None:
