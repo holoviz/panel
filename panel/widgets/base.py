@@ -113,9 +113,10 @@ class Widget(Reactive):
             ] + params['stylesheets']
         if "description" in params:
             description = params["description"]
+            renderer_options = params.pop("renderer_options", {})
             if isinstance(description, str):
                 from ..pane.markup import Markdown
-                parser = Markdown._get_parser('markdown-it', ())
+                parser = Markdown._get_parser('markdown-it', (), **renderer_options)
                 html = parser.render(description)
                 params['description'] = Tooltip(
                     content=HTML(html), position='right',
