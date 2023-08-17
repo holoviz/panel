@@ -600,8 +600,10 @@ export class DataTabulatorView extends HTMLBoxView {
 
   get child_models(): LayoutDOM[] {
     const children = []
+    if (this.model.children == null)
+      return children
     for (const idx of this.model.expanded) {
-      if (this.model.children?.has(idx))
+      if (this.model.children.has(idx))
         children.push(this.model.children.get(idx))
     }
     return children
