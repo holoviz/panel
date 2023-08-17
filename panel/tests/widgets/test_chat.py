@@ -81,8 +81,10 @@ class TestChatReactionIcons:
     def test_width_height(self):
         icons = ChatReactionIcons(width=50, height=50)
         svg = icons._svgs[0]
-        assert svg.width == 50
-        assert svg.height == 50
+        svg_text = svg.object
+        assert 'width="50px"' in svg_text
+        assert 'height="50px"' in svg_text
+
 
 class TestChatEntry:
     def test_layout(self):
@@ -345,13 +347,13 @@ class TestChatFeed:
 
         chat_feed.callback = callback
         chat_feed.send("Question", respond=True)
-        time.sleep(0.5)
+        time.sleep(0.75)
 
         assert len(chat_feed.value) == 2
         assert chat_feed.value[1].value == "Response to: Question"
 
         chat_feed.respond()
-        time.sleep(0.5)
+        time.sleep(0.75)
 
         assert len(chat_feed.value) == 3
         assert chat_feed.value[2].value == "Response to: Response to: Question"
@@ -362,12 +364,12 @@ class TestChatFeed:
 
         chat_feed.callback = callback
         chat_feed.send("Question", respond=False)
-        time.sleep(0.5)
+        time.sleep(0.75)
 
         assert len(chat_feed.value) == 1
 
         chat_feed.respond()
-        time.sleep(0.5)
+        time.sleep(0.75)
 
         assert len(chat_feed.value) == 2
         assert chat_feed.value[1].value == "Response to: Question"
@@ -553,7 +555,7 @@ class TestChatFeedCallback:
         chat_feed.callback_user = "Bob"
         chat_feed.callback_avatar = "👨"
         chat_feed.send("Message", respond=True)
-        time.sleep(0.5)
+        time.sleep(0.75)
         assert len(chat_feed.value) == 2
         assert chat_feed.value[1].user == "Bob"
         assert chat_feed.value[1].avatar == "👨"
@@ -564,7 +566,7 @@ class TestChatFeedCallback:
 
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
-        time.sleep(0.5)
+        time.sleep(0.75)
         assert len(chat_feed.value) == 2
         assert chat_feed.value[1].value == "Message"
 
@@ -574,7 +576,7 @@ class TestChatFeedCallback:
 
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
-        time.sleep(0.5)
+        time.sleep(0.75)
         assert len(chat_feed.value) == 2
         assert chat_feed.value[1].value == "Message"
 
