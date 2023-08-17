@@ -2,7 +2,7 @@
 
 Welcome to Panel!
 
-The getting started guide will get you set up with Panel and provide a basic overview of the features and strengths of Panel. The [announcement blog](https://blog.pyviz.org/panel_announcement.html) is another great resource to learn about the features of Panel and get an idea of what it can do.
+The getting started guide will get you set up with Panel and provide a basic overview of the features and strengths of Panel.
 
 ---
 
@@ -40,6 +40,10 @@ Introduces you to some of the core concepts behind Panel, how to develop Panel a
 :::
 
 ::::
+
+## Additional Resources
+
+- The [original announcement of Panel from 2019](https://blog.holoviz.org/panel_announcement.html).
 
 ```{toctree}
 :titlesonly:
