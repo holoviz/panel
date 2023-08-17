@@ -489,4 +489,3 @@ def flatten(line):
             yield from flatten(element)
         else:
             yield element
->>>>>>> Implement ReactiveExpr pane type

@@ -773,11 +773,20 @@ class panel_extension(_pyviz_extension):
         except Exception:
             return
 
-        from param.ipython import IPythonDisplay
+        from param.depends import (
+            register_display_accessor, unregister_display_accessor,
+        )
 
+        from .pane import panel
+        try:
+            unregister_display_accessor('_ipython_display_')
+        except KeyError:
+            pass
+        try:
+            register_display_accessor('_repr_mimebundle_', lambda obj: panel(obj)._repr_mimebundle_)
+        except Exception:
+            pass
         from .io.notebook import load_notebook
-
-        IPythonDisplay.enabled = False
 
         self._detect_comms(params)
 

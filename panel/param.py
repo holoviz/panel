@@ -1018,9 +1018,16 @@ class ParamFunction(ParamMethod):
 
 
 class ReactiveExpr(PaneBase):
+    """
+    ReactiveExpr generates a UI for param.reactive objects
+    by rendering the widgets and outputs.
+    """
 
     center = param.Boolean(default=False, doc="""
         Whether to center the output.""")
+
+    show_widgets = param.Boolean(default=True, doc="""
+        Whether to display the widget inputs.""")
 
     widget_layout = param.Selector(
         objects=[WidgetBox, Row, Column], constant=True, default=WidgetBox, doc="""
@@ -1030,11 +1037,8 @@ class ReactiveExpr(PaneBase):
         'left', 'right', 'top', 'bottom', 'top_left',
         'top_right', 'bottom_left', 'bottom_right',
         'left_top', 'right_top', 'right_bottom'], doc="""
-      The location of the widgets relative to the output
-      of the reactive expression.""")
-
-    show_widgets = param.Boolean(default=True, doc="""
-      Whether to display the widget inputs.""")
+        The location of the widgets relative to the output
+        of the reactive expression.""")
 
     priority: ClassVar[float | bool | None] = 1
 
@@ -1055,6 +1059,8 @@ class ReactiveExpr(PaneBase):
         'right_top': (Row, ('end', 'start'), False),
         'right_bottom': (Row, 'end', False)
     }
+
+    _unpack: ClassVar[bool] = False
 
     def __init__(self, object=None, **params):
         super().__init__(object=object, **params)

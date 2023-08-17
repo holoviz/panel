@@ -105,6 +105,9 @@ class Widget(Reactive):
             props.remove('description')
         return tuple(props)
 
+    def reactive(self):
+        return self.param.value.reactive()
+
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
         params = super()._process_param_change(params)
         if self._widget_type is not None and 'stylesheets' in params:
