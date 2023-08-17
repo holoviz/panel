@@ -934,7 +934,7 @@ export class DataTabulatorView extends HTMLBoxView {
 
   setStyles(): void {
     const style_data = this.model.cell_styles.data
-    if (this.tabulator == null || this.tabulator.getDataCount() == 0 || !style_data.size)
+    if (this.tabulator == null || this.tabulator.getDataCount() == 0 || style_data == null || !style_data.size)
       return
     this._applied_styles = false
     for (const r of style_data.keys()) {
