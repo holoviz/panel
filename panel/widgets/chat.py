@@ -1283,14 +1283,14 @@ class ChatInterface(ChatFeed):
             if active and button_data.objects:
                 button.button_type = "warning"
                 button.name = "Revert"
-                button.width = 75
+                button.width = 90
             else:
                 button.button_type = "default"
                 if self.show_button_name:
                     button.name = button_data.name.title()
                 else:
                     button.name = ""
-                button.width = 75 if self.show_button_name else 45
+                button.width = 90 if self.show_button_name else 45
 
     def _reset_button_data(self):
         """
