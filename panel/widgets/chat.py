@@ -11,8 +11,11 @@ from typing import (
 )
 
 import param
+import requests
 
+from ..io.cache import cache
 from ..io.resources import CDN_DIST
+from ..io.state import state
 from ..layout import (
     Column, ListPanel, Row, Tabs,
 )
@@ -20,7 +23,7 @@ from ..layout.card import Card
 from ..layout.spacer import VSpacer
 from ..pane.base import panel as _panel
 from ..pane.image import (
-    PDF, FileBase, Image, ImageBase,
+    PDF, SVG, FileBase, Image, ImageBase,
 )
 from ..pane.markup import HTML, DataFrame, HTMLBasePane
 from ..pane.media import Audio, Video
@@ -88,8 +91,6 @@ class ChatReactionIcons(ReactiveHTML):
     options : Dict
         A key-value pair of reaction values and their corresponding tabler icon names
         found on https://tabler-icons.io.
-    icon_size : str
-        The size of each icon.
     active_icons : Dict
         The mapping of reactions to their corresponding active icon names;
         if not set, the active icon name will default to its "filled" version.
@@ -101,51 +102,54 @@ class ChatReactionIcons(ReactiveHTML):
     >>> ChatReactionIcons(value=["like"], options={"like": "thumb-up", "dislike": "thumb-down"})
     """
 
-    value = param.List(doc="The selected reactions.")
+    value = param.List(doc="The active reactions.")
 
     options = param.Dict(default={"favorite": "heart"}, doc="""
         A key-value pair of reaction values and their corresponding tabler icon names
         found on https://tabler-icons.io.""")
 
-    icon_size = param.String(default="15px", doc="""The size of each icon.""")
-
     active_icons = param.Dict(default={}, doc="""
         The mapping of reactions to their corresponding active icon names;
         if not set, the active icon name will default to its "filled" version.""")
 
-    _icon_base_url = param.String("https://tabler-icons.io/static/tabler-icons/icons/")
+    _reactions = param.List(doc="""
+        The list of reactions, which is the same as the keys of the options dict;
+        primarily needed as a workaround for quirks of ReactiveHTML.""")
+
+    _svgs = param.List(doc="""
+        The list of SVGs corresponding to the active reactions.""")
+
+    _base_url = param.String(default="https://tabler-icons.io/static/tabler-icons/icons/", doc="""
+        The base URL for the SVGs.""")
 
     _template = """
-        <div id="reaction-icons" class="reaction-icons">
-            {% for reaction, icon_name in options.items() %}
-            <img id="icon-{{ loop.index0 }}" alt="{{ reaction }}"
-                {% if reaction in value and reaction in active_icons %}
-                src="${_icon_base_url}{{ active_icons[reaction] }}.svg"
-                {% elif reaction in value %}
-                src="${_icon_base_url}{{ icon_name }}-filled.svg"
-                {% else %}
-                src="${_icon_base_url}{{ icon_name }}.svg"
-                {% endif %}
-                style="width: ${icon_size}; height: ${icon_size}; cursor: pointer;"
-                onclick="${script('update_value')}">
-            </img>
-            {% endfor %}
-        </div>
+    <div id="reaction-icons" class="reaction-icons">
+        {% for option in options %}
+        <span
+            type="button"
+            id="reaction-{{ loop.index0 }}"
+            onclick="${script('toggle_value')}"
+            style="cursor: pointer; width: ${model.width}px; height: ${model.height}px;"
+        >
+            ${_svgs[{{ loop.index0 }}]}
+        </span>
+        {% endfor %}
+    </div>
     """
 
     _scripts = {
-        "update_value": """
-            const reaction = event.target.alt;
+        "toggle_value": """
+            svg = event.target.shadowRoot.querySelector("svg");
+            const reaction = svg.getAttribute("alt");
             const icon_name = data.options[reaction];
-
             let src;
             if (data.value.includes(reaction)) {
-                src = `${data._icon_base_url}${icon_name}.svg`;
+                src = `${data._base_url}${icon_name}.svg`;
                 data.value = data.value.filter(r => r !== reaction);
             } else {
                 src = reaction in data.active_icons
-                    ? `${data._icon_base_url}${data.active_icons[reaction]}.svg`
-                    : `${data._icon_base_url}${icon_name}-filled.svg`;
+                    ? `${data._base_url}${data.active_icons[reaction]}.svg`
+                    : `${data._base_url}${icon_name}-filled.svg`;
                 data.value = [...data.value, reaction];
             }
             event.target.src = src;
@@ -156,10 +160,62 @@ class ChatReactionIcons(ReactiveHTML):
         f"{CDN_DIST}css/chat_reaction_icons.css"
     ]
 
-    def __init__(self, **params):
-        super().__init__(**params)
-        if self.icon_size.endswith("px"):
-            self.max_width = int(self.icon_size[:-2])
+    def _get_label(self, reaction: str, icon: str):
+        active = reaction in self.value
+        if active and reaction in self.active_icons:
+            icon_label = self.active_icons[reaction]
+        elif active:
+            icon_label = f"{icon}-filled"
+        else:
+            icon_label = icon
+        return icon_label
+
+    @cache
+    def _fetch_svg(self, icon_label: str):
+        src = f"{self._base_url}{icon_label}.svg"
+        with requests.get(src) as response:
+            response.raise_for_status()
+            svg = response.text
+        return svg
+
+    def _stylize_svg(self, svg, reaction):
+        if b"dark" in state.session_args.get("theme", []):
+            svg = svg.replace('stroke="currentColor"', 'stroke="white"')
+            svg = svg.replace('fill="currentColor"', 'fill="white"')
+        svg = svg.replace("<svg", f'<svg alt="{reaction}"')
+        return svg
+
+    @param.depends(
+        "value",
+        "options",
+        "active_icons",
+        "width",
+        "height",
+        watch=True,
+        on_init=True,
+    )
+    def _update_icons(self):
+        self._reactions = list(self.options.keys())
+        svgs = []
+        for reaction, icon in self.options.items():
+            icon_label = self._get_label(reaction, icon)
+            svg = self._fetch_svg(icon_label)
+            svg = self._stylize_svg(svg, reaction)
+            # important not to encode to keep the alt text!
+            svg_pane = SVG(
+                svg,
+                width=self.width,
+                height=self.height,
+                alt_text=reaction,
+                encode=False,
+                margin=0,
+            )
+            svgs.append(svg_pane)
+        self._svgs = svgs
+
+        for reaction in self.value:
+            if reaction not in self._reactions:
+                self.value.remove(reaction)
 
 
 class ChatEntry(CompositeWidget):
@@ -268,7 +324,7 @@ class ChatEntry(CompositeWidget):
             params["reaction_icons"] = {"favorite": "heart"}
         if isinstance(params["reaction_icons"], dict):
             params["reaction_icons"] = ChatReactionIcons(
-                options=params["reaction_icons"])
+                options=params["reaction_icons"], width=15, height=15)
         super().__init__(**params)
         self.reaction_icons.link(self, value="reactions", bidirectional=True)
         self.param.trigger("reactions")
