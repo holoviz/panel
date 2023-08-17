@@ -255,7 +255,7 @@ class ChatEntry(CompositeWidget):
         f"{CDN_DIST}css/chat_entry.css"
     ]
 
-    _exit_stack: ExitStack = None
+    _exit_stack: Optional[ExitStack] = None
 
     def __init__(self, **params):
         from ..param import ParamMethod  # circular imports
@@ -412,7 +412,7 @@ class ChatEntry(CompositeWidget):
         return value_panel
 
     @param.depends("avatar", "show_avatar")
-    def _render_avatar(self) -> None:
+    def _render_avatar(self) -> HTML:
         """
         Render the avatar pane as some HTML text or Image pane.
         """
@@ -434,7 +434,7 @@ class ChatEntry(CompositeWidget):
         return avatar_pane
 
     @param.depends("user", "show_user")
-    def _render_user(self) -> None:
+    def _render_user(self) -> HTML:
         """
         Render the user pane as some HTML text or Image pane.
         """
@@ -453,7 +453,7 @@ class ChatEntry(CompositeWidget):
         return value_panel
 
     @param.depends("timestamp", "timestamp_format", "show_timestamp")
-    def _render_timestamp(self) -> None:
+    def _render_timestamp(self) -> HTML:
         """
         Formats the timestamp and renders it as HTML pane.
         """
@@ -720,7 +720,7 @@ class ChatFeed(CompositeWidget):
             value: Union[ChatEntry, dict, Any],
             user: Optional[str] = None,
             avatar: Optional[Union[str, BinaryIO]] = None,
-        ) -> ChatEntry:
+        ) -> Optional[ChatEntry]:
         """
         Builds a ChatEntry from the value.
         """
@@ -754,7 +754,7 @@ class ChatFeed(CompositeWidget):
             entry = value
         return entry
 
-    def _upsert_entry(self, value: Any, entry: Optional[ChatEntry] = None) -> ChatEntry:
+    def _upsert_entry(self, value: Any, entry: Optional[ChatEntry] = None) -> Optional[ChatEntry]:
         """
         Replace the placeholder entry with the response or update
         the entry's value with the response.
@@ -863,7 +863,7 @@ class ChatFeed(CompositeWidget):
             self._replace_placeholder(None)
             self.disabled = disabled
 
-    def _stream(self, token: str, entry: ChatEntry) -> ChatEntry:
+    def _stream(self, token: str, entry: ChatEntry) -> Optional[ChatEntry]:
         """
         Updates the entry with the token and handles nested
         objects by traversing the entry's value and updating the
@@ -880,14 +880,14 @@ class ChatFeed(CompositeWidget):
             if hasattr(value, "objects"):
                 parent_panel = value
                 attr = "objects"
-                value = value.objects[i]
+                value = getattr(value, "objects")[i]
                 i = -1
             elif hasattr(value, "object"):
                 attr = "object"
-                value = value.object
+                value = getattr(value, "object")
             elif hasattr(value, "value"):
                 attr = "value"
-                value = value.value
+                value = getattr(value, "value")
             elif parent_panel is not None:
                 value = parent_panel
                 parent_panel = None
@@ -902,7 +902,7 @@ class ChatFeed(CompositeWidget):
         user: Optional[str] = None,
         avatar: Optional[Union[str, BinaryIO]] = None,
         respond: bool = True,
-    ) -> ChatEntry:
+    ) -> Optional[ChatEntry]:
         """
         Sends a value and creates a new entry in the chat log.
 
@@ -936,7 +936,7 @@ class ChatFeed(CompositeWidget):
             user: Optional[str] = None,
             avatar: Optional[Union[str, BinaryIO]] = None,
             entry: Optional[ChatEntry] = None,
-        ) -> ChatEntry:
+        ) -> Optional[ChatEntry]:
         """
         Streams a token and updates the provided entry, if provided.
         Otherwise creates a new entry in the chat log, so be sure the
@@ -963,10 +963,11 @@ class ChatFeed(CompositeWidget):
         """
         replace = entry is None
         entry = self._build_entry(entry or value, user=user, avatar=avatar)
-        if replace:
-            self._replace_placeholder(entry)
-        else:
-            self._stream(value, entry)
+        if entry:
+            if replace:
+                self._replace_placeholder(entry)
+            else:
+                self._stream(value, entry)
         return entry
 
     def respond(self):
@@ -1250,7 +1251,7 @@ class ChatInterface(ChatFeed):
                     file_name=active_widget.filename,
                 )
             # don't use isinstance here; TextAreaInput subclasses TextInput
-            if type(active_widget) == TextInput or self.reset_on_send:
+            if type(active_widget) is TextInput or self.reset_on_send:
                 if hasattr(active_widget, "value_input"):
                     active_widget.value_input = ""
                 try:
