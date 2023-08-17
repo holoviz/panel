@@ -601,7 +601,7 @@ export class DataTabulatorView extends HTMLBoxView {
   get child_models(): LayoutDOM[] {
     const children = []
     for (const idx of this.model.expanded) {
-      if (this.model.children.has(idx))
+      if (this.model.children?.has(idx))
         children.push(this.model.children.get(idx))
     }
     return children
@@ -617,7 +617,8 @@ export class DataTabulatorView extends HTMLBoxView {
         this._render_row(row, false)
       }
       this._update_children()
-      this.tabulator.rowManager.adjustTableSize()
+      if (this.tabulator.rowManager.renderer != null)
+	this.tabulator.rowManager.adjustTableSize()
       this.invalidate_layout()
     })
   }
@@ -997,7 +998,7 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   setSelection(): void {
-    if (this.tabulator == null || this._selection_updating)
+    if (this.tabulator == null || this._initializing || this._selection_updating)
       return
 
     const indices = this.model.source.selected.indices;
