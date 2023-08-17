@@ -23,7 +23,7 @@ from ..layout.card import Card
 from ..layout.spacer import VSpacer
 from ..pane.base import panel as _panel
 from ..pane.image import (
-    PDF, FileBase, Image, ImageBase,
+    PDF, SVG, FileBase, Image, ImageBase,
 )
 from ..pane.markup import HTML, DataFrame, HTMLBasePane
 from ..pane.media import Audio, Video
@@ -125,25 +125,40 @@ class ChatReactionIcons(ReactiveHTML):
     _template = """
     <div id="reaction-icons" class="reaction-icons">
         {% for option in options %}
-        <div id="reaction-{{ loop.index0 }}" onclick=${_toggle_value} style="cursor: pointer;">
+        <span
+            type="button"
+            id="reaction-{{ loop.index0 }}"
+            onclick="${script('toggle_value')}"
+            style="cursor: pointer; width: ${model.width}px; height: ${model.height}px;"
+        >
             ${_svgs[{{ loop.index0 }}]}
-        </div>
+        </span>
         {% endfor %}
     </div>
     """
 
+    _scripts = {
+        "toggle_value": """
+            svg = event.target.shadowRoot.querySelector("svg");
+            const reaction = svg.getAttribute("alt");
+            const icon_name = data.options[reaction];
+            let src;
+            if (data.value.includes(reaction)) {
+                src = `${data._base_url}${icon_name}.svg`;
+                data.value = data.value.filter(r => r !== reaction);
+            } else {
+                src = reaction in data.active_icons
+                    ? `${data._base_url}${data.active_icons[reaction]}.svg`
+                    : `${data._base_url}${icon_name}-filled.svg`;
+                data.value = [...data.value, reaction];
+            }
+            event.target.src = src;
+        """
+    }
+
     _stylesheets: ClassVar[List[str]] = [
         f"{CDN_DIST}css/chat_reaction_icons.css"
     ]
-
-    def _toggle_value(self, event):
-        print(event.data, event.node)
-        reaction_index = int(event.node.split("-")[1])
-        reaction = self._reactions[reaction_index]
-        if reaction in self.value:
-            self.value = [r for r in self.value if r != reaction]
-        else:
-            self.value = [*self.value, reaction]
 
     def _get_label(self, reaction: str, icon: str):
         active = reaction in self.value
@@ -163,12 +178,11 @@ class ChatReactionIcons(ReactiveHTML):
             svg = response.text
         return svg
 
-    def _stylize_svg(self, svg):
-        svg = svg.replace('width="24"', f'width="{self.width or 20}"')
-        svg = svg.replace('height="24"', f'height="{self.height or 20}"')
+    def _stylize_svg(self, svg, reaction):
         if b"dark" in state.session_args.get("theme", []):
             svg = svg.replace('stroke="currentColor"', 'stroke="white"')
             svg = svg.replace('fill="currentColor"', 'fill="white"')
+        svg = svg.replace("<svg", f'<svg alt="{reaction}"')
         return svg
 
     @param.depends(
@@ -186,8 +200,17 @@ class ChatReactionIcons(ReactiveHTML):
         for reaction, icon in self.options.items():
             icon_label = self._get_label(reaction, icon)
             svg = self._fetch_svg(icon_label)
-            svg = self._stylize_svg(svg)
-            svgs.append(svg)
+            svg = self._stylize_svg(svg, reaction)
+            # important not to encode to keep the alt text!
+            svg_pane = SVG(
+                svg,
+                width=self.width,
+                height=self.height,
+                alt_text=reaction,
+                encode=False,
+                margin=0,
+            )
+            svgs.append(svg_pane)
         self._svgs = svgs
 
         for reaction in self.value:
@@ -301,7 +324,7 @@ class ChatEntry(CompositeWidget):
             params["reaction_icons"] = {"favorite": "heart"}
         if isinstance(params["reaction_icons"], dict):
             params["reaction_icons"] = ChatReactionIcons(
-                options=params["reaction_icons"])
+                options=params["reaction_icons"], width=15, height=15)
         super().__init__(**params)
         self.reaction_icons.link(self, value="reactions", bidirectional=True)
         self.param.trigger("reactions")
