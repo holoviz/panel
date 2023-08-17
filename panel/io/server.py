@@ -485,27 +485,28 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
                 token = session.token
             logger.info(LOG_SESSION_CREATED, id(session.document))
             with set_curdoc(session.document):
-                import inspect
-                authorize_callback_signature = inspect.signature(config.authorize_callback)
-                authorize_callback_parameters = authorize_callback_signature.parameters
-                authorized = False
-                if len(authorize_callback_parameters) == 1:
-                    authorized = config.authorize_callback(state.user_info)
-                if len(authorize_callback_parameters) == 2:
-                    authorized = config.authorize_callback(state.user_info, self.request.path)
-                if config.authorize_callback and not authorized:
-                    if config.auth_template:
-                        with open(config.auth_template) as f:
-                            template = _env.from_string(f.read())
-                    else:
-                        template = ERROR_TEMPLATE
-                    page = template.render(
-                        npm_cdn=config.npm_cdn,
-                        title='Panel: Authorization Error',
-                        error_type='Authorization Error',
-                        error='User is not authorized.',
-                        error_msg=f'{state.user} is not authorized to access this application.'
-                    )
+                if config.authorize_callback:
+                    import inspect
+                    authorize_callback_signature = inspect.signature(config.authorize_callback)
+                    authorize_callback_parameters = authorize_callback_signature.parameters
+                    authorized = False
+                    if len(authorize_callback_parameters) == 1:
+                        authorized = config.authorize_callback(state.user_info)
+                    if len(authorize_callback_parameters) == 2:
+                        authorized = config.authorize_callback(state.user_info, self.request.path)
+                    if not authorized:
+                        if config.auth_template:
+                            with open(config.auth_template) as f:
+                                template = _env.from_string(f.read())
+                        else:
+                            template = ERROR_TEMPLATE
+                        page = template.render(
+                            npm_cdn=config.npm_cdn,
+                            title='Panel: Authorization Error',
+                            error_type='Authorization Error',
+                            error='User is not authorized.',
+                            error_msg=f'{state.user} is not authorized to access this application.'
+                        )
                 else:
                     resources = Resources.from_bokeh(self.application.resources())
                     page = server_html_page_for_session(
