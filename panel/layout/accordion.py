@@ -119,6 +119,7 @@ class Accordion(NamedListPanel):
             params.update(self._apply_style(i))
             if id(pane) in self._panels:
                 card = self._panels[id(pane)]
+                params['title'] = name
                 card.param.update(**params)
             else:
                 card = Card(
