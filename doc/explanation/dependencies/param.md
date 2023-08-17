@@ -232,7 +232,7 @@ class D(param.Parameterized):
 
 d = D()
 
-pn.panel(b.param)
+pn.panel(d.param)
 ```
 
 Panel, when given a method decorated with `@param.depends`, will re-run the method and render its new output every time one of the *Parameters* it depends on change:
