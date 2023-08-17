@@ -1669,6 +1669,8 @@ def test_tabulator_row_content_expand_from_python_after(page, port, df_mixed):
     # Expanding the rows after the server is launched
     widget.expanded = [0, 2]
 
+    time.sleep(0.2)
+
     for i in range(len(df_mixed)):
         row_content = page.locator(f'text="{df_mixed.iloc[i]["str"]}-row-content"')
         if i in widget.expanded:
