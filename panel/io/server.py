@@ -485,6 +485,12 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
                 token = session.token
             logger.info(LOG_SESSION_CREATED, id(session.document))
             with set_curdoc(session.document):
+                resources = Resources.from_bokeh(self.application.resources())
+                page = server_html_page_for_session(
+                    session, resources=resources, title=session.document.title,
+                    token=token, template=session.document.template,
+                    template_variables=session.document.template_variables,
+                )
                 if config.authorize_callback:
                     import inspect
                     authorize_callback_signature = inspect.signature(config.authorize_callback)
@@ -507,13 +513,6 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
                             error='User is not authorized.',
                             error_msg=f'{state.user} is not authorized to access this application.'
                         )
-                else:
-                    resources = Resources.from_bokeh(self.application.resources())
-                    page = server_html_page_for_session(
-                        session, resources=resources, title=session.document.title,
-                        token=token, template=session.document.template,
-                        template_variables=session.document.template_variables,
-                    )
         self.set_header("Content-Type", 'text/html')
         self.write(page)
 
