@@ -350,8 +350,8 @@ class ChatEntry(CompositeWidget):
         Set the sizing mode and height of the object.
         """
         if hasattr(obj, "objects"):
-            for _obj in obj.objects:
-                self._set_default_attrs(_obj)
+            for subobj in obj.objects:
+                self._set_default_attrs(subobj)
             return None
 
         is_markup = (
