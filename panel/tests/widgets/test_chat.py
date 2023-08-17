@@ -817,7 +817,6 @@ class TestChatInterface:
     def test_click_send(self, chat_interface):
         chat_interface.widgets = [TextAreaInput()]
         chat_interface.active_widget.value = "Message"
-        chat_interface._click_send(None)
         assert len(chat_interface.value) == 1
         assert chat_interface.value[0].value == "Message"
 

@@ -182,6 +182,10 @@ class ChatReactionIcons(ReactiveHTML):
         if b"dark" in state.session_args.get("theme", []):
             svg = svg.replace('stroke="currentColor"', 'stroke="white"')
             svg = svg.replace('fill="currentColor"', 'fill="white"')
+        if self.width:
+            svg = svg.replace('width="24"', f'width="{self.width}px"')
+        if self.height:
+            svg = svg.replace('height="24"', f'height="{self.height}px"')
         svg = svg.replace("<svg", f'<svg alt="{reaction}"')
         return svg
 
@@ -204,8 +208,6 @@ class ChatReactionIcons(ReactiveHTML):
             # important not to encode to keep the alt text!
             svg_pane = SVG(
                 svg,
-                width=self.width,
-                height=self.height,
                 alt_text=reaction,
                 encode=False,
                 margin=0,
