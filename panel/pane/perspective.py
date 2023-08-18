@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
+
     from ..models.perspective import RowClickEvent
 
 DEFAULT_THEME = "material"
