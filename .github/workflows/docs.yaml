@@ -7,6 +7,10 @@ on:
       - 'v[0-9]+.[0-9]+.[0-9]+a[0-9]+'
       - 'v[0-9]+.[0-9]+.[0-9]+b[0-9]+'
       - 'v[0-9]+.[0-9]+.[0-9]+rc[0-9]+'
+  # TODO: undo
+  pull_request:
+    branches:
+    - '*'
   workflow_dispatch:
     inputs:
       target:
@@ -28,76 +32,61 @@ jobs:
     timeout-minutes: 180
     defaults:
       run:
-        shell: bash -l {0}
+        shell: bash -el {0}
     env:
       DESC: "Documentation build"
       MPLBACKEND: "Agg"
-      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
       MOZ_HEADLESS: 1
       DISPLAY: ":99.0"
       PANEL_IPYWIDGET: 1
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a15
+      - uses: actions/checkout@v3
         with:
-          name: doc_build
-          python-version: "3.9"
-          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
-          conda-update: 'true'
-          nodejs: true
-          # Remove when all examples tools can be installed on 3.10
-          envs: -o examples -o doc -o build
-          cache: true
-          opengl: true
-          conda-mamba: mamba
-      - name: doit develop_install
-        if: steps.install.outputs.cache-hit != 'true'
+          fetch-depth: "100"
+          # Forcing fetch to avoid 'would clobber existing tag', as the previous step
+          # fetches tags already.
+      - run: git fetch --prune --tags --unshallow --force
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          auto-update-conda: true
+          auto-activate-base: false
+      - name: Set up base environment
         run: |
-          conda activate test-environment
-          pip install --use-deprecated=legacy-resolver pyecharts ipywidgets_bokeh==1.4.0.dev3
-      - name: bokeh sampledata
+          pip3 install --upgrade pip
+          pip3 install hatch hatch-conda
+          hatch -v env create docs
+      - name: Build docs
         run: |
-          conda activate test-environment
-          bokeh sampledata
-      - name: refmanual
-        run: |
-          conda activate test-environment
-          python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests
-      - name: build docs
-        run: |
-          conda activate test-environment
-          python scripts/gallery/convert_gallery.py
-          nbsite build --what=html --output=builtdocs --org holoviz --project-name panel
-          cp -r ./panel/dist ./builtdocs/panel_dist
-      - name: convert gallery
-        run: |
-          conda activate test-environment
-          panel convert examples/gallery/*.ipynb doc/how_to/*/examples/*.md --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index --requirements doc/pyodide_dependencies.json
-      - name: git status and git diff
-        run: |
-          git status
-          git diff
+          hatch -v run docs:generate-rst
+          hatch -v run docs:refmanual
+          hatch -v run docs:build
+          hatch -v run docs:build-pyodide
       - name: Set and echo git ref
         id: vars
         run: |
           echo "Deploying from ref ${GITHUB_REF#refs/*/}"
           echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-      - name: Deploy dev
-        uses: peaceiris/actions-gh-pages@v3
-        if: |
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
-          (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
-        with:
-          personal_token: ${{ secrets.ACCESS_TOKEN }}
-          external_repository: holoviz-dev/panel
-          publish_dir: ./builtdocs
-          force_orphan: true
-      - name: Deploy main
-        if: |
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
-          (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./builtdocs
-          cname: panel.holoviz.org
-          force_orphan: true
+      # - name: Deploy dev
+      #   uses: peaceiris/actions-gh-pages@v3
+      #   if: |
+      #     (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
+      #     (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+      #   with:
+      #     personal_token: ${{ secrets.ACCESS_TOKEN }}
+      #     external_repository: holoviz-dev/panel
+      #     publish_dir: ./builtdocs
+      #     force_orphan: true
+      # - name: Deploy main
+      #   if: |
+      #     (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
+      #     (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+      #   uses: peaceiris/actions-gh-pages@v3
+      #   with:
+      #     github_token: ${{ secrets.GITHUB_TOKEN }}
+      #     publish_dir: ./builtdocs
+      #     cname: panel.holoviz.org
+      #     force_orphan: true

@@ -1,4 +1,4 @@
--e .[all_pip,build]
+-e .[all]
 -e binder/jupyter-panel-apps-server/.
 pyecharts
 xlsxwriter

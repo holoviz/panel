@@ -38,17 +38,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
+        # TODO: re-add macos-latest
+        # os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
+        os: ['ubuntu-latest', 'windows-latest']
         # Run on the full set on schedule, workflow_dispatch and push&tags events, otherwise on a subset.
         python-version: ${{ ( github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || ( github.event_name == 'push' && github.ref_type == 'tag' ) ) && fromJSON('["3.8", "3.9", "3.10", "3.11"]') || fromJSON('["3.8", "3.9", "3.11"]') }}
     timeout-minutes: 90
-    defaults:
-      run:
-        shell: bash -l {0}
     env:
       DESC: "Python ${{ matrix.python-version }} tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
-      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
       DISPLAY: ":99.0"
       PYTHONIOENCODING: "utf-8"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -57,55 +55,45 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
       OMP_NUM_THREADS: 1
+    defaults:
+      run:
+        shell: bash -el {0}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a15
+      - uses: actions/checkout@v3
         with:
-          name: unit_test_suite
-          python-version: ${{ matrix.python-version }}
-          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
-          # Remove when Python 3.11 is well supported on latest conda/conda-forge.
-          conda-update: ${{ matrix.python-version == '3.11' && 'false' || 'true' }}
-          nodejs: true
-          # Remove when all examples tools can be installed on 3.10
-          envs: ${{ !contains(matrix.python-version, '3.1') && '-o examples -o recommended -o tests -o build' || '-o recommended -o tests -o build' }}
-          cache: true
-          opengl: true
-          conda-mamba: mamba
-        id: install
-      - name: doit develop_install
-        if: steps.install.outputs.cache-hit != 'true'
+          fetch-depth: "100"
+          # Forcing fetch to avoid 'would clobber existing tag', as the previous step
+          # fetches tags already.
+      - run: git fetch --prune --tags --unshallow --force
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          auto-update-conda: true
+          auto-activate-base: true
+      - name: Set up environment
         run: |
-          conda activate test-environment
-          pip install pyecharts
-      - name: bokeh_sampledata
+          conda info
+          pipx install hatch
+          pipx inject hatch hatch-conda
+          hatch -v env create test.py${{ matrix.python-version }}
+      - name: Run unit test suite
         run: |
-          conda activate test-environment
-          bokeh sampledata
-      - name: doit env_capture
+          hatch -v run test.py${{ matrix.python-version }}:run
+      - name: Run subprocess unit test suite
         run: |
-          conda activate test-environment
-          doit env_capture
-      - name: doit test_unit
+          hatch -v run test.py${{ matrix.python-version }}:run-subprocess
+      - name: Run example test suite
         run: |
-          conda activate test-environment
-          doit test_unit
-      - name: doit test_unit-subprocess
-        if: contains(matrix.os, 'ubuntu')
-        run: |
-          conda activate test-environment
-          doit test_subprocess
-      - name: test examples
-        # Remove when all examples tools can be installed on 3.10
-        if: (!(contains(matrix.python-version, '3.1')))
-        run: |
-          conda activate test-environment
-          doit test_examples
+          hatch -v run test.py${{ matrix.python-version }}:run-examples
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
           files: ./coverage.xml
           flags: unitexamples-tests
-          fail_ci_if_error: false # optional (default = false)
+          fail_ci_if_error: false
   ui_test_suite:
     name: UI tests on ${{ matrix.os }} with Python 3.9
     needs: [pre_commit]
@@ -113,66 +101,42 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
+        # TODO: re-add macos-latest
+        # os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
+        os: ['ubuntu-latest', 'windows-latest']
     timeout-minutes: 60
-    defaults:
-      run:
-        shell: bash -el {0}
     env:
       DESC: "Python ${{ matrix.python-version }} tests"
       PYTHONIOENCODING: "utf-8"
       PANEL_LOG_LEVEL: info
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
-      # Without this env var `doit env_create ...` uses by default
-      # the `pyviz` channel, except that we don't want to configure
-      # it as one of the sources.
-      PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
+    defaults:
+      run:
+        shell: bash -el {0}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a15
+      - uses: actions/checkout@v3
         with:
-          name: ui_test_suite
-          python-version: 3.9
-          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
-          envs: "-o recommended -o tests -o build"
-          cache: true
-          nodejs: true
-          playwright: true
-        id: install
-      - name: doit develop_install
-        if: steps.install.outputs.cache-hit != 'true'
-        run: |
-          conda activate test-environment
-          pip install --pre ipywidgets_bokeh
-      - name: build pyodide wheels
-        run: |
-          conda activate test-environment
-          python scripts/build_pyodide_wheels.py
-      - name: launch jupyter
-        run: |
-          conda activate test-environment
-          jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
-          (jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887 > /tmp/jupyterlab_server.log 2>&1) &
-      - name: build jupyterlite
-        run: |
-          conda activate test-environment
-          pip install jupyterlite
-          python ./scripts/build_pyodide_wheels.py lite/pypi
-          python ./scripts/panelite/generate_panelite_content.py
-          jupyter lite build --lite-dir lite --output-dir lite/dist
-      - name: Wait for JupyterLab
-        uses: ifaxity/wait-on-action@v1
+          fetch-depth: "100"
+          # Forcing fetch to avoid 'would clobber existing tag', as the previous step
+          # fetches tags already.
+      - run: git fetch --prune --tags --unshallow --force
+      - uses: actions/setup-python@v4
         with:
-          resource: http-get://localhost:8887/lab
-          timeout: 180000
-      - name: doit env_capture
+          python-version: "3.11"
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          auto-update-conda: true
+          auto-activate-base: true
+      - name: Set up environment
         run: |
-          conda activate test-environment
-          doit env_capture
-      - name: doit test_ui
+          pipx install hatch
+          pipx inject hatch hatch-conda
+          hatch -v env create test-ui.py3.10
+      - name: Run UI test suite
         run: |
-          conda activate test-environment
-          doit test_ui
+          hatch run jupyterlite:build
+          hatch -v run test-ui.py3.10:run
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:

@@ -2,7 +2,6 @@ DEPENDENCY_NOT_INSTALLABLE = [
     "aiohttp", # https://github.com/aio-libs/aiohttp/issues/7253
     "datashader", # https://github.com/holoviz/datashader/issues/1200
     "pyarrow", # https://github.com/apache/arrow/issues/34996
-    "pygraphviz", # https://github.com/pygraphviz/pygraphviz/issues/453
     "pyvista", # https://gitlab.kitware.com/vtk/vtk/-/issues/18806
     "streamz", # https://github.com/python-streamz/streamz/issues/467,
     "vtk", # https://gitlab.kitware.com/vtk/vtk/-/issues/18806

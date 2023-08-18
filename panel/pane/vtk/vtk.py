@@ -205,7 +205,6 @@ class VTK:
 
 class BaseVTKRenderWindow(AbstractVTK):
 
-
     enable_keybindings = param.Boolean(default=False, doc="""
         Activate/Deactivate keys binding.
 
