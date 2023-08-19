@@ -2,6 +2,8 @@
 
 For example `ChatEntry`, `ChatFeed` and `ChatInterface`.
 """
+from __future__ import annotations
+
 import asyncio
 import datetime
 
@@ -11,7 +13,7 @@ from inspect import isasyncgen, isawaitable, isgenerator
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from typing import (
-    Any, BinaryIO, ClassVar, List, Optional, Type, Union,
+    Any, BinaryIO, ClassVar, Dict, List, Type,
 )
 
 import param
@@ -259,7 +261,7 @@ class ChatEntry(CompositeWidget):
         f"{CDN_DIST}css/chat_entry.css"
     ]
 
-    _exit_stack: Optional[ExitStack] = None
+    _exit_stack: ExitStack | None = None
 
     def __init__(self, **params):
         from ..param import ParamMethod  # circular imports
@@ -698,7 +700,7 @@ class ChatFeed(CompositeWidget):
         """
         self._composite.hide_header = not self.header
 
-    def _replace_placeholder(self, entry: Optional[ChatEntry] = None) -> None:
+    def _replace_placeholder(self, entry: ChatEntry | None = None) -> None:
         """
         Replace the placeholder from the chat log with the entry
         if placeholder, otherwise simply append the entry.
@@ -721,10 +723,10 @@ class ChatFeed(CompositeWidget):
 
     def _build_entry(
             self,
-            value: Union[ChatEntry, dict, Any],
-            user: Optional[str] = None,
-            avatar: Optional[Union[str, BinaryIO]] = None,
-        ) -> Optional[ChatEntry]:
+            value: ChatEntry |  dict | Any,
+            user: str | None = None,
+            avatar: str | BinaryIO | None = None,
+        ) -> ChatEntry | None:
         """
         Builds a ChatEntry from the value.
         """
@@ -734,7 +736,7 @@ class ChatFeed(CompositeWidget):
         if not isinstance(value, (ChatEntry, dict)):
             value = {"value": value}
 
-        new_params = {}
+        new_params: Dict[str, str | BytesIO | None] = {}
         if user is not None:
             new_params["user"] = user
         if avatar is not None:
@@ -758,7 +760,7 @@ class ChatFeed(CompositeWidget):
             entry = value
         return entry
 
-    def _upsert_entry(self, value: Any, entry: Optional[ChatEntry] = None) -> Optional[ChatEntry]:
+    def _upsert_entry(self, value: Any, entry: ChatEntry | None = None) -> ChatEntry | None:
         """
         Replace the placeholder entry with the response or update
         the entry's value with the response.
@@ -794,7 +796,7 @@ class ChatFeed(CompositeWidget):
             contents = value
         return contents
 
-    async def _serialize_response(self, response: Any) -> Optional[ChatEntry]:
+    async def _serialize_response(self, response: Any) -> ChatEntry | None:
         """
         Serializes the response by iterating over it and
         updating the entry's value.
@@ -812,7 +814,7 @@ class ChatFeed(CompositeWidget):
             response_entry = self._upsert_entry(response, response_entry)
         return response_entry
 
-    async def _handle_callback(self, entry: ChatEntry) -> Optional[ChatEntry]:
+    async def _handle_callback(self, entry: ChatEntry) -> ChatEntry | None:
         contents = self._extract_contents(entry)
         response = self.callback(contents, entry.user, self)
         response_entry = await self._serialize_response(response)
@@ -902,11 +904,11 @@ class ChatFeed(CompositeWidget):
 
     def send(
         self,
-        value: Union[ChatEntry, dict, Any],
-        user: Optional[str] = None,
-        avatar: Optional[Union[str, BinaryIO]] = None,
+        value: ChatEntry | dict | Any,
+        user: str | None = None,
+        avatar: str | BinaryIO | None = None,
         respond: bool = True,
-    ) -> Optional[ChatEntry]:
+    ) -> ChatEntry | None:
         """
         Sends a value and creates a new entry in the chat log.
 
@@ -914,11 +916,11 @@ class ChatFeed(CompositeWidget):
 
         Parameters
         ----------
-        value : Union[ChatEntry, dict, Any]
+        value : ChatEntry | dict | Any
             The message contents to send.
-        user : Optional[str]
+        user : str | None
             The user to send as; overrides the message entry's user if provided.
-        avatar : Optional[Union[str, BinaryIO]]
+        avatar : str | BinaryIO | None
             The avatar to use; overrides the message entry's avatar if provided.
         respond : bool
             Whether to execute the callback.
@@ -937,10 +939,10 @@ class ChatFeed(CompositeWidget):
     def stream(
             self,
             value: str,
-            user: Optional[str] = None,
-            avatar: Optional[Union[str, BinaryIO]] = None,
-            entry: Optional[ChatEntry] = None,
-        ) -> Optional[ChatEntry]:
+            user: str | None = None,
+            avatar: str | BinaryIO | None = None,
+            entry: ChatEntry | None = None,
+        ) -> ChatEntry | None:
         """
         Streams a token and updates the provided entry, if provided.
         Otherwise creates a new entry in the chat log, so be sure the
@@ -954,11 +956,11 @@ class ChatFeed(CompositeWidget):
         ----------
         value : str
             The new token value to stream.
-        user : Optional[str]
+        user : str | None
             The user to stream as; overrides the entry's user if provided.
-        avatar : Optional[Union[str, BinaryIO]]
+        avatar : str | BinaryIO | None
             The avatar to use; overrides the entry's avatar if provided.
-        entry : Optional[ChatEntry]
+        entry : ChatEntry | None
             The entry to update.
 
         Returns
@@ -980,21 +982,20 @@ class ChatFeed(CompositeWidget):
         """
         self._callback_trigger.param.trigger("clicks")
 
-    def undo(self, count: Optional[int] = 1) -> List[Any]:
+    def undo(self, count: int = 1) -> List[Any]:
         """
-        Removes the last `count` of entries from
-        the chat log and returns them.
+        Removes the last `count` of entries from the chat log and returns them.
 
         Parameters
         ----------
-        count : Optional[int]
+        count : int
             The number of entries to remove, starting from the last entry.
 
         Returns
         -------
         The entries that were removed.
         """
-        if count == 0:
+        if count <= 0:
             return []
         entries = self._chat_log.objects
         undone_entries = entries[-count:]
@@ -1003,8 +1004,7 @@ class ChatFeed(CompositeWidget):
 
     def clear(self) -> List[Any]:
         """
-        Clears the chat log and returns
-        the entries that were cleared.
+        Clears the chat log and returns the entries that were cleared.
 
         Returns
         -------
@@ -1236,7 +1236,7 @@ class ChatInterface(ChatFeed):
         self._input_container.objects = [input_layout]
         self._input_layout = input_layout
 
-    def _click_send(self, _: Optional[param.parameterized.Event] = None) -> None:
+    def _click_send(self, _: param.parameterized.Event | None = None) -> None:
         """
         Send the input when the user presses Enter.
         """
