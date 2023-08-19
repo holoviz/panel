@@ -240,9 +240,9 @@ def component_resource_path(component, attr, path):
 def patch_stylesheet(stylesheet, dist_url):
     url = stylesheet.url
     if url.startswith(CDN_DIST+dist_url) and dist_url != CDN_DIST:
-        patched_url = url.replace(CDN_DIST+dist_url, dist_url)
+        patched_url = url.replace(CDN_DIST+dist_url, dist_url) + f'?v={JS_VERSION}'
     elif url.startswith(CDN_DIST) and dist_url != CDN_DIST:
-        patched_url = url.replace(CDN_DIST, dist_url)
+        patched_url = url.replace(CDN_DIST, dist_url) + f'?v={JS_VERSION}'
     else:
         return
     try:
