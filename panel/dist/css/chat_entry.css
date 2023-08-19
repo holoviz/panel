@@ -19,7 +19,7 @@
   text-align: center;
 
   border-radius: 25px;
-  background-color: var(--neutral-fill-active, #f1f1f1);
+  background-color: var(--panel-surface-color, #f1f1f1);
 }
 
 .right {
@@ -52,7 +52,7 @@
   max-height: 600px;
   margin-block: 0px;
   margin-inline: 10px; /* Space for avatar */
-  background-color: var(--neutral-fill-active, #f1f1f1);
+  background-color: var(--panel-surface-color, #f1f1f1);
 }
 
 .footer {

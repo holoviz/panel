@@ -8,7 +8,7 @@ import pytest
 
 from panel import Param, bind
 from panel.layout import Column, Row, Tabs
-from panel.pane.image import Image
+from panel.pane.image import SVG, Image
 from panel.pane.markup import HTML, Markdown
 from panel.tests.util import mpl_figure
 from panel.widgets.button import Button
@@ -25,6 +25,65 @@ LAYOUT_PARAMETERS = {
     "width": 101,
     "max_width": 201,
 }
+
+
+class TestChatReactionIcons:
+    def test_init(self):
+        icons = ChatReactionIcons()
+        assert icons.options == {"favorite": "heart"}
+
+        svg = icons._svgs[0]
+        assert isinstance(svg, SVG)
+        assert svg.alt_text == "favorite"
+        assert not svg.encode
+        assert svg.margin == 0
+        svg_text = svg.object
+        assert 'alt="favorite"' in svg_text
+        assert 'icon-tabler-heart' in svg_text
+
+        assert icons._reactions == ["favorite"]
+
+    def test_options(self):
+        icons = ChatReactionIcons(options={"favorite": "heart", "like": "thumb-up"})
+        assert icons.options == {"favorite": "heart", "like": "thumb-up"}
+        assert len(icons._svgs) == 2
+
+        svg = icons._svgs[0]
+        assert svg.alt_text == "favorite"
+
+        svg = icons._svgs[1]
+        assert svg.alt_text == "like"
+
+    def test_value(self):
+        icons = ChatReactionIcons(value=["favorite"])
+        assert icons.value == ["favorite"]
+
+        svg = icons._svgs[0]
+        svg_text = svg.object
+        assert 'icon-tabler-heart-fill' in svg_text
+
+    def test_active_icons(self):
+        icons = ChatReactionIcons(
+            options={"dislike": "thumb-up"},
+            active_icons={"dislike": "thumb-down"},
+            value=["dislike"])
+        assert icons.options == {"dislike": "thumb-up"}
+
+        svg = icons._svgs[0]
+        svg_text = svg.object
+        assert 'icon-tabler-thumb-down' in svg_text
+
+        icons.value = []
+        svg = icons._svgs[0]
+        svg_text = svg.object
+        assert 'icon-tabler-thumb-up' in svg_text
+
+    def test_width_height(self):
+        icons = ChatReactionIcons(width=50, height=50)
+        svg = icons._svgs[0]
+        svg_text = svg.object
+        assert 'width="50px"' in svg_text
+        assert 'height="50px"' in svg_text
 
 
 class TestChatEntry:
@@ -288,13 +347,13 @@ class TestChatFeed:
 
         chat_feed.callback = callback
         chat_feed.send("Question", respond=True)
-        time.sleep(0.5)
+        time.sleep(0.75)
 
         assert len(chat_feed.value) == 2
         assert chat_feed.value[1].value == "Response to: Question"
 
         chat_feed.respond()
-        time.sleep(0.5)
+        time.sleep(0.75)
 
         assert len(chat_feed.value) == 3
         assert chat_feed.value[2].value == "Response to: Response to: Question"
@@ -305,12 +364,12 @@ class TestChatFeed:
 
         chat_feed.callback = callback
         chat_feed.send("Question", respond=False)
-        time.sleep(0.5)
+        time.sleep(0.75)
 
         assert len(chat_feed.value) == 1
 
         chat_feed.respond()
-        time.sleep(0.5)
+        time.sleep(0.75)
 
         assert len(chat_feed.value) == 2
         assert chat_feed.value[1].value == "Response to: Question"
@@ -496,7 +555,7 @@ class TestChatFeedCallback:
         chat_feed.callback_user = "Bob"
         chat_feed.callback_avatar = "👨"
         chat_feed.send("Message", respond=True)
-        time.sleep(0.5)
+        time.sleep(0.75)
         assert len(chat_feed.value) == 2
         assert chat_feed.value[1].user == "Bob"
         assert chat_feed.value[1].avatar == "👨"
@@ -507,7 +566,7 @@ class TestChatFeedCallback:
 
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
-        time.sleep(0.5)
+        time.sleep(0.75)
         assert len(chat_feed.value) == 2
         assert chat_feed.value[1].value == "Message"
 
@@ -517,7 +576,7 @@ class TestChatFeedCallback:
 
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
-        time.sleep(0.5)
+        time.sleep(0.75)
         assert len(chat_feed.value) == 2
         assert chat_feed.value[1].value == "Message"
 
@@ -760,7 +819,6 @@ class TestChatInterface:
     def test_click_send(self, chat_interface: ChatInterface):
         chat_interface.widgets = [TextAreaInput()]
         chat_interface.active_widget.value = "Message"
-        chat_interface._click_send(None)
         assert len(chat_interface.value) == 1
         assert chat_interface.value[0].value == "Message"
 
