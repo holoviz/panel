@@ -13,7 +13,7 @@ from inspect import isasyncgen, isawaitable, isgenerator
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from typing import (
-    Any, BinaryIO, ClassVar, Dict, List, Type,
+    Any, BinaryIO, ClassVar, Dict, List, Tuple, Type,
 )
 
 import param
@@ -217,7 +217,7 @@ class ChatEntry(CompositeWidget):
     show_timestamp : bool
         Whether to display the timestamp of the message.
     """
-    _ignored_refs: ClassVar[List[str]] = ['value']
+    _ignored_refs: ClassVar[Tuple[str,...]] = ('value',)
 
     value = param.Parameter(doc="""
         The message contents. Can be any Python object that panel can display.""")
