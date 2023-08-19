@@ -885,15 +885,12 @@ class ChatFeed(CompositeWidget):
             value_panel = value
             if hasattr(value, "objects"):
                 parent_panel = value
-                attr = "objects"
-                value = getattr(value, "objects")[i]
+                value = value.objects[i]
                 i = -1
             elif hasattr(value, "object"):
-                attr = "object"
-                value = getattr(value, "object")
+                value = value.object
             elif hasattr(value, "value"):
-                attr = "value"
-                value = getattr(value, "value")
+                value = value.value
             elif parent_panel is not None:
                 value = parent_panel
                 parent_panel = None
