@@ -330,12 +330,15 @@ class Markdown(HTMLBasePane):
         'markdown-it', 'myst', 'markdown'], doc="""
         Markdown renderer implementation.""")
 
+    renderer_options = param.Dict(default={}, doc="""
+        Options to pass to the markdown renderer.""")
+
     # Priority depends on the data type
     priority: ClassVar[float | bool | None] = None
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'dedent': None, 'disable_math': None, 'extensions': None,
-        'plugins': None, 'renderer': None
+        'plugins': None, 'renderer': None, 'renderer_options': None
     }
 
     _rerender_params: ClassVar[List[str]] = [
@@ -361,9 +364,11 @@ class Markdown(HTMLBasePane):
 
     @classmethod
     @functools.lru_cache(maxsize=None)
-    def _get_parser(cls, renderer, plugins):
+    def _get_parser(cls, renderer, plugins, **renderer_options):
         if renderer == 'markdown':
             return None
+        if "breaks" not in renderer_options:
+            renderer_options["breaks"] = True
         from markdown_it import MarkdownIt
         from markdown_it.renderer import RendererHTML
         from mdit_py_plugins.anchors import anchors_plugin
@@ -379,7 +384,11 @@ class Markdown(HTMLBasePane):
                 return token
 
         if renderer == 'markdown-it':
-            parser = MarkdownIt('gfm-like', renderer_cls=RendererHTML)
+            parser = MarkdownIt(
+                'gfm-like',
+                renderer_cls=RendererHTML,
+                options_update=renderer_options
+            )
         elif renderer == 'myst':
             from myst_parser.parsers.mdit import (
                 MdParserConfig, create_md_parser,
@@ -387,7 +396,7 @@ class Markdown(HTMLBasePane):
             config = MdParserConfig(heading_anchors=1, enable_extensions=[
                 'colon_fence', 'linkify', 'smartquotes', 'tasklist',
                 'attrs_block'
-            ], enable_checkboxes=True)
+            ], enable_checkboxes=True, **renderer_options)
             parser = create_md_parser(config, RendererHTML)
         parser = (
             parser
@@ -412,12 +421,18 @@ class Markdown(HTMLBasePane):
             obj = obj._repr_markdown_()
         if self.dedent:
             obj = textwrap.dedent(obj)
+
         if self.renderer == 'markdown':
             html = markdown.markdown(
-                obj, extensions=self.extensions, output_format='html5'
+                obj,
+                extensions=self.extensions,
+                output_format='html5',
+                **self.renderer_options
             )
         else:
-            html = self._get_parser(self.renderer, tuple(self.plugins)).render(obj)
+            html = self._get_parser(
+                self.renderer, tuple(self.plugins), **self.renderer_options
+            ).render(obj)
         return dict(object=escape(html))
 
     def _process_param_change(self, params):

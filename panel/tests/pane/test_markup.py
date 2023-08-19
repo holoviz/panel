@@ -73,6 +73,35 @@ def test_markdown_pane_dedent(document, comm):
     pane.dedent = False
     assert model.text.startswith('&lt;pre&gt;&lt;code&gt;ABC')
 
+def test_markdown_pane_newline(document, comm):
+    # Newlines should be separated by a br
+    pane = Markdown(
+        "Hello\nWorld\nI'm here!",
+        renderer="markdown-it",
+    )
+    model = pane.get_root(document, comm=comm)
+    assert pane._models[model.ref['id']][0] is model
+    # <p>Hello<br>World<br>I'm here!</p>
+    assert model.text == "&lt;p&gt;Hello&lt;br /&gt;\nWorld&lt;br /&gt;\nI&#x27;m here!&lt;/p&gt;\n"
+
+    # Two newlines should be separated by a div
+    pane = Markdown("Hello\n\nWorld")
+    model = pane.get_root(document, comm=comm)
+    assert pane._models[model.ref['id']][0] is model
+    # <p>Hello</p><p>World</p>
+    assert model.text == "&lt;p&gt;Hello&lt;/p&gt;\n&lt;p&gt;World&lt;/p&gt;\n"
+
+    # Disable newlines
+    pane = Markdown(
+        "Hello\nWorld\nI'm here!",
+        renderer="markdown-it",
+        renderer_options={"breaks": False},
+    )
+    model = pane.get_root(document, comm=comm)
+    assert pane._models[model.ref['id']][0] is model
+    assert model.text == "&lt;p&gt;Hello\nWorld\nI&#x27;m here!&lt;/p&gt;\n"
+
+
 def test_markdown_pane_markdown_it_renderer(document, comm):
     pane = Markdown("""
     - [x] Task1
