@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import re
 
 from contextlib import ExitStack
 from dataclasses import dataclass
@@ -34,6 +35,23 @@ from .button import Button
 from .indicators import LoadingSpinner
 from .input import FileInput, TextInput
 
+GPT_3_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_logo.svg/1024px-ChatGPT_logo.svg.png?20230318122128"
+GPT_4_LOGO = "https://upload.wikimedia.org/wikipedia/commons/a/a4/GPT-4.png"
+WOLFRAM_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/WolframCorporateLogo.svg/1920px-WolframCorporateLogo.svg.png"
+
+DEFAULT_USER_AVATARS = {
+    "user": "😊",
+    "assistant": "🤖",
+    "system": "⚙️",
+    "chatgpt": GPT_3_LOGO,
+    "gpt3": GPT_3_LOGO,
+    "gpt4": GPT_4_LOGO,
+    "calculator": "🧮",
+    "langchain": "🦜",
+    "translator": "🌐",
+    "wolfram": WOLFRAM_LOGO,
+    "wolframalpha": WOLFRAM_LOGO,
+}
 
 @dataclass
 class _FileInputMessage:
@@ -625,8 +643,11 @@ class ChatFeed(CompositeWidget):
     callback_user = param.String(default="Assistant", doc="""
         The default user name to use for the entry provided by the callback.""")
 
-    callback_avatar = param.ClassSelector(default="🤖", class_=(str, BinaryIO), doc="""
-        The default avatar to use for the entry provided by the callback.""")
+    callback_avatar = param.ClassSelector(class_=(str, BinaryIO), doc="""
+        The default avatar to use for the entry provided by the callback.
+        Takes precedence over `user_avatars` if set; else, if None,
+        defaults to the avatar set in `user_avatars` if matching key exists.
+        Otherwise defaults to the first character of the `callback_user`.""")
 
     placeholder = param.Parameter(doc="""
         Placeholder to display while the callback is running.
@@ -639,6 +660,10 @@ class ChatFeed(CompositeWidget):
     placeholder_threshold = param.Number(default=0.2, bounds=(0, None), doc="""
         Min duration in seconds of buffering before displaying the placeholder.
         If 0, the placeholder will be disabled.""")
+
+    user_avatars = param.Dict(default=DEFAULT_USER_AVATARS, doc="""
+        A default mapping of user names to their corresponding avatars
+        to use when the avatar is not set.""")
 
     auto_scroll_limit = param.Integer(default=200, bounds=(0, None), doc="""
         Max pixel distance from the latest object in the Column to
@@ -806,7 +831,13 @@ class ChatFeed(CompositeWidget):
             else:
                 entry_params = self.entry_params
             entry_params.update(renderers=self.renderers)
-            entry = ChatEntry(**value, **entry_params)
+            input_params = {**value, **entry_params}
+            if not input_params.get("avatar"):
+                user_alpha_numeric = re.sub(r"\W+", "", input_params.get("user", "")).lower()
+                default_avatar = self.user_avatars.get(user_alpha_numeric)
+                if default_avatar:
+                    input_params["avatar"] = default_avatar
+            entry = ChatEntry(**input_params)
         else:
             value.param.update(**new_params)
             entry = value
