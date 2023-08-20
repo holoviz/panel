@@ -1,6 +1,5 @@
 import asyncio
 import datetime
-import re
 
 from contextlib import ExitStack
 from dataclasses import dataclass
@@ -40,17 +39,17 @@ GPT_4_LOGO = "https://upload.wikimedia.org/wikipedia/commons/a/a4/GPT-4.png"
 WOLFRAM_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/WolframCorporateLogo.svg/1920px-WolframCorporateLogo.svg.png"
 
 DEFAULT_USER_AVATARS = {
-    "user": "😊",
-    "assistant": "🤖",
-    "system": "⚙️",
-    "chatgpt": GPT_3_LOGO,
-    "gpt3": GPT_3_LOGO,
-    "gpt4": GPT_4_LOGO,
-    "calculator": "🧮",
-    "langchain": "🦜",
-    "translator": "🌐",
-    "wolfram": WOLFRAM_LOGO,
-    "wolframalpha": WOLFRAM_LOGO,
+    "user": "😊", "User": "😊",
+    "assistant": "🤖", "Assistant": "🤖",
+    "system": "⚙️", "System": "⚙️",
+    "chatgpt": GPT_3_LOGO, "ChatGPT": GPT_3_LOGO,
+    "gpt3": GPT_3_LOGO, "GPT3": GPT_3_LOGO,
+    "gpt4": GPT_4_LOGO, "GPT4": GPT_4_LOGO,
+    "calculator": "🧮", "Calculator": "🧮",
+    "langchain": "🦜", "LangChain": "🦜",
+    "translator": "🌐", "Translator": "🌐",
+    "wolfram": WOLFRAM_LOGO, "Wolfram": WOLFRAM_LOGO,
+    "wolfram alpha": WOLFRAM_LOGO, "Wolfram Alpha": WOLFRAM_LOGO,
 }
 
 @dataclass
@@ -271,6 +270,10 @@ class ChatEntry(CompositeWidget):
         The avatar to use for the user. Can be a single character text, an emoji,
         or anything supported by `pn.pane.Image`. If not set, uses the
         first character of the name.
+    default_avatars : dict
+        A default mapping of user names to their corresponding avatars
+        to use when the user is specified but not the avatar. You can modify, but not replace the
+        dictionary.
     reactions : List
         Reactions to associate with the message.
     reaction_icons : ChatReactionIcons | dict
@@ -306,6 +309,11 @@ class ChatEntry(CompositeWidget):
         The avatar to use for the user. Can be a single character text, an emoji,
         or anything supported by `pn.pane.Image`. If not set, uses the
         first character of the name.""")
+
+    default_avatars = param.Dict(default=DEFAULT_USER_AVATARS, readonly=True, doc="""
+    A default mapping of user names to their corresponding avatars
+    to use when the user is specified but the avatar is. You can modify, but not replace the
+    dictionary.""")
 
     reactions = param.List(doc="""
         Reactions to associate with the message.""")
@@ -345,6 +353,8 @@ class ChatEntry(CompositeWidget):
         if isinstance(params["reaction_icons"], dict):
             params["reaction_icons"] = ChatReactionIcons(
                 options=params["reaction_icons"], width=15, height=15)
+        if "avatar" not in params and "user" in params and params["user"] in self.default_avatars:
+            params["avatar"]=self.default_avatars[params["user"]]
         super().__init__(**params)
         self.reaction_icons.link(self, value="reactions", bidirectional=True)
         self.param.trigger("reactions")
@@ -645,8 +655,8 @@ class ChatFeed(CompositeWidget):
 
     callback_avatar = param.ClassSelector(class_=(str, BinaryIO), doc="""
         The default avatar to use for the entry provided by the callback.
-        Takes precedence over `user_avatars` if set; else, if None,
-        defaults to the avatar set in `user_avatars` if matching key exists.
+        Takes precedence over `ChatEntry.default_avatars` if set; else, if None,
+        defaults to the avatar set in `ChatEntry.default_avatars` if matching key exists.
         Otherwise defaults to the first character of the `callback_user`.""")
 
     placeholder = param.Parameter(doc="""
@@ -660,10 +670,6 @@ class ChatFeed(CompositeWidget):
     placeholder_threshold = param.Number(default=0.2, bounds=(0, None), doc="""
         Min duration in seconds of buffering before displaying the placeholder.
         If 0, the placeholder will be disabled.""")
-
-    user_avatars = param.Dict(default=DEFAULT_USER_AVATARS, doc="""
-        A default mapping of user names to their corresponding avatars
-        to use when the avatar is not set.""")
 
     auto_scroll_limit = param.Integer(default=200, bounds=(0, None), doc="""
         Max pixel distance from the latest object in the Column to
@@ -832,11 +838,6 @@ class ChatFeed(CompositeWidget):
                 entry_params = self.entry_params
             entry_params.update(renderers=self.renderers)
             input_params = {**value, **entry_params}
-            if not input_params.get("avatar"):
-                user_alpha_numeric = re.sub(r"\W+", "", input_params.get("user", "")).lower()
-                default_avatar = self.user_avatars.get(user_alpha_numeric)
-                if default_avatar:
-                    input_params["avatar"] = default_avatar
             entry = ChatEntry(**input_params)
         else:
             value.param.update(**new_params)

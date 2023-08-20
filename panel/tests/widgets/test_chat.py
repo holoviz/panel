@@ -251,6 +251,23 @@ class TestChatEntry:
         entry.reactions = ["favorite"]
         assert entry.value == "favorite"
 
+    def test_default_avatars(self):
+        assert isinstance(ChatEntry.default_avatars, dict)
+        assert ChatEntry(user="Assistant").avatar==ChatEntry(user="assistant").avatar=="🤖"
+        assert ChatEntry(value="Hello", user="NoDefaultUserAvatar").avatar==ChatEntry.param.avatar.default
+        ChatEntry.default_avatars["test1"]="1"
+        ChatEntry.default_avatars["test2"]="2"
+
+        entry = ChatEntry(value="Hello", user="test1")
+        assert entry.avatar=="1"
+        entry.user="test2"
+        assert entry.avatar=="1"
+
+    def test_cannot_replace_default_avatars(self):
+        with pytest.raises(TypeError):
+            ChatEntry.default_avatars={"user": "X"}
+
+
 class TestChatFeed:
     @pytest.fixture
     def chat_feed(self):
@@ -541,32 +558,32 @@ class TestChatFeed:
         chat_feed.send("Message 1")
         assert chat_feed.value[0].width == 420
 
-    @pytest.mark.parametrize("user", ["system", "System", " System", " system ", "system-"])
-    def test_user_avatars_default(self, chat_feed, user):
+    @pytest.mark.parametrize("user", ["system", "System",])
+    def test_default_avatars_default(self, chat_feed, user):
         chat_feed.send("Message 1", user=user)
 
         assert chat_feed.value[0].user == user
         assert chat_feed.value[0].avatar == "⚙️"
 
-    def test_user_avatars_superseded_in_dict(self, chat_feed):
+    def test_default_avatars_superseded_in_dict(self, chat_feed):
         chat_feed.send({"user": "System", "avatar": "👨", "value": "Message 1"})
 
         assert chat_feed.value[0].user == "System"
         assert chat_feed.value[0].avatar == "👨"
 
-    def test_user_avatars_superseded_by_keyword(self, chat_feed):
+    def test_default_avatars_superseded_by_keyword(self, chat_feed):
         chat_feed.send({"user": "System", "value": "Message 1"}, avatar="👨")
 
         assert chat_feed.value[0].user == "System"
         assert chat_feed.value[0].avatar == "👨"
 
-    def test_user_avatars_superseded_in_entry(self, chat_feed):
+    def test_default_avatars_superseded_in_entry(self, chat_feed):
         chat_feed.send(ChatEntry(**{"user": "System", "avatar": "👨", "value": "Message 1"}))
 
         assert chat_feed.value[0].user == "System"
         assert chat_feed.value[0].avatar == "👨"
 
-    def test_user_avatars_superseded_by_callback_avatar(self, chat_feed):
+    def test_default_avatars_superseded_by_callback_avatar(self, chat_feed):
         def callback(contents, user, instance):
             yield "Message back"
 
