@@ -263,6 +263,9 @@ class TestChatEntry:
         entry.user="test2"
         assert entry.avatar=="1"
 
+        ChatEntry.default_avatars.pop("test1")
+        ChatEntry.default_avatars.pop("test2")
+
     def test_cannot_replace_default_avatars(self):
         with pytest.raises(TypeError):
             ChatEntry.default_avatars={"user": "X"}
@@ -595,6 +598,13 @@ class TestChatFeed:
         assert len(chat_feed.value) == 2
         assert chat_feed.value[1].user == "System"
         assert chat_feed.value[1].avatar == "👨"
+
+    def test_default_avatars(self, chat_feed):
+        ChatEntry.default_avatars["test1"]="1"
+
+        assert chat_feed.send(value="", user="test1").avatar=="1"
+
+        ChatEntry.default_avatars.pop("test1")
 
 
 class TestChatFeedCallback:
