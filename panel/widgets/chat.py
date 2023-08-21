@@ -371,8 +371,6 @@ class ChatEntry(CompositeWidget):
         if isinstance(params["reaction_icons"], dict):
             params["reaction_icons"] = ChatReactionIcons(
                 options=params["reaction_icons"], width=15, height=15)
-        if params.get("avatar_lookup") is None:
-            params["avatar_lookup"] = self._avatar_lookup
         super().__init__(**params)
         self.reaction_icons.link(self, value="reactions", bidirectional=True)
         self.param.trigger("reactions")
@@ -604,7 +602,10 @@ class ChatEntry(CompositeWidget):
 
         However, if the user is updated, we want to update the avatar.
         """
-        self.avatar = self.avatar_lookup(self.user)
+        if self.avatar_lookup:
+            self.avatar = self.avatar_lookup(self.user)
+        else:
+            self.avatar = self._avatar_lookup(self.user)
 
     def _cleanup(self, root=None) -> None:
         """
