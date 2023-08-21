@@ -760,7 +760,7 @@ class TestChatFeedCallback:
         area_input = chat_feed.value[0]._value_panel
         assert isinstance(area_input, TextAreaInput)
         assert area_input.value == "Hello!"
-        assert area_input.height == 400
+        assert area_input.height == 500
         assert area_input.sizing_mode is None
 
     def test_renderers_custom_callable(self, chat_feed):
