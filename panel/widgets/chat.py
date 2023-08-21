@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import re
 
 from contextlib import ExitStack
 from dataclasses import dataclass
@@ -7,7 +8,7 @@ from inspect import isasyncgen, isawaitable, isgenerator
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from typing import (
-    Any, BinaryIO, ClassVar, List, Optional, Tuple, Type, Union,
+    Any, BinaryIO, ClassVar, Dict, List, Optional, Tuple, Type, Union,
 )
 
 import param
@@ -38,18 +39,21 @@ GPT_3_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_
 GPT_4_LOGO = "https://upload.wikimedia.org/wikipedia/commons/a/a4/GPT-4.png"
 WOLFRAM_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/WolframCorporateLogo.svg/1920px-WolframCorporateLogo.svg.png"
 
-DEFAULT_USER_AVATARS = {
-    "user": "😊", "User": "😊",
-    "assistant": "🤖", "Assistant": "🤖",
-    "system": "⚙️", "System": "⚙️",
-    "chatgpt": GPT_3_LOGO, "ChatGPT": GPT_3_LOGO,
-    "gpt3": GPT_3_LOGO, "GPT3": GPT_3_LOGO,
-    "gpt4": GPT_4_LOGO, "GPT4": GPT_4_LOGO,
-    "calculator": "🧮", "Calculator": "🧮",
-    "langchain": "🦜", "LangChain": "🦜",
-    "translator": "🌐", "Translator": "🌐",
-    "wolfram": WOLFRAM_LOGO, "Wolfram": WOLFRAM_LOGO,
-    "wolfram alpha": WOLFRAM_LOGO, "Wolfram Alpha": WOLFRAM_LOGO,
+Avatar = str | BytesIO
+AvatarDict = Dict[str, Avatar]
+
+DEFAULT_USER_AVATARS: AvatarDict = {
+    "user": "😊",
+    "assistant": "🤖",
+    "system": "⚙️",
+    "chatgpt": GPT_3_LOGO,
+    "gpt3": GPT_3_LOGO,
+    "gpt4": GPT_4_LOGO,
+    "calculator": "🧮",
+    "langchain": "🦜",
+    "translator": "🌐",
+    "wolfram": WOLFRAM_LOGO,
+    "wolfram alpha": WOLFRAM_LOGO,
 }
 
 @dataclass
@@ -236,6 +240,13 @@ class ChatReactionIcons(ReactiveHTML):
             if reaction not in self._reactions:
                 self.value.remove(reaction)
 
+def _to_alpha_numeric(user: str)->str:
+    return re.sub(r"\W+", "", user).lower()
+
+def _avatar_lookup(user: str)->Avatar:
+    clean_user =  _to_alpha_numeric(user)
+    return DEFAULT_USER_AVATARS.get(clean_user, "")
+
 
 class ChatEntry(CompositeWidget):
     """
@@ -305,15 +316,20 @@ class ChatEntry(CompositeWidget):
     user = param.Parameter(default="User", doc="""
         Name of the user who sent the message.""")
 
-    avatar = param.ClassSelector(default="😊", class_=(str, BinaryIO), doc="""
+    avatar: Avatar = param.ClassSelector(default="😊", class_=(str, BinaryIO), doc="""
         The avatar to use for the user. Can be a single character text, an emoji,
         or anything supported by `pn.pane.Image`. If not set, uses the
         first character of the name.""")
 
-    default_avatars = param.Dict(default=DEFAULT_USER_AVATARS, readonly=True, doc="""
+    default_avatars: AvatarDict = param.Dict(default=DEFAULT_USER_AVATARS, readonly=True, doc="""
     A default mapping of user names to their corresponding avatars
     to use when the user is specified but the avatar is. You can modify, but not replace the
     dictionary.""")
+
+    avatar_lookup = param.Callable(_avatar_lookup, doc="""
+    A function that can lookup an `avatar` from a user name. The function signature should be
+    `(user: str)->Avatar`.
+    """)
 
     reactions = param.List(doc="""
         Reactions to associate with the message.""")
@@ -353,8 +369,11 @@ class ChatEntry(CompositeWidget):
         if isinstance(params["reaction_icons"], dict):
             params["reaction_icons"] = ChatReactionIcons(
                 options=params["reaction_icons"], width=15, height=15)
-        if "avatar" not in params and "user" in params and params["user"] in self.default_avatars:
-            params["avatar"]=self.default_avatars[params["user"]]
+        if "avatar" not in params and "user" in params:
+            user = params["user"]
+            avatar = self.avatar_lookup(user)
+            if avatar:
+                params["avatar"]=avatar
         super().__init__(**params)
         self.reaction_icons.link(self, value="reactions", bidirectional=True)
         self.param.trigger("reactions")
@@ -601,8 +620,6 @@ class ChatFeed(CompositeWidget):
         and the component `instance`.
     callback_user : str
         The default user name to use for the entry provided by the callback.
-    callback_avatar : str | BinaryIO
-        The default avatar to use for the entry provided by the callback.
     placeholder : Any
         Placeholder to display while the callback is running.
         If not set, defaults to a LoadingSpinner.
@@ -652,12 +669,6 @@ class ChatFeed(CompositeWidget):
 
     callback_user = param.String(default="Assistant", doc="""
         The default user name to use for the entry provided by the callback.""")
-
-    callback_avatar = param.ClassSelector(class_=(str, BinaryIO), doc="""
-        The default avatar to use for the entry provided by the callback.
-        Takes precedence over `ChatEntry.default_avatars` if set; else, if None,
-        defaults to the avatar set in `ChatEntry.default_avatars` if matching key exists.
-        Otherwise defaults to the first character of the `callback_user`.""")
 
     placeholder = param.Parameter(doc="""
         Placeholder to display while the callback is running.
@@ -850,7 +861,7 @@ class ChatFeed(CompositeWidget):
         the entry's value with the response.
         """
         user = self.callback_user
-        avatar = self.callback_avatar
+        avatar = None
         if isinstance(value, ChatEntry):
             user = value.user
             avatar = value.avatar

@@ -561,7 +561,7 @@ class TestChatFeed:
         chat_feed.send("Message 1")
         assert chat_feed.value[0].width == 420
 
-    @pytest.mark.parametrize("user", ["system", "System",])
+    @pytest.mark.parametrize("user", ["system", "System", " System", " system ", "system-"])
     def test_default_avatars_default(self, chat_feed, user):
         chat_feed.send("Message 1", user=user)
 
@@ -592,12 +592,11 @@ class TestChatFeed:
 
         chat_feed.callback = callback
         chat_feed.callback_user = "System"
-        chat_feed.callback_avatar = "👨"
         chat_feed.send("Message", respond=True)
         time.sleep(0.2)
         assert len(chat_feed.value) == 2
         assert chat_feed.value[1].user == "System"
-        assert chat_feed.value[1].avatar == "👨"
+        assert chat_feed.value[1].avatar == ChatEntry.avatar_lookup("System")
 
     def test_default_avatars(self, chat_feed):
         ChatEntry.default_avatars["test1"]="1"
@@ -613,17 +612,18 @@ class TestChatFeedCallback:
         return ChatFeed()
 
     def test_user_avatar(self, chat_feed):
+        ChatEntry.default_avatars["bob"]="👨"
         def echo(contents, user, instance):
             return f"{user}: {contents}"
 
         chat_feed.callback = echo
         chat_feed.callback_user = "Bob"
-        chat_feed.callback_avatar = "👨"
         chat_feed.send("Message", respond=True)
         time.sleep(0.75)
         assert len(chat_feed.value) == 2
         assert chat_feed.value[1].user == "Bob"
         assert chat_feed.value[1].avatar == "👨"
+        ChatEntry.default_avatars.pop("bob")
 
     def test_return(self, chat_feed):
         def echo(contents, user, instance):
