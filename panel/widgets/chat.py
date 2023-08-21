@@ -49,6 +49,9 @@ DEFAULT_AVATARS: AvatarDict = {
     "chatgpt": GPT_3_LOGO,
     "gpt3": GPT_3_LOGO,
     "gpt4": GPT_4_LOGO,
+    "dalle": GPT_4_LOGO,
+    "openai": GPT_4_LOGO,
+    "huggingface": "🤗",
     "calculator": "🧮",
     "langchain": "🦜",
     "translator": "🌐",
@@ -489,7 +492,7 @@ class ChatEntry(CompositeWidget):
                 obj.sizing_mode = "stretch_width"
 
             if obj.height is None:
-                obj.height = 400
+                obj.height = 500
 
         return obj
 
