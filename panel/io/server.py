@@ -8,6 +8,7 @@ import datetime as dt
 import gc
 import html
 import importlib
+import inspect
 import logging
 import os
 import pathlib
@@ -488,7 +489,6 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
                 resources = Resources.from_bokeh(self.application.resources())
                 auth_cb = config.authorize_callback
                 if auth_cb:
-                    import inspect
                     auth_cb = config.authorize_callback
                     auth_params = inspect.signature(auth_cb).parameters
                     auth_args = (state.user_info,)
