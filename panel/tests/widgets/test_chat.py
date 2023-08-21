@@ -39,7 +39,7 @@ class TestChatReactionIcons:
         assert svg.margin == 0
         svg_text = svg.object
         assert 'alt="favorite"' in svg_text
-        assert 'icon-tabler-heart' in svg_text
+        assert "icon-tabler-heart" in svg_text
 
         assert icons._reactions == ["favorite"]
 
@@ -60,23 +60,24 @@ class TestChatReactionIcons:
 
         svg = icons._svgs[0]
         svg_text = svg.object
-        assert 'icon-tabler-heart-fill' in svg_text
+        assert "icon-tabler-heart-fill" in svg_text
 
     def test_active_icons(self):
         icons = ChatReactionIcons(
             options={"dislike": "thumb-up"},
             active_icons={"dislike": "thumb-down"},
-            value=["dislike"])
+            value=["dislike"],
+        )
         assert icons.options == {"dislike": "thumb-up"}
 
         svg = icons._svgs[0]
         svg_text = svg.object
-        assert 'icon-tabler-thumb-down' in svg_text
+        assert "icon-tabler-thumb-down" in svg_text
 
         icons.value = []
         svg = icons._svgs[0]
         svg_text = svg.object
-        assert 'icon-tabler-thumb-up' in svg_text
+        assert "icon-tabler-thumb-up" in svg_text
 
     def test_width_height(self):
         icons = ChatReactionIcons(width=50, height=50)
@@ -253,23 +254,25 @@ class TestChatEntry:
 
     def test_default_avatars(self):
         assert isinstance(ChatEntry.default_avatars, dict)
-        assert ChatEntry(user="Assistant").avatar==ChatEntry(user="assistant").avatar=="🤖"
-        assert ChatEntry(value="Hello", user="NoDefaultUserAvatar").avatar==ChatEntry.param.avatar.default
-        ChatEntry.default_avatars["test1"]="1"
-        ChatEntry.default_avatars["test2"]="2"
+        assert ChatEntry(user="Assistant").avatar == ChatEntry(user="assistant").avatar
+        assert ChatEntry(value="Hello", user="NoDefaultUserAvatar").avatar == ""
+
+    def test_default_avatars_depends_on_user(self):
+        ChatEntry.default_avatars["test1"] = "1"
+        ChatEntry.default_avatars["test2"] = "2"
 
         entry = ChatEntry(value="Hello", user="test1")
-        assert entry.avatar=="1"
-        entry.user="test2"
-        assert entry.avatar=="1"
+        assert entry.avatar == "1"
 
-        ChatEntry.default_avatars.pop("test1")
-        ChatEntry.default_avatars.pop("test2")
+        entry.user = "test2"
+        assert entry.avatar == "2"
 
-    def test_cannot_replace_default_avatars(self):
-        with pytest.raises(TypeError):
-            ChatEntry.default_avatars={"user": "X"}
+    def test_default_avatars_can_be_updated_but_the_original_stays(self):
+        assert ChatEntry(user="Assistant").avatar == "🤖"
+        ChatEntry.default_avatars["assistant"] = "👨"
+        assert ChatEntry(user="Assistant").avatar == "👨"
 
+        assert ChatEntry(user="System").avatar == "⚙️"
 
 class TestChatFeed:
     @pytest.fixture
@@ -352,6 +355,17 @@ class TestChatFeed:
 
     def test_send_entry_with_user_avatar_override(self, chat_feed):
         user = "August"
+        avatar = "👩"
+        entry = ChatEntry(value="Message", user="Bob", avatar="👨")
+        chat_feed.send(entry, user=user, avatar=avatar)
+        assert len(chat_feed.value) == 1
+        assert chat_feed.value[0] is entry
+        assert chat_feed.value[0].value == "Message"
+        assert chat_feed.value[0].user == user
+        assert chat_feed.value[0].avatar == avatar
+
+    def test_send_entry_with_user_avatar_override_not_using_default(self, chat_feed):
+        user = "System"
         avatar = "👩"
         entry = ChatEntry(value="Message", user="Bob", avatar="👨")
         chat_feed.send(entry, user=user, avatar=avatar)
@@ -561,7 +575,9 @@ class TestChatFeed:
         chat_feed.send("Message 1")
         assert chat_feed.value[0].width == 420
 
-    @pytest.mark.parametrize("user", ["system", "System", " System", " system ", "system-"])
+    @pytest.mark.parametrize(
+        "user", ["system", "System", " System", " system ", "system-"]
+    )
     def test_default_avatars_default(self, chat_feed, user):
         chat_feed.send("Message 1", user=user)
 
@@ -581,7 +597,9 @@ class TestChatFeed:
         assert chat_feed.value[0].avatar == "👨"
 
     def test_default_avatars_superseded_in_entry(self, chat_feed):
-        chat_feed.send(ChatEntry(**{"user": "System", "avatar": "👨", "value": "Message 1"}))
+        chat_feed.send(
+            ChatEntry(**{"user": "System", "avatar": "👨", "value": "Message 1"})
+        )
 
         assert chat_feed.value[0].user == "System"
         assert chat_feed.value[0].avatar == "👨"
@@ -596,14 +614,14 @@ class TestChatFeed:
         time.sleep(0.2)
         assert len(chat_feed.value) == 2
         assert chat_feed.value[1].user == "System"
-        assert chat_feed.value[1].avatar == ChatEntry.avatar_lookup("System")
+        assert chat_feed.value[1].avatar == ChatEntry()._avatar_lookup("System")
 
-    def test_default_avatars(self, chat_feed):
-        ChatEntry.default_avatars["test1"]="1"
+    def test_default_avatars_entry_params(self, chat_feed):
+        chat_feed.entry_params["default_avatars"] = {"test1": "1"}
+        assert chat_feed.send(value="", user="test1").avatar == "1"
 
-        assert chat_feed.send(value="", user="test1").avatar=="1"
-
-        ChatEntry.default_avatars.pop("test1")
+        # has default
+        assert chat_feed.send(value="", user="system").avatar == "⚙️"
 
 
 class TestChatFeedCallback:
@@ -612,7 +630,8 @@ class TestChatFeedCallback:
         return ChatFeed()
 
     def test_user_avatar(self, chat_feed):
-        ChatEntry.default_avatars["bob"]="👨"
+        ChatEntry.default_avatars["bob"] = "👨"
+
         def echo(contents, user, instance):
             return f"{user}: {contents}"
 
@@ -750,10 +769,8 @@ class TestChatFeedCallback:
 
     def test_renderers_custom_callable(self, chat_feed):
         def renderer(value):
-            return Column(
-                value,
-                LinearGauge(value=int(value), width=100)
-            )
+            return Column(value, LinearGauge(value=int(value), width=100))
+
         chat_feed.renderers = [renderer]
         chat_feed.send(1)
         column = chat_feed.value[0]._value_panel
@@ -766,6 +783,7 @@ class TestChatFeedCallback:
         assert gauge.value == 1
         assert gauge.width == 100
         assert gauge.sizing_mode == "fixed"
+
 
 class TestChatInterfaceWidgetsSizingMode:
     def test_none(self):
