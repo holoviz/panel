@@ -785,7 +785,7 @@ class LogoutHandler(tornado.web.RequestHandler):
         self.clear_cookie("id_token")
         self.clear_cookie("access_token")
         self.clear_cookie(STATE_COOKIE_NAME)
-        self.redirect("/")
+        self.redirect(self.request.uri.replace('/logout', ''))
 
 
 class OAuthProvider(AuthProvider):
@@ -820,7 +820,7 @@ class OAuthProvider(AuthProvider):
 
     @property
     def logout_url(self):
-        return "/logout"
+        return '/logout'
 
     @property
     def logout_handler(self):
@@ -839,7 +839,8 @@ class BasicLoginHandler(RequestHandler):
         if next_url:
             self.set_cookie("next_url", next_url)
         html = self._basic_login_template.render(
-            errormessage=errormessage, PANEL_CDN=CDN_DIST
+            errormessage=errormessage,
+            PANEL_CDN=CDN_DIST
         )
         self.write(html)
 
@@ -869,7 +870,7 @@ class BasicLoginHandler(RequestHandler):
             self.redirect(next_url)
         else:
             error_msg = "?error=" + tornado.escape.url_escape("Login incorrect")
-            self.redirect('/login' + error_msg)
+            self.redirect(self.request.uri + error_msg)
 
     def set_current_user(self, user):
         if not user:
