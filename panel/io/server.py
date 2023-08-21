@@ -438,8 +438,26 @@ class SessionPrefixHandler:
                 state.base_url = old_url
                 state.rel_path = old_rel
 
+class LoginUrlMixin:
+    """
+    Overrides the AuthRequestHandler.get_login_url implementation to
+    correctly handle prefixes.
+    """
+
+    def get_login_url(self):
+        ''' Delegates to``get_login_url`` method of the auth provider, or the
+        ``login_url`` attribute.
+
+        '''
+        if self.application.auth_provider.get_login_url is not None:
+            return '.' + self.application.auth_provider.get_login_url(self)
+        if self.application.auth_provider.login_url is not None:
+            return '.' + self.application.auth_provider.login_url
+        raise RuntimeError('login_url or get_login_url() must be supplied when authentication hooks are enabled')
+
+
 # Patch Bokeh DocHandler URL
-class DocHandler(BkDocHandler, SessionPrefixHandler):
+class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
 
     @authenticated
     async def get_session(self):
@@ -546,23 +564,11 @@ class AutoloadJsHandler(BkAutoloadJsHandler, SessionPrefixHandler):
 
 per_app_patterns[3] = (r'/autoload.js', AutoloadJsHandler)
 
-class RootHandler(BkRootHandler):
+class RootHandler(LoginUrlMixin, BkRootHandler):
     """
     Custom RootHandler that provides the CDN_DIST directory as a
     template variable.
     """
-
-    def get_login_url(self):
-        ''' Delegates to``get_login_url`` method of the auth provider, or the
-        ``login_url`` attribute.
-
-        '''
-        prefix = "" if self.prefix is None else self.prefix
-        if self.application.auth_provider.get_login_url is not None:
-            return prefix + self.application.auth_provider.get_login_url(self)
-        if self.application.auth_provider.login_url is not None:
-            return prefix + self.application.auth_provider.login_url
-        raise RuntimeError('login_url or get_login_url() must be supplied when authentication hooks are enabled')
 
     def render(self, *args, **kwargs):
         kwargs['PANEL_CDN'] = CDN_DIST
