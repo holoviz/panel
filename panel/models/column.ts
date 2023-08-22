@@ -47,28 +47,14 @@ export class ColumnView extends BkColumnView {
 
   render(): void {
     super.render()
-    this.empty()
-    this._update_stylesheets()
-    this._update_css_classes()
-    this._apply_styles()
-    this._apply_visible()
-
-    this.class_list.add(...this.css_classes())
     this.scroll_down_button_el = DOM.createElement('div', { class: 'scroll-button' });
     this.shadow_el.appendChild(this.scroll_down_button_el);
-
     this.el.addEventListener("scroll", () => {
       this.toggle_scroll_button();
     });
     this.scroll_down_button_el.addEventListener("click", () => {
       this.scroll_to_latest();
     });
-
-    for (const child_view of this.child_views) {
-      this.shadow_el.appendChild(child_view.el)
-      child_view.render()
-      child_view.after_render()
-    }
   }
 
   after_render(): void {

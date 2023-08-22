@@ -416,6 +416,8 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   render(): void {
+    if (this.tabulator != null)
+      this.tabulator.destroy()
     super.render()
     this._initializing = true
     const container = div({style: "display: contents;"})
@@ -599,12 +601,11 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   get child_models(): LayoutDOM[] {
-    const children = []
-    if (this.model.children == null)
-      return children
+    const children: LayoutDOM[] = []
     for (const idx of this.model.expanded) {
-      if (this.model.children.has(idx))
-        children.push(this.model.children.get(idx))
+      const child = this.model.children.get?.(idx)
+      if (child != null)
+	children.push(child)
     }
     return children
   }
@@ -627,10 +628,10 @@ export class DataTabulatorView extends HTMLBoxView {
 
   _render_row(row: any, resize: boolean = true): void {
     const index = row._row?.data._index
-    if (!this.model.expanded.includes(index) || !this.model.children.has(index))
+    if (!this.model.expanded.includes(index) || this.model.children.get(index) == null)
       return
     const model = this.model.children.get(index)
-    const view = this._child_views.get(model)
+    const view = model == null ? null : this._child_views.get(model)
     if (view == null)
       return
     const rowEl = row.getElement()
@@ -640,8 +641,10 @@ export class DataTabulatorView extends HTMLBoxView {
     const viewEl = div({style: "background-color: " + bg +"; margin-left:" + neg_margin + "; max-width: 100%; overflow-x: hidden;"})
     viewEl.appendChild(view.el)
     rowEl.appendChild(viewEl)
-    view.render()
-    view.after_render()
+    if (!view.has_finished()) {
+      view.render()
+      view.after_render()
+    }
     if (resize) {
       this._update_children()
       this.tabulator.rowManager.adjustTableSize()
@@ -663,8 +666,8 @@ export class DataTabulatorView extends HTMLBoxView {
       expanded.push(index)
     else {
       const removed = expanded.splice(exp_index, 1)[0]
-      if (removed in this.model.children) {
-        const model = this.model.children[removed]
+      const model = this.model.children.get?.(removed)
+      if (model != null) {
         const view = this._child_views.get(model)
         if (view !== undefined && view.el != null)
           undisplay(view.el)
@@ -675,7 +678,7 @@ export class DataTabulatorView extends HTMLBoxView {
       return
     let ready = true
     for (const idx of this.model.expanded) {
-      if (!(idx in this.model.children)) {
+      if (this.model.children.get?.(idx) == null) {
         ready = false
         break
       }
@@ -874,6 +877,8 @@ export class DataTabulatorView extends HTMLBoxView {
   // Update table
 
   setData(): void {
+    if (this._initializing || this._building || !this.tabulator.initialized)
+      return
     const data = this.getData()
     if (this.model.pagination != null)
       this.tabulator.rowManager.setData(data, true, false)
@@ -1000,7 +1005,7 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   setSelection(): void {
-    if (this.tabulator == null || this._initializing || this._selection_updating)
+    if (this.tabulator == null || this._initializing || this._selection_updating || !this.tabulator.initialized)
       return
 
     const indices = this.model.source.selected.indices;
@@ -1118,7 +1123,7 @@ export namespace DataTabulator {
   export type Props = HTMLBox.Props & {
     aggregators: p.Property<any>
     buttons: p.Property<any>
-    children: p.Property<any>
+    children: p.Property<Map<number, LayoutDOM>>
     columns: p.Property<TableColumn[]>
     configuration: p.Property<any>
     download: p.Property<boolean>
@@ -1163,7 +1168,7 @@ export class DataTabulator extends HTMLBox {
     this.define<DataTabulator.Props>(({Any, Array, Boolean, Nullable, Number, Ref, String}) => ({
       aggregators:    [ Any,                     {} ],
       buttons:        [ Any,                     {} ],
-      children:       [ Any,                     {} ],
+      children:       [ Any,              new Map() ],
       configuration:  [ Any,                     {} ],
       columns:        [ Array(Ref(TableColumn)), [] ],
       download:       [ Boolean,              false ],
