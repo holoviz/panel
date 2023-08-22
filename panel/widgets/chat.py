@@ -44,6 +44,7 @@ WOLFRAM_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Wolfra
 
 DEFAULT_AVATARS: AvatarDict = {
     "user": "😊",
+    "bot": "🤖",
     "assistant": "🤖",
     "system": "⚙️",
     "chatgpt": GPT_3_LOGO,
@@ -475,6 +476,7 @@ class ChatEntry(CompositeWidget):
         Set the sizing mode and height of the object.
         """
         if hasattr(obj, "objects"):
+            obj._stylesheets = self._stylesheets
             for obj in obj.objects:
                 self._set_default_attrs(obj)
             return
@@ -804,7 +806,7 @@ class ChatFeed(CompositeWidget):
 
         self.link(self._chat_log, value="objects", bidirectional=True)
 
-    @param.depends("placeholder", watch=True, on_init=True)
+    @param.depends("placeholder", "placeholder_text", watch=True, on_init=True)
     def _update_placeholder(self):
         plain_entry = dict(
             show_avatar=False,
