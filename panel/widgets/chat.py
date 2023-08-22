@@ -337,7 +337,7 @@ class ChatEntry(CompositeWidget):
         f"{CDN_DIST}css/chat_entry.css"
     ]
 
-    _exit_stack: ExitStack | None = None
+    _exit_stack: ClassVar[ExitStack | None] = None
 
     def __init__(self, **params):
         from ..param import ParamMethod  # circular imports
