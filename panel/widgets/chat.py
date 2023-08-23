@@ -41,22 +41,29 @@ from .button import Button
 from .indicators import LoadingSpinner
 from .input import FileInput, TextInput
 
+Avatar = Union[str, BytesIO]
+AvatarDict = Dict[str, Avatar]
+
 GPT_3_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_logo.svg/1024px-ChatGPT_logo.svg.png?20230318122128"
 GPT_4_LOGO = "https://upload.wikimedia.org/wikipedia/commons/a/a4/GPT-4.png"
 WOLFRAM_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/WolframCorporateLogo.svg/1920px-WolframCorporateLogo.svg.png"
 
-DEFAULT_USER_AVATARS = {
+DEFAULT_AVATARS: AvatarDict = {
     "user": "😊",
+    "bot": "🤖",
     "assistant": "🤖",
     "system": "⚙️",
     "chatgpt": GPT_3_LOGO,
     "gpt3": GPT_3_LOGO,
     "gpt4": GPT_4_LOGO,
+    "dalle": GPT_4_LOGO,
+    "openai": GPT_4_LOGO,
+    "huggingface": "🤗",
     "calculator": "🧮",
     "langchain": "🦜",
     "translator": "🌐",
     "wolfram": WOLFRAM_LOGO,
-    "wolframalpha": WOLFRAM_LOGO,
+    "wolfram alpha": WOLFRAM_LOGO,
 }
 
 @dataclass
@@ -275,8 +282,18 @@ class ChatEntry(CompositeWidget):
         Name of the user who sent the message.
     avatar : str | BinaryIO
         The avatar to use for the user. Can be a single character text, an emoji,
-        or anything supported by `pn.pane.Image`. If not set, uses the
+        or anything supported by `pn.pane.Image`. If not set, checks if
+        the user is available in the default_avatars mapping; else uses the
         first character of the name.
+    default_avatars : dict
+        A default mapping of user names to their corresponding avatars
+        to use when the user is specified but the avatar is. You can modify, but not replace the
+        dictionary. Note, the keys are *only* alphanumeric sensitive, meaning spaces, special characters,
+        and case sensitivity is disregarded, e.g. `"Chat-GPT3.5"`, `"chatgpt 3.5"` and `"Chat GPT 3.5"`
+        all map to the same value.
+    avatar_lookup : Callable
+        A function that can lookup an `avatar` from a user name. The function signature should be
+        `(user: str) -> Avatar`. If this is set, `default_avatars` is disregarded.
     reactions : List
         Reactions to associate with the message.
     reaction_icons : ChatReactionIcons | dict
@@ -308,10 +325,20 @@ class ChatEntry(CompositeWidget):
     user = param.Parameter(default="User", doc="""
         Name of the user who sent the message.""")
 
-    avatar = param.ClassSelector(default="😊", class_=(str, BinaryIO), doc="""
+    avatar = param.ClassSelector(default="", class_=(str, BinaryIO), doc="""
         The avatar to use for the user. Can be a single character text, an emoji,
-        or anything supported by `pn.pane.Image`. If not set, uses the
+        or anything supported by `pn.pane.Image`. If not set, checks if
+        the user is available in the default_avatars mapping; else uses the
         first character of the name.""")
+
+    default_avatars = param.Dict(default=DEFAULT_AVATARS, doc="""
+        A default mapping of user names to their corresponding avatars
+        to use when the user is specified but the avatar is. You can modify, but not replace the
+        dictionary.""")
+
+    avatar_lookup = param.Callable(default=None, doc="""
+        A function that can lookup an `avatar` from a user name. The function signature should be
+        `(user: str) -> Avatar`. If this is set, `default_avatars` is disregarded.""")
 
     reactions = param.List(doc="""
         Reactions to associate with the message.""")
@@ -354,6 +381,8 @@ class ChatEntry(CompositeWidget):
         super().__init__(**params)
         self.reaction_icons.link(self, value="reactions", bidirectional=True)
         self.param.trigger("reactions")
+        if not self.avatar:
+            self._update_avatar()
 
         render_kwargs = {
             "inplace": True, "stylesheets": self._stylesheets
@@ -380,6 +409,31 @@ class ChatEntry(CompositeWidget):
         )
         self._composite._stylesheets = self._stylesheets
         self._composite[:] = [left_col, right_col]
+
+    @staticmethod
+    def _to_alpha_numeric(user: str) -> str:
+        """
+        Convert the user name to an alpha numeric string,
+        removing all non-alphanumeric characters.
+        """
+        return re.sub(r"\W+", "", user).lower()
+
+    def _avatar_lookup(self, user: str) -> Avatar:
+        """
+        Lookup the avatar for the user.
+        """
+        alpha_numeric_key =  self._to_alpha_numeric(user)
+        # always use the default first
+        updated_avatars = DEFAULT_AVATARS.copy()
+        # update with the user input
+        updated_avatars.update(self.default_avatars)
+        # correct the keys to be alpha numeric
+        updated_avatars = {
+            self._to_alpha_numeric(key): value
+            for key, value in updated_avatars.items()
+        }
+        # now lookup the avatar
+        return updated_avatars.get(alpha_numeric_key, self.avatar)
 
     def _select_renderer(
             self,
@@ -428,6 +482,7 @@ class ChatEntry(CompositeWidget):
         Set the sizing mode and height of the object.
         """
         if hasattr(obj, "objects"):
+            obj._stylesheets = self._stylesheets
             for subobj in obj.objects:
                 self._set_default_attrs(subobj)
             return None
@@ -443,7 +498,7 @@ class ChatEntry(CompositeWidget):
                 obj.sizing_mode = "stretch_width"
 
             if obj.height is None:
-                obj.height = 400
+                obj.height = 500
 
         return obj
 
@@ -494,7 +549,7 @@ class ChatEntry(CompositeWidget):
         return value_panel
 
     @param.depends("avatar", "show_avatar")
-    def _render_avatar(self) -> HTML:
+    def _render_avatar(self) -> HTML | Image:
         """
         Render the avatar pane as some HTML text or Image pane.
         """
@@ -523,7 +578,7 @@ class ChatEntry(CompositeWidget):
         return HTML(self.user, css_classes=["name"], visible=self.show_user)
 
     @param.depends("value")
-    def _render_value(self):
+    def _render_value(self) -> Viewable:
         """
         Renders value as a panel object.
         """
@@ -544,6 +599,21 @@ class ChatEntry(CompositeWidget):
             css_classes=["timestamp"],
             visible=self.show_timestamp,
         )
+
+    @param.depends("avatar_lookup", "user", watch=True)
+    def _update_avatar(self):
+        """
+        Update the avatar based on the user name.
+
+        We do not use on_init here because if avatar is set,
+        we don't want to override the provided avatar.
+
+        However, if the user is updated, we want to update the avatar.
+        """
+        if self.avatar_lookup:
+            self.avatar = self.avatar_lookup(self.user)
+        else:
+            self.avatar = self._avatar_lookup(self.user)
 
     def _cleanup(self, root=None) -> None:
         """
@@ -597,8 +667,6 @@ class ChatFeed(CompositeWidget):
         and the component `instance`.
     callback_user : str
         The default user name to use for the entry provided by the callback.
-    callback_avatar : str | BinaryIO
-        The default avatar to use for the entry provided by the callback.
     placeholder : Any
         Placeholder to display while the callback is running.
         If not set, defaults to a LoadingSpinner.
@@ -623,8 +691,8 @@ class ChatFeed(CompositeWidget):
         Params to pass to Card, like `header`,
         `header_background`, `header_color`, etc.
     entry_params : Dict
-        Params to pass to each ChatEntry, like `reaction_icons`, `timestamp_format`,
-        `show_avatar`, `show_user`, and `show_timestamp`.
+        Params to pass to each ChatEntry, like `reaction_icons`, `default_avatars`,
+        `timestamp_format`, `show_avatar`, `show_user`, and `show_timestamp`.
     """
     value = param.List(item_type=ChatEntry, doc="""
         The list of entries in the feed.""")
@@ -649,12 +717,6 @@ class ChatFeed(CompositeWidget):
     callback_user = param.String(default="Assistant", doc="""
         The default user name to use for the entry provided by the callback.""")
 
-    callback_avatar = param.ClassSelector(class_=(str, BinaryIO), doc="""
-        The default avatar to use for the entry provided by the callback.
-        Takes precedence over `user_avatars` if set; else, if None,
-        defaults to the avatar set in `user_avatars` if matching key exists.
-        Otherwise defaults to the first character of the `callback_user`.""")
-
     placeholder = param.Parameter(doc="""
         Placeholder to display while the callback is running.
         If not set, defaults to a LoadingSpinner.""")
@@ -666,10 +728,6 @@ class ChatFeed(CompositeWidget):
     placeholder_threshold = param.Number(default=0.2, bounds=(0, None), doc="""
         Min duration in seconds of buffering before displaying the placeholder.
         If 0, the placeholder will be disabled.""")
-
-    user_avatars = param.Dict(default=DEFAULT_USER_AVATARS, doc="""
-        A default mapping of user names to their corresponding avatars
-        to use when the avatar is not set.""")
 
     auto_scroll_limit = param.Integer(default=200, bounds=(0, None), doc="""
         Max pixel distance from the latest object in the Column to
@@ -754,7 +812,7 @@ class ChatFeed(CompositeWidget):
 
         self.link(self._chat_log, value="objects", bidirectional=True)
 
-    @param.depends("placeholder", watch=True, on_init=True)
+    @param.depends("placeholder", "placeholder_text", watch=True, on_init=True)
     def _update_placeholder(self):
         plain_entry = {
             "show_avatar": False,
@@ -819,33 +877,30 @@ class ChatFeed(CompositeWidget):
         if not isinstance(value, (ChatEntry, dict)):
             value = {"value": value}
 
-        new_params: Dict[str, str | BytesIO | None] = {}
-        if user is not None:
-            new_params["user"] = user
-        if avatar is not None:
-            new_params["avatar"] = avatar
-
         if isinstance(value, dict):
             if "value" not in value:
                 raise ValueError(
                     f"If 'value' is a dict, it must contain a 'value' key, "
                     f"e.g. {{'value': 'Hello World'}}; got {value!r}"
                 )
-            value.update(**new_params)
+            if user:
+                value.update(user=user)
+            if avatar:
+                value.update(avatar=avatar)
             if self.width:
                 entry_params = {"width": int(self.width - 80), **self.entry_params}
             else:
                 entry_params = self.entry_params
             entry_params.update(renderers=self.renderers)
             input_params = {**value, **entry_params}
-            if not input_params.get("avatar"):
-                user_alpha_numeric = re.sub(r"\W+", "", input_params.get("user", "")).lower()
-                default_avatar = self.user_avatars.get(user_alpha_numeric)
-                if default_avatar:
-                    input_params["avatar"] = default_avatar
             entry = ChatEntry(**input_params)
         else:
-            value.param.update(**new_params)
+            # must update one at a time so avatar is not overwritten
+            # by the default avatar
+            if user:
+                value.user = user
+            if avatar:
+                value.avatar = avatar
             entry = value
         return entry
 
@@ -855,7 +910,7 @@ class ChatFeed(CompositeWidget):
         the entry's value with the response.
         """
         user = self.callback_user
-        avatar = self.callback_avatar
+        avatar = None
         if isinstance(value, ChatEntry):
             user = value.user
             avatar = value.avatar
