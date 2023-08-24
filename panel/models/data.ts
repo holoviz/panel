@@ -1,10 +1,11 @@
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source";
 
+
 export function transform_cds_to_records(cds: ColumnDataSource, addId: boolean = false, start: number = 0): any {
   const data: any = []
   const columns = cds.columns()
   const cdsLength = cds.get_length()
-  if (columns.length === 0||cdsLength === null)
+  if (columns.length === 0 || cdsLength === null)
     return []
 
   for (let i = start; i < cdsLength; i++) {
@@ -14,7 +15,10 @@ export function transform_cds_to_records(cds: ColumnDataSource, addId: boolean =
       const shape = (array[0] == null || array[0].shape == null) ? null : array[0].shape;
       if ((shape != null) && (shape.length > 1) && (typeof shape[0] == "number"))
         item[column] = array.slice(i*shape[1], i*shape[1]+shape[1])
-      else
+      else if (array.length != cdsLength && (array.length % cdsLength === 0)) {
+        const offset = array.length / cdsLength
+	item[column] = array.slice(i*offset, i*offset+offset)
+      } else
         item[column] = array[i]
     }
     if (addId)
