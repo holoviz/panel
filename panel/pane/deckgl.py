@@ -209,7 +209,7 @@ class DeckGL(ModelPane):
             tooltip = self.tooltips
         else:
             data = dict(self.object.__dict__)
-            mapbox_api_key = data.pop('mapbox_key', self.mapbox_api_key)
+            mapbox_api_key = data.pop('mapbox_key', "") or self.mapbox_api_key
             deck_widget = data.pop('deck_widget', None)
             if isinstance(self.tooltips, dict) or deck_widget is None:
                 tooltip = self.tooltips

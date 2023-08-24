@@ -159,3 +159,11 @@ def test_deckgl_insert_layer(document, comm):
     assert cds1.data['b'] is b_vals
     assert np.array_equal(cds2.data['b'], np.array([3, 9]))
     assert np.array_equal(cds2.data['c'], np.array([1, 3]))
+
+@pydeck_available
+def test_pydeck_mapbox_api_key_issue_5790(document, comm):
+    deck_wo_key = pydeck.Deck()
+    pane_w_key = DeckGL(deck_wo_key, mapbox_api_key="ABC")
+
+    model = pane_w_key.get_root(document, comm=comm)
+    assert model.mapbox_api_key == "ABC"
