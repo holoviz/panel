@@ -903,7 +903,7 @@ class TestChatInterface:
         assert chat_interface.active == 1
         assert isinstance(chat_interface.active_widget, TextInput)
 
-    def test_click_send(self, chat_interface):
+    def test_click_send(self, chat_interface: ChatInterface):
         chat_interface.widgets = [TextAreaInput()]
         chat_interface.active_widget.value = "Message"
         assert len(chat_interface.value) == 1

@@ -55,7 +55,7 @@ class GridBox(ListPanel):
 
     _bokeh_model: ClassVar[Model] = BkGridBox
 
-    _linked_properties: ClassVar[Tuple[str]] = ()
+    _linked_properties: ClassVar[Tuple[str,...]] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'objects': 'children'
