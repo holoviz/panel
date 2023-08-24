@@ -343,7 +343,8 @@ class Perspective(ModelPane, ReactiveData):
         click_handler = params.pop('on_click', None)
         self._on_click_callbacks = []
         super().__init__(object, **params)
-        self.on_click(click_handler)
+        if click_handler:
+            self.on_click(click_handler)
 
     def _get_data(self):
         if self.object is None:
