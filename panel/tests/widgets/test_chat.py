@@ -252,6 +252,12 @@ class TestChatEntry:
         entry.reactions = ["favorite"]
         assert entry.value == "favorite"
 
+    def test_show_reaction_icons(self):
+        entry = ChatEntry()
+        assert entry.reaction_icons.visible
+        entry.show_reaction_icons = False
+        assert not entry.reaction_icons.visible
+
     def test_default_avatars(self):
         assert isinstance(ChatEntry.default_avatars, dict)
         assert ChatEntry(user="Assistant").avatar == ChatEntry(user="assistant").avatar

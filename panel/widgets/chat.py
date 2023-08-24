@@ -309,6 +309,8 @@ class ChatEntry(CompositeWidget):
         Whether to display the name of the user.
     show_timestamp : bool
         Whether to display the timestamp of the message.
+    show_reaction_icons: bool
+        Whether to display the reaction icons.
     """
     _ignored_refs: ClassVar[Tuple[str,...]] = ('value',)
 
@@ -358,6 +360,11 @@ class ChatEntry(CompositeWidget):
 
     show_timestamp = param.Boolean(default=True, doc="Whether to display the timestamp of the message.")
 
+    show_reaction_icons = param.Boolean(default=True, doc="Whether to display the reaction icons.")
+
+    css_classes = param.List(default=["chat-entry"], doc="""
+        The CSS classes to apply to the widget.""")
+
     _value_panel = param.Parameter(doc="The rendered value panel.")
 
     _stylesheets: ClassVar[List[str]] = [
@@ -380,7 +387,8 @@ class ChatEntry(CompositeWidget):
                 options=params["reaction_icons"], width=15, height=15)
         super().__init__(**params)
         self.reaction_icons.link(self, value="reactions", bidirectional=True)
-        self.param.trigger("reactions")
+        self.reaction_icons.link(self, visible="show_reaction_icons", bidirectional=True)
+        self.param.trigger("reactions", "show_reaction_icons")
         if not self.avatar:
             self._update_avatar()
 
@@ -393,6 +401,7 @@ class ChatEntry(CompositeWidget):
             height=100,
             css_classes=["left"],
             stylesheets=self._stylesheets,
+            visible=self.param.show_avatar,
         )
         center_row = Row(
             ParamMethod(self._render_value, **render_kwargs),
@@ -408,6 +417,7 @@ class ChatEntry(CompositeWidget):
             stylesheets=self._stylesheets,
         )
         self._composite._stylesheets = self._stylesheets
+        self._composite.css_classes = self.css_classes
         self._composite[:] = [left_col, right_col]
 
     @staticmethod

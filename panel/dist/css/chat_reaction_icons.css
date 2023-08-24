@@ -1,13 +1,8 @@
 .reaction-icons {
   display: flex;
   flex-direction: column;
-  align-items: end;
+  align-items: start;
   justify-content: end;
   width: fit-content;
-  margin-left: 0px;
-  margin-top: 5px;
-}
-
-:host(.reaction-icons.dark) {
-  filter: invert(1);
+  margin-inline: 5px;
 }

@@ -179,6 +179,7 @@ img.app-logo {
 }
 
 .mdc-drawer__content {
+  display: flex;
   overflow-x: hidden;
 }
 
