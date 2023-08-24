@@ -127,7 +127,7 @@ export class PerspectiveView extends HTMLBoxView {
     this.perspective_element.resetThemes([...Object.values(THEMES)]).catch(() => {});
     if (this.model.toggle_config)
       this.perspective_element.toggleConfig()
-    set_size(this.perspective_element, this.model)
+    set_size(container, this.model)
     this.shadow_el.appendChild(container)
 
     this.worker.table(this.model.schema).then((table: any) => {
