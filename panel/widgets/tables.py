@@ -1388,15 +1388,32 @@ class Tabulator(BaseTable):
             models[i] = model
         return models
 
+    def _indexes_changed(self, old, new):
+        """
+        Comparator that checks whether DataFrame indexes have changed.
+
+        If indexes and length are unchanged we assume we do not
+        have to reset various settings including expanded rows,
+        scroll position, pagination etc.
+        """
+        if type(old) != type(new) or isinstance(new, dict):
+            return True
+        elif len(old) != len(new):
+            return False
+        return (old.index == new.index).all()
+
     def _update_children(self, *events):
         cleanup, reuse = set(), set()
-        page_events = ('page', 'page_size', 'value', 'pagination')
+        page_events = ('page', 'page_size', 'pagination')
         for event in events:
             if event.name == 'expanded' and len(events) == 1:
                 cleanup = set(event.old) - set(event.new)
                 reuse = set(event.old) & set(event.new)
-            elif ((event.name in page_events and not self._updating) or
-                  (self.pagination == 'remote' and event.name == 'sorters')):
+            elif (
+              (event.name == 'value' and self._indexes_changed(event.old, event.new)) or
+              (event.name in page_events and not self._updating) or
+              (self.pagination == 'remote' and event.name == 'sorters')
+            ):
                 self.expanded = []
                 return
         old_panels = self._child_panels
