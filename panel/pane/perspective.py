@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
-    from ..models.perspective import RowClickEvent
+    from ..model.perspective import PerspectiveClickEvent
 
 DEFAULT_THEME = "material"
 
@@ -319,8 +319,6 @@ class Perspective(ModelPane, ReactiveData):
 
     _data_params: ClassVar[List[str]] = ['object']
 
-    _on_click_callbacks: List[Callable[[RowClickEvent], None]] = []
-
     _rename: ClassVar[Mapping[str, str | None]] = {
         'selection': None
     }
@@ -340,6 +338,12 @@ class Perspective(ModelPane, ReactiveData):
             if isinstance(object, pd.DataFrame):
                 return 0
         return False
+
+    def __init__(self, object=None, **params):
+        click_handler = params.pop('on_click', None)
+        self._on_click_callbacks = []
+        super().__init__(object, **params)
+        self.on_click(click_handler)
 
     def _get_data(self):
         if self.object is None:
@@ -467,22 +471,23 @@ class Perspective(ModelPane, ReactiveData):
             'panel.models.perspective', 'Perspective', isinstance(comm, JupyterComm), root
         )
         model = super()._get_model(doc, root, parent, comm)
-        self._register_events('row-click', model=model, doc=doc, comm=comm)
+        self._register_events('perspective-click', model=model, doc=doc, comm=comm)
         return model
 
     def _update(self, ref: str, model: Model) -> None:
         model.update(**self._get_properties(model.document, source=model.source))
 
     def _process_event(self, event):
-        if event.event_name == 'row-click':
+        if event.event_name == 'perspective-click':
             for cb in self._on_click_callbacks:
                 state.execute(partial(cb, event), schedule=False)
 
-    def on_click(self, callback: Callable[[RowClickEvent], None]):
+    def on_click(self, callback: Callable[[PerspectiveClickEvent], None]):
         """
         Register a callback to be executed when any row is clicked.
-        The callback is given a RowClickEvent declaring the config,
-        column names, and row values of the row that was clicked.
+        The callback is given a PerspectiveClickEvent declaring the
+        config, column names, and row values of the row that was
+        clicked.
 
         Arguments
         ---------

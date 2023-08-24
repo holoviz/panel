@@ -27,9 +27,9 @@ CSS_URLS = [
 for theme in PERSPECTIVE_THEMES:
     CSS_URLS.append(f'{THEME_URL}{theme}.css')
 
-class RowClickEvent(ModelEvent):
+class PerspectiveClickEvent(ModelEvent):
 
-    event_name = 'row-click'
+    event_name = 'perspective-click'
 
     def __init__(self, model, config, column_names, row):
         self.config = config

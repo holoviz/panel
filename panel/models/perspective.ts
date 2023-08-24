@@ -41,7 +41,7 @@ function objectFlip(obj: any) {
 const PLUGINS_REVERSE = objectFlip(PLUGINS)
 const THEMES_REVERSE = objectFlip(THEMES)
 
-export class RowClickEvent extends ModelEvent {
+export class PerspectiveClickEvent extends ModelEvent {
   constructor(readonly config: any, readonly column_names: string[], readonly row: any[]) {
     super()
   }
@@ -51,7 +51,7 @@ export class RowClickEvent extends ModelEvent {
   }
 
   static {
-    this.prototype.event_name = "row-click"
+    this.prototype.event_name = "perspective-click"
   }
 }
 
@@ -175,7 +175,7 @@ export class PerspectiveView extends HTMLBoxView {
       this._config_listener = () => this.sync_config()
       this.perspective_element.addEventListener("perspective-config-update", this._config_listener)
       this.perspective_element.addEventListener("perspective-click", (event: any) => {
-        this.model.trigger_event(new RowClickEvent(event.detail.config, event.detail.column_names, event.detail.row))
+        this.model.trigger_event(new PerspectiveClickEvent(event.detail.config, event.detail.column_names, event.detail.row))
       })
       this._loaded = true
     })
