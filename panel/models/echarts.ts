@@ -80,7 +80,7 @@ export class EChartsView extends HTMLBoxView {
   _plot(): void {
     if ((window as any).echarts == null)
       return
-    this._chart.setOption(this.model.data);
+    this._chart.setOption(this.model.data, true);
   }
 
   _resize(): void {
