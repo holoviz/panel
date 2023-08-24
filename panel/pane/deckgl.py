@@ -124,7 +124,7 @@ class DeckGL(ModelPane):
         'view_state': 'viewState', 'tooltips': 'tooltip'
     }
 
-    _pydeck_encoders_are_added: ClassVar[bool]=False
+    _pydeck_encoders_are_added: ClassVar[bool] = False
 
     _updates: ClassVar[bool] = True
 
@@ -208,7 +208,7 @@ class DeckGL(ModelPane):
         def pydeck_string_encoder(obj, serializer):
             return obj.value
 
-        Serializer._encoders[String]=pydeck_string_encoder
+        Serializer._encoders[String] = pydeck_string_encoder
 
     def _transform_deck_object(self, obj):
         data = dict(obj.__dict__)
