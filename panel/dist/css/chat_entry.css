@@ -1,6 +1,7 @@
 .chat-entry {
   display: flex;
   flex-direction: row;
+  width: 100%;
 }
 
 .avatar {
@@ -37,22 +38,20 @@
 
 .center {
   margin-right: 10px; /* Space for reaction icons */
-  max-width: 1000px;
   padding: 0px;
 }
 
 .message {
   width: fit-content;
-  display: flex;
-  align-items: center;
   border-radius: 5px;
   font-size: 1.25em;
   min-width: 50px;
   min-height: 50px;
-  max-height: 650px;
+  max-height: 800px;
   overflow-y: auto;
   margin-block: 0px;
-  margin-inline: 10px; /* Space for avatar */
+  margin-left: 10px; /* Space for avatar */
+  margin-right: 5px; /* Space for reaction */
   background-color: var(--panel-surface-color, #f1f1f1);
 }
 
