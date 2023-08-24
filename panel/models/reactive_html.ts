@@ -3,10 +3,8 @@ import {useCallback} from 'preact/hooks';
 import {html} from 'htm/preact';
 
 import {div} from "@bokehjs/core/dom"
-import {build_views} from "@bokehjs/core/build_views"
 import {isArray} from "@bokehjs/core/util/types"
 import * as p from "@bokehjs/core/properties"
-import {UIElementView} from "@bokehjs/models/ui/ui_element"
 import {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
 
 import {dict_to_records} from "./data"

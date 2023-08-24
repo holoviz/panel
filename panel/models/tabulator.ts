@@ -296,7 +296,9 @@ export class DataTabulatorView extends HTMLBoxView {
 
     const p = this.model.properties
     const {configuration, layout, columns, groupby} = p;
-    this.on_change([configuration, layout, groupby], debounce(() => this.invalidate_render(), 20, false))
+    this.on_change([configuration, layout, groupby], debounce(() => {
+      this.invalidate_render()
+    }, 20, false))
 
     this.on_change([columns], () => {
       this.tabulator.setColumns(this.getColumns())
