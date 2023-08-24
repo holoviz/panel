@@ -25,7 +25,6 @@ export function transform_cds_to_records(cds: ColumnDataSource, addId: boolean =
       item['_index'] = i
     data.push(item)
   }
-  console.log(data)
   return data
 }
 
