@@ -67,36 +67,47 @@ export class PerspectiveView extends HTMLBoxView {
       this.perspective_element.toggleConfig()
     })
     this.connect(this.model.properties.columns.change, () => {
+      if (this._updating) return
       this.perspective_element.restore({"columns": this.model.columns})
     })
     this.connect(this.model.properties.expressions.change, () => {
+      if (this._updating) return
       this.perspective_element.restore({"expressions": this.model.expressions})
     })
     this.connect(this.model.properties.split_by.change, () => {
+      if (this._updating) return
       this.perspective_element.restore({"split_by": this.model.split_by})
     })
     this.connect(this.model.properties.group_by.change, () => {
+      if (this._updating) return
       this.perspective_element.restore({"group_by": this.model.group_by})
     })
     this.connect(this.model.properties.aggregates.change, () => {
+      if (this._updating) return
       this.perspective_element.restore({"aggregates":this.model.aggregates})
     })
     this.connect(this.model.properties.filters.change, () => {
+      if (this._updating) return
       this.perspective_element.restore({"filter": this.model.filters})
     })
     this.connect(this.model.properties.sort.change, () => {
+      if (this._updating) return
       this.perspective_element.restore({"sort": this.model.sort})
     })
     this.connect(this.model.properties.plugin.change, () => {
+      if (this._updating) return
       this.perspective_element.restore({"plugin": PLUGINS[this.model.plugin as any]})
     })
     this.connect(this.model.properties.selectable.change, () => {
+      if (this._updating) return
       this.perspective_element.restore({"plugin_config": {...this._current_config, selectable: this.model.selectable}})
     })
     this.connect(this.model.properties.editable.change, () => {
+      if (this._updating) return
       this.perspective_element.restore({"plugin_config": {...this._current_config, editable: this.model.editable}})
     })
     this.connect(this.model.properties.theme.change, () => {
+      if (this._updating) return
       this.perspective_element.restore({"theme": THEMES[this.model.theme as string]}).catch(() => {})
     })
   }
