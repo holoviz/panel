@@ -226,18 +226,6 @@ export class ReactiveHTMLView extends HTMLBoxView {
     return models
   }
 
-  async build_child_views(): Promise<UIElementView[]> {
-    const {created, removed} = await build_views(this._child_views, this.child_models, {parent: (null as any)})
-    for (const view of removed) {
-      this._resize_observer.unobserve(view.el)
-    }
-
-    for (const view of created) {
-      this._resize_observer.observe(view.el, {box: "border-box"})
-    }
-    return created
-  }
-
   _after_layout(): void {
     this.run_script('after_layout', true)
   }
@@ -273,7 +261,9 @@ export class ReactiveHTMLView extends HTMLBoxView {
     if (view == null)
       el.innerHTML = htmlDecode(model) || model
     else {
-      view.render_to(el)
+      el.appendChild(view.el)
+      view.render()
+      view.after_render()
     }
   }
 
