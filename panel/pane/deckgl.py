@@ -15,6 +15,7 @@ from typing import (
 import numpy as np
 import param
 
+from bokeh.core.serialization import Serializer
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
@@ -123,6 +124,8 @@ class DeckGL(ModelPane):
         'view_state': 'viewState', 'tooltips': 'tooltip'
     }
 
+    _pydeck_encoders_are_added: ClassVar[bool]=False
+
     _updates: ClassVar[bool] = True
 
     priority: ClassVar[float | bool | None] = None
@@ -196,6 +199,17 @@ class DeckGL(ModelPane):
                 sources.append(cds)
             layer['data'] = sources.index(cds)
 
+    @classmethod
+    def _add_pydeck_encoders(cls):
+        if cls._pydeck_encoders_are_added or 'pydeck' not in sys.modules:
+            return
+
+        from pydeck.types import String
+        def pydeck_string_encoder(obj, serializer):
+            return obj.value
+
+        Serializer._encoders[String]=pydeck_string_encoder
+
     def _transform_deck_object(self, obj):
         data = dict(obj.__dict__)
         mapbox_api_key = data.pop('mapbox_key', "") or self.mapbox_api_key
@@ -210,6 +224,9 @@ class DeckGL(ModelPane):
             data["initialViewState"]={
                 k:v for k, v in data["initialViewState"].items() if v is not None
             }
+
+        self._add_pydeck_encoders()
+
         return data, tooltip, mapbox_api_key
 
     def _transform_object(self, obj) -> Dict[str, Any]:

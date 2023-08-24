@@ -8,6 +8,8 @@ except Exception:
 
 pydeck_available = pytest.mark.skipif(pydeck is None, reason="requires pydeck")
 
+from bokeh.core.serialization import Serializer
+
 from panel.models.deckgl import DeckGLPlot
 from panel.pane import DeckGL, PaneBase, panel
 
@@ -183,3 +185,32 @@ def test_pydeck_no_min_max_zoom_issue_5790(document, comm):
 
     model = pane.get_root(document, comm=comm)
     assert model.initialViewState == state_w_no_min_max_zoom
+
+@pydeck_available
+def test_pydeck_type_string_can_be_serialized_issue_5790(document, comm):
+    serializer = Serializer(references=document.models.synced_references)
+    data = [
+                {
+                    "name": "24th St. Mission (24TH)",
+                    "code": "24",
+                    "address": "2800 Mission Street, San Francisco CA 94110",
+                    "entries": 12817,
+                    "exits": 12529,
+                    # "coordinates": [-122.418466, 37.752254]
+                }
+    ]
+
+
+    layer = pydeck.Layer(
+        "TextLayer",
+        data,
+        get_text_anchor=pydeck.types.String("middle"),
+        get_alignment_baseline=pydeck.types.String("center"),
+        size_units = pydeck.types.String("meters")   # <--- The key addition to switch to meters as the units.
+    )
+    deck = pydeck.Deck(layers=[layer])
+    pane = DeckGL(deck)
+
+    model = pane.get_root(document, comm=comm)
+    serializer.serialize(model)
+    assert Serializer._encoders.pop(pydeck.types.String)
