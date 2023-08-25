@@ -218,6 +218,8 @@ class _config(_base_config):
 
     _admin = param.Boolean(default=False, doc="Whether the admin panel was enabled.")
 
+    _admin_panel_name = param.String(default=None, doc="Name to use for the admin panel.")
+
     _admin_log_level = param.Selector(
         default='DEBUG', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
         doc="Log level of the Admin Panel logger")
@@ -456,6 +458,10 @@ class _config(_base_config):
         return os.environ.get('PANEL_DOC_BUILD')
 
     @property
+    def admin_panel_name(self):
+        return os.environ.get('PANEL_ADMIN_PANEL_NAME', self._admin_panel_name)
+
+    @property
     def admin_log_level(self):
         admin_log_level = os.environ.get('PANEL_ADMIN_LOG_LEVEL', self._admin_log_level)
         return admin_log_level.upper() if admin_log_level else None
@@ -579,7 +585,6 @@ else:
 
 config = _config(**{k: None if p.allow_None else getattr(_config, k)
                     for k, p in _params.items() if k != 'name'})
-
 
 class panel_extension(_pyviz_extension):
     """

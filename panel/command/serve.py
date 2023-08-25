@@ -182,6 +182,12 @@ class Serve(_BkServe):
             action  = 'store_true',
             help    = "Whether to add an admin panel."
         )),
+        ('--admin-panel-name', dict(
+            metavar = "KEY=VALUE",
+            nargs   = '+',
+            help    = "Name to use for the admin panel.",
+            default = '/admin'
+        )),
         ('--admin-log-level', dict(
             action  = 'store',
             default = None,
@@ -348,17 +354,20 @@ class Serve(_BkServe):
         if args.admin:
             from ..io.admin import admin_panel
             from ..io.server import per_app_patterns
+
+            # NOTE: `admin_panel_name` returns a list.
+            admin_path = args.admin_panel_name[0] if args.admin_panel_name else "/admin"
             config._admin = True
             app = Application(FunctionHandler(admin_panel))
             unused_timeout = args.check_unused_sessions or 15000
             state._admin_context = app_ctx = AdminApplicationContext(
-                app, unused_timeout=unused_timeout, url='/admin'
+                app, unused_timeout=unused_timeout, url=admin_path
             )
             if all(not isinstance(handler, DocumentLifecycleHandler) for handler in app._handlers):
                 app.add(DocumentLifecycleHandler())
             app_patterns = []
             for p in per_app_patterns:
-                route = '/admin' + p[0]
+                route = admin_path + p[0]
                 context = {"application_context": app_ctx}
                 app_patterns.append((route, p[1], context))
 
