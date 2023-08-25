@@ -82,6 +82,15 @@ DEFAULT_USER_AVATARS = {
     "chatgpt": GPT_3_LOGO,
     "gpt3": GPT_3_LOGO,
     "gpt4": GPT_4_LOGO,
+    "dalle": GPT_4_LOGO,
+    "openai": GPT_4_LOGO,
+    "huggingface": "🤗",
+    "calculator": "🧮",
+    "langchain": "🦜",
+    "translator": "🌐",
+    "wolfram": WOLFRAM_LOGO,
+    "wolfram alpha": WOLFRAM_LOGO,
+}
 
 
 @dataclass
