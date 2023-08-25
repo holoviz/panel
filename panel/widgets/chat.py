@@ -44,15 +44,41 @@ from .input import FileInput, TextInput
 Avatar = Union[str, BytesIO]
 AvatarDict = Dict[str, Avatar]
 
+USER_LOGO = "🧑"
+ASSISTANT_LOGO = "🤖"
+SYSTEM_LOGO = "⚙️"
 GPT_3_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_logo.svg/1024px-ChatGPT_logo.svg.png?20230318122128"
 GPT_4_LOGO = "https://upload.wikimedia.org/wikipedia/commons/a/a4/GPT-4.png"
 WOLFRAM_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/WolframCorporateLogo.svg/1920px-WolframCorporateLogo.svg.png"
 
-DEFAULT_AVATARS: AvatarDict = {
-    "user": "😊",
-    "bot": "🤖",
-    "assistant": "🤖",
-    "system": "⚙️",
+DEFAULT_AVATARS = {
+    # User
+    "client": USER_LOGO,
+    "customer": USER_LOGO,
+    "employee": USER_LOGO,
+    "human": USER_LOGO,
+    "person": USER_LOGO,
+    "user": USER_LOGO,
+    # Assistant
+    "agent": ASSISTANT_LOGO,
+    "ai": ASSISTANT_LOGO,
+    "assistant": ASSISTANT_LOGO,
+    "bot": ASSISTANT_LOGO,
+    "chatbot": ASSISTANT_LOGO,
+    "machine": ASSISTANT_LOGO,
+    "robot": ASSISTANT_LOGO,
+    # System
+    "system": SYSTEM_LOGO,
+    # Human
+    "adult": "🧑",
+    "baby": "👶",
+    "boy": "👦",
+    "child": "🧒",
+    "girl": "👧",
+    "man": "👨",
+    "woman": "👩",
+    # Machine
+    "calculator": "🧮",
     "chatgpt": GPT_3_LOGO,
     "gpt3": GPT_3_LOGO,
     "gpt4": GPT_4_LOGO,
@@ -65,6 +91,7 @@ DEFAULT_AVATARS: AvatarDict = {
     "wolfram": WOLFRAM_LOGO,
     "wolfram alpha": WOLFRAM_LOGO,
 }
+
 
 @dataclass
 class _FileInputMessage:
