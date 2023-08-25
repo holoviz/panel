@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import pathlib
+import re
 import shutil
 
 from test.notebooks_with_panelite_issues import NOTEBOOK_ISSUES
@@ -19,6 +20,8 @@ LITE_FILES = PANEL_BASE / 'lite' / 'files'
 DOC_DIR = PANEL_BASE / 'doc'
 BASE_DEPENDENCIES = ['panel', 'pyodide-http']
 MINIMUM_VERSIONS = {}
+
+INLINE_DIRECTIVE = re.compile('\{.*\}`.*`\s*')
 
 # Add piplite command to notebooks
 with open(DOC_DIR / 'pyodide_dependencies.json', encoding='utf8') as file:
@@ -104,6 +107,9 @@ def convert_md_to_nb(
             # EOF
             break
 
+        # Remove MyST-Directives
+        line = INLINE_DIRECTIVE.sub('', line)
+
         lsline = line.lstrip()
         if inblock:
             if lsline.startswith(block_opener):
@@ -139,7 +145,6 @@ def convert_docs():
         list(DOC_DIR.glob('explanation/**/*.md')) +
         list(DOC_DIR.glob('how_to/**/*.md'))
     )
-    print(mds)
     for md in mds:
         out = LITE_FILES / md.relative_to(DOC_DIR).with_suffix('.ipynb')
         out.parent.mkdir(parents=True, exist_ok=True)

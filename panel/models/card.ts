@@ -1,4 +1,4 @@
-import {Column, ColumnView} from "@bokehjs/models/layouts/column"
+import {Column, ColumnView} from "./column"
 import * as DOM from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
 

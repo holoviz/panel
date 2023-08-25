@@ -4,8 +4,9 @@ import datetime as dt
 import sys
 
 from enum import Enum
+from functools import partial
 from typing import (
-    TYPE_CHECKING, ClassVar, List, Mapping, Optional, Type,
+    TYPE_CHECKING, Callable, ClassVar, List, Mapping, Optional, Type,
 )
 
 import numpy as np
@@ -15,6 +16,7 @@ from bokeh.models import ColumnDataSource, ImportedStyleSheet
 from pyviz_comms import JupyterComm
 
 from ..io.resources import CDN_DIST
+from ..io.state import state
 from ..reactive import ReactiveData
 from ..util import lazy_load
 from ..viewable import Viewable
@@ -24,6 +26,8 @@ if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
+
+    from ..model.perspective import PerspectiveClickEvent
 
 DEFAULT_THEME = "material"
 
@@ -335,6 +339,13 @@ class Perspective(ModelPane, ReactiveData):
                 return 0
         return False
 
+    def __init__(self, object=None, **params):
+        click_handler = params.pop('on_click', None)
+        self._on_click_callbacks = []
+        super().__init__(object, **params)
+        if click_handler:
+            self.on_click(click_handler)
+
     def _get_data(self):
         if self.object is None:
             return {}, {}
@@ -460,7 +471,28 @@ class Perspective(ModelPane, ReactiveData):
         self._bokeh_model = lazy_load(
             'panel.models.perspective', 'Perspective', isinstance(comm, JupyterComm), root
         )
-        return super()._get_model(doc, root, parent, comm)
+        model = super()._get_model(doc, root, parent, comm)
+        self._register_events('perspective-click', model=model, doc=doc, comm=comm)
+        return model
 
     def _update(self, ref: str, model: Model) -> None:
         model.update(**self._get_properties(model.document, source=model.source))
+
+    def _process_event(self, event):
+        if event.event_name == 'perspective-click':
+            for cb in self._on_click_callbacks:
+                state.execute(partial(cb, event), schedule=False)
+
+    def on_click(self, callback: Callable[[PerspectiveClickEvent], None]):
+        """
+        Register a callback to be executed when any row is clicked.
+        The callback is given a PerspectiveClickEvent declaring the
+        config, column names, and row values of the row that was
+        clicked.
+
+        Arguments
+        ---------
+        callback: (callable)
+            The callback to run on edit events.
+        """
+        self._on_click_callbacks.append(callback)

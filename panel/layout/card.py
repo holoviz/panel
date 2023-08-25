@@ -8,7 +8,7 @@ import param
 
 from ..io.resources import CDN_DIST
 from ..models import Card as BkCard
-from .base import Column, ListPanel, Row
+from .base import Column, Row
 
 if TYPE_CHECKING:
     from bokeh.model import Model
@@ -94,15 +94,6 @@ class Card(Column):
     def _cleanup(self, root: Model | None = None) -> None:
         super()._cleanup(root)
         self._header_layout._cleanup(root)
-
-    def _process_param_change(self, params):
-        scroll = params.pop('scroll', None)
-        css_classes = self.css_classes or []
-        if scroll:
-            params['css_classes'] = css_classes + ['scrollable']
-        elif scroll == False:
-            params['css_classes'] = css_classes
-        return super(ListPanel, self)._process_param_change(params)
 
     def _update_header(self, *events):
         from ..pane import HTML, panel

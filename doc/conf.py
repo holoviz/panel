@@ -199,6 +199,19 @@ def patched_card_run(self):
 
 CardDirective.run = patched_card_run
 
+def update_versions(app, docname, source):
+    # Inspired by: https://stackoverflow.com/questions/8821511
+    version_replace = {
+       "{{PANEL_VERSION}}" : PY_VERSION,
+       "{{BOKEH_VERSION}}" : BOKEH_VERSION,
+       "{{PYSCRIPT_VERSION}}" : "2022.12.1",
+       "{{PYODIDE_VERSION}}" : "0.23.4",
+    }
+
+    for old, new in version_replace.items():
+        source[0] = source[0].replace(old, new)
+
+
 def setup(app) -> None:
     try:
         from nbsite.paramdoc import param_formatter, param_skip
@@ -207,6 +220,7 @@ def setup(app) -> None:
     except ImportError:
         print('no param_formatter (no param?)')
 
+    app.connect('source-read', update_versions)
     nbbuild.setup(app)
     app.add_config_value('grid_item_link_domain', '', 'html')
 

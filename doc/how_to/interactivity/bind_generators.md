@@ -31,7 +31,7 @@ def runner(run):
     for i in range(101):
         time.sleep(0.01) # Some calculation
         yield pn.Column(
-            'Running ({i}/100%)', pn.indicators.Progress(value=i)
+            f'Running ({i}/100%)', pn.indicators.Progress(value=i)
         )
     yield "Success ✅︎"
 pn.Row(run, pn.bind(runner, run))

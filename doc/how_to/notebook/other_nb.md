@@ -12,6 +12,8 @@ In the Google Colaboratory notebook, first make sure to load the `pn.extension()
 
 Visual Studio Code (VSCode) versions 2020.4.74986 and later support ipywidgets, and Panel objects can be used as ipywidgets since Panel 0.10 thanks to `jupyter_bokeh`, which means that you can now use Panel components interactively in VSCode. Ensure you install `jupyter_bokeh` with `pip install jupyter_bokeh` or `conda install -c bokeh jupyter_bokeh` and then enable the extension with `pn.extension()`.
 
+See also the [How-To Configure VS Code Guide](../editor/vscode_configure.md).
+
 ### nteract and other ipywidgets notebooks
 
 In other notebook environments that support rendering ipywidgets interactively, such as nteract, you can use the same underlying ipywidgets support as for vscode: Install ``jupyter_bokeh`` and then use ``pn.extension(comms='ipywidgets')``.

@@ -1,8 +1,9 @@
+import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {div} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 import {HTMLBox, HTMLBoxView, set_size} from "./layout"
-
+import {Attrs} from "@bokehjs/core/types"
 
 const THEMES: any = {
   'material-dark': 'Material Dark',
@@ -40,6 +41,20 @@ function objectFlip(obj: any) {
 const PLUGINS_REVERSE = objectFlip(PLUGINS)
 const THEMES_REVERSE = objectFlip(THEMES)
 
+export class PerspectiveClickEvent extends ModelEvent {
+  constructor(readonly config: any, readonly column_names: string[], readonly row: any[]) {
+    super()
+  }
+
+  protected get event_values(): Attrs {
+    return {model: this.origin, config: this.config, column_names: this.column_names, row: this.row}
+  }
+
+  static {
+    this.prototype.event_name = "perspective-click"
+  }
+}
+
 export class PerspectiveView extends HTMLBoxView {
   model: Perspective
   perspective_element: any
@@ -67,36 +82,47 @@ export class PerspectiveView extends HTMLBoxView {
       this.perspective_element.toggleConfig()
     })
     this.connect(this.model.properties.columns.change, () => {
+      if (this._updating) return
       this.perspective_element.restore({"columns": this.model.columns})
     })
     this.connect(this.model.properties.expressions.change, () => {
+      if (this._updating) return
       this.perspective_element.restore({"expressions": this.model.expressions})
     })
     this.connect(this.model.properties.split_by.change, () => {
+      if (this._updating) return
       this.perspective_element.restore({"split_by": this.model.split_by})
     })
     this.connect(this.model.properties.group_by.change, () => {
+      if (this._updating) return
       this.perspective_element.restore({"group_by": this.model.group_by})
     })
     this.connect(this.model.properties.aggregates.change, () => {
+      if (this._updating) return
       this.perspective_element.restore({"aggregates":this.model.aggregates})
     })
     this.connect(this.model.properties.filters.change, () => {
+      if (this._updating) return
       this.perspective_element.restore({"filter": this.model.filters})
     })
     this.connect(this.model.properties.sort.change, () => {
+      if (this._updating) return
       this.perspective_element.restore({"sort": this.model.sort})
     })
     this.connect(this.model.properties.plugin.change, () => {
+      if (this._updating) return
       this.perspective_element.restore({"plugin": PLUGINS[this.model.plugin as any]})
     })
     this.connect(this.model.properties.selectable.change, () => {
+      if (this._updating) return
       this.perspective_element.restore({"plugin_config": {...this._current_config, selectable: this.model.selectable}})
     })
     this.connect(this.model.properties.editable.change, () => {
+      if (this._updating) return
       this.perspective_element.restore({"plugin_config": {...this._current_config, editable: this.model.editable}})
     })
     this.connect(this.model.properties.theme.change, () => {
+      if (this._updating) return
       this.perspective_element.restore({"theme": THEMES[this.model.theme as string]}).catch(() => {})
     })
   }
@@ -127,7 +153,7 @@ export class PerspectiveView extends HTMLBoxView {
     this.perspective_element.resetThemes([...Object.values(THEMES)]).catch(() => {});
     if (this.model.toggle_config)
       this.perspective_element.toggleConfig()
-    set_size(this.perspective_element, this.model)
+    set_size(container, this.model)
     this.shadow_el.appendChild(container)
 
     this.worker.table(this.model.schema).then((table: any) => {
@@ -159,6 +185,9 @@ export class PerspectiveView extends HTMLBoxView {
       })
       this._config_listener = () => this.sync_config()
       this.perspective_element.addEventListener("perspective-config-update", this._config_listener)
+      this.perspective_element.addEventListener("perspective-click", (event: any) => {
+        this.model.trigger_event(new PerspectiveClickEvent(event.detail.config, event.detail.column_names, event.detail.row))
+      })
       this._loaded = true
     })
   }

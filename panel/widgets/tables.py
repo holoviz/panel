@@ -1095,6 +1095,10 @@ class Tabulator(BaseTable):
        List of extra CSS classes to apply to the Tabulator element
        to customize the theme.""")
 
+    title_formatters = param.Dict(default={}, doc="""
+       Tabulator formatter specification to use for a particular column
+       header title.""")
+
     _data_params: ClassVar[List[str]] = [
         'value', 'page', 'page_size', 'pagination', 'sorters', 'filters'
     ]
@@ -1112,7 +1116,7 @@ class Tabulator(BaseTable):
     _rename: ClassVar[Mapping[str, str | None]] = {
         'selection': None, 'row_content': None, 'row_height': None,
         'text_align': None, 'embed_content': None, 'header_align': None,
-        'header_filters': None, 'styles': 'cell_styles'
+        'header_filters': None, 'styles': 'cell_styles', 'title_formatters': None
     }
 
     # Determines the maximum size limits beyond which (local, remote)
@@ -1384,15 +1388,32 @@ class Tabulator(BaseTable):
             models[i] = model
         return models
 
+    def _indexes_changed(self, old, new):
+        """
+        Comparator that checks whether DataFrame indexes have changed.
+
+        If indexes and length are unchanged we assume we do not
+        have to reset various settings including expanded rows,
+        scroll position, pagination etc.
+        """
+        if type(old) != type(new) or isinstance(new, dict):
+            return True
+        elif len(old) != len(new):
+            return False
+        return (old.index != new.index).any()
+
     def _update_children(self, *events):
         cleanup, reuse = set(), set()
-        page_events = ('page', 'page_size', 'value', 'pagination')
+        page_events = ('page', 'page_size', 'pagination')
         for event in events:
             if event.name == 'expanded' and len(events) == 1:
                 cleanup = set(event.old) - set(event.new)
                 reuse = set(event.old) & set(event.new)
-            elif ((event.name in page_events and not self._updating) or
-                  (self.pagination == 'remote' and event.name == 'sorters')):
+            elif (
+              (event.name == 'value' and self._indexes_changed(event.old, event.new)) or
+              (event.name in page_events and not self._updating) or
+              (self.pagination == 'remote' and event.name == 'sorters')
+            ):
                 self.expanded = []
                 return
         old_panels = self._child_panels
@@ -1718,6 +1739,13 @@ class Tabulator(BaseTable):
                 formatter = dict(formatter)
                 col_dict['formatter'] = formatter.pop('type')
                 col_dict['formatterParams'] = formatter
+            title_formatter = self.title_formatters.get(column.field)
+            if title_formatter:
+                col_dict['titleFormatter'] = title_formatter
+            elif isinstance(title_formatter, dict):
+                formatter = dict(title_formatter)
+                col_dict['titleFormatter'] = title_formatter.pop('type')
+                col_dict['titleFormatterParams'] = title_formatter
             col_name = self._renamed_cols[column.field]
             if column.field in self.indexes:
                 if len(self.indexes) == 1:

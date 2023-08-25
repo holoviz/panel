@@ -14,13 +14,19 @@ from panel.tests.util import (
 
 
 @unix_only
-def test_basic_auth(py_file, page):
+@pytest.mark.parametrize('prefix', ['', 'prefix'])
+def test_basic_auth(py_file, page, prefix):
     app = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
     write_file(app, py_file.file)
 
     app_name = os.path.basename(py_file.name)[:-3]
 
-    with run_panel_serve(["--port", "0", "--basic-auth", "my_password", "--cookie-secret", "secret", py_file.name]) as p:
+    cmd = ["--port", "0", "--basic-auth", "my_password", "--cookie-secret", "secret", py_file.name]
+    if prefix:
+        app_name = f'{prefix}/{app_name}'
+        cmd += ['--prefix', prefix]
+    print(app_name)
+    with run_panel_serve(cmd) as p:
         port = wait_for_port(p.stdout)
         page.goto(f"http://localhost:{port}/{app_name}")
 

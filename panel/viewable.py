@@ -53,6 +53,7 @@ if TYPE_CHECKING:
     from bokeh.server.server import Server
 
     from .io.location import Location
+    from .io.server import StoppableThread
 
 
 class Layoutable(param.Parameterized):
@@ -405,7 +406,7 @@ class ServableMixin:
         self, title: Optional[str] = None, port: int = 0, address: Optional[str] = None,
         websocket_origin: Optional[str] = None, threaded: bool = False, verbose: bool = True,
         open: bool = True, location: bool | 'Location' = True, **kwargs
-    ) -> threading.Thread | 'Server':
+    ) -> 'StoppableThread' | 'Server':
         """
         Starts a Bokeh server and displays the Viewable in a new tab.
 
@@ -435,7 +436,7 @@ class ServableMixin:
 
         Returns
         -------
-        server: bokeh.server.Server or threading.Thread
+        server: bokeh.server.Server or panel.io.server.StoppableThread
           Returns the Bokeh server instance or the thread the server
           was launched on (if threaded=True)
         """

@@ -37,6 +37,10 @@ panel serve app.py --show --autoreload
 The `--show` flag will open a browser tab with the live app and the ``--autoreload`` flag ensures that the app reloads whenever you make a change to the Python source.
 :::
 
-![](../../_static/editor_server_app.png)
+In VS Code this looks like
 
-## Related Resources
+![VS Code Script](../../_static/vscode-script.png)
+
+The app looks like
+
+![App Developed in an Editor](../../_static/editor_server_app.png)
