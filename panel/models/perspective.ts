@@ -1,8 +1,9 @@
+import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {div} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 import {HTMLBox, HTMLBoxView, set_size} from "./layout"
-
+import {Attrs} from "@bokehjs/core/types"
 
 const THEMES: any = {
   'material-dark': 'Material Dark',
@@ -39,6 +40,20 @@ function objectFlip(obj: any) {
 
 const PLUGINS_REVERSE = objectFlip(PLUGINS)
 const THEMES_REVERSE = objectFlip(THEMES)
+
+export class PerspectiveClickEvent extends ModelEvent {
+  constructor(readonly config: any, readonly column_names: string[], readonly row: any[]) {
+    super()
+  }
+
+  protected get event_values(): Attrs {
+    return {model: this.origin, config: this.config, column_names: this.column_names, row: this.row}
+  }
+
+  static {
+    this.prototype.event_name = "perspective-click"
+  }
+}
 
 export class PerspectiveView extends HTMLBoxView {
   model: Perspective
@@ -170,6 +185,9 @@ export class PerspectiveView extends HTMLBoxView {
       })
       this._config_listener = () => this.sync_config()
       this.perspective_element.addEventListener("perspective-config-update", this._config_listener)
+      this.perspective_element.addEventListener("perspective-click", (event: any) => {
+        this.model.trigger_event(new PerspectiveClickEvent(event.detail.config, event.detail.column_names, event.detail.row))
+      })
       this._loaded = true
     })
   }
