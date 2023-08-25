@@ -161,7 +161,7 @@ export class ECharts extends HTMLBox {
 
     this.define<ECharts.Props>(({ Any, String }) => ({
       data:          [ Any,           {} ],
-      options:[ Any,           {} ],
+      options:       [ Any,           {} ],
       event_config:  [ Any,           {} ],
       js_events:     [ Any,           {} ],
       theme:         [ String,  "default"],

@@ -40,6 +40,8 @@ class ECharts(ModelPane):
 
     options = param.Parameter(default=None, doc="""
         An optional dict of options passed to Echarts.setOption. Allows to fine-tune the rendering behavior.
+        For example, you might want to use `options={ "replaceMerge": ['series'] })` when updating
+        the `objects` with a value containing a smaller number of series.
         """)
 
     renderer = param.ObjectSelector(default="canvas", objects=["canvas", "svg"], doc="""
