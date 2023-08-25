@@ -32,7 +32,7 @@ If you enter an invalid password it will look like
 
 ![Invalid Basic Auth Login Form](../../_static/images/basic_auth_invalid.png)
 
-If you enter a valid password it will look like
+If you enter the valid password (i.e. `my_password`) it will look like
 
 ![Valid Basic Auth Login Form](../../_static/images/basic_auth_valid.png)
 
