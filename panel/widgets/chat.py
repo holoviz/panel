@@ -60,7 +60,7 @@ DEFAULT_USER_AVATARS = {
     "robot": ASSISTANT_LOGO,
     # System
     "system": SYSTEM_LOGO,
-    # People
+    # Human
     "baby": "👶",
     "child": "🧒",
     "adult": "🧑",
