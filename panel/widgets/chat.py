@@ -61,9 +61,11 @@ DEFAULT_USER_AVATARS = {
     # System
     "system": SYSTEM_LOGO,
     # Human
-    "baby": "👶",
-    "child": "🧒",
     "adult": "🧑",
+    "baby": "👶",
+    "boy": "👦",
+    "child": "🧒",
+    "girl": "👧",
     "man": "👨",
     "woman": "👩",
     # Machine
