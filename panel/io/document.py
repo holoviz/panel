@@ -11,7 +11,7 @@ import threading
 from contextlib import contextmanager
 from functools import partial, wraps
 from typing import (
-    TYPE_CHECKING, Callable, Iterator, List, Optional,
+    Callable, Iterator, List, Optional,
 )
 
 from bokeh.application.application import SessionContext
@@ -25,12 +25,8 @@ from bokeh.models import CustomJS
 from ..config import config
 from ..util import param_watchers
 from .loading import LOADING_INDICATOR_CSS_CLASS
-from .model import monkeypatch_events
+from .model import hold, monkeypatch_events  # noqa: API import
 from .state import curdoc_locked, state
-
-if TYPE_CHECKING:
-    from bokeh.core.enums import HoldPolicyType
-    from pyviz_comms import Comm
 
 logger = logging.getLogger(__name__)
 
@@ -300,47 +296,6 @@ def unlocked() -> Iterator:
             if remaining_events:
                 curdoc.add_next_tick_callback(partial(_dispatch_events, curdoc, remaining_events))
 
-
-@contextmanager
-def hold(doc: Document, policy: 'HoldPolicyType' = 'combine', comm: Comm | None = None):
-    """
-    Context manager that holds events on a particular Document
-    allowing them all to be collected and dispatched when the context
-    manager exits. This allows multiple events on the same object to
-    be combined if the policy is set to 'combine'.
-
-    Arguments
-    ---------
-    doc: Document
-        The Bokeh Document to hold events on.
-    policy: HoldPolicyType
-        One of 'combine', 'collect' or None determining whether events
-        setting the same property are combined or accumulated to be
-        dispatched when the context manager exits.
-    comm: Comm
-        The Comm to dispatch events on when the context manager exits.
-    """
-    doc = doc or state.curdoc
-    if doc is None:
-        yield
-        return
-    held = doc.callbacks.hold_value
-    try:
-        if policy is None:
-            doc.unhold()
-        else:
-            doc.hold(policy)
-        yield
-    finally:
-        if held:
-            doc.callbacks._hold = held
-        else:
-            if comm is not None:
-                from .notebook import push
-                push(doc, comm)
-            with unlocked():
-                doc.unhold()
-
 @contextmanager
 def immediate_dispatch(doc: Document | None = None):
     """
@@ -361,10 +316,10 @@ def immediate_dispatch(doc: Document | None = None):
         return
 
     old_events = doc.callbacks._held_events
-    hold = doc.callbacks._hold
+    held = doc.callbacks._hold
     doc.callbacks._held_events = []
     doc.callbacks.unhold()
     with unlocked():
         yield
-    doc.callbacks._hold = hold
+    doc.callbacks._hold = held
     doc.callbacks._held_events = old_events

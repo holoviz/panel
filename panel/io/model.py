@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import textwrap
 
+from contextlib import contextmanager
 from typing import (
     TYPE_CHECKING, Any, Iterable, List, Optional,
 )
@@ -21,12 +22,13 @@ from bokeh.model import DataModel
 from bokeh.models import ColumnDataSource, FlexBox, Model
 from bokeh.protocol.messages.patch_doc import patch_doc
 
-from .document import hold  # noqa: legacy import
 from .state import state
 
 if TYPE_CHECKING:
+    from bokeh.core.enums import HoldPolicyType
     from bokeh.document.events import DocumentChangedEvent
     from bokeh.protocol.message import Message
+    from pyviz_comms import Comm
 
 #---------------------------------------------------------------------
 # Private API
@@ -102,7 +104,7 @@ def remove_root(obj: Model, replace: Document | None = None) -> None:
         if replace:
             model._document = replace
 
-def add_to_doc(obj: Model, doc: Document, hold: bool = False):  # noqa: redefinition of hold legacy import
+def add_to_doc(obj: Model, doc: Document, hold: bool = False):
     """
     Adds a model to the supplied Document removing it from any existing Documents.
     """
@@ -164,3 +166,42 @@ def bokeh_repr(obj: Model, depth: int = 0, ignored: Optional[Iterable[str]] = No
     else:
         r += '{cls}({props})'.format(cls=cls, props=props_repr)
     return r
+
+@contextmanager
+def hold(doc: Document, policy: HoldPolicyType = 'combine', comm: Comm | None = None):
+    """
+    Context manager that holds events on a particular Document
+    allowing them all to be collected and dispatched when the context
+    manager exits. This allows multiple events on the same object to
+    be combined if the policy is set to 'combine'.
+
+    Arguments
+    ---------
+    doc: Document
+        The Bokeh Document to hold events on.
+    policy: HoldPolicyType
+        One of 'combine', 'collect' or None determining whether events
+        setting the same property are combined or accumulated to be
+        dispatched when the context manager exits.
+    comm: Comm
+        The Comm to dispatch events on when the context manager exits.
+    """
+    doc = doc or state.curdoc
+    if doc is None:
+        yield
+        return
+    held = doc.callbacks.hold_value
+    try:
+        if policy is None:
+            doc.unhold()
+        else:
+            doc.hold(policy)
+        yield
+    finally:
+        if held:
+            doc.callbacks._hold = held
+        else:
+            if comm is not None:
+                from .notebook import push
+                push(doc, comm)
+            doc.unhold()
