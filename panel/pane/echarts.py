@@ -38,7 +38,7 @@ class ECharts(ModelPane):
     object = param.Parameter(default=None, doc="""
         The Echarts object being wrapped. Can be an Echarts dictionary or a pyecharts chart""")
 
-    options_kwargs = param.Parameter(default=None, doc="""
+    options = param.Parameter(default=None, doc="""
         An optional dict of options passed to Echarts.setOption. Allows to fine-tune the rendering behavior.
         """)
 
