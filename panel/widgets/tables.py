@@ -1400,7 +1400,7 @@ class Tabulator(BaseTable):
             return True
         elif len(old) != len(new):
             return False
-        return (old.index == new.index).all()
+        return (old.index != new.index).any()
 
     def _update_children(self, *events):
         cleanup, reuse = set(), set()
