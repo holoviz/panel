@@ -131,6 +131,7 @@ discover/
 node_modules
 .bokeh
 /tmp
+.devcontainer/*
 pyodide/
 script.*
 doc/_build/*
