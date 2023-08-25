@@ -51,7 +51,7 @@ GPT_3_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_
 GPT_4_LOGO = "https://upload.wikimedia.org/wikipedia/commons/a/a4/GPT-4.png"
 WOLFRAM_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/WolframCorporateLogo.svg/1920px-WolframCorporateLogo.svg.png"
 
-DEFAULT_USER_AVATARS = {
+DEFAULT_AVATARS = {
     # User
     "client": USER_LOGO,
     "customer": USER_LOGO,
