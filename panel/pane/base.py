@@ -547,7 +547,7 @@ class ReplacementPane(PaneBase):
 
     _ignored_refs: ClassVar[Tuple[str,...]] = ('object',)
 
-    _linked_properties: ClassVar[Tuple[str]] = ()
+    _linked_properties: ClassVar[Tuple[str,...]] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {'_pane': None, 'inplace': None}
 
