@@ -78,7 +78,6 @@ DEFAULT_AVATARS = {
     "man": "👨",
     "woman": "👩",
     # Machine
-    "calculator": "🧮",
     "chatgpt": GPT_3_LOGO,
     "gpt3": GPT_3_LOGO,
     "gpt4": GPT_4_LOGO,
