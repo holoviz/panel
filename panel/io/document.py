@@ -11,7 +11,7 @@ import threading
 from contextlib import contextmanager
 from functools import partial, wraps
 from typing import (
-    Callable, Iterator, List, Optional,
+    TYPE_CHECKING, Callable, Iterator, List, Optional,
 )
 
 from bokeh.application.application import SessionContext
@@ -27,6 +27,10 @@ from ..util import param_watchers
 from .loading import LOADING_INDICATOR_CSS_CLASS
 from .model import monkeypatch_events
 from .state import curdoc_locked, state
+
+if TYPE_CHECKING:
+    from bokeh.core.enums import HoldPolicyType
+    from pyviz_comms import Comm
 
 logger = logging.getLogger(__name__)
 
@@ -295,3 +299,72 @@ def unlocked() -> Iterator:
         except RuntimeError:
             if remaining_events:
                 curdoc.add_next_tick_callback(partial(_dispatch_events, curdoc, remaining_events))
+
+
+@contextmanager
+def hold(doc: Document, policy: 'HoldPolicyType' = 'combine', comm: Comm | None = None):
+    """
+    Context manager that holds events on a particular Document
+    allowing them all to be collected and dispatched when the context
+    manager exits. This allows multiple events on the same object to
+    be combined if the policy is set to 'combine'.
+
+    Arguments
+    ---------
+    doc: Document
+        The Bokeh Document to hold events on.
+    policy: HoldPolicyType
+        One of 'combine', 'collect' or None determining whether events
+        setting the same property are combined or accumulated to be
+        dispatched when the context manager exits.
+    comm: Comm
+        The Comm to dispatch events on when the context manager exits.
+    """
+    doc = doc or state.curdoc
+    if doc is None:
+        yield
+        return
+    held = doc.callbacks.hold_value
+    try:
+        if policy is None:
+            doc.unhold()
+        else:
+            doc.hold(policy)
+        yield
+    finally:
+        if held:
+            doc.callbacks._hold = held
+        else:
+            if comm is not None:
+                from .notebook import push
+                push(doc, comm)
+            with unlocked():
+                doc.unhold()
+
+@contextmanager
+def immediate_dispatch(doc: Document | None = None):
+    """
+    Context manager to trigger immediate dispatch of events triggered
+    inside the execution context even when Document events are
+    currently on hold.
+
+    Arguments
+    ---------
+    doc: Document
+        The document to dispatch events on (if `None` then `state.curdoc` is used).
+    """
+    doc = doc or state.curdoc
+
+    # Skip if not in a server context
+    if not doc or not doc._session_context:
+        yield
+        return
+
+    old_events = doc.callbacks._held_events
+    hold = doc.callbacks._hold
+    doc.callbacks._held_events = []
+    doc.callbacks.unhold()
+    with unlocked():
+        yield
+    doc.callbacks._hold = hold
+    doc.callbacks._held_events = old_events

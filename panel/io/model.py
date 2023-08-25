@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import textwrap
 
-from contextlib import contextmanager
 from typing import (
     TYPE_CHECKING, Any, Iterable, List, Optional,
 )
@@ -22,13 +21,12 @@ from bokeh.model import DataModel
 from bokeh.models import ColumnDataSource, FlexBox, Model
 from bokeh.protocol.messages.patch_doc import patch_doc
 
+from .document import hold  # noqa: legacy import
 from .state import state
 
 if TYPE_CHECKING:
-    from bokeh.core.enums import HoldPolicyType
     from bokeh.document.events import DocumentChangedEvent
     from bokeh.protocol.message import Message
-    from pyviz_comms import Comm
 
 #---------------------------------------------------------------------
 # Private API
@@ -45,7 +43,7 @@ class comparable_array(np.ndarray):
     def __ne__(self, other: Any) -> bool:
         return not np.array_equal(self, other, equal_nan=True)
 
-def monkeypatch_events(events: List['DocumentChangedEvent']) -> None:
+def monkeypatch_events(events: List[DocumentChangedEvent]) -> None:
     """
     Patch events applies patches to events that are to be dispatched
     avoiding various issues in Bokeh.
@@ -66,7 +64,7 @@ def monkeypatch_events(events: List['DocumentChangedEvent']) -> None:
 #---------------------------------------------------------------------
 
 def diff(
-    doc: 'Document', binary: bool = True, events: Optional[List['DocumentChangedEvent']] = None
+    doc: Document, binary: bool = True, events: Optional[List[DocumentChangedEvent]] = None
 ) -> Message[Any] | None:
     """
     Returns a json diff required to update an existing plot with
@@ -92,7 +90,7 @@ def diff(
             msg.add_buffer(buffer)
     return msg
 
-def remove_root(obj: 'Model', replace: Optional['Document'] = None) -> None:
+def remove_root(obj: Model, replace: Document | None = None) -> None:
     """
     Removes the document from any previously displayed bokeh object
     """
@@ -104,7 +102,7 @@ def remove_root(obj: 'Model', replace: Optional['Document'] = None) -> None:
         if replace:
             model._document = replace
 
-def add_to_doc(obj: 'Model', doc: 'Document', hold: bool = False):
+def add_to_doc(obj: Model, doc: Document, hold: bool = False):  # noqa: redefinition of hold legacy import
     """
     Adds a model to the supplied Document removing it from any existing Documents.
     """
@@ -113,24 +111,6 @@ def add_to_doc(obj: 'Model', doc: 'Document', hold: bool = False):
     doc.add_root(obj)
     if doc.callbacks.hold_value is None and hold:
         doc.hold()
-
-@contextmanager
-def hold(doc: 'Document', policy: 'HoldPolicyType' = 'combine', comm: Optional['Comm'] = None):
-    held = doc.callbacks.hold_value
-    try:
-        if policy is None:
-            doc.unhold()
-        else:
-            doc.hold(policy)
-        yield
-    finally:
-        if held:
-            doc.callbacks._hold = held
-        else:
-            if comm is not None:
-                from .notebook import push
-                push(doc, comm)
-            doc.unhold()
 
 def patch_cds_msg(model, msg):
     """
@@ -149,7 +129,7 @@ def patch_cds_msg(model, msg):
 
 _DEFAULT_IGNORED_REPR = frozenset(['children', 'text', 'name', 'toolbar', 'renderers', 'below', 'center', 'left', 'right'])
 
-def bokeh_repr(obj: 'Model', depth: int = 0, ignored: Optional[Iterable[str]] = None) -> str:
+def bokeh_repr(obj: Model, depth: int = 0, ignored: Optional[Iterable[str]] = None) -> str:
     """
     Returns a string repr for a bokeh model, useful for recreating
     panel objects using pure bokeh.
