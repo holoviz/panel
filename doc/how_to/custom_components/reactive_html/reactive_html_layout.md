@@ -1,14 +1,14 @@
 # Create Layouts With ReactiveHTML
 
-In this guide you will learn how to build custom layouts using `ReactiveHTML` and HTML.
+In this guide you will learn how to build custom layouts using HTML and `ReactiveHTML`.
 
 If you are not familiar with HTML then the [W3 HTML School](https://www.w3schools.com/html/default.asp)
 is a good resource to learn from. You can also ask ChatGPT for help. It can often provide you with
-a HTML starting point that you can fine tune.
+a good HTML starting point that you can fine tune.
 
 ## A layout of a single object
 
-You can layout a single `object` as follows.
+You can layout a single object as follows.
 
 ```{pyodide}
 import panel as pn

@@ -1,12 +1,15 @@
-# Migrate from Streamlit to Panel
+# Create Custom Components with `ReactiveHTML`
 
-These guides addresses how to create custom components with HTML, CSS and Javascript using
-`ReactiveHTML`.
+These guides addresses how to create custom components with HTML, CSS and/ or Javascript using
+`ReactiveHTML` and no Javascript tooling.
 
-If you are not familiar with HTML, CSS or JavaScript then the [W3 HTML School](https://www.w3schools.com/html/default.asp),
+If you are not familiar with HTML, CSS or Javascript then the [W3 HTML School](https://www.w3schools.com/html/default.asp),
 [W3 CSS School](https://www.w3schools.com/css/default.asp) and [W3 JS School](https://www.w3schools.com/js/default.asp)
 are good resource to learn from. You can also ask ChatGPT for help. It can often provide you with
-a HTML, CSS and JavaScript starting point that you can fine tune.
+HTML, CSS and/ or Javascript that you can fine tune.
+
+`ReactiveHTML` as most of Panel builds on top of [Param](https://param.holoviz.org/). If you are
+not familiar with Param you should check out the [Param Documentation]](https://param.holoviz.org/).
 
 ---
 
