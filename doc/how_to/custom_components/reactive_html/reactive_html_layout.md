@@ -44,12 +44,12 @@ Please notice
 `100%`. This will make your `_template` responsive, i.e. (re-)size it self to the `height` and
 `width` of your `ReactiveHTML` component.
 - We can refer to the parameter `object` in the `_template` via the *template parameter* `${object}`.
-  - We must give the `div` element holding the `${object}` an `id`. If we do not do this an exception
+  - We must give the `div` element holding the `${object}` an `id`. If we do not, then an exception
   will be raised. The `id` can be any value, for example `id="my-object"`.
 - We call our *object* parameter `object` to be consistent with our built in layouts. But the
 parameter can be called anything. For example `value`, `dial` or `temperature`.
 - We add the `border` in the `styles` parameter so that we can better see how the `_template` layes
-it self out inside the `ReactiveHTML` component. This can be useful for development.
+it self out inside the `ReactiveHTML` component. This can be very useful for development.
 
 ## A Layout of multiple objects
 

@@ -158,7 +158,7 @@ will invoke the following script if it is defined on the class:
 
 ```python
     _scripts = {
-        'some_script': 'console.log(self.state.event)'
+        'some_script': 'console.log(state.event)'
    }
 ```
 

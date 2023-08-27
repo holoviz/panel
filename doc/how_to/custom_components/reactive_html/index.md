@@ -1,33 +1,40 @@
 # Create Custom Components with `ReactiveHTML`
 
 These guides addresses how to create custom components with HTML, CSS and/ or Javascript using
-`ReactiveHTML` and no Javascript tooling.
+`ReactiveHTML` and no Javascript build tools.
 
-If you are not familiar with HTML, CSS or Javascript then the [W3 HTML School](https://www.w3schools.com/html/default.asp),
-[W3 CSS School](https://www.w3schools.com/css/default.asp) and [W3 JS School](https://www.w3schools.com/js/default.asp)
-are good resource to learn from. You can also ask ChatGPT for help. It can often provide you with
-HTML, CSS and/ or Javascript that you can fine tune.
-
-`ReactiveHTML` as most of Panel builds on top of [Param](https://param.holoviz.org/). If you are
-not familiar with Param you should check out the [Param Documentation]](https://param.holoviz.org/).
+A `ReactiveHTML` subclass provides bi-directional syncing of its parameters with arbitrary HTML
+elements, attributes and properties. The key part of the subclass is the `_template`
+variable. This is the HTML template that gets rendered and declares how to link parameters on the
+subclass to HTML.
 
 ---
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`rocket;2.5em;sd-mr-1 sd-animate-grow50` Layouts
-:link: get_started
-:link-type: reactive_html_layout
+:::{grid-item-card} {octicon}`columns-2;2.5em;sd-mr-1 sd-animate-grow50` Layouts
+:link: reactive_html_layout
+:link-type: doc
 
-How to create layouts using HTML and `ReactiveHTML`
+How to create layouts using `ReactiveHTML`
 :::
 
-:::{grid-item-card} {octicon}`device-desktop;2.5em;sd-mr-1 sd-animate-grow50` CSS Styling
-:link: panes
-:link-type: reactive_html_styling
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
 
-How to style your `ReactiveHTML` components using CSS
+:::{grid-item-card} {octicon}`brush;2.5em;sd-mr-1 sd-animate-grow50` Styling
+:link: reactive_html_layout
+:link-type: doc
+
+How to style `ReactiveHTML` components
+:::
+
+:::{grid-item-card} {octicon}`select;2.5em;sd-mr-1 sd-animate-grow50` Widgets
+:link: reactive_html_widgets
+:link-type: doc
+
+How to create input widgets using `ReactiveHTML`
 :::
 
 ::::
@@ -39,6 +46,7 @@ How to style your `ReactiveHTML` components using CSS
 
 reactive_html_layout
 reactive_html_styling
+reactive_html_widgets
 ```
 
 ## Examples
@@ -82,4 +90,9 @@ Build custom component wrapping a Vue.js app using `ReactiveHTML`.
 
 ## Related Resources
 
-- Read the associated [Explanation > Building Custom Components](../../explanation/components/components_custom) for further explanation.
+- Read the associated [Explanation > Building Custom Components](../../explanation/components/components_custom) to learn how `ReactiveHTML` works.
+
+## External Resources
+
+- [Building custom Panel widgets using ReactiveHTML | Blog post](https://blog.holoviz.org/building_custom_panel_widgets_using_reactivehtml.html)
+- Read the [Param Documentation](https://param.holoviz.org/): learn more about `ReactiveHTML`s powerful parameters.
