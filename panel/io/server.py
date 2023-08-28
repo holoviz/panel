@@ -1139,7 +1139,8 @@ def get_server(
     if basic_auth:
         from ..auth import BasicProvider
         server_config['basic_auth'] = basic_auth
-        opts['auth_provider'] = BasicProvider()
+        basic_login_template = kwargs.pop('basic_login_template', None)
+        opts['auth_provider'] = BasicProvider(basic_login_template)
     elif oauth_provider:
         from ..auth import OAuthProvider
         config.oauth_provider = oauth_provider # type: ignore
