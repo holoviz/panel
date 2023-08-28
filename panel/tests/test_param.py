@@ -11,6 +11,7 @@ from bokeh.models import (
     Row as BkRow, Select, Slider, Tabs as BkTabs, TextInput,
     TextInput as BkTextInput, Toggle,
 )
+from packaging.version import Version
 
 from panel import config
 from panel.depends import bind
@@ -1563,7 +1564,10 @@ def test_set_widget_autocompleteinput(document, comm):
 
     autocompleteinput = model.children[1]
     assert isinstance(autocompleteinput, BkAutocompleteInput)
-    assert autocompleteinput.completions == ['a', 'b']
+    if Version(param.__version__) > Version('2.0.0a2'):
+        assert autocompleteinput.completions == ['a', 'b', '']
+    else:
+        assert autocompleteinput.completions == ['a', 'b']
     assert autocompleteinput.value == ''
     assert autocompleteinput.disabled == False
 
@@ -1630,7 +1634,10 @@ def test_param_editablerangeslider_with_bounds():
     t = Test()
     w = EditableRangeSlider.from_param(t.param.i)
 
-    msg = "Range parameter 'value''s lower bound must be in range \[0, 10\]"
+    if Version(param.__version__) > Version('2.0.0a2'):
+        msg = "Attribute 'bound' of Range parameter 'EditableRangeSlider\.value' must be in range '\[0, 10\]'"
+    else:
+        msg = "Range parameter 'value''s lower bound must be in range \[0, 10\]"
     with pytest.raises(ValueError, match=msg):
         w.value = (-1, 2)
 
@@ -1671,7 +1678,10 @@ def test_param_editablefloatslider_with_bounds():
     t = Test()
     w = EditableFloatSlider.from_param(t.param.i)
 
-    msg = "Parameter 'value' must be at least 0, not -1"
+    if Version(param.__version__) > Version('2.0.0a2'):
+        msg = "Number parameter 'EditableFloatSlider.value' must be at least 0, not -1"
+    else:
+        msg = "Parameter 'value' must be at least 0, not -1"
     with pytest.raises(ValueError, match=msg):
         w.value = -1
 
