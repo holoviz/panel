@@ -40,7 +40,7 @@ def test_viewable_ipywidget():
 def test_viewable_signature(viewable):
     from inspect import Parameter, signature
     parameters = signature(viewable).parameters
-    if viewable._param__private.signature:
+    if getattr(getattr(viewable, '_param__private', object), 'signature', None):
         pytest.skip('Signature already set by Param')
     assert 'params' in parameters
     try:
