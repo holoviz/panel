@@ -356,7 +356,8 @@ def destroy_document(self, session):
 
     # Clean up pn.state to avoid tasks getting executed on dead session
     for attr in dir(state):
-        if not attr.startswith('_'):
+        # _param_watchers is deprecated in Param 2.0 and will raise a warning
+        if not attr.startswith('_') or attr == "_param_watchers":
             continue
         state_obj = getattr(state, attr)
         if isinstance(state_obj, weakref.WeakKeyDictionary) and self in state_obj:
