@@ -38,6 +38,12 @@ class ECharts(ModelPane):
     object = param.Parameter(default=None, doc="""
         The Echarts object being wrapped. Can be an Echarts dictionary or a pyecharts chart""")
 
+    options = param.Parameter(default=None, doc="""
+        An optional dict of options passed to Echarts.setOption. Allows to fine-tune the rendering behavior.
+        For example, you might want to use `options={ "replaceMerge": ['series'] })` when updating
+        the `objects` with a value containing a smaller number of series.
+        """)
+
     renderer = param.ObjectSelector(default="canvas", objects=["canvas", "svg"], doc="""
        Whether to render as HTML canvas or SVG""")
 

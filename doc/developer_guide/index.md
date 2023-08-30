@@ -127,10 +127,21 @@ doit develop_install -c pyviz/label/dev -c conda-forge -c bokeh -o build -o test
 
 The above command installs Panel's dependencies using conda, then performs a pip editable install of Panel. If it fails, `nodejs>=14.0.0` may be missing from your environment, fix it with `conda install -c conda-forge nodejs` then rerun above command.
 
-If you also want to run the UI tests run the following:
+If you also want to run the UI tests you'll need to install pytest-playwright with `conda`:
 
-```bash
-pip install playwright pytest-playwright
+``` bash
+conda install pytest-playwright -c microsoft -c conda-forge
+```
+
+or with `pip`:
+
+``` bash
+pip install pytest-playwright
+```
+
+then run:
+
+``` bash
 playwright install chromium
 ```
 

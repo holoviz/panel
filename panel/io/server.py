@@ -8,6 +8,7 @@ import datetime as dt
 import gc
 import html
 import importlib
+import inspect
 import logging
 import os
 import pathlib
@@ -355,7 +356,8 @@ def destroy_document(self, session):
 
     # Clean up pn.state to avoid tasks getting executed on dead session
     for attr in dir(state):
-        if not attr.startswith('_'):
+        # _param_watchers is deprecated in Param 2.0 and will raise a warning
+        if not attr.startswith('_') or attr == "_param_watchers":
             continue
         state_obj = getattr(state, attr)
         if isinstance(state_obj, weakref.WeakKeyDictionary) and self in state_obj:
@@ -438,8 +440,26 @@ class SessionPrefixHandler:
                 state.base_url = old_url
                 state.rel_path = old_rel
 
+class LoginUrlMixin:
+    """
+    Overrides the AuthRequestHandler.get_login_url implementation to
+    correctly handle prefixes.
+    """
+
+    def get_login_url(self):
+        ''' Delegates to``get_login_url`` method of the auth provider, or the
+        ``login_url`` attribute.
+
+        '''
+        if self.application.auth_provider.get_login_url is not None:
+            return '.' + self.application.auth_provider.get_login_url(self)
+        if self.application.auth_provider.login_url is not None:
+            return '.' + self.application.auth_provider.login_url
+        raise RuntimeError('login_url or get_login_url() must be supplied when authentication hooks are enabled')
+
+
 # Patch Bokeh DocHandler URL
-class DocHandler(BkDocHandler, SessionPrefixHandler):
+class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
 
     @authenticated
     async def get_session(self):
@@ -485,7 +505,34 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
                 token = session.token
             logger.info(LOG_SESSION_CREATED, id(session.document))
             with set_curdoc(session.document):
-                if config.authorize_callback and not config.authorize_callback(state.user_info):
+                resources = Resources.from_bokeh(self.application.resources())
+                auth_cb = config.authorize_callback
+                if auth_cb:
+                    auth_cb = config.authorize_callback
+                    auth_params = inspect.signature(auth_cb).parameters
+                    auth_args = (state.user_info,)
+                    if len(auth_params) == 2:
+                        auth_args += (self.request.path,)
+                    else:
+                        raise RuntimeError(
+                            'Authorization callback must accept either one or two arguments.'
+                        )
+                    auth_error = f'{state.user} is not authorized to access this application.'
+                    try:
+                        authorized = auth_cb(*auth_args)
+                        auth_error = None
+                    except Exception:
+                        auth_error = f'Authorization callback errored. Could not validate user {state.user}'
+                else:
+                    authorized = True
+
+                if authorized:
+                    page = server_html_page_for_session(
+                        session, resources=resources, title=session.document.title,
+                        token=token, template=session.document.template,
+                        template_variables=session.document.template_variables,
+                    )
+                else:
                     if config.auth_template:
                         with open(config.auth_template) as f:
                             template = _env.from_string(f.read())
@@ -496,14 +543,7 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
                         title='Panel: Authorization Error',
                         error_type='Authorization Error',
                         error='User is not authorized.',
-                        error_msg=f'{state.user} is not authorized to access this application.'
-                    )
-                else:
-                    resources = Resources.from_bokeh(self.application.resources())
-                    page = server_html_page_for_session(
-                        session, resources=resources, title=session.document.title,
-                        token=token, template=session.document.template,
-                        template_variables=session.document.template_variables,
+                        error_msg=auth_error
                     )
         self.set_header("Content-Type", 'text/html')
         self.write(page)
@@ -546,7 +586,7 @@ class AutoloadJsHandler(BkAutoloadJsHandler, SessionPrefixHandler):
 
 per_app_patterns[3] = (r'/autoload.js', AutoloadJsHandler)
 
-class RootHandler(BkRootHandler):
+class RootHandler(LoginUrlMixin, BkRootHandler):
     """
     Custom RootHandler that provides the CDN_DIST directory as a
     template variable.
@@ -804,7 +844,7 @@ def serve(
     threaded: bool = False,
     admin: bool = False,
     **kwargs
-) -> threading.Thread | Server:
+) -> StoppableThread | Server:
     """
     Allows serving one or more panel objects on a single server.
     The panels argument should be either a Panel object or a function
@@ -1100,7 +1140,8 @@ def get_server(
     if basic_auth:
         from ..auth import BasicProvider
         server_config['basic_auth'] = basic_auth
-        opts['auth_provider'] = BasicProvider()
+        basic_login_template = kwargs.pop('basic_login_template', None)
+        opts['auth_provider'] = BasicProvider(basic_login_template)
     elif oauth_provider:
         from ..auth import OAuthProvider
         config.oauth_provider = oauth_provider # type: ignore

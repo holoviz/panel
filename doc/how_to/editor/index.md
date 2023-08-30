@@ -12,6 +12,20 @@ One of the main design goals for Panel was to make it seamless to work across de
 How to rapidly develop a Panel application in your favorite IDE or editor.
 :::
 
+:::{grid-item-card} {octicon}`bug;2.5em;sd-mr-1 sd-animate-grow50` Debug apps in an editor
+:link: editor_debug
+:link-type: doc
+
+How to debug a Panel application in your favorite IDE or editor.
+:::
+
+:::{grid-item-card} {octicon}`gear;2.5em;sd-mr-1 sd-animate-grow50` Configure VS Code
+:link: vscode_configure
+:link-type: doc
+
+How to configure VS Code to work efficiently with Panel
+:::
+
 :::{grid-item-card} {octicon}`markdown;2.5em;sd-mr-1 sd-animate-grow50` Write apps in Markdown
 :link: markdown
 :link-type: doc

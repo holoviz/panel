@@ -2,7 +2,7 @@
 
 At this point you should have [set up your environment and installed Panel](installation.md) so you should be ready to get going.
 
-On this page, we're going to be building a basic interactive application. If you want to implement this app yourself as you follow along, we recommend starting with a Jupyter notebook.
+On this page, we're going to be building a basic interactive application based on Numpy, Pandas and [hvplot](https://hvplot.holoviz.org/). If you want to implement this app yourself as you follow along, we recommend starting with a Jupyter notebook. You can also launch the Notebook with JupyterLite on the right.
 
 ## Fetch the data
 
@@ -31,23 +31,26 @@ data.tail()
 Before we utilize Panel, let's write a function that smooths one of our time series and finds the outliers. We will then plot the result using hvplot.
 
 ```{pyodide}
-def view_hvplot(avg, highlight):
-    return avg.hvplot(height=300, width=400, legend=False) * highlight.hvplot.scatter(
-        color="orange", padding=0.1, legend=False
-    )
-
-def find_outliers(variable="Temperature", window=30, sigma=10, view_fn=view_hvplot):
+def transform_data(variable, window, sigma):
+    ''' Calculates the rolling average and the outliers '''
     avg = data[variable].rolling(window=window).mean()
     residual = data[variable] - avg
     std = residual.rolling(window=window).std()
     outliers = np.abs(residual) > std * sigma
-    return view_fn(avg, avg[outliers])
+    return avg, avg[outliers]
+
+def create_plot(variable="Temperature", window=30, sigma=10):
+    ''' Plots the rolling average and the outliers '''
+    avg, highlight = transform_data(variable, window, sigma)
+    return avg.hvplot(height=300, width=400, legend=False) * highlight.hvplot.scatter(
+        color="orange", padding=0.1, legend=False
+    )
 ```
 
-We can now call our `find_outliers` function with specific parameters to get a plot with a single set of parameters.
+We can now call our `create_plot` function with specific parameters to get a plot with a single set of parameters.
 
 ```{pyodide}
-find_outliers(variable='Temperature', window=20, sigma=10)
+create_plot(variable='Temperature', window=20, sigma=10)
 ```
 
 It works! But now we want explore how values for `window` and `sigma` affect the plot. We could reevaluate the above cell a lot of times, but that would be a slow and painful process. Instead, let's use Panel to quickly add some interactive controls and quickly determine how different parameter values impact the output.
@@ -65,7 +68,7 @@ sigma_widget = pn.widgets.IntSlider(name="sigma", value=10, start=0, end=20)
 Now that we have a function and some widgets, let's link them together so that updates to the widgets rerun the function. One easy way to create this link in Panel is with `pn.bind`:
 
 ```{pyodide}
-bound_plot = pn.bind(find_outliers, variable=variable_widget, window=window_widget, sigma=sigma_widget)
+bound_plot = pn.bind(create_plot, variable=variable_widget, window=window_widget, sigma=sigma_widget)
 ```
 
 Once you have bound the widgets to the function's arguments you can lay out the resulting `bound_plot` component along with the `widget` components using a Panel layout such as `Column`:
@@ -77,7 +80,7 @@ first_app = pn.Column(variable_widget, window_widget, sigma_widget, bound_plot)
 first_app
 ```
 
-As long as you have a live Python process running, dragging these widgets will trigger a call to the `find_outliers` callback function, evaluating it for whatever combination of parameter values you select and displaying the results.
+As long as you have a live Python process running, dragging these widgets will trigger a call to the `create_plot` callback function, evaluating it for whatever combination of parameter values you select and displaying the results.
 
 ## Next Steps
 

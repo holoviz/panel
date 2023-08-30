@@ -3,10 +3,8 @@ import {useCallback} from 'preact/hooks';
 import {html} from 'htm/preact';
 
 import {div} from "@bokehjs/core/dom"
-import {build_views} from "@bokehjs/core/build_views"
 import {isArray} from "@bokehjs/core/util/types"
 import * as p from "@bokehjs/core/properties"
-import {UIElementView} from "@bokehjs/models/ui/ui_element"
 import {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
 
 import {dict_to_records} from "./data"
@@ -226,18 +224,6 @@ export class ReactiveHTMLView extends HTMLBoxView {
     return models
   }
 
-  async build_child_views(): Promise<UIElementView[]> {
-    const {created, removed} = await build_views(this._child_views, this.child_models, {parent: (null as any)})
-    for (const view of removed) {
-      this._resize_observer.unobserve(view.el)
-    }
-
-    for (const view of created) {
-      this._resize_observer.observe(view.el, {box: "border-box"})
-    }
-    return created
-  }
-
   _after_layout(): void {
     this.run_script('after_layout', true)
   }
@@ -273,7 +259,9 @@ export class ReactiveHTMLView extends HTMLBoxView {
     if (view == null)
       el.innerHTML = htmlDecode(model) || model
     else {
-      view.render_to(el)
+      el.appendChild(view.el)
+      view.render()
+      view.after_render()
     }
   }
 

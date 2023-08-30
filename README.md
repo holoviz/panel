@@ -97,7 +97,7 @@ Head over to the [getting started guide](https://panel.holoviz.org/getting_start
 Panel can be installed on Linux, Windows, or Mac with ``conda``:
 
 ```bash
-conda install -c pyviz panel
+conda install panel
 ```
 
 or with ``pip``:

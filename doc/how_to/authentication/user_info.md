@@ -38,3 +38,29 @@ The auth template must be a valid Jinja2 template and accepts a number of argume
 - `{{ error_type }}`: The type of error.
 - `{{ error }}`: A short description of the error.
 - `{{ error_msg }}`: A full description of the error.
+
+The `authorization_callback` may also contain a second parameter, which is set by the
+requested application path. You can use this extra parameter to check if a user is
+authenticated _and_ has access to the application at the given path.
+
+```python
+from urllib import parse
+import panel as pn
+
+authorized_user_paths = {
+    "user1": ["/app1", "/app2"],
+    "user2": ["/app1"],
+}
+
+def authorize(user_info, request_path):
+    current_user = user_info['username']
+    current_path = parse.urlparse(request_path).path
+    if current_user not in authorized_user_paths:
+        return False
+    current_user_paths = authorized_user_paths[current_user]
+    if current_path in current_user_paths:
+        return True
+    return False
+
+pn.config.authorize_callback = authorize
+```
