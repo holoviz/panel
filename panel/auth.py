@@ -869,7 +869,7 @@ class BasicLoginHandler(RequestHandler):
             next_url = self.get_cookie("next_url", "/")
             self.redirect(next_url)
         else:
-            error_msg = "?error=" + tornado.escape.url_escape("Login incorrect")
+            error_msg = "?error=" + tornado.escape.url_escape("Invalid username or password!")
             self.redirect(self.request.uri + error_msg)
 
     def set_current_user(self, user):
