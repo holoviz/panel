@@ -1,5 +1,7 @@
 # ReactiveHTML component with callback
 
+In this guide you will learn how to add callbacks to your `ReactiveHTML` components.
+
 ## Slideshow with Python callback
 
 This example will show you how to create a `SlideShow` component that uses a python *callback*
@@ -51,3 +53,7 @@ class JSSlideshow(ReactiveHTML):
 
 JSSlideshow(width=800, height=300)
 ```
+
+By using Javascript callbacks instead of Python callbacks you can achieve higher performance,
+components that can be *js linked* and components that will also work when your app is saved to
+static html.

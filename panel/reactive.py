@@ -1560,8 +1560,25 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
 
 class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     """
-    ReactiveHTML provides bi-directional syncing of arbitrary HTML
-    attributes and DOM properties with parameters on the subclass.
+    The ReactiveHTML class enables you to create custom Panel components using HTML, CSS and/ or
+    Javascript without Javascript build tools.
+
+    A `ReactiveHTML` subclass provides bi-directional syncing of its parameters with arbitrary HTML
+    elements, attributes and properties. The key part of the subclass is the `_template`
+    variable. This is the HTML template that gets rendered and declares how to link parameters on the
+    subclass to HTML.
+
+    >>>    import panel as pn
+    >>>    import param
+    >>>    class CustomComponent(pn.reactive.ReactiveHTML):
+    ...
+    ...        index = param.Integer(default=0)
+    ...
+    ...        _template = '<img id="slideshow" src="https://picsum.photos/800/300?image=${index}" onclick="${_img_click}"></img>'
+    ...
+    ...        def _img_click(self, event):
+    ...            self.index += 1
+    >>>    CustomComponent(width=500, height=200).servable()
 
     HTML templates
     ~~~~~~~~~~~~~~
