@@ -30,11 +30,28 @@ How to create layouts using `ReactiveHTML`
 How to style `ReactiveHTML` components
 :::
 
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`bolt;2.5em;sd-mr-1 sd-animate-grow50` Callbacks
+:link: reactive_html_callbacks
+:link-type: doc
+
+How to add Python and JS callbacks to `ReactiveHTML`
+:::
+
 :::{grid-item-card} {octicon}`select;2.5em;sd-mr-1 sd-animate-grow50` Widgets
 :link: reactive_html_widgets
 :link-type: doc
 
 How to create input widgets using `ReactiveHTML`
+:::
+
+:::{grid-item-card} {octicon}`border-all;2.5em;sd-mr-1 sd-animate-grow50` DataFrame
+:link: reactive_html_dataframe
+:link-type: doc
+
+How to create components using `ReactiveHTML` and a DataFrame parameter
 :::
 
 ::::

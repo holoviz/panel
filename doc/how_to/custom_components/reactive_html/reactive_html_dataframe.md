@@ -5,12 +5,14 @@ In this guide you will learn how to efficiently implement `ReactiveHTML` compone
 
 ## Creating a Table Pane
 
-In this example we will shop you how to create a custom Table Pane. The example will be based on the [GridJS table](https://gridjs.io/).
+In this example we will show you how to create a custom Table Pane. The example will be based on
+the [GridJS table](https://gridjs.io/).
 
 ```{pyodide}
 import panel as pn
 import param
 import pandas as pd
+import random
 
 class GridJSComponent(pn.reactive.ReactiveHTML):
     value = param.DataFrame()
@@ -18,15 +20,23 @@ class GridJSComponent(pn.reactive.ReactiveHTML):
     _scripts = {
       "render": """
 console.log(data.value)
-const columns = Object.keys(data.value).filter(key => key !== "index");
-var rows= []
-for (let index=0;index<data.value["index"].shape[0];index++){
-  const row=columns.map((key)=>{
-    return data.value[key][index]
-  })
-  rows.push(row)
+state.config= ()=>{
+  const columns = Object.keys(data.value).filter(key => key !== "index");
+  var rows= []
+  for (let index=0;index<data.value["index"].shape[0];index++){
+    const row=columns.map((key)=>{
+      return data.value[key][index]
+    })
+    rows.push(row)
+  }
+  return {columns: columns, data: rows, resizable: true, sort: true }
 }
-new gridjs.Grid({columns: columns, data: rows }).render(wrapper);
+config = state.config()
+console.log(config)
+state.grid = new gridjs.Grid(config).render(wrapper);
+""", "value": """
+config = state.config()
+state.grid.updateConfig(config).forceRender()
 """
     }
     __css__ = [
@@ -36,21 +46,21 @@ new gridjs.Grid({columns: columns, data: rows }).render(wrapper);
       "https://unpkg.com/gridjs/dist/gridjs.umd.js"
     ]
 
-data=pd.DataFrame([
-  ["John", "john@example.com", "(353) 01 222 3333"],
-  ["Mark", "mark@gmail.com", "(01) 22 888 4444"],
-  ["Eoin", "eoin@gmail.com", "0097 22 654 00033"],
-  ["Sarah", "sarahcdd@gmail.com", "+322 876 1233"],
-  ["Afshin", "afshin@mail.com", "(353) 22 87 8356"]
-],
-  columns= ["Name", "Email", "Phone Number"]
-)
-GridJSComponent(value=data, width=600).servable()
+def data(event):
+  return pd.DataFrame([
+    ["John", "john@example.com", "(353) 01 222 3333", random.uniform(0, 1)],
+    ["Mark", "mark@gmail.com", "(01) 22 888 4444", random.uniform(0, 1)],
+    ["Eoin", "eoin@gmail.com", "0097 22 654 00033", random.uniform(0, 1)],
+    ["Sarah", "sarahcdd@gmail.com", "+322 876 1233", random.uniform(0, 1)],
+    ["Afshin", "afshin@mail.com", "(353) 22 87 8356", random.uniform(0, 1)]
+  ],
+    columns= ["Name", "Email", "Phone Number", "Random"]
+  )
+update_button = pn.widgets.Button(name="UPDATE", button_type="primary")
+grid = GridJSComponent(value=pn.bind(data, update_button), sizing_mode="stretch_width")
+pn.Column(update_button, grid).servable()
 ```
 
-If you look in the *browser console* you will see the `data.value`
+If you look in the *browser console* you can see the `data.value` and `config` values.
 
 ![DataFrame in the console](../../../_static/reactive-html-dataframe-in-console.png)
-
-# Todo: Figure out if we should make this example more complete
-# Todo: Figure out how to explain what `data.value` is and how to efficiently transform it
