@@ -2,6 +2,50 @@
 
 See [the HoloViz blog](https://blog.holoviz.org/tag/panel.html) for a visual summary of the major features added in each release.
 
+## Version 1.2.2
+
+Date: 2023-08-31
+
+This micro-release is likely the last in the 1.2.x series with a large number of bug fixes and a few enhancements to existing components. The enhancements include the ability to control the scroll position on a `Column`, improvements for authentication and authorization, the ability to add click event handlers to `Perspective` and a few other items. In terms of bug fixes this release also includes fixes for authentication, some improvements when rendering `Tabulator` avoiding various race conditions in its rendering pipeline, and fixes for `Perspective`, `Echarts`, `DeckGL` and a few other components. We are very grateful for a large number of community contributions to this release and welcome and congratulate new contributors @s22chan, @RaulPL, @dogbunny, @thomasjpfan, @SultanOrazbayev and @pierrotsmnrd. Many thanks also to returning contributors @TBym, @Lnk2past, @ndmlny-qs, @owenlamont and our core developer team @MarcSkovMadsen, @ahuang11, @Hoxbro, @maximlt, and @philippjfr.
+
+### Enhancements
+
+- Add scroll button, auto-scroll and scroll position options to `Column` ([#5245](https://github.com/holoviz/panel/pull/5245), [#5365](https://github.com/holoviz/panel/pull/5365), [#5369](https://github.com/holoviz/panel/pull/5369), [#5403](https://github.com/holoviz/panel/pull/5403))
+- Add cache busting to server CSS resources ([#5414](https://github.com/holoviz/panel/pull/5414))
+- Add `Tabulator.title_formatters` parameter ([#5421](https://github.com/holoviz/panel/pull/5421))
+- Provide the the accessed path to authorization checks ([#5386](https://github.com/holoviz/panel/pull/5386))
+- Add `Perspective` click events ([#5430](https://github.com/holoviz/panel/pull/5430))
+- Add and improve `pn.io.hold` and `pn.io.immediate_dispatch` context managers to control events ([#5444](https://github.com/holoviz/panel/pull/5444))
+- Allow to passing `basic_login_template` argument to panel server ([#5454](https://github.com/holoviz/panel/pull/5454))
+
+### Bug fixes
+
+- Ensure `BasicAuth` forwards to original URL after login ([#5357](https://github.com/holoviz/panel/pull/5357))
+- Correct return types from `threading.Thread` to `panel.io.server.StoppableThread` ([#5396](https://github.com/holoviz/panel/pull/5396))
+- Various guards and fixes ensuring `Tabulator` re-renders correctly ([#5410](https://github.com/holoviz/panel/pull/5410), [#5412](https://github.com/holoviz/panel/pull/5412), [[#5432](https://github.com/holoviz/panel/pull/5432)](https://github.com/holoviz/panel/pull/5432))
+- Avoid extra executions when executing periodic callback with counter ([#5344](https://github.com/holoviz/panel/pull/5344))
+- Ensure updates to `DataModel` are correctly scheduled on the event loop ([#5360](https://github.com/holoviz/panel/pull/5360))
+- Fixes for displaying single newlines in `Markdown` output and add `renderer_options` ([#5376](https://github.com/holoviz/panel/pull/5376))
+- Allow update of `Accordion` title without updating content ([#5413](https://github.com/holoviz/panel/pull/5413))
+- Fix authentication handling when prefix is set ([#5422](https://github.com/holoviz/panel/pull/5422))
+- Fix serialization issues affecting `TextLayer` objects in `DeckGL` ([#5427](https://github.com/holoviz/panel/pull/5427))
+- Fix height responsiveness of `Perspective` pane ([#5429](https://github.com/holoviz/panel/pull/5429))
+- Ensure `FileDownload` button can be clicked anywhere ([#5431](https://github.com/holoviz/panel/pull/5431))
+- Ensure `ReactiveHTML` children are rendered just like other models ([#5434](https://github.com/holoviz/panel/pull/5434))
+- Set `Perspective` properties correctly to avoid causing unfocus on keypresses ([[#5432](https://github.com/holoviz/panel/pull/5432)](https://github.com/holoviz/panel/pull/5432))
+- Ensure `FloatPanel` correctly exposes its children to allow linking ([#5433](https://github.com/holoviz/panel/pull/5433))
+- Do no reset `Tabulator` options if DataFrame indexes are unchanged ([#5436](https://github.com/holoviz/panel/pull/5436))
+- Add ability to work around issues when removing series from `ECharts` ([#5435](https://github.com/holoviz/panel/pull/5435))
+
+### Documentation
+
+- Fix incorrectly linked images in streamlit migration guide and VSCode guide ([#5327](https://github.com/holoviz/panel/pull/5327), [#5329](https://github.com/holoviz/panel/pull/5329))
+- Improve developer instructions ([#5305](https://github.com/holoviz/panel/pull/5305), [#5380](https://github.com/holoviz/panel/pull/5380), [#5426](https://github.com/holoviz/panel/pull/5426))
+
+### Compatibility
+
+- Compatibility with param 2.0 watchers ([#5350](https://github.com/holoviz/panel/pull/5350), [#5455](https://github.com/holoviz/panel/pull/5455))
+
 ## Version 1.2.1
 
 Date: 2023-07-25
