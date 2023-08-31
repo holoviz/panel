@@ -11,12 +11,13 @@
 .card-header {
   align-items: center;
   background-color: rgba(0, 0, 0, 0.03);
-  outline: unset;
+  border: unset;
   border-radius: 0.25rem;
   display: inline-flex;
   justify-content: start;
-  position: sticky;
   left: 0;
+  outline: unset;
+  position: sticky;
   width: 100%;
 }
 

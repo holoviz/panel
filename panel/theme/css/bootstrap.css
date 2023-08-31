@@ -134,9 +134,9 @@ html {
 
 button.card-header,
 button.accordion-header {
-  outline: unset;
   box-shadow: unset;
   color: var(--bs-body-color);
+  outline: unset;
   padding: 0px 6px;
 }
 
