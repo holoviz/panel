@@ -80,6 +80,7 @@ export class QuillInputView extends HTMLBoxView {
 
   style_redraw(): void {
     this.container.style.visibility = 'visible';
+    this.invalidate_layout()
   }
 
   after_layout(): void {
