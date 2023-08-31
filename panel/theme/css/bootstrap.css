@@ -123,7 +123,7 @@ html {
   --bs-card-border-width: var(--bs-border-width);
   --bs-card-border-color: var(--bs-border-color-translucent);
   background-color: var(--bs-body-bg);
-  border: var(--bs-card-border-width) solid var(--bs-card-border-color);
+  outline: var(--bs-card-border-width) solid var(--bs-card-border-color);
   color: var(--bs-body-color);
 }
 
@@ -134,9 +134,9 @@ html {
 
 button.card-header,
 button.accordion-header {
-  border: unset;
   box-shadow: unset;
   color: var(--bs-body-color);
+  outline: unset;
   padding: 0px 6px;
 }
 
