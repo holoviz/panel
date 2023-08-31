@@ -11,7 +11,6 @@ export class IPyWidgetView extends HTMLBoxView {
   private ipychildren: any[]
   private manager: any
 
-
   initialize(): void {
     super.initialize()
     let manager: any
@@ -60,19 +59,18 @@ export class IPyWidgetView extends HTMLBoxView {
       if (model == null)
 	return
 
-      this.manager.create_view(model, {el: this.el}).then(async (view: any) => {
-	this.ipyview = view
-	this.ipychildren = []
-	if (view.children_views) {
-          for (const child of view.children_views.views)
-            this.ipychildren.push(await child)
-	}
-	this.shadow_el.appendChild(this.ipyview.el)
-	this.ipyview.trigger('displayed', this.ipyview)
-	for (const child of this.ipychildren)
-          child.trigger('displayed', child)
-	this.invalidate_layout()
-      })
+      const view = await this.manager.create_view(model, {el: this.el})
+      this.ipyview = view
+      this.ipychildren = []
+      if (view.children_views) {
+        for (const child of view.children_views.views)
+          this.ipychildren.push(await child)
+      }
+      this.shadow_el.appendChild(this.ipyview.el)
+      this.ipyview.trigger('displayed', this.ipyview)
+      for (const child of this.ipychildren)
+        child.trigger('displayed', child)
+      this.invalidate_layout()
     })
   }
 }
