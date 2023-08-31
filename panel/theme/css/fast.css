@@ -163,7 +163,7 @@ img {
 .accordion-header {
   align-items: center;
   background-color: var(--neutral-fill-rest);
-  border: unset;
+  outline: unset;
   box-shadow: unset;
   color: var(--neutral-foreground-rest);
   display: flex;

@@ -1,5 +1,5 @@
 :host(.card) {
-  border: 1px solid rgba(0, 0, 0, 0.125);
+  outline: 1px solid rgba(0, 0, 0, 0.125);
   border-radius: 0.25rem;
 }
 
@@ -11,7 +11,7 @@
 .card-header {
   align-items: center;
   background-color: rgba(0, 0, 0, 0.03);
-  border: unset;
+  outline: unset;
   border-radius: 0.25rem;
   display: inline-flex;
   justify-content: start;
@@ -23,7 +23,7 @@
 .accordion-header {
   align-items: center;
   background-color: rgba(0, 0, 0, 0.03);
-  border: none;
+  border: unset;
   outline: 1px solid;
   border-radius: 0;
   display: flex;

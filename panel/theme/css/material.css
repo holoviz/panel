@@ -49,7 +49,7 @@
 .accordion-header {
   --current-background-color: var(--mdc-theme-surface);
   background-color: var(--current-background-color);
-  border: unset;
+  outline: unset;
   border-radius: 0;
   border-bottom: 0.2px solid var(--current-background-color);
   padding: 0px 6px;
