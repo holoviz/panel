@@ -4,7 +4,8 @@
 }
 
 :host(.accordion) {
-  border: 1px solid rgba(0, 0, 0, 0.125);
+  outline: 1px solid rgba(0, 0, 0, 0.125);
+  width: 100%;
 }
 
 .card-header {
@@ -22,7 +23,8 @@
 .accordion-header {
   align-items: center;
   background-color: rgba(0, 0, 0, 0.03);
-  border: 1px solid;
+  border: none;
+  outline: 1px solid;
   border-radius: 0;
   display: flex;
   justify-content: start;
