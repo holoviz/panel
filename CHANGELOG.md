@@ -34,6 +34,12 @@ This micro-release is likely the last in the 1.2.x series with a large number of
 - Ensure `FloatPanel` correctly exposes its children to allow linking ([#5433](https://github.com/holoviz/panel/pull/5433))
 - Do no reset `Tabulator` options if DataFrame indexes are unchanged ([#5436](https://github.com/holoviz/panel/pull/5436))
 - Add ability to work around issues when removing series from `ECharts` ([#5435](https://github.com/holoviz/panel/pull/5435))
+- Fix race conditions when initializing and rendering IPyWidgets in notebooks ([#5462](https://github.com/holoviz/panel/pull/5462))
+- Tweak `Accordion` CSS to remove gaps and avoid border overlap ([#5460](https://github.com/holoviz/panel/pull/5460))
+- Ensure columns are deleted when updating traces on `Plotly` pane to avoid corruption ([#5464](https://github.com/holoviz/panel/pull/5464))
+- Invalidate layout when `TextEditor` CSS loads ([#5465](https://github.com/holoviz/panel/pull/5465))
+- Ensure `FloatPanel` reflects closed status ([#5466](https://github.com/holoviz/panel/pull/5466))
+- Fix handling of string dtypes on `Perspective` pane ([#5467](https://github.com/holoviz/panel/pull/5467))
 
 ### Documentation
 
