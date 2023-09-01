@@ -10,7 +10,9 @@ import re
 
 from contextlib import ExitStack
 from dataclasses import dataclass
-from inspect import isasyncgen, isawaitable, isgenerator
+from inspect import (
+    isasyncgen, isasyncgenfunction, isawaitable, isgenerator,
+)
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from typing import (
@@ -38,10 +40,9 @@ from ..reactive import ReactiveHTML
 from ..viewable import Viewable
 from .base import CompositeWidget, Widget
 from .button import Button
-from .indicators import LoadingSpinner
 from .input import FileInput, TextInput
 
-Avatar = Union[str, BytesIO]
+Avatar = Union[str, BytesIO, ImageBase]
 AvatarDict = Dict[str, Avatar]
 
 USER_LOGO = "🧑"
@@ -90,6 +91,14 @@ DEFAULT_AVATARS = {
     "wolfram": WOLFRAM_LOGO,
     "wolfram alpha": WOLFRAM_LOGO,
 }
+
+PLACEHOLDER_SVG = """
+    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-loader-3" width="40" height="40" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+        <path d="M3 12a9 9 0 0 0 9 9a9 9 0 0 0 9 -9a9 9 0 0 0 -9 -9"></path>
+        <path d="M17 12a5 5 0 1 0 -5 5"></path>
+    </svg>
+"""  # noqa: E501
 
 
 @dataclass
@@ -306,7 +315,7 @@ class ChatEntry(CompositeWidget):
         from the value.
     user : str
         Name of the user who sent the message.
-    avatar : str | BinaryIO
+    avatar : str | BinaryIO | pn.pane.ImageBase
         The avatar to use for the user. Can be a single character text, an emoji,
         or anything supported by `pn.pane.Image`. If not set, checks if
         the user is available in the default_avatars mapping; else uses the
@@ -353,7 +362,7 @@ class ChatEntry(CompositeWidget):
     user = param.Parameter(default="User", doc="""
         Name of the user who sent the message.""")
 
-    avatar = param.ClassSelector(default="", class_=(str, BinaryIO), doc="""
+    avatar = param.ClassSelector(default="", class_=(str, BinaryIO, ImageBase), doc="""
         The avatar to use for the user. Can be a single character text, an emoji,
         or anything supported by `pn.pane.Image`. If not set, checks if
         the user is available in the default_avatars mapping; else uses the
@@ -528,7 +537,8 @@ class ChatEntry(CompositeWidget):
             not isinstance(obj, FileBase)
         )
         if is_markup:
-            obj.css_classes = [*obj.css_classes, "message"]
+            if obj.object:  # only show a background if there is content
+                obj.css_classes = [*obj.css_classes, "message"]
         else:
             if obj.sizing_mode is None and not obj.width:
                 obj.sizing_mode = "stretch_width"
@@ -593,7 +603,10 @@ class ChatEntry(CompositeWidget):
         if not avatar and self.user:
             avatar = self.user[0]
 
-        if len(avatar) == 1:
+        if isinstance(avatar, ImageBase):
+            avatar_pane = avatar
+            avatar_pane.param.update(width=35, height=35)
+        elif len(avatar) == 1:
             # single character
             avatar_pane = HTML(avatar)
         else:
@@ -602,7 +615,7 @@ class ChatEntry(CompositeWidget):
             except ValueError:
                 # likely an emoji
                 avatar_pane = HTML(avatar)
-        avatar_pane.css_classes = ["avatar"]
+        avatar_pane.css_classes = ["avatar", *avatar_pane.css_classes]
         avatar_pane.visible = self.show_avatar
         return avatar_pane
 
@@ -611,7 +624,7 @@ class ChatEntry(CompositeWidget):
         """
         Render the user pane as some HTML text or Image pane.
         """
-        return HTML(self.user, css_classes=["name"], visible=self.show_user)
+        return HTML(self.user, height=20, css_classes=["name"], visible=self.show_user)
 
     @param.depends("value")
     def _render_value(self) -> Viewable:
@@ -753,15 +766,11 @@ class ChatFeed(CompositeWidget):
     callback_user = param.String(default="Assistant", doc="""
         The default user name to use for the entry provided by the callback.""")
 
-    placeholder = param.Parameter(doc="""
-        Placeholder to display while the callback is running.
-        If not set, defaults to a LoadingSpinner.""")
-
-    placeholder_text = param.String(default="Loading...", doc="""
+    placeholder_text = param.String(default="", doc="""
         If placeholder is the default LoadingSpinner,
         the text to display next to it.""")
 
-    placeholder_threshold = param.Number(default=0.2, bounds=(0, None), doc="""
+    placeholder_threshold = param.Number(default=0.4, bounds=(0, None), doc="""
         Min duration in seconds of buffering before displaying the placeholder.
         If 0, the placeholder will be disabled.""")
 
@@ -848,27 +857,16 @@ class ChatFeed(CompositeWidget):
 
         self.link(self._chat_log, value="objects", bidirectional=True)
 
-    @param.depends("placeholder", "placeholder_text", watch=True, on_init=True)
+    @param.depends("placeholder_text", watch=True, on_init=True)
     def _update_placeholder(self):
-        plain_entry = {
-            "show_avatar": False,
-            "show_user": False,
-            "show_timestamp": False,
-            "reaction_icons": {},
-        }
-        if self.placeholder is None:
-            self._placeholder = ChatEntry(
-                value=LoadingSpinner(
-                    name=self.param.placeholder_text,
-                    value=True,
-                    width=40,
-                    height=40,
-                ),
-                **plain_entry,
-            )
-        else:
-            self._placeholder = ChatEntry(value=self.placeholder, **plain_entry)
-        self._placeholder.margin = (25, 30)
+        loading_avatar = SVG(PLACEHOLDER_SVG, css_classes=["rotating-placeholder"])
+        self._placeholder = ChatEntry(
+            user=" ",
+            value=self.placeholder_text,
+            show_timestamp=False,
+            avatar=loading_avatar,
+            reaction_icons={}
+        )
 
     @param.depends("header", watch=True)
     def _hide_header(self):
@@ -1012,10 +1010,14 @@ class ChatFeed(CompositeWidget):
         if self.placeholder_threshold == 0:
             return
 
+        callable_is_async = (
+            asyncio.iscoroutinefunction(self.callback) or
+            isasyncgenfunction(self.callback)
+        )
         start = asyncio.get_event_loop().time()
         while not task.done() and num_entries == len(self._chat_log):
             duration = asyncio.get_event_loop().time() - start
-            if duration > self.placeholder_threshold:
+            if duration > self.placeholder_threshold or not callable_is_async:
                 self._chat_log.append(self._placeholder)
                 return
             await asyncio.sleep(0.05)
@@ -1036,15 +1038,10 @@ class ChatFeed(CompositeWidget):
                 return
 
             num_entries = len(self._chat_log)
-            if isawaitable(self.callback):
-                task = asyncio.create_task(self._handle_callback(entry))
-                await self._schedule_placeholder(task, num_entries)
-                await task
-                task.result()
-            else:
-                if self.placeholder_threshold > 0:
-                    self._chat_log.append(self._placeholder)
-                await self._handle_callback(entry)
+            task = asyncio.create_task(self._handle_callback(entry))
+            await self._schedule_placeholder(task, num_entries)
+            await task
+            task.result()
         finally:
             self._replace_placeholder(None)
             self.disabled = disabled

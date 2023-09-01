@@ -95,7 +95,7 @@ class TestChatEntry:
 
         avatar_pane = columns[0][0].object()
         assert isinstance(avatar_pane, HTML)
-        assert avatar_pane.object == "😊"
+        assert avatar_pane.object == "🧑"
 
         user_pane = columns[1][0].object()
         assert isinstance(user_pane, HTML)
@@ -158,6 +158,10 @@ class TestChatEntry:
         entry.show_avatar = False
         avatar_pane = columns[0][0].object()
         assert not avatar_pane.visible
+
+        entry.avatar = SVG("https://tabler-icons.io/static/tabler-icons/icons/user.svg")
+        avatar_pane = columns[0][0].object()
+        assert isinstance(avatar_pane, SVG)
 
     def test_update_user(self):
         entry = ChatEntry(user="Andrew")
@@ -749,12 +753,76 @@ class TestChatFeedCallback:
         # append sent message and placeholder
         assert chat_log_mock.append.call_count == 2
 
-    def test_custom_placeholder(self, chat_feed):
-        chat_feed.placeholder = "Loading..."
-        placeholder = chat_feed._placeholder
-        assert isinstance(placeholder, ChatEntry)
-        assert placeholder.value == "Loading..."
-        assert placeholder.margin == (25, 30)
+    def test_placeholder_threshold_under(self, chat_feed):
+        async def echo(contents, user, instance):
+            await asyncio.sleep(0.25)
+
+        chat_log_mock = MagicMock()
+        chat_log_mock.__getitem__.return_value = ChatEntry(
+            value="Message", placeholder_threshold=5)
+        chat_feed.callback = echo
+        chat_feed._chat_log = chat_log_mock
+        chat_feed.send("Message", respond=True)
+        # append sent message and placeholder
+        assert chat_log_mock.append.call_count == 1
+
+    def test_placeholder_threshold_under_generator(self, chat_feed):
+        async def echo(contents, user, instance):
+            await asyncio.sleep(0.25)
+            yield "hey testing"
+
+        chat_log_mock = MagicMock()
+        chat_log_mock.__getitem__.return_value = ChatEntry(
+            value="Message", placeholder_threshold=5)
+        chat_feed.callback = echo
+        chat_feed._chat_log = chat_log_mock
+        chat_feed.send("Message", respond=True)
+        # append sent message and placeholder
+        assert chat_log_mock.append.call_count == 2
+
+    def test_placeholder_threshold_exceed(self, chat_feed):
+        async def echo(contents, user, instance):
+            await asyncio.sleep(0.5)
+
+        chat_log_mock = MagicMock()
+        chat_log_mock.__getitem__.return_value = ChatEntry(
+            value="Message", placeholder_threshold=0.1)
+        chat_feed.callback = echo
+        chat_feed._chat_log = chat_log_mock
+        chat_feed.send("Message", respond=True)
+        # append sent message and placeholder
+        assert chat_log_mock.append.call_count == 2
+
+    def test_placeholder_threshold_exceed_generator(self, chat_feed):
+        async def echo(contents, user, instance):
+            await asyncio.sleep(0.5)
+            yield "hello testing"
+
+        chat_log_mock = MagicMock()
+        chat_log_mock.__getitem__.return_value = ChatEntry(
+            value="Message", placeholder_threshold=0.1)
+        chat_feed.callback = echo
+        chat_feed._chat_log = chat_log_mock
+        chat_feed.send("Message", respond=True)
+        # append sent message and placeholder
+        assert chat_log_mock.append.call_count == 3
+
+    def test_placeholder_threshold_sync(self, chat_feed):
+        """
+        Placeholder should always be appended if the
+        callback is synchronous.
+        """
+        def echo(contents, user, instance):
+            time.sleep(0.25)
+
+        chat_log_mock = MagicMock()
+        chat_log_mock.__getitem__.return_value = ChatEntry(
+            value="Message", placeholder_threshold=5)
+        chat_feed.callback = echo
+        chat_feed._chat_log = chat_log_mock
+        chat_feed.send("Message", respond=True)
+        # append sent message and placeholder
+        assert chat_log_mock.append.call_count == 2
 
     def test_renderers_pane(self, chat_feed):
         chat_feed.renderers = [HTML]

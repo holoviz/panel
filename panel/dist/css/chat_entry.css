@@ -1,3 +1,12 @@
+@keyframes icon-rotation {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(359deg);
+  }
+}
+
 .chat-entry {
   display: flex;
   flex-direction: row;
@@ -71,4 +80,8 @@
 .markdown {
   padding-block: 0px;
   padding-inline: 15px;
+}
+
+.avatar.rotating-placeholder {
+  animation: icon-rotation 1.28s infinite cubic-bezier(0.68, -0.55, 0.27, 1.55);
 }
