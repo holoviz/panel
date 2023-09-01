@@ -61,6 +61,6 @@ grid = GridJSComponent(value=pn.bind(data, update_button), sizing_mode="stretch_
 pn.Column(update_button, grid).servable()
 ```
 
-If you look in the *browser console* you can see the `data.value` and `config` values.
+If you look in the *browser console* you can see the *DataFrame* `data.value` and transformed `config` values.
 
 ![DataFrame in the console](../../../_static/reactive-html-dataframe-in-console.png)
