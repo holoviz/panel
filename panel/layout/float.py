@@ -94,6 +94,10 @@ class FloatPanel(ListLike, ReactiveHTML):
           contentSize: `${model.width} ${model.height}`,
           onstatuschange: function() {
             data.status = this.status
+          },
+          onbeforeclose: function() {
+           data.status = 'closed'
+           return true
           }
         }
         if (data.contained) {
