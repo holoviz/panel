@@ -529,9 +529,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         self._models = {}
         self._comms = {}
         self._kernels = {}
-        component_name = params.pop('component_name', type(self).__name__)
         super().__init__(**params)
-        self.component_name = component_name
         self._found_links = set()
         self._logger = logging.getLogger(f'{__name__}.{type(self).__name__}')
 
@@ -634,18 +632,6 @@ class Renderable(param.Parameterized, MimeRenderMixin):
     def __repr__(self, depth: int = 0) -> str:
         return '{cls}({params})'.format(cls=type(self).__name__,
                                         params=', '.join(param_reprs(self)))
-
-    @property
-    def component_name(self) -> str:
-        """
-        A user given custom name for this component. Default is the class
-        name of the component e.g. `Row` or `Button`.
-        """
-        return self._component_name
-
-    @component_name.setter
-    def component_name(self, v: str):
-        self._component_name = v
 
     def get_root(
         self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
