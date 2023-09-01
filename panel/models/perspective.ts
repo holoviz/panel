@@ -3,7 +3,7 @@ import {div} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 import {HTMLBox, HTMLBoxView, set_size} from "./layout"
-import {Attrs} from "@bokehjs/core/types"
+import type {Attrs} from "@bokehjs/core/types"
 
 const THEMES: any = {
   'material-dark': 'Material Dark',

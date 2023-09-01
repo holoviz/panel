@@ -1,4 +1,5 @@
-import {build_view, IterViews} from "@bokehjs/core/build_views"
+import type {IterViews} from "@bokehjs/core/build_views"
+import {build_view} from "@bokehjs/core/build_views"
 import {ButtonType} from "@bokehjs/core/enums"
 import * as p from "@bokehjs/core/properties"
 
@@ -6,7 +7,8 @@ import {InputWidget, InputWidgetView} from "@bokehjs/models/widgets/input_widget
 import {Icon, IconView} from "@bokehjs/models/ui/icons/icon"
 
 import buttons_css, * as buttons from "@bokehjs/styles/buttons.css"
-import {prepend, nbsp, text, button, StyleSheetLike} from "@bokehjs/core/dom"
+import type {StyleSheetLike} from "@bokehjs/core/dom"
+import {prepend, nbsp, text, button} from "@bokehjs/core/dom"
 
 function dataURItoBlob(dataURI: string) {
   // convert base64 to raw binary data held in a string

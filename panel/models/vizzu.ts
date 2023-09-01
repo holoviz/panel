@@ -3,7 +3,7 @@ import * as p from "@bokehjs/core/properties"
 import {isArray, isObject} from "@bokehjs/core/util/types"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source";
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
-import {Attrs} from "@bokehjs/core/types"
+import type {Attrs} from "@bokehjs/core/types"
 
 import {debounce} from  "debounce"
 
