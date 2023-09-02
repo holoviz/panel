@@ -425,7 +425,7 @@ class ChatEntry(CompositeWidget):
         self.reaction_icons.link(self, visible="show_reaction_icons", bidirectional=True)
         self.param.trigger("reactions", "show_reaction_icons")
         if not self.avatar:
-            self._update_avatar()
+            self.param.trigger("avatar_lookup")
 
         render_kwargs = {
             "inplace": True, "stylesheets": self._stylesheets
@@ -537,7 +537,7 @@ class ChatEntry(CompositeWidget):
             not isinstance(obj, FileBase)
         )
         if is_markup:
-            if obj.object:  # only show a background if there is content
+            if len(obj.object) > 0:  # only show a background if there is content
                 obj.css_classes = [*obj.css_classes, "message"]
         else:
             if obj.sizing_mode is None and not obj.width:
@@ -627,7 +627,7 @@ class ChatEntry(CompositeWidget):
         return HTML(self.user, height=20, css_classes=["name"], visible=self.show_user)
 
     @param.depends("value")
-    def _render_value(self) -> Viewable:
+    async def _render_value(self) -> Viewable:
         """
         Renders value as a panel object.
         """
@@ -770,7 +770,7 @@ class ChatFeed(CompositeWidget):
         If placeholder is the default LoadingSpinner,
         the text to display next to it.""")
 
-    placeholder_threshold = param.Number(default=0.4, bounds=(0, None), doc="""
+    placeholder_threshold = param.Number(default=1, bounds=(0, None), doc="""
         Min duration in seconds of buffering before displaying the placeholder.
         If 0, the placeholder will be disabled.""")
 
@@ -893,7 +893,7 @@ class ChatFeed(CompositeWidget):
                 self._chat_log[index] = entry
             elif entry is None:
                 self._chat_log.remove(self._placeholder)
-        elif entry is not None and entry.value:
+        elif entry is not None:
             self._chat_log.append(entry)
 
     def _build_entry(
@@ -1020,7 +1020,7 @@ class ChatFeed(CompositeWidget):
             if duration > self.placeholder_threshold or not callable_is_async:
                 self._chat_log.append(self._placeholder)
                 return
-            await asyncio.sleep(0.05)
+            await asyncio.sleep(0.28)
 
     async def _prepare_response(self, _) -> None:
         """
@@ -1269,7 +1269,7 @@ class ChatInterface(ChatFeed):
     show_clear = param.Boolean(default=True, doc="""
         Whether to show the clear button.""")
 
-    show_button_name = param.Boolean(default=True, doc="""
+    show_button_name = param.Boolean(default=None, doc="""
         Whether to show the button name.""")
 
     _widgets = param.Dict(default={}, doc="""
@@ -1318,6 +1318,9 @@ class ChatInterface(ChatFeed):
         if active is not None:
             self.active = active
         self._composite[:] = [*self._composite[:], self._input_container]
+        self._composite.css_classes = ["chat-interface"]
+        self._composite.stylesheets = self._stylesheets
+        self._composite.styles = {"border": "1px solid var(--panel-border-color, #e1e1e1)"}
 
     def _link_disabled_loading(self, obj: Viewable):
         """
@@ -1327,6 +1330,14 @@ class ChatInterface(ChatFeed):
         for attr in ["disabled", "loading"]:
             setattr(obj, attr, getattr(self, attr))
             self.link(obj, **{attr: attr})
+
+    @param.depends("width", on_init=True)
+    def _update_input_width(self):
+        """
+        Update the input width.
+        """
+        if self.show_button_name is None:
+            self.show_button_name = self.width >= 400
 
     @param.depends(
         "widgets",
