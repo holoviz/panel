@@ -284,6 +284,7 @@ class TestChatEntry:
 
         assert ChatEntry(user="System").avatar == "⚙️"
 
+
 class TestChatFeed:
     @pytest.fixture
     def chat_feed(self):
@@ -735,6 +736,7 @@ class TestChatFeedCallback:
     def test_placeholder_disabled(self, chat_feed):
         def echo(contents, user, instance):
             time.sleep(0.25)
+            yield "hey testing"
 
         chat_log_mock = MagicMock()
         chat_log_mock.__getitem__.return_value = ChatEntry(value="Message")
@@ -743,11 +745,12 @@ class TestChatFeedCallback:
         chat_feed._chat_log = chat_log_mock
         chat_feed.send("Message", respond=True)
         # only append sent message
-        assert chat_log_mock.append.call_count == 1
+        assert chat_log_mock.append.call_count == 2
 
     def test_placeholder_enabled(self, chat_feed):
         def echo(contents, user, instance):
             time.sleep(0.25)
+            yield "hey testing"
 
         chat_log_mock = MagicMock()
         chat_log_mock.__getitem__.return_value = ChatEntry(value="Message")
@@ -755,29 +758,29 @@ class TestChatFeedCallback:
         chat_feed._chat_log = chat_log_mock
         chat_feed.send("Message", respond=True)
         # append sent message and placeholder
-        assert chat_log_mock.append.call_count == 2
+        assert chat_log_mock.append.call_count == 3
 
     def test_placeholder_threshold_under(self, chat_feed):
         async def echo(contents, user, instance):
             await asyncio.sleep(0.25)
+            return "hey testing"
 
+        chat_feed.placeholder_threshold = 5
         chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatEntry(
-            value="Message", placeholder_threshold=5)
+        chat_log_mock.__getitem__.return_value = ChatEntry(value="Message")
         chat_feed.callback = echo
         chat_feed._chat_log = chat_log_mock
         chat_feed.send("Message", respond=True)
-        # append sent message and placeholder
-        assert chat_log_mock.append.call_count == 1
+        assert chat_log_mock.append.call_count == 2
 
     def test_placeholder_threshold_under_generator(self, chat_feed):
         async def echo(contents, user, instance):
             await asyncio.sleep(0.25)
             yield "hey testing"
 
+        chat_feed.placeholder_threshold = 5
         chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatEntry(
-            value="Message", placeholder_threshold=5)
+        chat_log_mock.__getitem__.return_value = ChatEntry(value="Message")
         chat_feed.callback = echo
         chat_feed._chat_log = chat_log_mock
         chat_feed.send("Message", respond=True)
@@ -787,24 +790,27 @@ class TestChatFeedCallback:
     def test_placeholder_threshold_exceed(self, chat_feed):
         async def echo(contents, user, instance):
             await asyncio.sleep(0.5)
+            yield "hello testing"
 
+        chat_feed.placeholder_threshold = 0.1
         chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatEntry(
-            value="Message", placeholder_threshold=0.1)
+        chat_log_mock.__getitem__.return_value = ChatEntry(value="Message")
         chat_feed.callback = echo
         chat_feed._chat_log = chat_log_mock
         chat_feed.send("Message", respond=True)
         # append sent message and placeholder
-        assert chat_log_mock.append.call_count == 2
+        assert chat_log_mock.append.call_count == 3
 
     def test_placeholder_threshold_exceed_generator(self, chat_feed):
         async def echo(contents, user, instance):
             await asyncio.sleep(0.5)
             yield "hello testing"
 
+        chat_feed.placeholder_threshold = 0.1
         chat_log_mock = MagicMock()
         chat_log_mock.__getitem__.return_value = ChatEntry(
-            value="Message", placeholder_threshold=0.1)
+            value="Message", placeholder_threshold=0.1
+        )
         chat_feed.callback = echo
         chat_feed._chat_log = chat_log_mock
         chat_feed.send("Message", respond=True)
@@ -816,17 +822,19 @@ class TestChatFeedCallback:
         Placeholder should always be appended if the
         callback is synchronous.
         """
+
         def echo(contents, user, instance):
             time.sleep(0.25)
+            yield "hey testing"
 
+        chat_feed.placeholder_threshold = 5
         chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatEntry(
-            value="Message", placeholder_threshold=5)
+        chat_log_mock.__getitem__.return_value = ChatEntry(value="Message")
         chat_feed.callback = echo
         chat_feed._chat_log = chat_log_mock
         chat_feed.send("Message", respond=True)
         # append sent message and placeholder
-        assert chat_log_mock.append.call_count == 2
+        assert chat_log_mock.append.call_count == 3
 
     def test_renderers_pane(self, chat_feed):
         chat_feed.renderers = [HTML]
