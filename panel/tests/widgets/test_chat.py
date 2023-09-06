@@ -870,6 +870,45 @@ class TestChatFeedCallback:
         assert gauge.width == 100
         assert gauge.sizing_mode == "fixed"
 
+    def test_callback_exception(self, chat_feed):
+        def callback(msg, user, instance):
+            return 1 / 0
+
+        chat_feed.callback = callback
+        chat_feed.callback_exception = "summary"
+        chat_feed.send("Message", respond=True)
+        assert chat_feed.value[-1].value == "division by zero"
+        assert chat_feed.value[-1].user == "Exception"
+
+    def test_callback_exception_traceback(self, chat_feed):
+        def callback(msg, user, instance):
+            return 1 / 0
+
+        chat_feed.callback = callback
+        chat_feed.callback_exception = "verbose"
+        chat_feed.send("Message", respond=True)
+        assert chat_feed.value[-1].value.startswith("```python\nTraceback (most recent call last):")
+        assert chat_feed.value[-1].user == "Exception"
+
+    def test_callback_exception_ignore(self, chat_feed):
+        def callback(msg, user, instance):
+            return 1 / 0
+
+        chat_feed.callback = callback
+        chat_feed.callback_exception = "ignore"
+        chat_feed.send("Message", respond=True)
+        assert len(chat_feed.value) == 1
+
+    def test_callback_exception_raise(self, chat_feed):
+        def callback(msg, user, instance):
+            return 1 / 0
+
+        chat_feed.callback = callback
+        chat_feed.callback_exception = "raise"
+        with pytest.raises(ZeroDivisionError, match="division by zero"):
+            chat_feed.send("Message", respond=True)
+        assert len(chat_feed.value) == 1
+
 
 class TestChatInterfaceWidgetsSizingMode:
     def test_none(self):
