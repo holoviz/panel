@@ -1,12 +1,95 @@
-# Building Custom Components
+# Building `ReactiveHTML` Components
 
-When building custom applications and dashboards it is frequently useful to extend Panel with custom components to fit a specialized need. Panel provides multiple mechanisms to extend and compose different components or even add entirely new components.
+When you're working on custom applications and dashboards, there are times when you need to **extend Panel's capabilities to meet unique requirements**.
 
-This Background page will focus on the building of entirely new components. Making full new components can be straightforward in the simplest cases, but it does require knowledge of web technologies like HTML, CSS, and JavaScript. Alternatively, to learn how to compose existing Panel components into an easily reusable unit that behaves like a native Panel component, see the [How-to > Combine Existing Components](../../how_to/custom_components/custom_viewer.md) page.
+This page will walk you through using the `ReactiveHTML` class to craft custom components without the need for complex JavaScript build tools. You'll be able to leverage basic HTML, CSS, and JavaScript to tailor your components to your specific needs.
 
-## ReactiveHTML components
+If you're looking for an even simpler way to build custom components by combining existing ones, our guide [How-to > Combine Existing Components](../../how_to/custom_components/custom_viewer.md) might be just what you need.
 
-The `ReactiveHTML` provides bi-directional syncing of arbitrary HTML attributes and DOM properties with parameters on the subclass. This kind of component must declare a HTML template written using Javascript template variables (`${}`) and optionally Jinja2 syntax:
+## Why Use ReactiveHTML?
+
+`ReactiveHTML` empowers you to design and build custom components that seamlessly integrate with your Panel applications. These components can enhance your applications' interactivity and functionality, all while keeping the development process straightforward and free from the complexities of JavaScript build tools.
+
+## What is a `ReactiveHTML` component?
+
+A *`ReactiveHTML` component* is essentially a class that you create by inheriting from the `ReactiveHTML` class, much like the example [shown below](#what-does-a-basic-example-look-like). Within this custom class, you are required to define the `_template` attribute using HTML, which serves as the *design blueprint* for your custom component. You can use [Jinja2](https://jinja.palletsprojects.com) syntax as well as *template variables* `${...}` to make the template *dynamic*.
+
+## What does a basic example look like?
+
+A basic `ReactiveHTML` component looks like below
+
+```{pyodide}
+import param
+from panel.reactive import ReactiveHTML
+import panel as pn
+pn.extension() # for notebook
+
+class Slideshow(ReactiveHTML):
+
+    index = param.Integer(default=0)
+
+    _template = '<img id="slideshow" src="https://picsum.photos/800/300?image=${index}" onclick="${_img_click}"></img>'
+
+    def _img_click(self, event):
+        self.index += 1
+
+Slideshow(width=800, height=300)
+```
+
+## Where do I find practical examples?
+
+To see `ReactiveHTML` in action and discover **how to** create your custom components, check out our detailed guide: [How-to > Create Custom Components with ReactiveHTML](../../how_to/custom_components/reactive_html/index.md). It's packed with practical examples to help you get started quickly.
+
+## What does the API of `ReactiveHTML` look like?
+
+You can find the full api documentation [here](../../api/panel.reactive.html#panel.reactive.ReactiveHTML).
+
+### Class Attributes
+
+* **``_template``** (str): The *blueprint* for how your custom component should look and behave. The *_template* is defined using HTML. You can use [Jinja2](https://jinja.palletsprojects.com) syntax as well as *template variables* `${...}` to make the template *dynamic*.
+
+## `_template`: The Blueprint for Your Component
+
+The `_template` class attribute is where you define the structure of your ReactiveHTML component. It's like creating a blueprint for your component. This blueprint consists of HTML and CSS code.
+
+### HTML: The Content
+
+Inside `_template`, you write the HTML code that defines how your element looks. You can add headings, paragraphs, buttons, or any other HTML elements just like you would in a regular HTML file.
+
+```python
+_template = """
+<div>
+    <h1>Welcome to my component</h1>
+    <button>Click Me</button>
+</div>
+"""
+```
+
+### CSS: The Style
+
+```python
+_template = """
+<style>
+    div {background-color: lightblue;padding: 20px;}
+    h1 {color: navy;}
+</style>
+<div>
+    <h1>Welcome to my component</h1>
+    <button>Click Me</button>
+</div>
+"""
+```
+
+
+The *template variables* can refer to parameters on the class, python methods on the class or *scripts* defined in the `_scripts` class attribute. The template variables can be used to set attributes of HTML elements as well as *child elements*. By default any parameter referenced as a *child element* element will be converted to a Panel component using `pn.panel`.
+
+
+#####################################
+
+
+The `ReactiveHTML` enables (optionally) laying out parameters on subclasses using [Jinja2](https://jinja.palletsprojects.com/en/3.1.x/) syntax and bi-directional syncing of arbitrary HTML attributes and DOM properties with parameters on the subclass.
+
+This kind of component must declare a HTML template written using Javascript template variables (`${}`) and optionally Jinja2 syntax:
 
 - `_template`: The HTML template to render declaring how to link parameters on the class to HTML attributes.
 
@@ -15,6 +98,8 @@ Additionally the component may declare some additional attributes providing furt
 - `_child_config` (optional): Optional mapping that controls how children are rendered.
 - `_dom_events` (optional): Optional mapping of named nodes to DOM events to add event listeners to.
 - `_scripts` (optional): Optional mapping of Javascript to execute on specific parameter changes.
+
+1. Identifies variables to be inserted as children into HTML elements and converts them to Panel objects
 
 ### HTML templates
 
@@ -385,7 +470,3 @@ text_field
 ```
 
 In a notebook dependencies for this component will not be loaded unless the user explicitly loads them with a `pn.extension('material-components')`. In a server context you will also have to explicitly load this extension unless the component is rendered on initial page load, i.e. if the component is only added to the page in a callback you will also have to explicitly run `pn.extension('material-components')`.
-
-## Building custom Bokeh models
-
-The last approach to extending Panel with new components is to write custom Bokeh models. This involves writing, compiling and distributing custom Javascript and therefore requires considerably more effort than the other approaches. Detailed documentation on writing such components will be coming to the developer guide in the future.
