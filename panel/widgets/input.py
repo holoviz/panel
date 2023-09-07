@@ -227,8 +227,8 @@ class FileInput(Widget):
                     f.write(val)
             else:
                 fn.write(val)
-                if hasattr(val, "seek"):
-                    val.seek(0)
+                if hasattr(fn, "seek"):
+                    fn.seek(0)
 
 
 class StaticText(Widget):
