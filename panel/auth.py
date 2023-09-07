@@ -785,7 +785,7 @@ class LogoutHandler(tornado.web.RequestHandler):
         self.clear_cookie("id_token")
         self.clear_cookie("access_token")
         self.clear_cookie(STATE_COOKIE_NAME)
-        self.redirect(self.request.uri.replace('/logout', ''))
+        self.redirect(self.request.uri.replace('/logout', '/login'))
 
 
 class OAuthProvider(AuthProvider):
