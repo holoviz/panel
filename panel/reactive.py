@@ -1561,7 +1561,7 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
 class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     """
     The ReactiveHTML class enables you to create custom Panel components using HTML, CSS and/ or
-    Javascript without Javascript build tools.
+    Javascript and without the complexities of Javascript build tools.
 
     A `ReactiveHTML` subclass provides bi-directional syncing of its parameters with arbitrary HTML
     elements, attributes and properties. The key part of the subclass is the `_template`

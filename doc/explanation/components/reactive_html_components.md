@@ -42,11 +42,87 @@ To see `ReactiveHTML` in action and discover **how to** create your custom compo
 
 ## What does the API of `ReactiveHTML` look like?
 
-You can find the full api documentation [here](../../api/panel.reactive.html#panel.reactive.ReactiveHTML).
+It looks like described [here](../../api/panel.reactive.html#panel.reactive.ReactiveHTML).
 
-### Class Attributes
+### What class attributes does `ReactiveHTML` expose?
 
-* **``_template``** (str): The *blueprint* for how your custom component should look and behave. The *_template* is defined using HTML. You can use [Jinja2](https://jinja.palletsprojects.com) syntax as well as *template variables* `${...}` to make the template *dynamic*.
+#### `_template` (str)
+
+The *blueprint* for how your custom component should look and behave. The *_template* is defined using HTML. You can use [Jinja2](https://jinja.palletsprojects.com) syntax as well as *template variables* `${...}` to make the template *dynamic*.
+
+### `_child_config` (Optional[dict])**
+
+Controls how template variables ${...} will be rendered when inserted as children into the HTML
+elements
+
+- `model` (default): Create child and render as Panel component.
+- `literal`: Create child and insert the string value as `innerHTML`
+- `template`: Create child and insert the string value as `innerText`
+
+```{pyodide}
+import panel as pn
+import param
+
+class CustomComponent(pn.reactive.ReactiveHTML):
+    v_model = param.String(default="I'm a **model** value. <em>emphasize</em>")
+    v_literal = param.String(default="I'm a **literal** value. <em>emphasize</em>")
+    v_template = param.String(default="I'm a **template** value. <em>emphasize</em>")
+
+    _child_config = {
+        "v_model": "model",
+        "v_literal": "literal",
+        "v_template": "template",
+    }
+
+    _template = """
+<div id="el_model">${v_model}</div>
+<div id="el_literal">${v_literal}</div>
+<div id="el_template">${v_template}</div>
+"""
+
+component = CustomComponent(width=500, height=200)
+component
+```
+
+As you can see the parameters are rendered very differently.
+
+If we change any of the parameter values the component is updated
+
+```{pyodide}
+component.v_model=component.v_model.replace("**", "*")
+component.v_literal=component.v_model.replace("**", "*")
+component.v_template=component.v_model.replace("**", "*")
+```
+
+Here is a another example illustrating the difference
+
+```{pyodide}
+svg = """<svg style="stroke: #e62f63;" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" slot="collapsed-icon">
+<path d="M15.2222 1H2.77778C1.79594 1 1 1.79594 1 2.77778V15.2222C1 16.2041 1.79594 17 2.77778 17H15.2222C16.2041 17 17 16.2041 17 15.2222V2.77778C17 1.79594 16.2041 1 15.2222 1Z" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M9 5.44446V12.5556" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M5.44446 9H12.5556" stroke-linecap="round" stroke-linejoin="round"></path></svg>"""
+CustomComponent(v_literal=svg, v_template=svg, width=500, height=200)
+```
+
+Please note if you set `v_model=svg` you will get an exception when it tries to set the `v_model` to a `pn.pane.SVG` pane.
+
+
+
+    _dom_events: ClassVar[Mapping[str, List[str]]] = {}
+
+    _extension_name: ClassVar[Optional[str]] = None
+
+    _template: ClassVar[str] = ""
+
+    _scripts: ClassVar[Mapping[str, str | List[str]]] = {}
+
+    _script_assignment: ClassVar[str] = (
+        r'data\.([^[^\d\W]\w*)[ ]*[\+,\-,\*,\\,%,\*\*,<<,>>,>>>,&,\^,|,\&\&,\|\|,\?\?]*='
+    )
+
+    __css__: ClassVar[Optional[List[str]]] = None
+    __javascript__: ClassVar[Optional[List[str]]] = None
+    __javascript_modules__: ClassVar[Optional[List[str]]] = None
 
 ## `_template`: The Blueprint for Your Component
 
