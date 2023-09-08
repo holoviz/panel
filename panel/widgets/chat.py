@@ -776,7 +776,7 @@ class ChatFeed(CompositeWidget):
         The default user name to use for the entry provided by the callback.""")
 
     callback_exception = param.ObjectSelector(
-        default="raise",
+        default="summary",
         objects=["raise", "summary", "verbose", "ignore"],
         doc="""
         How to handle exceptions raised by the callback.
