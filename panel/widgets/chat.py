@@ -100,6 +100,23 @@ PLACEHOLDER_SVG = """
     </svg>
 """  # noqa: E501
 
+# if user cannot connect to internet
+MISSING_SVG = """
+    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-help-square" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+        <path d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z"></path>
+        <path d="M12 16v.01"></path>
+        <path d="M12 13a2 2 0 0 0 .914 -3.782a1.98 1.98 0 0 0 -2.414 .483"></path>
+    </svg>
+"""  # noqa: E501
+
+MISSING_FILLED_SVG = """
+    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-help-square-filled" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+        <path d="M19 2a3 3 0 0 1 2.995 2.824l.005 .176v14a3 3 0 0 1 -2.824 2.995l-.176 .005h-14a3 3 0 0 1 -2.995 -2.824l-.005 -.176v-14a3 3 0 0 1 2.824 -2.995l.176 -.005h14zm-7 13a1 1 0 0 0 -.993 .883l-.007 .117l.007 .127a1 1 0 0 0 1.986 0l.007 -.117l-.007 -.127a1 1 0 0 0 -.993 -.883zm1.368 -6.673a2.98 2.98 0 0 0 -3.631 .728a1 1 0 0 0 1.44 1.383l.171 -.18a.98 .98 0 0 1 1.11 -.15a1 1 0 0 1 -.34 1.886l-.232 .012a1 1 0 0 0 .111 1.994a3 3 0 0 0 1.371 -5.673z" stroke-width="0" fill="currentColor"></path>
+    </svg>
+"""  # noqa: E501
+
 
 @dataclass
 class _FileInputMessage:
@@ -226,8 +243,7 @@ class ChatReactionIcons(ReactiveHTML):
         f"{CDN_DIST}css/chat_reaction_icons.css"
     ]
 
-    def _get_label(self, reaction: str, icon: str):
-        active = reaction in self.value
+    def _get_label(self, active: bool, reaction: str, icon: str):
         if active and reaction in self.active_icons:
             icon_label = self.active_icons[reaction]
         elif active:
@@ -268,8 +284,12 @@ class ChatReactionIcons(ReactiveHTML):
         self._reactions = list(self.options.keys())
         svgs = []
         for reaction, icon in self.options.items():
-            icon_label = self._get_label(reaction, icon)
-            svg = self._fetch_svg(icon_label)
+            active = reaction in self.value
+            icon_label = self._get_label(active, reaction, icon)
+            try:
+                svg = self._fetch_svg(icon_label)
+            except Exception:
+                svg = MISSING_FILLED_SVG if active else MISSING_SVG
             svg = self._stylize_svg(svg, reaction)
             # important not to encode to keep the alt text!
             svg_pane = SVG(
