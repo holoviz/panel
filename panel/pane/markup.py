@@ -367,8 +367,6 @@ class Markdown(HTMLBasePane):
     def _get_parser(cls, renderer, plugins, **renderer_options):
         if renderer == 'markdown':
             return None
-        if "breaks" not in renderer_options:
-            renderer_options["breaks"] = True
         from markdown_it import MarkdownIt
         from markdown_it.renderer import RendererHTML
         from mdit_py_plugins.anchors import anchors_plugin
@@ -384,6 +382,9 @@ class Markdown(HTMLBasePane):
                 return token
 
         if renderer == 'markdown-it':
+            if "breaks" not in renderer_options:
+                renderer_options["breaks"] = True
+
             parser = MarkdownIt(
                 'gfm-like',
                 renderer_cls=RendererHTML,
