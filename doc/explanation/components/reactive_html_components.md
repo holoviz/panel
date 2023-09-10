@@ -20,11 +20,11 @@ A basic `ReactiveHTML` component looks like below
 
 ```{pyodide}
 import param
-from panel.reactive import ReactiveHTML
 import panel as pn
-pn.extension() # for notebook
 
-class Slideshow(ReactiveHTML):
+pn.extension()
+
+class Slideshow(pn.reactive.ReactiveHTML):
 
     index = param.Integer(default=0)
 
@@ -63,33 +63,100 @@ The component may also optionally declare
 - `__javascript__`: A list of javascript dependencies that your component relies on.
 - `__javascript_modules__`: A list of javascript module dependencies that your component relies on.
 
-### What does the `_template` attribute do?
+### What does the `_template` attribute define?
 
 The `_template` variable defines the *blueprint* of your component using HTML (content) and optionally CSS (style) or Javascript (behaviour).
 
 ```python
-  _template = '<img id="slideshow" src="https://picsum.photos/800/300?image=${index}" onclick="${_img_click}"></img>'
+_template = '<img id="slideshow" src="https://picsum.photos/800/300?image=${index}" onclick="${_img_click}"></img>'
 ```
 
-The `_template` supports Python [Jinja2](https://jinja.palletsprojects.com/en/2.11.x/) syntax as
-well as Javascript *template variables* `${...}`.
+The `_template` supports Javascript *template variables* `${...}` as well as optional [Jinja2](https://jinja.palletsprojects.com/en/2.11.x/) syntax.
+
+#### What can I use Javascript Template Variables for?
+
+You can use template variables of the form `${...}` to link the parameters of a component to
+the attributes of html elements.
+
+```python
+_template = '<div id="custom_id" class="${some_parameter}"></div>'
+```
+
+In addition to providing attributes we can also provide children to HTML elements.
+
+```python
+_template = '<div id="custom_id">${some_parameter}</div>'
+```
+
+Template variables can also be used to trigger python methods on the component
+
+```python
+_template = '<div id="custom_id" onclick="${some_python_method}"></div>'
+```
+
+as well as trigger javascript scripts defined in the `_scripts` attribute
+
+```python
+_template = '<div id="custom_id" onclick="${script('some_javascript_script')}"></div>'
+```
+
+Note that you must declare an `id` on components which contain a template variable.
+
+If the parameter is a list each item in the list will be inserted in sequence unless declared otherwise. However if you want to wrap each child in some custom HTML you will have to use Jinja2 loop syntax:
+
+```html
+class CustomComponent(pn.reactive.ReactiveHTML):
+    value = param.List(["value **1**", "value **2**", "value **3**"])
+
+    _template = """
+<div id="loop_el">
+  {% for obj in value %}
+  <div id="option">${obj}</div>
+  {% endfor %}
+</div>
+"""
+CustomComponent(width=500).servable()
+```
 
 #### What can I use Jinja2 templating for?
 
-You can use Jinja2 syntax to layout your template. When using Jinja2 syntax you can refer to parameters using `{{ ... }}` syntax. This will insert your parameter values as a literal string values. In addition you can use the following context variables:
+You can optionally use Jinja2 syntax to layout your template. When using Jinja2 syntax you can refer to parameters using `{{...}}` syntax. This will insert your parameter values as a literal string values.
+
+```{pyodide}
+class CustomComponent(pn.reactive.ReactiveHTML):
+    value = param.String("A **value**")
+
+    _template = """
+<div>{{value}}</div>
+"""
+CustomComponent(width=500)
+```
+
+If the parameter is a list you can insert the children as *literal* values using the syntax:
+
+```{pyodide}
+class CustomComponent(pn.reactive.ReactiveHTML):
+    value = param.List(["value **1**", "value **2**", "value **3**"])
+
+    _template = """
+<div id="loop_el">
+  {% for obj in value %}
+  <div id="option">{{obj}}</div>
+  {% endfor %}
+</div>
+"""
+
+CustomComponent(width=500)
+```
+
+Please note you must wrap a `{% for ... %}` loop in a HTML element with an `id` attribute just as we do in the example.
+
+In addition you can use the following context variables:
 
 - `param`: The param namespace object allows templating parameter names, labels, docstrings and other attributes.
 - `__doc__`: The class docstring
 
-Here is an illustrative example
-
 ```{pyodide}
-import panel as pn
-import param
-
-pn.extension()
-
-
 class CustomComponent(pn.reactive.ReactiveHTML):
     """I'm a custom ReactiveHTML component"""
     value = param.String("My value", doc="My Documentation")
@@ -103,41 +170,11 @@ class CustomComponent(pn.reactive.ReactiveHTML):
 {% endif %}{% endfor %}
 </p>
 """
+
 CustomComponent(value="A new value", width=500)
 ```
 
-Please note you must wrap a `{% for ... %}` loop in a HTML element with an `id` attribute just as we do in the example.
-
 Check out the [How-to > Create Layouts With ReactiveHTML](../../how_to/custom_components/reactive_html/reactive_html_layout.md) guide for lots of Jinja2 examples.
-
-#### What can I use Javascript Template Variables for?
-
-You can use template variables of the form `${...}` to link the parameters of a component to
-the attributes of html elements.
-
-```python
-    _template = '<div id="custom_id" class="${some_parameter}"></div>'
-```
-
-In addition to providing attributes we can also provide children to HTML elements.
-
-```python
-  _template = '<div id="custom_id">${some_parameter}</div>'
-```
-
-Template variables can also be used to trigger python methods on the component
-
-```python
-  _template = '<div id="custom_id" onclick="${some_python_method}"></div>'
-```
-
-as well as trigger javascript scripts defined in the `_scripts` attribute
-
-```python
-  _template = '<div id="custom_id" onclick="${script('some_javascript_script')}"></div>'
-```
-
-Note that you must declare an `id` on components which contain a template variable.
 
 #### What are the differences between Jinja2 templating and Javascript template variables?
 
@@ -153,12 +190,6 @@ You can see the differences below
 Here is an example illustrating the differences. If you change the color only the Javascript template variable section will update.
 
 ```{pyodide}
-import panel as pn
-import param
-
-pn.extension()
-
-
 class CustomComponent(pn.reactive.ReactiveHTML):
     """I'm a custom component"""
     text = param.String("I'm **bold**")
@@ -176,7 +207,7 @@ pn.Column(component.param.color, component, )
 
 ## What does the `_child_config` attribute do?
 
-The optional attribute `_child_config` controls how template variables `${...}` will
+The optional attribute `_child_config` attribute controls how template variables `${...}` will
 be rendered when inserted as children into a HTML element. The configuration can be one of
 
 - `model` (default): Render as Panel component
@@ -244,98 +275,57 @@ will raise a `bokeh.core.serialization.SerializationError`.
 
 ## What does the `_dom_events` do?
 
+In certain cases it is necessary to explicitly declare event listeners on the HTML element to ensure that changes their properties are synced when an event is fired.
+
+To make this possible the HTML element in question must be given an `id` and the `id` + `event` name must be defined in `_dom_events`.
+
+```{pyodide}
+class CustomComponent(pn.reactive.ReactiveHTML):
+    value = param.String()
+
+    _template = """
+<input id="input_el" value="${value}"></input>
+"""
+
+    _dom_events = {'input_el': ['change']}
+
+component=CustomComponent(width=500)
+pn.Column(component, component.param.value)
+```
+
+Once subscribed the class may also define a method following the `_{element-id}_{event}` naming convention which will fire when the DOM event triggers, e.g. we could define a `_el_change` method. Any such callback will be given a `DOMEvent` object as the first and only argument.
+
+The `DOMEvent` contains information about the event on the `.data` attribute, like declaring the type of event on `.data.type`.
+
+```{pyodide}
+class CustomComponent(pn.reactive.ReactiveHTML):
+    value = param.String()
+
+    event = param.Parameter()
+
+    _template = """
+<input id="input_el" value="${value}"></input>
+"""
+
+    _dom_events = {"input_el": ["change"]}
+
+    def _input_el_change(self, event):
+        self.event = event.data
+
+
+component = CustomComponent(width=500)
+pn.Column(
+    component, component.param.value, pn.pane.JSON(component.param.event)
+)
+```
+
 ## What does the `_extension_name` do?
 
 ## What does the `_scripts` do?
 
-
-#####################################
-
-
-The `ReactiveHTML` enables (optionally) laying out parameters on subclasses using [Jinja2](https://jinja.palletsprojects.com/en/3.1.x/) syntax and bi-directional syncing of arbitrary HTML attributes and DOM properties with parameters on the subclass.
-
-This kind of component must declare a HTML template written using Javascript template variables (`${}`) and optionally Jinja2 syntax:
-
-- `_template`: The HTML template to render declaring how to link parameters on the class to HTML attributes.
-
-Additionally the component may declare some additional attributes providing further functionality
-
-- `_child_config` (optional): Optional mapping that controls how children are rendered.
-- `_dom_events` (optional): Optional mapping of named nodes to DOM events to add event listeners to.
-- `_scripts` (optional): Optional mapping of Javascript to execute on specific parameter changes.
-
-1. Identifies variables to be inserted as children into HTML elements and converts them to Panel objects
-
-### HTML templates
-
-A ReactiveHTML component is declared by providing an HTML template on the `_template` attribute on the class. Parameters are synced by inserting them as template variables of the form `${parameter}`, e.g.:
-
-```html
-    _template = '<div id="custom_id" class="${div_class}" onclick="${some_method}">${children}</div>'
-```
-
-will interpolate the `div_class` parameter on the `class` attribute of the HTML element.
-
-In addition to providing attributes we can also provide children to an HTML tag. Any child parameter will be treated as other Panel components to render into the containing HTML. This makes it possible to use `ReactiveHTML` to lay out other components. Lastly the `${}` syntax may also be used to invoke Python methods and JS scripts. Note that you must declare an `id` on components which have linked parameters, methods or children.
-
-The HTML templates also support [Jinja2](https://jinja.palletsprojects.com/en/2.11.x/) syntax to template parameter variables and child objects. The Jinja2 templating engine is automatically given a few context variables:
-
-- `param`: The param namespace object allows templating parameter names, labels, docstrings and other attributes.
-- `__doc__`: The class docstring
-
-The difference between Jinja2 literal templating and the JS templating syntax is important to note. While literal values are inserted during the initial rendering step they are not dynamically linked.
-
-### Children
-
-In order to template other parameters as child objects there are a few options. By default all parameters referenced using `${child}` syntax are treated as if they were Panel components, e.g.:
-
-```html
-<div id="custom_id">${parameter}</div>
-```
-
-will render the contents of the `parameter` as a Panel object. If you want to render it as a literal string instead you can use the regular Jinja templating syntax instead, i.e. `{{ parameter }}` or you can use the `_child_config` to declare you want to treat `parameter` as a literal:
-
-```python
-_child_config = {'parameter': 'literal'}
-```
-
-If the parameter is a list each item in the list will be inserted in sequence unless declared otherwise. However if you want to wrap each child in some custom HTML you will have to use Jinja2 loop syntax:
-
-```html
-<select>
-  {% for obj in parameter %}
-  <option id="option">${obj}</option>
-  {% endfor %}
-</select>
-```
-
-This will insert the children as Panel components. If you want to insert the children as *literal* values, you can use the syntax:
-
-```html
-<select>
-  {% for obj in parameter %}
-  <option id="option-{{ loop.index0 }}">{{ obj }}</option>
-  {% endfor %}
-</select>
-```
-
 ### DOM Events
 
-In certain cases it is necessary to explicitly declare event listeners on the DOM node to ensure that changes in their properties are synced when an event is fired. To make this possible the HTML element in question must be given an `id`, e.g.:
 
-```html
-    _template = '<input id="custom_id"></input>'
-```
-
-Now we can use this name to declare set of `_dom_events` to subscribe to. The following will subscribe to change DOM events on the input element:
-
-```python
-    _dom_events = {'custom_id': ['change']}
-```
-
-Once subscribed the class may also define a method following the `_{node-id}_{event}` naming convention which will fire when the DOM event triggers, e.g. we could define a `_custom_id_change` method. Any such callback will be given a `DOMEvent` object as the first and only argument.
-
-The `DOMEvent` contains information about the event on the `.data` attribute, like declaring the type of event on `.data.type`.
 
 ### Scripts
 
