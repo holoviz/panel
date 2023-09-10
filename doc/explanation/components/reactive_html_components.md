@@ -40,24 +40,153 @@ Slideshow(width=800, height=300)
 
 To see `ReactiveHTML` in action and discover **how to** create your custom components, check out our detailed guide: [How-to > Create Custom Components with ReactiveHTML](../../how_to/custom_components/reactive_html/index.md). It's packed with practical examples to help you get started quickly.
 
-## What does the API of `ReactiveHTML` look like?
+## Where do I find the full API description?
 
-It looks like described [here](../../api/panel.reactive.html#panel.reactive.ReactiveHTML).
+You can find it here [API > ReactiveHTML](../../api/panel.reactive.html#panel.reactive.ReactiveHTML).
 
-### What class attributes does `ReactiveHTML` expose?
+## What class attributes should a component declare?
 
-#### `_template` (str)
+The component must declare
 
-The *blueprint* for how your custom component should look and behave. The *_template* is defined using HTML. You can use [Jinja2](https://jinja.palletsprojects.com) syntax as well as *template variables* `${...}` to make the template *dynamic*.
+- `_template`: The *blueprint* for how your custom component should look and behave. The *_template* is defined using HTML. You can use [Jinja2](https://jinja.palletsprojects.com) syntax as well as *template variables* `${...}` to make the template *dynamic*.
 
-### `_child_config` (Optional[dict])**
+The component may optionally declare
 
-Controls how template variables ${...} will be rendered when inserted as children into the HTML
-elements
+- `_child_config` (dict): Mapping that controls how children are rendered.
+- `_dom_events` (dict): Mapping of node ids to DOM events to add event listeners to.
+- `_extension_name` (str): Name used to import external `css` and `js` dependencies via `pn.extension(_extension_name)`.
+- `_scripts` (dict): Mapping of javascript scripts. These scripts are automatically executed during the component's life cycle and on parameter changes.
 
-- `model` (default): Create child and render as Panel component.
-- `literal`: Create child and insert the string value as `innerHTML`
-- `template`: Create child and insert the string value as `innerText`
+The component may also optionally declare
+
+- `__css__`: A list of CSS dependencies required to style your component.
+- `__javascript__`: A list of javascript dependencies that your component relies on.
+- `__javascript_modules__`: A list of javascript module dependencies that your component relies on.
+
+### What does the `_template` attribute do?
+
+The `_template` variable defines the *blueprint* of your component using HTML (content) and optionally CSS (style) or Javascript (behaviour).
+
+```python
+  _template = '<img id="slideshow" src="https://picsum.photos/800/300?image=${index}" onclick="${_img_click}"></img>'
+```
+
+The `_template` supports Python [Jinja2](https://jinja.palletsprojects.com/en/2.11.x/) syntax as
+well as Javascript *template variables* `${...}`.
+
+#### What can I use Jinja2 templating for?
+
+You can use Jinja2 syntax to layout your template. When using Jinja2 syntax you can refer to parameters using `{{ ... }}` syntax. This will insert your parameter values as a literal string values. In addition you can use the following context variables:
+
+- `param`: The param namespace object allows templating parameter names, labels, docstrings and other attributes.
+- `__doc__`: The class docstring
+
+Here is an illustrative example
+
+```{pyodide}
+import panel as pn
+import param
+
+pn.extension()
+
+
+class CustomComponent(pn.reactive.ReactiveHTML):
+    """I'm a custom ReactiveHTML component"""
+    value = param.String("My value", doc="My Documentation")
+
+    _template = """
+<p>{{ __doc__ }}</p>
+<p>value: {{value}} ({{ param.value.default }}, {{ param.value.doc }})</p>
+<h2>List of parameters</p>
+<p id="loop_el">
+{% for object in param.params().values() %}
+<div>{{ loop.index0 }}. {{object.name}}: {{object.value}} ({{object.default|e}}, doc?)</div>
+{% endfor %}
+</p>
+"""
+
+component = CustomComponent(value="A new value", width=500)
+component
+```
+
+Please note you must wrap a `{% for ... %}` loop in a HTML element with an `id` attribute just as we do in the example.
+
+Check out the [How-to > Create Layouts With ReactiveHTML](../../how_to/custom_components/reactive_html/reactive_html_layout.md) guide for lots of Jinja2 examples.
+
+#### What can I use Javascript Template Variables for?
+
+You can use template variables of the form `${...}` to link the parameters of a component to
+the attributes of html elements.
+
+```python
+    _template = '<div id="custom_id" class="${some_parameter}"></div>'
+```
+
+In addition to providing attributes we can also provide children to HTML elements.
+
+```python
+  _template = '<div id="custom_id">${some_parameter}</div>'
+```
+
+Template variables can also be used to trigger python methods on the component
+
+```python
+  _template = '<div id="custom_id" onclick="${some_python_method}"></div>'
+```
+
+as well as trigger javascript scripts defined in the `_scripts` attribute
+
+```python
+  _template = '<div id="custom_id" onclick="${script('some_javascript_script')}"></div>'
+```
+
+Note that you must declare an `id` on components which contain a template variable.
+
+#### What are the differences between Jinja2 templating and Javascript template variables?
+
+You can see the differences below
+
+|                              | Jinja2 Templating                     | Javascript Template Variables       |
+|------------------------------|---------------------------------------|------------------------------------|
+| Time of Rendering            | Python-side during initial rendering  | Inserted later on Javascript side                      |
+| Type of Rendering    | Literal string values                | Panel objects by default           |
+| Element IDs                  | No need to add an *id* except when using `{% for ... %}` loops | Must add an *id*                |
+| Linking of Parameter Values    | Not dynamically linked               | Dynamically linked                  |
+
+Here is an example illustrating the differences. If you change the color only the Javascript template variable section will update.
+
+```{pyodide}
+import panel as pn
+import param
+
+pn.extension()
+
+
+class CustomComponent(pn.reactive.ReactiveHTML):
+    """I'm a custom component"""
+    text = param.String("I'm **bold**")
+    color = param.Color("silver", label="Select a color", doc="""The color of the component""")
+
+    _template = """
+<p style="background:{{ color }}">Jinja literal value. {{ text }}</p>
+<p id="el" style="background:${color}">Javascript template variable. ${text}</p>
+"""
+
+component = CustomComponent(width=500)
+
+pn.Column(component.param.color, component, )
+```
+
+## What does the `_child_config` attribute do?
+
+The optional attribute `_child_config` controls how template variables `${...}` will
+be rendered when inserted as children into a HTML element. The configuration can be one of
+
+- `model` (default): Render as Panel component
+- `literal`: Render as HTML string
+- `template`: Render as string
+
+Lets take an example
 
 ```{pyodide}
 import panel as pn
@@ -104,60 +233,23 @@ svg = """<svg style="stroke: #e62f63;" width="18" height="18" viewBox="0 0 18 18
 CustomComponent(v_literal=svg, v_template=svg, width=500, height=200)
 ```
 
-Please note if you set `v_model=svg` you will get an exception when it tries to set the `v_model` to a `pn.pane.SVG` pane.
+Please note you cannot set `v_model=svg` because `ReactiveHTML` tries to set the `v_model` to a `pn.pane.SVG` pane.
 
-
-
-    _dom_events: ClassVar[Mapping[str, List[str]]] = {}
-
-    _extension_name: ClassVar[Optional[str]] = None
-
-    _template: ClassVar[str] = ""
-
-    _scripts: ClassVar[Mapping[str, str | List[str]]] = {}
-
-    _script_assignment: ClassVar[str] = (
-        r'data\.([^[^\d\W]\w*)[ ]*[\+,\-,\*,\\,%,\*\*,<<,>>,>>>,&,\^,|,\&\&,\|\|,\?\?]*='
-    )
-
-    __css__: ClassVar[Optional[List[str]]] = None
-    __javascript__: ClassVar[Optional[List[str]]] = None
-    __javascript_modules__: ClassVar[Optional[List[str]]] = None
-
-## `_template`: The Blueprint for Your Component
-
-The `_template` class attribute is where you define the structure of your ReactiveHTML component. It's like creating a blueprint for your component. This blueprint consists of HTML and CSS code.
-
-### HTML: The Content
-
-Inside `_template`, you write the HTML code that defines how your element looks. You can add headings, paragraphs, buttons, or any other HTML elements just like you would in a regular HTML file.
-
-```python
-_template = """
-<div>
-    <h1>Welcome to my component</h1>
-    <button>Click Me</button>
-</div>
-"""
+```{pyodide}
+try:
+    CustomComponent(v_model=svg, v_literal=svg, v_template=svg, width=500, height=200)
+except Exception as ex:
+    print(ex)
 ```
 
-### CSS: The Style
+For a complex object like `DataFrame` you can only use `model`. Using `literal` or `template`
+will raise a `bokeh.core.serialization.SerializationError`.
 
-```python
-_template = """
-<style>
-    div {background-color: lightblue;padding: 20px;}
-    h1 {color: navy;}
-</style>
-<div>
-    <h1>Welcome to my component</h1>
-    <button>Click Me</button>
-</div>
-"""
-```
+## What does the `_dom_events` do?
 
+## What does the `_extension_name` do?
 
-The *template variables* can refer to parameters on the class, python methods on the class or *scripts* defined in the `_scripts` class attribute. The template variables can be used to set attributes of HTML elements as well as *child elements*. By default any parameter referenced as a *child element* element will be converted to a Panel component using `pn.panel`.
+## What does the `_scripts` do?
 
 
 #####################################
