@@ -95,18 +95,15 @@ class CustomComponent(pn.reactive.ReactiveHTML):
     value = param.String("My value", doc="My Documentation")
 
     _template = """
-<p>{{ __doc__ }}</p>
 <p>value: {{value}} ({{ param.value.default }}, {{ param.value.doc }})</p>
 <h2>List of parameters</p>
-<p id="loop_el">
-{% for object in param.params().values() %}
-<div>{{ loop.index0 }}. {{object.name}}: {{object.value}} ({{object.default|e}}, doc?)</div>
-{% endfor %}
+<p id="loop">
+{% for object in param.params().values() %}{% if loop.index0 < 3 %}
+<div>{{ loop.index0 }}. {{object.name}}: {{object.owner[object.name]}} ({{object.default}}, {{object.doc | replace("`", "'")}})</div><hr/>
+{% endif %}{% endfor %}
 </p>
 """
-
-component = CustomComponent(value="A new value", width=500)
-component
+CustomComponent(value="A new value", width=500)
 ```
 
 Please note you must wrap a `{% for ... %}` loop in a HTML element with an `id` attribute just as we do in the example.
@@ -151,7 +148,7 @@ You can see the differences below
 | Time of Rendering            | Python-side during initial rendering  | Inserted later on Javascript side                      |
 | Type of Rendering    | Literal string values                | Panel objects by default           |
 | Element IDs                  | No need to add an *id* except when using `{% for ... %}` loops | Must add an *id*                |
-| Linking of Parameter Values    | Not dynamically linked               | Dynamically linked                  |
+| Parameter linking    | Not dynamically linked               | Dynamically linked                  |
 
 Here is an example illustrating the differences. If you change the color only the Javascript template variable section will update.
 
