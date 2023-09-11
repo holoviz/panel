@@ -182,11 +182,11 @@ class Serve(_BkServe):
             action  = 'store_true',
             help    = "Whether to add an admin panel."
         )),
-        ('--admin-panel-name', dict(
+        ('--admin-endpoint', dict(
             metavar = "KEY=VALUE",
             nargs   = '+',
-            help    = "Name to use for the admin panel.",
-            default = '/admin'
+            help    = "Name to use for the admin endpoint.",
+            default = None
         )),
         ('--admin-log-level', dict(
             action  = 'store',
@@ -355,8 +355,12 @@ class Serve(_BkServe):
             from ..io.admin import admin_panel
             from ..io.server import per_app_patterns
 
-            # NOTE: `admin_panel_name` returns a list.
-            admin_path = args.admin_panel_name[0] if args.admin_panel_name else "/admin"
+            # NOTE: `admin_endpoint` returns a list. If the command line flag
+            #       `--admin-endpoint` is not used, then we default to the `/admin` path.
+            admin_path = "/admin"
+            if args.admin_endpoint:
+                admin_path = args.admin_endpoint[0]
+
             config._admin = True
             app = Application(FunctionHandler(admin_panel))
             unused_timeout = args.check_unused_sessions or 15000

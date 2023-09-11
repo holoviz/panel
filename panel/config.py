@@ -218,7 +218,7 @@ class _config(_base_config):
 
     _admin = param.Boolean(default=False, doc="Whether the admin panel was enabled.")
 
-    _admin_panel_name = param.String(default=None, doc="Name to use for the admin panel.")
+    _admin_endpoint = param.String(default=None, doc="Name to use for the admin endpoint.")
 
     _admin_log_level = param.Selector(
         default='DEBUG', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
@@ -458,8 +458,8 @@ class _config(_base_config):
         return os.environ.get('PANEL_DOC_BUILD')
 
     @property
-    def admin_panel_name(self):
-        return os.environ.get('PANEL_ADMIN_PANEL_NAME', self._admin_panel_name)
+    def admin_endpoint(self):
+        return os.environ.get('PANEL_ADMIN_ENDPOINT', self._admin_endpoint)
 
     @property
     def admin_log_level(self):
