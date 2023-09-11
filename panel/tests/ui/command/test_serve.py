@@ -29,5 +29,7 @@ def test_autoreload_app(py_file, port, page):
         page.goto(f"http://localhost:{port}/{app_name}")
         expect(page.locator(".markdown")).to_have_text("Example 1")
 
+        time.sleep(0.5)
+
         write_file(app2, py_file.file)
         expect(page.locator(".markdown")).to_have_text('Example 2')
