@@ -507,22 +507,32 @@ class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
             with set_curdoc(session.document):
                 resources = Resources.from_bokeh(self.application.resources())
                 auth_cb = config.authorize_callback
+                authorized = False
                 if auth_cb:
                     auth_cb = config.authorize_callback
                     auth_params = inspect.signature(auth_cb).parameters
-                    auth_args = (state.user_info,)
-                    if len(auth_params) == 2:
-                        auth_args += (self.request.path,)
+                    if len(auth_params) == 1:
+                        auth_args = (state.user_info,)
+                    elif len(auth_params) == 2:
+                        auth_args = (state.user_info, self.request.path,)
                     else:
                         raise RuntimeError(
-                            'Authorization callback must accept either one or two arguments.'
+                            'Authorization callback must accept either 1) a single argument '
+                            'which is the user name or 2) two arguments which includes the '
+                            'user name and the paths that user name has access to.'
                         )
                     auth_error = f'{state.user} is not authorized to access this application.'
                     try:
                         authorized = auth_cb(*auth_args)
-                        auth_error = None
+                        if not authorized:
+                            auth_error = (
+                                f'Authorization callback errored. Could not validate user name "{state.user}" '
+                                f'for the given app "{self.request.path}".'
+                            )
+                        if authorized:
+                            auth_error = None
                     except Exception:
-                        auth_error = f'Authorization callback errored. Could not validate user {state.user}'
+                        auth_error = f'Authorization callback errored. Could not validate user {state.user}.'
                 else:
                     authorized = True
 
