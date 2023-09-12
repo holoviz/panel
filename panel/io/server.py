@@ -519,7 +519,7 @@ class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
                         raise RuntimeError(
                             'Authorization callback must accept either 1) a single argument '
                             'which is the user name or 2) two arguments which includes the '
-                            'user name and the paths that user name has access to.'
+                            'user name and the url path the user is trying to access.'
                         )
                     auth_error = f'{state.user} is not authorized to access this application.'
                     try:
