@@ -358,7 +358,7 @@ class Serve(_BkServe):
             # If `--admin-endpoint` is not set, then we default to the `/admin` path.
             admin_path = "/admin"
             if args.admin_endpoint:
-                admin_path = args.admin_endpoint[0]
+                admin_path = args.admin_endpoint
 
             config._admin = True
             app = Application(FunctionHandler(admin_panel))
