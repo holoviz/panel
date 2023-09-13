@@ -355,8 +355,7 @@ class Serve(_BkServe):
             from ..io.admin import admin_panel
             from ..io.server import per_app_patterns
 
-            # NOTE: `admin_endpoint` returns a list. If the command line flag
-            #       `--admin-endpoint` is not used, then we default to the `/admin` path.
+            # If `--admin-endpoint` is not set, then we default to the `/admin` path.
             admin_path = "/admin"
             if args.admin_endpoint:
                 admin_path = args.admin_endpoint[0]
