@@ -183,8 +183,8 @@ class Serve(_BkServe):
             help    = "Whether to add an admin panel."
         )),
         ('--admin-endpoint', dict(
-        action = 'store',
-        type    = str,
+            action = 'store',
+            type    = str,
             help    = "Name to use for the admin endpoint.",
             default = None
         )),
