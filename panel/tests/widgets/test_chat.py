@@ -808,9 +808,7 @@ class TestChatFeedCallback:
 
         chat_feed.placeholder_threshold = 0.1
         chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatEntry(
-            value="Message", placeholder_threshold=0.1
-        )
+        chat_log_mock.__getitem__.return_value = ChatEntry(value="Message")
         chat_feed.callback = echo
         chat_feed._chat_log = chat_log_mock
         chat_feed.send("Message", respond=True)
@@ -869,6 +867,47 @@ class TestChatFeedCallback:
         assert gauge.value == 1
         assert gauge.width == 100
         assert gauge.sizing_mode == "fixed"
+
+    def test_callback_exception(self, chat_feed):
+        def callback(msg, user, instance):
+            return 1 / 0
+
+        chat_feed.callback = callback
+        chat_feed.callback_exception = "summary"
+        chat_feed.send("Message", respond=True)
+        assert chat_feed.value[-1].value == "division by zero"
+        assert chat_feed.value[-1].user == "Exception"
+
+    def test_callback_exception_traceback(self, chat_feed):
+        def callback(msg, user, instance):
+            return 1 / 0
+
+        chat_feed.callback = callback
+        chat_feed.callback_exception = "verbose"
+        chat_feed.send("Message", respond=True)
+        assert chat_feed.value[-1].value.startswith(
+            "```python\nTraceback (most recent call last):"
+        )
+        assert chat_feed.value[-1].user == "Exception"
+
+    def test_callback_exception_ignore(self, chat_feed):
+        def callback(msg, user, instance):
+            return 1 / 0
+
+        chat_feed.callback = callback
+        chat_feed.callback_exception = "ignore"
+        chat_feed.send("Message", respond=True)
+        assert len(chat_feed.value) == 1
+
+    def test_callback_exception_raise(self, chat_feed):
+        def callback(msg, user, instance):
+            return 1 / 0
+
+        chat_feed.callback = callback
+        chat_feed.callback_exception = "raise"
+        with pytest.raises(ZeroDivisionError, match="division by zero"):
+            chat_feed.send("Message", respond=True)
+        assert len(chat_feed.value) == 1
 
 
 class TestChatInterfaceWidgetsSizingMode:
@@ -1060,3 +1099,9 @@ class TestChatInterface:
     def test_widgets_supports_list_and_widget(self, chat_interface):
         chat_interface.widgets = TextAreaInput()
         chat_interface.widgets = [TextAreaInput(), FileInput]
+
+    def test_show_button_name_width(self, chat_interface):
+        assert chat_interface.show_button_name
+        assert chat_interface.width is None
+        chat_interface.width = 200
+        assert not chat_interface.show_button_name

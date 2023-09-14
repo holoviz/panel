@@ -7,6 +7,7 @@ from __future__ import annotations
 import asyncio
 import datetime
 import re
+import traceback
 
 from contextlib import ExitStack
 from dataclasses import dataclass
@@ -48,6 +49,7 @@ AvatarDict = Dict[str, Avatar]
 USER_LOGO = "🧑"
 ASSISTANT_LOGO = "🤖"
 SYSTEM_LOGO = "⚙️"
+ERROR_LOGO = "❌"
 GPT_3_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_logo.svg/1024px-ChatGPT_logo.svg.png?20230318122128"
 GPT_4_LOGO = "https://upload.wikimedia.org/wikipedia/commons/a/a4/GPT-4.png"
 WOLFRAM_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/WolframCorporateLogo.svg/1920px-WolframCorporateLogo.svg.png"
@@ -70,6 +72,8 @@ DEFAULT_AVATARS = {
     "robot": ASSISTANT_LOGO,
     # System
     "system": SYSTEM_LOGO,
+    "exception": ERROR_LOGO,
+    "error": ERROR_LOGO,
     # Human
     "adult": "🧑",
     "baby": "👶",
@@ -557,7 +561,7 @@ class ChatEntry(CompositeWidget):
             not isinstance(obj, FileBase)
         )
         if is_markup:
-            if len(obj.object) > 0:  # only show a background if there is content
+            if len(str(obj.object)) > 0:  # only show a background if there is content
                 obj.css_classes = [*obj.css_classes, "message"]
         else:
             if obj.sizing_mode is None and not obj.width:
@@ -647,7 +651,7 @@ class ChatEntry(CompositeWidget):
         return HTML(self.user, height=20, css_classes=["name"], visible=self.show_user)
 
     @param.depends("value")
-    async def _render_value(self) -> Viewable:
+    def _render_value(self) -> Viewable:
         """
         Renders value as a panel object.
         """
@@ -736,6 +740,11 @@ class ChatFeed(CompositeWidget):
         and the component `instance`.
     callback_user : str
         The default user name to use for the entry provided by the callback.
+    callback_exception : Literal["summary", "verbose", "ignore"]
+        How to handle exceptions raised by the callback.
+        If "summary", a summary will be sent to the chat feed.
+        If "verbose", the full traceback will be sent to the chat feed.
+        If "ignore", the exception will be ignored.
     placeholder : Any
         Placeholder to display while the callback is running.
         If not set, defaults to a LoadingSpinner.
@@ -785,6 +794,17 @@ class ChatFeed(CompositeWidget):
 
     callback_user = param.String(default="Assistant", doc="""
         The default user name to use for the entry provided by the callback.""")
+
+    callback_exception = param.ObjectSelector(
+        default="summary",
+        objects=["raise", "summary", "verbose", "ignore"],
+        doc="""
+        How to handle exceptions raised by the callback.
+        If "raise", the exception will be raised.
+        If "summary", a summary will be sent to the chat feed.
+        If "verbose", the full traceback will be sent to the chat feed.
+        If "ignore", the exception will be ignored.
+        """)
 
     placeholder_text = param.String(default="", doc="""
         If placeholder is the default LoadingSpinner,
@@ -1062,6 +1082,19 @@ class ChatFeed(CompositeWidget):
             await self._schedule_placeholder(task, num_entries)
             await task
             task.result()
+        except Exception as e:
+            send_kwargs = dict(
+                user="Exception",
+                respond=False
+            )
+            if self.callback_exception == "summary":
+                self.send(str(e), **send_kwargs)
+            elif self.callback_exception == "verbose":
+                self.send(f"```python\n{traceback.format_exc()}\n```", **send_kwargs)
+            elif self.callback_exception == "ignore":
+                return
+            else:
+                raise e
         finally:
             self._replace_placeholder(None)
             self.disabled = disabled
@@ -1351,15 +1384,15 @@ class ChatInterface(ChatFeed):
             setattr(obj, attr, getattr(self, attr))
             self.link(obj, **{attr: attr})
 
-    @param.depends("width", on_init=True)
+    @param.depends("width", on_init=True, watch=True)
     def _update_input_width(self):
         """
         Update the input width.
         """
-        if self.show_button_name is None:
-            self.show_button_name = self.width >= 400
+        self.show_button_name = self.width is None or self.width >= 400
 
     @param.depends(
+        "width",
         "widgets",
         "show_send",
         "show_rerun",
@@ -1419,8 +1452,8 @@ class ChatInterface(ChatFeed):
                     icon=button_data.icon,
                     sizing_mode="fixed",
                     width=90 if self.show_button_name else 45,
-                    height=35,
-                    margin=(5, 5),
+                    height=30,
+                    margin=(5, 5, 5, 0),
                     align="center",
                 )
                 self._link_disabled_loading(button)
