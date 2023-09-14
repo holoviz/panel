@@ -670,7 +670,7 @@ class DateRangeSlider(_SliderBase):
         The upper bound.""")
 
     step = param.Number(default=1, doc="""
-        The step size. Default is 1 millisecond.""")
+        The step size in days. Default is 1 day.""")
 
     format = param.String(default=None, doc="""
         Datetime format used for parsing and formatting the date.""")
