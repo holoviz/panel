@@ -1,5 +1,30 @@
 # Releases
 
+## Version 1.2.3
+
+Date: 2023-09-14
+
+This micro-release primarily fixes some critical regressions that were introduced in the 1.2.2 release, along with some other minor bug fixes. Many thanks for our users for reporting these issues so quickly and @monodera, @ndmlny-qs, @ahuang11, @mattpap, @Hoxbro and @philippjfr for their contributions to the release.
+
+### Enhancements
+
+- Add ability to change admin page endpoint ([#5447](https://github.com/holoviz/panel/pull/5447))
+
+### Bug fixes
+
+- Fix regression introduced in 1.2.2 causing issues with periodic callbacks and `--autoreload` ([#5490](https://github.com/holoviz/panel/pull/5490))
+- Fix regression introduced in 1.2.2 causing issues with authorization callbacks ([#5504](https://github.com/holoviz/panel/pull/5504))
+- Fix regression introduced in 1.2.2 related to logout redirects ([#5484](https://github.com/holoviz/panel/pull/5484))
+- Fix extracting `panel convert` requirements from requirements.txt ([#5509](https://github.com/holoviz/panel/pull/5509))
+- Ensure visibility is applied correctly for all components when initialized as False ([#5508](https://github.com/holoviz/panel/pull/5508))
+- Fix rendering of backticks in ReactiveHTML ([#5512](https://github.com/holoviz/panel/pull/5512))
+- Ensure Quill correctly detects selections and renders HTML ([#5511](https://github.com/holoviz/panel/pull/5511))
+- Fix markdown rendering with the MyST parser ([#5497](https://github.com/holoviz/panel/pull/5497))
+
+### Documentation
+
+- Update outdated `DateRangeSlider.step` documentation ([#5510](https://github.com/holoviz/panel/pull/5510))
+
 ## Version 1.2.2
 
 Date: 2023-08-31
