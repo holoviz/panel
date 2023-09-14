@@ -300,7 +300,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
   }
 
   private _render_html(literal: any, state: any={}): any {
-    let htm = literal
+    let htm = literal.replace(/[`]/g, '\\$&');
     let callbacks = ''
     const methods: string[] = []
     for (const elname in this.model.callbacks) {
