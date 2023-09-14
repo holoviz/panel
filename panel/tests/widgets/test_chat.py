@@ -808,9 +808,7 @@ class TestChatFeedCallback:
 
         chat_feed.placeholder_threshold = 0.1
         chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatEntry(
-            value="Message", placeholder_threshold=0.1
-        )
+        chat_log_mock.__getitem__.return_value = ChatEntry(value="Message")
         chat_feed.callback = echo
         chat_feed._chat_log = chat_log_mock
         chat_feed.send("Message", respond=True)
@@ -887,7 +885,9 @@ class TestChatFeedCallback:
         chat_feed.callback = callback
         chat_feed.callback_exception = "verbose"
         chat_feed.send("Message", respond=True)
-        assert chat_feed.value[-1].value.startswith("```python\nTraceback (most recent call last):")
+        assert chat_feed.value[-1].value.startswith(
+            "```python\nTraceback (most recent call last):"
+        )
         assert chat_feed.value[-1].user == "Exception"
 
     def test_callback_exception_ignore(self, chat_feed):
