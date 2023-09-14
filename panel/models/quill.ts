@@ -3,6 +3,43 @@ import { div } from "@bokehjs/core/dom"
 
 import {HTMLBox, HTMLBoxView} from "./layout"
 
+const normalizeNative = (nativeRange: any) => {
+
+  // document.getSelection model has properties startContainer and endContainer
+  // shadow.getSelection model has baseNode and focusNode
+  // Unify formats to always look like document.getSelection
+
+  if (nativeRange) {
+
+    const range = nativeRange;
+
+    if (range.baseNode) {
+      range.startContainer = nativeRange.baseNode;
+      range.endContainer = nativeRange.focusNode;
+      range.startOffset = nativeRange.baseOffset;
+      range.endOffset = nativeRange.focusOffset;
+
+      if (range.endOffset < range.startOffset) {
+        range.startContainer = nativeRange.focusNode;
+        range.endContainer = nativeRange.baseNode;
+        range.startOffset = nativeRange.focusOffset;
+        range.endOffset = nativeRange.baseOffset;
+      }
+    }
+
+    if (range.startContainer) {
+
+      return {
+        start: { node: range.startContainer, offset: range.startOffset },
+        end: { node: range.endContainer, offset: range.endOffset },
+        native: range
+      };
+    }
+  }
+
+  return null
+};
+
 export class QuillInputView extends HTMLBoxView {
   override model: QuillInput
   protected container: HTMLDivElement
@@ -63,9 +100,21 @@ export class QuillInputView extends HTMLBoxView {
       placeholder: this.model.placeholder,
       theme: theme
     });
+
+    // Hack Quill and replace document.getSelection with shadow.getSelection
+    // see https://stackoverflow.com/questions/67914657/quill-editor-inside-shadow-dom/67944380#67944380
+    this.quill.selection.getNativeRange = () => {
+      const selection = (this.shadow_el as any).getSelection();
+      const range = normalizeNative(selection);
+      return range;
+    };
+
     this._editor = (this.shadow_el.querySelector('.ql-editor') as HTMLDivElement)
     this._toolbar = (this.shadow_el.querySelector('.ql-toolbar') as HTMLDivElement)
-    this.quill.clipboard.dangerouslyPasteHTML(this.model.text)
+
+    const delta = this.quill.clipboard.convert(this.model.text);
+    this.quill.setContents(delta);
+
     this.quill.on('text-change', () => {
       if (this._editing)
         return
@@ -85,6 +134,10 @@ export class QuillInputView extends HTMLBoxView {
   style_redraw(): void {
     if (this.model.visible)
       this.container.style.visibility = 'visible';
+
+    const delta = this.quill.clipboard.convert(this.model.text);
+    this.quill.setContents(delta);
+
     this.invalidate_layout()
   }
 
