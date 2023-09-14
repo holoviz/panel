@@ -1099,3 +1099,9 @@ class TestChatInterface:
     def test_widgets_supports_list_and_widget(self, chat_interface):
         chat_interface.widgets = TextAreaInput()
         chat_interface.widgets = [TextAreaInput(), FileInput]
+
+    def test_show_button_name_width(self, chat_interface):
+        assert chat_interface.show_button_name
+        assert chat_interface.width is None
+        chat_interface.width = 200
+        assert not chat_interface.show_button_name

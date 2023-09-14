@@ -541,7 +541,7 @@ class ChatEntry(CompositeWidget):
             not isinstance(obj, FileBase)
         )
         if is_markup:
-            if len(obj.object) > 0:  # only show a background if there is content
+            if len(str(obj.object)) > 0:  # only show a background if there is content
                 obj.css_classes = [*obj.css_classes, "message"]
         else:
             if obj.sizing_mode is None and not obj.width:
@@ -631,7 +631,7 @@ class ChatEntry(CompositeWidget):
         return HTML(self.user, height=20, css_classes=["name"], visible=self.show_user)
 
     @param.depends("value")
-    async def _render_value(self) -> Viewable:
+    def _render_value(self) -> Viewable:
         """
         Renders value as a panel object.
         """
@@ -1364,15 +1364,15 @@ class ChatInterface(ChatFeed):
             setattr(obj, attr, getattr(self, attr))
             self.link(obj, **{attr: attr})
 
-    @param.depends("width", on_init=True)
+    @param.depends("width", on_init=True, watch=True)
     def _update_input_width(self):
         """
         Update the input width.
         """
-        if self.show_button_name is None:
-            self.show_button_name = self.width >= 400
+        self.show_button_name = self.width is None or self.width >= 400
 
     @param.depends(
+        "width",
         "widgets",
         "show_send",
         "show_rerun",
@@ -1432,8 +1432,8 @@ class ChatInterface(ChatFeed):
                     icon=button_data.icon,
                     sizing_mode="fixed",
                     width=90 if self.show_button_name else 45,
-                    height=35,
-                    margin=(5, 5),
+                    height=30,
+                    margin=(5, 5, 5, 0),
                     align="center",
                 )
                 self._link_disabled_loading(button)
