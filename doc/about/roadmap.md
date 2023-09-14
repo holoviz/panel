@@ -15,6 +15,7 @@ We plan to switch the current project build and testing infrastructure to Hatch,
 In addition to providing more flexibility around build and developer environment setup we aim to update the contributor guide to make it straightforward even for inexperienced developers to set up an environment that allows them to start contributing.
 
 ### Improve Documentation Build Tooling
+
 We will improve our current documentation build tooling, allowing developers to perform partial builds more easily. This change aims to reduce the build time and make the process of contributing to or updating the documentation more approachable.
 
 ### Easy Extension Creation
