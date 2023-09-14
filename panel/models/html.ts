@@ -46,6 +46,10 @@ export class HTMLView extends PanelMarkupView {
       const html = this.process_tex()
       this.set_html(html)
     })
+    this.connect(this.model.properties.visible.change, () => {
+      if (this.model.visible)
+	this.container.style.visibility = 'visible';
+    })
     this.connect(this.model.properties.events.change, () => {
       this._remove_event_listeners()
       this._setup_event_listeners()

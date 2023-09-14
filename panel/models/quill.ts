@@ -15,6 +15,10 @@ export class QuillInputView extends HTMLBoxView {
   connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.disabled.change, () => this.quill.enable(!this.model.disabled))
+    this.connect(this.model.properties.visible.change, () => {
+      if (this.model.visible)
+	this.container.style.visibility = 'visible';
+    })
     this.connect(this.model.properties.text.change, () => {
       if (this._editing)
         return
@@ -79,7 +83,8 @@ export class QuillInputView extends HTMLBoxView {
   }
 
   style_redraw(): void {
-    this.container.style.visibility = 'visible';
+    if (this.model.visible)
+      this.container.style.visibility = 'visible';
     this.invalidate_layout()
   }
 
