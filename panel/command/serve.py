@@ -359,6 +359,7 @@ class Serve(_BkServe):
             admin_path = "/admin"
             if args.admin_endpoint:
                 admin_path = args.admin_endpoint
+                admin_path = admin_path if admin_path.startswith('/') else f'/{admin_path}'
 
             config._admin = True
             app = Application(FunctionHandler(admin_panel))
