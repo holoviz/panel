@@ -36,6 +36,13 @@ Discover how to configure OAuth from the commandline.
 A list of OAuth providers and how to configure them.
 :::
 
+:::{grid-item-card} {octicon}`file;2.5em;sd-mr-1 sd-animate-grow50` Templates
+:link: templates
+:link-type: doc
+
+Discover how to configure error and logout templates to match the design of your application.
+:::
+
 :::{grid-item-card} {octicon}`person;2.5em;sd-mr-1 sd-animate-grow50` User Information
 :link: user_info
 :link-type: doc
