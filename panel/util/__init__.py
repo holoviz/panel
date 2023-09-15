@@ -24,6 +24,7 @@ from html import escape  # noqa
 from importlib import import_module
 from typing import Any, AnyStr, Iterator
 
+import bleach
 import bokeh
 import numpy as np
 import param
@@ -44,6 +45,8 @@ bokeh_version = Version(bokeh.__version__)
 BOKEH_JS_NAT = -9223372036854776.0
 
 PARAM_NAME_PATTERN = re.compile(r'^.*\d{5}$')
+
+HTML_SANITIZER = bleach.sanitizer.Cleaner(strip=True)
 
 
 def hashable(x):

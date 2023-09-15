@@ -12,12 +12,11 @@ from typing import (
     TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Type,
 )
 
-import bleach
 import param  # type: ignore
 
 from ..io.resources import CDN_DIST
 from ..models import HTML as _BkHTML, JSON as _BkJSON
-from ..util import escape
+from ..util import HTML_SANITIZER, escape
 from ..util.warnings import deprecated
 from .base import ModelPane
 
@@ -73,15 +72,19 @@ class HTML(HTMLBasePane):
     sanitize_html = param.Boolean(default=False, doc="""
         Whether to sanitize HTML sent to the frontend.""")
 
-    sanitize_callback = param.Callable(default=bleach.clean, doc="""
-        Sanitization callback to apply if sanitize_html=True.""")
+    sanitize_hook = param.Callable(default=HTML_SANITIZER.clean, doc="""
+        Sanitization callback to apply if `sanitize_html=True`.""")
 
     # Priority is dependent on the data type
     priority: ClassVar[float | bool | None] = None
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'sanitize_html': None, 'sanitize_callback': None
+        'sanitize_html': None, 'sanitize_hook': None
     }
+
+    _rerender_params: ClassVar[List[str]] = [
+        'object', 'sanitize_html', 'sanitize_hook'
+    ]
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
@@ -99,7 +102,7 @@ class HTML(HTMLBasePane):
         if hasattr(text, '_repr_html_'):
             text = text._repr_html_()
         if self.sanitize_html:
-            text = self.sanitize_callback(text)
+            text = self.sanitize_hook(text)
         return dict(object=escape(text))
 
 
@@ -355,7 +358,7 @@ class Markdown(HTMLBasePane):
     }
 
     _rerender_params: ClassVar[List[str]] = [
-        'object', 'dedent', 'extensions', 'css_classes', 'plugins'
+        'object', 'dedent', 'extensions', 'css_classes', 'plugins',
     ]
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
