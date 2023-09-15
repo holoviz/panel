@@ -1,6 +1,6 @@
 {
   "name": "@holoviz/panel",
-  "version": "1.2.3-a.1",
+  "version": "1.2.3-rc.1",
   "description": "The powerful data exploration & web app framework for Python.",
   "license": "BSD-3-Clause",
   "repository": {
@@ -19,11 +19,11 @@
     "preact": "^10.13.0"
   },
   "devDependencies": {
-    "flatpickr": "^4.6.9",
     "@typescript-eslint/eslint-plugin": "^6.5.0",
     "@typescript-eslint/parser": "^6.5.0",
     "acorn": "^8.10.0",
-    "eslint": "^8.48.0"
+    "eslint": "^8.48.0",
+    "flatpickr": "^4.6.9"
   },
   "files": [
     "dist/**/*.{js,js.map,d.ts,json,css,whl}"
