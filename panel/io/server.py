@@ -982,8 +982,10 @@ def get_server(
     oauth_secret: Optional[str] = None,
     oauth_redirect_uri: Optional[str] = None,
     oauth_extra_params: Mapping[str, str] = {},
+    oauth_error_template: Optional[str] = None,
     cookie_secret: Optional[str] = None,
     oauth_encryption_key: Optional[str] = None,
+    logout_template: Optional[str] = None,
     session_history: Optional[int] = None,
     **kwargs
 ) -> Server:
@@ -1038,11 +1040,16 @@ def get_server(
       Overrides the default OAuth redirect URI
     oauth_extra_params: dict (optional, default={})
       Additional information for the OAuth provider
+    oauth_error_template: str (optional, default=None)
+      Jinja2 template used when displaying authentication errors.
     cookie_secret: str (optional, default=None)
       A random secret string to sign cookies (required for OAuth)
     oauth_encryption_key: str (optional, default=False)
       A random encryption key used for encrypting OAuth user
       information and access tokens.
+    logout_template: str (optional, default=None)
+      Jinja2 template served when viewing the logout endpoint when
+      authentication is enabled.
     session_history: int (optional, default=None)
       The amount of session history to accumulate. If set to non-zero
       and non-None value will launch a REST endpoint at
@@ -1151,11 +1158,17 @@ def get_server(
         from ..auth import BasicProvider
         server_config['basic_auth'] = basic_auth
         basic_login_template = kwargs.pop('basic_login_template', None)
-        opts['auth_provider'] = BasicProvider(basic_login_template)
+        opts['auth_provider'] = BasicProvider(
+            basic_login_template,
+            logout_template=logout_template
+        )
     elif oauth_provider:
         from ..auth import OAuthProvider
         config.oauth_provider = oauth_provider # type: ignore
-        opts['auth_provider'] = OAuthProvider()
+        opts['auth_provider'] = OAuthProvider(
+            error_template=oauth_error_template,
+            logout_template=logout_template
+        )
     if oauth_key:
         config.oauth_key = oauth_key # type: ignore
     if oauth_secret:
