@@ -430,6 +430,12 @@ class Serve(_BkServe):
                 )
             config.auth_template = str(authpath.absolute())
 
+
+        if args.logout_template:
+            logout_template = str(pathlib.Path(args.logout_template).absolute())
+        else:
+            logout_template = None
+
         if args.basic_auth and config.basic_auth:
             raise ValueError(
                 "Turn on Basic authentication using environment variable "
@@ -448,8 +454,10 @@ class Serve(_BkServe):
                     )
             else:
                 basic_login_template = None
+
             kwargs['auth_provider'] = BasicProvider(
-                basic_login_template=basic_login_template
+                basic_login_template=basic_login_template,
+                logout_template=logout_template
             )
 
         if args.cookie_secret and config.cookie_secret:
@@ -559,11 +567,6 @@ class Serve(_BkServe):
                 error_template = config.auth_template
             else:
                 error_template = None
-
-            if args.logout_template:
-                logout_template = str(pathlib.Path(args.logout_template).absolute())
-            else:
-                logout_template = None
 
             kwargs['auth_provider'] = OAuthProvider(
                 error_template=error_template, logout_template=logout_template
