@@ -37,7 +37,7 @@ def test_basic_auth(py_file, page, prefix):
         expect(page.locator('.markdown')).to_have_text('test_user', timeout=10000)
 
 
-#@unix_only
+@unix_only
 @pytest.mark.parametrize('logout_template', [None, (pathlib.Path(__file__).parent / 'logout.html').absolute()])
 def test_basic_auth_logout(py_file, page, logout_template):
     app = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
