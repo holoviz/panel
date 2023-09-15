@@ -164,7 +164,7 @@ def test_html_pane_sanitize_html(document, comm):
 
     pane.sanitize_html = False
 
-    assert model.text.endswith("&lt;h1&gt;&lt;strong&gt;HTML&lt;/strong&gt;&lt;/h1&gt;")
+    assert model.text.endswith('&lt;h1&gt;&lt;strong&gt;HTML&lt;/h1&gt;&lt;/strong&gt;')
 
 def test_dataframe_pane_pandas(document, comm):
     pane = DataFrame(pd._testing.makeDataFrame())
