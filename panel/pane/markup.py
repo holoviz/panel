@@ -12,6 +12,7 @@ from typing import (
     TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Type,
 )
 
+import bleach
 import param  # type: ignore
 
 from ..io.resources import CDN_DIST
@@ -69,8 +70,18 @@ class HTML(HTMLBasePane):
         Whether to disable support for MathJax math rendering for
         strings escaped with $$ delimiters.""")
 
+    sanitize_html = param.Boolean(default=False, doc="""
+        Whether to sanitize HTML sent to the frontend.""")
+
+    sanitize_callback = param.Callable(default=bleach.clean, doc="""
+        Sanitization callback to apply if sanitize_html=True.""")
+
     # Priority is dependent on the data type
     priority: ClassVar[float | bool | None] = None
+
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'sanitize_html': None, 'sanitize_callback': None
+    }
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
@@ -87,6 +98,8 @@ class HTML(HTMLBasePane):
         text = '' if obj is None else obj
         if hasattr(text, '_repr_html_'):
             text = text._repr_html_()
+        if self.sanitize_html:
+            text = self.sanitize_callback(text)
         return dict(object=escape(text))
 
 
