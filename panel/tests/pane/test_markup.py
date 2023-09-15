@@ -154,6 +154,18 @@ def test_html_pane(document, comm):
     pane._cleanup(model)
     assert pane._models == {}
 
+def test_html_pane_sanitize_html(document, comm):
+    pane = HTML("<h1><strong>HTML</h1></strong>", sanitize_html=True)
+
+    # Create pane
+    model = pane.get_root(document, comm=comm)
+    assert pane._models[model.ref['id']][0] is model
+    assert model.text.endswith("&lt;strong&gt;HTML&lt;/strong&gt;")
+
+    pane.sanitize_html = False
+
+    assert model.text.endswith('&lt;h1&gt;&lt;strong&gt;HTML&lt;/h1&gt;&lt;/strong&gt;')
+
 def test_dataframe_pane_pandas(document, comm):
     pane = DataFrame(pd._testing.makeDataFrame())
 
