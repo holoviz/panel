@@ -419,6 +419,9 @@ class _config(_base_config):
         """
         from .io.state import state
 
+        if attr == '_param__private':
+            return super().__getattribute__('_param__private')
+
         # _param__private added in Param 2
         try:
             init = super().__getattribute__('_param__private').initialized
