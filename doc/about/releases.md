@@ -4,7 +4,9 @@ See [the HoloViz blog](https://blog.holoviz.org/tag/panel.html) for a visual sum
 
 ## Version 1.2.3
 
-Date: 2023-09-15
+Date: 2023-09-18
+
+This micro-release primarily fixes some critical regressions that were introduced in the 1.2.2 release, along with some other minor bug fixes. Many thanks for our users for reporting these issues so quickly and @monodera, @ndmlny-qs, @ahuang11, @mattpap, @Hoxbro and @philippjfr for their contributions to the release.
 
 ### Enhancements
 
