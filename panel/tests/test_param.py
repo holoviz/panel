@@ -1634,9 +1634,9 @@ def test_param_editablerangeslider_with_bounds():
     t = Test()
     w = EditableRangeSlider.from_param(t.param.i)
 
-    if Version(param.__version__) > Version('2.0.0a3'):
+    if Version(param.__version__) >= Version('2.0.0a3'):
         msg = r"Range parameter 'EditableRangeSlider\.value' lower bound must be in range \[0, 10\], not -1\."
-    elif Version(param.__version__) > Version('2.0.0a2'):
+    elif Version(param.__version__) >= Version('2.0.0a2'):
         msg = r"Attribute 'bound' of Range parameter 'EditableRangeSlider\.value' must be in range '\[0, 10\]'"
     else:
         msg = r"Range parameter 'value''s lower bound must be in range \[0, 10\]"
