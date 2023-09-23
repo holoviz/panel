@@ -1068,7 +1068,10 @@ class ReactiveExpr(PaneBase):
 
     @param.depends('center', 'object', 'widget_layout', 'widget_location', watch=True)
     def _update_layout(self, *events):
-        self.layout[:] = [self._generate_layout()]
+        if self.object is None:
+            self.layout[:] = []
+        else:
+            self.layout[:] = [self._generate_layout()]
 
     @classmethod
     def applies(self, object):
@@ -1123,6 +1126,8 @@ class ReactiveExpr(PaneBase):
     @property
     def widgets(self):
         widgets = []
+        if self.object is None:
+            return []
         for p in self.object._fn_params:
             if (isinstance(p.owner, Widget) and
                 p.owner not in widgets):
@@ -1142,10 +1147,10 @@ class ReactiveExpr(PaneBase):
         return self.widget_layout(*widgets)
 
     def _generate_layout(self):
-        widget_box = self.widgets
         panel = ParamFunction(self.object._callback)
         if not self.show_widgets:
             return panel
+        widget_box = self.widgets
         loc = self.widget_location
         layout, align, widget_first = self._layouts[loc]
         widget_box.align = align
