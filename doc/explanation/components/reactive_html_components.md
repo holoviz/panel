@@ -715,3 +715,67 @@ pn.Column(text_field, text_field.param.value).servable()
 ```
 
 In a notebook dependencies for this component will not be loaded unless the user explicitly loads them with a `pn.extension('material-components')`. In a server context you will also have to explicitly load this extension unless the component is rendered on initial page load, i.e. if the component is only added to the page in a callback you will also have to explicitly run `pn.extension('material-components')`.
+
+## How does `ReactiveHTML` compare to `AnyWidget`?
+
+Both `ReactiveHTML` in the Panel ecosystem and `AnyWidget` in the Jupyter ipywidgets ecosystem allow you to develop custom components using HTML, CSS, and JavaScript. However, there are some differences in terms of parameter layout and event handling between the two.
+
+### `AnyWidget`
+
+- Parameter Layout: In `AnyWidget`, you use JavaScript in the `_esm` attribute to layout your parameter values.
+- Event Handling: You configure event handlers using JavaScript code within the `_esm` attribute. You can listen for parameter changes and update the widget accordingly.
+
+Here is an example of a `CounterWidget` using `AnyWidget`:
+
+```python
+import anywidget
+import traitlets
+
+class CounterWidget(anywidget.AnyWidget):
+    value = traitlets.Int(0).tag(sync=True)
+
+    _esm = """
+    export function render({ model, el }) {
+      let button = document.createElement("button");
+      button.innerHTML = `count is ${model.get("value")}`;
+      button.addEventListener("click", () => {
+        model.set("value", model.get("value") + 1);
+        model.save_changes();
+      });
+      model.on("change:value", () => {
+        button.innerHTML = `count is ${model.get("value")}`;
+      });
+      el.appendChild(button);
+    }
+    """
+```
+
+### `ReactiveHTML`
+
+- Parameter Layout: In `ReactiveHTML`, you typically use HTML, JavaScript template variables `${...}`, and Python Jinja2 syntax to layout your parameter values.
+- Event Handling: You can configure event handlers using JavaScript code within the `_template` attribute. Additionally, you can use the `_scripts` attribute to define JavaScript callbacks that respond to events or parameter changes.
+
+Here is an example of a `CounterWidget` using `ReactiveHTML`:
+
+```{pyodide}
+import param
+from panel.reactive import ReactiveHTML
+
+class CounterWidget(ReactiveHTML):
+    value = param.Integer(default=0)
+
+    _template = """
+    <button id="button_el" class="styled-button" onclick="${script('click_handler')}"></button>
+    """
+
+    _scripts = {
+        "render": "button_el.innerHTML = `count is ${data.value}`",
+        "click_handler": "data.value += 1",
+        "value": "button_el.innerHTML = `count is ${data.value}`"
+    }
+```
+
+### Additional Notes
+
+- Custom CSS and JavaScript files: `AnyWidget` allows you to easily develop CSS and JavaScript in separate files, providing a great developer experience with hot reload. `ReactiveHTML` does not currently have built-in support for separate files, but there are plans to add similar features in the future.
+- Integration with other ecosystems: `AnyWidget` is part of the Jupyter ipywidgets ecosystem, while `ReactiveHTML` is part of the Panel ecosystem. There are ongoing efforts to make it easier for Panel users to integrate with the growing `AnyWidget` ecosystem.
