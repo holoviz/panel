@@ -8,8 +8,8 @@ This example will show you how to create a `SlideShow` component that uses a pyt
 function to update the `SlideShow` image when its clicked:
 
 ```{pyodide}
-import panel as pn
 import param
+import panel as pn
 
 from panel.reactive import ReactiveHTML
 
@@ -36,8 +36,8 @@ This example will show you how to create a `SlideShow` component that uses a Jav
 function to update the `SlideShow` image when its clicked:
 
 ```{pyodide}
-import panel as pn
 import param
+import panel as pn
 
 from panel.reactive import ReactiveHTML
 

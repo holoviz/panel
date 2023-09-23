@@ -18,7 +18,12 @@ class ImageButton(ReactiveHTML):
     image = param.String()
 
     _template = """\
-<style>
+<button id="button" class="pn-container center-content" onclick="${script('click')}">
+    <img id="image" class="image-size" src="${image}"></img>
+</button>
+"""
+
+    _stylesheets = ["""
 .pn-container {
     height: 100%;
     width: 100%;
@@ -34,11 +39,7 @@ class ImageButton(ReactiveHTML):
     max-height: 100%;
     object-fit: contain;
 }
-</style>
-<button id="button" class="pn-container center-content" onclick="${script('click')}">
-    <img id="image" class="image-size" src="${image}"></img>
-</button>
-"""
+"""]
 
     _scripts = {'click': 'data.clicks += 1'}
 
@@ -76,16 +77,17 @@ class SVGInput(ReactiveHTML):
     _child_config={"value": "literal"}
 
     _template = """\
-<style>
-.pn-container {height: 100%;width: 100%;position:relative;}
-.pn-container svg {position: relative;height:100%;width:100%}
-</style>
 <div id="container" class="pn-container"
     onclick="${script('click_handler')}" onmouseover="${script('mouseover_handler')}"
 >
 {{ value }}
 </div>
 """
+
+    _stylesheets = ["""
+.pn-container {height: 100%;width: 100%;position:relative;}
+.pn-container svg {position: relative;height:100%;width:100%}
+"""]
 
     _scripts = {
         'click_handler': """
@@ -146,16 +148,17 @@ class Select(pn.reactive.ReactiveHTML):
     value = param.String(doc="Current selected option")
 
     _template = """
-    <style>
-    .pn-container {height: 100%;width: 100%;position:relative;}
-    .style {border: 2px dashed lightgray;border-radius:20px}
-    </style>
     <select id="select_el" class="pn-container style" value="${value}">
       {% for option in options %}
-      <option id="option">{{option}}</option>
+      <option id="option_el">{{option}}</option>
       {% endfor %}
     </select>
     """
+
+    stylesheets=["""
+.pn-container {height: 100%;width: 100%;position:relative;}
+.style {border: 2px dashed lightgray;border-radius:20px}
+"""]
 
     _dom_events = {'select_el': ['change']}
 
@@ -173,14 +176,12 @@ In this example we inserted the options as literal `str` values via `{{option}}`
 Note that the example above inserted the `options` as child objects but since they are strings we could use literals instead:
 
 ```html
-<select id="select" value="${value}" style="width: ${model.width}px">
+<select id="select_el" class="pn-container style" value="${value}" >
   {% for option in options %}
-  <option id="option-{{ loop.index0 }}">{{ option }}</option>
+  <option id="option_el">{{ option }}</option>
   {% endfor %}
 </select>
 ```
-
-When using child literals we have to ensure that each `<option>` DOM node has a unique ID manually by inserting the `loop.index0` value (which would otherwise be added automatically).etc>
 
 ## Drawable Canvas
 
@@ -259,7 +260,7 @@ pn.Column(
         canvas,
         png_view,
     ),
-).servable()
+)
 ```
 
 This example invokes *scripts* in 3 ways:

@@ -9,10 +9,11 @@ In this example we will show you how to create a custom Table Pane. The example 
 the [GridJS table](https://gridjs.io/).
 
 ```{pyodide}
-import panel as pn
-import param
-import pandas as pd
 import random
+import pandas as pd
+import param
+import panel as pn
+
 
 class GridJSComponent(pn.reactive.ReactiveHTML):
     value = param.DataFrame()

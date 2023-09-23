@@ -4,7 +4,7 @@ In this guide you will learn how to build custom layouts using HTML and `Reactiv
 
 If you are not familiar with HTML then the [W3 HTML School](https://www.w3schools.com/html/default.asp)
 is a good resource to learn from. You can also ask ChatGPT for help. It can often provide you with
-a good HTML starting point that you can fine tune.
+a good HTML starting point that you can finetune.
 
 ## A layout of a single object
 
@@ -16,40 +16,47 @@ import param
 
 pn.extension()
 
+
 class LayoutSingleObject(pn.reactive.ReactiveHTML):
     object = param.Parameter()
 
     _ignored_refs = ("object",)
 
     _template = """
-    <div style="height:100%;width:100%">
+    <div>
         <h1>Temperature</h1>
         <h2>A measurement from the sensor</h2>
-        <div id="object" class="styled-block">${object}</div>
+        <div id="object">${object}</div>
     </div>
 """
 
+
 dial = pn.widgets.Dial(
-    name="°C", value=37, format="{value}", colors=[(0.40, "green"), (1, "red")], bounds=(0, 100),
+    name="°C",
+    value=37,
+    format="{value}",
+    colors=[(0.40, "green"), (1, "red")],
+    bounds=(0, 100),
 )
 LayoutSingleObject(
-    object=dial, name="Temperature", description="A measurement from the sensor", styles={"border": "2px solid lightgray"}, width=500
+    object=dial,
+    name="Temperature",
+    description="A measurement from the sensor",
+    styles={"border": "2px solid lightgray"},
+    sizing_mode="stretch_width",
 ).servable()
 ```
 
 Please notice
 
 - We define the HTML layout in the `_template` attribute.
-- In the `_template` attribute we define an outer *container* `div` with a `height` and `width` of
-`100%`. This will make your `_template` responsive, i.e. (re-)size it self to the `height` and
-`width` of your `ReactiveHTML` component.
 - We can refer to the parameter `object` in the `_template` via the *template parameter* `${object}`.
   - We must give the `div` element holding the `${object}` an `id`. If we do not, then an exception
   will be raised. The `id` can be any value, for example `id="my-object"`.
 - We call our *object* parameter `object` to be consistent with our built in layouts. But the
 parameter can be called anything. For example `value`, `dial` or `temperature`.
 - We add the `border` in the `styles` parameter so that we can better see how the `_template` layes
-it self out inside the `ReactiveHTML` component. This can be very useful for development.
+out inside the `ReactiveHTML` component. This can be very useful for development.
 
 ## A Layout of multiple objects
 
@@ -66,14 +73,11 @@ class LayoutMultipleValues(pn.reactive.ReactiveHTML):
     _ignored_refs = ("object1", "object2")
 
     _template = """
-    <style>
-    .pn-container {height: 100%;width: 100%;}
-    </style>
-    <div class="pn-container">
+    <div>
         <h1>Object 1</h1>
         <div id="object1">${object1}</div>
-        <h2>Object 2</h2>
-        <div id="object2">${object1}</div>
+        <h1>Object 2</h1>
+        <div id="object2">${object2}</div>
     </div>
 """
 
@@ -164,9 +168,6 @@ class LayoutOfList(pn.reactive.ReactiveHTML):
     objects = param.List()
 
     _template = """
-    <style>
-    .pn-container {height: 100%;width: 100%;}
-    </style>
     <div id="container" class="pn-container">
         {% for object in objects %}
             <h1>Object {{ loop.index0 }}</h1>
@@ -187,7 +188,7 @@ LayoutOfList(objects=[
 Please note that you must
 
 - wrap the `{% for object in objects %}` loop in an HTML element with an `id`. Here it is wrapped
-with `<div id="container" class="pn-container">...</div>`.
+with `<div id="container">...</div>`.
 - close all HTML tags! `<hr>` is valid HTML, but not valid with `ReactiveHTML`. You must close it
 as `<hr/>`.
 
@@ -210,15 +211,12 @@ class ListLikeLayout(pn.layout.base.NamedListLike, pn.reactive.ReactiveHTML):
     objects = param.List()
 
     _template = """
-    <style>
-    .pn-container {height: 100%;width: 100%;}
-    </style>
     <div id="container" class="pn-container">
-         {% for object in objects %}
+        {% for object in objects %}
             <h1>Object {{ loop.index0 }}</h1>
             <div id="object">${object}</div>
             <hr/>
-		{% endfor %}
+        {% endfor %}
     </div>
 """
 
@@ -244,9 +242,6 @@ expect.
 If you want to layout a dictionary, you can use a for loop on the `.items()`.
 
 ```{pyodide}
-layout[2]
-```
-
 import panel as pn
 import param
 
@@ -256,16 +251,13 @@ class LayoutOfDict(pn.reactive.ReactiveHTML):
     object = param.Dict()
 
     _template = """
-    <style>
-    .pn-container {height: 100%;width: 100%;}
-    </style>
     <div id="container" class="pn-container">
          {% for key, value in object.items() %}
             <h1>Item {{ loop.index0 }}</h1>
             <div>{{ key }}</div>
             <div id="value">${value}</div>
             <hr/>
-		{% endfor %}
+        {% endfor %}
     </div>
 """
 
@@ -276,16 +268,10 @@ LayoutOfDict(object={
 },
     styles={"border": "2px solid lightgray"},
 )
+```
 
 Please note
 
 - We can insert the `key` as a literal value using `{{ key }}`.
 - We must not give the HTML element containing `{{ key }}` an `id`. If we do, an exception will be
 raised.
-
-## A Grid like layout
-
-If you want to create a grid like layout similar to the [`GridSpec`](https://panel.holoviz.org/reference/layouts/GridSpec.html)
-you can ???
-
-Todo: Figure out how to do this. Looking at the `GridSpec` it seems there is no *mixin* class I can use.
