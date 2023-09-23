@@ -41,7 +41,6 @@ dial = pn.widgets.Dial(
 LayoutSingleObject(
     object=dial,
     name="Temperature",
-    description="A measurement from the sensor",
     styles={"border": "2px solid lightgray"},
     sizing_mode="stretch_width",
 ).servable()
