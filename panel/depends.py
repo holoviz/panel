@@ -1,5 +1,6 @@
 from packaging.version import Version
-from param.depends import bind, depends, transform_dependency
+from param.depends import depends, transform_dependency
+from param.reactive import bind
 
 from .config import __version__
 from .util.warnings import deprecated

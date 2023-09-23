@@ -45,8 +45,8 @@ from .models.reactive_html import (
     DOMEvent, ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser,
 )
 from .util import (
-    BOKEH_JS_NAT, classproperty, edit_readonly, escape,
-    eval_function, extract_dependencies, updating,
+    BOKEH_JS_NAT, HTML_SANITIZER, classproperty, edit_readonly, escape,
+    extract_dependencies, updating,
 )
 from .viewable import Layoutable, Renderable, Viewable
 

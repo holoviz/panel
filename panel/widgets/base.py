@@ -105,8 +105,9 @@ class Widget(Reactive):
             props.remove('description')
         return tuple(props)
 
-    def reactive(self):
-        return self.param.value.reactive()
+    @property
+    def rx(self):
+        return self.param.value.rx
 
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
         params = super()._process_param_change(params)
