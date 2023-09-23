@@ -39,7 +39,7 @@ panel serve app.py --autoreload --show
 
 Once you run that command Panel will launch a server that will serve your app, open a tab in your default browser (`--show`) and update the application whenever you update the code (`--autoreload`).
 
-<img src="https://assets.holoviz.org/panel/gifs/jupyterlab_preview.gif" style="margin-left: auto; margin-right: auto; display: block;"></img>
+<img src="https://assets.holoviz.org/panel/gifs/vscode_autoreload.gif" style="margin-left: auto; margin-right: auto; display: block;"></img>
 
 > Checkout [How-to > Prepare to develop](../how_to/prepare_to_develop.md) for more guidance on each of the development environment options.
 ## Control flow

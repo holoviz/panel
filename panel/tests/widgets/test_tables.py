@@ -853,7 +853,7 @@ def test_tabulator_stream_df_rollover(document, comm):
 
     model = table.get_root(document, comm)
 
-    stream_value = pd.Series({'A': 5, 'B': 1, 'C': 'foo6', 'D': dt.datetime(2009, 1, 8)}).to_frame().T
+    stream_value = pd.DataFrame({'A': [5], 'B': [1], 'C': ['foo6'], 'D': [np.datetime64(dt.datetime(2009, 1, 8))]})
 
     table.stream(stream_value, rollover=5)
 

@@ -163,11 +163,11 @@ img {
 .accordion-header {
   align-items: center;
   background-color: var(--neutral-fill-rest);
-  border: unset;
   box-shadow: unset;
   color: var(--neutral-foreground-rest);
   display: flex;
   height: unset;
+  outline: unset;
 }
 
 .card-margin {

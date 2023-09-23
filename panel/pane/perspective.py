@@ -18,7 +18,7 @@ from pyviz_comms import JupyterComm
 from ..io.resources import CDN_DIST
 from ..io.state import state
 from ..reactive import ReactiveData
-from ..util import lazy_load
+from ..util import datetime_types, lazy_load
 from ..viewable import Viewable
 from .base import ModelPane
 
@@ -387,8 +387,8 @@ class Perspective(ModelPane, ReactiveData):
         for col, array in source.data.items():
             if not isinstance(array, np.ndarray):
                 array = np.asarray(array)
-            kind = array.dtype.kind.lower()
-            if kind == 'm':
+            kind = array.dtype.kind
+            if kind == 'M':
                 schema[col] = 'datetime'
             elif kind in 'ui':
                 schema[col] = 'integer'
@@ -396,14 +396,14 @@ class Perspective(ModelPane, ReactiveData):
                 schema[col] = 'boolean'
             elif kind == 'f':
                 schema[col] = 'float'
-            elif kind == 'su':
+            elif kind in 'sU':
                 schema[col] = 'string'
             else:
                 if len(array):
                     value = array[0]
                     if isinstance(value, dt.date):
                         schema[col] = 'date'
-                    elif isinstance(value, dt.datetime):
+                    elif isinstance(value, datetime_types):
                         schema[col] = 'datetime'
                     elif isinstance(value, str):
                         schema[col] = 'string'

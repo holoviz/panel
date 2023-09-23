@@ -1,10 +1,11 @@
 :host(.card) {
-  border: 1px solid rgba(0, 0, 0, 0.125);
+  outline: 1px solid rgba(0, 0, 0, 0.125);
   border-radius: 0.25rem;
 }
 
 :host(.accordion) {
-  border: 1px solid rgba(0, 0, 0, 0.125);
+  outline: 1px solid rgba(0, 0, 0, 0.125);
+  width: 100%;
 }
 
 .card-header {
@@ -14,15 +15,17 @@
   border-radius: 0.25rem;
   display: inline-flex;
   justify-content: start;
-  position: sticky;
   left: 0;
+  outline: unset;
+  position: sticky;
   width: 100%;
 }
 
 .accordion-header {
   align-items: center;
   background-color: rgba(0, 0, 0, 0.03);
-  border: 1px solid;
+  border: unset;
+  outline: 1px solid;
   border-radius: 0;
   display: flex;
   justify-content: start;

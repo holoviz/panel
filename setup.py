@@ -209,7 +209,8 @@ extras_require = {
     'recommended': _recommended,
     'doc': _recommended + [
         'nbsite ==0.8.2',
-        'lxml'
+        'lxml',
+        'pandas <2.1.0' # Avoid deprecation warnings
     ],
     'ui': _ui
 }

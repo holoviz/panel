@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <meta content="en" name="docsearch:language">
-    <title>Panel App | Login</title>
+    <title>Panel App | Logout</title>
     <link rel="icon" type="image/x-icon" href="{{ PANEL_CDN }}images/favicon.ico">
     <style>
     * {
@@ -47,7 +47,7 @@
       width: 100%;
     }
     .form-group {
-      margin-bottom: 1em;
+      margin: 1em 0;
     }
     .form-button {
       background: #107bba;
@@ -77,25 +77,12 @@
 </head>
 <body>
   <div class="wrap">
-    <form class="login-form" action="./login" method="post">
+    <form class="login-form" action="./login" method="get">
       <div class="form-header">
         <h3><img id="logo" src="{{ PANEL_CDN }}images/logo_stacked.png" width="150" height="120"></h3>
         <br>
-        <p> Login to access your application</p>
+        <p> Successfully logged out.</p>
       </div>
-      <div id="error-message" class="form-group">
-        <p style="color:rgb(255, 0, 0);font-weight:bold" class="errormessage">{{errormessage}}</p>
-      </div>
-      <p></p>
-      <!--Email Input-->
-      <div class="form-group">
-        <input name="username" type="text" class="form-input" autocapitalize="off" autocorrect="off" placeholder="username">
-      </div>
-      <!--Password Input-->
-      <div class="form-group">
-        <input name="password" type="password" class="form-input" placeholder="password">
-      </div>
-      <!--Login Button-->
       <div class="form-group">
         <button class="form-button" type="submit">Login</button>
       </div>

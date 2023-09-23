@@ -239,6 +239,11 @@ class Plotly(ModelPane):
                 update_sources = True
                 cds.data[key] = [new]
 
+        for key in list(cds.data):
+            if key not in trace_arrays:
+                del cds.data[key]
+                update_sources = True
+
         return update_sources
 
     @staticmethod

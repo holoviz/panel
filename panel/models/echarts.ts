@@ -80,7 +80,7 @@ export class EChartsView extends HTMLBoxView {
   _plot(): void {
     if ((window as any).echarts == null)
       return
-    this._chart.setOption(this.model.data);
+    this._chart.setOption(this.model.data, this.model.options );
   }
 
   _resize(): void {
@@ -137,6 +137,7 @@ export namespace ECharts {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
     data: p.Property<any>
+    options: p.Property<any>
     event_config: p.Property<any>
     js_events: p.Property<any>
     renderer: p.Property<string>
@@ -159,11 +160,12 @@ export class ECharts extends HTMLBox {
     this.prototype.default_view = EChartsView
 
     this.define<ECharts.Props>(({ Any, String }) => ({
-      data:         [ Any,           {} ],
-      event_config: [ Any,           {} ],
-      js_events:    [ Any,           {} ],
-      theme:        [ String,  "default"],
-      renderer:     [ String,   "canvas"]
+      data:          [ Any,           {} ],
+      options:       [ Any,           {} ],
+      event_config:  [ Any,           {} ],
+      js_events:     [ Any,           {} ],
+      theme:         [ String,  "default"],
+      renderer:      [ String,   "canvas"]
     }))
   }
 }

@@ -356,7 +356,8 @@ def destroy_document(self, session):
 
     # Clean up pn.state to avoid tasks getting executed on dead session
     for attr in dir(state):
-        if not attr.startswith('_'):
+        # _param_watchers is deprecated in Param 2.0 and will raise a warning
+        if not attr.startswith('_') or attr == "_param_watchers":
             continue
         state_obj = getattr(state, attr)
         if isinstance(state_obj, weakref.WeakKeyDictionary) and self in state_obj:
@@ -506,22 +507,32 @@ class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
             with set_curdoc(session.document):
                 resources = Resources.from_bokeh(self.application.resources())
                 auth_cb = config.authorize_callback
+                authorized = False
                 if auth_cb:
                     auth_cb = config.authorize_callback
                     auth_params = inspect.signature(auth_cb).parameters
-                    auth_args = (state.user_info,)
-                    if len(auth_params) == 2:
-                        auth_args += (self.request.path,)
+                    if len(auth_params) == 1:
+                        auth_args = (state.user_info,)
+                    elif len(auth_params) == 2:
+                        auth_args = (state.user_info, self.request.path,)
                     else:
                         raise RuntimeError(
-                            'Authorization callback must accept either one or two arguments.'
+                            'Authorization callback must accept either 1) a single argument '
+                            'which is the user name or 2) two arguments which includes the '
+                            'user name and the url path the user is trying to access.'
                         )
                     auth_error = f'{state.user} is not authorized to access this application.'
                     try:
                         authorized = auth_cb(*auth_args)
-                        auth_error = None
+                        if not authorized:
+                            auth_error = (
+                                f'Authorization callback errored. Could not validate user name "{state.user}" '
+                                f'for the given app "{self.request.path}".'
+                            )
+                        if authorized:
+                            auth_error = None
                     except Exception:
-                        auth_error = f'Authorization callback errored. Could not validate user {state.user}'
+                        auth_error = f'Authorization callback errored. Could not validate user {state.user}.'
                 else:
                     authorized = True
 
@@ -971,8 +982,10 @@ def get_server(
     oauth_secret: Optional[str] = None,
     oauth_redirect_uri: Optional[str] = None,
     oauth_extra_params: Mapping[str, str] = {},
+    oauth_error_template: Optional[str] = None,
     cookie_secret: Optional[str] = None,
     oauth_encryption_key: Optional[str] = None,
+    logout_template: Optional[str] = None,
     session_history: Optional[int] = None,
     **kwargs
 ) -> Server:
@@ -1027,11 +1040,16 @@ def get_server(
       Overrides the default OAuth redirect URI
     oauth_extra_params: dict (optional, default={})
       Additional information for the OAuth provider
+    oauth_error_template: str (optional, default=None)
+      Jinja2 template used when displaying authentication errors.
     cookie_secret: str (optional, default=None)
       A random secret string to sign cookies (required for OAuth)
     oauth_encryption_key: str (optional, default=False)
       A random encryption key used for encrypting OAuth user
       information and access tokens.
+    logout_template: str (optional, default=None)
+      Jinja2 template served when viewing the logout endpoint when
+      authentication is enabled.
     session_history: int (optional, default=None)
       The amount of session history to accumulate. If set to non-zero
       and non-None value will launch a REST endpoint at
@@ -1139,11 +1157,18 @@ def get_server(
     if basic_auth:
         from ..auth import BasicProvider
         server_config['basic_auth'] = basic_auth
-        opts['auth_provider'] = BasicProvider()
+        basic_login_template = kwargs.pop('basic_login_template', None)
+        opts['auth_provider'] = BasicProvider(
+            basic_login_template,
+            logout_template=logout_template
+        )
     elif oauth_provider:
         from ..auth import OAuthProvider
         config.oauth_provider = oauth_provider # type: ignore
-        opts['auth_provider'] = OAuthProvider()
+        opts['auth_provider'] = OAuthProvider(
+            error_template=oauth_error_template,
+            logout_template=logout_template
+        )
     if oauth_key:
         config.oauth_key = oauth_key # type: ignore
     if oauth_secret:

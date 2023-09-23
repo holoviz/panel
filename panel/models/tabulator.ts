@@ -300,6 +300,10 @@ export class DataTabulatorView extends HTMLBoxView {
       this.invalidate_render()
     }, 20, false))
 
+    this.connect(this.model.properties.visible.change, () => {
+      if (this.model.visible)
+	this.tabulator.element.style.visibility = 'visible';
+    })
     this.on_change([columns], () => {
       this.tabulator.setColumns(this.getColumns())
       this.setHidden()

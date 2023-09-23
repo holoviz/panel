@@ -26,6 +26,14 @@ class ReactiveComponent(ReactiveHTML):
         'click': 'data.count += 1; reactive.innerText = `${data.count}`;'
     }
 
+class ReactiveLiteral(ReactiveHTML):
+
+    value = param.String()
+
+    _template = """
+    <div class="reactive">{{value}}</div>
+    """
+
 
 def test_reactive_html_click_js_event(page, port):
     component = ReactiveComponent()
@@ -104,3 +112,14 @@ def test_reactive_html_set_background_no_rerender(page, port):
     component.styles = dict(background='green')
     time.sleep(0.1)
     expect(page.locator(".reactive")).to_have_text('1')
+
+def test_reactive_literal_backtick(page, port):
+    component = ReactiveLiteral(value="Backtick: `")
+
+    serve(component, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    expect(page.locator(".reactive")).to_have_text('Backtick: `')
