@@ -80,6 +80,7 @@ __all__ = (
     "GridStack",
     "HSpacer",
     "Param",
+    "ReactiveExpr",
     "Row",
     "Spacer",
     "Tabs",
