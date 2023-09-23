@@ -24,7 +24,7 @@ from bokeh.models.widgets.tables import (
 from bokeh.util.serialization import convert_datetime_array
 from pyviz_comms import JupyterComm
 
-from ..depends import param_value_if_widget
+from ..depends import transform_dependency
 from ..io.resources import CDN_DIST, CSS_URLS
 from ..io.state import state
 from ..reactive import Reactive, ReactiveData
@@ -544,7 +544,7 @@ class BaseTable(ReactiveData, Widget):
         elif isinstance(filter, (FunctionType, MethodType)):
             deps = list(filter._dinfo['kw'].values()) if hasattr(filter, '_dinfo') else []
         else:
-            filter = param_value_if_widget(filter)
+            filter = transform_dependency(filter)
             if not isinstance(filter, param.Parameter):
                 raise ValueError(f'{type(self).__name__} filter must be '
                                  'a constant value, parameter, widget '

@@ -12,13 +12,13 @@ from panel.pane import (
     Bokeh, HoloViews, Interactive, IPyWidget, Markdown, PaneBase, RGGPlot,
     Vega,
 )
-from panel.param import Param, ParamMethod
+from panel.param import Param, ParamMethod, ReactiveExpr
 from panel.tests.util import check_layoutable_properties
 from panel.util import param_watchers
 
 SKIP_PANES = (
     Bokeh, HoloViews, Interactive, IPyWidget, Param, ParamMethod, RGGPlot,
-    Vega, interactive
+    ReactiveExpr, Vega, interactive
 )
 
 all_panes = [w for w in param.concrete_descendents(PaneBase).values()

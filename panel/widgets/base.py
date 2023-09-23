@@ -16,6 +16,7 @@ import param  # type: ignore
 
 from bokeh.models import ImportedStyleSheet, Tooltip
 from bokeh.models.dom import HTML
+from param.depends import register_depends_transform
 
 from .._param import Margin
 from ..layout.base import Row
@@ -103,6 +104,10 @@ class Widget(Reactive):
         if 'description' in props:
             props.remove('description')
         return tuple(props)
+
+    @property
+    def rx(self):
+        return self.param.value.rx
 
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
         params = super()._process_param_change(params)
@@ -244,3 +249,9 @@ class CompositeWidget(Widget):
     @property
     def _synced_params(self) -> List[str]:
         return []
+
+
+def _widget_transform(obj):
+    return obj.param.value if isinstance(obj, Widget) else obj
+
+register_depends_transform(_widget_transform)

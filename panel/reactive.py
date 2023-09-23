@@ -30,6 +30,7 @@ from bokeh.core.property.descriptors import UnsetValueError
 from bokeh.model import DataModel
 from bokeh.models import ImportedStyleSheet
 from packaging.version import Version
+from param.depends import eval_function_with_deps
 from param.parameterized import ParameterizedMetaclass, Watcher
 
 from .io.document import unlocked
@@ -45,7 +46,7 @@ from .models.reactive_html import (
 )
 from .util import (
     BOKEH_JS_NAT, HTML_SANITIZER, classproperty, edit_readonly, escape,
-    eval_function, extract_dependencies, updating,
+    extract_dependencies, updating,
 )
 from .viewable import Layoutable, Renderable, Viewable
 
@@ -545,15 +546,15 @@ class Reactive(Syncable, Viewable):
         self._setup_refs(refs)
 
     def _resolve_ref(self, pname, value):
-        from .depends import param_value_if_widget
+        from .depends import transform_dependency
         ref = None
-        value = param_value_if_widget(value)
+        value = transform_dependency(value)
         if isinstance(value, param.Parameter):
             ref = value
             value = getattr(value.owner, value.name)
         elif hasattr(value, '_dinfo'):
             ref = value
-            value = eval_function(value)
+            value = eval_function_with_deps(value)
             if isinstance(value, Generator):
                 if pname == 'refs':
                     v = {}
@@ -575,7 +576,8 @@ class Reactive(Syncable, Viewable):
             )
         pobj = self.param[pname]
         pobj._validate(value)
-        if isinstance(pobj, param.Dynamic) and callable(value) and hasattr(value, '_dinfo'):
+        if (isinstance(pobj, param.Dynamic) and callable(value) and
+            (hasattr(value, '_dinfo') or isinstance(value, param.reactive))):
             raise ValueError(
                 'Dynamic parameters should not capture functions with dependencies.'
             )
@@ -655,7 +657,7 @@ class Reactive(Syncable, Viewable):
             if isinstance(p, param.Parameter):
                 new_val = getattr(p.owner, p.name)
             else:
-                new_val = eval_function(p)
+                new_val = eval_function_with_deps(p)
 
             if inspect.isawaitable(new_val) or isinstance(new_val, types.AsyncGeneratorType):
                 param.parameterized.async_executor(partial(self._async_ref, pname, new_val))

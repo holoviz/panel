@@ -1,14 +1,14 @@
 import pytest
 
-from panel.depends import bind, param_value_if_widget
+from panel.depends import bind, transform_dependency
 from panel.pane import panel
 from panel.param import ParamFunction
 from panel.widgets import IntSlider
 
 
-def test_param_value_if_widget():
+def test_transform_dependency():
     widget = IntSlider()
-    assert param_value_if_widget(widget) is widget.param.value
+    assert transform_dependency(widget) is widget.param.value
 
 
 def test_bind_param_to_arg():

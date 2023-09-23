@@ -24,19 +24,24 @@ from typing import (
 
 import param
 
-from param.parameterized import classlist, discard_events, iscoroutinefunction
+from param.depends import eval_function_with_deps
+from param.parameterized import (
+    classlist, discard_events, get_method_owner, iscoroutinefunction,
+)
 
 from .config import config
 from .io import state
 from .layout import (
-    Column, Panel, Row, Spacer, Tabs,
+    Column, HSpacer, Panel, Row, Spacer, Tabs, WidgetBox,
 )
+from .pane import DataFrame as DataFramePane
 from .pane.base import PaneBase, ReplacementPane
 from .reactive import Reactive
 from .util import (
-    abbreviated_repr, eval_function, full_groupby, fullpath, get_method_owner,
-    is_parameterized, param_name, recursive_parameterized,
+    abbreviated_repr, flatten, full_groupby, fullpath, is_parameterized,
+    param_name, recursive_parameterized,
 )
+from .util.checks import is_dataframe, is_mpl_axes, is_series
 from .viewable import Layoutable, Viewable
 from .widgets import (
     ArrayInput, Button, Checkbox, ColorPicker, DataFrame, DatePicker,
@@ -810,7 +815,7 @@ class ParamMethod(ReplacementPane):
 
     @classmethod
     def eval(self, function):
-        return eval_function(function)
+        return eval_function_with_deps(function)
 
     async def _eval_async(self, awaitable):
         if self._async_task:
@@ -1012,6 +1017,166 @@ class ParamFunction(ParamMethod):
         return False
 
 
+class ReactiveExpr(PaneBase):
+    """
+    ReactiveExpr generates a UI for param.reactive objects
+    by rendering the widgets and outputs.
+    """
+
+    center = param.Boolean(default=False, doc="""
+        Whether to center the output.""")
+
+    show_widgets = param.Boolean(default=True, doc="""
+        Whether to display the widget inputs.""")
+
+    widget_layout = param.Selector(
+        objects=[WidgetBox, Row, Column], constant=True, default=WidgetBox, doc="""
+        The layout object to display the widgets in.""")
+
+    widget_location = param.Selector(default='left', objects=[
+        'left', 'right', 'top', 'bottom', 'top_left',
+        'top_right', 'bottom_left', 'bottom_right',
+        'left_top', 'right_top', 'right_bottom'], doc="""
+        The location of the widgets relative to the output
+        of the reactive expression.""")
+
+    priority: ClassVar[float | bool | None] = 1
+
+    # Parameter values which should not be treated like references
+    _ignored_refs: ClassVar[List[str]] = ['object']
+
+    _layouts = {
+        'left': (Row, ('start', 'center'), True),
+        'right': (Row, ('end', 'center'), False),
+        'top': (Column, ('center', 'start'), True),
+        'bottom': (Column, ('center', 'end'), False),
+        'top_left': (Column, 'start', True),
+        'top_right': (Column, ('end', 'start'), True),
+        'bottom_left': (Column, ('start', 'end'), False),
+        'bottom_right': (Column, 'end', False),
+        'left_top': (Row, 'start', True),
+        'left_bottom': (Row, ('start', 'end'), True),
+        'right_top': (Row, ('end', 'start'), False),
+        'right_bottom': (Row, 'end', False)
+    }
+
+    _unpack: ClassVar[bool] = False
+
+    def __init__(self, object=None, **params):
+        super().__init__(object=object, **params)
+        self._update_layout()
+
+    @param.depends('center', 'object', 'widget_layout', 'widget_location', watch=True)
+    def _update_layout(self, *events):
+        if self.object is None:
+            self.layout[:] = []
+        else:
+            self.layout[:] = [self._generate_layout()]
+
+    @classmethod
+    def applies(self, object):
+        return isinstance(object, param.reactive)
+
+    @classmethod
+    def _find_widgets(cls, op):
+        widgets = []
+        op_args = list(op['args']) + list(op['kwargs'].values())
+        op_args = flatten(op_args)
+        for op_arg in op_args:
+            # Find widgets introduced as `widget` in an expression
+            if isinstance(op_arg, Widget) and op_arg not in widgets:
+                widgets.append(op_arg)
+                continue
+
+            # Find Ipywidgets
+            if 'ipywidgets' in sys.modules:
+                from ipywidgets import Widget as IPyWidget
+                if isinstance(op_arg, IPyWidget) and op_arg not in widgets:
+                    widgets.append(op_arg)
+                    continue
+
+            # Find widgets introduced as `widget.param.value` in an expression
+            if (isinstance(op_arg, param.Parameter) and
+                isinstance(op_arg.owner, Widget) and
+                op_arg.owner not in widgets):
+                widgets.append(op_arg.owner)
+                continue
+
+            # Recurse into object
+            if hasattr(op_arg, '_dinfo'):
+                dinfo = op_arg._dinfo
+                args = list(dinfo.get('dependencies', []))
+                kwargs = dinfo.get('kw', {})
+                nested_op = {"args": args, "kwargs": kwargs}
+            elif isinstance(op_arg, slice):
+                nested_op = {"args": [op_arg.start, op_arg.stop, op_arg.step], "kwargs": {}}
+            elif isinstance(op_arg, (list, tuple)):
+                nested_op = {"args": op_arg, "kwargs": {}}
+            elif isinstance(op_arg, dict):
+                nested_op = {"args": (), "kwargs": op_arg}
+            elif isinstance(op_arg, param.reactive):
+                nested_op = {"args": op_arg._params, "kwargs": {}}
+            else:
+                continue
+            for widget in cls._find_widgets(nested_op):
+                if widget not in widgets:
+                    widgets.append(widget)
+        return widgets
+
+    @property
+    def widgets(self):
+        widgets = []
+        if self.object is None:
+            return []
+        for p in self.object._fn_params:
+            if (isinstance(p.owner, Widget) and
+                p.owner not in widgets):
+                widgets.append(p.owner)
+
+        operations = []
+        prev = self.object
+        while prev is not None:
+            if prev._operation:
+                operations.append(prev._operation)
+            prev = prev._prev
+
+        for op in operations[::-1]:
+            for w in self._find_widgets(op):
+                if w not in widgets:
+                    widgets.append(w)
+        return self.widget_layout(*widgets)
+
+    def _generate_layout(self):
+        panel = ParamFunction(self.object._callback)
+        if not self.show_widgets:
+            return panel
+        widget_box = self.widgets
+        loc = self.widget_location
+        layout, align, widget_first = self._layouts[loc]
+        widget_box.align = align
+        if not len(widget_box):
+            if self.center:
+                components = [HSpacer(), panel, HSpacer()]
+            else:
+                components = [panel]
+            return Row(*components)
+
+        items = (widget_box, panel) if widget_first else (panel, widget_box)
+        if not self.center:
+            if layout is Row:
+                components = list(items)
+            else:
+                components = [layout(*items, sizing_mode=self.sizing_mode)]
+        elif layout is Column:
+            components = [HSpacer(), layout(*items, sizing_mode=self.sizing_mode), HSpacer()]
+        elif loc.startswith('left'):
+            components = [widget_box, HSpacer(), panel, HSpacer()]
+        else:
+            components = [HSpacer(), panel, HSpacer(), widget_box]
+        return Row(*components)
+
+
+
 class JSONInit(param.Parameterized):
     """
     Callable that can be passed to Widgets.initializer to set Parameter
@@ -1098,9 +1263,45 @@ def link_param_method(root_view, root_model):
 
 Viewable._preprocessing_hooks.insert(0, link_param_method)
 
+
+class FigureWrapper(param.Parameterized):
+
+    figure = param.Parameter()
+
+    def get_ax(self):
+        from matplotlib.backends.backend_agg import FigureCanvas
+        from matplotlib.pyplot import Figure
+        self.figure = fig = Figure()
+        FigureCanvas(fig)
+        return fig.subplots()
+
+    def _repr_mimebundle_(self, include=[], exclude=[]):
+        return self.layout()._repr_mimebundle_()
+
+    def __panel__(self):
+        return self.layout()
+
+
+def _plot_handler(reactive):
+    fig_wrapper = FigureWrapper()
+    def plot(obj, *args, **kwargs):
+        if 'ax' not in kwargs:
+            kwargs['ax'] = fig_wrapper.get_ax()
+        obj.plot(*args, **kwargs)
+        return fig_wrapper.figure
+    return plot
+
+
+param.reactive.register_display_handler(is_dataframe, handler=DataFramePane, max_rows=100)
+param.reactive.register_display_handler(is_series, handler=DataFramePane, max_rows=100)
+param.reactive.register_display_handler(is_mpl_axes, handler=lambda ax: ax.get_figure())
+param.reactive.register_method_handler('plot', _plot_handler)
+
+
 __all__= (
     "Param",
     "ParamFunction",
     "ParamMethod",
+    "ReactiveExpr",
     "set_values"
 )

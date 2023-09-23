@@ -64,7 +64,7 @@ from .layout import (  # noqa
     HSpacer, Row, Spacer, Swipe, Tabs, VSpacer, WidgetBox,
 )
 from .pane import panel  # noqa
-from .param import Param  # noqa
+from .param import Param, ReactiveExpr  # noqa
 from .template import Template  # noqa
 from .widgets import indicators, widget  # noqa
 
@@ -80,6 +80,7 @@ __all__ = (
     "GridStack",
     "HSpacer",
     "Param",
+    "ReactiveExpr",
     "Row",
     "Spacer",
     "Tabs",
@@ -100,7 +101,6 @@ __all__ = (
     "panel",
     "param",
     "pipeline",
-    "reactive",
     "serve",
     "state",
     "viewable",
