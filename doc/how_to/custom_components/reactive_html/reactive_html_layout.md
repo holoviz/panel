@@ -187,7 +187,7 @@ LayoutOfList(objects=[
 
 Please note that you must
 
-- wrap the `{% for object in objects %}` loop in a HTML element with an `id`. Here it is wrapped
+- wrap the `{% for object in objects %}` loop in an HTML element with an `id`. Here it is wrapped
 with `<div id="container" class="pn-container">...</div>`.
 - close all HTML tags! `<hr>` is valid HTML, but not valid with `ReactiveHTML`. You must close it
 as `<hr/>`.

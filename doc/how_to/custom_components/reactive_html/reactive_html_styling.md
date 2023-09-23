@@ -4,7 +4,7 @@ In this guide you will learn how to style your `ReactiveHTML` `_template` using 
 
 If you are not familiar with CSS then the [W3 CSS School](https://www.w3schools.com/css/default.asp)
 is a good resource to learn from. You can also ask ChatGPT for help. It can often provide you with
-a HTML and CSS starting point that you can fine tune.
+an HTML and CSS starting point that you can fine tune.
 
 ## A Layout with CSS Styling
 

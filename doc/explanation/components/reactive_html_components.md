@@ -10,15 +10,15 @@ This page will walk you through using the `ReactiveHTML` class to craft custom c
 
 ## What are the alternatives to `ReactiveHTML`?
 
-If you're looking for simpler alternatives to `ReactiveHTML`, Panel provides a `Viewer` class that allows you to combine existing Panel components using Python only. This approach is a great choice if you want to quickly create custom components without the need for writing HTML, CSS, or JavaScript. You can learn more about creating custom `Viewer` components in our guide [How-to > Combine Existing Components](../../how_to/custom_components/custom_viewer.md).
+If you're looking for **simpler** alternatives to `ReactiveHTML`, Panel provides a `Viewer` class that allows you to combine existing Panel components using Python only. This approach is a great choice if you want to quickly create custom components without the need for writing HTML, CSS, or JavaScript. You can learn more about creating custom `Viewer` components in our guide [How-to > Combine Existing Components](../../how_to/custom_components/custom_viewer.md).
 
-On the other hand, if you're looking for a more advanced approach that gives you full control over the design and functionality of your custom components, you can use *Bokeh Models*. With Bokeh Models, you can leverage the power of your IDE and modern JavaScript development tools to build advanced and performant custom components. Many of the built-in Panel components are built using this approach. It provides flexibility and extensibility, allowing you to create highly customized and interactive components tailored to your specific needs.
+On the other hand, if you're looking for a **more advanced** approach that gives you full control over the design and functionality of your custom components, you can use *Bokeh Models*. With Bokeh Models, you can leverage the power of your IDE, TypeScript and modern JavaScript development tools to build advanced and performant custom components. Many of the built-in Panel components are built using this approach. It provides flexibility and extensibility, allowing you to create highly customized and interactive components tailored to your specific needs.
 
 ## What is a `ReactiveHTML` component?
 
 A *`ReactiveHTML` component* is essentially a class that you create by inheriting from the `ReactiveHTML` class. Within this custom class, you are required to define the `_template` attribute using HTML, which serves as the *design blueprint* for your custom component. You can use Javascript *template variables* `${...}` as well as Python [Jinja2](https://jinja.palletsprojects.com) syntax to make the template *dynamic*.
 
-Here is a basic example
+Here is a basic `SlideShow` component
 
 ```{pyodide}
 import param
@@ -40,7 +40,9 @@ Slideshow(width=800, height=300)
 
 ## Why is it called ReactiveHTML?
 
-`ReactiveHTML` is named for its ability to enable reactive programming in HTML. Unlike the static HTML content that the [`HTML`](../../../examples/reference/panes/HTML.ipynb) pane displays, `ReactiveHTML` components can update their view in response to changes in the class parameters.
+`ReactiveHTML` is named for its ability to enable reactive programming in HTML. Unlike the static HTML content that the [`HTML`](../../../examples/reference/panes/HTML.ipynb) pane displays, `ReactiveHTML` components can update their view dynamically in response to changes in parameter values and other events.
+
+We could also have called the `ReactiveHTML` class for example `BaseComponent`, `HTMLComponent`, `SimpleComponent` or `AnyComponent` to give you the right associations.
 
 It's worth noting that the name `ReactiveHTML` is not related to the JavaScript framework [React](https://react.dev/), although you can still use React with `ReactiveHTML` components.
 
@@ -132,13 +134,13 @@ class CustomComponent(pn.reactive.ReactiveHTML):
 CustomComponent(width=500)
 ```
 
-Note that you must wrap a `{% for ... %}` loop in a HTML element with an `id` attribute just as we do in the example.
+Note that you must wrap a `{% for ... %}` loop in an HTML element with an `id` attribute just as we do in the example.
 
 #### What can I use Jinja2 templating for?
 
 You can use Jinja2 syntax to layout your template. When using Jinja2 syntax you can refer to parameters using `{{...}}` syntax. This will insert your parameter values as a literal string values.
 
-For example, the following `CustomComponent` class uses Jinja2 syntax to insert the value parameter into a div element:
+For example, the following `CustomComponent` class uses Jinja2 syntax to insert the `value` literal value into a div element:
 
 ```{pyodide}
 class CustomComponent(pn.reactive.ReactiveHTML):
@@ -202,8 +204,8 @@ There are several differences between JavaScript template variables and Jinja2 t
 
 - *Time of Rendering*: Jinja2 templating is rendered on the Python side during initial rendering, while JavaScript template variables are inserted later on the JavaScript side.
 - *Type of Rendering*: Jinja2 templating provides literal string values, while JavaScript template variables provide Panel objects by default.
-- *Element IDs*: With Jinja2 templating, you don't need to add an id attribute except when using {% for ... %} loops. With JavaScript template variables, you must add an id attribute.
-- *Parameter Linking*: Jinja2 templating is not dynamically linked, while JavaScript template variables are dynamically linked.
+- *Element `id`s*: With Jinja2 templating, you don't need to add an id attribute except when using {% for ... %} loops. With JavaScript template variables, you must add an id attribute.
+- *Parameter Linking*: Jinja2 `{{...}}` template variables are not dynamically linked, while JavaScript template variables `${...} are dynamically linked.
 
 Here's an example that illustrates the differences. If you change the color, only the JavaScript template variable section will update:
 
@@ -278,6 +280,7 @@ svg = """<svg style="stroke: #e62f63;" width="18" height="18" viewBox="0 0 18 18
 <path d="M15.2222 1H2.77778C1.79594 1 1 1.79594 1 2.77778V15.2222C1 16.2041 1.79594 17 2.77778 17H15.2222C16.2041 17 17 16.2041 17 15.2222V2.77778C17 1.79594 16.2041 1 15.2222 1Z" stroke-linecap="round" stroke-linejoin="round"></path>
 <path d="M9 5.44446V12.5556" stroke-linecap="round" stroke-linejoin="round"></path>
 <path d="M5.44446 9H12.5556" stroke-linecap="round" stroke-linejoin="round"></path></svg>"""
+
 CustomComponent(v_literal=svg, v_template=svg, width=500, height=200)
 ```
 
@@ -295,7 +298,7 @@ will raise a `bokeh.core.serialization.SerializationError`.
 
 ## What does the `_dom_events` do?
 
-In certain cases it is necessary to explicitly declare event listeners on the HTML element to ensure that changes their properties are synced when an event is fired.
+In certain cases it is necessary to explicitly declare event listeners on the HTML element to ensure that changes in their properties are synced when an event is fired.
 
 To make this possible the HTML element in question must be given an `id` and the `id` + `event` name must be defined in `_dom_events`.
 
@@ -343,18 +346,7 @@ pn.Column(
 )
 ```
 
-The `_extension_name` enables you to get the css and javascript dependencies imported in your notebook or app - even if the component is not rendered initially.
-
-It simple to use as you just add the `_extension_name` to `pn.extension` in the same way as you would do when using the Plotly or Tabulator components.
-
-```python
-import panel as pn
-from my_components import CustomComponent
-
-pn.extension("custom-component", "plotly", "tabulator")
-```
-
-## What does the `_extension_name` do?
+## What does the `_extension_name` attribute do?
 
 The `_extension_name` attribute allows you to easily import the CSS and JavaScript dependencies required by your custom component, even if the component is not initially rendered. By adding the `_extension_name` to the list of extensions in the `pn.extension` call, you ensure that the necessary resources are loaded when your component is used.
 
@@ -372,16 +364,16 @@ Then, when you want to use the `CustomComponent` in your notebook or app, you si
 import panel as pn
 from my_components import CustomComponent
 
-pn.extension("custom-component", "tabulator", ...)
+pn.extension("custom-component", ...)
 ```
 
 This ensures that the necessary CSS and JavaScript dependencies are imported and available for your component to function correctly.
 
-### Scripts
+### What does the `_scripts` attribute do?
 
 In addition to declaring callbacks in Python it is also possible to declare Javascript callbacks on the `_scripts` attribute of the `ReactiveHTML` class.
 
-All scripts have a number of objects available in their namespace that allow accessing (and setting) the parameter values, store state, update the layout and access any named DOM nodes declared as part of the template. Specifically the following objects are declared in each callbacks namespace:
+All callback scripts have a number of objects available in their namespace that allow accessing (and setting) the parameter values, store state, update the layout and access any named DOM nodes declared as part of the template. Specifically the following objects are declared in each callbacks namespace:
 
 - `self`: A namespace model which provides access to all scripts on the class, e.g. `self.do_something()` will call the script named `do_something`.
 - `data`:   The data model holds the current values of the synced parameters, e.g. `data.value` will reflect the current value of the parameter named `value`.

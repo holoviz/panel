@@ -1583,7 +1583,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     HTML templates
     ~~~~~~~~~~~~~~
 
-    A ReactiveHTML component is declared by providing a HTML template
+    A ReactiveHTML component is declared by providing an HTML template
     on the `_template` attribute on the class. Parameters are synced by
     inserting them as template variables of the form `${parameter_name}`,
     e.g.:
