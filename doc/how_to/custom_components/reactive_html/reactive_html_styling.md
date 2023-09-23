@@ -36,9 +36,9 @@ dial = pn.widgets.Dial(
     name="°C", value=37, format="{value}", colors=[(0.40, "green"), (1, "red")], bounds=(0, 100),
 )
 SensorLayout(
-    object=dial, name="Temperature", description="A measurement from the sensor",
+    object=dial, name="Temperature",
     styles={"border": "2px solid lightgray"},
-).servable()
+)
 ```
 
 print(type(layout.object1), type(layout.object2))

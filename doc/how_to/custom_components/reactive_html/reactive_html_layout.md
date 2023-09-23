@@ -152,7 +152,6 @@ print(type(layout.object1), type(layout.object2))
 
 ## A layout of a list of objects
 
-```{pyodide}
 If you want to want to layout a list of objects you can use a *for loop*.
 
 ```{pyodide}
@@ -169,11 +168,11 @@ class LayoutOfList(pn.reactive.ReactiveHTML):
     .pn-container {height: 100%;width: 100%;}
     </style>
     <div id="container" class="pn-container">
-         {% for object in objects %}
+        {% for object in objects %}
             <h1>Object {{ loop.index0 }}</h1>
             <div id="object">${object}</div>
             <hr/>
-		{% endfor %}
+        {% endfor %}
     </div>
 """
 

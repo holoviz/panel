@@ -8,11 +8,13 @@ This page will walk you through using the `ReactiveHTML` class to craft custom c
 
 `ReactiveHTML` empowers you to design and build custom components that seamlessly integrate with your Panel applications. These components can enhance your applications' interactivity and functionality, all while keeping the development process straightforward and free from the complexities of JavaScript build tools.
 
+For example you might use `ReactiveHTML` to add a custom drawing widget or some existing Javascript component to your Panel application.
+
 ## What are the alternatives to `ReactiveHTML`?
 
 If you're looking for **simpler** alternatives to `ReactiveHTML`, Panel provides a `Viewer` class that allows you to combine existing Panel components using Python only. This approach is a great choice if you want to quickly create custom components without the need for writing HTML, CSS, or JavaScript. You can learn more about creating custom `Viewer` components in our guide [How-to > Combine Existing Components](../../how_to/custom_components/custom_viewer.md).
 
-On the other hand, if you're looking for a **more advanced** approach that gives you full control over the design and functionality of your custom components, you can use *Bokeh Models*. With Bokeh Models, you can leverage the power of your IDE, TypeScript and modern JavaScript development tools to build advanced and performant custom components. Many of the built-in Panel components are built using this approach. It provides flexibility and extensibility, allowing you to create highly customized and interactive components tailored to your specific needs.
+On the other hand, if you're looking for a **more advanced** approach that gives you full control over the design and functionality of your custom components, you can use *Bokeh Models*. With Bokeh Models, you can leverage the power of your IDE, TypeScript and modern JavaScript development tools to build advanced and performant custom components. Many of the built-in Panel components are built using this approach. It provides flexibility and extensibility, allowing you to create highly customized and interactive components tailored to your specific needs. We expect detailed documentation on writing custom Bokeh models will be added to the documentation in the future.
 
 ## What is a `ReactiveHTML` component?
 
@@ -23,10 +25,11 @@ Here is a basic `SlideShow` component
 ```{pyodide}
 import param
 import panel as pn
+from panel.reactive import ReactiveHTML
 
 pn.extension()
 
-class Slideshow(pn.reactive.ReactiveHTML):
+class Slideshow(ReactiveHTML):
 
     index = param.Integer(default=0)
 
@@ -121,7 +124,7 @@ Note that you must declare an `id` on components that contain a template variabl
 If the parameter is a list, each item in the list will be inserted in sequence unless declared otherwise. However, if you want to wrap each child in some custom HTML, you will have to use Jinja2 loop syntax:
 
 ```{pyodide}
-class CustomComponent(pn.reactive.ReactiveHTML):
+class CustomComponent(ReactiveHTML):
     value = param.List(["value **1**", "value **2**", "value **3**"])
 
     _template = """
@@ -143,7 +146,7 @@ You can use Jinja2 syntax to layout your template. When using Jinja2 syntax you 
 For example, the following `CustomComponent` class uses Jinja2 syntax to insert the `value` literal value into a div element:
 
 ```{pyodide}
-class CustomComponent(pn.reactive.ReactiveHTML):
+class CustomComponent(ReactiveHTML):
     value = param.String("A **value**")
 
     _template = """
@@ -155,7 +158,7 @@ CustomComponent(width=500)
 If the parameter is a list you can insert the children as *literal* values using the syntax:
 
 ```{pyodide}
-class CustomComponent(pn.reactive.ReactiveHTML):
+class CustomComponent(ReactiveHTML):
     value = param.List(["value **1**", "value **2**", "value **3**"])
 
     _template = """
@@ -179,7 +182,7 @@ In addition you can use the following context variables:
 For example, the following `CustomComponent` class uses Jinja2 syntax to insert the `value` parameter and display some information about it:
 
 ```{pyodide}
-class CustomComponent(pn.reactive.ReactiveHTML):
+class CustomComponent(ReactiveHTML):
     """I'm a custom ReactiveHTML component"""
     value = param.String("My value", doc="My Documentation")
 
@@ -210,7 +213,7 @@ There are several differences between JavaScript template variables and Jinja2 t
 Here's an example that illustrates the differences. If you change the color, only the JavaScript template variable section will update:
 
 ```{pyodide}
-class CustomComponent(pn.reactive.ReactiveHTML):
+class CustomComponent(ReactiveHTML):
     """I'm a custom component"""
     text = param.String("I'm **bold**")
     color = param.Color("silver", label="Select a color", doc="""The color of the component""")
@@ -242,7 +245,7 @@ For example:
 import panel as pn
 import param
 
-class CustomComponent(pn.reactive.ReactiveHTML):
+class CustomComponent(ReactiveHTML):
     v_model = param.String(default="I'm a **model** value. <em>emphasize</em>")
     v_literal = param.String(default="I'm a **literal** value. <em>emphasize</em>")
     v_template = param.String(default="I'm a **template** value. <em>emphasize</em>")
@@ -305,7 +308,7 @@ To make this possible the HTML element in question must be given an `id` and the
 For example:
 
 ```{pyodide}
-class CustomComponent(pn.reactive.ReactiveHTML):
+class CustomComponent(ReactiveHTML):
     value = param.String()
 
     _template = """
@@ -325,7 +328,7 @@ The `DOMEvent` contains information about the event on the `.data` attribute, li
 For example:
 
 ```{pyodide}
-class CustomComponent(pn.reactive.ReactiveHTML):
+class CustomComponent(ReactiveHTML):
     value = param.String()
 
     event = param.Parameter()
@@ -353,7 +356,7 @@ The `_extension_name` attribute allows you to easily import the CSS and JavaScri
 For example, if you have a custom component called `CustomComponent` and it requires specific CSS and JavaScript dependencies, you can define the `_extension_name` attribute in the class definition:
 
 ```python
-class CustomComponent(pn.reactive.ReactiveHTML):
+class CustomComponent(ReactiveHTML):
     _extension_name = "custom-component"
     ...
 ```
@@ -442,7 +445,7 @@ In addition to parameter callbacks there are a few reserved keys in the `_script
 For example:
 
 ```{{pyodide}}
-class Counter(pn.reactive.ReactiveHTML):
+class Counter(ReactiveHTML):
     _template = """
     <p id="render_el"></p><p id="after_layout_el"></p>
     """
