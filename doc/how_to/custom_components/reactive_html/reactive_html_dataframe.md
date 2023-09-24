@@ -1,11 +1,11 @@
 # DataFrames and ReactiveHTML
 
-In this guide you will learn how to efficiently implement `ReactiveHTML` components with a
+In this guide we will show you how to implement `ReactiveHTML` components with a
 `DataFrame` parameter.
 
-## Creating a Table Pane
+## Creating a Custom DataFrame Pane
 
-In this example we will show you how to create a custom Table Pane. The example will be based on
+In this example we will show you how to create a custom DataFrame Pane. The example will be based on
 the [GridJS table](https://gridjs.io/).
 
 ```{pyodide}
@@ -15,9 +15,13 @@ import param
 import panel as pn
 
 
-class GridJSComponent(pn.reactive.ReactiveHTML):
+class GridJS(pn.reactive.ReactiveHTML):
     value = param.DataFrame()
+
     _template = '<div id="wrapper" styles="height:100%;width:100%;"></div>'
+
+    _extension_name = 'gridjs'
+
     _scripts = {
       "render": """
 console.log(data.value)
@@ -40,9 +44,11 @@ config = state.config()
 state.grid.updateConfig(config).forceRender()
 """
     }
+
     __css__ = [
       "https://unpkg.com/gridjs/dist/theme/mermaid.min.css"
     ]
+
     __javascript__ = [
       "https://unpkg.com/gridjs/dist/gridjs.umd.js"
     ]
@@ -58,10 +64,14 @@ def data(event):
     columns= ["Name", "Email", "Phone Number", "Random"]
   )
 update_button = pn.widgets.Button(name="UPDATE", button_type="primary")
-grid = GridJSComponent(value=pn.bind(data, update_button), sizing_mode="stretch_width")
+grid = GridJS(value=pn.bind(data, update_button), sizing_mode="stretch_width")
 pn.Column(update_button, grid).servable()
 ```
 
-If you look in the *browser console* you can see the *DataFrame* `data.value` and transformed `config` values.
+The main challenge of creating this component is understanding the structure of `data.value` and
+how it can be converted to a format (`config`) that `gridjs.Grid` accepts.
+
+To help you understand what the `data.value` and `config` values looks like, I've logged them to
+the *browser console* using `console.log`.
 
 ![DataFrame in the console](../../../_static/reactive-html-dataframe-in-console.png)

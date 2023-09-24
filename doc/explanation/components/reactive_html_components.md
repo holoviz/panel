@@ -8,15 +8,7 @@ This page will walk you through using the `ReactiveHTML` class to craft custom c
 
 `ReactiveHTML` empowers you to design and build custom components that seamlessly integrate with your Panel applications. These components can enhance your applications' interactivity and functionality, all while keeping the development process straightforward and free from the complexities of JavaScript build tools.
 
-For example you might use `ReactiveHTML` to add a custom drawing widget or some existing Javascript component to your Panel application.
-
-## What are the alternatives to `ReactiveHTML`?
-
-If you're looking for **simpler** alternatives to `ReactiveHTML`, Panel provides a `Viewer` class that allows you to combine existing Panel components using Python only. This approach is a great choice if you want to quickly create custom components without the need for writing HTML, CSS, or JavaScript. You can learn more about creating custom `Viewer` components in our guide [How-to > Combine Existing Components](../../how_to/custom_components/custom_viewer.md).
-
-On the other hand, if you're looking for a **more advanced** approach that gives you full control over the design and functionality of your custom components, you can use *Bokeh Models*. With Bokeh Models, you can leverage the power of your IDE, TypeScript and modern JavaScript development tools to build advanced and performant custom components. Many of the built-in Panel components are built using this approach. It provides flexibility and extensibility, allowing you to create highly customized and interactive components tailored to your specific needs. We expect detailed documentation on writing custom Bokeh models will be added to the documentation in the future.
-
-## What is a `ReactiveHTML` component?
+## A Basic Example
 
 A *`ReactiveHTML` component* is essentially a class that you create by inheriting from the `ReactiveHTML` class. Within this custom class, you are required to define the `_template` attribute using HTML, which serves as the *design blueprint* for your custom component. You can use Javascript *template variables* `${...}` as well as Python [Jinja2](https://jinja.palletsprojects.com) syntax to make the template *dynamic*.
 
@@ -41,7 +33,13 @@ class Slideshow(ReactiveHTML):
 Slideshow(width=800, height=300)
 ```
 
-## Why is it called ReactiveHTML?
+## Alternatives
+
+If you're looking for **simpler** alternatives to `ReactiveHTML`, Panel provides a `Viewer` class that allows you to combine existing Panel components using Python only. This approach is a great choice if you want to quickly create custom components without the need for writing HTML, CSS, or JavaScript. You can learn more about creating custom `Viewer` components in our guide [How-to > Combine Existing Components](../../how_to/custom_components/custom_viewer.md).
+
+On the other hand, if you're looking for a **more advanced** approach that gives you full control over the design and functionality of your custom components, you can use *Bokeh Models*. With Bokeh Models, you can leverage the full power of your IDE, TypeScript and modern JavaScript development tools to build advanced and performant custom components. Many of the built-in Panel components are built using this approach. It provides flexibility and extensibility, allowing you to create highly customized and interactive components tailored to your specific needs. We expect detailed documentation on writing custom Bokeh models will be added to the documentation in the future.
+
+## The Name
 
 `ReactiveHTML` is named for its ability to enable reactive programming in HTML. Unlike the static HTML content that the [`HTML`](../../../examples/reference/panes/HTML.ipynb) pane displays, `ReactiveHTML` components can update their view dynamically in response to changes in parameter values and other events.
 
@@ -49,15 +47,15 @@ We could also have called the `ReactiveHTML` class for example `BaseComponent`, 
 
 It's worth noting that the name `ReactiveHTML` is not related to the JavaScript framework [React](https://react.dev/), although you can still use React with `ReactiveHTML` components.
 
-## Where do I find practical examples?
+## How-to Guides
 
 To see `ReactiveHTML` in action and discover **how to** create your custom components, check out our detailed guide: [How-to > Create Custom Components with ReactiveHTML](../../how_to/custom_components/reactive_html/index.md). It's packed with practical examples to help you get started quickly.
 
-## Where do I find the full API description?
+## API Guide
 
 You can find it here [API > ReactiveHTML](../../api/panel.reactive.html#panel.reactive.ReactiveHTML).
 
-## What class attributes should a component declare?
+## Class Attributes
 
 When creating a `ReactiveHTML` component, there are several class attributes that you can declare to customize its behavior.
 
@@ -80,7 +78,7 @@ In addition, you can optionally declare the following attributes:
 - `__javascript__` (list): This is a list of JavaScript dependencies that your component relies on.
 - `__javascript_modules__` (list): This is a list of JavaScript module dependencies that your component relies on.
 
-### What does the `_template` attribute define?
+## `_template`
 
 The `_template` attribute defines the blueprint of your component using HTML for the content and optionally CSS or JavaScript for styling and behavior.
 
@@ -92,7 +90,7 @@ _template = '<img id="slideshow_el" src="https://picsum.photos/800/300?image=${i
 
 In this case, the `_template` variable consists of an HTML `img` tag that displays an image and includes a dynamic parameter `${index}` that changes the image displayed. It also includes an `onclick` event listener that triggers a Python method `_img_click` when the image is clicked.
 
-#### What can I use JavaScript Template Variables for?
+### Template Variables
 
 You can use JavaScript template variables of the form `${...}` to link the parameters of a component to the attributes of HTML elements.
 
@@ -140,7 +138,7 @@ CustomComponent(width=500)
 
 Note that you must wrap a `{% for ... %}` loop in an HTML element with an `id` attribute just as we do in the example.
 
-#### What can I use Jinja2 templating for?
+### Jinja2 templating
 
 You can use Jinja2 syntax to layout your template. When using Jinja2 syntax you can refer to parameters using `{{...}}` syntax. This will insert your parameter values as a literal string values.
 
@@ -202,7 +200,7 @@ CustomComponent(value="A new value", width=500)
 
 Check out the [How-to > Create Layouts With ReactiveHTML](../../how_to/custom_components/reactive_html/reactive_html_layout.md) guide for lots of Jinja2 examples.
 
-#### What are the differences between Javascript template variables and Jinja2 templating?
+### Template variables vs Jinja2
 
 There are several differences between JavaScript template variables and Jinja2 templating.
 
@@ -229,7 +227,7 @@ component = CustomComponent(width=500)
 pn.Column(component.param.color, component, )
 ```
 
-## What does the `_child_config` attribute do?
+## `_child_config`
 
 The optional attribute `_child_config` attribute controls how template variables `${...}` will
 be rendered when inserted as children into an HTML element.
@@ -300,7 +298,7 @@ except Exception as ex:
 For a complex object like `DataFrame` you can only use `model`. Using `literal` or `template`
 will raise a `bokeh.core.serialization.SerializationError`.
 
-## What does the `_dom_events` do?
+## `_dom_events`
 
 In certain cases it is necessary to explicitly declare event listeners on the HTML element to ensure that changes in their properties are synced when an event is fired.
 
@@ -350,7 +348,7 @@ pn.Column(
 )
 ```
 
-## What does the `_extension_name` attribute do?
+## `_extension_name`
 
 The `_extension_name` attribute allows you to easily import the CSS and JavaScript dependencies required by your custom component, even if the component is not initially rendered. By adding the `_extension_name` to the list of extensions in the `pn.extension` call, you ensure that the necessary resources are loaded when your component is used.
 
@@ -373,7 +371,7 @@ pn.extension("custom-component", ...)
 
 This ensures that the necessary CSS and JavaScript dependencies are imported and available for your component to function correctly.
 
-### What does the `_scripts` attribute do?
+## `_scripts`
 
 In addition to declaring callbacks in Python it is also possible to declare Javascript callbacks on the `_scripts` attribute of the `ReactiveHTML` class.
 
@@ -419,7 +417,7 @@ When the `count` value is changed, the corresponding `count` JavaScript callback
 
 By combining Python callbacks and JavaScript callbacks, you can create dynamic and interactive components that respond to user interactions.
 
-#### Parameter callbacks
+### Parameter callbacks
 
 If the key in the `_scripts` dictionary matches one of the parameters declared on the class the callback will automatically fire whenever the synced parameter value changes. As an example let's say we have a class which declares a `count` parameter
 
@@ -435,7 +433,7 @@ We can now declare a `'count'` key in the `_scripts` dictionary, which will fire
    }
 ```
 
-#### Lifecycle callbacks
+### Lifecycle callbacks
 
 In addition to parameter callbacks there are a few reserved keys in the `_scripts` which are fired during rendering of the component:
 
@@ -461,7 +459,7 @@ Counter()
 
 This example will show the timestamp when `"render"` and `"after_layout"` scripts are automatically invoked. You will notice the `"after_layout"` callback is automatically invoked a few milliseconds later.
 
-#### Explicit calls
+### Explicit calls
 
 It is also possible to explicitly invoke one script from the namespace of another script using the `self` object, e.g. we might define a `get_datetime` method that returns the current date and time in a
 particular format:
@@ -481,7 +479,7 @@ class Counter(ReactiveHTML):
 Counter()
 ```
 
-#### Inline callbacks
+### Inline callbacks
 
 We can invoke the Javascript code declared in the `_scripts` dictionary from an HTML element by
 using the `script` function, e.g.:
@@ -500,177 +498,13 @@ will invoke the `"increment"` script defined below when the button is clicked:
 
 Note that the event that triggered the callback will be made available in the namespace via `state.event` value.
 
-### Examples
-
-Below you will see some more examples to help explain how the `ReactiveHTML` class can be utilized.
-
-#### Python vs Javascript Callbacks
-
-To see all of this in action we declare a `Slideshow` component which subscribes to `click` events on an `<img>` element and advances the image `index` on each click:
-
-```{pyodide}
-class Slideshow(ReactiveHTML):
-
-    index = param.Integer(default=0)
-
-    _template = '<img id="slideshow_el" src="https://picsum.photos/800/300?image=${index}" onclick="${_img_click}"></img>'
-
-    def _img_click(self, event):
-        self.index += 1
-
-Slideshow(width=800, height=300).servable()
-```
-
-As we can see this approach lets us quickly build custom HTML components with complex interactivity. However if we do not need any complex computations in Python we can also construct a pure JS equivalent:
-
-```{pyodide}
-class JSSlideshow(ReactiveHTML):
-
-    index = param.Integer(default=0)
-
-    _template = """<img id="slideshow_el" src="https://picsum.photos/800/300?image=${index}" onclick="${script('click')}"></img>"""
-
-    _scripts = {'click': 'data.index += 1'}
-
-JSSlideshow(width=800, height=300)
-```
-
-#### Child templates
-
-If we want to provide a template for the children of an HTML node we have to use Jinja2 syntax to loop over the parameter. The component will insert the loop variable `item` into each of the tags:
-
-```{pyodide}
-class Cards(ReactiveHTML):
-
-    items = param.List(doc="Items to render into cards.")
-
-    _template = """
-    <div id="cards" class="cards">
-      {% for item in items -%}
-        <div id="card" class="card">${item}</div>
-      {%- endfor %}
-    </div>
-    """
-
-    _stylesheets = ["""
-        .cards { display: flex; }
-        .card {
-          box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
-          border-radius: 5px;
-          margin: 5px
-        }
-    """]
-
-cards = Cards(items=['Foo', 'Bar', 'Baz'])
-
-cards
-```
-
-The loop body can declare any number of HTML tags to add for each child object, e.g. to add labels or icons, however the child object (like the `{{item}}` or `${item}`) must always be wrapped by an HTML element (e.g. `<div>`) which must declare an `id`. Depending on your use case you can wrap each child in any HTML element you require, allowing complex nested components to be declared. Note that the example above inserted the `items` as child objects (i.e. as full Panel objects) but since they are strings we could use literals instead:
-
-```html
-<div id="cards" class="cards">
-{% for item in items -%}
-    <div id="card" class="card">{{item}}</div>
-{%- endfor %}
-</div>
-```
-
-#### Pure Javascript events
-
-Next we will build a more complex example using pure Javascript events to draw on a canvas with configurable line width, color and the ability to clear and save the resulting drawing.
-
-```{pyodide}
-class Canvas(ReactiveHTML):
-
-    color = param.Color(default='#000000')
-
-    line_width = param.Number(default=1, bounds=(0.1, 10))
-
-    uri = param.String()
-
-    _template = """
-    <canvas
-      id="canvas"
-      style="border: 1px solid;"
-      width="${model.width}"
-      height="${model.height}"
-      onmousedown="${script('start')}"
-      onmousemove="${script('draw')}"
-      onmouseup="${script('end')}"
-    >
-    </canvas>
-    <button id="clear" onclick='${script("clear")}'>Clear</button>
-    <button id="save" onclick='${script("save")}'>Save</button>
-    """
-
-    _scripts = {
-        'render': """
-          state.ctx = canvas.getContext("2d")
-        """,
-        'start': """
-          state.start = event
-          state.ctx.beginPath()
-          state.ctx.moveTo(state.start.offsetX, state.start.offsetY)
-        """,
-        'draw': """
-          if (state.start == null)
-            return
-          state.ctx.lineTo(event.offsetX, event.offsetY)
-          state.ctx.stroke()
-        """,
-        'end': """
-          delete state.start
-        """,
-        'clear': """
-          state.ctx.clearRect(0, 0, canvas.width, canvas.height);
-        """,
-        'save': """
-          data.uri = canvas.toDataURL();
-        """,
-        'line_width': """
-          state.ctx.lineWidth = data.line_width;
-        """,
-        'color': """
-          state.ctx.strokeStyle = data.color;
-        """
-    }
-
-canvas = Canvas(width=300, height=300)
-
-# We create a separate HTML element which syncs with the uri parameter of the Canvas
-png_view = pn.pane.HTML()
-canvas.jslink(png_view, code={'uri': "target.text = `<img src='${source.uri}'></img>`"})
-
-pn.Column(
-    '# Drag on canvas to draw\n To export the drawing to a png click save.',
-    pn.Row(
-        canvas.controls(['color', 'line_width']),
-        canvas,
-        png_view
-    )
-)
-```
-
-This example leverages all three ways a script is invoked:
-
-1. `'render'` is called on initialization
-2. `'start'`, `'draw'` and `'end'` are explicitly invoked using the `${script(...)}` syntax in inline callbacks
-3. `'line_width'` and `'color'` are invoked when the parameters change (i.e. when a widget is updated)
-
-It also makes extensive use of the available objects in the namespace:
-
-- `'render'`: Uses the `state` object to easily access the canvas rendering context in subsequent callbacks and accesses the `canvas` DOM node by name.
-- `'start'`, `'draw'`:  Use the `event` object provided by the `onmousedown` and `onmousemove` inline callbacks
-- `'save'`, `'line_width'`, `'color'`: Use the `data` object to get and set the current state of the parameter values
-
-## External dependencies
+## External Dependencies
 
 Often the components you build will have dependencies on some external Javascript or CSS files. To make this possible `ReactiveHTML` components may declare `__javascript__`, `__javascript_modules__` and `__css__` attributes, specifying the external dependencies to load. Note that in a notebook as long as the component is imported before the call to `pn.extension` all its dependencies will be loaded automatically. If you want to require users to load the components as an extension explicitly via a `pn.extension` call you can declare an `_extension_name`.
 
 Below we will create a Material UI text field and declare the Javascript and CSS components to load:
 
-```python
+```{pyodide}
 import panel as pn
 from panel.reactive import ReactiveHTML
 import param
@@ -704,9 +538,7 @@ class MaterialTextField(ReactiveHTML):
     __css__ = [
         'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css'
     ]
-```
 
-```python
 pn.extension('material-components') # for notebook
 
 text_field = MaterialTextField(value="Some value")
@@ -716,7 +548,7 @@ pn.Column(text_field, text_field.param.value).servable()
 
 In a notebook dependencies for this component will not be loaded unless the user explicitly loads them with a `pn.extension('material-components')`. In a server context you will also have to explicitly load this extension unless the component is rendered on initial page load, i.e. if the component is only added to the page in a callback you will also have to explicitly run `pn.extension('material-components')`.
 
-## How does `ReactiveHTML` compare to `AnyWidget`?
+## `ReactiveHTML` vs `AnyWidget`
 
 Both `ReactiveHTML` in the Panel ecosystem and `AnyWidget` in the Jupyter ipywidgets ecosystem allow you to develop custom components using HTML, CSS, and JavaScript. However, there are some differences in terms of parameter layout and event handling between the two.
 

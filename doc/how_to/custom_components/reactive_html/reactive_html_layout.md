@@ -1,12 +1,8 @@
 # Create Layouts With ReactiveHTML
 
-In this guide you will learn how to build custom layouts using HTML and `ReactiveHTML`.
+In this guide we will show you how to build custom layouts using HTML and `ReactiveHTML`.
 
-If you are not familiar with HTML then the [W3 HTML School](https://www.w3schools.com/html/default.asp)
-is a good resource to learn from. You can also ask ChatGPT for help. It can often provide you with
-a good HTML starting point that you can finetune.
-
-## A layout of a single object
+## Layout a single parameter
 
 You can layout a single object as follows.
 
@@ -57,7 +53,7 @@ parameter can be called anything. For example `value`, `dial` or `temperature`.
 - We add the `border` in the `styles` parameter so that we can better see how the `_template` layes
 out inside the `ReactiveHTML` component. This can be very useful for development.
 
-## A Layout of multiple objects
+## Layout multiple parameters
 
 ```{pyodide}
 import panel as pn
@@ -84,7 +80,7 @@ layout = LayoutMultipleValues(
     object1="This is the **value** of `object1`", object2="This is the **value** of `object2`",
     styles={"border": "2px solid lightgray"},
 )
-layout
+layout.servable()
 ```
 
 You might notice that the values of `object1` and `object2` looks like they have been
@@ -110,7 +106,7 @@ LayoutMultipleValues(
 )
 ```
 
-## A layout of literal `str` values
+## Layout as literal `str` values
 
 If you want to show the *literal* `str` value of your parameter instead of the `pn.panel` return
 value you can configure that via the `_child_config` attribute.
@@ -144,7 +140,7 @@ layout = LayoutLiteralValues(
     object1="This is the **value** of `object1`", object2="This is the **value** of `object2`",
     styles={"border": "2px solid lightgray"},
 )
-layout
+layout.servable()
 ```
 
 Lets check the types
@@ -153,7 +149,7 @@ Lets check the types
 print(type(layout.object1), type(layout.object2))
 ```
 
-## A layout of a list of objects
+## Layout a list of objects
 
 If you want to want to layout a list of objects you can use a *for loop*.
 
@@ -181,7 +177,7 @@ LayoutOfList(objects=[
             "https://upload.wikimedia.org/wikipedia/commons/d/d3/Beatboxset1_pepouni.ogg",
             "Yes I do!"],
         styles={"border": "2px solid lightgray"},
-)
+).servable()
 ```
 
 Please note that you must
@@ -195,7 +191,7 @@ Please note you can optionally
 
 - get the index of the `{% for object in objects %}` loop via `{{ loop.index0 }}`.
 
-## A list like layout
+## Create a list like layout
 
 If you want to create a *list like* layout similar to `Columnn` and `Row`, you can
 combine `NamedListLike` and `ReactiveHTML`.
@@ -225,7 +221,7 @@ layout = ListLikeLayout(
     "Yes I do!",
     styles={"border": "2px solid lightgray"},
 )
-layout
+layout.servable()
 ```
 
 Please note that you must
@@ -236,7 +232,7 @@ way around `ReactiveHTML, NamedListLike` will not work.
 You can now use `[...]` indexing and the `.append`, `.insert`, `pop`, ... methods that you would
 expect.
 
-## A layout of a dictionary
+## Layout a dictionary
 
 If you want to layout a dictionary, you can use a for loop on the `.items()`.
 
@@ -252,8 +248,7 @@ class LayoutOfDict(pn.reactive.ReactiveHTML):
     _template = """
     <div id="container" class="pn-container">
          {% for key, value in object.items() %}
-            <h1>Item {{ loop.index0 }}</h1>
-            <div>{{ key }}</div>
+            <h1>{{ loop.index0 }}. {{ key }}</h1>
             <div id="value">${value}</div>
             <hr/>
         {% endfor %}
@@ -266,11 +261,12 @@ LayoutOfDict(object={
     "*Outro*": "Yes I do!"
 },
     styles={"border": "2px solid lightgray"},
-)
+).servable()
 ```
 
 Please note
 
-- We can insert the `key` as a literal value using `{{ key }}`.
+- We can insert the `key` as a literal value only using `{{ key }}`. Inserting it as a template
+variable ${key} will not work.
 - We must not give the HTML element containing `{{ key }}` an `id`. If we do, an exception will be
 raised.

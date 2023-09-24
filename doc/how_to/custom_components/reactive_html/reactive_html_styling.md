@@ -1,7 +1,6 @@
 # Style your ReactiveHTML template
 
-In this guide you will learn how to style your `ReactiveHTML` `_template` using the `_styles`
-attribute and CSS.
+In this guide we will show you how to style your `ReactiveHTML` `_template` using the `_stylesheets` attribute and CSS.
 
 If you are not familiar with CSS then the [W3 CSS School](https://www.w3schools.com/css/default.asp)
 is a good resource to learn from. You can also ask ChatGPT for help. It can often provide you with
@@ -41,5 +40,10 @@ dial = pn.widgets.Dial(
 SensorLayout(
     object=dial, name="Temperature",
     styles={"border": "2px solid lightgray"},
-)
+).servable()
 ```
+
+Note the difference between `styles` and `_stylesheets`.
+
+- `styles` styles the outer HTML element wrapping the component
+- `_stylesheets` styles the HTML elements inside the component

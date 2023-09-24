@@ -1,5 +1,7 @@
 # Widgets with ReactiveHTML
 
+In this guide we will show you how to efficiently implement custom widgets using `ReactiveHTML` to get input from the user.
+
 ## Image Button
 
 This example we will show you to create an `ImageButton`.
@@ -48,14 +50,14 @@ button = ImageButton(
     styles={"border": "2px solid lightgray"},
     width=400, height=200
 )
-pn.Column(button, button.param.clicks,)
+pn.Column(button, button.param.clicks,).servable()
 ```
 
 If you don't want the *button* styling, you can change the `<button>` tag to a `<div>` tag.
 
 ## SVG Input
 
-This example will show you have to turn an SVG into a clickable and hoverable input widget.
+This example will show you have to turn a [SVG](https://en.wikipedia.org/wiki/SVG) image into a clickable and hoverable input widget.
 
 This can for example be used to make a technical drawing interactive.
 
@@ -118,18 +120,16 @@ button = SVGInput(
     styles={"border": "2px solid lightgray"},
     height=400, sizing_mode="stretch_width", max_width=1000
 )
-pn.Column(button, button.param.clicks, button.param.click, button.param.hover)
+pn.Column(button, button.param.clicks, button.param.click, button.param.hover).servable()
 ```
 
-If you want to use your own `SVG` value, you must make sure that
+If you want to use your own SVG `value`, you must make sure that
 
-- the `viewBox` is set on the `svg`
-- the `data-name` is set on the ´svg` child elements, that you want to make clickable and hoverable.
+- the `viewBox` is set on the SVG
+- the `data-name` is set on the SVG child elements, that you want to make clickable and hoverable.
 
 In this example its tempting to call the `onclick` event handler `click` instead of `click_handler`.
-But if you do, the `clicks` value will be incremented twice! Javascript `_scripts` functions
-with the same name as a Python parameter are run automatically when the Python parameter value is
-changed.
+But if you do, the `clicks` value will be incremented twice because a parameter called `click` also exists and when its value changes, the associated `click` script will be executed!
 
 ## Select Widget
 
@@ -166,7 +166,7 @@ select = Select(
     value="B",
     options=['A', 'B', 'C'], height=50, width=300,
 )
-pn.Column(select, select.param.value)
+pn.Column(select, select.param.value).servable()
 ```
 
 Note how we used a {% for ... %}` loop to loop over the options.
@@ -260,7 +260,7 @@ pn.Column(
         canvas,
         png_view,
     ),
-)
+).servable()
 ```
 
 This example invokes *scripts* in 3 ways:

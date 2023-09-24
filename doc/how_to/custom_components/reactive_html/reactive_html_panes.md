@@ -1,6 +1,6 @@
 # Create Panes with ReactiveHTML
 
-In this guide you will learn how to efficiently implement `ReactiveHTML` panes to display Python objects.
+In this guide we will show you how to efficiently implement `ReactiveHTML` panes to display Python objects.
 
 ## Creating a ChartJS Pane
 
@@ -67,7 +67,9 @@ pn.Column(chart_type, grid).servable()
 
 Initially I tried creating the chart in the `render` function, but the chart did not display.
 I found out via Google Search and experimentation that the chart needs to be created later in the
-`after_layout` function.
+`after_layout` function. If you get stuck
+share your question and minimum, reproducible code example on
+[Discourse](https://discourse.holoviz.org/).
 
 ## Creating a Cytoscape Pane
 
@@ -136,10 +138,10 @@ pn.extension('cytoscape', sizing_mode='stretch_width')
 
 elements =  [{"data":{"id":'A', "label":'A'}},{"data":{"id":'B', "label":'B'}}, {"data":{"id": "A-B", "source":'A', "target":'B'}}]
 graph = Cytoscape(object=elements, sizing_mode="stretch_width", height=600)
-app = pn.Row(
+pn.Row(
     pn.Param(graph, parameters=["object", "zoom", "pan", "layout", "style", "selected_nodes", "selected_edges"], sizing_mode="fixed", width=300),
     graph
-)
+).servable()
 ```
 
 Please notice that we `resize` and `fit` the graph on `scrollend`.
