@@ -28,6 +28,7 @@ from param.parameterized import (
     classlist, discard_events, eval_function_with_deps, get_method_owner,
     iscoroutinefunction,
 )
+from param.reactive import rx
 
 from .config import config
 from .io import state
@@ -1024,8 +1025,8 @@ class ParamFunction(ParamMethod):
 
 class ReactiveExpr(PaneBase):
     """
-    ReactiveExpr generates a UI for param.reactive objects
-    by rendering the widgets and outputs.
+    ReactiveExpr generates a UI for param.rx objects by rendering the
+    widgets and outputs.
     """
 
     center = param.Boolean(default=False, doc="""
@@ -1084,7 +1085,7 @@ class ReactiveExpr(PaneBase):
 
     @classmethod
     def applies(self, object):
-        return isinstance(object, param.reactive)
+        return isinstance(object, param.rx)
 
     @classmethod
     def _find_widgets(cls, op):
@@ -1123,7 +1124,7 @@ class ReactiveExpr(PaneBase):
                 nested_op = {"args": op_arg, "kwargs": {}}
             elif isinstance(op_arg, dict):
                 nested_op = {"args": (), "kwargs": op_arg}
-            elif isinstance(op_arg, param.reactive):
+            elif isinstance(op_arg, param.rx):
                 nested_op = {"args": op_arg._params, "kwargs": {}}
             else:
                 continue
@@ -1301,10 +1302,10 @@ def _plot_handler(reactive):
     return plot
 
 
-param.reactive.register_display_handler(is_dataframe, handler=DataFramePane, max_rows=100)
-param.reactive.register_display_handler(is_series, handler=DataFramePane, max_rows=100)
-param.reactive.register_display_handler(is_mpl_axes, handler=lambda ax: ax.get_figure())
-param.reactive.register_method_handler('plot', _plot_handler)
+rx.register_display_handler(is_dataframe, handler=DataFramePane, max_rows=100)
+rx.register_display_handler(is_series, handler=DataFramePane, max_rows=100)
+rx.register_display_handler(is_mpl_axes, handler=lambda ax: ax.get_figure())
+rx.register_method_handler('plot', _plot_handler)
 
 
 __all__= (

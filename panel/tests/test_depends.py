@@ -1,6 +1,6 @@
 import pytest
 
-from panel.depends import bind, transform_dependency
+from panel.depends import bind, transform_reference
 from panel.pane import panel
 from panel.param import ParamFunction
 from panel.widgets import IntSlider
@@ -8,7 +8,7 @@ from panel.widgets import IntSlider
 
 def test_transform_dependency():
     widget = IntSlider()
-    assert transform_dependency(widget) is widget.param.value
+    assert transform_reference(widget) is widget.param.value
 
 
 def test_bind_param_to_arg():
