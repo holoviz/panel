@@ -49,7 +49,7 @@ class Plotly(ModelPane):
 
     clickannotation_data = param.Dict(doc="Clickannotation callback data")
 
-    config = param.Dict(doc="Config data")
+    config = param.Dict(nested_refs=True, doc="Config data")
 
     hover_data = param.Dict(doc="Hover callback data")
 
@@ -57,13 +57,13 @@ class Plotly(ModelPane):
        Attach callbacks to the Plotly figure to update output when it
        is modified in place.""")
 
-    relayout_data = param.Dict(doc="Relayout callback data")
+    relayout_data = param.Dict(nested_refs=True, doc="Relayout callback data")
 
-    restyle_data = param.List(doc="Restyle callback data")
+    restyle_data = param.List(nested_refs=True, doc="Restyle callback data")
 
-    selected_data = param.Dict(doc="Selected callback data")
+    selected_data = param.Dict(nested_refs=True, doc="Selected callback data")
 
-    viewport = param.Dict(doc="Current viewport state")
+    viewport = param.Dict(nested_refs=True, doc="Current viewport state")
 
     viewport_update_policy = param.Selector(default="mouseup", doc="""
         Policy by which the viewport parameter is updated during user interactions.

@@ -156,12 +156,12 @@ class Select(SingleSelectBase):
     >>> Select(name='Study', options=['Biology', 'Chemistry', 'Physics'])
     """
 
-    disabled_options = param.List(default=[], doc="""
+    disabled_options = param.List(default=[], nested_refs=True, doc="""
         Optional list of ``options`` that are disabled, i.e. unusable and
         un-clickable. If ``options`` is a dictionary the list items must be
         dictionary values.""")
 
-    groups = param.Dict(default=None, doc="""
+    groups = param.Dict(default=None, nested_refs=True, doc="""
         Dictionary whose keys are used to visually group the options
         and whose values are either a list or a dictionary of options
         to select from. Mutually exclusive with ``options``  and valid only

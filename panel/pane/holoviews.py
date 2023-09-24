@@ -17,7 +17,7 @@ import param
 from bokeh.models import Range1d, Spacer as _BkSpacer
 from bokeh.themes.theme import Theme
 from packaging.version import Version
-from param.depends import register_depends_transform
+from param.parameterized import register_reference_transform
 from param.reactive import bind
 
 from ..io import state, unlocked
@@ -678,6 +678,10 @@ class HoloViews(PaneBase):
 
 class Interactive(PaneBase):
 
+    object = param.Parameter(default=None, allow_refs=False, doc="""
+        The object being wrapped, which will be converted to a
+        Bokeh model.""")
+
     priority: ClassVar[float | bool | None] = None
 
     _ignored_refs: ClassVar[Tuple[str]] = ['object']
@@ -916,4 +920,4 @@ def _hvplot_interactive_transform(obj):
         return obj
     return bind(lambda *_: obj.eval(), *obj._params)
 
-register_depends_transform(_hvplot_interactive_transform)
+register_reference_transform(_hvplot_interactive_transform)

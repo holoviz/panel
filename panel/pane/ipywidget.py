@@ -3,12 +3,12 @@ from __future__ import annotations
 import os
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Optional,
+    TYPE_CHECKING, Any, ClassVar, List, Optional,
 )
 
 import param
 
-from param.depends import register_depends_transform
+from param.parameterized import register_reference_transform
 from pyviz_comms import JupyterComm
 
 from ..config import config
@@ -37,7 +37,13 @@ class IPyWidget(PaneBase):
     >>> IPyWidget(some_ipywidget)
     """
 
+    object = param.Parameter(default=None, allow_refs=False, doc="""
+        The IPywidget being wrapped, which will be converted to a
+        Bokeh model.""")
+
     priority: ClassVar[float | bool | None] = 0.6
+
+    _ignored_refs: ClassVar[List[str]] = ['object']
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
@@ -137,4 +143,4 @@ def _ipywidget_transform(obj):
     obj.observe(lambda event: ipy_inst.param.update(value=event['new']), 'value')
     return ipy_inst.param.value
 
-register_depends_transform(_ipywidget_transform)
+register_reference_transform(_ipywidget_transform)

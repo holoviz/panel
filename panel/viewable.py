@@ -79,7 +79,7 @@ class Layoutable(param.Parameterized):
     background = param.Parameter(default=None, doc="""
         Background color of the component.""")
 
-    css_classes = param.List(default=[], doc="""
+    css_classes = param.List(default=[], nested_refs=True, doc="""
         CSS classes to apply to the layout.""")
 
     design = param.ObjectSelector(default=None, objects=[], doc="""
@@ -106,15 +106,15 @@ class Layoutable(param.Parameterized):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    styles = param.Dict(default={}, doc="""
+    styles = param.Dict(default={}, nested_refs=True, doc="""
         Dictionary of CSS rules to apply to DOM node wrapping the
         component.""")
 
-    stylesheets = param.List(default=[], doc="""
+    stylesheets = param.List(default=[], nested_refs=True, doc="""
         List of stylesheets defined as URLs pointing to .css files
         or raw CSS defined as a string.""")
 
-    tags = param.List(default=[], doc="""
+    tags = param.List(default=[], nested_refs=True, doc="""
         List of arbitrary tags to add to the component.
         Can be useful for templating or for storing metadata on
         the model.""")
