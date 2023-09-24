@@ -224,7 +224,7 @@ extras_require['all_pip'] = sorted(set(extras_require['all']) - set(_conda_only)
 # non-python dependencies). Note that setup_requires isn't used
 # because it doesn't work well with pip.
 extras_require['build'] = [
-    'param >=1.9.2',
+    'param >=2.0.0rc2',
     'setuptools >=42',
     'requests',
     'packaging',
