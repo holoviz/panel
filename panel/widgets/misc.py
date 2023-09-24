@@ -96,7 +96,7 @@ class FileDownload(IconMixin):
     button_style = param.ObjectSelector(default='solid', objects=BUTTON_STYLES, doc="""
         A button style to switch between 'solid', 'outline'.""")
 
-    callback = param.Callable(default=None, doc="""
+    callback = param.Callable(default=None, allow_refs=False, doc="""
         A callable that returns the file path or file-like object.""")
 
     data = param.String(default=None, doc="""
@@ -123,6 +123,8 @@ class FileDownload(IconMixin):
     _clicks = param.Integer(default=0)
 
     _transfers = param.Integer(default=0)
+
+    _ignored_refs: ClassVar[List[str]] = ['callback']
 
     _mime_types = {
         'application': {
