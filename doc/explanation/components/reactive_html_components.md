@@ -548,6 +548,28 @@ pn.Column(text_field, text_field.param.value).servable()
 
 In a notebook dependencies for this component will not be loaded unless the user explicitly loads them with a `pn.extension('material-components')`. In a server context you will also have to explicitly load this extension unless the component is rendered on initial page load, i.e. if the component is only added to the page in a callback you will also have to explicitly run `pn.extension('material-components')`.
 
+### Bootstrap
+
+[Bootstrap](https://getbootstrap.com/) is one of the most popular design frameworks. **We recommend not using [Bootstrap](https://getbootstrap.com/) with Panel**.
+
+You can use its CSS to style your components, but n our experience its javascript does not work well with Panel. It simply cannot select and update HTML elements inside the *shadowroot* of `ReactiveHTML` components.
+
+### Web Components
+
+[Web Components](https://en.wikipedia.org/wiki/Web_Components) are custom HTML elements. Web components work really great with `ReactiveHTML` and in the same way as built in HTML elements like `button`, `div` and `img`.
+
+Some web components that work well with Panels designs are
+
+- [Shoelace](https://shoelace.style/): A large, mature collection of components that integrate well with the Bootstrap design.
+- [Fast](https://explore.fast.design/): A relatively large and mature collection of components that integrate well with the Fast design.
+- [Material](https://github.com/material-components/material-web): A growing collection of components that integrate well with the Material design.
+
+For more inspiration check out the [awesome-web-components](https://github.com/web-padawan/awesome-web-components#components) list.
+
+### React, Preact and Vue
+
+`ReactiveHTML` can be used with [React](https://react.dev/), [Preact](https://preactjs.com/) and [Vue](https://vuejs.org/).
+
 ## `ReactiveHTML` vs `AnyWidget`
 
 Both `ReactiveHTML` in the Panel ecosystem and `AnyWidget` in the Jupyter ipywidgets ecosystem allow you to develop custom components using HTML, CSS, and JavaScript. However, there are some differences in terms of parameter layout and event handling between the two.
