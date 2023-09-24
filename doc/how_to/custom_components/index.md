@@ -42,9 +42,6 @@ How to create layouts using `ReactiveHTML`
 How to style `ReactiveHTML` components
 :::
 
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
-
 :::{grid-item-card} {octicon}`image;2.5em;sd-mr-1 sd-animate-grow50` Panes
 :link: reactive_html/reactive_html_panes
 :link-type: doc
@@ -52,18 +49,12 @@ How to style `ReactiveHTML` components
 How to create panes using `ReactiveHTML`
 :::
 
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
-
 :::{grid-item-card} {octicon}`issue-draft;2.5em;sd-mr-1 sd-animate-grow50` Indicators
 :link: reactive_html/reactive_html_indicators
 :link-type: doc
 
 How to create indicators using `ReactiveHTML`
 :::
-
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
 
 :::{grid-item-card} {octicon}`bolt;2.5em;sd-mr-1 sd-animate-grow50` Callbacks
 :link: reactive_html/reactive_html_callbacks
