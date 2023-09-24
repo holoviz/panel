@@ -16,7 +16,7 @@ import param  # type: ignore
 
 from bokeh.models import ImportedStyleSheet, Tooltip
 from bokeh.models.dom import HTML
-from param.depends import register_depends_transform
+from param.parameterized import register_reference_transform
 
 from .._param import Margin
 from ..layout.base import Row
@@ -254,4 +254,4 @@ class CompositeWidget(Widget):
 def _widget_transform(obj):
     return obj.param.value if isinstance(obj, Widget) else obj
 
-register_depends_transform(_widget_transform)
+register_reference_transform(_widget_transform)

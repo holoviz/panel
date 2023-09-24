@@ -24,9 +24,9 @@ from typing import (
 
 import param
 
-from param.depends import eval_function_with_deps
 from param.parameterized import (
-    classlist, discard_events, get_method_owner, iscoroutinefunction,
+    classlist, discard_events, eval_function_with_deps, get_method_owner,
+    iscoroutinefunction,
 )
 
 from .config import config
@@ -155,6 +155,10 @@ class Param(PaneBase):
     name = param.String(default='', doc="""
         Title of the pane.""")
 
+    object = param.Parameter(default=None, allow_refs=False, doc="""
+        The object being wrapped, which will be converted to a
+        Bokeh model.""")
+
     parameters = param.List(default=[], allow_None=True, doc="""
         If set this serves as a whitelist of parameters to display on
         the supplied Parameterized object.""")
@@ -230,6 +234,7 @@ class Param(PaneBase):
         else:
             self._explicit_parameters = object is not None
 
+        print(object)
         if object and 'name' not in params:
             params['name'] = param_name(object.name)
         super().__init__(object, **params)
@@ -1025,6 +1030,10 @@ class ReactiveExpr(PaneBase):
 
     center = param.Boolean(default=False, doc="""
         Whether to center the output.""")
+
+    object = param.Parameter(default=None, allow_refs=False, doc="""
+        The object being wrapped, which will be converted to a
+        Bokeh model.""")
 
     show_widgets = param.Boolean(default=True, doc="""
         Whether to display the widget inputs.""")

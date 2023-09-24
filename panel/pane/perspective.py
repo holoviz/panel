@@ -267,23 +267,23 @@ class Perspective(ModelPane, ReactiveData):
     >>> Perspective(df, plugin='hypergrid', theme='material-dark')
     """
 
-    aggregates = param.Dict(default=None, doc="""
+    aggregates = param.Dict(default=None, nested_refs=True, doc="""
       How to aggregate. For example {"x": "distinct count"}""")
 
-    columns = param.List(default=None, doc="""
+    columns = param.List(default=None, nested_refs=True, doc="""
         A list of source columns to show as columns. For example ["x", "y"]""")
 
     editable = param.Boolean(default=True, allow_None=True, doc="""
       Whether items are editable.""")
 
-    expressions = param.List(default=None, doc="""
+    expressions = param.List(default=None, nested_refs=True, doc="""
       A list of expressions computing new columns from existing columns.
       For example [""x"+"index""]""")
 
-    split_by = param.List(default=None, doc="""
+    split_by = param.List(default=None, nested_refs=True, doc="""
       A list of source columns to pivot by. For example ["x", "y"]""")
 
-    filters = param.List(default=None, doc="""
+    filters = param.List(default=None, nested_refs=True, doc="""
       How to filter. For example [["x", "<", 3],["y", "contains", "abc"]]""")
 
     min_width = param.Integer(default=420, bounds=(0, None), doc="""
@@ -304,7 +304,7 @@ class Perspective(ModelPane, ReactiveData):
     plugin = param.ObjectSelector(default=Plugin.GRID.value, objects=Plugin.options(), doc="""
       The name of a plugin to display the data. For example hypergrid or d3_xy_scatter.""")
 
-    plugin_config = param.Dict(default={}, doc="""
+    plugin_config = param.Dict(default={}, nested_refs=True, doc="""
       Configuration for the PerspectiveViewerPlugin.""")
 
     toggle_config = param.Boolean(default=True, doc="""

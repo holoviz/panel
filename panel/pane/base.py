@@ -543,6 +543,10 @@ class ReplacementPane(PaneBase):
     inplace = param.Boolean(default=False, doc="""
         Whether to update the object inplace.""")
 
+    object = param.Parameter(default=None, allow_refs=False, doc="""
+        The object being wrapped, which will be converted to a
+        Bokeh model.""")
+
     _pane = param.ClassSelector(class_=Viewable)
 
     _ignored_refs: ClassVar[Tuple[str]] = ['object']

@@ -150,11 +150,11 @@ class Pipeline(Viewer):
         Whether parameters should be inherited between pipeline
         stages.""")
 
-    next_parameter = param.String(default=None, doc="""
+    next_parameter = param.String(default=None, allow_refs=False, doc="""
         Parameter name to watch to switch between different branching
         stages""")
 
-    ready_parameter = param.String(default=None, doc="""
+    ready_parameter = param.String(default=None, allow_refs=False, doc="""
         Parameter name to watch to check whether a stage is ready.""")
 
     show_header = param.Boolean(default=True, doc="""

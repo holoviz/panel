@@ -8,7 +8,7 @@ from typing import (
 
 import param
 
-from param.depends import register_depends_transform
+from param.parameterized import register_reference_transform
 from pyviz_comms import JupyterComm
 
 from ..config import config
@@ -137,4 +137,4 @@ def _ipywidget_transform(obj):
     obj.observe(lambda event: ipy_inst.param.update(value=event['new']), 'value')
     return ipy_inst.param.value
 
-register_depends_transform(_ipywidget_transform)
+register_reference_transform(_ipywidget_transform)
