@@ -547,9 +547,9 @@ class ReplacementPane(PaneBase):
         The object being wrapped, which will be converted to a
         Bokeh model.""")
 
-    _pane = param.ClassSelector(class_=Viewable)
+    _pane = param.ClassSelector(class_=Viewable, allow_refs=False)
 
-    _ignored_refs: ClassVar[Tuple[str]] = ['object']
+    _ignored_refs: ClassVar[Tuple[str]] = ['object', '_pane']
 
     _linked_properties: ClassVar[Tuple[str]] = ()
 
