@@ -264,7 +264,7 @@ class ArcProgressIndicator(pn.reactive.ReactiveHTML):
 
 indicator = ArcProgressIndicator(
     progress=10,
-    style={"background": "#efebeb"},
+    styles={"background": "#efebeb"},
     use_gradient=True,
     text_style={"fill": "gray"},
     format_options={"style": "percent"},

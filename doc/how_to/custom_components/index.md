@@ -32,9 +32,6 @@ Build custom components using HTML, CSS and Javascript and without Javascript bu
 How to create layouts using `ReactiveHTML`
 :::
 
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
-
 :::{grid-item-card} {octicon}`brush;2.5em;sd-mr-1 sd-animate-grow50` Styling
 :link: reactive_html/reactive_html_styling
 :link-type: doc

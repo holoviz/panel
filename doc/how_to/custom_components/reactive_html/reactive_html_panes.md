@@ -4,7 +4,7 @@ In this guide we will show you how to efficiently implement `ReactiveHTML` panes
 
 ## Creating a ChartJS Pane
 
-In this example we will show you the basics of creating a
+This example will show you the basics of creating a
 [ChartJS](https://www.chartjs.org/docs/latest/) pane.
 
 ```{pyodide}
@@ -72,6 +72,8 @@ share your question and minimum, reproducible code example on
 [Discourse](https://discourse.holoviz.org/).
 
 ## Creating a Cytoscape Pane
+
+This example will show you how to build a more advanced [CytoscapeJS](https://js.cytoscape.org/) pane.
 
 ```{pyodide}
 import param
