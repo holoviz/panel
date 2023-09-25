@@ -22,6 +22,7 @@ from bokeh.models.widgets import (
     DateRangeSlider as _BkDateRangeSlider, DateSlider as _BkDateSlider,
     RangeSlider as _BkRangeSlider, Slider as _BkSlider,
 )
+from param.parameterized import resolve_value
 
 from ..config import config
 from ..io import state
@@ -524,7 +525,8 @@ class _RangeSliderBase(_SliderBase):
                 params.get('start', self.start), params.get('end', self.end)
             )
         if params['value'] is not None:
-            params['value_start'], params['value_end'] = params['value']
+            v1, v2 = params['value']
+            params['value_start'], params['value_end'] = resolve_value(v1), resolve_value(v2)
         with edit_readonly(self):
             super().__init__(**params)
 
@@ -702,7 +704,8 @@ class DateRangeSlider(_SliderBase):
                 params['value'] = (params.get('start', self.start),
                                 params.get('end', self.end))
         if params['value'] is not None:
-            params['value_start'], params['value_end'] = params['value']
+            v1, v2 = params['value']
+            params['value_start'], params['value_end'] = resolve_value(v1), resolve_value(v2)
         with edit_readonly(self):
             super().__init__(**params)
 
