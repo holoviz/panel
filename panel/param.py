@@ -235,7 +235,6 @@ class Param(PaneBase):
         else:
             self._explicit_parameters = object is not None
 
-        print(object)
         if object and 'name' not in params:
             params['name'] = param_name(object.name)
         super().__init__(object, **params)
