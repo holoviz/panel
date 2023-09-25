@@ -63,6 +63,16 @@ git clone https://github.com/holoviz/panel.git
 
 The instructions for cloning above created a ``panel`` directory at your file system location. This ``panel`` directory is referred to as the *source checkout* for the remainder of this document. For the remainder of this document we will assume your current working directory is the *source checkout* directory.
 
+### Fetch tags from upstream
+
+Make sure to fetch tags from upstream repository before installing
+
+```bash
+git remote add upstream https://github.com/holoviz/panel.git
+git fetch --tags upstream
+git push --tags
+```
+
 ### Basic Install with pip
 
 We recommend this install to first time contributors that
