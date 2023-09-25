@@ -27,7 +27,7 @@ from bokeh.core.property.descriptors import UnsetValueError
 from bokeh.model import DataModel
 from bokeh.models import ImportedStyleSheet
 from packaging.version import Version
-from param.parameterized import ParameterizedMetaclass, Watcher
+from param.parameterized import ParameterizedMetaclass, Watcher, _syncing
 
 from .io.document import unlocked
 from .io.model import hold
@@ -377,7 +377,8 @@ class Syncable(Renderable):
         try:
             with edit_readonly(self):
                 self_events = {k: v for k, v in events.items() if '.' not in k}
-                self.param.update(**self_events)
+                with _syncing(self, list(self_events)):
+                    self.param.update(**self_events)
             for k, v in self_events.items():
                 if '.' not in k:
                     continue
@@ -386,7 +387,8 @@ class Syncable(Renderable):
                 for sp in subpath:
                     obj = getattr(obj, sp)
                 with edit_readonly(obj):
-                    obj.param.update(**{p: v})
+                    with _syncing(obj, [p]):
+                        obj.param.update(**{p: v})
         except Exception:
             if len(events)>1:
                 msg_end = f" changing properties {pformat(events)} \n"
