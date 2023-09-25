@@ -509,7 +509,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
 class _RangeSliderBase(_SliderBase):
 
-    value = param.Tuple(length=2, allow_None=False, doc="""
+    value = param.Tuple(length=2, allow_None=False, nested_refs=True, doc="""
         The selected range of the slider. Updated when a handle is dragged.""")
 
     value_start = param.Parameter(readonly=True, doc="""The lower value of the selected range.""")
@@ -557,11 +557,11 @@ class RangeSlider(_RangeSliderBase):
     ... )
     """
 
-    value = param.Range(default=(0, 1), allow_None=False, doc=
+    value = param.Range(default=(0, 1), allow_None=False, nested_refs=True, doc=
         """The selected range as a tuple of values. Updated when a handle is
         dragged.""")
 
-    value_throttled = param.Range(default=None, constant=True, doc="""
+    value_throttled = param.Range(default=None, constant=True, nested_refs=True, doc="""
         The selected range as a tuple of floating point values. Updated when a handle is
         released""")
 
@@ -659,7 +659,7 @@ class DateRangeSlider(_SliderBase):
     value_end = param.Date(default=None, readonly=True, doc="""
         The upper value of the selected range.""")
 
-    value_throttled = param.DateRange(default=None, constant=True, doc="""
+    value_throttled = param.DateRange(default=None, constant=True, nested_refs=True, doc="""
         The selected range as a tuple of values. Updated one of the handles is released. Supports
         datetime.datetime, datetime.date and np.datetime64 ranges""")
 
