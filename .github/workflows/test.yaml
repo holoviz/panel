@@ -60,7 +60,6 @@ jobs:
           envs: ${{ !contains(matrix.python-version, '3.1') && '-o examples -o recommended -o tests -o build' || '-o recommended -o tests -o build' }}
           cache: true
           opengl: true
-          conda-mamba: mamba
         id: install
       - name: doit develop_install
         if: steps.install.outputs.cache-hit != 'true'
