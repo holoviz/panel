@@ -62,7 +62,6 @@ jobs:
           opengl: true
         id: install
       - name: doit develop_install
-        if: steps.install.outputs.cache-hit != 'true'
         run: |
           conda activate test-environment
           pip install pyecharts
@@ -129,7 +128,6 @@ jobs:
           playwright: true
         id: install
       - name: doit develop_install
-        if: steps.install.outputs.cache-hit != 'true'
         run: |
           conda activate test-environment
           pip install --pre ipywidgets_bokeh
