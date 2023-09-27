@@ -1,11 +1,14 @@
 import base64
 import codecs
+import hashlib
 import json
 import logging
 import os
 import re
 import urllib.parse as urlparse
 import uuid
+
+from base64 import urlsafe_b64encode
 
 import tornado
 
@@ -26,6 +29,7 @@ from .util import base64url_decode, base64url_encode
 log = logging.getLogger(__name__)
 
 STATE_COOKIE_NAME = 'panel-oauth-state'
+CODE_COOKIE_NAME = 'panel-oauth-code'
 
 
 def decode_response_body(response):
@@ -167,17 +171,17 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
           The unguessable random string to protect against cross-site
           request forgery attacks
         """
-        if not client_secret:
-            raise ValueError('The client secret is undefined.')
-
         log.debug("%s making access token request.", type(self).__name__)
         params = {
             'code':          code,
             'redirect_uri':  redirect_uri,
             'client_id':     client_id,
-            'client_secret': client_secret,
             **self._EXTRA_TOKEN_PARAMS
         }
+        if client_secret:
+            params['client_secret'] = client_secret
+        else:
+            params['code_verifier'] = self.get_code_cookie()
 
         http = self.get_auth_http_client()
 
@@ -252,6 +256,22 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
                 )
         return _serialize_state(
             {'state_id': uuid.uuid4().hex, 'next_url': next_url or '/'}
+        )
+
+    def get_code(self):
+        code_verifier = uuid.uuid4().hex + uuid.uuid4().hex + uuid.uuid4().hex
+        hashed_code_verifier = hashlib.sha256(code_verifier.encode("utf-8")).digest()
+        code_challenge = urlsafe_b64encode(hashed_code_verifier).decode("utf-8").replace("=", "")
+        return code_verifier, code_challenge
+
+    def get_code_cookie(self):
+        code = (self.get_secure_cookie(CODE_COOKIE_NAME, max_age_days=config.oauth_expiry) or b'').decode('utf8', 'replace')
+        self.clear_cookie(CODE_COOKIE_NAME)
+        return code
+
+    def set_code_cookie(self, code):
+        self.set_secure_cookie(
+            CODE_COOKIE_NAME, code, expires_days=config.oauth_expiry, httponly=True
         )
 
     async def get(self):
@@ -354,7 +374,14 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             log.warning(f"{provider} OAuth provider failed to fully "
                         f"authenticate returning the following response:"
                         f"{body}.")
-        raise HTTPError(500, f"{provider} authentication failed {body}")
+        self.set_header("Content-Type", 'text/html')
+        self.write(self._error_template.render(
+            npm_cdn=config.npm_cdn,
+            title='Panel: Authentication Error',
+            error_type='Authentication Error',
+            error=body['error'],
+            error_msg=body.get('error_description', body)
+        ))
 
 
 class GenericLoginHandler(OAuthLoginHandler, OAuth2Mixin):
@@ -362,7 +389,7 @@ class GenericLoginHandler(OAuthLoginHandler, OAuth2Mixin):
     _access_token_header = 'Bearer {}'
 
     _EXTRA_TOKEN_PARAMS = {
-        'grant_type':    'authorization_code'
+        'grant_type': 'authorization_code'
     }
 
     @property
@@ -386,6 +413,130 @@ class GenericLoginHandler(OAuthLoginHandler, OAuth2Mixin):
     @property
     def _USER_KEY(self):
         return config.oauth_extra_params.get('USER_KEY', os.environ.get('PANEL_USER_KEY', 'email'))
+
+
+class PasswordLoginHandler(GenericLoginHandler):
+
+    _EXTRA_TOKEN_PARAMS = {
+        'grant_type': 'password'
+    }
+
+    def get(self):
+        try:
+            errormessage = self.get_argument("error")
+        except Exception:
+            errormessage = ""
+
+        next_url = self.get_argument('next', None)
+        if next_url:
+            self.set_cookie("next_url", next_url)
+        html = self._basic_login_template.render(
+            errormessage=errormessage,
+            PANEL_CDN=CDN_DIST
+        )
+        self.write(html)
+
+    async def post(self):
+        username = self.get_argument("username", "")
+        password = self.get_argument("password", "")
+        params = {
+            "scope": ' '.join(self._SCOPE),
+            "grant_type": "password",
+            "client_id": config.oauth_key,
+            "username": username,
+            "password": password,
+            **self._EXTRA_TOKEN_PARAMS
+        }
+
+        http = self.get_auth_http_client()
+
+        # Request the authorization token.
+        req = HTTPRequest(
+            self._OAUTH_ACCESS_TOKEN_URL,
+            method='POST',
+            body=urlparse.urlencode(params),
+            headers=self._API_BASE_HEADERS
+        )
+
+        try:
+            response = await http.fetch(req)
+        except HTTPError as e:
+            return self._on_error(e.response)
+
+        body = decode_response_body(response)
+
+        if 'access_token' not in body:
+            return self._on_error(response, body)
+
+        user_headers = dict(self._API_BASE_HEADERS)
+        if self._access_token_header:
+            user_url = self._OAUTH_USER_URL
+            user_headers['Authorization'] = self._access_token_header.format(
+                body['access_token']
+            )
+        else:
+            user_url = '{}{}'.format(self._OAUTH_USER_URL, body['access_token'])
+
+        user_response = await http.fetch(user_url, headers=user_headers)
+        user = decode_response_body(user_response)
+
+        if not user:
+            return
+
+        log.debug("%s received user information.", type(self).__name__)
+        user = self._on_auth(user, body['access_token'], body.get('refresh_token'))
+        self.redirect('/')
+
+
+class AuthorizationCodeLoginHandler(GenericLoginHandler):
+
+    _EXTRA_TOKEN_PARAMS = {
+        'grant_type': 'authorization_code'
+    }
+
+    async def get(self):
+        code = self.get_argument("code", "")
+        url_state = self.get_argument("state", "")
+        if config.oauth_redirect_uri:
+            redirect_uri = config.oauth_redirect_uri
+        else:
+            redirect_uri = f"{self.request.protocol}://{self.request.host}/login"
+
+        if not code or not url_state:
+            self._authorize_redirect(redirect_uri)
+            return
+
+        cookie_state = self.get_state_cookie()
+        if cookie_state != url_state:
+            log.warning("OAuth state mismatch: %s != %s", cookie_state, url_state)
+            raise HTTPError(400, "OAuth state mismatch")
+
+        state = _deserialize_state(url_state)
+        user = await self.get_authenticated_user(redirect_uri, config.oauth_key, url_state, code=code)
+        if user is None:
+            raise HTTPError(403)
+        log.debug("%s authorized user, redirecting to app.", type(self).__name__)
+        self.redirect(state.get('next_url', '/'))
+
+    def _authorize_redirect(self, redirect_uri):
+        state = self.get_state()
+        self.set_state_cookie(state)
+        code_verifier, code_challenge = self.get_code()
+        self.set_code_cookie(code_verifier)
+
+        params = {
+            "client_id": config.oauth_key,
+            "response_type": "code",
+            "scope": ' '.join(self._SCOPE),
+            "state": state,
+            "response_mode": "query",
+            "code_challenge": code_challenge,
+            "code_challenge_method": "S256",
+            "redirect_uri": redirect_uri
+        }
+        query_params = urlparse.urlencode(params)
+        self.redirect(f"{self._OAUTH_AUTHORIZE_URL}?{query_params}")
+
 
 
 class GithubLoginHandler(OAuthLoginHandler, OAuth2Mixin):
@@ -794,7 +945,7 @@ class LogoutHandler(tornado.web.RequestHandler):
 
 class OAuthProvider(AuthProvider):
 
-    def __init__(self, error_template=None, logout_template=None):
+    def __init__(self, error_template=None, logout_template=None, basic_login_template=None):
         if error_template is None:
             self._error_template = ERROR_TEMPLATE
         else:
@@ -805,7 +956,13 @@ class OAuthProvider(AuthProvider):
         else:
             with open(logout_template) as f:
                 self._logout_template = _env.from_string(f.read())
+        if basic_login_template is None:
+            self._basic_login_template = BASIC_LOGIN_TEMPLATE
+        else:
+            with open(basic_login_template) as f:
+                self._basic_login_template = _env.from_string(f.read())
         super().__init__()
+
 
     @property
     def get_user(self):
@@ -815,13 +972,14 @@ class OAuthProvider(AuthProvider):
 
     @property
     def login_url(self):
-        return '/login'
+        return '/auth'
 
     @property
     def login_handler(self):
         handler = AUTH_PROVIDERS[config.oauth_provider]
         if self._error_template:
             handler._error_template = self._error_template
+        handler._basic_login_template = self._basic_login_template
         return handler
 
     @property
@@ -868,6 +1026,22 @@ class BasicLoginHandler(RequestHandler):
             return True
         return False
 
+    def get(self):
+        try:
+            errormessage = self.get_argument("error")
+        except Exception:
+            errormessage = ""
+
+        next_url = self.get_argument('next', None)
+        if next_url:
+            self.set_cookie("next_url", next_url)
+        html = self._basic_login_template.render(
+            errormessage=errormessage,
+            PANEL_CDN=CDN_DIST
+        )
+        self.write(html)
+
+
     def post(self):
         username = self.get_argument("username", "")
         password = self.get_argument("password", "")
@@ -894,22 +1068,9 @@ class BasicLoginHandler(RequestHandler):
 
 class BasicProvider(OAuthProvider):
 
-    def __init__(self, basic_login_template=None, logout_template=None):
-        if basic_login_template is None:
-            self._basic_login_template = BASIC_LOGIN_TEMPLATE
-        else:
-            with open(basic_login_template) as f:
-                self._basic_login_template = _env.from_string(f.read())
-        super().__init__(logout_template=logout_template)
-
     @property
     def login_url(self):
         return '/login'
-
-    @property
-    def login_handler(self):
-        BasicLoginHandler._basic_login_template = self._basic_login_template
-        return BasicLoginHandler
 
 
 AUTH_PROVIDERS = {
@@ -921,7 +1082,9 @@ AUTH_PROVIDERS = {
     'google': GoogleLoginHandler,
     'github': GithubLoginHandler,
     'gitlab': GitLabLoginHandler,
-    'okta': OktaLoginHandler
+    'okta': OktaLoginHandler,
+    'password': PasswordLoginHandler,
+    'code': AuthorizationCodeLoginHandler
 }
 
 # Populate AUTH Providers from external extensions
