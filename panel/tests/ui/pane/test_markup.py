@@ -42,10 +42,7 @@ def test_update_markdown_pane_resizes(page, port):
 def test_markdown_pane_visible_toggle(page, port):
     md = Markdown('Initial', visible=False)
 
-    serve(md, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, md)
 
     assert page.locator(".markdown").locator("div").text_content() == 'Initial\n'
     assert not page.locator(".markdown").locator("div").is_visible()

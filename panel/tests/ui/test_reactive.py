@@ -96,10 +96,6 @@ def test_reactive_html_set_background_no_rerender(page, port):
 def test_reactive_literal_backtick(page, port):
     component = ReactiveLiteral(value="Backtick: `")
 
-    serve(component, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, component)
 
     expect(page.locator(".reactive")).to_have_text('Backtick: `')

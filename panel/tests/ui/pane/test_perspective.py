@@ -21,11 +21,7 @@ def test_perspective_click_event(page, port):
     perspective = Perspective(pd._testing.makeMixedDataFrame())
     perspective.on_click(lambda e: events.append(e))
 
-    serve(perspective, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, perspective)
 
     page.locator('tr').nth(3).click()
 

@@ -53,11 +53,7 @@ def test_ready_notification(page, port):
         config.ready_notification = 'Ready!'
         return Markdown('Ready app')
 
-    serve(app, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, app)
 
     expect(page.locator('.notyf__message')).to_have_text('Ready!')
 
@@ -71,13 +67,7 @@ def test_disconnect_notification(page, port):
         """)
         return button
 
-    serve(app, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
-
-    time.sleep(0.2)
+    serve_component(page, port, app)
 
     page.click('.bk-btn')
 

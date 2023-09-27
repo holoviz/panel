@@ -195,7 +195,7 @@ def test_card_custom_css(page, port):
 
 def test_card_scrollable(page, port):
     card = Card(scroll=True)
-    serve_panel_widget(page, port, card)
+    serve_component(page, port, card)
 
     card_widget = page.locator('.card')
     assert 'scrollable-vertical' in card_widget.get_attribute('class')
