@@ -310,7 +310,7 @@ pn.config.template = 'fast'
 The `pn.config` object provides a range of options that will allow you to configure your application. As a shortcut, you may instead provide options for the `config` object as keywords to the `pn.extension` call. In other words `pn.extension(template='fast')` is equivalent to `pn.config.template = 'fast'`, providing a clean way to set multiple config options at once.
 :::
 
-Once you have configured a template you can control where to render your components using the `area` argument of the `.servable()` method. Most templates have multiple areas including 'main', 'sidebar', 'header' and 'modal'. As an example you might want to render your widgets into the sidebar and your plots into the main area:
+Once you have configured a template you can control where to render your components using the `target` argument of the `.servable()` method. Most templates have multiple target areas including 'main', 'sidebar', 'header' and 'modal'. As an example you might want to render your widgets into the sidebar and your plots into the main area:
 
 ```python
 import numpy as np
