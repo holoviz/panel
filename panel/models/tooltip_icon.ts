@@ -1,8 +1,10 @@
 import { Control, ControlView } from '@bokehjs/models/widgets/control'
 import { Tooltip, TooltipView } from '@bokehjs/models/ui/tooltip'
 
-import { build_view, IterViews } from '@bokehjs/core/build_views'
-import { div, label, StyleSheetLike } from '@bokehjs/core/dom'
+import type {IterViews} from '@bokehjs/core/build_views'
+import {build_view} from '@bokehjs/core/build_views'
+import type {StyleSheetLike} from '@bokehjs/core/dom'
+import {div, label} from '@bokehjs/core/dom'
 import * as p from '@bokehjs/core/properties'
 
 import inputs_css, * as inputs from '@bokehjs/styles/widgets/inputs.css'

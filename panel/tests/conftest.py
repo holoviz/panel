@@ -27,7 +27,7 @@ from panel.config import panel_extension
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
 
-CUSTOM_MARKS = ('ui', 'jupyter')
+CUSTOM_MARKS = ('ui', 'jupyter', 'subprocess')
 
 config.apply_signatures = False
 
@@ -89,6 +89,11 @@ optional_markers = {
         "help": "Runs Jupyter related tests",
         "marker-descr": "Jupyter test marker",
         "skip-reason": "Test only runs with the --jupyter option."
+    },
+    "subprocess": {
+        "help": "Runs tests that fork the process",
+        "marker-descr": "Subprocess test marker",
+        "skip-reason": "Test only runs with the --subprocess option."
     },
     "docs": {
         "help": "Runs docs specific tests",

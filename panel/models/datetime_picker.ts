@@ -1,7 +1,8 @@
 import flatpickr from "flatpickr"
 
 import {InputWidget, InputWidgetView} from "@bokehjs/models/widgets/input_widget"
-import {bounding_box, input, StyleSheetLike} from "@bokehjs/core/dom"
+import type {StyleSheetLike} from "@bokehjs/core/dom"
+import {bounding_box, input} from "@bokehjs/core/dom"
 import {CalendarPosition} from "@bokehjs/core/enums"
 import * as p from "@bokehjs/core/properties"
 import {isString} from "@bokehjs/core/util/types"

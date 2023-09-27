@@ -1,7 +1,7 @@
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {div} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
-import {Attrs} from "@bokehjs/core/types"
+import type {Attrs} from "@bokehjs/core/types"
 
 import {serializeEvent} from "./event-to-object"
 import {HTMLBox, HTMLBoxView} from "./layout"
@@ -80,7 +80,7 @@ export class EChartsView extends HTMLBoxView {
   _plot(): void {
     if ((window as any).echarts == null)
       return
-    this._chart.setOption(this.model.data);
+    this._chart.setOption(this.model.data, this.model.options );
   }
 
   _resize(): void {
@@ -137,6 +137,7 @@ export namespace ECharts {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
     data: p.Property<any>
+    options: p.Property<any>
     event_config: p.Property<any>
     js_events: p.Property<any>
     renderer: p.Property<string>
@@ -159,11 +160,12 @@ export class ECharts extends HTMLBox {
     this.prototype.default_view = EChartsView
 
     this.define<ECharts.Props>(({ Any, String }) => ({
-      data:         [ Any,           {} ],
-      event_config: [ Any,           {} ],
-      js_events:    [ Any,           {} ],
-      theme:        [ String,  "default"],
-      renderer:     [ String,   "canvas"]
+      data:          [ Any,           {} ],
+      options:       [ Any,           {} ],
+      event_config:  [ Any,           {} ],
+      js_events:     [ Any,           {} ],
+      theme:         [ String,  "default"],
+      renderer:      [ String,   "canvas"]
     }))
   }
 }

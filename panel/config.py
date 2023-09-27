@@ -21,12 +21,16 @@ from bokeh.core.has_props import _default_resolver
 from bokeh.document import Document
 from bokeh.model import Model
 from bokeh.settings import settings as bk_settings
+from param.depends import (
+    register_display_accessor, unregister_display_accessor,
+)
 from pyviz_comms import (
     JupyterCommManager as _JupyterCommManager, extension as _pyviz_extension,
 )
 
 from .io.logging import panel_log_handler
 from .io.state import state
+from .util import param_watchers
 
 __version__ = str(param.version.Version(
     fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
@@ -109,7 +113,11 @@ class _config(_base_config):
         is enabled. The callback is given the user information returned
         by the configured Auth provider and should return True or False
         depending on whether the user is authorized to access the
-        application.""")
+        application. The callback may also contain a second parameter,
+        which is the requested path the user is making. If the user
+        is authenticated and has explicit access to the path, then
+        the callback should return True otherwise it should return
+        False.""")
 
     auth_template = param.Path(default=None, doc="""
         A jinja2 template rendered when the authorize_callback determines
@@ -130,6 +138,10 @@ class _config(_base_config):
 
     design = param.ClassSelector(class_=None, is_instance=False, doc="""
         The design system to use to style components.""")
+
+    disconnect_notification = param.String(doc="""
+        The notification to display to the user when the connection
+        to the server is dropped.""")
 
     exception_handler = param.Callable(default=None, doc="""
         General exception handler for events.""")
@@ -168,6 +180,10 @@ class _config(_base_config):
         'pyinstrument', 'snakeviz', 'memray'], doc="""
         The profiler engine to enable.""")
 
+    ready_notification = param.String(doc="""
+        The notification to display when the application is ready and
+        fully loaded.""")
+
     reuse_sessions = param.Boolean(default=False, doc="""
         Whether to reuse a session for the initial request to speed up
         the initial page render. Note that if the initial page differs
@@ -204,6 +220,8 @@ class _config(_base_config):
         If sliders and inputs should be throttled until release of mouse.""")
 
     _admin = param.Boolean(default=False, doc="Whether the admin panel was enabled.")
+
+    _admin_endpoint = param.String(default=None, doc="Name to use for the admin endpoint.")
 
     _admin_log_level = param.Selector(
         default='DEBUG', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
@@ -325,13 +343,18 @@ class _config(_base_config):
         state._thread_pool = ThreadPoolExecutor(max_workers=threads)
 
     @param.depends('notifications', watch=True)
-    def _enable_notifications(self):
+    def _setup_notifications(self):
         from .io.notifications import NotificationArea
         from .reactive import ReactiveHTMLMetaclass
         if self.notifications and 'notifications' not in ReactiveHTMLMetaclass._loaded_extensions:
             ReactiveHTMLMetaclass._loaded_extensions.add('notifications')
         if not state.curdoc:
             state._notification = NotificationArea()
+
+    @param.depends('disconnect_notification', 'ready_notification', watch=True)
+    def _enable_notifications(self):
+        if self.disconnect_notification or self.ready_notification:
+            self.notifications = True
 
     @contextmanager
     def set(self, **kwargs):
@@ -351,10 +374,16 @@ class _config(_base_config):
 
     def __setattr__(self, attr, value):
         from .io.state import state
-        if not getattr(self, 'initialized', False) or (attr.startswith('_') and attr.endswith('_')) or attr == '_validating':
+
+        # _param__private added in Param 2
+        if hasattr(self, '_param__private'):
+            init = getattr(self._param__private, 'initialized', False)
+        else:
+            init = getattr(self, 'initialized', False)
+        if not init or (attr.startswith('_') and attr.endswith('_')) or attr == '_validating':
             return super().__setattr__(attr, value)
         value = getattr(self, f'_{attr}_hook', lambda x: x)(value)
-        if attr in self._globals:
+        if attr in self._globals or self.param._TRIGGER:
             super().__setattr__(attr if attr in self.param else f'_{attr}', value)
         elif state.curdoc is not None:
             if attr in self.param:
@@ -366,6 +395,9 @@ class _config(_base_config):
             if state.curdoc not in self._session_config:
                 self._session_config[state.curdoc] = {}
             self._session_config[state.curdoc][attr] = value
+            watchers = param_watchers(self).get(attr, {}).get('value', [])
+            for w in watchers:
+                w.fn()
         elif f'_{attr}' in self.param and hasattr(self, f'_{attr}_'):
             validate_config(self, f'_{attr}', value)
             super().__setattr__(f'_{attr}_', value)
@@ -389,7 +421,15 @@ class _config(_base_config):
         end up being modified.
         """
         from .io.state import state
-        init = super().__getattribute__('initialized')
+
+        if attr == '_param__private':
+            return super().__getattribute__('_param__private')
+
+        # _param__private added in Param 2
+        try:
+            init = super().__getattribute__('_param__private').initialized
+        except AttributeError:
+            init = super().__getattribute__('initialized')
         global_params = super().__getattribute__('_globals')
         if init and not attr.startswith('__'):
             params = super().__getattribute__('param')
@@ -422,6 +462,10 @@ class _config(_base_config):
     @property
     def _doc_build(self):
         return os.environ.get('PANEL_DOC_BUILD')
+
+    @property
+    def admin_endpoint(self):
+        return os.environ.get('PANEL_ADMIN_ENDPOINT', self._admin_endpoint)
 
     @property
     def admin_log_level(self):
@@ -548,7 +592,6 @@ else:
 config = _config(**{k: None if p.allow_None else getattr(_config, k)
                     for k, p in _params.items() if k != 'name'})
 
-
 class panel_extension(_pyviz_extension):
     """
     Initializes and configures Panel. You should always run `pn.extension`.
@@ -628,7 +671,9 @@ class panel_extension(_pyviz_extension):
         newly_loaded = [arg for arg in args if arg not in panel_extension._loaded_extensions]
         if state.curdoc and state.curdoc not in state._extensions_:
             state._extensions_[state.curdoc] = []
-        if params.get('notifications') and 'notifications' not in args:
+        if params.get('ready_notification') or params.get('disconnect_notification'):
+            params['notifications'] = True
+        if params.get('notifications', config.notifications) and 'notifications' not in args:
             args += ('notifications',)
         for arg in args:
             if arg == 'notifications' and 'notifications' not in params:
@@ -731,7 +776,17 @@ class panel_extension(_pyviz_extension):
         except Exception:
             return
 
-        from .io.notebook import load_notebook
+        from .io.notebook import load_notebook, mime_renderer
+
+        try:
+            unregister_display_accessor('_ipython_display_')
+        except KeyError:
+            pass
+
+        try:
+            register_display_accessor('_repr_mimebundle_', mime_renderer)
+        except Exception:
+            pass
 
         self._detect_comms(params)
 
@@ -787,14 +842,11 @@ class panel_extension(_pyviz_extension):
             return
 
         # Try to detect environment so that we can enable comms
-        try:
-            import google.colab  # noqa
+        if "google.colab" in sys.modules:
             config.comms = "colab"
             return
-        except ImportError:
-            pass
 
-        if "VSCODE_PID" in os.environ:
+        if "VSCODE_CWD" in os.environ or "VSCODE_PID" in os.environ:
             config.comms = "vscode"
             self._ignore_bokeh_warnings()
             return

@@ -1,10 +1,9 @@
 import * as p from "@bokehjs/core/properties"
 
 import {AbstractVTKPlot, AbstractVTKView} from "./vtklayout"
+import type {ColorMapper, VolumeType} from "./util"
 import {
-  ColorMapper,
   Interpolation,
-  VolumeType,
   vtkns,
   data2VTKImageData,
   hexToRGB,

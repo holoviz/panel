@@ -37,3 +37,19 @@ def test_update_markdown_pane_resizes(page, port):
     - Points
     """
     wait_until(lambda: int(page.locator(".markdown").bounding_box()['height']) == 37, page)
+
+
+def test_markdown_pane_visible_toggle(page, port):
+    md = Markdown('Initial', visible=False)
+
+    serve(md, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+    page.goto(f"http://localhost:{port}")
+
+    assert page.locator(".markdown").locator("div").text_content() == 'Initial\n'
+    assert not page.locator(".markdown").locator("div").is_visible()
+
+    md.visible = True
+
+    wait_until(lambda: page.locator(".markdown").locator("div").is_visible(), page)

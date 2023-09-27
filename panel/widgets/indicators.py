@@ -42,7 +42,7 @@ from ..models import (
 )
 from ..pane.markup import Str
 from ..reactive import SyncableData
-from ..util import escape, updating
+from ..util import PARAM_NAME_PATTERN, escape, updating
 from ..util.warnings import deprecated
 from ..viewable import Viewable
 from .base import Widget
@@ -152,16 +152,17 @@ class LoadingSpinner(BooleanIndicator):
         'primary', 'secondary', 'success', 'info', 'danger', 'warning',
         'light', 'dark'])
 
-    height = param.Integer(default=125, doc="""
-        height of the circle.""")
-
-    width = param.Integer(default=125, doc="""
-        Width of the circle.""")
+    size = param.Integer(default=125, doc="""
+        Size of the spinner in pixels.""")
 
     value = param.Boolean(default=False, doc="""
         Whether the indicator is active or not.""")
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {'value': None, 'color': None, 'bgcolor': None}
+    _rename = {'name': 'text'}
+
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'value': None, 'color': None, 'bgcolor': None, 'size': None
+    }
 
     _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/loadingspinner.css']
 
@@ -169,9 +170,22 @@ class LoadingSpinner(BooleanIndicator):
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
+        if 'text' in msg:
+            text = msg.pop('text')
+            if not PARAM_NAME_PATTERN.match(text):
+                msg['text'] = escape(f'<span><b>{text}</b></span>')
         value = msg.pop('value', None)
         color = msg.pop('color', None)
         bgcolor = msg.pop('bgcolor', None)
+        if msg.get('sizing_mode') == 'fixed':
+            msg['sizing_mode'] = None
+        if 'size' in msg or 'height' in msg or 'stylesheets' in msg:
+            if 'width' in msg and msg['width'] == msg.get('height'):
+                del msg['width']
+            size = int(min(msg.pop('height', self.height) or float('inf'), msg.pop('size', self.size)))
+            msg['stylesheets'] = ([f':host {{ --loading-spinner-size: {size}px; }}'] +
+                                  msg.get('stylesheets', []))
+            msg['min_width'] = msg['min_height'] = size
         if value is None and not (color or bgcolor):
             return msg
         color_cls = f'{self.color}-{self.bgcolor}'
@@ -289,6 +303,8 @@ class Number(ValueIndicator):
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
+        if not any(p in self._source_transforms or p == 'name' for p in msg):
+            return msg
         font_size = msg.pop('font_size', self.font_size)
         title_font_size = msg.pop('title_size', self.title_size)
         name = msg.pop('name', self.name)
@@ -343,6 +359,8 @@ class String(ValueIndicator):
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
+        if not any(p in self._source_transforms or p == 'name' for p in msg):
+            return msg
         font_size = msg.pop('font_size', self.font_size)
         title_font_size = msg.pop('title_size', self.title_size)
         name = msg.pop('name', self.name)
@@ -1062,7 +1080,7 @@ class Trend(SyncableData, Indicator):
     _manual_params: ClassVar[List[str]] = ['data']
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'data': None, 'name': 'name', 'selection': None
+        'data': None, 'name': 'title', 'selection': None
     }
 
     _widget_type: ClassVar[Type[Model]] = _BkTrendIndicator
@@ -1189,7 +1207,7 @@ class Tqdm(Indicator):
 
     max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 
-    progress = param.ClassSelector(class_=Progress, precedence=-1, doc="""
+    progress = param.ClassSelector(class_=Progress, allow_refs=False, precedence=-1, doc="""
         The Progress indicator used to display the progress.""",)
 
     text = param.String(default='', doc="""
@@ -1209,6 +1227,8 @@ class Tqdm(Indicator):
 
     write_to_console = param.Boolean(default=False, doc="""
         Whether or not to also write to the console.""")
+
+    _ignored_refs: ClassVar[List[str]] = ['progress']
 
     _layouts: ClassVar[Dict[Type[Panel], str]] = {Row: 'row', Column: 'column'}
 

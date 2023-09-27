@@ -45,6 +45,22 @@ RUN pip install --no-cache-dir -r requirements.txt
 CMD panel serve app.py --address 0.0.0.0 --port 8080 --allow-websocket-origin="*"
 ```
 
-Finally, to deploy a Panel app to App Engine run `gcloud app create` and `gcloud app deploy`. To deploy a Panel app to Cloud Run, run `gcloud run deploy`.
+Finally, to deploy a Panel app to App Engine run `gcloud app create` and `gcloud app deploy`.
+
+## Deploying with Cloud Run
+
+To deploy a Panel app to Cloud Run, run `gcloud run deploy`.
+
+Panel apps use a websocket to the running Bokeh server. Websockets are considered by Cloud Run to be long-running HTTP requests.
+
+If you deploy a panel app on GCP with Cloud Run, make sure you set up a long request timeout, with CLI parameter `--timeout=...`
+
+The default timeout is 5 minutes, which makes the panel app lose its websocket connection after this time, leading to unresponsive UI, because Cloud Run considers the websocket as timed-out.
+
+You can extend the timeout up to 60 minutes.
+
+To extend the timeout duration, run `gcloud run deploy --timeout 60min`.
 
 For detailed information and steps, check out this [example](https://towardsdatascience.com/deploy-a-python-visualization-panel-app-to-google-cloud-cafe558fe787?sk=98a75bd79e98cba241cc6711e6fc5be5) on how to deploy a Panel app to App Engine and this [example](https://towardsdatascience.com/deploy-a-python-visualization-panel-app-to-google-cloud-ii-416e487b44eb?sk=aac35055957ba95641a6947bbb436410) on how to deploy a Panel app to Cloud Run.
+
+Regarding Cloud Run, check out the documentation about [Cloud run and WebSockets](https://cloud.google.com/run/docs/triggering/websockets) and about the [`--timeout` option](https://cloud.google.com/run/docs/configuring/request-timeout)

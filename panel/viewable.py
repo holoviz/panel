@@ -53,6 +53,7 @@ if TYPE_CHECKING:
     from bokeh.server.server import Server
 
     from .io.location import Location
+    from .io.server import StoppableThread
 
 
 class Layoutable(param.Parameterized):
@@ -78,7 +79,7 @@ class Layoutable(param.Parameterized):
     background = param.Parameter(default=None, doc="""
         Background color of the component.""")
 
-    css_classes = param.List(default=[], doc="""
+    css_classes = param.List(default=[], nested_refs=True, doc="""
         CSS classes to apply to the layout.""")
 
     design = param.ObjectSelector(default=None, objects=[], doc="""
@@ -105,15 +106,15 @@ class Layoutable(param.Parameterized):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    styles = param.Dict(default={}, doc="""
+    styles = param.Dict(default={}, nested_refs=True, doc="""
         Dictionary of CSS rules to apply to DOM node wrapping the
         component.""")
 
-    stylesheets = param.List(default=[], doc="""
+    stylesheets = param.List(default=[], nested_refs=True, doc="""
         List of stylesheets defined as URLs pointing to .css files
         or raw CSS defined as a string.""")
 
-    tags = param.List(default=[], doc="""
+    tags = param.List(default=[], nested_refs=True, doc="""
         List of arbitrary tags to add to the component.
         Can be useful for templating or for storing metadata on
         the model.""")
@@ -405,7 +406,7 @@ class ServableMixin:
         self, title: Optional[str] = None, port: int = 0, address: Optional[str] = None,
         websocket_origin: Optional[str] = None, threaded: bool = False, verbose: bool = True,
         open: bool = True, location: bool | 'Location' = True, **kwargs
-    ) -> threading.Thread | 'Server':
+    ) -> 'StoppableThread' | 'Server':
         """
         Starts a Bokeh server and displays the Viewable in a new tab.
 
@@ -435,7 +436,7 @@ class ServableMixin:
 
         Returns
         -------
-        server: bokeh.server.Server or threading.Thread
+        server: bokeh.server.Server or panel.io.server.StoppableThread
           Returns the Bokeh server instance or the thread the server
           was launched on (if threaded=True)
         """
@@ -1035,7 +1036,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         if location:
             self._add_location(doc, location, model)
         if config.notifications and doc is state.curdoc:
-            notification_model = state.notifications._get_model(doc, model)
+            notification_model = state.notifications.get_root(doc)
             notification_model.name = 'notifications'
             doc.add_root(notification_model)
         if config.browser_info and doc is state.curdoc:

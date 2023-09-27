@@ -1422,6 +1422,8 @@ def test_tabulator_row_content_expand_from_python_after(page, port, df_mixed):
     # Expanding the rows after the server is launched
     widget.expanded = [0, 2]
 
+    time.sleep(0.2)
+
     for i in range(len(df_mixed)):
         row_content = page.locator(f'text="{df_mixed.iloc[i]["str"]}-row-content"')
         if i in widget.expanded:
@@ -1674,6 +1676,22 @@ def test_tabulator_pagination(page, port, df_mixed, pagination):
             i += 1
         else:
             break
+
+
+def test_tabulator_pagination_programmatic_update(page, port, df_mixed):
+    widget = Tabulator(df_mixed, pagination='local', page_size=2)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    widget.page = 2
+
+    time.sleep(0.2)
+
+    expect(page.locator('.tabulator-page.active')).to_have_text('2')
 
 
 def test_tabulator_filter_constant_scalar(page, port, df_mixed):

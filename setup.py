@@ -101,8 +101,8 @@ except Exception:
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=3.1.1,<3.2.0',
-    'param >=1.12.0',
+    'bokeh >=3.1.1,<3.3.0',
+    'param >=2.0.0rc2',
     'pyviz_comms >=0.7.4',
     'xyzservices >=2021.09.1', # Bokeh dependency, but pyodide 23.0.0 does not always pick it up
     'markdown',
@@ -159,54 +159,64 @@ _ui = [
     'pytest-playwright'
 ]
 
+_examples = [
+    'holoviews >=1.16.0',
+    'hvplot',
+    'plotly >=4.0',
+    'altair',
+    'streamz',
+    'vega_datasets',
+    'vtk',
+    'scikit-learn',
+    'datashader',
+    'jupyter_bokeh >=3.0.7',
+    'django <4',
+    'channels',
+    'pyvista',
+    'ipywidgets',
+    'ipywidgets_bokeh',
+    'ipyvolume',
+    'ipyleaflet',
+    'ipympl',
+    'folium',
+    'xarray',
+    'pyinstrument >=4.0',
+    'aiohttp',
+    'croniter',
+    'graphviz',
+    'networkx >=2.5',
+    'pygraphviz',
+    'seaborn',
+    'pydeck',
+    'graphviz',
+    'python-graphviz',
+    'xgboost',
+    'ipyvuetify',
+    'reacton',
+    'scikit-image',
+    'fastparquet'
+]
+
+# Anything only installable via conda
+_conda_only = [
+    'pygraphviz',
+    'python-graphviz',
+]
+
 extras_require = {
-    'examples': [
-        'holoviews >=1.16.0',
-        'hvplot',
-        'plotly >=4.0',
-        'altair',
-        'streamz',
-        'vega_datasets',
-        'vtk',
-        'scikit-learn',
-        'datashader',
-        'jupyter_bokeh >=3.0.7',
-        'django <4',
-        'channels',
-        'pyvista',
-        'ipywidgets',
-        'ipywidgets_bokeh',
-        'ipyvolume',
-        'ipyleaflet',
-        'ipympl',
-        'folium',
-        'xarray',
-        'pyinstrument >=4.0',
-        'aiohttp',
-        'croniter',
-        'graphviz',
-        'networkx >=2.5',
-        'pygraphviz',
-        'seaborn',
-        'pydeck',
-        'graphviz',
-        'python-graphviz',
-        'xgboost',
-        'ipyvuetify',
-        'reacton',
-        'scikit-image',
-        'fastparquet'
-    ],
+    'examples': _examples,
     'tests': _tests,
     'recommended': _recommended,
     'doc': _recommended + [
-        'nbsite ==0.8.1',
-        'lxml'
+        'nbsite ==0.8.2',
+        'lxml',
+        'pandas <2.1.0' # Avoid deprecation warnings
     ],
     'ui': _ui
 }
 
 extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
+extras_require['all_pip'] = sorted(set(extras_require['all']) - set(_conda_only))
 
 # Superset of what's in pyproject.toml (includes non-python
 # dependencies).  Also, pyproject.toml isn't supported by all tools
@@ -214,11 +224,11 @@ extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
 # non-python dependencies). Note that setup_requires isn't used
 # because it doesn't work well with pip.
 extras_require['build'] = [
-    'param >=1.9.2',
+    'param >=2.0.0rc2',
     'setuptools >=42',
     'requests',
     'packaging',
-    'bokeh >=3.1.1,<3.2.0',
+    'bokeh >=3.1.1,<3.3.0',
     'pyviz_comms >=0.7.4',
     'bleach',
     'tqdm >=4.48.0',

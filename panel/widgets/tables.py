@@ -24,7 +24,7 @@ from bokeh.models.widgets.tables import (
 from bokeh.util.serialization import convert_datetime_array
 from pyviz_comms import JupyterComm
 
-from ..depends import param_value_if_widget
+from ..depends import transform_reference
 from ..io.resources import CDN_DIST, CSS_URLS
 from ..io.state import state
 from ..reactive import Reactive, ReactiveData
@@ -52,18 +52,18 @@ def _convert_datetime_array_ignore_list(v):
 
 class BaseTable(ReactiveData, Widget):
 
-    aggregators = param.Dict(default={}, doc="""
+    aggregators = param.Dict(default={}, nested_refs=True, doc="""
         A dictionary mapping from index name to an aggregator to
         be used for hierarchical multi-indexes (valid aggregators
         include 'min', 'max', 'mean' and 'sum'). If separate
         aggregators for different columns are required the dictionary
         may be nested as `{index_name: {column_name: aggregator}}`""")
 
-    editors = param.Dict(default={}, doc="""
+    editors = param.Dict(default={}, nested_refs=True, doc="""
         Bokeh CellEditor to use for a particular column
         (overrides the default chosen based on the type).""")
 
-    formatters = param.Dict(default={}, doc="""
+    formatters = param.Dict(default={}, nested_refs=True, doc="""
         Bokeh CellFormatter to use for a particular column
         (overrides the default chosen based on the type).""")
 
@@ -82,14 +82,14 @@ class BaseTable(ReactiveData, Widget):
     sorters = param.List(default=[], doc="""
         A list of sorters to apply during pagination.""")
 
-    text_align = param.ClassSelector(default={}, class_=(dict, str), doc="""
+    text_align = param.ClassSelector(default={}, nested_refs=True, class_=(dict, str), doc="""
         A mapping from column name to alignment or a fixed column
         alignment, which should be one of 'left', 'center', 'right'.""")
 
-    titles = param.Dict(default={}, doc="""
+    titles = param.Dict(default={}, nested_refs=True, doc="""
         A mapping from column name to a title to override the name with.""")
 
-    widths = param.ClassSelector(default={}, class_=(dict, int), doc="""
+    widths = param.ClassSelector(default={}, nested_refs=True, class_=(dict, int), doc="""
         A mapping from column name to column width or a fixed column
         width.""")
 
@@ -544,7 +544,7 @@ class BaseTable(ReactiveData, Widget):
         elif isinstance(filter, (FunctionType, MethodType)):
             deps = list(filter._dinfo['kw'].values()) if hasattr(filter, '_dinfo') else []
         else:
-            filter = param_value_if_widget(filter)
+            filter = transform_reference(filter)
             if not isinstance(filter, param.Parameter):
                 raise ValueError(f'{type(self).__name__} filter must be '
                                  'a constant value, parameter, widget '
@@ -997,11 +997,11 @@ class Tabulator(BaseTable):
     >>> Tabulator(df, theme='site', pagination='remote', page_size=25)
     """
 
-    buttons = param.Dict(default={}, doc="""
+    buttons = param.Dict(default={}, nested_refs=True, doc="""
         Dictionary mapping from column name to a HTML element
         to use as the button icon.""")
 
-    expanded = param.List(default=[], doc="""
+    expanded = param.List(default=[], nested_refs=True, doc="""
         List of expanded rows, only applicable if a row_content function
         has been defined.""")
 
@@ -1013,31 +1013,31 @@ class Tabulator(BaseTable):
         List of client-side filters declared as dictionaries containing
         'field', 'type' and 'value' keys.""")
 
-    frozen_columns = param.List(default=[], doc="""
+    frozen_columns = param.List(default=[], nested_refs=True, doc="""
         List indicating the columns to freeze. The column(s) may be
         selected by name or index.""")
 
-    frozen_rows = param.List(default=[], doc="""
+    frozen_rows = param.List(default=[], nested_refs=True, doc="""
         List indicating the rows to freeze. If set, the
         first N rows will be frozen, which prevents them from scrolling
         out of frame; if set to a negative value the last N rows will be
         frozen.""")
 
-    groups = param.Dict(default={}, doc="""
+    groups = param.Dict(default={}, nested_refs=True, doc="""
         Dictionary mapping defining the groups.""")
 
-    groupby = param.List(default=[], doc="""
+    groupby = param.List(default=[], nested_refs=True, doc="""
         Groups rows in the table by one or more columns.""")
 
-    header_align = param.ClassSelector(default={}, class_=(dict, str), doc="""
+    header_align = param.ClassSelector(default={}, nested_refs=True, class_=(dict, str), doc="""
         A mapping from column name to alignment or a fixed column
         alignment, which should be one of 'left', 'center', 'right'.""")
 
-    header_filters = param.ClassSelector(class_=(bool, dict), doc="""
+    header_filters = param.ClassSelector(class_=(bool, dict), nested_refs=True, doc="""
         Whether to enable filters in the header or dictionary
         configuring filters for each column.""")
 
-    hidden_columns = param.List(default=[], doc="""
+    hidden_columns = param.List(default=[], nested_refs=True, doc="""
         List of columns to hide.""")
 
     layout = param.ObjectSelector(default='fit_data_table', objects=[
@@ -1086,9 +1086,18 @@ class Tabulator(BaseTable):
     theme = param.ObjectSelector(
         default="simple", objects=[
             'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
-            'bootstrap4', 'materialize', 'bulma', 'semantic-ui', 'fast'
+            'bootstrap4', 'materialize', 'bulma', 'semantic-ui', 'fast',
+            'bootstrap5'
         ], doc="""
         Tabulator CSS theme to apply to table.""")
+
+    theme_classes = param.List(default=[], nested_refs=True, item_type=str, doc="""
+       List of extra CSS classes to apply to the Tabulator element
+       to customize the theme.""")
+
+    title_formatters = param.Dict(default={}, nested_refs=True, doc="""
+       Tabulator formatter specification to use for a particular column
+       header title.""")
 
     _data_params: ClassVar[List[str]] = [
         'value', 'page', 'page_size', 'pagination', 'sorters', 'filters'
@@ -1107,7 +1116,7 @@ class Tabulator(BaseTable):
     _rename: ClassVar[Mapping[str, str | None]] = {
         'selection': None, 'row_content': None, 'row_height': None,
         'text_align': None, 'embed_content': None, 'header_align': None,
-        'header_filters': None, 'styles': 'cell_styles'
+        'header_filters': None, 'styles': 'cell_styles', 'title_formatters': None
     }
 
     # Determines the maximum size limits beyond which (local, remote)
@@ -1379,15 +1388,32 @@ class Tabulator(BaseTable):
             models[i] = model
         return models
 
+    def _indexes_changed(self, old, new):
+        """
+        Comparator that checks whether DataFrame indexes have changed.
+
+        If indexes and length are unchanged we assume we do not
+        have to reset various settings including expanded rows,
+        scroll position, pagination etc.
+        """
+        if type(old) != type(new) or isinstance(new, dict):
+            return True
+        elif len(old) != len(new):
+            return False
+        return (old.index != new.index).any()
+
     def _update_children(self, *events):
         cleanup, reuse = set(), set()
-        page_events = ('page', 'page_size', 'value', 'pagination')
+        page_events = ('page', 'page_size', 'pagination')
         for event in events:
             if event.name == 'expanded' and len(events) == 1:
                 cleanup = set(event.old) - set(event.new)
                 reuse = set(event.old) & set(event.new)
-            elif ((event.name in page_events and not self._updating) or
-                  (self.pagination == 'remote' and event.name == 'sorters')):
+            elif (
+              (event.name == 'value' and self._indexes_changed(event.old, event.new)) or
+              (event.name in page_events and not self._updating) or
+              (self.pagination == 'remote' and event.name == 'sorters')
+            ):
                 self.expanded = []
                 return
         old_panels = self._child_panels
@@ -1570,7 +1596,7 @@ class Tabulator(BaseTable):
         if 'hidden_columns' in params:
             import pandas as pd
             if not self.show_index and self.value is not None and not isinstance(self.value.index, pd.MultiIndex):
-                params['hidden_columns'] += [self.value.index.name or 'index']
+                params['hidden_columns'] = params['hidden_columns'] + [self.value.index.name or 'index']
         if 'selectable_rows' in params:
             params['selectable_rows'] = self._get_selectable()
         return params
@@ -1713,6 +1739,13 @@ class Tabulator(BaseTable):
                 formatter = dict(formatter)
                 col_dict['formatter'] = formatter.pop('type')
                 col_dict['formatterParams'] = formatter
+            title_formatter = self.title_formatters.get(column.field)
+            if title_formatter:
+                col_dict['titleFormatter'] = title_formatter
+            elif isinstance(title_formatter, dict):
+                formatter = dict(title_formatter)
+                col_dict['titleFormatter'] = title_formatter.pop('type')
+                col_dict['titleFormatterParams'] = title_formatter
             col_name = self._renamed_cols[column.field]
             if column.field in self.indexes:
                 if len(self.indexes) == 1:

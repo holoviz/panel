@@ -23,8 +23,9 @@ from bokeh.document.events import (
 from bokeh.models import CustomJS
 
 from ..config import config
+from ..util import param_watchers
 from .loading import LOADING_INDICATOR_CSS_CLASS
-from .model import monkeypatch_events
+from .model import hold, monkeypatch_events  # noqa: API import
 from .state import curdoc_locked, state
 
 logger = logging.getLogger(__name__)
@@ -90,10 +91,10 @@ def _cleanup_doc(doc, destroy=True):
                 pane._hooks = []
                 for p in pane.select():
                     p._hooks = []
-                    p._param_watchers = {}
+                    param_watchers(p, {})
                     p._documents = {}
                     p._internal_callbacks = {}
-            pane._param_watchers = {}
+            param_watchers(pane, {})
             pane._documents = {}
             pane._internal_callbacks = {}
         else:
@@ -294,3 +295,31 @@ def unlocked() -> Iterator:
         except RuntimeError:
             if remaining_events:
                 curdoc.add_next_tick_callback(partial(_dispatch_events, curdoc, remaining_events))
+
+@contextmanager
+def immediate_dispatch(doc: Document | None = None):
+    """
+    Context manager to trigger immediate dispatch of events triggered
+    inside the execution context even when Document events are
+    currently on hold.
+
+    Arguments
+    ---------
+    doc: Document
+        The document to dispatch events on (if `None` then `state.curdoc` is used).
+    """
+    doc = doc or state.curdoc
+
+    # Skip if not in a server context
+    if not doc or not doc._session_context:
+        yield
+        return
+
+    old_events = doc.callbacks._held_events
+    held = doc.callbacks._hold
+    doc.callbacks._held_events = []
+    doc.callbacks.unhold()
+    with unlocked():
+        yield
+    doc.callbacks._hold = held
+    doc.callbacks._held_events = old_events

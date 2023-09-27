@@ -1,4 +1,4 @@
-import {Column, ColumnView} from "@bokehjs/models/layouts/column"
+import {Column, ColumnView} from "./column"
 import * as DOM from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
 
@@ -90,10 +90,13 @@ export class CardView extends ColumnView {
 
   _collapse(): void {
     for (const child_view of this.child_views.slice(1)) {
-      if (this.model.collapsed)
+      if (this.model.collapsed) {
         this.shadow_el.removeChild(child_view.el)
-      else
+	child_view.model.visible = false
+      } else {
         this.shadow_el.appendChild(child_view.el)
+	child_view.model.visible = true
+      }
     }
     this.button_el.children[0].innerHTML = this.model.collapsed ? "\u25ba" : "\u25bc"
     this.invalidate_layout()

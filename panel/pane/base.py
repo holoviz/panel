@@ -24,12 +24,12 @@ from ..io.document import create_doc_if_none_exists, unlocked
 from ..io.notebook import push
 from ..io.state import state
 from ..layout.base import (
-    ListPanel, NamedListPanel, Panel, Row,
+    Column, ListPanel, NamedListPanel, Panel, Row,
 )
 from ..links import Link
 from ..models import ReactiveHTML as _BkReactiveHTML
 from ..reactive import Reactive
-from ..util import param_reprs
+from ..util import param_reprs, param_watchers
 from ..util.checks import is_dataframe, is_series
 from ..viewable import (
     Layoutable, ServableMixin, Viewable, Viewer,
@@ -51,12 +51,14 @@ def panel(obj: Any, **kwargs) -> Viewable:
 
     Any keyword arguments are passed down to the applicable Pane.
 
-    To lazily render components you may also provide a Python
-    function, with or without bound parameter dependencies and set
-    `defer_load=True`. Setting `loading_indicator=True` will display a
-    loading indicator while the function is being evaluated.
+    Setting `loading_indicator=True` will display a loading indicator while the function is being
+    evaluated.
 
-    Reference: https://panel.holoviz.org/background/components/components_overview.html#panes
+    To lazily render components when the application loads, you may also provide a Python
+    function, with or without bound parameter dependencies and set
+    `defer_load=True`.
+
+    Reference: https://panel.holoviz.org/explanation/components/components_overview.html#panes
 
     >>> pn.panel(some_python_object, width=500)
 
@@ -541,9 +543,13 @@ class ReplacementPane(PaneBase):
     inplace = param.Boolean(default=False, doc="""
         Whether to update the object inplace.""")
 
-    _pane = param.ClassSelector(class_=Viewable)
+    object = param.Parameter(default=None, allow_refs=False, doc="""
+        The object being wrapped, which will be converted to a
+        Bokeh model.""")
 
-    _ignored_refs: ClassVar[Tuple[str]] = ['object']
+    _pane = param.ClassSelector(class_=Viewable, allow_refs=False)
+
+    _ignored_refs: ClassVar[Tuple[str]] = ['object', '_pane']
 
     _linked_properties: ClassVar[Tuple[str]] = ()
 
@@ -559,7 +565,7 @@ class ReplacementPane(PaneBase):
         super().__init__(object, **params)
         self._pane = panel(None)
         self._internal = True
-        self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
+        self._inner_layout = Column(self._pane, **{k: v for k, v in params.items() if k in Column.param})
         self._internal_callbacks.append(
             self.param.watch(self._update_inner_layout, list(Layoutable.param))
         )
@@ -656,7 +662,7 @@ class ReplacementPane(PaneBase):
         custom_watchers = []
         if isinstance(object, Reactive):
             watchers = [
-                w for pwatchers in object._param_watchers.values()
+                w for pwatchers in param_watchers(object).values()
                 for awatchers in pwatchers.values() for w in awatchers
             ]
             custom_watchers = [
@@ -706,7 +712,7 @@ class ReplacementPane(PaneBase):
             return
 
         self._pane = new_pane
-        self._inner_layout[0] = self._pane
+        self._inner_layout[:] = [self._pane]
         self._internal = internal
 
     def _cleanup(self, root: Model | None = None) -> None:

@@ -1,3 +1,5 @@
+import pytest
+
 from panel.depends import bind
 from panel.layout import Column
 from panel.pane import JPG
@@ -19,6 +21,28 @@ def test_chat_box(document, comm):
     assert len(rows) == 1
     assert rows[0].value == ["Hello"]
     assert rows[0]._bubble[0].object == "Hello"
+
+
+def test_chat_box_role_content_format(document, comm):
+    value = [
+        {"role": "user1", "content": "Hello"},
+    ]
+    chat_box = ChatBox(value=value.copy())
+    assert chat_box.value == value
+    assert len(chat_box) == 1
+    rows = chat_box.rows
+    assert all(isinstance(row, ChatRow) for row in rows)
+    assert len(rows) == 1
+    assert rows[0].value == ["Hello"]
+    assert rows[0]._bubble[0].object == "Hello"
+
+
+def test_chat_box_invalid_format(document, comm):
+    value = [
+        {"a_user": "user1", "message": "Hello"},
+    ]
+    with pytest.raises(ValueError, match="Expected a dictionary with one key-value"):
+        ChatBox(value=value.copy())
 
 
 def test_chat_box_list(document, comm):
@@ -444,3 +468,14 @@ def test_chat_row_align_end(document, comm):
 def test_chat_row_not_show_name(document, comm):
     chat_row = ChatRow(value=["Hello"], name="user1", show_name=False)
     assert chat_row._name is None
+
+
+def test_chat_row_bubble_obj_sizing_mode_default(document, comm):
+    chat_row = ChatRow(value=["Hello"], name="user1", show_name=False)
+    assert chat_row._bubble[0].sizing_mode == "stretch_width"
+
+
+def test_chat_row_bubble_obj_sizing_mode_set(document, comm):
+    widget = TextInput(sizing_mode="fixed", width=300, height=100)
+    chat_row = ChatRow(value=[widget], name="user1", show_name=False)
+    assert chat_row._bubble[0].sizing_mode == "fixed"

@@ -11,6 +11,7 @@ from bokeh.models import (
     Row as BkRow, Select, Slider, Tabs as BkTabs, TextInput,
     TextInput as BkTextInput, Toggle,
 )
+from packaging.version import Version
 
 from panel import config
 from panel.depends import bind
@@ -1182,7 +1183,7 @@ def test_param_function_pane(document, comm):
 
     # Create pane
     row = pane.get_root(document, comm=comm)
-    assert isinstance(row, BkRow)
+    assert isinstance(row, BkColumn)
     assert len(row.children) == 1
     model = row.children[0]
     assert pane._models[row.ref['id']][0] is row
@@ -1227,7 +1228,7 @@ def test_param_function_pane_defer_load(document, comm):
     # Create pane
     with set_curdoc(document):
         row = pane.get_root(document, comm=comm)
-    assert isinstance(row, BkRow)
+    assert isinstance(row, BkColumn)
     assert len(row.children) == 1
     model = row.children[0]
     assert pane._models[row.ref['id']][0] is row
@@ -1343,7 +1344,7 @@ def test_param_method_pane(document, comm):
 
     # Create pane
     row = pane.get_root(document, comm=comm)
-    assert isinstance(row, BkRow)
+    assert isinstance(row, BkColumn)
     assert len(row.children) == 1
     model = row.children[0]
     assert pane._models[row.ref['id']][0] is row
@@ -1372,7 +1373,7 @@ def test_param_method_pane_subobject(document, comm):
 
     # Create pane
     row = pane.get_root(document, comm=comm)
-    assert isinstance(row, BkRow)
+    assert isinstance(row, BkColumn)
     assert len(row.children) == 1
     model = row.children[0]
     assert isinstance(model, Div)
@@ -1406,7 +1407,7 @@ def test_param_method_pane_mpl(document, comm):
 
     # Create pane
     row = pane.get_root(document, comm=comm)
-    assert isinstance(row, BkRow)
+    assert isinstance(row, BkColumn)
     assert len(row.children) == 1
     model = row.children[0]
     assert pane._models[row.ref['id']][0] is row
@@ -1435,7 +1436,7 @@ def test_param_method_pane_changing_type(document, comm):
 
     # Create pane
     row = pane.get_root(document, comm=comm)
-    assert isinstance(row, BkRow)
+    assert isinstance(row, BkColumn)
     assert len(row.children) == 1
     model = row.children[0]
     text = model.text
@@ -1563,7 +1564,10 @@ def test_set_widget_autocompleteinput(document, comm):
 
     autocompleteinput = model.children[1]
     assert isinstance(autocompleteinput, BkAutocompleteInput)
-    assert autocompleteinput.completions == ['a', 'b']
+    if Version(param.__version__) > Version('2.0.0a2'):
+        assert autocompleteinput.completions == ['a', 'b', '']
+    else:
+        assert autocompleteinput.completions == ['a', 'b']
     assert autocompleteinput.value == ''
     assert autocompleteinput.disabled == False
 
@@ -1630,7 +1634,12 @@ def test_param_editablerangeslider_with_bounds():
     t = Test()
     w = EditableRangeSlider.from_param(t.param.i)
 
-    msg = "Range parameter 'value''s lower bound must be in range \[0, 10\]"
+    if Version(param.__version__) >= Version('2.0.0a3'):
+        msg = r"Range parameter 'EditableRangeSlider\.value' lower bound must be in range \[0, 10\], not -1\."
+    elif Version(param.__version__) >= Version('2.0.0a2'):
+        msg = r"Attribute 'bound' of Range parameter 'EditableRangeSlider\.value' must be in range '\[0, 10\]'"
+    else:
+        msg = r"Range parameter 'value''s lower bound must be in range \[0, 10\]"
     with pytest.raises(ValueError, match=msg):
         w.value = (-1, 2)
 
@@ -1671,7 +1680,10 @@ def test_param_editablefloatslider_with_bounds():
     t = Test()
     w = EditableFloatSlider.from_param(t.param.i)
 
-    msg = "Parameter 'value' must be at least 0, not -1"
+    if Version(param.__version__) > Version('2.0.0a2'):
+        msg = "Number parameter 'EditableFloatSlider.value' must be at least 0, not -1"
+    else:
+        msg = "Parameter 'value' must be at least 0, not -1"
     with pytest.raises(ValueError, match=msg):
         w.value = -1
 
@@ -1766,6 +1778,28 @@ def test_param_generator(document, comm):
     assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
 
 
+def test_param_generator_append(document, comm):
+    checkbox = Checkbox(value=False)
+
+    def function(value):
+        yield Markdown(f"{value}")
+        yield Markdown(f"{not value}")
+
+    pane = ParamFunction(bind(function, checkbox), generator_mode='append')
+
+    root = pane.get_root(document, comm)
+
+    assert len(root.children) == 2
+    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+    assert root.children[1].text == '&lt;p&gt;True&lt;/p&gt;\n'
+
+    checkbox.value = True
+
+    assert len(root.children) == 2
+    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    assert root.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n'
+
+
 @pytest.mark.asyncio
 async def test_param_async_generator(document, comm):
     checkbox = Checkbox(value=False)
@@ -1786,6 +1820,38 @@ async def test_param_async_generator(document, comm):
     await asyncio.sleep(0.01)
 
     assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+
+
+@pytest.mark.asyncio
+async def test_param_async_generator_append(document, comm):
+    checkbox = Checkbox(value=False)
+
+    async def function(value):
+        yield Markdown(f"{value}")
+        await asyncio.sleep(0.01)
+        yield Markdown(f"{not value}")
+
+    pane = ParamFunction(bind(function, checkbox), generator_mode='append')
+
+    root = pane.get_root(document, comm)
+
+    await asyncio.sleep(0.01)
+    assert len(root.children) == 1
+    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+    await asyncio.sleep(0.01)
+    assert len(root.children) == 2
+    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+    assert root.children[1].text == '&lt;p&gt;True&lt;/p&gt;\n'
+
+    checkbox.value = True
+
+    await asyncio.sleep(0.01)
+    assert len(root.children) == 1
+    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    await asyncio.sleep(0.01)
+    assert len(root.children) == 2
+    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    assert root.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n'
 
 
 def test_param_generator_multiple(document, comm):

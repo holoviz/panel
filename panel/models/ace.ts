@@ -1,7 +1,14 @@
 import * as p from "@bokehjs/core/properties"
-import { div } from "@bokehjs/core/dom";
-
+import {div} from "@bokehjs/core/dom";
 import {HTMLBox, HTMLBoxView} from "./layout"
+
+import type {Ace} from "ace-code"
+import type * as AceCode from "ace-code"
+declare const ace: typeof AceCode
+
+declare type ModeList = {
+  getModeForPath(path: string): {mode: string}
+}
 
 function ID() {
   // Math.random should be unique because of its seeding algorithm.
@@ -10,12 +17,11 @@ function ID() {
   return '_' + Math.random().toString(36).substr(2, 9);
 }
 
-
 export class AcePlotView extends HTMLBoxView {
   model: AcePlot
-  protected _editor: any
-  protected _langTools: any
-  protected _modelist: any
+  protected _editor: Ace.Editor
+  protected _langTools: unknown
+  protected _modelist: ModeList
   protected _container: HTMLDivElement
 
   initialize(): void {
@@ -48,10 +54,10 @@ export class AcePlotView extends HTMLBoxView {
     if (!(this._container === this.shadow_el.childNodes[0]))
       this.shadow_el.append(this._container)
       this._container.textContent = this.model.code
-      this._editor = (window as any).ace.edit(this._container)
+      this._editor = ace.edit(this._container)
       this._editor.renderer.attachToShadowRoot()
-      this._langTools = (window as any).ace.require('ace/ext/language_tools')
-      this._modelist = (window as any).ace.require("ace/ext/modelist")
+      this._langTools = ace.require('ace/ext/language_tools')
+      this._modelist = ace.require("ace/ext/modelist")
       this._editor.setOptions({
         enableBasicAutocompletion: true,
         enableSnippets: true,
@@ -81,7 +87,7 @@ export class AcePlotView extends HTMLBoxView {
   }
 
   _update_theme(): void {
-    this._editor.setTheme("ace/theme/" + `${this.model.theme}`)
+    this._editor.setTheme(`ace/theme/${this.model.theme}`)
   }
 
   _update_filename(): void {
@@ -93,7 +99,7 @@ export class AcePlotView extends HTMLBoxView {
 
   _update_language(): void{
     if (this.model.language != null) {
-      this._editor.session.setMode("ace/mode/" + `${this.model.language}`)
+      this._editor.session.setMode(`ace/mode/${this.model.language}`)
     }
   }
 

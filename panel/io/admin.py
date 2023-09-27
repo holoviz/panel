@@ -112,6 +112,11 @@ class _LogTabulator(Tabulator):
 
 
 # Set up logging
+session_filter = MultiSelect(name='Filter by session', options=[])
+message_filter = TextInput(name='Filter by message')
+level_filter = MultiSelect(name="Filter by level", options=["DEBUG", "INFO", "WARNING", "ERROR"])
+app_filter = TextInput(name='Filter by app')
+
 data = Data()
 log_data_handler = LogDataHandler(data)
 log_handler = logging.StreamHandler()
@@ -126,11 +131,6 @@ formatter = logging.Formatter('%(asctime)s %(levelname)s: %(name)s - %(message)s
 log_handler.setFormatter(formatter)
 log_terminal = _LogTabulator(sizing_mode='stretch_both', min_height=400)
 log_handler.setStream(log_terminal)
-
-session_filter = MultiSelect(name='Filter by session', options=[])
-message_filter = TextInput(name='Filter by message')
-level_filter = MultiSelect(name="Filter by level", options=["DEBUG", "INFO", "WARNING", "ERROR"])
-app_filter = TextInput(name='Filter by app')
 
 def _textinput_filter(df, pattern, column):
     if not pattern or df.empty:

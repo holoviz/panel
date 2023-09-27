@@ -443,7 +443,7 @@ class _state(param.Parameterized):
 
     def as_cached(self, key: str, fn: Callable[[], T], ttl: int = None, **kwargs) -> T:
         """
-        Caches the return value of a function, memoizing on the given
+        Caches the return value of a function globally across user sessions, memoizing on the given
         key and supplied keyword arguments.
 
         Note: Keyword arguments must be hashable.
@@ -995,7 +995,12 @@ class _state(param.Parameterized):
         from ..config import config
         if config.notifications and self.curdoc and self.curdoc.session_context and self.curdoc not in self._notifications:
             from .notifications import NotificationArea
-            self._notifications[self.curdoc] = notifications = NotificationArea()
+            js_events = {}
+            if config.ready_notification:
+                js_events['document_ready'] = {'type': 'success', 'message': config.ready_notification, 'duration': 3000}
+            if config.disconnect_notification:
+                js_events['connection_lost'] = {'type': 'error', 'message': config.disconnect_notification}
+            self._notifications[self.curdoc] = notifications = NotificationArea(js_events=js_events)
             return notifications
         elif self.curdoc is None or self.curdoc.session_context is None:
             return self._notification

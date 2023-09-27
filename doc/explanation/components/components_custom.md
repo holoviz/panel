@@ -80,7 +80,7 @@ In certain cases it is necessary to explicitly declare event listeners on the DO
 Now we can use this name to declare set of `_dom_events` to subscribe to. The following will subscribe to change DOM events on the input element:
 
 ```python
-    _dom_events = {'input': ['change']}
+    _dom_events = {'custom_id': ['change']}
 ```
 
 Once subscribed the class may also define a method following the `_{node-id}_{event}` naming convention which will fire when the DOM event triggers, e.g. we could define a `_custom_id_change` method. Any such callback will be given a `DOMEvent` object as the first and only argument.

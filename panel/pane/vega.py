@@ -191,7 +191,7 @@ class Vega(ModelPane):
 
     def _update_selections(self, *args):
         params = {
-            e: param.Dict() if stype == 'interval' else param.List()
+            e: param.Dict(allow_refs=False) if stype == 'interval' else param.List(allow_refs=False)
             for e, stype in self._selections.items()
         }
         if self.selection and (set(self.selection.param) - {'name'}) == set(params):

@@ -45,6 +45,8 @@ https://blog.holoviz.org/panel_0.12.0.html#JupyterLab-previews
 To learn more about Panel check out
 https://panel.holoviz.org/getting_started/index.html
 """
+from param import rx
+
 from . import layout  # noqa
 from . import links  # noqa
 from . import pane  # noqa
@@ -64,7 +66,7 @@ from .layout import (  # noqa
     HSpacer, Row, Spacer, Swipe, Tabs, VSpacer, WidgetBox,
 )
 from .pane import panel  # noqa
-from .param import Param  # noqa
+from .param import Param, ReactiveExpr  # noqa
 from .template import Template  # noqa
 from .widgets import indicators, widget  # noqa
 
@@ -80,6 +82,7 @@ __all__ = (
     "GridStack",
     "HSpacer",
     "Param",
+    "ReactiveExpr",
     "Row",
     "Spacer",
     "Tabs",
@@ -100,7 +103,7 @@ __all__ = (
     "panel",
     "param",
     "pipeline",
-    "reactive",
+    "rx",
     "serve",
     "state",
     "viewable",

@@ -42,13 +42,17 @@ def test_session_override():
 
 @pytest.mark.usefixtures("with_curdoc")
 def test_defer_load():
-    config.defer_load = True
+    try:
+        defer_load_old = config.defer_load
+        config.defer_load = True
 
-    def test():
-        return 1
+        def test():
+            return 1
 
-    assert ParamFunction.applies(test)
-    assert isinstance(panel(test), ParamFunction)
+        assert ParamFunction.applies(test)
+        assert isinstance(panel(test), ParamFunction)
+    finally:
+        config.defer_load = defer_load_old
 
 def test_console_output_replace_stdout(document, comm, get_display_handle):
     pane = HTML()

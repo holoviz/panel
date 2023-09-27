@@ -15,7 +15,7 @@ def test_widgetbox_vertical_scroll(page, port):
 
     serve_component(page, port, wbox)
 
-    bbox = page.locator(".bk-Column").bounding_box()
+    bbox = page.locator(".bk-panel-models-layout-Column").bounding_box()
 
     assert bbox['width'] in (202, 217) # Ignore if browser hides empty scrollbar
     assert bbox['height'] == 420
