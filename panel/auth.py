@@ -110,6 +110,8 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
 
     _error_template = ERROR_TEMPLATE
 
+    _login_endpoint = '/login'
+
     async def get_authenticated_user(self, redirect_uri, client_id, state,
                                      client_secret=None, code=None):
         """
@@ -240,7 +242,8 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         )
 
     def get_state(self):
-        next_url = original_next_url = self.get_argument('next', self.request.uri.replace('/login', ''))
+        root_url = self.request.uri.replace(self._login_endpoint, '')
+        next_url = original_next_url = self.get_argument('next', root_url)
         if next_url:
             # avoid browsers treating \ as /
             next_url = next_url.replace('\\', urlparse.quote('\\'))
@@ -379,7 +382,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             npm_cdn=config.npm_cdn,
             title='Panel: Authentication Error',
             error_type='Authentication Error',
-            error=body['error'],
+            error=body.get('error', 'Unknown Error'),
             error_msg=body.get('error_description', body)
         ))
 
@@ -496,7 +499,7 @@ class CodeChallengeLoginHandler(GenericLoginHandler):
         if config.oauth_redirect_uri:
             redirect_uri = config.oauth_redirect_uri
         else:
-            redirect_uri = f"{self.request.protocol}://{self.request.host}/login"
+            redirect_uri = f"{self.request.protocol}://{self.request.host}{self._login_endpoint}"
 
         if not code or not url_state:
             self._authorize_redirect(redirect_uri)
@@ -959,21 +962,6 @@ class BasicLoginHandler(RequestHandler):
             return True
         return False
 
-    def get(self):
-        try:
-            errormessage = self.get_argument("error")
-        except Exception:
-            errormessage = ""
-
-        next_url = self.get_argument('next', None)
-        if next_url:
-            self.set_cookie("next_url", next_url)
-        html = self._basic_login_template.render(
-            errormessage=errormessage,
-            PANEL_CDN=CDN_DIST
-        )
-        self.write(html)
-
     def post(self):
         username = self.get_argument("username", "")
         password = self.get_argument("password", "")
@@ -999,14 +987,19 @@ class BasicLoginHandler(RequestHandler):
 
 class LogoutHandler(tornado.web.RequestHandler):
 
-    _logout_handler = LOGOUT_TEMPLATE
+    _login_endpoint = '/login'
+
+    _logout_template = LOGOUT_TEMPLATE
 
     def get(self):
         self.clear_cookie("user")
         self.clear_cookie("id_token")
         self.clear_cookie("access_token")
         self.clear_cookie(STATE_COOKIE_NAME)
-        html = self._logout_template.render(PANEL_CDN=CDN_DIST)
+        html = self._logout_template.render(
+            PANEL_CDN=CDN_DIST,
+            LOGIN_ENDPOINT=self._login_endpoint
+        )
         self.write(html)
 
 
@@ -1050,16 +1043,18 @@ class BasicAuthProvider(AuthProvider):
 
     @property
     def login_handler(self):
+        BasicLoginHandler._login_endpoint = self._login_endpoint
         return BasicLoginHandler
 
     @property
     def logout_url(self):
-        return self._login_endpoint
+        return self._logout_endpoint
 
     @property
     def logout_handler(self):
         if self._logout_template:
             LogoutHandler._logout_template = self._logout_template
+        LogoutHandler._login_endpoint = self._login_endpoint
         return LogoutHandler
 
 
@@ -1075,6 +1070,7 @@ class OAuthProvider(BasicAuthProvider):
         if self._error_template:
             handler._error_template = self._error_template
         handler._basic_login_template = self._basic_login_template
+        handler._login_endpoint = self._login_endpoint
         return handler
 
 
