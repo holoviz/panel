@@ -4,7 +4,7 @@ import {View} from "@bokehjs/core/view"
 import {Model} from "@bokehjs/model"
 import {Message} from "@bokehjs/protocol/message"
 import {Receiver} from "@bokehjs/protocol/receiver"
-import {Patch} from "@bokehjs/document"
+import type {Patch} from "@bokehjs/document"
 
 export const comm_settings: any = {
   debounce: true

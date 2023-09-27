@@ -1,4 +1,5 @@
-import {InlineStyleSheet, StyleSheetLike} from "@bokehjs/core/dom"
+import type {StyleSheetLike} from "@bokehjs/core/dom"
+import {InlineStyleSheet} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
 
 import {HTMLBox, HTMLBoxView} from "./layout"

@@ -12,6 +12,7 @@
     "@luma.gl/constants": "^8.0.3",
     "@types/debounce": "^1.2.0",
     "@types/gl-matrix": "^2.4.5",
+    "ace-code": "^1.24.1",
     "debounce": "^1.2.0",
     "gl-matrix": "^3.1.0",
     "htm": "^3.1.1",
