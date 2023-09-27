@@ -298,6 +298,7 @@ class ChatReactionIcons(ReactiveHTML):
             # important not to encode to keep the alt text!
             svg_pane = SVG(
                 svg,
+                sizing_mode=None,
                 alt_text=reaction,
                 encode=False,
                 margin=0,
@@ -461,12 +462,14 @@ class ChatEntry(CompositeWidget):
             css_classes=["left"],
             stylesheets=self._stylesheets,
             visible=self.param.show_avatar,
+            sizing_mode=None,
         )
         center_row = Row(
             ParamMethod(self._render_value, **render_kwargs),
             self.reaction_icons,
             css_classes=["center"],
             stylesheets=self._stylesheets,
+            sizing_mode=None,
         )
         right_col = Column(
             ParamMethod(self._render_user, **render_kwargs),
@@ -474,6 +477,7 @@ class ChatEntry(CompositeWidget):
             ParamMethod(self._render_timestamp, **render_kwargs),
             css_classes=["right"],
             stylesheets=self._stylesheets,
+            sizing_mode=None,
         )
         self._composite._stylesheets = self._stylesheets
         self._composite.css_classes = self.css_classes
@@ -563,6 +567,7 @@ class ChatEntry(CompositeWidget):
         if is_markup:
             if len(str(obj.object)) > 0:  # only show a background if there is content
                 obj.css_classes = [*obj.css_classes, "message"]
+            obj.sizing_mode = None
         else:
             if obj.sizing_mode is None and not obj.width:
                 obj.sizing_mode = "stretch_width"
@@ -873,6 +878,7 @@ class ChatFeed(CompositeWidget):
             card_params["height"] = card_params.get("height", 500)
         self._composite.param.update(**card_params)
         self._composite._stylesheets = self._stylesheets
+        self._composite.styles = {"border": "1px solid var(--panel-border-color, #e1e1e1)", "padding": "0px", "margin": "0px"}
 
         # instantiate the card's column
         chat_log_params = {
@@ -899,7 +905,11 @@ class ChatFeed(CompositeWidget):
 
     @param.depends("placeholder_text", watch=True, on_init=True)
     def _update_placeholder(self):
-        loading_avatar = SVG(PLACEHOLDER_SVG, css_classes=["rotating-placeholder"])
+        loading_avatar = SVG(
+            PLACEHOLDER_SVG,
+            sizing_mode=None,
+            css_classes=["rotating-placeholder"]
+        )
         self._placeholder = ChatEntry(
             user=" ",
             value=self.placeholder_text,
@@ -1373,7 +1383,6 @@ class ChatInterface(ChatFeed):
         self._composite[:] = [*self._composite[:], self._input_container]
         self._composite.css_classes = ["chat-interface"]
         self._composite.stylesheets = self._stylesheets
-        self._composite.styles = {"border": "1px solid var(--panel-border-color, #e1e1e1)"}
 
     def _link_disabled_loading(self, obj: Viewable):
         """
@@ -1430,6 +1439,7 @@ class ChatInterface(ChatFeed):
             sizing_mode=sizing_mode,
             css_classes=["chat-interface-input-tabs"],
             stylesheets=self._stylesheets,
+            dynamic=True,
         )
         for name, widget in self._widgets.items():
             # for longer form messages, like TextArea / Ace, don't
@@ -1450,9 +1460,9 @@ class ChatInterface(ChatFeed):
                 button = Button(
                     name=button_name,
                     icon=button_data.icon,
-                    sizing_mode="fixed",
-                    width=90 if self.show_button_name else 45,
-                    height=30,
+                    sizing_mode="stretch_width",
+                    max_width=90 if self.show_button_name else 45,
+                    max_height=50,
                     margin=(5, 5, 5, 0),
                     align="center",
                 )
@@ -1475,6 +1485,8 @@ class ChatInterface(ChatFeed):
         # if only a single input, don't use tabs
         if len(self._widgets) == 1:
             input_layout = input_layout[0]
+        else:
+            self._chat_log.css_classes = ["chat-feed-log-tabbed"]
 
         self._input_container.objects = [input_layout]
         self._input_layout = input_layout
