@@ -488,11 +488,7 @@ class PasswordLoginHandler(GenericLoginHandler):
         self.redirect('/')
 
 
-class AuthorizationCodeLoginHandler(GenericLoginHandler):
-
-    _EXTRA_TOKEN_PARAMS = {
-        'grant_type': 'authorization_code'
-    }
+class CodeChallengeLoginHandler(GenericLoginHandler):
 
     async def get(self):
         code = self.get_argument("code", "")
@@ -930,69 +926,6 @@ class GoogleLoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
     _USER_KEY = 'email'
 
 
-class LogoutHandler(tornado.web.RequestHandler):
-
-    _logout_handler = LOGOUT_TEMPLATE
-
-    def get(self):
-        self.clear_cookie("user")
-        self.clear_cookie("id_token")
-        self.clear_cookie("access_token")
-        self.clear_cookie(STATE_COOKIE_NAME)
-        html = self._logout_template.render(PANEL_CDN=CDN_DIST)
-        self.write(html)
-
-
-class OAuthProvider(AuthProvider):
-
-    def __init__(self, error_template=None, logout_template=None, basic_login_template=None):
-        if error_template is None:
-            self._error_template = ERROR_TEMPLATE
-        else:
-            with open(error_template) as f:
-                self._error_template = _env.from_string(f.read())
-        if logout_template is None:
-            self._logout_template = LOGOUT_TEMPLATE
-        else:
-            with open(logout_template) as f:
-                self._logout_template = _env.from_string(f.read())
-        if basic_login_template is None:
-            self._basic_login_template = BASIC_LOGIN_TEMPLATE
-        else:
-            with open(basic_login_template) as f:
-                self._basic_login_template = _env.from_string(f.read())
-        super().__init__()
-
-
-    @property
-    def get_user(self):
-        def get_user(request_handler):
-            return request_handler.get_secure_cookie("user", max_age_days=config.oauth_expiry)
-        return get_user
-
-    @property
-    def login_url(self):
-        return '/auth'
-
-    @property
-    def login_handler(self):
-        handler = AUTH_PROVIDERS[config.oauth_provider]
-        if self._error_template:
-            handler._error_template = self._error_template
-        handler._basic_login_template = self._basic_login_template
-        return handler
-
-    @property
-    def logout_url(self):
-        return '/logout'
-
-    @property
-    def logout_handler(self):
-        if self._logout_template:
-            LogoutHandler._logout_template = self._logout_template
-        return LogoutHandler
-
-
 class BasicLoginHandler(RequestHandler):
 
     def get(self):
@@ -1041,7 +974,6 @@ class BasicLoginHandler(RequestHandler):
         )
         self.write(html)
 
-
     def post(self):
         username = self.get_argument("username", "")
         password = self.get_argument("password", "")
@@ -1065,12 +997,85 @@ class BasicLoginHandler(RequestHandler):
         self.set_secure_cookie('id_token', id_token, expires_days=config.oauth_expiry)
 
 
+class LogoutHandler(tornado.web.RequestHandler):
 
-class BasicProvider(OAuthProvider):
+    _logout_handler = LOGOUT_TEMPLATE
+
+    def get(self):
+        self.clear_cookie("user")
+        self.clear_cookie("id_token")
+        self.clear_cookie("access_token")
+        self.clear_cookie(STATE_COOKIE_NAME)
+        html = self._logout_template.render(PANEL_CDN=CDN_DIST)
+        self.write(html)
+
+
+class BasicAuthProvider(AuthProvider):
+    """
+    An AuthProvider which serves a simple login and logout page.
+    """
+
+    def __init__(
+        self, login_endpoint=None, logout_endpoint=None,
+        login_template=None, logout_template=None, error_template=None
+    ):
+        if error_template is None:
+            self._error_template = ERROR_TEMPLATE
+        else:
+            with open(error_template) as f:
+                self._error_template = _env.from_string(f.read())
+        if logout_template is None:
+            self._logout_template = LOGOUT_TEMPLATE
+        else:
+            with open(logout_template) as f:
+                self._logout_template = _env.from_string(f.read())
+        if login_template is None:
+            self._basic_login_template = BASIC_LOGIN_TEMPLATE
+        else:
+            with open(login_template) as f:
+                self._basic_login_template = _env.from_string(f.read())
+        self._login_endpoint = login_endpoint or '/login'
+        self._logout_endpoint = logout_endpoint or '/logout'
+        super().__init__()
+
+    @property
+    def get_user(self):
+        def get_user(request_handler):
+            return request_handler.get_secure_cookie("user", max_age_days=config.oauth_expiry)
+        return get_user
 
     @property
     def login_url(self):
-        return '/login'
+        return self._login_endpoint
+
+    @property
+    def login_handler(self):
+        return BasicLoginHandler
+
+    @property
+    def logout_url(self):
+        return self._login_endpoint
+
+    @property
+    def logout_handler(self):
+        if self._logout_template:
+            LogoutHandler._logout_template = self._logout_template
+        return LogoutHandler
+
+
+class OAuthProvider(BasicAuthProvider):
+    """
+    An AuthProvider using specific OAuth implementation selected via
+    the global config.oauth_provider configuration.
+    """
+
+    @property
+    def login_handler(self):
+        handler = AUTH_PROVIDERS[config.oauth_provider]
+        if self._error_template:
+            handler._error_template = self._error_template
+        handler._basic_login_template = self._basic_login_template
+        return handler
 
 
 AUTH_PROVIDERS = {
@@ -1084,7 +1089,7 @@ AUTH_PROVIDERS = {
     'gitlab': GitLabLoginHandler,
     'okta': OktaLoginHandler,
     'password': PasswordLoginHandler,
-    'code': AuthorizationCodeLoginHandler
+    'code': CodeChallengeLoginHandler
 }
 
 # Populate AUTH Providers from external extensions
