@@ -4,7 +4,6 @@ import pytest
 from panel.pane import Perspective
 from panel.tests.util import serve_component, wait_until
 
-
 pytestmark = pytest.mark.ui
 
 def test_perspective_no_console_errors(page, port):
