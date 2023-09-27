@@ -25,7 +25,7 @@ from bokeh.server.contexts import ApplicationContext
 from tornado.ioloop import PeriodicCallback
 from tornado.web import StaticFileHandler
 
-from ..auth import BasicProvider, OAuthProvider
+from ..auth import BasicAuthProvider, OAuthProvider
 from ..config import config
 from ..io.document import _cleanup_doc
 from ..io.liveness import LivenessHandler
@@ -477,7 +477,7 @@ class Serve(_BkServe):
         if args.basic_auth:
             config.basic_auth = args.basic_auth
         if config.basic_auth:
-            kwargs['auth_provider'] = BasicProvider(
+            kwargs['auth_provider'] = BasicAuthProvider(
                 login_endpoint=login_endpoint,
                 logout_endpoint=logout_endpoint,
                 login_template=login_template,
