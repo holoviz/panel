@@ -17,20 +17,10 @@ concurrency:
 
 jobs:
   pre_commit:
-    name: Run pre-commit hooks
+    name: Run pre-commit
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: "1"
-      - name: set PY
-        run: echo "PY=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
-      - uses: actions/cache@v3
-        with:
-          path: ~/.cache/pre-commit
-          key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
-      - name: pre-commit
-        uses: pre-commit/action@v3.0.0
+      - uses: holoviz-dev/holoviz_tasks/pre-commit@v0.1a17
   unit_test_suite:
     name: Unit tests on ${{ matrix.os }} with Python ${{ matrix.python-version }}
     needs: [pre_commit]
@@ -58,7 +48,7 @@ jobs:
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
       OMP_NUM_THREADS: 1
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a15
+      - uses: holoviz-dev/holoviz_tasks/install@v0.1a17
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
@@ -70,10 +60,8 @@ jobs:
           envs: ${{ !contains(matrix.python-version, '3.1') && '-o examples -o recommended -o tests -o build' || '-o recommended -o tests -o build' }}
           cache: true
           opengl: true
-          conda-mamba: mamba
         id: install
       - name: doit develop_install
-        if: steps.install.outputs.cache-hit != 'true'
         run: |
           conda activate test-environment
           pip install pyecharts
@@ -129,7 +117,7 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a15
+      - uses: holoviz-dev/holoviz_tasks/install@v0.1a17
         with:
           name: ui_test_suite
           python-version: 3.9
@@ -140,7 +128,6 @@ jobs:
           playwright: true
         id: install
       - name: doit develop_install
-        if: steps.install.outputs.cache-hit != 'true'
         run: |
           conda activate test-environment
           pip install --pre ipywidgets_bokeh

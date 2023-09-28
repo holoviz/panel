@@ -19,7 +19,7 @@ from .config import config
 from .entry_points import entry_points_for
 from .io import state
 from .io.resources import (
-    BASIC_LOGIN_TEMPLATE, CDN_DIST, ERROR_TEMPLATE, _env,
+    BASIC_LOGIN_TEMPLATE, CDN_DIST, ERROR_TEMPLATE, LOGOUT_TEMPLATE, _env,
 )
 from .util import base64url_decode, base64url_encode
 
@@ -236,7 +236,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         )
 
     def get_state(self):
-        next_url = original_next_url = self.get_argument('next', None)
+        next_url = original_next_url = self.get_argument('next', self.request.uri.replace('/login', ''))
         if next_url:
             # avoid browsers treating \ as /
             next_url = next_url.replace('\\', urlparse.quote('\\'))
@@ -251,7 +251,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
                     "Ignoring next_url %r, using %r", original_next_url, next_url
                 )
         return _serialize_state(
-            {'state_id': uuid.uuid4().hex, 'next_url': next_url}
+            {'state_id': uuid.uuid4().hex, 'next_url': next_url or '/'}
         )
 
     async def get(self):
@@ -267,6 +267,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             'redirect_uri': redirect_uri,
             'client_id':    config.oauth_key,
         }
+
         # Some OAuth2 backends do not correctly return code
         next_arg = self.get_argument('next', {})
         if next_arg:
@@ -780,22 +781,30 @@ class GoogleLoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
 
 class LogoutHandler(tornado.web.RequestHandler):
 
+    _logout_handler = LOGOUT_TEMPLATE
+
     def get(self):
         self.clear_cookie("user")
         self.clear_cookie("id_token")
         self.clear_cookie("access_token")
         self.clear_cookie(STATE_COOKIE_NAME)
-        self.redirect("/")
+        html = self._logout_template.render(PANEL_CDN=CDN_DIST)
+        self.write(html)
 
 
 class OAuthProvider(AuthProvider):
 
-    def __init__(self, error_template=None):
+    def __init__(self, error_template=None, logout_template=None):
         if error_template is None:
             self._error_template = ERROR_TEMPLATE
         else:
             with open(error_template) as f:
                 self._error_template = _env.from_string(f.read())
+        if logout_template is None:
+            self._logout_template = LOGOUT_TEMPLATE
+        else:
+            with open(logout_template) as f:
+                self._logout_template = _env.from_string(f.read())
         super().__init__()
 
     @property
@@ -806,10 +815,7 @@ class OAuthProvider(AuthProvider):
 
     @property
     def login_url(self):
-        if config.oauth_redirect_uri is None:
-            return '/login'
-        else:
-            return urlparse.urlparse(config.oauth_redirect_uri).path + '/login'
+        return '/login'
 
     @property
     def login_handler(self):
@@ -820,10 +826,12 @@ class OAuthProvider(AuthProvider):
 
     @property
     def logout_url(self):
-        return "/logout"
+        return '/logout'
 
     @property
     def logout_handler(self):
+        if self._logout_template:
+            LogoutHandler._logout_template = self._logout_template
         return LogoutHandler
 
 
@@ -839,7 +847,8 @@ class BasicLoginHandler(RequestHandler):
         if next_url:
             self.set_cookie("next_url", next_url)
         html = self._basic_login_template.render(
-            errormessage=errormessage, PANEL_CDN=CDN_DIST
+            errormessage=errormessage,
+            PANEL_CDN=CDN_DIST
         )
         self.write(html)
 
@@ -868,8 +877,8 @@ class BasicLoginHandler(RequestHandler):
             next_url = self.get_cookie("next_url", "/")
             self.redirect(next_url)
         else:
-            error_msg = "?error=" + tornado.escape.url_escape("Login incorrect")
-            self.redirect('/login' + error_msg)
+            error_msg = "?error=" + tornado.escape.url_escape("Invalid username or password!")
+            self.redirect(self.request.uri + error_msg)
 
     def set_current_user(self, user):
         if not user:
@@ -885,13 +894,13 @@ class BasicLoginHandler(RequestHandler):
 
 class BasicProvider(OAuthProvider):
 
-    def __init__(self, basic_login_template=None):
+    def __init__(self, basic_login_template=None, logout_template=None):
         if basic_login_template is None:
             self._basic_login_template = BASIC_LOGIN_TEMPLATE
         else:
             with open(basic_login_template) as f:
                 self._basic_login_template = _env.from_string(f.read())
-        super().__init__()
+        super().__init__(logout_template=logout_template)
 
     @property
     def login_url(self):

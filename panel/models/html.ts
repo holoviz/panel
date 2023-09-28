@@ -1,6 +1,6 @@
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import * as p from "@bokehjs/core/properties"
-import {Attrs} from "@bokehjs/core/types"
+import type {Attrs} from "@bokehjs/core/types"
 import {Markup} from "@bokehjs/models/widgets/markup"
 import {PanelMarkupView} from "./layout";
 import {serializeEvent} from "./event-to-object";
@@ -45,6 +45,10 @@ export class HTMLView extends PanelMarkupView {
     this.connect(this.model.properties.text.change, () => {
       const html = this.process_tex()
       this.set_html(html)
+    })
+    this.connect(this.model.properties.visible.change, () => {
+      if (this.model.visible)
+	this.container.style.visibility = 'visible';
     })
     this.connect(this.model.properties.events.change, () => {
       this._remove_event_listeners()

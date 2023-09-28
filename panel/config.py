@@ -21,6 +21,9 @@ from bokeh.core.has_props import _default_resolver
 from bokeh.document import Document
 from bokeh.model import Model
 from bokeh.settings import settings as bk_settings
+from param.depends import (
+    register_display_accessor, unregister_display_accessor,
+)
 from pyviz_comms import (
     JupyterCommManager as _JupyterCommManager, extension as _pyviz_extension,
 )
@@ -110,7 +113,11 @@ class _config(_base_config):
         is enabled. The callback is given the user information returned
         by the configured Auth provider and should return True or False
         depending on whether the user is authorized to access the
-        application.""")
+        application. The callback may also contain a second parameter,
+        which is the requested path the user is making. If the user
+        is authenticated and has explicit access to the path, then
+        the callback should return True otherwise it should return
+        False.""")
 
     auth_template = param.Path(default=None, doc="""
         A jinja2 template rendered when the authorize_callback determines
@@ -213,6 +220,8 @@ class _config(_base_config):
         If sliders and inputs should be throttled until release of mouse.""")
 
     _admin = param.Boolean(default=False, doc="Whether the admin panel was enabled.")
+
+    _admin_endpoint = param.String(default=None, doc="Name to use for the admin endpoint.")
 
     _admin_log_level = param.Selector(
         default='DEBUG', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
@@ -413,6 +422,9 @@ class _config(_base_config):
         """
         from .io.state import state
 
+        if attr == '_param__private':
+            return super().__getattribute__('_param__private')
+
         # _param__private added in Param 2
         try:
             init = super().__getattribute__('_param__private').initialized
@@ -450,6 +462,10 @@ class _config(_base_config):
     @property
     def _doc_build(self):
         return os.environ.get('PANEL_DOC_BUILD')
+
+    @property
+    def admin_endpoint(self):
+        return os.environ.get('PANEL_ADMIN_ENDPOINT', self._admin_endpoint)
 
     @property
     def admin_log_level(self):
@@ -575,7 +591,6 @@ else:
 
 config = _config(**{k: None if p.allow_None else getattr(_config, k)
                     for k, p in _params.items() if k != 'name'})
-
 
 class panel_extension(_pyviz_extension):
     """
@@ -761,7 +776,17 @@ class panel_extension(_pyviz_extension):
         except Exception:
             return
 
-        from .io.notebook import load_notebook
+        from .io.notebook import load_notebook, mime_renderer
+
+        try:
+            unregister_display_accessor('_ipython_display_')
+        except KeyError:
+            pass
+
+        try:
+            register_display_accessor('_repr_mimebundle_', mime_renderer)
+        except Exception:
+            pass
 
         self._detect_comms(params)
 

@@ -22,6 +22,7 @@ from bokeh.models.widgets import (
     DateRangeSlider as _BkDateRangeSlider, DateSlider as _BkDateSlider,
     RangeSlider as _BkRangeSlider, Slider as _BkSlider,
 )
+from param.parameterized import resolve_value
 
 from ..config import config
 from ..io import state
@@ -509,7 +510,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
 class _RangeSliderBase(_SliderBase):
 
-    value = param.Tuple(length=2, allow_None=False, doc="""
+    value = param.Tuple(length=2, allow_None=False, nested_refs=True, doc="""
         The selected range of the slider. Updated when a handle is dragged.""")
 
     value_start = param.Parameter(readonly=True, doc="""The lower value of the selected range.""")
@@ -524,7 +525,8 @@ class _RangeSliderBase(_SliderBase):
                 params.get('start', self.start), params.get('end', self.end)
             )
         if params['value'] is not None:
-            params['value_start'], params['value_end'] = params['value']
+            v1, v2 = params['value']
+            params['value_start'], params['value_end'] = resolve_value(v1), resolve_value(v2)
         with edit_readonly(self):
             super().__init__(**params)
 
@@ -557,11 +559,11 @@ class RangeSlider(_RangeSliderBase):
     ... )
     """
 
-    value = param.Range(default=(0, 1), allow_None=False, doc=
+    value = param.Range(default=(0, 1), allow_None=False, nested_refs=True, doc=
         """The selected range as a tuple of values. Updated when a handle is
         dragged.""")
 
-    value_throttled = param.Range(default=None, constant=True, doc="""
+    value_throttled = param.Range(default=None, constant=True, nested_refs=True, doc="""
         The selected range as a tuple of floating point values. Updated when a handle is
         released""")
 
@@ -659,7 +661,7 @@ class DateRangeSlider(_SliderBase):
     value_end = param.Date(default=None, readonly=True, doc="""
         The upper value of the selected range.""")
 
-    value_throttled = param.DateRange(default=None, constant=True, doc="""
+    value_throttled = param.DateRange(default=None, constant=True, nested_refs=True, doc="""
         The selected range as a tuple of values. Updated one of the handles is released. Supports
         datetime.datetime, datetime.date and np.datetime64 ranges""")
 
@@ -670,7 +672,7 @@ class DateRangeSlider(_SliderBase):
         The upper bound.""")
 
     step = param.Number(default=1, doc="""
-        The step size. Default is 1 millisecond.""")
+        The step size in days. Default is 1 day.""")
 
     format = param.String(default=None, doc="""
         Datetime format used for parsing and formatting the date.""")
@@ -702,7 +704,8 @@ class DateRangeSlider(_SliderBase):
                 params['value'] = (params.get('start', self.start),
                                 params.get('end', self.end))
         if params['value'] is not None:
-            params['value_start'], params['value_end'] = params['value']
+            v1, v2 = params['value']
+            params['value_start'], params['value_end'] = resolve_value(v1), resolve_value(v2)
         with edit_readonly(self):
             super().__init__(**params)
 

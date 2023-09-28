@@ -3,7 +3,7 @@ import {View} from "@bokehjs/core/view"
 import {copy} from "@bokehjs/core/util/array"
 import {Model} from "@bokehjs/model"
 import {Receiver} from "@bokehjs/protocol/receiver"
-import {Patch} from "@bokehjs/document"
+import type {Patch} from "@bokehjs/document"
 
 function get_json(file: string, callback: any): void {
   var xobj = new XMLHttpRequest();

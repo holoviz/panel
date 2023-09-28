@@ -13,7 +13,7 @@ Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt
 <tbody>
 <tr>
 <td>Build Status</td>
-<td><a href="https://github.com/holoviz/panel/actions/workflows/test.yaml?query=branch%3Amain"><img src="https://github.com/holoviz/panel/workflows/pytest/badge.svg?query=branch%3Amain" alt="Linux/MacOS Build Status"></a></td>
+<td><a href="https://github.com/holoviz/panel/actions/workflows/test.yaml?query=branch%3Amain"><img src="https://github.com/holoviz/panel/workflows/tests/badge.svg?query=branch%3Amain" alt="Linux/MacOS Build Status"></a></td>
 </tr>
 <tr>
 <td>Coverage</td>
@@ -97,7 +97,7 @@ Head over to the [getting started guide](https://panel.holoviz.org/getting_start
 Panel can be installed on Linux, Windows, or Mac with ``conda``:
 
 ```bash
-conda install -c pyviz panel
+conda install panel
 ```
 
 or with ``pip``:

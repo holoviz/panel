@@ -2,96 +2,105 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Panel App with BasicAuth</title>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="en" name="docsearch:language">
+    <title>Panel App | Login</title>
+    <link rel="icon" type="image/x-icon" href="{{ PANEL_CDN }}images/favicon.ico">
     <style>
-    *{
-        margin:0;
-        padding: 0;
-        box-sizing: border-box;
+    * {
+      box-sizing: border-box;
+      margin:0;
+      padding: 0;
     }
-    html{
-        height: 100%;
+    html {
+      height: 100%;
     }
-    body{
-        font-family: 'Segoe UI', sans-serif;;
-        font-size: 1rem;
-        line-height: 1.6;
-        height: 100%;
+    body {
+      font-family: 'Segoe UI', sans-serif;;
+      font-size: 1em;
+      height: 100%;
+      line-height: 1.6;
     }
-    p{
-        padding-bottom: 5px;
+    p {
+      padding-bottom: 5px;
     }
     .wrap {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background: #fafafa;
+      align-items: center;
+      background: #fafafa;
+      display: flex;
+      height: 100%;
+      justify-content: center;
+      width: 100%;
     }
-    .login-form{
-        width: 350px;
-        margin: 0 auto;
-        border: 1px solid #ddd;
-        padding: 2rem;
-        background: #ffffff;
+    .login-form {
+      background: #ffffff;
+      border: 1px solid #ddd;
+      margin: 0 auto;
+      padding: 2em;
+      width: 350px;
     }
-    .form-input{
-        background: #fafafa;
-        border: 1px solid #eeeeee;
-        padding: 12px;
-        width: 100%;
+    .form-input {
+      background: #fafafa;
+      border: 1px solid #eeeeee;
+      padding: 12px;
+      width: 100%;
     }
-    .form-group{
-        margin-bottom: 1rem;
+    .form-group {
+      margin-bottom: 1em;
     }
-    .form-button{
-        background: #69d2e7;
-        border: 1px solid #ddd;
-        color: #ffffff;
-        padding: 10px;
-        width: 100%;
-        text-transform: uppercase;
+    .form-button {
+      background: #107bba;
+      border: 1px solid #ddd;
+      color: #ffffff;
+      padding: 10px;
+      text-transform: uppercase;
+      width: 100%;
     }
-    .form-button:hover{
-        background: #69c8e7;
+    .form-button:hover {
+      background: #0072b5;
     }
-    .form-header{
-        text-align: center;
-        margin-bottom : 2rem;
+    .form-header {
+      text-align: center;
     }
-    .form-footer{
-        text-align: center;
+    .form-footer {
+      text-align: center;
+    }
+    #logo {
+      margin-top: 2em;
+    }
+    #error-message {
+      text-align: center;
+      margin-bottom: 0em;
     }
     </style>
 </head>
 <body>
-    <div class="wrap">
-        <form class="login-form" action="/login" method="post">
-            <div class="form-header">
-                <h3><img src="{{ PANEL_CDN }}images/logo_stacked.png" width="150" height="120"></h3>
-                <p> Login to access your application</p>
-            </div>
-            <div class="form-group">
-                <span style="color:rgb(255, 0, 0);font-weight:bold" class="errormessage">{{errormessage}}</span>
-            </div>
-            <p></p>
-            <!--Email Input-->
-            <div class="form-group">
-                <input name="username" type="text" class="form-input" autocapitalize="off" autocorrect="off" placeholder="username">
-            </div>
-            <!--Password Input-->
-            <div class="form-group">
-                <input name="password" type="password" class="form-input" placeholder="password">
-            </div>
-            <!--Login Button-->
-            <div class="form-group">
-                <button class="form-button" type="submit">Login</button>
-            </div>
-            <div><small>
-            <p><a href="https://panel.holoviz.org/how_to/authentication/index.html">See the documentation</a> for a full discussion.</p>
-            </small></div>
-        </form>
-    </div>
-  </body>
-  </html>
+  <div class="wrap">
+    <form class="login-form" action="./login" method="post">
+      <div class="form-header">
+        <h3><img id="logo" src="{{ PANEL_CDN }}images/logo_stacked.png" width="150" height="120"></h3>
+        <br>
+        <p> Login to access your application</p>
+      </div>
+      <div id="error-message" class="form-group">
+        <p style="color:rgb(255, 0, 0);font-weight:bold" class="errormessage">{{errormessage}}</p>
+      </div>
+      <p></p>
+      <!--Email Input-->
+      <div class="form-group">
+        <input name="username" type="text" class="form-input" autocapitalize="off" autocorrect="off" placeholder="username">
+      </div>
+      <!--Password Input-->
+      <div class="form-group">
+        <input name="password" type="password" class="form-input" placeholder="password">
+      </div>
+      <!--Login Button-->
+      <div class="form-group">
+        <button class="form-button" type="submit">Login</button>
+      </div>
+      <div><small></small></div>
+    </form>
+  </div>
+</body>
+</html>

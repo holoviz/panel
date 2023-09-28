@@ -1,6 +1,10 @@
 # Reactive API
 
-Panel's reactive programming API `pn.bind` allows a programmer to indicate that a certain widget or *Parameter* should be used as the argument to a function or method that returns something displayable, after which Panel will *automatically* invoke that function or method when the corresponding *Parameter* changes. The programmer defines and configures widgets explicitly, laying them out with the reactive functions into an app (or even a set of separate Jupyter notebook cells) where each output is updated whenever the corresponding *Parameter* changes.
+Most people are familiar with the reactive programming model due to Excel, where formulas can reference cells or ranges and dynamically (or rather reactively) recompute when the inputs to a formula changes. In Panel reactive APIs build on top of Param. Sticking with the Excel analogy, `Parameter` objects represent the inputs or references in a formula and using this we can build two kinds of reactive constructs, so called expressions and functions.
+
+Reactive expressions are a powerful way to declaratively express complex reactive "formulas" without having to learn a large new API or operate inside a restricted evaluation context (we will unpack what exactly that means a bit later). If we need to express logic using pure Python we can easily fall back to declaring a reactive function using `pn.bind`.
+
+`pn.bind` allows a programmer to indicate that a certain widget or *Parameter* should be used as the argument to a function or method that returns something displayable, after which Panel will *automatically* invoke that function or method when the corresponding *Parameter* changes. The programmer defines and configures widgets explicitly, laying them out with the reactive functions into an app (or even a set of separate Jupyter notebook cells) where each output is updated whenever the corresponding *Parameter* changes.
 
 ## Pros:
 

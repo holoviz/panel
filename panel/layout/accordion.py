@@ -116,15 +116,17 @@ class Accordion(NamedListPanel):
         current_objects = list(self)
         self._updating_active = True
         for i, (name, pane) in enumerate(zip(self._names, self)):
-            params.update(self._apply_style(i))
+            child_params = dict(params, title=name)
+            child_params.update(self._apply_style(i))
             if id(pane) in self._panels:
                 card = self._panels[id(pane)]
-                card.param.update(**params)
+                card.param.update(**child_params)
             else:
                 card = Card(
-                    pane, title=name, css_classes=['accordion'],
+                    pane,
+                    css_classes=['accordion'],
                     header_css_classes=['accordion-header'],
-                    **params
+                    **child_params
                 )
                 card.param.watch(self._set_active, ['collapsed'])
                 self._panels[id(pane)] = card

@@ -199,6 +199,18 @@ def render_model(
             {EXEC_MIME: {'id': target}})
 
 
+def mime_renderer(obj):
+    """
+    Generates a function that will render the supplied object as a
+    mimebundle, e.g. to monkey-patch a _repr_mimebundle_ method onto
+    an existing object.
+    """
+    from ..pane import panel
+    def _repr_mimebundle_(include=None, exclude=None):
+        return panel(obj)._repr_mimebundle_(include, exclude)
+    return _repr_mimebundle_
+
+
 def render_mimebundle(
     model: 'Model', doc: 'Document', comm: 'Comm',
     manager: Optional['CommManager'] = None,

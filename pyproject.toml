@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "param >=1.9.2",
+    "param >=2.0.0rc2",
     "pyct >=0.4.4",
     "setuptools >=42",
     "bokeh >=3.1.1,<3.3.0",
@@ -48,5 +48,5 @@ select = [
 
 [tool.codespell]
 ignore-words-list = "nd,doubleclick"
-skip = "doc/generate_modules.py,examples/reference/templates/FastGridTemplate.ipynb"
+skip = "doc/generate_modules.py,examples/reference/templates/FastGridTemplate.ipynb,panel/eslint.js,panel/package-lock.json,panel/package.json"
 write-changes = true

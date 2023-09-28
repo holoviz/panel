@@ -26,6 +26,8 @@ all_widgets = [
 def test_widget_signature(widget):
     from inspect import signature
     parameters = signature(widget).parameters
+    if getattr(getattr(widget, '_param__private', object), 'signature', None):
+        pytest.skip('Signature already set by Param')
     assert len(parameters) == 1
 
 @pytest.mark.parametrize('widget', all_widgets)

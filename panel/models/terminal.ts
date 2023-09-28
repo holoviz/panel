@@ -1,7 +1,7 @@
 import * as p from "@bokehjs/core/properties"
 import { div } from "@bokehjs/core/dom"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
-import {Attrs} from "@bokehjs/core/types"
+import type {Attrs} from "@bokehjs/core/types"
 
 import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 

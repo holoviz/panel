@@ -1207,7 +1207,7 @@ class Tqdm(Indicator):
 
     max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 
-    progress = param.ClassSelector(class_=Progress, precedence=-1, doc="""
+    progress = param.ClassSelector(class_=Progress, allow_refs=False, precedence=-1, doc="""
         The Progress indicator used to display the progress.""",)
 
     text = param.String(default='', doc="""
@@ -1227,6 +1227,8 @@ class Tqdm(Indicator):
 
     write_to_console = param.Boolean(default=False, doc="""
         Whether or not to also write to the console.""")
+
+    _ignored_refs: ClassVar[List[str]] = ['progress']
 
     _layouts: ClassVar[Dict[Type[Panel], str]] = {Row: 'row', Column: 'column'}
 

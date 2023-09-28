@@ -84,7 +84,7 @@ class PeriodicCallback(param.Parameterized):
             with set_curdoc(self._doc):
                 if self.running:
                     self.counter += 1
-                    if self.counter > self.count:
+                    if self.count is not None and self.counter > self.count:
                         self.stop()
                 cb = self.callback() if self.running else None
         except Exception:
