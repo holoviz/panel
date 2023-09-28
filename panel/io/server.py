@@ -1171,6 +1171,7 @@ def get_server(
             server_config['basic_auth'] = basic_auth
             provider = BasicAuthProvider
         else:
+            config.oauth_provider = oauth_provider
             provider = OAuthProvider
         opts['auth_provider'] = provider(
             login_endpoint=login_endpoint,
