@@ -1202,8 +1202,9 @@ def get_server(
     state._server_config[server._tornado] = server_config
 
     if show:
+        login_endpoint = login_endpoint or '/login'
         def show_callback():
-            server.show('/login' if config.oauth_provider else '/')
+            server.show(login_endpoint if config.oauth_provider or basic_auth else '/')
         server.io_loop.add_callback(show_callback)
 
     def sig_exit(*args, **kwargs):
