@@ -3149,7 +3149,10 @@ def test_tabulator_sorter_default_number(page, port):
     widget.value = df2
 
     def x_values():
-        table_values = [int(v) for v in tabulator_column_values(page, 'x')]
+        try:
+            table_values = [int(v) for v in tabulator_column_values(page, 'x')]
+        except Exception:
+            return False
         assert table_values == list(df2['x'].sort_values(ascending=False))
 
     wait_until(x_values, page)

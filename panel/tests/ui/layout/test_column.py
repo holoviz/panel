@@ -1,3 +1,5 @@
+import time
+
 import pytest
 
 from panel import Column, Spacer
@@ -40,13 +42,14 @@ def test_column_auto_scroll_limit(page, port):
     assert bbox['height'] == 420
 
     assert 'scrollable-vertical' in column.get_attribute('class')
-
-    scroll_loc = column.evaluate('(el) => el.scrollTop')
-    assert scroll_loc == 0
+    assert column.evaluate('(el) => el.scrollTop') == 0
 
     # assert scroll location is still at top
     col.append(Spacer(styles=dict(background='yellow'), width=200, height=200))
-    wait_until(lambda: column.evaluate('(el) => el.scrollTop')  == scroll_loc, page)
+
+    time.sleep(1)
+
+    assert column.evaluate('(el) => el.scrollTop')  == 0
 
     # scroll to close to bottom
     column.evaluate('(el) => el.scrollTop = el.scrollHeight')
