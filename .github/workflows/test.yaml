@@ -131,6 +131,7 @@ jobs:
         run: |
           conda activate test-environment
           pip install --pre ipywidgets_bokeh
+          conda install vtk=9.2.6=*213
       - name: build pyodide wheels
         run: |
           conda activate test-environment
