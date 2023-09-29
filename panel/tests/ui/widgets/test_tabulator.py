@@ -666,7 +666,7 @@ def test_tabulator_editors_tabulator_dict(page, port, df_mixed):
 
     textarea = page.locator('textarea')
     expect(textarea).to_have_count(1)
-    expect(textarea).to_have_js_attribute('maxlength', '10')
+    expect(textarea).to_have_js_property('maxlength', '10')
 
 
 def test_tabulator_editors_tabulator_list_default(page, port):
@@ -3184,7 +3184,7 @@ def test_tabulator_update_hidden_columns(page, port):
     expect(col_a_cells.nth(1)).not_to_be_visible()
 
     title = page.locator('text="a"')
-    cell = col_a_cells.first.bounding_box()
+    cell = col_a_cells.first
     wait_until(lambda: (
         (title.bounding_box()['x'] == cell.bounding_box()['x']) and
         (title.bounding_box()['width'] == cell.bounding_box()['width'])
