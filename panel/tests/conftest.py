@@ -42,11 +42,10 @@ def port_open(port):
     sock.close()
     return is_open
 
+
 def get_default_port():
-    # to get a different starting port per worker for pytest-xdist
     worker_id = os.environ.get("PYTEST_XDIST_WORKER", "0")
-    n = int(re.sub(r"\D", "", worker_id))
-    return 6000 + n * 30
+    return 6001 + int(re.sub(r"\D", "", worker_id))
 
 def start_jupyter():
     global JUPYTER_PORT, JUPYTER_PROCESS
@@ -163,8 +162,11 @@ def comm():
 
 @pytest.fixture
 def port():
-    PORT[0] += 1
-    return PORT[0]
+    worker_id = os.environ.get("PYTEST_XDIST_WORKER", "0")
+    worker_count = int(os.environ.get("PYTEST_XDIST_WORKER_COUNT", "1"))
+    new_port = PORT[0] + int(re.sub(r"\D", "", worker_id))
+    PORT[0] += worker_count
+    return new_port
 
 
 @pytest.fixture
