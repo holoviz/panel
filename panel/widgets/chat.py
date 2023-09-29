@@ -841,7 +841,7 @@ class ChatFeed(CompositeWidget):
         Params to pass to each ChatEntry, like `reaction_icons`, `timestamp_format`,
         `show_avatar`, `show_user`, and `show_timestamp`.""")
 
-    _placeholder = param.ClassSelector(class_=ChatEntry, doc="""
+    _placeholder = param.ClassSelector(class_=ChatEntry, allow_refs=False, doc="""
         The placeholder wrapped in a ChatEntry object;
         primarily to prevent recursion error in _update_placeholder.""")
 
@@ -853,6 +853,8 @@ class ChatFeed(CompositeWidget):
     ]
 
     _composite_type: ClassVar[Type[ListPanel]] = Card
+
+    _ignored_refs: ClassVar[Tuple[str]] = ('_placeholder',)
 
     def __init__(self, **params):
         if params.get("renderers") and not isinstance(params["renderers"], list):
@@ -1377,12 +1379,15 @@ class ChatInterface(ChatFeed):
             css_classes=["chat-interface-input-container"],
             stylesheets=self._stylesheets
         )
+        self._update_input_width()
         self._init_widgets()
         if active is not None:
             self.active = active
-        self._composite[:] = [*self._composite[:], self._input_container]
-        self._composite.css_classes = ["chat-interface"]
-        self._composite.stylesheets = self._stylesheets
+        self._composite.param.update(
+            objects=self._composite.objects+[self._input_container],
+            css_classes=["chat-interface"],
+            stylesheets=self._stylesheets
+        )
 
     def _link_disabled_loading(self, obj: Viewable):
         """
@@ -1393,7 +1398,7 @@ class ChatInterface(ChatFeed):
             setattr(obj, attr, getattr(self, attr))
             self.link(obj, **{attr: attr})
 
-    @param.depends("width", on_init=True, watch=True)
+    @param.depends("width", watch=True)
     def _update_input_width(self):
         """
         Update the input width.
