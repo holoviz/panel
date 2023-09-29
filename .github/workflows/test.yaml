@@ -131,7 +131,7 @@ jobs:
         run: |
           conda activate test-environment
           pip install --pre ipywidgets_bokeh
-          conda install mesalib=23.1.4
+          conda install numba::llvmlite
       - name: build pyodide wheels
         run: |
           conda activate test-environment
