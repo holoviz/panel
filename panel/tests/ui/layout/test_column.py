@@ -1,6 +1,9 @@
-import time
-
 import pytest
+
+try:
+    from playwright.sync_api import expect
+except ImportError:
+    pytestmark = pytest.mark.skip('playwright not available')
 
 from panel import Column, Spacer
 from panel.tests.util import serve_component, wait_until
@@ -21,8 +24,7 @@ def test_column_scroll(page, port):
 
     assert bbox['width'] in (200, 215) # Ignore if browser hides empty scrollbar
     assert bbox['height'] == 420
-
-    assert 'scrollable-vertical' in col_el.get_attribute('class')
+    expect(col_el).to_have_class('bk-panel-models-layout-Column scrollable-vertical')
 
 
 def test_column_auto_scroll_limit(page, port):
@@ -37,29 +39,30 @@ def test_column_auto_scroll_limit(page, port):
     column = page.locator(".bk-panel-models-layout-Column")
 
     bbox = column.bounding_box()
-
     assert bbox['width'] in (200, 215) # Ignore if browser hides empty scrollbar
     assert bbox['height'] == 420
 
-    assert 'scrollable-vertical' in column.get_attribute('class')
-    assert column.evaluate('(el) => el.scrollTop') == 0
+    expect(column.locator('div')).to_have_count(4)
+    expect(column).to_have_class('bk-panel-models-layout-Column scrollable-vertical')
+    expect(column).to_have_js_property('scrollTop', 0)
 
     # assert scroll location is still at top
     col.append(Spacer(styles=dict(background='yellow'), width=200, height=200))
 
-    time.sleep(1)
+    page.wait_for_timeout(500)
 
-    assert column.evaluate('(el) => el.scrollTop')  == 0
+    expect(column.locator('div')).to_have_count(5)
+    expect(column).to_have_js_property('scrollTop', 0)
 
     # scroll to close to bottom
-    column.evaluate('(el) => el.scrollTop = el.scrollHeight')
+    column.evaluate('(el) => el.scrollTo({top: el.scrollHeight})')
 
     # assert auto scroll works; i.e. distance from bottom is 0
     col.append(Spacer(styles=dict(background='yellow'), width=200, height=200))
 
     wait_until(lambda: column.evaluate(
         '(el) => el.scrollHeight - el.scrollTop - el.clientHeight'
-    ) == 0, page, timeout=2000)
+    ) == 0, page)
 
 
 def test_column_auto_scroll_limit_disabled(page, port):
@@ -72,20 +75,18 @@ def test_column_auto_scroll_limit_disabled(page, port):
     serve_component(page, port, col)
 
     column = page.locator(".bk-panel-models-layout-Column")
-    bbox = column.bounding_box()
 
+    bbox = column.bounding_box()
     assert bbox['width'] in (200, 215) # Ignore if browser hides empty scrollbar
     assert bbox['height'] == 420
 
-    assert 'scrollable-vertical' in column.get_attribute('class')
-
-    scroll_loc = column.evaluate('(el) => el.scrollTop')
-    assert scroll_loc == 0
+    expect(column).to_have_class('bk-panel-models-layout-Column scrollable-vertical')
+    expect(column).to_have_js_property('scrollTop', 0)
 
     # assert scroll location is still at top
     col.append(Spacer(styles=dict(background='yellow'), width=200, height=200))
+    expect(column).to_have_js_property('scrollTop', 0)
 
-    wait_until(lambda: column.evaluate('(el) => el.scrollTop') == scroll_loc, page)
 
 def test_column_scroll_button_threshold(page, port):
     col = Column(
@@ -102,26 +103,22 @@ def test_column_scroll_button_threshold(page, port):
     assert bbox['width'] in (200, 215) # Ignore if browser hides empty scrollbar
     assert bbox['height'] == 420
 
-    assert 'scrollable-vertical' in column.get_attribute('class')
+    expect(column).to_have_class('bk-panel-models-layout-Column scrollable-vertical')
 
     # assert scroll button is visible on render
     scroll_arrow = page.locator(".scroll-button")
-    assert scroll_arrow.get_attribute('class') == 'scroll-button visible'
-    assert scroll_arrow.is_visible()
+    expect(scroll_arrow).to_have_class('scroll-button visible')
+    expect(scroll_arrow).to_be_visible()
 
     # assert scroll button is invisible at bottom of page
-    column.evaluate('(el) => el.scrollTop = el.scrollHeight')
-    wait_until(lambda: (
-        scroll_arrow.get_attribute('class') == 'scroll-button' and
-        not scroll_arrow.is_visible()
-    ), page)
+    column.evaluate('(el) => el.scrollTo({top: el.scrollHeight})')
+    expect(scroll_arrow).to_have_class('scroll-button')
+    expect(scroll_arrow).not_to_be_visible()
 
     # assert scroll button is visible beyond threshold
-    column.evaluate('(el) => el.scrollTop = 5')
-    wait_until(lambda: (
-        scroll_arrow.get_attribute('class') == 'scroll-button visible' and
-        scroll_arrow.is_visible()
-    ), page)
+    column.evaluate('(el) => el.scrollTo({top: 5})')
+    expect(scroll_arrow).to_have_class('scroll-button visible')
+    expect(scroll_arrow).to_be_visible()
 
 
 def test_column_scroll_button_threshold_disabled(page, port):
@@ -139,20 +136,17 @@ def test_column_scroll_button_threshold_disabled(page, port):
     assert bbox['width'] in (200, 215) # Ignore if browser hides empty scrollbar
     assert bbox['height'] == 420
 
-    assert 'scrollable-vertical' in column.get_attribute('class')
+    expect(column).to_have_class('bk-panel-models-layout-Column scrollable-vertical')
 
     # assert scroll button is invisible on render
     scroll_arrow = page.locator(".scroll-button")
-    assert scroll_arrow.get_attribute('class') == 'scroll-button'
-    assert not scroll_arrow.is_visible()
+    expect(scroll_arrow).to_have_class('scroll-button')
+    expect(scroll_arrow).not_to_be_visible()
 
     # assert scroll button is visible beyond threshold
-    column.evaluate('(el) => el.scrollTop = 5')
-
-    wait_until(lambda: (
-        scroll_arrow.get_attribute('class') == 'scroll-button' and
-        not scroll_arrow.is_visible()
-    ), page)
+    column.evaluate('(el) => el.scrollTo({top: 5})')
+    expect(scroll_arrow).to_have_class('scroll-button')
+    expect(scroll_arrow).not_to_be_visible()
 
 
 def test_column_view_latest(page, port):
@@ -171,8 +165,9 @@ def test_column_view_latest(page, port):
 
     assert bbox['width'] in (200, 215) # Ignore if browser hides empty scrollbar
     assert bbox['height'] == 420
-    assert 'scrollable-vertical' in column.get_attribute('class')
-    wait_until(lambda: column.evaluate('(el) => el.scrollTop') != 0, page)
+
+    expect(column).to_have_class('bk-panel-models-layout-Column scrollable-vertical')
+    expect(column).not_to_have_js_property('scrollTop', 0)
 
 
 def test_column_scroll_position_init(page, port):
@@ -187,7 +182,7 @@ def test_column_scroll_position_init(page, port):
 
     # assert scroll position can be used to initialize scroll location
     column = page.locator(".bk-panel-models-layout-Column")
-    wait_until(lambda: column.evaluate('(el) => el.scrollTop') == 100, page)
+    expect(column).to_have_js_property('scrollTop', 100)
 
 
 def test_column_scroll_position_recorded(page, port):
@@ -202,11 +197,8 @@ def test_column_scroll_position_recorded(page, port):
 
     column = page.locator(".bk-panel-models-layout-Column")
 
-    # change scroll location thru scrolling
     column.evaluate('(el) => el.scrollTop = 150')
-
-    # assert scroll position is synced and recorded at 150
-    wait_until(lambda: col.scroll_position == 150, page)
+    expect(column).to_have_js_property('scrollTop', 150)
 
 
 def test_column_scroll_position_param_updated(page, port):
@@ -219,8 +211,7 @@ def test_column_scroll_position_param_updated(page, port):
 
     serve_component(page, port, col)
 
-    # change scroll location
     col.scroll_position = 175
 
     column = page.locator(".bk-panel-models-layout-Column")
-    wait_until(lambda: column.evaluate('(el) => el.scrollTop') == 175, page)
+    expect(column).to_have_js_property('scrollTop', 175)

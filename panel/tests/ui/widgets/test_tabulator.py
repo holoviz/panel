@@ -2110,6 +2110,7 @@ def test_tabulator_patching_and_styling(page, port, df_mixed):
     expect(max_cell).to_have_count(1)
     expect(max_cell).to_have_css('background-color', _color_mapping['yellow'])
 
+
 def test_tabulator_filters_and_styling(page, port, df_mixed):
     df_styled = df_mixed.style.apply(highlight_max, subset=['int'])
 
@@ -2128,7 +2129,6 @@ def test_tabulator_filters_and_styling(page, port, df_mixed):
     max_cell = page.locator('.tabulator-cell', has=page.locator(f'text="{max_int}"'))
     expect(max_cell).to_have_count(1)
     expect(max_cell).to_have_css('background-color', _color_mapping['yellow'])
-
 
 
 def test_tabulator_configuration(page, port, df_mixed):
@@ -2390,6 +2390,7 @@ def test_tabulator_click_event_and_header_filters_and_streamed_data(page, port):
     # This cell was at index 5 in col2 of the original dataframe
     assert values[1] == ('col2', 5, 'Y')
 
+
 def test_tabulator_edit_event_and_header_filters_last_row(page, port):
     df = pd.DataFrame({
         'col1': list('ABCDD'),
@@ -2613,7 +2614,6 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, po
     assert df.at['idx4', 'values'] == 'Z'
     # current_view should show Y and Z, there's no more B
     assert len(widget.current_view) == 4
-
 
 
 @pytest.mark.parametrize('sorter', ['sorter', 'no_sorter'])
@@ -3171,9 +3171,8 @@ def test_tabulator_update_hidden_columns(page, port):
     serve_component(page, port, widget)
 
     col_a_cells = page.locator('text="3"')
-
-    assert not col_a_cells.nth(0).is_visible()
-    assert not col_a_cells.nth(1).is_visible()
+    expect(col_a_cells.nth(0)).not_to_be_visible()
+    expect(col_a_cells.nth(1)).not_to_be_visible()
 
     widget.hidden_columns = ['b']
 
@@ -3181,8 +3180,8 @@ def test_tabulator_update_hidden_columns(page, port):
     title_bbox = page.locator('text="a"').bounding_box()
     cell_bbox = col_a_cells.first.bounding_box()
 
-    assert col_a_cells.nth(0).is_visible()
-    assert not col_a_cells.nth(1).is_visible()
+    expect(col_a_cells.nth(0)).to_be_visible()
+    expect(col_a_cells.nth(1)).not_to_be_visible()
 
     assert title_bbox['x'] == cell_bbox['x']
     assert title_bbox['width'] == cell_bbox['width']

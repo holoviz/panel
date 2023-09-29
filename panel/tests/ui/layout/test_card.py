@@ -95,24 +95,21 @@ def test_card_objects(page, port, card_components):
     card = Card(w1, w2)
     serve_component(page, port, card)
 
-    new_objects = [w2]
-    # set new list of objects for the card
-    card.objects = new_objects
+    card.objects = [w2]
 
     card_elements = page.locator('.card > div, .card > button')
     expect(card_elements).to_have_count(2)
 
     card_header = card_elements.nth(0)
     w2_object = card_elements.nth(1)
-    assert 'card-header' in card_header.get_attribute('class')
-    assert 'class_w2' in w2_object.get_attribute('class')
+    expect(card_header).to_have_class('card-header')
+    expect(w2_object).to_have_class('bk-TextInput class_w2')
 
     w3 = TextInput(name='Text:', css_classes=['class_w3'])
     card.append(w3)
-    card_elements = page.locator('.card > div, .card > button')
+
     expect(card_elements).to_have_count(3)
-    w3_object = card_elements.nth(2)
-    assert 'class_w3' in w3_object.get_attribute('class')
+    expect(card_elements.nth(2)).to_have_class('bk-TextInput class_w3')
 
 
 def test_card_title(page, port, card_components):
@@ -121,7 +118,7 @@ def test_card_title(page, port, card_components):
     card = Card(w1, w2, title=card_title)
     serve_component(page, port, card)
 
-    assert page.locator('.card-title').locator("div").inner_text() == card_title
+    expect(page.locator('.card-title').locator("div")).to_have_text(card_title)
 
 
 def test_card_background(page, port, card_components):
@@ -132,7 +129,7 @@ def test_card_background(page, port, card_components):
     serve_component(page, port, card)
 
     card_widget = page.locator('.card')
-    assert f'background: {background};' in card_widget.get_attribute('style')
+    expect(card_widget).to_have_css('background-color', background)
 
 
 def test_card_background_legacy(page, port, card_components):
@@ -143,7 +140,7 @@ def test_card_background_legacy(page, port, card_components):
     serve_component(page, port, card)
 
     card_widget = page.locator('.card')
-    assert f'background: {background};' in card_widget.get_attribute('style')
+    expect(card_widget).to_have_css('background-color', background)
 
 
 def test_card_header_color_formatting(page, port):
@@ -158,15 +155,15 @@ def test_card_header_color_formatting(page, port):
     serve_component(page, port, card)
 
     card_header = page.locator('.card-header')
-    assert f'color: {header_color};' in card_header.get_attribute('style')
+    expect(card_header).to_have_css('color', header_color)
 
     # card is expanded by default
-    assert f'background-color: {active_header_background};' in card_header.get_attribute('style')
+    expect(card_header).to_have_css('background-color', active_header_background)
 
     # collapse the card, header background color is set to header_background
     card_header.wait_for()
     card_header.click()
-    assert f'background-color: {header_background};' in card_header.get_attribute('style')
+    expect(card_header).to_have_css('background-color', header_background)
 
 
 def test_card_custom_css(page, port):
@@ -197,5 +194,4 @@ def test_card_scrollable(page, port):
     card = Card(scroll=True)
     serve_component(page, port, card)
 
-    card_widget = page.locator('.card')
-    assert 'scrollable-vertical' in card_widget.get_attribute('class')
+    expect(page.locator('.card')).to_have_class('bk-panel-models-layout-Card card scrollable-vertical')
