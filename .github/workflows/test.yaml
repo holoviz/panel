@@ -65,6 +65,7 @@ jobs:
         run: |
           conda activate test-environment
           pip install pyecharts
+          panel build panel
       - name: override-vtk-osmesa
         if: contains(matrix.os, 'ubuntu')
         run: |
@@ -78,7 +79,6 @@ jobs:
         run: |
           conda activate test-environment
           doit env_capture
-          ls panel/dist
       - name: doit test_unit
         run: |
           conda activate test-environment
