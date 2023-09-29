@@ -151,6 +151,8 @@ _tests = [
     'reacton',
     'scipy',
     'twine',
+    # Temporary pins
+    'numba <0.58'
 ]
 
 _ui = [
