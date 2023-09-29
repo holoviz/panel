@@ -666,7 +666,7 @@ def test_tabulator_editors_tabulator_dict(page, port, df_mixed):
 
     textarea = page.locator('textarea')
     expect(textarea).to_have_count(1)
-    wait_until(lambda: textarea.get_attribute('maxlength') == "10", page)
+    expect(textarea).to_have_attribute('maxlength', '10')
 
 
 def test_tabulator_editors_tabulator_list_default(page, port):

@@ -210,6 +210,9 @@ def serve_component(page, port, app, suffix=''):
     serve(app, port=port, threaded=True, show=False, liveness=True)
     wait_for_server(port)
     page.goto(f"http://localhost:{port}{suffix}")
+
+    wait_until(lambda: any("Websocket connection 0 is now open" in str(msg) for msg in msgs), page, interval=10)
+
     return msgs
 
 
