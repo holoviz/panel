@@ -39,7 +39,7 @@ The auth template must be a valid Jinja2 template and accepts a number of argume
 - `{{ error }}`: A short description of the error.
 - `{{ error_msg }}`: A full description of the error.
 
-The `authorization_callback` may also contain a second parameter, which is set by the
+The `authorize_callback` may also contain a second parameter, which is set by the
 requested application path. You can use this extra parameter to check if a user is
 authenticated _and_ has access to the application at the given path.
 
