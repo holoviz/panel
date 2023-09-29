@@ -182,7 +182,7 @@ def test_column_scroll_position_init(page):
 
     # assert scroll position can be used to initialize scroll location
     column = page.locator('.bk-panel-models-layout-Column')
-    expect(column).to_have_js_property('scrollTop', '100')
+    expect(column).to_have_js_property('scrollTop', 100)
 
 
 def test_column_scroll_position_recorded(page):
