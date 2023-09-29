@@ -79,6 +79,7 @@ jobs:
         run: |
           conda activate test-environment
           doit env_capture
+          ls panel/dist
       - name: doit test_unit
         run: |
           conda activate test-environment
