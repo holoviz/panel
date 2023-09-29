@@ -66,6 +66,11 @@ jobs:
           conda activate test-environment
           pip install pyecharts
           conda install numba::llvmlite
+      - name: override-vtk-osmesa
+        if: contains(matrix.os, 'ubuntu')
+        run: |
+          conda activate test-environment
+          conda install -c conda-forge vtk=9.2.6=osmesa*
       - name: bokeh_sampledata
         run: |
           conda activate test-environment
