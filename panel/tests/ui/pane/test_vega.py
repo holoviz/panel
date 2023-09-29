@@ -33,17 +33,17 @@ vega_example = {
     '$schema': 'https://vega.github.io/schema/vega-lite/v3.2.1.json'
 }
 
-def test_vega_no_console_errors(page, port):
+def test_vega_no_console_errors(page):
     vega = Vega(vega_example)
 
-    msgs = serve_component(page, port, vega)
+    msgs, _ = serve_component(page, vega)
 
     page.wait_for_timeout(1000)
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 @altair_available
-def test_altair_select_point(page, port, dataframe):
+def test_altair_select_point(page, dataframe):
     multi = alt.selection_point(name='multi')  # selection of type "interval"
 
     chart = alt.Chart(dataframe).mark_point(size=12000).encode(
@@ -54,7 +54,7 @@ def test_altair_select_point(page, port, dataframe):
 
     pane = Vega(chart)
 
-    serve_component(page, port, pane)
+    serve_component(page, pane)
 
     vega_plot = page.locator('.vega-embed')
     expect(vega_plot).to_have_count(1)
@@ -71,14 +71,14 @@ def test_altair_select_point(page, port, dataframe):
     wait_until(lambda: pane.selection.multi == [2, 3], page)
 
 @altair_available
-def test_altair_select_interval(page, port, dataframe):
+def test_altair_select_interval(page, dataframe):
     brush = alt.selection_interval(name='brush')  # selection of type "interval"
 
     chart = alt.Chart(dataframe).mark_circle().encode(x='int', y='float').add_params(brush)
 
     pane = Vega(chart)
 
-    serve_component(page, port, pane)
+    serve_component(page, pane)
 
     vega_plot = page.locator('.vega-embed')
     expect(vega_plot).to_have_count(1)
@@ -95,7 +95,7 @@ def test_altair_select_interval(page, port, dataframe):
 
 
 @altair_available
-def test_altair_select_agg(page, port, dataframe):
+def test_altair_select_agg(page, dataframe):
     multi_bar_ref = alt.selection_point(fields=['str'], name='multi_bar_ref')
 
     chart = (alt.Chart(dataframe).mark_bar()
@@ -113,7 +113,7 @@ def test_altair_select_agg(page, port, dataframe):
 
     pane = Vega(chart)
 
-    serve_component(page, port, pane)
+    serve_component(page, pane)
 
     vega_plot = page.locator('.vega-embed')
     expect(vega_plot).to_have_count(1)

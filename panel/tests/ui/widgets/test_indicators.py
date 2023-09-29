@@ -16,10 +16,10 @@ except ImportError:
 @pytest.mark.parametrize(
     "value", ["Test", Tooltip(content="Test", position="right")], ids=["str", "Tooltip"]
 )
-def test_plaintext_tooltip(page, port, value):
+def test_plaintext_tooltip(page, value):
     tooltip_icon = TooltipIcon(value="Test")
 
-    serve_component(page, port, tooltip_icon)
+    serve_component(page, tooltip_icon)
 
     icon = page.locator(".bk-icon")
     expect(icon).to_have_count(1)

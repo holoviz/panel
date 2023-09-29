@@ -6,22 +6,22 @@ from panel.tests.util import serve_component, wait_until
 
 pytestmark = pytest.mark.ui
 
-def test_perspective_no_console_errors(page, port):
+def test_perspective_no_console_errors(page):
     perspective = Perspective(pd._testing.makeMixedDataFrame())
 
-    msgs = serve_component(page, port, perspective)
+    msgs, _ = serve_component(page, perspective)
 
     page.wait_for_timeout(1000)
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 
-def test_perspective_click_event(page, port):
+def test_perspective_click_event(page):
     events = []
     perspective = Perspective(pd._testing.makeMixedDataFrame())
     perspective.on_click(lambda e: events.append(e))
 
-    serve_component(page, port, perspective)
+    serve_component(page, perspective)
 
     page.locator('tr').nth(3).click()
 

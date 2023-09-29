@@ -5,6 +5,7 @@ import re
 import subprocess
 import sys
 import time
+import uuid
 import warnings
 
 from queue import Empty, Queue
@@ -19,6 +20,7 @@ from packaging.version import Version
 import panel as pn
 
 from panel.io.server import serve
+from panel.io.state import state
 
 # Ignore tests which are not yet working with Bokeh 3.
 # Will begin to fail again when the first rc is released.
@@ -203,17 +205,21 @@ def get_ctrl_modifier():
         raise ValueError(f'No control modifier defined for platform {sys.platform}')
 
 
-def serve_component(page, port, app, suffix=''):
+def serve_component(page, app, suffix=''):
     msgs = []
     page.on("console", lambda msg: msgs.append(msg))
 
-    serve(app, port=port, threaded=True, show=False, liveness=True)
+    server_id = uuid.uuid4().hex
+    serve(app, port=0, threaded=True, show=False, liveness=True, server_id=server_id)
+    wait_until(lambda: server_id in state._servers, page)
+    server = state._servers[server_id][0]
+    port = server.port
     wait_for_server(port)
     page.goto(f"http://localhost:{port}{suffix}")
 
     wait_until(lambda: any("Websocket connection 0 is now open" in str(msg) for msg in msgs), page, interval=10)
 
-    return msgs
+    return msgs, port
 
 
 def wait_for_server(port, timeout=3):

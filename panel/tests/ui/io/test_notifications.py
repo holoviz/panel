@@ -14,7 +14,7 @@ from panel.tests.util import serve_component
 from panel.widgets import Button
 
 
-def test_notifications_no_template(page, port):
+def test_notifications_no_template(page):
     def callback(event):
         state.notifications.error('MyError')
 
@@ -24,14 +24,14 @@ def test_notifications_no_template(page, port):
         button.on_click(callback)
         return button
 
-    serve_component(page, port, app)
+    serve_component(page, app)
 
     page.click('.bk-btn')
 
     expect(page.locator('.notyf__message')).to_have_text('MyError')
 
 
-def test_notifications_with_template(page, port):
+def test_notifications_with_template(page):
     def callback(event):
         state.notifications.error('MyError')
 
@@ -41,24 +41,24 @@ def test_notifications_with_template(page, port):
         tmpl = BootstrapTemplate()
         tmpl.main.append(button)
 
-    serve_component(page, port, tmpl)
+    serve_component(page, tmpl)
 
     page.click('.bk-btn')
 
     expect(page.locator('.notyf__message')).to_have_text('MyError')
 
 
-def test_ready_notification(page, port):
+def test_ready_notification(page):
     def app():
         config.ready_notification = 'Ready!'
         return Markdown('Ready app')
 
-    serve_component(page, port, app)
+    serve_component(page, app)
 
     expect(page.locator('.notyf__message')).to_have_text('Ready!')
 
 
-def test_disconnect_notification(page, port):
+def test_disconnect_notification(page):
     def app():
         config.disconnect_notification = 'Disconnected!'
         button = Button(name='Stop server')
@@ -67,7 +67,7 @@ def test_disconnect_notification(page, port):
         """)
         return button
 
-    serve_component(page, port, app)
+    serve_component(page, app)
 
     page.click('.bk-btn')
 

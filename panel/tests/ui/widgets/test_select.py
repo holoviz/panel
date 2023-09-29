@@ -6,10 +6,10 @@ from panel.widgets import Select
 pytestmark = pytest.mark.ui
 
 
-def test_select_with_size(page, port):
+def test_select_with_size(page):
     select = Select(options=['A', 'B', 'C'], size=4)
 
-    serve_component(page, port, select)
+    serve_component(page, select)
 
     page.locator('option').nth(1).click()
 

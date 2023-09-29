@@ -13,7 +13,7 @@ from panel.pane import Markdown
 from panel.tests.util import serve_component
 
 
-def test_on_load(page, port):
+def test_on_load(page):
     def app():
         md = Markdown('Initial')
 
@@ -23,6 +23,6 @@ def test_on_load(page, port):
         state.onload(cb)
         return md
 
-    serve_component(page, port, app)
+    serve_component(page, app)
 
     expect(page.locator('.markdown').locator("div")).to_have_text('Loaded\n')

@@ -5,7 +5,7 @@ from panel.tests.util import serve_component, wait_until
 
 pytestmark = pytest.mark.ui
 
-def test_swipe_fixed_width(page, port):
+def test_swipe_fixed_width(page):
     before = Spacer(styles={'background': "red"}, height=400, width=800)
     after = Spacer(styles={'background': "green"}, height=400, width=800)
     swipe = Swipe(
@@ -13,7 +13,7 @@ def test_swipe_fixed_width(page, port):
         after,
     )
 
-    serve_component(page, port, swipe)
+    serve_component(page, swipe)
 
     bbox = page.locator(".swipe-container").bounding_box()
 
@@ -55,7 +55,7 @@ def test_swipe_fixed_width(page, port):
         window.getComputedStyle(element).getPropertyValue('clip-path')""") == 'polygon(calc(25% + 5px) 0%, 100% 0%, 100% 100%, calc(25% + 5px) 100%)'
 
 
-def test_swipe_stretch_width(page, port):
+def test_swipe_stretch_width(page):
     before = Spacer(styles={'background': "red"}, height=400, sizing_mode='stretch_width')
     after = Spacer(styles={'background': "green"}, height=400, sizing_mode='stretch_width')
     swipe = Swipe(
@@ -64,7 +64,7 @@ def test_swipe_stretch_width(page, port):
         sizing_mode='stretch_width'
     )
 
-    serve_component(page, port, swipe)
+    serve_component(page, swipe)
 
     bbox = page.locator(".swipe-container").bounding_box()
     assert bbox['height'] == 400

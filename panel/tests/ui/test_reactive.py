@@ -33,10 +33,10 @@ class ReactiveLiteral(ReactiveHTML):
     """
 
 
-def test_reactive_html_click_js_event(page, port):
+def test_reactive_html_click_js_event(page):
     component = ReactiveComponent()
 
-    serve_component(page, port, component)
+    serve_component(page, component)
 
     expect(page.locator(".reactive")).to_have_text('1')
 
@@ -46,10 +46,10 @@ def test_reactive_html_click_js_event(page, port):
 
     wait_until(lambda: component.count == 2, page)
 
-def test_reactive_html_set_loading_no_rerender(page, port):
+def test_reactive_html_set_loading_no_rerender(page):
     component = ReactiveComponent()
 
-    serve_component(page, port, component)
+    serve_component(page, component)
 
     expect(page.locator(".reactive")).to_have_text('1')
 
@@ -59,10 +59,10 @@ def test_reactive_html_set_loading_no_rerender(page, port):
     component.loading = False
     expect(page.locator(".reactive")).to_have_text('1')
 
-def test_reactive_html_changing_css_classes_rerenders(page, port):
+def test_reactive_html_changing_css_classes_rerenders(page):
     component = ReactiveComponent()
 
-    serve_component(page, port, component)
+    serve_component(page, component)
 
     expect(page.locator(".reactive")).to_have_text('1')
 
@@ -78,10 +78,10 @@ def test_reactive_html_changing_css_classes_rerenders(page, port):
 
     expect(page.locator(".reactive")).to_have_text('1')
 
-def test_reactive_html_set_background_no_rerender(page, port):
+def test_reactive_html_set_background_no_rerender(page):
     component = ReactiveComponent()
 
-    serve_component(page, port, component)
+    serve_component(page, component)
 
     expect(page.locator(".reactive")).to_have_text('1')
 
@@ -93,9 +93,9 @@ def test_reactive_html_set_background_no_rerender(page, port):
 
     expect(page.locator(".reactive")).to_have_text('1')
 
-def test_reactive_literal_backtick(page, port):
+def test_reactive_literal_backtick(page):
     component = ReactiveLiteral(value="Backtick: `")
 
-    serve_component(page, port, component)
+    serve_component(page, component)
 
     expect(page.locator(".reactive")).to_have_text('Backtick: `')

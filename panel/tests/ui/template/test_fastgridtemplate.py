@@ -11,13 +11,13 @@ from panel.template import FastGridTemplate
 from panel.tests.util import serve_component
 
 
-def test_fast_grid_template_no_console_errors(page, port):
+def test_fast_grid_template_no_console_errors(page):
     tmpl = FastGridTemplate()
     md = Markdown('Initial')
 
     tmpl.main[0:3, 0:3] = md
 
-    msgs = serve_component(page, port, tmpl)
+    msgs, _ = serve_component(page, tmpl)
 
     expect(page.locator(".markdown").locator("div")).to_have_text('Initial\n')
 
@@ -27,13 +27,13 @@ def test_fast_grid_template_no_console_errors(page, port):
     ] == []
 
 
-def test_fast_grid_template_updates(page, port):
+def test_fast_grid_template_updates(page):
     tmpl = FastGridTemplate()
     md = Markdown('Initial')
 
     tmpl.main[0:3, 0:3] = md
 
-    serve_component(page, port, tmpl)
+    serve_component(page, tmpl)
 
     expect(page.locator(".markdown").locator("div")).to_have_text('Initial\n')
     md.object = 'Updated'

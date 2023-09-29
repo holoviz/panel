@@ -139,10 +139,10 @@ def valid_next_month(old_month, new_month, old_year, new_year):
     return True
 
 
-def test_datetimepicker_default(page, port, weekdays_as_str, months_as_str):
+def test_datetimepicker_default(page, weekdays_as_str, months_as_str):
     datetime_picker_widget = DatetimePicker()
 
-    serve_component(page, port, datetime_picker_widget)
+    serve_component(page, datetime_picker_widget)
 
     datetime_picker = page.locator('.flatpickr-calendar')
     expect(datetime_picker).to_have_count(1)
@@ -298,7 +298,7 @@ def test_datetimepicker_default(page, port, weekdays_as_str, months_as_str):
     assert valid_next_time(sec_before_click, sec_after_click, max_value=60, amount=5)
 
 
-def test_datetimepicker_value(page, port, march_2021, datetime_value_data):
+def test_datetimepicker_value(page, march_2021, datetime_value_data):
 
     year, month, day, hour, min, sec, month_str, date_str, datetime_str = datetime_value_data
 
@@ -308,7 +308,7 @@ def test_datetimepicker_value(page, port, march_2021, datetime_value_data):
         value=datetime.datetime(year, month, day, hour, min, sec)
     )
 
-    serve_component(page, port, datetime_picker_widget)
+    serve_component(page, datetime_picker_widget)
 
     datetime_value = page.locator('.flatpickr-input')
     assert datetime_value.input_value() == datetime_str
@@ -368,14 +368,14 @@ def test_datetimepicker_value(page, port, march_2021, datetime_value_data):
     assert valid_prev_time(sec_before_click, sec_after_click, max_value=60, amount=5)
 
 
-def test_datetimepicker_start_end(page, port, march_2021, datetime_start_end):
+def test_datetimepicker_start_end(page, march_2021, datetime_start_end):
     start, end, selectable_dates = datetime_start_end
 
     march_2021_str, num_days, _, _ = march_2021
 
     datetime_picker_widget = DatetimePicker(start=start, end=end)
 
-    serve_component(page, port, datetime_picker_widget)
+    serve_component(page, datetime_picker_widget)
 
     datetime_value = page.locator('.flatpickr-input')
     # click to show the datetime picker container
@@ -390,14 +390,14 @@ def test_datetimepicker_start_end(page, port, march_2021, datetime_start_end):
     expect(disabled_days).to_have_count(num_days - len(selectable_dates))
 
 
-def test_datetimepicker_disabled_dates(page, port, disabled_dates):
+def test_datetimepicker_disabled_dates(page, disabled_dates):
     active_date, disabled_list, disabled_str_list = disabled_dates
 
     datetime_picker_widget = DatetimePicker(
         disabled_dates=disabled_list, value=active_date
     )
 
-    serve_component(page, port, datetime_picker_widget)
+    serve_component(page, datetime_picker_widget)
 
     # click to show the datetime picker container
     datetime_value = page.locator('.flatpickr-input')
@@ -410,13 +410,13 @@ def test_datetimepicker_disabled_dates(page, port, disabled_dates):
         assert disabled_days.nth(i).get_attribute('aria-label') == disabled_str_list[i]
 
 
-def test_datetimepicker_enabled_dates(page, port, march_2021, enabled_dates):
+def test_datetimepicker_enabled_dates(page, march_2021, enabled_dates):
     active_date, enabled_list, enabled_str_list = enabled_dates
     datetime_picker_widget = DatetimePicker(
         enabled_dates=enabled_list, value=active_date
     )
 
-    serve_component(page, port, datetime_picker_widget)
+    serve_component(page, datetime_picker_widget)
 
     # click to show the datetime picker container
     datetime_value = page.locator('.flatpickr-input')
@@ -433,10 +433,10 @@ def test_datetimepicker_enabled_dates(page, port, march_2021, enabled_dates):
     expect(disabled_days).to_have_count(0)
 
 
-def test_datetimepicker_enable_time(page, port):
+def test_datetimepicker_enable_time(page):
     datetime_picker_widget = DatetimePicker(enable_time=False)
 
-    serve_component(page, port, datetime_picker_widget)
+    serve_component(page, datetime_picker_widget)
 
     # click to show the datetime picker container
     page.locator('.flatpickr-input').dblclick()
@@ -446,10 +446,10 @@ def test_datetimepicker_enable_time(page, port):
     expect(time_editor).to_have_count(0)
 
 
-def test_datetimepicker_enable_seconds(page, port):
+def test_datetimepicker_enable_seconds(page):
     datetime_picker_widget = DatetimePicker(enable_seconds=False)
 
-    serve_component(page, port, datetime_picker_widget)
+    serve_component(page, datetime_picker_widget)
 
     # click to show the datetime picker container
     datetime_value = page.locator('.flatpickr-input')
@@ -475,10 +475,10 @@ def test_datetimepicker_enable_seconds(page, port):
     expect(time_separators).to_have_count(1)
 
 
-def test_datetimepicker_military_time(page, port):
+def test_datetimepicker_military_time(page):
     datetime_picker_widget = DatetimePicker(military_time=False)
 
-    serve_component(page, port, datetime_picker_widget)
+    serve_component(page, datetime_picker_widget)
 
     # click to show the datetime picker container
     datetime_value = page.locator('.flatpickr-input')
@@ -525,40 +525,40 @@ def test_datetimepicker_military_time(page, port):
     assert valid_next_time(hour_before_click, hour_after_click, max_value=13, amount=1)
 
 
-def test_datetimepicker_disable_editing(page, port):
+def test_datetimepicker_disable_editing(page):
     datetime_picker_widget = DatetimePicker(disabled=True)
 
-    serve_component(page, port, datetime_picker_widget)
+    serve_component(page, datetime_picker_widget)
 
     expect(page.locator('.flatpickr-input')).to_have_attribute('disabled', 'true')
 
 
-def test_datetimepicker_visible(page, port):
+def test_datetimepicker_visible(page):
     # add css class to search for name more easily
     datetime_picker_widget = DatetimePicker(
         visible=False, css_classes=['invisible-datetimepicker']
     )
 
-    serve_component(page, port, datetime_picker_widget)
+    serve_component(page, datetime_picker_widget)
 
     expect(page.locator('.invisible-datetimepicker')).to_have_css('display', 'none')
 
 
-def test_datetimepicker_name(page, port):
+def test_datetimepicker_name(page):
     name = 'Datetime Picker'
     # add css class to search for name more easily
     datetime_picker_widget = DatetimePicker(
         name=name, css_classes=['datetimepicker-with-name']
     )
 
-    serve_component(page, port, datetime_picker_widget)
+    serve_component(page, datetime_picker_widget)
 
     expect(page.locator('.datetimepicker-with-name > .bk-input-group > label')).to_have_text(name)
 
-def test_datetimepicker_no_value(page, port, datetime_start_end):
+def test_datetimepicker_no_value(page, datetime_start_end):
     datetime_picker_widget = DatetimePicker()
 
-    serve_component(page, port, datetime_picker_widget)
+    serve_component(page, datetime_picker_widget)
 
     datetime_picker = page.locator('.flatpickr-input')
     assert datetime_picker.input_value() == ""
@@ -570,10 +570,10 @@ def test_datetimepicker_no_value(page, port, datetime_start_end):
     wait_until(lambda: datetime_picker.input_value() == '', page)
 
 
-def test_datetimerangepicker_no_value(page, port, datetime_start_end):
+def test_datetimerangepicker_no_value(page, datetime_start_end):
     datetime_picker_widget = DatetimeRangePicker()
 
-    serve_component(page, port, datetime_picker_widget)
+    serve_component(page, datetime_picker_widget)
 
     datetime_picker = page.locator('.flatpickr-input')
     assert datetime_picker.input_value() == ""
@@ -587,10 +587,10 @@ def test_datetimerangepicker_no_value(page, port, datetime_start_end):
     wait_until(lambda: datetime_picker.input_value() == '', page)
 
 
-def test_datetimepicker_remove_value(page, port, datetime_start_end):
+def test_datetimepicker_remove_value(page, datetime_start_end):
     datetime_picker_widget = DatetimePicker(value=datetime_start_end[0])
 
-    serve_component(page, port, datetime_picker_widget)
+    serve_component(page, datetime_picker_widget)
 
     datetime_picker = page.locator('.flatpickr-input')
     assert datetime_picker.input_value() == "2021-03-02 00:00:00"

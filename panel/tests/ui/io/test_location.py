@@ -17,7 +17,7 @@ def verify_document_location(expected_location, page):
         wait_until(lambda: page.evaluate('() => document.location')[param] == expected_location[param], page)
 
 
-def test_set_url_params_update_document(page, port):
+def test_set_url_params_update_document(page):
     def app():
         """Simple app to set url by widgets' values"""
         w1 = FloatSlider(name='Slider', start=0, end=10)
@@ -42,7 +42,7 @@ def test_set_url_params_update_document(page, port):
         pn.state.onload(cb)
         return widgets
 
-    serve_component(page, port, app)
+    _, port = serve_component(page, app)
 
     expected_location = {
         'protocol': 'http:',
@@ -60,7 +60,7 @@ def test_set_url_params_update_document(page, port):
     }, page)
 
 
-def test_set_hash_update_document(page, port):
+def test_set_hash_update_document(page):
     def app():
         """simple app to set hash at onload"""
         widget = TextInput(name='Text')
@@ -71,7 +71,7 @@ def test_set_hash_update_document(page, port):
         pn.state.onload(cb)
         return widget
 
-    serve_component(page, port, app)
+    _, port = serve_component(page, app)
 
     expected_location = {
         'href': f'http://localhost:{port}/#123',
@@ -86,7 +86,7 @@ def test_set_hash_update_document(page, port):
     verify_document_location(expected_location, page)
 
 
-def test_set_document_location_update_state(page, port):
+def test_set_document_location_update_state(page):
     widget = TextInput(name='Text')
 
     def app():
@@ -101,7 +101,7 @@ def test_set_document_location_update_state(page, port):
         pn.state.onload(cb)
         return widget
 
-    serve_component(page, port, app, suffix="/?text_value=Text+Value")
+    serve_component(page, app, suffix="/?text_value=Text+Value")
 
     # confirm value of the text input widget
     wait_until(lambda: widget.value == 'Text Value', page)

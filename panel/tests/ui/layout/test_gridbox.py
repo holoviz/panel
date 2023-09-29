@@ -5,13 +5,13 @@ from panel.tests.util import serve_component, wait_until
 
 pytestmark = pytest.mark.ui
 
-def test_gridbox(page, port):
+def test_gridbox(page):
     grid = GridBox(
         *(Spacer(width=50, height=50) for i in range(12)),
         ncols=4
     )
 
-    serve_component(page, port, grid)
+    serve_component(page, grid)
 
     wait_until(lambda: page.locator(".bk-GridBox").bounding_box() == {'width': 200, 'height': 150, 'x': 0, 'y': 0}, page)
 
@@ -20,7 +20,7 @@ def test_gridbox(page, port):
     wait_until(lambda: page.locator(".bk-GridBox").bounding_box() == {'width': 300, 'height': 100, 'x': 0, 'y': 0}, page)
 
 
-def test_gridbox_unequal(page, port):
+def test_gridbox_unequal(page):
     grid = GridBox(
         Spacer(width=50, height=10),
         Spacer(width=40, height=10),
@@ -30,7 +30,7 @@ def test_gridbox_unequal(page, port):
         ncols=4
     )
 
-    serve_component(page, port, grid)
+    serve_component(page, grid)
 
     wait_until(lambda: page.locator(".bk-GridBox").bounding_box() == {'width': 170, 'height': 50, 'x': 0, 'y': 0}, page)
 
@@ -51,7 +51,7 @@ def test_gridbox_unequal(page, port):
     wait_until(lambda: children.nth(4).bounding_box() == {'x': 170, 'y': 0, 'width': 20, 'height': 30}, page)
 
 
-def test_gridbox_stretch_width(page, port):
+def test_gridbox_stretch_width(page):
     grid = Column(GridBox(
         Spacer(sizing_mode='stretch_width', height=50),
         Spacer(sizing_mode='stretch_width', height=50),
@@ -59,7 +59,7 @@ def test_gridbox_stretch_width(page, port):
         ncols=2, sizing_mode='stretch_width'
     ), width=800)
 
-    serve_component(page, port, grid)
+    serve_component(page, grid)
 
     bbox = page.locator(".bk-GridBox").bounding_box()
     children = page.locator(".bk-GridBox div")
@@ -81,7 +81,7 @@ def test_gridbox_stretch_width(page, port):
     assert bbox3['height'] == 50
 
 
-def test_gridbox_stretch_height(page, port):
+def test_gridbox_stretch_height(page):
     grid = Column(GridBox(
         Spacer(sizing_mode='stretch_height', width=50),
         Spacer(sizing_mode='stretch_height', width=50),
@@ -89,7 +89,7 @@ def test_gridbox_stretch_height(page, port):
         ncols=2, sizing_mode='stretch_height'
     ), height=800)
 
-    serve_component(page, port, grid)
+    serve_component(page, grid)
 
     bbox = page.locator(".bk-GridBox").bounding_box()
     children = page.locator(".bk-GridBox div")
@@ -112,7 +112,7 @@ def test_gridbox_stretch_height(page, port):
     assert bbox3['height'] == 400
     assert bbox3['width'] == 50
 
-def test_gridbox_stretch_both(page, port):
+def test_gridbox_stretch_both(page):
     grid = Column(GridBox(
         Spacer(sizing_mode='stretch_both'),
         Spacer(sizing_mode='stretch_both'),
@@ -120,7 +120,7 @@ def test_gridbox_stretch_both(page, port):
         ncols=2, sizing_mode='stretch_both'
     ), height=800, width=600)
 
-    serve_component(page, port, grid)
+    serve_component(page, grid)
 
     bbox = page.locator(".bk-GridBox").bounding_box()
     children = page.locator(".bk-GridBox div")

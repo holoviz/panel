@@ -29,7 +29,6 @@ export class ColumnView extends BkColumnView {
   scroll_to_latest(): void {
     // Waits for the child to be rendered before scrolling
     requestAnimationFrame(() => {
-
       this.el.scrollTo({top: this.el.scrollHeight});
     });
   }

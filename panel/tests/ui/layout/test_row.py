@@ -5,7 +5,7 @@ from panel.tests.util import serve_component
 
 pytestmark = pytest.mark.ui
 
-def test_row_scroll(page, port):
+def test_row_scroll(page):
     row = Row(
         Spacer(styles=dict(background='red'), width=200, height=200),
         Spacer(styles=dict(background='green'), width=200, height=200),
@@ -13,7 +13,7 @@ def test_row_scroll(page, port):
         scroll=True, width=420
     )
 
-    serve_component(page, port, row)
+    serve_component(page, row)
 
     row_el = page.locator(".bk-Row")
     bbox = row_el.bounding_box()

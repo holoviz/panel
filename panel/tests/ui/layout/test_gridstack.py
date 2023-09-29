@@ -12,7 +12,7 @@ from panel.layout.gridstack import GridStack
 from panel.tests.util import serve_component
 
 
-def test_gridstack(page, port):
+def test_gridstack(page):
     gspec = GridStack(width=800, height=600, margin=0)
 
     gspec[:,   0  ] = Spacer(styles=dict(background='red'))
@@ -21,7 +21,7 @@ def test_gridstack(page, port):
     gspec[2,   1:4] = Spacer(styles=dict(background='blue'))
     gspec[0:1, 3:4] = Spacer(styles=dict(background='purple'))
 
-    serve_component(page, port, gspec)
+    serve_component(page, gspec)
 
     children = page.locator(".grid-stack > div > div > div")
 
@@ -82,7 +82,7 @@ def test_gridstack(page, port):
     assert bbox6['height'] == 200
 
 
-def test_gridstack_stretch(page, port):
+def test_gridstack_stretch(page):
     gspec = GridStack(sizing_mode='stretch_both')
     column = Column(gspec, max_width=800, max_height=600)
 
@@ -92,7 +92,7 @@ def test_gridstack_stretch(page, port):
     gspec[2,   1:4] = Spacer(styles=dict(background='blue'))
     gspec[0:1, 3:4] = Spacer(styles=dict(background='purple'))
 
-    serve_component(page, port, column)
+    serve_component(page, column)
 
     children = page.locator(".grid-stack > div > div > div")
 

@@ -6,7 +6,7 @@ from panel.tests.util import serve_component
 
 pytestmark = pytest.mark.ui
 
-def test_gridspec(page, port):
+def test_gridspec(page):
     gspec = GridSpec(width=800, height=600, margin=0)
 
     gspec[:,   0  ] = Spacer(styles=dict(background='red'))
@@ -15,7 +15,7 @@ def test_gridspec(page, port):
     gspec[2,   1:4] = Spacer(styles=dict(background='blue'))
     gspec[0:1, 3:4] = Spacer(styles=dict(background='purple'))
 
-    serve_component(page, port, gspec)
+    serve_component(page, gspec)
 
     bbox = page.locator(".bk-GridBox").bounding_box()
     children = page.locator(".bk-GridBox div")
@@ -69,7 +69,7 @@ def test_gridspec(page, port):
     assert bbox6['height'] == 200
 
 
-def test_gridspec_stretch(page, port):
+def test_gridspec_stretch(page):
     gspec = GridSpec(sizing_mode='stretch_both')
     col = Column(gspec, width=800, height=600)
 
@@ -79,7 +79,7 @@ def test_gridspec_stretch(page, port):
     gspec[2,   1:4] = Spacer(styles=dict(background='blue'))
     gspec[0:1, 3:4] = Spacer(styles=dict(background='purple'))
 
-    serve_component(page, port, col)
+    serve_component(page, col)
 
     bbox = page.locator(".bk-GridBox").bounding_box()
     children = page.locator(".bk-GridBox > div")

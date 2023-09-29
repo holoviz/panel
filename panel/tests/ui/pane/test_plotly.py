@@ -53,8 +53,8 @@ def plotly_3d_plot():
 
 
 @plotly_available
-def test_plotly_no_console_errors(page, port, plotly_2d_plot):
-    msgs = serve_component(page, port, plotly_2d_plot)
+def test_plotly_no_console_errors(page, plotly_2d_plot):
+    msgs, _ = serve_component(page, plotly_2d_plot)
 
     page.wait_for_timeout(1000)
 
@@ -62,8 +62,8 @@ def test_plotly_no_console_errors(page, port, plotly_2d_plot):
 
 
 @plotly_available
-def test_plotly_2d_plot(page, port, plotly_2d_plot):
-    serve_component(page, port, plotly_2d_plot)
+def test_plotly_2d_plot(page, plotly_2d_plot):
+    serve_component(page, plotly_2d_plot)
 
     # main pane
     plotly_plot = page.locator('.js-plotly-plot .plot-container.plotly')
@@ -90,10 +90,10 @@ def test_plotly_2d_plot(page, port, plotly_2d_plot):
 
 @plotly_available
 @pytest.mark.flaky(max_runs=3)
-def test_plotly_3d_plot(page, port, plotly_3d_plot):
+def test_plotly_3d_plot(page, plotly_3d_plot):
     plot_3d, title = plotly_3d_plot
 
-    serve_component(page, port, plot_3d)
+    serve_component(page, plot_3d)
 
     # main pane
     plotly_plot = page.locator('.js-plotly-plot .plot-container.plotly')
@@ -116,11 +116,11 @@ def test_plotly_3d_plot(page, port, plotly_3d_plot):
 
 @plotly_available
 @pytest.mark.flaky(max_runs=3)
-def test_plotly_hover_data(page, port, plotly_2d_plot):
+def test_plotly_hover_data(page, plotly_2d_plot):
     hover_data = []
     plotly_2d_plot.param.watch(lambda e: hover_data.append(e.new), 'hover_data')
 
-    serve_component(page, port, plotly_2d_plot)
+    serve_component(page, plotly_2d_plot)
 
     plotly_plot = page.locator('.js-plotly-plot .plot-container.plotly')
     expect(plotly_plot).to_have_count(1)
@@ -148,8 +148,8 @@ def test_plotly_hover_data(page, port, plotly_2d_plot):
 
 @plotly_available
 @pytest.mark.flaky(max_runs=3)
-def test_plotly_click_data(page, port, plotly_2d_plot):
-    serve_component(page, port, plotly_2d_plot)
+def test_plotly_click_data(page, plotly_2d_plot):
+    serve_component(page, plotly_2d_plot)
 
     plotly_plot = page.locator('.js-plotly-plot .plot-container.plotly')
     expect(plotly_plot).to_have_count(1)
@@ -171,8 +171,8 @@ def test_plotly_click_data(page, port, plotly_2d_plot):
 
 @plotly_available
 @pytest.mark.flaky(max_runs=3)
-def test_plotly_select_data(page, port, plotly_2d_plot):
-    serve_component(page, port, plotly_2d_plot)
+def test_plotly_select_data(page, plotly_2d_plot):
+    serve_component(page, plotly_2d_plot)
 
     plotly_plot = page.locator('.js-plotly-plot .plot-container.plotly')
     expect(plotly_plot).to_have_count(1)

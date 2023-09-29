@@ -10,14 +10,14 @@ from panel.tests.util import serve_component, wait_until
 
 pytestmark = pytest.mark.ui
 
-def test_column_scroll(page, port):
+def test_column_scroll(page):
     col = Column(
         Spacer(styles=dict(background='red'), width=200, height=200),
         Spacer(styles=dict(background='green'), width=200, height=200),
         Spacer(styles=dict(background='blue'), width=200, height=200),
         scroll=True, height=420
     )
-    serve_component(page, port, col)
+    serve_component(page, col)
 
     col_el = page.locator(".bk-panel-models-layout-Column")
     bbox = col_el.bounding_box()
@@ -27,14 +27,14 @@ def test_column_scroll(page, port):
     expect(col_el).to_have_class('bk-panel-models-layout-Column scrollable-vertical')
 
 
-def test_column_auto_scroll_limit(page, port):
+def test_column_auto_scroll_limit(page):
     col = Column(
         Spacer(styles=dict(background='red'), width=200, height=200),
         Spacer(styles=dict(background='green'), width=200, height=200),
         Spacer(styles=dict(background='blue'), width=200, height=200),
         auto_scroll_limit=100, height=420
     )
-    serve_component(page, port, col)
+    serve_component(page, col)
 
     column = page.locator(".bk-panel-models-layout-Column")
 
@@ -65,14 +65,14 @@ def test_column_auto_scroll_limit(page, port):
     ) == 0, page)
 
 
-def test_column_auto_scroll_limit_disabled(page, port):
+def test_column_auto_scroll_limit_disabled(page):
     col = Column(
         Spacer(styles=dict(background='red'), width=200, height=200),
         Spacer(styles=dict(background='green'), width=200, height=200),
         Spacer(styles=dict(background='blue'), width=200, height=200),
         auto_scroll_limit=0, height=420, scroll=True
     )
-    serve_component(page, port, col)
+    serve_component(page, col)
 
     column = page.locator(".bk-panel-models-layout-Column")
 
@@ -88,14 +88,14 @@ def test_column_auto_scroll_limit_disabled(page, port):
     expect(column).to_have_js_property('scrollTop', 0)
 
 
-def test_column_scroll_button_threshold(page, port):
+def test_column_scroll_button_threshold(page):
     col = Column(
         Spacer(styles=dict(background='red'), width=200, height=200),
         Spacer(styles=dict(background='green'), width=200, height=200),
         Spacer(styles=dict(background='blue'), width=200, height=200),
         scroll_button_threshold=10, height=420
     )
-    serve_component(page, port, col)
+    serve_component(page, col)
 
     column = page.locator(".bk-panel-models-layout-Column")
     bbox = column.bounding_box()
@@ -121,14 +121,14 @@ def test_column_scroll_button_threshold(page, port):
     expect(scroll_arrow).to_be_visible()
 
 
-def test_column_scroll_button_threshold_disabled(page, port):
+def test_column_scroll_button_threshold_disabled(page):
     col = Column(
         Spacer(styles=dict(background='red'), width=200, height=200),
         Spacer(styles=dict(background='green'), width=200, height=200),
         Spacer(styles=dict(background='blue'), width=200, height=200),
         scroll=True, scroll_button_threshold=0, height=420
     )
-    serve_component(page, port, col)
+    serve_component(page, col)
 
     column = page.locator(".bk-panel-models-layout-Column")
     bbox = column.bounding_box()
@@ -149,7 +149,7 @@ def test_column_scroll_button_threshold_disabled(page, port):
     expect(scroll_arrow).not_to_be_visible()
 
 
-def test_column_view_latest(page, port):
+def test_column_view_latest(page):
     col = Column(
         Spacer(styles=dict(background='red'), width=200, height=200),
         Spacer(styles=dict(background='green'), width=200, height=200),
@@ -157,7 +157,7 @@ def test_column_view_latest(page, port):
         view_latest=True, scroll=True, height=420
     )
 
-    serve_component(page, port, col)
+    serve_component(page, col)
 
     # assert scroll location does not start at top
     column = page.locator(".bk-panel-models-layout-Column")
@@ -167,10 +167,10 @@ def test_column_view_latest(page, port):
     assert bbox['height'] == 420
 
     expect(column).to_have_class('bk-panel-models-layout-Column scrollable-vertical')
-    expect(column).not_to_have_js_property('scrollTop', 0)
+    expect(column).not_to_have_js_property('scrollTop', '0')
 
 
-def test_column_scroll_position_init(page, port):
+def test_column_scroll_position_init(page):
     col = Column(
         Spacer(styles=dict(background='red'), width=200, height=200),
         Spacer(styles=dict(background='green'), width=200, height=200),
@@ -178,14 +178,14 @@ def test_column_scroll_position_init(page, port):
         scroll=True, scroll_position=100, height=420
     )
 
-    serve_component(page, port, col)
+    serve_component(page, col)
 
     # assert scroll position can be used to initialize scroll location
-    column = page.locator(".bk-panel-models-layout-Column")
-    expect(column).to_have_js_property('scrollTop', 100)
+    column = page.locator('.bk-panel-models-layout-Column')
+    expect(column).to_have_js_property('scrollTop', '100')
 
 
-def test_column_scroll_position_recorded(page, port):
+def test_column_scroll_position_recorded(page):
     col = Column(
         Spacer(styles=dict(background='red'), width=200, height=200),
         Spacer(styles=dict(background='green'), width=200, height=200),
@@ -193,7 +193,7 @@ def test_column_scroll_position_recorded(page, port):
         scroll=True, height=420
     )
 
-    serve_component(page, port, col)
+    serve_component(page, col)
 
     column = page.locator(".bk-panel-models-layout-Column")
 
@@ -201,7 +201,7 @@ def test_column_scroll_position_recorded(page, port):
     expect(column).to_have_js_property('scrollTop', 150)
 
 
-def test_column_scroll_position_param_updated(page, port):
+def test_column_scroll_position_param_updated(page):
     col = Column(
         Spacer(styles=dict(background='red'), width=200, height=200),
         Spacer(styles=dict(background='green'), width=200, height=200),
@@ -209,7 +209,7 @@ def test_column_scroll_position_param_updated(page, port):
         scroll=True, height=420
     )
 
-    serve_component(page, port, col)
+    serve_component(page, col)
 
     page.wait_for_timeout(200)
 

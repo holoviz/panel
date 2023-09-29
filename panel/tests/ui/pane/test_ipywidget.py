@@ -29,7 +29,7 @@ def cleanup_ipywidgets():
     _default_resolver._known_models = old_models
 
 @requires_reacton
-def test_reacton(page, port):
+def test_reacton(page):
     import reacton
     import reacton.ipywidgets
 
@@ -63,7 +63,7 @@ def test_reacton(page, port):
         Reacton(ButtonClick(), width=200, height=50)
     )
 
-    serve_component(page, port, reacton_app)
+    serve_component(page, reacton_app)
 
     wait_until(lambda: bool(runs), page)
 
@@ -77,7 +77,7 @@ def test_reacton(page, port):
 
 
 @requires_anywidget()
-def test_anywidget(page, port):
+def test_anywidget(page):
 
     class CounterWidget(anywidget.AnyWidget):
         # Widget front-end JavaScript code
@@ -101,7 +101,7 @@ def test_anywidget(page, port):
 
     counter = CounterWidget()
 
-    serve_component(page, port, counter)
+    serve_component(page, counter)
 
     page.locator('.lm-Widget button').click()
 

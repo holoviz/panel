@@ -11,20 +11,20 @@ from panel.template import BootstrapTemplate
 from panel.tests.util import serve_component
 
 
-def test_bootstrap_template_no_console_errors(page, port):
+def test_bootstrap_template_no_console_errors(page):
     tmpl = BootstrapTemplate()
     md = Markdown('Initial')
 
     tmpl.main.append(md)
 
-    msgs = serve_component(page, port, tmpl)
+    msgs, _ = serve_component(page, tmpl)
 
     expect(page.locator(".markdown").locator("div")).to_have_text('Initial\n')
 
     assert [msg for msg in msgs if msg.type == 'error'] == []
 
 
-def test_bootstrap_template_raw_css_on_config(page, port):
+def test_bootstrap_template_raw_css_on_config(page):
     tmpl = BootstrapTemplate()
 
     tmpl.config.raw_css = ['.markdown { color: rgb(255, 0, 0); }']
@@ -33,20 +33,20 @@ def test_bootstrap_template_raw_css_on_config(page, port):
 
     tmpl.main.append(md)
 
-    msgs = serve_component(page, port, tmpl)
+    msgs, _ = serve_component(page, tmpl)
 
     expect(page.locator('.markdown')).to_have_css('color', 'rgb(255, 0, 0)')
 
     assert [msg for msg in msgs if msg.type == 'error'] == []
 
 
-def test_bootstrap_template_updates(page, port):
+def test_bootstrap_template_updates(page):
     tmpl = BootstrapTemplate()
     md = Markdown('Initial')
 
     tmpl.main.append(md)
 
-    serve_component(page, port, tmpl)
+    serve_component(page, tmpl)
 
     expect(page.locator(".markdown").locator("div")).to_have_text('Initial\n')
     md.object = 'Updated'

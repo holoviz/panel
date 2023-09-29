@@ -6,7 +6,7 @@ from panel.tests.util import serve_component, wait_until
 from panel.widgets import Button
 
 
-def test_button_click(page, port):
+def test_button_click(page):
     button = Button(name='Click')
 
     events = []
@@ -14,7 +14,7 @@ def test_button_click(page, port):
         events.append(event)
     button.on_click(cb)
 
-    serve_component(page, port, button)
+    serve_component(page, button)
 
     page.click('.bk-btn')
 

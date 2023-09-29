@@ -44,8 +44,10 @@ def port_open(port):
 
 
 def get_default_port():
+    worker_count = int(os.environ.get("PYTEST_XDIST_WORKER_COUNT", "1"))
     worker_id = os.environ.get("PYTEST_XDIST_WORKER", "0")
-    return 6001 + int(re.sub(r"\D", "", worker_id))
+    worker_idx = int(re.sub(r"\D", "", worker_id))
+    return 9001 + (worker_idx * worker_count * 10)
 
 def start_jupyter():
     global JUPYTER_PORT, JUPYTER_PROCESS
