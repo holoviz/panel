@@ -23,6 +23,7 @@ from typing import (
 import param
 import requests
 
+from .._param import Margin
 from ..io.cache import cache
 from ..io.resources import CDN_DIST
 from ..io.state import state
@@ -811,6 +812,11 @@ class ChatFeed(CompositeWidget):
         If "ignore", the exception will be ignored.
         """)
 
+    margin = Margin(default=0, doc="""
+        Allows to create additional space around the component. May
+        be specified as a two-tuple of the form (vertical, horizontal)
+        or a four-tuple (top, right, bottom, left).""")
+
     placeholder_text = param.String(default="", doc="""
         If placeholder is the default LoadingSpinner,
         the text to display next to it.""")
@@ -880,7 +886,7 @@ class ChatFeed(CompositeWidget):
             card_params["height"] = card_params.get("height", 500)
         self._composite.param.update(**card_params)
         self._composite._stylesheets = self._stylesheets
-        self._composite.styles = {"border": "1px solid var(--panel-border-color, #e1e1e1)", "padding": "0px", "margin": "0px"}
+        self._composite.styles = {"border": "1px solid var(--panel-border-color, #e1e1e1)", "padding": "0px"}
 
         # instantiate the card's column
         chat_log_params = {
