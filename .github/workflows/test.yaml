@@ -65,6 +65,7 @@ jobs:
         run: |
           conda activate test-environment
           pip install pyecharts
+          conda install numba::llvmlite vtk=9.2.6=osmesa*
       - name: bokeh_sampledata
         run: |
           conda activate test-environment
@@ -131,7 +132,6 @@ jobs:
         run: |
           conda activate test-environment
           pip install --pre ipywidgets_bokeh
-          conda install numba::llvmlite
       - name: build pyodide wheels
         run: |
           conda activate test-environment
