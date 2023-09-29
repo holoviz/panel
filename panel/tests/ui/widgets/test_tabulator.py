@@ -639,7 +639,7 @@ def test_tabulator_editors_tabulator_disable_one(page, port, df_mixed):
     serve_component(page, port, widget)
 
     page.locator('text="3.14"').click()
-    page.wait_for_timeout(200)
+
     expect(page.locator('input[type="number"]')).to_have_count(0)
 
 
@@ -663,9 +663,10 @@ def test_tabulator_editors_tabulator_dict(page, port, df_mixed):
 
     cell = page.locator('text="A"')
     cell.click()
+
     textarea = page.locator('textarea')
     expect(textarea).to_have_count(1)
-    assert textarea.get_attribute('maxlength') == "10"
+    expect(textarea).to_have_js_attribute('maxlength', '10')
 
 
 def test_tabulator_editors_tabulator_list_default(page, port):
@@ -848,13 +849,13 @@ def test_tabulator_frozen_columns(page, port, df_mixed):
 
     # Scroll to the right, and give it a little extra time
     page.locator('text="2019-01-01 10:00:00"').scroll_into_view_if_needed()
-    page.wait_for_timeout(200)
+
+    # Check that the position of one of the non frozen columns has indeed moved
+    wait_until(lambda: page.locator('text="bool"').bounding_box()['x'] < bool_bb['x'], page)
 
     # Check that the two frozen columns haven't moved after scrolling right
     assert float_bb == page.locator('text="float"').bounding_box()
     assert int_bb == page.locator('text="int"').bounding_box()
-    # But check that the position of one of the non frozen columns has indeed moved
-    assert bool_bb['x'] > page.locator('text="bool"').bounding_box()['x']
 
 
 def test_tabulator_frozen_rows(page, port):
@@ -1007,11 +1008,9 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, port, df_mixed, pa
 
     # Wait to catch a potential rescroll
     page.wait_for_timeout(400)
-    header = page.locator(f'text="{col_name}"')
-    header.wait_for()
+
     # The table should keep the same scroll position, this fails
-    assert bb == header.bounding_box()
-    # assert bb == page.locator(f'text="{col_name}"').bounding_box()
+    assert page.locator(f'text="{col_name}"').bounding_box() == bb
 
 
 def test_tabulator_header_filter_always_visible(page, port, df_mixed):
@@ -1368,26 +1367,29 @@ def test_tabulator_row_content(page, port, df_mixed):
 
     serve_component(page, port, widget)
 
-    openables = page.locator('text="►"')
-    expect(openables).to_have_count(len(df_mixed))
+    expect(page.locator('text="►"')).to_have_count(len(df_mixed))
 
     expected_expanded = []
     for i in range(len(df_mixed)):
-        openables = page.locator('text="►"')
-        openables.first.click()
+        page.locator('text="►"').first.click()
+
         row_content = page.locator(f'text="{df_mixed.iloc[i]["str"]}-row-content"')
         expect(row_content).to_have_count(1)
+
         closables = page.locator('text="▼"')
         expect(closables).to_have_count(i + 1)
-        assert row_content.is_visible()
+        expect(row_content).to_be_visible()
+
         expected_expanded.append(i)
         wait_until(lambda: widget.expanded == expected_expanded, page)
 
     for i in range(len(df_mixed)):
         closables = page.locator('text="▼"')
         closables.first.click()
+
         row_content = page.locator(f'text="{df_mixed.iloc[i]["str"]}-row-content"')
-        expect(row_content).to_have_count(0)  # timeout here?
+        expect(row_content).to_have_count(0)
+
         expected_expanded.remove(i)
         wait_until(lambda: widget.expanded == expected_expanded, page)
 
@@ -1562,7 +1564,8 @@ def test_tabulator_hierarchical(page, port, df_multiindex):
     for i in range(len(df_multiindex.index.get_level_values(0).unique())):
         gr = page.locator(f'text="group{i}"')
         expect(gr).to_have_count(1)
-        assert gr.is_visible()
+        expect(gr).to_be_visible()
+
     for i in range(len(df_multiindex.index.get_level_values(1).unique())):
         subgr = page.locator(f'text="subgroup{i}"')
         expect(subgr).to_have_count(0)
@@ -1573,7 +1576,7 @@ def test_tabulator_hierarchical(page, port, df_multiindex):
     for i in range(len(df_multiindex.index.get_level_values(1).unique())):
         subgr = page.locator(f'text="subgroup{i}"')
         expect(subgr).to_have_count(1)
-        assert subgr.is_visible()
+        expect(subgr).to_be_visible()
 
 
 def test_tabulator_cell_click_event(page, port, df_mixed):
@@ -1587,6 +1590,7 @@ def test_tabulator_cell_click_event(page, port, df_mixed):
     page.locator('text="idx0"').click()
     wait_until(lambda: len(values) >= 1, page)
     assert values[-1] == ('index', 0, 'idx0')
+
     page.locator('text="A"').click()
     wait_until(lambda: len(values) >= 2, page)
     assert values[-1] == ('str', 0, 'A')
@@ -1763,7 +1767,6 @@ def test_tabulator_filter_param(page, port, df_mixed):
 
     for filt_val in ['B', 'NOT']:
         p.s = filt_val
-        page.wait_for_timeout(200)
         df_filtered = df_mixed.loc[df_mixed[filt_col] == filt_val, :]
 
         wait_until(lambda: widget.current_view.equals(df_filtered), page)
@@ -1793,7 +1796,6 @@ def test_tabulator_filter_bound_function(page, port, df_mixed):
 
     for filt_val in w_filter.options[1:]:
         w_filter.value = filt_val
-        page.wait_for_timeout(200)
         df_filtered = filt_(df_mixed, filt_val)
 
         wait_until(lambda: widget.current_view.equals(df_filtered), page)
@@ -3177,11 +3179,13 @@ def test_tabulator_update_hidden_columns(page, port):
     widget.hidden_columns = ['b']
 
     col_a_cells = page.locator('text="3"')
-    title_bbox = page.locator('text="a"').bounding_box()
-    cell_bbox = col_a_cells.first.bounding_box()
 
     expect(col_a_cells.nth(0)).to_be_visible()
     expect(col_a_cells.nth(1)).not_to_be_visible()
 
-    assert title_bbox['x'] == cell_bbox['x']
-    assert title_bbox['width'] == cell_bbox['width']
+    title = page.locator('text="a"')
+    cell = col_a_cells.first.bounding_box()
+    wait_until(lambda: (
+        (title.bounding_box()['x'] == cell.bounding_box()['x']) and
+        (title.bounding_box()['width'] == cell.bounding_box()['width'])
+    ), page)

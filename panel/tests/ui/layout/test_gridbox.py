@@ -1,7 +1,7 @@
 import pytest
 
 from panel import Column, GridBox, Spacer
-from panel.tests.util import serve_component
+from panel.tests.util import serve_component, wait_until
 
 pytestmark = pytest.mark.ui
 
@@ -13,17 +13,11 @@ def test_gridbox(page, port):
 
     serve_component(page, port, grid)
 
-    bbox = page.locator(".bk-GridBox").bounding_box()
-
-    assert bbox['width'] == 200
-    assert bbox['height'] == 150
+    wait_until(lambda: page.locator(".bk-GridBox").bounding_box() == {'width': 200, 'height': 150, 'x': 0, 'y': 0}, page)
 
     grid.ncols = 6
 
-    bbox = page.locator(".bk-GridBox").bounding_box()
-
-    assert bbox['width'] == 300
-    assert bbox['height'] == 100
+    wait_until(lambda: page.locator(".bk-GridBox").bounding_box() == {'width': 300, 'height': 100, 'x': 0, 'y': 0}, page)
 
 
 def test_gridbox_unequal(page, port):
@@ -38,53 +32,23 @@ def test_gridbox_unequal(page, port):
 
     serve_component(page, port, grid)
 
-    bbox = page.locator(".bk-GridBox").bounding_box()
-    children = page.locator(".bk-GridBox div")
+    wait_until(lambda: page.locator(".bk-GridBox").bounding_box() == {'width': 170, 'height': 50, 'x': 0, 'y': 0}, page)
 
-    assert bbox['width'] == 170
-    assert bbox['height'] == 50
-    bbox1 = children.nth(0).bounding_box()
-    assert bbox1['x'] == 0
-    assert bbox1['width'] == 50
-    bbox2 = children.nth(1).bounding_box()
-    assert bbox2['x'] == 50
-    assert bbox2['width'] == 40
-    bbox3 = children.nth(2).bounding_box()
-    assert bbox3['x'] == 90
-    assert bbox3['width'] == 60
-    bbox4 = children.nth(3).bounding_box()
-    assert bbox4['x'] == 150
-    assert bbox4['width'] == 20
-    bbox5 = children.nth(4).bounding_box()
-    assert bbox5['x'] == 0
-    assert bbox5['y'] == 20
-    assert bbox5['width'] == 20
-    assert bbox5['height'] == 30
+    children = page.locator(".bk-GridBox div")
+    wait_until(lambda: children.nth(0).bounding_box() == {'x': 0, 'y': 0, 'width': 50, 'height': 10}, page)
+    wait_until(lambda: children.nth(1).bounding_box() == {'x': 50, 'y': 0, 'width': 40, 'height': 10}, page)
+    wait_until(lambda: children.nth(2).bounding_box() == {'x': 90, 'y': 0, 'width': 60, 'height': 20}, page)
+    wait_until(lambda: children.nth(3).bounding_box() == {'x': 150, 'y': 0, 'width': 20, 'height': 10}, page)
+    wait_until(lambda: children.nth(4).bounding_box() == {'x': 0, 'y': 20, 'width': 20, 'height': 30}, page)
 
     grid.ncols = 5
 
-    bbox = page.locator(".bk-GridBox").bounding_box()
-    children = page.locator(".bk-GridBox div")
-
-    assert bbox['width'] == 190
-    assert bbox['height'] == 30
-    bbox1 = children.nth(0).bounding_box()
-    assert bbox1['x'] == 0
-    assert bbox1['width'] == 50
-    bbox2 = children.nth(1).bounding_box()
-    assert bbox2['x'] == 50
-    assert bbox2['width'] == 40
-    bbox3 = children.nth(2).bounding_box()
-    assert bbox3['x'] == 90
-    assert bbox3['width'] == 60
-    bbox4 = children.nth(3).bounding_box()
-    assert bbox4['x'] == 150
-    assert bbox4['width'] == 20
-    bbox5 = children.nth(4).bounding_box()
-    assert bbox5['x'] == 170
-    assert bbox5['y'] == 0
-    assert bbox5['width'] == 20
-    assert bbox5['height'] == 30
+    wait_until(lambda: page.locator(".bk-GridBox").bounding_box() == {'width': 190, 'height': 30, 'x': 0, 'y': 0}, page)
+    wait_until(lambda: children.nth(0).bounding_box() == {'x': 0, 'y': 0, 'width': 50, 'height': 10}, page)
+    wait_until(lambda: children.nth(1).bounding_box() == {'x': 50, 'y': 0, 'width': 40, 'height': 10}, page)
+    wait_until(lambda: children.nth(2).bounding_box() == {'x': 90, 'y': 0, 'width': 60, 'height': 20}, page)
+    wait_until(lambda: children.nth(3).bounding_box() == {'x': 150, 'y': 0, 'width': 20, 'height': 10}, page)
+    wait_until(lambda: children.nth(4).bounding_box() == {'x': 170, 'y': 0, 'width': 20, 'height': 30}, page)
 
 
 def test_gridbox_stretch_width(page, port):

@@ -211,6 +211,8 @@ def test_column_scroll_position_param_updated(page, port):
 
     serve_component(page, port, col)
 
+    page.wait_for_timeout(200)
+
     col.scroll_position = 175
 
     column = page.locator(".bk-panel-models-layout-Column")

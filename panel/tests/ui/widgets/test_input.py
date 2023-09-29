@@ -439,8 +439,7 @@ def test_datetimepicker_enable_time(page, port):
     serve_component(page, port, datetime_picker_widget)
 
     # click to show the datetime picker container
-    datetime_value = page.locator('.flatpickr-input')
-    datetime_value.dblclick()
+    page.locator('.flatpickr-input').dblclick()
 
     # no time editor
     time_editor = page.locator('.flatpickr-calendar .flatpickr-time.time24hr.hasSeconds')

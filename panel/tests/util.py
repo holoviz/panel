@@ -203,11 +203,11 @@ def get_ctrl_modifier():
         raise ValueError(f'No control modifier defined for platform {sys.platform}')
 
 
-def serve_component(page, port, pn_widget, suffix=''):
+def serve_component(page, port, app, suffix=''):
     msgs = []
     page.on("console", lambda msg: msgs.append(msg))
 
-    serve(pn_widget, port=port, threaded=True, show=False, liveness=True)
+    serve(app, port=port, threaded=True, show=False, liveness=True)
     wait_for_server(port)
     page.goto(f"http://localhost:{port}{suffix}")
     return msgs
