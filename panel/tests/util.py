@@ -205,16 +205,20 @@ def get_ctrl_modifier():
         raise ValueError(f'No control modifier defined for platform {sys.platform}')
 
 
-def serve_component(page, app, suffix=''):
-    msgs = []
-    page.on("console", lambda msg: msgs.append(msg))
-
+def serve_and_wait(app, page=None, prefix=None, port=None, **kwargs):
     server_id = uuid.uuid4().hex
-    serve(app, port=0, threaded=True, show=False, liveness=True, server_id=server_id)
+    serve(app, port=port or 0, threaded=True, show=False, liveness=True, server_id=server_id, prefix=prefix or "", **kwargs)
     wait_until(lambda: server_id in state._servers, page)
     server = state._servers[server_id][0]
     port = server.port
-    wait_for_server(port)
+    wait_for_server(port, prefix=prefix)
+    return port
+
+
+def serve_component(page, app, suffix=''):
+    msgs = []
+    page.on("console", lambda msg: msgs.append(msg))
+    port = serve_and_wait(app, page)
     page.goto(f"http://localhost:{port}{suffix}")
 
     wait_until(lambda: any("Websocket connection 0 is now open" in str(msg) for msg in msgs), page, interval=10)
@@ -222,9 +226,16 @@ def serve_component(page, app, suffix=''):
     return msgs, port
 
 
-def wait_for_server(port, timeout=3):
+def serve_and_request(app, suffix="", n=1, port=None, **kwargs):
+    port = serve_and_wait(app, port=port, **kwargs)
+    reqs = [requests.get(f"http://localhost:{port}{suffix}") for i in range(n)]
+    return reqs[0] if len(reqs) == 1 else reqs
+
+
+def wait_for_server(port, prefix=None, timeout=3):
     start = time.time()
-    url = f"http://localhost:{port}/liveness"
+    prefix = prefix or ""
+    url = f"http://localhost:{port}{prefix}/liveness"
     while True:
         try:
             if requests.get(url).ok:
