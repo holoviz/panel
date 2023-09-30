@@ -1,4 +1,6 @@
+import os
 import pathlib
+import re
 import shutil
 import tempfile
 import uuid
@@ -24,6 +26,8 @@ if not (PANEL_LOCAL_WHL.is_file() and BOKEH_LOCAL_WHL.is_file()):
         allow_module_level=True
     )
 
+_worker_id = os.environ.get("PYTEST_XDIST_WORKER", "0")
+HTTP_PORT = 5990 + int(re.sub(r"\D", "", _worker_id))
 
 button_app = """
 import panel as pn
@@ -112,7 +116,7 @@ def http_serve():
         pass
 
     process = Popen(
-        ["python", "-m", "http.server", "8124", "--directory", str(temp_path)], stdout=PIPE
+        ["python", "-m", "http.server", str(HTTP_PORT), "--directory", str(temp_path)], stdout=PIPE
     )
     def write(app):
         app_name = uuid.uuid4().hex
@@ -138,7 +142,7 @@ def wait_for_app(http_serve, app, page, runtime, wait=True, **kwargs):
     msgs = []
     page.on("console", lambda msg: msgs.append(msg))
 
-    page.goto(f"http://localhost:8124/{app_path.name[:-3]}.html")
+    page.goto(f"http://localhost:{HTTP_PORT}/{app_path.name[:-3]}.html")
 
     cls = f'pn-loading pn-{config.loading_spinner}'
     expect(page.locator('body')).to_have_class(cls)
