@@ -112,7 +112,7 @@ def http_serve():
         pass
 
     process = Popen(
-        ["python", "-m", "http.server", "8123", "--directory", str(temp_path)], stdout=PIPE
+        ["python", "-m", "http.server", "8124", "--directory", str(temp_path)], stdout=PIPE
     )
     def write(app):
         app_name = uuid.uuid4().hex
@@ -122,6 +122,7 @@ def http_serve():
         return app_path
 
     yield write
+
     process.terminate()
     process.wait()
 
@@ -137,7 +138,7 @@ def wait_for_app(http_serve, app, page, runtime, wait=True, **kwargs):
     msgs = []
     page.on("console", lambda msg: msgs.append(msg))
 
-    page.goto(f"http://localhost:8123/{app_path.name[:-3]}.html")
+    page.goto(f"http://localhost:8124/{app_path.name[:-3]}.html")
 
     cls = f'pn-loading pn-{config.loading_spinner}'
     expect(page.locator('body')).to_have_class(cls)
