@@ -328,50 +328,6 @@ class ChatEntry(CompositeWidget):
     :Example:
 
     >>> ChatEntry(value="Hello world!", user="New User", avatar="😊")
-
-    Parameters
-    ----------
-    value : object
-        The message contents. Can be a string, pane, widget, layout, etc.
-    renderers : Callable | List[Callable]
-        A callable or list of callables that accept the value and return a
-        Panel object to render the value. If a list is provided, will
-        attempt to use the first renderer that does not raise an
-        exception. If None, will attempt to infer the renderer
-        from the value.
-    user : str
-        Name of the user who sent the message.
-    avatar : str | BinaryIO | pn.pane.ImageBase
-        The avatar to use for the user. Can be a single character text, an emoji,
-        or anything supported by `pn.pane.Image`. If not set, checks if
-        the user is available in the default_avatars mapping; else uses the
-        first character of the name.
-    default_avatars : dict
-        A default mapping of user names to their corresponding avatars
-        to use when the user is specified but the avatar is. You can modify, but not replace the
-        dictionary. Note, the keys are *only* alphanumeric sensitive, meaning spaces, special characters,
-        and case sensitivity is disregarded, e.g. `"Chat-GPT3.5"`, `"chatgpt 3.5"` and `"Chat GPT 3.5"`
-        all map to the same value.
-    avatar_lookup : Callable
-        A function that can lookup an `avatar` from a user name. The function signature should be
-        `(user: str) -> Avatar`. If this is set, `default_avatars` is disregarded.
-    reactions : List
-        Reactions to associate with the message.
-    reaction_icons : ChatReactionIcons | dict
-        A mapping of reactions to their reaction icons; if not provided
-        defaults to `{"favorite": "heart"}`.
-    timestamp : datetime
-        Timestamp of the message. Defaults to the instantiation time.
-    timestamp_format : str
-        The timestamp format.
-    show_avatar : bool
-        Whether to display the avatar of the user.
-    show_user : bool
-        Whether to display the name of the user.
-    show_timestamp : bool
-        Whether to display the timestamp of the message.
-    show_reaction_icons: bool
-        Whether to display the reaction icons.
     """
     _ignored_refs: ClassVar[Tuple[str,...]] = ('value',)
 
@@ -722,59 +678,8 @@ class ChatFeed(CompositeWidget):
 
     >>> chat_feed = ChatFeed(callback=say_welcome, header="Welcome Feed")
     >>> chat_feed.send("Hello World!", user="New User", avatar="😊")
-
-    Parameters
-    ----------
-    value : List[ChatEntry]
-        The entries added to the chat feed.
-    renderers : Callable | List[Callable]
-        A callable or list of callables that accept the value and return a
-        Panel object to render the value. If a list is provided, will
-        attempt to use the first renderer that does not raise an
-        exception. If None, will attempt to infer the renderer
-        from the value.
-    header : Any
-        The header of the chat feed; commonly used for the title.
-        Can be a string, pane, or widget.
-    callback : Callable
-        Callback to execute when a user sends a message or
-        when `respond` is called. The signature must include
-        the previous message value `contents`, the previous `user` name,
-        and the component `instance`.
-    callback_user : str
-        The default user name to use for the entry provided by the callback.
-    callback_exception : Literal["summary", "verbose", "ignore"]
-        How to handle exceptions raised by the callback.
-        If "summary", a summary will be sent to the chat feed.
-        If "verbose", the full traceback will be sent to the chat feed.
-        If "ignore", the exception will be ignored.
-    placeholder : Any
-        Placeholder to display while the callback is running.
-        If not set, defaults to a LoadingSpinner.
-    placeholder_text : str
-        If placeholder is the default LoadingSpinner,
-        the text to display next to it.
-    placeholder_threshold : float
-        Min duration in seconds of buffering before displaying the placeholder.
-        If 0, the placeholder will be disabled.
-    auto_scroll_limit : int
-        Max pixel distance from the latest object in the Column to
-        activate automatic scrolling upon update. Setting to 0
-        disables auto-scrolling.
-    scroll_button_threshold : int
-        Min pixel distance from the latest object in the Column to
-        display the scroll button. Setting to 0
-        disables the scroll button.
-    view_latest : bool
-        Whether to scroll to the latest object on init. If not
-        enabled the view will be on the first object.
-    card_params : Dict
-        Params to pass to Card, like `header`,
-        `header_background`, `header_color`, etc.
-    entry_params : Dict
-        Params to pass to each ChatEntry, like `reaction_icons`, `default_avatars`,
-        `timestamp_format`, `show_avatar`, `show_user`, and `show_timestamp`.
     """
+
     value = param.List(item_type=ChatEntry, doc="""
         The list of entries in the feed.""")
 
@@ -1275,35 +1180,6 @@ class ChatInterface(ChatFeed):
     >>> chat_interface = ChatInterface(
         callback=repeat_contents, widgets=[TextInput(), FileInput()]
     )
-
-    Parameters
-    ----------
-    widgets : Widget | List[Widget]
-        Widgets to use for the input. If not provided, defaults to
-        `[TextInput]`.
-    auto_send_types : List[Widget]
-        The widget types to automatically send when the user presses enter
-        or clicks away from the widget. If not provided, defaults to
-        `[TextInput]`.
-    user : str
-        Name of the ChatInterface user.
-    avatar : str | BinaryIO
-        The avatar to use for the user. Can be a single character text, an emoji,
-        or anything supported by `pn.pane.Image`. If not set, uses the
-        first character of the name.
-    reset_on_send : bool
-        Whether to reset the widget's value after sending a message;
-        has no effect for `TextInput` and non string-based inputs.
-    show_send : bool
-        Whether to show the send button.
-    show_rerun : bool
-        Whether to show the rerun button.
-    show_undo : bool
-        Whether to show the undo button.
-    show_clear : bool
-        Whether to show the clear button.
-    show_button_name : bool
-        Whether to show the button name.
     """
 
     widgets = param.ClassSelector(class_=(Widget, list), doc="""
