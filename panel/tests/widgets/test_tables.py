@@ -1803,7 +1803,7 @@ def test_server_edit_event():
 
     serve_and_wait(table)
 
-    assert table._models
+    wait_until(lambda: bool(table._models))
     ref, (model, _) = list(table._models.items())[0]
     doc = list(table._documents.keys())[0]
 
@@ -1850,8 +1850,10 @@ def test_server_cell_click_async_event():
 
     serve_and_wait(table)
 
-    data = df.reset_index()
+    wait_until(lambda: bool(table._models))
     doc = list(table._models.values())[0][0].document
+
+    data = df.reset_index()
     with set_curdoc(doc):
         for col in data.columns:
             for row in range(len(data)):
