@@ -789,7 +789,7 @@ class ChatFeed(CompositeWidget):
         The header of the chat feed; commonly used for the title.
         Can be a string, pane, or widget.""")
 
-    callback = param.Callable(doc="""
+    callback = param.Callable(allow_refs=False, doc="""
         Callback to execute when a user sends a message or
         when `respond` is called. The signature must include
         the previous message value `contents`, the previous `user` name,
@@ -857,7 +857,7 @@ class ChatFeed(CompositeWidget):
 
     _composite_type: ClassVar[Type[ListPanel]] = Card
 
-    _ignored_refs: ClassVar[Tuple[str]] = ('_placeholder',)
+    _ignored_refs: ClassVar[Tuple[str]] = ('_placeholder', 'callback')
 
     def __init__(self, **params):
         if params.get("renderers") and not isinstance(params["renderers"], list):
