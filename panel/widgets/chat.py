@@ -432,8 +432,6 @@ class ChatEntry(CompositeWidget):
         f"{CDN_DIST}css/chat_entry.css"
     ]
 
-    _exit_stack: ClassVar[ExitStack | None] = None
-
     def __init__(self, **params):
         from ..param import ParamMethod  # circular imports
 
@@ -480,7 +478,6 @@ class ChatEntry(CompositeWidget):
             stylesheets=self._stylesheets,
             sizing_mode=None,
         )
-        self._composite._stylesheets = self._stylesheets
         self._composite.css_classes = self.css_classes
         self._composite[:] = [left_col, right_col]
 
@@ -885,7 +882,6 @@ class ChatFeed(CompositeWidget):
         if self.sizing_mode is None:
             card_params["height"] = card_params.get("height", 500)
         self._composite.param.update(**card_params)
-        self._composite._stylesheets = self._stylesheets
         self._composite.styles = {"border": "1px solid var(--panel-border-color, #e1e1e1)", "padding": "0px"}
 
         # instantiate the card's column
@@ -1097,8 +1093,10 @@ class ChatFeed(CompositeWidget):
 
             num_entries = len(self._chat_log)
             task = asyncio.create_task(self._handle_callback(entry))
-            await self._schedule_placeholder(task, num_entries)
-            await task
+            await asyncio.gather(
+                self._schedule_placeholder(task, num_entries),
+                task
+            )
             task.result()
         except Exception as e:
             send_kwargs = dict(
