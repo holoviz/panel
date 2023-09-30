@@ -70,7 +70,7 @@ jobs:
         if: contains(matrix.os, 'ubuntu')
         run: |
           conda activate test-environment
-          conda install -c conda-forge vtk=9.2.6=osmesa*
+          conda install -c conda-forge vtk=9.2.6=osmesa* vtk-base=9.2.6=osmesa* vtk-io-ffmpeg=9.2.6=osmesa* --no-deps
       - name: bokeh_sampledata
         run: |
           conda activate test-environment
