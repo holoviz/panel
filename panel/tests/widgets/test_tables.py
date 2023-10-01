@@ -1861,7 +1861,7 @@ def test_server_cell_click_async_event():
                 table._process_event(event)
 
     # Ensure multiple callbacks started concurrently
-    wait_until(lambda: max(counts) > 1)
+    wait_until(lambda: len(counts) >= 1 and max(counts) > 1)
 
 def test_tabulator_pagination_remote_cell_click_event():
     df = makeMixedDataFrame()
