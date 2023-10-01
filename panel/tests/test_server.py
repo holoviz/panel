@@ -150,11 +150,8 @@ def test_server_async_callbacks():
         for _ in range(5):
             button.clicks += 1
 
-    # Wait for callbacks to be scheduled
-    time.sleep(2)
-
-    # Ensure multiple callbacks started concurrently
-    assert max(counts) > 1
+    # Checks whether Button on_click callback was executed concurrently
+    wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
 def test_server_async_local_state():
@@ -463,7 +460,7 @@ def test_server_thread_pool_change_event(threads, port):
         button2._server_change(doc, model.ref['id'], None, 'clicks', 0, 1)
 
     # Checks whether Button on_click callback was executed concurrently
-    wait_until(lambda: len(counts) > 0 and max(counts) == 2)
+    wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
 def test_server_thread_pool_bokeh_event(threads, port):
@@ -511,7 +508,7 @@ def test_server_thread_pool_periodic(threads, port):
     serve_and_request(app)
 
     # Checks whether periodic callbacks were executed concurrently
-    wait_until(lambda: len(counts) > 0 and max(counts) >= 2)
+    wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
 def test_server_thread_pool_onload(threads, port):
@@ -537,7 +534,7 @@ def test_server_thread_pool_onload(threads, port):
     serve_and_request(app, n=2)
 
     # Checks whether onload callbacks were executed concurrently
-    wait_until(lambda: len(counts) > 0 and max(counts) >= 2)
+    wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
 def test_server_thread_pool_busy(threads, port):
@@ -585,7 +582,7 @@ def test_server_async_onload(threads, port):
     serve_and_request(app, n=2)
 
     # Checks whether onload callbacks were executed concurrently
-    wait_until(lambda: max(counts) >= 2)
+    wait_until(lambda: len(counts) and max(counts) >= 2)
 
 
 class CustomBootstrapTemplate(BootstrapTemplate):
