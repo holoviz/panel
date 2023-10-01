@@ -17,7 +17,7 @@ from pandas._testing import (
 from panel.depends import bind
 from panel.io.state import set_curdoc
 from panel.models.tabulator import CellClickEvent, TableEditEvent
-from panel.tests.util import serve_and_wait, wait_until
+from panel.tests.util import serve_and_request, wait_until
 from panel.widgets import Button, TextInput
 from panel.widgets.tables import DataFrame, Tabulator
 
@@ -1801,7 +1801,7 @@ def test_server_edit_event():
     df = makeMixedDataFrame()
     table = Tabulator(df)
 
-    serve_and_wait(table)
+    serve_and_request(table)
 
     wait_until(lambda: bool(table._models))
     ref, (model, _) = list(table._models.items())[0]
@@ -1848,7 +1848,7 @@ def test_server_cell_click_async_event():
 
     table.on_click(cb)
 
-    serve_and_wait(table)
+    serve_and_request(table)
 
     wait_until(lambda: bool(table._models))
     doc = list(table._models.values())[0][0].document
