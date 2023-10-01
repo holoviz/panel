@@ -52,7 +52,7 @@ jobs:
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
-          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
+          channels: pyviz/label/dev,numba,bokeh,conda-forge,nodefaults
           # Remove when Python 3.11 is well supported on latest conda/conda-forge.
           conda-update: ${{ matrix.python-version == '3.11' && 'false' || 'true' }}
           nodejs: true
@@ -65,6 +65,12 @@ jobs:
         run: |
           conda activate test-environment
           pip install pyecharts
+          panel build panel
+      - name: override-vtk-osmesa
+        if: contains(matrix.os, 'ubuntu')
+        run: |
+          conda activate test-environment
+          conda install -c conda-forge vtk=9.2.6=osmesa* vtk-base=9.2.6=osmesa* vtk-io-ffmpeg=9.2.6=osmesa* --no-deps
       - name: bokeh_sampledata
         run: |
           conda activate test-environment

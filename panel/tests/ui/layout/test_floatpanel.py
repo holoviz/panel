@@ -1,27 +1,19 @@
-import time
-
 import pytest
 
 from panel import FloatPanel, Spacer
-from panel.io.server import serve
+from panel.tests.util import serve_component, wait_until
 
 pytestmark = pytest.mark.ui
 
-def test_float_panel_closed_status(page, port):
+def test_float_panel_closed_status(page):
     float_panel = FloatPanel(
         Spacer(styles=dict(background='red'), width=200, height=200),
         Spacer(styles=dict(background='green'), width=200, height=200),
         Spacer(styles=dict(background='blue'), width=200, height=200),
     )
 
-    serve(float_panel, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, float_panel)
 
     page.locator('.jsPanel-btn-close').click()
 
-    time.sleep(0.2)
-
-    assert float_panel.status == 'closed'
+    wait_until(lambda: float_panel.status == 'closed', page)

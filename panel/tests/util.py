@@ -5,6 +5,7 @@ import re
 import subprocess
 import sys
 import time
+import uuid
 import warnings
 
 from queue import Empty, Queue
@@ -12,12 +13,14 @@ from threading import Thread
 
 import numpy as np
 import pytest
+import requests
 
 from packaging.version import Version
 
 import panel as pn
 
 from panel.io.server import serve
+from panel.io.state import state
 
 # Ignore tests which are not yet working with Bokeh 3.
 # Will begin to fail again when the first rc is released.
@@ -202,10 +205,46 @@ def get_ctrl_modifier():
         raise ValueError(f'No control modifier defined for platform {sys.platform}')
 
 
-def serve_panel_widget(page, port, pn_widget, sleep=0.5):
-    serve(pn_widget, port=port, threaded=True, show=False)
-    time.sleep(sleep)
-    page.goto(f"http://localhost:{port}")
+def serve_and_wait(app, page=None, prefix=None, port=None, **kwargs):
+    server_id = uuid.uuid4().hex
+    serve(app, port=port or 0, threaded=True, show=False, liveness=True, server_id=server_id, prefix=prefix or "", **kwargs)
+    wait_until(lambda: server_id in state._servers, page)
+    server = state._servers[server_id][0]
+    port = server.port
+    wait_for_server(port, prefix=prefix)
+    return port
+
+
+def serve_component(page, app, suffix=''):
+    msgs = []
+    page.on("console", lambda msg: msgs.append(msg))
+    port = serve_and_wait(app, page)
+    page.goto(f"http://localhost:{port}{suffix}")
+
+    wait_until(lambda: any("Websocket connection 0 is now open" in str(msg) for msg in msgs), page, interval=10)
+
+    return msgs, port
+
+
+def serve_and_request(app, suffix="", n=1, port=None, **kwargs):
+    port = serve_and_wait(app, port=port, **kwargs)
+    reqs = [requests.get(f"http://localhost:{port}{suffix}") for i in range(n)]
+    return reqs[0] if len(reqs) == 1 else reqs
+
+
+def wait_for_server(port, prefix=None, timeout=3):
+    start = time.time()
+    prefix = prefix or ""
+    url = f"http://localhost:{port}{prefix}/liveness"
+    while True:
+        try:
+            if requests.get(url).ok:
+                return
+        except Exception:
+            pass
+        time.sleep(0.05)
+        if (time.time()-start) > timeout:
+            raise RuntimeError(f'{url} did not respond before timeout.')
 
 
 @contextlib.contextmanager

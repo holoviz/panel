@@ -264,7 +264,7 @@ class Vega(ModelPane):
         data = props['data']
         if data is not None:
             sources = self._get_sources(data, sources)
-        dimensions = _get_dimensions(data)
+        dimensions = _get_dimensions(data) if data else {}
         props['data'] = data
         props['data_sources'] = sources
         props['events'] = list(self._selections)

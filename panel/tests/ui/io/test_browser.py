@@ -1,17 +1,14 @@
-import time
-
 import pytest
 
 pytestmark = pytest.mark.ui
 
 from panel.config import config
-from panel.io.server import serve
 from panel.io.state import state
 from panel.pane import Markdown
-from panel.tests.util import wait_until
+from panel.tests.util import serve_component, wait_until
 
 
-def test_browser_sync(page, port):
+def test_browser_sync(page):
     info = {}
     def app():
         with config.set(browser_info=True):
@@ -19,11 +16,7 @@ def test_browser_sync(page, port):
             state.browser_info.param.watch(sync, list(state.browser_info.param))
             Markdown('# Test').servable()
 
-    serve(app, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, app)
 
     wait_until(lambda: bool(info), page)
 

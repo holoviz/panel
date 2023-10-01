@@ -1,10 +1,8 @@
 import datetime as dt
-import time
 
 import numpy as np
 import pandas as pd
 import pytest
-import requests
 
 from bokeh.models.widgets.tables import (
     AvgAggregator, CellEditor, CheckboxEditor, DataCube, DateEditor,
@@ -17,9 +15,9 @@ from pandas._testing import (
 )
 
 from panel.depends import bind
-from panel.io.server import serve
 from panel.io.state import set_curdoc
 from panel.models.tabulator import CellClickEvent, TableEditEvent
+from panel.tests.util import serve_and_request, wait_until
 from panel.widgets import Button, TextInput
 from panel.widgets.tables import DataFrame, Tabulator
 
@@ -1799,17 +1797,13 @@ def test_tabulator_patch_event():
             table._process_event(event)
             assert values[-1] == (col, row, df[col].iloc[row])
 
-def test_server_edit_event(port):
+def test_server_edit_event():
     df = makeMixedDataFrame()
     table = Tabulator(df)
 
-    serve(table, port=port, threaded=True, show=False)
+    serve_and_request(table)
 
-    time.sleep(0.5)
-
-    requests.get(f'http://localhost:{port}')
-
-    assert table._models
+    wait_until(lambda: bool(table._models))
     ref, (model, _) = list(table._models.items())[0]
     doc = list(table._documents.keys())[0]
 
@@ -1822,8 +1816,7 @@ def test_server_edit_event(port):
     table._server_change(doc, ref, None, 'data', model.source.data, new_data)
     table._server_event(doc, TableEditEvent(model, 'B', 1))
 
-    time.sleep(0.1)
-    assert len(events) == 1
+    wait_until(lambda: len(events) == 1)
     assert events[0].value == 3.14
     assert events[0].old == 1
 
@@ -1841,7 +1834,7 @@ def test_tabulator_cell_click_event():
             table._process_event(event)
             assert values[-1] == (col, row, data[col].iloc[row])
 
-def test_server_cell_click_async_event(port):
+def test_server_cell_click_async_event():
     df = makeMixedDataFrame()
     table = Tabulator(df)
 
@@ -1855,26 +1848,20 @@ def test_server_cell_click_async_event(port):
 
     table.on_click(cb)
 
-    serve(table, port=port, threaded=True, show=False)
+    serve_and_request(table)
 
-    # Wait for server to start
-    time.sleep(1)
-
-    requests.get(f"http://localhost:{port}/")
+    wait_until(lambda: bool(table._models))
+    doc = list(table._models.values())[0][0].document
 
     data = df.reset_index()
-    doc = list(table._models.values())[0][0].document
     with set_curdoc(doc):
         for col in data.columns:
             for row in range(len(data)):
                 event = CellClickEvent(model=None, column=col, row=row)
                 table._process_event(event)
 
-    # Wait for callbacks to be scheduled
-    time.sleep(2)
-
     # Ensure multiple callbacks started concurrently
-    assert max(counts) > 1
+    wait_until(lambda: len(counts) >= 1 and max(counts) > 1)
 
 def test_tabulator_pagination_remote_cell_click_event():
     df = makeMixedDataFrame()
