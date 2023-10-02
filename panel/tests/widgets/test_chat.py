@@ -845,7 +845,7 @@ class TestChatFeedCallback:
     def test_renderers_widget(self, chat_feed):
         chat_feed.renderers = [TextAreaInput]
         chat_feed.send("Hello!")
-        area_input = chat_feed.value[0]._value_panel
+        area_input = chat_feed.value[0]._render_value()
         assert isinstance(area_input, TextAreaInput)
         assert area_input.value == "Hello!"
         assert area_input.height == 500
@@ -1090,15 +1090,15 @@ class TestChatInterface:
         assert chat_interface.active_widget.value == ""
 
     def test_reset_on_send_text_area(self, chat_interface):
-        chat_interface.widgets = TextAreaInput()
+        chat_interface = ChatInterface(widgets=TextAreaInput())
         chat_interface.active_widget.value = "Hello"
         chat_interface.reset_on_send = False
         chat_interface._click_send(None)
         assert chat_interface.active_widget.value == "Hello"
 
     def test_widgets_supports_list_and_widget(self, chat_interface):
-        chat_interface.widgets = TextAreaInput()
-        chat_interface.widgets = [TextAreaInput(), FileInput]
+        assert ChatInterface(widgets=TextAreaInput())
+        assert ChatInterface(widgets=[TextAreaInput(), FileInput()])
 
     def test_show_button_name_width(self, chat_interface):
         assert chat_interface.show_button_name
