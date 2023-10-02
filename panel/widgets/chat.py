@@ -95,6 +95,9 @@ DEFAULT_AVATARS = {
     "translator": "🌐",
     "wolfram": WOLFRAM_LOGO,
     "wolfram alpha": WOLFRAM_LOGO,
+    # Llama
+    "llama": "🦙",
+    "llama2": "🐪",
 }
 
 PLACEHOLDER_SVG = """
@@ -435,6 +438,7 @@ class ChatEntry(CompositeWidget):
             stylesheets=self._stylesheets,
             sizing_mode=None,
         )
+        self._composite.stylesheets = self._stylesheets
         self._composite.css_classes = self.css_classes
         self._composite[:] = [left_col, right_col]
 
@@ -713,7 +717,7 @@ class ChatFeed(CompositeWidget):
         The header of the chat feed; commonly used for the title.
         Can be a string, pane, or widget.""")
 
-    margin = Margin(default=0, doc="""
+    margin = Margin(default=5, doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
@@ -787,6 +791,7 @@ class ChatFeed(CompositeWidget):
         if self.sizing_mode is None:
             card_params["height"] = card_params.get("height", 500)
         self._composite.param.update(**card_params)
+        self._composite.stylesheets = self._stylesheets
         self._composite.styles = {"border": "1px solid var(--panel-border-color, #e1e1e1)", "padding": "0px"}
 
         # instantiate the card's column
