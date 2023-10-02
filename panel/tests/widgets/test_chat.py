@@ -1086,15 +1086,15 @@ class TestChatInterface:
         assert chat_interface.active_widget.value == ""
 
     def test_reset_on_send_text_area(self, chat_interface):
-        chat_interface = ChatInterface(widgets=TextAreaInput())
+        chat_interface.widgets = TextAreaInput()
         chat_interface.active_widget.value = "Hello"
         chat_interface.reset_on_send = False
         chat_interface._click_send(None)
         assert chat_interface.active_widget.value == "Hello"
 
     def test_widgets_supports_list_and_widget(self, chat_interface):
-        assert ChatInterface(widgets=TextAreaInput())
-        assert ChatInterface(widgets=[TextAreaInput(), FileInput()])
+        chat_interface.widgets = TextAreaInput()
+        chat_interface.widgets = [TextAreaInput(), FileInput]
 
     def test_show_button_name_width(self, chat_interface):
         assert chat_interface.show_button_name
