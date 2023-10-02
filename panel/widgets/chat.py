@@ -18,7 +18,7 @@ from inspect import (
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from typing import (
-    Any, BinaryIO, ClassVar, Dict, List, Tuple, Type, Union,
+    Any, BinaryIO, ClassVar, Dict, List, Type, Union,
 )
 
 import param
@@ -386,8 +386,6 @@ class ChatEntry(CompositeWidget):
         The message contents. Can be any Python object that panel can display.""")
 
     _value_panel = param.Parameter(doc="The rendered value panel.")
-
-    _ignored_refs: ClassVar[Tuple[str,...]] = ('value',)
 
     _stylesheets: ClassVar[List[str]] = [
         f"{CDN_DIST}css/chat_entry.css"
@@ -766,8 +764,6 @@ class ChatFeed(CompositeWidget):
     ]
 
     _composite_type: ClassVar[Type[ListPanel]] = Card
-
-    _ignored_refs: ClassVar[Tuple[str]] = ('_placeholder', 'callback')
 
     def __init__(self, **params):
         if params.get("renderers") and not isinstance(params["renderers"], list):
@@ -1234,10 +1230,6 @@ class ChatInterface(ChatFeed):
 
     _button_data = param.Dict(default={}, doc="""
         Metadata and data related to the buttons.""")
-
-    _ignored_refs: ClassVar[Tuple[str]] = (
-        '_placeholder', '_widgets', 'callback', 'widgets'
-    )
 
     _stylesheets: ClassVar[List[str]] = [
         f"{CDN_DIST}css/chat_interface.css"
