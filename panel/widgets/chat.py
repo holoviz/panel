@@ -998,10 +998,8 @@ class ChatFeed(CompositeWidget):
 
             num_entries = len(self._chat_log)
             task = asyncio.create_task(self._handle_callback(entry))
-            await asyncio.gather(
-                self._schedule_placeholder(task, num_entries),
-                task
-            )
+            await self._schedule_placeholder(task, num_entries)
+            await task
             task.result()
         except Exception as e:
             send_kwargs = dict(
@@ -1182,7 +1180,7 @@ class ChatInterface(ChatFeed):
     )
     """
 
-    widgets = param.ClassSelector(class_=(Widget, list), doc="""
+    widgets = param.ClassSelector(class_=(Widget, list), allow_refs=True, doc="""
         Widgets to use for the input. If not provided, defaults to
         `[TextInput]`.""")
 
@@ -1236,8 +1234,11 @@ class ChatInterface(ChatFeed):
     ]
 
     def __init__(self, **params):
-        if params.get("widgets") is None:
+        widgets = params.get("widgets")
+        if widgets is None:
             params["widgets"] = [TextInput(placeholder="Send a message")]
+        elif not isinstance(widgets, list):
+            params["widgets"] = [widgets]
         active = params.pop("active", None)
         super().__init__(**params)
 
