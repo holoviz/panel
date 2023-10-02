@@ -13,7 +13,7 @@
 .scroll-button {
   /* For location */
   position: sticky;
-  bottom: 0;
+  top: calc(100% - 38px);
   left: calc(100% - 45px);
   /* For icon */
   cursor: pointer;
