@@ -190,15 +190,15 @@ class ChatReactionIcons(ReactiveHTML):
     >>> ChatReactionIcons(value=["like"], options={"like": "thumb-up", "dislike": "thumb-down"})
     """
 
-    value = param.List(doc="The active reactions.")
+    active_icons = param.Dict(default={}, doc="""
+        The mapping of reactions to their corresponding active icon names;
+        if not set, the active icon name will default to its "filled" version.""")
 
     options = param.Dict(default={"favorite": "heart"}, doc="""
         A key-value pair of reaction values and their corresponding tabler icon names
         found on https://tabler-icons.io.""")
 
-    active_icons = param.Dict(default={}, doc="""
-        The mapping of reactions to their corresponding active icon names;
-        if not set, the active icon name will default to its "filled" version.""")
+    value = param.List(doc="The active reactions.")
 
     _reactions = param.List(doc="""
         The list of reactions, which is the same as the keys of the options dict;
@@ -329,20 +329,6 @@ class ChatEntry(CompositeWidget):
 
     >>> ChatEntry(value="Hello world!", user="New User", avatar="😊")
     """
-    _ignored_refs: ClassVar[Tuple[str,...]] = ('value',)
-
-    value = param.Parameter(doc="""
-        The message contents. Can be any Python object that panel can display.""")
-
-    renderers = param.HookList(doc="""
-        A callable or list of callables that accept the value and return a
-        Panel object to render the value. If a list is provided, will
-        attempt to use the first renderer that does not raise an
-        exception. If None, will attempt to infer the renderer
-        from the value.""")
-
-    user = param.Parameter(default="User", doc="""
-        Name of the user who sent the message.""")
 
     avatar = param.ClassSelector(default="", class_=(str, BinaryIO, ImageBase), doc="""
         The avatar to use for the user. Can be a single character text, an emoji,
@@ -350,14 +336,17 @@ class ChatEntry(CompositeWidget):
         the user is available in the default_avatars mapping; else uses the
         first character of the name.""")
 
+    avatar_lookup = param.Callable(default=None, doc="""
+        A function that can lookup an `avatar` from a user name. The function signature should be
+        `(user: str) -> Avatar`. If this is set, `default_avatars` is disregarded.""")
+
+    css_classes = param.List(default=["chat-entry"], doc="""
+        The CSS classes to apply to the widget.""")
+
     default_avatars = param.Dict(default=DEFAULT_AVATARS, doc="""
         A default mapping of user names to their corresponding avatars
         to use when the user is specified but the avatar is. You can modify, but not replace the
         dictionary.""")
-
-    avatar_lookup = param.Callable(default=None, doc="""
-        A function that can lookup an `avatar` from a user name. The function signature should be
-        `(user: str) -> Avatar`. If this is set, `default_avatars` is disregarded.""")
 
     reactions = param.List(doc="""
         Reactions to associate with the message.""")
@@ -379,10 +368,22 @@ class ChatEntry(CompositeWidget):
 
     show_reaction_icons = param.Boolean(default=True, doc="Whether to display the reaction icons.")
 
-    css_classes = param.List(default=["chat-entry"], doc="""
-        The CSS classes to apply to the widget.""")
+    renderers = param.HookList(doc="""
+        A callable or list of callables that accept the value and return a
+        Panel object to render the value. If a list is provided, will
+        attempt to use the first renderer that does not raise an
+        exception. If None, will attempt to infer the renderer
+        from the value.""")
+
+    user = param.Parameter(default="User", doc="""
+        Name of the user who sent the message.""")
+
+    value = param.Parameter(doc="""
+        The message contents. Can be any Python object that panel can display.""")
 
     _value_panel = param.Parameter(doc="The rendered value panel.")
+
+    _ignored_refs: ClassVar[Tuple[str,...]] = ('value',)
 
     _stylesheets: ClassVar[List[str]] = [
         f"{CDN_DIST}css/chat_entry.css"
@@ -680,28 +681,11 @@ class ChatFeed(CompositeWidget):
     >>> chat_feed.send("Hello World!", user="New User", avatar="😊")
     """
 
-    value = param.List(item_type=ChatEntry, doc="""
-        The list of entries in the feed.""")
-
-    renderers = param.HookList(doc="""
-        A callable or list of callables that accept the value and return a
-        Panel object to render the value. If a list is provided, will
-        attempt to use the first renderer that does not raise an
-        exception. If None, will attempt to infer the renderer
-        from the value.""")
-
-    header = param.Parameter(doc="""
-        The header of the chat feed; commonly used for the title.
-        Can be a string, pane, or widget.""")
-
     callback = param.Callable(allow_refs=False, doc="""
         Callback to execute when a user sends a message or
         when `respond` is called. The signature must include
         the previous message value `contents`, the previous `user` name,
         and the component `instance`.""")
-
-    callback_user = param.String(default="Assistant", doc="""
-        The default user name to use for the entry provided by the callback.""")
 
     callback_exception = param.ObjectSelector(
         default="summary",
@@ -714,10 +698,32 @@ class ChatFeed(CompositeWidget):
         If "ignore", the exception will be ignored.
         """)
 
+    callback_user = param.String(default="Assistant", doc="""
+        The default user name to use for the entry provided by the callback.""")
+
+    card_params = param.Dict(default={}, doc="""
+        Params to pass to Card, like `header`,
+        `header_background`, `header_color`, etc.""")
+
+    entry_params = param.Dict(default={}, doc="""
+        Params to pass to each ChatEntry, like `reaction_icons`, `timestamp_format`,
+        `show_avatar`, `show_user`, and `show_timestamp`.""")
+
+    header = param.Parameter(doc="""
+        The header of the chat feed; commonly used for the title.
+        Can be a string, pane, or widget.""")
+
     margin = Margin(default=0, doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
+
+    renderers = param.HookList(doc="""
+        A callable or list of callables that accept the value and return a
+        Panel object to render the value. If a list is provided, will
+        attempt to use the first renderer that does not raise an
+        exception. If None, will attempt to infer the renderer
+        from the value.""")
 
     placeholder_text = param.String(default="", doc="""
         If placeholder is the default LoadingSpinner,
@@ -740,14 +746,8 @@ class ChatFeed(CompositeWidget):
     view_latest = param.Boolean(default=True, doc="""
         Whether to scroll to the latest object on init. If not
         enabled the view will be on the first object.""")
-
-    card_params = param.Dict(default={}, doc="""
-        Params to pass to Card, like `header`,
-        `header_background`, `header_color`, etc.""")
-
-    entry_params = param.Dict(default={}, doc="""
-        Params to pass to each ChatEntry, like `reaction_icons`, `timestamp_format`,
-        `show_avatar`, `show_user`, and `show_timestamp`.""")
+    value = param.List(item_type=ChatEntry, doc="""
+        The list of entries in the feed.""")
 
     _placeholder = param.ClassSelector(class_=ChatEntry, allow_refs=False, doc="""
         The placeholder wrapped in a ChatEntry object;
@@ -856,11 +856,11 @@ class ChatFeed(CompositeWidget):
             self._chat_log.append(entry)
 
     def _build_entry(
-            self,
-            value: ChatEntry |  dict | Any,
-            user: str | None = None,
-            avatar: str | BinaryIO | None = None,
-        ) -> ChatEntry | None:
+        self,
+        value: ChatEntry |  dict | Any,
+        user: str | None = None,
+        avatar: str | BinaryIO | None = None,
+    ) -> ChatEntry | None:
         """
         Builds a ChatEntry from the value.
         """
@@ -1086,12 +1086,12 @@ class ChatFeed(CompositeWidget):
         return entry
 
     def stream(
-            self,
-            value: str,
-            user: str | None = None,
-            avatar: str | BinaryIO | None = None,
-            entry: ChatEntry | None = None,
-        ) -> ChatEntry | None:
+        self,
+        value: str,
+        user: str | None = None,
+        avatar: str | BinaryIO | None = None,
+        entry: ChatEntry | None = None,
+    ) -> ChatEntry | None:
         """
         Streams a token and updates the provided entry, if provided.
         Otherwise creates a new entry in the chat log, so be sure the
@@ -1180,16 +1180,10 @@ class ChatInterface(ChatFeed):
     )
     """
 
-    widgets = param.ClassSelector(class_=(Widget, list), allow_refs=True, doc="""
-        Widgets to use for the input. If not provided, defaults to
-        `[TextInput]`.""")
-
     auto_send_types = param.List(doc="""
         The widget types to automatically send when the user presses enter
         or clicks away from the widget. If not provided, defaults to
         `[TextInput]`.""")
-
-    user = param.String(default="User", doc="Name of the ChatInterface user.")
 
     avatar = param.ClassSelector(class_=(str, BinaryIO), doc="""
         The avatar to use for the user. Can be a single character text, an emoji,
@@ -1215,7 +1209,13 @@ class ChatInterface(ChatFeed):
     show_button_name = param.Boolean(default=None, doc="""
         Whether to show the button name.""")
 
-    _widgets = param.Dict(default={}, doc="""
+    user = param.String(default="User", doc="Name of the ChatInterface user.")
+
+    widgets = param.ClassSelector(class_=(Widget, list), allow_refs=False, doc="""
+        Widgets to use for the input. If not provided, defaults to
+        `[TextInput]`.""")
+
+    _widgets = param.Dict(default={}, allow_refs=False, doc="""
         The input widgets.""")
 
     _input_container = param.ClassSelector(class_=Row, doc="""
@@ -1228,6 +1228,10 @@ class ChatInterface(ChatFeed):
 
     _button_data = param.Dict(default={}, doc="""
         Metadata and data related to the buttons.""")
+
+    _ignored_refs: ClassVar[Tuple[str]] = (
+        '_placeholder', '_widgets', 'callback', 'widgets'
+    )
 
     _stylesheets: ClassVar[List[str]] = [
         f"{CDN_DIST}css/chat_interface.css"
