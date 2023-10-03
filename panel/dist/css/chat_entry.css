@@ -7,6 +7,10 @@
   }
 }
 
+:host {
+  max-height: none;
+}
+
 .chat-entry {
   display: flex;
   flex-direction: row;
@@ -56,8 +60,6 @@
   font-size: 1.25em;
   min-width: 50px;
   min-height: 50px;
-  max-height: 800px;
-  overflow-y: auto;
   margin-block: 0px;
   margin-left: 10px; /* Space for avatar */
   margin-right: 5px; /* Space for reaction */
