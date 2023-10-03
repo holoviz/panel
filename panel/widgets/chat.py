@@ -11,6 +11,7 @@ import traceback
 
 from contextlib import ExitStack
 from dataclasses import dataclass
+from functools import partial
 from inspect import (
     isasyncgen, isasyncgenfunction, isawaitable, isgenerator,
 )
@@ -480,7 +481,7 @@ class ChatEntry(CompositeWidget):
             contents = self._exit_stack.enter_context(
                 BytesIO(contents)
             )
-            renderer = PDF
+            renderer = partial(PDF, embed=True)
         elif mime_type.startswith("audio/"):
             file = self._exit_stack.enter_context(
                 NamedTemporaryFile(suffix=".mp3", delete=False)
