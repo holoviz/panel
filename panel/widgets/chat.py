@@ -383,7 +383,7 @@ class ChatEntry(CompositeWidget):
         Name of the user who sent the message.""")
 
     value = param.Parameter(doc="""
-        The message contents. Can be any Python object that panel can display.""")
+        The message contents. Can be any Python object that panel can display.""", allow_refs=False)
 
     _value_panel = param.Parameter(doc="The rendered value panel.")
 
