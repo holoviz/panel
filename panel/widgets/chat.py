@@ -437,8 +437,10 @@ class ChatEntry(CompositeWidget):
             stylesheets=self._stylesheets,
             sizing_mode=None,
         )
-        self._composite.stylesheets = self._stylesheets
-        self._composite.css_classes = self.css_classes
+        self._composite.param.update(
+            stylesheets = self._stylesheets,
+            css_classes = self.css_classes
+        )
         self._composite[:] = [left_col, right_col]
 
     @staticmethod
@@ -783,13 +785,13 @@ class ChatFeed(CompositeWidget):
             "width": self.width,
             "max_width": self.max_width,
             "max_height": self.max_height,
+            "styles": {"border": "1px solid var(--panel-border-color, #e1e1e1)", "padding": "0px"},
+            "stylesheets": self._stylesheets
         }
         card_params.update(**self.card_params)
         if self.sizing_mode is None:
             card_params["height"] = card_params.get("height", 500)
         self._composite.param.update(**card_params)
-        self._composite.stylesheets = self._stylesheets
-        self._composite.styles = {"border": "1px solid var(--panel-border-color, #e1e1e1)", "padding": "0px"}
 
         # instantiate the card's column
         chat_log_params = {
@@ -1336,8 +1338,10 @@ class ChatInterface(ChatFeed):
             auto_send_types = tuple(self.auto_send_types) or (TextInput,)
             if isinstance(widget, auto_send_types):
                 widget.param.watch(self._click_send, "value")
-            widget.sizing_mode = "stretch_width"
-            widget.css_classes = ["chat-interface-input-widget"]
+            widget.param.update(
+                sizing_mode="stretch_width",
+                css_classes=["chat-interface-input-widget"]
+            )
 
             buttons = []
             for button_data in self._button_data.values():
@@ -1399,10 +1403,11 @@ class ChatInterface(ChatFeed):
                 )
             # don't use isinstance here; TextAreaInput subclasses TextInput
             if type(active_widget) is TextInput or self.reset_on_send:
+                updates = {"value": ""}
                 if hasattr(active_widget, "value_input"):
-                    active_widget.value_input = ""
+                    updates["value_input"] = ""
                 try:
-                    active_widget.value = ""
+                    active_widget.param.update(updates)
                 except ValueError:
                     pass
         else:
@@ -1427,16 +1432,17 @@ class ChatInterface(ChatFeed):
         """
         for button in button_data.buttons:
             if active and button_data.objects:
-                button.button_type = "warning"
-                button.name = "Revert"
-                button.width = 90
+                button_update = {
+                    "button_type": "warning",
+                    "name": "Revert",
+                    "width": 90
             else:
-                button.button_type = "default"
-                if self.show_button_name:
-                    button.name = button_data.name.title()
-                else:
-                    button.name = ""
-                button.width = 90 if self.show_button_name else 45
+                button_update = {
+                    "button_type": "default",
+                    "name": button_data.name.title() if self.show_button_name else "",
+                    "width": 90 if self.show_button_name else 45
+                }
+            button.param.update(button_update)
 
     def _reset_button_data(self):
         """
