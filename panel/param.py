@@ -1051,9 +1051,6 @@ class ReactiveExpr(PaneBase):
 
     priority: ClassVar[float | bool | None] = 1
 
-    # Parameter values which should not be treated like references
-    _ignored_refs: ClassVar[List[str]] = ['object']
-
     _layouts = {
         'left': (Row, ('start', 'center'), True),
         'right': (Row, ('end', 'center'), False),

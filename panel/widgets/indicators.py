@@ -1228,8 +1228,6 @@ class Tqdm(Indicator):
     write_to_console = param.Boolean(default=False, doc="""
         Whether or not to also write to the console.""")
 
-    _ignored_refs: ClassVar[List[str]] = ['progress']
-
     _layouts: ClassVar[Dict[Type[Panel], str]] = {Row: 'row', Column: 'column'}
 
     _rename: ClassVar[Mapping[str, str | None]] = {
