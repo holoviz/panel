@@ -1,15 +1,15 @@
-{% set sdata = load_setup_py_data() %}
+{% set sdata = load_setup_py_data(setup_file="../setup.py", from_recipe_dir=True) %}
 
 package:
   name: panel
-  version: {{ sdata['version'] }}
+  version: {{ VERSION }}
 
 source:
-  path: ..
+  url: ../dist/panel-{{ VERSION }}-py3-none-any.whl
 
 build:
   noarch: python
-  script: python setup.py install --single-version-externally-managed --record record.txt
+  script: {{ PYTHON }} -m pip install -vv panel-{{ VERSION }}-py3-none-any.whl
   entry_points:
     {% for group,epoints in sdata.get("entry_points",{}).items() %}
     {% for entry_point in epoints %}
