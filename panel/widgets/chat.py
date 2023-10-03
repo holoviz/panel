@@ -222,6 +222,7 @@ class ChatReactionIcons(ReactiveHTML):
             id="reaction-{{ loop.index0 }}"
             onclick="${script('toggle_value')}"
             style="cursor: pointer; width: ${model.width}px; height: ${model.height}px;"
+            title="{{ _reactions[loop.index0]|title }}"
         >
             ${_svgs[{{ loop.index0 }}]}
         </span>
