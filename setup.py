@@ -102,7 +102,7 @@ except Exception:
 
 install_requires = [
     'bokeh >=3.1.1,<3.3.0',
-    'param >=2.0.0rc2',
+    'param >=2.0.0rc6',
     'pyviz_comms >=0.7.4',
     'xyzservices >=2021.09.1', # Bokeh dependency, but pyodide 23.0.0 does not always pick it up
     'markdown',
@@ -226,7 +226,7 @@ extras_require['all_pip'] = sorted(set(extras_require['all']) - set(_conda_only)
 # non-python dependencies). Note that setup_requires isn't used
 # because it doesn't work well with pip.
 extras_require['build'] = [
-    'param >=2.0.0rc2',
+    'param >=2.0.0rc6',
     'setuptools >=42',
     'requests',
     'packaging',
