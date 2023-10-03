@@ -97,7 +97,8 @@ class TestChatEntry:
         assert isinstance(avatar_pane, HTML)
         assert avatar_pane.object == "🧑"
 
-        user_pane = columns[1][0].object()
+        row = columns[1][0]
+        user_pane = row[0].object()
         assert isinstance(user_pane, HTML)
         assert user_pane.object == "User"
 
@@ -166,16 +167,16 @@ class TestChatEntry:
     def test_update_user(self):
         entry = ChatEntry(user="Andrew")
         columns = entry._composite.objects
-        user_pane = columns[1][0].object()
+        user_pane = columns[1][0][0].object()
         assert isinstance(user_pane, HTML)
         assert user_pane.object == "Andrew"
 
         entry.user = "August"
-        user_pane = columns[1][0].object()
+        user_pane = columns[1][0][0].object()
         assert user_pane.object == "August"
 
         entry.show_user = False
-        user_pane = columns[1][0].object()
+        user_pane = columns[1][0][0].object()
         assert not user_pane.visible
 
     def test_update_value(self):
@@ -284,6 +285,27 @@ class TestChatEntry:
 
         assert ChatEntry(user="System").avatar == "⚙️"
 
+    def test_chat_copy_icon(self):
+        entry = ChatEntry(value="testing")
+        assert entry.chat_copy_icon.visible
+        assert entry.chat_copy_icon.value == "testing"
+
+    @pytest.mark.parametrize("widget", [TextInput, TextAreaInput])
+    def test_chat_copy_icon_text_widget(self, widget):
+        entry = ChatEntry(value=widget(value="testing"))
+        assert entry.chat_copy_icon.visible
+        assert entry.chat_copy_icon.value == "testing"
+
+    def test_chat_copy_icon_disabled(self):
+        entry = ChatEntry(value="testing", show_copy_icon=False)
+        assert not entry.chat_copy_icon.visible
+        assert not entry.chat_copy_icon.value
+
+    @pytest.mark.parametrize("component", [Column, FileInput])
+    def test_chat_copy_icon_not_string(self, component):
+        entry = ChatEntry(value=component())
+        assert not entry.chat_copy_icon.visible
+        assert not entry.chat_copy_icon.value
 
 class TestChatFeed:
     @pytest.fixture
