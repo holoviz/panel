@@ -25,7 +25,7 @@ from bokeh.models import CustomJS
 from ..config import config
 from ..util import param_watchers
 from .loading import LOADING_INDICATOR_CSS_CLASS
-from .model import hold, monkeypatch_events  # noqa: API import
+from .model import hold, monkeypatch_events  # noqa: F401 API import
 from .state import curdoc_locked, state
 
 logger = logging.getLogger(__name__)

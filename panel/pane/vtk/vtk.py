@@ -521,7 +521,7 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
         if self.camera is not None:
             for k, v in self.camera.items():
                 if k not in exclude_properties:
-                    if type(v) is list:
+                    if isinstance(v, list):
                         getattr(new_camera, 'Set' + k[0].capitalize() + k[1:])(*v)
                     else:
                         getattr(new_camera, 'Set' + k[0].capitalize() + k[1:])(v)
