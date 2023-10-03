@@ -906,6 +906,10 @@ class ChatFeed(CompositeWidget):
         Replace the placeholder entry with the response or update
         the entry's value with the response.
         """
+        if isinstance(value, str) and entry:
+            entry.value = value
+            return entry
+
         user = self.callback_user
         avatar = None
         if isinstance(value, ChatEntry):
