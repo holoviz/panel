@@ -695,8 +695,10 @@ class ChatEntry(CompositeWidget):
     @param.depends("_value_panel", watch=True)
     def _update_chat_copy_icon(self):
         value = self._value_panel
-        if isinstance(value, (HTMLBasePane, str)) and self.show_copy_icon:
-            self.chat_copy_icon.value = self.value
+        if isinstance(value, HTMLBasePane):
+            value = value.object
+        if isinstance(value, str) and self.show_copy_icon:
+            self.chat_copy_icon.value = value
             self.chat_copy_icon.visible = True
         else:
             self.chat_copy_icon.value = ""
