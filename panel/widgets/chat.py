@@ -922,7 +922,7 @@ class ChatFeed(CompositeWidget):
         if value is None:
             return None
 
-        if not isinstance(value, (ChatEntry, dict)):
+        if not isinstance(value, (dict, ChatEntry)):
             value = {"value": value}
 
         if isinstance(value, dict):
@@ -957,18 +957,21 @@ class ChatFeed(CompositeWidget):
         Replace the placeholder entry with the response or update
         the entry's value with the response.
         """
-        if isinstance(value, str) and entry:
-            entry.value = value
+        if entry is not None and isinstance(value, (str, ChatEntry)):
+            if isinstance(value, str):
+                entry.value = value
+            elif isinstance(value, ChatEntry):
+                entry.param.update(**value.param.values())
             return entry
 
         user = self.callback_user
         avatar = None
-        if isinstance(value, ChatEntry):
-            user = value.user
-            avatar = value.avatar
-        elif isinstance(value, dict):
+        if isinstance(value, dict):
             user = value.get("user", user)
             avatar = value.get("avatar", avatar)
+        elif isinstance(value, ChatEntry):
+            user = value.user
+            avatar = value.avatar
 
         updated_entry = self._build_entry(value, user=user, avatar=avatar)
         if entry is None:
