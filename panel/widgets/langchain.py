@@ -33,7 +33,6 @@ class PanelCallbackHandler(BaseCallbackHandler):
         self._input_avatar = avatar
 
     def on_llm_start(self, serialized: Dict[str, Any], *args, **kwargs):
-        print("HELLO1")
         model = kwargs.get("invocation_params", {}).get("model_name", "")
         entries = self.chat_interface.value
         if entries[-1].user != self._active_user:
@@ -43,7 +42,6 @@ class PanelCallbackHandler(BaseCallbackHandler):
         return super().on_llm_start(serialized, *args, **kwargs)
 
     def on_llm_new_token(self, token: str, **kwargs) -> None:
-        print("HELLO2")
         self._entry = self.chat_interface.stream(
             token,
             user=self._active_user,
