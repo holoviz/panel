@@ -1436,6 +1436,7 @@ class ChatInterface(ChatFeed):
                     "button_type": "warning",
                     "name": "Revert",
                     "width": 90
+                }
             else:
                 button_update = {
                     "button_type": "default",
