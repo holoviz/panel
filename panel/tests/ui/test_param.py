@@ -8,22 +8,18 @@ try:
 except ImportError:
     pytestmark = pytest.mark.skip('playwright not available')
 
-from panel.io.server import serve
 from panel.pane import panel
+from panel.tests.util import serve_component
 
 
-def test_param_defer_load(page, port):
+def test_param_defer_load(page):
     def defer_load():
         time.sleep(0.5)
         return 'I render after load!'
 
     component = panel(defer_load, defer_load=True)
 
-    serve(component, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, component)
 
     assert page.locator(".pn-loading")
 

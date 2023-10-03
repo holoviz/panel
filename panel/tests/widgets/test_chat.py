@@ -312,10 +312,6 @@ class TestChatFeed:
         chat_feed.send("Message")
         assert chat_feed._chat_log.objects[0] is chat_feed.value[0]
 
-    def test_link_chat_log_objects(self, chat_feed):
-        chat_feed.send("Message")
-        assert chat_feed._chat_log.objects[0] is chat_feed.value[0]
-
     def test_send_with_user_avatar(self, chat_feed):
         user = "Bob"
         avatar = "👨"

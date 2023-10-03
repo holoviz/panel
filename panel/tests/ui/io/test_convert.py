@@ -1,11 +1,10 @@
-import glob
 import os
 import pathlib
+import re
 import shutil
 import tempfile
-import time
+import uuid
 
-from http.client import HTTPConnection
 from subprocess import PIPE, Popen
 
 import pytest
@@ -26,6 +25,9 @@ if not (PANEL_LOCAL_WHL.is_file() and BOKEH_LOCAL_WHL.is_file()):
         "version. Build wheels for pyodide using `python scripts/build_pyodide_wheels.py`.",
         allow_module_level=True
     )
+
+_worker_id = os.environ.get("PYTEST_XDIST_WORKER", "0")
+HTTP_PORT = 5990 + int(re.sub(r"\D", "", _worker_id))
 
 button_app = """
 import panel as pn
@@ -97,60 +99,40 @@ pn.Row('Output').servable();
 """
 
 
-def write_app(app):
-    """
-    Writes app to temporary file and returns path.
-    """
-    nf = tempfile.NamedTemporaryFile(mode='w', suffix='.py', encoding='utf-8', delete=False)
-    nf.write(app)
-    nf.flush()
-    dest = pathlib.Path(nf.name).parent
-    try:
-        shutil.copy(PANEL_LOCAL_WHL, dest / PANEL_LOCAL_WHL.name)
-    except shutil.SameFileError:
-        pass
-    try:
-        shutil.copy(BOKEH_LOCAL_WHL, dest / BOKEH_LOCAL_WHL.name)
-    except shutil.SameFileError:
-        pass
-    return nf
-
 @pytest.fixture(scope="module")
-def launch_app():
-    _PROCESSES = []
+def http_serve():
+    temp_dir = tempfile.TemporaryDirectory()
+    temp_path = pathlib.Path(temp_dir.name)
 
-    def start(code):
-        nf = write_app(code)
-        app_path = pathlib.Path(nf.name)
-        process = Popen(
-            ["python", "-m", "http.server", "8123", "--directory", str(app_path.parent)], stdout=PIPE
-        )
-        retries = 5
-        while retries > 0:
-            conn = HTTPConnection("localhost:8123")
-            try:
-                conn.request("HEAD", str(app_path.name))
-                response = conn.getresponse()
-                if response is not None:
-                    _PROCESSES.append((process, nf.name))
-                    break
-            except ConnectionRefusedError:
-                time.sleep(1)
-                retries -= 1
+    (temp_path / 'test.html').write_text('<html><body>Test</body></html>')
 
-        if not retries:
-            raise RuntimeError("Failed to start http server")
+    try:
+        shutil.copy(PANEL_LOCAL_WHL, temp_path / PANEL_LOCAL_WHL.name)
+    except shutil.SameFileError:
+        pass
+    try:
+        shutil.copy(BOKEH_LOCAL_WHL, temp_path / BOKEH_LOCAL_WHL.name)
+    except shutil.SameFileError:
+        pass
+
+    process = Popen(
+        ["python", "-m", "http.server", str(HTTP_PORT), "--directory", str(temp_path)], stdout=PIPE
+    )
+    def write(app):
+        app_name = uuid.uuid4().hex
+        app_path = temp_path / f'{app_name}.py'
+        with open(app_path, 'w') as f:
+            f.write(app)
         return app_path
-    yield start
-    for process, name in _PROCESSES:
-        process.terminate()
-        process.wait()
-        for f in glob.glob(f'{name[:-3]}*'):
-            os.remove(f)
+
+    yield write
+
+    process.terminate()
+    process.wait()
 
 
-def wait_for_app(launch_app, app, page, runtime, wait=True, **kwargs):
-    app_path = launch_app(app)
+def wait_for_app(http_serve, app, page, runtime, wait=True, **kwargs):
+    app_path = http_serve(app)
 
     convert_apps(
         [app_path], app_path.parent, runtime=runtime, build_pwa=False,
@@ -160,7 +142,7 @@ def wait_for_app(launch_app, app, page, runtime, wait=True, **kwargs):
     msgs = []
     page.on("console", lambda msg: msgs.append(msg))
 
-    page.goto(f"http://localhost:8123/{app_path.name[:-3]}.html")
+    page.goto(f"http://localhost:{HTTP_PORT}/{app_path.name[:-3]}.html")
 
     cls = f'pn-loading pn-{config.loading_spinner}'
     expect(page.locator('body')).to_have_class(cls)
@@ -170,14 +152,14 @@ def wait_for_app(launch_app, app, page, runtime, wait=True, **kwargs):
     return msgs
 
 
-def test_pyodide_test_error_handling_worker(page, launch_app):
-    wait_for_app(launch_app, error_app, page, 'pyodide-worker', wait=False)
+def test_pyodide_test_error_handling_worker(http_serve, page):
+    wait_for_app(http_serve, error_app, page, 'pyodide-worker', wait=False)
 
     expect(page.locator('.pn-loading-msg')).to_have_text('RuntimeError: This app is broken', timeout=90 * 1000)
 
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
-def test_pyodide_test_convert_button_app(page, runtime, launch_app):
-    msgs = wait_for_app(launch_app, button_app, page, runtime)
+def test_pyodide_test_convert_button_app(http_serve, page, runtime):
+    msgs = wait_for_app(http_serve, button_app, page, runtime)
 
     expect(page.locator('pre:not([class])')).to_have_text('0')
 
@@ -188,8 +170,8 @@ def test_pyodide_test_convert_button_app(page, runtime, launch_app):
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
-def test_pyodide_test_convert_slider_app(page, runtime, launch_app):
-    msgs = wait_for_app(launch_app, slider_app, page, runtime)
+def test_pyodide_test_convert_slider_app(http_serve, page, runtime):
+    msgs = wait_for_app(http_serve, slider_app, page, runtime)
 
     expect(page.locator('pre:not([class])')).to_have_text('0.0')
 
@@ -201,19 +183,19 @@ def test_pyodide_test_convert_slider_app(page, runtime, launch_app):
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
-def test_pyodide_test_convert_custom_config(page, runtime, launch_app):
-    wait_for_app(launch_app, config_app, page, runtime)
+def test_pyodide_test_convert_custom_config(http_serve, page, runtime):
+    wait_for_app(http_serve, config_app, page, runtime)
 
     assert page.locator("body").evaluate("""(element) =>
         window.getComputedStyle(element).getPropertyValue('background-color')""") == 'rgb(0, 0, 255)'
 
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker'])
-def test_pyodide_test_convert_tabulator_app(page, runtime, launch_app):
-    msgs = wait_for_app(launch_app, tabulator_app, page, runtime)
+def test_pyodide_test_convert_tabulator_app(http_serve, page, runtime):
+    msgs = wait_for_app(http_serve, tabulator_app, page, runtime)
 
     page.click('.bk-btn')
 
-    time.sleep(1)
+    page.wait_for_timeout(1)
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
@@ -225,8 +207,8 @@ def test_pyodide_test_convert_tabulator_app(page, runtime, launch_app):
         ('pyodide-worker', True)
     ]
 )
-def test_pyodide_test_convert_csv_app(page, runtime, http_patch, launch_app):
-    msgs = wait_for_app(launch_app, csv_app, page, runtime, http_patch=http_patch)
+def test_pyodide_test_convert_csv_app(http_serve, page, runtime, http_patch):
+    msgs = wait_for_app(http_serve, csv_app, page, runtime, http_patch=http_patch)
 
     expected_titles = ['index', 'date', 'Temperature', 'Humidity', 'Light', 'CO2', 'HumidityRatio', 'Occupancy']
 
@@ -238,8 +220,8 @@ def test_pyodide_test_convert_csv_app(page, runtime, http_patch, launch_app):
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker'])
-def test_pyodide_test_convert_png_app(page, runtime, launch_app):
-    msgs = wait_for_app(launch_app, png_app, page, runtime)
+def test_pyodide_test_convert_png_app(http_serve, page, runtime):
+    msgs = wait_for_app(http_serve, png_app, page, runtime)
 
     expect(page.locator('img')).to_have_count(1)
 
