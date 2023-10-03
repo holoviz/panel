@@ -316,6 +316,36 @@ class ChatReactionIcons(ReactiveHTML):
                 self.value.remove(reaction)
 
 
+class ChatCopyIcon(ReactiveHTML):
+
+    value = param.String(default=None, doc="The text to copy to the clipboard.")
+
+    _template = """
+        <div
+            type="button"
+            id="copy-button"
+            onclick="${script('copy_to_clipboard')}"
+            style="cursor: pointer; width: ${model.width}px; height: ${model.height}px;"
+            title="Copy message to clipboard"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copy"
+                width="${model.width}" height="${model.height}" viewBox="0 0 24 24"
+                stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"
+            >
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
+                <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+            </svg>
+        </div>
+    """
+
+    _scripts = {"copy_to_clipboard": "navigator.clipboard.writeText(`${data.value}`)"}
+
+    _stylesheets: ClassVar[List[str]] = [
+        f"{CDN_DIST}css/chat_copy_icon.css"
+    ]
+
+
 class ChatEntry(CompositeWidget):
     """
     A widget for displaying chat messages with support for various content types.
@@ -372,6 +402,8 @@ class ChatEntry(CompositeWidget):
 
     show_reaction_icons = param.Boolean(default=True, doc="Whether to display the reaction icons.")
 
+    show_copy_icon = param.Boolean(default=True, doc="Whether to display the copy icon.")
+
     renderers = param.HookList(doc="""
         A callable or list of callables that accept the value and return a
         Panel object to render the value. If a list is provided, will
@@ -396,6 +428,8 @@ class ChatEntry(CompositeWidget):
 
         self._exit_stack = ExitStack()
 
+        self.chat_copy_icon = ChatCopyIcon(
+            visible=False, width=15, height=15, css_classes=["copy-icon"])
         if params.get("timestamp") is None:
             params["timestamp"] = datetime.datetime.utcnow()
         if params.get("reaction_icons") is None:
@@ -430,7 +464,12 @@ class ChatEntry(CompositeWidget):
             sizing_mode=None,
         )
         right_col = Column(
-            ParamMethod(self._render_user, **render_kwargs),
+            Row(
+                ParamMethod(self._render_user, **render_kwargs),
+                self.chat_copy_icon,
+                stylesheets=self._stylesheets,
+                sizing_mode="stretch_width",
+            ),
             center_row,
             ParamMethod(self._render_timestamp, **render_kwargs),
             css_classes=["right"],
@@ -534,7 +573,6 @@ class ChatEntry(CompositeWidget):
 
             if obj.height is None:
                 obj.height = 500
-
         return obj
 
     @staticmethod
@@ -652,6 +690,16 @@ class ChatEntry(CompositeWidget):
             self.avatar = self.avatar_lookup(self.user)
         else:
             self.avatar = self._avatar_lookup(self.user)
+
+    @param.depends("_value_panel", watch=True)
+    def _update_chat_copy_icon(self):
+        value = self._value_panel
+        if isinstance(value, (HTMLBasePane, str)) and self.show_copy_icon:
+            self.chat_copy_icon.value = self.value
+            self.chat_copy_icon.visible = True
+        else:
+            self.chat_copy_icon.value = ""
+            self.chat_copy_icon.visible = False
 
     def _cleanup(self, root=None) -> None:
         """
