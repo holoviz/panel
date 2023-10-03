@@ -40,6 +40,7 @@ from ..pane.image import (
 from ..pane.markup import HTML, DataFrame, HTMLBasePane
 from ..pane.media import Audio, Video
 from ..reactive import ReactiveHTML
+from ..util.asyncutils import AsyncLeakyBucket
 from ..viewable import Viewable
 from .base import CompositeWidget, Widget
 from .button import Button
@@ -944,8 +945,20 @@ class ChatFeed(CompositeWidget):
         """
         response_entry = None
         if isasyncgen(response):
+            bucket = AsyncLeakyBucket(5)
+
+            all_tokens = []
+            tokens = []
             async for token in response:
-                response_entry = self._upsert_entry(token, response_entry)
+                all_tokens.append(token)
+                tokens.append(token)
+                print(token)
+                if bucket.has_capacity():
+                    await bucket.acquire(1)
+                    input_tokens = "".join(tokens)
+                    tokens.clear()
+                    response_entry = self._upsert_entry(input_tokens, response_entry)
+            response_entry = self._upsert_entry("".join(all_tokens), response_entry)
         elif isgenerator(response):
             for token in response:
                 response_entry = self._upsert_entry(token, response_entry)
