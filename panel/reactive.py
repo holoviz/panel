@@ -527,9 +527,6 @@ class Reactive(Syncable, Viewable):
     the parameters to other objects.
     """
 
-    # Parameter values which should not be treated like references
-    _ignored_refs: ClassVar[List[str]] = []
-
     _rename: ClassVar[Mapping[str, str | None]] = {
         'design': None, 'loading': None
     }
@@ -538,8 +535,8 @@ class Reactive(Syncable, Viewable):
 
     def __init__(self, refs=None, **params):
         for name, pobj in self.param.objects('existing').items():
-            enable_refs = name not in self._ignored_refs
-            pobj.allow_refs = enable_refs
+            if name not in self._param__private.explicit_no_refs:
+                pobj.allow_refs = True
         super().__init__(**params)
 
     #----------------------------------------------------------------

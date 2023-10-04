@@ -21,7 +21,7 @@ from bokeh.core.has_props import _default_resolver
 from bokeh.document import Document
 from bokeh.model import Model
 from bokeh.settings import settings as bk_settings
-from param.depends import (
+from param.display import (
     register_display_accessor, unregister_display_accessor,
 )
 from pyviz_comms import (

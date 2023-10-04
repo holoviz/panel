@@ -74,6 +74,7 @@ from ..config import config
 from ..util import edit_readonly, fullpath
 from ..util.warnings import warn
 from .document import init_doc, unlocked, with_lock  # noqa
+from .liveness import LivenessHandler
 from .loading import LOADING_INDICATOR_CSS_CLASS
 from .logging import (
     LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING,
@@ -990,6 +991,7 @@ def get_server(
     login_template: Optional[str] = None,
     logout_template: Optional[str] = None,
     session_history: Optional[int] = None,
+    liveness: bool | str = False,
     **kwargs
 ) -> Server:
     """
@@ -1065,6 +1067,10 @@ def get_server(
       and non-None value will launch a REST endpoint at
       /rest/session_info, which returns information about the session
       history.
+    liveness: bool | str (optional, default=False)
+      Whether to add a liveness endpoint. If a string is provided
+      then this will be used as the endpoint, otherwise the endpoint
+      will be hosted at /liveness.
     kwargs: dict
       Additional keyword arguments to pass to Server instance.
 
@@ -1142,6 +1148,10 @@ def get_server(
         pattern = REST_PROVIDERS['param']([], 'rest')
         extra_patterns.extend(pattern)
         state.publish('session_info', state, ['session_info'])
+
+    if liveness:
+        liveness_endpoint = 'liveness' if isinstance(liveness, bool) else liveness
+        extra_patterns += [(r"/%s" % liveness_endpoint, LivenessHandler, dict(applications=apps))]
 
     opts = dict(kwargs)
     if loop:

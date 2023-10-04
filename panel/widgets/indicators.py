@@ -1203,7 +1203,7 @@ class Tqdm(Indicator):
         The layout for the text and progress indicator.""",)
 
     lock = param.ClassSelector(class_=object, default=None,
-                               doc="""The `mutithreading.Lock` or `multiprocessing.Lock` object to be used by Tqdm.""",)
+                               doc="""The `multithreading.Lock` or `multiprocessing.Lock` object to be used by Tqdm.""",)
 
     max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 
@@ -1227,8 +1227,6 @@ class Tqdm(Indicator):
 
     write_to_console = param.Boolean(default=False, doc="""
         Whether or not to also write to the console.""")
-
-    _ignored_refs: ClassVar[List[str]] = ['progress']
 
     _layouts: ClassVar[Dict[Type[Panel], str]] = {Row: 'row', Column: 'column'}
 

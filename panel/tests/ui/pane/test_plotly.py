@@ -1,5 +1,3 @@
-import time
-
 import pytest
 
 try:
@@ -13,8 +11,8 @@ plotly_available = pytest.mark.skipif(plotly is None, reason="requires plotly")
 
 import numpy as np
 
-from panel.io.server import serve
 from panel.pane import Plotly
+from panel.tests.util import serve_component, wait_until
 
 try:
     from playwright.sync_api import expect
@@ -47,6 +45,7 @@ def plotly_3d_plot():
         height=500,
         margin=dict(t=50, b=50, r=50, l=50)
     )
+
     fig = dict(data=[surface], layout=layout)
     plot_3d = Plotly(fig, width=500, height=500)
 
@@ -54,26 +53,17 @@ def plotly_3d_plot():
 
 
 @plotly_available
-def test_plotly_no_console_errors(page, port, plotly_2d_plot):
-    serve(plotly_2d_plot, port=port, threaded=True, show=False)
+def test_plotly_no_console_errors(page, plotly_2d_plot):
+    msgs, _ = serve_component(page, plotly_2d_plot)
 
-    msgs = []
-    page.on("console", lambda msg: msgs.append(msg))
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
-
-    time.sleep(1)
+    page.wait_for_timeout(1000)
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 
 @plotly_available
-def test_plotly_2d_plot(page, port, plotly_2d_plot):
-    serve(plotly_2d_plot, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+def test_plotly_2d_plot(page, plotly_2d_plot):
+    serve_component(page, plotly_2d_plot)
 
     # main pane
     plotly_plot = page.locator('.js-plotly-plot .plot-container.plotly')
@@ -92,21 +82,18 @@ def test_plotly_2d_plot(page, port, plotly_2d_plot):
     hover = page.locator('.hoverlayer')
     expect(hover).to_have_count(1)
 
-    time.sleep(0.2)
-
-    assert plotly_2d_plot.viewport == {
+    wait_until(lambda: plotly_2d_plot.viewport == {
         'xaxis.range': [-0.08103975535168195, 1.081039755351682],
         'yaxis.range': [1.9267515923566878, 3.073248407643312]
-    }
+    }, page)
 
 
 @plotly_available
 @pytest.mark.flaky(max_runs=3)
-def test_plotly_3d_plot(page, port, plotly_3d_plot):
+def test_plotly_3d_plot(page, plotly_3d_plot):
     plot_3d, title = plotly_3d_plot
-    serve(plot_3d, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+
+    serve_component(page, plot_3d)
 
     # main pane
     plotly_plot = page.locator('.js-plotly-plot .plot-container.plotly')
@@ -129,14 +116,11 @@ def test_plotly_3d_plot(page, port, plotly_3d_plot):
 
 @plotly_available
 @pytest.mark.flaky(max_runs=3)
-def test_plotly_hover_data(page, port, plotly_2d_plot):
-    serve(plotly_2d_plot, port=port, threaded=True, show=False)
-
+def test_plotly_hover_data(page, plotly_2d_plot):
     hover_data = []
     plotly_2d_plot.param.watch(lambda e: hover_data.append(e.new), 'hover_data')
 
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, plotly_2d_plot)
 
     plotly_plot = page.locator('.js-plotly-plot .plot-container.plotly')
     expect(plotly_plot).to_have_count(1)
@@ -145,9 +129,7 @@ def test_plotly_hover_data(page, port, plotly_2d_plot):
     point = plotly_plot.locator('g.points path.point').nth(0)
     point.hover(force=True)
 
-    time.sleep(0.2)
-
-    assert {
+    wait_until(lambda: {
         'points': [{
             'curveNumber': 0,
             'pointIndex': 0,
@@ -155,25 +137,19 @@ def test_plotly_hover_data(page, port, plotly_2d_plot):
             'x': 0,
             'y': 2
         }]
-    } in hover_data
+    } in hover_data, page)
 
     # Hover somewhere else
     plot = page.locator('.js-plotly-plot .plot-container.plotly g.scatterlayer')
     plot.hover(force=True)
 
-    time.sleep(0.2)
-
-    assert plotly_2d_plot.hover_data is None
+    wait_until(lambda: plotly_2d_plot.hover_data is None, page)
 
 
 @plotly_available
 @pytest.mark.flaky(max_runs=3)
-def test_plotly_click_data(page, port, plotly_2d_plot):
-    serve(plotly_2d_plot, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+def test_plotly_click_data(page, plotly_2d_plot):
+    serve_component(page, plotly_2d_plot)
 
     plotly_plot = page.locator('.js-plotly-plot .plot-container.plotly')
     expect(plotly_plot).to_have_count(1)
@@ -182,9 +158,7 @@ def test_plotly_click_data(page, port, plotly_2d_plot):
     point = page.locator('.js-plotly-plot .plot-container.plotly path.point').nth(0)
     point.click(force=True)
 
-    time.sleep(0.2)
-
-    assert plotly_2d_plot.click_data == {
+    wait_until(lambda: plotly_2d_plot.click_data == {
         'points': [{
             'curveNumber': 0,
             'pointIndex': 0,
@@ -192,18 +166,13 @@ def test_plotly_click_data(page, port, plotly_2d_plot):
             'x': 0,
             'y': 2
         }]
-    }
-
+    }, page)
 
 
 @plotly_available
 @pytest.mark.flaky(max_runs=3)
-def test_plotly_select_data(page, port, plotly_2d_plot):
-    serve(plotly_2d_plot, port=port, threaded=True, show=False)
-
-    time.sleep(0.5)
-
-    page.goto(f"http://localhost:{port}")
+def test_plotly_select_data(page, plotly_2d_plot):
+    serve_component(page, plotly_2d_plot)
 
     plotly_plot = page.locator('.js-plotly-plot .plot-container.plotly')
     expect(plotly_plot).to_have_count(1)
@@ -217,7 +186,7 @@ def test_plotly_select_data(page, port, plotly_2d_plot):
     page.mouse.move(bbox['x']+bbox['width'], bbox['y']+bbox['height'], steps=5)
     page.mouse.up()
 
-    time.sleep(0.2)
+    wait_until(lambda: plotly_2d_plot.selected_data is not None, page)
 
     selected = plotly_2d_plot.selected_data
     assert selected is not None

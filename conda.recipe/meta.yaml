@@ -1,15 +1,15 @@
-{% set sdata = load_setup_py_data() %}
+{% set sdata = load_setup_py_data(setup_file="../setup.py", from_recipe_dir=True) %}
 
 package:
-  name: panel
-  version: {{ sdata['version'] }}
+  name: {{ sdata['name'] }}
+  version: {{ VERSION }}
 
 source:
-  path: ..
+  url: ../dist/{{ sdata['name'] }}-{{ VERSION }}-py3-none-any.whl
 
 build:
   noarch: python
-  script: python setup.py install --single-version-externally-managed --record record.txt
+  script: {{ PYTHON }} -m pip install -vv {{ sdata['name'] }}-{{ VERSION }}-py3-none-any.whl
   entry_points:
     {% for group,epoints in sdata.get("entry_points",{}).items() %}
     {% for entry_point in epoints %}
@@ -30,6 +30,18 @@ requirements:
     {% endfor %}
   run_constrained:
     - holoviews >=1.13.2
+
+test:
+  imports:
+    - panel
+    - panel.io
+  requires:
+    - pip
+    - pytest-asyncio
+  commands:
+    - pip check
+    - panel --help
+    - pytest --pyargs panel.tests
 
 about:
   home: {{ sdata['url'] }}

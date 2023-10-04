@@ -125,7 +125,7 @@ class PaneBase(Reactive):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    object = param.Parameter(default=None, doc="""
+    object = param.Parameter(default=None, allow_refs=True, doc="""
         The object being wrapped, which will be converted to a
         Bokeh model.""")
 
@@ -549,9 +549,7 @@ class ReplacementPane(PaneBase):
 
     _pane = param.ClassSelector(class_=Viewable, allow_refs=False)
 
-    _ignored_refs: ClassVar[Tuple[str]] = ['object', '_pane']
-
-    _linked_properties: ClassVar[Tuple[str]] = ()
+    _linked_properties: ClassVar[Tuple[str,...]] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {'_pane': None, 'inplace': None}
 

@@ -1,11 +1,8 @@
-import time
-
 import pytest
 
 pytestmark = pytest.mark.ui
 
-from panel.io.server import serve
-from panel.tests.util import wait_until
+from panel.tests.util import serve_component, wait_until
 from panel.widgets import (
     EditableFloatSlider, EditableIntSlider, EditableRangeSlider,
 )
@@ -39,13 +36,10 @@ class _editable_text_input:
     ],
     ids=["EditableIntSlider", "EditableFloatSlider"]
 )
-def test_editableslider_textinput_end(page, port, widget, val1, val2, val3, func):
+def test_editableslider_textinput_end(page, widget, val1, val2, val3, func):
     widget = widget()
 
-    serve(widget, port=port, threaded=True, show=False)
-    time.sleep(0.5)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, widget)
 
     text_input = _editable_text_input(page)
 
@@ -73,13 +67,10 @@ def test_editableslider_textinput_end(page, port, widget, val1, val2, val3, func
     ],
     ids=["EditableIntSlider", "EditableFloatSlider"]
 )
-def test_editableslider_textinput_start(page, port, widget, val1, val2, val3, func):
+def test_editableslider_textinput_start(page, widget, val1, val2, val3, func):
     widget = widget()
 
-    serve(widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, widget)
 
     text_input = _editable_text_input(page)
 
@@ -107,16 +98,13 @@ def test_editableslider_textinput_start(page, port, widget, val1, val2, val3, fu
     ],
     ids=["EditableIntSlider", "EditableFloatSlider"]
 )
-def test_editableslider_button_end(page, port, widget):
+def test_editableslider_button_end(page, widget):
     widget = widget(step=1)
     default_value = widget.value
     step = widget.step
     end = widget.end
 
-    serve(widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, widget)
 
     up = page.locator("button").nth(0)
     down = page.locator("button").nth(1)
@@ -143,16 +131,13 @@ def test_editableslider_button_end(page, port, widget):
     ],
     ids=["EditableIntSlider", "EditableFloatSlider"]
 )
-def test_editableslider_button_start(page, port, widget):
+def test_editableslider_button_start(page, widget):
     widget = widget(step=1)
     default_value = widget.value
     step = widget.step
     start = widget.start
 
-    serve(widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, widget)
 
     up = page.locator("button").nth(0)
     down = page.locator("button").nth(1)
@@ -177,13 +162,10 @@ def test_editableslider_button_start(page, port, widget):
     ],
     ids=["EditableRangeSlider"]
 )
-def test_editablerangeslider_textinput_end(page, port, widget, val1, val2, val3, func):
+def test_editablerangeslider_textinput_end(page, widget, val1, val2, val3, func):
     widget = widget()
 
-    serve(widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, widget)
 
     text_input = _editable_text_input(page, nth=1)
 
@@ -211,13 +193,10 @@ def test_editablerangeslider_textinput_end(page, port, widget, val1, val2, val3,
     ],
     ids=["EditableRangeSlider"]
 )
-def test_editablerangeslider_textinput_start(page, port, widget, val1, val2, val3, func):
+def test_editablerangeslider_textinput_start(page, widget, val1, val2, val3, func):
     widget = widget()
 
-    serve(widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, widget)
 
     text_input = _editable_text_input(page, nth=0)
 
@@ -245,16 +224,13 @@ def test_editablerangeslider_textinput_start(page, port, widget, val1, val2, val
     ],
     ids=["EditableRangeSlider"]
 )
-def test_editablerangeslider_button_end(page, port, widget):
+def test_editablerangeslider_button_end(page, widget):
     widget = widget(step=1)
     default_value = widget.value
     step = widget.step
     end = widget.end
 
-    serve(widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, widget)
 
     up = page.locator("button").nth(2)
     down = page.locator("button").nth(3)
@@ -280,16 +256,13 @@ def test_editablerangeslider_button_end(page, port, widget):
     ],
     ids=["EditableRangeSlider"]
 )
-def test_editablerangeslider_button_start(page, port, widget):
+def test_editablerangeslider_button_start(page, widget):
     widget = widget(step=1)
     default_value = widget.value
     step = widget.step
     start = widget.start
 
-    serve(widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, widget)
 
     up = page.locator("button").nth(0)
     down = page.locator("button").nth(1)
@@ -307,13 +280,10 @@ def test_editablerangeslider_button_start(page, port, widget):
     assert widget._slider.start == start - 2 * step
 
 
-def test_editablerangeslider_no_overlap(page, port):
+def test_editablerangeslider_no_overlap(page):
     widget = EditableRangeSlider(value=(0, 2), step=1)
 
-    serve(widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, widget)
 
     up_start = page.locator("button").nth(0)
     down_start = page.locator("button").nth(1)

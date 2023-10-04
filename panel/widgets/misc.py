@@ -124,8 +124,6 @@ class FileDownload(IconMixin):
 
     _transfers = param.Integer(default=0)
 
-    _ignored_refs: ClassVar[List[str]] = ['callback']
-
     _mime_types = {
         'application': {
             'pdf': 'pdf', 'zip': 'zip'

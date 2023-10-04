@@ -73,7 +73,6 @@ bound_plot = pn.bind(create_plot, variable=variable_widget, window=window_widget
 
 Once you have bound the widgets to the function's arguments you can lay out the resulting `bound_plot` component along with the `widget` components using a Panel layout such as `Column`:
 
-
 ```{pyodide}
 first_app = pn.Column(variable_widget, window_widget, sigma_widget, bound_plot)
 

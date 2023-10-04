@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, List, Optional,
+    TYPE_CHECKING, Any, ClassVar, Optional,
 )
 
 import param
@@ -42,8 +42,6 @@ class IPyWidget(PaneBase):
         Bokeh model.""")
 
     priority: ClassVar[float | bool | None] = 0.6
-
-    _ignored_refs: ClassVar[List[str]] = ['object']
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:

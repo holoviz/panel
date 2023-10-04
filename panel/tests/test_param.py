@@ -1893,7 +1893,7 @@ async def test_param_async_generator_multiple(document, comm):
     checkbox.value = True
 
     assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
-    await asyncio.sleep(0.15)
+    await asyncio.sleep(0.2)
     assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
 
 
