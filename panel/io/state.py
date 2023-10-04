@@ -33,7 +33,7 @@ from bokeh.document.locking import UnlockedDocumentProxy
 from bokeh.io import curdoc as _curdoc
 from pyviz_comms import CommManager as _CommManager
 
-from ..util import base64url_decode, edit_readonly, parse_timedelta
+from ..util import base64url_decode, parse_timedelta
 from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 
 _state_logger = logging.getLogger('panel.state')
@@ -964,45 +964,15 @@ class _state(param.Parameterized):
     def location(self) -> Location | None:
         if self.curdoc and self.curdoc not in self._locations:
             from .location import Location
-            loc = self._locations[self.curdoc] = Location()
             if self.curdoc.session_context:
-                request = self.curdoc.session_context.request
-                params = {}
-                href = ''
-                if request.protocol:
-                    params['protocol'] = href = f'{request.protocol}:'
-                if request.host:
-                    href += f'//{request.host}'
-                    if ':' in request.host:
-                        params['hostname'], params['port'] = request.host.split(':')
-                    else:
-                        params['hostname'] = request.host
-                if request.uri:
-                    search = hash = None
-                    href += request.uri
-                    if '?' in request.uri and '#' in request.uri:
-                        params['pathname'], query = request.uri.split('?')
-                        search, hash = query.split('#')
-                    elif '?' in request.uri:
-                        params['pathname'], search = request.uri.split('?')
-                    elif '#' in request.uri:
-                        params['pathname'], hash = request.uri.split('#')
-                    else:
-                        params['pathname'] = request.uri
-                    if search:
-                        params['search'] = f'?{search}'
-                    if hash:
-                        params['hash'] = f'#{hash}'
-                params['href'] = href
-                with edit_readonly(loc):
-                    loc.param.update(params)
+                loc = Location.from_request(self.curdoc.session_context.request)
+            else:
+                loc = Location()
+            self._locations[self.curdoc] = loc
         elif self.curdoc is None:
             loc = self._location
         else:
             loc = self._locations.get(self.curdoc) if self.curdoc else None
-        if loc is None:
-            return loc
-
         return loc
 
     @property
