@@ -1014,6 +1014,9 @@ class ChatFeed(CompositeWidget):
         """
         user = self.callback_user
         avatar = None
+        if isinstance(value, dict):
+            user = value.get('user', user)
+            avatar = value.get('avatar')
         if entry is not None:
             entry.update(value, user=user, avatar=avatar)
             return entry
