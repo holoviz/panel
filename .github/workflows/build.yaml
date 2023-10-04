@@ -53,7 +53,7 @@ jobs:
           conda config --append channels pyviz/label/dev
           conda config --append channels bokeh/label/dev
           conda install -y conda-build anaconda-client build
-      - name: build packages
+      - name: conda build
         run: |
           bash ./scripts/build_conda.sh
       - name: build pyodide wheels for CDN
