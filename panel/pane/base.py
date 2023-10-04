@@ -125,7 +125,7 @@ class PaneBase(Reactive):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    object = param.Parameter(default=None, doc="""
+    object = param.Parameter(default=None, allow_refs=True, doc="""
         The object being wrapped, which will be converted to a
         Bokeh model.""")
 

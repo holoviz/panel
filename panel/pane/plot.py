@@ -222,7 +222,7 @@ class Matplotlib(Image, IPyWidget):
     interactive = param.Boolean(default=False, constant=True, doc="""
         Whether to render interactive matplotlib plot with ipympl.""")
 
-    object = param.Parameter(default=None, allow_refs=False, doc="""
+    object = param.Parameter(default=None, allow_refs=True, doc="""
         The Matplotlib Figure being wrapped, which will be rendered as a
         Bokeh model.""")
 
