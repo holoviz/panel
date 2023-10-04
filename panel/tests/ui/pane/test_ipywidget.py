@@ -1,5 +1,4 @@
 import pytest
-import traitlets
 
 from bokeh.core.has_props import _default_resolver
 from bokeh.model import Model
@@ -9,6 +8,12 @@ pytestmark = pytest.mark.ui
 from panel.layout import Row
 from panel.pane.ipywidget import Reacton
 from panel.tests.util import serve_component, wait_until
+
+try:
+    import ipywidgets  # noqa
+    import traitlets
+except Exception:
+    pytestmark = pytest.mark.skip('ipywidgets not available')
 
 try:
     import reacton
