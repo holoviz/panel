@@ -4,7 +4,8 @@ set -euxo pipefail
 
 git status
 
-SETUPTOOLS_ENABLE_FEATURES="legacy-editable" python -m build .
+export SETUPTOOLS_ENABLE_FEATURES="legacy-editable"
+python -m build .
 
 git diff --exit-code
 
