@@ -42,9 +42,9 @@ template = """
 def test_template_links_axes(document, comm):
     tmplt = Template(template)
 
-    p1 = HoloViews(hv.Curve([1, 2, 3]))
-    p2 = HoloViews(hv.Curve([1, 2, 3]))
-    p3 = HoloViews(hv.Curve([1, 2, 3]))
+    p1 = HoloViews(hv.Curve([1, 2, 3]), backend='bokeh')
+    p2 = HoloViews(hv.Curve([1, 2, 3]), backend='bokeh')
+    p3 = HoloViews(hv.Curve([1, 2, 3]), backend='bokeh')
     row = Row(p2, p3)
 
     tmplt.add_panel('A', p1)
