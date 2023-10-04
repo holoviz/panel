@@ -20,4 +20,4 @@ def test_select_option(page):
 
     serve_component(page, select)
 
-    assert page.locator('select').evaluate("(sel)=>sel.value")=='B'
+    wait_until(lambda: page.locator('select').evaluate("(sel)=>sel.value") == 'B', page)
