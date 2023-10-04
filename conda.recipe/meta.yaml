@@ -41,7 +41,7 @@ test:
   commands:
     - pip check
     - panel --help
-    - pytest panel/tests
+    - pytest --pyargs panel.tests
 
 about:
   home: {{ sdata['url'] }}
