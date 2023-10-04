@@ -16,7 +16,7 @@ JPEG_FILE = 'https://assets.holoviz.org/panel/samples/jpeg_sample.jpeg'
 PNG_FILE = 'https://assets.holoviz.org/panel/samples/png_sample.png'
 SVG_FILE = 'https://assets.holoviz.org/panel/samples/svg_sample.svg'
 
-local_resolvable = pytest.mark.skipif(__file__.startswith('$'), reason="local files not resolvable as URI")
+local_resolvable = pytest.mark.skipif('$PREFIX' in __file__, reason="local files not resolvable as URI")
 
 
 def test_jpeg_applies():
