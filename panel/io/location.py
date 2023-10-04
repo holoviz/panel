@@ -65,7 +65,7 @@ class Location(Syncable):
     def from_request(cls, request):
         try:
             from bokeh.server.contexts import _RequestProxy
-            if not isinstance(request, _RequestProxy):
+            if not isinstance(request, _RequestProxy) or request._request is None:
                 return cls()
         except ImportError:
             return cls()
