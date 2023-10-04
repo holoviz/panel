@@ -623,6 +623,33 @@ class TestChatFeed:
         chat_feed.send("Some time ago, there was a recursion error like this")
         print(chat_feed.value)
 
+    def test_chained_response(self, chat_feed):
+        async def callback(contents, user, instance):
+            if user == "User":
+                yield {
+                    "user": "arm",
+                    "avatar": "🦾",
+                    "value": "Hey, leg! Did you hear the user?",
+                }
+                instance.respond()
+            elif user == "arm":
+                user_entry = instance.value[-2]
+                user_contents = user_entry.value
+                yield {
+                    "user": "leg",
+                    "avatar": "🦿",
+                    "value": f'Yeah! They said "{user_contents}".',
+                }
+
+        chat_feed.callback = callback
+        chat_feed.send("Testing!", user="User")
+        assert chat_feed.value[1].user == "arm"
+        assert chat_feed.value[1].avatar == "🦾"
+        assert chat_feed.value[1].value == "Hey, leg! Did you hear the user?"
+        assert chat_feed.value[2].user == "leg"
+        assert chat_feed.value[2].avatar == "🦿"
+        assert chat_feed.value[2].value == 'Yeah! They said "Testing!".'
+
 
 class TestChatFeedCallback:
     @pytest.fixture
