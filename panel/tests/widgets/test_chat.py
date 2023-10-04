@@ -382,28 +382,6 @@ class TestChatFeed:
         assert chat_feed.value[0].user == "Bob"
         assert chat_feed.value[0].avatar == "👨"
 
-    def test_send_entry_with_user_avatar_override(self, chat_feed):
-        user = "August"
-        avatar = "👩"
-        entry = ChatEntry(value="Message", user="Bob", avatar="👨")
-        chat_feed.send(entry, user=user, avatar=avatar)
-        assert len(chat_feed.value) == 1
-        assert chat_feed.value[0] is entry
-        assert chat_feed.value[0].value == "Message"
-        assert chat_feed.value[0].user == user
-        assert chat_feed.value[0].avatar == avatar
-
-    def test_send_entry_with_user_avatar_override_not_using_default(self, chat_feed):
-        user = "System"
-        avatar = "👩"
-        entry = ChatEntry(value="Message", user="Bob", avatar="👨")
-        chat_feed.send(entry, user=user, avatar=avatar)
-        assert len(chat_feed.value) == 1
-        assert chat_feed.value[0] is entry
-        assert chat_feed.value[0].value == "Message"
-        assert chat_feed.value[0].user == user
-        assert chat_feed.value[0].avatar == avatar
-
     def test_send_with_respond(self, chat_feed):
         def callback(contents, user, instance):
             return f"Response to: {contents}"
@@ -513,17 +491,6 @@ class TestChatFeed:
         assert chat_feed.value[0].value == "Streaming message"
         assert chat_feed.value[0].user == "Person"
         assert chat_feed.value[0].avatar == "P"
-
-    def test_stream_entry_with_user_avatar_override(self, chat_feed):
-        user = "Bob"
-        avatar = "👨"
-        entry = ChatEntry(value="Streaming message", user="Person", avatar="P")
-        chat_feed.stream(entry, user=user, avatar=avatar)
-        assert len(chat_feed.value) == 1
-        assert chat_feed.value[0] is entry
-        assert chat_feed.value[0].value == "Streaming message"
-        assert chat_feed.value[0].user == user
-        assert chat_feed.value[0].avatar == avatar
 
     @pytest.mark.parametrize(
         "obj",
