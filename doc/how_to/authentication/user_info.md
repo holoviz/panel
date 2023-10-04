@@ -11,9 +11,9 @@ Once a user is authorized with the chosen OAuth provider certain user informatio
 
 ## Authorization callbacks
 
-The OAuth providers integrated with Panel provide an easy way to enable authentication on your applications. This verifies the identity of a user and also provides some level of access control (i.e. authorization). However often times the OAuth configuration is controlled by a corporate IT department or is otherwise difficult to manage so its often easier to grant permissions to use the OAuth provider freely but then restrict access controls in the application itself. To manage access you can provide an `authorization_callback` as part of your applications.
+The OAuth providers integrated with Panel provide an easy way to enable authentication on your applications. This verifies the identity of a user and also provides some level of access control (i.e. authorization). However often times the OAuth configuration is controlled by a corporate IT department or is otherwise difficult to manage so its often easier to grant permissions to use the OAuth provider freely but then restrict access controls in the application itself. To manage access you can provide an `authorize_callback` as part of your applications.
 
-The `authorization_callback` can be configured on `pn.config` or via the `pn.extension`:
+The `authorize_callback` can be configured on `pn.config` or via the `pn.extension`:
 
 ```python
 import panel as pn
@@ -39,7 +39,7 @@ The auth template must be a valid Jinja2 template and accepts a number of argume
 - `{{ error }}`: A short description of the error.
 - `{{ error_msg }}`: A full description of the error.
 
-The `authorization_callback` may also contain a second parameter, which is set by the
+The `authorize_callback` may also contain a second parameter, which is set by the
 requested application path. You can use this extra parameter to check if a user is
 authenticated _and_ has access to the application at the given path.
 
