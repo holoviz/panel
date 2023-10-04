@@ -509,10 +509,10 @@ class ChatEntry(CompositeWidget):
         return updated_avatars.get(alpha_numeric_key, self.avatar)
 
     def _select_renderer(
-            self,
-            contents: Any,
-            mime_type: str,
-        ):
+        self,
+        contents: Any,
+        mime_type: str,
+    ):
         """
         Determine the renderer to use based on the mime type.
         """
@@ -713,6 +713,79 @@ class ChatEntry(CompositeWidget):
             self._exit_stack = None
         super()._cleanup()
 
+    def stream(self, token: str):
+        """
+        Updates the entry with the new token traversing the value to
+        allow updating nested objects. When traversing a nested Panel
+        the last object that supports rendering strings is updated, e.g.
+        in a layout of `Column(Markdown(...), Image(...))` the Markdown
+        pane is updated.
+
+        Arguments
+        ---------
+        token: str
+          The token to stream to the text pane.
+        """
+        i = -1
+        parent_panel = None
+        value_panel = self
+        attr = "value"
+        value = self.value
+        while not isinstance(value, str) or isinstance(value_panel, ImageBase):
+            value_panel = value
+            if hasattr(value, "objects"):
+                parent_panel = value
+                attr = "objects"
+                value = value.objects[i]
+                i = -1
+            elif hasattr(value, "object"):
+                attr = "object"
+                value = value.object
+            elif hasattr(value, "value"):
+                attr = "value"
+                value = value.value
+            elif parent_panel is not None:
+                value = parent_panel
+                parent_panel = None
+                i -= 1
+        setattr(value_panel, attr, value + token)
+
+    def update(
+        self,
+        value: dict | ChatEntry | Any,
+        user: str | None = None,
+        avatar: str | BinaryIO | None = None
+    ):
+        """
+        Updates the entry with a new value, user and avatar.
+
+        Arguments
+        ---------
+        value : ChatEntry | dict | Any
+            The message contents to send.
+        user : str | None
+            The user to send as; overrides the message entry's user if provided.
+        avatar : str | BinaryIO | None
+            The avatar to use; overrides the message entry's avatar if provided.
+        """
+        updates = {}
+        if isinstance(value, dict):
+            updates.update(value)
+            if user:
+                updates['user'] = user
+            if avatar:
+                updates['avatar'] = avatar
+        elif isinstance(value, ChatEntry):
+            if user is not None or avatar is not None:
+                raise ValueError(
+                    "Cannot set user or avatar when explicitly sending "
+                    "a ChatEntry. Set them directly on the ChatEntry."
+                )
+            updates = value.param.values()
+        else:
+            updates["value"] = value
+        self.param.update(**updates)
+
 
 class ChatFeed(CompositeWidget):
     """
@@ -912,44 +985,26 @@ class ChatFeed(CompositeWidget):
 
     def _build_entry(
         self,
-        value: ChatEntry |  dict | Any,
+        value: dict,
         user: str | None = None,
         avatar: str | BinaryIO | None = None,
     ) -> ChatEntry | None:
         """
         Builds a ChatEntry from the value.
         """
-        if value is None:
-            return None
-
-        if not isinstance(value, (dict, ChatEntry)):
-            value = {"value": value}
-
-        if isinstance(value, dict):
-            if "value" not in value:
-                raise ValueError(
-                    f"If 'value' is a dict, it must contain a 'value' key, "
-                    f"e.g. {{'value': 'Hello World'}}; got {value!r}"
-                )
-            if user:
-                value.update(user=user)
-            if avatar:
-                value.update(avatar=avatar)
-            if self.width:
-                entry_params = {"width": int(self.width - 80), **self.entry_params}
-            else:
-                entry_params = self.entry_params
-            entry_params.update(renderers=self.renderers)
-            input_params = {**value, **entry_params}
-            entry = ChatEntry(**input_params)
-        else:
-            # must update one at a time so avatar is not overwritten
-            # by the default avatar
-            if user:
-                value.user = user
-            if avatar:
-                value.avatar = avatar
-            entry = value
+        if "value" not in value:
+            raise ValueError(
+                f"If 'value' is a dict, it must contain a 'value' key, "
+                f"e.g. {{'value': 'Hello World'}}; got {value!r}"
+            )
+        entry_params = dict(value, renderers=self.renderers, **self.entry_params)
+        if user:
+            entry_params['user'] = user
+        if avatar:
+            entry_params['avatar'] = avatar
+        if self.width:
+            entry_params['width'] = int(self.width - 80)
+        entry = ChatEntry(**entry_params)
         return entry
 
     def _upsert_entry(self, value: Any, entry: ChatEntry | None = None) -> ChatEntry | None:
@@ -957,28 +1012,19 @@ class ChatFeed(CompositeWidget):
         Replace the placeholder entry with the response or update
         the entry's value with the response.
         """
-        if entry is not None and isinstance(value, (str, ChatEntry)):
-            if isinstance(value, str):
-                entry.value = value
-            elif isinstance(value, ChatEntry):
-                entry.param.update(**value.param.values())
-            return entry
-
         user = self.callback_user
         avatar = None
-        if isinstance(value, dict):
-            user = value.get("user", user)
-            avatar = value.get("avatar", avatar)
+        if entry is not None:
+            entry.update(value, user=user, avatar=avatar)
+            return entry
         elif isinstance(value, ChatEntry):
-            user = value.user
-            avatar = value.avatar
+            return value
 
-        updated_entry = self._build_entry(value, user=user, avatar=avatar)
-        if entry is None:
-            self._replace_placeholder(updated_entry)
-            return updated_entry
-        entry.param.update(**updated_entry.param.values())
-        return entry
+        if not isinstance(value, dict):
+            value = {"value": value}
+        new_entry = self._build_entry(value, user=user, avatar=avatar)
+        self._replace_placeholder(new_entry)
+        return new_entry
 
     def _extract_contents(self, entry: ChatEntry) -> Any:
         """
@@ -1080,38 +1126,7 @@ class ChatFeed(CompositeWidget):
             self._replace_placeholder(None)
             self.disabled = disabled
 
-    def _stream(self, token: str, entry: ChatEntry):
-        """
-        Updates the entry with the token and handles nested
-        objects by traversing the entry's value and updating the
-        last panel in the column that supports strings; e.g.
-        updates Markdown here: `Column(Markdown(...), Image(...))`
-        """
-        i = -1
-        parent_panel = None
-        value_panel = entry
-        attr = "value"
-        value = entry.value
-        while not isinstance(value, str) or isinstance(value_panel, ImageBase):
-            value_panel = value
-            if hasattr(value, "objects"):
-                parent_panel = value
-                attr = "objects"
-                value = value.objects[i]
-                i = -1
-            elif hasattr(value, "object"):
-                attr = "object"
-                value = value.object
-            elif hasattr(value, "value"):
-                attr = "value"
-                value = value.value
-            elif parent_panel is not None:
-                value = parent_panel
-                parent_panel = None
-                i -= 1
-        setattr(value_panel, attr, value + token)
-
-    # public API
+    # Public API
 
     def send(
         self,
@@ -1125,8 +1140,8 @@ class ChatFeed(CompositeWidget):
 
         If `respond` is `True`, additionally executes the callback, if provided.
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         value : ChatEntry | dict | Any
             The message contents to send.
         user : str | None
@@ -1140,9 +1155,18 @@ class ChatFeed(CompositeWidget):
         -------
         The entry that was created.
         """
-        entry = self._build_entry(value, user=user, avatar=avatar)
+        if isinstance(value, ChatEntry):
+            if user is not None or avatar is not None:
+                raise ValueError(
+                    "Cannot set user or avatar when explicitly sending "
+                    "a ChatEntry. Set them directly on the ChatEntry."
+                )
+            entry = value
+        else:
+            if not isinstance(value, dict):
+                value = {"value": value}
+            entry = self._build_entry(value, user=user, avatar=avatar)
         self._chat_log.append(entry)
-
         if respond:
             self.respond()
         return entry
@@ -1163,9 +1187,9 @@ class ChatFeed(CompositeWidget):
         This method is primarily for outputs that are not generators--
         notably LangChain. For most cases, use the send method instead.
 
-        Parameters
-        ----------
-        value : str
+        Arguments
+        ---------
+        value : str | dict | ChatEntry
             The new token value to stream.
         user : str | None
             The user to stream as; overrides the entry's user if provided.
@@ -1178,13 +1202,29 @@ class ChatFeed(CompositeWidget):
         -------
         The entry that was updated.
         """
-        replace = entry is None
-        entry = self._build_entry(entry or value, user=user, avatar=avatar)
-        if entry:
-            if replace:
-                self._replace_placeholder(entry)
+        if isinstance(value, ChatEntry) and (user is not None or avatar is not None):
+            raise ValueError(
+                "Cannot set user or avatar when explicitly streaming "
+                "a ChatEntry. Set them directly on the ChatEntry."
+            )
+        elif entry:
+            if isinstance(value, (str, dict)):
+                entry.stream(value)
+                if user:
+                    entry.user = user
+                if avatar:
+                    entry.avatar = avatar
             else:
-                self._stream(value, entry)
+                entry.update(value, user=user, avatar=avatar)
+            return entry
+
+        if isinstance(value, ChatEntry):
+            entry = value
+        else:
+            if not isinstance(value, dict):
+                value = {"value": value}
+            entry = self._build_entry(value, user=user, avatar=avatar)
+        self._replace_placeholder(entry)
         return entry
 
     def respond(self):
@@ -1589,8 +1629,8 @@ class ChatInterface(ChatFeed):
         """
         Set the active input widget tab index.
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         index : int
             The active index to set.
         """
