@@ -14,3 +14,10 @@ def test_select_with_size(page):
     page.locator('option').nth(1).click()
 
     wait_until(lambda: select.value == 'B')
+
+def test_select_option(page):
+    select = Select(value='B', options=['A', 'B', 'C'], size=4)
+
+    serve_component(page, select)
+
+    wait_until(lambda: page.locator('select').evaluate("(sel)=>sel.value") == 'B', page)
