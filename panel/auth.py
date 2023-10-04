@@ -409,7 +409,9 @@ class GenericLoginHandler(OAuthLoginHandler, OAuth2Mixin):
 
     @property
     def _SCOPE(self):
-        if 'PANEL_OAUTH_SCOPE' not in os.environ:
+        if 'scope' in config.oauth_extra_params:
+            return config.oauth_extra_params['scope']
+        elif 'PANEL_OAUTH_SCOPE' not in os.environ:
             return ['openid', 'email']
         return [scope for scope in os.environ['PANEL_OAUTH_SCOPE'].split(',')]
 
@@ -1085,7 +1087,7 @@ AUTH_PROVIDERS = {
     'gitlab': GitLabLoginHandler,
     'okta': OktaLoginHandler,
     'password': PasswordLoginHandler,
-    'code': CodeChallengeLoginHandler
+    'auth_code': CodeChallengeLoginHandler
 }
 
 # Populate AUTH Providers from external extensions

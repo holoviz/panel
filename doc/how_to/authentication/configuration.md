@@ -14,7 +14,7 @@ The first step in configuring a OAuth is to specify a specific OAuth provider. P
 * `okta`: Okta
 * `generic`: Generic OAuth Provider with configurable endpoints
 * `password`: Generic password grant based OAuth Provider with configurable endpoints
-* `code`: Generic code challenge grant based OAuth Provider with configurable endpoints
+* `auth_code`: Generic code challenge grant based OAuth Provider with configurable endpoints
 
 We will go through the process of configuring each of these individually in [Providers](./providers.md) but for now all we need to know that the `oauth_provider` can be set on the commandline using the `--oauth-provider` CLI argument to `panel serve` or the `PANEL_OAUTH_PROVIDER` environment variable.
 
@@ -92,7 +92,7 @@ or in Python:
 pn.serve(app, oauth_extra_params={'tenant_id': ...}, ...)
 ```
 
-The `oauth_extra_params` can also be used to provide the authentication URLs for the `'generic'`, `'password'`, and `'code'` OAuth providers. Specifically you can provide a `'AUTHORIZE_URL'`, `'TOKEN_URL'` and `'USER_URL'` as extra parameters.
+The `oauth_extra_params` can also be used to provide the authentication URLs for the `'generic'`, `'password'`, and `'code'` OAuth providers. Specifically you can provide a `'AUTHORIZE_URL'`, `'TOKEN_URL'` and `'USER_URL'` as extra parameters. Lastly it may be used to define the [scopes](#Scopes).
 
 ## `cookie_secret`
 
@@ -158,6 +158,24 @@ Examples:
 panel serve oauth_example.py --oauth-redirect-uri=...
 
 PANEL_OAUTH_REDIRECT_URI=... panel serve oauth_example.py
+```
+
+## Scopes
+
+OAuth allows the application to request specific scopes to perform certain actions when authenticating with the provider. To set the scopes you may set the `PANEL_OAUTH_SCOPE` environment variable or provide it as an argument using the `--oauth-extra-params {'scope': ...}` CLI argument.
+
+Examples:
+
+```
+panel serve oauth_example.py --oauth-extra-params {'scope': 'openid'}
+
+PANEL_OAUTH_SCOPE=openid panel serve oauth_example.py
+```
+
+or in Python:
+
+```python
+pn.serve(app, ..., oauth_extra_params={'scope': 'openid'})
 ```
 
 ## Summary
