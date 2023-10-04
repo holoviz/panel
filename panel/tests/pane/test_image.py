@@ -16,6 +16,8 @@ JPEG_FILE = 'https://assets.holoviz.org/panel/samples/jpeg_sample.jpeg'
 PNG_FILE = 'https://assets.holoviz.org/panel/samples/png_sample.png'
 SVG_FILE = 'https://assets.holoviz.org/panel/samples/svg_sample.svg'
 
+local_resolvable = pytest.mark.skipif(not __file__.startswith('$'), reason="local files not resolvable as URI")
+
 
 def test_jpeg_applies():
     assert JPG.applies(JPEG_FILE)
@@ -150,8 +152,9 @@ def test_pdf_no_embed(document, comm):
 
     assert model.text.startswith(f"&lt;embed src=&quot;{url}")
 
+@local_resolvable
 def test_pdf_local_file(document, comm):
-    path = Path(os.path.expandvars(__file__)).parent.parent / "test_data" / "sample.pdf"
+    path = Path(__file__).parent.parent / "test_data" / "sample.pdf"
     pdf_pane = PDF(object=path)
     model = pdf_pane.get_root(document, comm)
     assert model.text.startswith("&lt;embed src=&quot;data:application/pdf;base64,JVBER")
