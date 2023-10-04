@@ -347,6 +347,41 @@ class ChatCopyIcon(ReactiveHTML):
     ]
 
 
+class ChatTextArea(ReactiveHTML):
+
+    value = param.String(default="", doc="The text to copy to the clipboard.", allow_refs=False)
+
+    placeholder = param.String(default="Type something...", doc="The placeholder text.")
+
+    _template = """
+        <textarea
+            id="textarea"
+            class="chat-text-area"
+            rows=1
+            value="${value}"
+            placeholder="${placeholder}"
+            oninput="${script('resize_textarea')}"
+        ></textarea>
+    """
+
+    _scripts = {
+        # auto grow text and reduce in size if client deletes text
+        "resize_textarea": """
+            rows = textarea.value.split("\\n").length
+            if (rows > 1) {
+                textarea.rows = rows
+            } else {
+                textarea.rows = 1
+            }
+        """
+    }
+
+    _stylesheets: ClassVar[List[str]] = [
+        f"{CDN_DIST}css/chat_text_area.css"
+    ]
+
+    _child_config = {'value': 'literal'}
+
 class ChatEntry(CompositeWidget):
     """
     A widget for displaying chat messages with support for various content types.
@@ -1298,7 +1333,7 @@ class ChatInterface(ChatFeed):
     def __init__(self, **params):
         widgets = params.get("widgets")
         if widgets is None:
-            params["widgets"] = [TextInput(placeholder="Send a message")]
+            params["widgets"] = [ChatTextArea(placeholder="Send a message")]
         elif not isinstance(widgets, list):
             params["widgets"] = [widgets]
         active = params.pop("active", None)
@@ -1413,8 +1448,8 @@ class ChatInterface(ChatFeed):
                     sizing_mode="stretch_width",
                     max_width=90 if self.show_button_name else 45,
                     max_height=50,
-                    margin=(5, 5, 5, 0),
-                    align="center",
+                    margin=(5, 5, 15, 5),
+                    align=("center", "end"),
                 )
                 self._link_disabled_loading(button)
                 action = button_data.name
@@ -1460,7 +1495,7 @@ class ChatInterface(ChatFeed):
                     file_name=active_widget.filename,
                 )
             # don't use isinstance here; TextAreaInput subclasses TextInput
-            if type(active_widget) is TextInput or self.reset_on_send:
+            if type(active_widget) in (ChatTextArea, TextInput) or self.reset_on_send:
                 updates = {"value": ""}
                 if hasattr(active_widget, "value_input"):
                     updates["value_input"] = ""

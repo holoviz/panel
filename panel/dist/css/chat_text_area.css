@@ -1,0 +1,12 @@
+.chat-text-area {
+  padding: 7px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  resize: none;
+  overflow-y: auto;
+  width: -webkit-fill-available;
+  margin-block: -37px;
+  margin-inline: 10px;
+  position: absolute;
+  bottom: 0;
+}
