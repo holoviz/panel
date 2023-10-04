@@ -373,7 +373,8 @@ class ChatTextArea(ReactiveHTML):
             } else {
                 textarea.rows = 1
             }
-        """
+        """,
+        "value": "self.resize_textarea()"
     }
 
     _stylesheets: ClassVar[List[str]] = [
