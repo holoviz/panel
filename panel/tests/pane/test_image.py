@@ -151,7 +151,7 @@ def test_pdf_no_embed(document, comm):
     assert model.text.startswith(f"&lt;embed src=&quot;{url}")
 
 def test_pdf_local_file(document, comm):
-    path = Path(__file__).parent.parent / "test_data" / "sample.pdf"
+    path = Path(__file__).parent.parent.absolute() / "test_data" / "sample.pdf"
     pdf_pane = PDF(object=path)
     model = pdf_pane.get_root(document, comm)
     assert model.text.startswith("&lt;embed src=&quot;data:application/pdf;base64,JVBER")
