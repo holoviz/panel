@@ -66,14 +66,18 @@ jobs:
       - name: conda dev deploy
         if: (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
-          doit package_upload --token=${{ secrets.CONDA_UPLOAD_TOKEN }} --label=dev
+          VERSION="$(echo "$(ls dist/*.whl)" | cut -d- -f2)"
+          FILE="$CONDA_PREFIX/conda-bld/noarch/panel-$VERSION-py_0.tar.bz2"
+          anaconda --token $CONDA_UPLOAD_TOKEN upload --user pyviz --label=dev $FILE
           python setup.py develop
           cd ./panel
           npm publish --tag dev
       - name: conda main deploy
         if: (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
-          doit package_upload --token=${{ secrets.CONDA_UPLOAD_TOKEN }} --label=dev --label=main
+          VERSION="$(echo "$(ls dist/*.whl)" | cut -d- -f2)"
+          FILE="$CONDA_PREFIX/conda-bld/noarch/panel-$VERSION-py_0.tar.bz2"
+          anaconda --token $CONDA_UPLOAD_TOKEN upload --user pyviz --label=dev --label=main $FILE
           python setup.py develop
           cd ./panel
           npm publish --tag latest
