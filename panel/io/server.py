@@ -1185,7 +1185,7 @@ def get_server(
             provider = OAuthProvider
         opts['auth_provider'] = provider(
             login_endpoint=login_endpoint,
-            logout_endpoint=login_endpoint,
+            logout_endpoint=logout_endpoint,
             login_template=login_template,
             logout_template=logout_template,
             error_template=oauth_error_template
