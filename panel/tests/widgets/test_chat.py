@@ -650,6 +650,14 @@ class TestChatFeed:
         assert chat_feed.value[2].avatar == "🦿"
         assert chat_feed.value[2].value == 'Yeah! They said "Testing!".'
 
+    def test_respond_callback_returns_none(self, chat_feed):
+        def callback(contents, user, instance):
+            instance.value[0].value = "Mutated"
+
+        chat_feed.callback = callback
+        chat_feed.send("Testing!", user="User")
+        assert len(chat_feed.value) == 1
+        assert chat_feed.value[0].value == "Mutated"
 
 class TestChatFeedCallback:
     @pytest.fixture

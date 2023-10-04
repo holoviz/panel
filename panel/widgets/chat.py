@@ -952,7 +952,8 @@ class ChatFeed(CompositeWidget):
             value=self.placeholder_text,
             show_timestamp=False,
             avatar=loading_avatar,
-            reaction_icons={}
+            reaction_icons={},
+            show_copy_icon=False,
         )
 
     @param.depends("header", watch=True)
@@ -1012,6 +1013,10 @@ class ChatFeed(CompositeWidget):
         Replace the placeholder entry with the response or update
         the entry's value with the response.
         """
+        if value is None:
+            # don't add new entry if the callback returns None
+            return
+
         user = self.callback_user
         avatar = None
         if isinstance(value, dict):
