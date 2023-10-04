@@ -177,6 +177,7 @@ class _state(param.Parameterized):
     # Dictionary of callbacks to be triggered on app load
     _onload: ClassVar[Dict[Document, Callable[[], None]]] = WeakKeyDictionary()
     _on_session_created: ClassVar[List[Callable[[BokehSessionContext], []]]] = []
+    _on_session_destroyed: ClassVar[List[Callable[[BokehSessionContext], []]]] = []
     _loaded: ClassVar[WeakKeyDictionary[Document, bool]] = WeakKeyDictionary()
 
     # Module that was run during setup
@@ -437,6 +438,10 @@ class _state(param.Parameterized):
         else:
             self.log(f'Exception of unknown type raised: {exception}', level='error')
 
+    def _register_session_destroyed(self, session_context: BokehSessionContext):
+        for cb in self._on_session_destroyed:
+            session_context._document.on_session_destroyed(cb)
+
     #----------------------------------------------------------------
     # Public Methods
     #----------------------------------------------------------------
@@ -677,6 +682,13 @@ class _state(param.Parameterized):
         """
         Callback that is triggered when a session is created.
         """
+        if self.curdoc and self.curdoc.session_context:
+            raise RuntimeError(
+                "Cannot register session creation callback from within a session. "
+                "If running a Panel application from the CLI set up the callback "
+                "in a --setup script, if starting a server dynamically set it up "
+                "before starting the server."
+            )
         self._on_session_created.append(callback)
 
     def on_session_destroyed(self, callback: Callable[[BokehSessionContext], None]) -> None:
@@ -686,11 +698,9 @@ class _state(param.Parameterized):
         doc = self.curdoc
         if doc:
             doc.on_session_destroyed(callback)
-        else:
-            raise RuntimeError(
-                "Could not add session destroyed callback since no "
-                "document to attach it to could be found."
-            )
+        elif self._register_session_destroyed not in self._on_session_created:
+            self._on_session_created.append(self._register_session_destroyed)
+            self._on_session_destroyed.append(callback)
 
     def publish(
         self, endpoint: str, parameterized: param.Parameterized,
@@ -742,6 +752,8 @@ class _state(param.Parameterized):
             self._thread_pool = None
         self._sessions.clear()
         self._session_key_funcs.clear()
+        self._on_session_created.clear()
+        self._on_session_destroyed.clear()
 
     def schedule_task(
         self, name: str, callback: Callable[[], None], at: Tat =None,
