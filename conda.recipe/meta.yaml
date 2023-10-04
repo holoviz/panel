@@ -31,6 +31,18 @@ requirements:
   run_constrained:
     - holoviews >=1.13.2
 
+test:
+  imports:
+    - panel
+    - panel.io
+  requires:
+    - pip
+    - pytest-asyncio
+  commands:
+    - pip check
+    - panel --help
+    - pytest panel/tests
+
 about:
   home: {{ sdata['url'] }}
   summary: {{ sdata['description'] }}
