@@ -16,8 +16,12 @@ export class BrowserInfoView extends View {
       this.model.language = navigator.language
       this.model.webdriver = navigator.webdriver
     }
-    this.model.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    this.model.timezone_offset = new Date().getTimezoneOffset();
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    if (timezone != null)
+      this.model.timezone = timezone;
+    const timezone_offset = new Date().getTimezoneOffset()
+    if (timezone_offset != null)
+      this.model.timezone_offset = timezone_offset;
     this._has_finished = true
     this.notify_finished()
   }
