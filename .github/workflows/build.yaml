@@ -51,7 +51,7 @@ jobs:
           conda config --set always_yes True
           conda config --append channels pyviz/label/dev
           conda config --append channels bokeh/label/dev
-          conda install -y conda-build anaconda-client build
+          conda install -y conda-build anaconda-client build bokeh
       - name: conda build
         run: |
           bash ./scripts/build_conda.sh
