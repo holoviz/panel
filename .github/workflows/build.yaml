@@ -51,7 +51,7 @@ jobs:
           conda config --set always_yes True
           conda config --append channels pyviz/label/dev
           conda config --append channels bokeh/label/dev
-          conda install -y conda-build anaconda-client build bokeh
+          conda install -y conda-build anaconda-client build
       - name: conda build
         run: |
           bash ./scripts/build_conda.sh
@@ -63,22 +63,33 @@ jobs:
           echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_API_TOKEN }}" > $HOME/.npmrc
           npm whoami
           npm -v
+      - name: npm build
+        run: |
+          SETUPTOOLS_ENABLE_FEATURES="legacy-editable" python -m pip install -ve .
+          cd ./panel
+          npm publish --dry-run
+          cd ..
       - name: conda dev deploy
         if: (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
           VERSION="$(echo "$(ls dist/*.whl)" | cut -d- -f2)"
           FILE="$CONDA_PREFIX/conda-bld/noarch/panel-$VERSION-py_0.tar.bz2"
           anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev $FILE
-          python setup.py develop
+      - name: npm dev deploy
+        if: (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+        run: |
           cd ./panel
           npm publish --tag dev
+          cd ..
       - name: conda main deploy
         if: (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
           VERSION="$(echo "$(ls dist/*.whl)" | cut -d- -f2)"
           FILE="$CONDA_PREFIX/conda-bld/noarch/panel-$VERSION-py_0.tar.bz2"
           anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev --label=main $FILE
-          python setup.py develop
+      - name: npm main deploy
+        if: (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+        run: |
           cd ./panel
           npm publish --tag latest
           cd ..
