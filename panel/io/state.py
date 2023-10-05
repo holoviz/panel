@@ -964,25 +964,15 @@ class _state(param.Parameterized):
     def location(self) -> Location | None:
         if self.curdoc and self.curdoc not in self._locations:
             from .location import Location
-            loc = self._locations[self.curdoc] = Location()
+            if self.curdoc.session_context:
+                loc = Location.from_request(self.curdoc.session_context.request)
+            else:
+                loc = Location()
+            self._locations[self.curdoc] = loc
         elif self.curdoc is None:
             loc = self._location
         else:
             loc = self._locations.get(self.curdoc) if self.curdoc else None
-        if loc is None:
-            return loc
-
-        if '?' in self.base_url:
-            try:
-                loc.search = f'?{self.base_url.split("?")[-1].strip("/")}'
-            except Exception:
-                pass
-        if '#' in self.base_url:
-            try:
-                loc.hash = f'#{self.base_url.split("#")[-1].strip("/")}'
-            except Exception:
-                pass
-
         return loc
 
     @property

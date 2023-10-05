@@ -43,7 +43,7 @@ from .io.notebook import (
     render_mimebundle, render_model, show_server,
 )
 from .io.save import save
-from .io.state import curdoc_locked, state
+from .io.state import curdoc_locked, set_curdoc, state
 from .util import escape, param_reprs
 from .util.warnings import deprecated
 
@@ -321,11 +321,12 @@ class ServableMixin:
         from .io.location import Location
         if isinstance(location, Location):
             loc = location
+            state._locations[doc] = loc
         elif doc in state._locations:
             loc = state._locations[doc]
         else:
-            loc = Location()
-        state._locations[doc] = loc
+            with set_curdoc(doc):
+                loc = state.location
         if root is None:
             loc_model = loc.get_root(doc)
         else:
