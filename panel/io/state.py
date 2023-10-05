@@ -177,6 +177,7 @@ class _state(param.Parameterized):
     # Dictionary of callbacks to be triggered on app load
     _onload: ClassVar[Dict[Document, Callable[[], None]]] = WeakKeyDictionary()
     _on_session_created: ClassVar[List[Callable[[BokehSessionContext], []]]] = []
+    _on_session_created_internal: ClassVar[List[Callable[[BokehSessionContext], []]]] = []
     _on_session_destroyed: ClassVar[List[Callable[[BokehSessionContext], []]]] = []
     _loaded: ClassVar[WeakKeyDictionary[Document, bool]] = WeakKeyDictionary()
 
