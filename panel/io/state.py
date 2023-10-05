@@ -698,8 +698,9 @@ class _state(param.Parameterized):
         doc = self.curdoc
         if doc:
             doc.on_session_destroyed(callback)
-        elif self._register_session_destroyed not in self._on_session_created:
-            self._on_session_created.append(self._register_session_destroyed)
+        else:
+            if self._register_session_destroyed not in self._on_session_created:
+                self._on_session_created.append(self._register_session_destroyed)
             self._on_session_destroyed.append(callback)
 
     def publish(
