@@ -208,7 +208,7 @@ def _initialize_session_info(session_context: 'BokehSessionContext'):
     }
     state.param.trigger('session_info')
 
-state.on_session_created(_initialize_session_info)
+state._on_session_created_internal.append(_initialize_session_info)
 
 #---------------------------------------------------------------------
 # Bokeh patches
@@ -402,7 +402,7 @@ class Application(BkApplication):
         with set_curdoc(session_context._document):
             if self._admin is not None:
                 config._admin = self._admin
-            for cb in state._on_session_created:
+            for cb in state._on_session_created_internal+state._on_session_created:
                 cb(session_context)
         await super().on_session_created(session_context)
 

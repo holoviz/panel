@@ -223,6 +223,32 @@ def test_serve_config_per_session_state():
     assert CSS2 in r2
 
 
+def test_server_on_session_created():
+    session_contexts = []
+    def append_session(session_context):
+        session_contexts.append(session_context)
+    state.on_session_created(append_session)
+
+    html = Markdown('# Title')
+
+    serve_and_request(html, n=3)
+
+    assert len(session_contexts) == 3
+
+
+def test_server_on_session_destroyed():
+    session_contexts = []
+    def append_session(session_context):
+        session_contexts.append(session_context)
+    state.on_session_destroyed(append_session)
+
+    html = Markdown('# Title')
+
+    serve_and_request(html, n=3, check_unused_sessions_milliseconds=500, unused_session_lifetime_milliseconds=500)
+
+    wait_until(lambda: len(session_contexts) == 3)
+
+
 # This test seem to fail if run after:
 # - test_server_async_local_state_nested_tasks
 # - test_server_async_local_state
