@@ -68,7 +68,7 @@ jobs:
         run: |
           VERSION="$(echo "$(ls dist/*.whl)" | cut -d- -f2)"
           FILE="$CONDA_PREFIX/conda-bld/noarch/panel-$VERSION-py_0.tar.bz2"
-          anaconda --token $CONDA_UPLOAD_TOKEN upload --user pyviz --label=dev $FILE
+          anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev $FILE
           python setup.py develop
           cd ./panel
           npm publish --tag dev
@@ -77,7 +77,7 @@ jobs:
         run: |
           VERSION="$(echo "$(ls dist/*.whl)" | cut -d- -f2)"
           FILE="$CONDA_PREFIX/conda-bld/noarch/panel-$VERSION-py_0.tar.bz2"
-          anaconda --token $CONDA_UPLOAD_TOKEN upload --user pyviz --label=dev --label=main $FILE
+          anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev --label=main $FILE
           python setup.py develop
           cd ./panel
           npm publish --tag latest
