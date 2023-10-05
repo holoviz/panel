@@ -374,6 +374,7 @@ def bundle_resources(roots, resources, notebook=False, reloading=False, enable_m
         extensions = [
             ext for ext in extensions if not (ext.cdn_url is not None and ext.cdn_url.startswith('https://unpkg.com/@holoviz/panel@'))
         ]
+
     extra_js = []
     if mode == "inline":
         js_raw.extend([ Resources._inline(bundle.artifact_path) for bundle in extensions ])
@@ -382,6 +383,8 @@ def bundle_resources(roots, resources, notebook=False, reloading=False, enable_m
             server_url = bundle.server_url
             if resources.root_url and not resources.absolute:
                 server_url = server_url.replace(resources.root_url, '', 1)
+                if state.rel_path:
+                    server_url = f'{state.rel_path}/{server_url}'
             js_files.append(server_url)
     elif mode == "cdn":
         for bundle in extensions:
