@@ -4,36 +4,23 @@ import * as p from "@bokehjs/core/properties";
 export class TextAreaInputView extends BkTextAreaInputView {
   model: TextAreaInput;
 
-  connect_signals(): void {
-    super.connect_signals();
-
-    const { rows } = this.model.properties;
-
-    this.on_change(rows, () => this.update_rows());
-  }
-
   update_rows(): void {
     if (!this.model.auto_grow) {
       return;
     }
 
     // Use this.el directly to access the textarea element
-    const textarea = this.el as HTMLTextAreaElement;
-    const textLines = textarea.value.split("\n");
-    const numRows = textLines.length;
-    if (numRows > 1) {
-      textarea.rows = numRows;
-    } else {
-      textarea.rows = 1;
-    }
+    const textarea = this.input_el as HTMLTextAreaElement
+    const textLines = textarea.value.split("\n")
+    const numRows = Math.max(textLines.length, this.model.rows, 1)
+    textarea.rows = Math.min(numRows, this.model.max_rows || Infinity)
   }
 
   render(): void {
-    console.log("TESTING LOG STATEMENT")
-    super.render();
-
+    super.render()
+    this.update_rows()
     this.el.addEventListener("input", () => {
-      this.update_rows();
+      this.update_rows()
     });
   }
 }
@@ -42,6 +29,7 @@ export namespace TextAreaInput {
   export type Attrs = p.AttrsOf<Props>;
   export type Props = BkTextAreaInput.Props & {
     auto_grow: p.Property<boolean>;
+    max_rows: p.Property<number | null>;
   };
 }
 
@@ -59,8 +47,9 @@ export class TextAreaInput extends BkTextAreaInput {
   static {
     this.prototype.default_view = TextAreaInputView;
 
-    this.define<TextAreaInput.Props>(({ Boolean }) => ({
-      auto_grow: [Boolean, false],
+    this.define<TextAreaInput.Props>(({ Boolean, Int, Nullable }) => ({
+      auto_grow: [ Boolean,       false ],
+      max_rows:  [ Nullable(Int),  null ]
     }));
   }
 }

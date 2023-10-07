@@ -205,4 +205,10 @@ class TextAreaInput(BkTextAreaInput):
         default=False,
         help="""
         Whether the text area should automatically grow vertically to
-        accommodate the current text.""")
+        accommodate the current text."""
+    )
+
+    max_rows = Nullable(Int(), help="""
+        Maximum number of rows the input area can grow to if auto_grow
+        is enabled."""
+    )

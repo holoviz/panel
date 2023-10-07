@@ -131,6 +131,16 @@ class TextAreaInput(TextInput):
         Whether the text area should automatically grow vertically to
         accommodate the current text.""")
 
+    cols = param.Integer(default=20, doc="""
+        Number of columns in the text input field.""")
+
+    max_rows = param.Integer(default=None, doc="""
+        When combined with auto_grow this determines the maximum number
+        of rows the input area can grow.""")
+
+    rows = param.Integer(default=2, doc="""
+        Number of rows in the text input field.""")
+
     _widget_type: ClassVar[Type[Model]] = _bkTextAreaInput
 
 
