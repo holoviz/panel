@@ -3,7 +3,7 @@ import datetime
 import pytest
 
 from panel.tests.util import serve_component, wait_until
-from panel.widgets import DatetimePicker, DatetimeRangePicker
+from panel.widgets import DatetimePicker, DatetimeRangePicker, TextAreaInput
 
 try:
     from playwright.sync_api import expect
@@ -601,3 +601,54 @@ def test_datetimepicker_remove_value(page, datetime_start_end):
     datetime_picker.press("Escape")
 
     wait_until(lambda: datetime_picker_widget.value is None, page)
+
+
+def test_text_area_auto_grow_init(page):
+    text_area = TextAreaInput(auto_grow=True, value="1\n2\n3\n4\n")
+
+    serve_component(page, text_area)
+
+    expect(page.locator('.bk-input')).to_have_js_property('rows', 5)
+
+
+def test_text_area_auto_grow(page):
+    text_area = TextAreaInput(auto_grow=True, value="1\n2\n3\n4\n")
+
+    serve_component(page, text_area)
+
+    input_area = page.locator('.bk-input')
+    input_area.click()
+    input_area.press('Enter')
+    input_area.press('Enter')
+    input_area.press('Enter')
+
+    expect(page.locator('.bk-input')).to_have_js_property('rows', 8)
+
+
+def test_text_area_auto_grow_max_rows(page):
+    text_area = TextAreaInput(auto_grow=True, value="1\n2\n3\n4\n", max_rows=7)
+
+    serve_component(page, text_area)
+
+    input_area = page.locator('.bk-input')
+    input_area.click()
+    input_area.press('Enter')
+    input_area.press('Enter')
+    input_area.press('Enter')
+
+    expect(page.locator('.bk-input')).to_have_js_property('rows', 7)
+
+
+def test_text_area_auto_grow_min_rows(page):
+    text_area = TextAreaInput(auto_grow=True, value="1\n2\n3\n4\n", rows=3)
+
+    serve_component(page, text_area)
+
+    input_area = page.locator('.bk-input')
+    input_area.click()
+    for _ in range(5):
+        input_area.press('ArrowDown')
+    for _ in range(10):
+        input_area.press('Backspace')
+
+    expect(page.locator('.bk-input')).to_have_js_property('rows', 3)
