@@ -3,7 +3,6 @@ import * as p from "@bokehjs/core/properties";
 
 export class TextAreaInputView extends BkTextAreaInputView {
   model: TextAreaInput;
-  scroll_down_button_el: HTMLElement;
 
   connect_signals(): void {
     super.connect_signals();
