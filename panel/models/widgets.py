@@ -8,7 +8,9 @@ from bokeh.core.properties import (
 )
 from bokeh.models.ui import Tooltip
 from bokeh.models.ui.icons import Icon
-from bokeh.models.widgets import InputWidget, Select, Widget
+from bokeh.models.widgets import (
+    InputWidget, Select, TextAreaInput as BkTextAreaInput, Widget,
+)
 
 from .layout import HTMLBox
 
@@ -195,3 +197,12 @@ class TooltipIcon(Widget):
         default=Tooltip(content="Help text", position="right"),
         help="""The tooltip held by the icon"""
     )
+
+
+class TextAreaInput(BkTextAreaInput):
+
+    auto_grow = Bool(
+        default=False,
+        help="""
+        Whether the text area should automatically grow vertically to
+        accommodate the current text.""")

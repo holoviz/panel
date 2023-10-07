@@ -21,13 +21,14 @@ from bokeh.models.widgets import (
     Checkbox as _BkCheckbox, ColorPicker as _BkColorPicker,
     DatePicker as _BkDatePicker, Div as _BkDiv, FileInput as _BkFileInput,
     NumericInput as _BkNumericInput, PasswordInput as _BkPasswordInput,
-    Spinner as _BkSpinner, Switch as _BkSwitch,
-    TextAreaInput as _BkTextAreaInput, TextInput as _BkTextInput,
+    Spinner as _BkSpinner, Switch as _BkSwitch, TextInput as _BkTextInput,
 )
 
 from ..config import config
 from ..layout import Column, Panel
-from ..models import DatetimePicker as _bkDatetimePicker
+from ..models import (
+    DatetimePicker as _bkDatetimePicker, TextAreaInput as _bkTextAreaInput,
+)
 from ..util import param_reprs
 from .base import CompositeWidget, Widget
 
@@ -126,7 +127,11 @@ class TextAreaInput(TextInput):
     ... )
     """
 
-    _widget_type: ClassVar[Type[Model]] = _BkTextAreaInput
+    auto_grow = param.Boolean(default=False, doc="""
+        Whether the text area should automatically grow vertically to
+        accommodate the current text.""")
+
+    _widget_type: ClassVar[Type[Model]] = _bkTextAreaInput
 
 
 class FileInput(Widget):
