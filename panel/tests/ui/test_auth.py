@@ -9,8 +9,10 @@ try:
 except ImportError:
     pytestmark = pytest.mark.skip('playwright not available')
 
+from panel.config import config
+from panel.pane import Markdown
 from panel.tests.util import (
-    run_panel_serve, unix_only, wait_for_port, write_file,
+    run_panel_serve, serve_component, unix_only, wait_for_port, write_file,
 )
 
 
@@ -69,3 +71,39 @@ def test_basic_auth_logout(py_file, page, logout_template):
         cookies = [cookie['name'] for cookie in page.context.cookies()]
         assert 'user' not in cookies
         assert 'id_token' not in cookies
+
+
+def test_authorize_callback_redirect(page):
+
+    def authorize(user_info, uri):
+        if uri == '/':
+            user = user_info['user']
+            if user == 'A':
+                return '/a'
+            elif user == 'B':
+                return '/b'
+            else:
+                return False
+        return True
+
+    app1 = Markdown('Page A')
+    app2 = Markdown('Page B')
+
+    with config.set(authorize_callback=authorize):
+        _, port = serve_component(page, {'a': app1, 'b': app2, '/': 'Index'}, basic_auth='my_password', cookie_secret='my_secret', wait=False)
+
+        page.locator('input[name="username"]').fill("A")
+        page.locator('input[name="password"]').fill("my_password")
+        page.get_by_role("button").click(force=True)
+
+        expect(page.locator(".markdown").locator("div")).to_have_text('Page A\n')
+
+        page.goto(f"http://localhost:{port}/logout")
+
+        page.goto(f"http://localhost:{port}/login")
+
+        page.locator('input[name="username"]').fill("B")
+        page.locator('input[name="password"]').fill("my_password")
+        page.get_by_role("button").click(force=True)
+
+        expect(page.locator(".markdown").locator("div")).to_have_text('Page B\n')
