@@ -229,6 +229,8 @@ class ReactiveHTML(HTMLBox):
 
     data = bp.Instance(DataModel)
 
+    esm = bp.String()
+
     events = bp.Dict(bp.String, bp.Dict(bp.String, bp.Bool))
 
     html = bp.String()

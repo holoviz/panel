@@ -448,6 +448,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
 
   private _update(property: string | null = null): void {
     if (property == null || (this.html.indexOf(`\${${property}}`) > -1)) {
+      this._render_esm()
       const rendered = this._render_html(this.html)
       if (rendered == null)
 	return
@@ -458,6 +459,25 @@ export class ReactiveHTMLView extends HTMLBoxView {
         this._changing = false
       }
     }
+  }
+
+  private _render_esm(): void {
+    if (!this.model.esm)
+	return
+
+    let dyn = document.createElement("script")
+    dyn.type = "module"
+    dyn.innerHTML = `
+    ${this.model.esm}
+
+    const root = Bokeh.index['${this.root.model.id}']
+    const views = [...root.owner.query((view) => view.model.id == '${this.root.model.id}')]
+    if (views.length == 1) {
+      const view = views[0]
+      render({model: view.model.data, el: view.container})
+    }
+    `;
+    this.container.append(dyn);
   }
 
   private _update_model(el: any, name: string): void {
@@ -503,6 +523,7 @@ export namespace ReactiveHTML {
     callbacks: p.Property<any>
     children: p.Property<any>
     data: p.Property<any>
+    esm: p.Property<string>
     events: p.Property<any>
     html: p.Property<string>
     looped: p.Property<string[]>
@@ -530,6 +551,7 @@ export class ReactiveHTML extends HTMLBox {
       children:  [ Any,    {} ],
       data:      [ Any,       ],
       events:    [ Any,    {} ],
+      esm:       [ Any,    "" ],
       html:      [ String, "" ],
       looped:    [ Array(String), [] ],
       nodes:     [ Array(String), [] ],
