@@ -525,7 +525,10 @@ class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
                     auth_error = f'{state.user} is not authorized to access this application.'
                     try:
                         authorized = auth_cb(*auth_args)
-                        if not authorized:
+                        if isinstance(authorized, str):
+                            self.redirect(authorized)
+                            return
+                        elif not authorized:
                             auth_error = (
                                 f'Authorization callback errored. Could not validate user name "{state.user}" '
                                 f'for the given app "{self.request.path}".'

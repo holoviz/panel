@@ -50,6 +50,13 @@ Discover how to configure error and logout templates to match the design of your
 Discover how to make use of the user information and access tokens returned by the OAuth provider.
 :::
 
+:::{grid-item-card} {octicon}`verified;2.5em;sd-mr-1 sd-animate-grow50` Authorization callbacks
+:link: authorization
+:link-type: doc
+
+Discover how to configure a callback to implement custom authorization logic.
+:::
+
 ::::
 
 Note that since Panel is built on Bokeh server and Tornado it is also possible to implement your own authentication independent of the OAuth components shipped with Panel, [see the Bokeh documentation](https://docs.bokeh.org/en/latest/docs/user_guide/server.html#authentication) for further information.
