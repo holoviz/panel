@@ -124,9 +124,9 @@
 	text-align: center;
     }
     .header {
-	background-image: linear-gradient(to top, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0) ),url('{{ PANEL_CDN }}images/index_background.png');
+        background-image: linear-gradient(to top, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0) ),url('{{ PANEL_CDN }}images/index_background.png');
 	background-size: cover;
-	background-repeat: no-repeat;
+	background-repeat: space;
 	background-position: center;
     }
     .header-content {
@@ -202,12 +202,15 @@
 	fill: var(--neutral-foreground-rest);
     }
     .card-image {
-	height: 100px;
+	height: 175px;
 	width: 100%;
 	margin-top: 25px;
     }
     object {
-	height: 125px;
+        height: 175px;
+	max-width: calc(100% - 50px);
+	margin-top: 25px;
+        border-radius: calc(var(--control-corner-radius) * 1px);
     }
     .card-content {
 	padding: 10px 10px 10px;
@@ -292,6 +295,7 @@
       const header_design = new window.fastDesignProvider("#header-design-provider");
       header_design.setBackgroundColor('#ffffff')
       const body_design = window.bodyDesign = new window.fastDesignProvider("#body-design-provider");
+      body_design.setAccentColor("#0072B5")
       setSwitchFromParams()
       setSearchFromParams()
     })
