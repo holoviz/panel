@@ -5,8 +5,8 @@ events or merely toggling between on-off states.
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
-    Type,
+    TYPE_CHECKING, Any, Awaitable, Callable, ClassVar, Dict, List, Mapping,
+    Optional, Type,
 )
 
 import param
@@ -243,17 +243,26 @@ class Button(_ClickButton):
         self.clicks += 1
 
     def on_click(
-        self, callback: Callable[[param.parameterized.Event], None]
+        self, callback: Callable[[param.parameterized.Event], None | Awaitable[None]]
     ) -> param.parameterized.Watcher:
         """
         Register a callback to be executed when the `Button` is clicked.
 
         The callback is given an `Event` argument declaring the number of clicks
 
+        Example
+        -------
+
+        >>> button = pn.widgets.Button(name='Click me')
+        >>> def handle_click(event):
+        ...    print("I was clicked!")
+        >>> button.on_click(handle_click)
+
         Arguments
         ---------
-        callback: (Callable[[param.parameterized.Event], None])
-            The function to run on click events. Must accept a positional `Event` argument
+        callback:
+            The function to run on click events. Must accept a positional `Event` argument. Can
+            be a sync or async function
 
         Returns
         -------

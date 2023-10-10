@@ -527,6 +527,9 @@ class Reactive(Syncable, Viewable):
     the parameters to other objects.
     """
 
+    # Parameter values which should not be treated like references
+    _ignored_refs: ClassVar[Tuple[str,...]] = ()
+
     _rename: ClassVar[Mapping[str, str | None]] = {
         'design': None, 'loading': None
     }
