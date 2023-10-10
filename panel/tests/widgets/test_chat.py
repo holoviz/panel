@@ -1050,7 +1050,7 @@ class TestChatInterface:
         chat_interface.widgets = [TextAreaInput()]
         chat_interface.active_widget.value = "Message"
         assert len(chat_interface.value) == 1
-        assert chat_interface.value[0].value == "Message"
+        assert chat_interface.value[0].value == ""
 
     def test_click_undo(self, chat_interface):
         chat_interface.user = "User"

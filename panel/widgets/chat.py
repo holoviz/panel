@@ -43,7 +43,7 @@ from ..reactive import ReactiveHTML
 from ..viewable import Viewable
 from .base import CompositeWidget, Widget
 from .button import Button
-from .input import FileInput, TextInput
+from .input import FileInput, TextAreaInput
 
 Avatar = Union[str, BytesIO, ImageBase]
 AvatarDict = Dict[str, Avatar]
@@ -1286,14 +1286,14 @@ class ChatInterface(ChatFeed):
     >>>     yield contents
 
     >>> chat_interface = ChatInterface(
-        callback=repeat_contents, widgets=[TextInput(), FileInput()]
+        callback=repeat_contents, widgets=[TextAreaInput(), FileInput()]
     )
     """
 
     auto_send_types = param.List(doc="""
         The widget types to automatically send when the user presses enter
         or clicks away from the widget. If not provided, defaults to
-        `[TextInput]`.""")
+        `[TextAreaInput]`.""")
 
     avatar = param.ClassSelector(class_=(str, BinaryIO), doc="""
         The avatar to use for the user. Can be a single character text, an emoji,
@@ -1302,7 +1302,7 @@ class ChatInterface(ChatFeed):
 
     reset_on_send = param.Boolean(default=False, doc="""
         Whether to reset the widget's value after sending a message;
-        has no effect for `TextInput`.""")
+        has no effect for `TextAreaInput`.""")
 
     show_send = param.Boolean(default=True, doc="""
         Whether to show the send button.""")
@@ -1323,7 +1323,7 @@ class ChatInterface(ChatFeed):
 
     widgets = param.ClassSelector(class_=(Widget, list), allow_refs=False, doc="""
         Widgets to use for the input. If not provided, defaults to
-        `[TextInput]`.""")
+        `[TextAreaInput]`.""")
 
     _widgets = param.Dict(default={}, allow_refs=False, doc="""
         The input widgets.""")
@@ -1346,7 +1346,16 @@ class ChatInterface(ChatFeed):
     def __init__(self, **params):
         widgets = params.get("widgets")
         if widgets is None:
-            params["widgets"] = [TextInput(placeholder="Send a message")]
+            params["widgets"] = [
+                TextAreaInput(
+                    placeholder="Send a message",
+                    auto_grow=True,
+                    max_rows=3,
+                    rows=1,
+                    css_classes=["chat-interface-input"],
+                    stylesheets=self._stylesheets,
+                )
+            ]
         elif not isinstance(widgets, list):
             params["widgets"] = [widgets]
         active = params.pop("active", None)
@@ -1441,7 +1450,7 @@ class ChatInterface(ChatFeed):
             # for longer form messages, like TextArea / Ace, don't
             # submit when clicking away; only if they manually click
             # the send button
-            auto_send_types = tuple(self.auto_send_types) or (TextInput,)
+            auto_send_types = tuple(self.auto_send_types) or (TextAreaInput,)
             if isinstance(widget, auto_send_types):
                 widget.param.watch(self._click_send, "value")
             widget.param.update(
@@ -1461,8 +1470,8 @@ class ChatInterface(ChatFeed):
                     sizing_mode="stretch_width",
                     max_width=90 if self.show_button_name else 45,
                     max_height=50,
-                    margin=(5, 5, 5, 0),
-                    align="center",
+                    margin=(5, 5, 15, 5),
+                    align=("center", "end"),
                 )
                 self._link_disabled_loading(button)
                 action = button_data.name
@@ -1508,7 +1517,7 @@ class ChatInterface(ChatFeed):
                     file_name=active_widget.filename,
                 )
             # don't use isinstance here; TextAreaInput subclasses TextInput
-            if type(active_widget) is TextInput or self.reset_on_send:
+            if type(active_widget) is TextAreaInput or self.reset_on_send:
                 updates = {"value": ""}
                 if hasattr(active_widget, "value_input"):
                     updates["value_input"] = ""

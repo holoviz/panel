@@ -11,3 +11,8 @@
 .chat-interface {
   border: 1px solid var(--panel-border-color, red);
 }
+
+.chat-interface-input {
+  margin-bottom: 10px;
+  resize: none;
+}
