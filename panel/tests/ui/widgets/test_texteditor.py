@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 
 from panel import depends
@@ -69,9 +71,11 @@ def test_texteditor_regression_copy_paste(page):
     serve_component(page, Column(html, widget))
 
     page.get_by_text('test').select_text()
-    page.get_by_text('test').press('Meta+KeyC')
 
-    page.locator('.ql-editor').press('Meta+KeyV')
+    ctrl_key = 'Meta' if sys.platform == 'darwin' else 'Control'
+    page.get_by_text('test').press(f'{ctrl_key}+KeyC')
+
+    page.locator('.ql-editor').press(f'{ctrl_key}+KeyV')
 
     expect(page.locator('.ql-container')).to_have_text('test')
     wait_until(lambda: widget.value == '<p>test</p>', page)
