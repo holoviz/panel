@@ -643,6 +643,7 @@ class TestChatFeed:
 
         chat_feed.callback = callback
         chat_feed.send("Testing!", user="User")
+        time.sleep(0.75)
         assert chat_feed.value[1].user == "arm"
         assert chat_feed.value[1].avatar == "🦾"
         assert chat_feed.value[1].value == "Hey, leg! Did you hear the user?"
@@ -656,6 +657,7 @@ class TestChatFeed:
 
         chat_feed.callback = callback
         chat_feed.send("Testing!", user="User")
+        time.sleep(0.75)
         assert len(chat_feed.value) == 1
         assert chat_feed.value[0].value == "Mutated"
 
