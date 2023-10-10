@@ -909,7 +909,6 @@ class ChatFeed(CompositeWidget):
             "width": self.width,
             "max_width": self.max_width,
             "max_height": self.max_height,
-            "styles": {"border": "1px solid var(--panel-border-color, #e1e1e1)", "padding": "0px"},
             "stylesheets": self._stylesheets
         }
         card_params.update(**self.card_params)
@@ -1350,7 +1349,7 @@ class ChatInterface(ChatFeed):
                 TextAreaInput(
                     placeholder="Send a message",
                     auto_grow=True,
-                    max_rows=3,
+                    max_rows=8,
                     rows=1,
                     css_classes=["chat-interface-input"],
                     stylesheets=self._stylesheets,
@@ -1450,7 +1449,7 @@ class ChatInterface(ChatFeed):
             # for longer form messages, like TextArea / Ace, don't
             # submit when clicking away; only if they manually click
             # the send button
-            auto_send_types = tuple(self.auto_send_types) or (TextAreaInput,)
+            auto_send_types = tuple(self.auto_send_types)
             if isinstance(widget, auto_send_types):
                 widget.param.watch(self._click_send, "value")
             widget.param.update(

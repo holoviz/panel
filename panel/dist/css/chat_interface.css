@@ -12,7 +12,7 @@
   border: 1px solid var(--panel-border-color, red);
 }
 
-.chat-interface-input {
+.bk-input {
   margin-bottom: 10px;
   resize: none;
 }
