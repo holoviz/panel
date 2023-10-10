@@ -549,6 +549,8 @@ class ReplacementPane(PaneBase):
 
     _pane = param.ClassSelector(class_=Viewable, allow_refs=False)
 
+    _ignored_refs: ClassVar[Tuple[str,...]] = ('object',)
+
     _linked_properties: ClassVar[Tuple[str,...]] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {'_pane': None, 'inplace': None}
