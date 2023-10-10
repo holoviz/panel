@@ -43,7 +43,7 @@ export class ColumnView extends BkColumnView {
   }
 
   record_scroll_position(): void {
-    this.model.scroll_position = this.el.scrollTop;
+    this.model.scroll_position = Math.round(this.el.scrollTop);
   }
 
   toggle_scroll_button(): void {
