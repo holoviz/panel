@@ -999,7 +999,7 @@ class TestChatInterface:
         assert len(chat_interface._button_data) == 4
         assert len(chat_interface._widgets) == 1
         assert isinstance(chat_interface._input_layout, Row)
-        assert isinstance(chat_interface._widgets["TextInput"], TextInput)
+        assert isinstance(chat_interface._widgets["TextAreaInput"], TextAreaInput)
 
         assert chat_interface.active == -1
 
@@ -1049,8 +1049,9 @@ class TestChatInterface:
     def test_click_send(self, chat_interface: ChatInterface):
         chat_interface.widgets = [TextAreaInput()]
         chat_interface.active_widget.value = "Message"
+        chat_interface._click_send(None)
         assert len(chat_interface.value) == 1
-        assert chat_interface.value[0].value == ""
+        assert chat_interface.value[0].value == "Message"
 
     def test_click_undo(self, chat_interface):
         chat_interface.user = "User"
@@ -1116,7 +1117,7 @@ class TestChatInterface:
         chat_interface.active_widget.value = "Hello"
         chat_interface.reset_on_send = False
         chat_interface._click_send(None)
-        assert chat_interface.active_widget.value == "Hello"
+        assert chat_interface.active_widget.value == ""
 
     def test_widgets_supports_list_and_widget(self, chat_interface):
         chat_interface.widgets = TextAreaInput()
