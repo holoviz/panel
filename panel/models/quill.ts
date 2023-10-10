@@ -13,6 +13,11 @@ const normalizeNative = (nativeRange: any) => {
 
     const range = nativeRange;
 
+    // // HACK: To allow pasting
+    if (range.baseNode?.classList?.value === 'ql-clipboard') {
+      return null
+    }
+
     if (range.baseNode) {
       range.startContainer = nativeRange.baseNode;
       range.endContainer = nativeRange.focusNode;
@@ -101,13 +106,17 @@ export class QuillInputView extends HTMLBoxView {
       theme: theme
     });
 
-    // Hack Quill and replace document.getSelection with shadow.getSelection
-    // see https://stackoverflow.com/questions/67914657/quill-editor-inside-shadow-dom/67944380#67944380
-    this.quill.selection.getNativeRange = () => {
-      const selection = (this.shadow_el as any).getSelection();
-      const range = normalizeNative(selection);
-      return range;
-    };
+    // Apply only with getSelection() is defined (e.g. undefined on Firefox)
+    if (typeof this.quill.root.getRootNode().getSelection !== 'undefined') {
+      // Hack Quill and replace document.getSelection with shadow.getSelection
+      // see https://stackoverflow.com/questions/67914657/quill-editor-inside-shadow-dom/67944380#67944380
+      this.quill.selection.getNativeRange = () => {
+
+        const selection = (this.shadow_el as any).getSelection();
+        const range = normalizeNative(selection);
+        return range;
+      };
+    }
 
     this._editor = (this.shadow_el.querySelector('.ql-editor') as HTMLDivElement)
     this._toolbar = (this.shadow_el.querySelector('.ql-toolbar') as HTMLDivElement)
