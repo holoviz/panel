@@ -595,9 +595,7 @@ class _SpinnerBase(_NumericInputBase):
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
-        'start': None, 'end': None, 'value_throttled': None
-    }
+    _rename: ClassVar[Mapping[str, str | None]] = {'value_throttled': None}
 
     _widget_type: ClassVar[Type[Model]] = _BkSpinner
 
@@ -666,6 +664,8 @@ class IntInput(_SpinnerBase, _IntInputBase):
     value_throttled = param.Integer(default=None, constant=True, doc="""
         The current value. Updates only on `<enter>` or when the widget looses focus.""")
 
+    _rename: ClassVar[Mapping[str, str | None]] = {'start': 'low', 'end': 'high'}
+
 
 class FloatInput(_SpinnerBase, _FloatInputBase):
     """
@@ -691,6 +691,8 @@ class FloatInput(_SpinnerBase, _FloatInputBase):
 
     value_throttled = param.Number(default=None, constant=True, doc="""
         The current value. Updates only on `<enter>` or when the widget looses focus.""")
+
+    _rename: ClassVar[Mapping[str, str | None]] = {'start': 'low', 'end': 'high'}
 
     def _process_param_change(self, msg):
         if msg.get('value', False) is None:
