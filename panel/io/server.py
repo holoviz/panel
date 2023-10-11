@@ -1080,7 +1080,7 @@ def get_server(
     if isinstance(panel, dict):
         apps = {}
         for slug, app in panel.items():
-            if slug.endswith('/'):
+            if slug.endswith('/') and not slug == '/':
                 raise ValueError(f"Invalid URL: trailing slash '/' used for {slug!r} not supported.")
             if isinstance(title, dict):
                 try:
