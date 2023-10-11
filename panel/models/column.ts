@@ -43,15 +43,17 @@ export class ColumnView extends BkColumnView {
   }
 
   record_scroll_position(): void {
-    this.model.scroll_position = this.el.scrollTop;
+    this.model.scroll_position = Math.round(this.el.scrollTop);
   }
 
   toggle_scroll_button(): void {
     const threshold = this.model.scroll_button_threshold
     const exceeds_threshold = this.distance_from_latest >= threshold
-    this.scroll_down_button_el.classList.toggle(
-      "visible", threshold !== 0 && exceeds_threshold
-    )
+    if (this.scroll_down_button_el) {
+      this.scroll_down_button_el.classList.toggle(
+        "visible", threshold !== 0 && exceeds_threshold
+      )
+    }
   }
 
   render(): void {

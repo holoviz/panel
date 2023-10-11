@@ -10,7 +10,7 @@ from __future__ import annotations
 import datetime as dt
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, Tuple, Type,
 )
 
 import numpy as np
@@ -80,6 +80,10 @@ class _SliderBase(Widget):
     def __repr__(self, depth=0):
         return '{cls}({params})'.format(cls=type(self).__name__,
                                         params=', '.join(param_reprs(self, ['value_throttled'])))
+
+    @property
+    def _linked_properties(self) -> Tuple[str]:
+        return super()._linked_properties + ('value_throttled',)
 
     def _process_property_change(self, msg):
         if config.throttled:
@@ -176,7 +180,9 @@ class FloatSlider(ContinuousSlider):
     value_throttled = param.Number(default=None, constant=True, doc="""
          The value of the slider. Updated when the handle is released.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'name': 'title', 'value_throttled': None
+    }
 
 
 class IntSlider(ContinuousSlider):
@@ -206,7 +212,9 @@ class IntSlider(ContinuousSlider):
     value_throttled = param.Integer(default=None, constant=True, doc="""
         The value of the slider. Updated when the handle is released""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'name': 'title', 'value_throttled': None
+    }
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
@@ -261,7 +269,7 @@ class DateSlider(_SliderBase):
         Datetime format used for parsing and formatting the date.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': 'title', 'as_datetime': None
+        'name': 'title', 'as_datetime': None, 'value_throttled': None
     }
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
@@ -585,7 +593,7 @@ class RangeSlider(_RangeSliderBase):
     format = param.ClassSelector(class_=(str, TickFormatter,), doc="""
         A format string or bokeh TickFormatter.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'value_start': None, 'value_end': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'value_start': None, 'value_end': None, 'value_throttled': None}
 
     _widget_type: ClassVar[Type[Model]] = _BkRangeSlider
 
@@ -683,7 +691,8 @@ class DateRangeSlider(_SliderBase):
     }
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': 'title', 'value_start': None, 'value_end': None
+        'name': 'title', 'value_start': None, 'value_end': None,
+        'value_throttled': None
     }
 
     _widget_type: ClassVar[Type[Model]] = _BkDateRangeSlider

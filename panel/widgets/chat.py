@@ -909,6 +909,7 @@ class ChatFeed(CompositeWidget):
             "width": self.width,
             "max_width": self.max_width,
             "max_height": self.max_height,
+            "styles": {"border": "1px solid var(--panel-border-color, #e1e1e1)", "padding": "0px"},
             "stylesheets": self._stylesheets
         }
         card_params.update(**self.card_params)
@@ -1301,7 +1302,7 @@ class ChatInterface(ChatFeed):
 
     reset_on_send = param.Boolean(default=False, doc="""
         Whether to reset the widget's value after sending a message;
-        has no effect for `TextAreaInput`.""")
+        has no effect for `TextInput`.""")
 
     show_send = param.Boolean(default=True, doc="""
         Whether to show the send button.""")
@@ -1516,7 +1517,7 @@ class ChatInterface(ChatFeed):
                     file_name=active_widget.filename,
                 )
             # don't use isinstance here; TextAreaInput subclasses TextInput
-            if type(active_widget) is TextAreaInput or self.reset_on_send:
+            if type(active_widget) is TextInput or self.reset_on_send:
                 updates = {"value": ""}
                 if hasattr(active_widget, "value_input"):
                     updates["value_input"] = ""
