@@ -10,7 +10,7 @@ from panel import Param, bind
 from panel.layout import Column, Row, Tabs
 from panel.pane.image import SVG, Image
 from panel.pane.markup import HTML, Markdown
-from panel.tests.util import mpl_figure
+from panel.tests.util import mpl_available, mpl_figure
 from panel.widgets.button import Button
 from panel.widgets.chat import (
     ChatEntry, ChatFeed, ChatInterface, ChatReactionIcons, _FileInputMessage,
@@ -227,6 +227,7 @@ class TestChatEntry:
         entry = ChatEntry(value=button)
         assert entry.value == button
 
+    @mpl_available
     def test_can_display_any_python_object_that_panel_can_display(self):
         # For example matplotlib figures
         ChatEntry(value=mpl_figure())
