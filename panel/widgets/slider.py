@@ -10,7 +10,7 @@ from __future__ import annotations
 import datetime as dt
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, Tuple, Type,
 )
 
 import numpy as np
@@ -80,6 +80,10 @@ class _SliderBase(Widget):
     def __repr__(self, depth=0):
         return '{cls}({params})'.format(cls=type(self).__name__,
                                         params=', '.join(param_reprs(self, ['value_throttled'])))
+
+    @property
+    def _linked_properties(self) -> Tuple[str]:
+        return super()._linked_properties + ('value_throttled',)
 
     def _process_property_change(self, msg):
         if config.throttled:
@@ -265,7 +269,7 @@ class DateSlider(_SliderBase):
         Datetime format used for parsing and formatting the date.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': 'title', 'as_datetime': None
+        'name': 'title', 'as_datetime': None, 'value_throttled': None
     }
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
