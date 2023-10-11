@@ -435,7 +435,7 @@ class PasswordLoginHandler(GenericLoginHandler):
         next_url = self.get_argument('next', None)
         if next_url:
             self.set_cookie("next_url", next_url)
-        html = self._basic_login_template.render(
+        html = self._login_template.render(
             errormessage=errormessage,
             PANEL_CDN=CDN_DIST
         )
@@ -933,6 +933,8 @@ class GoogleLoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
 
 class BasicLoginHandler(RequestHandler):
 
+    _login_template = BASIC_LOGIN_TEMPLATE
+
     def get(self):
         try:
             errormessage = self.get_argument("error")
@@ -942,7 +944,7 @@ class BasicLoginHandler(RequestHandler):
         next_url = self.get_argument('next', None)
         if next_url:
             self.set_cookie("next_url", next_url)
-        html = self._basic_login_template.render(
+        html = self._login_template.render(
             errormessage=errormessage,
             PANEL_CDN=CDN_DIST
         )
@@ -1025,10 +1027,10 @@ class BasicAuthProvider(AuthProvider):
             with open(logout_template) as f:
                 self._logout_template = _env.from_string(f.read())
         if login_template is None:
-            self._basic_login_template = BASIC_LOGIN_TEMPLATE
+            self._login_template = BASIC_LOGIN_TEMPLATE
         else:
             with open(login_template) as f:
-                self._basic_login_template = _env.from_string(f.read())
+                self._login_template = _env.from_string(f.read())
         self._login_endpoint = login_endpoint or '/login'
         self._logout_endpoint = logout_endpoint or '/logout'
         super().__init__()
@@ -1046,6 +1048,7 @@ class BasicAuthProvider(AuthProvider):
     @property
     def login_handler(self):
         BasicLoginHandler._login_endpoint = self._login_endpoint
+        BasicLoginHandler._login_template = self._login_template
         return BasicLoginHandler
 
     @property
@@ -1071,7 +1074,7 @@ class OAuthProvider(BasicAuthProvider):
         handler = AUTH_PROVIDERS[config.oauth_provider]
         if self._error_template:
             handler._error_template = self._error_template
-        handler._basic_login_template = self._basic_login_template
+        handler._login_template = self._login_template
         handler._login_endpoint = self._login_endpoint
         return handler
 
