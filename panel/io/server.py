@@ -989,6 +989,9 @@ def get_server(
     oauth_error_template: Optional[str] = None,
     cookie_secret: Optional[str] = None,
     oauth_encryption_key: Optional[str] = None,
+    login_endpoint: Optional[str] = None,
+    logout_endpoint: Optional[str] = None,
+    login_template: Optional[str] = None,
     logout_template: Optional[str] = None,
     session_history: Optional[int] = None,
     liveness: bool | str = False,
@@ -1052,6 +1055,13 @@ def get_server(
     oauth_encryption_key: str (optional, default=False)
       A random encryption key used for encrypting OAuth user
       information and access tokens.
+    login_endpoint: str (optional, default=None)
+      Overrides the default login endpoint `/login`
+    logout_endpoint: str (optional, default=None)
+      Overrides the default logout endpoint `/logout`
+    logout_template: str (optional, default=None)
+      Jinja2 template served when viewing the login endpoint when
+      authentication is enabled.
     logout_template: str (optional, default=None)
       Jinja2 template served when viewing the logout endpoint when
       authentication is enabled.
@@ -1167,20 +1177,21 @@ def get_server(
     # Configure OAuth
     from ..config import config
     server_config = {}
-    if basic_auth:
-        from ..auth import BasicProvider
-        server_config['basic_auth'] = basic_auth
-        basic_login_template = kwargs.pop('basic_login_template', None)
-        opts['auth_provider'] = BasicProvider(
-            basic_login_template,
-            logout_template=logout_template
-        )
-    elif oauth_provider:
-        from ..auth import OAuthProvider
-        config.oauth_provider = oauth_provider # type: ignore
-        opts['auth_provider'] = OAuthProvider(
-            error_template=oauth_error_template,
-            logout_template=logout_template
+    login_template = kwargs.pop('basic_login_template', login_template)
+    if basic_auth or oauth_provider:
+        from ..auth import BasicAuthProvider, OAuthProvider
+        if basic_auth:
+            server_config['basic_auth'] = basic_auth
+            provider = BasicAuthProvider
+        else:
+            config.oauth_provider = oauth_provider
+            provider = OAuthProvider
+        opts['auth_provider'] = provider(
+            login_endpoint=login_endpoint,
+            logout_endpoint=logout_endpoint,
+            login_template=login_template,
+            logout_template=logout_template,
+            error_template=oauth_error_template
         )
     if oauth_key:
         config.oauth_key = oauth_key # type: ignore
@@ -1204,8 +1215,9 @@ def get_server(
     state._server_config[server._tornado] = server_config
 
     if show:
+        login_endpoint = login_endpoint or '/login'
         def show_callback():
-            server.show('/login' if config.oauth_provider else '/')
+            server.show(login_endpoint if config.oauth_provider or basic_auth else '/')
         server.io_loop.add_callback(show_callback)
 
     def sig_exit(*args, **kwargs):

@@ -25,7 +25,7 @@ from bokeh.server.contexts import ApplicationContext
 from tornado.ioloop import PeriodicCallback
 from tornado.web import StaticFileHandler
 
-from ..auth import BasicProvider, OAuthProvider
+from ..auth import BasicAuthProvider, OAuthProvider
 from ..config import config
 from ..io.document import _cleanup_doc
 from ..io.liveness import LivenessHandler
@@ -142,6 +142,16 @@ class Serve(_BkServe):
             type    = float,
             help    = "Expiry off the OAuth cookie in number of days.",
             default = 1
+        )),
+        ('--login-endpoint', dict(
+            action  = 'store',
+            type    = str,
+            help    = "Endpoint to serve the authentication login page on."
+        )),
+        ('--logout-endpoint', dict(
+            action  = 'store',
+            type    = str,
+            help    = "Endpoint to serve the authentication logout page on."
         )),
         ('--auth-template', dict(
             action  = 'store',
@@ -430,7 +440,6 @@ class Serve(_BkServe):
                 )
             config.auth_template = str(authpath.absolute())
 
-
         if args.logout_template:
             logout_template = str(pathlib.Path(args.logout_template).absolute())
         else:
@@ -441,22 +450,37 @@ class Serve(_BkServe):
                 "Turn on Basic authentication using environment variable "
                 "or via explicit argument, not both"
             )
+
+        if args.basic_login_template:
+            login_template = args.basic_login_template
+            authpath = pathlib.Path(login_template)
+            if not authpath.is_file():
+                raise ValueError(
+                    f"The supplied auth-template {login_template} does not "
+                    "exist, ensure you supply and existing Jinja2 template."
+                )
+        else:
+            login_template = None
+
+        login_endpoint = args.login_endpoint or '/login'
+        login_endpoint = login_endpoint if login_endpoint.startswith('/') else f'/{login_endpoint}'
+        logout_endpoint = args.logout_endpoint or '/logout'
+        logout_endpoint = logout_endpoint if logout_endpoint.startswith('/') else f'/{logout_endpoint}'
+
+        if args.oauth_error_template:
+            error_template = str(pathlib.Path(args.oauth_error_template).absolute())
+        elif config.auth_template:
+            error_template = config.auth_template
+        else:
+            error_template = None
+
         if args.basic_auth:
             config.basic_auth = args.basic_auth
         if config.basic_auth:
-            if args.basic_login_template:
-                basic_login_template = args.basic_login_template
-                authpath = pathlib.Path(basic_login_template)
-                if not authpath.is_file():
-                    raise ValueError(
-                        f"The supplied auth-template {basic_login_template} does not "
-                        "exist, ensure you supply and existing Jinja2 template."
-                    )
-            else:
-                basic_login_template = None
-
-            kwargs['auth_provider'] = BasicProvider(
-                basic_login_template=basic_login_template,
+            kwargs['auth_provider'] = BasicAuthProvider(
+                login_endpoint=login_endpoint,
+                logout_endpoint=logout_endpoint,
+                login_template=login_template,
                 logout_template=logout_template
             )
 
@@ -561,15 +585,12 @@ class Serve(_BkServe):
                     )
                 state.encryption = Fernet(config.oauth_encryption_key)
 
-            if args.oauth_error_template:
-                error_template = str(pathlib.Path(args.oauth_error_template).absolute())
-            elif config.auth_template:
-                error_template = config.auth_template
-            else:
-                error_template = None
-
             kwargs['auth_provider'] = OAuthProvider(
-                error_template=error_template, logout_template=logout_template
+                login_endpoint=login_endpoint,
+                logout_endpoint=logout_endpoint,
+                login_template=login_template,
+                logout_template=logout_template,
+                error_template=error_template,
             )
 
             if args.oauth_redirect_uri and config.oauth_redirect_uri:
