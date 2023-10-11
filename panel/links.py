@@ -707,8 +707,7 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
                     value = msg[tgt_spec]
             else:
                 value = getattr(src_model, src_spec)
-            if value and hasattr(tgt_model, tgt_spec):
-                if tgt_spec != 'value_throttled':
+            if value and tgt_spec != 'value_throttled' and hasattr(tgt_model, tgt_spec):
                     setattr(tgt_model, tgt_spec, value)
         if tgt_model is None and not link.code:
             raise ValueError('Model could not be resolved on target '
