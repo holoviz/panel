@@ -9,8 +9,7 @@ export class TextAreaInputView extends BkTextAreaInputView {
 
     const { value, max_rows } = this.model.properties;
 
-    this.on_change(value, () => this.update_rows());  // for manually setting value
-    this.on_change(max_rows, () => this.update_rows());
+    this.on_change([max_rows, value], () => this.update_rows());
   }
 
   update_rows(): void {
