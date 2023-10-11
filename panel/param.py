@@ -212,9 +212,9 @@ class Param(PaneBase):
     if hasattr(param, 'Event'):
         mapping[param.Event] = Button
 
-    _ignored_refs: ClassVar[Tuple[str]] = ('object',)
+    _ignored_refs: ClassVar[Tuple[str,...]] = ('object',)
 
-    _linkable_properties: ClassVar[Tuple[str]] = ()
+    _linkable_properties: ClassVar[Tuple[str,...]] = ()
 
     _rerender_params: ClassVar[List[str]] = []
 

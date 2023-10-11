@@ -9,7 +9,7 @@ import sys
 from collections import OrderedDict, defaultdict
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional, Type,
+    TYPE_CHECKING, Any, ClassVar, Mapping, Optional, Tuple, Type,
 )
 
 import param
@@ -684,6 +684,7 @@ class Interactive(PaneBase):
         Bokeh model.""")
 
     priority: ClassVar[float | bool | None] = None
+    _ignored_refs: ClassVar[Tuple[str, ...]] = ('object',)
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
