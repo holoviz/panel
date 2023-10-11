@@ -10,7 +10,7 @@ import json
 from base64 import b64decode
 from datetime import date, datetime
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional, Tuple, Type,
 )
 
 import numpy as np
@@ -595,6 +595,8 @@ class _SpinnerBase(_NumericInputBase):
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
+    _rename: ClassVar[Mapping[str, str | None]] = {'value_throttled': None}
+
     _widget_type: ClassVar[Type[Model]] = _BkSpinner
 
     __abstract = True
@@ -611,6 +613,10 @@ class _SpinnerBase(_NumericInputBase):
     def __repr__(self, depth=0):
         return '{cls}({params})'.format(cls=type(self).__name__,
                                         params=', '.join(param_reprs(self, ['value_throttled'])))
+
+    @property
+    def _linked_properties(self) -> Tuple[str]:
+        return super()._linked_properties + ('value_throttled',)
 
     def _update_model(
         self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
@@ -658,6 +664,8 @@ class IntInput(_SpinnerBase, _IntInputBase):
     value_throttled = param.Integer(default=None, constant=True, doc="""
         The current value. Updates only on `<enter>` or when the widget looses focus.""")
 
+    _rename: ClassVar[Mapping[str, str | None]] = {'start': 'low', 'end': 'high'}
+
 
 class FloatInput(_SpinnerBase, _FloatInputBase):
     """
@@ -683,6 +691,8 @@ class FloatInput(_SpinnerBase, _FloatInputBase):
 
     value_throttled = param.Number(default=None, constant=True, doc="""
         The current value. Updates only on `<enter>` or when the widget looses focus.""")
+
+    _rename: ClassVar[Mapping[str, str | None]] = {'start': 'low', 'end': 'high'}
 
     def _process_param_change(self, msg):
         if msg.get('value', False) is None:

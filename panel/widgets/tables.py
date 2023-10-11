@@ -14,7 +14,7 @@ import numpy as np
 import param
 
 from bokeh.model import Model
-from bokeh.models import ColumnDataSource, ImportedStyleSheet, Selection
+from bokeh.models import ColumnDataSource, ImportedStyleSheet
 from bokeh.models.widgets.tables import (
     AvgAggregator, CellEditor, CellFormatter, CheckboxEditor, DataCube,
     DataTable, DateEditor, DateFormatter, GroupingInfo, IntEditor,
@@ -302,9 +302,8 @@ class BaseTable(ReactiveData, Widget):
     def _get_properties(self, doc: Document) -> Dict[str, Any]:
         properties = super()._get_properties(doc)
         properties['columns'] = self._get_columns()
-        properties['source']  = ColumnDataSource(
-            data=self._data, selected=Selection(indices=self.selection)
-        )
+        properties['source']  = cds = ColumnDataSource(data=self._data)
+        cds.selected.indices = self.selection
         return properties
 
     def _get_model(
