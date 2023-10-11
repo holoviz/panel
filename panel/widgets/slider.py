@@ -176,7 +176,9 @@ class FloatSlider(ContinuousSlider):
     value_throttled = param.Number(default=None, constant=True, doc="""
          The value of the slider. Updated when the handle is released.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'name': 'title', 'value_throttled': None
+    }
 
 
 class IntSlider(ContinuousSlider):
@@ -206,7 +208,9 @@ class IntSlider(ContinuousSlider):
     value_throttled = param.Integer(default=None, constant=True, doc="""
         The value of the slider. Updated when the handle is released""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'name': 'title', 'value_throttled': None
+    }
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
@@ -585,7 +589,7 @@ class RangeSlider(_RangeSliderBase):
     format = param.ClassSelector(class_=(str, TickFormatter,), doc="""
         A format string or bokeh TickFormatter.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'value_start': None, 'value_end': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'value_start': None, 'value_end': None, 'value_throttled': None}
 
     _widget_type: ClassVar[Type[Model]] = _BkRangeSlider
 
@@ -683,7 +687,8 @@ class DateRangeSlider(_SliderBase):
     }
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': 'title', 'value_start': None, 'value_end': None
+        'name': 'title', 'value_start': None, 'value_end': None,
+        'value_throttled': None
     }
 
     _widget_type: ClassVar[Type[Model]] = _BkDateRangeSlider
