@@ -79,12 +79,12 @@ def test_azure_oauth(py_file, page):
 
     app_name = os.path.basename(py_file.name)[:-3]
 
+    cookie_secret = os.environ['OAUTH_COOKIE_SECRET']
+    encryption_key = os.environ['OAUTH_ENCRYPTION_KEY']
     oauth_key = os.environ['AZURE_OAUTH_KEY']
     oauth_secret = os.environ['AZURE_OAUTH_SECRET']
-    cookie_secret = os.environ['OAUTH_COOKIE_SECRET']
     azure_user = os.environ['AZURE_OAUTH_USER']
     azure_password = os.environ['AZURE_OAUTH_PASSWORD']
-    encryption_key = os.environ['OAUTH_ENCRYPTION_KEY']
     cmd = [
         "--port", "5006", "--oauth-provider", "azure", "--oauth-key", oauth_key,
         "--oauth-secret", oauth_secret, "--cookie-secret", cookie_secret,
@@ -102,6 +102,38 @@ def test_azure_oauth(py_file, page):
         page.locator('input[type="submit"]').click(force=True)
 
         expect(page.locator('.markdown')).to_have_text(f'live.com#{azure_user}', timeout=10000)
+
+
+#@unix_only
+@pytest.mark.skipif('AUTH0_OAUTH_KEY' not in os.environ, reason='Auth0 credentials not available')
+def test_auth0_oauth(py_file, page):
+    app = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
+    write_file(app, py_file.file)
+
+    app_name = os.path.basename(py_file.name)[:-3]
+
+    cookie_secret = os.environ['OAUTH_COOKIE_SECRET']
+    encryption_key = os.environ['OAUTH_ENCRYPTION_KEY']
+    oauth_key = os.environ['AUTH0_OAUTH_KEY']
+    oauth_secret = os.environ['AUTH0_OAUTH_SECRET']
+    extra_params = os.environ['AUTH0_OAUTH_EXTRA_PARAMS']
+    auth0_user = os.environ['AUTH0_OAUTH_USER']
+    auth0_password = os.environ['AUTH0_OAUTH_PASSWORD']
+    cmd = [
+        "--port", "5006", "--oauth-provider", "auth0", "--oauth-key", oauth_key,
+        "--oauth-secret", oauth_secret, "--cookie-secret", cookie_secret,
+        "--oauth-encryption-key", encryption_key, "--oauth-extra-params", extra_params,
+        py_file.name
+    ]
+    with run_panel_serve(cmd) as p:
+        port = wait_for_port(p.stdout)
+        page.goto(f"http://localhost:{port}/{app_name}")
+
+        page.locator('input[name="username"]').fill(auth0_user)
+        page.locator('input[name="password"]').fill(auth0_password)
+        page.get_by_role("button", name="Continue", exact=True).click(force=True)
+
+        expect(page.locator('.markdown')).to_have_text(auth0_user, timeout=10000)
 
 
 @unix_only

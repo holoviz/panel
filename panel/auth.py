@@ -97,13 +97,19 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         'grant_type':    'authorization_code'
     }
 
-    _SCOPE = None
-
     _state_cookie = None
 
     _error_template = ERROR_TEMPLATE
 
     _login_endpoint = '/login'
+
+    @property
+    def _SCOPE(self):
+        if 'scope' in config.oauth_extra_params:
+            return config.oauth_extra_params['scope']
+        elif 'PANEL_OAUTH_SCOPE' not in os.environ:
+            return ['openid', 'email', 'profile']
+        return [scope for scope in os.environ['PANEL_OAUTH_SCOPE'].split(',')]
 
     async def get_authenticated_user(self, redirect_uri, client_id, state,
                                      client_secret=None, code=None):
@@ -139,8 +145,10 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
             'response_type': 'code',
             'extra_params': {
                 'state': state,
-            },
+            }
         }
+        if 'audience' in config.oauth_extra_params:
+            params['extra_params']['audience'] = config.oauth_extra_params['audience']
         if self._SCOPE is not None:
             params['scope'] = self._SCOPE
         if 'scope' in config.oauth_extra_params:
@@ -208,6 +216,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         body = decode_response_body(response)
 
         if not body:
+            log.debug("%s token endpoint did not return a valid access token.", type(self).__name__)
             return
 
         if 'access_token' not in body:
@@ -226,11 +235,20 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         else:
             user_url = '{}{}'.format(self._OAUTH_USER_URL, body['access_token'])
 
-        user_response = await http.fetch(user_url, headers=user_headers)
-        user = decode_response_body(user_response)
+        try:
+            user_response = await http.fetch(user_url, headers=user_headers)
+            user = decode_response_body(user_response)
+        except HTTPError:
+            user = None
 
         if not user:
-            return
+            log.debug("%s could not obtain user_info, falling back to decoding access_token.", type(self).__name__)
+            try:
+                user = decode_token(body['access_token'])
+            except Exception as e:
+                raise e
+                log.debug("%s could not decode access_token.", type(self).__name__)
+                return None
 
         log.debug("%s received user information.", type(self).__name__)
         return self._on_auth(user, body['access_token'], body.get('refresh_token'))
@@ -427,14 +445,6 @@ class GenericLoginHandler(OAuthLoginHandler):
         return config.oauth_extra_params.get('USER_URL', os.environ.get('PANEL_OAUTH_USER_URL'))
 
     @property
-    def _SCOPE(self):
-        if 'scope' in config.oauth_extra_params:
-            return config.oauth_extra_params['scope']
-        elif 'PANEL_OAUTH_SCOPE' not in os.environ:
-            return ['openid', 'email']
-        return [scope for scope in os.environ['PANEL_OAUTH_SCOPE'].split(',')]
-
-    @property
     def _USER_KEY(self):
         return config.oauth_extra_params.get('USER_KEY', os.environ.get('PANEL_USER_KEY', 'email'))
 
@@ -555,9 +565,13 @@ class BitbucketLoginHandler(OAuthLoginHandler):
 
 class Auth0Handler(OAuthLoginHandler):
 
+    _access_token_header = 'Bearer {}'
+
     _OAUTH_ACCESS_TOKEN_URL_ = 'https://{0}.auth0.com/oauth/token'
     _OAUTH_AUTHORIZE_URL_ = 'https://{0}.auth0.com/authorize'
-    _OAUTH_USER_URL_ = 'https://{0}.auth0.com/userinfo?access_token='
+    _OAUTH_USER_URL_ = 'https://{0}.auth0.com/userinfo'
+
+    _USER_KEY = 'email'
 
     @property
     def _OAUTH_ACCESS_TOKEN_URL(self):
@@ -574,7 +588,6 @@ class Auth0Handler(OAuthLoginHandler):
         url = config.oauth_extra_params.get('subdomain', 'example')
         return self._OAUTH_USER_URL_.format(url)
 
-    _USER_KEY = 'email'
 
 
 class GitLabLoginHandler(OAuthLoginHandler):
@@ -651,7 +664,6 @@ class AzureAdV2LoginHandler(OAuthLoginHandler):
     _OAUTH_USER_URL_ = ''
 
     _USER_KEY = 'email'
-    _SCOPE = ['openid', 'email', 'profile']
 
     @property
     def _OAUTH_ACCESS_TOKEN_URL(self):
@@ -689,8 +701,6 @@ class OktaLoginHandler(OAuthLoginHandler):
 
     _USER_KEY = 'email'
 
-    _SCOPE = ['openid', 'email', 'profile']
-
     @property
     def _OAUTH_ACCESS_TOKEN_URL(self):
         url = config.oauth_extra_params.get('url', 'okta.com')
@@ -727,8 +737,6 @@ class GoogleLoginHandler(OAuthLoginHandler):
 
     _OAUTH_AUTHORIZE_URL = "https://accounts.google.com/o/oauth2/v2/auth"
     _OAUTH_ACCESS_TOKEN_URL = "https://accounts.google.com/o/oauth2/token"
-
-    _SCOPE = ['profile', 'email']
 
     _USER_KEY = 'email'
 
@@ -899,9 +907,12 @@ class OAuthProvider(BasicAuthProvider):
             refresh_cookie = handler.get_secure_cookie('refresh_token', max_age_days=config.oauth_expiry)
             if refresh_cookie:
                 refresh_token = state._decrypt_cookie(refresh_cookie)
-                refresh_json = decode_token(refresh_token)
-                if refresh_json['exp'] < now_ts:
-                    refresh_token = None
+                try:
+                    refresh_json = decode_token(refresh_token)
+                    if refresh_json['exp'] < now_ts:
+                        refresh_token = None
+                except UnicodeDecodeError:
+                    pass
             else:
                 refresh_token = None
 
@@ -915,6 +926,7 @@ class OAuthProvider(BasicAuthProvider):
                 handler.clear_cookie(STATE_COOKIE_NAME)
                 handler.redirect(self.login_url)
                 return
+
             auth_handler = self.login_handler(
                 application=handler.application, request=handler.request
             )
