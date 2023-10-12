@@ -14,7 +14,6 @@ from typing import (
 
 import param
 
-from bokeh.models import Tooltip as _BkTooltip
 from bokeh.models.widgets import (
     AutocompleteInput as _BkAutocompleteInput,
     CheckboxGroup as _BkCheckboxGroup, MultiChoice as _BkMultiChoice,
@@ -28,6 +27,7 @@ from ..models import (
     RadioButtonGroup as _BkRadioButtonGroup, SingleSelect as _BkSingleSelect,
 )
 from ..util import PARAM_NAME_PATTERN, indexOf, isIn
+from ._mixin import TooltipMixin
 from .base import CompositeWidget, Widget
 from .button import Button, _ButtonBase
 from .input import TextAreaInput, TextInput
@@ -552,7 +552,7 @@ class _RadioGroupBase(SingleSelectBase):
 
 
 
-class RadioButtonGroup(_RadioGroupBase, _ButtonBase):
+class RadioButtonGroup(_RadioGroupBase, _ButtonBase, TooltipMixin):
     """
     The `RadioButtonGroup` widget allows selecting from a list or dictionary
     of values using a set of toggle buttons.
@@ -575,9 +575,6 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase):
         objects=['horizontal', 'vertical'], doc="""
         Button group orientation, either 'horizontal' (default) or 'vertical'.""")
 
-    description = param.ClassSelector(default=None, class_=(str, _BkTooltip), doc="""
-        The description in the tooltip.""")
-
     _source_transforms = {
         'value': "source.labels[value]", 'button_style': None
     }
@@ -586,12 +583,6 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase):
 
     _widget_type: ClassVar[Type[Model]] = _BkRadioButtonGroup
 
-    _rename = {'description': 'tooltip'}
-
-    def _process_param_change(self, params):
-        if isinstance(desc := params.get('description'), str):
-            params['description'] = _BkTooltip(content=desc, position='right')
-        return super()._process_param_change(params)
 
 
 class RadioBoxGroup(_RadioGroupBase):
@@ -660,7 +651,7 @@ class _CheckGroupBase(SingleSelectBase):
 
 
 
-class CheckButtonGroup(_CheckGroupBase, _ButtonBase):
+class CheckButtonGroup(_CheckGroupBase, _ButtonBase, TooltipMixin):
     """
     The `CheckButtonGroup` widget allows selecting between a list of options
     by toggling the corresponding buttons.
@@ -683,21 +674,12 @@ class CheckButtonGroup(_CheckGroupBase, _ButtonBase):
         objects=['horizontal', 'vertical'], doc="""
         Button group orientation, either 'horizontal' (default) or 'vertical'.""")
 
-    description = param.ClassSelector(default=None, class_=(str, _BkTooltip), doc="""
-        The description in the tooltip.""")
-
     _source_transforms = {
         'value': "value.map((index) => source.labels[index])", 'button_style': None
     }
 
     _widget_type: ClassVar[Type[Model]] = _BkCheckboxButtonGroup
 
-    _rename = {'description': 'tooltip'}
-
-    def _process_param_change(self, params):
-        if isinstance(desc := params.get('description'), str):
-            params['description'] = _BkTooltip(content=desc, position='right')
-        return super()._process_param_change(params)
 
 
 class CheckBoxGroup(_CheckGroupBase):
