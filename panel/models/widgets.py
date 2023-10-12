@@ -10,7 +10,8 @@ from bokeh.models.ui import Tooltip
 from bokeh.models.ui.icons import Icon
 from bokeh.models.widgets import (
     Button as bkButton, CheckboxButtonGroup as bkCheckboxButtonGroup,
-    InputWidget, Select, TextAreaInput as BkTextAreaInput, Widget,
+    InputWidget, RadioButtonGroup as bkRadioButtonGroup, Select,
+    TextAreaInput as BkTextAreaInput, Widget,
 )
 
 from .layout import HTMLBox
@@ -224,6 +225,14 @@ class Button(bkButton):
 
 
 class CheckboxButtonGroup(bkCheckboxButtonGroup):
+
+    tooltip = Nullable(Instance(Tooltip), help="""
+    A tooltip with plain text or rich HTML contents, providing general help or
+    description of a widget's or component's function.
+    """)
+
+
+class RadioButtonGroup(bkRadioButtonGroup):
 
     tooltip = Nullable(Instance(Tooltip), help="""
     A tooltip with plain text or rich HTML contents, providing general help or

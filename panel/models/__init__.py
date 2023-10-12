@@ -15,5 +15,6 @@ from .state import State  # noqa
 from .trend import TrendIndicator  # noqa
 from .widgets import (  # noqa
     Audio, Button, CheckboxButtonGroup, CustomSelect, FileDownload, Player,
-    Progress, SingleSelect, TextAreaInput, TooltipIcon, Video, VideoStream,
+    Progress, RadioButtonGroup, SingleSelect, TextAreaInput, TooltipIcon,
+    Video, VideoStream,
 )
