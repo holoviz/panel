@@ -14,17 +14,19 @@ from typing import (
 
 import param
 
+from bokeh.models import Tooltip as _BkTooltip
 from bokeh.models.widgets import (
     AutocompleteInput as _BkAutocompleteInput,
-    CheckboxButtonGroup as _BkCheckboxButtonGroup,
     CheckboxGroup as _BkCheckboxGroup, MultiChoice as _BkMultiChoice,
-    MultiSelect as _BkMultiSelect, RadioButtonGroup as _BkRadioButtonGroup,
-    RadioGroup as _BkRadioBoxGroup,
+    MultiSelect as _BkMultiSelect, RadioGroup as _BkRadioBoxGroup,
 )
 
 from ..io.resources import CDN_DIST
 from ..layout import Column
-from ..models import CustomSelect, SingleSelect as _BkSingleSelect
+from ..models import (
+    CheckboxButtonGroup as _BkCheckboxButtonGroup, CustomSelect,
+    RadioButtonGroup as _BkRadioButtonGroup, SingleSelect as _BkSingleSelect,
+)
 from ..util import PARAM_NAME_PATTERN, indexOf, isIn
 from .base import CompositeWidget, Widget
 from .button import Button, _ButtonBase
@@ -573,6 +575,9 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase):
         objects=['horizontal', 'vertical'], doc="""
         Button group orientation, either 'horizontal' (default) or 'vertical'.""")
 
+    description = param.ClassSelector(default=None, class_=(str, _BkTooltip), doc="""
+        The description in the tooltip.""")
+
     _source_transforms = {
         'value': "source.labels[value]", 'button_style': None
     }
@@ -581,6 +586,12 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase):
 
     _widget_type: ClassVar[Type[Model]] = _BkRadioButtonGroup
 
+    _rename = {'description': 'tooltip'}
+
+    def _process_param_change(self, params):
+        if isinstance(desc := params.get('description'), str):
+            params['description'] = _BkTooltip(content=desc, position='right')
+        return super()._process_param_change(params)
 
 
 class RadioBoxGroup(_RadioGroupBase):
@@ -672,11 +683,21 @@ class CheckButtonGroup(_CheckGroupBase, _ButtonBase):
         objects=['horizontal', 'vertical'], doc="""
         Button group orientation, either 'horizontal' (default) or 'vertical'.""")
 
+    description = param.ClassSelector(default=None, class_=(str, _BkTooltip), doc="""
+        The description in the tooltip.""")
+
     _source_transforms = {
         'value': "value.map((index) => source.labels[index])", 'button_style': None
     }
 
     _widget_type: ClassVar[Type[Model]] = _BkCheckboxButtonGroup
+
+    _rename = {'description': 'tooltip'}
+
+    def _process_param_change(self, params):
+        if isinstance(desc := params.get('description'), str):
+            params['description'] = _BkTooltip(content=desc, position='right')
+        return super()._process_param_change(params)
 
 
 class CheckBoxGroup(_CheckGroupBase):

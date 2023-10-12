@@ -12,7 +12,9 @@ from typing import (
 import param
 
 from bokeh.events import ButtonClick, MenuItemClick
-from bokeh.models import Dropdown as _BkDropdown, Toggle as _BkToggle, Tooltip
+from bokeh.models import (
+    Dropdown as _BkDropdown, Toggle as _BkToggle, Tooltip as _BkTooltip,
+)
 from bokeh.models.ui import SVGIcon, TablerIcon
 
 from ..io.resources import CDN_DIST
@@ -179,7 +181,7 @@ class Button(_ClickButton):
     value = param.Event(doc="""
         Toggles from False to True while the event is being processed.""")
 
-    description = param.ClassSelector(default=None, class_=(str, Tooltip), doc="""
+    description = param.ClassSelector(default=None, class_=(str, _BkTooltip), doc="""
         The description in the tooltip.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
@@ -275,7 +277,7 @@ class Button(_ClickButton):
 
     def _process_param_change(self, params):
         if isinstance(desc := params.get('description'), str):
-            params['description'] = Tooltip(content=desc, position='right')
+            params['description'] = _BkTooltip(content=desc, position='right')
         return super()._process_param_change(params)
 
 class Toggle(_ButtonBase, IconMixin):
