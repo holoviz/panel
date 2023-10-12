@@ -47,6 +47,7 @@ def test_okta_oauth(py_file, page):
 
     app_name = os.path.basename(py_file.name)[:-3]
 
+    port = os.environ.get('OKTA_PORT')
     cookie_secret = os.environ['OAUTH_COOKIE_SECRET']
     encryption_key = os.environ['OAUTH_ENCRYPTION_KEY']
     oauth_key = os.environ['OKTA_OAUTH_KEY']
@@ -55,7 +56,7 @@ def test_okta_oauth(py_file, page):
     okta_user = os.environ['OKTA_OAUTH_USER']
     okta_password = os.environ['OKTA_OAUTH_PASSWORD']
     cmd = [
-        "--port", "5006", "--oauth-provider", "okta", "--oauth-key", oauth_key,
+        "--port", port, "--oauth-provider", "okta", "--oauth-key", oauth_key,
         "--oauth-secret", oauth_secret, "--cookie-secret", cookie_secret,
         "--oauth-encryption-key", encryption_key, "--oauth-extra-params", extra_params,
         py_file.name
@@ -79,6 +80,7 @@ def test_azure_oauth(py_file, page):
 
     app_name = os.path.basename(py_file.name)[:-3]
 
+    port = os.environ.get('AZURE_PORT')
     cookie_secret = os.environ['OAUTH_COOKIE_SECRET']
     encryption_key = os.environ['OAUTH_ENCRYPTION_KEY']
     oauth_key = os.environ['AZURE_OAUTH_KEY']
@@ -86,7 +88,7 @@ def test_azure_oauth(py_file, page):
     azure_user = os.environ['AZURE_OAUTH_USER']
     azure_password = os.environ['AZURE_OAUTH_PASSWORD']
     cmd = [
-        "--port", "5006", "--oauth-provider", "azure", "--oauth-key", oauth_key,
+        "--port", port, "--oauth-provider", "azure", "--oauth-key", oauth_key,
         "--oauth-secret", oauth_secret, "--cookie-secret", cookie_secret,
         "--oauth-encryption-key", encryption_key,
         py_file.name
@@ -104,7 +106,7 @@ def test_azure_oauth(py_file, page):
         expect(page.locator('.markdown')).to_have_text(f'live.com#{azure_user}', timeout=10000)
 
 
-#@unix_only
+@unix_only
 @pytest.mark.skipif('AUTH0_OAUTH_KEY' not in os.environ, reason='Auth0 credentials not available')
 def test_auth0_oauth(py_file, page):
     app = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
@@ -112,6 +114,7 @@ def test_auth0_oauth(py_file, page):
 
     app_name = os.path.basename(py_file.name)[:-3]
 
+    port = os.environ.get('AUTH0_PORT')
     cookie_secret = os.environ['OAUTH_COOKIE_SECRET']
     encryption_key = os.environ['OAUTH_ENCRYPTION_KEY']
     oauth_key = os.environ['AUTH0_OAUTH_KEY']
@@ -120,7 +123,7 @@ def test_auth0_oauth(py_file, page):
     auth0_user = os.environ['AUTH0_OAUTH_USER']
     auth0_password = os.environ['AUTH0_OAUTH_PASSWORD']
     cmd = [
-        "--port", "5006", "--oauth-provider", "auth0", "--oauth-key", oauth_key,
+        "--port", port, "--oauth-provider", "auth0", "--oauth-key", oauth_key,
         "--oauth-secret", oauth_secret, "--cookie-secret", cookie_secret,
         "--oauth-encryption-key", encryption_key, "--oauth-extra-params", extra_params,
         py_file.name
