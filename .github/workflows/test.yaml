@@ -118,6 +118,16 @@ jobs:
       PANEL_LOG_LEVEL: info
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      OKTA_OAUTH_KEY: ${{ secrets.OKTA_OAUTH_KEY }}
+      OKTA_OAUTH_SECRET: ${{ secrets.OKTA_OAUTH_SECRET }}
+      OKTA_OAUTH_EXTRA_PARAMS: ${{ secrets.OKTA_OAUTH_EXTRA_PARAMS }}
+      OKTA_OAUTH_USER: ${{ secrets.OKTA_OAUTH_USER }}
+      OKTA_OAUTH_PASSWORD: ${{ secrets.OKTA_OAUTH_PASSWORD }}
+      AZURE_OAUTH_KEY: ${{ secrets.AZURE_OAUTH_KEY }}
+      AZURE_OAUTH_SECRET: ${{ secrets.AZURE_OAUTH_SECRET }}
+      AZURE_OAUTH_USER: ${{ secrets.AZURE_OAUTH_USER }}
+      AZURE_OAUTH_PASSWORD: ${{ secrets.AZURE_OAUTH_PASSWORD }}
       # Without this env var `doit env_create ...` uses by default
       # the `pyviz` channel, except that we don't want to configure
       # it as one of the sources.
