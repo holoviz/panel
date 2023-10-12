@@ -33,7 +33,7 @@ from bokeh.document.locking import UnlockedDocumentProxy
 from bokeh.io import curdoc as _curdoc
 from pyviz_comms import CommManager as _CommManager
 
-from ..util import base64url_decode, parse_timedelta
+from ..util import base64url_decode, decode_token, parse_timedelta
 from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 
 _state_logger = logging.getLogger('panel.state')
@@ -881,7 +881,7 @@ class _state(param.Parameterized):
     # Public Properties
     #----------------------------------------------------------------
 
-    def _decode_cookie(self, cookie_name):
+    def _decode_cookie(self, cookie_name, cookie=None):
         from tornado.web import decode_signed_value
 
         from ..config import config
@@ -889,6 +889,9 @@ class _state(param.Parameterized):
         if cookie is None:
             return None
         cookie = decode_signed_value(config.cookie_secret, cookie_name, cookie)
+        return self._decrypt_cookie(cookie)
+
+    def _decrypt_cookie(self, cookie):
         if self.encryption is None:
             return cookie.decode('utf-8')
         return self.encryption.decrypt(cookie).decode('utf-8')
@@ -898,7 +901,13 @@ class _state(param.Parameterized):
         """
         Returns the OAuth access_token if enabled.
         """
-        return self._decode_cookie('access_token')
+        access_token = self._decode_cookie('access_token')
+        if not access_token:
+            return
+        decoded_token = decode_token(access_token)
+        if decoded_token['exp'] <= dt.datetime.now(dt.timezone.utc).timestamp():
+            return None
+        return access_token
 
     @property
     def app_url(self) -> str | None:
@@ -1016,7 +1025,13 @@ class _state(param.Parameterized):
         """
         Returns the OAuth refresh_token if enabled and available.
         """
-        return self._decode_cookie('refresh_token')
+        refresh_token = self._decode_cookie('refresh_token')
+        if not refresh_token:
+            return
+        decoded_token = decode_token(refresh_token)
+        if decoded_token['exp'] <= dt.datetime.now(dt.timezone.utc).timestamp():
+            return None
+        return refresh_token
 
     @property
     def served(self):
