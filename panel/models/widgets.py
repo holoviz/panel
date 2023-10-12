@@ -9,8 +9,8 @@ from bokeh.core.properties import (
 from bokeh.models.ui import Tooltip
 from bokeh.models.ui.icons import Icon
 from bokeh.models.widgets import (
-    Button as bkButton,
-    InputWidget, Select, TextAreaInput as BkTextAreaInput, Widget,
+    Button as bkButton, InputWidget, Select, TextAreaInput as BkTextAreaInput,
+    Widget,
 )
 
 from .layout import HTMLBox
