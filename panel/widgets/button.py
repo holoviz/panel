@@ -272,7 +272,6 @@ class Button(_ClickButton, TooltipMixin):
         return self.param.watch(callback, 'clicks', onlychanged=False)
 
 
-
 class Toggle(_ButtonBase, IconMixin):
     """The `Toggle` widget allows toggling a single condition between `True`/`False` states.
 

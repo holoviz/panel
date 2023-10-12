@@ -681,7 +681,6 @@ class CheckButtonGroup(_CheckGroupBase, _ButtonBase, TooltipMixin):
     _widget_type: ClassVar[Type[Model]] = _BkCheckboxButtonGroup
 
 
-
 class CheckBoxGroup(_CheckGroupBase):
     """
     The `CheckBoxGroup` widget allows selecting between a list of options by
