@@ -131,7 +131,7 @@ jobs:
       AZURE_OAUTH_SECRET: ${{ secrets.AZURE_OAUTH_SECRET }}
       AZURE_OAUTH_USER: ${{ secrets.AZURE_OAUTH_USER }}
       AZURE_OAUTH_PASSWORD: ${{ secrets.AZURE_OAUTH_PASSWORD }}
-      OTKA_PORT: "5703"
+      OKTA_PORT: "5703"
       OKTA_OAUTH_KEY: ${{ secrets.OKTA_OAUTH_KEY }}
       OKTA_OAUTH_SECRET: ${{ secrets.OKTA_OAUTH_SECRET }}
       OKTA_OAUTH_EXTRA_PARAMS: ${{ secrets.OKTA_OAUTH_EXTRA_PARAMS }}
@@ -185,6 +185,10 @@ jobs:
         run: |
           conda activate test-environment
           doit test_ui
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ui_screenshots
+          path: ./ui_screenshots
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
