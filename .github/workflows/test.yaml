@@ -127,6 +127,11 @@ jobs:
       AZURE_OAUTH_SECRET: ${{ secrets.AZURE_OAUTH_SECRET }}
       AZURE_OAUTH_USER: ${{ secrets.AZURE_OAUTH_USER }}
       AZURE_OAUTH_PASSWORD: ${{ secrets.AZURE_OAUTH_PASSWORD }}
+      AUTH0_OAUTH_KEY: ${{ secrets.AUTH0_OAUTH_KEY }}
+      AUTH0_OAUTH_SECRET: ${{ secrets.AUTH0_OAUTH_SECRET }}
+      AUTH0_OAUTH_EXTRA_PARAMS: ${{ secrets.AUTH0_OAUTH_EXTRA_PARAMS }}
+      AUTH0_OAUTH_USER: ${{ secrets.AUTH0_OAUTH_USER }}
+      AUTH0_OAUTH_PASSWORD: ${{ secrets.AUTH0_OAUTH_PASSWORD }}
       # Without this env var `doit env_create ...` uses by default
       # the `pyviz` channel, except that we don't want to configure
       # it as one of the sources.
