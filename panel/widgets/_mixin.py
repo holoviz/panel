@@ -14,7 +14,7 @@ class TooltipMixin(Widget):
 
     __abstract = True
 
-    description = param.ClassSelector(default=None, class_=(str, BkTooltip), doc="""
+    description = param.ClassSelector(default=None, class_=(str, BkTooltip, TooltipIcon), doc="""
         The description in the tooltip.""")
 
     _rename: ClassVar[Mapping[str, str | None]]  = {'description': 'tooltip'}
