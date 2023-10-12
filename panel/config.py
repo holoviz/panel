@@ -301,6 +301,9 @@ class _config(_base_config):
     _oauth_extra_params = param.Dict(default={}, doc="""
         Additional parameters required for OAuth provider.""")
 
+    _oauth_token_refresh = param.Boolean(default=True, doc="""
+        Automatically refresh access tokens in the background.""")
+
     _inline = param.Boolean(default=_LOCAL_DEV_VERSION, allow_None=True, doc="""
         Whether to inline JS and CSS resources. If disabled, resources
         are loaded from CDN if one is available.""")
@@ -314,7 +317,7 @@ class _config(_base_config):
         'nthreads', 'oauth_provider', 'oauth_expiry', 'oauth_key',
         'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
         'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
-        'layout_compatibility'
+        'layout_compatibility', 'oauth_token_refresh'
     ]
 
     _truthy = ['True', 'true', '1', True, 1]
@@ -558,6 +561,13 @@ class _config(_base_config):
     @property
     def oauth_jwt_user(self):
         return os.environ.get('PANEL_OAUTH_JWT_USER', self._oauth_jwt_user)
+
+    @property
+    def oauth_token_refresh(self):
+        refresh = os.environ.get('PANEL_OAUTH_TOKEN_REFRESH', self._oauth_token_refresh)
+        if isinstance(refresh, bool):
+            return refresh
+        return refresh.lower() in ('1', 'true')
 
     @property
     def oauth_encryption_key(self):

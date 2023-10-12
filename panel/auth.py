@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import codecs
 import datetime as dt
@@ -108,7 +109,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         if 'scope' in config.oauth_extra_params:
             return config.oauth_extra_params['scope']
         elif 'PANEL_OAUTH_SCOPE' not in os.environ:
-            return ['openid', 'email', 'profile']
+            return ['openid', 'email', 'profile', 'offline_access']
         return [scope for scope in os.environ['PANEL_OAUTH_SCOPE'].split(',')]
 
     async def get_authenticated_user(self, redirect_uri, client_id, state,
@@ -131,12 +132,13 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
           The response code from the server
         """
         if code:
-            return await self._fetch_access_token(
+            user, _, _ = await self._fetch_access_token(
                 client_id,
                 redirect_uri,
                 client_secret=client_secret,
                 code=code
             )
+            return user
 
         params = {
             'redirect_uri': redirect_uri,
@@ -157,8 +159,8 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         self.authorize_redirect(**params)
 
     async def _fetch_access_token(
-        self, client_id, redirect_uri, client_secret=None, code=None,
-            refresh_token=None, username=None, password=None
+        self, client_id, redirect_uri=None, client_secret=None, code=None,
+        refresh_token=None, username=None, password=None
     ):
         """
         Fetches the access token.
@@ -182,16 +184,18 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         """
         log.debug("%s making access token request.", type(self).__name__)
         params = {
-            'client_id':     client_id,
-            'redirect_uri':  redirect_uri,
+            'client_id': client_id,
             **self._EXTRA_TOKEN_PARAMS
         }
+        if redirect_uri:
+            params['redirect_uri'] = redirect_uri
         if self._SCOPE:
             params['scope'] = ' '.join(self._SCOPE)
         if code:
             params['code'] = code
         if refresh_token:
             params['refresh_token'] = refresh_token
+            params['grant_type'] = 'refresh_token'
         if client_secret:
             params['client_secret'] = client_secret
         elif username:
@@ -211,20 +215,26 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         try:
             response = await http.fetch(req)
         except HTTPError as e:
-            return self._on_error(e.response)
+            self._on_error(e.response)
+            return None, None, None
 
         body = decode_response_body(response)
-
         if not body:
             log.debug("%s token endpoint did not return a valid access token.", type(self).__name__)
             return
 
         if 'access_token' not in body:
-            return self._on_error(response, body)
-        elif 'id_token' in body:
-            access_token = body['access_token']
+            if refresh_token:
+                log.debug("%s token endpoint did not reissue an access token.", type(self).__name__)
+                return None, None, None
+            self._on_error(response, body)
+            return None, None, None
+
+        access_token, refresh_token = body['access_token'], body.get('refresh_token')
+        if 'id_token' in body:
             id_token = body['id_token']
-            return self._on_auth(id_token, access_token, body.get('refresh_token'))
+            user = self._on_auth(id_token, access_token, refresh_token)
+            return user, access_token, refresh_token
 
         user_headers = dict(self._API_BASE_HEADERS)
         if self._access_token_header:
@@ -248,10 +258,11 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
             except Exception as e:
                 raise e
                 log.debug("%s could not decode access_token.", type(self).__name__)
-                return None
+                return None, None, None
 
         log.debug("%s received user information.", type(self).__name__)
-        return self._on_auth(user, body['access_token'], body.get('refresh_token'))
+        user = self._on_auth(user, access_token, refresh_token)
+        return user, access_token, refresh_token
 
     def get_state_cookie(self):
         """Get OAuth state from cookies
@@ -477,7 +488,7 @@ class PasswordLoginHandler(GenericLoginHandler):
             redirect_uri = config.oauth_redirect_uri
         else:
             redirect_uri = f"{self.request.protocol}://{self.request.host}{self._login_endpoint}"
-        user = await self._fetch_access_token(
+        user, _, _ = await self._fetch_access_token(
             client_id=config.oauth_key,
             redirect_uri=redirect_uri,
             username=username,
@@ -887,58 +898,71 @@ class OAuthProvider(BasicAuthProvider):
     @property
     def get_user_async(self):
         async def get_user(handler):
-            now_ts = dt.datetime.now(dt.timezone.utc).timestamp()
             user = handler.get_secure_cookie('user', max_age_days=config.oauth_expiry)
-
-            # Check if access token is still valid, if not and no refresh
-            # token is available then re-authenticate, otherwise use refresh
-            # token in background to fetch new access_token
-            access_cookie = handler.get_secure_cookie('access_token', max_age_days=config.oauth_expiry)
-            if not access_cookie:
+            if not config.oauth_token_refresh or user is None:
                 return user
-            access_token = state._decrypt_cookie(access_cookie)
+            user = user.decode('utf-8')
+
+            now_ts = dt.datetime.now(dt.timezone.utc).timestamp()
+            if user in state._oauth_user_overrides:
+                expired = False
+                while not state._oauth_user_overrides[user]:
+                    await asyncio.sleep(0.1)
+                access_token = state._oauth_user_overrides[user]['access_token']
+            else:
+                expired =True
+                access_cookie = handler.get_secure_cookie('access_token', max_age_days=config.oauth_expiry)
+                if not access_cookie:
+                    log.debug("No access token available, forcing user to reauthenticate.")
+                    return
+                access_token = state._decrypt_cookie(access_cookie)
+
             try:
                 access_json = decode_token(access_token)
             except (UnicodeDecodeError, ValueError):
                 # Token does not have content and therefore does not expire
+                log.debug("access_token is not a valid JWT token. Expiry cannot be determined.")
                 return user
-            if access_json['exp'] > now_ts:
-                return user
-            refresh_cookie = handler.get_secure_cookie('refresh_token', max_age_days=config.oauth_expiry)
-            if refresh_cookie:
-                refresh_token = state._decrypt_cookie(refresh_cookie)
-                try:
-                    refresh_json = decode_token(refresh_token)
-                    if refresh_json['exp'] < now_ts:
-                        refresh_token = None
-                except UnicodeDecodeError:
-                    pass
-            else:
-                refresh_token = None
 
-            if not refresh_token:
-                # User no longer has a valid access or refresh token,
-                # delete all cookies and force user to reauthenticated
-                handler.clear_cookie('user')
-                handler.clear_cookie('id_token')
-                handler.clear_cookie('access_token')
-                handler.clear_cookie('refresh_token')
-                handler.clear_cookie(STATE_COOKIE_NAME)
-                handler.redirect(self.login_url)
+            if access_json['exp'] > now_ts and not expired:
+                log.debug("Fully authenticated and access_token still valid.")
+                return user
+
+            if user in state._oauth_user_overrides:
+                refresh_token = state._oauth_user_overrides[user]['refresh_token']
+            else:
+                refresh_cookie = handler.get_secure_cookie('refresh_token', max_age_days=config.oauth_expiry)
+                if refresh_cookie:
+                    refresh_token = state._decrypt_cookie(refresh_cookie)
+                else:
+                    refresh_token = None
+
+            try:
+                refresh_json = decode_token(refresh_token)
+                if refresh_json['exp'] < now_ts:
+                    refresh_token = None
+            except (ValueError, UnicodeDecodeError):
+                pass
+
+            if refresh_token is None:
+                log.debug("%s access_token is expired and refresh_token available, forcing user to reauthenticate.", type(self).__name__)
                 return
 
+            log.debug("%s refreshing token", type(self).__name__)
+            state._oauth_user_overrides[user] = {}
             auth_handler = self.login_handler(
                 application=handler.application, request=handler.request
             )
-            if config.oauth_redirect_uri:
-                redirect_uri = config.oauth_redirect_uri
-            else:
-                redirect_uri = f"{self.request.protocol}://{self.request.host}{self._login_endpoint}"
-            user = await auth_handler._fetch_access_token(
+            _, access_token, refresh_token = await auth_handler._fetch_access_token(
                 client_id=config.oauth_key,
-                redirect_uri=redirect_uri,
+                client_secret=config.oauth_secret,
                 refresh_token=refresh_token
             )
+            if access_token:
+                state._oauth_user_overrides[user] = {
+                    'access_token': access_token,
+                    'refresh_token': refresh_token
+                }
             return user
         return get_user
 
