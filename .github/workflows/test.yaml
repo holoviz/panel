@@ -186,6 +186,7 @@ jobs:
           conda activate test-environment
           doit test_ui
       - uses: actions/upload-artifact@v3
+        if: always()
         with:
           name: ui_screenshots
           path: ./ui_screenshots
