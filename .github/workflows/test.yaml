@@ -118,6 +118,8 @@ jobs:
       PANEL_LOG_LEVEL: info
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
+      OAUTH_COOKIE_SECRET: ${{ secrets.OAUTH_COOKIE_SECRET }}
+      OAUTH_ENCRYPTION_KEY: ${{ secrets.OAUTH_ENCRYPTION_KEY }}
       OKTA_OAUTH_KEY: ${{ secrets.OKTA_OAUTH_KEY }}
       OKTA_OAUTH_SECRET: ${{ secrets.OKTA_OAUTH_SECRET }}
       OKTA_OAUTH_EXTRA_PARAMS: ${{ secrets.OKTA_OAUTH_EXTRA_PARAMS }}
