@@ -9,8 +9,8 @@ from bokeh.core.properties import (
 from bokeh.models.ui import Tooltip
 from bokeh.models.ui.icons import Icon
 from bokeh.models.widgets import (
-    Button as bkButton, InputWidget, Select, TextAreaInput as BkTextAreaInput,
-    Widget,
+    Button as bkButton, CheckboxButtonGroup as bkCheckboxButtonGroup,
+    InputWidget, Select, TextAreaInput as BkTextAreaInput, Widget,
 )
 
 from .layout import HTMLBox
@@ -216,6 +216,14 @@ class TextAreaInput(BkTextAreaInput):
 
 
 class Button(bkButton):
+
+    tooltip = Nullable(Instance(Tooltip), help="""
+    A tooltip with plain text or rich HTML contents, providing general help or
+    description of a widget's or component's function.
+    """)
+
+
+class CheckboxButtonGroup(bkCheckboxButtonGroup):
 
     tooltip = Nullable(Instance(Tooltip), help="""
     A tooltip with plain text or rich HTML contents, providing general help or
