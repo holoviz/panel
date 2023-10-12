@@ -28,5 +28,8 @@ class TooltipMixin(Widget):
         return super()._process_param_change(params)
 
     @property
-    def _linkable_params(self) -> list[str]:
-        return [lp for lp in super()._linkable_params if lp != 'description']
+    def _linkable_params(self) -> tuple[str]:
+        props = list(super()._linked_properties)
+        if 'description' in props:
+            props.remove('description')
+        return tuple(props)

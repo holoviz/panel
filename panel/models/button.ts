@@ -72,9 +72,5 @@ export class Button extends BkButton {
     this.define<Button.Props>(({Nullable, Ref}) => ({
       tooltip: [ Nullable(Ref(Tooltip)), null ],
     }))
-
-    this.override<Button.Props>({
-      label: "Button",
-    })
   }
 }
