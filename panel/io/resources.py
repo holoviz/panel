@@ -4,7 +4,6 @@ resources via the panel.config object.
 """
 from __future__ import annotations
 
-import copy
 import importlib
 import json
 import logging
@@ -17,6 +16,7 @@ import textwrap
 from base64 import b64encode
 from collections import OrderedDict
 from contextlib import contextmanager
+from functools import lru_cache
 from pathlib import Path
 from typing import (
     TYPE_CHECKING, Dict, List, Literal, TypedDict,
@@ -38,6 +38,7 @@ from markupsafe import Markup
 
 from ..config import config, panel_extension as extension
 from ..util import isurl, url_path
+from .loading import LOADING_INDICATOR_CSS_CLASS
 from .state import state
 
 if TYPE_CHECKING:
@@ -82,6 +83,7 @@ ASSETS_DIR = PANEL_DIR / 'assets'
 INDEX_TEMPLATE = _env.get_template('convert_index.html')
 BASE_TEMPLATE = _env.get_template('base.html')
 ERROR_TEMPLATE = _env.get_template('error.html')
+LOGOUT_TEMPLATE = _env.get_template('logout.html')
 BASIC_LOGIN_TEMPLATE = _env.get_template('basic_login.html')
 DEFAULT_TITLE = "Panel Application"
 JS_RESOURCES = _env.get_template('js_resources.html')
@@ -169,15 +171,15 @@ def process_raw_css(raw_css):
     """
     return [BK_PREFIX_RE.sub('.', css) for css in raw_css]
 
-def loading_css():
-    from ..config import config
-    with open(ASSETS_DIR / f'{config.loading_spinner}_spinner.svg', encoding='utf-8') as f:
-        svg = f.read().replace('\n', '').format(color=config.loading_color)
+@lru_cache(maxsize=None)
+def loading_css(loading_spinner, color, max_height):
+    with open(ASSETS_DIR / f'{loading_spinner}_spinner.svg', encoding='utf-8') as f:
+        svg = f.read().replace('\n', '').format(color=color)
     b64 = b64encode(svg.encode('utf-8')).decode('utf-8')
     return textwrap.dedent(f"""
-    :host(.pn-loading).{config.loading_spinner}:before, .pn-loading.{config.loading_spinner}:before {{
+    :host(.{LOADING_INDICATOR_CSS_CLASS}.pn-{loading_spinner}):before, .pn-loading.pn-{loading_spinner}:before {{
       background-image: url("data:image/svg+xml;base64,{b64}");
-      background-size: auto calc(min(50%, {config.loading_max_height}px));
+      background-size: auto calc(min(50%, {max_height}px));
     }}""")
 
 def resolve_custom_path(
@@ -239,9 +241,9 @@ def component_resource_path(component, attr, path):
 def patch_stylesheet(stylesheet, dist_url):
     url = stylesheet.url
     if url.startswith(CDN_DIST+dist_url) and dist_url != CDN_DIST:
-        patched_url = url.replace(CDN_DIST+dist_url, dist_url)
+        patched_url = url.replace(CDN_DIST+dist_url, dist_url) + f'?v={JS_VERSION}'
     elif url.startswith(CDN_DIST) and dist_url != CDN_DIST:
-        patched_url = url.replace(CDN_DIST, dist_url)
+        patched_url = url.replace(CDN_DIST, dist_url) + f'?v={JS_VERSION}'
     else:
         return
     try:
@@ -334,7 +336,7 @@ def bundled_files(model, file_type='javascript'):
             files.append(url)
     return files
 
-def bundle_resources(roots, resources, notebook=False, reloading=False):
+def bundle_resources(roots, resources, notebook=False, reloading=False, enable_mathjax='auto'):
     from ..config import panel_extension as ext
     global RESOURCE_MODE
     if not isinstance(resources, Resources):
@@ -347,21 +349,19 @@ def bundle_resources(roots, resources, notebook=False, reloading=False):
     css_files = []
     css_raw = []
 
-    use_mathjax = (_use_mathjax(roots) or 'mathjax' in ext._loaded_extensions) if roots else True
+    if isinstance(enable_mathjax, bool):
+        use_mathjax = enable_mathjax
+    elif roots:
+        use_mathjax = _use_mathjax(roots) or 'mathjax' in ext._loaded_extensions
+    else:
+        use_mathjax = False
 
     if js_resources:
-        if hasattr(BkResources, 'clone'):
-            js_resources = js_resources.clone()
-            if not use_mathjax and "bokeh-mathjax" in js_resources.components:
-                js_resources.components.remove("bokeh-mathjax")
-            if reloading:
-                js_resources.components.clear()
-        else:
-            js_resources = copy.deepcopy(js_resources)
-            if reloading:
-                js_resources.js_components.clear()
-            if not use_mathjax and "bokeh-mathjax" in js_resources.js_components:
-                js_resources.js_components.remove("bokeh-mathjax")
+        js_resources = js_resources.clone()
+        if not use_mathjax and "bokeh-mathjax" in js_resources.components:
+            js_resources.components.remove("bokeh-mathjax")
+        if reloading:
+            js_resources.components.clear()
 
         js_files.extend(js_resources.js_files)
         js_raw.extend(js_resources.js_raw)
@@ -372,8 +372,9 @@ def bundle_resources(roots, resources, notebook=False, reloading=False):
     extensions = _bundle_extensions(None, js_resources)
     if reloading:
         extensions = [
-            ext for ext in extensions if not ext.cdn_url.startswith('https://unpkg.com/@holoviz/panel@')
+            ext for ext in extensions if not (ext.cdn_url is not None and ext.cdn_url.startswith('https://unpkg.com/@holoviz/panel@'))
         ]
+
     extra_js = []
     if mode == "inline":
         js_raw.extend([ Resources._inline(bundle.artifact_path) for bundle in extensions ])
@@ -381,7 +382,9 @@ def bundle_resources(roots, resources, notebook=False, reloading=False):
         for bundle in extensions:
             server_url = bundle.server_url
             if resources.root_url and not resources.absolute:
-                server_url = server_url.replace(resources.root_url, '')
+                server_url = server_url.replace(resources.root_url, '', 1)
+                if state.rel_path:
+                    server_url = f'{state.rel_path}/{server_url}'
             js_files.append(server_url)
     elif mode == "cdn":
         for bundle in extensions:
@@ -442,7 +445,12 @@ class ResourceComponent:
             prefixed_dist = dist_path
 
         bundlepath = BUNDLE_DIR / resource_path.replace('/', os.path.sep)
-        if bundlepath.is_file():
+        # Windows may trigger OSError: [WinError 123]
+        try:
+            is_file = bundlepath.is_file()
+        except Exception:
+            is_file = False
+        if is_file:
             return f'{prefixed_dist}bundled/{resource_path}'
         elif isurl(resource):
             return resource
@@ -670,7 +678,9 @@ class Resources(BkResources):
         # Add loading spinner
         if config.global_loading_spinner:
             loading_base = (DIST_DIR / "css" / "loading.css").read_text(encoding='utf-8')
-            raw.extend([loading_base, loading_css()])
+            raw.extend([loading_base, loading_css(
+                config.loading_spinner, config.loading_color, config.loading_max_height
+            )])
         return raw + process_raw_css(config.raw_css) + process_raw_css(config.global_css)
 
     @property

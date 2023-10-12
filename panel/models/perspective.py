@@ -1,6 +1,7 @@
 from bokeh.core.properties import (
     Any, Bool, Dict, Either, Enum, Instance, List, Null, Nullable, String,
 )
+from bokeh.events import ModelEvent
 from bokeh.models import ColumnDataSource
 
 from ..config import config
@@ -25,6 +26,22 @@ CSS_URLS = [
 ]
 for theme in PERSPECTIVE_THEMES:
     CSS_URLS.append(f'{THEME_URL}{theme}.css')
+
+class PerspectiveClickEvent(ModelEvent):
+
+    event_name = 'perspective-click'
+
+    def __init__(self, model, config, column_names, row):
+        self.config = config
+        self.column_names = column_names
+        self.row = row
+        super().__init__(model=model)
+
+    def __repr__(self):
+        return (
+            f'{type(self).__name__}(config={self.config}, '
+            f'column_names={self.column_names}, row={self.row}'
+        )
 
 class Perspective(HTMLBox):
 

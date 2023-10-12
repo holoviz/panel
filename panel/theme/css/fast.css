@@ -161,25 +161,22 @@ img {
 
 .card-header,
 .accordion-header {
+  align-items: center;
   background-color: var(--neutral-fill-rest);
-  border: unset;
   box-shadow: unset;
   color: var(--neutral-foreground-rest);
+  display: flex;
   height: unset;
+  outline: unset;
 }
 
 .card-margin {
   margin: 1em;
 }
 
-.card-header > .card-header-row {
-  margin-left: 15px;
-}
-
 .card-button {
   display: block;
   margin-left: 0.5em;
-  padding-right: 1em;
 }
 
 :host(.card-title) h1,
@@ -288,7 +285,7 @@ table.panel-df {
 
 .panel-df tr:hover {
   background: var(--accent-fill-hover) !important;
-  color: var(--accent-foreground-cut-rest);
+  color: var(--accent-foreground-rest);
   cursor: pointer;
 }
 
@@ -355,19 +352,15 @@ textarea.bk-input {
 
 .bk-input:focus option:checked,
 .bk-input:focus option:checked,
-.bk-input option:active {
-  background: var(--accent-fill-hover) -webkit-linear-gradient(bottom, var(
-          --accent-fill-hover
-        )
-        0%, var(--accent-fill-hover) 100%);
-}
-
+.bk-input option:active,
 .bk-input option:hover,
 .bk-input:focus option:hover {
-  background: var(--accent-fill-hover) -webkit-linear-gradient(bottom, var(
-          --accent-fill-hover
-        )
-        0%, var(--accent-fill-hover) 100%);
+  background-color: var(--accent-fill-hover);
+  color: var(--foreground-on-accent-rest);
+}
+
+select:-internal-list-box option:checked {
+  color: var(--neutral-foreground-rest);
 }
 
 /* Choices widget */
@@ -633,7 +626,7 @@ select:not([type='file']).bk-input {
 }
 
 .bk-input-group input[type='radio']:checked {
-  background: var(--accent-foreground-cut-rest);
+  background: var(--accent-foreground-rest);
   border: calc(var(--outline-width) * 4px) solid var(--accent-fill-rest);
 }
 
@@ -660,7 +653,7 @@ select:not([type='file']).bk-input {
 
 .bk-input-group input[type='radio']:disabled:checked,
 .bk-input-group input[type='radio']:disabled:checked:hover {
-  background: var(--accent-foreground-cut-rest);
+  background: var(--accent-foreground-rest);
   border: calc(var(--outline-width) * 4px) solid var(--accent-fill-rest);
 }
 
@@ -725,7 +718,7 @@ select:not([type='file']).bk-input {
 }
 
 :host(.active) .knob {
-  background-color: var(--accent-foreground-cut-rest);
+  background-color: var(--accent-foreground-rest);
   border-radius: calc(var(--control-corner-radius) * 1px);
   left: calc(100% - var(--switch-size) / 2 - 2px);
 }
@@ -804,8 +797,6 @@ iframe {
 }
 
 .codehilite {
-  padding-top: 1px;
-  padding-bottom: 1px;
   padding-left: 1em;
   padding-right: 1em;
   border-radius: calc(var(--corner-radius) * 1px);
@@ -834,7 +825,7 @@ table.panel-df {
 
 .panel-df tr:hover {
   background: var(--accent-fill-hover) !important;
-  color: var(--accent-foreground-cut-rest);
+  color: var(--accent-foreground-rest);
   cursor: pointer;
 }
 
@@ -842,7 +833,7 @@ table.panel-df {
 
 .pnx-tabulator.tabulator {
   max-width: 100%;
-  overflow-x: ;
+  overflow-x:;
 }
 
 /* SlickGrid */
@@ -951,7 +942,7 @@ table.panel-df {
 .slick-row:hover,
 .slick-row.odd:hover {
   background-color: var(--accent-fill-hover);
-  color: var(--accent-foreground-cut-rest);
+  color: var(--accent-foreground-rest);
 }
 
 .slick-group {
@@ -965,7 +956,7 @@ table.panel-df {
 
 .slick-cell.selected {
   background-color: var(--accent-fill-rest);
-  color: var(--accent-foreground-cut-rest);
+  color: var(--accent-foreground-rest);
 }
 
 .slick-cell.active {

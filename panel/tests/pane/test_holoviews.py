@@ -27,7 +27,9 @@ from bokeh.plotting import figure
 import panel as pn
 
 from panel.depends import bind
-from panel.layout import Column, FlexBox, Row
+from panel.layout import (
+    Column, FlexBox, HSpacer, Row,
+)
 from panel.pane import HoloViews, PaneBase, panel
 from panel.tests.util import hv_available, mpl_available
 from panel.util.warnings import PanelDeprecationWarning
@@ -168,7 +170,7 @@ def test_holoviews_pane_reflect_responsive_override(document, comm):
     # Create pane
     row = pane.get_root(document, comm=comm)
 
-    assert row.sizing_mode is None
+    assert row.sizing_mode == 'stretch_both'
     assert pane.sizing_mode == 'fixed'
 
     # Unset override
@@ -281,7 +283,7 @@ def test_holoviews_with_widgets(document, comm):
 
     hv_pane = HoloViews(hmap)
     layout = hv_pane.get_root(document, comm)
-    model = layout.children[0].children[0]
+    model = layout.children[0]
     assert len(hv_pane.widget_box.objects) == 2
     assert hv_pane.widget_box.objects[0].name == 'X'
     assert hv_pane.widget_box.objects[1].name == 'Y'
@@ -304,12 +306,12 @@ def test_holoviews_updates_widgets(document, comm):
 
     hv_pane.widgets = {'X': Select}
     assert isinstance(hv_pane.widget_box[0], Select)
-    assert isinstance(layout.children[0].children[1].children[0], BkSelect)
+    assert isinstance(layout.children[1].children[1], BkSelect)
 
     hv_pane.widgets = {'X': DiscreteSlider}
     assert isinstance(hv_pane.widget_box[0], DiscreteSlider)
-    assert isinstance(layout.children[0].children[1].children[0], BkColumn)
-    assert isinstance(layout.children[0].children[1].children[0].children[1], BkSlider)
+    assert isinstance(layout.children[1].children[0], BkColumn)
+    assert isinstance(layout.children[1].children[0].children[1], BkSlider)
 
 @hv_available
 def test_holoviews_widgets_update_plot(document, comm):
@@ -347,6 +349,18 @@ def test_holoviews_with_widgets_not_shown(document, comm):
 
 
 @hv_available
+def test_holoviews_center(document, comm):
+    hv_pane = HoloViews(hv.Curve([1, 2, 3]), backend='bokeh', center=True)
+
+    layout = hv_pane.layout
+
+    assert len(layout) == 3
+    hspacer1, hv_out, hspacer2 = layout
+    assert isinstance(hspacer1, HSpacer)
+    assert hv_pane is hv_out
+    assert isinstance(hspacer2, HSpacer)
+
+@hv_available
 def test_holoviews_layouts(document, comm):
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
@@ -381,13 +395,13 @@ def test_holoviews_layouts(document, comm):
                     wmodel, hv_model = cmodel.children[1],  cmodel.children[0]
             else:
                 if loc.startswith('left'):
-                    assert len(layout) == 1
-                    widgets, hv_obj = layout[0]
-                    wmodel, hv_model = model.children[0].children
+                    assert len(layout) == 2
+                    widgets, hv_obj = layout
+                    wmodel, hv_model = model.children
                 elif loc.startswith('right'):
-                    assert len(layout) == 1
-                    hv_obj, widgets = layout[0]
-                    hv_model, wmodel = model.children[0].children
+                    assert len(layout) == 2
+                    hv_obj, widgets = layout
+                    hv_model, wmodel = model.children
                 elif loc.startswith('top'):
                     assert len(layout) == 1
                     col = layout[0]

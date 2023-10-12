@@ -232,6 +232,8 @@ class Video(_MediaBase):
     ...     width=640, height=360, loop=True
     ... )
     """
+    volume = param.Integer(default=100, bounds=(0, 100), doc="""
+        The volume of the media player.""")
 
     _bokeh_model = _BkVideo
 

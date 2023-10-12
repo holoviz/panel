@@ -10,7 +10,7 @@ from __future__ import annotations
 import datetime as dt
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, Tuple, Type,
 )
 
 import numpy as np
@@ -22,6 +22,7 @@ from bokeh.models.widgets import (
     DateRangeSlider as _BkDateRangeSlider, DateSlider as _BkDateSlider,
     RangeSlider as _BkRangeSlider, Slider as _BkSlider,
 )
+from param.parameterized import resolve_value
 
 from ..config import config
 from ..io import state
@@ -72,11 +73,17 @@ class _SliderBase(Widget):
     def __init__(self, **params):
         if 'value' in params and 'value_throttled' in self.param:
             params['value_throttled'] = params['value']
+        if 'orientation' == 'vertical':
+            params['height'] = self.param.width.default
         super().__init__(**params)
 
     def __repr__(self, depth=0):
         return '{cls}({params})'.format(cls=type(self).__name__,
                                         params=', '.join(param_reprs(self, ['value_throttled'])))
+
+    @property
+    def _linked_properties(self) -> Tuple[str]:
+        return super()._linked_properties + ('value_throttled',)
 
     def _process_property_change(self, msg):
         if config.throttled:
@@ -173,7 +180,9 @@ class FloatSlider(ContinuousSlider):
     value_throttled = param.Number(default=None, constant=True, doc="""
          The value of the slider. Updated when the handle is released.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'name': 'title', 'value_throttled': None
+    }
 
 
 class IntSlider(ContinuousSlider):
@@ -203,7 +212,9 @@ class IntSlider(ContinuousSlider):
     value_throttled = param.Integer(default=None, constant=True, doc="""
         The value of the slider. Updated when the handle is released""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'name': 'title', 'value_throttled': None
+    }
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
@@ -258,7 +269,7 @@ class DateSlider(_SliderBase):
         Datetime format used for parsing and formatting the date.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': 'title', 'as_datetime': None
+        'name': 'title', 'as_datetime': None, 'value_throttled': None
     }
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
@@ -507,7 +518,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
 class _RangeSliderBase(_SliderBase):
 
-    value = param.Tuple(length=2, allow_None=False, doc="""
+    value = param.Tuple(length=2, allow_None=False, nested_refs=True, doc="""
         The selected range of the slider. Updated when a handle is dragged.""")
 
     value_start = param.Parameter(readonly=True, doc="""The lower value of the selected range.""")
@@ -522,7 +533,8 @@ class _RangeSliderBase(_SliderBase):
                 params.get('start', self.start), params.get('end', self.end)
             )
         if params['value'] is not None:
-            params['value_start'], params['value_end'] = params['value']
+            v1, v2 = params['value']
+            params['value_start'], params['value_end'] = resolve_value(v1), resolve_value(v2)
         with edit_readonly(self):
             super().__init__(**params)
 
@@ -555,11 +567,11 @@ class RangeSlider(_RangeSliderBase):
     ... )
     """
 
-    value = param.Range(default=(0, 1), allow_None=False, doc=
+    value = param.Range(default=(0, 1), allow_None=False, nested_refs=True, doc=
         """The selected range as a tuple of values. Updated when a handle is
         dragged.""")
 
-    value_throttled = param.Range(default=None, constant=True, doc="""
+    value_throttled = param.Range(default=None, constant=True, nested_refs=True, doc="""
         The selected range as a tuple of floating point values. Updated when a handle is
         released""")
 
@@ -581,7 +593,7 @@ class RangeSlider(_RangeSliderBase):
     format = param.ClassSelector(class_=(str, TickFormatter,), doc="""
         A format string or bokeh TickFormatter.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'value_start': None, 'value_end': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'value_start': None, 'value_end': None, 'value_throttled': None}
 
     _widget_type: ClassVar[Type[Model]] = _BkRangeSlider
 
@@ -657,7 +669,7 @@ class DateRangeSlider(_SliderBase):
     value_end = param.Date(default=None, readonly=True, doc="""
         The upper value of the selected range.""")
 
-    value_throttled = param.DateRange(default=None, constant=True, doc="""
+    value_throttled = param.DateRange(default=None, constant=True, nested_refs=True, doc="""
         The selected range as a tuple of values. Updated one of the handles is released. Supports
         datetime.datetime, datetime.date and np.datetime64 ranges""")
 
@@ -668,7 +680,7 @@ class DateRangeSlider(_SliderBase):
         The upper bound.""")
 
     step = param.Number(default=1, doc="""
-        The step size. Default is 1 millisecond.""")
+        The step size in days. Default is 1 day.""")
 
     format = param.String(default=None, doc="""
         Datetime format used for parsing and formatting the date.""")
@@ -679,7 +691,8 @@ class DateRangeSlider(_SliderBase):
     }
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': 'title', 'value_start': None, 'value_end': None
+        'name': 'title', 'value_start': None, 'value_end': None,
+        'value_throttled': None
     }
 
     _widget_type: ClassVar[Type[Model]] = _BkDateRangeSlider
@@ -700,7 +713,8 @@ class DateRangeSlider(_SliderBase):
                 params['value'] = (params.get('start', self.start),
                                 params.get('end', self.end))
         if params['value'] is not None:
-            params['value_start'], params['value_end'] = params['value']
+            v1, v2 = params['value']
+            params['value_start'], params['value_end'] = resolve_value(v1), resolve_value(v2)
         with edit_readonly(self):
             super().__init__(**params)
 
@@ -812,6 +826,7 @@ class _EditableContinuousSlider(CompositeWidget):
 
         label = Row(self._label, self._value_edit)
         self._composite.extend([label, self._slider])
+        self._update_disabled()
         self._update_editable()
         self._update_layout()
         self._update_name()
@@ -858,9 +873,13 @@ class _EditableContinuousSlider(CompositeWidget):
             w = (self.width or 300)//4
             self._value_edit.width = w
 
-    @param.depends('editable', watch=True)
+    @param.depends('disabled', 'editable', watch=True)
     def _update_editable(self):
-        self._value_edit.disabled = not self.editable
+        self._value_edit.disabled = (not self.editable) or self.disabled
+
+    @param.depends('disabled', watch=True)
+    def _update_disabled(self):
+        self._slider.disabled = self.disabled
 
     @param.depends('name', watch=True)
     def _update_name(self):
@@ -1060,6 +1079,7 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         }
         """)
         self._update_editable()
+        self._update_disabled()
         self._update_layout()
         self._update_name()
         self._update_slider()
@@ -1102,10 +1122,14 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
             start = params.get("start", end - params.get("step", 1))
             params["value"] = (start, end)
 
-    @param.depends('editable', watch=True)
+    @param.depends('disabled', watch=True)
+    def _update_disabled(self):
+        self._slider.disabled = self.disabled
+
+    @param.depends('disabled', 'editable', watch=True)
     def _update_editable(self):
-        self._start_edit.disabled = not self.editable[0]
-        self._end_edit.disabled = not self.editable[1]
+        self._start_edit.disabled = (not self.editable[0]) or self.disabled
+        self._end_edit.disabled = (not self.editable[1]) or self.disabled
 
     @param.depends('name', watch=True)
     def _update_name(self):

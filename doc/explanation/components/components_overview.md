@@ -6,7 +6,7 @@ Panel provides a wide range of components for easily composing panels, apps, and
 * ``Widget`` objects provide controls that can trigger Python or JavaScript events.
 * ``Panel`` layout objects allow combining plots into a ``Row``, ``Column``, ``Tabs`` or a ``Grid``.
 
-All objects share an API that makes it easy to [customize behavior and appearance](../../how_to/components/index.md), [link parameters](../../how_to/links/index.md), and [display or export](../../how_to/display/index.md) them. To display any panel objects in a notebook environment ensure you load the extension first:
+All objects share an API that makes it easy to [customize behavior and appearance](../../how_to/styling/index.md), [link parameters](../../how_to/links/index.md), and to [display them in notebooks](../../how_to/notebook/index.md), [serve them as applications](../../how_to/server/index.md) or [export them](../../how_to/export/index.md). To display any panel objects in a notebook environment ensure you load the extension first:
 
 
 ```{pyodide}
@@ -20,11 +20,11 @@ Note that to use certain components such as Vega, LaTeX, and Plotly plots in a n
 pn.extension('vega', 'katex')
 ```
 
-will ensure that the Vega and LaTeX JS dependencies are loaded. Once the extension is loaded, Panel objects will display themselves in the notebook, outside the notebook objects can be displayed in a server using the show method or run from the commandline by appending ``.servable()`` to the objects to be displayed.
+will ensure that the Vega and LaTeX JS dependencies are loaded. Once the extension is loaded, Panel objects will display themselves in the notebook. Outside the notebook, objects can be displayed in a server using the `show` method or run from the commandline by appending ``.servable()`` to the objects to be displayed.
 
 ## Parameterized Components
 
-All components in Panel are built on the [Param](https://param.holoviz.org/) library. Each component declares a set of parameters that control the behavior and output of the component. See the [Param documentation](https://param.holoviz.org/) for more details on how to use Param. The basic idea however is that the parameter values can be controlled both at the class-level:
+All components in Panel are built on the [Param](https://param.holoviz.org/) library. Each component declares a set of parameters that control the behavior and output of the component. See the [Param documentation](https://param.holoviz.org/) for more details on how to use Param. The basic idea, however, is that the parameter values can be controlled both at the class level:
 
 ```{pyodide}
 pn.widgets.Select.sizing_mode = 'stretch_both'
@@ -33,9 +33,10 @@ pn.widgets.Select.sizing_mode = 'stretch_both'
 or on each instance:
 
 ```{pyodide}
-pn.widgets.Select(sizing_mode='stretch_both')
+pn.widgets.Select(sizing_mode='stretch_both');
 ```
 
+In the first case, all subsequent Select objects created will have sizing mode `stretch_both`; in the second only this particular instance will.
 
 ## Panes
 
@@ -52,7 +53,7 @@ pn.pane.Markdown('''
 ''')
 ```
 
-Panel also provides a convenient helper function that will convert objects into a Pane or Panel. This utility is also used internally when passing external objects to a Row, Column, or other Panel. The utility resolves the appropriate representation for an object using by checking all Pane object types available and then ranking them by priority. When passing a string (for instance) there are many representations, but the PNG pane takes precedence if the string is a valid URL or local file path ending in ".png".
+Panel also provides a convenient helper function that will convert objects into a Pane or Panel. This utility is also used internally when passing external objects to a Row, Column, or other Panel. The utility resolves the appropriate representation for an object by checking all Pane object types available and then ranking them by priority. When passing a string (for instance) there are many representations, but the PNG pane takes precedence if the string is a valid URL or local file path ending in ".png".
 
 
 ```{pyodide}
@@ -61,14 +62,16 @@ png = pn.panel('https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transpar
 png
 ```
 
-To see the type of the pane use the `print` function, which works with any Widget, Pane, or (perhaps most usefully) Panel:
+To see the type of the pane, use the `print` function, which works with any Widget, Pane, or (perhaps most usefully) Panel:
 
 
 ```{pyodide}
 print(png)
 ```
 
-All Panel objects store the object they are wrapping on the ``object`` parameter.  By setting that parameter, existing views of this object (whether in other notebook cells or on a server instance) will update:
+The `print` representation typically includes *Parameter* values for that object, such as `width` in this case.
+
+All Panel objects store the object they are wrapping on their ``object`` parameter.  By setting that parameter, existing views of this object (whether in this or other notebook cells or on a server instance) will update:
 
 
 ```{pyodide}
@@ -157,7 +160,7 @@ column[4] = pn.widgets.Button(name='Click here')
 column
 ```
 
-The ability to add, remove, and replace items opens up the possibility of building rich and responsive GUIs with the ease of manipulating a list.
+The ability to add, remove, and replace items using list operations opens up the possibility of building rich and responsive GUIs with the ease of manipulating a Python list.
 
 ### Tabs
 

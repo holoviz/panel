@@ -3,11 +3,10 @@ Miscellaneous widgets which do not fit into the other main categories.
 """
 from __future__ import annotations
 
-import os
-
 from base64 import b64encode
+from pathlib import Path
 from typing import (
-    TYPE_CHECKING, ClassVar, Mapping, Type,
+    TYPE_CHECKING, ClassVar, List, Mapping, Type,
 )
 
 import param
@@ -15,12 +14,14 @@ import param
 from pyviz_comms import JupyterComm
 
 from ..io.notebook import push
+from ..io.resources import CDN_DIST
 from ..io.state import state
 from ..models import (
     FileDownload as _BkFileDownload, VideoStream as _BkVideoStream,
 )
 from ..util import lazy_load
 from .base import Widget
+from .button import BUTTON_STYLES, BUTTON_TYPES, IconMixin
 from .indicators import Progress  # noqa
 
 if TYPE_CHECKING:
@@ -68,7 +69,7 @@ class VideoStream(Widget):
                 push(doc, comm)
 
 
-class FileDownload(Widget):
+class FileDownload(IconMixin):
     """
     The `FileDownload` widget allows a user to download a file.
 
@@ -86,10 +87,15 @@ class FileDownload(Widget):
         Whether to download on the initial click or allow for
         right-click save as.""")
 
-    button_type = param.ObjectSelector(default='default', objects=[
-        'default', 'primary', 'success', 'warning', 'danger', 'light'])
+    button_type = param.ObjectSelector(default='default', objects=BUTTON_TYPES, doc="""
+        A button theme; should be one of 'default' (white), 'primary'
+        (blue), 'success' (green), 'info' (yellow), 'light' (light),
+        or 'danger' (red).""")
 
-    callback = param.Callable(default=None, doc="""
+    button_style = param.ObjectSelector(default='solid', objects=BUTTON_STYLES, doc="""
+        A button style to switch between 'solid', 'outline'.""")
+
+    callback = param.Callable(default=None, allow_refs=False, doc="""
         A callable that returns the file path or file-like object.""")
 
     data = param.String(default=None, doc="""
@@ -99,7 +105,7 @@ class FileDownload(Widget):
         Whether to embed the file on initialization.""")
 
     file = param.Parameter(default=None, doc="""
-        The file, file-like object or file contents to transfer.  If
+        The file, Path, file-like object or file contents to transfer.  If
         the file is not pointing to a file on disk a filename must
         also be provided.""")
 
@@ -139,8 +145,10 @@ class FileDownload(Widget):
     }
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'callback': None, 'file': None, '_clicks': 'clicks'
+        'callback': None, 'button_style': None, 'file': None, '_clicks': 'clicks'
     }
+
+    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/button.css']
 
     _widget_type: ClassVar[Type[Model]] = _BkFileDownload
 
@@ -151,15 +159,32 @@ class FileDownload(Widget):
         if self.embed:
             self._transfer()
         self._update_label()
+        if "filename" not in params:
+            self._update_filename()
+
+    def _process_param_change(self, params):
+        if 'button_style' in params or 'css_classes' in params:
+            params['css_classes'] = [
+                params.pop('button_style', self.button_style)
+            ] + params.get('css_classes', self.css_classes)
+        return super()._process_param_change(params)
 
     @param.depends('label', watch=True)
     def _update_default(self):
         self._default_label = False
 
+    @property
+    def _is_file_path(self)->bool:
+        return isinstance(self.file, (str, Path))
+
+    @property
+    def _file_path(self)->Path:
+        return Path(self.file)
+
     @param.depends('file', watch=True)
     def _update_filename(self):
-        if isinstance(self.file, str):
-            self.filename = os.path.basename(self.file)
+        if self._is_file_path:
+            self.filename = self._file_path.name
 
     @param.depends('auto', 'file', 'filename', watch=True)
     def _update_label(self):
@@ -169,7 +194,7 @@ class FileDownload(Widget):
                 label = 'No file set'
             else:
                 try:
-                    filename = self.filename or os.path.basename(self.file)
+                    filename = self.filename or self._file_path.name
                 except TypeError:
                     raise ValueError('Must provide filename if file-like '
                                      'object is provided.')
@@ -196,13 +221,15 @@ class FileDownload(Widget):
         else:
             fileobj = ParamFunction.eval(self.callback)
         filename = self.filename
-        if isinstance(fileobj, str):
-            if not os.path.isfile(fileobj):
+
+        if isinstance(fileobj, (str, Path)):
+            fileobj = Path(fileobj)
+            if not fileobj.exists():
                 raise FileNotFoundError('File "%s" not found.' % fileobj)
             with open(fileobj, 'rb') as f:
                 b64 = b64encode(f.read()).decode("utf-8")
             if filename is None:
-                filename = os.path.basename(fileobj)
+                filename = fileobj.name
         elif hasattr(fileobj, 'read'):
             bdata = fileobj.read()
             if not isinstance(bdata, bytes):
@@ -228,7 +255,6 @@ class FileDownload(Widget):
 
         data = "data:{mime};base64,{b64}".format(mime=mime, b64=b64)
         self._synced = True
-
         self.param.update(data=data, filename=filename)
         self._update_label()
         self._transfers += 1

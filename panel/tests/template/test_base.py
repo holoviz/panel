@@ -31,3 +31,16 @@ def test_notification_explicit(document):
 
     with set_curdoc(document):
         assert state.notifications is tmpl.notifications
+
+
+def test_template_pass_config_params_constructor(document):
+    custom_config = {
+        'raw_css': ['html { background-color: purple; }'],
+        'css_files': ['stylesheet.css'],
+        'js_files': {'foo': 'foo.js'},
+        'js_modules': {'bar': 'bar.js'},
+    }
+    tmpl = VanillaTemplate(**custom_config)
+    config = tmpl.config.param.values()
+    del config['name']
+    assert config == custom_config

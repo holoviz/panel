@@ -501,7 +501,7 @@ def test_expand_row_sizing_mode_stretch_both(document, comm):
 
     assert model.sizing_mode == 'stretch_both'
 
-@pytest.mark.parametrize('panel', [Card, Column, Tabs, Accordion])
+@pytest.mark.parametrize('panel', [Accordion, Card, Column, Row, Tabs])
 def test_expand_both_axes(panel, document, comm):
     div1 = Div(sizing_mode='stretch_width')
     div2 = Div(sizing_mode='stretch_height')
@@ -510,15 +510,6 @@ def test_expand_both_axes(panel, document, comm):
     model = layout.get_root(document, comm)
 
     assert model.sizing_mode == 'stretch_both'
-
-def test_not_expand_row_both_axes(document, comm):
-    div1 = Div(sizing_mode='stretch_width')
-    div2 = Div(sizing_mode='stretch_height')
-    layout = Row(div1, div2)
-
-    model = layout.get_root(document, comm)
-
-    assert model.sizing_mode == 'stretch_width'
 
 def test_expand_row_both_axes(document, comm):
     div1 = Div(sizing_mode='stretch_both')
@@ -546,7 +537,7 @@ def test_not_expand_row_only_non_fixed_axis_width(document, comm):
 
     model = layout.get_root(document, comm)
 
-    assert model.sizing_mode is None
+    assert model.sizing_mode == 'stretch_height'
 
 def test_expand_row_all_only_non_fixed_axis_width(document, comm):
     div1 = Div(sizing_mode='stretch_height')
@@ -576,3 +567,14 @@ def test_no_expand_fixed(panel, document, comm):
     model = layout.get_root(document, comm)
 
     assert model.sizing_mode == 'fixed'
+
+
+@pytest.mark.parametrize('scroll_param', ["auto_scroll_limit", "scroll", "scroll_button_threshold", "view_latest"])
+def test_column_scroll_params_sets_scroll(scroll_param, document, comm):
+    if scroll_param not in ["auto_scroll_limit", "scroll_button_threshold"]:
+        params = {scroll_param: True}
+    else:
+        params = {scroll_param: 1}
+    col = Column(**params)
+    assert getattr(col, scroll_param)
+    assert col.scroll

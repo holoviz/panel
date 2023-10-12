@@ -2,7 +2,7 @@
 
 The callback API in Panel is the lowest-level approach, affording the greatest amount of flexibility but also quickly growing in complexity because each new interactive behavior requires additional callbacks that can interact in complex ways. Nonetheless, callbacks are important to know about, and can often be used to complement the other approaches. For instance, one specific callback could be used in addition to the more reactive approaches the other APIs provide.
 
-For more details on defining callbacks see the [Links user guide](./Links.md).
+For more details on defining callbacks see the [linking how-to guides](../how_to/links/index.md).
 
 ## Pros:
 
@@ -11,11 +11,11 @@ For more details on defining callbacks see the [Links user guide](./Links.md).
 ## Cons:
 
 - Complexity grows very quickly with the number of callbacks
-- Have to handle initializing the plots separately
+- If you have interactive plots, you need to handle initializing them separately
 
 ## Example
 
-In this approach we once again define the widgets. Unlike in other approaches we then have to define the actual layout, to ensure that the callback we define has something that it can update or replace. In this case we use a single callback to update the plot, but in many cases multiple callbacks might be required.
+In this approach we once again define the widgets. Unlike in other approaches we then have to define the actual layout up front, to ensure that the callback we define has something that it can update or replace. In this case we use a single callback to update the plot, but in many cases multiple callbacks might be required.
 
 ```{pyodide}
 import hvplot.pandas

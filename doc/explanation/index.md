@@ -27,7 +27,7 @@ Learn the pros and cons of Panel's different APIs.
 :link: components/components_overview
 :link-type: doc
 
-Deepen your understanding about Panel's visible objects and layouts types.
+Deepen your understanding about Panel's visible objects and layout types.
 :::
 
 :::{grid-item-card} {octicon}`plus-circle;2.5em;sd-mr-1 sd-animate-grow50` Custom components
@@ -75,7 +75,7 @@ Deepen your understanding about Template styling in Panel.
 :link: dependencies/param
 :link-type: doc
 
-Learn about why Panel utilizes the Param library.
+Learn about why and how Panel utilizes the Param library.
 
 ```{image} https://assets.holoviz.org/panel/background/dependencies/param_logo_stacked.png
 :width: 125px
@@ -89,7 +89,7 @@ Learn about why Panel utilizes the Param library.
 :link: dependencies/bokeh
 :link-type: doc
 
-Learn about why Panel utilizes the Bokeh library.
+Learn about why and how Panel utilizes the Bokeh library.
 
 ```{image} https://assets.holoviz.org/panel/background/dependencies/bokeh-icon%405x.png
 :width: 125px

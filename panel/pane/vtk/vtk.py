@@ -37,7 +37,7 @@ base64encode = lambda x: base64.b64encode(x).decode('utf-8')
 
 class AbstractVTK(PaneBase):
 
-    axes = param.Dict(default={}, doc="""
+    axes = param.Dict(default={}, nested_refs=True, doc="""
         Parameters of the axes to construct in the 3d view.
 
         Must contain at least ``xticker``, ``yticker`` and ``zticker``.
@@ -60,10 +60,10 @@ class AbstractVTK(PaneBase):
                 Defines the axes lines opacity.
     """)
 
-    camera = param.Dict(doc="""
+    camera = param.Dict(nested_refs=True, doc="""
       State of the rendered VTK camera.""")
 
-    color_mappers = param.List(doc="""
+    color_mappers = param.List(nested_refs=True, doc="""
       Color mapper of the actor in the scene""")
 
     orientation_widget = param.Boolean(default=False, doc="""
@@ -521,7 +521,7 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
         if self.camera is not None:
             for k, v in self.camera.items():
                 if k not in exclude_properties:
-                    if type(v) is list:
+                    if isinstance(v, list):
                         getattr(new_camera, 'Set' + k[0].capitalize() + k[1:])(*v)
                     else:
                         getattr(new_camera, 'Set' + k[0].capitalize() + k[1:])(v)

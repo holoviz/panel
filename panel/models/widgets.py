@@ -7,8 +7,10 @@ from bokeh.core.properties import (
     String, Tuple,
 )
 from bokeh.models.ui import Tooltip
+from bokeh.models.ui.icons import Icon
 from bokeh.models.widgets import (
-    Button as bkButton, InputWidget, Select, Widget,
+    Button as bkButton,
+    InputWidget, Select, TextAreaInput as BkTextAreaInput, Widget,
 )
 
 from .layout import HTMLBox
@@ -61,13 +63,13 @@ class SingleSelect(InputWidget):
     value will be corresponding given label.
     """)
 
-    value = String(help="Initial or selected value.")
-
     size = Int(default=4, help="""
     The number of visible options in the dropdown list. (This uses the
     ``select`` HTML element's ``size`` attribute. Some browsers might not
     show less than 3 options.)
     """)
+
+    value = Nullable(String, help="Initial or selected value.")
 
 
 class Audio(HTMLBox):
@@ -161,6 +163,12 @@ class FileDownload(InputWidget):
 
     embed = Bool(False, help="""Whether the data is pre-embedded.""")
 
+    icon = Nullable(Instance(Icon), help="""
+    An optional image appearing to the left of button's text. An instance of
+    :class:`~bokeh.models.Icon` (such as :class:`~bokeh.models.BuiltinIcon`,
+    :class:`~bokeh.models.SVGIcon`, or :class:`~bokeh.models.TablerIcon`).`
+    """)
+
     label = String("", help="""The text label for the button to display.""")
 
     filename = String(help="""Filename to use on download""")
@@ -182,6 +190,29 @@ class CustomSelect(Select):
     """)
 
     size = Int(default=1)
+
+
+class TooltipIcon(Widget):
+    description = Instance(
+        Tooltip,
+        default=Tooltip(content="Help text", position="right"),
+        help="""The tooltip held by the icon"""
+    )
+
+
+class TextAreaInput(BkTextAreaInput):
+
+    auto_grow = Bool(
+        default=False,
+        help="""
+        Whether the text area should automatically grow vertically to
+        accommodate the current text."""
+    )
+
+    max_rows = Nullable(Int(), help="""
+        Maximum number of rows the input area can grow to if auto_grow
+        is enabled."""
+    )
 
 
 class Button(bkButton):

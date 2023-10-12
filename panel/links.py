@@ -17,6 +17,7 @@ import param
 from bokeh.models import CustomJS, LayoutDOM, Model as BkModel
 
 from .io.datamodel import create_linked_datamodel
+from .io.loading import LOADING_INDICATOR_CSS_CLASS
 from .models import ReactiveHTML
 from .reactive import Reactive
 from .util.warnings import warn
@@ -158,6 +159,9 @@ class Callback(param.Parameterized):
         """
         Registers the Callback
         """
+        if Callback._process_callbacks not in Viewable._preprocessing_hooks:
+            Viewable._preprocessing_hooks.append(Callback._process_callbacks)
+
         source = self.source
         if source is None:
             return
@@ -192,13 +196,27 @@ class Callback(param.Parameterized):
         return self._source() if self._source else None
 
     @classmethod
-    def _process_callbacks(cls, root_view: 'Viewable', root_model: BkModel):
+    def _process_callbacks(
+        cls, root_view: Viewable, root_model: BkModel, changed: Viewable | None = None, old_models=None
+    ):
         if not root_model:
             return
 
-        linkable = (
-            root_view.select(Viewable) + list(root_model.select({'type' : BkModel})) # type: ignore
-        )
+        ref = root_model.ref['id']
+        if changed is not None:
+            inspect = root_view.select(Viewable)
+            if ref in changed._models:
+                inspect += changed._models[ref][0].select({'type' : BkModel})
+            targets = [link.target for links in cls.registry.values() for link in links if isinstance(link, Link)]
+            if not any(m in cls.registry or m in targets for m in inspect):
+                return
+
+        if root_view is changed:
+            linkable = inspect
+        else:
+            linkable = (
+                root_view.select(Viewable) + list(root_model.select({'type' : BkModel})) # type: ignore
+            )
 
         if not linkable:
             return
@@ -236,7 +254,6 @@ class Callback(param.Parameterized):
                         for tgt in hv_objs:
                             arg_overrides[id(link)][k] = tgt
 
-        ref = root_model.ref['id']
         for (link, src, tgt) in found:
             cb = cls._callbacks[type(link)]
             if ((src is None or ref not in getattr(src, '_models', [ref])) or
@@ -624,7 +641,7 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
       value = true
     }}
     var css_classes = target.css_classes.slice()
-    var loading_css = ['pn-loading', '{loading_spinner}']
+    var loading_css = ['{loading_css_class}', 'pn-{loading_spinner}']
     if (value) {{
       for (var css of loading_css) {{
         if (!(css in css_classes)) {{
@@ -690,9 +707,8 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
                     value = msg[tgt_spec]
             else:
                 value = getattr(src_model, src_spec)
-            if value and hasattr(tgt_model, tgt_spec):
-                if tgt_spec != 'value_throttled':
-                    setattr(tgt_model, tgt_spec, value)
+            if value and tgt_spec != 'value_throttled' and hasattr(tgt_model, tgt_spec):
+                setattr(tgt_model, tgt_spec, value)
         if tgt_model is None and not link.code:
             raise ValueError('Model could not be resolved on target '
                              '%s and no custom code was specified.' %
@@ -732,7 +748,8 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
             from .config import config
             return self._loading_link_template.format(
                 src_attr=src_spec, src_transform=src_transform,
-                loading_spinner=config.loading_spinner
+                loading_spinner=config.loading_spinner,
+                loading_css_class=LOADING_INDICATOR_CSS_CLASS
             )
         else:
             if src_spec and src_spec.startswith('event:'):
@@ -748,8 +765,6 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
 
 Callback.register_callback(callback=JSCallbackGenerator)
 Link.register_callback(callback=JSLinkCallbackGenerator)
-
-Viewable._preprocessing_hooks.append(Callback._process_callbacks)
 
 __all__ = (
     "Callback",

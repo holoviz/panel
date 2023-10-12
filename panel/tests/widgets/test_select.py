@@ -290,7 +290,7 @@ def test_select_disabled_options_error_set_disabled_options(options, size):
 @pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
 def test_select_disabled_options_set_value_and_disabled_options(options, size, document, comm):
     select = Select(options=options, disabled_options=[20], size=size)
-    select.param.set_param(value=20, disabled_options=[10])
+    select.param.update(value=20, disabled_options=[10])
 
     widget = select.get_root(document, comm=comm)
 

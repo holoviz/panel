@@ -1,4 +1,4 @@
-import {Column, ColumnView} from "@bokehjs/models/layouts/column"
+import {Column, ColumnView} from "./column"
 import * as DOM from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
 
@@ -9,8 +9,10 @@ export class CardView extends ColumnView {
 
   connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.collapsed.change, () => this._collapse())
-    const {active_header_background, collapsed, header_background, header_color, hide_header} = this.model.properties
+
+    const {active_header_background, children, collapsed, header_background, header_color, hide_header} = this.model.properties
+    this.on_change(children, () => this.render())
+    this.on_change(collapsed, () => this._collapse())
     this.on_change([header_color, hide_header], () => this.render())
 
     this.on_change([active_header_background, collapsed, header_background], () => {
@@ -77,6 +79,7 @@ export class CardView extends ColumnView {
   }
 
   async update_children(): Promise<void> {
+    await this.build_child_views()
     this.render()
     this.invalidate_layout()
   }
@@ -87,10 +90,13 @@ export class CardView extends ColumnView {
 
   _collapse(): void {
     for (const child_view of this.child_views.slice(1)) {
-      if (this.model.collapsed)
+      if (this.model.collapsed) {
         this.shadow_el.removeChild(child_view.el)
-      else
+	child_view.model.visible = false
+      } else {
         this.shadow_el.appendChild(child_view.el)
+	child_view.model.visible = true
+      }
     }
     this.button_el.children[0].innerHTML = this.model.collapsed ? "\u25ba" : "\u25bc"
     this.invalidate_layout()

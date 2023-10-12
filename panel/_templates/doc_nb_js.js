@@ -5,7 +5,7 @@
   if (!docs) {
     return
   }
-  const py_version = docs[0].version.replace('rc', '-rc.')
+  const py_version = docs[0].version.replace('rc', '-rc.').replace('.dev', '-dev.')
   const is_dev = py_version.indexOf("+") !== -1 || py_version.indexOf("-") !== -1
   function embed_document(root) {
     var Bokeh = get_bokeh(root)
@@ -35,7 +35,7 @@
   }
   function is_loaded(root) {
     var Bokeh = get_bokeh(root)
-    return (Bokeh != null && Bokeh.Panel !== undefined{% for reqs in requirements %} && ({% for req in reqs %}{% if loop.index0 > 0 %}||{% endif %} root['{{ req }}'] !== undefined{% endfor %}){% endfor %}{% if ipywidget %}&& (Bokeh.Models.registered_names().indexOf("ipywidgets_bokeh.widget.IPyWidget") > -1){% endif %})
+    return (Bokeh != null && Bokeh.Panel !== undefined{% for reqs in requirements %} && ({% for req in reqs %}{% if loop.index0 > 0 %}||{% endif %} root['{{ req }}'] !== undefined{% endfor %}){% endfor %}{% if ipywidget %}&& Bokeh.Models._known_models.has("ipywidgets_bokeh.widget.IPyWidget") {% endif %})
   }
   if (is_loaded(root)) {
     embed_document(root);
@@ -49,7 +49,13 @@
         attempts++;
         if (attempts > 200) {
           clearInterval(timer);
-          console.log("Bokeh: ERROR: Unable to run BokehJS code because BokehJS library is missing");
+	  var Bokeh = get_bokeh(root)
+	  if (Bokeh == null || Bokeh.Panel == null) {
+            console.warn("Panel: ERROR: Unable to run Panel code because Bokeh or Panel library is missing");
+	  } else {
+	    console.warn("Panel: WARNING: Attempting to render but not all required libraries could be resolved.")
+	    embed_document(root)
+	  }
         }
       }
     }, 25, root)

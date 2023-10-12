@@ -188,7 +188,7 @@ Go to that address and your app should be there running!
 ## Multiple apps
 
 
-This is the most basic configuration for a bokeh server. It is of course possible to add multiple apps in the same way and then registering them with FastApi in the way described in the [configuration](#Configuration) section above. To see a multi-app fastApi server have a look at ``examples/apps/fastApi_multi_apps`` and launch it with `uvicorn main:app --reload` as before.
+This is the most basic configuration for a bokeh server. It is of course possible to add multiple apps in the same way and then registering them with FastApi in the way described in the [configuration](#configuration) section above. To see a multi-app fastApi server have a look at ``examples/apps/fastApi_multi_apps`` and launch it with `uvicorn main:app --reload` as before.
 
 To run multiple apps you will need to do the following:
 1. Create a new directory in your and a new file with your panel app (ex. `sinewave2.py`).

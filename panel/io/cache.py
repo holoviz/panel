@@ -302,11 +302,12 @@ def compute_hash(func, hash_funcs, args, kwargs):
 
 def cache(
     func=None, hash_funcs=None, max_items=None, policy='LRU',
-    ttl=None, to_disk=False, cache_path='./cache'
+    ttl=None, to_disk=False, cache_path='./cache', per_session=False
 ):
     """
-    Decorator to memoize functions with options to configure the
-    caching behavior
+    Memoizes functions for a user session. Can be used as function annotation or just directly.
+
+    For global caching across user sessions use `pn.state.as_cached`.
 
     Arguments
     ---------
@@ -328,6 +329,8 @@ def cache(
         Whether to cache to disk using diskcache.
     cache_dir: str
         Directory to cache to on disk.
+    per_session: bool
+        Whether to cache data only for the current session.
     """
     if policy.lower() not in ('fifo', 'lru', 'lfu'):
         raise ValueError(
@@ -375,6 +378,8 @@ def cache(
             func_hash = (fname, type(args[0]).__name__, func.__name__)
         else:
             func_hash = (fname, func.__name__)
+        if per_session:
+            func_hash += (id(state.curdoc),)
         func_hash = hashlib.sha256(_generate_hash(func_hash)).hexdigest()
 
         func_cache = state._memoize_cache.get(func_hash)
@@ -404,7 +409,7 @@ def cache(
             func_cache[hash_value] = (ret, time, 0, time)
         return ret
 
-    def clear():
+    def clear(session_context=None):
         global func_hash
         if func_hash is None:
             return
@@ -416,6 +421,9 @@ def cache(
             cache = state._memoize_cache.get(func_hash, {})
         cache.clear()
     wrapped_func.clear = clear
+
+    if per_session and state.curdoc and state.curdoc.session_context:
+        state.curdoc.on_session_destroyed(clear)
 
     try:
         wrapped_func.__dict__.update(func.__dict__)

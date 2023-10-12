@@ -8,6 +8,7 @@ import datetime as dt
 import gc
 import html
 import importlib
+import inspect
 import logging
 import os
 import pathlib
@@ -50,11 +51,12 @@ from bokeh.embed.wrappers import wrap_in_script_tag
 from bokeh.io import curdoc
 from bokeh.models import CustomJS
 from bokeh.server.server import Server as BokehServer
-from bokeh.server.urls import per_app_patterns
+from bokeh.server.urls import per_app_patterns, toplevel_patterns
 from bokeh.server.views.autoload_js_handler import (
     AutoloadJsHandler as BkAutoloadJsHandler,
 )
 from bokeh.server.views.doc_handler import DocHandler as BkDocHandler
+from bokeh.server.views.root_handler import RootHandler as BkRootHandler
 from bokeh.server.views.static_handler import StaticHandler
 from bokeh.util.serialization import make_id
 from bokeh.util.token import (
@@ -72,6 +74,7 @@ from ..config import config
 from ..util import edit_readonly, fullpath
 from ..util.warnings import warn
 from .document import init_doc, unlocked, with_lock  # noqa
+from .liveness import LivenessHandler
 from .loading import LOADING_INDICATOR_CSS_CLASS
 from .logging import (
     LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING,
@@ -205,7 +208,7 @@ def _initialize_session_info(session_context: 'BokehSessionContext'):
     }
     state.param.trigger('session_info')
 
-state.on_session_created(_initialize_session_info)
+state._on_session_created_internal.append(_initialize_session_info)
 
 #---------------------------------------------------------------------
 # Bokeh patches
@@ -315,7 +318,7 @@ def server_html_page_for_session(
         )
         if config.global_loading_spinner:
             html = html.replace(
-                '<body>', f'<body class="{LOADING_INDICATOR_CSS_CLASS} {config.loading_spinner}">'
+                '<body>', f'<body class="{LOADING_INDICATOR_CSS_CLASS} pn-{config.loading_spinner}">'
             )
     return html
 
@@ -354,7 +357,8 @@ def destroy_document(self, session):
 
     # Clean up pn.state to avoid tasks getting executed on dead session
     for attr in dir(state):
-        if not attr.startswith('_'):
+        # _param_watchers is deprecated in Param 2.0 and will raise a warning
+        if not attr.startswith('_') or attr == "_param_watchers":
             continue
         state_obj = getattr(state, attr)
         if isinstance(state_obj, weakref.WeakKeyDictionary) and self in state_obj:
@@ -398,7 +402,7 @@ class Application(BkApplication):
         with set_curdoc(session_context._document):
             if self._admin is not None:
                 config._admin = self._admin
-            for cb in state._on_session_created:
+            for cb in state._on_session_created_internal+state._on_session_created:
                 cb(session_context)
         await super().on_session_created(session_context)
 
@@ -437,8 +441,26 @@ class SessionPrefixHandler:
                 state.base_url = old_url
                 state.rel_path = old_rel
 
+class LoginUrlMixin:
+    """
+    Overrides the AuthRequestHandler.get_login_url implementation to
+    correctly handle prefixes.
+    """
+
+    def get_login_url(self):
+        ''' Delegates to``get_login_url`` method of the auth provider, or the
+        ``login_url`` attribute.
+
+        '''
+        if self.application.auth_provider.get_login_url is not None:
+            return '.' + self.application.auth_provider.get_login_url(self)
+        if self.application.auth_provider.login_url is not None:
+            return '.' + self.application.auth_provider.login_url
+        raise RuntimeError('login_url or get_login_url() must be supplied when authentication hooks are enabled')
+
+
 # Patch Bokeh DocHandler URL
-class DocHandler(BkDocHandler, SessionPrefixHandler):
+class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
 
     @authenticated
     async def get_session(self):
@@ -484,7 +506,47 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
                 token = session.token
             logger.info(LOG_SESSION_CREATED, id(session.document))
             with set_curdoc(session.document):
-                if config.authorize_callback and not config.authorize_callback(state.user_info):
+                resources = Resources.from_bokeh(self.application.resources())
+                auth_cb = config.authorize_callback
+                authorized = False
+                if auth_cb:
+                    auth_cb = config.authorize_callback
+                    auth_params = inspect.signature(auth_cb).parameters
+                    if len(auth_params) == 1:
+                        auth_args = (state.user_info,)
+                    elif len(auth_params) == 2:
+                        auth_args = (state.user_info, self.request.path,)
+                    else:
+                        raise RuntimeError(
+                            'Authorization callback must accept either 1) a single argument '
+                            'which is the user name or 2) two arguments which includes the '
+                            'user name and the url path the user is trying to access.'
+                        )
+                    auth_error = f'{state.user} is not authorized to access this application.'
+                    try:
+                        authorized = auth_cb(*auth_args)
+                        if isinstance(authorized, str):
+                            self.redirect(authorized)
+                            return
+                        elif not authorized:
+                            auth_error = (
+                                f'Authorization callback errored. Could not validate user name "{state.user}" '
+                                f'for the given app "{self.request.path}".'
+                            )
+                        if authorized:
+                            auth_error = None
+                    except Exception:
+                        auth_error = f'Authorization callback errored. Could not validate user {state.user}.'
+                else:
+                    authorized = True
+
+                if authorized:
+                    page = server_html_page_for_session(
+                        session, resources=resources, title=session.document.title,
+                        token=token, template=session.document.template,
+                        template_variables=session.document.template_variables,
+                    )
+                else:
                     if config.auth_template:
                         with open(config.auth_template) as f:
                             template = _env.from_string(f.read())
@@ -495,14 +557,7 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
                         title='Panel: Authorization Error',
                         error_type='Authorization Error',
                         error='User is not authorized.',
-                        error_msg=f'{state.user} is not authorized to access this application.'
-                    )
-                else:
-                    resources = Resources.from_bokeh(self.application.resources())
-                    page = server_html_page_for_session(
-                        session, resources=resources, title=session.document.title,
-                        token=token, template=session.document.template,
-                        template_variables=session.document.template_variables,
+                        error_msg=auth_error
                     )
         self.set_header("Content-Type", 'text/html')
         self.write(page)
@@ -544,6 +599,19 @@ class AutoloadJsHandler(BkAutoloadJsHandler, SessionPrefixHandler):
         self.write(js)
 
 per_app_patterns[3] = (r'/autoload.js', AutoloadJsHandler)
+
+class RootHandler(LoginUrlMixin, BkRootHandler):
+    """
+    Custom RootHandler that provides the CDN_DIST directory as a
+    template variable.
+    """
+
+    def render(self, *args, **kwargs):
+        kwargs['PANEL_CDN'] = CDN_DIST
+        return super().render(*args, **kwargs)
+
+toplevel_patterns[0] = (r'/?', RootHandler)
+bokeh.server.tornado.RootHandler = RootHandler
 
 
 class ComponentResourceHandler(StaticFileHandler):
@@ -709,7 +777,7 @@ def modify_document(self, doc: 'Document'):
             # Serve error
             e_msg = str(e).replace('\033[1m', '<b>').replace('\033[0m', '</b>')
             Alert(
-                f'<b>{type(e).__name__}</b>: {e_msg}</br><pre style="overflow-y: auto">{tb}</pre>',
+                f'<b>{type(e).__name__}</b>: {e_msg}\n<pre style="overflow-y: auto">{tb}</pre>',
                 alert_type='danger', margin=5, sizing_mode='stretch_width'
             ).servable()
 
@@ -790,7 +858,7 @@ def serve(
     threaded: bool = False,
     admin: bool = False,
     **kwargs
-) -> threading.Thread | Server:
+) -> StoppableThread | Server:
     """
     Allows serving one or more panel objects on a single server.
     The panels argument should be either a Panel object or a function
@@ -912,14 +980,21 @@ def get_server(
     location: bool | Location = True,
     admin: bool = False,
     static_dirs: Mapping[str, str] = {},
+    basic_auth: str = None,
     oauth_provider: Optional[str] = None,
     oauth_key: Optional[str] = None,
     oauth_secret: Optional[str] = None,
     oauth_redirect_uri: Optional[str] = None,
     oauth_extra_params: Mapping[str, str] = {},
+    oauth_error_template: Optional[str] = None,
     cookie_secret: Optional[str] = None,
     oauth_encryption_key: Optional[str] = None,
+    login_endpoint: Optional[str] = None,
+    logout_endpoint: Optional[str] = None,
+    login_template: Optional[str] = None,
+    logout_template: Optional[str] = None,
     session_history: Optional[int] = None,
+    liveness: bool | str = False,
     **kwargs
 ) -> Server:
     """
@@ -961,6 +1036,8 @@ def get_server(
     static_dirs: dict (optional, default={})
       A dictionary of routes and local paths to serve as static file
       directories on those routes.
+    basic_auth: str (optional, default=None)
+      Password or filepath to use with basic auth provider.
     oauth_provider: str
       One of the available OAuth providers
     oauth_key: str (optional, default=None)
@@ -971,16 +1048,32 @@ def get_server(
       Overrides the default OAuth redirect URI
     oauth_extra_params: dict (optional, default={})
       Additional information for the OAuth provider
+    oauth_error_template: str (optional, default=None)
+      Jinja2 template used when displaying authentication errors.
     cookie_secret: str (optional, default=None)
       A random secret string to sign cookies (required for OAuth)
     oauth_encryption_key: str (optional, default=False)
       A random encryption key used for encrypting OAuth user
       information and access tokens.
+    login_endpoint: str (optional, default=None)
+      Overrides the default login endpoint `/login`
+    logout_endpoint: str (optional, default=None)
+      Overrides the default logout endpoint `/logout`
+    logout_template: str (optional, default=None)
+      Jinja2 template served when viewing the login endpoint when
+      authentication is enabled.
+    logout_template: str (optional, default=None)
+      Jinja2 template served when viewing the logout endpoint when
+      authentication is enabled.
     session_history: int (optional, default=None)
       The amount of session history to accumulate. If set to non-zero
       and non-None value will launch a REST endpoint at
       /rest/session_info, which returns information about the session
       history.
+    liveness: bool | str (optional, default=False)
+      Whether to add a liveness endpoint. If a string is provided
+      then this will be used as the endpoint, otherwise the endpoint
+      will be hosted at /liveness.
     kwargs: dict
       Additional keyword arguments to pass to Server instance.
 
@@ -997,6 +1090,8 @@ def get_server(
     if isinstance(panel, dict):
         apps = {}
         for slug, app in panel.items():
+            if slug.endswith('/') and not slug == '/':
+                raise ValueError(f"Invalid URL: trailing slash '/' used for {slug!r} not supported.")
             if isinstance(title, dict):
                 try:
                     title_ = title[slug]
@@ -1059,6 +1154,10 @@ def get_server(
         extra_patterns.extend(pattern)
         state.publish('session_info', state, ['session_info'])
 
+    if liveness:
+        liveness_endpoint = 'liveness' if isinstance(liveness, bool) else liveness
+        extra_patterns += [(r"/%s" % liveness_endpoint, LivenessHandler, dict(applications=apps))]
+
     opts = dict(kwargs)
     if loop:
         asyncio.set_event_loop(loop.asyncio_loop)
@@ -1079,10 +1178,23 @@ def get_server(
 
     # Configure OAuth
     from ..config import config
-    if oauth_provider:
-        from ..auth import OAuthProvider
-        config.oauth_provider = oauth_provider # type: ignore
-        opts['auth_provider'] = OAuthProvider()
+    server_config = {}
+    login_template = kwargs.pop('basic_login_template', login_template)
+    if basic_auth or oauth_provider:
+        from ..auth import BasicAuthProvider, OAuthProvider
+        if basic_auth:
+            server_config['basic_auth'] = basic_auth
+            provider = BasicAuthProvider
+        else:
+            config.oauth_provider = oauth_provider
+            provider = OAuthProvider
+        opts['auth_provider'] = provider(
+            login_endpoint=login_endpoint,
+            logout_endpoint=logout_endpoint,
+            login_template=login_template,
+            logout_template=logout_template,
+            error_template=oauth_error_template
+        )
     if oauth_key:
         config.oauth_key = oauth_key # type: ignore
     if oauth_secret:
@@ -1102,10 +1214,12 @@ def get_server(
         print(f"Launching server at {url}")
 
     state._servers[server_id] = (server, panel, [])
+    state._server_config[server._tornado] = server_config
 
     if show:
+        login_endpoint = login_endpoint or '/login'
         def show_callback():
-            server.show('/login' if config.oauth_provider else '/')
+            server.show(login_endpoint if config.oauth_provider or basic_auth else '/')
         server.io_loop.add_callback(show_callback)
 
     def sig_exit(*args, **kwargs):

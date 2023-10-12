@@ -3,10 +3,8 @@ import {useCallback} from 'preact/hooks';
 import {html} from 'htm/preact';
 
 import {div} from "@bokehjs/core/dom"
-import {build_views} from "@bokehjs/core/build_views"
 import {isArray} from "@bokehjs/core/util/types"
 import * as p from "@bokehjs/core/properties"
-import {UIElementView} from "@bokehjs/models/ui/ui_element"
 import {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
 
 import {dict_to_records} from "./data"
@@ -78,6 +76,14 @@ function extractToken(template: string, str: string, tokens: string[]) {
   }
 
   return result;
+}
+
+function element_lookup(root: ShadowRoot, el_id: string): HTMLElement | null {
+  let el = root.getElementById(el_id)
+  if (el == null) {
+    el = document.getElementById(el_id)
+  }
+  return el
 }
 
 
@@ -218,18 +224,6 @@ export class ReactiveHTMLView extends HTMLBoxView {
     return models
   }
 
-  async build_child_views(): Promise<UIElementView[]> {
-    const {created, removed} = await build_views(this._child_views, this.child_models, {parent: (null as any)})
-    for (const view of removed) {
-      this._resize_observer.unobserve(view.el)
-    }
-
-    for (const view of created) {
-      this._resize_observer.observe(view.el, {box: "border-box"})
-    }
-    return created
-  }
-
   _after_layout(): void {
     this.run_script('after_layout', true)
   }
@@ -265,7 +259,9 @@ export class ReactiveHTMLView extends HTMLBoxView {
     if (view == null)
       el.innerHTML = htmlDecode(model) || model
     else {
-      view.render_to(el)
+      el.appendChild(view.el)
+      view.render()
+      view.after_render()
     }
   }
 
@@ -273,15 +269,15 @@ export class ReactiveHTMLView extends HTMLBoxView {
     const id = this.model.data.id
     if (this.model.looped.indexOf(node) > -1) {
       for (let i = 0; i < children.length; i++) {
-        let el: any = this.shadow_el.getElementById(`${node}-${i}-${id}`)
-        if (el == null) {
+        const el: any = element_lookup(this.shadow_el, `${node}-${i}-${id}`)
+	if (el == null) {
           console.warn(`DOM node '${node}-${i}-${id}' could not be found. Cannot render children.`)
           continue
         }
         this._render_child(children[i], el)
       }
     } else {
-      let el: any = this.shadow_el.getElementById(`${node}-${id}`)
+      const el: any = element_lookup(this.shadow_el, `${node}-${id}`)
       if (el == null) {
         console.warn(`DOM node '${node}-${id}' could not be found. Cannot render children.`)
         return
@@ -304,7 +300,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
   }
 
   private _render_html(literal: any, state: any={}): any {
-    let htm = literal
+    let htm = literal.replace(/[`]/g, '\\$&');
     let callbacks = ''
     const methods: string[] = []
     for (const elname in this.model.callbacks) {
@@ -370,7 +366,9 @@ export class ReactiveHTMLView extends HTMLBoxView {
       if (literal.indexOf(elvar) === -1)
         continue
       const script = `
-      const ${elvar} = view.shadow_el.getElementById('${elname}-${id}')
+      let ${elvar} = view.shadow_el.getElementById('${elname}-${id}')
+      if (${elvar} == null)
+        ${elvar} = document.getElementById('${elname}-${id}')
       if (${elvar} == null) {
         console.warn("DOM node '${elname}' could not be found. Cannot execute callback.")
         return
@@ -398,7 +396,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
   private _setup_mutation_observers(): void {
     const id = this.model.data.id
     for (const name in this.model.attrs) {
-      const el: any = this.shadow_el.getElementById(`${name}-${id}`)
+      const el: any = element_lookup(this.shadow_el, `${name}-${id}`)
       if (el == null) {
         console.warn(`DOM node '${name}-${id}' could not be found. Cannot set up MutationObserver.`)
         continue
@@ -414,7 +412,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
   private _remove_event_listeners(): void {
     const id = this.model.data.id
     for (const node in this._event_listeners) {
-      const el: any = this.shadow_el.getElementById(`${node}-${id}`)
+      const el: any = element_lookup(this.shadow_el, `${node}-${id}`)
       if (el == null)
         continue
       for (const event_name in this._event_listeners[node]) {
@@ -428,7 +426,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
   private _setup_event_listeners(): void {
     const id = this.model.data.id
     for (const node in this.model.events) {
-      const el: any = this.shadow_el.getElementById(`${node}-${id}`)
+      const el: any = element_lookup(this.shadow_el, `${node}-${id}`)
       if (el == null) {
         console.warn(`DOM node '${node}-${id}' could not be found. Cannot subscribe to DOM events.`)
         continue
@@ -451,6 +449,8 @@ export class ReactiveHTMLView extends HTMLBoxView {
   private _update(property: string | null = null): void {
     if (property == null || (this.html.indexOf(`\${${property}}`) > -1)) {
       const rendered = this._render_html(this.html)
+      if (rendered == null)
+	return
       try {
         this._changing = true
         render(rendered, this.container)

@@ -94,6 +94,10 @@ class FloatPanel(ListLike, ReactiveHTML):
           contentSize: `${model.width} ${model.height}`,
           onstatuschange: function() {
             data.status = this.status
+          },
+          onbeforeclose: function() {
+           data.status = 'closed'
+           return true
           }
         }
         if (data.contained) {
@@ -149,6 +153,26 @@ class FloatPanel(ListLike, ReactiveHTML):
         f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/dock/jspanel.dock.js",
     ]
 
+    __js_require__ = {
+        'paths': {
+            'jspanel': f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/jspanel",
+            'jspanel-modal': f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/modal/jspanel.modal",
+            'jspanel-tooltip': f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/tooltip/jspanel.tooltip",
+            'jspanel-hint': f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/hint/jspanel.hint",
+            'jspanel-layout': f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/layout/jspanel.layout",
+            'jspanel-contextmenu': f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/contextmenu/jspanel.contextmenu",
+            'jspanel-dock': f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/dock/jspanel.dock",
+        },
+        'exports': {
+            'jspanel': 'jsPanel'
+        },
+        'shim': {
+            'jspanel': {
+                'exports': 'jsPanel'
+            }
+        }
+    }
+
     _stylesheets: ClassVar[List[str]] = [
         f'{CDN_DIST}css/floatpanel.css'
     ]
@@ -169,3 +193,23 @@ class FloatPanel(ListLike, ReactiveHTML):
 
     def __init__(self, *objects, name='', **params):
         super().__init__(objects=list(objects), name=name, **params)
+
+    def select(self, selector=None):
+        """
+        Iterates over the Viewable and any potential children in the
+        applying the Selector.
+
+        Arguments
+        ---------
+        selector: type or callable or None
+          The selector allows selecting a subset of Viewables by
+          declaring a type or callable function to filter by.
+
+        Returns
+        -------
+        viewables: list(Viewable)
+        """
+        objects = super().select(selector)
+        for obj in self:
+            objects += obj.select(selector)
+        return objects

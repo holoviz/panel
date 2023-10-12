@@ -32,7 +32,7 @@ from bokeh.settings import settings as bk_settings
 from bokeh.util.sampledata import (
     __file__ as _bk_util_dir, _download_file, external_data_dir, splitext,
 )
-from js import JSON, Object, XMLHttpRequest
+from js import JSON, XMLHttpRequest
 
 from ..config import config
 from ..util import edit_readonly, isurl
@@ -223,6 +223,18 @@ def _process_document_events(doc: Document, events: List[Any]):
     patch_json = _serialize_buffers(patch_json, buffers=buffer_map)
     return patch_json, buffer_map
 
+# JS function to convert undefined -> null (workaround for https://github.com/pyodide/pyodide/issues/3968)
+_dict_converter = pyodide.code.run_js("""
+((entries) => {
+  for (let entry of entries) {
+    if (entry[1] === undefined) {
+      entry[1] = null;
+    }
+  }
+  return Object.fromEntries(entries);
+})
+""")
+
 def _link_docs(pydoc: Document, jsdoc: Any) -> None:
     """
     Links Python and JS documents in Pyodide ensuring that messages
@@ -249,13 +261,17 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
         if setter is not None and setter == 'js':
             return
         json_patch, buffer_map = _process_document_events(pydoc, [event])
-        json_patch = pyodide.ffi.to_js(json_patch, dict_converter=Object.fromEntries)
+        json_patch = pyodide.ffi.to_js(json_patch, dict_converter=_dict_converter)
         buffer_map = pyodide.ffi.to_js(buffer_map)
         jsdoc.apply_json_patch(json_patch, buffer_map)
 
     pydoc.on_change(pysync)
-    pydoc.unhold()
-    pydoc.callbacks.trigger_event(DocumentReady())
+
+    try:
+        pydoc.unhold()
+        pydoc.callbacks.trigger_event(DocumentReady())
+    except Exception as e:
+        print(f'Error raised while processing Document events: {e}')
 
 def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None, setter: str | None = None):
     """
@@ -278,7 +294,7 @@ def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None
         if setter is not None and getattr(event, 'setter', None) == setter:
             return
         json_patch, buffer_map = _process_document_events(doc, [event])
-        json_patch = pyodide.ffi.to_js(json_patch, dict_converter=Object.fromEntries)
+        json_patch = pyodide.ffi.to_js(json_patch, dict_converter=_dict_converter)
         dispatch_fn(json_patch, pyodide.ffi.to_js(buffer_map), msg_id)
 
     doc.on_change(pysync)
@@ -446,7 +462,7 @@ def hide_loader() -> None:
     from js import document
 
     body = document.getElementsByTagName('body')[0]
-    body.classList.remove(LOADING_INDICATOR_CSS_CLASS, config.loading_spinner)
+    body.classList.remove(LOADING_INDICATOR_CSS_CLASS, f'pn-{config.loading_spinner}')
 
 def sync_location():
     """

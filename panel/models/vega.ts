@@ -3,7 +3,7 @@ import * as p from "@bokehjs/core/properties"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {isArray} from "@bokehjs/core/util/types"
 import {LayoutDOM, LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
-import {Attrs} from "@bokehjs/core/types"
+import type {Attrs} from "@bokehjs/core/types"
 
 import {set_size} from "./layout"
 
@@ -76,8 +76,18 @@ export class VegaPlotView extends LayoutDOMView {
   _dispatch_event(name: string, value: any): void {
     if ('vlPoint' in value && value.vlPoint.or != null) {
       const indexes = []
-      for (const index of value.vlPoint.or)
-        indexes.push(index._vgsid_)
+      for (const index of value.vlPoint.or) {
+        if (index._vgsid_ !== undefined) {  // If "_vgsid_" property exists
+          indexes.push(index._vgsid_);
+        } else {  // If "_vgsid_" property doesn't exist
+          // Iterate through all properties in the "index" object
+          for (const key in index) {
+            if (index.hasOwnProperty(key)) {  // To ensure key comes from "index" object itself, not its prototype
+              indexes.push({[key]: index[key]});  // Push a new object with this key-value pair into the array
+            }
+          }
+        }
+      }
       value = indexes
     }
     this.model.trigger_event(new VegaEvent({type: name, value: value}))

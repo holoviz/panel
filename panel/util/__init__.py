@@ -24,6 +24,7 @@ from html import escape  # noqa
 from importlib import import_module
 from typing import Any, AnyStr, Iterator
 
+import bleach
 import bokeh
 import numpy as np
 import param
@@ -44,6 +45,8 @@ bokeh_version = Version(bokeh.__version__)
 BOKEH_JS_NAT = -9223372036854776.0
 
 PARAM_NAME_PATTERN = re.compile(r'^.*\d{5}$')
+
+HTML_SANITIZER = bleach.sanitizer.Cleaner(strip=True)
 
 
 def hashable(x):
@@ -314,17 +317,6 @@ def edit_readonly(parameterized: param.Parameterized) -> Iterator:
             p.constant = constant
 
 
-def eval_function(function):
-    args, kwargs = (), {}
-    if hasattr(function, '_dinfo'):
-        arg_deps = function._dinfo['dependencies']
-        kw_deps = function._dinfo.get('kw', {})
-        if kw_deps or any(isinstance(d, param.Parameter) for d in arg_deps):
-            args = (getattr(dep.owner, dep.name) for dep in arg_deps)
-            kwargs = {n: getattr(dep.owner, dep.name) for n, dep in kw_deps.items()}
-    return function(*args, **kwargs)
-
-
 def lazy_load(module, model, notebook=False, root=None, ext=None):
     from ..config import panel_extension as extension
     from ..io.state import state
@@ -332,12 +324,13 @@ def lazy_load(module, model, notebook=False, root=None, ext=None):
         module: ext for ext, module in extension._imports.items()
     }
     ext = ext or module.split('.')[-1]
-    loaded = not state._extensions or external_modules[module] in state._extensions
+    ext_name = external_modules[module]
+    loaded_extensions = state._extensions
+    loaded = loaded_extensions is None or ext_name in loaded_extensions
     if module in sys.modules and loaded:
         model_cls = getattr(sys.modules[module], model)
         if f'{model_cls.__module__}.{model}' not in Model.model_class_reverse_map:
             _default_resolver.add(model_cls)
-
         return model_cls
 
     if notebook:
@@ -347,11 +340,26 @@ def lazy_load(module, model, notebook=False, root=None, ext=None):
             'ensure you load it as part of the extension using:'
             f'\n\npn.extension(\'{ext}\')\n'
         )
+    elif not loaded and state._is_launching:
+        # If we are still launching the application it is not too late
+        # to automatically load the extension and therefore ensure it
+        # is included in the resources added to the served page
+        param.main.param.warning(
+            f'pn.extension was initialized but {ext!r} extension was not '
+            'loaded. Since the application is still launching the extension '
+            'was loaded automatically but we strongly recommend you load '
+            'the extension explicitly with the following argument(s):'
+            f'\n\npn.extension({ext!r})\n'
+        )
+        if loaded_extensions is None:
+            state._extensions_[state.curdoc] = [ext_name]
+        else:
+            loaded_extensions.append(ext_name)
     elif not loaded:
         param.main.param.warning(
-            f'pn.extension was initialized but {ext!r} extension was not'
+            f'pn.extension was initialized but {ext!r} extension was not '
             'loaded. In order for the required resources to be initialized '
-            'ensure the extension using is loaded with the extension:'
+            'ensure the extension is loaded with the following argument(s):'
             f'\n\npn.extension({ext!r})\n'
         )
     elif root is not None and root.ref['id'] in state._views:
@@ -441,3 +449,43 @@ def relative_to(path, other_path):
         return True
     except Exception:
         return False
+
+_unset = object()
+
+def param_watchers(parameterized, value=_unset):
+    if Version(param.__version__) <= Version('2.0.0a2'):
+        if value is not _unset:
+            parameterized._param_watchers = value
+        else:
+            return parameterized._param_watchers
+    else:
+        if value is not _unset:
+            parameterized.param.watchers = value
+        else:
+            return parameterized.param.watchers
+
+
+def flatten(line):
+    """
+    Flatten an arbitrarily nested sequence.
+
+    Inspired by: pd.core.common.flatten
+
+    Parameters
+    ----------
+    line : sequence
+        The sequence to flatten
+
+    Notes
+    -----
+    This only flattens list, tuple, and dict sequences.
+
+    Returns
+    -------
+    flattened : generator
+    """
+    for element in line:
+        if any(isinstance(element, tp) for tp in (list, tuple, dict)):
+            yield from flatten(element)
+        else:
+            yield element

@@ -37,7 +37,7 @@ jobs:
       DISPLAY: ":99.0"
       PANEL_IPYWIDGET: 1
     steps:
-      - uses: pyviz-dev/holoviz_tasks/install@v0.1a12
+      - uses: holoviz-dev/holoviz_tasks/install@v0.1a15
         with:
           name: doc_build
           python-version: "3.9"
@@ -88,7 +88,7 @@ jobs:
           (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         with:
           personal_token: ${{ secrets.ACCESS_TOKEN }}
-          external_repository: pyviz-dev/panel
+          external_repository: holoviz-dev/panel
           publish_dir: ./builtdocs
           force_orphan: true
       - name: Deploy main

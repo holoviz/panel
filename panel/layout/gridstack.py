@@ -91,9 +91,14 @@ class GridStack(ReactiveHTML, GridSpec):
         })
         sync_state()
         state.gridstack = gridstack
+        state.init = false
         """,
         'after_layout': """
         self.nrows()
+        if (!state.init) {
+          state.init = true
+          view.invalidate_layout()
+        }
         state.gridstack.engine._notify()
         """,
         'allow_drag':   "state.gridstack.enableMove(data.allow_drag)",

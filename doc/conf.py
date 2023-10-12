@@ -33,10 +33,8 @@ os.environ['BRANCH'] = f"v{release}"
 
 html_static_path += ['_static']
 
-html_css_files = [
-    'nbsite.css',
+html_css_files += [
     'css/custom.css',
-    'css/dataframe.css',
 ]
 
 html_theme = "pydata_sphinx_theme"
@@ -61,7 +59,7 @@ html_theme_options = {
         },
         {
             "name": "Discord",
-            "url": "https://discord.gg/AXRHnJU6sP",
+            "url": "https://discord.gg/UXdtYyGVQX",
             "icon": "fa-brands fa-discord",
         },
     ],
@@ -70,6 +68,7 @@ html_theme_options = {
     "pygment_dark_style": "material",
     "header_links_before_dropdown": 5,
     'secondary_sidebar_items': [
+        "github-stars-button",
         "panelitelink",
         "page-toc",
     ],
@@ -147,7 +146,7 @@ nbsite_pyodide_conf = {
     'requires': get_requirements()
 }
 
-templates_path = [
+templates_path += [
     '_templates'
 ]
 
@@ -165,7 +164,6 @@ nbbuild_patterns_to_take_along = ["simple.html", "*.json", "json_*"]
 
 # Override the Sphinx default title that appends `documentation`
 html_title = f'{project} v{version}'
-
 
 
 # Patching GridItemCardDirective to be able to substitute the domain name
@@ -201,6 +199,19 @@ def patched_card_run(self):
 
 CardDirective.run = patched_card_run
 
+def update_versions(app, docname, source):
+    # Inspired by: https://stackoverflow.com/questions/8821511
+    version_replace = {
+       "{{PANEL_VERSION}}" : PY_VERSION,
+       "{{BOKEH_VERSION}}" : BOKEH_VERSION,
+       "{{PYSCRIPT_VERSION}}" : "2022.12.1",
+       "{{PYODIDE_VERSION}}" : "0.23.4",
+    }
+
+    for old, new in version_replace.items():
+        source[0] = source[0].replace(old, new)
+
+
 def setup(app) -> None:
     try:
         from nbsite.paramdoc import param_formatter, param_skip
@@ -209,6 +220,7 @@ def setup(app) -> None:
     except ImportError:
         print('no param_formatter (no param?)')
 
+    app.connect('source-read', update_versions)
     nbbuild.setup(app)
     app.add_config_value('grid_item_link_domain', '', 'html')
 

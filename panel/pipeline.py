@@ -150,11 +150,11 @@ class Pipeline(Viewer):
         Whether parameters should be inherited between pipeline
         stages.""")
 
-    next_parameter = param.String(default=None, doc="""
+    next_parameter = param.String(default=None, allow_refs=False, doc="""
         Parameter name to watch to switch between different branching
         stages""")
 
-    ready_parameter = param.String(default=None, doc="""
+    ready_parameter = param.String(default=None, allow_refs=False, doc="""
         Parameter name to watch to check whether a stage is ready.""")
 
     show_header = param.Boolean(default=True, doc="""
@@ -165,7 +165,7 @@ class Pipeline(Viewer):
 
     previous = param.Action(default=lambda x: x.param.trigger('previous'))
 
-    _ignored_refs: ClassVar[Tuple[str]] = ('next_parameter', 'ready_parameter')
+    _ignored_refs: ClassVar[Tuple[str, ...]] = ('next_parameter', 'ready_parameter')
 
     def __init__(self, stages=[], graph={}, **params):
         try:

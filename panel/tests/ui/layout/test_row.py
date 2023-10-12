@@ -1,27 +1,24 @@
-import time
-
 import pytest
 
 from panel import Row, Spacer
-from panel.io.server import serve
+from panel.tests.util import serve_component
 
 pytestmark = pytest.mark.ui
 
-def test_row_scroll(page, port):
-    col = Row(
+def test_row_scroll(page):
+    row = Row(
         Spacer(styles=dict(background='red'), width=200, height=200),
         Spacer(styles=dict(background='green'), width=200, height=200),
         Spacer(styles=dict(background='blue'), width=200, height=200),
         scroll=True, width=420
     )
 
-    serve(col, port=port, threaded=True, show=False)
+    serve_component(page, row)
 
-    time.sleep(0.5)
-
-    page.goto(f"http://localhost:{port}")
-
-    bbox = page.locator(".bk-Row").bounding_box()
+    row_el = page.locator(".bk-Row")
+    bbox = row_el.bounding_box()
 
     assert bbox['width'] == 420
     assert bbox['height'] in (200, 215) # Ignore if browser hides empty scrollbar
+
+    assert 'scrollable-horizontal' in row_el.get_attribute('class')

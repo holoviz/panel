@@ -4,7 +4,7 @@ Welcome to the Upgrade Guide for Panel! When we make backward-incompatible chang
 
 ## Version 1.0
 
-The 1.0 release brings a wealth of improvements, including significant changes to the layout engine and an improved approach to handling CSS for individual components. These improvements are thanks to the new Bokeh 3.x releases, which received a bottom-up rewrite of layouts and CSS handling. These updates not only boost the performance but also elevate the customizability of your Panel apps.
+The 1.0 release brings a wealth of improvements compared to the 0.x series, including significant changes to the layout engine and an improved approach to handling CSS for individual components. These improvements are thanks to the new Bokeh 3.x releases, which received a bottom-up rewrite of layouts and CSS handling. These updates not only boost the performance but also elevate the customizability of your Panel apps.
 
 As with any major update, it's important to understand the implications of these changes for your existing applications. This guide is designed to walk you through the key updates introduced in Panel 1.0, the rationale behind them, and the critical considerations to consider while adapting your applications to this new version. We'll take you on a comprehensive journey, outlining how the new layout engine transforms how you create and manage your Panel apps and the impact of the enhanced CSS handling on your components.
 

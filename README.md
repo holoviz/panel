@@ -13,7 +13,7 @@ Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt
 <tbody>
 <tr>
 <td>Build Status</td>
-<td><a href="https://github.com/holoviz/panel/actions/workflows/test.yaml?query=branch%3Amain"><img src="https://github.com/holoviz/panel/workflows/pytest/badge.svg?query=branch%3Amain" alt="Linux/MacOS Build Status"></a></td>
+<td><a href="https://github.com/holoviz/panel/actions/workflows/test.yaml?query=branch%3Amain"><img src="https://github.com/holoviz/panel/workflows/tests/badge.svg?query=branch%3Amain" alt="Linux/MacOS Build Status"></a></td>
 </tr>
 <tr>
 <td>Coverage</td>
@@ -21,7 +21,7 @@ Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt
 </tr>
 <tr>
 <td>Latest dev release</td>
-<td><a href="https://github.com/holoviz/panel/tags"><img src="https://img.shields.io/github/v/tag/holoviz/panel.svg?label=tag&amp;colorB=11ccbb" alt="Github tag"></a> <a href="https://pyviz-dev.github.io/panel/"><img src="https://img.shields.io/website-up-down-green-red/https/pyviz-dev.github.io/panel.svg?label=dev%20website" alt="dev-site"></a></td>
+<td><a href="https://github.com/holoviz/panel/tags"><img src="https://img.shields.io/github/v/tag/holoviz/panel.svg?label=tag&amp;colorB=11ccbb" alt="Github tag"></a> <a href="https://holoviz-dev.github.io/panel/"><img src="https://img.shields.io/website-up-down-green-red/https/holoviz-dev.github.io/panel.svg?label=dev%20website" alt="dev-site"></a></td>
 </tr>
 <tr>
 <td>Latest release</td>
@@ -73,7 +73,7 @@ You can develop in [Jupyter Notebooks](http://jupyter.org) as well as editors li
 Panel provides a unique combination of deployment options. You can share your data and models as
 
 - a web application running on the [Tornado](https://www.tornadoweb.org/en/stable/) (default), [Flask](https://flask.palletsprojects.com/), [Django](https://www.djangoproject.com/) or [Fast API](https://fastapi.tiangolo.com/) web server.
-- a stand alone client side application powered by [Pyodide](https://pyodide.org/en/stable/) or [PyScript](https://pyscript.net/) via [`panel convert`](https://panel.holoviz.org/user_guide/Running_in_Webassembly.html).
+- a stand alone client side application powered by [Pyodide](https://pyodide.org/en/stable/) or [PyScript](https://pyscript.net/) via [`panel convert`](https://panel.holoviz.org/how_to/wasm/convert.html).
 - an interactive Jupyter notebook component.
 - a static `.html` web page, a `.gif` video, a `.png` image and more.
 
@@ -97,7 +97,7 @@ Head over to the [getting started guide](https://panel.holoviz.org/getting_start
 Panel can be installed on Linux, Windows, or Mac with ``conda``:
 
 ```bash
-conda install -c pyviz panel
+conda install panel
 ```
 
 or with ``pip``:

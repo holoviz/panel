@@ -1,11 +1,10 @@
 # Building Custom Components
 
- When building custom applications and dashboards it is frequently useful to extend Panel with custom components, which are specific to a particular application. Panel provides multiple mechanisms to extend and compose different components or even add entirely new components.
+When building custom applications and dashboards it is frequently useful to extend Panel with custom components to fit a specialized need. Panel provides multiple mechanisms to extend and compose different components or even add entirely new components.
 
-This Background page will focus on the building of entirely new components. Alternatively, to learn how to compose existing Panel components into an easily reusable unit that behaves like a native Panel component, see the [How-to > Combine Existing Components](../../how_to/components/custom_viewer.md) page.
+This Background page will focus on the building of entirely new components. Making full new components can be straightforward in the simplest cases, but it does require knowledge of web technologies like HTML, CSS, and JavaScript. Alternatively, to learn how to compose existing Panel components into an easily reusable unit that behaves like a native Panel component, see the [How-to > Combine Existing Components](../../how_to/custom_components/custom_viewer.md) page.
 
 ## ReactiveHTML components
-
 
 The `ReactiveHTML` provides bi-directional syncing of arbitrary HTML attributes and DOM properties with parameters on the subclass. This kind of component must declare a HTML template written using Javascript template variables (`${}`) and optionally Jinja2 syntax:
 
@@ -81,7 +80,7 @@ In certain cases it is necessary to explicitly declare event listeners on the DO
 Now we can use this name to declare set of `_dom_events` to subscribe to. The following will subscribe to change DOM events on the input element:
 
 ```python
-    _dom_events = {'input': ['change']}
+    _dom_events = {'custom_id': ['change']}
 ```
 
 Once subscribed the class may also define a method following the `_{node-id}_{event}` naming convention which will fire when the DOM event triggers, e.g. we could define a `_custom_id_change` method. Any such callback will be given a `DOMEvent` object as the first and only argument.
@@ -100,7 +99,7 @@ All scripts have a number of objects available in their namespace that allow acc
 * `state`:  An empty state dictionary which scripts can use to store state for the lifetime of the view.
 * `view`: Bokeh View class responsible for rendering the component. This provides access to method like `view.resize_layout()` to signal to Bokeh that  it should recompute the layout of the element.
 * `<node>`: All named DOM nodes in the HTML template, e.g. the `input` node in the example above.
-* `event`: If the script is invoked via an [inline callback](#Inline-callbacks) the corresponding event will be in the namespace
+* `event`: If the script is invoked via an [inline callback](#inline-callbacks) the corresponding event will be in the namespace
 
 #### Parameter callbacks
 
@@ -205,37 +204,43 @@ JSSlideshow(width=800, height=300)
 
 #### Child templates
 
-If we want to provide a template for the children of an HTML node we have to use Jinja2 syntax to loop over the parameter. The component will insert the loop variable `option` into each of the tags:
+If we want to provide a template for the children of an HTML node we have to use Jinja2 syntax to loop over the parameter. The component will insert the loop variable `item` into each of the tags:
 
 ```{pyodide}
-class Select(ReactiveHTML):
+class Cards(ReactiveHTML):
 
-    options = param.List(doc="Options to choose from.")
-
-    value = param.String(doc="Current selected option")
+    items = param.List(doc="Items to render into cards.")
 
     _template = """
-    <select id="select" value="${value}" style="width: ${model.width}px">
-      {% for option in options %}
-      <option id="option">${option}</option>
-      {% endfor %}
-    </select>
+    <div id="cards" class="cards">
+      {% for item in items -%}
+        <div id="card" class="card">${item}</div>
+      {%- endfor %}
+    </div>
     """
 
-    _dom_events = {'select': ['change']}
+    _stylesheets = ["""
+        .cards { display: flex; }
+        .card {
+          box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+          border-radius: 5px;
+          margin: 5px
+        }
+    """]
 
-select = Select(options=['A', 'B', 'C'])
-select
+cards = Cards(items=['Foo', 'Bar', 'Baz'])
+
+cards
 ```
 
-The loop body can declare any number of HTML tags to add for each child object, e.g. to add labels or icons, however the child object (like the `{{option}}` or `${option}`) must always be wrapped by an HTML element (e.g. `<option>`) which must declare an `id`. Depending on your use case you can wrap each child in any HTML element you require, allowing complex nested components to be declared. Note that the example above inserted the `options` as child objects but since they are strings we could use literals instead:
+The loop body can declare any number of HTML tags to add for each child object, e.g. to add labels or icons, however the child object (like the `{{item}}` or `${item}`) must always be wrapped by an HTML element (e.g. `<option>`) which must declare an `id`. Depending on your use case you can wrap each child in any HTML element you require, allowing complex nested components to be declared. Note that the example above inserted the `items` as child objects (i.e. as full Panel objects) but since they are strings we could use literals instead:
 
 ```html
-<select id="select" value="${value}" style="width: ${model.width}px">
-  {% for option in options %}
-  <option id="option-{{ loop.index0 }}">{{ option }}</option>
-  {% endfor %}
-</select>
+<div id="cards" class="cards">
+{% for item in items -%}
+    <div id="card" class="card">{{item}}</div>
+{%- endfor %}
+</div>
 ```
 
 When using child literals we have to ensure that each `<option>` DOM node has a unique ID manually by inserting the `loop.index0` value (which would otherwise be added automatically).

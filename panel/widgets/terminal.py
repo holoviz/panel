@@ -55,7 +55,7 @@ class TerminalSubprocess(param.Parameterized):
 
     _period = param.Integer(default=50, doc="Period length of _periodic_callback")
 
-    _terminal = param.Parameter(constant=True, doc="""
+    _terminal = param.Parameter(constant=True, allow_refs=False, doc="""
         The Terminal to which the subprocess is connected.""")
 
     _timeout_sec = param.Integer(default=0)

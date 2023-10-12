@@ -17,19 +17,19 @@ For a large variety of use cases we do not need complete control over the exact 
 
 These four areas behave very similarly to other Panel layout components and have list-like semantics. This means we can easily append new components into these areas. Unlike other layout components however, the contents of the areas is fixed once rendered. If you need a dynamic layout you should therefore insert a regular Panel layout component (e.g. a `Column` or `Row`) and modify it in place once added to one of the content areas.
 
-<img src="../assets/template_areas.png" style="margin-left: auto; margin-right: auto; display: block;"></img>
+<img src="../../_static/images/template_areas.png" style="margin-left: auto; margin-right: auto; display: block;"></img>
 
 ### Supported templates
 
 Panel ships with a number of these default themes built on different CSS frameworks:
 
-* **[``MaterialTemplate``](../reference/templates/Material.ipynb)**: Built on [Material Components for the web](https://material.io/develop/web/)
-* **[``BootstrapTemplate``](../reference/templates/Bootstrap.ipynb)**: Built on  [Bootstrap v4](https://getbootstrap.com/docs/4.0/getting-started/introduction/)
-* **[``VanillaTemplate``](../reference/templates/Vanilla.ipynb)**: Built using pure CSS without relying on any specific framework
-* **[``FastListTemplate``](../reference/templates/FastListTemplate.ipynb)**: Built on the [Fast UI](https://fast.design/) framework using a list-like API
-* **[``FastGridTemplate``](../reference/templates/FastGridTemplate.ipynb)**: Built on the [Fast UI](https://fast.design/) framework using grid-like API
-* **[``GoldenTemplate``](../reference/templates/GoldenLayout.ipynb)**: Built on the [Golden Layout](https://golden-layout.com/) framework
-
+* **[``MaterialTemplate``](../../reference/templates/Material.ipynb)**: Built on [Material Components for the web](https://material.io/develop/web/)
+* **[``BootstrapTemplate``](../../reference/templates/Bootstrap.ipynb)**: Built on  [Bootstrap v4](https://getbootstrap.com/docs/4.0/getting-started/introduction/)
+* **[``VanillaTemplate``](../../reference/templates/Vanilla.ipynb)**: Built using pure CSS without relying on any specific framework
+* **[``FastListTemplate``](../../reference/templates/FastListTemplate.ipynb)**: Built on the [Fast UI](https://fast.design/) framework using a list-like API
+* **[``FastGridTemplate``](../../reference/templates/FastGridTemplate.ipynb)**: Built on the [Fast UI](https://fast.design/) framework using grid-like API
+* **[``GoldenTemplate``](../../reference/templates/GoldenLayout.ipynb)**: Built on the [Golden Layout](https://golden-layout.com/) framework
+* **[``Slidestemplate``](../../reference/templates/Slides.ipynb)**: For presentations, built on [reveal.js](https://revealjs.com/) framework
 
 ## Related Resources
 - See [How-to > Apply Templates](../../how_to/templates/index.md) for template solutions.

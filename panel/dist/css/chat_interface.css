@@ -1,0 +1,13 @@
+@import url('chat_feed.css');
+
+.chat-feed-log {
+  height: 90%; /* prevent from overflowing and pushing down element */
+}
+
+.chat-feed-log-tabbed {
+  height: 85%; /* account for tabs */
+}
+
+.chat-interface {
+  border: 1px solid var(--panel-border-color, red);
+}

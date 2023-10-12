@@ -1,13 +1,13 @@
 # APIs
 
-Panel can be used to make a simple app in minutes, but you can also create complex apps with fully customized behavior and appearance or even flexibly integrate GUI support into long-term, large-scale software projects.
+Panel can be used to make a simple app in minutes, but you can also create complex apps with fully customized behavior and appearance. You can even flexibly integrate GUI support into long-term, large-scale software projects, while keeping your GUI code fully separate from the core code for your project.
 
-To accommodate these different ways of using Panel, multiple APIs are available. Nearly all of the functionality of Panel can be accessed using any of the APIs, but each makes certain things much easier than others.
+To accommodate these different ways of using Panel, multiple APIs are available. Nearly all of the functionality of Panel can be accessed using any of the APIs, but each makes certain things much, much easier than others.
 
-Let's go work through each API with an example app while pointing out the benefits and drawback along the way. Here's a quick summary:
-1. The ``Reactive API`` approach allows you to define a reactive function that is bound directly to a set of widgets using `pn.bind`. This API is efficient while still being explicit, flexible, and maintainable. We recommend this for most users, especially those that are new to Panel.
-2.  When writing libraries or other code that might be used independently of the actual GUI, a Parameterized class can be a great way to organize the code. In this case, dive into the ``Declarative API``.
-3. If you need low-level control or want to complement any of the other approaches, defining explicit callbacks can be done with the ``Callbacks API``.
+Let's work through each API with an example app, while pointing out the benefits and drawbacks along the way. Here's a quick summary:
+1. The ``Reactive API`` approach allows you to define a reactive function that is bound directly to a set of widgets using `pn.bind`. This API is efficient while still being explicit, flexible, and maintainable. We recommend this for most users and most projects, especially when you are first starting out.
+2.  When writing libraries or other code that might be used independently of the actual GUI, a Parameterized class can be a great way to organize your core code while still supporting an optional GUI interface. In this case, dive into the ``Declarative API``.
+3. If you need low-level control to implement fully arbitrary event handling, either alone or alongside any of the other approaches, defining explicit callbacks can be done with the ``Callbacks API``.
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -70,7 +70,7 @@ Build a stock explorer app using the reactive API.
 :link: examples/outliers_declarative
 :link-type: doc
 
-Build a simple outlier explorer app using the reactive API.
+Build a simple outlier explorer app using the declarative API.
 :::
 
 ::::

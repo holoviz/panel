@@ -6,7 +6,7 @@
     var(
       --vscode-notebook-cellEditorBackground,
       var(
-        --jp-layout-color2,
+        --jp-cell-editor-background,
         var(--pst-color-surface, var(--panel-surface-color))
       )
     )

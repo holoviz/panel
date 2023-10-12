@@ -104,9 +104,6 @@ class _state(param.Parameterized):
        Object with encrypt and decrypt methods to support encryption
        of secret variables including OAuth information.""")
 
-    loaded = param.Boolean(default=False, doc="""
-       Whether the page is fully loaded.""")
-
     rel_path = param.String(default='', readonly=True, doc="""
        Relative path from the current app being served to the root URL.
        If application is embedded in a different server via autoload.js
@@ -169,6 +166,7 @@ class _state(param.Parameterized):
     # An index of all currently active servers
     _servers: ClassVar[Dict[str, Tuple[Server, Viewable | BaseTemplate, List[Document]]]] = {}
     _threads: ClassVar[Dict[str, StoppableThread]] = {}
+    _server_config: ClassVar[WeakKeyDictionary[Any, Dict[str, Any]]] = WeakKeyDictionary()
 
     # Jupyter display handles
     _handles: ClassVar[Dict[str, [DisplayHandle, List[str]]]] = {}
@@ -179,6 +177,8 @@ class _state(param.Parameterized):
     # Dictionary of callbacks to be triggered on app load
     _onload: ClassVar[Dict[Document, Callable[[], None]]] = WeakKeyDictionary()
     _on_session_created: ClassVar[List[Callable[[BokehSessionContext], []]]] = []
+    _on_session_created_internal: ClassVar[List[Callable[[BokehSessionContext], []]]] = []
+    _on_session_destroyed: ClassVar[List[Callable[[BokehSessionContext], []]]] = []
     _loaded: ClassVar[WeakKeyDictionary[Document, bool]] = WeakKeyDictionary()
 
     # Module that was run during setup
@@ -241,6 +241,13 @@ class _state(param.Parameterized):
         thread = threading.current_thread()
         thread_id = thread.ident if thread else None
         return thread_id
+
+    @property
+    def _is_launching(self) -> bool:
+        curdoc = self.curdoc
+        if not curdoc or not curdoc.session_context:
+            return False
+        return not bool(curdoc.session_context.server_context.sessions)
 
     @property
     def _is_pyodide(self) -> bool:
@@ -432,13 +439,17 @@ class _state(param.Parameterized):
         else:
             self.log(f'Exception of unknown type raised: {exception}', level='error')
 
+    def _register_session_destroyed(self, session_context: BokehSessionContext):
+        for cb in self._on_session_destroyed:
+            session_context._document.on_session_destroyed(cb)
+
     #----------------------------------------------------------------
     # Public Methods
     #----------------------------------------------------------------
 
     def as_cached(self, key: str, fn: Callable[[], T], ttl: int = None, **kwargs) -> T:
         """
-        Caches the return value of a function, memoizing on the given
+        Caches the return value of a function globally across user sessions, memoizing on the given
         key and supplied keyword arguments.
 
         Note: Keyword arguments must be hashable.
@@ -672,6 +683,13 @@ class _state(param.Parameterized):
         """
         Callback that is triggered when a session is created.
         """
+        if self.curdoc and self.curdoc.session_context:
+            raise RuntimeError(
+                "Cannot register session creation callback from within a session. "
+                "If running a Panel application from the CLI set up the callback "
+                "in a --setup script, if starting a server dynamically set it up "
+                "before starting the server."
+            )
         self._on_session_created.append(callback)
 
     def on_session_destroyed(self, callback: Callable[[BokehSessionContext], None]) -> None:
@@ -682,10 +700,9 @@ class _state(param.Parameterized):
         if doc:
             doc.on_session_destroyed(callback)
         else:
-            raise RuntimeError(
-                "Could not add session destroyed callback since no "
-                "document to attach it to could be found."
-            )
+            if self._register_session_destroyed not in self._on_session_created:
+                self._on_session_created.append(self._register_session_destroyed)
+            self._on_session_destroyed.append(callback)
 
     def publish(
         self, endpoint: str, parameterized: param.Parameterized,
@@ -737,6 +754,8 @@ class _state(param.Parameterized):
             self._thread_pool = None
         self._sessions.clear()
         self._session_key_funcs.clear()
+        self._on_session_created.clear()
+        self._on_session_destroyed.clear()
 
     def schedule_task(
         self, name: str, callback: Callable[[], None], at: Tat =None,
@@ -959,25 +978,15 @@ class _state(param.Parameterized):
     def location(self) -> Location | None:
         if self.curdoc and self.curdoc not in self._locations:
             from .location import Location
-            loc = self._locations[self.curdoc] = Location()
+            if self.curdoc.session_context:
+                loc = Location.from_request(self.curdoc.session_context.request)
+            else:
+                loc = Location()
+            self._locations[self.curdoc] = loc
         elif self.curdoc is None:
             loc = self._location
         else:
             loc = self._locations.get(self.curdoc) if self.curdoc else None
-        if loc is None:
-            return loc
-
-        if '?' in self.base_url:
-            try:
-                loc.search = f'?{self.base_url.split("?")[-1].strip("/")}'
-            except Exception:
-                pass
-        if '#' in self.base_url:
-            try:
-                loc.hash = f'#{self.base_url.split("#")[-1].strip("/")}'
-            except Exception:
-                pass
-
         return loc
 
     @property
@@ -990,7 +999,12 @@ class _state(param.Parameterized):
         from ..config import config
         if config.notifications and self.curdoc and self.curdoc.session_context and self.curdoc not in self._notifications:
             from .notifications import NotificationArea
-            self._notifications[self.curdoc] = notifications = NotificationArea()
+            js_events = {}
+            if config.ready_notification:
+                js_events['document_ready'] = {'type': 'success', 'message': config.ready_notification, 'duration': 3000}
+            if config.disconnect_notification:
+                js_events['connection_lost'] = {'type': 'error', 'message': config.disconnect_notification}
+            self._notifications[self.curdoc] = notifications = NotificationArea(js_events=js_events)
             return notifications
         elif self.curdoc is None or self.curdoc.session_context is None:
             return self._notification

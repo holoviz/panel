@@ -13,6 +13,7 @@
     --design-surface-text-color,
     var(--panel-on-surface-color)
   );
+  --bokeh-base-font: 'Lato', sans-serif;
 }
 
 html {
@@ -42,7 +43,7 @@ body {
   background-color: var(--background-color);
   height: 100vh;
   margin: 0px;
-  font-family: 'Lato', sans-serif;
+  font-family: var(--bokeh-base-font);
 }
 
 #container {
@@ -60,6 +61,8 @@ body {
 }
 
 #header-items {
+  display: flex;
+  flex-direction: row;
   padding-left: 15px;
   width: 100%;
 }

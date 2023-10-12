@@ -12,13 +12,14 @@ from typing import (
 
 import param
 
-from bokeh.models import Column as BkColumn, Row as BkRow
+from bokeh.models import Row as BkRow
 
 from ..io.model import hold
 from ..io.resources import CDN_DIST
 from ..io.state import state
+from ..models import Column as PnColumn
 from ..reactive import Reactive
-from ..util import param_name, param_reprs
+from ..util import param_name, param_reprs, param_watchers
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -91,7 +92,9 @@ class Panel(Reactive):
         obj_key = self._property_mapping['objects']
         if obj_key in msg:
             old = events['objects'].old
-            msg[obj_key] = children = self._get_objects(model, old, doc, root, comm)
+            children, old_children = self._get_objects(model, old, doc, root, comm)
+            msg[obj_key] = children
+
             msg.update(self._compute_sizing_mode(
                 children,
                 dict(
@@ -102,18 +105,21 @@ class Panel(Reactive):
                     margin=msg.get('margin', model.margin)
                 )
             ))
+        else:
+            old_children = None
 
         with hold(doc):
             update = Panel._batch_update
             Panel._batch_update = True
             try:
-                super()._update_model(events, msg, root, model, doc, comm)
-                if update:
-                    return
-                from ..io import state
-                ref = root.ref['id']
-                if ref in state._views and preprocess:
-                    state._views[ref][0]._preprocess(root)
+                with doc.models.freeze():
+                    super()._update_model(events, msg, root, model, doc, comm)
+                    if update:
+                        return
+                    from ..io import state
+                    ref = root.ref['id']
+                    if ref in state._views and preprocess:
+                        state._views[ref][0]._preprocess(root, self, old_children)
             finally:
                 Panel._batch_update = update
 
@@ -130,7 +136,7 @@ class Panel(Reactive):
         models and cleaning up any dropped objects.
         """
         from ..pane.base import RerenderError, panel
-        new_models = []
+        new_models, old_models = [], []
         for i, pane in enumerate(self.objects):
             pane = panel(pane)
             self.objects[i] = pane
@@ -144,13 +150,17 @@ class Panel(Reactive):
         for i, pane in enumerate(self.objects):
             if pane in old_objects and ref in pane._models:
                 child, _ = pane._models[root.ref['id']]
+                old_models.append(child)
             else:
                 try:
                     child = pane._get_model(doc, root, model, comm)
-                except RerenderError:
+                except RerenderError as e:
+                    if e.layout is not None and e.layout is not self:
+                        raise e
+                    e.layout = None
                     return self._get_objects(model, current_objects[:i], doc, root, comm)
             new_models.append(child)
-        return new_models
+        return new_models, old_models
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
@@ -161,7 +171,7 @@ class Panel(Reactive):
         model = self._bokeh_model()
         root = root or model
         self._models[root.ref['id']] = (model, parent)
-        objects = self._get_objects(model, [], doc, root, comm)
+        objects, _ = self._get_objects(model, [], doc, root, comm)
         props = self._get_properties(doc)
         props[self._property_mapping['objects']] = objects
         props.update(self._compute_sizing_mode(objects, props))
@@ -204,38 +214,49 @@ class Panel(Reactive):
         # Iterate over children and determine responsiveness along
         # each axis, scaling and the widths of each component.
         heights, widths = [], []
-        all_expand_width, all_expand_height, expand_width, expand_height, scale = True, True, False, False, False
+        all_expand_height, expand_width, expand_height, scale = True, False, False, False
         for child in children:
-            if child.sizing_mode and 'scale' in child.sizing_mode:
+            smode = child.sizing_mode
+            if smode and 'scale' in smode:
                 scale = True
-            if child.sizing_mode in ('stretch_width', 'stretch_both', 'scale_width', 'scale_both'):
-                expand_width = True
+
+            width_expanded = smode in ('stretch_width', 'stretch_both', 'scale_width', 'scale_both')
+            height_expanded = smode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both')
+            expand_width |= width_expanded
+            expand_height |= height_expanded
+            if width_expanded:
+                width = child.min_width
             else:
-                width = child.width or child.min_width
-                if width:
-                    if isinstance(margin, tuple):
-                        if len(margin) == 2:
-                            width += margin[1]*2
-                        else:
-                            width += margin[1] + margin[3]
+                width = child.width
+                if not child.width:
+                    width = child.min_width
+            if width:
+                if isinstance(margin, tuple):
+                    if len(margin) == 2:
+                        width += margin[1]*2
                     else:
-                        width += margin*2
-                    widths.append(width)
-                all_expand_width = False
-            if child.sizing_mode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both'):
-                expand_height = True
+                        width += margin[1] + margin[3]
+                else:
+                    width += margin*2
+                widths.append(width)
+
+            if height_expanded:
+                height = child.min_height
             else:
-                height = child.height or child.min_height
+                height = child.height
                 if height:
-                    if isinstance(margin, tuple):
-                        if len(margin) == 2:
-                            height += margin[0]*2
-                        else:
-                            height += margin[0] + margin[2]
+                    all_expand_height = False
+                else:
+                    height = child.min_height
+            if height:
+                if isinstance(margin, tuple):
+                    if len(margin) == 2:
+                        height += margin[0]*2
                     else:
-                        height += margin*2
-                    heights.append(height)
-                all_expand_height = False
+                        height += margin[0] + margin[2]
+                else:
+                    height += margin*2
+                heights.append(height)
 
         # Infer new sizing mode based on children
         mode = 'scale' if scale else 'stretch'
@@ -257,15 +278,21 @@ class Panel(Reactive):
 
         properties = {'sizing_mode': sizing_mode}
         if ((sizing_mode.endswith('_width') or sizing_mode.endswith('_both')) and
-            not all_expand_width and widths and 'min_width' not in properties):
+            widths and 'min_width' not in properties):
             width_op = max if self._direction == 'vertical' else sum
             min_width = width_op(widths)
-            properties['min_width'] = min(min_width, properties.get('max_width') or 0)
+            op_widths = [min_width]
+            if 'max_width' in properties:
+                op_widths.append(properties['max_width'])
+            properties['min_width'] = min(op_widths)
         if ((sizing_mode.endswith('_height') or sizing_mode.endswith('_both')) and
-            not all_expand_height and heights and 'min_height' not in properties):
+            heights and 'min_height' not in properties):
             height_op = max if self._direction == 'horizontal' else sum
             min_height = height_op(heights)
-            properties['min_height'] = min(min_height, properties.get('max_height') or 0)
+            op_heights = [min_height]
+            if 'max_height' in properties:
+                op_heights.append(properties['max_height'])
+            properties['min_height'] = min(op_heights)
         return properties
 
     #----------------------------------------------------------------
@@ -504,7 +531,7 @@ class NamedListLike(param.Parameterized):
         self.param.watch(self._update_names, 'objects')
         # ALERT: Ensure that name update happens first, should be
         #        replaced by watch precedence support in param
-        self._param_watchers['objects']['value'].reverse()
+        param_watchers(self)['objects']['value'].reverse()
 
     def _to_object_and_name(self, item):
         from ..pane import panel
@@ -754,7 +781,8 @@ class ListPanel(ListLike, Panel):
                                  "not both." % type(self).__name__)
             params['objects'] = [panel(pane) for pane in objects]
         elif 'objects' in params:
-            params['objects'] = [panel(pane) for pane in params['objects']]
+            if not hasattr(params['objects'], '_dinfo'):
+                params['objects'] = [panel(pane) for pane in params['objects']]
         super(Panel, self).__init__(**params)
 
     @property
@@ -765,11 +793,14 @@ class ListPanel(ListLike, Panel):
         )
 
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        scroll = params.pop('scroll', None)
-        css_classes = self.css_classes or []
-        if scroll:
-            params['css_classes'] = css_classes + ['scrollable']
-        elif scroll == False:
+        if 'scroll' in params:
+            scroll = params['scroll']
+            css_classes = params.get('css_classes', self.css_classes)
+            if scroll:
+                if self._direction is not None:
+                    css_classes += [f'scrollable-{self._direction}']
+                else:
+                    css_classes += ['scrollable']
             params['css_classes'] = css_classes
         return super()._process_param_change(params)
 
@@ -798,10 +829,13 @@ class NamedListPanel(NamedListLike, Panel):
 
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
         if 'scroll' in params:
-            scroll = params.pop('scroll')
-            css_classes = list(self.css_classes or [])
+            scroll = params['scroll']
+            css_classes = params.get('css_classes', self.css_classes)
             if scroll:
-                css_classes += ['scrollable']
+                if self._direction is not None:
+                    css_classes += [f'scrollable-{self._direction}']
+                else:
+                    css_classes += ['scrollable']
             params['css_classes'] = css_classes
         return super()._process_param_change(params)
 
@@ -852,11 +886,47 @@ class Column(ListPanel):
     >>> pn.Column(some_widget, some_pane, some_python_object)
     """
 
-    _bokeh_model: ClassVar[Type[Model]] = BkColumn
+    scroll_position = param.Integer(default=None, doc="""
+        Current scroll position of the Column. Setting this value
+        will update the scroll position of the Column. Setting to
+        0 will scroll to the top.""")
+
+    auto_scroll_limit = param.Integer(bounds=(0, None), doc="""
+        Max pixel distance from the latest object in the Column to
+        activate automatic scrolling upon update. Setting to 0
+        disables auto-scrolling.""")
+
+    scroll_button_threshold = param.Integer(bounds=(0, None), doc="""
+        Min pixel distance from the latest object in the Column to
+        display the scroll button. Setting to 0
+        disables the scroll button.""")
+
+    view_latest = param.Boolean(default=False, doc="""
+        Whether to scroll to the latest object on init. If not
+        enabled the view will be on the first object.""")
+
+    _bokeh_model: ClassVar[Type[Model]] = PnColumn
 
     _direction = 'vertical'
 
     _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/listpanel.css']
+
+    @param.depends(
+        "scroll_position",
+        "auto_scroll_limit",
+        "scroll_button_threshold",
+        "view_latest",
+        watch=True,
+        on_init=True
+    )
+    def _set_scrollable(self):
+        self.scroll = (
+            self.scroll or
+            bool(self.scroll_position) or
+            bool(self.auto_scroll_limit) or
+            bool(self.scroll_button_threshold) or
+            self.view_latest
+        )
 
 
 class WidgetBox(ListPanel):
@@ -902,7 +972,7 @@ class WidgetBox(ListPanel):
 
     @property
     def _bokeh_model(self) -> Type[Model]: # type: ignore
-        return BkRow if self.horizontal else BkColumn
+        return BkRow if self.horizontal else PnColumn
 
     @property
     def _direction(self):

@@ -6,6 +6,7 @@
   --slider-size: 4px;
   --padding-vertical: 10px;
   --mdc-on-surface: inherit;
+  --current-background-color: var(--mdc-theme-background);
 }
 
 :host-context(.mdc-top-app-bar) .bk-menu {
@@ -30,10 +31,13 @@
 
 :host(.mdc-card),
 :host(.accordion) {
+  --current-background-color: var(--mdc-theme-background);
   color: var(--mdc-theme-on-surface);
   background-color: var(--mdc-theme-background);
-  box-shadow: rgb(0 0 0 / 20%) 0px 2px 1px -1px,
-    rgb(0 0 0 / 14%) 0px 1px 1px 0px, rgb(0 0 0 / 12%) 0px 1px 3px 0px;
+  box-shadow:
+    rgb(0 0 0 / 20%) 0px 2px 1px -1px,
+    rgb(0 0 0 / 14%) 0px 1px 1px 0px,
+    rgb(0 0 0 / 12%) 0px 1px 3px 0px;
 }
 
 :host(.accordion) button,
@@ -43,10 +47,11 @@
 
 .card-header,
 .accordion-header {
-  background-color: var(--mdc-theme-surface);
-  border: unset;
+  --current-background-color: var(--mdc-theme-surface);
+  background-color: var(--current-background-color);
   border-radius: 0;
-  border-bottom: 0.2px solid var(--mdc-theme-surface);
+  border-bottom: 0.2px solid var(--current-background-color);
+  outline: unset;
   padding: 0px 6px;
 }
 
@@ -177,8 +182,10 @@ button.mdc-button.mdc-card-button {
   background-color: var(--mdc-theme-primary);
   border: 0px;
   border-radius: 50%;
-  box-shadow: rgb(0 0 0 / 20%) 0px 3px 1px -2px,
-    rgb(0 0 0 / 14%) 0px 2px 2px 0px, rgb(0 0 0 / 12%) 0px 1px 5px 0px;
+  box-shadow:
+    rgb(0 0 0 / 20%) 0px 3px 1px -2px,
+    rgb(0 0 0 / 14%) 0px 2px 2px 0px,
+    rgb(0 0 0 / 12%) 0px 1px 5px 0px;
 }
 
 .noUi-handle:hover,
@@ -217,6 +224,10 @@ button.mdc-button.mdc-card-button {
   color: var(--design-secondary-text-color, var(--panel-on-secondary-color));
 }
 
+.bk-input-group {
+  margin-top: 0.5rem;
+}
+
 .bk-input:not([type='file']) {
   border-radius: 4px;
   height: 1.4375em;
@@ -225,7 +236,7 @@ button.mdc-button.mdc-card-button {
 }
 
 textarea.bk-input:not([type='file']) {
-  padding: 12px 10px;
+  padding: 0.5em 10px;
 }
 
 .bk-input[disabled] {
@@ -248,21 +259,17 @@ textarea.bk-input:not([type='file']) {
 .bk-input-group > label:has(+ .bk-input-container),
 .bk-input-group > label:has(+ .bk-spin-wrapper),
 .bk-input-group > label:has(+ textarea) {
-  backdrop-filter: blur(1000px);
+  background-color: var(--current-background-color);
   position: absolute;
   left: 0;
   top: 0;
-  transform: translate(10px, -5px) scale(0.75);
+  transform: scale(0.75);
   line-height: 1.4375em;
   font-size: 1rem;
   transform-origin: top left;
   z-index: 1;
   padding: 0 10px;
-  margin: -2px 0;
-}
-
-.bk-input-group > label:has(+ select) {
-  margin: 6px 0;
+  margin: 0rem 0.5rem;
 }
 
 /* Number input */
@@ -285,11 +292,15 @@ select:not([multiple]).bk-input,
 select:not([size]).bk-input {
   background-image: url('data:image/svg+xml;utf8,<svg version="1.1" viewBox="0 0 25 20" xmlns="http://www.w3.org/2000/svg"><path d="M 0,0 25,0 12.5,20 Z" fill="black" /></svg>');
   min-height: 1.4375em;
-  padding: 12px 10px;
+  padding: 8px 10px;
 }
 
 select[multiple].bk-input {
   padding: 10px 10px;
+}
+
+.bk-input-group select.bk-input {
+  margin: 0;
 }
 
 select.bk-input:focus {
@@ -405,7 +416,8 @@ input[type='checkbox'] + span {
 .body > .knob {
   background-color: var(--mdc-theme-primary);
   border-radius: 50%;
-  transition: box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+  transition:
+    box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
     left 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
     bottom 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
 }

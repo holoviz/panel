@@ -5,7 +5,7 @@ import os
 import pathlib
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Literal, Tuple, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Literal, Tuple, Type,
 )
 
 import param
@@ -115,7 +115,10 @@ class Design(param.Parameterized, ResourceComponent):
         theme = self._themes[theme]()
         super().__init__(theme=theme, **params)
 
-    def _reapply(self, viewable: Viewable, root: Model, isolated: bool=True, cache=None) -> None:
+    def _reapply(
+        self, viewable: Viewable, root: Model, old_models: List[Model] = None,
+        isolated: bool=True, cache=None, document=None
+    ) -> None:
         ref = root.ref['id']
         for o in viewable.select():
             if o.design and not isolated:
@@ -123,16 +126,19 @@ class Design(param.Parameterized, ResourceComponent):
             elif not o.design and not isolated:
                 o._design = self
 
-            self._apply_modifiers(o, ref, self.theme, isolated, cache)
+            if old_models and ref in o._models:
+                if o._models[ref][0] in old_models:
+                    continue
+            self._apply_modifiers(o, ref, self.theme, isolated, cache, document)
 
-    def _apply_hooks(self, viewable: Viewable, root: Model) -> None:
+    def _apply_hooks(self, viewable: Viewable, root: Model, changed: Viewable, old_models=None) -> None:
         from ..io.state import state
         if root.document in state._stylesheets:
             cache = state._stylesheets[root.document]
         else:
             state._stylesheets[root.document] = cache = {}
         with root.document.models.freeze():
-            self._reapply(viewable, root, isolated=False, cache=cache)
+            self._reapply(changed, root, old_models, isolated=False, cache=cache, document=root.document)
 
     def _wrapper(self, viewable):
         return viewable
@@ -216,20 +222,23 @@ class Design(param.Parameterized, ResourceComponent):
             modifiers['stylesheets'] = stylesheets
 
     @classmethod
-    def _apply_modifiers(cls, viewable: Viewable, mref: str, theme: Theme, isolated: bool, cache={}) -> None:
+    def _apply_modifiers(
+        cls, viewable: Viewable, mref: str, theme: Theme, isolated: bool,
+        cache={}, document=None
+    ) -> None:
         if mref not in viewable._models:
             return
         model, _ = viewable._models[mref]
         modifiers, child_modifiers = cls._get_modifiers(viewable, theme, isolated)
-        cls._patch_modifiers(model.document, modifiers, cache)
+        cls._patch_modifiers(model.document or document, modifiers, cache)
         if child_modifiers:
             for child in viewable:
-                cls._apply_params(child, mref, child_modifiers)
+                cls._apply_params(child, mref, child_modifiers, document)
         if modifiers:
-            cls._apply_params(viewable, mref, modifiers)
+            cls._apply_params(viewable, mref, modifiers, document)
 
     @classmethod
-    def _apply_params(cls, viewable, mref, modifiers):
+    def _apply_params(cls, viewable, mref, modifiers, document=None):
         # Apply params never sync the modifier values with the Viewable
         # This should not be a concern since most `Layoutable` properties,
         # e.g. stylesheets or sizing_mode, are not synced between the
@@ -245,7 +254,7 @@ class Design(param.Parameterized, ResourceComponent):
         if 'stylesheets' in modifiers:
             params['stylesheets'] = modifiers['stylesheets'] + viewable.stylesheets
         props = viewable._process_param_change(params)
-        doc = model.document
+        doc = model.document or document
         if doc and 'dist_url' in doc._template_variables:
             dist_url = doc._template_variables['dist_url']
         else:
@@ -253,6 +262,25 @@ class Design(param.Parameterized, ResourceComponent):
         for stylesheet in props.get('stylesheets', []):
             if isinstance(stylesheet, ImportedStyleSheet):
                 patch_stylesheet(stylesheet, dist_url)
+
+        # Do not update stylesheets if they match
+        if 'stylesheets' in props and len(model.stylesheets) == len(props['stylesheets']):
+            all_match = True
+            stylesheets = []
+            for st1, st2 in zip(model.stylesheets, props['stylesheets']):
+                if st1 == st2:
+                    stylesheets.append(st1)
+                    continue
+                elif type(st1) is type(st2) and isinstance(st1, ImportedStyleSheet) and st1.url == st2.url:
+                    stylesheets.append(st1)
+                    continue
+                stylesheets.append(st2)
+                all_match = False
+            if all_match:
+                del props['stylesheets']
+            else:
+                props['stylesheets'] = stylesheets
+
         model.update(**props)
         if hasattr(viewable, '_synced_properties') and 'objects' in viewable._property_mapping:
             obj_key = viewable._property_mapping['objects']

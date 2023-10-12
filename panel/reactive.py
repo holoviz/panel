@@ -20,7 +20,6 @@ from typing import (
     Tuple, Type, Union,
 )
 
-import bleach
 import numpy as np
 import param
 
@@ -28,7 +27,7 @@ from bokeh.core.property.descriptors import UnsetValueError
 from bokeh.model import DataModel
 from bokeh.models import ImportedStyleSheet
 from packaging.version import Version
-from param.parameterized import ParameterizedMetaclass, Watcher
+from param.parameterized import ParameterizedMetaclass, Watcher, _syncing
 
 from .io.document import unlocked
 from .io.model import hold
@@ -42,8 +41,8 @@ from .models.reactive_html import (
     DOMEvent, ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser,
 )
 from .util import (
-    BOKEH_JS_NAT, classproperty, edit_readonly, escape, eval_function,
-    extract_dependencies, updating,
+    BOKEH_JS_NAT, HTML_SANITIZER, classproperty, edit_readonly, escape,
+    updating,
 )
 from .viewable import Layoutable, Renderable, Viewable
 
@@ -187,7 +186,9 @@ class Syncable(Renderable):
             properties['min_height'] = properties['height']
         if 'stylesheets' in properties:
             from .config import config
-            stylesheets = [loading_css(), f'{CDN_DIST}css/loading.css']
+            stylesheets = [loading_css(
+                config.loading_spinner, config.loading_color, config.loading_max_height
+            ), f'{CDN_DIST}css/loading.css']
             stylesheets += process_raw_css(config.raw_css)
             stylesheets += config.css_files
             stylesheets += [
@@ -376,7 +377,8 @@ class Syncable(Renderable):
         try:
             with edit_readonly(self):
                 self_events = {k: v for k, v in events.items() if '.' not in k}
-                self.param.update(**self_events)
+                with _syncing(self, list(self_events)):
+                    self.param.update(**self_events)
             for k, v in self_events.items():
                 if '.' not in k:
                     continue
@@ -385,7 +387,8 @@ class Syncable(Renderable):
                 for sp in subpath:
                     obj = getattr(obj, sp)
                 with edit_readonly(obj):
-                    obj.param.update(**{p: v})
+                    with _syncing(obj, [p]):
+                        obj.param.update(**{p: v})
         except Exception:
             if len(events)>1:
                 msg_end = f" changing properties {pformat(events)} \n"
@@ -525,7 +528,7 @@ class Reactive(Syncable, Viewable):
     """
 
     # Parameter values which should not be treated like references
-    _ignored_refs: ClassVar[List[str]] = []
+    _ignored_refs: ClassVar[Tuple[str,...]] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'design': None, 'loading': None
@@ -533,93 +536,11 @@ class Reactive(Syncable, Viewable):
 
     __abstract = True
 
-    def __init__(self, **params):
-        params, refs = self._extract_refs(params)
+    def __init__(self, refs=None, **params):
+        for name, pobj in self.param.objects('existing').items():
+            if name not in self._param__private.explicit_no_refs:
+                pobj.allow_refs = True
         super().__init__(**params)
-        self._refs = refs
-        self._setup_refs(refs)
-
-    def _resolve_ref(self, pname, value):
-        from .depends import param_value_if_widget
-        ref = None
-        value = param_value_if_widget(value)
-        if isinstance(value, param.Parameter):
-            ref = value
-            value = getattr(value.owner, value.name)
-        elif hasattr(value, '_dinfo'):
-            ref = value
-            value = eval_function(value)
-        return ref, value
-
-    def _validate_ref(self, pname, value):
-        pobj = self.param[pname]
-        pobj._validate(value)
-        if isinstance(pobj, param.Dynamic) and callable(value) and hasattr(value, '_dinfo'):
-            raise ValueError(
-                'Dynamic parameters should not capture functions with dependencies.'
-            )
-
-    def _extract_refs(self, params):
-        processed, refs = {}, {}
-        for pname, value in params.items():
-            if pname not in self.param or pname in self._ignored_refs:
-                processed[pname] = value
-                continue
-
-            # Only consider extracting reference if the provided value is not
-            # a valid value for the parameter (or no validation was defined)
-            try:
-                self._validate_ref(pname, value)
-            except Exception:
-                pass
-            else:
-                pobj = self.param[pname]
-                if type(pobj) is not param.Parameter:
-                    processed[pname] = value
-                    continue
-
-            # Resolve references, allowing for Widget, Parameter and
-            # objects with dependencies
-            ref, value = self._resolve_ref(pname, value)
-            if ref is not None:
-                refs[pname] = ref
-            processed[pname] = value
-        return processed, refs
-
-    def _sync_refs(self, *events):
-        from .config import config
-        if config.loading_indicator:
-            self.loading = True
-        updates = {}
-        for pname, p in self._refs.items():
-            if isinstance(p, param.Parameter):
-                deps = (p,)
-            else:
-                deps = extract_dependencies(p)
-            # Skip updating value if dependency has not changed
-            if not any((dep.owner is e.obj and dep.name == e.name) for dep in deps for e in events):
-                continue
-            if isinstance(p, param.Parameter):
-                updates[pname] = getattr(p.owner, p.name)
-            else:
-                updates[pname] = eval_function(p)
-        if config.loading_indicator:
-            updates['loading'] = False
-        with param.edit_constant(self):
-            self.param.update(updates)
-
-    def _setup_refs(self, refs):
-        groups = defaultdict(list)
-        for pname, p in refs.items():
-            if isinstance(p, param.Parameter):
-                groups[p.owner].append(p.name)
-            else:
-                for sp in extract_dependencies(p):
-                    groups[sp.owner].append(sp.name)
-        for owner, pnames in groups.items():
-            self._internal_callbacks.append(
-                owner.param.watch(self._sync_refs, list(set(pnames)))
-            )
 
     #----------------------------------------------------------------
     # Private API
@@ -658,7 +579,7 @@ class Reactive(Syncable, Viewable):
     def _update_properties(self, *events: param.parameterized.Event, doc: Document) -> Dict[str, Any]:
         params, _ = self._design.params(self, doc) if self._design else ({}, None)
         changes = {event.name: event.new for event in events}
-        if 'stylesheets' in changes and 'stylsheets' in params:
+        if 'stylesheets' in changes and 'stylesheets' in params:
             changes['stylesheets'] = params['stylesheets'] + changes['stylesheets']
         return self._process_param_change(changes)
 
@@ -901,7 +822,7 @@ class SyncableData(Reactive):
     with the frontend via a ColumnDataSource.
     """
 
-    selection = param.List(default=[], class_=int, doc="""
+    selection = param.List(default=[], item_type=int, doc="""
         The currently selected rows in the data.""")
 
     # Parameters which when changed require an update of the data
@@ -1710,7 +1631,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             ):
                 continue
             if isinstance(v, str):
-                v = bleach.clean(v)
+                v = HTML_SANITIZER.clean(v)
             data_params[k] = v
         html, nodes, self._attrs = self._get_template()
         params.update({
@@ -1980,7 +1901,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             if prop in child_params:
                 new_children[prop] = prop
                 if self._child_config.get(prop) == 'literal':
-                    data_msg[prop] = bleach.clean(v)
+                    data_msg[prop] = HTML_SANITIZER.clean(v)
                 elif prop in model.data.properties():
                     data_msg[prop] = v
             elif prop in list(Reactive.param)+['events']:
@@ -1993,7 +1914,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             ):
                 continue
             elif isinstance(v, str):
-                data_msg[prop] = bleach.clean(v)
+                data_msg[prop] = HTML_SANITIZER.clean(v)
             else:
                 data_msg[prop] = v
         if new_children:
