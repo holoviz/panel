@@ -1028,7 +1028,10 @@ class _state(param.Parameterized):
         refresh_token = self._decode_cookie('refresh_token')
         if not refresh_token:
             return
-        decoded_token = decode_token(refresh_token)
+        try:
+            decoded_token = decode_token(refresh_token)
+        except ValueError:
+            return refresh_token
         if decoded_token['exp'] <= dt.datetime.now(dt.timezone.utc).timestamp():
             return None
         return refresh_token

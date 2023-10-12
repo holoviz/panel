@@ -40,6 +40,71 @@ def test_basic_auth(py_file, page, prefix):
 
 
 @unix_only
+@pytest.mark.skipif('OKTA_OAUTH_KEY' not in os.environ, reason='Okta credentials not available')
+def test_okta_oauth(py_file, page):
+    app = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
+    write_file(app, py_file.file)
+
+    app_name = os.path.basename(py_file.name)[:-3]
+
+    cookie_secret = os.environ['OAUTH_COOKIE_SECRET']
+    encryption_key = os.environ['OAUTH_ENCRYPTION_KEY']
+    oauth_key = os.environ['OKTA_OAUTH_KEY']
+    oauth_secret = os.environ['OKTA_OAUTH_SECRET']
+    extra_params = os.environ['OKTA_OAUTH_EXTRA_PARAMS']
+    okta_user = os.environ['OKTA_OAUTH_USER']
+    okta_password = os.environ['OKTA_OAUTH_PASSWORD']
+    cmd = [
+        "--port", "5006", "--oauth-provider", "okta", "--oauth-key", oauth_key,
+        "--oauth-secret", oauth_secret, "--cookie-secret", cookie_secret,
+        "--oauth-encryption-key", encryption_key, "--oauth-extra-params", extra_params,
+        py_file.name
+    ]
+    with run_panel_serve(cmd) as p:
+        port = wait_for_port(p.stdout)
+        page.goto(f"http://localhost:{port}/{app_name}")
+
+        page.locator('input[name="username"]').fill(okta_user)
+        page.locator('input[name="password"]').fill(okta_password)
+        page.locator('input[type="submit"]').click(force=True)
+
+        expect(page.locator('.markdown')).to_have_text(okta_user, timeout=10000)
+
+
+@unix_only
+@pytest.mark.skipif('AZURE_OAUTH_KEY' not in os.environ, reason='Azure credentials not available')
+def test_azure_oauth(py_file, page):
+    app = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
+    write_file(app, py_file.file)
+
+    app_name = os.path.basename(py_file.name)[:-3]
+
+    oauth_key = os.environ['AZURE_OAUTH_KEY']
+    oauth_secret = os.environ['AZURE_OAUTH_SECRET']
+    cookie_secret = os.environ['OAUTH_COOKIE_SECRET']
+    azure_user = os.environ['AZURE_OAUTH_USER']
+    azure_password = os.environ['AZURE_OAUTH_PASSWORD']
+    encryption_key = os.environ['OAUTH_ENCRYPTION_KEY']
+    cmd = [
+        "--port", "5006", "--oauth-provider", "azure", "--oauth-key", oauth_key,
+        "--oauth-secret", oauth_secret, "--cookie-secret", cookie_secret,
+        "--oauth-encryption-key", encryption_key,
+        py_file.name
+    ]
+    with run_panel_serve(cmd) as p:
+        port = wait_for_port(p.stdout)
+        page.goto(f"http://localhost:{port}/{app_name}")
+
+        page.locator('input[type="email"]').fill(azure_user)
+        page.locator('input[type="submit"]').click(force=True)
+        page.locator('input[type="password"]').fill(azure_password)
+        page.locator('input[type="submit"]').click(force=True)
+        page.locator('input[type="submit"]').click(force=True)
+
+        expect(page.locator('.markdown')).to_have_text(f'live.com#{azure_user}', timeout=10000)
+
+
+@unix_only
 @pytest.mark.parametrize('logout_template', [None, (pathlib.Path(__file__).parent / 'logout.html').absolute()])
 def test_basic_auth_logout(py_file, page, logout_template):
     app = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
