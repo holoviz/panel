@@ -95,6 +95,8 @@ def test_azure_oauth(py_file, page):
 
         page.locator('input[type="email"]').fill(azure_user)
         page.locator('input[type="submit"]').click(force=True)
+
+        expect(page.locator('input[type="submit"]')).to_have_attribute('value', 'Sign in')
         page.locator('input[type="password"]').fill(azure_password)
         page.locator('input[type="submit"]').click(force=True)
         page.locator('input[type="submit"]').click(force=True)
