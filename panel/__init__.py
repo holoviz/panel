@@ -47,6 +47,7 @@ https://panel.holoviz.org/getting_started/index.html
 """
 from param import rx
 
+from . import chat  # noqa
 from . import layout  # noqa
 from . import links  # noqa
 from . import pane  # noqa
@@ -74,6 +75,7 @@ __all__ = (
     "__version__",
     "Accordion",
     "Card",
+    "chat",
     "Column",
     "FlexBox",
     "FloatPanel",
