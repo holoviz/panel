@@ -813,7 +813,8 @@ class _EditableContinuousSlider(CompositeWidget):
 
         self._value_edit = self._input_widget(
             margin=0, align='end', css_classes=['slider-edit'],
-            stylesheets=[f'{CDN_DIST}css/editable_slider.css']
+            stylesheets=[f'{CDN_DIST}css/editable_slider.css'],
+            format=self.format,
         )
         self._value_edit.param.watch(self._sync_value, 'value')
         self._value_edit.param.watch(self._sync_value, 'value_throttled')
