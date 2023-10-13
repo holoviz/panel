@@ -1,6 +1,3 @@
-
-
-
 from panel.chat.icon import ChatReactionIcons
 from panel.pane.image import SVG
 

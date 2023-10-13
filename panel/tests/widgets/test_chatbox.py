@@ -1,10 +1,10 @@
 import pytest
 
-from panel.chatbox import ChatBox, ChatRow
 from panel.depends import bind
 from panel.layout import Column
 from panel.pane import JPG
 from panel.widgets import FileInput, TextInput
+from panel.widgets.chatbox import ChatBox, ChatRow
 
 JPG_FILE = "https://assets.holoviz.org/panel/samples/jpg_sample.jpg"
 
