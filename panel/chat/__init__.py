@@ -29,9 +29,11 @@ For more detail see the Reference Gallery guide.
 https://panel.holoviz.org/reference/chat/ChatInterface.html
 """
 from .chat import ChatEntry, ChatFeed, ChatInterface  # noqa
+from .langchain import PanelCallbackHandler  # noqa
 
 __all__ = (
     "ChatEntry",
     "ChatFeed",
-    "ChatInterfaces",
+    "ChatInterface",
+    "PanelCallbackHandler",
 )

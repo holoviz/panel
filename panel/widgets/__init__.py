@@ -48,7 +48,6 @@ from .input import (  # noqa
     FloatInput, IntInput, LiteralInput, NumberInput, PasswordInput, Spinner,
     StaticText, Switch, TextAreaInput, TextInput,
 )
-from .langchain import PanelCallbackHandler  # noqa
 from .misc import FileDownload, JSONEditor, VideoStream  # noqa
 from .player import DiscretePlayer, Player  # noqa
 from .select import (  # noqa
