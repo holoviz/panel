@@ -9,7 +9,7 @@ except ImportError:
     AgentFinish = None
     LLMResult = None
 
-from panel.widgets import ChatInterface
+from panel.chat import ChatInterface
 
 
 class PanelCallbackHandler(BaseCallbackHandler):
