@@ -187,7 +187,7 @@ class ChatReactionIcons(ReactiveHTML):
         The mapping of reactions to their corresponding active icon names;
         if not set, the active icon name will default to its "filled" version.
 
-    Reference: https://panel.holoviz.org/reference/widgets/ChatReactionIcons.html
+    Reference: https://panel.holoviz.org/reference/chat/ChatReactionIcons.html
 
     :Example:
 
@@ -358,7 +358,7 @@ class ChatEntry(CompositeWidget):
     - Associating reactions with messages and mapping them to icons.
     - Rendering various content types including text, images, audio, video, and more.
 
-    Reference: https://panel.holoviz.org/reference/widgets/ChatEntry.html
+    Reference: https://panel.holoviz.org/reference/chat/ChatEntry.html
 
     :Example:
 
@@ -798,7 +798,7 @@ class ChatFeed(CompositeWidget):
     - Undo a number of sent `ChatEntry` objects.
     - Clear the chat log of all `ChatEntry` objects.
 
-    Reference: https://panel.holoviz.org/reference/widgets/ChatFeed.html
+    Reference: https://panel.holoviz.org/reference/chat/ChatFeed.html
 
     :Example:
 
@@ -1278,7 +1278,7 @@ class ChatInterface(ChatFeed):
     """
     High level widget that contains the chat log and the chat input.
 
-    Reference: https://panel.holoviz.org/reference/widgets/ChatInterface.html
+    Reference: https://panel.holoviz.org/reference/chat/ChatInterface.html
 
     :Example:
 
