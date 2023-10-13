@@ -1,4 +1,4 @@
-## Authorization callbacks
+# Authorization callbacks
 
 The OAuth providers integrated with Panel provide an easy way to enable authentication on your applications. This verifies the identity of a user and also provides some level of access control (i.e. authorization). However often times the OAuth configuration is controlled by a corporate IT department or is otherwise difficult to manage so its often easier to grant permissions to use the OAuth provider freely but then restrict access controls in the application itself. To manage access you can provide an `authorize_callback` as part of your applications.
 

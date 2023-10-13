@@ -13,7 +13,7 @@ import sys
 import threading
 import time
 
-from collections import OrderedDict, defaultdict
+from collections import Counter, OrderedDict, defaultdict
 from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -212,6 +212,7 @@ class _state(param.Parameterized):
 
     # Override user info
     _oauth_user_overrides = {}
+    _active_users = Counter()
 
     def __repr__(self) -> str:
         server_info = []

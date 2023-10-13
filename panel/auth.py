@@ -11,20 +11,22 @@ import urllib.parse as urlparse
 import uuid
 
 from base64 import urlsafe_b64encode
+from functools import partial
 
 import tornado
 
 from bokeh.server.auth_provider import AuthProvider
 from tornado.auth import OAuth2Mixin
 from tornado.httpclient import HTTPError, HTTPRequest
-from tornado.web import RequestHandler
+from tornado.web import RequestHandler, decode_signed_value
+from tornado.websocket import WebSocketHandler
 
 from .config import config
 from .entry_points import entry_points_for
-from .io import state
 from .io.resources import (
     BASIC_LOGIN_TEMPLATE, CDN_DIST, ERROR_TEMPLATE, LOGOUT_TEMPLATE, _env,
 )
+from .io.state import state
 from .util import base64url_encode, decode_token
 
 log = logging.getLogger(__name__)
@@ -215,6 +217,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         try:
             response = await http.fetch(req)
         except HTTPError as e:
+            log.debug("%s access token request failed.", type(self).__name__)
             self._on_error(e.response)
             return None, None, None
 
@@ -232,6 +235,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
 
         access_token, refresh_token = body['access_token'], body.get('refresh_token')
         if 'id_token' in body:
+            log.debug("%s successfully obtained tokens.", type(self).__name__)
             id_token = body['id_token']
             user = self._on_auth(id_token, access_token, refresh_token)
             return user, access_token, refresh_token
@@ -260,7 +264,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
                 log.debug("%s could not decode access_token.", type(self).__name__)
                 return None, None, None
 
-        log.debug("%s received user information.", type(self).__name__)
+        log.debug("%s successfully obtained tokens.", type(self).__name__)
         user = self._on_auth(user, access_token, refresh_token)
         return user, access_token, refresh_token
 
@@ -409,6 +413,8 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         self.set_secure_cookie('id_token', id_token, expires_days=config.oauth_expiry)
         if refresh_token:
             self.set_secure_cookie('refresh_token', refresh_token, expires_days=config.oauth_expiry)
+        if user in state._oauth_user_overrides:
+            del state._oauth_user_overrides[user]
         return user
 
     def _on_error(self, response, body=None):
@@ -855,12 +861,26 @@ class BasicAuthProvider(AuthProvider):
                 self._login_template = _env.from_string(f.read())
         self._login_endpoint = login_endpoint or '/login'
         self._logout_endpoint = logout_endpoint or '/logout'
+
+        state.on_session_destroyed(self._remove_user)
         super().__init__()
+
+    def _remove_user(self, session_context):
+        user_cookie = session_context.request.cookies.get('user')
+        user = decode_signed_value(config.cookie_secret, 'user', user_cookie).decode('utf-8')
+        state._active_users[user] -= 1
+        if not state._active_users[user]:
+            del state._active_users[user]
 
     @property
     def get_user(self):
         def get_user(request_handler):
-            return request_handler.get_secure_cookie("user", max_age_days=config.oauth_expiry)
+            user = request_handler.get_secure_cookie("user", max_age_days=config.oauth_expiry)
+            if user:
+                user = user.decode('utf-8')
+                if user and isinstance(request_handler, WebSocketHandler):
+                    state._active_users[user] += 1
+            return user
         return get_user
 
     @property
@@ -899,9 +919,11 @@ class OAuthProvider(BasicAuthProvider):
     def get_user_async(self):
         async def get_user(handler):
             user = handler.get_secure_cookie('user', max_age_days=config.oauth_expiry)
-            if not config.oauth_token_refresh or user is None:
+            user = user.decode('utf-8') if user else None
+            if user and isinstance(handler, WebSocketHandler):
+                state._active_users[user] += 1
+            if not config.oauth_refresh_tokens or user is None:
                 return user
-            user = user.decode('utf-8')
 
             now_ts = dt.datetime.now(dt.timezone.utc).timestamp()
             if user in state._oauth_user_overrides:
@@ -922,18 +944,19 @@ class OAuthProvider(BasicAuthProvider):
                 log.debug("access_token is not a valid JWT token. Expiry cannot be determined.")
                 return user
 
-            if access_json['exp'] > now_ts:
-                log.debug("Fully authenticated and access_token still valid.")
-                return user
-
             if user in state._oauth_user_overrides:
                 refresh_token = state._oauth_user_overrides[user]['refresh_token']
             else:
                 refresh_cookie = handler.get_secure_cookie('refresh_token', max_age_days=config.oauth_expiry)
                 if refresh_cookie:
                     refresh_token = state._decrypt_cookie(refresh_cookie)
+                    self._schedule_refresh(access_json['exp'], user, refresh_token, handler.application, handler.request)
                 else:
                     refresh_token = None
+
+            if access_json['exp'] > now_ts:
+                log.debug("Fully authenticated and access_token still valid.")
+                return user
 
             if refresh_token:
                 try:
@@ -948,20 +971,7 @@ class OAuthProvider(BasicAuthProvider):
                 return
 
             log.debug("%s refreshing token", type(self).__name__)
-            state._oauth_user_overrides[user] = {}
-            auth_handler = self.login_handler(
-                application=handler.application, request=handler.request
-            )
-            _, access_token, refresh_token = await auth_handler._fetch_access_token(
-                client_id=config.oauth_key,
-                client_secret=config.oauth_secret,
-                refresh_token=refresh_token
-            )
-            if access_token:
-                state._oauth_user_overrides[user] = {
-                    'access_token': access_token,
-                    'refresh_token': refresh_token
-                }
+            await self._refresh_access_token(user, refresh_token, handler.application, handler.request)
             return user
         return get_user
 
@@ -973,6 +983,60 @@ class OAuthProvider(BasicAuthProvider):
         handler._login_template = self._login_template
         handler._login_endpoint = self._login_endpoint
         return handler
+
+    def _remove_user(self, session_context):
+        user_cookie = session_context.request.cookies.get('user')
+        user = decode_signed_value(config.cookie_secret, 'user', user_cookie).decode('utf-8')
+        state._active_users[user] -= 1
+        if not state._active_users[user]:
+            del state._active_users[user]
+            if user in state._oauth_user_overrides:
+                del state._oauth_user_overrides[user]
+
+    def _schedule_refresh(self, expiry_ts, user, refresh_token, application, request):
+        if not state._active_users.get(user):
+            return
+        now_ts = dt.datetime.now(dt.timezone.utc).timestamp()
+        expiry_seconds = expiry_ts - now_ts - 10
+        log.debug("%s scheduling token refresh in %d seconds", type(self).__name__, expiry_seconds)
+        expiry_date = dt.datetime.now() + dt.timedelta(seconds=expiry_seconds)
+        refresh_cb = partial(self._scheduled_refresh, user, refresh_token, application, request)
+        if expiry_seconds <= 0:
+            refresh_cb()
+            return
+        task = f'{user}-access-token-refresh'
+        try:
+            state.cancel_task(task)
+        except KeyError:
+            pass
+        finally:
+            state.schedule_task(task, refresh_cb, at=expiry_date)
+
+    async def _scheduled_refresh(self, user, refresh_token, application, request):
+        await self._refresh_access_token(user, refresh_token, application, request)
+        user_state = state._oauth_user_overrides[user]
+        access_token, refresh_token = user_state['access_token'], user_state['refresh_token']
+        access_json = decode_token(access_token)
+        self._schedule_refresh(access_json['exp'], user, refresh_token, application, request)
+
+    async def _refresh_access_token(self, user, refresh_token, application, request):
+        log.debug("%s refreshing token", type(self).__name__)
+        if user in state._oauth_user_overrides:
+            refresh_token = state._oauth_user_overrides[user]['refresh_token']
+        state._oauth_user_overrides[user] = {}
+        auth_handler = self.login_handler(application=application, request=request)
+        _, access_token, refresh_token = await auth_handler._fetch_access_token(
+            client_id=config.oauth_key,
+            client_secret=config.oauth_secret,
+            refresh_token=refresh_token
+        )
+        if access_token:
+            state._oauth_user_overrides[user] = {
+                'access_token': access_token,
+                'refresh_token': refresh_token
+            }
+        else:
+            del state._oauth_user_overrides[user]
 
 
 AUTH_PROVIDERS = {

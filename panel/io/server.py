@@ -989,6 +989,7 @@ def get_server(
     oauth_error_template: Optional[str] = None,
     cookie_secret: Optional[str] = None,
     oauth_encryption_key: Optional[str] = None,
+    oauth_refresh_tokens: Optional[bool] = None,
     login_endpoint: Optional[str] = None,
     logout_endpoint: Optional[str] = None,
     login_template: Optional[str] = None,
@@ -1052,9 +1053,11 @@ def get_server(
       Jinja2 template used when displaying authentication errors.
     cookie_secret: str (optional, default=None)
       A random secret string to sign cookies (required for OAuth)
-    oauth_encryption_key: str (optional, default=False)
+    oauth_encryption_key: str (optional, default=None)
       A random encryption key used for encrypting OAuth user
       information and access tokens.
+    oauth_refresh_tokens: str (optional, default=None)
+      Whether to automatically refresh OAuth access tokens when they expire.
     login_endpoint: str (optional, default=None)
       Overrides the default login endpoint `/login`
     logout_endpoint: str (optional, default=None)
@@ -1205,6 +1208,8 @@ def get_server(
         config.cookie_secret = cookie_secret # type: ignore
     if oauth_redirect_uri:
         config.oauth_redirect_uri = oauth_redirect_uri # type: ignore
+    if oauth_refresh_tokens is not None:
+        config.oauth_refresh_tokens = oauth_refresh_tokens
     opts['cookie_secret'] = config.cookie_secret
 
     server = Server(apps, port=port, **opts)
