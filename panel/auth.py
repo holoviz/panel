@@ -418,7 +418,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         if refresh_token:
             self.set_secure_cookie('refresh_token', refresh_token, expires_days=config.oauth_expiry)
         if user in state._oauth_user_overrides:
-            del state._oauth_user_overrides[user]
+            state._oauth_user_overrides.pop(user, None)
         return user
 
     def _on_error(self, response, body=None):
@@ -977,10 +977,11 @@ class OAuthProvider(BasicAuthProvider):
                     if refresh_json['exp'] < now_ts:
                         refresh_token = None
                 except Exception:
+                    # If refresh token is not a valid JWT token then it does not expire
                     pass
 
             if refresh_token is None:
-                log.debug("%s access_token is expired and refresh_token available, forcing user to reauthenticate.", type(self).__name__)
+                log.debug("%s access_token is expired and refresh_token not available, forcing user to reauthenticate.", type(self).__name__)
                 return
 
             log.debug("%s refreshing token", type(self).__name__)
@@ -1012,7 +1013,7 @@ class OAuthProvider(BasicAuthProvider):
         now_ts = dt.datetime.now(dt.timezone.utc).timestamp()
         expiry_seconds = expiry_ts - now_ts - 10
         log.debug("%s scheduling token refresh in %d seconds", type(self).__name__, expiry_seconds)
-        expiry_date = dt.datetime.now() + dt.timedelta(seconds=expiry_seconds)
+        expiry_date = dt.datetime.now() + dt.timedelta(seconds=expiry_seconds) # schedule_task is in local TZ
         refresh_cb = partial(self._scheduled_refresh, user, refresh_token, application, request)
         if expiry_seconds <= 0:
             refresh_cb()
