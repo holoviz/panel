@@ -279,7 +279,7 @@ def decode_token(token, signed=True):
     """
     Decodes a signed or unsigned JWT token.
     """
-    if signed:
+    if signed and b"." in token:
         signing_input, _ = token.encode('utf-8').rsplit(b".", 1)
         _, payload_segment = signing_input.split(b".", 1)
     else:

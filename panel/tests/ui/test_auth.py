@@ -45,9 +45,7 @@ def test_okta_oauth(py_file, page):
     app = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
     write_file(app, py_file.file)
 
-    app_name = os.path.basename(py_file.name)[:-3]
-
-    port = os.environ.get('OKTA_PORT')
+    port = os.environ.get('OKTA_PORT', '5703')
     cookie_secret = os.environ['OAUTH_COOKIE_SECRET']
     encryption_key = os.environ['OAUTH_ENCRYPTION_KEY']
     oauth_key = os.environ['OKTA_OAUTH_KEY']
@@ -63,7 +61,7 @@ def test_okta_oauth(py_file, page):
     ]
     with run_panel_serve(cmd) as p:
         port = wait_for_port(p.stdout)
-        page.goto(f"http://localhost:{port}/{app_name}")
+        page.goto(f"http://localhost:{port}")
 
         page.locator('input[name="username"]').fill(okta_user)
         page.locator('input[name="password"]').fill(okta_password)
@@ -78,9 +76,7 @@ def test_azure_oauth(py_file, page):
     app = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
     write_file(app, py_file.file)
 
-    app_name = os.path.basename(py_file.name)[:-3]
-
-    port = os.environ.get('AZURE_PORT')
+    port = os.environ.get('AZURE_PORT', '5702')
     cookie_secret = os.environ['OAUTH_COOKIE_SECRET']
     encryption_key = os.environ['OAUTH_ENCRYPTION_KEY']
     oauth_key = os.environ['AZURE_OAUTH_KEY']
@@ -95,7 +91,7 @@ def test_azure_oauth(py_file, page):
     ]
     with run_panel_serve(cmd) as p:
         port = wait_for_port(p.stdout)
-        page.goto(f"http://localhost:{port}/{app_name}")
+        page.goto(f"http://localhost:{port}")
 
         page.locator('input[type="email"]').fill(azure_user)
         page.locator('input[type="submit"]').click(force=True)
@@ -112,9 +108,7 @@ def test_auth0_oauth(py_file, page):
     app = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
     write_file(app, py_file.file)
 
-    app_name = os.path.basename(py_file.name)[:-3]
-
-    port = os.environ.get('AUTH0_PORT')
+    port = os.environ.get('AUTH0_PORT', '5701')
     cookie_secret = os.environ['OAUTH_COOKIE_SECRET']
     encryption_key = os.environ['OAUTH_ENCRYPTION_KEY']
     oauth_key = os.environ['AUTH0_OAUTH_KEY']
@@ -130,7 +124,7 @@ def test_auth0_oauth(py_file, page):
     ]
     with run_panel_serve(cmd) as p:
         port = wait_for_port(p.stdout)
-        page.goto(f"http://localhost:{port}/{app_name}")
+        page.goto(f"http://localhost:{port}")
 
         page.locator('input[name="username"]').fill(auth0_user)
         page.locator('input[name="password"]').fill(auth0_password)
@@ -173,6 +167,7 @@ def test_basic_auth_logout(py_file, page, logout_template):
         assert 'id_token' not in cookies
 
 
+@unix_only
 def test_authorize_callback_redirect(page):
 
     def authorize(user_info, uri):

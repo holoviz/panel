@@ -905,12 +905,10 @@ class OAuthProvider(BasicAuthProvider):
 
             now_ts = dt.datetime.now(dt.timezone.utc).timestamp()
             if user in state._oauth_user_overrides:
-                expired = False
                 while not state._oauth_user_overrides[user]:
                     await asyncio.sleep(0.1)
                 access_token = state._oauth_user_overrides[user]['access_token']
             else:
-                expired =True
                 access_cookie = handler.get_secure_cookie('access_token', max_age_days=config.oauth_expiry)
                 if not access_cookie:
                     log.debug("No access token available, forcing user to reauthenticate.")
@@ -924,7 +922,7 @@ class OAuthProvider(BasicAuthProvider):
                 log.debug("access_token is not a valid JWT token. Expiry cannot be determined.")
                 return user
 
-            if access_json['exp'] > now_ts and not expired:
+            if access_json['exp'] > now_ts:
                 log.debug("Fully authenticated and access_token still valid.")
                 return user
 
@@ -937,12 +935,13 @@ class OAuthProvider(BasicAuthProvider):
                 else:
                     refresh_token = None
 
-            try:
-                refresh_json = decode_token(refresh_token)
-                if refresh_json['exp'] < now_ts:
-                    refresh_token = None
-            except (ValueError, UnicodeDecodeError):
-                pass
+            if refresh_token:
+                try:
+                    refresh_json = decode_token(refresh_token)
+                    if refresh_json['exp'] < now_ts:
+                        refresh_token = None
+                except (ValueError, UnicodeDecodeError):
+                    pass
 
             if refresh_token is None:
                 log.debug("%s access_token is expired and refresh_token available, forcing user to reauthenticate.", type(self).__name__)
