@@ -792,7 +792,7 @@ class BasicTemplate(BaseTemplate):
 
         old = event.old if isinstance(event.old, list) else list(event.old.values())
         for obj in old:
-            ref = str(id(obj))
+            ref = f'{tag}-{str(id(obj))}'
             if ref in self._render_items:
                 del self._render_items[ref]
 
@@ -806,7 +806,7 @@ class BasicTemplate(BaseTemplate):
 
         labels = {}
         for obj in new:
-            ref = str(id(obj))
+            ref = f'{tag}-{str(id(obj))}'
             if obj.name.startswith(type(obj).__name__):
                 labels[ref] = 'Content'
             else:
