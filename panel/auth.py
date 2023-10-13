@@ -134,7 +134,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
           The response code from the server
         """
         if code:
-            user, _, _ = await self._fetch_access_token(
+            user, _, _, _ = await self._fetch_access_token(
                 client_id,
                 redirect_uri,
                 client_secret=client_secret,
@@ -219,7 +219,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         except HTTPError as e:
             log.debug("%s access token request failed.", type(self).__name__)
             self._on_error(e.response)
-            return None, None, None
+            return None, None, None, None
 
         body = decode_response_body(response)
         if not body:
@@ -231,14 +231,15 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
                 log.debug("%s token endpoint did not reissue an access token.", type(self).__name__)
                 return None, None, None
             self._on_error(response, body)
-            return None, None, None
+            return None, None, None, None
 
         access_token, refresh_token = body['access_token'], body.get('refresh_token')
+        expires_in = body.get('expires_in')
         if 'id_token' in body:
             log.debug("%s successfully obtained tokens.", type(self).__name__)
             id_token = body['id_token']
-            user = self._on_auth(id_token, access_token, refresh_token)
-            return user, access_token, refresh_token
+            user = self._on_auth(id_token, access_token, refresh_token, expires_in)
+            return user, access_token, refresh_token, expires_in
 
         user_headers = dict(self._API_BASE_HEADERS)
         if self._access_token_header:
@@ -251,22 +252,22 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
 
         try:
             user_response = await http.fetch(user_url, headers=user_headers)
-            user = decode_response_body(user_response)
+            id_token = decode_response_body(user_response)
         except HTTPError:
-            user = None
+            id_token = None
 
-        if not user:
-            log.debug("%s could not obtain user_info, falling back to decoding access_token.", type(self).__name__)
+        if not id_token:
+            log.debug("%s could not obtain id_token, falling back to decoding access_token.", type(self).__name__)
             try:
-                user = decode_token(body['access_token'])
-            except Exception as e:
-                raise e
+                id_token = decode_token(body['access_token'])
+            except Exception:
                 log.debug("%s could not decode access_token.", type(self).__name__)
-                return None, None, None
+                self._on_error(response, body)
+                return None, None, None, None
 
         log.debug("%s successfully obtained tokens.", type(self).__name__)
-        user = self._on_auth(user, access_token, refresh_token)
-        return user, access_token, refresh_token
+        user = self._on_auth(id_token, access_token, refresh_token, expires_in)
+        return user, access_token, refresh_token, expires_in
 
     def get_state_cookie(self):
         """Get OAuth state from cookies
@@ -390,7 +391,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
             self.set_state_cookie(state)
             await self.get_authenticated_user(**params)
 
-    def _on_auth(self, id_token, access_token, refresh_token=None):
+    def _on_auth(self, id_token, access_token, refresh_token=None, expires_in=None):
         if isinstance(id_token, str):
             decoded = decode_token(id_token)
         else:
@@ -411,6 +412,9 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
                 refresh_token = state.encryption.encrypt(refresh_token.encode('utf-8'))
         self.set_secure_cookie('access_token', access_token, expires_days=config.oauth_expiry)
         self.set_secure_cookie('id_token', id_token, expires_days=config.oauth_expiry)
+        if expires_in:
+            now_ts = dt.datetime.now(dt.timezone.utc).timestamp()
+            self.set_secure_cookie('oauth_expiry', str(int(now_ts + expires_in)), expires_days=config.oauth_expiry)
         if refresh_token:
             self.set_secure_cookie('refresh_token', refresh_token, expires_days=config.oauth_expiry)
         if user in state._oauth_user_overrides:
@@ -494,7 +498,7 @@ class PasswordLoginHandler(GenericLoginHandler):
             redirect_uri = config.oauth_redirect_uri
         else:
             redirect_uri = f"{self.request.protocol}://{self.request.host}{self._login_endpoint}"
-        user, _, _ = await self._fetch_access_token(
+        user, _, _, _ = await self._fetch_access_token(
             client_id=config.oauth_key,
             redirect_uri=redirect_uri,
             username=username,
@@ -827,6 +831,7 @@ class LogoutHandler(tornado.web.RequestHandler):
         self.clear_cookie("id_token")
         self.clear_cookie("access_token")
         self.clear_cookie("refresh_token")
+        self.clear_cookie("oauth_expiry")
         self.clear_cookie(STATE_COOKIE_NAME)
         html = self._logout_template.render(
             PANEL_CDN=CDN_DIST,
@@ -926,10 +931,14 @@ class OAuthProvider(BasicAuthProvider):
                 return user
 
             now_ts = dt.datetime.now(dt.timezone.utc).timestamp()
+            expiry = None
             if user in state._oauth_user_overrides:
                 while not state._oauth_user_overrides[user]:
                     await asyncio.sleep(0.1)
-                access_token = state._oauth_user_overrides[user]['access_token']
+                user_state = state._oauth_user_overrides[user]
+                access_token = user_state['access_token']
+                if user_state['expiry']:
+                    expiry = user_state['expiry']
             else:
                 access_cookie = handler.get_secure_cookie('access_token', max_age_days=config.oauth_expiry)
                 if not access_cookie:
@@ -937,12 +946,16 @@ class OAuthProvider(BasicAuthProvider):
                     return
                 access_token = state._decrypt_cookie(access_cookie)
 
-            try:
-                access_json = decode_token(access_token)
-            except (UnicodeDecodeError, ValueError):
-                # Token does not have content and therefore does not expire
-                log.debug("access_token is not a valid JWT token. Expiry cannot be determined.")
-                return user
+            if expiry is None:
+                try:
+                    access_json = decode_token(access_token)
+                    expiry = access_json['exp']
+                except Exception:
+                    expiry = handler.get_secure_cookie('oauth_expiry', max_age_days=config.oauth_expiry)
+                    if expiry is None:
+                        # Token does not have content and therefore does not expire
+                        log.debug("access_token is not a valid JWT token. Expiry cannot be determined.")
+                        return user
 
             if user in state._oauth_user_overrides:
                 refresh_token = state._oauth_user_overrides[user]['refresh_token']
@@ -954,7 +967,7 @@ class OAuthProvider(BasicAuthProvider):
                 else:
                     refresh_token = None
 
-            if access_json['exp'] > now_ts:
+            if expiry > now_ts:
                 log.debug("Fully authenticated and access_token still valid.")
                 return user
 
@@ -963,7 +976,7 @@ class OAuthProvider(BasicAuthProvider):
                     refresh_json = decode_token(refresh_token)
                     if refresh_json['exp'] < now_ts:
                         refresh_token = None
-                except (ValueError, UnicodeDecodeError):
+                except Exception:
                     pass
 
             if refresh_token is None:
@@ -1016,8 +1029,11 @@ class OAuthProvider(BasicAuthProvider):
         await self._refresh_access_token(user, refresh_token, application, request)
         user_state = state._oauth_user_overrides[user]
         access_token, refresh_token = user_state['access_token'], user_state['refresh_token']
-        access_json = decode_token(access_token)
-        self._schedule_refresh(access_json['exp'], user, refresh_token, application, request)
+        if user_state['expiry']:
+            expiry = user_state['expiry']
+        else:
+            expiry = decode_token(access_token)['exp']
+        self._schedule_refresh(expiry, user, refresh_token, application, request)
 
     async def _refresh_access_token(self, user, refresh_token, application, request):
         log.debug("%s refreshing token", type(self).__name__)
@@ -1025,15 +1041,17 @@ class OAuthProvider(BasicAuthProvider):
             refresh_token = state._oauth_user_overrides[user]['refresh_token']
         state._oauth_user_overrides[user] = {}
         auth_handler = self.login_handler(application=application, request=request)
-        _, access_token, refresh_token = await auth_handler._fetch_access_token(
+        _, access_token, refresh_token, expires_in = await auth_handler._fetch_access_token(
             client_id=config.oauth_key,
             client_secret=config.oauth_secret,
             refresh_token=refresh_token
         )
         if access_token:
+            now_ts = dt.datetime.now(dt.timezone.utc).timestamp()
             state._oauth_user_overrides[user] = {
                 'access_token': access_token,
-                'refresh_token': refresh_token
+                'refresh_token': refresh_token,
+                'expiry': now_ts+expires_in if expires_in else None
             }
         else:
             del state._oauth_user_overrides[user]
