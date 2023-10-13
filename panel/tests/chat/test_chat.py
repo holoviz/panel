@@ -7,14 +7,15 @@ from unittest.mock import MagicMock
 import pytest
 
 from panel import Param, bind
+from panel.chat.base import (
+    ChatEntry, ChatFeed, ChatInterface, _FileInputMessage,
+)
+from panel.chat.icon import ChatReactionIcons
 from panel.layout import Column, Row, Tabs
 from panel.pane.image import SVG, Image
 from panel.pane.markup import HTML, Markdown
 from panel.tests.util import mpl_available, mpl_figure
 from panel.widgets.button import Button
-from panel.widgets.chat import (
-    ChatEntry, ChatFeed, ChatInterface, ChatReactionIcons, _FileInputMessage,
-)
 from panel.widgets.indicators import LinearGauge
 from panel.widgets.input import FileInput, TextAreaInput, TextInput
 

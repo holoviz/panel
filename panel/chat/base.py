@@ -22,12 +22,9 @@ from typing import (
 )
 
 import param
-import requests
 
 from .._param import Margin
-from ..io.cache import cache
 from ..io.resources import CDN_DIST
-from ..io.state import state
 from ..layout import (
     Column, ListPanel, Row, Tabs,
 )
@@ -39,11 +36,11 @@ from ..pane.image import (
 )
 from ..pane.markup import HTML, DataFrame, HTMLBasePane
 from ..pane.media import Audio, Video
-from ..reactive import ReactiveHTML
 from ..viewable import Viewable
-from .base import CompositeWidget, Widget
-from .button import Button
-from .input import FileInput, TextInput
+from ..widgets.base import CompositeWidget, Widget
+from ..widgets.button import Button
+from ..widgets.input import FileInput, TextInput
+from .icon import ChatCopyIcon, ChatReactionIcons
 
 Avatar = Union[str, BytesIO, ImageBase]
 AvatarDict = Dict[str, Avatar]
@@ -109,23 +106,6 @@ PLACEHOLDER_SVG = """
     </svg>
 """  # noqa: E501
 
-# if user cannot connect to internet
-MISSING_SVG = """
-    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-help-square" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-        <path d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z"></path>
-        <path d="M12 16v.01"></path>
-        <path d="M12 13a2 2 0 0 0 .914 -3.782a1.98 1.98 0 0 0 -2.414 .483"></path>
-    </svg>
-"""  # noqa: E501
-
-MISSING_FILLED_SVG = """
-    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-help-square-filled" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-        <path d="M19 2a3 3 0 0 1 2.995 2.824l.005 .176v14a3 3 0 0 1 -2.824 2.995l-.176 .005h-14a3 3 0 0 1 -2.995 -2.824l-.005 -.176v-14a3 3 0 0 1 2.824 -2.995l.176 -.005h14zm-7 13a1 1 0 0 0 -.993 .883l-.007 .117l.007 .127a1 1 0 0 0 1.986 0l.007 -.117l-.007 -.127a1 1 0 0 0 -.993 -.883zm1.368 -6.673a2.98 2.98 0 0 0 -3.631 .728a1 1 0 0 0 1.44 1.383l.171 -.18a.98 .98 0 0 1 1.11 -.15a1 1 0 0 1 -.34 1.886l-.232 .012a1 1 0 0 0 .111 1.994a3 3 0 0 0 1.371 -5.673z" stroke-width="0" fill="currentColor"></path>
-    </svg>
-"""  # noqa: E501
-
 
 @dataclass
 class _FileInputMessage:
@@ -141,6 +121,7 @@ class _FileInputMessage:
     mime_type : str
         The mime type of the file.
     """
+
     contents: bytes
     file_name: str
     mime_type: str
@@ -165,186 +146,12 @@ class _ChatButtonData:
     buttons : List
         The buttons to display.
     """
+
     index: int
     name: str
     icon: str
     objects: List
     buttons: List
-
-
-class ChatReactionIcons(ReactiveHTML):
-    """
-    A widget to display reaction icons that can be clicked on.
-
-    Parameters
-    ----------
-    value : List
-        The selected reactions.
-    options : Dict
-        A key-value pair of reaction values and their corresponding tabler icon names
-        found on https://tabler-icons.io.
-    active_icons : Dict
-        The mapping of reactions to their corresponding active icon names;
-        if not set, the active icon name will default to its "filled" version.
-
-    Reference: https://panel.holoviz.org/reference/chat/ChatReactionIcons.html
-
-    :Example:
-
-    >>> ChatReactionIcons(value=["like"], options={"like": "thumb-up", "dislike": "thumb-down"})
-    """
-
-    active_icons = param.Dict(default={}, doc="""
-        The mapping of reactions to their corresponding active icon names;
-        if not set, the active icon name will default to its "filled" version.""")
-
-    options = param.Dict(default={"favorite": "heart"}, doc="""
-        A key-value pair of reaction values and their corresponding tabler icon names
-        found on https://tabler-icons.io.""")
-
-    value = param.List(doc="The active reactions.")
-
-    _reactions = param.List(doc="""
-        The list of reactions, which is the same as the keys of the options dict;
-        primarily needed as a workaround for quirks of ReactiveHTML.""")
-
-    _svgs = param.List(doc="""
-        The list of SVGs corresponding to the active reactions.""")
-
-    _base_url = param.String(default="https://tabler-icons.io/static/tabler-icons/icons/", doc="""
-        The base URL for the SVGs.""")
-
-    _template = """
-    <div id="reaction-icons" class="reaction-icons">
-        {% for option in options %}
-        <span
-            type="button"
-            id="reaction-{{ loop.index0 }}"
-            onclick="${script('toggle_value')}"
-            style="cursor: pointer; width: ${model.width}px; height: ${model.height}px;"
-            title="{{ _reactions[loop.index0]|title }}"
-        >
-            ${_svgs[{{ loop.index0 }}]}
-        </span>
-        {% endfor %}
-    </div>
-    """
-
-    _scripts = {
-        "toggle_value": """
-            svg = event.target.shadowRoot.querySelector("svg");
-            const reaction = svg.getAttribute("alt");
-            const icon_name = data.options[reaction];
-            let src;
-            if (data.value.includes(reaction)) {
-                src = `${data._base_url}${icon_name}.svg`;
-                data.value = data.value.filter(r => r !== reaction);
-            } else {
-                src = reaction in data.active_icons
-                    ? `${data._base_url}${data.active_icons[reaction]}.svg`
-                    : `${data._base_url}${icon_name}-filled.svg`;
-                data.value = [...data.value, reaction];
-            }
-            event.target.src = src;
-        """
-    }
-
-    _stylesheets: ClassVar[List[str]] = [
-        f"{CDN_DIST}css/chat_reaction_icons.css"
-    ]
-
-    def _get_label(self, active: bool, reaction: str, icon: str):
-        if active and reaction in self.active_icons:
-            icon_label = self.active_icons[reaction]
-        elif active:
-            icon_label = f"{icon}-filled"
-        else:
-            icon_label = icon
-        return icon_label
-
-    @cache
-    def _fetch_svg(self, icon_label: str):
-        src = f"{self._base_url}{icon_label}.svg"
-        with requests.get(src) as response:
-            response.raise_for_status()
-            svg = response.text
-        return svg
-
-    def _stylize_svg(self, svg, reaction):
-        if b"dark" in state.session_args.get("theme", []):
-            svg = svg.replace('stroke="currentColor"', 'stroke="white"')
-            svg = svg.replace('fill="currentColor"', 'fill="white"')
-        if self.width:
-            svg = svg.replace('width="24"', f'width="{self.width}px"')
-        if self.height:
-            svg = svg.replace('height="24"', f'height="{self.height}px"')
-        svg = svg.replace("<svg", f'<svg alt="{reaction}"')
-        return svg
-
-    @param.depends(
-        "value",
-        "options",
-        "active_icons",
-        "width",
-        "height",
-        watch=True,
-        on_init=True,
-    )
-    def _update_icons(self):
-        self._reactions = list(self.options.keys())
-        svgs = []
-        for reaction, icon in self.options.items():
-            active = reaction in self.value
-            icon_label = self._get_label(active, reaction, icon)
-            try:
-                svg = self._fetch_svg(icon_label)
-            except Exception:
-                svg = MISSING_FILLED_SVG if active else MISSING_SVG
-            svg = self._stylize_svg(svg, reaction)
-            # important not to encode to keep the alt text!
-            svg_pane = SVG(
-                svg,
-                sizing_mode=None,
-                alt_text=reaction,
-                encode=False,
-                margin=0,
-            )
-            svgs.append(svg_pane)
-        self._svgs = svgs
-
-        for reaction in self.value:
-            if reaction not in self._reactions:
-                self.value.remove(reaction)
-
-
-class ChatCopyIcon(ReactiveHTML):
-
-    value = param.String(default=None, doc="The text to copy to the clipboard.")
-
-    _template = """
-        <div
-            type="button"
-            id="copy-button"
-            onclick="${script('copy_to_clipboard')}"
-            style="cursor: pointer; width: ${model.width}px; height: ${model.height}px;"
-            title="Copy message to clipboard"
-        >
-            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copy"
-                width="${model.width}" height="${model.height}" viewBox="0 0 24 24"
-                stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"
-            >
-                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
-                <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
-            </svg>
-        </div>
-    """
-
-    _scripts = {"copy_to_clipboard": "navigator.clipboard.writeText(`${data.value}`)"}
-
-    _stylesheets: ClassVar[List[str]] = [
-        f"{CDN_DIST}css/chat_copy_icon.css"
-    ]
 
 
 class ChatEntry(CompositeWidget):
@@ -365,64 +172,100 @@ class ChatEntry(CompositeWidget):
     >>> ChatEntry(value="Hello world!", user="New User", avatar="😊")
     """
 
-    avatar = param.ClassSelector(default="", class_=(str, BinaryIO, ImageBase), doc="""
+    avatar = param.ClassSelector(
+        default="",
+        class_=(str, BinaryIO, ImageBase),
+        doc="""
         The avatar to use for the user. Can be a single character text, an emoji,
         or anything supported by `pn.pane.Image`. If not set, checks if
         the user is available in the default_avatars mapping; else uses the
-        first character of the name.""")
+        first character of the name.""",
+    )
 
-    avatar_lookup = param.Callable(default=None, doc="""
+    avatar_lookup = param.Callable(
+        default=None,
+        doc="""
         A function that can lookup an `avatar` from a user name. The function signature should be
-        `(user: str) -> Avatar`. If this is set, `default_avatars` is disregarded.""")
+        `(user: str) -> Avatar`. If this is set, `default_avatars` is disregarded.""",
+    )
 
-    css_classes = param.List(default=["chat-entry"], doc="""
-        The CSS classes to apply to the widget.""")
+    css_classes = param.List(
+        default=["chat-entry"],
+        doc="""
+        The CSS classes to apply to the widget.""",
+    )
 
-    default_avatars = param.Dict(default=DEFAULT_AVATARS, doc="""
+    default_avatars = param.Dict(
+        default=DEFAULT_AVATARS,
+        doc="""
         A default mapping of user names to their corresponding avatars
         to use when the user is specified but the avatar is. You can modify, but not replace the
-        dictionary.""")
+        dictionary.""",
+    )
 
-    reactions = param.List(doc="""
-        Reactions to associate with the message.""")
+    reactions = param.List(
+        doc="""
+        Reactions to associate with the message."""
+    )
 
-    reaction_icons = param.ClassSelector(class_=(ChatReactionIcons, dict), doc="""
+    reaction_icons = param.ClassSelector(
+        class_=(ChatReactionIcons, dict),
+        doc="""
         A mapping of reactions to their reaction icons; if not provided
-        defaults to `{"favorite": "heart"}`.""")
+        defaults to `{"favorite": "heart"}`.""",
+    )
 
-    timestamp = param.Date(doc="""
-        Timestamp of the message. Defaults to the creation time.""")
+    timestamp = param.Date(
+        doc="""
+        Timestamp of the message. Defaults to the creation time."""
+    )
 
     timestamp_format = param.String(default="%H:%M", doc="The timestamp format.")
 
-    show_avatar = param.Boolean(default=True, doc="Whether to display the avatar of the user.")
+    show_avatar = param.Boolean(
+        default=True, doc="Whether to display the avatar of the user."
+    )
 
-    show_user = param.Boolean(default=True, doc="Whether to display the name of the user.")
+    show_user = param.Boolean(
+        default=True, doc="Whether to display the name of the user."
+    )
 
-    show_timestamp = param.Boolean(default=True, doc="Whether to display the timestamp of the message.")
+    show_timestamp = param.Boolean(
+        default=True, doc="Whether to display the timestamp of the message."
+    )
 
-    show_reaction_icons = param.Boolean(default=True, doc="Whether to display the reaction icons.")
+    show_reaction_icons = param.Boolean(
+        default=True, doc="Whether to display the reaction icons."
+    )
 
-    show_copy_icon = param.Boolean(default=True, doc="Whether to display the copy icon.")
+    show_copy_icon = param.Boolean(
+        default=True, doc="Whether to display the copy icon."
+    )
 
-    renderers = param.HookList(doc="""
+    renderers = param.HookList(
+        doc="""
         A callable or list of callables that accept the value and return a
         Panel object to render the value. If a list is provided, will
         attempt to use the first renderer that does not raise an
         exception. If None, will attempt to infer the renderer
-        from the value.""")
+        from the value."""
+    )
 
-    user = param.Parameter(default="User", doc="""
-        Name of the user who sent the message.""")
+    user = param.Parameter(
+        default="User",
+        doc="""
+        Name of the user who sent the message.""",
+    )
 
-    value = param.Parameter(doc="""
-        The message contents. Can be any Python object that panel can display.""", allow_refs=False)
+    value = param.Parameter(
+        doc="""
+        The message contents. Can be any Python object that panel can display.""",
+        allow_refs=False,
+    )
 
     _value_panel = param.Parameter(doc="The rendered value panel.")
 
-    _stylesheets: ClassVar[List[str]] = [
-        f"{CDN_DIST}css/chat_entry.css"
-    ]
+    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_entry.css"]
 
     def __init__(self, **params):
         from ..param import ParamMethod  # circular imports
@@ -430,24 +273,26 @@ class ChatEntry(CompositeWidget):
         self._exit_stack = ExitStack()
 
         self.chat_copy_icon = ChatCopyIcon(
-            visible=False, width=15, height=15, css_classes=["copy-icon"])
+            visible=False, width=15, height=15, css_classes=["copy-icon"]
+        )
         if params.get("timestamp") is None:
             params["timestamp"] = datetime.datetime.utcnow()
         if params.get("reaction_icons") is None:
             params["reaction_icons"] = {"favorite": "heart"}
         if isinstance(params["reaction_icons"], dict):
             params["reaction_icons"] = ChatReactionIcons(
-                options=params["reaction_icons"], width=15, height=15)
+                options=params["reaction_icons"], width=15, height=15
+            )
         super().__init__(**params)
         self.reaction_icons.link(self, value="reactions", bidirectional=True)
-        self.reaction_icons.link(self, visible="show_reaction_icons", bidirectional=True)
+        self.reaction_icons.link(
+            self, visible="show_reaction_icons", bidirectional=True
+        )
         self.param.trigger("reactions", "show_reaction_icons")
         if not self.avatar:
             self.param.trigger("avatar_lookup")
 
-        render_kwargs = {
-            "inplace": True, "stylesheets": self._stylesheets
-        }
+        render_kwargs = {"inplace": True, "stylesheets": self._stylesheets}
         left_col = Column(
             ParamMethod(self._render_avatar, **render_kwargs),
             max_width=60,
@@ -478,8 +323,7 @@ class ChatEntry(CompositeWidget):
             sizing_mode=None,
         )
         self._composite.param.update(
-            stylesheets = self._stylesheets,
-            css_classes = self.css_classes
+            stylesheets=self._stylesheets, css_classes=self.css_classes
         )
         self._composite[:] = [left_col, right_col]
 
@@ -495,15 +339,14 @@ class ChatEntry(CompositeWidget):
         """
         Lookup the avatar for the user.
         """
-        alpha_numeric_key =  self._to_alpha_numeric(user)
+        alpha_numeric_key = self._to_alpha_numeric(user)
         # always use the default first
         updated_avatars = DEFAULT_AVATARS.copy()
         # update with the user input
         updated_avatars.update(self.default_avatars)
         # correct the keys to be alpha numeric
         updated_avatars = {
-            self._to_alpha_numeric(key): value
-            for key, value in updated_avatars.items()
+            self._to_alpha_numeric(key): value for key, value in updated_avatars.items()
         }
         # now lookup the avatar
         return updated_avatars.get(alpha_numeric_key, self.avatar)
@@ -518,9 +361,7 @@ class ChatEntry(CompositeWidget):
         """
         renderer = _panel
         if mime_type == "application/pdf":
-            contents = self._exit_stack.enter_context(
-                BytesIO(contents)
-            )
+            contents = self._exit_stack.enter_context(BytesIO(contents))
             renderer = partial(PDF, embed=True)
         elif mime_type.startswith("audio/"):
             file = self._exit_stack.enter_context(
@@ -531,17 +372,14 @@ class ChatEntry(CompositeWidget):
             contents = file.name
             renderer = Audio
         elif mime_type.startswith("video/"):
-            contents = self._exit_stack.enter_context(
-                BytesIO(contents)
-            )
+            contents = self._exit_stack.enter_context(BytesIO(contents))
             renderer = Video
         elif mime_type.startswith("image/"):
-            contents = self._exit_stack.enter_context(
-                BytesIO(contents)
-            )
+            contents = self._exit_stack.enter_context(BytesIO(contents))
             renderer = Image
         elif mime_type.endswith("/csv"):
             import pandas as pd
+
             with BytesIO(contents) as buf:
                 contents = pd.read_csv(buf)
             renderer = DataFrame
@@ -560,10 +398,7 @@ class ChatEntry(CompositeWidget):
                 self._set_default_attrs(subobj)
             return None
 
-        is_markup = (
-            isinstance(obj, HTMLBasePane) and
-            not isinstance(obj, FileBase)
-        )
+        is_markup = isinstance(obj, HTMLBasePane) and not isinstance(obj, FileBase)
         if is_markup:
             if len(str(obj.object)) > 0:  # only show a background if there is content
                 obj.css_classes = [*obj.css_classes, "message"]
@@ -591,16 +426,13 @@ class ChatEntry(CompositeWidget):
         if isinstance(value, _FileInputMessage):
             contents = value.contents
             mime_type = value.mime_type
-            value, renderer = self._select_renderer(
-                contents, mime_type
-            )
+            value, renderer = self._select_renderer(contents, mime_type)
         else:
             try:
                 import magic
+
                 mime_type = magic.from_buffer(value, mime=True)
-                value, renderer = self._select_renderer(
-                    value, mime_type
-                )
+                value, renderer = self._select_renderer(value, mime_type)
             except Exception:
                 pass
 
@@ -754,7 +586,7 @@ class ChatEntry(CompositeWidget):
         self,
         value: dict | ChatEntry | Any,
         user: str | None = None,
-        avatar: str | BinaryIO | None = None
+        avatar: str | BinaryIO | None = None,
     ):
         """
         Updates the entry with a new value, user and avatar.
@@ -772,9 +604,9 @@ class ChatEntry(CompositeWidget):
         if isinstance(value, dict):
             updates.update(value)
             if user:
-                updates['user'] = user
+                updates["user"] = user
             if avatar:
-                updates['avatar'] = avatar
+                updates["avatar"] = avatar
         elif isinstance(value, ChatEntry):
             if user is not None or avatar is not None:
                 raise ValueError(
@@ -810,11 +642,14 @@ class ChatFeed(CompositeWidget):
     >>> chat_feed.send("Hello World!", user="New User", avatar="😊")
     """
 
-    callback = param.Callable(allow_refs=False, doc="""
+    callback = param.Callable(
+        allow_refs=False,
+        doc="""
         Callback to execute when a user sends a message or
         when `respond` is called. The signature must include
         the previous message value `contents`, the previous `user` name,
-        and the component `instance`.""")
+        and the component `instance`.""",
+    )
 
     callback_exception = param.ObjectSelector(
         default="summary",
@@ -825,69 +660,112 @@ class ChatFeed(CompositeWidget):
         If "summary", a summary will be sent to the chat feed.
         If "verbose", the full traceback will be sent to the chat feed.
         If "ignore", the exception will be ignored.
-        """)
+        """,
+    )
 
-    callback_user = param.String(default="Assistant", doc="""
-        The default user name to use for the entry provided by the callback.""")
+    callback_user = param.String(
+        default="Assistant",
+        doc="""
+        The default user name to use for the entry provided by the callback.""",
+    )
 
-    card_params = param.Dict(default={}, doc="""
+    card_params = param.Dict(
+        default={},
+        doc="""
         Params to pass to Card, like `header`,
-        `header_background`, `header_color`, etc.""")
+        `header_background`, `header_color`, etc.""",
+    )
 
-    entry_params = param.Dict(default={}, doc="""
+    entry_params = param.Dict(
+        default={},
+        doc="""
         Params to pass to each ChatEntry, like `reaction_icons`, `timestamp_format`,
-        `show_avatar`, `show_user`, and `show_timestamp`.""")
+        `show_avatar`, `show_user`, and `show_timestamp`.""",
+    )
 
-    header = param.Parameter(doc="""
+    header = param.Parameter(
+        doc="""
         The header of the chat feed; commonly used for the title.
-        Can be a string, pane, or widget.""")
+        Can be a string, pane, or widget."""
+    )
 
-    margin = Margin(default=5, doc="""
+    margin = Margin(
+        default=5,
+        doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
+        or a four-tuple (top, right, bottom, left).""",
+    )
 
-    renderers = param.HookList(doc="""
+    renderers = param.HookList(
+        doc="""
         A callable or list of callables that accept the value and return a
         Panel object to render the value. If a list is provided, will
         attempt to use the first renderer that does not raise an
         exception. If None, will attempt to infer the renderer
-        from the value.""")
+        from the value."""
+    )
 
-    placeholder_text = param.String(default="", doc="""
+    placeholder_text = param.String(
+        default="",
+        doc="""
         If placeholder is the default LoadingSpinner,
-        the text to display next to it.""")
+        the text to display next to it.""",
+    )
 
-    placeholder_threshold = param.Number(default=1, bounds=(0, None), doc="""
+    placeholder_threshold = param.Number(
+        default=1,
+        bounds=(0, None),
+        doc="""
         Min duration in seconds of buffering before displaying the placeholder.
-        If 0, the placeholder will be disabled.""")
+        If 0, the placeholder will be disabled.""",
+    )
 
-    auto_scroll_limit = param.Integer(default=200, bounds=(0, None), doc="""
+    auto_scroll_limit = param.Integer(
+        default=200,
+        bounds=(0, None),
+        doc="""
         Max pixel distance from the latest object in the Column to
         activate automatic scrolling upon update. Setting to 0
-        disables auto-scrolling.""")
+        disables auto-scrolling.""",
+    )
 
-    scroll_button_threshold = param.Integer(default=100, bounds=(0, None), doc="""
+    scroll_button_threshold = param.Integer(
+        default=100,
+        bounds=(0, None),
+        doc="""
         Min pixel distance from the latest object in the Column to
         display the scroll button. Setting to 0
-        disables the scroll button.""")
+        disables the scroll button.""",
+    )
 
-    view_latest = param.Boolean(default=True, doc="""
+    view_latest = param.Boolean(
+        default=True,
+        doc="""
         Whether to scroll to the latest object on init. If not
-        enabled the view will be on the first object.""")
-    value = param.List(item_type=ChatEntry, doc="""
-        The list of entries in the feed.""")
+        enabled the view will be on the first object.""",
+    )
+    value = param.List(
+        item_type=ChatEntry,
+        doc="""
+        The list of entries in the feed.""",
+    )
 
-    _placeholder = param.ClassSelector(class_=ChatEntry, allow_refs=False, doc="""
+    _placeholder = param.ClassSelector(
+        class_=ChatEntry,
+        allow_refs=False,
+        doc="""
         The placeholder wrapped in a ChatEntry object;
-        primarily to prevent recursion error in _update_placeholder.""")
+        primarily to prevent recursion error in _update_placeholder.""",
+    )
 
-    _disabled = param.Boolean(default=False, doc="""
-        Whether the chat feed is disabled.""")
+    _disabled = param.Boolean(
+        default=False,
+        doc="""
+        Whether the chat feed is disabled.""",
+    )
 
-    _stylesheets: ClassVar[List[str]] = [
-        f"{CDN_DIST}css/chat_feed.css"
-    ]
+    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_feed.css"]
 
     _composite_type: ClassVar[Type[ListPanel]] = Card
 
@@ -909,8 +787,11 @@ class ChatFeed(CompositeWidget):
             "width": self.width,
             "max_width": self.max_width,
             "max_height": self.max_height,
-            "styles": {"border": "1px solid var(--panel-border-color, #e1e1e1)", "padding": "0px"},
-            "stylesheets": self._stylesheets
+            "styles": {
+                "border": "1px solid var(--panel-border-color, #e1e1e1)",
+                "padding": "0px",
+            },
+            "stylesheets": self._stylesheets,
         }
         card_params.update(**self.card_params)
         if self.sizing_mode is None:
@@ -921,11 +802,7 @@ class ChatFeed(CompositeWidget):
         chat_log_params = {
             p: getattr(self, p)
             for p in Column.param
-            if (
-                p in ChatFeed.param and
-                p != "name" and
-                getattr(self, p) is not None
-            )
+            if (p in ChatFeed.param and p != "name" and getattr(self, p) is not None)
         }
         chat_log_params["css_classes"] = ["chat-feed-log"]
         chat_log_params["stylesheets"] = self._stylesheets
@@ -943,9 +820,7 @@ class ChatFeed(CompositeWidget):
     @param.depends("placeholder_text", watch=True, on_init=True)
     def _update_placeholder(self):
         loading_avatar = SVG(
-            PLACEHOLDER_SVG,
-            sizing_mode=None,
-            css_classes=["rotating-placeholder"]
+            PLACEHOLDER_SVG, sizing_mode=None, css_classes=["rotating-placeholder"]
         )
         self._placeholder = ChatEntry(
             user=" ",
@@ -1000,15 +875,17 @@ class ChatFeed(CompositeWidget):
             )
         entry_params = dict(value, renderers=self.renderers, **self.entry_params)
         if user:
-            entry_params['user'] = user
+            entry_params["user"] = user
         if avatar:
-            entry_params['avatar'] = avatar
+            entry_params["avatar"] = avatar
         if self.width:
-            entry_params['width'] = int(self.width - 80)
+            entry_params["width"] = int(self.width - 80)
         entry = ChatEntry(**entry_params)
         return entry
 
-    def _upsert_entry(self, value: Any, entry: ChatEntry | None = None) -> ChatEntry | None:
+    def _upsert_entry(
+        self, value: Any, entry: ChatEntry | None = None
+    ) -> ChatEntry | None:
         """
         Replace the placeholder entry with the response or update
         the entry's value with the response.
@@ -1020,8 +897,8 @@ class ChatFeed(CompositeWidget):
         user = self.callback_user
         avatar = None
         if isinstance(value, dict):
-            user = value.get('user', user)
-            avatar = value.get('avatar')
+            user = value.get("user", user)
+            avatar = value.get("avatar")
         if entry is not None:
             entry.update(value, user=user, avatar=avatar)
             return entry
@@ -1085,10 +962,9 @@ class ChatFeed(CompositeWidget):
         if self.placeholder_threshold == 0:
             return
 
-        callable_is_async = (
-            asyncio.iscoroutinefunction(self.callback) or
-            isasyncgenfunction(self.callback)
-        )
+        callable_is_async = asyncio.iscoroutinefunction(
+            self.callback
+        ) or isasyncgenfunction(self.callback)
         start = asyncio.get_event_loop().time()
         while not task.done() and num_entries == len(self._chat_log):
             duration = asyncio.get_event_loop().time() - start
@@ -1118,10 +994,7 @@ class ChatFeed(CompositeWidget):
             await task
             task.result()
         except Exception as e:
-            send_kwargs = dict(
-                user="Exception",
-                respond=False
-            )
+            send_kwargs = dict(user="Exception", respond=False)
             if self.callback_exception == "summary":
                 self.send(str(e), **send_kwargs)
             elif self.callback_exception == "verbose":
@@ -1290,58 +1163,96 @@ class ChatInterface(ChatFeed):
     )
     """
 
-    auto_send_types = param.List(doc="""
+    auto_send_types = param.List(
+        doc="""
         The widget types to automatically send when the user presses enter
         or clicks away from the widget. If not provided, defaults to
-        `[TextInput]`.""")
+        `[TextInput]`."""
+    )
 
-    avatar = param.ClassSelector(class_=(str, BinaryIO), doc="""
+    avatar = param.ClassSelector(
+        class_=(str, BinaryIO),
+        doc="""
         The avatar to use for the user. Can be a single character text, an emoji,
         or anything supported by `pn.pane.Image`. If not set, uses the
-        first character of the name.""")
+        first character of the name.""",
+    )
 
-    reset_on_send = param.Boolean(default=False, doc="""
+    reset_on_send = param.Boolean(
+        default=False,
+        doc="""
         Whether to reset the widget's value after sending a message;
-        has no effect for `TextInput`.""")
+        has no effect for `TextInput`.""",
+    )
 
-    show_send = param.Boolean(default=True, doc="""
-        Whether to show the send button.""")
+    show_send = param.Boolean(
+        default=True,
+        doc="""
+        Whether to show the send button.""",
+    )
 
-    show_rerun = param.Boolean(default=True, doc="""
-        Whether to show the rerun button.""")
+    show_rerun = param.Boolean(
+        default=True,
+        doc="""
+        Whether to show the rerun button.""",
+    )
 
-    show_undo = param.Boolean(default=True, doc="""
-        Whether to show the undo button.""")
+    show_undo = param.Boolean(
+        default=True,
+        doc="""
+        Whether to show the undo button.""",
+    )
 
-    show_clear = param.Boolean(default=True, doc="""
-        Whether to show the clear button.""")
+    show_clear = param.Boolean(
+        default=True,
+        doc="""
+        Whether to show the clear button.""",
+    )
 
-    show_button_name = param.Boolean(default=None, doc="""
-        Whether to show the button name.""")
+    show_button_name = param.Boolean(
+        default=None,
+        doc="""
+        Whether to show the button name.""",
+    )
 
     user = param.String(default="User", doc="Name of the ChatInterface user.")
 
-    widgets = param.ClassSelector(class_=(Widget, list), allow_refs=False, doc="""
+    widgets = param.ClassSelector(
+        class_=(Widget, list),
+        allow_refs=False,
+        doc="""
         Widgets to use for the input. If not provided, defaults to
-        `[TextInput]`.""")
+        `[TextInput]`.""",
+    )
 
-    _widgets = param.Dict(default={}, allow_refs=False, doc="""
-        The input widgets.""")
+    _widgets = param.Dict(
+        default={},
+        allow_refs=False,
+        doc="""
+        The input widgets.""",
+    )
 
-    _input_container = param.ClassSelector(class_=Row, doc="""
+    _input_container = param.ClassSelector(
+        class_=Row,
+        doc="""
         The input message row that wraps the input layout (Tabs / Row)
         to easily swap between Tabs and Rows, depending on
-        number of widgets.""")
+        number of widgets.""",
+    )
 
-    _input_layout = param.ClassSelector(class_=(Row, Tabs), doc="""
-        The input layout that contains the input widgets.""")
+    _input_layout = param.ClassSelector(
+        class_=(Row, Tabs),
+        doc="""
+        The input layout that contains the input widgets.""",
+    )
 
-    _button_data = param.Dict(default={}, doc="""
-        Metadata and data related to the buttons.""")
+    _button_data = param.Dict(
+        default={},
+        doc="""
+        Metadata and data related to the buttons.""",
+    )
 
-    _stylesheets: ClassVar[List[str]] = [
-        f"{CDN_DIST}css/chat_interface.css"
-    ]
+    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_interface.css"]
 
     def __init__(self, **params):
         widgets = params.get("widgets")
@@ -1364,20 +1275,21 @@ class ChatInterface(ChatFeed):
         self._button_data = {
             name: _ChatButtonData(
                 index=index, name=name, icon=icon, objects=[], buttons=[]
-            ) for index, (name, icon) in enumerate(button_icons.items())
+            )
+            for index, (name, icon) in enumerate(button_icons.items())
         }
         self._input_container = Row(
             css_classes=["chat-interface-input-container"],
-            stylesheets=self._stylesheets
+            stylesheets=self._stylesheets,
         )
         self._update_input_width()
         self._init_widgets()
         if active is not None:
             self.active = active
         self._composite.param.update(
-            objects=self._composite.objects+[self._input_container],
+            objects=self._composite.objects + [self._input_container],
             css_classes=["chat-interface"],
-            stylesheets=self._stylesheets
+            stylesheets=self._stylesheets,
         )
 
     def _link_disabled_loading(self, obj: Viewable):
@@ -1445,8 +1357,7 @@ class ChatInterface(ChatFeed):
             if isinstance(widget, auto_send_types):
                 widget.param.watch(self._click_send, "value")
             widget.param.update(
-                sizing_mode="stretch_width",
-                css_classes=["chat-interface-input-widget"]
+                sizing_mode="stretch_width", css_classes=["chat-interface-input-widget"]
             )
 
             buttons = []
@@ -1541,13 +1452,13 @@ class ChatInterface(ChatFeed):
                 button_update = {
                     "button_type": "warning",
                     "name": "Revert",
-                    "width": 90
+                    "width": 90,
                 }
             else:
                 button_update = {
                     "button_type": "default",
                     "name": button_data.name.title() if self.show_button_name else "",
-                    "width": 90 if self.show_button_name else 45
+                    "width": 90 if self.show_button_name else 45,
                 }
             button.param.update(button_update)
 

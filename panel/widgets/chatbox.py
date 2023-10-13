@@ -207,7 +207,7 @@ class ChatBox(CompositeWidget):
     The ChatBox widget displays a conversation between multiple users
     composed of users' icons, names, messages, and likes.
 
-    Reference: https://panel.holoviz.org/reference/chat/ChatBox.html
+    Reference: https://panel.holoviz.org/reference/widgets/ChatBox.html
 
     :Example:
 
