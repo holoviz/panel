@@ -115,26 +115,26 @@ def test_basic_template(template, document, comm):
     markdown = Markdown('# Some title')
     tmplt.main.append(markdown)
 
-    assert titems[str(id(markdown))] == (markdown, ['main'])
+    assert titems[f'main-{id(markdown)}'] == (markdown, ['main'])
 
     slider = FloatSlider()
     tmplt.sidebar.append(slider)
 
-    assert titems[str(id(slider))] == (slider, ['nav'])
+    assert titems[f'nav-{id(slider)}'] == (slider, ['nav'])
     assert tvars['nav'] == True
 
     tmplt.sidebar[:] = []
     assert tvars['nav'] == False
-    assert str(id(slider)) not in titems
+    assert f'nav-{id(slider)}' not in titems
 
     subtitle = Markdown('## Some subtitle')
     tmplt.header.append(subtitle)
 
-    assert titems[str(id(subtitle))] == (subtitle, ['header'])
+    assert titems[f'header-{id(subtitle)}'] == (subtitle, ['header'])
     assert tvars['header'] == True
 
     tmplt.header[:] = []
-    assert str(id(subtitle)) not in titems
+    assert f'header-{id(subtitle)}' not in titems
     assert tvars['header'] == False
 
 
