@@ -1,7 +1,10 @@
+import platform
+
 import pytest
 
 from langchain.agents import AgentType, initialize_agent, load_tools
 from langchain.llms.fake import FakeListLLM
+from packaging.version import Version
 
 from panel.chat import ChatFeed, ChatInterface
 from panel.chat.langchain import PanelCallbackHandler
@@ -17,7 +20,10 @@ def test_panel_callback_handler(streaming, instance_type):
     callback_handler = PanelCallbackHandler(instance)
     tools = load_tools(["python_repl"])
     responses = ["Action: Python REPL\nAction Input: print(2 + 2)", "Final Answer: 4"]
-    llm = FakeListLLM(responses=responses, callbacks=[callback_handler], streaming=streaming)
+    llm_kwargs = dict(responses=responses, callbacks=[callback_handler], streaming=streaming)
+    if streaming and Version(platform.python_version) <= Version("3.8"):
+        pytest.skip("Streaming on FakeListLLM not supported on Python 3.8")
+    llm = FakeListLLM(**llm_kwargs)
     agent = initialize_agent(
         tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, callbacks=[callback_handler]
     )
