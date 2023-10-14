@@ -1,10 +1,11 @@
-import platform
-
 import pytest
+import sys
 
-from langchain.agents import AgentType, initialize_agent, load_tools
-from langchain.llms.fake import FakeListLLM
-from packaging.version import Version
+try:
+    from langchain.agents import AgentType, initialize_agent, load_tools
+    from langchain.llms.fake import FakeListLLM
+except ImportError:
+    pytest.skip("langchain not installed", allow_module_level=True)
 
 from panel.chat import ChatFeed, ChatInterface
 from panel.chat.langchain import PanelCallbackHandler
@@ -21,7 +22,7 @@ def test_panel_callback_handler(streaming, instance_type):
     tools = load_tools(["python_repl"])
     responses = ["Action: Python REPL\nAction Input: print(2 + 2)", "Final Answer: 4"]
     llm_kwargs = dict(responses=responses, callbacks=[callback_handler], streaming=streaming)
-    if Version(platform.python_version()) <= Version("3.8"):
+    if sys.version_info < (3, 9):
         llm_kwargs.pop("streaming")
     llm = FakeListLLM(**llm_kwargs)
     agent = initialize_agent(

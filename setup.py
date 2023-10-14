@@ -151,7 +151,6 @@ _tests = [
     'reacton',
     'scipy',
     'twine',
-    'langchain',
     # Temporary pins
     'numba <0.58'
 ]
