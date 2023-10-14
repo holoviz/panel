@@ -186,6 +186,8 @@ class ChatReactionIcons(ReactiveHTML):
 class ChatCopyIcon(ReactiveHTML):
     value = param.String(default=None, doc="The text to copy to the clipboard.")
 
+    fill = param.String(default="none", doc="The fill color of the icon.")
+
     _template = """
         <div
             type="button"
@@ -194,9 +196,9 @@ class ChatCopyIcon(ReactiveHTML):
             style="cursor: pointer; width: ${model.width}px; height: ${model.height}px;"
             title="Copy message to clipboard"
         >
-            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copy"
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copy" id="copy-icon"
                 width="${model.width}" height="${model.height}" viewBox="0 0 24 24"
-                stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"
+                stroke-width="2" stroke="currentColor" fill=${fill} stroke-linecap="round" stroke-linejoin="round"
             >
                 <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                 <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
@@ -205,6 +207,10 @@ class ChatCopyIcon(ReactiveHTML):
         </div>
     """
 
-    _scripts = {"copy_to_clipboard": "navigator.clipboard.writeText(`${data.value}`)"}
+    _scripts = {"copy_to_clipboard": """
+        navigator.clipboard.writeText(`${data.value}`);
+        data.fill = "currentColor";
+        setTimeout(() => data.fill = "none", 50);
+    """}
 
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_copy_icon.css"]
