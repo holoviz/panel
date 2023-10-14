@@ -21,7 +21,7 @@ def test_panel_callback_handler(streaming, instance_type):
     tools = load_tools(["python_repl"])
     responses = ["Action: Python REPL\nAction Input: print(2 + 2)", "Final Answer: 4"]
     llm_kwargs = dict(responses=responses, callbacks=[callback_handler], streaming=streaming)
-    if streaming and Version(platform.python_version) <= Version("3.8"):
+    if streaming and Version(platform.python_version()) <= Version("3.8"):
         pytest.skip("Streaming on FakeListLLM not supported on Python 3.8")
     llm = FakeListLLM(**llm_kwargs)
     agent = initialize_agent(
