@@ -1,5 +1,4 @@
-"""
-"""
+"""The langchain module integrates Langchain support with Panel."""
 
 from __future__ import annotations
 
