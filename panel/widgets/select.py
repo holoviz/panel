@@ -576,7 +576,7 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase, TooltipMixin):
         Button group orientation, either 'horizontal' (default) or 'vertical'.""")
 
     _source_transforms = {
-        'value': "source.labels[value]", 'button_style': None
+        'value': "source.labels[value]", 'button_style': None, 'description': None
     }
 
     _supports_embed: ClassVar[bool] = True
@@ -675,7 +675,8 @@ class CheckButtonGroup(_CheckGroupBase, _ButtonBase, TooltipMixin):
         Button group orientation, either 'horizontal' (default) or 'vertical'.""")
 
     _source_transforms = {
-        'value': "value.map((index) => source.labels[index])", 'button_style': None
+        'value': "value.map((index) => source.labels[index])", 'button_style': None,
+        'description': None
     }
 
     _widget_type: ClassVar[Type[Model]] = _BkCheckboxButtonGroup

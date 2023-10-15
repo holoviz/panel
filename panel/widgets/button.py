@@ -184,8 +184,12 @@ class Button(_ClickButton, TooltipMixin):
         'clicks': None, 'name': 'label', 'value': None,
     }
 
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'button_style': None, 'description': None
+    }
+
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
-        'event:button_click': None, 'value': None
+        'event:button_click': None, 'value': None,
     }
 
     _widget_type: ClassVar[Type[Model]] = _BkButton
