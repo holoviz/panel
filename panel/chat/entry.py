@@ -1,5 +1,7 @@
-"""The entry module provides a low-level API for rendering chat messages.
 """
+The entry module provides a low-level API for rendering chat messages.
+"""
+
 from __future__ import annotations
 
 import datetime

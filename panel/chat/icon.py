@@ -1,3 +1,7 @@
+"""
+The icon module provides a low-level API for rendering chat related icons.
+"""
+
 from typing import ClassVar, List
 
 import param

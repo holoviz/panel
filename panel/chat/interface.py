@@ -1,5 +1,7 @@
 """
-A widget to display a list of `ChatEntry` objects and interact with them.
+The interface module provides an even higher-level API for interacting
+with a list of `ChatEntry` objects compared to the `ChatFeed`
+through a frontend input UI.
 """
 
 from __future__ import annotations

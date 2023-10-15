@@ -1,6 +1,8 @@
 """
-A widget to display a list of `ChatEntry` objects.
+The feed module provides a high-level API for interacting
+with a list of `ChatEntry` objects through the backend methods.
 """
+
 from __future__ import annotations
 
 import asyncio
