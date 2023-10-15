@@ -235,6 +235,8 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
 
         access_token, refresh_token = body['access_token'], body.get('refresh_token')
         expires_in = body.get('expires_in')
+        if expires_in:
+            expires_in = int(expires_in)
         if 'id_token' in body:
             log.debug("%s successfully obtained tokens.", type(self).__name__)
             id_token = body['id_token']
