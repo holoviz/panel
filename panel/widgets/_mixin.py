@@ -26,10 +26,3 @@ class TooltipMixin(Widget):
         if isinstance(desc, str):
             params['description'] = BkTooltip(content=desc, position='right')
         return super()._process_param_change(params)
-
-    @property
-    def _linkable_params(self) -> tuple[str]:
-        props = list(super()._linked_properties)
-        if 'description' in props:
-            props.remove('description')
-        return tuple(props)
