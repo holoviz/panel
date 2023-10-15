@@ -29,7 +29,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
     >>> chat_interface = pn.widgets.ChatInterface(callback=callback, callback_user="Langchain")
     >>> callback_handler = pn.widgets.langchain.PanelCallbackHandler(instance=chat_interface)
     >>> llm = ChatOpenAI(streaming=True, callbacks=[callback_handler])
-    >>> chain = ConversationChain(llm=llm, memory=memory)
+    >>> chain = ConversationChain(llm=llm)
 
     """
 
