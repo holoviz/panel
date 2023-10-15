@@ -12,13 +12,13 @@ from typing import (
 import param
 
 from bokeh.events import ButtonClick, MenuItemClick
-from bokeh.models import (
-    Button as _BkButton, Dropdown as _BkDropdown, Toggle as _BkToggle,
-)
+from bokeh.models import Dropdown as _BkDropdown, Toggle as _BkToggle
 from bokeh.models.ui import SVGIcon, TablerIcon
 
 from ..io.resources import CDN_DIST
 from ..links import Callback
+from ..models.widgets import Button as _BkButton
+from ._mixin import TooltipMixin
 from .base import Widget
 
 if TYPE_CHECKING:
@@ -156,7 +156,7 @@ class _ClickButton(_ButtonBase, IconMixin):
         return Callback(self, code=callbacks, args=args)
 
 
-class Button(_ClickButton):
+class Button(_ClickButton, TooltipMixin):
     """
     The `Button` widget allows triggering events when the button is
     clicked.
@@ -181,11 +181,15 @@ class Button(_ClickButton):
         Toggles from False to True while the event is being processed.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'clicks': None, 'name': 'label', 'value': None
+        'clicks': None, 'name': 'label', 'value': None,
+    }
+
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'button_style': None, 'description': None
     }
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
-        'event:button_click': None, 'value': None
+        'event:button_click': None, 'value': None,
     }
 
     _widget_type: ClassVar[Type[Model]] = _BkButton

@@ -307,15 +307,22 @@ class NBSR:
 def wait_for_port(stdout):
     nbsr = NBSR(stdout)
     m = None
+    output = []
     for i in range(20):
         o = nbsr.readline(0.5)
         if not o:
             continue
-        m = APP_PATTERN.search(o.decode('utf-8'))
+        out = o.decode('utf-8')
+        output.append(out)
+        m = APP_PATTERN.search(out)
         if m is not None:
             break
     if m is None:
-        pytest.fail("no matching log line in process output")
+        output = '\n    '.join(output)
+        pytest.fail(
+            "No matching log line in process output, following output "
+            f"was captured:\n\n   {output}"
+        )
     return int(m.group(1))
 
 def write_file(content, file_obj):

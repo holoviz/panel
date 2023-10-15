@@ -262,7 +262,7 @@ textarea.bk-input:not([type='file']) {
   background-color: var(--current-background-color);
   position: absolute;
   left: 0;
-  top: 0;
+  top: -0.5em;
   transform: scale(0.75);
   line-height: 1.4375em;
   font-size: 1rem;
