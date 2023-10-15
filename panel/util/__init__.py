@@ -275,6 +275,18 @@ def base64url_decode(input):
     return base64.urlsafe_b64decode(input)
 
 
+def decode_token(token, signed=True):
+    """
+    Decodes a signed or unsigned JWT token.
+    """
+    if signed and "." in token:
+        signing_input, _ = token.encode('utf-8').rsplit(b".", 1)
+        _, payload_segment = signing_input.split(b".", 1)
+    else:
+        payload_segment = token
+    return json.loads(base64url_decode(payload_segment).decode('utf-8'))
+
+
 class classproperty:
 
     def __init__(self, f):

@@ -7,14 +7,13 @@ import asyncio
 import datetime as dt
 import functools
 import inspect
-import json
 import logging
 import shutil
 import sys
 import threading
 import time
 
-from collections import OrderedDict, defaultdict
+from collections import Counter, OrderedDict, defaultdict
 from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -33,7 +32,7 @@ from bokeh.document.locking import UnlockedDocumentProxy
 from bokeh.io import curdoc as _curdoc
 from pyviz_comms import CommManager as _CommManager
 
-from ..util import base64url_decode, parse_timedelta
+from ..util import decode_token, parse_timedelta
 from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 
 _state_logger = logging.getLogger('panel.state')
@@ -210,6 +209,10 @@ class _state(param.Parameterized):
     # Sessions
     _sessions = {}
     _session_key_funcs = {}
+
+    # Override user info
+    _oauth_user_overrides = {}
+    _active_users = Counter()
 
     def __repr__(self) -> str:
         server_info = []
@@ -881,7 +884,7 @@ class _state(param.Parameterized):
     # Public Properties
     #----------------------------------------------------------------
 
-    def _decode_cookie(self, cookie_name):
+    def _decode_cookie(self, cookie_name, cookie=None):
         from tornado.web import decode_signed_value
 
         from ..config import config
@@ -889,6 +892,9 @@ class _state(param.Parameterized):
         if cookie is None:
             return None
         cookie = decode_signed_value(config.cookie_secret, cookie_name, cookie)
+        return self._decrypt_cookie(cookie)
+
+    def _decrypt_cookie(self, cookie):
         if self.encryption is None:
             return cookie.decode('utf-8')
         return self.encryption.decrypt(cookie).decode('utf-8')
@@ -898,7 +904,15 @@ class _state(param.Parameterized):
         """
         Returns the OAuth access_token if enabled.
         """
-        return self._decode_cookie('access_token')
+        if self.user in self._oauth_user_overrides and 'refresh_token' in self._oauth_user_overrides:
+            return self._oauth_user_overrides[self.user]['access_token']
+        access_token = self._decode_cookie('access_token')
+        if not access_token:
+            return
+        decoded_token = decode_token(access_token)
+        if decoded_token['exp'] <= dt.datetime.now(dt.timezone.utc).timestamp():
+            return None
+        return access_token
 
     @property
     def app_url(self) -> str | None:
@@ -1016,7 +1030,18 @@ class _state(param.Parameterized):
         """
         Returns the OAuth refresh_token if enabled and available.
         """
-        return self._decode_cookie('refresh_token')
+        if self.user in self._oauth_user_overrides and 'refresh_token' in self._oauth_user_overrides:
+            return self._oauth_user_overrides[self.user]['refresh_token']
+        refresh_token = self._decode_cookie('refresh_token')
+        if not refresh_token:
+            return
+        try:
+            decoded_token = decode_token(refresh_token)
+        except ValueError:
+            return refresh_token
+        if decoded_token['exp'] <= dt.datetime.now(dt.timezone.utc).timestamp():
+            return None
+        return refresh_token
 
     @property
     def served(self):
@@ -1068,23 +1093,7 @@ class _state(param.Parameterized):
         """
         Returns the OAuth user information if enabled.
         """
-        from tornado.web import decode_signed_value
-
-        from ..config import config
-        id_token = self.cookies.get('id_token')
-        if id_token is None or config.cookie_secret is None:
-            return None
-        id_token = decode_signed_value(config.cookie_secret, 'id_token', id_token)
-        if self.encryption is None:
-            id_token = id_token
-        else:
-            id_token = self.encryption.decrypt(id_token)
-        if b"." in id_token:
-            signing_input, _ = id_token.rsplit(b".", 1)
-            _, payload_segment = signing_input.split(b".", 1)
-        else:
-            payload_segment = id_token
-        return json.loads(base64url_decode(payload_segment).decode('utf-8'))
-
+        id_token = self._decode_cookie('id_token')
+        return decode_token(id_token)
 
 state = _state()

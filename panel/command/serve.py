@@ -143,6 +143,10 @@ class Serve(_BkServe):
             help    = "Expiry off the OAuth cookie in number of days.",
             default = 1
         )),
+        ('--oauth-refresh-tokens', dict(
+            action  = 'store_true',
+            help    = "Whether to automatically OAuth access tokens when they expire.",
+        )),
         ('--login-endpoint', dict(
             action  = 'store',
             type    = str,
@@ -501,6 +505,7 @@ class Serve(_BkServe):
         if args.oauth_provider:
             config.oauth_provider = args.oauth_provider
         if config.oauth_provider:
+            config.oauth_refresh_tokens = args.oauth_refresh_tokens
             config.oauth_expiry = args.oauth_expiry_days
             if config.oauth_key and args.oauth_key:
                 raise ValueError(
