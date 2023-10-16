@@ -1059,7 +1059,7 @@ def get_server(
     oauth_encryption_key: str (optional, default=None)
       A random encryption key used for encrypting OAuth user
       information and access tokens.
-    oauth_refresh_tokens: str (optional, default=None)
+    oauth_refresh_tokens: bool (optional, default=None)
       Whether to automatically refresh OAuth access tokens when they expire.
     login_endpoint: str (optional, default=None)
       Overrides the default login endpoint `/login`
