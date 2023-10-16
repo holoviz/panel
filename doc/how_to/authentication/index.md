@@ -50,6 +50,14 @@ Discover how to configure error and logout templates to match the design of your
 Discover how to make use of the user information and access tokens returned by the OAuth provider.
 :::
 
+
+:::{grid-item-card} {octicon}`file-badge;2.5em;sd-mr-1 sd-animate-grow50` Access Tokens
+:link: access_tokens
+:link-type: doc
+
+Discover how to use OAuth access tokens and ensure they are automatically refreshed when they expire.
+:::
+
 :::{grid-item-card} {octicon}`verified;2.5em;sd-mr-1 sd-animate-grow50` Authorization callbacks
 :link: authorization
 :link-type: doc

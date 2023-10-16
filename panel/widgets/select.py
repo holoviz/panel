@@ -16,16 +16,18 @@ import param
 
 from bokeh.models.widgets import (
     AutocompleteInput as _BkAutocompleteInput,
-    CheckboxButtonGroup as _BkCheckboxButtonGroup,
     CheckboxGroup as _BkCheckboxGroup, MultiChoice as _BkMultiChoice,
-    MultiSelect as _BkMultiSelect, RadioButtonGroup as _BkRadioButtonGroup,
-    RadioGroup as _BkRadioBoxGroup,
+    MultiSelect as _BkMultiSelect, RadioGroup as _BkRadioBoxGroup,
 )
 
 from ..io.resources import CDN_DIST
 from ..layout import Column
-from ..models import CustomSelect, SingleSelect as _BkSingleSelect
+from ..models import (
+    CheckboxButtonGroup as _BkCheckboxButtonGroup, CustomSelect,
+    RadioButtonGroup as _BkRadioButtonGroup, SingleSelect as _BkSingleSelect,
+)
 from ..util import PARAM_NAME_PATTERN, indexOf, isIn
+from ._mixin import TooltipMixin
 from .base import CompositeWidget, Widget
 from .button import Button, _ButtonBase
 from .input import TextAreaInput, TextInput
@@ -550,7 +552,7 @@ class _RadioGroupBase(SingleSelectBase):
 
 
 
-class RadioButtonGroup(_RadioGroupBase, _ButtonBase):
+class RadioButtonGroup(_RadioGroupBase, _ButtonBase, TooltipMixin):
     """
     The `RadioButtonGroup` widget allows selecting from a list or dictionary
     of values using a set of toggle buttons.
@@ -574,7 +576,7 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase):
         Button group orientation, either 'horizontal' (default) or 'vertical'.""")
 
     _source_transforms = {
-        'value': "source.labels[value]", 'button_style': None
+        'value': "source.labels[value]", 'button_style': None, 'description': None
     }
 
     _supports_embed: ClassVar[bool] = True
@@ -649,7 +651,7 @@ class _CheckGroupBase(SingleSelectBase):
 
 
 
-class CheckButtonGroup(_CheckGroupBase, _ButtonBase):
+class CheckButtonGroup(_CheckGroupBase, _ButtonBase, TooltipMixin):
     """
     The `CheckButtonGroup` widget allows selecting between a list of options
     by toggling the corresponding buttons.
@@ -673,7 +675,8 @@ class CheckButtonGroup(_CheckGroupBase, _ButtonBase):
         Button group orientation, either 'horizontal' (default) or 'vertical'.""")
 
     _source_transforms = {
-        'value': "value.map((index) => source.labels[index])", 'button_style': None
+        'value': "value.map((index) => source.labels[index])", 'button_style': None,
+        'description': None
     }
 
     _widget_type: ClassVar[Type[Model]] = _BkCheckboxButtonGroup

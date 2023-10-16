@@ -32,6 +32,10 @@ Google provides a guide about [configuring a OAuth application](https://develope
 
 Okta provides a guide about [configuring OAuth2](https://developer.okta.com/docs/concepts/oauth-openid/). You must provide an `oauth_key` and `oauth_secret` but in most other ordinary setups you will also have to provide a `url` via the `oauth_extra_params` and if you have set up a custom authentication server (i.e. not 'default') with Okta you must also provide 'server', the `oauth_extra_params` should then look something like this: `{'server': 'custom', 'url': 'dev-***.okta.com'}`
 
+## **Auth0**
+
+Auth0 provides detailed documentation about [configuring a OAuth application](https://auth0.com/docs/get-started/applications/application-settings). In addition to the `oauth_key` and `oauth_secret` you must also provide a `subdomain` via the `oauth_extra_params`, i.e. you must provide something like: `{'subdomain': 'dev-....us'}` and we also recommend you obtain the `audience` for your Auth0 API and provide that along with the subdomain.
+
 ## **Generic**/**Password**/**Code**
 
 The `'generic'`, `'password'` and `'code'` OAuth providers allows you to provide custom authentication endpoints using the `--oauth-extra-param` or using environment variables. Specifically you must provide:

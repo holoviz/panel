@@ -54,10 +54,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
           channels: pyviz/label/dev,numba,bokeh,conda-forge,nodefaults
           # Remove when Python 3.11 is well supported on latest conda/conda-forge.
-          conda-update: ${{ matrix.python-version == '3.11' && 'false' || 'true' }}
+          conda-update: true
           nodejs: true
           # Remove when all examples tools can be installed on 3.10
-          envs: ${{ !contains(matrix.python-version, '3.1') && '-o examples -o recommended -o tests -o build' || '-o recommended -o tests -o build' }}
+          envs: -o examples -o recommended -o tests -o build
           cache: true
           opengl: true
         id: install
@@ -89,8 +89,6 @@ jobs:
           conda activate test-environment
           doit test_subprocess
       - name: test examples
-        # Remove when all examples tools can be installed on 3.10
-        if: (!(contains(matrix.python-version, '3.1')))
         run: |
           conda activate test-environment
           doit test_examples
@@ -118,6 +116,25 @@ jobs:
       PANEL_LOG_LEVEL: info
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
+      OAUTH_COOKIE_SECRET: ${{ secrets.OAUTH_COOKIE_SECRET }}
+      OAUTH_ENCRYPTION_KEY: ${{ secrets.OAUTH_ENCRYPTION_KEY }}
+      AUTH0_PORT: "5701"
+      AUTH0_OAUTH_KEY: ${{ secrets.AUTH0_OAUTH_KEY }}
+      AUTH0_OAUTH_SECRET: ${{ secrets.AUTH0_OAUTH_SECRET }}
+      AUTH0_OAUTH_EXTRA_PARAMS: ${{ secrets.AUTH0_OAUTH_EXTRA_PARAMS }}
+      AUTH0_OAUTH_USER: ${{ secrets.AUTH0_OAUTH_USER }}
+      AUTH0_OAUTH_PASSWORD: ${{ secrets.AUTH0_OAUTH_PASSWORD }}
+      AZURE_PORT: "5702"
+      AZURE_OAUTH_KEY: ${{ secrets.AZURE_OAUTH_KEY }}
+      AZURE_OAUTH_SECRET: ${{ secrets.AZURE_OAUTH_SECRET }}
+      AZURE_OAUTH_USER: ${{ secrets.AZURE_OAUTH_USER }}
+      AZURE_OAUTH_PASSWORD: ${{ secrets.AZURE_OAUTH_PASSWORD }}
+      OKTA_PORT: "5703"
+      OKTA_OAUTH_KEY: ${{ secrets.OKTA_OAUTH_KEY }}
+      OKTA_OAUTH_SECRET: ${{ secrets.OKTA_OAUTH_SECRET }}
+      OKTA_OAUTH_EXTRA_PARAMS: ${{ secrets.OKTA_OAUTH_EXTRA_PARAMS }}
+      OKTA_OAUTH_USER: ${{ secrets.OKTA_OAUTH_USER }}
+      OKTA_OAUTH_PASSWORD: ${{ secrets.OKTA_OAUTH_PASSWORD }}
       # Without this env var `doit env_create ...` uses by default
       # the `pyviz` channel, except that we don't want to configure
       # it as one of the sources.
@@ -166,6 +183,11 @@ jobs:
         run: |
           conda activate test-environment
           doit test_ui
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: ui_screenshots
+          path: ./ui_screenshots
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
