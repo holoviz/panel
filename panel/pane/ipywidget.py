@@ -45,7 +45,10 @@ class IPyWidget(PaneBase):
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
-        return (hasattr(obj, 'traits') and hasattr(obj, 'get_manager_state') and hasattr(obj, 'comm'))
+        try:
+            return (hasattr(obj, 'traits') and hasattr(obj, 'get_manager_state') and hasattr(obj, 'comm'))
+        except Exception:
+            return False
 
     def _resolve_ref(self, pname, value):
         if pname == 'object' and self.applies(value):
