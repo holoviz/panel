@@ -20,6 +20,8 @@ from contextlib import contextmanager
 
 import param
 
+from param.parameterized import iscoroutinefunction
+
 from .state import state
 
 #---------------------------------------------------------------------
@@ -351,8 +353,7 @@ def cache(
 
     lock = threading.RLock()
 
-    @functools.wraps(func)
-    def wrapped_func(*args, **kwargs):
+    def hash_func(*args, **kwargs):
         global func_hash
         # Handle param.depends method by adding parameters to arguments
         func_name = func.__name__
@@ -396,18 +397,39 @@ def cache(
             _cleanup_ttl(func_cache, ttl, time)
 
         if hash_value in func_cache:
-            with lock:
-                ret, ts, count, _ = func_cache[hash_value]
-                func_cache[hash_value] = (ret, ts, count+1, time)
-                return ret
+            return func_cache, hash_value, time
 
         if max_items is not None:
             _cleanup_cache(func_cache, policy, max_items, time)
 
-        ret = func(*args, **kwargs)
-        with lock:
-            func_cache[hash_value] = (ret, time, 0, time)
-        return ret
+        return func_cache, hash_value, time
+
+    if iscoroutinefunction(func):
+        @functools.wraps(func)
+        async def wrapped_func(*args, **kwargs):
+            func_cache, hash_value, time = hash_func(*args, **kwargs)
+            if hash_value in func_cache:
+                with lock:
+                    ret, ts, count, _ = func_cache[hash_value]
+                    func_cache[hash_value] = (ret, ts, count+1, time)
+            else:
+                ret = await func(*args, **kwargs)
+                with lock:
+                    func_cache[hash_value] = (ret, time, 0, time)
+            return ret
+    else:
+        @functools.wraps(func)
+        def wrapped_func(*args, **kwargs):
+            func_cache, hash_value, time = hash_func(*args, **kwargs)
+            if hash_value in func_cache:
+                with lock:
+                    ret, ts, count, _ = func_cache[hash_value]
+                    func_cache[hash_value] = (ret, ts, count+1, time)
+            else:
+                ret = func(*args, **kwargs)
+                with lock:
+                    func_cache[hash_value] = (ret, time, 0, time)
+            return ret
 
     def clear(session_context=None):
         global func_hash

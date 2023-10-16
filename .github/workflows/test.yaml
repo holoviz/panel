@@ -54,10 +54,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
           channels: pyviz/label/dev,numba,bokeh,conda-forge,nodefaults
           # Remove when Python 3.11 is well supported on latest conda/conda-forge.
-          conda-update: ${{ matrix.python-version == '3.11' && 'false' || 'true' }}
+          conda-update: true
           nodejs: true
           # Remove when all examples tools can be installed on 3.10
-          envs: ${{ !contains(matrix.python-version, '3.1') && '-o examples -o recommended -o tests -o build' || '-o recommended -o tests -o build' }}
+          envs: -o examples -o recommended -o tests -o build
           cache: true
           opengl: true
         id: install
@@ -89,8 +89,6 @@ jobs:
           conda activate test-environment
           doit test_subprocess
       - name: test examples
-        # Remove when all examples tools can be installed on 3.10
-        if: (!(contains(matrix.python-version, '3.1')))
         run: |
           conda activate test-environment
           doit test_examples

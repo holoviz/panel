@@ -102,6 +102,7 @@ nbsite_gallery_conf = {
                 'global',
                 'indicators',
                 'widgets',
+                'chat',
             ],
             'titles': {
                 'Vega': 'Altair & Vega',
