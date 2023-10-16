@@ -53,10 +53,8 @@ jobs:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
           channels: pyviz/label/dev,numba,bokeh,conda-forge,nodefaults
-          # Remove when Python 3.11 is well supported on latest conda/conda-forge.
           conda-update: true
           nodejs: true
-          # Remove when all examples tools can be installed on 3.10
           envs: -o examples -o recommended -o tests -o build
           cache: true
           opengl: true
