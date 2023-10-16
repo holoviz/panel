@@ -29,7 +29,7 @@ from ..io.resources import CDN_DIST, CSS_URLS
 from ..io.state import state
 from ..reactive import Reactive, ReactiveData
 from ..util import (
-    clone_model, isdatetime, lazy_load, updating,
+    clone_model, datetime_as_utctimestamp, isdatetime, lazy_load, updating,
 )
 from .base import Widget
 from .button import Button
@@ -822,6 +822,8 @@ class BaseTable(ReactiveData, Widget):
                         self.value.loc[data_ind, k] = value
                     else:
                         self.value.iloc[data_ind, columns.index(k)] = value
+                    if isinstance(value, pd.Timestamp):
+                        value = datetime_as_utctimestamp(value)
                     values.append((patch_ind, value))
                 patches[k] = values
             self._patch(patches)
