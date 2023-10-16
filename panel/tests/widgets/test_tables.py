@@ -1271,6 +1271,29 @@ def test_tabulator_patch_ranges(document, comm):
         if col != 'index':
             np.testing.assert_array_equal(table.value[col].values, expected[col])
 
+def test_tabulator_patch_with_timestamp(document, comm):
+    # https://github.com/holoviz/panel/issues/5555
+    df = pd.DataFrame(dict(A=pd.to_datetime(['1980-01-01', '1980-01-02'])))
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    table.patch({'A': [(0, pd.Timestamp('2021-01-01'))]})
+
+    expected = {
+        'index': np.array([0, 1]),
+        'A': np.array(['2021-01-01T00:00:00.000000000',
+                       '1980-01-02T00:00:00.000000000'],
+                      dtype='datetime64[ns]')
+    }
+    for col, values in model.source.data.items():
+        if col == 'A':
+            expected_array = expected[col].astype(np.int64) / 10e5
+        else:
+            expected_array = expected[col]
+        np.testing.assert_array_equal(values, expected_array)
+        if col != 'index':
+            np.testing.assert_array_equal(table.value[col].values, expected[col])
 
 def test_tabulator_stream_series_paginated_not_follow(document, comm):
     df = makeMixedDataFrame()
