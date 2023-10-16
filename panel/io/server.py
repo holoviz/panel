@@ -481,6 +481,35 @@ class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
                     session.block_expiration()
         return session
 
+    def _token_payload(self):
+        app = self.application
+        if app.include_headers is None:
+            excluded_headers = (app.exclude_headers or [])
+            allowed_headers = [header for header in self.request.headers
+                               if header not in excluded_headers]
+        else:
+            allowed_headers = app.include_headers
+        headers = {k: v for k, v in self.request.headers.items()
+                   if k in allowed_headers}
+
+        if app.include_cookies is None:
+            excluded_cookies = (app.exclude_cookies or [])
+            allowed_cookies = [cookie for cookie in self.request.cookies
+                               if cookie not in excluded_cookies]
+        else:
+            allowed_cookies = app.include_cookies
+        cookies = {k: v.value for k, v in self.request.cookies.items()
+                   if k in allowed_cookies}
+
+        if cookies and 'Cookie' in headers and 'Cookie' not in (app.include_headers or []):
+            # Do not include Cookie header since cookies can be restored from cookies dict
+            del headers['Cookie']
+
+        arguments = {} if self.request.arguments is None else self.request.arguments
+        payload = {'headers': headers, 'cookies': cookies, 'arguments': arguments}
+        payload.update(self.application_context.application.process_request(self.request))
+        return payload
+
     @authenticated
     async def get(self, *args, **kwargs):
         app = self.application
@@ -494,6 +523,7 @@ class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
                     signed=self.application.sign_sessions
                 )
                 payload = get_token_payload(session.token)
+                payload.update(self._token_payload())
                 del payload['session_expiry']
                 token = generate_jwt_token(
                     session_id,
