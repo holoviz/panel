@@ -34,9 +34,6 @@ https://panel.holoviz.org/getting_started/index.html
 """
 from .base import CompositeWidget, Widget  # noqa
 from .button import Button, MenuButton, Toggle  # noqa
-from .chat import (  # noqa
-    ChatEntry, ChatFeed, ChatInterface, ChatReactionIcons,
-)
 from .chatbox import ChatBox  # noqa
 from .codeeditor import Ace, CodeEditor  # noqa
 from .debugger import Debugger  # noqa
@@ -51,7 +48,6 @@ from .input import (  # noqa
     FloatInput, IntInput, LiteralInput, NumberInput, PasswordInput, Spinner,
     StaticText, Switch, TextAreaInput, TextInput,
 )
-from .langchain import PanelCallbackHandler  # noqa
 from .misc import FileDownload, JSONEditor, VideoStream  # noqa
 from .player import DiscretePlayer, Player  # noqa
 from .select import (  # noqa
