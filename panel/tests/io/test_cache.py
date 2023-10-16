@@ -164,12 +164,26 @@ def function_with_args(a, b):
     OFFSET[(a, b)] = offset + 1
     return result
 
+async def async_function_with_args(a, b):
+    global OFFSET
+    offset = OFFSET.get((a, b), 0)
+    result = a + b + offset
+    OFFSET[(a, b)] = offset + 1
+    return result
+
 def test_cache_with_args():
     global OFFSET
     OFFSET.clear()
     fn = cache(function_with_args)
     assert fn(0, 0) == 0
     assert fn(0, 0) == 0
+
+async def test_async_cache_with_args():
+    global OFFSET
+    OFFSET.clear()
+    fn = cache(async_function_with_args)
+    assert (await fn(0, 0)) == 0
+    assert (await fn(0, 0)) == 0
 
 def test_cache_with_kwargs():
     global OFFSET
