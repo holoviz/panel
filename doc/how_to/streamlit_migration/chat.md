@@ -4,20 +4,21 @@ Both Streamlit and Panel provides special components to help you build conversat
 
 | Streamlit            | Panel               | Description                            |
 | -------------------- | ------------------- | -------------------------------------- |
-| [`st.chat_message`](https://docs.streamlit.io/library/api-reference/chat/st.chat_message)    | [`pn.chat.ChatEntry`](../../../examples/reference/chat/ChatEntry.ipynb) | Display a single chat message  |
-| [`st_chat_input`](https://docs.streamlit.io/library/api-reference/chat/st.chat_input) |  | Input a chat message |
-| `st.status`          | | Display output of long-running tasks in a container |
-|                      | [`pn.chat.ChatFeed`](../../../examples/reference/chat/ChatFeed.ipynb)  | Display multiple chat messages         |
-|                      | [`pn.chat.ChatInterface`](../../../examples/reference/chat/ChatInterface.ipynb)  | High-level, easy to use chat interface |
-| `langchain.callbacks.StreamlitCallbackHandler` | [`pn.chat.PanelCallbackHandler`](../../../examples/reference/chat/ChatInterface.ipynb) | Display the thoughts and actions of a [LangChain](https://python.langchain.com/docs/get_started/introduction) agent |
+| [`chat_message`](https://docs.streamlit.io/library/api-reference/chat/st.chat_message)    | [`ChatEntry`](../../../examples/reference/chat/ChatEntry.ipynb) | Display a chat message  |
+| [`chat_input`](https://docs.streamlit.io/library/api-reference/chat/st.chat_input) |  | Input a chat message |
+| [`status`](https://docs.streamlit.io/library/api-reference/status/st.status) | | Display the output of long-running tasks in a container |
+|                      | [`ChatFeed`](../../../examples/reference/chat/ChatFeed.ipynb)  | Display multiple chat messages         |
+|                      | [`ChatInterface`](../../../examples/reference/chat/ChatInterface.ipynb)  | High-level, easy to use chat interface |
+| [`StreamlitCallbackHandler`](https://python.langchain.com/docs/integrations/callbacks/streamlit) | [`PanelCallbackHandler`](../../../examples/reference/chat/ChatInterface.ipynb) | Display the thoughts and actions of a [LangChain](https://python.langchain.com/docs/get_started/introduction) agent |
+| [`StreamlitChatMessageHistory`](https://python.langchain.com/docs/integrations/memory/streamlit_chat_message_history) |  | Persists the memory of a [LangChain](https://python.langchain.com/docs/get_started/introduction) agent |
 
-The starting point for most Panel users is the *high-level* `ChatInterface`. Not the *low-level* `ChatEntry` and `ChatFeed` components.
+The starting point for most Panel users is the *high-level* [`ChatInterface`](../../../examples/reference/chat/ChatInterface.ipyn), not the *low-level* [`ChatEntry`](../../../examples/reference/chat/ChatEntry.ipynb) and [`ChatFeed`](../../../examples/reference/chat/ChatFeed.ipynb) components.
 
-You can find specialized chat components and examples at [panel-chat-examples/](https://holoviz-topics.github.io/panel-chat-examples/).
+For inspiration check out the many chat components and examples at [panel-chat-examples](https://holoviz-topics.github.io/panel-chat-examples/).
 
 ## Chat Message
 
-Lets see how-to migrate an app using `st.chat_message`
+Lets see how-to migrate an app that is using `st.chat_message`.
 
 ### Streamlit Chat Message Example
 
@@ -49,6 +50,8 @@ pn.chat.ChatEntry(value=message, user="user").servable()
 
 ## Chat Input
 
+Lets see how-to migrate an app that is using `st.chat_message`
+
 ### Streamlit Chat Input
 
 ```python
@@ -65,7 +68,7 @@ if prompt:
 
 Panel does not provide a dedicated *chat input* component because it is built into Panels high-level `ChatInterface`.
 
-Below we will show you how to build a custom `ChatInput` widget.
+Below we will show you how to build and use a custom `ChatInput` widget.
 
 ```python
 import param
@@ -127,8 +130,11 @@ class ChatInput(pn.viewable.Viewer):
     def _update_value(self, value, event):
         self.value = value or self.value
         self._text_input.value = ""
+```
 
+Let us use the custom `ChatInput` widget.
 
+```Python
 chat_input = ChatInput(placeholder="Say something")
 
 
@@ -145,6 +151,8 @@ pn.Column(message, chat_input, margin=50).servable()
 ![Panel ChatInput](../../_static/images/panel_chat_input.png)
 
 ## Chat Status
+
+Lets see how-to migrate an app that is using `st.status`.
 
 ### Streamlit Chat Status
 
@@ -167,9 +175,9 @@ st.button("Run")
 
 ### Panel Chat Status
 
-Panel does not provide a dedicated *status* component because it is built into Panels high-level `ChatInterface`. Furthermore Panel provides a lot of other built in *indicators*. Check out the [Indicators Gallery](https://panel.holoviz.org/reference/index.html#indicators).
+Panel does not provide a dedicated *status* component. Instead it is built into Panels high-level `ChatInterface` as well as provided by a long list of alternative Panel [*indicator components*](https://panel.holoviz.org/reference/index.html#indicators).
 
-Below we will show you how to build a custom `Status` indicator.
+Below we will show you how to build and use a custom `Status` indicator.
 
 ```python
 import time
@@ -315,8 +323,11 @@ class Status(pn.viewable.Viewer):
             self.value = "error"
         else:
             self.complete()
+```
 
+Let us use the custom `Status` indicator.
 
+```python
 status = Status("Downloading data...", collapsed=False, sizing_mode="stretch_width")
 
 
