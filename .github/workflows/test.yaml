@@ -209,7 +209,7 @@ jobs:
         with:
           python-version: 3.12
       - run: |
-          python -m pip install -ve '.[tests, recommended]'
+          python -m pip install -ve '.[tests_core, recommended]'
       - name: bokeh sampledata
         run: |
           # conda activate test-environment

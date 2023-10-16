@@ -124,7 +124,7 @@ _recommended = [
     'plotly'
 ]
 
-_tests = [
+_tests_core = [
     # Test dependencies
     'flake8',
     'parameterized',
@@ -142,14 +142,17 @@ _tests = [
     'folium',
     'diskcache',
     'holoviews >=1.16.0',
-    'ipympl',
-    'ipython >=7.0',
-    'ipyvuetify',
-    'ipywidgets_bokeh',
     'numpy',
     'pandas >=1.3',
-    'reacton',
+    'ipython >=7.0',
     'scipy',
+]
+
+_tests = _tests_core + [
+    'ipympl',
+    'ipyvuetify',
+    'ipywidgets_bokeh',
+    'reacton',
     'twine',
     # Temporary pins
     'numba <0.58'
@@ -207,6 +210,7 @@ _conda_only = [
 
 extras_require = {
     'examples': _examples,
+    'tests_core': _tests_core,
     'tests': _tests,
     'recommended': _recommended,
     'doc': _recommended + [
