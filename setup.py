@@ -297,7 +297,7 @@ setup_args = dict(
         "Topic :: Office/Business",
         "Topic :: Office/Business :: Financial",
         "Topic :: Software Development :: Libraries"],
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     entry_points={
         'console_scripts': [
             'panel = panel.command:main'
