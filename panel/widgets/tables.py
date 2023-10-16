@@ -804,15 +804,27 @@ class BaseTable(ReactiveData, Widget):
             self.patch(patch_value_dict, as_index=as_index)
         elif isinstance(patch_value, dict):
             columns = list(self.value.columns)
+            patches = {}
             for k, v in patch_value.items():
-                for (ind, value) in v:
-                    if isinstance(ind, slice):
-                        ind = range(ind.start, ind.stop, ind.step or 1)
+                values = []
+                for (patch_ind, value) in v:
+                    data_ind = patch_ind
+                    if isinstance(patch_ind, slice):
+                        data_ind = range(patch_ind.start, patch_ind.stop, patch_ind.step or 1)
                     if as_index:
-                        self.value.loc[ind, k] = value
+                        if not isinstance(data_ind, range):
+                            patch_ind = self.value.index.get_loc(patch_ind)
+                            if not isinstance(patch_ind, int):
+                                raise ValueError(
+                                    'Patching a table with duplicate index values is not supported. '
+                                    f'Found this duplicate index: {data_ind!r}'
+                                )
+                        self.value.loc[data_ind, k] = value
                     else:
-                        self.value.iloc[ind, columns.index(k)] = value
-            self._patch(patch_value)
+                        self.value.iloc[data_ind, columns.index(k)] = value
+                    values.append((patch_ind, value))
+                patches[k] = values
+            self._patch(patches)
         else:
             raise ValueError(
                 f"Patching with a patch_value of type {type(patch_value).__name__} "

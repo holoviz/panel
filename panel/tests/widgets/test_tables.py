@@ -959,6 +959,86 @@ def test_tabulator_patch_with_dataframe(document, comm):
         if col != 'index':
             np.testing.assert_array_equal(table.value[col].values, expected[col])
 
+def test_tabulator_patch_with_dataframe_custom_index(document, comm):
+    df = pd.DataFrame(dict(A=[1, 4, 2]), index=['foo1', 'foo2', 'foo3'])
+    df_patch = pd.DataFrame(dict(A=[10]), index=['foo2'])
+
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    table.patch(df_patch)
+
+    expected = {
+        'index': np.array(['foo1', 'foo2', 'foo3']),
+        'A': np.array([1, 10, 2]),
+    }
+    for col, values in model.source.data.items():
+        expected_array = expected[col]
+        np.testing.assert_array_equal(values, expected_array)
+        if col != 'index':
+            np.testing.assert_array_equal(table.value[col].values, expected[col])
+
+def test_tabulator_patch_with_dataframe_custom_index_name(document, comm):
+    df = pd.DataFrame(dict(A=[1, 4, 2]), index=['foo1', 'foo2', 'foo3'])
+    df.index.name = 'foo'
+    df_patch = pd.DataFrame(dict(A=[10]), index=['foo2'])
+    df.index.name = 'foo'
+
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    table.patch(df_patch)
+
+    expected = {
+        'foo': np.array(['foo1', 'foo2', 'foo3']),
+        'A': np.array([1, 10, 2]),
+    }
+    for col, values in model.source.data.items():
+        expected_array = expected[col]
+        np.testing.assert_array_equal(values, expected_array)
+        if col != 'foo':
+            np.testing.assert_array_equal(table.value[col].values, expected[col])
+
+def test_tabulator_patch_with_complete_dataframe_custom_index(document, comm):
+    df = makeMixedDataFrame()[['A', 'B', 'C']]
+    df.index = [0, 1, 2, 3, 10]
+
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    table.patch(df)
+
+    expected = {
+        'index': np.array([0, 1, 2, 3, 10]),
+        'A': np.array([0, 1, 2, 3, 4]),
+        'B': np.array([0, 1, 0, 1, 0]),
+        'C': np.array(['foo1', 'foo2', 'foo3', 'foo4', 'foo5']),
+    }
+    for col, values in model.source.data.items():
+        expected_array = expected[col]
+        np.testing.assert_array_equal(values, expected_array)
+        if col != 'index':
+            np.testing.assert_array_equal(table.value[col].values, expected[col])
+
+def test_tabulator_patch_with_dataframe_custom_index_multiple_error(document, comm):
+    df = pd.DataFrame(dict(A=[1, 4, 2]), index=['foo1', 'foo1', 'foo3'])
+    # Copy to assert at the end that the original dataframe hasn't been touched
+    original = df.copy()
+    df_patch = pd.DataFrame(dict(A=[20, 10]), index=['foo1', 'foo1'])
+
+    table = Tabulator(df)
+
+    with pytest.raises(
+        ValueError,
+        match=r"Patching a table with duplicate index values is not supported\. Found this duplicate index: 'foo1'"
+    ):
+        table.patch(df_patch)
+
+    pd.testing.assert_frame_equal(table.value, original)
+
 def test_tabulator_patch_with_dataframe_not_as_index(document, comm):
     df = makeMixedDataFrame().sort_values('A', ascending=False)
     table = Tabulator(df)
