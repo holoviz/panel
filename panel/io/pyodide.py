@@ -226,9 +226,9 @@ def _process_document_events(doc: Document, events: List[Any]):
 # JS function to convert undefined -> null (workaround for https://github.com/pyodide/pyodide/issues/3968)
 _dict_converter = pyodide.code.run_js("""
 ((entries) => {
-  for (let message of entries) {
-    if (message[1] === undefined) {
-      message[1] = null;
+  for (let entry of entries) {
+    if (entry[1] === undefined) {
+      entry[1] = null;
     }
   }
   return Object.fromEntries(entries);
