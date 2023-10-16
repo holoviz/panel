@@ -1,3 +1,5 @@
+import sys
+
 from collections import OrderedDict
 
 import param
@@ -84,8 +86,13 @@ def test_abbreviated_repr_list():
 
 
 def test_abbreviated_repr_ordereddict():
-    assert (abbreviated_repr(OrderedDict([('key', 'some really, really long string')]))
-            == "OrderedDict([('key', ...])")
+    if sys.version_info >= (3, 12):
+        expected = "OrderedDict({'key': 'some ...])"
+    else:
+        expected = "OrderedDict([('key', ...])"
+
+    result = abbreviated_repr(OrderedDict([('key', 'some really, really long string')]))
+    assert result == expected
 
 
 def test_parse_query():
