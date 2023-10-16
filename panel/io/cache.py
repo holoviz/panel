@@ -20,7 +20,7 @@ from contextlib import contextmanager
 
 import param
 
-from param._utils import iscoroutinefunction
+from param.parameterized import iscoroutinefunction
 
 from .state import state
 
