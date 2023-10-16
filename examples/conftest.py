@@ -2,10 +2,8 @@ collect_ignore_glob = [
     "apps/",
     "developer_guide/",
     "homepage.ipynb",
-    "*VTK*",
-    "*vtk*",
+    "*VTK*.ipynb",
     "*Vega.ipynb",
-    "*DeckGL*",
-    "*deckgl*",
-    "reference/widgets/Terminal.ipynb",
- ]
+    "*DeckGL*.ipynb",
+    "*Terminal.ipynb",
+]
