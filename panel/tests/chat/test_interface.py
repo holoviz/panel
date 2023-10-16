@@ -146,6 +146,10 @@ class TestChatInterface:
         chat_interface.width = 200
         assert not chat_interface.show_button_name
 
+    def test_show_button_name_set(self, chat_interface):
+        chat_interface.show_button_name = False
+        chat_interface.width = 800
+        assert not chat_interface.show_button_name
 
 class TestChatInterfaceWidgetsSizingMode:
     def test_none(self):

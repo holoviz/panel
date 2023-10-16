@@ -28,14 +28,14 @@ How to use Panel widgets in 3 simple steps
 For more detail see the Reference Gallery guide.
 https://panel.holoviz.org/reference/chat/ChatInterface.html
 """
-from .entry import ChatEntry  # noqa
+from .entry import ChatMessage  # noqa
 from .feed import ChatFeed  # noqa
 from .icon import ChatReactionIcons  # noqa
 from .interface import ChatInterface  # noqa
 from .langchain import PanelCallbackHandler  # noqa
 
 __all__ = (
-    "ChatEntry",
+    "ChatMessage",
     "ChatFeed",
     "ChatInterface",
     "ChatReactionIcons",

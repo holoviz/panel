@@ -73,7 +73,7 @@ __all__ = (
     "AutocompleteInput",
     "BooleanStatus",
     "Button",
-    "ChatEntry",
+    "ChatMessage",
     "ChatInterface",
     "ChatFeed",
     "ChatBox",
