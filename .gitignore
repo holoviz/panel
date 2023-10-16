@@ -153,3 +153,5 @@ doc/reference/*
 .config/code-server/*
 .conda/*
 .jupyter/*
+app_panel.py
+app_streamlit.py
