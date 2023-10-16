@@ -10,7 +10,7 @@ Both Streamlit and Panel provides special components to help you build conversat
 |                      | [`ChatFeed`](../../../examples/reference/chat/ChatFeed.ipynb)  | Display multiple chat messages         |
 |                      | [`ChatInterface`](../../../examples/reference/chat/ChatInterface.ipynb)  | High-level, easy to use chat interface |
 | [`StreamlitCallbackHandler`](https://python.langchain.com/docs/integrations/callbacks/streamlit) | [`PanelCallbackHandler`](../../../examples/reference/chat/ChatInterface.ipynb) | Display the thoughts and actions of a [LangChain](https://python.langchain.com/docs/get_started/introduction) agent |
-| [`StreamlitChatMessageHistory`](https://python.langchain.com/docs/integrations/memory/streamlit_chat_message_history) |  | Persists the memory of a [LangChain](https://python.langchain.com/docs/get_started/introduction) agent |
+| [`StreamlitChatMessageHistory`](https://python.langchain.com/docs/integrations/memory/streamlit_chat_message_history) |  | Persist the memory of a [LangChain](https://python.langchain.com/docs/get_started/introduction) agent |
 
 The starting point for most Panel users is the *high-level* [`ChatInterface`](../../../examples/reference/chat/ChatInterface.ipyn), not the *low-level* [`ChatEntry`](../../../examples/reference/chat/ChatEntry.ipynb) and [`ChatFeed`](../../../examples/reference/chat/ChatFeed.ipynb) components.
 
@@ -50,7 +50,7 @@ pn.chat.ChatEntry(value=message, user="user").servable()
 
 ## Chat Input
 
-Lets see how-to migrate an app that is using `st.chat_message`
+Lets see how-to migrate an app that is using `st.chat_input`.
 
 ### Streamlit Chat Input
 
@@ -175,7 +175,7 @@ st.button("Run")
 
 ### Panel Chat Status
 
-Panel does not provide a dedicated *status* component. Instead it is built into Panels high-level `ChatInterface` as well as provided by a long list of alternative Panel [*indicator components*](https://panel.holoviz.org/reference/index.html#indicators).
+Panel does not provide a dedicated *status* component. Instead it is built into Panels high-level `ChatInterface` as well as provided by a long list of alternative Panel [*indicators*](https://panel.holoviz.org/reference/index.html#indicators).
 
 Below we will show you how to build and use a custom `Status` indicator.
 
