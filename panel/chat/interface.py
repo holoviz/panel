@@ -207,7 +207,8 @@ class ChatInterface(ChatFeed):
         """
         Update the input width.
         """
-        self.show_button_name = self.width is None or self.width >= 400
+        if self.show_button_name is None:
+            self.show_button_name = self.width is None or self.width >= 400
 
     @param.depends(
         "width",
