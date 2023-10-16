@@ -1020,7 +1020,7 @@ class OAuthProvider(BasicAuthProvider):
         if expiry_seconds <= 0:
             refresh_cb()
             return
-        task = f'{user}-access-token-refresh'
+        task = f'{user}-refresh-access-tokens'
         try:
             state.cancel_task(task)
         except KeyError:
