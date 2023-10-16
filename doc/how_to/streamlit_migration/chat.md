@@ -4,14 +4,14 @@ Both Streamlit and Panel provides special components to help you build conversat
 
 | Streamlit            | Panel               | Description                            |
 | -------------------- | ------------------- | -------------------------------------- |
-| `st.chat_message`    | [`pn.chat.ChatEntry`](../../../examples/reference/chat/ChatEntry.ipynb) | Output a single chat message  |
-| `st_chat_input`      |  | Input a chat message |
+| [`st.chat_message`](https://docs.streamlit.io/library/api-reference/chat/st.chat_message)    | [`pn.chat.ChatEntry`](../../../examples/reference/chat/ChatEntry.ipynb) | Display a single chat message  |
+| [`st_chat_input`](https://docs.streamlit.io/library/api-reference/chat/st.chat_input) |  | Input a chat message |
 | `st.status`          | | Display output of long-running tasks in a container |
-|                      | [`pn.chat.ChatFeed`](../../../examples/reference/chat/ChatFeed.ipynb)  | Output multiple of chat messages         |
+|                      | [`pn.chat.ChatFeed`](../../../examples/reference/chat/ChatFeed.ipynb)  | Display multiple chat messages         |
 |                      | [`pn.chat.ChatInterface`](../../../examples/reference/chat/ChatInterface.ipynb)  | High-level, easy to use chat interface |
-| `langchain.callbacks.StreamlitCallbackHandler` | [`pn.chat.PanelCallbackHandler`](../../../examples/reference/chat/ChatInterface.ipynb) | Display the thoughts and actions of a LangChain agent |
+| `langchain.callbacks.StreamlitCallbackHandler` | [`pn.chat.PanelCallbackHandler`](../../../examples/reference/chat/ChatInterface.ipynb) | Display the thoughts and actions of a [LangChain](https://python.langchain.com/docs/get_started/introduction) agent |
 
-The starting point for most Panel users would be the *high-level*, easy to use `ChatInterface` and `PanelCallbackHandler` components. Not the lower level `ChatEntry` and `ChatFeed` components.
+The starting point for most Panel users is the *high-level* `ChatInterface`. Not the *low-level* `ChatEntry` and `ChatFeed` components.
 
 You can find specialized chat components and examples at [panel-chat-examples/](https://holoviz-topics.github.io/panel-chat-examples/).
 
@@ -143,3 +143,199 @@ pn.Column(message, chat_input, margin=50).servable()
 ```
 
 ![Panel ChatInput](../../_static/images/panel_chat_input.png)
+
+## Chat Status
+
+### Streamlit Chat Status
+
+```python
+import time
+import streamlit as st
+
+with st.status("Downloading data...", expanded=True):
+    st.write("Searching for data...")
+    time.sleep(1.5)
+    st.write("Downloading data...")
+    time.sleep(1.5)
+    st.write("Validating data...")
+    time.sleep(1.5)
+
+st.button("Run")
+```
+
+![Streamlit status](https://user-images.githubusercontent.com/42288570/275434382-992f352f-676a-4167-aad0-1fcc2745c130.gif)
+
+### Panel Chat Status
+
+Panel does not provide a dedicated *status* component because it is built into Panels high-level `ChatInterface`. Furthermore Panel provides a lot of other built in *indicators*. Check out the [Indicators Gallery](https://panel.holoviz.org/reference/index.html#indicators).
+
+Below we will show you how to build a custom `Status` indicator.
+
+```python
+import time
+
+from contextlib import contextmanager
+
+import param
+
+import panel as pn
+
+from panel.widgets.indicators import LoadingSpinner
+
+pn.extension(design="material")
+
+COLORS = {
+    "running": "green",
+    "complete": "black",
+    "error": "red",
+    "next": "lightgray",
+}
+
+
+class Status(pn.viewable.Viewer):
+    value = param.Selector(default="complete", objects=["running", "complete", "error"])
+    title = param.String()
+
+    bgcolor = param.ObjectSelector(
+        default=LoadingSpinner.param.bgcolor.default,
+        objects=LoadingSpinner.param.bgcolor.objects,
+    )
+    color = param.ObjectSelector(
+        default="success", objects=LoadingSpinner.param.color.objects
+    )
+    collapsed = param.Boolean(default=True)
+
+    steps = param.List(constant=True)
+    step = param.Parameter(constant=True)
+
+    def __init__(self, title: str, **params):
+        params["title"] = title
+        params["steps"] = params.get("steps", [])
+        layout_params = {
+            key: value
+            for key, value in params.items()
+            if not key
+            in ["value", "title", "collapsed", "bgcolor", "color", "steps", "step"]
+        }
+        params = {
+            key: value for key, value in params.items() if key not in layout_params
+        }
+        super().__init__(**params)
+
+        self._indicators = {
+            "running": pn.indicators.LoadingSpinner(
+                value=True,
+                color=self.param.color,
+                bgcolor=self.param.bgcolor,
+                size=25,
+                margin=(15, 0, 0, 5),
+            ),
+            "complete": "✔️",
+            "error": "❌",
+        }
+
+        self._title_pane = pn.pane.Markdown(self.param.title, align="center")
+        self._header_row = pn.Row(
+            self._indicator,
+            self._title_pane,
+            sizing_mode="stretch_width",
+            margin=(0, 5),
+        )
+        self._details_pane = pn.pane.HTML(
+            self._details, margin=(10, 5, 10, 55), sizing_mode="stretch_width"
+        )
+        self._layout = pn.Card(
+            self._details_pane,
+            header=self._header_row,
+            collapsed=self.param.collapsed,
+            **layout_params,
+        )
+
+    def __panel__(self):
+        return self._layout
+
+    @param.depends("value")
+    def _indicator(self):
+        return self._indicators[self.value]
+
+    @property
+    def _step_color(self):
+        return COLORS[self.value]
+
+    def _step_index(self):
+        if self.step not in self.steps:
+            return 0
+        return self.steps.index(self.step)
+
+    @param.depends("step", "value")
+    def _details(self):
+        steps = self.steps
+
+        if not steps:
+            return ""
+
+        index = self._step_index()
+
+        html = ""
+        for step in steps[:index]:
+            html += f"<div style='color:{COLORS['complete']}'>{step}</div>"
+        step = steps[index]
+        html += f"<div style='color:{self._step_color}'>{step}</div>"
+        for step in steps[index + 1 :]:
+            html += f"<div style='color:{COLORS['next']};'>{step}</div>"
+
+        return html
+
+    def inc(self, step: str):
+        with param.edit_constant(self):
+            self.value = "running"
+            if not step in self.steps:
+                self.steps = self.steps + [step]
+            self.step = step
+
+    def reset(self):
+        with param.edit_constant(self):
+            self.steps = []
+            self.value = self.param.value.default
+
+    def start(self):
+        with param.edit_constant(self):
+            self.step = None
+        self.value = "running"
+
+    def complete(self):
+        self.value = "complete"
+
+    @contextmanager
+    def report(self):
+        self.start()
+        try:
+            yield self
+        except Exception as ex:
+            self.value = "error"
+        else:
+            self.complete()
+
+
+status = Status("Downloading data...", collapsed=False, sizing_mode="stretch_width")
+
+
+def run(_):
+    with status.report() as progress:
+        progress.inc("Searching for data...")
+        time.sleep(1.5)
+        progress.inc("Downloading data...")
+        time.sleep(1.5)
+        progress.inc("Validating data...")
+        time.sleep(1.5)
+
+
+run_button = pn.widgets.Button(name="Run", on_click=run)
+
+pn.Column(
+    status,
+    run_button,
+).servable()
+```
+
+![Panel Status](https://user-images.githubusercontent.com/42288570/275434435-dc737d33-4458-474f-9bc3-17e7bf807896.gif)
