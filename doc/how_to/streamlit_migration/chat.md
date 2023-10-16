@@ -338,4 +338,4 @@ pn.Column(
 ).servable()
 ```
 
-![Panel Status](https://user-images.githubusercontent.com/42288570/275434435-dc737d33-4458-474f-9bc3-17e7bf807896.gif)
+![Panel Status](https://user-images.githubusercontent.com/42288570/275440464-5a610fd8-b1c9-4c1e-8f5e-c9a9f407bc36.gif)
