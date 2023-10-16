@@ -101,7 +101,7 @@ except Exception:
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=3.1.1,<3.4.0',
+    'bokeh >=3.2.0,<3.4.0',
     'param >=2.0.0rc6,<3.0',
     'pyviz_comms >=0.7.4',
     'xyzservices >=2021.09.1', # Bokeh dependency, but pyodide 23.0.0 does not always pick it up
@@ -234,7 +234,7 @@ extras_require['build'] = [
     'setuptools >=42',
     'requests',
     'packaging',
-    'bokeh >=3.1.1,<3.3.0',
+    'bokeh >=3.2.0,<3.3.0',
     'pyviz_comms >=0.7.4',
     'bleach',
     'tqdm >=4.48.0',
@@ -277,7 +277,6 @@ setup_args = dict(
         "License :: OSI Approved :: BSD License",
         "Development Status :: 5 - Production/Stable",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
