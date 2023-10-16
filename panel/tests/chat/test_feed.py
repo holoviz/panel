@@ -5,8 +5,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from panel.chat.entry import ChatEntry
 from panel.chat.feed import ChatFeed
+from panel.chat.message import ChatMessage
 from panel.layout import Column, Row
 from panel.pane.image import Image
 from panel.pane.markup import HTML
@@ -40,9 +40,9 @@ class TestChatFeed:
         assert chat_feed._composite.hide_header
 
     def test_send(self, chat_feed):
-        entry = chat_feed.send("Message")
+        message = chat_feed.send("Message")
         assert len(chat_feed.value) == 1
-        assert chat_feed.value[0] is entry
+        assert chat_feed.value[0] is message
         assert chat_feed.value[0].value == "Message"
 
     def test_link_chat_log_objects(self, chat_feed):
@@ -52,22 +52,22 @@ class TestChatFeed:
     def test_send_with_user_avatar(self, chat_feed):
         user = "Bob"
         avatar = "👨"
-        entry = chat_feed.send("Message", user=user, avatar=avatar)
-        assert entry.user == user
-        assert entry.avatar == avatar
+        message = chat_feed.send("Message", user=user, avatar=avatar)
+        assert message.user == user
+        assert message.avatar == avatar
 
     def test_send_dict(self, chat_feed):
-        entry = chat_feed.send({"value": "Message", "user": "Bob", "avatar": "👨"})
+        message = chat_feed.send({"value": "Message", "user": "Bob", "avatar": "👨"})
         assert len(chat_feed.value) == 1
-        assert chat_feed.value[0] is entry
+        assert chat_feed.value[0] is message
         assert chat_feed.value[0].value == "Message"
         assert chat_feed.value[0].user == "Bob"
         assert chat_feed.value[0].avatar == "👨"
 
     def test_send_dict_minimum(self, chat_feed):
-        entry = chat_feed.send({"value": "Message"})
+        message = chat_feed.send({"value": "Message"})
         assert len(chat_feed.value) == 1
-        assert chat_feed.value[0] is entry
+        assert chat_feed.value[0] is message
         assert chat_feed.value[0].value == "Message"
 
     def test_send_dict_without_value(self, chat_feed):
@@ -77,22 +77,22 @@ class TestChatFeed:
     def test_send_dict_with_user_avatar_override(self, chat_feed):
         user = "August"
         avatar = "👩"
-        entry = chat_feed.send(
+        message = chat_feed.send(
             {"value": "Message", "user": "Bob", "avatar": "👨"},
             user=user,
             avatar=avatar,
         )
         assert len(chat_feed.value) == 1
-        assert chat_feed.value[0] is entry
+        assert chat_feed.value[0] is message
         assert chat_feed.value[0].value == "Message"
         assert chat_feed.value[0].user == user
         assert chat_feed.value[0].avatar == avatar
 
     def test_send_entry(self, chat_feed):
-        entry = ChatEntry(value="Message", user="Bob", avatar="👨")
-        chat_feed.send(entry)
+        message = ChatMessage(value="Message", user="Bob", avatar="👨")
+        chat_feed.send(message)
         assert len(chat_feed.value) == 1
-        assert chat_feed.value[0] is entry
+        assert chat_feed.value[0] is message
         assert chat_feed.value[0].value == "Message"
         assert chat_feed.value[0].user == "Bob"
         assert chat_feed.value[0].avatar == "👨"
@@ -134,15 +134,15 @@ class TestChatFeed:
         chat_feed.respond()  # Should not raise any errors
 
     def test_stream(self, chat_feed):
-        entry = chat_feed.stream("Streaming message", user="Person", avatar="P")
+        message = chat_feed.stream("Streaming message", user="Person", avatar="P")
         assert len(chat_feed.value) == 1
-        assert chat_feed.value[0] is entry
+        assert chat_feed.value[0] is message
         assert chat_feed.value[0].value == "Streaming message"
         assert chat_feed.value[0].user == "Person"
         assert chat_feed.value[0].avatar == "P"
 
         updated_entry = chat_feed.stream(
-            " Appended message", user="New Person", entry=entry, avatar="N"
+            " Appended message", user="New Person", message=message, avatar="N"
         )
         assert len(chat_feed.value) == 1
         assert chat_feed.value[0] is updated_entry
@@ -158,26 +158,26 @@ class TestChatFeed:
     def test_stream_with_user_avatar(self, chat_feed):
         user = "Bob"
         avatar = "👨"
-        entry = chat_feed.stream(
+        message = chat_feed.stream(
             "Streaming with user and avatar", user=user, avatar=avatar
         )
-        assert entry.user == user
-        assert entry.avatar == avatar
+        assert message.user == user
+        assert message.avatar == avatar
 
     def test_stream_dict(self, chat_feed):
-        entry = chat_feed.stream(
+        message = chat_feed.stream(
             {"value": "Streaming message", "user": "Person", "avatar": "P"}
         )
         assert len(chat_feed.value) == 1
-        assert chat_feed.value[0] is entry
+        assert chat_feed.value[0] is message
         assert chat_feed.value[0].value == "Streaming message"
         assert chat_feed.value[0].user == "Person"
         assert chat_feed.value[0].avatar == "P"
 
     def test_stream_dict_minimum(self, chat_feed):
-        entry = chat_feed.stream({"value": "Streaming message"})
+        message = chat_feed.stream({"value": "Streaming message"})
         assert len(chat_feed.value) == 1
-        assert chat_feed.value[0] is entry
+        assert chat_feed.value[0] is message
         assert chat_feed.value[0].value == "Streaming message"
 
     def test_stream_dict_without_value(self, chat_feed):
@@ -187,22 +187,22 @@ class TestChatFeed:
     def test_stream_dict_with_user_avatar_override(self, chat_feed):
         user = "Bob"
         avatar = "👨"
-        entry = chat_feed.stream(
+        message = chat_feed.stream(
             {"value": "Streaming message", "user": "Person", "avatar": "P"},
             user=user,
             avatar=avatar,
         )
         assert len(chat_feed.value) == 1
-        assert chat_feed.value[0] is entry
+        assert chat_feed.value[0] is message
         assert chat_feed.value[0].value == "Streaming message"
         assert chat_feed.value[0].user == user
         assert chat_feed.value[0].avatar == avatar
 
     def test_stream_entry(self, chat_feed):
-        entry = ChatEntry(value="Streaming message", user="Person", avatar="P")
-        chat_feed.stream(entry)
+        message = ChatMessage(value="Streaming message", user="Person", avatar="P")
+        chat_feed.stream(message)
         assert len(chat_feed.value) == 1
-        assert chat_feed.value[0] is entry
+        assert chat_feed.value[0] is message
         assert chat_feed.value[0].value == "Streaming message"
         assert chat_feed.value[0].user == "Person"
         assert chat_feed.value[0].avatar == "P"
@@ -217,15 +217,15 @@ class TestChatFeed:
         ],
     )
     def test_stream_to_nested_entry(self, chat_feed, obj):
-        entry = chat_feed.send(
+        message = chat_feed.send(
             Row(
                 obj,
                 Image("https://panel.holoviz.org/_static/logo_horizontal.png"),
             )
         )
-        chat_feed.stream(" Added", entry=entry)
+        chat_feed.stream(" Added", message=message)
         assert len(chat_feed.value) == 1
-        assert chat_feed.value[0] is entry
+        assert chat_feed.value[0] is message
         entry_obj = chat_feed.value[0].value[0]
         if isinstance(entry_obj, Row):
             entry_obj = entry_obj[0]
@@ -266,7 +266,7 @@ class TestChatFeed:
 
         assert len(chat_feed.value) == 2
 
-        chat_feed.value = [ChatEntry(value="Message 3")]
+        chat_feed.value = [ChatMessage(value="Message 3")]
         assert len(chat_feed.value) == 1
         assert chat_feed.value[0].value == "Message 3"
 
@@ -309,7 +309,7 @@ class TestChatFeed:
 
     def test_default_avatars_superseded_in_entry(self, chat_feed):
         chat_feed.send(
-            ChatEntry(**{"user": "System", "avatar": "👨", "value": "Message 1"})
+            ChatMessage(**{"user": "System", "avatar": "👨", "value": "Message 1"})
         )
 
         assert chat_feed.value[0].user == "System"
@@ -325,10 +325,10 @@ class TestChatFeed:
         time.sleep(0.2)
         assert len(chat_feed.value) == 2
         assert chat_feed.value[1].user == "System"
-        assert chat_feed.value[1].avatar == ChatEntry()._avatar_lookup("System")
+        assert chat_feed.value[1].avatar == ChatMessage()._avatar_lookup("System")
 
-    def test_default_avatars_entry_params(self, chat_feed):
-        chat_feed.entry_params["default_avatars"] = {"test1": "1"}
+    def test_default_avatars_message_params(self, chat_feed):
+        chat_feed.message_params["default_avatars"] = {"test1": "1"}
         assert chat_feed.send(value="", user="test1").avatar == "1"
 
         # has default
@@ -383,7 +383,7 @@ class TestChatFeedCallback:
         return ChatFeed()
 
     def test_user_avatar(self, chat_feed):
-        ChatEntry.default_avatars["bob"] = "👨"
+        ChatMessage.default_avatars["bob"] = "👨"
 
         def echo(contents, user, instance):
             return f"{user}: {contents}"
@@ -395,7 +395,7 @@ class TestChatFeedCallback:
         assert len(chat_feed.value) == 2
         assert chat_feed.value[1].user == "Bob"
         assert chat_feed.value[1].avatar == "👨"
-        ChatEntry.default_avatars.pop("bob")
+        ChatMessage.default_avatars.pop("bob")
 
     def test_return(self, chat_feed):
         def echo(contents, user, instance):
@@ -477,7 +477,7 @@ class TestChatFeedCallback:
             yield "hey testing"
 
         chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatEntry(value="Message")
+        chat_log_mock.__getitem__.return_value = ChatMessage(value="Message")
         chat_feed.placeholder_threshold = 0
         chat_feed.callback = echo
         chat_feed._chat_log = chat_log_mock
@@ -491,7 +491,7 @@ class TestChatFeedCallback:
             yield "hey testing"
 
         chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatEntry(value="Message")
+        chat_log_mock.__getitem__.return_value = ChatMessage(value="Message")
         chat_feed.callback = echo
         chat_feed._chat_log = chat_log_mock
         chat_feed.send("Message", respond=True)
@@ -505,7 +505,7 @@ class TestChatFeedCallback:
 
         chat_feed.placeholder_threshold = 5
         chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatEntry(value="Message")
+        chat_log_mock.__getitem__.return_value = ChatMessage(value="Message")
         chat_feed.callback = echo
         chat_feed._chat_log = chat_log_mock
         chat_feed.send("Message", respond=True)
@@ -518,7 +518,7 @@ class TestChatFeedCallback:
 
         chat_feed.placeholder_threshold = 5
         chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatEntry(value="Message")
+        chat_log_mock.__getitem__.return_value = ChatMessage(value="Message")
         chat_feed.callback = echo
         chat_feed._chat_log = chat_log_mock
         chat_feed.send("Message", respond=True)
@@ -532,7 +532,7 @@ class TestChatFeedCallback:
 
         chat_feed.placeholder_threshold = 0.1
         chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatEntry(value="Message")
+        chat_log_mock.__getitem__.return_value = ChatMessage(value="Message")
         chat_feed.callback = echo
         chat_feed._chat_log = chat_log_mock
         chat_feed.send("Message", respond=True)
@@ -546,7 +546,7 @@ class TestChatFeedCallback:
 
         chat_feed.placeholder_threshold = 0.1
         chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatEntry(value="Message")
+        chat_log_mock.__getitem__.return_value = ChatMessage(value="Message")
         chat_feed.callback = echo
         chat_feed._chat_log = chat_log_mock
         chat_feed.send("Message", respond=True)
@@ -565,7 +565,7 @@ class TestChatFeedCallback:
 
         chat_feed.placeholder_threshold = 5
         chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatEntry(value="Message")
+        chat_log_mock.__getitem__.return_value = ChatMessage(value="Message")
         chat_feed.callback = echo
         chat_feed._chat_log = chat_log_mock
         chat_feed.send("Message", respond=True)

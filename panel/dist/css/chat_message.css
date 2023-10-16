@@ -12,7 +12,7 @@
   max-width: 99%; /* Prevent horizontal scroll bar */
 }
 
-.chat-entry {
+.chat-message {
   display: flex;
   flex-direction: row;
 }
