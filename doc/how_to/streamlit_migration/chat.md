@@ -228,7 +228,7 @@ class Status(pn.viewable.Viewer):
                 color=self.param.color,
                 bgcolor=self.param.bgcolor,
                 size=25,
-                margin=(15, 0, 0, 5),
+                # margin=(15, 0, 0, 0),
             ),
             "complete": "✔️",
             "error": "❌",
@@ -236,7 +236,7 @@ class Status(pn.viewable.Viewer):
 
         self._title_pane = pn.pane.Markdown(self.param.title, align="center")
         self._header_row = pn.Row(
-            self._indicator,
+            pn.panel(self._indicator, sizing_mode="fixed", width=40, align="center"),
             self._title_pane,
             sizing_mode="stretch_width",
             margin=(0, 5),
@@ -286,7 +286,7 @@ class Status(pn.viewable.Viewer):
 
         return html
 
-    def inc(self, step: str):
+    def progress(self, step: str):
         with param.edit_constant(self):
             self.value = "running"
             if not step in self.steps:
@@ -310,7 +310,7 @@ class Status(pn.viewable.Viewer):
     def report(self):
         self.start()
         try:
-            yield self
+            yield self.progress
         except Exception as ex:
             self.value = "error"
         else:
@@ -322,11 +322,11 @@ status = Status("Downloading data...", collapsed=False, sizing_mode="stretch_wid
 
 def run(_):
     with status.report() as progress:
-        progress.inc("Searching for data...")
+        progress("Searching for data...")
         time.sleep(1.5)
-        progress.inc("Downloading data...")
+        progress("Downloading data...")
         time.sleep(1.5)
-        progress.inc("Validating data...")
+        progress("Validating data...")
         time.sleep(1.5)
 
 
