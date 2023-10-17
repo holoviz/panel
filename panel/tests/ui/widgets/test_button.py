@@ -58,7 +58,7 @@ def test_button_tooltip(page, button_fn, button_locator, tooltip):
     page.hover(button_locator)
     tooltip = page.locator(".bk-tooltip-content")
     expect(tooltip).to_have_count(1)
-    assert tooltip.text_content().strip() == "Test"
+    expect(tooltip).to_have_text("Test")
 
     # Removing hover should hide the tooltip
     page.hover("body")
