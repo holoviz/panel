@@ -409,7 +409,7 @@ class ChatFeed(ListPanel):
         while not task.done() and num_entries == len(self._chat_log):
             duration = asyncio.get_event_loop().time() - start
             if duration > self.placeholder_threshold or not callable_is_async:
-                self._chat_log.append(self._placeholder)
+                self.append(self._placeholder)
                 return
             await asyncio.sleep(0.28)
 
@@ -487,7 +487,7 @@ class ChatFeed(ListPanel):
             if not isinstance(value, dict):
                 value = {"object": value}
             message = self._build_message(value, user=user, avatar=avatar)
-        self._chat_log.append(message)
+        self.append(message)
         if respond:
             self.respond()
         return message
