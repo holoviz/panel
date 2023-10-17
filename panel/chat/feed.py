@@ -201,6 +201,8 @@ class ChatFeed(ListPanel):
     def __init__(self, *objects, **params):
         if params.get("renderers") and not isinstance(params["renderers"], list):
             params["renderers"] = [params["renderers"]]
+        if params.get("width") is None and params.get("sizing_mode") is None:
+            params["sizing_mode"] = "stretch_width"
         super().__init__(*objects, **params)
 
         # instantiate the card's column) is not None)

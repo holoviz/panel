@@ -154,8 +154,8 @@ class TestChatInterface:
 class TestChatInterfaceWidgetsSizingMode:
     def test_none(self):
         chat_interface = ChatInterface()
-        assert chat_interface.sizing_mode is None
-        assert chat_interface._chat_log.sizing_mode is None
+        assert chat_interface.sizing_mode == "stretch_width"
+        assert chat_interface._chat_log.sizing_mode == "stretch_width"
         assert chat_interface._input_layout.sizing_mode == "stretch_width"
         assert chat_interface._input_layout[0].sizing_mode == "stretch_width"
 

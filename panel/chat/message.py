@@ -26,6 +26,7 @@ from ..pane.image import (
 )
 from ..pane.markup import HTML, DataFrame, HTMLBasePane
 from ..pane.media import Audio, Video
+from ..param import ParamFunction
 from ..viewable import Viewable
 from ..widgets.base import Widget
 from .icon import ChatCopyIcon, ChatReactionIcons
@@ -258,6 +259,10 @@ class ChatMessage(PaneBase):
         )
         self._composite[:] = [left_col, right_col]
 
+    @property
+    def _synced_params(self) -> List[str]:
+        return []
+
     def _get_model(
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
@@ -347,7 +352,7 @@ class ChatMessage(PaneBase):
             if obj.sizing_mode is None and not obj.width:
                 obj.sizing_mode = "stretch_width"
 
-            if obj.height is None:
+            if obj.height is None and not isinstance(obj, ParamFunction):
                 obj.height = 500
         return obj
 
