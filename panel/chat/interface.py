@@ -398,7 +398,7 @@ class ChatInterface(ChatFeed):
             undo_data.objects = self.undo(count)
             self._toggle_revert(undo_data, True)
         else:
-            self.objects = [*self.objects, *undo_objects.copy()]
+            self.extend(undo_objects)
             self._reset_button_data()
 
     def _click_clear(self, _):
@@ -414,7 +414,7 @@ class ChatInterface(ChatFeed):
             clear_data.objects = self.clear()
             self._toggle_revert(clear_data, True)
         else:
-            self.objects = clear_objects.copy()
+            self[:] = clear_objects.copy()
             self._reset_button_data()
 
     @property

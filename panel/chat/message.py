@@ -260,6 +260,8 @@ class ChatMessage(PaneBase):
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = self._composite._get_model(doc, root, parent, comm)
+        ref = (root or model).ref['id']
+        self._models[ref] = (model, parent)
         return model
 
     @staticmethod
