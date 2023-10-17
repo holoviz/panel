@@ -461,11 +461,11 @@ class ChatMessage(PaneBase):
 
     @param.depends("_object_panel", watch=True)
     def _update_chat_copy_icon(self):
-        value = self._object_panel
-        if isinstance(value, HTMLBasePane):
-            value = value.object
-        if isinstance(object, str) and self.show_copy_icon:
-            self.chat_copy_icon.value = value
+        object_panel = self._object_panel
+        if isinstance(object_panel, HTMLBasePane):
+            object_panel = object_panel.object
+        if isinstance(object_panel, str) and self.show_copy_icon:
+            self.chat_copy_icon.value = object_panel
             self.chat_copy_icon.visible = True
         else:
             self.chat_copy_icon.value = ""

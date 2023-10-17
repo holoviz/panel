@@ -67,34 +67,34 @@ class TestChatInterface:
     def test_click_send(self, chat_interface: ChatInterface):
         chat_interface.widgets = [TextAreaInput()]
         chat_interface.active_widget.value = "Message"
-        assert len(chat_interface.value) == 1
-        assert chat_interface.value[0].value == "Message"
+        assert len(chat_interface.objects) == 1
+        assert chat_interface.objects[0].object == "Message"
 
     def test_click_undo(self, chat_interface):
         chat_interface.user = "User"
         chat_interface.send("Message 1")
         chat_interface.send("Message 2")
         chat_interface.send("Message 3", user="Assistant")
-        expected = chat_interface.value[-2:].copy()
+        expected = chat_interface.objects[-2:].copy()
         chat_interface._click_undo(None)
-        assert len(chat_interface.value) == 1
-        assert chat_interface.value[0].value == "Message 1"
+        assert len(chat_interface.objects) == 1
+        assert chat_interface.objects[0].object == "Message 1"
         assert chat_interface._button_data["undo"].objects == expected
 
         # revert
         chat_interface._click_undo(None)
-        assert len(chat_interface.value) == 3
-        assert chat_interface.value[0].value == "Message 1"
-        assert chat_interface.value[1].value == "Message 2"
-        assert chat_interface.value[2].value == "Message 3"
+        assert len(chat_interface.objects) == 3
+        assert chat_interface.objects[0].object == "Message 1"
+        assert chat_interface.objects[1].object == "Message 2"
+        assert chat_interface.objects[2].object == "Message 3"
 
     def test_click_clear(self, chat_interface):
         chat_interface.send("Message 1")
         chat_interface.send("Message 2")
         chat_interface.send("Message 3")
-        expected = chat_interface.value.copy()
+        expected = chat_interface.objects.copy()
         chat_interface._click_clear(None)
-        assert len(chat_interface.value) == 0
+        assert len(chat_interface.objects) == 0
         assert chat_interface._button_data["clear"].objects == expected
 
     def test_click_rerun(self, chat_interface):
@@ -106,13 +106,13 @@ class TestChatInterface:
 
         chat_interface.callback = callback
         chat_interface.send("Message 1")
-        assert chat_interface.value[1].value == 1
+        assert chat_interface.objects[1].object == 1
         chat_interface._click_rerun(None)
-        assert chat_interface.value[1].value == 2
+        assert chat_interface.objects[1].object == 2
 
     def test_click_rerun_null(self, chat_interface):
         chat_interface._click_rerun(None)
-        assert len(chat_interface.value) == 0
+        assert len(chat_interface.objects) == 0
 
     def test_replace_widgets(self, chat_interface):
         assert isinstance(chat_interface._input_layout, Row)
@@ -154,8 +154,8 @@ class TestChatInterface:
 class TestChatInterfaceWidgetsSizingMode:
     def test_none(self):
         chat_interface = ChatInterface()
-        assert chat_interface.sizing_mode is None
-        assert chat_interface._chat_log.sizing_mode is None
+        assert chat_interface.sizing_mode == "stretch_width"
+        assert chat_interface._chat_log.sizing_mode == "stretch_width"
         assert chat_interface._input_layout.sizing_mode == "stretch_width"
         assert chat_interface._input_layout[0].sizing_mode == "stretch_width"
 

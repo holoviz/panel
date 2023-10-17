@@ -338,7 +338,7 @@ class ChatInterface(ChatFeed):
         """
         Get the index of the last user message.
         """
-        messages = self.value[::-1]
+        messages = self.objects[::-1]
         for index, message in enumerate(messages, 1):
             if message.user == self.user:
                 return index
@@ -398,7 +398,7 @@ class ChatInterface(ChatFeed):
             undo_data.objects = self.undo(count)
             self._toggle_revert(undo_data, True)
         else:
-            self.value = [*self.value, *undo_objects.copy()]
+            self.objects = [*self.objects, *undo_objects.copy()]
             self._reset_button_data()
 
     def _click_clear(self, _):
@@ -414,7 +414,7 @@ class ChatInterface(ChatFeed):
             clear_data.objects = self.clear()
             self._toggle_revert(clear_data, True)
         else:
-            self.value = clear_objects.copy()
+            self.objects = clear_objects.copy()
             self._reset_button_data()
 
     @property

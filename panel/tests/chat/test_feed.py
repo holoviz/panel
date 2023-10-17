@@ -237,6 +237,8 @@ class TestChatFeed:
 
         if hasattr(message_obj, "object"):
             assert message_obj.object == "Some Text Added"
+        elif hasattr(message_obj, "value"):
+            assert message_obj.value == "Some Text Added"
         else:
             assert message_obj.objects == "Some Text Added"
 
@@ -271,7 +273,7 @@ class TestChatFeed:
 
         assert len(chat_feed.objects) == 2
 
-        chat_feed.objects = [ChatMessage(value="Message 3")]
+        chat_feed.objects = [ChatMessage("Message 3")]
         assert len(chat_feed.objects) == 1
         assert chat_feed.objects[0].object == "Message 3"
 
@@ -314,7 +316,7 @@ class TestChatFeed:
 
     def test_default_avatars_superseded_in_entry(self, chat_feed):
         chat_feed.send(
-            ChatMessage(**{"user": "System", "avatar": "👨", "value": "Message 1"})
+            ChatMessage(**{"user": "System", "avatar": "👨", "object": "Message 1"})
         )
 
         assert chat_feed.objects[0].user == "System"
@@ -354,7 +356,7 @@ class TestChatFeed:
                 instance.respond()
             elif user == "arm":
                 user_entry = instance.objects[-2]
-                user_contents = user_entry.objects
+                user_contents = user_entry.object
                 yield {
                     "user": "leg",
                     "avatar": "🦿",
@@ -482,7 +484,7 @@ class TestChatFeedCallback:
             yield "hey testing"
 
         chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatMessage(value="Message")
+        chat_log_mock.__getitem__.return_value = ChatMessage("Message")
         chat_feed.placeholder_threshold = 0
         chat_feed.callback = echo
         chat_feed._chat_log = chat_log_mock
@@ -496,7 +498,7 @@ class TestChatFeedCallback:
             yield "hey testing"
 
         chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatMessage(value="Message")
+        chat_log_mock.__getitem__.return_value = ChatMessage("Message")
         chat_feed.callback = echo
         chat_feed._chat_log = chat_log_mock
         chat_feed.send("Message", respond=True)
@@ -510,7 +512,7 @@ class TestChatFeedCallback:
 
         chat_feed.placeholder_threshold = 5
         chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatMessage(value="Message")
+        chat_log_mock.__getitem__.return_value = ChatMessage("Message")
         chat_feed.callback = echo
         chat_feed._chat_log = chat_log_mock
         chat_feed.send("Message", respond=True)
@@ -523,7 +525,7 @@ class TestChatFeedCallback:
 
         chat_feed.placeholder_threshold = 5
         chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatMessage(value="Message")
+        chat_log_mock.__getitem__.return_value = ChatMessage("Message")
         chat_feed.callback = echo
         chat_feed._chat_log = chat_log_mock
         chat_feed.send("Message", respond=True)
@@ -537,7 +539,7 @@ class TestChatFeedCallback:
 
         chat_feed.placeholder_threshold = 0.1
         chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatMessage(value="Message")
+        chat_log_mock.__getitem__.return_value = ChatMessage("Message")
         chat_feed.callback = echo
         chat_feed._chat_log = chat_log_mock
         chat_feed.send("Message", respond=True)
@@ -551,7 +553,7 @@ class TestChatFeedCallback:
 
         chat_feed.placeholder_threshold = 0.1
         chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatMessage(value="Message")
+        chat_log_mock.__getitem__.return_value = ChatMessage("Message")
         chat_feed.callback = echo
         chat_feed._chat_log = chat_log_mock
         chat_feed.send("Message", respond=True)
@@ -570,7 +572,7 @@ class TestChatFeedCallback:
 
         chat_feed.placeholder_threshold = 5
         chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatMessage(value="Message")
+        chat_log_mock.__getitem__.return_value = ChatMessage("Message")
         chat_feed.callback = echo
         chat_feed._chat_log = chat_log_mock
         chat_feed.send("Message", respond=True)
@@ -580,7 +582,7 @@ class TestChatFeedCallback:
     def test_renderers_pane(self, chat_feed):
         chat_feed.renderers = [HTML]
         chat_feed.send("Hello!")
-        html = chat_feed.objects[0]._value_panel
+        html = chat_feed.objects[0]._object_panel
         assert isinstance(html, HTML)
         assert html.object == "Hello!"
         assert html.sizing_mode is None
@@ -588,7 +590,7 @@ class TestChatFeedCallback:
     def test_renderers_widget(self, chat_feed):
         chat_feed.renderers = [TextAreaInput]
         chat_feed.send("Hello!")
-        area_input = chat_feed.objects[0]._render_value()
+        area_input = chat_feed.objects[0]._render_object()
         assert isinstance(area_input, TextAreaInput)
         assert area_input.objects == "Hello!"
         assert area_input.height == 500
@@ -600,7 +602,7 @@ class TestChatFeedCallback:
 
         chat_feed.renderers = [renderer]
         chat_feed.send(1)
-        column = chat_feed.objects[0]._value_panel
+        column = chat_feed.objects[0]._object_panel
         assert isinstance(column, Column)
         number = column[0]
         gauge = column[1]
