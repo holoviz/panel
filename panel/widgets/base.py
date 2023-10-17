@@ -9,7 +9,7 @@ import math
 
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
-    Tuple, Type,
+    Tuple, Type, TypeVar,
 )
 
 import param  # type: ignore
@@ -24,13 +24,13 @@ from ..reactive import Reactive
 from ..viewable import Layoutable, Viewable
 
 if TYPE_CHECKING:
-
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
-    from typing_extensions import Self
 
     from ..layout.base import ListPanel
+
+    T = TypeVar('T', bound='Widget')
 
 
 class Widget(Reactive):
@@ -75,7 +75,7 @@ class Widget(Reactive):
         super().__init__(**params)
 
     @classmethod
-    def from_param(cls, parameter: param.Parameter, **params) -> Self:
+    def from_param(cls, parameter: param.Parameter, **params) -> T:
         """
         Construct a widget from a Parameter and link the two
         bi-directionally.

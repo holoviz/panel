@@ -7,7 +7,7 @@ import pathlib
 import uuid
 
 from typing import (
-    IO, Any, Dict, List,
+    IO, Any, Dict, List, Literal,
 )
 
 import bokeh
@@ -21,7 +21,6 @@ from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import RenderItem, standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag
 from bokeh.util.serialization import make_id
-from typing_extensions import Literal
 
 from .. import __version__, config
 from ..util import base_version, escape
