@@ -444,11 +444,17 @@ class ListLike(param.Parameterized):
         new_objects.append(panel(obj))
         self.objects = new_objects
 
-    def clear(self) -> None:
+    def clear(self) -> List[Viewable]:
         """
         Clears the objects on this layout.
+
+        Returns
+        -------
+        objects (list[Viewable]): List of cleared objects.
         """
+        objects = self.objects
         self.objects = []
+        return objects
 
     def extend(self, objects: Iterable[Any]) -> None:
         """
@@ -462,6 +468,20 @@ class ListLike(param.Parameterized):
         new_objects = list(self)
         new_objects.extend(list(map(panel, objects)))
         self.objects = new_objects
+
+    def index(self, object) -> int:
+        """
+        Returns the integer index of the supplied object in the list of objects.
+
+        Arguments
+        ---------
+        obj (object): Panel component to look up the index for.
+
+        Returns
+        -------
+        index (int): Integer index of the object in the layout.
+        """
+        return self.objects.index(object)
 
     def insert(self, index: int, obj: Any) -> None:
         """
