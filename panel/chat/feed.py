@@ -228,9 +228,9 @@ class ChatFeed(ListPanel):
             align=self.param.align,
             header=self.header,
             height=self.param.height,
-            hide_header=self.param.header.rx().rx.is_(None),
+            hide_header=self.param.header.rx().rx.in_((None, "")),
             collapsible=False,
-            css_classes=["chat-feed"]+self.param.css_classes.rx(),
+            css_classes=["chat-feed"] + self.param.css_classes.rx(),
             header_css_classes=["chat-feed-header"],
             max_height=self.param.max_height,
             min_height=self.param.min_height,
@@ -239,7 +239,7 @@ class ChatFeed(ListPanel):
                 "border": "1px solid var(--panel-border-color, #e1e1e1)",
                 "padding": "0px",
             },
-            stylesheets=self._stylesheets+self.param.stylesheets.rx(),
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
             **linked_params
         )
 
@@ -301,7 +301,11 @@ class ChatFeed(ListPanel):
         """
         Builds a ChatMessage from the value.
         """
-        if "object" not in value:
+        if "value" in value and "object" in value:
+            raise ValueError(f"Cannot pass both 'value' and 'object' together; got {value!r}")
+        elif "value" in value:
+            value["object"] = value.pop("value")
+        elif "object" not in value:
             raise ValueError(
                 f"If 'value' is a dict, it must contain an 'object' key, "
                 f"e.g. {{'object': 'Hello World'}}; got {value!r}"
@@ -549,31 +553,31 @@ class ChatFeed(ListPanel):
 
     def undo(self, count: int = 1) -> List[Any]:
         """
-        Removes the last `count` of entries from the chat log and returns them.
+        Removes the last `count` of messages from the chat log and returns them.
 
         Parameters
         ----------
         count : int
-            The number of entries to remove, starting from the last message.
+            The number of messages to remove, starting from the last message.
 
         Returns
         -------
-        The entries that were removed.
+        The messages that were removed.
         """
         if count <= 0:
             return []
-        entries = self._chat_log.objects
-        undone_entries = entries[-count:]
-        self[:] = entries[:-count]
+        messages = self._chat_log.objects
+        undone_entries = messages[-count:]
+        self[:] = messages[:-count]
         return undone_entries
 
     def clear(self) -> List[Any]:
         """
-        Clears the chat log and returns the entries that were cleared.
+        Clears the chat log and returns the messages that were cleared.
 
         Returns
         -------
-        The entries that were cleared.
+        The messages that were cleared.
         """
         cleared_entries = self._chat_log.objects
         self._chat_log.clear()
