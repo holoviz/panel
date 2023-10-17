@@ -12,6 +12,7 @@ from typing import (
     TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Type,
 )
 
+import numpy as np
 import param
 
 from bokeh.models.widgets import (
@@ -321,7 +322,8 @@ class Select(SingleSelectBase):
 class ColorMap(SingleSelectBase):
     """
     The `ColorMap` widget allows selecting a value from a dictionary of
-    `options` each containing a colormap specified as a list of colors.
+    `options` each containing a colormap specified as a list of colors
+    or a matplotlib colormap.
 
     Reference: https://panel.holoviz.org/reference/widgets/ColorMap.html
 
@@ -353,7 +355,7 @@ class ColorMap(SingleSelectBase):
         try:
             from bokeh.models import ColorMap
         except Exception:
-            self.param.warning('ColorMap widget requires bokeh version >= 3.3.0')
+            raise ImportError('ColorMap widget requires bokeh version >= 3.3.0.')
         return ColorMap
 
     @param.depends('value_name', watch=True, on_init=True)
@@ -369,8 +371,19 @@ class ColorMap(SingleSelectBase):
 
     def _process_param_change(self, params):
         if 'options' in params:
-            params['items'] = list(params.pop('options').items())
-        if 'value' in params and isinstance(params['value'], list):
+            options = []
+            for name, cmap in params.pop('options').items():
+                if 'matplotlib' in getattr(cmap, '__module__', ''):
+                    N = getattr(cmap, 'N', 10)
+                    samples = np.linspace(0, 1, N)
+                    rgba_tmpl = 'rgba({0}, {1}, {2}, {3:.3f})'
+                    cmap = [
+                        rgba_tmpl.format(*(rgba[:3]*255).astype(int), rgba[-1])
+                        for rgba in cmap(samples)
+                    ]
+                options.append((name, cmap))
+            params['options'] = options
+        if 'value' in params and not isinstance(params['value'], (str, type(None))):
             idx = indexOf(params['value'], self.values)
             params['value'] = self.labels[idx]
         return {
