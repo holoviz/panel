@@ -20,7 +20,8 @@ from contextvars import ContextVar
 from functools import partial, wraps
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Coroutine, Dict,
-    Iterator as TIterator, List, Optional, Tuple, Type, TypeVar, Union,
+    Iterator as TIterator, List, Literal, Optional, Tuple, Type, TypeVar,
+    Union,
 )
 from urllib.parse import urljoin
 from weakref import WeakKeyDictionary
@@ -47,7 +48,6 @@ if TYPE_CHECKING:
     from IPython.display import DisplayHandle
     from pyviz_comms import Comm
     from tornado.ioloop import IOLoop
-    from typing_extensions import Literal
 
     from ..template.base import BaseTemplate
     from ..viewable import Viewable

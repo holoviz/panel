@@ -813,7 +813,7 @@ class panel_extension(_pyviz_extension):
             # In embedded mode the ipywidgets_bokeh model must be loaded
             __import__(self._imports['ipywidgets'])
 
-        nb_loaded = getattr(self, '_repeat_execution_in_cell', False)
+        nb_loaded = published = getattr(self, '_repeat_execution_in_cell', False)
         if 'holoviews' in sys.modules:
             if getattr(hv.extension, '_loaded', False):
                 nb_loaded = True
@@ -831,13 +831,17 @@ class panel_extension(_pyviz_extension):
                 config.inline, reloading=nb_loaded
             )
 
-        if not nb_loaded and config.browser_info and state.browser_info:
+        if not published:
+            self._display_globals()
+
+    def _display_globals(self):
+        if config.browser_info and state.browser_info:
             doc = Document()
             comm = state._comm_manager.get_server_comm()
             model = state.browser_info._render_model(doc, comm)
             bundle, meta = state.browser_info._render_mimebundle(model, doc, comm)
             display(bundle, metadata=meta, raw=True)  # noqa
-        if not nb_loaded and config.notifications:
+        if config.notifications:
             display(state.notifications)  # noqa
 
     def _detect_comms(self, params):
