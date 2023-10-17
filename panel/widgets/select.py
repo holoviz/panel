@@ -12,6 +12,7 @@ from typing import (
     TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Type,
 )
 
+import numpy as np
 import param
 
 from bokeh.models.widgets import (
@@ -158,6 +159,9 @@ class Select(SingleSelectBase):
     >>> Select(name='Study', options=['Biology', 'Chemistry', 'Physics'])
     """
 
+    description = param.String(default=None, doc="""
+        An HTML string describing the function of this component.""")
+
     disabled_options = param.List(default=[], nested_refs=True, doc="""
         Optional list of ``options`` that are disabled, i.e. unusable and
         un-clickable. If ``options`` is a dictionary the list items must be
@@ -177,9 +181,6 @@ class Select(SingleSelectBase):
     width = param.Integer(default=300, allow_None=True, doc="""
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
-
-    description = param.String(default=None, doc="""
-        An HTML string describing the function of this component.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'groups': None,
@@ -316,6 +317,79 @@ class Select(SingleSelectBase):
                 return [v for subd in self.groups.values() for v in subd.values()]
             else:
                 return list(itertools.chain(*self.groups.values()))
+
+
+class ColorMap(SingleSelectBase):
+    """
+    The `ColorMap` widget allows selecting a value from a dictionary of
+    `options` each containing a colormap specified as a list of colors
+    or a matplotlib colormap.
+
+    Reference: https://panel.holoviz.org/reference/widgets/ColorMap.html
+
+    :Example:
+
+    >>> ColorMap(name='Reds', options={'Reds': ['white', 'red'], 'Blues': ['#ffffff', '#0000ff']})
+    """
+
+    options = param.Dict(default={}, doc="""
+        Dictionary of colormaps""")
+
+    ncols = param.Integer(default=1, doc="""
+        Number of columns of swatches to display.""")
+
+    swatch_height = param.Integer(default=20, doc="""
+        Height of the color swatches.""")
+
+    swatch_width = param.Integer(default=100, doc="""
+        Width of the color swatches.""")
+
+    value = param.Parameter(default=None, doc="The selected colormap.")
+
+    value_name = param.String(default=None, doc="Name of the selected colormap.")
+
+    _rename = {'options': 'items', 'value_name': None}
+
+    @property
+    def _widget_type(self) -> Type[Model]:
+        try:
+            from bokeh.models import ColorMap
+        except Exception:
+            raise ImportError('ColorMap widget requires bokeh version >= 3.3.0.')
+        return ColorMap
+
+    @param.depends('value_name', watch=True, on_init=True)
+    def _sync_value_name(self):
+        if self.value_name and self.value_name in self.options:
+            self.value = self.options[self.value_name]
+
+    @param.depends('value', watch=True, on_init=True)
+    def _sync_value(self):
+        if self.value:
+            idx = indexOf(self.value, self.values)
+            self.value_name = self.labels[idx]
+
+    def _process_param_change(self, params):
+        if 'options' in params:
+            options = []
+            for name, cmap in params.pop('options').items():
+                if 'matplotlib' in getattr(cmap, '__module__', ''):
+                    N = getattr(cmap, 'N', 10)
+                    samples = np.linspace(0, 1, N)
+                    rgba_tmpl = 'rgba({0}, {1}, {2}, {3:.3g})'
+                    cmap = [
+                        rgba_tmpl.format(*(rgba[:3]*255).astype(int), rgba[-1])
+                        for rgba in cmap(samples)
+                    ]
+                options.append((name, cmap))
+            params['options'] = options
+        if 'value' in params and not isinstance(params['value'], (str, type(None))):
+            idx = indexOf(params['value'], self.values)
+            params['value'] = self.labels[idx]
+        return {
+            self._rename.get(p, p): v for p, v in params.items()
+            if self._rename.get(p, False) is not None
+        }
 
 
 class _MultiSelectBase(SingleSelectBase):
