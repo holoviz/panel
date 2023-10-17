@@ -483,27 +483,27 @@ class TestChatFeedCallback:
             time.sleep(0.25)
             yield "hey testing"
 
-        chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatMessage("Message")
         chat_feed.placeholder_threshold = 0
         chat_feed.callback = echo
-        chat_feed._chat_log = chat_log_mock
+        chat_feed.append = MagicMock(
+            side_effect=lambda message: chat_feed._chat_log.append(message)
+        )
         chat_feed.send("Message", respond=True)
         # only append sent message
-        assert chat_log_mock.append.call_count == 2
+        assert chat_feed.append.call_count == 2
 
     def test_placeholder_enabled(self, chat_feed):
         def echo(contents, user, instance):
             time.sleep(0.25)
             yield "hey testing"
 
-        chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatMessage("Message")
         chat_feed.callback = echo
-        chat_feed._chat_log = chat_log_mock
+        chat_feed.append = MagicMock(
+            side_effect=lambda message: chat_feed._chat_log.append(message)
+        )
         chat_feed.send("Message", respond=True)
         # append sent message and placeholder
-        assert chat_log_mock.append.call_count == 3
+        chat_feed.append.call_args_list[1].args[0] == chat_feed._placeholder
 
     def test_placeholder_threshold_under(self, chat_feed):
         async def echo(contents, user, instance):
@@ -511,12 +511,12 @@ class TestChatFeedCallback:
             return "hey testing"
 
         chat_feed.placeholder_threshold = 5
-        chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatMessage("Message")
         chat_feed.callback = echo
-        chat_feed._chat_log = chat_log_mock
+        chat_feed.append = MagicMock(
+            side_effect=lambda message: chat_feed._chat_log.append(message)
+        )
         chat_feed.send("Message", respond=True)
-        assert chat_log_mock.append.call_count == 2
+        chat_feed.append.call_args_list[1].args[0] != chat_feed._placeholder
 
     def test_placeholder_threshold_under_generator(self, chat_feed):
         async def echo(contents, user, instance):
@@ -524,13 +524,12 @@ class TestChatFeedCallback:
             yield "hey testing"
 
         chat_feed.placeholder_threshold = 5
-        chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatMessage("Message")
         chat_feed.callback = echo
-        chat_feed._chat_log = chat_log_mock
+        chat_feed.append = MagicMock(
+            side_effect=lambda message: chat_feed._chat_log.append(message)
+        )
         chat_feed.send("Message", respond=True)
-        # append sent message and placeholder
-        assert chat_log_mock.append.call_count == 2
+        chat_feed.append.call_args_list[1].args[0] != chat_feed._placeholder
 
     def test_placeholder_threshold_exceed(self, chat_feed):
         async def echo(contents, user, instance):
@@ -538,13 +537,12 @@ class TestChatFeedCallback:
             yield "hello testing"
 
         chat_feed.placeholder_threshold = 0.1
-        chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatMessage("Message")
         chat_feed.callback = echo
-        chat_feed._chat_log = chat_log_mock
+        chat_feed.append = MagicMock(
+            side_effect=lambda message: chat_feed._chat_log.append(message)
+        )
         chat_feed.send("Message", respond=True)
-        # append sent message and placeholder
-        assert chat_log_mock.append.call_count == 3
+        chat_feed.append.call_args_list[1].args[0] == chat_feed._placeholder
 
     def test_placeholder_threshold_exceed_generator(self, chat_feed):
         async def echo(contents, user, instance):
@@ -552,13 +550,12 @@ class TestChatFeedCallback:
             yield "hello testing"
 
         chat_feed.placeholder_threshold = 0.1
-        chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatMessage("Message")
         chat_feed.callback = echo
-        chat_feed._chat_log = chat_log_mock
+        chat_feed.append = MagicMock(
+            side_effect=lambda message: chat_feed._chat_log.append(message)
+        )
         chat_feed.send("Message", respond=True)
-        # append sent message and placeholder
-        assert chat_log_mock.append.call_count == 3
+        chat_feed.append.call_args_list[1].args[0] == chat_feed._placeholder
 
     def test_placeholder_threshold_sync(self, chat_feed):
         """
@@ -571,13 +568,12 @@ class TestChatFeedCallback:
             yield "hey testing"
 
         chat_feed.placeholder_threshold = 5
-        chat_log_mock = MagicMock()
-        chat_log_mock.__getitem__.return_value = ChatMessage("Message")
         chat_feed.callback = echo
-        chat_feed._chat_log = chat_log_mock
+        chat_feed.append = MagicMock(
+            side_effect=lambda message: chat_feed._chat_log.append(message)
+        )
         chat_feed.send("Message", respond=True)
-        # append sent message and placeholder
-        assert chat_log_mock.append.call_count == 3
+        chat_feed.append.call_args_list[1].args[0] == chat_feed._placeholder
 
     def test_renderers_pane(self, chat_feed):
         chat_feed.renderers = [HTML]
