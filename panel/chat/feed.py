@@ -197,47 +197,50 @@ class ChatFeed(ListPanel):
         primarily to prevent recursion error in _update_placeholder.""")
 
     _disabled = param.Boolean(default=False,doc="""
-        Whether the chat feed is disabled.""",)
+        Whether the chat feed is disabled.""")
 
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_feed.css"]
 
     def __init__(self, *objects, **params):
         if params.get("renderers") and not isinstance(params["renderers"], list):
             params["renderers"] = [params["renderers"]]
+        if params.get('sizing_mode') is None:
+            params['height'] = params.get("height", 500)
         super().__init__(*objects, **params)
 
-        #if params.get('sizing_mode') is None:
-        #    params['height'] = params.get("height", 500)
-
-        # instantiate the card's column
-        chat_log_params = {
-            p: getattr(self, p)
-            for p in Column.param
-            if (p in ChatFeed.param and p != "name" and getattr(self, p) is not None)
-        }
-        chat_log_params["css_classes"] = ["chat-feed-log"]
-        chat_log_params["stylesheets"] = self._stylesheets
-        chat_log_params["margin"] = 0
-        self._chat_log = Column(**chat_log_params)
+        # instantiate the card's column) is not None)
+        linked_params = dict(
+            design=self.param.design,
+            sizing_mode=self.param.sizing_mode,
+            width=self.param.width,
+            max_width=self.param.max_width,
+            min_width=self.param.min_width,
+            visible=self.param.visible
+        )
+        self._chat_log = Column(
+            css_classes=["chat-feed-log"],
+            stylesheets=self._stylesheets,
+            **linked_params
+        )
         self.link(self._chat_log, objects='objects', bidirectional=True)
         self._card = Card(
             self._chat_log, VSpacer(),
+            align=self.param.align,
             header=self.header,
-            hide_header=self.header is None,
+            height=self.param.height,
+            hide_header=self.param.header.rx().rx.is_(None),
             collapsible=False,
-            css_classes=["chat-feed"],
+            css_classes=["chat-feed"]+self.param.css_classes.rx(),
             header_css_classes=["chat-feed-header"],
+            max_height=self.param.max_height,
+            min_height=self.param.min_height,
             title_css_classes=["chat-feed-title"],
             styles={
                 "border": "1px solid var(--panel-border-color, #e1e1e1)",
                 "padding": "0px",
             },
-            stylesheets=self._stylesheets,
-            sizing_mode=self.param.sizing_mode,
-            height=self.param.height,
-            width=self.param.width,
-            max_width=self.param.max_width,
-            max_height=self.param.max_height
+            stylesheets=self._stylesheets+self.param.stylesheets.rx(),
+            **linked_params
         )
 
         # handle async callbacks using this trick
@@ -267,13 +270,6 @@ class ChatFeed(ListPanel):
             reaction_icons={},
             show_copy_icon=False,
         )
-
-    @param.depends("header", watch=True)
-    def _hide_header(self):
-        """
-        Hide the header if there is no title or header.
-        """
-        self._card.hide_header = not self.header
 
     def _replace_placeholder(self, message: ChatMessage | None = None) -> None:
         """

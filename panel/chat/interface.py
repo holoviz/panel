@@ -187,8 +187,8 @@ class ChatInterface(ChatFeed):
         self._init_widgets()
         if active is not None:
             self.active = active
-        self._composite.param.update(
-            objects=self._composite.objects + [self._input_container],
+        self._card.param.update(
+            objects=self._card.objects + [self._input_container],
             css_classes=["chat-interface"],
             stylesheets=self._stylesheets,
         )
