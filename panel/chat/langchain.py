@@ -66,8 +66,8 @@ class PanelCallbackHandler(BaseCallbackHandler):
     def on_llm_start(self, serialized: Dict[str, Any], *args, **kwargs):
         model = kwargs.get("invocation_params", {}).get("model_name", "")
         self._is_streaming = serialized.get("kwargs", {}).get("streaming")
-        entries = self.instance.value
-        if entries[-1].user != self._active_user:
+        messages = self.instance.value
+        if messages[-1].user != self._active_user:
             self._message = None
         if self._active_user and model not in self._active_user:
             self._active_user = f"{self._active_user} ({model})"

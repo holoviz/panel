@@ -338,8 +338,8 @@ class ChatInterface(ChatFeed):
         """
         Get the index of the last user message.
         """
-        entries = self.value[::-1]
-        for index, message in enumerate(entries, 1):
+        messages = self.value[::-1]
+        for index, message in enumerate(messages, 1):
             if message.user == self.user:
                 return index
         return 0
@@ -379,14 +379,14 @@ class ChatInterface(ChatFeed):
         which can trigger the callback again.
         """
         count = self._get_last_user_entry_index()
-        entries = self.undo(count)
-        if not entries:
+        messages = self.undo(count)
+        if not messages:
             return
-        self.send(value=entries[0], respond=True)
+        self.send(value=messages[0], respond=True)
 
     def _click_undo(self, _):
         """
-        Upon clicking the undo button, undo (remove) entries
+        Upon clicking the undo button, undo (remove) messages
         up to the last user message. If the button is clicked
         again without performing any other actions, revert the undo.
         """
