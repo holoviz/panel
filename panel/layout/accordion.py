@@ -106,6 +106,7 @@ class Accordion(NamedListPanel):
         for obj in old_objects:
             if obj not in self.objects:
                 self._panels[id(obj)]._cleanup(root)
+                del self._panels[id(obj)]
 
         params = {
             k: v for k, v in self.param.values().items()
