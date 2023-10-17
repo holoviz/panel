@@ -360,7 +360,7 @@ class ColorMap(SingleSelectBase):
 
     @param.depends('value_name', watch=True, on_init=True)
     def _sync_value_name(self):
-        if self.value_name:
+        if self.value_name and self.value_name in self.options:
             self.value = self.options[self.value_name]
 
     @param.depends('value', watch=True, on_init=True)
@@ -376,7 +376,7 @@ class ColorMap(SingleSelectBase):
                 if 'matplotlib' in getattr(cmap, '__module__', ''):
                     N = getattr(cmap, 'N', 10)
                     samples = np.linspace(0, 1, N)
-                    rgba_tmpl = 'rgba({0}, {1}, {2}, {3:.3f})'
+                    rgba_tmpl = 'rgba({0}, {1}, {2}, {3:.3g})'
                     cmap = [
                         rgba_tmpl.format(*(rgba[:3]*255).astype(int), rgba[-1])
                         for rgba in cmap(samples)
