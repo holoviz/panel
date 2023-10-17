@@ -1,6 +1,6 @@
 """
 The interface module provides an even higher-level API for interacting
-with a list of `ChatEntry` objects compared to the `ChatFeed`
+with a list of `ChatMessage` objects compared to the `ChatFeed`
 through a frontend input UI.
 """
 
@@ -17,8 +17,8 @@ from ..viewable import Viewable
 from ..widgets.base import Widget
 from ..widgets.button import Button
 from ..widgets.input import FileInput, TextInput
-from .entry import _FileInputMessage
 from .feed import ChatFeed
+from .message import _FileInputMessage
 
 
 @dataclass
@@ -207,7 +207,8 @@ class ChatInterface(ChatFeed):
         """
         Update the input width.
         """
-        self.show_button_name = self.width is None or self.width >= 400
+        if self.show_button_name is None:
+            self.show_button_name = self.width is None or self.width >= 400
 
     @param.depends(
         "width",
@@ -335,11 +336,11 @@ class ChatInterface(ChatFeed):
 
     def _get_last_user_entry_index(self) -> int:
         """
-        Get the index of the last user entry.
+        Get the index of the last user message.
         """
         entries = self.value[::-1]
-        for index, entry in enumerate(entries, 1):
-            if entry.user == self.user:
+        for index, message in enumerate(entries, 1):
+            if message.user == self.user:
                 return index
         return 0
 
@@ -374,7 +375,7 @@ class ChatInterface(ChatFeed):
 
     def _click_rerun(self, _):
         """
-        Upon clicking the rerun button, rerun the last user entry,
+        Upon clicking the rerun button, rerun the last user message,
         which can trigger the callback again.
         """
         count = self._get_last_user_entry_index()
@@ -386,7 +387,7 @@ class ChatInterface(ChatFeed):
     def _click_undo(self, _):
         """
         Upon clicking the undo button, undo (remove) entries
-        up to the last user entry. If the button is clicked
+        up to the last user message. If the button is clicked
         again without performing any other actions, revert the undo.
         """
         undo_data = self._button_data["undo"]

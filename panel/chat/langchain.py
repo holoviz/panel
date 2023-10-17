@@ -19,7 +19,7 @@ from panel.chat import ChatFeed, ChatInterface
 class PanelCallbackHandler(BaseCallbackHandler):
     """
     The Langchain `PanelCallbackHandler` itself is not a widget or pane, but is useful for rendering
-    and streaming output from Langchain Tools, Agents, and Chains as `ChatEntry` objects.
+    and streaming output from Langchain Tools, Agents, and Chains as `ChatMessage` objects.
 
     Reference: https://panel.holoviz.org/reference/chat/PanelCallbackHandler.html
 
@@ -43,7 +43,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
                 "LangChainCallbackHandler requires `langchain` to be installed."
             )
         self.instance = instance
-        self._entry = None
+        self._message = None
         self._active_user = user
         self._active_avatar = avatar
         self._disabled_state = self.instance.disabled
@@ -68,33 +68,33 @@ class PanelCallbackHandler(BaseCallbackHandler):
         self._is_streaming = serialized.get("kwargs", {}).get("streaming")
         entries = self.instance.value
         if entries[-1].user != self._active_user:
-            self._entry = None
+            self._message = None
         if self._active_user and model not in self._active_user:
             self._active_user = f"{self._active_user} ({model})"
         return super().on_llm_start(serialized, *args, **kwargs)
 
     def on_llm_new_token(self, token: str, **kwargs) -> None:
-        self._entry = self.instance.stream(
+        self._message = self.instance.stream(
             token,
             user=self._active_user,
             avatar=self._active_avatar,
-            entry=self._entry,
+            message=self._message,
         )
         return super().on_llm_new_token(token, **kwargs)
 
     def on_llm_end(self, response: LLMResult, *args, **kwargs):
         if not self._is_streaming:
             # on_llm_new_token does not get called if not streaming
-            self._entry = self.instance.stream(
+            self._message = self.instance.stream(
                 response.generations[0][0].text,
                 user=self._active_user,
                 avatar=self._active_avatar,
-                entry=self._entry,
+                message=self._message,
             )
         if self._active_user != self._input_user:
             self._active_user = self._input_user
             self._active_avatar = self._input_avatar
-            self._entry = None
+            self._message = None
         return super().on_llm_end(response, *args, **kwargs)
 
     def on_llm_error(self, error: Union[Exception, KeyboardInterrupt], *args, **kwargs):

@@ -1,6 +1,6 @@
 """
 The feed module provides a high-level API for interacting
-with a list of `ChatEntry` objects through the backend methods.
+with a list of `ChatMessage` objects through the backend methods.
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from ..layout.spacer import VSpacer
 from ..pane.image import SVG, ImageBase
 from ..widgets.base import CompositeWidget
 from ..widgets.button import Button
-from .entry import ChatEntry
+from .message import ChatMessage
 
 Avatar = Union[str, BytesIO, ImageBase]
 AvatarDict = Dict[str, Avatar]
@@ -95,14 +95,14 @@ PLACEHOLDER_SVG = """
 
 class ChatFeed(CompositeWidget):
     """
-    A widget to display a list of `ChatEntry` objects and interact with them.
+    A widget to display a list of `ChatMessage` objects and interact with them.
 
     This widget provides methods to:
     - Send (append) messages to the chat log.
-    - Stream tokens to the latest `ChatEntry` in the chat log.
+    - Stream tokens to the latest `ChatMessage` in the chat log.
     - Execute callbacks when a user sends a message.
-    - Undo a number of sent `ChatEntry` objects.
-    - Clear the chat log of all `ChatEntry` objects.
+    - Undo a number of sent `ChatMessage` objects.
+    - Clear the chat log of all `ChatMessage` objects.
 
     Reference: https://panel.holoviz.org/reference/chat/ChatFeed.html
 
@@ -140,7 +140,7 @@ class ChatFeed(CompositeWidget):
     callback_user = param.String(
         default="Assistant",
         doc="""
-        The default user name to use for the entry provided by the callback.""",
+        The default user name to use for the message provided by the callback.""",
     )
 
     card_params = param.Dict(
@@ -150,10 +150,10 @@ class ChatFeed(CompositeWidget):
         `header_background`, `header_color`, etc.""",
     )
 
-    entry_params = param.Dict(
+    message_params = param.Dict(
         default={},
         doc="""
-        Params to pass to each ChatEntry, like `reaction_icons`, `timestamp_format`,
+        Params to pass to each ChatMessage, like `reaction_icons`, `timestamp_format`,
         `show_avatar`, `show_user`, and `show_timestamp`.""",
     )
 
@@ -220,16 +220,16 @@ class ChatFeed(CompositeWidget):
         enabled the view will be on the first object.""",
     )
     value = param.List(
-        item_type=ChatEntry,
+        item_type=ChatMessage,
         doc="""
         The list of entries in the feed.""",
     )
 
     _placeholder = param.ClassSelector(
-        class_=ChatEntry,
+        class_=ChatMessage,
         allow_refs=False,
         doc="""
-        The placeholder wrapped in a ChatEntry object;
+        The placeholder wrapped in a ChatMessage object;
         primarily to prevent recursion error in _update_placeholder.""",
     )
 
@@ -296,7 +296,7 @@ class ChatFeed(CompositeWidget):
         loading_avatar = SVG(
             PLACEHOLDER_SVG, sizing_mode=None, css_classes=["rotating-placeholder"]
         )
-        self._placeholder = ChatEntry(
+        self._placeholder = ChatMessage(
             user=" ",
             value=self.placeholder_text,
             show_timestamp=False,
@@ -312,10 +312,10 @@ class ChatFeed(CompositeWidget):
         """
         self._composite.hide_header = not self.header
 
-    def _replace_placeholder(self, entry: ChatEntry | None = None) -> None:
+    def _replace_placeholder(self, message: ChatMessage | None = None) -> None:
         """
-        Replace the placeholder from the chat log with the entry
-        if placeholder, otherwise simply append the entry.
+        Replace the placeholder from the chat log with the message
+        if placeholder, otherwise simply append the message.
         Replacing helps lessen the chat log jumping around.
         """
         index = None
@@ -326,46 +326,46 @@ class ChatFeed(CompositeWidget):
                 pass
 
         if index is not None:
-            if entry is not None:
-                self._chat_log[index] = entry
-            elif entry is None:
+            if message is not None:
+                self._chat_log[index] = message
+            elif message is None:
                 self._chat_log.remove(self._placeholder)
-        elif entry is not None:
-            self._chat_log.append(entry)
+        elif message is not None:
+            self._chat_log.append(message)
 
-    def _build_entry(
+    def _build_message(
         self,
         value: dict,
         user: str | None = None,
         avatar: str | BinaryIO | None = None,
-    ) -> ChatEntry | None:
+    ) -> ChatMessage | None:
         """
-        Builds a ChatEntry from the value.
+        Builds a ChatMessage from the value.
         """
         if "value" not in value:
             raise ValueError(
                 f"If 'value' is a dict, it must contain a 'value' key, "
                 f"e.g. {{'value': 'Hello World'}}; got {value!r}"
             )
-        entry_params = dict(value, renderers=self.renderers, **self.entry_params)
+        message_params = dict(value, renderers=self.renderers, **self.message_params)
         if user:
-            entry_params["user"] = user
+            message_params["user"] = user
         if avatar:
-            entry_params["avatar"] = avatar
+            message_params["avatar"] = avatar
         if self.width:
-            entry_params["width"] = int(self.width - 80)
-        entry = ChatEntry(**entry_params)
-        return entry
+            message_params["width"] = int(self.width - 80)
+        message = ChatMessage(**message_params)
+        return message
 
-    def _upsert_entry(
-        self, value: Any, entry: ChatEntry | None = None
-    ) -> ChatEntry | None:
+    def _upsert_message(
+        self, value: Any, message: ChatMessage | None = None
+    ) -> ChatMessage | None:
         """
-        Replace the placeholder entry with the response or update
-        the entry's value with the response.
+        Replace the placeholder message with the response or update
+        the message's value with the response.
         """
         if value is None:
-            # don't add new entry if the callback returns None
+            # don't add new message if the callback returns None
             return
 
         user = self.callback_user
@@ -373,23 +373,23 @@ class ChatFeed(CompositeWidget):
         if isinstance(value, dict):
             user = value.get("user", user)
             avatar = value.get("avatar")
-        if entry is not None:
-            entry.update(value, user=user, avatar=avatar)
-            return entry
-        elif isinstance(value, ChatEntry):
+        if message is not None:
+            message.update(value, user=user, avatar=avatar)
+            return message
+        elif isinstance(value, ChatMessage):
             return value
 
         if not isinstance(value, dict):
             value = {"value": value}
-        new_entry = self._build_entry(value, user=user, avatar=avatar)
-        self._replace_placeholder(new_entry)
-        return new_entry
+        new_message = self._build_message(value, user=user, avatar=avatar)
+        self._replace_placeholder(new_message)
+        return new_message
 
-    def _extract_contents(self, entry: ChatEntry) -> Any:
+    def _extract_contents(self, message: ChatMessage) -> Any:
         """
-        Extracts the contents from the entry's panel object.
+        Extracts the contents from the message's panel object.
         """
-        value = entry._value_panel
+        value = message._value_panel
         if hasattr(value, "object"):
             contents = value.object
         elif hasattr(value, "objects"):
@@ -400,29 +400,29 @@ class ChatFeed(CompositeWidget):
             contents = value
         return contents
 
-    async def _serialize_response(self, response: Any) -> ChatEntry | None:
+    async def _serialize_response(self, response: Any) -> ChatMessage | None:
         """
         Serializes the response by iterating over it and
-        updating the entry's value.
+        updating the message's value.
         """
-        response_entry = None
+        response_message = None
         if isasyncgen(response):
             async for token in response:
-                response_entry = self._upsert_entry(token, response_entry)
+                response_message = self._upsert_message(token, response_message)
         elif isgenerator(response):
             for token in response:
-                response_entry = self._upsert_entry(token, response_entry)
+                response_message = self._upsert_message(token, response_message)
         elif isawaitable(response):
-            response_entry = self._upsert_entry(await response, response_entry)
+            response_message = self._upsert_message(await response, response_message)
         else:
-            response_entry = self._upsert_entry(response, response_entry)
-        return response_entry
+            response_message = self._upsert_message(response, response_message)
+        return response_message
 
-    async def _handle_callback(self, entry: ChatEntry) -> ChatEntry | None:
-        contents = self._extract_contents(entry)
-        response = self.callback(contents, entry.user, self)
-        response_entry = await self._serialize_response(response)
-        return response_entry
+    async def _handle_callback(self, message: ChatMessage) -> ChatMessage | None:
+        contents = self._extract_contents(message)
+        response = self.callback(contents, message.user, self)
+        response_message = await self._serialize_response(response)
+        return response_message
 
     async def _schedule_placeholder(
         self,
@@ -458,12 +458,12 @@ class ChatFeed(CompositeWidget):
         disabled = self.disabled
         try:
             self.disabled = True
-            entry = self._chat_log[-1]
-            if not isinstance(entry, ChatEntry):
+            message = self._chat_log[-1]
+            if not isinstance(message, ChatMessage):
                 return
 
             num_entries = len(self._chat_log)
-            task = asyncio.create_task(self._handle_callback(entry))
+            task = asyncio.create_task(self._handle_callback(message))
             await self._schedule_placeholder(task, num_entries)
             await task
             task.result()
@@ -485,106 +485,106 @@ class ChatFeed(CompositeWidget):
 
     def send(
         self,
-        value: ChatEntry | dict | Any,
+        value: ChatMessage | dict | Any,
         user: str | None = None,
         avatar: str | BinaryIO | None = None,
         respond: bool = True,
-    ) -> ChatEntry | None:
+    ) -> ChatMessage | None:
         """
-        Sends a value and creates a new entry in the chat log.
+        Sends a value and creates a new message in the chat log.
 
         If `respond` is `True`, additionally executes the callback, if provided.
 
         Arguments
         ---------
-        value : ChatEntry | dict | Any
+        value : ChatMessage | dict | Any
             The message contents to send.
         user : str | None
-            The user to send as; overrides the message entry's user if provided.
+            The user to send as; overrides the message message's user if provided.
         avatar : str | BinaryIO | None
-            The avatar to use; overrides the message entry's avatar if provided.
+            The avatar to use; overrides the message message's avatar if provided.
         respond : bool
             Whether to execute the callback.
 
         Returns
         -------
-        The entry that was created.
+        The message that was created.
         """
-        if isinstance(value, ChatEntry):
+        if isinstance(value, ChatMessage):
             if user is not None or avatar is not None:
                 raise ValueError(
                     "Cannot set user or avatar when explicitly sending "
-                    "a ChatEntry. Set them directly on the ChatEntry."
+                    "a ChatMessage. Set them directly on the ChatMessage."
                 )
-            entry = value
+            message = value
         else:
             if not isinstance(value, dict):
                 value = {"value": value}
-            entry = self._build_entry(value, user=user, avatar=avatar)
-        self._chat_log.append(entry)
+            message = self._build_message(value, user=user, avatar=avatar)
+        self._chat_log.append(message)
         if respond:
             self.respond()
-        return entry
+        return message
 
     def stream(
         self,
         value: str,
         user: str | None = None,
         avatar: str | BinaryIO | None = None,
-        entry: ChatEntry | None = None,
-    ) -> ChatEntry | None:
+        message: ChatMessage | None = None,
+    ) -> ChatMessage | None:
         """
-        Streams a token and updates the provided entry, if provided.
-        Otherwise creates a new entry in the chat log, so be sure the
-        returned entry is passed back into the method, e.g.
-        `entry = chat.stream(token, entry=entry)`.
+        Streams a token and updates the provided message, if provided.
+        Otherwise creates a new message in the chat log, so be sure the
+        returned message is passed back into the method, e.g.
+        `message = chat.stream(token, message=message)`.
 
         This method is primarily for outputs that are not generators--
         notably LangChain. For most cases, use the send method instead.
 
         Arguments
         ---------
-        value : str | dict | ChatEntry
+        value : str | dict | ChatMessage
             The new token value to stream.
         user : str | None
-            The user to stream as; overrides the entry's user if provided.
+            The user to stream as; overrides the message's user if provided.
         avatar : str | BinaryIO | None
-            The avatar to use; overrides the entry's avatar if provided.
-        entry : ChatEntry | None
-            The entry to update.
+            The avatar to use; overrides the message's avatar if provided.
+        message : ChatMessage | None
+            The message to update.
 
         Returns
         -------
-        The entry that was updated.
+        The message that was updated.
         """
-        if isinstance(value, ChatEntry) and (user is not None or avatar is not None):
+        if isinstance(value, ChatMessage) and (user is not None or avatar is not None):
             raise ValueError(
                 "Cannot set user or avatar when explicitly streaming "
-                "a ChatEntry. Set them directly on the ChatEntry."
+                "a ChatMessage. Set them directly on the ChatMessage."
             )
-        elif entry:
+        elif message:
             if isinstance(value, (str, dict)):
-                entry.stream(value)
+                message.stream(value)
                 if user:
-                    entry.user = user
+                    message.user = user
                 if avatar:
-                    entry.avatar = avatar
+                    message.avatar = avatar
             else:
-                entry.update(value, user=user, avatar=avatar)
-            return entry
+                message.update(value, user=user, avatar=avatar)
+            return message
 
-        if isinstance(value, ChatEntry):
-            entry = value
+        if isinstance(value, ChatMessage):
+            message = value
         else:
             if not isinstance(value, dict):
                 value = {"value": value}
-            entry = self._build_entry(value, user=user, avatar=avatar)
-        self._replace_placeholder(entry)
-        return entry
+            message = self._build_message(value, user=user, avatar=avatar)
+        self._replace_placeholder(message)
+        return message
 
     def respond(self):
         """
-        Executes the callback with the latest entry in the chat log.
+        Executes the callback with the latest message in the chat log.
         """
         self._callback_trigger.param.trigger("clicks")
 
@@ -595,7 +595,7 @@ class ChatFeed(CompositeWidget):
         Parameters
         ----------
         count : int
-            The number of entries to remove, starting from the last entry.
+            The number of entries to remove, starting from the last message.
 
         Returns
         -------

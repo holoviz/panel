@@ -1,5 +1,5 @@
 """
-The entry module provides a low-level API for rendering chat messages.
+The message module provides a low-level API for rendering chat messages.
 """
 
 from __future__ import annotations
@@ -107,7 +107,7 @@ class _FileInputMessage:
     mime_type: str
 
 
-class ChatEntry(CompositeWidget):
+class ChatMessage(CompositeWidget):
     """
     A widget for displaying chat messages with support for various content types.
 
@@ -118,11 +118,11 @@ class ChatEntry(CompositeWidget):
     - Associating reactions with messages and mapping them to icons.
     - Rendering various content types including text, images, audio, video, and more.
 
-    Reference: https://panel.holoviz.org/reference/chat/ChatEntry.html
+    Reference: https://panel.holoviz.org/reference/chat/ChatMessage.html
 
     :Example:
 
-    >>> ChatEntry(value="Hello world!", user="New User", avatar="😊")
+    >>> ChatMessage(value="Hello world!", user="New User", avatar="😊")
     """
 
     avatar = param.ClassSelector(
@@ -143,7 +143,7 @@ class ChatEntry(CompositeWidget):
     )
 
     css_classes = param.List(
-        default=["chat-entry"],
+        default=["chat-message"],
         doc="""
         The CSS classes to apply to the widget.""",
     )
@@ -218,7 +218,7 @@ class ChatEntry(CompositeWidget):
 
     _value_panel = param.Parameter(doc="The rendered value panel.")
 
-    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_entry.css"]
+    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_message.css"]
 
     def __init__(self, **params):
         from ..param import ParamMethod  # circular imports
@@ -500,7 +500,7 @@ class ChatEntry(CompositeWidget):
 
     def stream(self, token: str):
         """
-        Updates the entry with the new token traversing the value to
+        Updates the message with the new token traversing the value to
         allow updating nested objects. When traversing a nested Panel
         the last object that supports rendering strings is updated, e.g.
         in a layout of `Column(Markdown(...), Image(...))` the Markdown
@@ -537,21 +537,21 @@ class ChatEntry(CompositeWidget):
 
     def update(
         self,
-        value: dict | ChatEntry | Any,
+        value: dict | ChatMessage | Any,
         user: str | None = None,
         avatar: str | BinaryIO | None = None,
     ):
         """
-        Updates the entry with a new value, user and avatar.
+        Updates the message with a new value, user and avatar.
 
         Arguments
         ---------
-        value : ChatEntry | dict | Any
+        value : ChatMessage | dict | Any
             The message contents to send.
         user : str | None
-            The user to send as; overrides the message entry's user if provided.
+            The user to send as; overrides the message message's user if provided.
         avatar : str | BinaryIO | None
-            The avatar to use; overrides the message entry's avatar if provided.
+            The avatar to use; overrides the message message's avatar if provided.
         """
         updates = {}
         if isinstance(value, dict):
@@ -560,11 +560,11 @@ class ChatEntry(CompositeWidget):
                 updates["user"] = user
             if avatar:
                 updates["avatar"] = avatar
-        elif isinstance(value, ChatEntry):
+        elif isinstance(value, ChatMessage):
             if user is not None or avatar is not None:
                 raise ValueError(
                     "Cannot set user or avatar when explicitly sending "
-                    "a ChatEntry. Set them directly on the ChatEntry."
+                    "a ChatMessage. Set them directly on the ChatMessage."
                 )
             updates = value.param.values()
         else:

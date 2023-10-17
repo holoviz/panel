@@ -72,7 +72,7 @@ class ChatRow(CompositeWidget):
         styles: Dict[str, str] = None,
         **params,
     ):
-        deprecated("1.4", "pn.widgets.ChatRow", "pn.widgets.ChatEntry")
+        deprecated("1.4", "pn.widgets.ChatRow", "pn.widgets.ChatMessage")
         bubble_styles = {
             "overflow-x": "auto",
             "overflow-y": "auto",
