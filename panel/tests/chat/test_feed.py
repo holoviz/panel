@@ -592,7 +592,7 @@ class TestChatFeedCallback:
         chat_feed.send("Hello!")
         area_input = chat_feed.objects[0]._render_object()
         assert isinstance(area_input, TextAreaInput)
-        assert area_input.objects == "Hello!"
+        assert area_input.value == "Hello!"
         assert area_input.height == 500
         assert area_input.sizing_mode is None
 
@@ -609,7 +609,7 @@ class TestChatFeedCallback:
         assert number.object == 1
         assert number.sizing_mode is None
         assert isinstance(gauge, LinearGauge)
-        assert gauge.objects == 1
+        assert gauge.value == 1
         assert gauge.width == 100
         assert gauge.sizing_mode == "fixed"
 

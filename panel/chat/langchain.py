@@ -46,7 +46,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
         self._message = None
         self._active_user = user
         self._active_avatar = avatar
-        self._disabled_state = self.instance.disabled
+        # self._disabled_state = self.instance.disabled
         self._is_streaming = None
 
         self._input_user = user  # original user

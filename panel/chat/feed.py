@@ -196,9 +196,6 @@ class ChatFeed(ListPanel):
         The placeholder wrapped in a ChatMessage object;
         primarily to prevent recursion error in _update_placeholder.""")
 
-    _disabled = param.Boolean(default=False,doc="""
-        Whether the chat feed is disabled.""")
-
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_feed.css"]
 
     def __init__(self, *objects, **params):
