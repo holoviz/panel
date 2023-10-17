@@ -30,7 +30,7 @@ jobs:
       matrix:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
         # Run on the full set on schedule, workflow_dispatch and push&tags events, otherwise on a subset.
-        python-version: ${{ ( github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || ( github.event_name == 'push' && github.ref_type == 'tag' ) ) && fromJSON('["3.8", "3.9", "3.10", "3.11"]') || fromJSON('["3.8", "3.9", "3.11"]') }}
+        python-version: ${{ ( github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || ( github.event_name == 'push' && github.ref_type == 'tag' ) ) && fromJSON('["3.9", "3.10", "3.11"]') || fromJSON('["3.9", "3.11"]') }}
     timeout-minutes: 90
     defaults:
       run:
@@ -53,10 +53,8 @@ jobs:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
           channels: pyviz/label/dev,numba,bokeh,conda-forge,nodefaults
-          # Remove when Python 3.11 is well supported on latest conda/conda-forge.
           conda-update: true
           nodejs: true
-          # Remove when all examples tools can be installed on 3.10
           envs: -o examples -o recommended -o tests -o build
           cache: true
           opengl: true
@@ -194,3 +192,53 @@ jobs:
           files: ./coverage.xml
           flags: ui-tests
           fail_ci_if_error: false # optional (default = false)
+  core_test_suite:
+    name: Core tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
+    needs: [pre_commit]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['ubuntu-latest']
+        python-version: ['3.12']
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash -el {0}
+    env:
+      DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} core tests"
+      PYTHON_VERSION: ${{ matrix.python-version }}
+      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
+    steps:
+      # Add back when this works on Python 3.12
+      # - uses: holoviz-dev/holoviz_tasks/install@v0.1a17
+      #   with:
+      #     name: core_test_suite
+      #     python-version: ${{ matrix.python-version }}
+      #     # channel-priority: strict
+      #     channels: pyviz/label/dev,conda-forge,nodefaults
+      #     envs: "-o tests_core -o tests_ci"
+      #     cache: true
+      #     conda-update: true
+      #     id: install
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: "100"
+      - name: Fetch unshallow
+        run: git fetch --prune --tags --unshallow -f
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+      - run: |
+          python -m pip install -ve '.[tests_core, recommended]'
+      - name: bokeh sampledata
+        run: |
+          # conda activate test-environment
+          bokeh sampledata
+      - name: doit test_unit
+        run: |
+          # conda activate test-environment
+          pytest panel

@@ -101,7 +101,7 @@ except Exception:
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=3.1.1,<3.4.0',
+    'bokeh >=3.2.0,<3.4.0',
     'param >=2.0.0rc6,<3.0',
     'pyviz_comms >=0.7.4',
     'xyzservices >=2021.09.1', # Bokeh dependency, but pyodide 23.0.0 does not always pick it up
@@ -124,7 +124,7 @@ _recommended = [
     'plotly'
 ]
 
-_tests = [
+_tests_core = [
     # Test dependencies
     'flake8',
     'parameterized',
@@ -142,14 +142,17 @@ _tests = [
     'folium',
     'diskcache',
     'holoviews >=1.16.0',
-    'ipympl',
-    'ipython >=7.0',
-    'ipyvuetify',
-    'ipywidgets_bokeh',
     'numpy',
     'pandas >=1.3',
-    'reacton',
+    'ipython >=7.0',
     'scipy',
+]
+
+_tests = _tests_core + [
+    'ipympl',
+    'ipyvuetify',
+    'ipywidgets_bokeh',
+    'reacton',
     'twine',
     # Temporary pins
     'numba <0.58'
@@ -207,6 +210,7 @@ _conda_only = [
 
 extras_require = {
     'examples': _examples,
+    'tests_core': _tests_core,
     'tests': _tests,
     'recommended': _recommended,
     'doc': _recommended + [
@@ -230,7 +234,7 @@ extras_require['build'] = [
     'setuptools >=42',
     'requests',
     'packaging',
-    'bokeh >=3.1.1,<3.3.0',
+    'bokeh >=3.2.0,<3.3.0',
     'pyviz_comms >=0.7.4',
     'bleach',
     'tqdm >=4.48.0',
@@ -273,10 +277,10 @@ setup_args = dict(
         "License :: OSI Approved :: BSD License",
         "Development Status :: 5 - Production/Stable",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Operating System :: OS Independent",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
@@ -293,7 +297,7 @@ setup_args = dict(
         "Topic :: Office/Business",
         "Topic :: Office/Business :: Financial",
         "Topic :: Software Development :: Libraries"],
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     entry_points={
         'console_scripts': [
             'panel = panel.command:main'
