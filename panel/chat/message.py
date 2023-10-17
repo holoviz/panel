@@ -195,6 +195,9 @@ class ChatMessage(PaneBase):
 
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_message.css"]
 
+    # Declares whether Pane supports updates to the Bokeh model
+    _updates: ClassVar[bool] = True
+
     def __init__(self, object=None, **params):
         from ..param import ParamMethod  # circular imports
 
@@ -415,6 +418,11 @@ class ChatMessage(PaneBase):
         avatar_pane.css_classes = ["avatar", *avatar_pane.css_classes]
         avatar_pane.visible = self.show_avatar
         return avatar_pane
+
+    def _update(self, ref, old_models):
+        """
+        Internals will be updated inplace.
+        """
 
     @param.depends("user", "show_user")
     def _render_user(self) -> HTML:
