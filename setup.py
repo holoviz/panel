@@ -234,7 +234,7 @@ extras_require['build'] = [
     'setuptools >=42',
     'requests',
     'packaging',
-    'bokeh >=3.2.0,<3.3.0',
+    'bokeh >=3.3.0,<3.4.0',
     'pyviz_comms >=0.7.4',
     'bleach',
     'tqdm >=4.48.0',
