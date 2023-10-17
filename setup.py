@@ -237,6 +237,7 @@ extras_require['build'] = [
     'bokeh >=3.3.0,<3.4.0',
     'pyviz_comms >=0.7.4',
     'bleach',
+    'markdown',
     'tqdm >=4.48.0',
     'cryptography <39', # Avoid pyOpenSSL issue
     'urllib3 <2.0',  # See: https://github.com/holoviz/panel/pull/4979

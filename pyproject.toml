@@ -9,6 +9,7 @@ requires = [
     "bleach",
     "packaging",
     "tqdm >=4.48.0",
+    "markdown",
     "wheel"
 ]
 
