@@ -44,7 +44,7 @@ class HTMLBasePane(ModelPane):
         if "style" in params:
             # In Bokeh 3 'style' was changed to 'styles'.
             params["styles"] = params.pop("style")
-            deprecated("1.3", "style",  "styles")
+            deprecated("1.4", "style",  "styles")
         super().__init__(object=object, **params)
 
 
