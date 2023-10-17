@@ -3,6 +3,7 @@ import pytest
 
 import panel as pn
 
+from panel.chat import ChatMessage
 from panel.config import config
 from panel.interact import interactive
 from panel.io.loading import LOADING_INDICATOR_CSS_CLASS
@@ -18,7 +19,7 @@ from panel.util import param_watchers
 
 SKIP_PANES = (
     Bokeh, HoloViews, Interactive, IPyWidget, Param, ParamMethod, RGGPlot,
-    ReactiveExpr, Vega, interactive
+    ReactiveExpr, Vega, interactive, ChatMessage
 )
 
 all_panes = [w for w in param.concrete_descendents(PaneBase).values()
