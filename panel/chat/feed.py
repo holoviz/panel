@@ -205,8 +205,6 @@ class ChatFeed(ListPanel):
         if params.get("renderers") and not isinstance(params["renderers"], list):
             params["renderers"] = [params["renderers"]]
         if params.get('sizing_mode') is None:
-            if params.get("width") is None:
-                params["sizing_mode"] = "stretch_width"
             params["height"] = params.get("height", 500)
         super().__init__(*objects, **params)
 
