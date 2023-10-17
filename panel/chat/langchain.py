@@ -60,6 +60,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
         if label == "None":
             return
 
+        self._active_avatar = avatar
         if f"- {label}" not in self._active_user:
             self._active_user = f"{self._active_user} - {label}"
 

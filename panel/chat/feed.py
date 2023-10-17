@@ -204,8 +204,6 @@ class ChatFeed(ListPanel):
     def __init__(self, *objects, **params):
         if params.get("renderers") and not isinstance(params["renderers"], list):
             params["renderers"] = [params["renderers"]]
-        if params.get('sizing_mode') is None:
-            params["height"] = params.get("height", 500)
         super().__init__(*objects, **params)
 
         # instantiate the card's column) is not None)
@@ -217,14 +215,19 @@ class ChatFeed(ListPanel):
             min_width=self.param.min_width,
             visible=self.param.visible
         )
+        # we separate out chat log for the auto scroll feature
         self._chat_log = Column(
+            auto_scroll_limit=self.auto_scroll_limit,
+            scroll_button_threshold=self.scroll_button_threshold,
             css_classes=["chat-feed-log"],
             stylesheets=self._stylesheets,
             **linked_params
         )
         self.link(self._chat_log, objects='objects', bidirectional=True)
+        # we have a card for the title
         self._card = Card(
             self._chat_log, VSpacer(),
+            margin=self.param.margin,
             align=self.param.align,
             header=self.header,
             height=self.param.height,
