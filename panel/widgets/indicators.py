@@ -1088,7 +1088,7 @@ class Trend(SyncableData, Indicator):
     def __init__(self, **params):
         if "title" in params:
             params["name"] = params.pop("title")
-            deprecated("1.3", "title",  "name")
+            deprecated("1.4", "title",  "name")
         super().__init__(**params)
 
     def _get_data(self):

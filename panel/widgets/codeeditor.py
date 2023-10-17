@@ -86,5 +86,5 @@ class CodeEditor(Widget):
 
 class Ace(CodeEditor):
     def __init__(self, **params):
-        deprecated("1.3", "Ace", "CodeEditor")
+        deprecated("1.4", "Ace", "CodeEditor")
         super().__init__(**params)
