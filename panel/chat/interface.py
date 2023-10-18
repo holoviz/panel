@@ -289,15 +289,13 @@ class ChatInterface(ChatFeed):
                 sizing_mode="stretch_width",
                 css_classes=["chat-interface-input-row"],
                 stylesheets=self._stylesheets,
-                align="center",
+                align=("start", "center"),
             )
             input_layout.append((name, message_row))
 
         # if only a single input, don't use tabs
         if len(self._widgets) == 1:
             input_layout = input_layout[0]
-        else:
-            self._chat_log.css_classes = ["chat-feed-log-tabbed"]
 
         self._input_container.objects = [input_layout]
         self._input_layout = input_layout
