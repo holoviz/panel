@@ -1,7 +1,7 @@
 @import url('chat_feed.css');
 
-:host {
-  max-height: none;
+.chat-feed-log {
+  max-height: 89vh;
 }
 
 .chat-interface {
