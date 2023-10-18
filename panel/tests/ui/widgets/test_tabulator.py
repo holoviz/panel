@@ -567,7 +567,6 @@ def test_tabulator_editors_bokeh_select(page, df_mixed):
     expect(page.locator('text="option1"')).to_have_count(1)
 
 
-@pytest.mark.skip('Broken with playwright 1.39.0 on Chromium')
 def test_tabulator_editors_panel_date(page, df_mixed):
     widget = Tabulator(df_mixed, editors={'date': 'date'})
 
@@ -597,7 +596,6 @@ def test_tabulator_editors_panel_date(page, df_mixed):
     assert new_date2 not in widget.value['date'].tolist()
 
 
-@pytest.mark.skip('Broken with playwright 1.39.0 on Chromium')
 def test_tabulator_editors_panel_datetime(page, df_mixed):
     widget = Tabulator(df_mixed, editors={'datetime': 'datetime'})
 
@@ -973,6 +971,28 @@ def test_tabulator_patch_no_vertical_rescroll(page):
     # The table should keep the same scroll position
     # This fails
     assert bb == page.locator(f'text="{new_val}"').bounding_box()
+
+
+def test_tabulator_patch_no_height_resize(page):
+    header = Column('Text', height=1000)
+    df = pd.DataFrame(np.random.random((150, 1)), columns=['a'])
+    widget = Tabulator(df)
+    app = Column(header, widget)
+
+    serve_component(page, app)
+
+    page.mouse.wheel(delta_x=0, delta_y=10000)
+    at_bottom_script = """
+    isAtBottom => (window.innerHeight + window.scrollY) >= document.body.scrollHeight;
+    """
+    wait_until(lambda: page.evaluate(at_bottom_script), page)
+
+    widget.patch({'a': [(len(df)-1, 100)]})
+
+    # Give it some time to potentially "re-scroll"
+    page.wait_for_timeout(400)
+
+    wait_until(lambda: page.evaluate(at_bottom_script), page)
 
 
 @pytest.mark.parametrize(

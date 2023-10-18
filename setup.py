@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import json
 import os
-import shutil
 import sys
 
 from setuptools import find_packages, setup
