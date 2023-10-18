@@ -375,7 +375,8 @@ select[multiple].bk-input option:checked {
 
 /* Button widgets */
 
-.bk-btn-group > button {
+.bk-btn-group > button,
+.bk-input-group > button {
   background-position: center;
   font-weight: 500;
   font-size: medium;
