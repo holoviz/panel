@@ -47,9 +47,9 @@ from .viewable import Layoutable, Viewable
 from .widgets import (
     ArrayInput, Button, Checkbox, ColorPicker, DataFrame, DatePicker,
     DateRangeSlider, DatetimeInput, DatetimeRangeSlider, DiscreteSlider,
-    FileSelector, FloatInput, FloatSlider, IntInput, IntSlider, LiteralInput,
-    MultiSelect, RangeSlider, Select, StaticText, Tabulator, TextInput, Toggle,
-    Widget,
+    FileInput, FileSelector, FloatInput, FloatSlider, IntInput, IntSlider,
+    LiteralInput, MultiSelect, RangeSlider, Select, StaticText, Tabulator,
+    TextInput, Toggle, Widget,
 )
 from .widgets.button import _ButtonBase
 
@@ -187,6 +187,7 @@ class Param(PaneBase):
         param.Action:            Button,
         param.Array:             ArrayInput,
         param.Boolean:           Checkbox,
+        param.Bytes:             FileInput,
         param.CalendarDate:      DatePicker,
         param.Color:             ColorPicker,
         param.Date:              DatetimeInput,
