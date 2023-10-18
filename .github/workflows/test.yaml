@@ -138,7 +138,7 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a17
+      - uses: holoviz-dev/holoviz_tasks/install@version_playwright
         with:
           name: ui_test_suite
           python-version: 3.9
@@ -147,6 +147,7 @@ jobs:
           cache: true
           nodejs: true
           playwright: true
+          playwright-version: "1.38.0"
         id: install
       - name: doit develop_install
         run: |
