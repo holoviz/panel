@@ -151,6 +151,8 @@ class ChatMessage(PaneBase):
         to use when the user is specified but the avatar is. You can
         modify, but not replace the dictionary.""")
 
+    max_width = param.Integer(default=1200, bounds=(0, None))
+
     object = param.Parameter(allow_refs=False, doc="""
         The message contents. Can be any Python object that panel can display.""")
 
@@ -239,24 +241,34 @@ class ChatMessage(PaneBase):
             self.reaction_icons,
             css_classes=["center"],
             stylesheets=self._stylesheets,
-            sizing_mode=None,
+            sizing_mode=None
         )
         right_col = Column(
             Row(
-                ParamMethod(self._render_user, **render_kwargs),
+                HTML(
+                    self.param.user, height=20, css_classes=["name"],
+                    visible=self.param.show_user, stylesheets=self._stylesheets,
+                ),
                 self.chat_copy_icon,
                 stylesheets=self._stylesheets,
                 sizing_mode="stretch_width",
             ),
             center_row,
-            ParamMethod(self._render_timestamp, **render_kwargs),
+            HTML(
+                self.param.timestamp.rx().strftime(self.param.timestamp_format),
+                css_classes=["timestamp"],
+                visible=self.param.show_timestamp
+            ),
             css_classes=["right"],
             stylesheets=self._stylesheets,
-            sizing_mode=None,
+            sizing_mode=None
         )
-        self._composite.param.update(
-            stylesheets=self._stylesheets, css_classes=self.css_classes
-        )
+        viewable_params = {
+            p: self.param[p] for p in self.param if p in Viewable.param
+            if p in Viewable.param and p != 'name'
+        }
+        viewable_params['stylesheets'] = self._stylesheets + self.param.stylesheets.rx()
+        self._composite.param.update(**viewable_params)
         self._composite[:] = [left_col, right_col]
 
     @property
@@ -429,35 +441,14 @@ class ChatMessage(PaneBase):
         Internals will be updated inplace.
         """
 
-    @param.depends("user", "show_user")
-    def _render_user(self) -> HTML:
-        """
-        Render the user pane as some HTML text or Image pane.
-        """
-        return HTML(self.user, height=20, css_classes=["name"], visible=self.show_user)
-
     @param.depends("object")
     def _render_object(self) -> Viewable:
         """
         Renders object as a panel object.
         """
-        object = self.object
-        object_panel = self._create_panel(object)
-
         # used in ChatFeed to extract its contents
-        self._object_panel = object_panel
+        self._object_panel = object_panel = self._create_panel(self.object)
         return object_panel
-
-    @param.depends("timestamp", "timestamp_format", "show_timestamp")
-    def _render_timestamp(self) -> HTML:
-        """
-        Formats the timestamp and renders it as HTML pane.
-        """
-        return HTML(
-            self.timestamp.strftime(self.timestamp_format),
-            css_classes=["timestamp"],
-            visible=self.show_timestamp,
-        )
 
     @param.depends("avatar_lookup", "user", watch=True)
     def _update_avatar(self):
