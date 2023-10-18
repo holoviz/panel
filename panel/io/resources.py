@@ -217,7 +217,10 @@ def resolve_custom_path(
         abs_path = path
     else:
         abs_path = module_path / path
-    if not abs_path.is_file():
+    try:
+        if not abs_path.is_file():
+            return None
+    except OSError:
         return None
     abs_path = abs_path.resolve()
     if not relative:
