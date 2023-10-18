@@ -29,7 +29,8 @@ from ..io.resources import CDN_DIST, CSS_URLS
 from ..io.state import state
 from ..reactive import Reactive, ReactiveData
 from ..util import (
-    clone_model, datetime_as_utctimestamp, isdatetime, lazy_load, updating,
+    BOKEH_JS_NAT, clone_model, datetime_as_utctimestamp, isdatetime, lazy_load,
+    updating,
 )
 from .base import Widget
 from .button import Button
@@ -824,6 +825,8 @@ class BaseTable(ReactiveData, Widget):
                         self.value.iloc[data_ind, columns.index(k)] = value
                     if isinstance(value, pd.Timestamp):
                         value = datetime_as_utctimestamp(value)
+                    elif value is pd.NaT:
+                        value = BOKEH_JS_NAT
                     values.append((patch_ind, value))
                 patches[k] = values
             self._patch(patches)

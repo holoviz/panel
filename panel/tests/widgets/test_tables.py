@@ -18,6 +18,7 @@ from panel.depends import bind
 from panel.io.state import set_curdoc
 from panel.models.tabulator import CellClickEvent, TableEditEvent
 from panel.tests.util import serve_and_request, wait_until
+from panel.util import BOKEH_JS_NAT
 from panel.widgets import Button, TextInput
 from panel.widgets.tables import DataFrame, Tabulator
 
@@ -1294,6 +1295,28 @@ def test_tabulator_patch_with_timestamp(document, comm):
         np.testing.assert_array_equal(values, expected_array)
         if col != 'index':
             np.testing.assert_array_equal(table.value[col].values, expected[col])
+
+def test_tabulator_patch_with_NaT(document, comm):
+    df = pd.DataFrame(dict(A=pd.to_datetime(['1980-01-01', np.nan])))
+    assert df.loc[1, 'A'] is pd.NaT
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    table.patch({'A': [(0, pd.NaT)]})
+
+    # We're also checking that the NaT value that was in the original table
+    # at .loc[1, 'A'] is converted in the model as BOKEH_JS_NAT.
+    expected = {
+        'index': np.array([0, 1]),
+        'A': np.array([BOKEH_JS_NAT, BOKEH_JS_NAT])
+    }
+    for col, values in model.source.data.items():
+        expected_array = expected[col]
+        np.testing.assert_array_equal(values, expected_array)
+        # Not checking that the data in table.value is the same as expected
+        # In table.value we have NaT values, in expected the BOKEH_JS_NAT constant.
+
 
 def test_tabulator_stream_series_paginated_not_follow(document, comm):
     df = makeMixedDataFrame()
