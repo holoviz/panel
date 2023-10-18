@@ -567,6 +567,7 @@ def test_tabulator_editors_bokeh_select(page, df_mixed):
     expect(page.locator('text="option1"')).to_have_count(1)
 
 
+@pytest.mark.skip('Broken with playwright 1.39.0 on Chromium')
 def test_tabulator_editors_panel_date(page, df_mixed):
     widget = Tabulator(df_mixed, editors={'date': 'date'})
 
@@ -596,6 +597,7 @@ def test_tabulator_editors_panel_date(page, df_mixed):
     assert new_date2 not in widget.value['date'].tolist()
 
 
+@pytest.mark.skip('Broken with playwright 1.39.0 on Chromium')
 def test_tabulator_editors_panel_datetime(page, df_mixed):
     widget = Tabulator(df_mixed, editors={'datetime': 'datetime'})
 
