@@ -1,5 +1,14 @@
 @import url('chat_feed.css');
 
+:host {
+  overflow-y: hidden;
+}
+
 .chat-feed-log {
-  max-height: 89%;
+  max-height: 90%;
+}
+
+.chat-interface-input-container {
+  position: sticky;
+  bottom: 0;
 }
