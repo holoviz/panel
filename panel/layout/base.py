@@ -13,6 +13,7 @@ from typing import (
 import param
 
 from bokeh.models import Row as BkRow
+from param.parameterized import iscoroutinefunction, resolve_ref
 
 from ..io.model import hold
 from ..io.resources import CDN_DIST
@@ -801,8 +802,9 @@ class ListPanel(ListLike, Panel):
                                  "not both." % type(self).__name__)
             params['objects'] = [panel(pane) for pane in objects]
         elif 'objects' in params:
-            if not hasattr(params['objects'], '_dinfo'):
-                params['objects'] = [panel(pane) for pane in params['objects']]
+            objects = params['objects']
+            if not resolve_ref(objects) or iscoroutinefunction(objects):
+                params['objects'] = [panel(pane) for pane in objects]
         super(Panel, self).__init__(**params)
 
     @property
