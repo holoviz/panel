@@ -4,7 +4,7 @@ Both Streamlit and Panel provides special components to help you build conversat
 
 | Streamlit            | Panel               | Description                            |
 | -------------------- | ------------------- | -------------------------------------- |
-| [`chat_message`](https://docs.streamlit.io/library/api-reference/chat/st.chat_message)    | [`ChatEntry`](../../../examples/reference/chat/ChatEntry.ipynb) | Display a chat message  |
+| [`chat_message`](https://docs.streamlit.io/library/api-reference/chat/st.chat_message)    | [`ChatMessage`](../../../examples/reference/chat/ChatMessage.ipynb) | Display a chat message  |
 | [`chat_input`](https://docs.streamlit.io/library/api-reference/chat/st.chat_input) |  | Input a chat message |
 | [`status`](https://docs.streamlit.io/library/api-reference/status/st.status) | | Display the output of long-running tasks in a container |
 |                      | [`ChatFeed`](../../../examples/reference/chat/ChatFeed.ipynb)  | Display multiple chat messages         |
@@ -12,7 +12,7 @@ Both Streamlit and Panel provides special components to help you build conversat
 | [`StreamlitCallbackHandler`](https://python.langchain.com/docs/integrations/callbacks/streamlit) | [`PanelCallbackHandler`](../../../examples/reference/chat/ChatInterface.ipynb) | Display the thoughts and actions of a [LangChain](https://python.langchain.com/docs/get_started/introduction) agent |
 | [`StreamlitChatMessageHistory`](https://python.langchain.com/docs/integrations/memory/streamlit_chat_message_history) |  | Persist the memory of a [LangChain](https://python.langchain.com/docs/get_started/introduction) agent |
 
-The starting point for most Panel users is the *high-level* [`ChatInterface`](../../../examples/reference/chat/ChatInterface.ipyn), not the *low-level* [`ChatEntry`](../../../examples/reference/chat/ChatEntry.ipynb) and [`ChatFeed`](../../../examples/reference/chat/ChatFeed.ipynb) components.
+The starting point for most Panel users is the *high-level* [`ChatInterface`](../../../examples/reference/chat/ChatInterface.ipyn), not the *low-level* [`ChatMessage`](../../../examples/reference/chat/ChatMessage.ipynb) and [`ChatFeed`](../../../examples/reference/chat/ChatFeed.ipynb) components.
 
 For inspiration check out the many chat components and examples at [panel-chat-examples](https://holoviz-topics.github.io/panel-chat-examples/).
 
@@ -43,7 +43,7 @@ message = pn.Column(
     "https://panel.holoviz.org/_images/logo_horizontal_light_theme.png",
     "# The powerful data exploration & web app framework for Python"
 )
-pn.chat.ChatEntry(value=message, user="user").servable()
+pn.chat.ChatMessage(message, user="user").servable()
 ```
 
 ![Panel ChatEntry](../../_static/images/panel_chat_entry.png)
@@ -71,9 +71,8 @@ Panel does not provide a dedicated *chat input* component because it is built in
 Below we will show you how to build and use a custom `ChatInput` widget.
 
 ```python
-import param
-
 import panel as pn
+import param
 
 pn.extension(design="material")
 
@@ -132,20 +131,17 @@ class ChatInput(pn.viewable.Viewer):
         self._text_input.value = ""
 ```
 
-Let us use the custom `ChatInput` widget.
+Let us use the custom `ChatInput` widget:
 
 ```Python
 chat_input = ChatInput(placeholder="Say something")
 
-
-@pn.depends(chat_input.param.value)
 def message(prompt):
     if not prompt:
         return ""
     return f"User has sent the following prompt: {prompt}"
 
-
-pn.Column(message, chat_input, margin=50).servable()
+pn.Column(pn.bind(message, chat_input.param.value), margin=50).servable()
 ```
 
 ![Panel ChatInput](../../_static/images/panel_chat_input.png)
@@ -330,7 +326,6 @@ Let us use the custom `Status` indicator.
 ```python
 status = Status("Downloading data...", collapsed=False, sizing_mode="stretch_width")
 
-
 def run(_):
     with status.report() as progress:
         progress("Searching for data...")
@@ -339,7 +334,6 @@ def run(_):
         time.sleep(1.5)
         progress("Validating data...")
         time.sleep(1.5)
-
 
 run_button = pn.widgets.Button(name="Run", on_click=run)
 
