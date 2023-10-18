@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import datetime as dt
 import difflib
+import inspect
 import logging
 import re
 import sys
@@ -27,7 +28,10 @@ from bokeh.core.property.descriptors import UnsetValueError
 from bokeh.model import DataModel
 from bokeh.models import ImportedStyleSheet
 from packaging.version import Version
-from param.parameterized import ParameterizedMetaclass, Watcher, _syncing
+from param.parameterized import (
+    ParameterizedMetaclass, Watcher, _syncing, iscoroutinefunction,
+    resolve_ref, resolve_value,
+)
 
 from .io.document import unlocked
 from .io.model import hold
@@ -540,7 +544,28 @@ class Reactive(Syncable, Viewable):
         for name, pobj in self.param.objects('existing').items():
             if name not in self._param__private.explicit_no_refs:
                 pobj.allow_refs = True
+        if refs is not None:
+            self._refs = refs
+            if iscoroutinefunction(refs):
+                param.parameterized.async_executor(self._async_refs)
+            else:
+                params.update(resolve_value(self._refs))
+            refs = resolve_ref(self._refs)
+            if refs:
+                param.bind(self._sync_refs, *refs, watch=True)
         super().__init__(**params)
+
+    def _sync_refs(self, *_):
+        resolved = resolve_value(self._refs)
+        self.param.update(resolved)
+
+    async def _async_refs(self, *_):
+        resolved = resolve_value(self._refs)
+        if inspect.isasyncgenfunction(self._refs):
+            async for val in resolved:
+                self.param.update(val)
+        else:
+            self.param.update(await resolved)
 
     #----------------------------------------------------------------
     # Private API
