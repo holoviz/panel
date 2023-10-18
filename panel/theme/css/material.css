@@ -224,14 +224,6 @@ button.mdc-button.mdc-card-button {
   color: var(--design-secondary-text-color, var(--panel-on-secondary-color));
 }
 
-.bk-input-group {
-  margin-top: 0.5rem;
-}
-
-.bk-input-group:has(> button) {
-  margin-top: 0px;
-}
-
 .bk-input:not([type='file']) {
   border-radius: 4px;
   height: 1.4375em;
