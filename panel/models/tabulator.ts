@@ -911,8 +911,16 @@ export class DataTabulatorView extends HTMLBoxView {
     if (this._tabulator_cell_updating)
       return
 
+    // Temporarily set minHeight to avoid "scroll-to-top" issues caused
+    // by Tabulator JS entirely destroying the table when .setData is called.
+    // Inspired by https://github.com/olifolkerd/tabulator/issues/4155
+    const prev_minheight = this.tabulator.element.style.minHeight
+    this.tabulator.element.style.minHeight = this.tabulator.element.offsetHeight + "px"
+
     let data = transform_cds_to_records(this.model.source, true)
-    this.tabulator.setData(data)
+    this.tabulator.setData(data).then(() => {
+      this.tabulator.element.style.minHeight = prev_minheight
+    })
   }
 
   setFrozen(): void {
