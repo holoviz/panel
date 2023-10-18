@@ -13,22 +13,28 @@ from functools import partial
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from typing import (
-    Any, BinaryIO, ClassVar, Dict, List, Union,
+    TYPE_CHECKING, Any, BinaryIO, ClassVar, Dict, List, Union,
 )
 
 import param
 
 from ..io.resources import CDN_DIST
 from ..layout import Column, Row
-from ..pane.base import panel as _panel
+from ..pane.base import PaneBase, panel as _panel
 from ..pane.image import (
     PDF, FileBase, Image, ImageBase,
 )
 from ..pane.markup import HTML, DataFrame, HTMLBasePane
 from ..pane.media import Audio, Video
+from ..param import ParamFunction
 from ..viewable import Viewable
-from ..widgets.base import CompositeWidget, Widget
+from ..widgets.base import Widget
 from .icon import ChatCopyIcon, ChatReactionIcons
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from pyviz_comms import Comm
 
 Avatar = Union[str, BytesIO, ImageBase]
 AvatarDict = Dict[str, Avatar]
@@ -107,7 +113,7 @@ class _FileInputMessage:
     mime_type: str
 
 
-class ChatMessage(CompositeWidget):
+class ChatMessage(PaneBase):
     """
     A widget for displaying chat messages with support for various content types.
 
@@ -122,109 +128,81 @@ class ChatMessage(CompositeWidget):
 
     :Example:
 
-    >>> ChatMessage(value="Hello world!", user="New User", avatar="😊")
+    >>> ChatMessage(object="Hello world!", user="New User", avatar="😊")
     """
 
-    avatar = param.ClassSelector(
-        default="",
-        class_=(str, BinaryIO, ImageBase),
-        doc="""
-        The avatar to use for the user. Can be a single character text, an emoji,
-        or anything supported by `pn.pane.Image`. If not set, checks if
-        the user is available in the default_avatars mapping; else uses the
-        first character of the name.""",
-    )
+    avatar = param.ClassSelector(default="", class_=(str, BinaryIO, ImageBase), doc="""
+        The avatar to use for the user. Can be a single character
+        text, an emoji, or anything supported by `pn.pane.Image`. If
+        not set, checks if the user is available in the
+        default_avatars mapping; else uses the first character of the
+        name.""")
 
-    avatar_lookup = param.Callable(
-        default=None,
-        doc="""
-        A function that can lookup an `avatar` from a user name. The function signature should be
-        `(user: str) -> Avatar`. If this is set, `default_avatars` is disregarded.""",
-    )
+    avatar_lookup = param.Callable(default=None, doc="""
+        A function that can lookup an `avatar` from a user name. The
+        function signature should be `(user: str) -> Avatar`. If this
+        is set, `default_avatars` is disregarded.""")
 
-    css_classes = param.List(
-        default=["chat-message"],
-        doc="""
-        The CSS classes to apply to the widget.""",
-    )
+    css_classes = param.List(default=["chat-message"],doc="""
+        The CSS classes to apply to the widget.""")
 
-    default_avatars = param.Dict(
-        default=DEFAULT_AVATARS,
-        doc="""
+    default_avatars = param.Dict(default=DEFAULT_AVATARS, doc="""
         A default mapping of user names to their corresponding avatars
-        to use when the user is specified but the avatar is. You can modify, but not replace the
-        dictionary.""",
-    )
+        to use when the user is specified but the avatar is. You can
+        modify, but not replace the dictionary.""")
 
-    reactions = param.List(
-        doc="""
-        Reactions to associate with the message."""
-    )
+    object = param.Parameter(allow_refs=False, doc="""
+        The message contents. Can be any Python object that panel can display.""")
 
-    reaction_icons = param.ClassSelector(
-        class_=(ChatReactionIcons, dict),
-        doc="""
+    reactions = param.List(doc="""
+        Reactions to associate with the message.""")
+
+    reaction_icons = param.ClassSelector(class_=(ChatReactionIcons, dict), doc="""
         A mapping of reactions to their reaction icons; if not provided
-        defaults to `{"favorite": "heart"}`.""",
-    )
+        defaults to `{"favorite": "heart"}`.""",)
 
-    timestamp = param.Date(
-        doc="""
-        Timestamp of the message. Defaults to the creation time."""
-    )
+    timestamp = param.Date(doc="""
+        Timestamp of the message. Defaults to the creation time.""")
 
     timestamp_format = param.String(default="%H:%M", doc="The timestamp format.")
 
-    show_avatar = param.Boolean(
-        default=True, doc="Whether to display the avatar of the user."
-    )
+    show_avatar = param.Boolean(default=True, doc="""
+         Whether to display the avatar of the user.""")
 
-    show_user = param.Boolean(
-        default=True, doc="Whether to display the name of the user."
-    )
+    show_user = param.Boolean(default=True, doc="""
+        Whether to display the name of the user.""")
 
-    show_timestamp = param.Boolean(
-        default=True, doc="Whether to display the timestamp of the message."
-    )
+    show_timestamp = param.Boolean(default=True, doc="""
+        Whether to display the timestamp of the message.""")
 
-    show_reaction_icons = param.Boolean(
-        default=True, doc="Whether to display the reaction icons."
-    )
+    show_reaction_icons = param.Boolean(default=True, doc="""
+        Whether to display the reaction icons.""")
 
-    show_copy_icon = param.Boolean(
-        default=True, doc="Whether to display the copy icon."
-    )
+    show_copy_icon = param.Boolean(default=True, doc="""
+        Whether to display the copy icon.""")
 
-    renderers = param.HookList(
-        doc="""
-        A callable or list of callables that accept the value and return a
-        Panel object to render the value. If a list is provided, will
+    renderers = param.HookList(doc="""
+        A callable or list of callables that accept the object and return a
+        Panel object to render the object. If a list is provided, will
         attempt to use the first renderer that does not raise an
         exception. If None, will attempt to infer the renderer
-        from the value."""
+        from the object."""
     )
 
-    user = param.Parameter(
-        default="User",
-        doc="""
-        Name of the user who sent the message.""",
-    )
+    user = param.Parameter(default="User", doc="""
+        Name of the user who sent the message.""")
 
-    value = param.Parameter(
-        doc="""
-        The message contents. Can be any Python object that panel can display.""",
-        allow_refs=False,
-    )
-
-    _value_panel = param.Parameter(doc="The rendered value panel.")
+    _object_panel = param.Parameter(doc="The rendered object panel.")
 
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_message.css"]
 
-    def __init__(self, **params):
+    # Declares whether Pane supports updates to the Bokeh model
+    _updates: ClassVar[bool] = True
+
+    def __init__(self, object=None, **params):
         from ..param import ParamMethod  # circular imports
 
         self._exit_stack = ExitStack()
-
         self.chat_copy_icon = ChatCopyIcon(
             visible=False, width=15, height=15, css_classes=["copy-icon"]
         )
@@ -236,7 +214,7 @@ class ChatMessage(CompositeWidget):
             params["reaction_icons"] = ChatReactionIcons(
                 options=params["reaction_icons"], width=15, height=15
             )
-        super().__init__(**params)
+        super().__init__(object=object, **params)
         self.reaction_icons.link(self, value="reactions", bidirectional=True)
         self.reaction_icons.link(
             self, visible="show_reaction_icons", bidirectional=True
@@ -245,6 +223,7 @@ class ChatMessage(CompositeWidget):
         if not self.avatar:
             self.param.trigger("avatar_lookup")
 
+        self._composite = Row()
         render_kwargs = {"inplace": True, "stylesheets": self._stylesheets}
         left_col = Column(
             ParamMethod(self._render_avatar, **render_kwargs),
@@ -256,7 +235,7 @@ class ChatMessage(CompositeWidget):
             sizing_mode=None,
         )
         center_row = Row(
-            ParamMethod(self._render_value, **render_kwargs),
+            ParamMethod(self._render_object, **render_kwargs),
             self.reaction_icons,
             css_classes=["center"],
             stylesheets=self._stylesheets,
@@ -279,6 +258,19 @@ class ChatMessage(CompositeWidget):
             stylesheets=self._stylesheets, css_classes=self.css_classes
         )
         self._composite[:] = [left_col, right_col]
+
+    @property
+    def _synced_params(self) -> List[str]:
+        return []
+
+    def _get_model(
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
+    ) -> Model:
+        model = self._composite._get_model(doc, root, parent, comm)
+        ref = (root or model).ref['id']
+        self._models[ref] = (model, parent)
+        return model
 
     @staticmethod
     def _to_alpha_numeric(user: str) -> str:
@@ -360,7 +352,7 @@ class ChatMessage(CompositeWidget):
             if obj.sizing_mode is None and not obj.width:
                 obj.sizing_mode = "stretch_width"
 
-            if obj.height is None:
+            if obj.height is None and not isinstance(obj, ParamFunction):
                 obj.height = 500
         return obj
 
@@ -394,18 +386,18 @@ class ChatMessage(CompositeWidget):
         for renderer in renderers:
             try:
                 if self._is_widget_renderer(renderer):
-                    value_panel = renderer(value=value)
+                    object_panel = renderer(value=value)
                 else:
-                    value_panel = renderer(value)
-                if isinstance(value_panel, Viewable):
+                    object_panel = renderer(value)
+                if isinstance(object_panel, Viewable):
                     break
             except Exception:
                 pass
         else:
-            value_panel = _panel(value)
+            object_panel = _panel(value)
 
-        self._set_default_attrs(value_panel)
-        return value_panel
+        self._set_default_attrs(object_panel)
+        return object_panel
 
     @param.depends("avatar", "show_avatar")
     def _render_avatar(self) -> HTML | Image:
@@ -432,6 +424,11 @@ class ChatMessage(CompositeWidget):
         avatar_pane.visible = self.show_avatar
         return avatar_pane
 
+    def _update(self, ref, old_models):
+        """
+        Internals will be updated inplace.
+        """
+
     @param.depends("user", "show_user")
     def _render_user(self) -> HTML:
         """
@@ -439,17 +436,17 @@ class ChatMessage(CompositeWidget):
         """
         return HTML(self.user, height=20, css_classes=["name"], visible=self.show_user)
 
-    @param.depends("value")
-    def _render_value(self) -> Viewable:
+    @param.depends("object")
+    def _render_object(self) -> Viewable:
         """
-        Renders value as a panel object.
+        Renders object as a panel object.
         """
-        value = self.value
-        value_panel = self._create_panel(value)
+        object = self.object
+        object_panel = self._create_panel(object)
 
         # used in ChatFeed to extract its contents
-        self._value_panel = value_panel
-        return value_panel
+        self._object_panel = object_panel
+        return object_panel
 
     @param.depends("timestamp", "timestamp_format", "show_timestamp")
     def _render_timestamp(self) -> HTML:
@@ -477,13 +474,13 @@ class ChatMessage(CompositeWidget):
         else:
             self.avatar = self._avatar_lookup(self.user)
 
-    @param.depends("_value_panel", watch=True)
+    @param.depends("_object_panel", watch=True)
     def _update_chat_copy_icon(self):
-        value = self._value_panel
-        if isinstance(value, HTMLBasePane):
-            value = value.object
-        if isinstance(value, str) and self.show_copy_icon:
-            self.chat_copy_icon.value = value
+        object_panel = self._object_panel
+        if isinstance(object_panel, HTMLBasePane):
+            object_panel = object_panel.object
+        if isinstance(object_panel, str) and self.show_copy_icon:
+            self.chat_copy_icon.value = object_panel
             self.chat_copy_icon.visible = True
         else:
             self.chat_copy_icon.value = ""
@@ -493,14 +490,12 @@ class ChatMessage(CompositeWidget):
         """
         Cleanup the exit stack.
         """
-        if self._exit_stack is not None:
-            self._exit_stack.close()
-            self._exit_stack = None
-        super()._cleanup()
+        self._composite._cleanup(root)
+        return super()._cleanup(root)
 
     def stream(self, token: str):
         """
-        Updates the message with the new token traversing the value to
+        Updates the message with the new token traversing the object to
         allow updating nested objects. When traversing a nested Panel
         the last object that supports rendering strings is updated, e.g.
         in a layout of `Column(Markdown(...), Image(...))` the Markdown
@@ -513,27 +508,27 @@ class ChatMessage(CompositeWidget):
         """
         i = -1
         parent_panel = None
-        value_panel = self
-        attr = "value"
-        value = self.value
-        while not isinstance(value, str) or isinstance(value_panel, ImageBase):
-            value_panel = value
-            if hasattr(value, "objects"):
-                parent_panel = value
+        object_panel = self
+        attr = "object"
+        obj = self.object
+        while not isinstance(obj, str) or isinstance(object_panel, ImageBase):
+            object_panel = obj
+            if hasattr(obj, "objects"):
+                parent_panel = obj
                 attr = "objects"
-                value = value.objects[i]
+                obj = obj.objects[i]
                 i = -1
-            elif hasattr(value, "object"):
+            elif hasattr(obj, "object"):
                 attr = "object"
-                value = value.object
-            elif hasattr(value, "value"):
+                obj = obj.object
+            elif hasattr(obj, "value"):
                 attr = "value"
-                value = value.value
+                obj = obj.value
             elif parent_panel is not None:
-                value = parent_panel
+                obj = parent_panel
                 parent_panel = None
                 i -= 1
-        setattr(value_panel, attr, value + token)
+        setattr(object_panel, attr, obj + token)
 
     def update(
         self,
@@ -568,5 +563,5 @@ class ChatMessage(CompositeWidget):
                 )
             updates = value.param.values()
         else:
-            updates["value"] = value
+            updates["object"] = value
         self.param.update(**updates)

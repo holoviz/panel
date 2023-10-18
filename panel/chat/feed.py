@@ -13,7 +13,7 @@ from inspect import (
 )
 from io import BytesIO
 from typing import (
-    Any, BinaryIO, ClassVar, Dict, List, Type, Union,
+    TYPE_CHECKING, Any, BinaryIO, ClassVar, Dict, List, Union,
 )
 
 import param
@@ -24,9 +24,13 @@ from ..layout import Column, ListPanel
 from ..layout.card import Card
 from ..layout.spacer import VSpacer
 from ..pane.image import SVG, ImageBase
-from ..widgets.base import CompositeWidget
 from ..widgets.button import Button
 from .message import ChatMessage
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from pyviz_comms import Comm
 
 Avatar = Union[str, BytesIO, ImageBase]
 AvatarDict = Dict[str, Avatar]
@@ -93,7 +97,7 @@ PLACEHOLDER_SVG = """
 """  # noqa: E501
 
 
-class ChatFeed(CompositeWidget):
+class ChatFeed(ListPanel):
     """
     A widget to display a list of `ChatMessage` objects and interact with them.
 
@@ -116,180 +120,144 @@ class ChatFeed(CompositeWidget):
     >>> chat_feed.send("Hello World!", user="New User", avatar="😊")
     """
 
-    callback = param.Callable(
-        allow_refs=False,
-        doc="""
+    auto_scroll_limit = param.Integer(default=200, bounds=(0, None), doc="""
+        Max pixel distance from the latest object in the Column to
+        activate automatic scrolling upon update. Setting to 0
+        disables auto-scrolling.""",)
+
+    callback = param.Callable(allow_refs=False, doc="""
         Callback to execute when a user sends a message or
         when `respond` is called. The signature must include
         the previous message value `contents`, the previous `user` name,
-        and the component `instance`.""",
-    )
+        and the component `instance`.""")
 
     callback_exception = param.ObjectSelector(
-        default="summary",
-        objects=["raise", "summary", "verbose", "ignore"],
-        doc="""
+        default="summary", objects=["raise", "summary", "verbose", "ignore"], doc="""
         How to handle exceptions raised by the callback.
         If "raise", the exception will be raised.
         If "summary", a summary will be sent to the chat feed.
         If "verbose", the full traceback will be sent to the chat feed.
         If "ignore", the exception will be ignored.
-        """,
-    )
+        """)
 
-    callback_user = param.String(
-        default="Assistant",
-        doc="""
-        The default user name to use for the message provided by the callback.""",
-    )
+    callback_user = param.String(default="Assistant", doc="""
+        The default user name to use for the message provided by the callback.""")
 
-    card_params = param.Dict(
-        default={},
-        doc="""
-        Params to pass to Card, like `header`,
-        `header_background`, `header_color`, etc.""",
-    )
+    card_params = param.Dict(default={}, doc="""
+        Params to pass to Card, like `header`, `header_background`, `header_color`, etc.""")
 
-    message_params = param.Dict(
-        default={},
-        doc="""
+    collapsible = param.Boolean(default=False, readonly=True, doc="""
+        Whether the Card should be expandable and collapsible.""")
+
+    disabled = param.Boolean(default=False, doc="""
+       Whether the feed is disabled.""")
+
+    message_params = param.Dict(default={}, doc="""
         Params to pass to each ChatMessage, like `reaction_icons`, `timestamp_format`,
-        `show_avatar`, `show_user`, and `show_timestamp`.""",
-    )
+        `show_avatar`, `show_user`, and `show_timestamp`.""")
 
-    header = param.Parameter(
-        doc="""
+    header = param.Parameter(doc="""
         The header of the chat feed; commonly used for the title.
-        Can be a string, pane, or widget."""
-    )
+        Can be a string, pane, or widget.""")
 
-    margin = Margin(
-        default=5,
-        doc="""
+    margin = Margin(default=5, doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""",
-    )
+        or a four-tuple (top, right, bottom, left).""")
 
-    renderers = param.HookList(
-        doc="""
+    objects = param.List(default=[], doc="""
+        The list of child objects that make up the layout.""")
+
+    placeholder_text = param.String(default="", doc="""
+        If placeholder is the default LoadingSpinner the text to display
+        next to it.""")
+
+    placeholder_threshold = param.Number(default=1, bounds=(0, None), doc="""
+        Min duration in seconds of buffering before displaying the placeholder.
+        If 0, the placeholder will be disabled.""")
+
+    renderers = param.HookList(doc="""
         A callable or list of callables that accept the value and return a
         Panel object to render the value. If a list is provided, will
         attempt to use the first renderer that does not raise an
         exception. If None, will attempt to infer the renderer
-        from the value."""
-    )
+        from the value.""")
 
-    placeholder_text = param.String(
-        default="",
-        doc="""
-        If placeholder is the default LoadingSpinner,
-        the text to display next to it.""",
-    )
-
-    placeholder_threshold = param.Number(
-        default=1,
-        bounds=(0, None),
-        doc="""
-        Min duration in seconds of buffering before displaying the placeholder.
-        If 0, the placeholder will be disabled.""",
-    )
-
-    auto_scroll_limit = param.Integer(
-        default=200,
-        bounds=(0, None),
-        doc="""
-        Max pixel distance from the latest object in the Column to
-        activate automatic scrolling upon update. Setting to 0
-        disables auto-scrolling.""",
-    )
-
-    scroll_button_threshold = param.Integer(
-        default=100,
-        bounds=(0, None),
-        doc="""
+    scroll_button_threshold = param.Integer(default=100, bounds=(0, None),doc="""
         Min pixel distance from the latest object in the Column to
         display the scroll button. Setting to 0
-        disables the scroll button.""",
-    )
+        disables the scroll button.""")
 
-    view_latest = param.Boolean(
-        default=True,
-        doc="""
+    view_latest = param.Boolean(default=True, doc="""
         Whether to scroll to the latest object on init. If not
-        enabled the view will be on the first object.""",
-    )
-    value = param.List(
-        item_type=ChatMessage,
-        doc="""
-        The list of entries in the feed.""",
-    )
+        enabled the view will be on the first object.""")
 
-    _placeholder = param.ClassSelector(
-        class_=ChatMessage,
-        allow_refs=False,
-        doc="""
+    _placeholder = param.ClassSelector(class_=ChatMessage, allow_refs=False, doc="""
         The placeholder wrapped in a ChatMessage object;
-        primarily to prevent recursion error in _update_placeholder.""",
-    )
-
-    _disabled = param.Boolean(
-        default=False,
-        doc="""
-        Whether the chat feed is disabled.""",
-    )
+        primarily to prevent recursion error in _update_placeholder.""")
 
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_feed.css"]
 
-    _composite_type: ClassVar[Type[ListPanel]] = Card
-
-    def __init__(self, **params):
+    def __init__(self, *objects, **params):
         if params.get("renderers") and not isinstance(params["renderers"], list):
             params["renderers"] = [params["renderers"]]
-        super().__init__(**params)
-        # instantiate the card
-        card_params = {
-            "header": self.header,
-            "hide_header": self.header is None,
-            "collapsed": False,
-            "collapsible": False,
-            "css_classes": ["chat-feed"],
-            "header_css_classes": ["chat-feed-header"],
-            "title_css_classes": ["chat-feed-title"],
-            "sizing_mode": self.sizing_mode,
-            "height": self.height,
-            "width": self.width,
-            "max_width": self.max_width,
-            "max_height": self.max_height,
-            "styles": {
+        if params.get("width") is None and params.get("sizing_mode") is None:
+            params["sizing_mode"] = "stretch_width"
+        super().__init__(*objects, **params)
+
+        # instantiate the card's column) is not None)
+        linked_params = dict(
+            design=self.param.design,
+            sizing_mode=self.param.sizing_mode,
+            width=self.param.width,
+            max_width=self.param.max_width,
+            min_width=self.param.min_width,
+            visible=self.param.visible
+        )
+        # we separate out chat log for the auto scroll feature
+        self._chat_log = Column(
+            auto_scroll_limit=self.auto_scroll_limit,
+            scroll_button_threshold=self.scroll_button_threshold,
+            css_classes=["chat-feed-log"],
+            stylesheets=self._stylesheets,
+            **linked_params
+        )
+        self.link(self._chat_log, objects='objects', bidirectional=True)
+        # we have a card for the title
+        self._card = Card(
+            self._chat_log, VSpacer(),
+            margin=self.param.margin,
+            align=self.param.align,
+            header=self.header,
+            height=self.param.height,
+            hide_header=self.param.header.rx().rx.in_((None, "")),
+            collapsible=False,
+            css_classes=["chat-feed"] + self.param.css_classes.rx(),
+            header_css_classes=["chat-feed-header"],
+            max_height=self.param.max_height,
+            min_height=self.param.min_height,
+            title_css_classes=["chat-feed-title"],
+            styles={
                 "border": "1px solid var(--panel-border-color, #e1e1e1)",
                 "padding": "0px",
             },
-            "stylesheets": self._stylesheets,
-        }
-        card_params.update(**self.card_params)
-        if self.sizing_mode is None:
-            card_params["height"] = card_params.get("height", 500)
-        self._composite.param.update(**card_params)
-
-        # instantiate the card's column
-        chat_log_params = {
-            p: getattr(self, p)
-            for p in Column.param
-            if (p in ChatFeed.param and p != "name" and getattr(self, p) is not None)
-        }
-        chat_log_params["css_classes"] = ["chat-feed-log"]
-        chat_log_params["stylesheets"] = self._stylesheets
-        chat_log_params["objects"] = self.value
-        chat_log_params["margin"] = 0
-        self._chat_log = Column(**chat_log_params)
-        self._composite[:] = [self._chat_log, VSpacer()]
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
+            **linked_params
+        )
 
         # handle async callbacks using this trick
         self._callback_trigger = Button(visible=False)
         self._callback_trigger.on_click(self._prepare_response)
 
-        self.link(self._chat_log, value="objects", bidirectional=True)
+    def _get_model(
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
+    ) -> Model:
+        return self._card._get_model(doc, root, parent, comm)
+
+    def _cleanup(self, root: Model | None = None) -> None:
+        self._card._cleanup(root)
+        super()._cleanup(root)
 
     @param.depends("placeholder_text", watch=True, on_init=True)
     def _update_placeholder(self):
@@ -297,20 +265,13 @@ class ChatFeed(CompositeWidget):
             PLACEHOLDER_SVG, sizing_mode=None, css_classes=["rotating-placeholder"]
         )
         self._placeholder = ChatMessage(
+            self.placeholder_text,
             user=" ",
-            value=self.placeholder_text,
             show_timestamp=False,
             avatar=loading_avatar,
             reaction_icons={},
             show_copy_icon=False,
         )
-
-    @param.depends("header", watch=True)
-    def _hide_header(self):
-        """
-        Hide the header if there is no title or header.
-        """
-        self._composite.hide_header = not self.header
 
     def _replace_placeholder(self, message: ChatMessage | None = None) -> None:
         """
@@ -321,17 +282,17 @@ class ChatFeed(CompositeWidget):
         index = None
         if self.placeholder_threshold > 0:
             try:
-                index = self.value.index(self._placeholder)
+                index = self.index(self._placeholder)
             except ValueError:
                 pass
 
         if index is not None:
             if message is not None:
-                self._chat_log[index] = message
+                self[index] = message
             elif message is None:
-                self._chat_log.remove(self._placeholder)
+                self.remove(self._placeholder)
         elif message is not None:
-            self._chat_log.append(message)
+            self.append(message)
 
     def _build_message(
         self,
@@ -342,10 +303,14 @@ class ChatFeed(CompositeWidget):
         """
         Builds a ChatMessage from the value.
         """
-        if "value" not in value:
+        if "value" in value and "object" in value:
+            raise ValueError(f"Cannot pass both 'value' and 'object' together; got {value!r}")
+        elif "value" in value:
+            value["object"] = value.pop("value")
+        elif "object" not in value:
             raise ValueError(
-                f"If 'value' is a dict, it must contain a 'value' key, "
-                f"e.g. {{'value': 'Hello World'}}; got {value!r}"
+                f"If 'value' is a dict, it must contain an 'object' key, "
+                f"e.g. {{'object': 'Hello World'}}; got {value!r}"
             )
         message_params = dict(value, renderers=self.renderers, **self.message_params)
         if user:
@@ -380,7 +345,7 @@ class ChatFeed(CompositeWidget):
             return value
 
         if not isinstance(value, dict):
-            value = {"value": value}
+            value = {"object": value}
         new_message = self._build_message(value, user=user, avatar=avatar)
         self._replace_placeholder(new_message)
         return new_message
@@ -389,7 +354,7 @@ class ChatFeed(CompositeWidget):
         """
         Extracts the contents from the message's panel object.
         """
-        value = message._value_panel
+        value = message._object_panel
         if hasattr(value, "object"):
             contents = value.object
         elif hasattr(value, "objects"):
@@ -443,7 +408,7 @@ class ChatFeed(CompositeWidget):
         while not task.done() and num_entries == len(self._chat_log):
             duration = asyncio.get_event_loop().time() - start
             if duration > self.placeholder_threshold or not callable_is_async:
-                self._chat_log.append(self._placeholder)
+                self.append(self._placeholder)
                 return
             await asyncio.sleep(0.28)
 
@@ -519,9 +484,9 @@ class ChatFeed(CompositeWidget):
             message = value
         else:
             if not isinstance(value, dict):
-                value = {"value": value}
+                value = {"object": value}
             message = self._build_message(value, user=user, avatar=avatar)
-        self._chat_log.append(message)
+        self.append(message)
         if respond:
             self.respond()
         return message
@@ -577,7 +542,7 @@ class ChatFeed(CompositeWidget):
             message = value
         else:
             if not isinstance(value, dict):
-                value = {"value": value}
+                value = {"object": value}
             message = self._build_message(value, user=user, avatar=avatar)
         self._replace_placeholder(message)
         return message
@@ -590,31 +555,31 @@ class ChatFeed(CompositeWidget):
 
     def undo(self, count: int = 1) -> List[Any]:
         """
-        Removes the last `count` of entries from the chat log and returns them.
+        Removes the last `count` of messages from the chat log and returns them.
 
         Parameters
         ----------
         count : int
-            The number of entries to remove, starting from the last message.
+            The number of messages to remove, starting from the last message.
 
         Returns
         -------
-        The entries that were removed.
+        The messages that were removed.
         """
         if count <= 0:
             return []
-        entries = self._chat_log.objects
-        undone_entries = entries[-count:]
-        self._chat_log.objects = entries[:-count]
+        messages = self._chat_log.objects
+        undone_entries = messages[-count:]
+        self[:] = messages[:-count]
         return undone_entries
 
     def clear(self) -> List[Any]:
         """
-        Clears the chat log and returns the entries that were cleared.
+        Clears the chat log and returns the messages that were cleared.
 
         Returns
         -------
-        The entries that were cleared.
+        The messages that were cleared.
         """
         cleared_entries = self._chat_log.objects
         self._chat_log.clear()

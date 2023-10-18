@@ -3,6 +3,7 @@ import pytest
 
 from bokeh.models import Column as BkColumn, Div, Row as BkRow
 
+from panel.chat import ChatInterface
 from panel.layout import (
     Accordion, Card, Column, Row, Spacer, Tabs, WidgetBox,
 )
@@ -12,7 +13,7 @@ from panel.param import Param
 from panel.tests.util import check_layoutable_properties
 from panel.widgets import Debugger
 
-excluded = (NamedListPanel, Debugger)
+excluded = (NamedListPanel, Debugger, ChatInterface)
 all_panels = [w for w in param.concrete_descendents(ListPanel).values()
                if not w.__name__.startswith('_') and not issubclass(w, excluded)]
 

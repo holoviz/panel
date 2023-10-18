@@ -187,8 +187,8 @@ class ChatInterface(ChatFeed):
         self._init_widgets()
         if active is not None:
             self.active = active
-        self._composite.param.update(
-            objects=self._composite.objects + [self._input_container],
+        self._card.param.update(
+            objects=self._card.objects + [self._input_container],
             css_classes=["chat-interface"],
             stylesheets=self._stylesheets,
         )
@@ -338,8 +338,8 @@ class ChatInterface(ChatFeed):
         """
         Get the index of the last user message.
         """
-        entries = self.value[::-1]
-        for index, message in enumerate(entries, 1):
+        messages = self.objects[::-1]
+        for index, message in enumerate(messages, 1):
             if message.user == self.user:
                 return index
         return 0
@@ -379,14 +379,14 @@ class ChatInterface(ChatFeed):
         which can trigger the callback again.
         """
         count = self._get_last_user_entry_index()
-        entries = self.undo(count)
-        if not entries:
+        messages = self.undo(count)
+        if not messages:
             return
-        self.send(value=entries[0], respond=True)
+        self.send(value=messages[0], respond=True)
 
     def _click_undo(self, _):
         """
-        Upon clicking the undo button, undo (remove) entries
+        Upon clicking the undo button, undo (remove) messages
         up to the last user message. If the button is clicked
         again without performing any other actions, revert the undo.
         """
@@ -398,7 +398,7 @@ class ChatInterface(ChatFeed):
             undo_data.objects = self.undo(count)
             self._toggle_revert(undo_data, True)
         else:
-            self.value = [*self.value, *undo_objects.copy()]
+            self.extend(undo_objects)
             self._reset_button_data()
 
     def _click_clear(self, _):
@@ -414,7 +414,7 @@ class ChatInterface(ChatFeed):
             clear_data.objects = self.clear()
             self._toggle_revert(clear_data, True)
         else:
-            self.value = clear_objects.copy()
+            self[:] = clear_objects.copy()
             self._reset_button_data()
 
     @property
