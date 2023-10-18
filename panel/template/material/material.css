@@ -219,6 +219,11 @@ img.app-logo {
   cursor: pointer;
 }
 
+.mdc-top-app-bar__row {
+  height: unset;
+  min-height: 64px;
+}
+
 .tabulator-popup-container {
   background-color: var(--mdc-theme-surface);
 }
