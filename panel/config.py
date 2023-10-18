@@ -834,6 +834,7 @@ class panel_extension(_pyviz_extension):
         if not published:
             self._display_globals()
 
+    @classmethod
     def _display_globals(self):
         if config.browser_info and state.browser_info:
             doc = Document()
