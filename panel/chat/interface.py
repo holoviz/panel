@@ -275,7 +275,7 @@ class ChatInterface(ChatFeed):
                     max_width=90 if self.show_button_name else 45,
                     max_height=50,
                     margin=(5, 5, 5, 0),
-                    align="center",
+                    align="start",
                 )
                 self._link_disabled_loading(button)
                 action = button_data.name
@@ -289,7 +289,7 @@ class ChatInterface(ChatFeed):
                 sizing_mode="stretch_width",
                 css_classes=["chat-interface-input-row"],
                 stylesheets=self._stylesheets,
-                align=("start", "center"),
+                align="start",
             )
             input_layout.append((name, message_row))
 

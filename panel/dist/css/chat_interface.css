@@ -3,7 +3,3 @@
 .chat-feed-log {
   max-height: 89%;
 }
-
-.chat-interface {
-  border: 1px solid var(--panel-border-color, black);
-}
