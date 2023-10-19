@@ -77,6 +77,13 @@ How to improve the performance with caching
 How to store state for a session
 :::
 
+:::{grid-item-card} {octicon}`dependabottack;2.5em;sd-mr-1 sd-animate-grow50` Chat Interfaces
+:link: chat
+:link-type: doc
+
+How to create create chat interfaces
+:::
+
 :::{grid-item-card} {octicon}`stack;2.5em;sd-mr-1 sd-animate-grow50` Multi Page Apps
 :link: multipage_apps
 :link-type: doc
