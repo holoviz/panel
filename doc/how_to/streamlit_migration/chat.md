@@ -131,7 +131,7 @@ if prompt := st.chat_input():
 ```
 
 <video controls="" poster="../../_static/images/streamlit_callback_handler.png">
-    <source src="https://assets.holoviz.org/panel/how_to/streamlit_migration/streamlit_callback_handler.mp4" type="video/mp4" style="max-height: 400px; max-width: 600px;">
+    <source src="https://assets.holoviz.org/panel/how_to/streamlit_migration/streamlit_callback_handler.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
     Your browser does not support the video tag.
 </video>
 
@@ -158,7 +158,7 @@ pn.chat.ChatInterface(callback=callback).servable()
 ```
 
 <video controls="" poster="../../_static/images/panel_callback_handler.png">
-    <source src="https://assets.holoviz.org/panel/how_to/streamlit_migration/panel_callback_handler.mp4" type="video/mp4" style="max-height: 400px; max-width: 600px;">
+    <source src="https://assets.holoviz.org/panel/how_to/streamlit_migration/panel_callback_handler.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
     Your browser does not support the video tag.
 </video>
 
