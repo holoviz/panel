@@ -275,7 +275,7 @@ class ChatInterface(ChatFeed):
                     max_width=90 if self.show_button_name else 45,
                     max_height=50,
                     margin=(5, 5, 5, 0),
-                    align="center",
+                    align="start",
                 )
                 self._link_disabled_loading(button)
                 action = button_data.name
@@ -289,15 +289,13 @@ class ChatInterface(ChatFeed):
                 sizing_mode="stretch_width",
                 css_classes=["chat-interface-input-row"],
                 stylesheets=self._stylesheets,
-                align="center",
+                align="start",
             )
             input_layout.append((name, message_row))
 
         # if only a single input, don't use tabs
         if len(self._widgets) == 1:
             input_layout = input_layout[0]
-        else:
-            self._chat_log.css_classes = ["chat-feed-log-tabbed"]
 
         self._input_container.objects = [input_layout]
         self._input_layout = input_layout

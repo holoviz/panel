@@ -9,7 +9,6 @@
 
 :host {
   max-height: none;
-  max-width: 99%; /* Prevent horizontal scroll bar */
 }
 
 .chat-message {
@@ -34,13 +33,18 @@
 
   border-radius: 25px;
   background-color: var(--panel-surface-color, #f1f1f1);
+  box-shadow:
+    color-mix(in srgb, var(--panel-shadow-color) 30%, transparent) 0px 1px 2px
+      0px,
+    color-mix(in srgb, var(--panel-shadow-color) 15%, transparent) 0px 1px 3px
+      1px;
 }
 
 .right {
   display: flex;
   flex-direction: column;
   margin-left: 5px;
-  width: calc(100% - 80px);
+  max-width: calc(100% - 80px);
 }
 
 .name {
@@ -64,6 +68,11 @@
   margin-left: 10px; /* Space for avatar */
   margin-right: 5px; /* Space for reaction */
   background-color: var(--panel-surface-color, #f1f1f1);
+  box-shadow:
+    color-mix(in srgb, var(--panel-shadow-color) 30%, transparent) 0px 1px 2px
+      0px,
+    color-mix(in srgb, var(--panel-shadow-color) 15%, transparent) 0px 1px 3px
+      1px;
 }
 
 .footer {

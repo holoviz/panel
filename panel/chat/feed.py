@@ -237,10 +237,7 @@ class ChatFeed(ListPanel):
             max_height=self.param.max_height,
             min_height=self.param.min_height,
             title_css_classes=["chat-feed-title"],
-            styles={
-                "border": "1px solid var(--panel-border-color, #e1e1e1)",
-                "padding": "0px",
-            },
+            styles={"padding": "0px"},
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
             **linked_params
         )

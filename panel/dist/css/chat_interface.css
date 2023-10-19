@@ -1,17 +1,9 @@
 @import url('chat_feed.css');
 
-:host {
-  max-height: none;
-}
-
 .chat-feed-log {
-  height: 90%; /* prevent from overflowing and pushing down element */
+  max-height: calc(100% - 75px);
 }
 
-.chat-feed-log-tabbed {
-  height: 85%; /* account for tabs */
-}
-
-.chat-interface {
-  border: 1px solid var(--panel-border-color, black);
+.chat-interface-input-tabs {
+  background: white;
 }

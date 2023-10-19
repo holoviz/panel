@@ -335,3 +335,11 @@ td {
 p {
   overflow-wrap: break-word;
 }
+
+pre {
+  white-space: nowrap;
+}
+
+.codehilite > pre > code {
+  white-space: break-spaces;
+}
