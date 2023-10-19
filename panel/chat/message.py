@@ -84,6 +84,8 @@ DEFAULT_AVATARS = {
     "huggingface": "🤗",
     "calculator": "🧮",
     "langchain": "🦜",
+    "retriever": "📄",
+    "tool": "🛠️",
     "translator": "🌐",
     "wolfram": WOLFRAM_LOGO,
     "wolfram alpha": WOLFRAM_LOGO,
