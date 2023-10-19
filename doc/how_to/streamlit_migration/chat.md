@@ -9,12 +9,10 @@ Both Streamlit and Panel provides special components to help you build conversat
 | [`status`](https://docs.streamlit.io/library/api-reference/status/st.status) | [`Status` example](https://holoviz-topics.github.io/panel-chat-examples/components/#status) | Display the output of long-running tasks in a container |
 |                      | [`ChatFeed`](../../../examples/reference/chat/ChatFeed.ipynb)  | Display multiple chat messages         |
 |                      | [`ChatInterface`](../../../examples/reference/chat/ChatInterface.ipynb)  | High-level, easy to use chat interface |
-| [`StreamlitCallbackHandler`](https://python.langchain.com/docs/integrations/callbacks/streamlit) | [`PanelCallbackHandler`](../../../examples/reference/chat/ChatInterface.ipynb) | Display the thoughts and actions of a [LangChain](https://python.langchain.com/docs/get_started/introduction) agent |
+| [`StreamlitCallbackHandler`](https://python.langchain.com/docs/integrations/callbacks/streamlit) | [`PanelCallbackHandler`](../../../examples/reference/chat/PanelCallbackHandler.ipynb) | Display the thoughts and actions of a [LangChain](https://python.langchain.com/docs/get_started/introduction) agent |
 | [`StreamlitChatMessageHistory`](https://python.langchain.com/docs/integrations/memory/streamlit_chat_message_history) |  | Persist the memory of a [LangChain](https://python.langchain.com/docs/get_started/introduction) agent |
 
-The starting point for most Panel users is the *high-level* [`ChatInterface`](../../../examples/reference/chat/ChatInterface.ipyn), not the *low-level* [`ChatMessage`](../../../examples/reference/chat/ChatMessage.ipynb) and [`ChatFeed`](../../../examples/reference/chat/ChatFeed.ipynb) components.
-
-For inspiration check out the many chat components and examples at [panel-chat-examples](https://holoviz-topics.github.io/panel-chat-examples/).
+The starting point for most Panel users is the *high-level* [`ChatInterface`](../../../examples/reference/chat/ChatInterface.ipyn) or [`PanelCallbackHandler`](../../../examples/reference/chat/PanelCallbackHandler.ipynb), not the *low-level* [`ChatMessage`](../../../examples/reference/chat/ChatMessage.ipynb) and [`ChatFeed`](../../../examples/reference/chat/ChatFeed.ipynb) components.
 
 ## Chat Message
 
@@ -47,3 +45,64 @@ pn.chat.ChatMessage(message, user="user").servable()
 ```
 
 ![Panel ChatEntry](../../_static/images/panel_chat_entry.png)
+
+## Echo Bot
+
+Lets see how to migrate a bot that echoes the user input.
+
+### Streamlit Echo Bot
+
+```python
+import streamlit as st
+
+def echo(prompt):
+    return f"Echo: {prompt}"
+
+st.title("Echo Bot")
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+if prompt := st.chat_input("What is up?"):
+    st.chat_message("user").markdown(prompt)
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    response = echo(prompt)
+
+    with st.chat_message("assistant"):
+        st.markdown(response)
+    st.session_state.messages.append({"role": "assistant", "content": response})
+```
+
+![Streamlit Echo Bot](../../_static/images/streamlit_echo_bot.png)
+
+### Panel Echo Bot
+
+```python
+import panel as pn
+
+pn.extension(design="material")
+
+
+def echo(contents, user, instance):
+    return f"Echo: {contents}"
+
+
+chat_interface = pn.chat.ChatInterface(
+    callback=echo,
+)
+
+pn.Column(
+    "# Echo Bot",
+    chat_interface,
+).servable()
+```
+
+![Panel Echo Bot](../../_static/images/panel_echo_bot.png)
+
+## More Panel Chat Examples
+
+For more inspiration check out [panel-chat-examples](https://holoviz-topics.github.io/panel-chat-examples/).
