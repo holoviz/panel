@@ -15,6 +15,8 @@ except ImportError:
 
 from ..chat.feed import ChatFeed
 from ..chat.interface import ChatInterface
+from ..chat.message import DEFAULT_AVATARS
+from ..layout import Accordion
 
 
 class PanelCallbackHandler(BaseCallbackHandler):
@@ -37,7 +39,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
         self,
         instance: ChatFeed | ChatInterface,
         user: str = "LangChain",
-        avatar: str = "🦜️",
+        avatar: str = DEFAULT_AVATARS["langchain"],
     ):
         if BaseCallbackHandler is object:
             raise ImportError(
@@ -90,11 +92,11 @@ class PanelCallbackHandler(BaseCallbackHandler):
     def on_llm_end(self, response: LLMResult, *args, **kwargs):
         if not self._is_streaming:
             # on_llm_new_token does not get called if not streaming
-            self._message = self.instance.stream(
+            self._message = self.instance.send(
                 response.generations[0][0].text,
                 user=self._active_user,
                 avatar=self._active_avatar,
-                message=self._message,
+                respond=False,
             )
 
         self._active_user = self._input_user
@@ -114,7 +116,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
     def on_tool_start(
         self, serialized: Dict[str, Any], input_str: str, *args, **kwargs
     ):
-        self._update_active("🛠️", serialized["name"])
+        self._update_active(DEFAULT_AVATARS["tool"], serialized["name"])
         return super().on_tool_start(serialized, input_str, *args, **kwargs)
 
     def on_tool_end(self, output: str, *args, **kwargs):
@@ -145,9 +147,17 @@ class PanelCallbackHandler(BaseCallbackHandler):
         """Run when Retriever errors."""
         return super().on_retriever_error(error, **kwargs)
 
-    def on_retriever_end(self, **kwargs: Any) -> Any:
+    def on_retriever_end(self, documents, **kwargs: Any) -> Any:
         """Run when Retriever ends running."""
-        return super().on_retriever_end(**kwargs)
+        objects = [(f"Document {index}", document.page_content) for index, document in enumerate(documents)]
+        message = Accordion(*objects, sizing_mode="stretch_width", margin=(10,13,10,5))
+        self.instance.send(
+            message,
+            user="LangChain (retriever)",
+            avatar=DEFAULT_AVATARS["retriever"],
+            respond=False,
+        )
+        return super().on_retriever_end(documents=documents, **kwargs)
 
     def on_text(self, text: str, **kwargs: Any):
         """Run when text is received."""
