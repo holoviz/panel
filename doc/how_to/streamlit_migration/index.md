@@ -77,7 +77,7 @@ How to improve the performance with caching
 How to store state for a session
 :::
 
-:::{grid-item-card} {octicon}`dependabottack;2.5em;sd-mr-1 sd-animate-grow50` Chat Interfaces
+:::{grid-item-card} {octicon}`dependabot;2.5em;sd-mr-1 sd-animate-grow50` Chat Interfaces
 :link: chat
 :link-type: doc
 
