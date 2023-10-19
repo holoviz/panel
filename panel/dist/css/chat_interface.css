@@ -11,8 +11,3 @@
 .chat-interface-input-tabs {
   background: white;
 }
-
-.chat-interface-input-container {
-  position: sticky;
-  bottom: 0;
-}
