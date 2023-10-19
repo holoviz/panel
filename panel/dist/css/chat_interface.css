@@ -1,11 +1,7 @@
 @import url('chat_feed.css');
 
-:host {
-  overflow-y: hidden;
-}
-
 .chat-feed-log {
-  max-height: calc(100% - 100px);
+  max-height: calc(100% - 75px);
 }
 
 .chat-interface-input-tabs {
