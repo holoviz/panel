@@ -13,7 +13,8 @@ except ImportError:
     AgentFinish = None
     LLMResult = None
 
-from panel.chat import ChatFeed, ChatInterface
+from ..chat.feed import ChatFeed
+from ..chat.interface import ChatInterface
 
 
 class PanelCallbackHandler(BaseCallbackHandler):
