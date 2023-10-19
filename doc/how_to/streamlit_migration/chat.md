@@ -130,13 +130,37 @@ if prompt := st.chat_input():
         st.write(response)
 ```
 
-
 <video controls="" poster="../../_static/images/streamlit_callback_handler.png">
     <source src="https://user-images.githubusercontent.com/42288570/276558354-95a078be-24bb-42a1-af07-ab7c631ac040.mp4" type="video/mp4" style="max-height: 400px; max-width: 600px;">
     Your browser does not support the video tag.
 </video>
 
 ### Panel Search Agent with Chain of thought
+
+```python
+from langchain.llms import OpenAI
+from langchain.agents import AgentType, initialize_agent, load_tools
+import panel as pn
+
+pn.extension(design="material")
+
+llm = OpenAI(temperature=0, streaming=True)
+tools = load_tools(["ddg-search"])
+agent = initialize_agent(
+    tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True,
+)
+
+async def callback(contents, user, instance):
+    callback_handler = pn.chat.langchain.PanelCallbackHandler(instance)
+    await agent.arun(contents, callbacks=[callback_handler])
+
+pn.chat.ChatInterface(callback=callback).servable()
+```
+
+<video controls="" poster="../../_static/images/panel_callback_handler.png">
+    <source src="https://user-images.githubusercontent.com/42288570/276561076-7ac4fe04-088e-4dea-8dea-400b6bc7f930.mp4" type="video/mp4" style="max-height: 400px; max-width: 600px;">
+    Your browser does not support the video tag.
+</video>
 
 ## More Panel Chat Examples
 
