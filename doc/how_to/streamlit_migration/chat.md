@@ -103,6 +103,41 @@ pn.Column(
 
 ![Panel Echo Bot](../../_static/images/panel_echo_bot.png)
 
+## Search Agent with Chain of thought
+
+Lets try to migrate an agent that uses the Duck Duck Go search tool and shows its
+*chain of thought*.
+
+### Streamlit Search Agent with Chain of thought
+
+```python
+from langchain.llms import OpenAI
+from langchain.agents import AgentType, initialize_agent, load_tools
+from langchain.callbacks import StreamlitCallbackHandler
+import streamlit as st
+
+llm = OpenAI(temperature=0, streaming=True)
+tools = load_tools(["ddg-search"])
+agent = initialize_agent(
+    tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
+)
+
+if prompt := st.chat_input():
+    st.chat_message("user").write(prompt)
+    with st.chat_message("assistant"):
+        st_callback = StreamlitCallbackHandler(st.container())
+        response = agent.run(prompt, callbacks=[st_callback])
+        st.write(response)
+```
+
+
+<video controls="" poster="../../_static/images/streamlit_callback_handler.png">
+    <source src="https://user-images.githubusercontent.com/42288570/276558354-95a078be-24bb-42a1-af07-ab7c631ac040.mp4" type="video/mp4" style="max-height: 400px; max-width: 600px;">
+    Your browser does not support the video tag.
+</video>
+
+### Panel Search Agent with Chain of thought
+
 ## More Panel Chat Examples
 
 For more inspiration check out [panel-chat-examples](https://holoviz-topics.github.io/panel-chat-examples/).
