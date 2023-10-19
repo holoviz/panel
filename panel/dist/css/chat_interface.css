@@ -5,7 +5,11 @@
 }
 
 .chat-feed-log {
-  max-height: 90%;
+  max-height: calc(100% - 100px);
+}
+
+.chat-interface-input-tabs {
+  background: white;
 }
 
 .chat-interface-input-container {
