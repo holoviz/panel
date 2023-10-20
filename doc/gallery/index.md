@@ -195,7 +195,7 @@ Examples of Panel applications maintained by the [HoloViz](https://holoviz.org/)
 :gutter: 1 1 1 2
 
 :::{grid-item-card} Panel Chat Examples
-:img-top: https://user-images.githubusercontent.com/42288570/276816259-088f14ce-4c11-42b3-a149-25774ecb6964.png
+:img-top: https://assets.holoviz.org/panel/gallery/panel_chat_examples.png
 :link: https://holoviz-topics.github.io/panel-chat-examples/
 :link-type: url
 
