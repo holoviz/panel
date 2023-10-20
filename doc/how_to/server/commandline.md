@@ -109,7 +109,7 @@ options:
                         A random string used to encode the user information.
   --oauth-expiry-days OAUTH_EXPIRY_DAYS
                         Expiry off the OAuth cookie in number of days.
-  --oauth-refresh_tokens OAUTH_REFRESH_TOKEN
+  --oauth-refresh-tokens OAUTH_REFRESH_TOKENS
                         Whether to automatically refresh OAuth access tokens when they expire.
   --auth-template AUTH_TEMPLATE
                         Template to serve when user is unauthenticated.
