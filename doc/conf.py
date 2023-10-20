@@ -96,19 +96,21 @@ nbsite_gallery_conf = {
         'reference': {
             'title': 'Component Gallery',
             'sections': [
+                'panes',
+                'widgets',
+                'layouts',
+                # 3 most important by expected usage. Rest alphabetically
                 'chat',
                 'global',
                 'indicators',
-                'layouts',
-                'panes',
                 'templates',
-                'widgets',
             ],
             'titles': {
                 'Vega': 'Altair & Vega',
                 'DeckGL': 'PyDeck & Deck.gl',
                 'ECharts': 'PyEcharts & ECharts',
-                'IPyWidget': 'ipywidgets'
+                'IPyWidget': 'ipywidgets',
+                'PanelCallbackHandler': 'LangChain CallbackHandler',
             },
             'as_pyodide': True,
             'normalize_titles': False
