@@ -96,13 +96,13 @@ nbsite_gallery_conf = {
         'reference': {
             'title': 'Component Gallery',
             'sections': [
-                'panes',
-                'layouts',
-                'templates',
+                'chat',
                 'global',
                 'indicators',
+                'layouts',
+                'panes',
+                'templates',
                 'widgets',
-                'chat',
             ],
             'titles': {
                 'Vega': 'Altair & Vega',
