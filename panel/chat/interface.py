@@ -221,11 +221,12 @@ class ChatInterface(ChatFeed):
             buttons = []
             for button_data in self._button_data.values():
                 action = button_data.name
+                show_expr = self.param.show_button_name.rx()
                 button = Button(
-                    name=self.param.show_button_name.rx().rx.where(button_data.name.title(), ""),
+                    name=show_expr.rx.where(button_data.name.title(), ""),
                     icon=button_data.icon,
                     sizing_mode="stretch_width",
-                    max_width=self.param.show_button_name.rx().rx.where(90, 45),
+                    max_width=show_expr.rx.where(90, 45),
                     max_height=50,
                     margin=(5, 5, 5, 0),
                     align="start",
