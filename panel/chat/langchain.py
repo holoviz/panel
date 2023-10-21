@@ -22,7 +22,8 @@ from ..layout import Accordion
 class PanelCallbackHandler(BaseCallbackHandler):
     """
     The Langchain `PanelCallbackHandler` itself is not a widget or pane, but is useful for rendering
-    and streaming output from Langchain Tools, Agents, and Chains as `ChatMessage` objects.
+    and streaming the *chain of thought* from Langchain Tools, Agents, and Chains
+    as `ChatMessage` objects.
 
     Reference: https://panel.holoviz.org/reference/chat/PanelCallbackHandler.html
 
@@ -136,9 +137,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
         return super().on_chain_start(serialized, inputs, *args, **kwargs)
 
     def on_chain_end(self, outputs: Dict[str, Any], *args, **kwargs):
-        if 'output' in outputs: # The chain is finished. Report the result
-            self.instance.disabled = self._disabled_state
-            self._stream(outputs['output'])
+        self.instance.disabled = self._disabled_state
         return super().on_chain_end(outputs, *args, **kwargs)
 
     def on_retriever_error(
