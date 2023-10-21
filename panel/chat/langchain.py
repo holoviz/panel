@@ -69,12 +69,13 @@ class PanelCallbackHandler(BaseCallbackHandler):
             self._active_user = f"{self._active_user} - {label}"
 
     def _stream(self, message: str):
-        return self.instance.stream(
-            message,
-            user=self._active_user,
-            avatar=self._active_avatar,
-            message=self._message,
-        )
+        if message:
+            return self.instance.stream(
+                message,
+                user=self._active_user,
+                avatar=self._active_avatar,
+                message=self._message,
+            )
 
     def on_llm_start(self, serialized: Dict[str, Any], *args, **kwargs):
         model = kwargs.get("invocation_params", {}).get("model_name", "")
@@ -118,6 +119,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
         self, serialized: Dict[str, Any], input_str: str, *args, **kwargs
     ):
         self._update_active(DEFAULT_AVATARS["tool"], serialized["name"])
+        self._stream(input_str)
         return super().on_tool_start(serialized, input_str, *args, **kwargs)
 
     def on_tool_end(self, output: str, *args, **kwargs):
