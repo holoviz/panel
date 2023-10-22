@@ -319,7 +319,6 @@ class ChatInterface(ChatFeed):
                     file_name=active_widget.filename,
                 )
             # don't use isinstance here; TextAreaInput subclasses TextInput
-            print(self.reset_on_send)
             if type(active_widget) is TextInput or self.reset_on_send:
                 updates = {"value": ""}
                 if hasattr(active_widget, "value_input"):
