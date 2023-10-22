@@ -76,6 +76,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
                 avatar=self._active_avatar,
                 message=self._message,
             )
+        return self._message
 
     def on_llm_start(self, serialized: Dict[str, Any], *args, **kwargs):
         model = kwargs.get("invocation_params", {}).get("model_name", "")
@@ -119,11 +120,14 @@ class PanelCallbackHandler(BaseCallbackHandler):
         self, serialized: Dict[str, Any], input_str: str, *args, **kwargs
     ):
         self._update_active(DEFAULT_AVATARS["tool"], serialized["name"])
-        self._stream(input_str)
+        self._stream(f"Input: {input_str}")
         return super().on_tool_start(serialized, input_str, *args, **kwargs)
 
     def on_tool_end(self, output: str, *args, **kwargs):
         self._stream(output)
+        self._active_user = self._input_user
+        self._active_avatar = self._input_avatar
+        self._message = None
         return super().on_tool_end(output, *args, **kwargs)
 
     def on_tool_error(
