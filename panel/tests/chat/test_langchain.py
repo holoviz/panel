@@ -33,4 +33,4 @@ def test_panel_callback_handler(streaming, instance_type):
     assert len(instance.objects) == 3
     assert instance.objects[1].object == "Action: Python REPL\nAction Input: print(2 + 2)"
     assert instance.objects[2].object == "Final Answer: 4"
-    assert instance.disabled==False
+    assert not instance.disabled
