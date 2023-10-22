@@ -172,6 +172,6 @@ class PanelCallbackHandler(BaseCallbackHandler):
         """
         Does not do anything here; the other methods will handle output,
         primarily on_llm_new_token and on_llm_end. Note, this method
-        explicitly does not call super() to prevent crashing into
+        explicitly does nothing and does not call super() to prevent crashing into
         a NotImplementedError from the inherited class.
         """
