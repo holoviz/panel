@@ -80,7 +80,7 @@ class ChatInterface(ChatFeed):
     )
 
     reset_on_send = param.Boolean(
-        default=False,
+        default=True,
         doc="""
         Whether to reset the widget's value after sending a message;
         has no effect for `TextInput`.""",
