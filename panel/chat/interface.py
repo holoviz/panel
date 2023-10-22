@@ -64,105 +64,66 @@ class ChatInterface(ChatFeed):
     )
     """
 
-    auto_send_types = param.List(
-        doc="""
+    auto_send_types = param.List(doc="""
         The widget types to automatically send when the user presses enter
         or clicks away from the widget. If not provided, defaults to
-        `[TextInput]`."""
-    )
+        `[TextInput]`.""")
 
-    avatar = param.ClassSelector(
-        class_=(str, BinaryIO),
-        doc="""
+    avatar = param.ClassSelector(class_=(str, BinaryIO), doc="""
         The avatar to use for the user. Can be a single character text, an emoji,
         or anything supported by `pn.pane.Image`. If not set, uses the
-        first character of the name.""",
-    )
+        first character of the name.""")
 
-    reset_on_send = param.Boolean(
-        default=False,
-        doc="""
+    reset_on_send = param.Boolean(default=False, doc="""
         Whether to reset the widget's value after sending a message;
-        has no effect for `TextInput`.""",
-    )
+        has no effect for `TextInput`.""")
 
-    show_send = param.Boolean(
-        default=True,
-        doc="""
-        Whether to show the send button.""",
-    )
+    show_send = param.Boolean(default=True, doc="""
+        Whether to show the send button.""")
 
-    show_rerun = param.Boolean(
-        default=True,
-        doc="""
-        Whether to show the rerun button.""",
-    )
+    show_rerun = param.Boolean(default=True, doc="""
+        Whether to show the rerun button.""")
 
-    show_undo = param.Boolean(
-        default=True,
-        doc="""
-        Whether to show the undo button.""",
-    )
+    show_undo = param.Boolean(default=True, doc="""
+        Whether to show the undo button.""")
 
-    show_clear = param.Boolean(
-        default=True,
-        doc="""
-        Whether to show the clear button.""",
-    )
+    show_clear = param.Boolean(default=True, doc="""
+        Whether to show the clear button.""")
 
-    show_button_name = param.Boolean(
-        default=None,
-        doc="""
-        Whether to show the button name.""",
-    )
+    show_button_name = param.Boolean(default=None, doc="""
+        Whether to show the button name.""")
 
-    user = param.String(default="User", doc="Name of the ChatInterface user.")
+    user = param.String(default="User", doc="""
+        Name of the ChatInterface user.""")
 
-    widgets = param.ClassSelector(
-        class_=(Widget, list),
-        allow_refs=False,
-        doc="""
+    widgets = param.ClassSelector(class_=(Widget, list), allow_refs=False, doc="""
         Widgets to use for the input. If not provided, defaults to
-        `[TextInput]`.""",
-    )
+        `[TextInput]`.""")
 
-    _widgets = param.Dict(
-        default={},
-        allow_refs=False,
-        doc="""
-        The input widgets.""",
-    )
+    _widgets = param.Dict(default={}, allow_refs=False, doc="""
+        The input widgets.""")
 
-    _input_container = param.ClassSelector(
-        class_=Row,
-        doc="""
+    _input_container = param.ClassSelector(class_=Row, doc="""
         The input message row that wraps the input layout (Tabs / Row)
         to easily swap between Tabs and Rows, depending on
-        number of widgets.""",
-    )
+        number of widgets.""")
 
-    _input_layout = param.ClassSelector(
-        class_=(Row, Tabs),
-        doc="""
-        The input layout that contains the input widgets.""",
-    )
+    _input_layout = param.ClassSelector(class_=(Row, Tabs), doc="""
+        The input layout that contains the input widgets.""")
 
-    _button_data = param.Dict(
-        default={},
-        doc="""
-        Metadata and data related to the buttons.""",
-    )
+    _button_data = param.Dict(default={}, doc="""
+        Metadata and data related to the buttons.""")
 
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_interface.css"]
 
-    def __init__(self, **params):
+    def __init__(self, *objects, **params):
         widgets = params.get("widgets")
         if widgets is None:
             params["widgets"] = [TextInput(placeholder="Send a message")]
         elif not isinstance(widgets, list):
             params["widgets"] = [widgets]
         active = params.pop("active", None)
-        super().__init__(**params)
+        super().__init__(*objects, **params)
 
         button_icons = {
             "send": "send",
@@ -210,16 +171,7 @@ class ChatInterface(ChatFeed):
         if self.show_button_name is None:
             self.show_button_name = self.width is None or self.width >= 400
 
-    @param.depends(
-        "width",
-        "widgets",
-        "show_send",
-        "show_rerun",
-        "show_undo",
-        "show_clear",
-        "show_button_name",
-        watch=True,
-    )
+    @param.depends("widgets", watch=True)
     def _init_widgets(self):
         """
         Initialize the input widgets.
@@ -233,11 +185,14 @@ class ChatInterface(ChatFeed):
             widgets = [self.widgets]
 
         self._widgets = {}
+        new_widgets = []
         for widget in widgets:
             key = widget.name or widget.__class__.__name__
             if isinstance(widget, type):  # check if instantiated
                 widget = widget()
-            self._widgets[key] = widget
+            if self._widgets.get(key) is not widget:
+                self._widgets[key] = widget
+                new_widgets.append(widget)
 
         sizing_mode = self.sizing_mode
         if sizing_mode is not None:
@@ -256,29 +211,28 @@ class ChatInterface(ChatFeed):
             # submit when clicking away; only if they manually click
             # the send button
             auto_send_types = tuple(self.auto_send_types) or (TextInput,)
-            if isinstance(widget, auto_send_types):
+            if isinstance(widget, auto_send_types) and widget in new_widgets:
                 widget.param.watch(self._click_send, "value")
             widget.param.update(
-                sizing_mode="stretch_width", css_classes=["chat-interface-input-widget"]
+                sizing_mode="stretch_width",
+                css_classes=["chat-interface-input-widget"]
             )
 
             buttons = []
             for button_data in self._button_data.values():
-                if self.show_button_name:
-                    button_name = button_data.name.title()
-                else:
-                    button_name = ""
+                action = button_data.name
+                show_expr = self.param.show_button_name.rx()
                 button = Button(
-                    name=button_name,
+                    name=show_expr.rx.where(button_data.name.title(), ""),
                     icon=button_data.icon,
                     sizing_mode="stretch_width",
-                    max_width=90 if self.show_button_name else 45,
+                    max_width=show_expr.rx.where(90, 45),
                     max_height=50,
                     margin=(5, 5, 5, 0),
                     align="start",
+                    visible=self.param[f'show_{action}']
                 )
                 self._link_disabled_loading(button)
-                action = button_data.name
                 button.on_click(getattr(self, f"_click_{action}"))
                 buttons.append(button)
                 button_data.buttons.append(button)

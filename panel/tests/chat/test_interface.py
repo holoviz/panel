@@ -145,11 +145,21 @@ class TestChatInterface:
         assert chat_interface.width is None
         chat_interface.width = 200
         assert chat_interface.show_button_name
+        assert chat_interface._input_layout[1].name == "Send"
 
     def test_show_button_name_set(self, chat_interface):
         chat_interface.show_button_name = False
         chat_interface.width = 800
         assert not chat_interface.show_button_name
+        assert chat_interface._input_layout[1].name == ""
+
+    def test_show_send_interactive(self, chat_interface):
+        send_button = chat_interface._input_layout[1]
+        assert chat_interface.show_send
+        assert send_button.visible
+        chat_interface.show_send = False
+        assert not chat_interface.show_send
+        assert not send_button.visible
 
 class TestChatInterfaceWidgetsSizingMode:
     def test_none(self):
