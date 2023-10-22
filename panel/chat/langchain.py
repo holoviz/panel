@@ -69,7 +69,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
             self._active_user = f"{self._active_user} - {label}"
 
     def _stream(self, message: str):
-        if message:
+        if message.strip():
             return self.instance.stream(
                 message,
                 user=self._active_user,
