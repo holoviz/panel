@@ -338,6 +338,12 @@ class ChatFeed(ListPanel):
 
         if message is not None:
             # ChatMessage is already created; updating existing ChatMessage
+            if isinstance(value, ChatMessage):
+                # Cannot set user or avatar when explicitly sending
+                # a ChatMessage; need to set them directly on the ChatMessage.
+                user = value.user
+                avatar = value.avatar
+                value = value.object
             message.update(value, user=user, avatar=avatar)
             return message
         elif isinstance(value, ChatMessage):

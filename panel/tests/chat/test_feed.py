@@ -473,6 +473,31 @@ class TestChatFeedCallback:
         assert chat_feed.objects[1].user == callback_avatar or "Assistant"
         assert chat_feed.objects[1].avatar == callback_avatar or "🤖"
 
+    @pytest.mark.parametrize("callback_user", [None, "Bob"])
+    @pytest.mark.parametrize("callback_avatar", [None, "C"])
+    def test_yield_chat_message_stream(self, chat_feed, callback_user, callback_avatar):
+        def echo(contents, user, instance):
+            message_kwargs = {}
+            if callback_user:
+                message_kwargs["user"] = callback_user
+            if callback_avatar:
+                message_kwargs["avatar"] = callback_avatar
+            message = ""
+            for char in contents:
+                message += char
+                yield ChatMessage(object=message, **message_kwargs)
+
+        chat_feed.callback = echo
+        chat_feed.send("Message", respond=True)
+        time.sleep(0.75)
+        assert len(chat_feed.objects) == 2
+        assert chat_feed.objects[1].object == "Message"
+        assert chat_feed.objects[1].user == callback_avatar or "Assistant"
+        assert chat_feed.objects[1].avatar == callback_avatar or "🤖"
+
+
+
+
     @pytest.mark.asyncio
     async def test_async_yield(self, chat_feed):
         async def echo(contents, user, instance):
