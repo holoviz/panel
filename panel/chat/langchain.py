@@ -74,7 +74,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
         self._message = None
 
     def _stream(self, message: str):
-        if message:
+        if message.strip():
             return self.instance.stream(
                 message,
                 user=self._active_user,
@@ -123,7 +123,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
         self, serialized: Dict[str, Any], input_str: str, *args, **kwargs
     ):
         self._update_active(DEFAULT_AVATARS["tool"], serialized["name"])
-        self._stream(f"Input: {input_str}")
+        self._stream(f"Tool input: {input_str}")
         return super().on_tool_start(serialized, input_str, *args, **kwargs)
 
     def on_tool_end(self, output: str, *args, **kwargs):
