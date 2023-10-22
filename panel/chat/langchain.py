@@ -162,3 +162,16 @@ class PanelCallbackHandler(BaseCallbackHandler):
     def on_text(self, text: str, **kwargs: Any):
         """Run when text is received."""
         return super().on_text(text, **kwargs)
+
+    def on_chat_model_start(
+        self,
+        serialized: Dict[str, Any],
+        messages: List[List[BaseMessage]],
+        **kwargs: Any
+    ) -> None:
+        """
+        Does not do anything here; the other methods will handle output,
+        primarily on_llm_new_token and on_llm_end. Note, this method
+        explicitly does not call super() to prevent crashing into
+        a NotImplementedError from the inherited class.
+        """
