@@ -68,6 +68,11 @@ class PanelCallbackHandler(BaseCallbackHandler):
         if f"- {label}" not in self._active_user:
             self._active_user = f"{self._active_user} - {label}"
 
+    def _reset_active(self):
+        self._active_user = self._input_user
+        self._active_avatar = self._input_avatar
+        self._message = None
+
     def _stream(self, message: str):
         if message.strip():
             return self.instance.stream(
@@ -76,6 +81,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
                 avatar=self._active_avatar,
                 message=self._message,
             )
+        return self._message
 
     def on_llm_start(self, serialized: Dict[str, Any], *args, **kwargs):
         model = kwargs.get("invocation_params", {}).get("model_name", "")
@@ -101,9 +107,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
                 respond=False,
             )
 
-        self._active_user = self._input_user
-        self._active_avatar = self._input_avatar
-        self._message = None
+        self._reset_active()
         return super().on_llm_end(response, *args, **kwargs)
 
     def on_llm_error(self, error: Union[Exception, KeyboardInterrupt], *args, **kwargs):
@@ -124,6 +128,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
 
     def on_tool_end(self, output: str, *args, **kwargs):
         self._stream(output)
+        self._reset_active()
         return super().on_tool_end(output, *args, **kwargs)
 
     def on_tool_error(
