@@ -119,7 +119,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
         self, serialized: Dict[str, Any], input_str: str, *args, **kwargs
     ):
         self._update_active(DEFAULT_AVATARS["tool"], serialized["name"])
-        self._stream(input_str)
+        self._stream(f"Tool input: {input_str}")
         return super().on_tool_start(serialized, input_str, *args, **kwargs)
 
     def on_tool_end(self, output: str, *args, **kwargs):
