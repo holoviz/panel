@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Union
+from typing import (
+    Any, Dict, List, Union,
+)
 
 try:
     from langchain.callbacks.base import BaseCallbackHandler
@@ -162,3 +164,16 @@ class PanelCallbackHandler(BaseCallbackHandler):
     def on_text(self, text: str, **kwargs: Any):
         """Run when text is received."""
         return super().on_text(text, **kwargs)
+
+    def on_chat_model_start(
+        self,
+        serialized: Dict[str, Any],
+        messages: List,
+        **kwargs: Any
+    ) -> None:
+        """
+        Does not do anything to prevent the inherited class from raising
+        NotImplementedError, and thus will not call super() here;
+        the other methods will handle output, primarily
+        `on_llm_new_token` and `on_llm_end`.
+        """
