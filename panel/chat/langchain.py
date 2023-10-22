@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Union
 
 try:
     from langchain.callbacks.base import BaseCallbackHandler
@@ -166,7 +166,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
     def on_chat_model_start(
         self,
         serialized: Dict[str, Any],
-        messages: List[List[BaseMessage]],
+        messages: List,
         **kwargs: Any
     ) -> None:
         """
