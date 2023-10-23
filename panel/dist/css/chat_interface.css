@@ -5,5 +5,5 @@
 }
 
 .chat-interface-input-tabs {
-  background: white;
+  background-color: var(--background-color);
 }
