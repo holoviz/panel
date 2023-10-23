@@ -216,6 +216,7 @@ class ChatFeed(ListPanel):
         )
         # we separate out chat log for the auto scroll feature
         self._chat_log = Column(
+            *objects,
             auto_scroll_limit=self.auto_scroll_limit,
             scroll_button_threshold=self.scroll_button_threshold,
             css_classes=["chat-feed-log"],
@@ -581,3 +582,25 @@ class ChatFeed(ListPanel):
         cleared_entries = self._chat_log.objects
         self._chat_log.clear()
         return cleared_entries
+
+    def select(self, selector=None):
+        """
+        Iterates over the ChatInterface and any potential children in the
+        applying the selector.
+
+        Arguments
+        ---------
+        selector: type or callable or None
+          The selector allows selecting a subset of Viewables by
+          declaring a type or callable function to filter by.
+
+        Returns
+        -------
+        viewables: list(Viewable)
+        """
+        selected = []
+        if (selector is None or
+            (isinstance(selector, type) and isinstance(self, selector)) or
+            (callable(selector) and not isinstance(selector, type) and selector(self))):
+            selected.append(self)
+        return selected + self._card.select(selector)
