@@ -78,3 +78,14 @@ def test_chat_model(instance_type, mock_completion):
     assert callback_message.object == "Bar Baz"
     assert callback_message.user == "LangChain (gpt-3.5-turbo)"
     assert len(instance.objects) == 2
+
+
+def test_stream():
+    instance = ChatFeed(callback_user="Langchain")
+    callback_handler = PanelCallbackHandler(instance)
+    # send each token / chunk individually
+    message = callback_handler._stream("Panel")
+    callback_handler._message = message
+    callback_handler._stream(" ")  # important it's still sent
+    callback_handler._stream("Chat!")
+    assert instance.objects[-1].object == "Panel Chat!"
