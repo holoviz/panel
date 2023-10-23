@@ -2,7 +2,7 @@
 
 ## Version 1.3.0
 
-Date: 2023-10-20
+Date: 2023-10-23
 
 This minor release packs many exciting new features, specifically a new `panel.chat` subpackage containing components with powerful capabilities for interacting with LLM whether local or remote. Secondly this release adds compatibility with Param 2.0 bringing powerful new features including the ability to leverage reactive expressions using the `rx` wrapper and deeper support for reactively linking parameters, expressions and bound functions on Panel components. Lastly we overhauled the OAuth implementations adding support for code authorization and password based OAuth grant workflows and automatically refreshing the `access_token` when it expires. Beyond that this release includes many enhancements and numerous bug fixes. Special thanks to our first time contributors @aktech and @monodera and returning contributors @cdeil, @pierrotsmnrd and @TheoMartin. We also want to highlight the contribution of our new core contributor @ahuang11 for developing the chat components and recognize @MarcSkovMadsen and @philippjfr for their efforts on testing and improving these new components. Finally we thank the entire core team @Hoxbro, @MarcSkovMadsen, @maximlt, @ahuang11 and @philippjfr for their continued efforts.
 
@@ -16,7 +16,7 @@ This minor release packs many exciting new features, specifically a new `panel.c
 ### Enhancement
 
 - Add unit to widget in `HoloViews` pane if provided ([#5535](https://github.com/holoviz/panel/pull/5535))
-- Allow registering global on_`session_destroyed` callback ([#5585](https://github.com/holoviz/panel/pull/5585))
+- Allow registering global `on_session_destroyed` callback ([#5585](https://github.com/holoviz/panel/pull/5585))
 - Implement `auto_grow` on `TextAreaInput` ([#5592](https://github.com/holoviz/panel/pull/5592))
 - Add ability to redirect users from authorization callback ([#5594](https://github.com/holoviz/panel/pull/5594))
 - Add support for `Path` object in `FileDownload` ([#5607](https://github.com/holoviz/panel/pull/5607))
@@ -37,13 +37,14 @@ This minor release packs many exciting new features, specifically a new `panel.c
 - Fix patching a table with a `DataFrame` with a custom index ([#5645](https://github.com/holoviz/panel/pull/5645))
 - Set `FloatPanel` status correctly on initialization ([#5651](https://github.com/holoviz/panel/pull/5651))
 - Fix patching table with `pd.Timestamp` values ([#5650](https://github.com/holoviz/panel/pull/5650))
-- Ensure `notifications` and `browser_info` are loaded when `HoloViews` is loaded
+- Ensure `notifications` and `browser_info` are loaded when `HoloViews` is loaded ([#5657](https://github.com/holoviz/panel/pull/5657))
 - Gracefully handle resolution of invalid paths in `_stylesheets` ([#5666](https://github.com/holoviz/panel/pull/5666))
 - Handle patching tables with `NaT` values ([#5675](https://github.com/holoviz/panel/pull/5675))
 
 ### Compatibility
 
-- Upgrade to Param 2.0
+- Add support for Python 3.12 and drop Python 3.8 support
+- Upgrade to Param 2.0 as minimum required version
 - Compatibility with Bokeh 3.3.0
 
 ### Documentation
