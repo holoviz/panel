@@ -30,7 +30,7 @@ def test_panel_callback_handler(streaming, instance_type):
         tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, callbacks=[callback_handler]
     )
     instance.send("2 + 2")
-    assert len(instance.objects) == 4
+    assert len(instance.objects) == 3
     assert instance.objects[1].object == "Action: Python REPL\nAction Input: print(2 + 2)"
     assert instance.objects[2].object == "Final Answer: 4"
-    assert instance.objects[3].object == "4"
+    assert not instance.disabled
