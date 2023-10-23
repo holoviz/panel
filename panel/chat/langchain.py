@@ -177,6 +177,6 @@ class PanelCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """
         To prevent the inherited class from raising
-        NotImplementedError, and thus will not call super() here.
+        NotImplementedError, will not call super() here.
         """
         self._on_start(serialized, kwargs)
