@@ -336,12 +336,23 @@ class ChatFeed(ListPanel):
         if isinstance(value, dict):
             user = value.get("user", user)
             avatar = value.get("avatar")
+
         if message is not None:
+            # ChatMessage is already created; updating existing ChatMessage
+            if isinstance(value, ChatMessage):
+                # Cannot set user or avatar when explicitly sending
+                # a ChatMessage; need to set them directly on the ChatMessage.
+                user = value.user
+                avatar = value.avatar
+                value = value.object
             message.update(value, user=user, avatar=avatar)
             return message
         elif isinstance(value, ChatMessage):
+            # ChatMessage is not created yet, but a ChatMessage is passed; use it
+            self._replace_placeholder(value)
             return value
 
+        # ChatMessage is not created yet, create a ChatMessage from string/dict
         if not isinstance(value, dict):
             value = {"object": value}
         new_message = self._build_message(value, user=user, avatar=avatar)
