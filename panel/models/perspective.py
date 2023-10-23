@@ -10,10 +10,10 @@ from ..util import classproperty
 from .layout import HTMLBox
 
 PERSPECTIVE_THEMES = [
-    'material', 'material-dark', 'monokai', 'solarized', 'solarized-dark', 'vaporwave'
+    'pro', 'pro-dark', 'monokai', 'solarized', 'solarized-dark', 'vaporwave', "gruvbox", "gruvbox-dark", "dracula"
 ]
 
-PERSPECTIVE_VERSION = '1.9.3'
+PERSPECTIVE_VERSION = '2.6.0'
 
 THEME_PATH = f"@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/css/"
 THEME_URL = f"{config.npm_cdn}/{THEME_PATH}"
@@ -73,26 +73,26 @@ class Perspective(HTMLBox):
 
     toggle_config = Bool(True)
 
-    theme = Enum(*PERSPECTIVE_THEMES, default="material")
+    theme = Enum(*PERSPECTIVE_THEMES, default="pro")
 
     # pylint: disable=line-too-long
-    __javascript__ = [
-        f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/umd/perspective.js",
-        f"{config.npm_cdn}/@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/umd/perspective-viewer.js",
-        f"{config.npm_cdn}/@finos/perspective-viewer-datagrid@{PERSPECTIVE_VERSION}/dist/umd/perspective-viewer-datagrid.js",
-        f"{config.npm_cdn}/@finos/perspective-viewer-d3fc@{PERSPECTIVE_VERSION}/dist/umd/perspective-viewer-d3fc.js",
+    __javascript_modules__ = [
+        f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/cdn/perspective.js",
+        f"{config.npm_cdn}/@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer.js",
+        f"{config.npm_cdn}/@finos/perspective-viewer-datagrid@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer-datagrid.js",
+        f"{config.npm_cdn}/@finos/perspective-viewer-d3fc@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer-d3fc.js",
     ]
 
     __js_skip__ = {
-        "perspective": __javascript__,
+        "perspective": __javascript_modules__,
     }
 
     __js_require__ = {
         "paths": {
-            "perspective": f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/umd/perspective",
-            "perspective-viewer": f"{config.npm_cdn}/@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/umd/perspective-viewer",
-            "perspective-viewer-datagrid": f"{config.npm_cdn}/@finos/perspective-viewer-datagrid@{PERSPECTIVE_VERSION}/dist/umd/perspective-viewer-datagrid",
-            "perspective-viewer-d3fc": f"{config.npm_cdn}/@finos/perspective-viewer-d3fc@{PERSPECTIVE_VERSION}/dist/umd/perspective-viewer-d3fc",
+            "perspective": f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/cdn/perspective",
+            "perspective-viewer": f"{config.npm_cdn}/@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer",
+            "perspective-viewer-datagrid": f"{config.npm_cdn}/@finos/perspective-viewer-datagrid@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer-datagrid",
+            "perspective-viewer-d3fc": f"{config.npm_cdn}/@finos/perspective-viewer-d3fc@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer-d3fc",
         },
         "exports": {
             "perspective": "perspective",
