@@ -104,7 +104,6 @@ class PanelCallbackHandler(BaseCallbackHandler):
 
     def on_llm_end(self, response: LLMResult, *args, **kwargs):
         if not self._is_streaming:
-            print("HELLO")
             # on_llm_new_token does not get called if not streaming
             self._stream(response.generations[0][0].text)
 
