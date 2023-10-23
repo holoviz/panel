@@ -65,7 +65,7 @@ class VSpacer(Spacer):
 
 class HSpacer(Spacer):
     """
-    The `HSpacer` layout provides responsive vertical spacing.
+    The `HSpacer` layout provides responsive horizontal spacing.
 
     Using this component we can space objects equidistantly in a layout and
     allow the empty space to shrink when the browser is resized.
