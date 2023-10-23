@@ -251,6 +251,13 @@ textarea.bk-input:not([type='file']) {
   box-shadow: unset;
 }
 
+.bk-input-group:has(> select),
+.bk-input-group:has(> .bk-input-container),
+.bk-input-group:has(> .bk-spin-wrapper),
+.bk-input-group:has(> textarea) {
+  padding-top: 0.5em;
+}
+
 .bk-input-group > label:has(+ select),
 .bk-input-group > label:has(+ .bk-input-container),
 .bk-input-group > label:has(+ .bk-spin-wrapper),
@@ -258,7 +265,7 @@ textarea.bk-input:not([type='file']) {
   background-color: var(--current-background-color);
   position: absolute;
   left: 0;
-  top: -0.5em;
+  top: 0;
   transform: scale(0.75);
   line-height: 1.4375em;
   font-size: 1rem;
