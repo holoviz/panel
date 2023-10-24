@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "param >=2.0.0rc2",
+    "param >=2.0.0",
     "pyct >=0.4.4",
     "setuptools >=42",
     "bokeh >=3.3.0,<3.4.0",

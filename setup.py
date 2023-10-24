@@ -101,7 +101,7 @@ except Exception:
 
 install_requires = [
     'bokeh >=3.2.0,<3.4.0',
-    'param >=2.0.0rc6,<3.0',
+    'param >=2.0.0,<3.0',
     'pyviz_comms >=0.7.4',
     'xyzservices >=2021.09.1', # Bokeh dependency, but pyodide 23.0.0 does not always pick it up
     'markdown',
