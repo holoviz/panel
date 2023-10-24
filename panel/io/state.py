@@ -904,7 +904,7 @@ class _state(param.Parameterized):
         """
         Returns the OAuth access_token if enabled.
         """
-        if self.user in self._oauth_user_overrides and 'refresh_token' in self._oauth_user_overrides:
+        if self.user in self._oauth_user_overrides and 'access_token' in self._oauth_user_overrides[self.user]:
             return self._oauth_user_overrides[self.user]['access_token']
         access_token = self._decode_cookie('access_token')
         if not access_token:
