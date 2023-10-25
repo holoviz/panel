@@ -37,29 +37,46 @@ class Accordion(NamedListPanel):
     >>> pn.Accordion(some_pane_with_a_name, ("Plot", some_plot))
     """
 
-    active_header_background = param.String(default='#ccc', doc="""
-        Color for currently active headers.""")
+    active_header_background = param.String(
+        default="#ccc",
+        doc="""
+        Color for currently active headers.""",
+    )
 
-    active = param.List(default=[], doc="""
-        List of indexes of active cards.""")
+    active = param.List(
+        default=[],
+        doc="""
+        List of indexes of active cards.""",
+    )
 
-    header_color = param.String(doc="""
-        A valid CSS color to apply to the expand button.""")
+    header_color = param.String(
+        doc="""
+        A valid CSS color to apply to the expand button."""
+    )
 
-    header_background = param.String(doc="""
-        A valid CSS color for the header background.""")
+    header_background = param.String(
+        doc="""
+        A valid CSS color for the header background."""
+    )
 
-    toggle = param.Boolean(default=False, doc="""
-        Whether to toggle between active cards or allow multiple cards""")
+    toggle = param.Boolean(
+        default=False,
+        doc="""
+        Whether to toggle between active cards or allow multiple cards""",
+    )
 
     _bokeh_model = BkColumn
 
-    _direction: ClassVar[str | None] = 'vertical'
+    _direction: ClassVar[str | None] = "vertical"
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'active': None, 'active_header_background': None,
-        'header_background': None, 'objects': 'children',
-        'dynamic': None, 'toggle': None, 'header_color': None
+        "active": None,
+        "active_header_background": None,
+        "header_background": None,
+        "objects": "children",
+        "dynamic": None,
+        "toggle": None,
+        "header_color": None,
     }
 
     _toggle = """
@@ -71,19 +88,25 @@ class Accordion(NamedListPanel):
     """
 
     _synced_properties = [
-        'active_header_background', 'header_background', 'width',
-        'sizing_mode', 'width_policy', 'height_policy', 'header_color',
-        'min_width', 'max_width'
+        "active_header_background",
+        "header_background",
+        "width",
+        "sizing_mode",
+        "width_policy",
+        "height_policy",
+        "header_color",
+        "min_width",
+        "max_width",
     ]
 
     def __init__(self, *objects, **params):
         super().__init__(*objects, **params)
         self._updating_active = False
-        self.param.watch(self._update_active, ['active'])
+        self.param.watch(self._update_active, ["active"])
         self.param.watch(self._update_cards, self._synced_properties)
 
     def _process_property_change(self, props):
-        props.pop('children', None)
+        props.pop("children", None)
         return super()._process_property_change(props)
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
@@ -92,12 +115,13 @@ class Accordion(NamedListPanel):
         models and cleaning up any dropped objects.
         """
         from panel.pane.base import RerenderError, panel
+
         new_models, old_models = [], []
         if len(self._names) != len(self):
             raise ValueError(
-                'Accordion names do not match objects, ensure that the '
-                'Accordion.objects are not modified directly. Found '
-                f'{len(self._names)} names, expected {len(self)}.'
+                "Accordion names do not match objects, ensure that the "
+                "Accordion.objects are not modified directly. Found "
+                f"{len(self._names)} names, expected {len(self)}."
             )
         for i, (name, pane) in enumerate(zip(self._names, self)):
             pane = panel(pane, name=name)
@@ -108,12 +132,9 @@ class Accordion(NamedListPanel):
                 self._panels[id(obj)]._cleanup(root)
                 del self._panels[id(obj)]
 
-        params = {
-            k: v for k, v in self.param.values().items()
-            if k in self._synced_properties
-        }
+        params = {k: v for k, v in self.param.values().items() if k in self._synced_properties}
 
-        ref = root.ref['id']
+        ref = root.ref["id"]
         current_objects = list(self)
         self._updating_active = True
         for i, (name, pane) in enumerate(zip(self._names, self)):
@@ -123,13 +144,8 @@ class Accordion(NamedListPanel):
                 card = self._panels[id(pane)]
                 card.param.update(**child_params)
             else:
-                card = Card(
-                    pane,
-                    css_classes=['accordion'],
-                    header_css_classes=['accordion-header'],
-                    **child_params
-                )
-                card.param.watch(self._set_active, ['collapsed'])
+                card = Card(pane, css_classes=["accordion"], header_css_classes=["accordion-header"], **child_params)
+                card.param.watch(self._set_active, ["collapsed"])
                 self._panels[id(pane)] = card
             if ref in card._models:
                 panel = card._models[ref][0]
@@ -138,15 +154,13 @@ class Accordion(NamedListPanel):
                 try:
                     panel = card._get_model(doc, root, model, comm)
                     if self.toggle:
-                        cb = CustomJS(args={'accordion': model}, code=self._toggle)
-                        panel.js_on_change('collapsed', cb)
+                        cb = CustomJS(args={"accordion": model}, code=self._toggle)
+                        panel.js_on_change("collapsed", cb)
                 except RerenderError as e:
                     if e.layout is not None and e.layout is not self:
                         raise e
                     e.layout = None
-                    return self._get_objects(
-                        model, current_objects[:i], doc, root, comm
-                    )
+                    return self._get_objects(model, current_objects[:i], doc, root, comm)
             new_models.append(panel)
 
         self._updating_active = False
@@ -167,11 +181,11 @@ class Accordion(NamedListPanel):
     def _apply_style(self, i):
         if i == 0:
             margin = (5, 5, 0, 5)
-        elif i == (len(self)-1):
+        elif i == (len(self) - 1):
             margin = (0, 5, 5, 5)
         else:
             margin = (0, 5, 0, 5)
-        return dict(margin=margin, collapsed = i not in self.active)
+        return dict(margin=margin, collapsed=i not in self.active)
 
     def _set_active(self, *events):
         if self._updating_active:
@@ -206,18 +220,13 @@ class Accordion(NamedListPanel):
             self._updating_active = False
 
     def _update_cards(self, *events):
-        params = {
-            k: v for k, v in self.param.values().items()
-            if k in self._synced_properties
-        }
+        params = {k: v for k, v in self.param.values().items() if k in self._synced_properties}
         for panel in self._panels.values():
             panel.param.update(**params)
 
     # Public API
 
-    def select(
-        self, selector: type | Callable[[Viewable], bool] | None = None
-    ) -> List[Viewable]:
+    def select(self, selector: type | Callable[[Viewable], bool] | None = None) -> List[Viewable]:
         selected = Reactive.select(self, selector)
         if self._panels:
             for card in self._panels.values():

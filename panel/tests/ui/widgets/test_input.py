@@ -7,14 +7,15 @@ from panel.widgets import DatetimePicker, DatetimeRangePicker, TextAreaInput
 
 try:
     from playwright.sync_api import expect
+
     pytestmark = pytest.mark.ui
 except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
+    pytestmark = pytest.mark.skip("playwright not available")
 
 
 @pytest.fixture
 def weekdays_as_str():
-    weekdays_str = '''
+    weekdays_str = """
         Sun
         Mon
         Tue
@@ -22,13 +23,13 @@ def weekdays_as_str():
         Thu
         Fri
         Sat
-    '''
+    """
     return weekdays_str
 
 
 @pytest.fixture
 def months_as_str():
-    months_str = '''
+    months_str = """
         January
         February
         March
@@ -41,21 +42,57 @@ def months_as_str():
         October
         November
         December
-    '''
+    """
     return months_str
 
 
 @pytest.fixture
 def march_2021():
     march_2021_days = [
-        28, 1, 2, 3, 4, 5, 6,           # 1st week
-        7, 8, 9, 10, 11, 12, 13,        # 2nd week
-        14, 15, 16, 17, 18, 19, 20,     # 3rd week
-        21, 22, 23, 24, 25, 26, 27,     # 4th week
-        28, 29, 30, 31, 1, 2, 3,        # 5th week
-        4, 5, 6, 7, 8, 9, 10            # 6th week
+        28,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,  # 1st week
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,  # 2nd week
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,  # 3rd week
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,  # 4th week
+        28,
+        29,
+        30,
+        31,
+        1,
+        2,
+        3,  # 5th week
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,  # 6th week
     ]
-    march_2021_str = '\n'.join([str(i) for i in march_2021_days])
+    march_2021_str = "\n".join([str(i) for i in march_2021_days])
     num_days = 42
     num_prev_month_days = 1
     num_next_month_days = 10
@@ -65,9 +102,9 @@ def march_2021():
 @pytest.fixture
 def datetime_value_data():
     year, month, day, hour, min, sec = 2021, 3, 2, 23, 55, 0
-    month_str = 'March'
-    date_str = 'March 2, 2021'
-    datetime_str = '2021-03-02 23:55:00'
+    month_str = "March"
+    date_str = "March 2, 2021"
+    datetime_str = "2021-03-02 23:55:00"
     return year, month, day, hour, min, sec, month_str, date_str, datetime_str
 
 
@@ -75,7 +112,7 @@ def datetime_value_data():
 def datetime_start_end():
     start = datetime.datetime(2021, 3, 2)
     end = datetime.datetime(2021, 3, 3)
-    selectable_dates = ['March 2, 2021', 'March 3, 2021']
+    selectable_dates = ["March 2, 2021", "March 3, 2021"]
     return start, end, selectable_dates
 
 
@@ -85,7 +122,7 @@ def disabled_dates():
         datetime.date(2021, 3, 1),
         datetime.date(2021, 3, 3),
     ]
-    disabled_str_list = ['March 1, 2021', 'March 3, 2021']
+    disabled_str_list = ["March 1, 2021", "March 3, 2021"]
     active_date = datetime.datetime(2021, 3, 2)
     return active_date, disabled_list, disabled_str_list
 
@@ -96,7 +133,7 @@ def enabled_dates():
         datetime.date(2021, 3, 1),
         datetime.date(2021, 3, 3),
     ]
-    enabled_str_list = ['March 1, 2021', 'March 3, 2021']
+    enabled_str_list = ["March 1, 2021", "March 3, 2021"]
     active_date = datetime.datetime(2021, 3, 1)
     return active_date, enabled_list, enabled_str_list
 
@@ -144,32 +181,32 @@ def test_datetimepicker_default(page, weekdays_as_str, months_as_str):
 
     serve_component(page, datetime_picker_widget)
 
-    datetime_picker = page.locator('.flatpickr-calendar')
+    datetime_picker = page.locator(".flatpickr-calendar")
     expect(datetime_picker).to_have_count(1)
 
-    datetime_value = page.locator('.flatpickr-input')
+    datetime_value = page.locator(".flatpickr-input")
     expect(datetime_value).to_have_count(1)
     # no value set at initialization, this locator has an empty string
-    expect(datetime_value).to_have_text('', use_inner_text=True)
+    expect(datetime_value).to_have_text("", use_inner_text=True)
 
     # click to show the datetime picker
     datetime_value.dblclick()
     # ensure the datetime picker is shown
-    datetime_value_active = page.locator('.flatpickr-input.active')
+    datetime_value_active = page.locator(".flatpickr-input.active")
     expect(datetime_value_active).to_have_count(1)
 
     # month and year
-    months_container = page.locator('.flatpickr-calendar .flatpickr-months')
+    months_container = page.locator(".flatpickr-calendar .flatpickr-months")
     expect(months_container).to_have_count(1)
     expect(months_container).to_contain_text(months_as_str, use_inner_text=True)
 
-    prev_month_button = page.locator('.flatpickr-prev-month')
-    next_month_button = page.locator('.flatpickr-next-month')
-    month_dropdown = page.locator('.flatpickr-current-month select.flatpickr-monthDropdown-months')
-    all_months = page.locator('.flatpickr-calendar .flatpickr-monthDropdown-month')
-    year_input = page.locator('.flatpickr-current-month .numInput.cur-year')
-    year_up = page.locator('.flatpickr-current-month .arrowUp')
-    year_down = page.locator('.flatpickr-current-month .arrowDown')
+    prev_month_button = page.locator(".flatpickr-prev-month")
+    next_month_button = page.locator(".flatpickr-next-month")
+    month_dropdown = page.locator(".flatpickr-current-month select.flatpickr-monthDropdown-months")
+    all_months = page.locator(".flatpickr-calendar .flatpickr-monthDropdown-month")
+    year_input = page.locator(".flatpickr-current-month .numInput.cur-year")
+    year_up = page.locator(".flatpickr-current-month .arrowUp")
+    year_down = page.locator(".flatpickr-current-month .arrowDown")
     expect(prev_month_button).to_have_count(1)
     expect(next_month_button).to_have_count(1)
     expect(month_dropdown).to_have_count(1)
@@ -186,9 +223,7 @@ def test_datetimepicker_default(page, weekdays_as_str, months_as_str):
     prev_month_button.click()
     month_after_click = month_dropdown.input_value()
     year_after_click = year_input.input_value()
-    assert valid_prev_month(
-        month_before_click, month_after_click, year_before_click, year_after_click
-    )
+    assert valid_prev_month(month_before_click, month_after_click, year_before_click, year_after_click)
 
     # change to next month
     year_before_click = year_input.input_value()
@@ -197,9 +232,7 @@ def test_datetimepicker_default(page, weekdays_as_str, months_as_str):
     next_month_button.click()
     month_after_click = month_dropdown.input_value()
     year_after_click = year_input.input_value()
-    assert valid_next_month(
-        month_before_click, month_after_click, year_before_click, year_after_click
-    )
+    assert valid_next_month(month_before_click, month_after_click, year_before_click, year_after_click)
 
     # TODO: check selected option for month dropdown
     # month_dropdown.click()
@@ -220,33 +253,33 @@ def test_datetimepicker_default(page, weekdays_as_str, months_as_str):
     assert int(year_before_click) == int(year_after_click) - 1
 
     # weekdays
-    weekdays_container = page.locator('.flatpickr-calendar .flatpickr-weekdays')
+    weekdays_container = page.locator(".flatpickr-calendar .flatpickr-weekdays")
     expect(weekdays_container).to_have_count(1)
     expect(weekdays_container).to_contain_text(weekdays_as_str, use_inner_text=True)
 
     # days
-    days_container = page.locator('.flatpickr-calendar .flatpickr-days')
+    days_container = page.locator(".flatpickr-calendar .flatpickr-days")
     expect(days_container).to_have_count(1)
     # only 1 date circled as current date
-    current_date = page.locator('.flatpickr-calendar .flatpickr-days .flatpickr-day.today')
+    current_date = page.locator(".flatpickr-calendar .flatpickr-days .flatpickr-day.today")
     expect(current_date).to_have_count(1)
 
     # time value
-    time_container = page.locator('.flatpickr-calendar .flatpickr-time')
+    time_container = page.locator(".flatpickr-calendar .flatpickr-time")
     expect(time_container).to_have_count(1)
 
-    time_inputs = page.locator('.flatpickr-calendar .flatpickr-time .numInputWrapper')
-    time_up_buttons = page.locator('.flatpickr-calendar .flatpickr-time .arrowUp')
-    time_down_buttons = page.locator('.flatpickr-calendar .flatpickr-time .arrowDown')
+    time_inputs = page.locator(".flatpickr-calendar .flatpickr-time .numInputWrapper")
+    time_up_buttons = page.locator(".flatpickr-calendar .flatpickr-time .arrowUp")
+    time_down_buttons = page.locator(".flatpickr-calendar .flatpickr-time .arrowDown")
     # 3 inputs and up/down buttons for hour, min, and sec
     expect(time_inputs).to_have_count(3)
     expect(time_up_buttons).to_have_count(3)
     expect(time_down_buttons).to_have_count(3)
     # 2 separators `:` hour:min:sec
-    time_separators = page.locator('.flatpickr-calendar .flatpickr-time .flatpickr-time-separator')
+    time_separators = page.locator(".flatpickr-calendar .flatpickr-time .flatpickr-time-separator")
     expect(time_separators).to_have_count(2)
 
-    hour_input = page.locator('.flatpickr-calendar .flatpickr-time .numInput.flatpickr-hour')
+    hour_input = page.locator(".flatpickr-calendar .flatpickr-time .numInput.flatpickr-hour")
     expect(hour_input).to_have_count(1)
     hour_up = time_up_buttons.nth(0)
     hour_down = time_down_buttons.nth(0)
@@ -263,7 +296,7 @@ def test_datetimepicker_default(page, weekdays_as_str, months_as_str):
     hour_after_click = hour_input.input_value()
     assert valid_next_time(hour_before_click, hour_after_click, max_value=24, amount=1)
 
-    min_input = page.locator('.flatpickr-calendar .flatpickr-time .numInput.flatpickr-minute')
+    min_input = page.locator(".flatpickr-calendar .flatpickr-time .numInput.flatpickr-minute")
     expect(min_input).to_have_count(1)
     min_up = time_up_buttons.nth(1)
     min_down = time_down_buttons.nth(1)
@@ -280,7 +313,7 @@ def test_datetimepicker_default(page, weekdays_as_str, months_as_str):
     min_after_click = min_input.input_value()
     assert valid_next_time(min_before_click, min_after_click, max_value=60, amount=5)
 
-    sec_input = page.locator('.flatpickr-calendar .flatpickr-time .numInput.flatpickr-second')
+    sec_input = page.locator(".flatpickr-calendar .flatpickr-time .numInput.flatpickr-second")
     expect(sec_input).to_have_count(1)
     sec_up = time_up_buttons.nth(2)
     sec_down = time_down_buttons.nth(2)
@@ -299,52 +332,49 @@ def test_datetimepicker_default(page, weekdays_as_str, months_as_str):
 
 
 def test_datetimepicker_value(page, march_2021, datetime_value_data):
-
     year, month, day, hour, min, sec, month_str, date_str, datetime_str = datetime_value_data
 
     march_2021_str, num_days, num_prev_month_days, num_next_month_days = march_2021
 
-    datetime_picker_widget = DatetimePicker(
-        value=datetime.datetime(year, month, day, hour, min, sec)
-    )
+    datetime_picker_widget = DatetimePicker(value=datetime.datetime(year, month, day, hour, min, sec))
 
     serve_component(page, datetime_picker_widget)
 
-    datetime_value = page.locator('.flatpickr-input')
+    datetime_value = page.locator(".flatpickr-input")
     assert datetime_value.input_value() == datetime_str
 
     # click to show the datetime picker container
     datetime_value.dblclick()
 
-    year_input = page.locator('.flatpickr-current-month .numInput.cur-year')
+    year_input = page.locator(".flatpickr-current-month .numInput.cur-year")
     assert int(year_input.input_value()) == year
 
     # days container contains all days of March and some days of previous month and next month
-    days_container = page.locator('.flatpickr-calendar .flatpickr-days .dayContainer')
+    days_container = page.locator(".flatpickr-calendar .flatpickr-days .dayContainer")
     expect(days_container).to_have_text(march_2021_str, use_inner_text=True)
 
-    prev_month_days = page.locator('.flatpickr-calendar .flatpickr-day.prevMonthDay')
+    prev_month_days = page.locator(".flatpickr-calendar .flatpickr-day.prevMonthDay")
     expect(prev_month_days).to_have_count(num_prev_month_days)
 
-    next_month_days = page.locator('.flatpickr-calendar .flatpickr-day.nextMonthDay')
+    next_month_days = page.locator(".flatpickr-calendar .flatpickr-day.nextMonthDay")
     expect(next_month_days).to_have_count(num_next_month_days)
 
-    all_days = page.locator('.flatpickr-calendar .flatpickr-day')
+    all_days = page.locator(".flatpickr-calendar .flatpickr-day")
     expect(all_days).to_have_count(num_days)
 
     # value of selected date
-    selected_day = page.locator('.flatpickr-calendar .flatpickr-day.selected')
-    assert selected_day.get_attribute('aria-label') == date_str
+    selected_day = page.locator(".flatpickr-calendar .flatpickr-day.selected")
+    assert selected_day.get_attribute("aria-label") == date_str
 
-    hour_input = page.locator('.flatpickr-calendar .flatpickr-time .numInput.flatpickr-hour')
+    hour_input = page.locator(".flatpickr-calendar .flatpickr-time .numInput.flatpickr-hour")
     assert int(hour_input.input_value()) == hour
-    min_input = page.locator('.flatpickr-calendar .flatpickr-time .numInput.flatpickr-minute')
+    min_input = page.locator(".flatpickr-calendar .flatpickr-time .numInput.flatpickr-minute")
     assert int(min_input.input_value()) == min
-    sec_input = page.locator('.flatpickr-calendar .flatpickr-time .numInput.flatpickr-second')
+    sec_input = page.locator(".flatpickr-calendar .flatpickr-time .numInput.flatpickr-second")
     assert int(sec_input.input_value()) == sec
 
-    time_up_buttons = page.locator('.flatpickr-calendar .flatpickr-time .arrowUp')
-    time_down_buttons = page.locator('.flatpickr-calendar .flatpickr-time .arrowDown')
+    time_up_buttons = page.locator(".flatpickr-calendar .flatpickr-time .arrowUp")
+    time_down_buttons = page.locator(".flatpickr-calendar .flatpickr-time .arrowDown")
     hour_up = time_up_buttons.nth(0)
     min_up = time_up_buttons.nth(1)
     sec_down = time_down_buttons.nth(2)
@@ -377,59 +407,55 @@ def test_datetimepicker_start_end(page, march_2021, datetime_start_end):
 
     serve_component(page, datetime_picker_widget)
 
-    datetime_value = page.locator('.flatpickr-input')
+    datetime_value = page.locator(".flatpickr-input")
     # click to show the datetime picker container
     datetime_value.dblclick()
 
     # days container contains all days of March and some days of previous month and next month
-    days_container = page.locator('.flatpickr-calendar .flatpickr-days .dayContainer')
+    days_container = page.locator(".flatpickr-calendar .flatpickr-days .dayContainer")
     expect(days_container).to_have_text(march_2021_str, use_inner_text=True)
 
     # disabled days
-    disabled_days = page.locator('.flatpickr-calendar .flatpickr-day.flatpickr-disabled')
+    disabled_days = page.locator(".flatpickr-calendar .flatpickr-day.flatpickr-disabled")
     expect(disabled_days).to_have_count(num_days - len(selectable_dates))
 
 
 def test_datetimepicker_disabled_dates(page, disabled_dates):
     active_date, disabled_list, disabled_str_list = disabled_dates
 
-    datetime_picker_widget = DatetimePicker(
-        disabled_dates=disabled_list, value=active_date
-    )
+    datetime_picker_widget = DatetimePicker(disabled_dates=disabled_list, value=active_date)
 
     serve_component(page, datetime_picker_widget)
 
     # click to show the datetime picker container
-    datetime_value = page.locator('.flatpickr-input')
+    datetime_value = page.locator(".flatpickr-input")
     datetime_value.dblclick()
 
     # disabled days
-    disabled_days = page.locator('.flatpickr-calendar .flatpickr-day.flatpickr-disabled')
+    disabled_days = page.locator(".flatpickr-calendar .flatpickr-day.flatpickr-disabled")
     expect(disabled_days).to_have_count(len(disabled_list))
     for i in range(len(disabled_list)):
-        assert disabled_days.nth(i).get_attribute('aria-label') == disabled_str_list[i]
+        assert disabled_days.nth(i).get_attribute("aria-label") == disabled_str_list[i]
 
 
 def test_datetimepicker_enabled_dates(page, march_2021, enabled_dates):
     active_date, enabled_list, enabled_str_list = enabled_dates
-    datetime_picker_widget = DatetimePicker(
-        enabled_dates=enabled_list, value=active_date
-    )
+    datetime_picker_widget = DatetimePicker(enabled_dates=enabled_list, value=active_date)
 
     serve_component(page, datetime_picker_widget)
 
     # click to show the datetime picker container
-    datetime_value = page.locator('.flatpickr-input')
+    datetime_value = page.locator(".flatpickr-input")
     datetime_value.dblclick()
 
     _, num_days, _, _ = march_2021
     # num disabled days
-    disabled_days = page.locator('.flatpickr-calendar .flatpickr-day.flatpickr-disabled')
+    disabled_days = page.locator(".flatpickr-calendar .flatpickr-day.flatpickr-disabled")
     expect(disabled_days).to_have_count(num_days - len(enabled_list))
 
     # enable all days
     datetime_picker_widget.enabled_dates = None
-    disabled_days = page.locator('.flatpickr-calendar .flatpickr-day.flatpickr-disabled')
+    disabled_days = page.locator(".flatpickr-calendar .flatpickr-day.flatpickr-disabled")
     expect(disabled_days).to_have_count(0)
 
 
@@ -439,10 +465,10 @@ def test_datetimepicker_enable_time(page):
     serve_component(page, datetime_picker_widget)
 
     # click to show the datetime picker container
-    page.locator('.flatpickr-input').dblclick()
+    page.locator(".flatpickr-input").dblclick()
 
     # no time editor
-    time_editor = page.locator('.flatpickr-calendar .flatpickr-time.time24hr.hasSeconds')
+    time_editor = page.locator(".flatpickr-calendar .flatpickr-time.time24hr.hasSeconds")
     expect(time_editor).to_have_count(0)
 
 
@@ -452,26 +478,26 @@ def test_datetimepicker_enable_seconds(page):
     serve_component(page, datetime_picker_widget)
 
     # click to show the datetime picker container
-    datetime_value = page.locator('.flatpickr-input')
+    datetime_value = page.locator(".flatpickr-input")
     datetime_value.dblclick()
 
     # no seconds in time editor
-    time_editor_with_sec = page.locator('.flatpickr-calendar .flatpickr-time.time24hr.hasSeconds')
+    time_editor_with_sec = page.locator(".flatpickr-calendar .flatpickr-time.time24hr.hasSeconds")
     expect(time_editor_with_sec).to_have_count(0)
 
     # time editor
-    time_editor_with_sec = page.locator('.flatpickr-calendar .flatpickr-time.time24hr')
+    time_editor_with_sec = page.locator(".flatpickr-calendar .flatpickr-time.time24hr")
     expect(time_editor_with_sec).to_have_count(1)
 
-    time_inputs = page.locator('.flatpickr-calendar .flatpickr-time .numInputWrapper')
-    time_up_buttons = page.locator('.flatpickr-calendar .flatpickr-time .arrowUp')
-    time_down_buttons = page.locator('.flatpickr-calendar .flatpickr-time .arrowDown')
+    time_inputs = page.locator(".flatpickr-calendar .flatpickr-time .numInputWrapper")
+    time_up_buttons = page.locator(".flatpickr-calendar .flatpickr-time .arrowUp")
+    time_down_buttons = page.locator(".flatpickr-calendar .flatpickr-time .arrowDown")
     # 2 inputs and up/down buttons for hour, min, no sec
     expect(time_inputs).to_have_count(2)
     expect(time_up_buttons).to_have_count(2)
     expect(time_down_buttons).to_have_count(2)
     # 1 separator `:` hour:min
-    time_separators = page.locator('.flatpickr-calendar .flatpickr-time .flatpickr-time-separator')
+    time_separators = page.locator(".flatpickr-calendar .flatpickr-time .flatpickr-time-separator")
     expect(time_separators).to_have_count(1)
 
 
@@ -481,21 +507,21 @@ def test_datetimepicker_military_time(page):
     serve_component(page, datetime_picker_widget)
 
     # click to show the datetime picker container
-    datetime_value = page.locator('.flatpickr-input')
+    datetime_value = page.locator(".flatpickr-input")
     datetime_value.dblclick()
 
     # no 24h format in time editor
-    time_editor_with_sec = page.locator('.flatpickr-calendar .flatpickr-time.time24hr.hasSeconds')
+    time_editor_with_sec = page.locator(".flatpickr-calendar .flatpickr-time.time24hr.hasSeconds")
     expect(time_editor_with_sec).to_have_count(0)
 
     # time editor
-    time_editor_with_sec = page.locator('.flatpickr-calendar .flatpickr-time.hasSeconds')
+    time_editor_with_sec = page.locator(".flatpickr-calendar .flatpickr-time.hasSeconds")
     expect(time_editor_with_sec).to_have_count(1)
 
-    time_inputs = page.locator('.flatpickr-calendar .flatpickr-time .numInputWrapper')
-    time_am_pm = page.locator('.flatpickr-calendar .flatpickr-time .flatpickr-am-pm')
-    time_up_buttons = page.locator('.flatpickr-calendar .flatpickr-time .arrowUp')
-    time_down_buttons = page.locator('.flatpickr-calendar .flatpickr-time .arrowDown')
+    time_inputs = page.locator(".flatpickr-calendar .flatpickr-time .numInputWrapper")
+    time_am_pm = page.locator(".flatpickr-calendar .flatpickr-time .flatpickr-am-pm")
+    time_up_buttons = page.locator(".flatpickr-calendar .flatpickr-time .arrowUp")
+    time_down_buttons = page.locator(".flatpickr-calendar .flatpickr-time .arrowDown")
     # 3 inputs and up/down buttons for hour, min, sec
     expect(time_inputs).to_have_count(3)
     expect(time_up_buttons).to_have_count(3)
@@ -503,10 +529,10 @@ def test_datetimepicker_military_time(page):
     # 1 am-pm toggle
     expect(time_am_pm).to_have_count(1)
     # 2 separators `:` hour:min:sec
-    time_separators = page.locator('.flatpickr-calendar .flatpickr-time .flatpickr-time-separator')
+    time_separators = page.locator(".flatpickr-calendar .flatpickr-time .flatpickr-time-separator")
     expect(time_separators).to_have_count(2)
 
-    hour_input = page.locator('.flatpickr-calendar .flatpickr-time .numInput.flatpickr-hour')
+    hour_input = page.locator(".flatpickr-calendar .flatpickr-time .numInput.flatpickr-hour")
     hour_up = time_up_buttons.nth(0)
     hour_down = time_down_buttons.nth(0)
 
@@ -530,44 +556,41 @@ def test_datetimepicker_disable_editing(page):
 
     serve_component(page, datetime_picker_widget)
 
-    expect(page.locator('.flatpickr-input')).to_have_attribute('disabled', 'true')
+    expect(page.locator(".flatpickr-input")).to_have_attribute("disabled", "true")
 
 
 def test_datetimepicker_visible(page):
     # add css class to search for name more easily
-    datetime_picker_widget = DatetimePicker(
-        visible=False, css_classes=['invisible-datetimepicker']
-    )
+    datetime_picker_widget = DatetimePicker(visible=False, css_classes=["invisible-datetimepicker"])
 
     serve_component(page, datetime_picker_widget)
 
-    expect(page.locator('.invisible-datetimepicker')).to_have_css('display', 'none')
+    expect(page.locator(".invisible-datetimepicker")).to_have_css("display", "none")
 
 
 def test_datetimepicker_name(page):
-    name = 'Datetime Picker'
+    name = "Datetime Picker"
     # add css class to search for name more easily
-    datetime_picker_widget = DatetimePicker(
-        name=name, css_classes=['datetimepicker-with-name']
-    )
+    datetime_picker_widget = DatetimePicker(name=name, css_classes=["datetimepicker-with-name"])
 
     serve_component(page, datetime_picker_widget)
 
-    expect(page.locator('.datetimepicker-with-name > .bk-input-group > label')).to_have_text(name)
+    expect(page.locator(".datetimepicker-with-name > .bk-input-group > label")).to_have_text(name)
+
 
 def test_datetimepicker_no_value(page, datetime_start_end):
     datetime_picker_widget = DatetimePicker()
 
     serve_component(page, datetime_picker_widget)
 
-    datetime_picker = page.locator('.flatpickr-input')
+    datetime_picker = page.locator(".flatpickr-input")
     assert datetime_picker.input_value() == ""
 
     datetime_picker_widget.value = datetime_start_end[0]
-    wait_until(lambda: datetime_picker.input_value() == '2021-03-02 00:00:00', page)
+    wait_until(lambda: datetime_picker.input_value() == "2021-03-02 00:00:00", page)
 
     datetime_picker_widget.value = None
-    wait_until(lambda: datetime_picker.input_value() == '', page)
+    wait_until(lambda: datetime_picker.input_value() == "", page)
 
 
 def test_datetimerangepicker_no_value(page, datetime_start_end):
@@ -575,16 +598,16 @@ def test_datetimerangepicker_no_value(page, datetime_start_end):
 
     serve_component(page, datetime_picker_widget)
 
-    datetime_picker = page.locator('.flatpickr-input')
+    datetime_picker = page.locator(".flatpickr-input")
     assert datetime_picker.input_value() == ""
 
     datetime_picker_widget.value = datetime_start_end[:2]
-    expected = '2021-03-02 00:00:00 to 2021-03-03 00:00:00'
+    expected = "2021-03-02 00:00:00 to 2021-03-03 00:00:00"
     wait_until(lambda: datetime_picker.input_value() == expected, page)
 
     datetime_picker_widget.value = None
 
-    wait_until(lambda: datetime_picker.input_value() == '', page)
+    wait_until(lambda: datetime_picker.input_value() == "", page)
 
 
 def test_datetimepicker_remove_value(page, datetime_start_end):
@@ -592,7 +615,7 @@ def test_datetimepicker_remove_value(page, datetime_start_end):
 
     serve_component(page, datetime_picker_widget)
 
-    datetime_picker = page.locator('.flatpickr-input')
+    datetime_picker = page.locator(".flatpickr-input")
     assert datetime_picker.input_value() == "2021-03-02 00:00:00"
 
     # Remove values from the browser
@@ -608,7 +631,7 @@ def test_text_area_auto_grow_init(page):
 
     serve_component(page, text_area)
 
-    expect(page.locator('.bk-input')).to_have_js_property('rows', 5)
+    expect(page.locator(".bk-input")).to_have_js_property("rows", 5)
 
 
 def test_text_area_auto_grow(page):
@@ -616,13 +639,13 @@ def test_text_area_auto_grow(page):
 
     serve_component(page, text_area)
 
-    input_area = page.locator('.bk-input')
+    input_area = page.locator(".bk-input")
     input_area.click()
-    input_area.press('Enter')
-    input_area.press('Enter')
-    input_area.press('Enter')
+    input_area.press("Enter")
+    input_area.press("Enter")
+    input_area.press("Enter")
 
-    expect(page.locator('.bk-input')).to_have_js_property('rows', 8)
+    expect(page.locator(".bk-input")).to_have_js_property("rows", 8)
 
 
 def test_text_area_auto_grow_max_rows(page):
@@ -630,13 +653,13 @@ def test_text_area_auto_grow_max_rows(page):
 
     serve_component(page, text_area)
 
-    input_area = page.locator('.bk-input')
+    input_area = page.locator(".bk-input")
     input_area.click()
-    input_area.press('Enter')
-    input_area.press('Enter')
-    input_area.press('Enter')
+    input_area.press("Enter")
+    input_area.press("Enter")
+    input_area.press("Enter")
 
-    expect(page.locator('.bk-input')).to_have_js_property('rows', 7)
+    expect(page.locator(".bk-input")).to_have_js_property("rows", 7)
 
 
 def test_text_area_auto_grow_min_rows(page):
@@ -644,14 +667,14 @@ def test_text_area_auto_grow_min_rows(page):
 
     serve_component(page, text_area)
 
-    input_area = page.locator('.bk-input')
+    input_area = page.locator(".bk-input")
     input_area.click()
     for _ in range(5):
-        input_area.press('ArrowDown')
+        input_area.press("ArrowDown")
     for _ in range(10):
-        input_area.press('Backspace')
+        input_area.press("Backspace")
 
-    expect(page.locator('.bk-input')).to_have_js_property('rows', 3)
+    expect(page.locator(".bk-input")).to_have_js_property("rows", 3)
 
 
 def test_text_area_auto_grow_shrink_back_on_new_value(page):
@@ -659,13 +682,13 @@ def test_text_area_auto_grow_shrink_back_on_new_value(page):
 
     serve_component(page, text_area)
 
-    input_area = page.locator('.bk-input')
+    input_area = page.locator(".bk-input")
     input_area.click()
     for _ in range(5):
-        input_area.press('ArrowDown')
+        input_area.press("ArrowDown")
     for _ in range(10):
-        input_area.press('Backspace')
+        input_area.press("Backspace")
 
     text_area.value = ""
 
-    expect(page.locator('.bk-input')).to_have_js_property('rows', 2)
+    expect(page.locator(".bk-input")).to_have_js_property("rows", 2)

@@ -62,5 +62,5 @@ __all__ = (
     "Swipe",
     "Tabs",
     "VSpacer",
-    "WidgetBox"
+    "WidgetBox",
 )

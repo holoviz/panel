@@ -45,9 +45,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
         avatar: str = DEFAULT_AVATARS["langchain"],
     ):
         if BaseCallbackHandler is object:
-            raise ImportError(
-                "LangChainCallbackHandler requires `langchain` to be installed."
-            )
+            raise ImportError("LangChainCallbackHandler requires `langchain` to be installed.")
         self.instance = instance
         self._message = None
         self._active_user = user
@@ -119,9 +117,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
     def on_agent_finish(self, finish: AgentFinish, *args, **kwargs: Any) -> Any:
         return super().on_agent_finish(finish, *args, **kwargs)
 
-    def on_tool_start(
-        self, serialized: Dict[str, Any], input_str: str, *args, **kwargs
-    ):
+    def on_tool_start(self, serialized: Dict[str, Any], input_str: str, *args, **kwargs):
         self._update_active(DEFAULT_AVATARS["tool"], serialized["name"])
         self._stream(f"Tool input: {input_str}")
         return super().on_tool_start(serialized, input_str, *args, **kwargs)
@@ -131,14 +127,10 @@ class PanelCallbackHandler(BaseCallbackHandler):
         self._reset_active()
         return super().on_tool_end(output, *args, **kwargs)
 
-    def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], *args, **kwargs
-    ):
+    def on_tool_error(self, error: Union[Exception, KeyboardInterrupt], *args, **kwargs):
         return super().on_tool_error(error, *args, **kwargs)
 
-    def on_chain_start(
-        self, serialized: Dict[str, Any], inputs: Dict[str, Any], *args, **kwargs
-    ):
+    def on_chain_start(self, serialized: Dict[str, Any], inputs: Dict[str, Any], *args, **kwargs):
         self._disabled_state = self.instance.disabled
         self.instance.disabled = True
         return super().on_chain_start(serialized, inputs, *args, **kwargs)
@@ -147,16 +139,14 @@ class PanelCallbackHandler(BaseCallbackHandler):
         self.instance.disabled = self._disabled_state
         return super().on_chain_end(outputs, *args, **kwargs)
 
-    def on_retriever_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> Any:
+    def on_retriever_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> Any:
         """Run when Retriever errors."""
         return super().on_retriever_error(error, **kwargs)
 
     def on_retriever_end(self, documents, **kwargs: Any) -> Any:
         """Run when Retriever ends running."""
         objects = [(f"Document {index}", document.page_content) for index, document in enumerate(documents)]
-        message = Accordion(*objects, sizing_mode="stretch_width", margin=(10,13,10,5))
+        message = Accordion(*objects, sizing_mode="stretch_width", margin=(10, 13, 10, 5))
         self.instance.send(
             message,
             user="LangChain (retriever)",
@@ -169,12 +159,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
         """Run when text is received."""
         return super().on_text(text, **kwargs)
 
-    def on_chat_model_start(
-        self,
-        serialized: Dict[str, Any],
-        messages: List,
-        **kwargs: Any
-    ) -> None:
+    def on_chat_model_start(self, serialized: Dict[str, Any], messages: List, **kwargs: Any) -> None:
         """
         To prevent the inherited class from raising
         NotImplementedError, will not call super() here.

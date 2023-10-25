@@ -51,60 +51,98 @@ def _convert_datetime_array_ignore_list(v):
         return convert_datetime_array(v)
     return v
 
-class BaseTable(ReactiveData, Widget):
 
-    aggregators = param.Dict(default={}, nested_refs=True, doc="""
+class BaseTable(ReactiveData, Widget):
+    aggregators = param.Dict(
+        default={},
+        nested_refs=True,
+        doc="""
         A dictionary mapping from index name to an aggregator to
         be used for hierarchical multi-indexes (valid aggregators
         include 'min', 'max', 'mean' and 'sum'). If separate
         aggregators for different columns are required the dictionary
-        may be nested as `{index_name: {column_name: aggregator}}`""")
+        may be nested as `{index_name: {column_name: aggregator}}`""",
+    )
 
-    editors = param.Dict(default={}, nested_refs=True, doc="""
+    editors = param.Dict(
+        default={},
+        nested_refs=True,
+        doc="""
         Bokeh CellEditor to use for a particular column
-        (overrides the default chosen based on the type).""")
+        (overrides the default chosen based on the type).""",
+    )
 
-    formatters = param.Dict(default={}, nested_refs=True, doc="""
+    formatters = param.Dict(
+        default={},
+        nested_refs=True,
+        doc="""
         Bokeh CellFormatter to use for a particular column
-        (overrides the default chosen based on the type).""")
+        (overrides the default chosen based on the type).""",
+    )
 
-    hierarchical = param.Boolean(default=False, constant=True, doc="""
-        Whether to generate a hierarchical index.""")
+    hierarchical = param.Boolean(
+        default=False,
+        constant=True,
+        doc="""
+        Whether to generate a hierarchical index.""",
+    )
 
-    row_height = param.Integer(default=40, doc="""
-        The height of each table row.""")
+    row_height = param.Integer(
+        default=40,
+        doc="""
+        The height of each table row.""",
+    )
 
-    selection = param.List(default=[], doc="""
-        The currently selected rows of the table.""")
+    selection = param.List(
+        default=[],
+        doc="""
+        The currently selected rows of the table.""",
+    )
 
-    show_index = param.Boolean(default=True, doc="""
-        Whether to show the index column.""")
+    show_index = param.Boolean(
+        default=True,
+        doc="""
+        Whether to show the index column.""",
+    )
 
-    sorters = param.List(default=[], doc="""
-        A list of sorters to apply during pagination.""")
+    sorters = param.List(
+        default=[],
+        doc="""
+        A list of sorters to apply during pagination.""",
+    )
 
-    text_align = param.ClassSelector(default={}, nested_refs=True, class_=(dict, str), doc="""
+    text_align = param.ClassSelector(
+        default={},
+        nested_refs=True,
+        class_=(dict, str),
+        doc="""
         A mapping from column name to alignment or a fixed column
-        alignment, which should be one of 'left', 'center', 'right'.""")
+        alignment, which should be one of 'left', 'center', 'right'.""",
+    )
 
-    titles = param.Dict(default={}, nested_refs=True, doc="""
-        A mapping from column name to a title to override the name with.""")
+    titles = param.Dict(
+        default={},
+        nested_refs=True,
+        doc="""
+        A mapping from column name to a title to override the name with.""",
+    )
 
-    widths = param.ClassSelector(default={}, nested_refs=True, class_=(dict, int), doc="""
+    widths = param.ClassSelector(
+        default={},
+        nested_refs=True,
+        class_=(dict, int),
+        doc="""
         A mapping from column name to column width or a fixed column
-        width.""")
+        width.""",
+    )
 
     value = param.Parameter(default=None)
 
-    _data_params: ClassVar[List[str]] = ['value']
+    _data_params: ClassVar[List[str]] = ["value"]
 
-    _manual_params: ClassVar[List[str]] = [
-        'formatters', 'editors', 'widths', 'titles', 'value', 'show_index'
-    ]
+    _manual_params: ClassVar[List[str]] = ["formatters", "editors", "widths", "titles", "value", "show_index"]
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
-        'hierarchical': None, 'name': None, 'selection': None
-    }
+    _rename: ClassVar[Mapping[str, str | None]] = {"hierarchical": None, "name": None, "selection": None}
 
     __abstract = True
 
@@ -114,18 +152,16 @@ class BaseTable(ReactiveData, Widget):
         self._index_mapping = {}
         self._edited_indexes = []
         super().__init__(value=value, **params)
-        self.param.watch(self._setup_on_change, ['editors', 'formatters'])
-        self.param.trigger('editors')
-        self.param.trigger('formatters')
+        self.param.watch(self._setup_on_change, ["editors", "formatters"])
+        self.param.trigger("editors")
+        self.param.trigger("formatters")
 
-    @param.depends('value', watch=True, on_init=True)
+    @param.depends("value", watch=True, on_init=True)
     def _compute_renamed_cols(self):
         if self.value is None:
             self._renamed_cols.clear()
             return
-        self._renamed_cols = {
-            str(col) if str(col) != col else col: col for col in self._get_fields()
-        }
+        self._renamed_cols = {str(col) if str(col) != col else col: col for col in self._get_fields()}
 
     @property
     def _length(self):
@@ -136,8 +172,7 @@ class BaseTable(ReactiveData, Widget):
             return
         cols = self.value.columns
         if len(cols) != len(cols.drop_duplicates()):
-            raise ValueError('Cannot display a pandas.DataFrame with '
-                             'duplicate column names.')
+            raise ValueError("Cannot display a pandas.DataFrame with " "duplicate column names.")
 
     def _get_fields(self) -> List[str]:
         indexes = self.indexes
@@ -159,6 +194,7 @@ class BaseTable(ReactiveData, Widget):
 
     def _get_column_definitions(self, col_names: List[str], df: pd.DataFrame) -> List[TableColumn]:
         import pandas as pd
+
         indexes = self.indexes
         columns = []
         for col in col_names:
@@ -177,21 +213,21 @@ class BaseTable(ReactiveData, Widget):
             kind = data.dtype.kind
             editor: CellEditor
             formatter: CellFormatter
-            if kind == 'i':
-                formatter = NumberFormatter(text_align='right')
+            if kind == "i":
+                formatter = NumberFormatter(text_align="right")
                 editor = IntEditor()
-            elif kind == 'b':
-                formatter = StringFormatter(text_align='center')
+            elif kind == "b":
+                formatter = StringFormatter(text_align="center")
                 editor = CheckboxEditor()
-            elif kind == 'f':
-                formatter = NumberFormatter(format='0,0.0[00000]', text_align='right')
+            elif kind == "f":
+                formatter = NumberFormatter(format="0,0.0[00000]", text_align="right")
                 editor = NumberEditor()
-            elif isdatetime(data) or kind == 'M':
+            elif isdatetime(data) or kind == "M":
                 if len(data) and isinstance(data.values[0], dt.date):
-                    date_format = '%Y-%m-%d'
+                    date_format = "%Y-%m-%d"
                 else:
-                    date_format = '%Y-%m-%d %H:%M:%S'
-                formatter = DateFormatter(format=date_format, text_align='right')
+                    date_format = "%Y-%m-%d %H:%M:%S"
+                formatter = DateFormatter(format=date_format, text_align="right")
                 editor = DateEditor()
             else:
                 formatter = StringFormatter()
@@ -202,7 +238,7 @@ class BaseTable(ReactiveData, Widget):
             elif col in self.text_align:
                 formatter.text_align = self.text_align[col]
             elif col in self.indexes:
-                formatter.text_align = 'left'
+                formatter.text_align = "left"
 
             if col in self.editors and not isinstance(self.editors[col], (dict, str)):
                 editor = self.editors[col]
@@ -218,20 +254,18 @@ class BaseTable(ReactiveData, Widget):
                     formatter = clone_model(formatter)
 
             if isinstance(self.widths, int):
-                col_kwargs['width'] = self.widths
+                col_kwargs["width"] = self.widths
             elif str(col) in self.widths and isinstance(self.widths.get(str(col)), int):
-                col_kwargs['width'] = self.widths.get(str(col))
+                col_kwargs["width"] = self.widths.get(str(col))
             else:
-                col_kwargs['width'] = 0
+                col_kwargs["width"] = 0
 
             title = self.titles.get(col, str(col))
             if col in indexes and len(indexes) > 1 and self.hierarchical:
-                title = 'Index: %s' % ' | '.join(indexes)
-            elif col in self.indexes and col.startswith('level_'):
-                title = ''
-            column = TableColumn(field=str(col), title=title,
-                                 editor=editor, formatter=formatter,
-                                 **col_kwargs)
+                title = "Index: %s" % " | ".join(indexes)
+            elif col in self.indexes and col.startswith("level_"):
+                title = ""
+            column = TableColumn(field=str(col), title=title, editor=editor, formatter=formatter, **col_kwargs)
             columns.append(column)
         return columns
 
@@ -245,7 +279,7 @@ class BaseTable(ReactiveData, Widget):
             if not isinstance(model, (CellEditor, CellFormatter)):
                 continue
             change_fn = self._editor_change if isinstance(model, CellEditor) else self._formatter_change
-            for prop in (model.properties() - Model.properties()):
+            for prop in model.properties() - Model.properties():
                 try:
                     model.remove_on_change(prop, change_fn)
                 except ValueError:
@@ -254,23 +288,20 @@ class BaseTable(ReactiveData, Widget):
             if not isinstance(model, (CellEditor, CellFormatter)):
                 continue
             change_fn = self._editor_change if isinstance(model, CellEditor) else self._formatter_change
-            for prop in (model.properties() - Model.properties()):
+            for prop in model.properties() - Model.properties():
                 model.on_change(prop, change_fn)
 
     def _editor_change(self, attr: str, new: Any, old: Any):
-        self.param.trigger('editors')
+        self.param.trigger("editors")
 
     def _formatter_change(self, attr: str, new: Any, old: Any):
-        self.param.trigger('formatters')
+        self.param.trigger("formatters")
 
     def _update_index_mapping(self):
         if self._processed is None or isinstance(self._processed, list) and not self._processed:
             self._index_mapping = {}
             return
-        self._index_mapping = {
-            i: index
-            for i, index in enumerate(self._processed.index)
-        }
+        self._index_mapping = {i: index for i, index in enumerate(self._processed.index)}
 
     @updating
     def _update_cds(self, *events: param.parameterized.Event):
@@ -290,97 +321,92 @@ class BaseTable(ReactiveData, Widget):
                     continue
             self.selection = selection
         self._data = {k: _convert_datetime_array_ignore_list(v) for k, v in data.items()}
-        msg = {'data': self._data}
+        msg = {"data": self._data}
         for ref, (m, _) in self._models.items():
             self._apply_update(events, msg, m.source, ref)
 
     def _process_param_change(self, params):
-        if 'disabled' in params:
-            params['editable'] = not params.pop('disabled') and len(self.indexes) <= 1
+        if "disabled" in params:
+            params["editable"] = not params.pop("disabled") and len(self.indexes) <= 1
         params = super()._process_param_change(params)
         return params
 
     def _get_properties(self, doc: Document) -> Dict[str, Any]:
         properties = super()._get_properties(doc)
-        properties['columns'] = self._get_columns()
-        properties['source']  = cds = ColumnDataSource(data=self._data)
+        properties["columns"] = self._get_columns()
+        properties["source"] = cds = ColumnDataSource(data=self._data)
         cds.selected.indices = self.selection
         return properties
 
-    def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
-    ) -> Model:
+    def _get_model(self, doc: Document, root: Optional[Model] = None, parent: Optional[Model] = None, comm: Optional[Comm] = None) -> Model:
         properties = self._get_properties(doc)
         model = self._widget_type(**properties)
         root = root or model
-        self._link_props(model.source, ['data'], doc, root, comm)
-        self._link_props(model.source.selected, ['indices'], doc, root, comm)
-        self._models[root.ref['id']] = (model, parent)
+        self._link_props(model.source, ["data"], doc, root, comm)
+        self._link_props(model.source.selected, ["indices"], doc, root, comm)
+        self._models[root.ref["id"]] = (model, parent)
         return model
 
     def _update_columns(self, event: param.parameterized.Event, model: Model):
-        if event.name == 'value' and [c.field for c in model.columns] == self._get_fields():
+        if event.name == "value" and [c.field for c in model.columns] == self._get_fields():
             # Skip column update if the data has changed but the columns
             # have not
             return
         model.columns = self._get_columns()
 
     def _manual_update(
-        self, events: Tuple[param.parameterized.Event, ...], model: Model, doc: Document,
-        root: Model, parent: Optional[Model], comm: Optional[Comm]
+        self, events: Tuple[param.parameterized.Event, ...], model: Model, doc: Document, root: Model, parent: Optional[Model], comm: Optional[Comm]
     ) -> None:
         for event in events:
-            if event.type == 'triggered' and self._updating:
+            if event.type == "triggered" and self._updating:
                 continue
-            elif event.name in ('value', 'show_index'):
+            elif event.name in ("value", "show_index"):
                 self._update_columns(event, model)
                 if isinstance(model, DataCube):
                     model.groupings = self._get_groupings()
-            elif hasattr(self, '_update_' + event.name):
-                getattr(self, '_update_' + event.name)(model)
+            elif hasattr(self, "_update_" + event.name):
+                getattr(self, "_update_" + event.name)(model)
             else:
                 self._update_columns(event, model)
 
     def _sort_df(self, df: pd.DataFrame) -> pd.DataFrame:
         if not self.sorters:
             return df
-        fields = [self._renamed_cols.get(s['field'], s['field']) for s in self.sorters]
-        ascending = [s['dir'] == 'asc' for s in self.sorters]
+        fields = [self._renamed_cols.get(s["field"], s["field"]) for s in self.sorters]
+        ascending = [s["dir"] == "asc" for s in self.sorters]
 
         # Temporarily add _index_ column because Tabulator uses internal _index
         # as additional sorter to break ties
-        df['_index_'] = np.arange(len(df)).astype(str)
-        fields.append('_index_')
+        df["_index_"] = np.arange(len(df)).astype(str)
+        fields.append("_index_")
         ascending.append(True)
 
         # Handle sort on index column if show_index=True
         if self.show_index:
-            rename = 'index' in fields and df.index.name is None
+            rename = "index" in fields and df.index.name is None
             if rename:
-                df.index.name = 'index'
+                df.index.name = "index"
         else:
             rename = False
 
         def tabulator_sorter(col):
             # Tabulator JS defines its own sorting algorithm:
             # - strings's case isn't taken into account
-            if col.dtype.kind not in 'SUO':
+            if col.dtype.kind not in "SUO":
                 return col
             try:
                 return col.fillna("").str.lower()
             except Exception:
                 return col
 
-        df_sorted = df.sort_values(fields, ascending=ascending, kind='mergesort',
-                                  key=tabulator_sorter)
+        df_sorted = df.sort_values(fields, ascending=ascending, kind="mergesort", key=tabulator_sorter)
 
         # Revert temporary changes to DataFrames
         if rename:
             df.index.name = None
             df_sorted.index.name = None
-        df.drop(columns=['_index_'], inplace=True)
-        df_sorted.drop(columns=['_index_'], inplace=True)
+        df.drop(columns=["_index_"], inplace=True)
+        df_sorted.drop(columns=["_index_"], inplace=True)
         return df_sorted
 
     def _filter_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -422,15 +448,13 @@ class BaseTable(ReactiveData, Widget):
                 if start is None and end is None:
                     continue
                 elif start is None:
-                    mask = column<=end
+                    mask = column <= end
                 elif end is None:
-                    mask = column>=start
+                    mask = column >= start
                 else:
-                    mask = (column>=start) & (column<=end)
+                    mask = (column >= start) & (column <= end)
             else:
-                raise ValueError(f"'{col_name} filter value not "
-                                 "understood. Must be either a scalar, "
-                                 "tuple or list.")
+                raise ValueError(f"'{col_name} filter value not " "understood. Must be either a scalar, " "tuple or list.")
             filters.append(mask)
 
         filters.extend(self._get_header_filters(df))
@@ -440,18 +464,18 @@ class BaseTable(ReactiveData, Widget):
             for f in filters:
                 mask &= f
             if self._edited_indexes:
-                edited_mask = (df.index.isin(self._edited_indexes))
+                edited_mask = df.index.isin(self._edited_indexes)
                 mask = mask | edited_mask
             df = df[mask]
         return df
 
     def _get_header_filters(self, df):
         filters = []
-        for filt in getattr(self, 'filters', []):
-            col_name = filt['field']
-            op = filt['type']
-            val = filt['value']
-            filt_def = getattr(self, 'header_filters', {}) or {}
+        for filt in getattr(self, "filters", []):
+            col_name = filt["field"]
+            op = filt["type"]
+            val = filt["value"]
+            filt_def = getattr(self, "header_filters", {}) or {}
             if col_name in df.columns:
                 col = df[col_name]
             elif col_name in self.indexes:
@@ -470,30 +494,31 @@ class BaseTable(ReactiveData, Widget):
                     continue
 
             val = col.dtype.type(val)
-            if op == '=':
+            if op == "=":
                 filters.append(col == val)
-            elif op == '!=':
+            elif op == "!=":
                 filters.append(col != val)
-            elif op == '<':
+            elif op == "<":
                 filters.append(col < val)
-            elif op == '>':
+            elif op == ">":
                 filters.append(col > val)
-            elif op == '>=':
+            elif op == ">=":
                 filters.append(col >= val)
-            elif op == '<=':
+            elif op == "<=":
                 filters.append(col <= val)
-            elif op == 'in':
-                if not isinstance(val, (list, np.ndarray)): val = [val]
+            elif op == "in":
+                if not isinstance(val, (list, np.ndarray)):
+                    val = [val]
                 filters.append(col.isin(val))
-            elif op == 'like':
+            elif op == "like":
                 filters.append(col.str.contains(val, case=False, regex=False))
-            elif op == 'starts':
+            elif op == "starts":
                 filters.append(col.str.startsWith(val))
-            elif op == 'ends':
+            elif op == "ends":
                 filters.append(col.str.endsWith(val))
-            elif op == 'keywords':
-                match_all = filt_def.get(col_name, {}).get('matchAll', False)
-                sep = filt_def.get(col_name, {}).get('separator', ' ')
+            elif op == "keywords":
+                match_all = filt_def.get(col_name, {}).get("matchAll", False)
+                sep = filt_def.get(col_name, {}).get("separator", " ")
                 matches = val.split(sep)
                 if match_all:
                     for match in matches:
@@ -503,7 +528,7 @@ class BaseTable(ReactiveData, Widget):
                     for match in matches[1:]:
                         filt |= col.str.contains(match, case=False, regex=False)
                     filters.append(filt)
-            elif op == 'regex':
+            elif op == "regex":
                 raise ValueError("Regex filtering not supported.")
             else:
                 raise ValueError(f"Filter type {op!r} not recognized.")
@@ -542,17 +567,13 @@ class BaseTable(ReactiveData, Widget):
         if isinstance(filter, (tuple, list, set)) or np.isscalar(filter):
             deps = []
         elif isinstance(filter, (FunctionType, MethodType)):
-            deps = list(filter._dinfo['kw'].values()) if hasattr(filter, '_dinfo') else []
+            deps = list(filter._dinfo["kw"].values()) if hasattr(filter, "_dinfo") else []
         else:
             filter = transform_reference(filter)
             if not isinstance(filter, param.Parameter):
-                raise ValueError(f'{type(self).__name__} filter must be '
-                                 'a constant value, parameter, widget '
-                                 'or function.')
+                raise ValueError(f"{type(self).__name__} filter must be " "a constant value, parameter, widget " "or function.")
             elif column is None:
-                raise ValueError('When filtering with a parameter or '
-                                 'widget, a column to filter on must be '
-                                 'declared.')
+                raise ValueError("When filtering with a parameter or " "widget, a column to filter on must be " "declared.")
             deps = [filter]
         for dep in deps:
             dep.owner.param.watch(self._update_cds, dep.name)
@@ -563,8 +584,7 @@ class BaseTable(ReactiveData, Widget):
         """
         Removes a filter which was previously added.
         """
-        self._filters = [(column, filt) for (column, filt) in self._filters
-                         if filt is not filter]
+        self._filters = [(column, filt) for (column, filt) in self._filters if filt is not filter]
         self._update_cds()
 
     def _process_column(self, values):
@@ -580,16 +600,14 @@ class BaseTable(ReactiveData, Widget):
 
     def _process_df_and_convert_to_cds(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, DataDict]:
         import pandas as pd
+
         df = self._filter_dataframe(df)
         if df is None:
             return [], {}
         if isinstance(self.value.index, pd.MultiIndex):
-            indexes = [
-                f'level_{i}' if n is None else n
-                for i, n in enumerate(df.index.names)
-            ]
+            indexes = [f"level_{i}" if n is None else n for i, n in enumerate(df.index.names)]
         else:
-            default_index = ('level_0' if 'index' in df.columns else 'index')
+            default_index = "level_0" if "index" in df.columns else "index"
             indexes = [df.index.name or default_index]
         if len(indexes) > 1:
             df = df.reset_index()
@@ -603,24 +621,22 @@ class BaseTable(ReactiveData, Widget):
 
         self.value[column] = array
         if self._processed is not None and self.value is not self._processed:
-            with pd.option_context('mode.chained_assignment', None):
+            with pd.option_context("mode.chained_assignment", None):
                 self._processed[column] = array
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Public API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
     @property
     def indexes(self):
         import pandas as pd
+
         if self.value is None or not self.show_index:
             return []
         elif isinstance(self.value.index, pd.MultiIndex):
-            return [
-                f'level_{i}' if n is None else n
-                for i, n in enumerate(self.value.index.names)
-            ]
-        default_index = ('level_0' if 'index' in self.value.columns else 'index')
+            return [f"level_{i}" if n is None else n for i, n in enumerate(self.value.index.names)]
+        default_index = "level_0" if "index" in self.value.columns else "index"
         return [self.value.index.name or default_index]
 
     def stream(self, stream_value, rollover=None, reset_index=True):
@@ -698,7 +714,7 @@ class BaseTable(ReactiveData, Widget):
                 self.value = combined
             try:
                 self._updating = True
-                self.param.trigger('value')
+                self.param.trigger("value")
             finally:
                 self._updating = False
             stream_value, stream_data = self._process_df_and_convert_to_cds(stream_value)
@@ -783,22 +799,16 @@ class BaseTable(ReactiveData, Widget):
             raise ValueError(f"Cannot patch empty {type(self).__name__}.")
 
         import pandas as pd
+
         if not isinstance(self.value, pd.DataFrame):
-            raise ValueError(
-                f"Patching an object of type {type(self.value).__name__} "
-                "is not supported. Please provide a dict."
-            )
+            raise ValueError(f"Patching an object of type {type(self.value).__name__} " "is not supported. Please provide a dict.")
 
         if isinstance(patch_value, pd.DataFrame):
-            patch_value_dict = {
-                column: list(patch_value[column].items()) for column in patch_value.columns
-            }
+            patch_value_dict = {column: list(patch_value[column].items()) for column in patch_value.columns}
             self.patch(patch_value_dict, as_index=as_index)
         elif isinstance(patch_value, pd.Series):
             if "index" in patch_value:  # Series orient is row
-                patch_value_dict = {
-                    k: [(patch_value["index"], v)] for k, v in patch_value.items()
-                }
+                patch_value_dict = {k: [(patch_value["index"], v)] for k, v in patch_value.items()}
                 patch_value_dict.pop("index")
             else:  # Series orient is column
                 patch_value_dict = {patch_value.name: list(patch_value.items())}
@@ -808,7 +818,7 @@ class BaseTable(ReactiveData, Widget):
             patches = {}
             for k, v in patch_value.items():
                 values = []
-                for (patch_ind, value) in v:
+                for patch_ind, value in v:
                     data_ind = patch_ind
                     if isinstance(patch_ind, slice):
                         data_ind = range(patch_ind.start, patch_ind.stop, patch_ind.step or 1)
@@ -816,10 +826,7 @@ class BaseTable(ReactiveData, Widget):
                         if not isinstance(data_ind, range):
                             patch_ind = self.value.index.get_loc(patch_ind)
                             if not isinstance(patch_ind, int):
-                                raise ValueError(
-                                    'Patching a table with duplicate index values is not supported. '
-                                    f'Found this duplicate index: {data_ind!r}'
-                                )
+                                raise ValueError("Patching a table with duplicate index values is not supported. " f"Found this duplicate index: {data_ind!r}")
                         self.value.loc[data_ind, k] = value
                     else:
                         self.value.iloc[data_ind, columns.index(k)] = value
@@ -831,10 +838,7 @@ class BaseTable(ReactiveData, Widget):
                 patches[k] = values
             self._patch(patches)
         else:
-            raise ValueError(
-                f"Patching with a patch_value of type {type(patch_value).__name__} "
-                "is not supported. Please provide a DataFrame, Series or Dict."
-            )
+            raise ValueError(f"Patching with a patch_value of type {type(patch_value).__name__} " "is not supported. Please provide a DataFrame, Series or Dict.")
 
     @property
     def current_view(self):
@@ -873,11 +877,16 @@ class DataFrame(BaseTable):
     >>> DataFrame(df, name='DataFrame')
     """
 
-    auto_edit = param.Boolean(default=False, doc="""
-        Whether clicking on a table cell automatically starts edit mode.""")
+    auto_edit = param.Boolean(
+        default=False,
+        doc="""
+        Whether clicking on a table cell automatically starts edit mode.""",
+    )
 
-    autosize_mode = param.ObjectSelector(default='force_fit', objects=[
-        "none", "fit_columns", "fit_viewport", "force_fit"], doc="""
+    autosize_mode = param.ObjectSelector(
+        default="force_fit",
+        objects=["none", "fit_columns", "fit_viewport", "force_fit"],
+        doc="""
 
         Determines the column autosizing mode, as one of the following options:
 
@@ -898,49 +907,60 @@ class DataFrame(BaseTable):
           can get unreadable if there is not enough space available.
 
         ``"none"``
-          Do not automatically compute column widths.""")
+          Do not automatically compute column widths.""",
+    )
 
-    fit_columns = param.Boolean(default=None, doc="""
+    fit_columns = param.Boolean(
+        default=None,
+        doc="""
         Whether columns should expand to the available width. This
         results in no horizontal scrollbar showing up, but data can
-        get unreadable if there is no enough space available.""")
+        get unreadable if there is no enough space available.""",
+    )
 
-    frozen_columns = param.Integer(default=None, doc="""
+    frozen_columns = param.Integer(
+        default=None,
+        doc="""
         Integer indicating the number of columns to freeze. If set, the
         first N columns will be frozen, which prevents them from
-        scrolling out of frame.""")
+        scrolling out of frame.""",
+    )
 
-    frozen_rows = param.Integer(default=None, doc="""
+    frozen_rows = param.Integer(
+        default=None,
+        doc="""
        Integer indicating the number of rows to freeze. If set, the
        first N rows will be frozen, which prevents them from scrolling
        out of frame; if set to a negative value the last N rows will be
-       frozen.""")
+       frozen.""",
+    )
 
-    reorderable = param.Boolean(default=True, doc="""
+    reorderable = param.Boolean(
+        default=True,
+        doc="""
         Allows the reordering of a table's columns. To reorder a
         column, click and drag a table's header to the desired
         location in the table.  The columns on either side will remain
-        in their previous order.""")
+        in their previous order.""",
+    )
 
-    sortable = param.Boolean(default=True, doc="""
+    sortable = param.Boolean(
+        default=True,
+        doc="""
         Allows to sort table's contents. By default natural order is
         preserved.  To sort a column, click on its header. Clicking
         one more time changes sort direction. Use Ctrl + click to
         return to natural order. Use Shift + click to sort multiple
-        columns simultaneously.""")
+        columns simultaneously.""",
+    )
 
-    _manual_params: ClassVar[List[str]] = BaseTable._manual_params + ['aggregators']
+    _manual_params: ClassVar[List[str]] = BaseTable._manual_params + ["aggregators"]
 
-    _aggregators = {
-        'sum': SumAggregator, 'max': MaxAggregator,
-        'min': MinAggregator, 'mean': AvgAggregator
-    }
+    _aggregators = {"sum": SumAggregator, "max": MaxAggregator, "min": MinAggregator, "mean": AvgAggregator}
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {'hierarchical': None}
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {"hierarchical": None}
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
-        'selection': None, 'sorters': None, 'text_align': None
-    }
+    _rename: ClassVar[Mapping[str, str | None]] = {"selection": None, "sorters": None, "text_align": None}
 
     @property
     def _widget_type(self) -> Type[Model]:
@@ -972,7 +992,7 @@ class DataFrame(BaseTable):
         return groups
 
     def _get_aggregators(self, group):
-        numeric_cols = list(self.value.select_dtypes(include='number').columns)
+        numeric_cols = list(self.value.select_dtypes(include="number").columns)
         aggs = self.aggregators.get(group, [])
         if not isinstance(aggs, list):
             aggs = [aggs]
@@ -990,14 +1010,14 @@ class DataFrame(BaseTable):
     def _get_properties(self, doc: Document) -> Dict[str, Any]:
         properties = super()._get_properties(doc)
         if self.hierarchical:
-            properties['target'] = ColumnDataSource(data=dict(row_indices=[], labels=[]))
-            properties['grouping'] = self._get_groupings()
+            properties["target"] = ColumnDataSource(data=dict(row_indices=[], labels=[]))
+            properties["grouping"] = self._get_groupings()
         return properties
 
     def _update_aggregators(self, model):
         for g in model.grouping:
             group = self._renamed_cols.get(g.getter, g.getter)
-            index = self.indexes[self.indexes.index(group)+1]
+            index = self.indexes[self.indexes.index(group) + 1]
             g.aggregators = self._get_aggregators(index)
 
 
@@ -1013,71 +1033,125 @@ class Tabulator(BaseTable):
     >>> Tabulator(df, theme='site', pagination='remote', page_size=25)
     """
 
-    buttons = param.Dict(default={}, nested_refs=True, doc="""
+    buttons = param.Dict(
+        default={},
+        nested_refs=True,
+        doc="""
         Dictionary mapping from column name to a HTML element
-        to use as the button icon.""")
+        to use as the button icon.""",
+    )
 
-    expanded = param.List(default=[], nested_refs=True, doc="""
+    expanded = param.List(
+        default=[],
+        nested_refs=True,
+        doc="""
         List of expanded rows, only applicable if a row_content function
-        has been defined.""")
+        has been defined.""",
+    )
 
-    embed_content = param.Boolean(default=False, doc="""
+    embed_content = param.Boolean(
+        default=False,
+        doc="""
         Whether to embed the row_content or render it dynamically
-        when a row is expanded.""")
+        when a row is expanded.""",
+    )
 
-    filters = param.List(default=[], doc="""
+    filters = param.List(
+        default=[],
+        doc="""
         List of client-side filters declared as dictionaries containing
-        'field', 'type' and 'value' keys.""")
+        'field', 'type' and 'value' keys.""",
+    )
 
-    frozen_columns = param.List(default=[], nested_refs=True, doc="""
+    frozen_columns = param.List(
+        default=[],
+        nested_refs=True,
+        doc="""
         List indicating the columns to freeze. The column(s) may be
-        selected by name or index.""")
+        selected by name or index.""",
+    )
 
-    frozen_rows = param.List(default=[], nested_refs=True, doc="""
+    frozen_rows = param.List(
+        default=[],
+        nested_refs=True,
+        doc="""
         List indicating the rows to freeze. If set, the
         first N rows will be frozen, which prevents them from scrolling
         out of frame; if set to a negative value the last N rows will be
-        frozen.""")
+        frozen.""",
+    )
 
-    groups = param.Dict(default={}, nested_refs=True, doc="""
-        Dictionary mapping defining the groups.""")
+    groups = param.Dict(
+        default={},
+        nested_refs=True,
+        doc="""
+        Dictionary mapping defining the groups.""",
+    )
 
-    groupby = param.List(default=[], nested_refs=True, doc="""
-        Groups rows in the table by one or more columns.""")
+    groupby = param.List(
+        default=[],
+        nested_refs=True,
+        doc="""
+        Groups rows in the table by one or more columns.""",
+    )
 
-    header_align = param.ClassSelector(default={}, nested_refs=True, class_=(dict, str), doc="""
+    header_align = param.ClassSelector(
+        default={},
+        nested_refs=True,
+        class_=(dict, str),
+        doc="""
         A mapping from column name to alignment or a fixed column
-        alignment, which should be one of 'left', 'center', 'right'.""")
+        alignment, which should be one of 'left', 'center', 'right'.""",
+    )
 
-    header_filters = param.ClassSelector(class_=(bool, dict), nested_refs=True, doc="""
+    header_filters = param.ClassSelector(
+        class_=(bool, dict),
+        nested_refs=True,
+        doc="""
         Whether to enable filters in the header or dictionary
-        configuring filters for each column.""")
+        configuring filters for each column.""",
+    )
 
-    hidden_columns = param.List(default=[], nested_refs=True, doc="""
-        List of columns to hide.""")
+    hidden_columns = param.List(
+        default=[],
+        nested_refs=True,
+        doc="""
+        List of columns to hide.""",
+    )
 
-    layout = param.ObjectSelector(default='fit_data_table', objects=[
-        'fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table',
-        'fit_columns'])
+    layout = param.ObjectSelector(default="fit_data_table", objects=["fit_data", "fit_data_fill", "fit_data_stretch", "fit_data_table", "fit_columns"])
 
-    pagination = param.ObjectSelector(default=None, allow_None=True,
-                                      objects=['local', 'remote'])
+    pagination = param.ObjectSelector(default=None, allow_None=True, objects=["local", "remote"])
 
-    page = param.Integer(default=1, doc="""
-        Currently selected page (indexed starting at 1), if pagination is enabled.""")
+    page = param.Integer(
+        default=1,
+        doc="""
+        Currently selected page (indexed starting at 1), if pagination is enabled.""",
+    )
 
-    page_size = param.Integer(default=20, bounds=(1, None), doc="""
-        Number of rows to render per page, if pagination is enabled.""")
+    page_size = param.Integer(
+        default=20,
+        bounds=(1, None),
+        doc="""
+        Number of rows to render per page, if pagination is enabled.""",
+    )
 
-    row_content = param.Callable(doc="""
+    row_content = param.Callable(
+        doc="""
         A function which is given the DataFrame row and should return
-        a Panel object to render as additional detail below the row.""")
+        a Panel object to render as additional detail below the row."""
+    )
 
-    row_height = param.Integer(default=30, doc="""
-        The height of each table row.""")
+    row_height = param.Integer(
+        default=30,
+        doc="""
+        The height of each table row.""",
+    )
 
     selectable = param.ClassSelector(
-        default=True, class_=(bool, str, int), doc="""
+        default=True,
+        class_=(bool, str, int),
+        doc="""
         Defines the selection mode of the Tabulator.
 
           - True
@@ -1093,68 +1167,83 @@ class Tabulator(BaseTable):
               Selection toggles when clicked
           - int
               The maximum number of selectable rows.
-        """)
+        """,
+    )
 
-    selectable_rows = param.Callable(default=None, doc="""
+    selectable_rows = param.Callable(
+        default=None,
+        doc="""
         A function which given a DataFrame should return a list of
-        rows by integer index, which are selectable.""")
+        rows by integer index, which are selectable.""",
+    )
 
     theme = param.ObjectSelector(
-        default="simple", objects=[
-            'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
-            'bootstrap4', 'materialize', 'bulma', 'semantic-ui', 'fast',
-            'bootstrap5'
-        ], doc="""
-        Tabulator CSS theme to apply to table.""")
+        default="simple",
+        objects=["default", "site", "simple", "midnight", "modern", "bootstrap", "bootstrap4", "materialize", "bulma", "semantic-ui", "fast", "bootstrap5"],
+        doc="""
+        Tabulator CSS theme to apply to table.""",
+    )
 
-    theme_classes = param.List(default=[], nested_refs=True, item_type=str, doc="""
+    theme_classes = param.List(
+        default=[],
+        nested_refs=True,
+        item_type=str,
+        doc="""
        List of extra CSS classes to apply to the Tabulator element
-       to customize the theme.""")
+       to customize the theme.""",
+    )
 
-    title_formatters = param.Dict(default={}, nested_refs=True, doc="""
+    title_formatters = param.Dict(
+        default={},
+        nested_refs=True,
+        doc="""
        Tabulator formatter specification to use for a particular column
-       header title.""")
+       header title.""",
+    )
 
-    _data_params: ClassVar[List[str]] = [
-        'value', 'page', 'page_size', 'pagination', 'sorters', 'filters'
-    ]
+    _data_params: ClassVar[List[str]] = ["value", "page", "page_size", "pagination", "sorters", "filters"]
 
-    _config_params: ClassVar[List[str]] = [
-        'frozen_columns', 'groups', 'selectable', 'hierarchical'
-    ]
+    _config_params: ClassVar[List[str]] = ["frozen_columns", "groups", "selectable", "hierarchical"]
 
-    _content_params: ClassVar[List[str]] = _data_params + ['expanded', 'row_content', 'embed_content']
+    _content_params: ClassVar[List[str]] = _data_params + ["expanded", "row_content", "embed_content"]
 
     _manual_params: ClassVar[List[str]] = BaseTable._manual_params + _config_params
 
-    _priority_changes: ClassVar[List[str]] = ['data']
+    _priority_changes: ClassVar[List[str]] = ["data"]
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'selection': None, 'row_content': None, 'row_height': None,
-        'text_align': None, 'embed_content': None, 'header_align': None,
-        'header_filters': None, 'styles': 'cell_styles', 'title_formatters': None
+        "selection": None,
+        "row_content": None,
+        "row_height": None,
+        "text_align": None,
+        "embed_content": None,
+        "header_align": None,
+        "header_filters": None,
+        "styles": "cell_styles",
+        "title_formatters": None,
     }
 
     # Determines the maximum size limits beyond which (local, remote)
     # pagination is enabled
     _MAX_ROW_LIMITS: ClassVar[Tuple[int, int]] = (200, 10000)
 
-    _stylesheets = [CSS_URLS['font-awesome']]
+    _stylesheets = [CSS_URLS["font-awesome"]]
 
     def __init__(self, value=None, **params):
         import pandas.io.formats.style
-        click_handler = params.pop('on_click', None)
-        edit_handler = params.pop('on_edit', None)
+
+        click_handler = params.pop("on_click", None)
+        edit_handler = params.pop("on_edit", None)
         if isinstance(value, pandas.io.formats.style.Styler):
             style = value
             value = value.data
         else:
             style = None
-        configuration = params.pop('configuration', {})
+        configuration = params.pop("configuration", {})
         self.style = None
         self._computed_styler = None
         self._child_panels = {}
-        self._explicit_pagination = 'pagination' in params
+        self._explicit_pagination = "pagination" in params
         self._on_edit_callbacks = []
         self._on_click_callbacks = {}
         self._old_value = None
@@ -1168,7 +1257,7 @@ class Tabulator(BaseTable):
         if style is not None:
             self.style._todo = style._todo
 
-    @param.depends('value', watch=True, on_init=True)
+    @param.depends("value", watch=True, on_init=True)
     def _apply_max_size(self):
         """
         Ensure large tables automatically enable remote pagination.
@@ -1179,12 +1268,12 @@ class Tabulator(BaseTable):
             if self.hierarchical:
                 pass
             elif self._MAX_ROW_LIMITS[0] < len(self.value) <= self._MAX_ROW_LIMITS[1]:
-                self.pagination = 'local'
+                self.pagination = "local"
             elif len(self.value) > self._MAX_ROW_LIMITS[1]:
-                self.pagination = 'remote'
+                self.pagination = "remote"
         self._explicit_pagination = False
 
-    @param.depends('pagination', watch=True)
+    @param.depends("pagination", watch=True)
     def _set_explicict_pagination(self):
         self._explicit_pagination = True
 
@@ -1195,9 +1284,9 @@ class Tabulator(BaseTable):
         # than one locations.
         if not isinstance(iloc, int):
             raise ValueError(
-                'The Tabulator widget expects the provided `value` Pandas DataFrame '
-                'to have unique indexes, in particular when it has to deal with '
-                f'click or edit events. Found this duplicate index: {idx!r}'
+                "The Tabulator widget expects the provided `value` Pandas DataFrame "
+                "to have unique indexes, in particular when it has to deal with "
+                f"click or edit events. Found this duplicate index: {idx!r}"
             )
 
     def _validate(self, *events):
@@ -1219,9 +1308,9 @@ class Tabulator(BaseTable):
 
     def _process_event(self, event):
         event_col = self._renamed_cols.get(event.column, event.column)
-        if self.pagination == 'remote':
+        if self.pagination == "remote":
             nrows = self.page_size
-            event.row = event.row+(self.page-1)*nrows
+            event.row = event.row + (self.page - 1) * nrows
 
         idx = self._index_mapping.get(event.row, event.row)
         iloc = self.value.index.get_loc(idx)
@@ -1234,9 +1323,10 @@ class Tabulator(BaseTable):
                 event.value = self.value[event_col].iloc[event.row]
 
         # Set the old attribute on a table edit event
-        if event.event_name == 'table-edit':
+        if event.event_name == "table-edit":
             if event.pre:
                 import pandas as pd
+
                 filter_df = pd.DataFrame([event.value], columns=[event.column])
                 filters = self._get_header_filters(filter_df)
                 # Check if edited cell was filtered
@@ -1256,9 +1346,10 @@ class Tabulator(BaseTable):
 
     def _get_theme(self, theme, resources=None):
         from ..models.tabulator import _TABULATOR_THEMES_MAPPING, THEME_PATH
+
         theme_ = _TABULATOR_THEMES_MAPPING.get(theme, theme)
-        fname = 'tabulator' if theme_ == 'default' else f'tabulator_{theme_}'
-        theme_url = f'{CDN_DIST}bundled/datatabulator/{THEME_PATH}{fname}.min.css'
+        fname = "tabulator" if theme_ == "default" else f"tabulator_{theme_}"
+        theme_url = f"{CDN_DIST}bundled/datatabulator/{THEME_PATH}{fname}.min.css"
         if self._widget_type is not None:
             self._widget_type.__css_raw__ = [theme_url]
         return theme_url
@@ -1266,8 +1357,7 @@ class Tabulator(BaseTable):
     def _update_columns(self, event, model):
         if event.name not in self._config_params:
             super()._update_columns(event, model)
-            if (event.name in ('editors', 'formatters') and
-                not any(isinstance(v, (str, dict)) for v in event.new.values())):
+            if event.name in ("editors", "formatters") and not any(isinstance(v, (str, dict)) for v in event.new.values()):
                 # If no tabulator editor/formatter was changed we can skip
                 # update to config
                 return
@@ -1287,6 +1377,7 @@ class Tabulator(BaseTable):
         self._old_value = self.value.copy()
 
         import pandas as pd
+
         df = pd.DataFrame(data)
         filters = self._get_header_filters(df)
         if filters:
@@ -1294,31 +1385,27 @@ class Tabulator(BaseTable):
             for f in filters:
                 mask &= f
             if self._edited_indexes:
-                edited_mask = (df[self.value.index.name or 'index'].isin(self._edited_indexes))
+                edited_mask = df[self.value.index.name or "index"].isin(self._edited_indexes)
                 mask = mask | edited_mask
             df = df[mask]
-        data = {
-            col: df[col].values for col in df.columns
-        }
+        data = {col: df[col].values for col in df.columns}
         return super()._process_data(data)
 
     def _get_data(self):
-        if self.pagination != 'remote' or self.value is None:
+        if self.pagination != "remote" or self.value is None:
             return super()._get_data()
         import pandas as pd
+
         df = self._filter_dataframe(self.value)
         df = self._sort_df(df)
         nrows = self.page_size
-        start = (self.page-1)*nrows
+        start = (self.page - 1) * nrows
 
-        page_df = df.iloc[start: start+nrows]
+        page_df = df.iloc[start : start + nrows]
         if isinstance(self.value.index, pd.MultiIndex):
-            indexes = [
-                f'level_{i}' if n is None else n
-                for i, n in enumerate(df.index.names)
-            ]
+            indexes = [f"level_{i}" if n is None else n for i, n in enumerate(df.index.names)]
         else:
-            default_index = ('level_0' if 'index' in df.columns else 'index')
+            default_index = "level_0" if "index" in df.columns else "index"
             indexes = [df.index.name or default_index]
         if len(indexes) > 1:
             page_df = page_df.reset_index()
@@ -1343,35 +1430,35 @@ class Tabulator(BaseTable):
             styler = self._computed_styler
         if styler is None:
             return {}
-        offset = 1 + len(self.indexes) + int(self.selectable in ('checkbox', 'checkbox-single')) + int(bool(self.row_content))
-        if self.pagination == 'remote':
-            start = (self.page-1)*self.page_size
+        offset = 1 + len(self.indexes) + int(self.selectable in ("checkbox", "checkbox-single")) + int(bool(self.row_content))
+        if self.pagination == "remote":
+            start = (self.page - 1) * self.page_size
             end = start + self.page_size
         styles = {}
         for (r, c), s in styler.ctx.items():
-            if self.pagination == 'remote':
-                if (r < start or r >= end):
+            if self.pagination == "remote":
+                if r < start or r >= end:
                     continue
                 else:
                     r -= start
             if r not in styles:
                 styles[int(r)] = {}
-            styles[int(r)][offset+int(c)] = s
-        return {'id': uuid.uuid4().hex, 'data': styles}
+            styles[int(r)][offset + int(c)] = s
+        return {"id": uuid.uuid4().hex, "data": styles}
 
     def _get_selectable(self):
         if self.value is None or self.selectable_rows is None:
             return None
         df = self._processed
-        if self.pagination == 'remote':
+        if self.pagination == "remote":
             nrows = self.page_size
-            start = (self.page-1)*nrows
-            df = df.iloc[start:(start+nrows)]
+            start = (self.page - 1) * nrows
+            df = df.iloc[start : (start + nrows)]
         return self.selectable_rows(df)
 
     def _update_style(self, recompute=True):
         styles = self._get_style_data(recompute)
-        msg = {'cell_styles': styles}
+        msg = {"cell_styles": styles}
         for ref, (m, _) in self._models.items():
             self._apply_update([], msg, m, ref)
 
@@ -1379,13 +1466,14 @@ class Tabulator(BaseTable):
         if self.row_content is None or self.value is None:
             return {}
         from ..pane import panel
+
         df = self._processed
-        if self.pagination == 'remote':
+        if self.pagination == "remote":
             nrows = self.page_size
-            start = (self.page-1)*nrows
-            df = df.iloc[start:(start+nrows)]
+            start = (self.page - 1) * nrows
+            df = df.iloc[start : (start + nrows)]
         children = {}
-        for i in (range(len(df)) if self.embed_content else self.expanded):
+        for i in range(len(df)) if self.embed_content else self.expanded:
             if i in old:
                 children[i] = old[i]
             else:
@@ -1393,7 +1481,7 @@ class Tabulator(BaseTable):
         return children
 
     def _get_model_children(self, panels, doc, root, parent, comm=None):
-        ref = root.ref['id']
+        ref = root.ref["id"]
         models = {}
         for i, p in panels.items():
             if ref in p._models:
@@ -1420,38 +1508,34 @@ class Tabulator(BaseTable):
 
     def _update_children(self, *events):
         cleanup, reuse = set(), set()
-        page_events = ('page', 'page_size', 'pagination')
+        page_events = ("page", "page_size", "pagination")
         for event in events:
-            if event.name == 'expanded' and len(events) == 1:
+            if event.name == "expanded" and len(events) == 1:
                 cleanup = set(event.old) - set(event.new)
                 reuse = set(event.old) & set(event.new)
             elif (
-              (event.name == 'value' and self._indexes_changed(event.old, event.new)) or
-              (event.name in page_events and not self._updating) or
-              (self.pagination == 'remote' and event.name == 'sorters')
+                (event.name == "value" and self._indexes_changed(event.old, event.new))
+                or (event.name in page_events and not self._updating)
+                or (self.pagination == "remote" and event.name == "sorters")
             ):
                 self.expanded = []
                 return
         old_panels = self._child_panels
-        self._child_panels = child_panels = self._get_children(
-            {i: old_panels[i] for i in reuse}
-        )
+        self._child_panels = child_panels = self._get_children({i: old_panels[i] for i in reuse})
         for ref, (m, _) in self._models.items():
             root, doc, comm = state._views[ref][1:]
             for idx in cleanup:
                 old_panels[idx]._cleanup(root)
-            children = self._get_model_children(
-                child_panels, doc, root, m, comm
-            )
-            msg = {'children': children}
+            children = self._get_model_children(child_panels, doc, root, m, comm)
+            msg = {"children": children}
             self._apply_update([], msg, m, ref)
 
     @updating
     def _stream(self, stream, rollover=None, follow=True):
-        if self.pagination == 'remote':
+        if self.pagination == "remote":
             length = self._length
             nrows = self.page_size
-            max_page = max(length//nrows + bool(length%nrows), 1)
+            max_page = max(length // nrows + bool(length % nrows), 1)
             if self.page != max_page:
                 return
         super()._stream(stream, rollover)
@@ -1461,11 +1545,11 @@ class Tabulator(BaseTable):
 
     def stream(self, stream_value, rollover=None, reset_index=True, follow=True):
         for ref, (model, _) in self._models.items():
-            self._apply_update([], {'follow': follow}, model, ref)
+            self._apply_update([], {"follow": follow}, model, ref)
         if follow and self.pagination:
             length = self._length
             nrows = self.page_size
-            self.page = max(length//nrows + bool(length%nrows), 1)
+            self.page = max(length // nrows + bool(length % nrows), 1)
         super().stream(stream_value, rollover, reset_index)
         if follow and self.pagination:
             self._update_max_page()
@@ -1476,14 +1560,13 @@ class Tabulator(BaseTable):
             self._updating = False
             self._update_cds()
             return
-        if self.pagination == 'remote':
+        if self.pagination == "remote":
             nrows = self.page_size
-            start = (self.page-1)*nrows
-            end = start+nrows
+            start = (self.page - 1) * nrows
+            end = start + nrows
             filtered = {}
             for c, values in patch.items():
-                values = [(ind, val) for (ind, val) in values
-                          if ind >= start and ind < end]
+                values = [(ind, val) for (ind, val) in values if ind >= start and ind < end]
                 if values:
                     filtered[c] = values
             patch = filtered
@@ -1494,19 +1577,17 @@ class Tabulator(BaseTable):
         self._update_selectable()
 
     def _update_cds(self, *events):
-        if any(event.name == 'filters' for event in events):
+        if any(event.name == "filters" for event in events):
             self._edited_indexes = []
-        page_events = ('page', 'page_size', 'sorters', 'filters')
+        page_events = ("page", "page_size", "sorters", "filters")
         if self._updating:
             return
-        elif events and all(e.name in page_events[:-1] for e in events) and self.pagination == 'local':
+        elif events and all(e.name in page_events[:-1] for e in events) and self.pagination == "local":
             return
         elif events and all(e.name in page_events for e in events) and not self.pagination:
             self._processed, _ = self._get_data()
             return
-        recompute = not all(
-            e.name in ('page', 'page_size', 'pagination') for e in events
-        )
+        recompute = not all(e.name in ("page", "page_size", "pagination") for e in events)
         super()._update_cds(*events)
         if self.pagination:
             self._update_max_page()
@@ -1517,60 +1598,59 @@ class Tabulator(BaseTable):
     def _update_selectable(self):
         selectable = self._get_selectable()
         for ref, (model, _) in self._models.items():
-            self._apply_update([], {'selectable_rows': selectable}, model, ref)
+            self._apply_update([], {"selectable_rows": selectable}, model, ref)
 
     def _update_max_page(self):
         length = self._length
         nrows = self.page_size
-        max_page = max(length//nrows + bool(length%nrows), 1)
+        max_page = max(length // nrows + bool(length % nrows), 1)
         self.param.page.bounds = (1, max_page)
         for ref, (model, _) in self._models.items():
-            self._apply_update([], {'max_page': max_page}, model, ref)
+            self._apply_update([], {"max_page": max_page}, model, ref)
 
     def _update_selected(self, *events: param.parameterized.Event, indices=None):
         kwargs = {}
-        if self.pagination == 'remote' and self.value is not None:
+        if self.pagination == "remote" and self.value is not None:
             index = self.value.iloc[self.selection].index
             indices = []
             for v in index.values:
                 try:
                     iloc = self._processed.index.get_loc(v)
-                    self._validate_iloc(v ,iloc)
+                    self._validate_iloc(v, iloc)
                     indices.append(iloc)
                 except KeyError:
                     continue
             nrows = self.page_size
-            start = (self.page-1)*nrows
-            end = start+nrows
-            kwargs['indices'] = [ind-start for ind in indices
-                                 if ind>=start and ind<end]
+            start = (self.page - 1) * nrows
+            end = start + nrows
+            kwargs["indices"] = [ind - start for ind in indices if ind >= start and ind < end]
         super()._update_selected(*events, **kwargs)
 
     def _update_column(self, column: str, array: np.ndarray):
         import pandas as pd
 
-        if self.pagination != 'remote':
+        if self.pagination != "remote":
             index = self._processed.index.values
             self.value.loc[index, column] = array
-            with pd.option_context('mode.chained_assignment', None):
+            with pd.option_context("mode.chained_assignment", None):
                 self._processed[column] = array
             return
         nrows = self.page_size
-        start = (self.page-1)*nrows
-        end = start+nrows
+        start = (self.page - 1) * nrows
+        end = start + nrows
         index = self._processed.iloc[start:end].index.values
         self.value.loc[index, column] = array
 
-        with pd.option_context('mode.chained_assignment', None):
+        with pd.option_context("mode.chained_assignment", None):
             self._processed.loc[index, column] = array
 
     def _update_selection(self, indices: List[int]):
-        if self.pagination != 'remote':
+        if self.pagination != "remote":
             self.selection = indices
             return
         nrows = self.page_size
-        start = (self.page-1)*nrows
-        index = self._processed.iloc[[start+ind for ind in indices]].index
+        start = (self.page - 1) * nrows
+        index = self._processed.iloc[[start + ind for ind in indices]].index
         indices = []
         for v in index.values:
             try:
@@ -1583,61 +1663,50 @@ class Tabulator(BaseTable):
 
     def _get_properties(self, doc: Document) -> Dict[str, Any]:
         properties = super()._get_properties(doc)
-        properties['configuration'] = self._get_configuration(properties['columns'])
-        properties['cell_styles'] = self._get_style_data()
-        properties['indexes'] = self.indexes
+        properties["configuration"] = self._get_configuration(properties["columns"])
+        properties["cell_styles"] = self._get_style_data()
+        properties["indexes"] = self.indexes
         if self.pagination:
             length = self._length
-            properties['max_page'] = max(length//self.page_size + bool(length%self.page_size), 1)
-        if isinstance(self.selectable, str) and self.selectable.startswith('checkbox'):
-            properties['select_mode'] = 'checkbox'
+            properties["max_page"] = max(length // self.page_size + bool(length % self.page_size), 1)
+        if isinstance(self.selectable, str) and self.selectable.startswith("checkbox"):
+            properties["select_mode"] = "checkbox"
         else:
-            properties['select_mode'] = self.selectable
+            properties["select_mode"] = self.selectable
         return properties
 
     def _process_param_change(self, params):
-        if 'theme' in params or 'stylesheets' in params:
-            theme_url = self._get_theme(params.pop('theme', self.theme))
-            params['stylesheets'] = params.get('stylesheets', self.stylesheets) + [
-                ImportedStyleSheet(url=theme_url)
-            ]
+        if "theme" in params or "stylesheets" in params:
+            theme_url = self._get_theme(params.pop("theme", self.theme))
+            params["stylesheets"] = params.get("stylesheets", self.stylesheets) + [ImportedStyleSheet(url=theme_url)]
         params = Reactive._process_param_change(self, params)
-        if 'disabled' in params:
-            params['editable'] = not params.pop('disabled') and len(self.indexes) <= 1
-        if 'frozen_rows' in params:
+        if "disabled" in params:
+            params["editable"] = not params.pop("disabled") and len(self.indexes) <= 1
+        if "frozen_rows" in params:
             length = self._length
-            params['frozen_rows'] = [
-                length+r if r < 0 else r for r in params['frozen_rows']
-            ]
-        if 'hidden_columns' in params:
+            params["frozen_rows"] = [length + r if r < 0 else r for r in params["frozen_rows"]]
+        if "hidden_columns" in params:
             import pandas as pd
+
             if not self.show_index and self.value is not None and not isinstance(self.value.index, pd.MultiIndex):
-                params['hidden_columns'] = params['hidden_columns'] + [self.value.index.name or 'index']
-        if 'selectable_rows' in params:
-            params['selectable_rows'] = self._get_selectable()
+                params["hidden_columns"] = params["hidden_columns"] + [self.value.index.name or "index"]
+        if "selectable_rows" in params:
+            params["selectable_rows"] = self._get_selectable()
         return params
 
-    def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
-    ) -> Model:
-        Tabulator._widget_type = lazy_load(
-            'panel.models.tabulator', 'DataTabulator', isinstance(comm, JupyterComm), root
-        )
+    def _get_model(self, doc: Document, root: Optional[Model] = None, parent: Optional[Model] = None, comm: Optional[Comm] = None) -> Model:
+        Tabulator._widget_type = lazy_load("panel.models.tabulator", "DataTabulator", isinstance(comm, JupyterComm), root)
         model = super()._get_model(doc, root, parent, comm)
         root = root or model
         self._child_panels = child_panels = self._get_children()
-        model.children = self._get_model_children(
-            child_panels, doc, root, parent, comm
-        )
-        self._link_props(model, ['page', 'sorters', 'expanded', 'filters'], doc, root, comm)
-        self._register_events('cell-click', 'table-edit', model=model, doc=doc, comm=comm)
+        model.children = self._get_model_children(child_panels, doc, root, parent, comm)
+        self._link_props(model, ["page", "sorters", "expanded", "filters"], doc, root, comm)
+        self._register_events("cell-click", "table-edit", model=model, doc=doc, comm=comm)
         return model
 
     def _get_filter_spec(self, column: TableColumn) -> Dict[str, Any]:
         fspec = {}
-        if not self.header_filters or (isinstance(self.header_filters, dict) and
-                                       column.field not in self.header_filters):
+        if not self.header_filters or (isinstance(self.header_filters, dict) and column.field not in self.header_filters):
             return fspec
         elif self.header_filters == True:
             if column.field in self.indexes:
@@ -1645,29 +1714,29 @@ class Tabulator(BaseTable):
                     col = self.value.index
                 else:
                     col = self.value.index.get_level_values(self.indexes.index(column.field))
-                if col.dtype.kind in 'uif':
-                    fspec['headerFilter'] = 'number'
-                elif col.dtype.kind == 'b':
-                    fspec['headerFilter'] = 'tickCross'
-                    fspec['headerFilterParams'] = {'tristate': True, 'indeterminateValue': None}
-                elif isdatetime(col) or col.dtype.kind == 'M':
-                    fspec['headerFilter'] = False
+                if col.dtype.kind in "uif":
+                    fspec["headerFilter"] = "number"
+                elif col.dtype.kind == "b":
+                    fspec["headerFilter"] = "tickCross"
+                    fspec["headerFilterParams"] = {"tristate": True, "indeterminateValue": None}
+                elif isdatetime(col) or col.dtype.kind == "M":
+                    fspec["headerFilter"] = False
                 else:
-                    fspec['headerFilter'] = True
+                    fspec["headerFilter"] = True
             elif isinstance(column.editor, DateEditor):
                 # Datetime filtering currently broken with Tabulator 5.4.3
                 # Initial (empty) value of filter is passed to luxon.js
                 # and causes error
-                fspec['headerFilter'] = False
+                fspec["headerFilter"] = False
             else:
-                fspec['headerFilter'] = True
+                fspec["headerFilter"] = True
             return fspec
         filter_type = self.header_filters[column.field]
         if isinstance(filter_type, dict):
             filter_params = dict(filter_type)
-            filter_type = filter_params.pop('type', True)
-            filter_func = filter_params.pop('func', None)
-            filter_placeholder = filter_params.pop('placeholder', None)
+            filter_type = filter_params.pop("type", True)
+            filter_func = filter_params.pop("func", None)
+            filter_placeholder = filter_params.pop("placeholder", None)
         else:
             filter_params = {}
             filter_func = None
@@ -1675,28 +1744,22 @@ class Tabulator(BaseTable):
         # Tabulator JS renamed select and autocomplete to list, and relies on
         # valuesLookup set to True to autopopulate the filter, instead of
         # values. This ensure backwards compatibility.
-        if filter_type in ['select', 'autocomplete']:
-            self.param.warning(
-                f'The {filter_type!r} filter has been deprecated, use '
-                f'instead the "list" filter type to configure column {column.field!r}'
-            )
-            filter_type = 'list'
-            if filter_params.get('values', False) is True:
-                self.param.warning(
-                    'Setting "values" to True has been deprecated, instead '
-                    f'set "valuesLookup" to True to configure column {column.field!r}'
-                )
-                del filter_params['values']
-                filter_params['valuesLookup'] = True
-        if filter_type == 'list' and not filter_params:
-            filter_params = {'valuesLookup': True}
-        fspec['headerFilter'] = filter_type
+        if filter_type in ["select", "autocomplete"]:
+            self.param.warning(f"The {filter_type!r} filter has been deprecated, use " f'instead the "list" filter type to configure column {column.field!r}')
+            filter_type = "list"
+            if filter_params.get("values", False) is True:
+                self.param.warning('Setting "values" to True has been deprecated, instead ' f'set "valuesLookup" to True to configure column {column.field!r}')
+                del filter_params["values"]
+                filter_params["valuesLookup"] = True
+        if filter_type == "list" and not filter_params:
+            filter_params = {"valuesLookup": True}
+        fspec["headerFilter"] = filter_type
         if filter_params:
-            fspec['headerFilterParams'] = filter_params
+            fspec["headerFilterParams"] = filter_params
         if filter_func:
-            fspec['headerFilterFunc'] = filter_func
+            fspec["headerFilterFunc"] = filter_func
         if filter_placeholder:
-            fspec['headerFilterPlaceholder'] = filter_placeholder
+            fspec["headerFilterPlaceholder"] = filter_placeholder
         return fspec
 
     def _config_columns(self, column_objs: List[TableColumn]) -> List[Dict[str, Any]]:
@@ -1705,19 +1768,19 @@ class Tabulator(BaseTable):
         columns = []
         selectable = self.selectable
         if self.row_content:
-            columns.append({
-                "formatter": "expand"
-            })
-        if isinstance(selectable, str) and selectable.startswith('checkbox'):
-            title = "" if selectable.endswith('-single') else "rowSelection"
-            columns.append({
-                "formatter": "rowSelection",
-                "titleFormatter": title,
-                "hozAlign": "center",
-                "headerSort": False,
-                "frozen": True,
-                "width": 40,
-            })
+            columns.append({"formatter": "expand"})
+        if isinstance(selectable, str) and selectable.startswith("checkbox"):
+            title = "" if selectable.endswith("-single") else "rowSelection"
+            columns.append(
+                {
+                    "formatter": "rowSelection",
+                    "titleFormatter": title,
+                    "hozAlign": "center",
+                    "headerSort": False,
+                    "frozen": True,
+                    "width": 40,
+                }
+            )
 
         ordered = []
         for col in self.frozen_columns:
@@ -1730,38 +1793,32 @@ class Tabulator(BaseTable):
                     column_objs.remove(cols[0])
         ordered += column_objs
 
-        grouping = {
-            group: [str(gc) for gc in group_cols]
-            for group, group_cols in self.groups.items()
-        }
+        grouping = {group: [str(gc) for gc in group_cols] for group, group_cols in self.groups.items()}
         for i, column in enumerate(ordered):
-            matching_groups = [
-                group for group, group_cols in grouping.items()
-                if column.field in group_cols
-            ]
-            col_dict = {'field': column.field}
+            matching_groups = [group for group, group_cols in grouping.items() if column.field in group_cols]
+            col_dict = {"field": column.field}
             if isinstance(self.text_align, str):
-                col_dict['hozAlign'] = self.text_align
+                col_dict["hozAlign"] = self.text_align
             elif column.field in self.text_align:
-                col_dict['hozAlign'] = self.text_align[column.field]
+                col_dict["hozAlign"] = self.text_align[column.field]
             if isinstance(self.header_align, str):
-                col_dict['headerHozAlign'] = self.header_align
+                col_dict["headerHozAlign"] = self.header_align
             elif column.field in self.header_align:
-                col_dict['headerHozAlign'] = self.header_align[column.field]
+                col_dict["headerHozAlign"] = self.header_align[column.field]
             formatter = self.formatters.get(column.field)
             if isinstance(formatter, str):
-                col_dict['formatter'] = formatter
+                col_dict["formatter"] = formatter
             elif isinstance(formatter, dict):
                 formatter = dict(formatter)
-                col_dict['formatter'] = formatter.pop('type')
-                col_dict['formatterParams'] = formatter
+                col_dict["formatter"] = formatter.pop("type")
+                col_dict["formatterParams"] = formatter
             title_formatter = self.title_formatters.get(column.field)
             if title_formatter:
-                col_dict['titleFormatter'] = title_formatter
+                col_dict["titleFormatter"] = title_formatter
             elif isinstance(title_formatter, dict):
                 formatter = dict(title_formatter)
-                col_dict['titleFormatter'] = title_formatter.pop('type')
-                col_dict['titleFormatterParams'] = title_formatter
+                col_dict["titleFormatter"] = title_formatter.pop("type")
+                col_dict["titleFormatterParams"] = title_formatter
             col_name = self._renamed_cols[column.field]
             if column.field in self.indexes:
                 if len(self.indexes) == 1:
@@ -1770,44 +1827,40 @@ class Tabulator(BaseTable):
                     dtype = self.value.index.get_level_values(self.indexes.index(column.field)).dtype
             else:
                 dtype = self.value.dtypes[col_name]
-            if dtype.kind == 'M':
-                col_dict['sorter'] = 'timestamp'
-            elif dtype.kind in 'iuf':
-                col_dict['sorter'] = 'number'
-            elif dtype.kind == 'b':
-                col_dict['sorter'] = 'boolean'
+            if dtype.kind == "M":
+                col_dict["sorter"] = "timestamp"
+            elif dtype.kind in "iuf":
+                col_dict["sorter"] = "number"
+            elif dtype.kind == "b":
+                col_dict["sorter"] = "boolean"
             editor = self.editors.get(column.field)
             if column.field in self.editors and editor is None:
-                col_dict['editable'] = False
+                col_dict["editable"] = False
             if isinstance(editor, str):
-                col_dict['editor'] = editor
+                col_dict["editor"] = editor
             elif isinstance(editor, dict):
                 editor = dict(editor)
-                col_dict['editor'] = editor.pop('type')
-                col_dict['editorParams'] = editor
-            if col_dict.get('editor') in ['select', 'autocomplete']:
+                col_dict["editor"] = editor.pop("type")
+                col_dict["editorParams"] = editor
+            if col_dict.get("editor") in ["select", "autocomplete"]:
                 self.param.warning(
-                    f'The {col_dict["editor"]!r} editor has been deprecated, use '
-                    f'instead the "list" editor type to configure column {column.field!r}'
+                    f'The {col_dict["editor"]!r} editor has been deprecated, use ' f'instead the "list" editor type to configure column {column.field!r}'
                 )
-                col_dict['editor'] = 'list'
-                if col_dict.get('editorParams', {}).get('values', False) is True:
-                    del col_dict['editorParams']['values']
-                    col_dict['editorParams']['valuesLookup']
+                col_dict["editor"] = "list"
+                if col_dict.get("editorParams", {}).get("values", False) is True:
+                    del col_dict["editorParams"]["values"]
+                    col_dict["editorParams"]["valuesLookup"]
             if column.field in self.frozen_columns or i in self.frozen_columns:
-                col_dict['frozen'] = True
+                col_dict["frozen"] = True
             if isinstance(self.widths, dict) and isinstance(self.widths.get(column.field), str):
-                col_dict['width'] = self.widths[column.field]
+                col_dict["width"] = self.widths[column.field]
             col_dict.update(self._get_filter_spec(column))
             if matching_groups:
                 group = matching_groups[0]
                 if group in groups:
-                    groups[group]['columns'].append(col_dict)
+                    groups[group]["columns"].append(col_dict)
                     continue
-                group_dict = {
-                    'title': group,
-                    'columns': [col_dict]
-                }
+                group_dict = {"title": group, "columns": [col_dict]}
                 groups[group] = group_dict
                 columns.append(group_dict)
             else:
@@ -1819,20 +1872,19 @@ class Tabulator(BaseTable):
         Returns the Tabulator configuration.
         """
         configuration = dict(self._configuration)
-        if 'selectable' not in configuration:
-            configuration['selectable'] = self.selectable
-        if self.groups and 'columns' in configuration:
-            raise ValueError("Groups must be defined either explicitly "
-                             "or via the configuration, not both.")
-        configuration['columns'] = self._config_columns(columns)
-        configuration['dataTree'] = self.hierarchical
-        if self.sizing_mode in ('stretch_height', 'stretch_both'):
-            configuration['maxHeight'] = '100%'
+        if "selectable" not in configuration:
+            configuration["selectable"] = self.selectable
+        if self.groups and "columns" in configuration:
+            raise ValueError("Groups must be defined either explicitly " "or via the configuration, not both.")
+        configuration["columns"] = self._config_columns(columns)
+        configuration["dataTree"] = self.hierarchical
+        if self.sizing_mode in ("stretch_height", "stretch_both"):
+            configuration["maxHeight"] = "100%"
         elif self.height:
-            configuration['height'] = self.height
+            configuration["height"] = self.height
         return configuration
 
-    def download(self, filename: str = 'table.csv'):
+    def download(self, filename: str = "table.csv"):
         """
         Triggers downloading of the table as a CSV or JSON.
 
@@ -1842,8 +1894,8 @@ class Tabulator(BaseTable):
             The filename to save the table as.
         """
         for ref, (model, _) in self._models.items():
-            self._apply_update({}, {'filename': filename}, model, ref)
-            self._apply_update({}, {'download': not model.download}, model, ref)
+            self._apply_update({}, {"filename": filename}, model, ref)
+            self._apply_update({}, {"download": not model.download}, model, ref)
 
     def download_menu(self, text_kwargs={}, button_kwargs={}):
         """
@@ -1865,20 +1917,23 @@ class Tabulator(BaseTable):
             The Button that triggers a download.
         """
         text_kwargs = dict(text_kwargs)
-        if 'name' not in text_kwargs:
-            text_kwargs['name'] = 'Filename'
-        if 'value' not in text_kwargs:
-            text_kwargs['value'] = 'table.csv'
+        if "name" not in text_kwargs:
+            text_kwargs["name"] = "Filename"
+        if "value" not in text_kwargs:
+            text_kwargs["value"] = "table.csv"
         filename = TextInput(**text_kwargs)
 
         button_kwargs = dict(button_kwargs)
-        if 'name' not in button_kwargs:
-            button_kwargs['name'] = 'Download'
+        if "name" not in button_kwargs:
+            button_kwargs["name"] = "Download"
         button = Button(**button_kwargs)
-        button.js_on_click({'table': self, 'filename': filename}, code="""
+        button.js_on_click(
+            {"table": self, "filename": filename},
+            code="""
         table.filename = filename.value
         table.download = !table.download
-        """)
+        """,
+        )
         return filename, button
 
     def on_edit(self, callback: Callable[[TableEditEvent], None]):
@@ -1920,6 +1975,6 @@ class Tabulator(BaseTable):
         sorting are applied.
         """
         df = self._processed
-        if self.pagination == 'remote':
+        if self.pagination == "remote":
             return df
         return self._sort_df(df)

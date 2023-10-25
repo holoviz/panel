@@ -30,19 +30,28 @@ class TerminalSubprocess(param.Parameterized):
     subprocesses via the Terminal easy.
     """
 
-    args = param.ClassSelector(class_=(str, list), doc="""
+    args = param.ClassSelector(
+        class_=(str, list),
+        doc="""
         The arguments used to run the subprocess. This may be a string
         or a list. The string cannot contain spaces. See subprocess.run
-        docs for more details.""")
+        docs for more details.""",
+    )
 
     kill = param.Action(doc="Kills the running process", constant=True)
 
-    kwargs = param.Dict(doc="""
+    kwargs = param.Dict(
+        doc="""
         Any other arguments to run the subprocess. See subprocess.run
-        docs for more details.""" )
+        docs for more details."""
+    )
 
-    running = param.Boolean(default=False, constant=True, doc="""
-        Whether or not the subprocess is running.""")
+    running = param.Boolean(
+        default=False,
+        constant=True,
+        doc="""
+        Whether or not the subprocess is running.""",
+    )
 
     _child_pid = param.Integer(default=0, doc="Child process id")
 
@@ -50,13 +59,20 @@ class TerminalSubprocess(param.Parameterized):
 
     _max_read_bytes = param.Integer(default=1024 * 20)
 
-    _periodic_callback = param.ClassSelector(class_=PeriodicCallback, doc="""
-        Watches the subprocess for output""")
+    _periodic_callback = param.ClassSelector(
+        class_=PeriodicCallback,
+        doc="""
+        Watches the subprocess for output""",
+    )
 
     _period = param.Integer(default=50, doc="Period length of _periodic_callback")
 
-    _terminal = param.Parameter(constant=True, allow_refs=False, doc="""
-        The Terminal to which the subprocess is connected.""")
+    _terminal = param.Parameter(
+        constant=True,
+        allow_refs=False,
+        doc="""
+        The Terminal to which the subprocess is connected.""",
+    )
 
     _timeout_sec = param.Integer(default=0)
 
@@ -89,9 +105,7 @@ class TerminalSubprocess(param.Parameterized):
         if not args:
             raise ValueError("Error. No args provided")
         if self.running:
-            raise ValueError(
-                "Error. A child process is already running. Cannot start another."
-            )
+            raise ValueError("Error. A child process is already running. Cannot start another.")
 
         args = self._clean_args(args)  # Clean for security reasons
 
@@ -120,26 +134,21 @@ class TerminalSubprocess(param.Parameterized):
 
             self._set_winsize()
 
-            self._periodic_callback = PeriodicCallback(
-                callback=self._forward_subprocess_output_to_terminal,
-                period=self._period
-            )
+            self._periodic_callback = PeriodicCallback(callback=self._forward_subprocess_output_to_terminal, period=self._period)
             self._periodic_callback.start()
 
-            self._watcher = self._terminal.param.watch(
-                self._forward_terminal_input_to_subprocess, 'value',
-                onlychanged=False
-            )
+            self._watcher = self._terminal.param.watch(self._forward_terminal_input_to_subprocess, "value", onlychanged=False)
             with param.edit_constant(self):
                 self.running = True
 
-    @param.depends('_terminal.ncols', '_terminal.nrows', watch=True)
+    @param.depends("_terminal.ncols", "_terminal.nrows", watch=True)
     def _set_winsize(self):
         if self._fd is None or not self._terminal.nrows or not self._terminal.ncols:
             return
         import fcntl
         import struct
         import termios
+
         winsize = struct.pack("HHHH", self._terminal.nrows, self._terminal.ncols, 0, 0)
         try:
             fcntl.ioctl(self._fd, termios.TIOCSWINSZ, winsize)
@@ -174,12 +183,12 @@ class TerminalSubprocess(param.Parameterized):
     def _decode_utf8_on_boundary(self, fd, max_read_bytes, max_extra_bytes=2):
         "UTF-8 characters can be multi-byte so need to decode on correct boundary"
         data = os.read(fd, max_read_bytes)
-        for _ in range(max_extra_bytes+1):
+        for _ in range(max_extra_bytes + 1):
             try:
-                return data.decode('utf-8')
+                return data.decode("utf-8")
             except UnicodeDecodeError:
                 data = data + os.read(fd, 1)
-        raise UnicodeError('Could not find decode boundary for UTF-8')
+        raise UnicodeError("Could not find decode boundary for UTF-8")
 
     def _forward_subprocess_output_to_terminal(self):
         if not self._fd:
@@ -235,37 +244,61 @@ class Terminal(Widget):
 
     clear = param.Action(doc="Clears the Terminal.", constant=True)
 
-    options = param.Dict(default={}, precedence=-1, doc="""
+    options = param.Dict(
+        default={},
+        precedence=-1,
+        doc="""
         Initial Options for the Terminal Constructor. cf.
-        https://xtermjs.org/docs/api/terminal/interfaces/iterminaloptions/""")
+        https://xtermjs.org/docs/api/terminal/interfaces/iterminaloptions/""",
+    )
 
-    output = param.String(default="", doc="""
-        System output written to the Terminal""")
+    output = param.String(
+        default="",
+        doc="""
+        System output written to the Terminal""",
+    )
 
-    ncols = param.Integer(readonly=True, doc="""
-        The number of columns in the terminal.""")
+    ncols = param.Integer(
+        readonly=True,
+        doc="""
+        The number of columns in the terminal.""",
+    )
 
-    nrows = param.Integer(readonly=True, doc="""
-        The number of rows in the terminal.""")
+    nrows = param.Integer(
+        readonly=True,
+        doc="""
+        The number of rows in the terminal.""",
+    )
 
-    value = param.String(label="Input", readonly=True, doc="""
-        User input received from the Terminal. Sent one character at the time.""")
+    value = param.String(
+        label="Input",
+        readonly=True,
+        doc="""
+        User input received from the Terminal. Sent one character at the time.""",
+    )
 
-    write_to_console = param.Boolean(default=False, doc="""
-        Whether or not to write to the server console.""")
+    write_to_console = param.Boolean(
+        default=False,
+        doc="""
+        Whether or not to write to the server console.""",
+    )
 
     _clears = param.Integer(doc="Sends a signal to clear the terminal")
 
     _output = param.String(default="")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'clear': None, 'name': None, 'output': None, '_output': 'output',
-        'value': None, 'write_to_console': None,
+        "clear": None,
+        "name": None,
+        "output": None,
+        "_output": "output",
+        "value": None,
+        "write_to_console": None,
     }
 
     def __init__(self, output=None, **params):
-        params['_output'] = output = output or ''
-        params['clear'] = self._clear
+        params["_output"] = output = output or ""
+        params["clear"] = self._clear
         super().__init__(output=output, **params)
         self._subprocess = None
 
@@ -274,13 +307,13 @@ class Terminal(Widget):
         if isinstance(__s, str):
             cleaned = __s
         elif isinstance(__s, bytes):
-            cleaned = __s.decode('utf8')
+            cleaned = __s.decode("utf8")
         else:
             cleaned = str(__s)
 
         if self._output == cleaned:
             # Hack to support writing the same string multiple times in a row
-            self._output = ''
+            self._output = ""
 
         self._output = cleaned
         self.output += cleaned
@@ -288,34 +321,32 @@ class Terminal(Widget):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if self._widget_type is None:
-            self._widget_type = lazy_load(
-                'panel.models.terminal', 'Terminal', isinstance(comm, JupyterComm), root
-            )
+            self._widget_type = lazy_load("panel.models.terminal", "Terminal", isinstance(comm, JupyterComm), root)
         model = super()._get_model(doc, root, parent, comm)
         model.output = self.output
-        self._register_events('keystroke', model=model, doc=doc, comm=comm)
+        self._register_events("keystroke", model=model, doc=doc, comm=comm)
         return model
 
     def _process_event(self, event):
         with edit_readonly(self):
             self.value = event.key
             with param.discard_events(self):
-                self.value = ''
+                self.value = ""
 
     def _clear(self, *events):
         """
         Clears all output on the terminal.
         """
-        self.output = ''
+        self.output = ""
         self._clears += 1
 
-    @param.depends('_output', watch=True)
+    @param.depends("_output", watch=True)
     def _write(self):
         if self.write_to_console:
             sys.__stdout__.write(self._output)
 
     def __repr__(self, depth=None):
-        return f'Terminal(id={id(self)})'
+        return f"Terminal(id={id(self)})"
 
     @property
     def subprocess(self):
@@ -353,7 +384,7 @@ class Terminal(Widget):
     def readlines(self, hint=-1):
         lines = []
         size = 0
-        for line in self.output.split('\n'):
+        for line in self.output.split("\n"):
             if hint > -1 and size > hint:
                 size += sys.getsizeof(line)
                 break

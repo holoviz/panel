@@ -14,19 +14,11 @@ from panel.pane import Alert, Vega
 from panel.tests.util import hv_available
 
 vega_example = {
-    'config': {
-        'mark': {'tooltip': None},
-        'view': {'height': 300, 'width': 400}
-    },
-    'data': {'values': [{'x': 'A', 'y': 5},
-                        {'x': 'B', 'y': 3},
-                        {'x': 'C', 'y': 6},
-                        {'x': 'D', 'y': 7},
-                        {'x': 'E', 'y': 2}]},
-    'mark': 'bar',
-    'encoding': {'x': {'type': 'ordinal', 'field': 'x'},
-                 'y': {'type': 'quantitative', 'field': 'y'}},
-    '$schema': 'https://vega.github.io/schema/vega-lite/v3.2.1.json'
+    "config": {"mark": {"tooltip": None}, "view": {"height": 300, "width": 400}},
+    "data": {"values": [{"x": "A", "y": 5}, {"x": "B", "y": 3}, {"x": "C", "y": 6}, {"x": "D", "y": 7}, {"x": "E", "y": 2}]},
+    "mark": "bar",
+    "encoding": {"x": {"type": "ordinal", "field": "x"}, "y": {"type": "quantitative", "field": "y"}},
+    "$schema": "https://vega.github.io/schema/vega-lite/v3.2.1.json",
 }
 
 
@@ -38,36 +30,37 @@ def test_save_external():
     sio.seek(0)
     html = sio.read()
     for js in VegaPlot.__javascript_raw__:
-        assert js.replace(config.npm_cdn, f'{CDN_DIST}bundled/vegaplot') in html
+        assert js.replace(config.npm_cdn, f"{CDN_DIST}bundled/vegaplot") in html
 
 
 def test_save_inline_resources():
-    alert = Alert('# Save test')
+    alert = Alert("# Save test")
 
     sio = StringIO()
-    alert.save(sio, resources='inline')
+    alert.save(sio, resources="inline")
     sio.seek(0)
     html = sio.read()
-    assert 'alert-primary' in html
+    assert "alert-primary" in html
 
 
 def test_save_cdn_resources():
-    alert = Alert('# Save test')
+    alert = Alert("# Save test")
 
     sio = StringIO()
-    alert.save(sio, resources='cdn')
+    alert.save(sio, resources="cdn")
     sio.seek(0)
     html = sio.read()
-    assert re.findall('https://cdn.holoviz.org/panel/(.*)/dist/panel.min.js', html)
+    assert re.findall("https://cdn.holoviz.org/panel/(.*)/dist/panel.min.js", html)
 
 
 @hv_available
 def test_static_path_in_holoviews_save(tmpdir):
     import holoviews as hv
-    hv.Store.set_current_backend('bokeh')
+
+    hv.Store.set_current_backend("bokeh")
     plot = hv.Curve(np.random.seed(42))
-    res = Resources(mode='server', root_url='/')
-    out_file = Path(tmpdir) / 'plot.html'
+    res = Resources(mode="server", root_url="/")
+    out_file = Path(tmpdir) / "plot.html"
     hv.save(plot, out_file, resources=res)
     content = out_file.read_text()
 

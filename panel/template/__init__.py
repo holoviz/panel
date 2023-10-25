@@ -10,13 +10,13 @@ from .slides import SlidesTemplate  # noqa
 from .vanilla import VanillaTemplate  # noqa
 
 templates = {
-    'bootstrap' : BootstrapTemplate,
-    'fast'      : FastListTemplate,
-    'fast-list' : FastListTemplate,
-    'material'  : MaterialTemplate,
-    'golden'    : GoldenTemplate,
-    'slides'    : SlidesTemplate,
-    'vanilla'   : VanillaTemplate
+    "bootstrap": BootstrapTemplate,
+    "fast": FastListTemplate,
+    "fast-list": FastListTemplate,
+    "material": MaterialTemplate,
+    "golden": GoldenTemplate,
+    "slides": SlidesTemplate,
+    "vanilla": VanillaTemplate,
 }
 
 _config.param.template.objects = list(templates)

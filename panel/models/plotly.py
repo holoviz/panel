@@ -16,10 +16,7 @@ class PlotlyPlot(LayoutDOM):
     a bokeh plot.
     """
 
-    __javascript_raw__ = [
-        JS_URLS['jQuery'],
-        'https://cdn.plot.ly/plotly-2.18.0.min.js'
-    ]
+    __javascript_raw__ = [JS_URLS["jQuery"], "https://cdn.plot.ly/plotly-2.18.0.min.js"]
 
     @classproperty
     def __javascript__(cls):
@@ -27,14 +24,9 @@ class PlotlyPlot(LayoutDOM):
 
     @classproperty
     def __js_skip__(cls):
-        return {'Plotly': cls.__javascript__[1:]}
+        return {"Plotly": cls.__javascript__[1:]}
 
-    __js_require__ = {
-        'paths': {
-            'plotly': 'https://cdn.plot.ly/plotly-2.18.0.min'
-        },
-        'exports': {'plotly': 'Plotly'}
-    }
+    __js_require__ = {"paths": {"plotly": "https://cdn.plot.ly/plotly-2.18.0.min"}, "exports": {"plotly": "Plotly"}}
 
     data = List(Any)
 
@@ -58,6 +50,6 @@ class PlotlyPlot(LayoutDOM):
     clickannotation_data = Either(Dict(String, Any), Null)
     selected_data = Either(Dict(String, Any), Null)
     viewport = Either(Dict(String, Any), Null)
-    viewport_update_policy = Enum( "mouseup", "continuous", "throttle")
+    viewport_update_policy = Enum("mouseup", "continuous", "throttle")
     viewport_update_throttle = Int()
     _render_count = Int()

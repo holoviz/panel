@@ -23,33 +23,32 @@ from .template.base import BasicTemplate
 from .theme import Design
 
 BASE_DIR = pathlib.Path(__file__).parent
-BUNDLE_DIR = pathlib.Path(__file__).parent / 'dist' / 'bundled'
+BUNDLE_DIR = pathlib.Path(__file__).parent / "dist" / "bundled"
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 # Public API
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
+
 
 def write_bundled_files(name, files, explicit_dir=None, ext=None):
-    model_name = name.split('.')[-1].lower()
+    model_name = name.split(".")[-1].lower()
     for bundle_file in files:
-        if not bundle_file.startswith('http'):
+        if not bundle_file.startswith("http"):
             dest_path = BUNDLE_DIR / name.lower() / bundle_file
             dest_path.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(BASE_DIR / 'theme' / bundle_file, dest_path)
+            shutil.copyfile(BASE_DIR / "theme" / bundle_file, dest_path)
             continue
 
-        bundle_file = bundle_file.split('?')[0]
+        bundle_file = bundle_file.split("?")[0]
         try:
             response = requests.get(bundle_file)
         except Exception:
             try:
                 response = requests.get(bundle_file, verify=False)
             except Exception as e:
-                raise ConnectionError(
-                    f"Failed to fetch {name} dependency: {bundle_file}. Errored with {e}."
-                )
+                raise ConnectionError(f"Failed to fetch {name} dependency: {bundle_file}. Errored with {e}.")
         try:
-            map_file = f'{bundle_file}.map'
+            map_file = f"{bundle_file}.map"
             map_response = requests.get(map_file)
         except Exception:
             try:
@@ -57,45 +56,46 @@ def write_bundled_files(name, files, explicit_dir=None, ext=None):
             except Exception:
                 map_response = None
         if bundle_file.startswith(config.npm_cdn):
-            bundle_path = os.path.join(*bundle_file.replace(config.npm_cdn, '').split('/'))
+            bundle_path = os.path.join(*bundle_file.replace(config.npm_cdn, "").split("/"))
         else:
-            bundle_path = os.path.join(*os.path.join(*bundle_file.split('//')[1:]).split('/')[1:])
+            bundle_path = os.path.join(*os.path.join(*bundle_file.split("//")[1:]).split("/")[1:])
         obj_dir = explicit_dir or model_name
         filename = BUNDLE_DIR.joinpath(obj_dir, bundle_path)
         filename.parent.mkdir(parents=True, exist_ok=True)
         filename = str(filename)
         if ext and not str(filename).endswith(ext):
-            filename += f'.{ext}'
-        if filename.endswith('.ttf'):
-            with open(filename, 'wb') as f:
+            filename += f".{ext}"
+        if filename.endswith(".ttf"):
+            with open(filename, "wb") as f:
                 f.write(response.content)
         else:
-            content = response.content.decode('utf-8')
-            with open(filename, 'w', encoding="utf-8") as f:
+            content = response.content.decode("utf-8")
+            with open(filename, "w", encoding="utf-8") as f:
                 f.write(content)
         if map_response:
-            with open(f'{filename}.map', 'w', encoding="utf-8") as f:
-                f.write(map_response.content.decode('utf-8'))
+            with open(f"{filename}.map", "w", encoding="utf-8") as f:
+                f.write(map_response.content.decode("utf-8"))
+
 
 def write_bundled_tarball(tarball, name=None, module=False):
-    model_name = name.split('.')[-1].lower() if name else ''
+    model_name = name.split(".")[-1].lower() if name else ""
     try:
-        response = requests.get(tarball['tar'])
+        response = requests.get(tarball["tar"])
     except Exception:
-        response = requests.get(tarball['tar'], verify=False)
+        response = requests.get(tarball["tar"], verify=False)
     f = io.BytesIO()
     f.write(response.content)
     f.seek(0)
     tar_obj = tarfile.open(fileobj=f)
-    exclude = tarball.get('exclude', [])
+    exclude = tarball.get("exclude", [])
     for tarf in tar_obj:
-        if not tarf.name.startswith(tarball['src']) or not tarf.isfile():
+        if not tarf.name.startswith(tarball["src"]) or not tarf.isfile():
             continue
-        path = tarf.name.replace(tarball['src'], '')
+        path = tarf.name.replace(tarball["src"], "")
         if any(fnmatch.fnmatch(tarf.name, exc) for exc in exclude):
             continue
-        bundle_path = os.path.join(*path.split('/'))
-        dest_path = tarball['dest'].replace('/', os.path.sep)
+        bundle_path = os.path.join(*path.split("/"))
+        dest_path = tarball["dest"].replace("/", os.path.sep)
         if model_name:
             filename = BUNDLE_DIR.joinpath(model_name, dest_path, bundle_path)
         else:
@@ -103,83 +103,87 @@ def write_bundled_tarball(tarball, name=None, module=False):
         filename.parent.mkdir(parents=True, exist_ok=True)
         fobj = tar_obj.extractfile(tarf.name)
         filename = str(filename)
-        if module and filename.endswith('.js'):
+        if module and filename.endswith(".js"):
             filename = filename[:-3]
-            if filename.endswith('index'):
-                filename += '.mjs'
-        if any(filename.endswith(ft) for ft in ('.ttf', '.eot', '.woff', '.woff2')):
+            if filename.endswith("index"):
+                filename += ".mjs"
+        if any(filename.endswith(ft) for ft in (".ttf", ".eot", ".woff", ".woff2")):
             content = fobj.read()
-            with open(filename, 'wb') as f:
+            with open(filename, "wb") as f:
                 f.write(content)
         else:
-            content = fobj.read().decode('utf-8')
-            with open(filename, 'w', encoding="utf-8") as f:
+            content = fobj.read().decode("utf-8")
+            with open(filename, "w", encoding="utf-8") as f:
                 f.write(content)
     tar_obj.close()
 
+
 def write_bundled_zip(name, resource):
     try:
-        response = requests.get(resource['zip'])
+        response = requests.get(resource["zip"])
     except Exception:
-        response = requests.get(resource['zip'], verify=False)
+        response = requests.get(resource["zip"], verify=False)
     f = io.BytesIO()
     f.write(response.content)
     f.seek(0)
     zip_obj = zipfile.ZipFile(f)
-    exclude = resource.get('exclude', [])
+    exclude = resource.get("exclude", [])
     for zipf in zip_obj.namelist():
-        path = zipf.replace(resource['src'], '')
-        if any(fnmatch.fnmatch(zipf, exc) for exc in exclude) or zipf.endswith('/'):
+        path = zipf.replace(resource["src"], "")
+        if any(fnmatch.fnmatch(zipf, exc) for exc in exclude) or zipf.endswith("/"):
             continue
-        bundle_path = path.replace('/', os.path.sep)
+        bundle_path = path.replace("/", os.path.sep)
         filename = BUNDLE_DIR.joinpath(name, bundle_path)
         filename.parent.mkdir(parents=True, exist_ok=True)
         fdata = zip_obj.read(zipf)
         filename = str(filename)
-        if any(filename.endswith(ft) for ft in ('.ttf', '.eot', '.woff', '.woff2')):
-            with open(filename, 'wb') as f:
+        if any(filename.endswith(ft) for ft in (".ttf", ".eot", ".woff", ".woff2")):
+            with open(filename, "wb") as f:
                 f.write(fdata)
         else:
-            with open(filename, 'w', encoding="utf-8") as f:
-                f.write(fdata.decode('utf-8'))
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(fdata.decode("utf-8"))
     zip_obj.close()
 
+
 def write_component_resources(name, component):
-    write_bundled_files(name, list(component._resources.get('css', {}).values()), BUNDLE_DIR, 'css')
-    write_bundled_files(name, list(component._resources.get('js', {}).values()), BUNDLE_DIR, 'js')
+    write_bundled_files(name, list(component._resources.get("css", {}).values()), BUNDLE_DIR, "css")
+    write_bundled_files(name, list(component._resources.get("js", {}).values()), BUNDLE_DIR, "js")
     js_modules = []
-    for tar_name, js_module in component._resources.get('js_modules', {}).items():
-        if tar_name not in component._resources.get('tarball', {}):
+    for tar_name, js_module in component._resources.get("js_modules", {}).items():
+        if tar_name not in component._resources.get("tarball", {}):
             js_modules.append(js_module)
-    write_bundled_files(name, js_modules, 'js', ext='mjs')
-    for tarball in component._resources.get('tarball', {}).values():
+    write_bundled_files(name, js_modules, "js", ext="mjs")
+    for tarball in component._resources.get("tarball", {}).values():
         write_bundled_tarball(tarball)
+
 
 def bundle_resource_urls(verbose=False, external=True):
     # Collect shared resources
     for name, resource in RESOURCE_URLS.items():
         if verbose:
-            print(f'Bundling shared resource {name}.')
-        if 'zip' in resource:
+            print(f"Bundling shared resource {name}.")
+        if "zip" in resource:
             write_bundled_zip(name, resource)
-        elif 'tar' in resource:
+        elif "tar" in resource:
             write_bundled_tarball(resource, name=name)
+
 
 def bundle_templates(verbose=False, external=True):
     # Bundle Template resources
     for name, template in param.concrete_descendents(BasicTemplate).items():
         if verbose:
-            print(f'Bundling {name} resources')
+            print(f"Bundling {name} resources")
 
         # Bundle Template._resources
-        if template._resources.get('bundle', True) and external:
+        if template._resources.get("bundle", True) and external:
             write_component_resources(name, template)
 
         # Bundle CSS files in template dir
         template_dir = pathlib.Path(inspect.getfile(template)).parent
         dest_dir = BUNDLE_DIR / name.lower()
         dest_dir.mkdir(parents=True, exist_ok=True)
-        for css in glob.glob(str(template_dir / '*.css')):
+        for css in glob.glob(str(template_dir / "*.css")):
             shutil.copyfile(css, dest_dir / os.path.basename(css))
 
         # Bundle Template._css
@@ -218,21 +222,21 @@ def bundle_themes(verbose=False, external=True):
     # Bundle design stylesheets
     for name, design in param.concrete_descendents(Design).items():
         if verbose:
-            print(f'Bundling {name} design resources')
+            print(f"Bundling {name} design resources")
 
         # Bundle Design._resources
-        if design._resources.get('bundle', True) and external:
+        if design._resources.get("bundle", True) and external:
             write_component_resources(name, design)
 
-    theme_bundle_dir = BUNDLE_DIR / 'theme'
+    theme_bundle_dir = BUNDLE_DIR / "theme"
     theme_bundle_dir.mkdir(parents=True, exist_ok=True)
-    for design_css in glob.glob(str(BASE_DIR / 'theme' / 'css' / '*.css')):
+    for design_css in glob.glob(str(BASE_DIR / "theme" / "css" / "*.css")):
         shutil.copyfile(design_css, theme_bundle_dir / os.path.basename(design_css))
 
 
 def bundle_models(verbose=False, external=True):
     for imp in panel_extension._imports.values():
-        if imp.startswith('panel.models'):
+        if imp.startswith("panel.models"):
             __import__(imp)
 
     if not external:
@@ -241,43 +245,37 @@ def bundle_models(verbose=False, external=True):
     # Extract Model dependencies
     js_files, css_files, resource_files = {}, {}, {}
     reactive = param.concrete_descendents(ReactiveHTML).values()
-    models = (
-        list(Model.model_class_reverse_map.items()) +
-        [(f'{m.__module__}.{m.__name__}', m) for m in reactive]
-    )
+    models = list(Model.model_class_reverse_map.items()) + [(f"{m.__module__}.{m.__name__}", m) for m in reactive]
     for name, model in models:
-        if not name.startswith('panel.'):
+        if not name.startswith("panel."):
             continue
         if verbose:
-            print(f'Collecting {name} resources')
-        prev_jsfiles = getattr(model, '__javascript_raw__', None)
-        prev_jsbundle = getattr(model, '__tarball__', None)
+            print(f"Collecting {name} resources")
+        prev_jsfiles = getattr(model, "__javascript_raw__", None)
+        prev_jsbundle = getattr(model, "__tarball__", None)
         prev_cls = model
         for cls in model.__mro__[1:]:
-            jsfiles = getattr(cls, '__javascript_raw__', None)
-            if ((jsfiles is None and prev_jsfiles is not None) or
-                (jsfiles is not None and jsfiles != prev_jsfiles)):
+            jsfiles = getattr(cls, "__javascript_raw__", None)
+            if (jsfiles is None and prev_jsfiles is not None) or (jsfiles is not None and jsfiles != prev_jsfiles):
                 if prev_jsbundle:
                     js_files[prev_cls.__name__] = prev_jsbundle
                 else:
                     js_files[prev_cls.__name__] = prev_jsfiles
                 break
             prev_cls = cls
-        prev_cssfiles = getattr(model, '__css_raw__', None)
+        prev_cssfiles = getattr(model, "__css_raw__", None)
         prev_cls = model
         for cls in model.__mro__[1:]:
-            cssfiles = getattr(cls, '__css_raw__', None)
-            if ((cssfiles is None and prev_cssfiles is not None) or
-                (cssfiles is not None and cssfiles != prev_cssfiles)):
+            cssfiles = getattr(cls, "__css_raw__", None)
+            if (cssfiles is None and prev_cssfiles is not None) or (cssfiles is not None and cssfiles != prev_cssfiles):
                 css_files[prev_cls.__name__] = prev_cssfiles
                 break
             prev_cls = cls
-        prev_resources = getattr(model, '__resources__', None)
+        prev_resources = getattr(model, "__resources__", None)
         prev_cls = model
         for cls in model.__mro__[1:]:
-            resources = getattr(cls, '__resources__', None)
-            if ((resources is None and prev_resources is not None) or
-                (resources is not None and resources != prev_resources)):
+            resources = getattr(cls, "__resources__", None)
+            if (resources is None and prev_resources is not None) or (resources is not None and resources != prev_resources):
                 resource_files[prev_cls.__name__] = prev_resources
                 break
             prev_cls = cls
@@ -285,7 +283,7 @@ def bundle_models(verbose=False, external=True):
     # Bundle Model dependencies
     for name, jsfiles in js_files.items():
         if verbose:
-            print(f'Bundling {name} model JS resources')
+            print(f"Bundling {name} model JS resources")
         if isinstance(jsfiles, dict):
             write_bundled_tarball(jsfiles, name=name)
         else:
@@ -293,19 +291,21 @@ def bundle_models(verbose=False, external=True):
 
     for name, cssfiles in css_files.items():
         if verbose:
-            print(f'Bundling {name} model CSS resources')
+            print(f"Bundling {name} model CSS resources")
         write_bundled_files(name, cssfiles)
 
     for name, res_files in resource_files.items():
         write_bundled_files(name, res_files)
 
+
 def bundle_icons(verbose=False, external=True):
     # Bundle icons & images
-    dest_dir = BUNDLE_DIR / 'images'
+    dest_dir = BUNDLE_DIR / "images"
     dest_dir.mkdir(parents=True, exist_ok=True)
-    icon_dir = pathlib.Path(__file__).parent.parent / 'doc' / '_static' / 'icons'
-    for icon in glob.glob(str(icon_dir / '*')):
+    icon_dir = pathlib.Path(__file__).parent.parent / "doc" / "_static" / "icons"
+    for icon in glob.glob(str(icon_dir / "*")):
         shutil.copyfile(icon, dest_dir / os.path.basename(icon))
+
 
 def bundle_resources(verbose=False, external=True):
     bundle_resource_urls(verbose=verbose, external=external)

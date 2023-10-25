@@ -12,9 +12,7 @@ from bokeh.command.util import (
 )
 
 
-def extract_code(
-    filehandle: IO, supported_syntax: tuple[str, ...] = ('{pyodide}', 'python')
-) -> str:
+def extract_code(filehandle: IO, supported_syntax: tuple[str, ...] = ("{pyodide}", "python")) -> str:
     """
     Extracts Panel application code from a Markdown file.
     """
@@ -37,54 +35,55 @@ def extract_code(
                 out.append(line)
         elif lsline.startswith("```"):
             num_leading_backticks = len(lsline) - len(lsline.lstrip("`"))
-            block_opener = '`'*num_leading_backticks
+            block_opener = "`" * num_leading_backticks
             syntax = line.strip()[num_leading_backticks:]
             if syntax in supported_syntax:
                 if markdown:
-                    md = ''.join(markdown)
+                    md = "".join(markdown)
                     markdown.clear()
-                    if any('pn.extension' in o for o in out):
+                    if any("pn.extension" in o for o in out):
                         out.append(f"pn.pane.Markdown({md!r}).servable()\n")
                 inblock = True
             else:
                 markdown.append(line)
-        elif line.startswith('# '):
+        elif line.startswith("# "):
             title = line[1:].lstrip()
         else:
             markdown.append(line)
     if markdown:
-        md = ''.join(markdown)
-        if any('pn.extension' in o for o in out):
+        md = "".join(markdown)
+        if any("pn.extension" in o for o in out):
             out.append(f"pn.pane.Markdown({md!r}).servable()\n")
-    if title and any('template=' in o for o in out if 'pn.extension' in o):
-        out.append(f'pn.state.template.title = {title.strip()!r}')
-    return '\n'.join(out)
+    if title and any("template=" in o for o in out if "pn.extension" in o):
+        out.append(f"pn.state.template.title = {title.strip()!r}")
+    return "\n".join(out)
+
 
 class MarkdownHandler(CodeHandler):
-    ''' Modify Bokeh documents by creating Dashboard from a Markdown file.
-
-    '''
+    """Modify Bokeh documents by creating Dashboard from a Markdown file."""
 
     def __init__(self, *args, **kwargs):
-        '''
+        """
 
         Keywords:
             filename (str) : a path to a Markdown (".md") file
 
-        '''
-        if 'filename' not in kwargs:
-            raise ValueError('Must pass a filename to Handler')
-        filename = os.path.abspath(kwargs['filename'])
-        with open(filename, encoding='utf-8') as f:
+        """
+        if "filename" not in kwargs:
+            raise ValueError("Must pass a filename to Handler")
+        filename = os.path.abspath(kwargs["filename"])
+        with open(filename, encoding="utf-8") as f:
             code = extract_code(f)
-        kwargs['source'] = code
+        kwargs["source"] = code
         super().__init__(*args, **kwargs)
+
 
 def build_single_handler_application(path, argv=None):
     if not os.path.isfile(path) or not path.endswith(".md"):
         return _build_application(path, argv)
 
     from .server import Application
+
     handler = MarkdownHandler(filename=path)
     if handler.failed:
         raise RuntimeError("Error loading %s:\n\n%s\n%s " % (path, handler.error, handler.error_detail))
@@ -92,5 +91,6 @@ def build_single_handler_application(path, argv=None):
     application = Application(handler)
 
     return application
+
 
 bokeh.command.util.build_single_handler_application = build_single_handler_application

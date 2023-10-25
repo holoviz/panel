@@ -24,7 +24,7 @@ class SpeechToText(Widget):
     stop = Bool()
     abort = Bool()
 
-    grammars = List(Dict(String,Any))
+    grammars = List(Dict(String, Any))
     lang = String()
     continuous = Bool()
     interim_results = Bool()

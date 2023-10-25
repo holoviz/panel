@@ -47,27 +47,29 @@ class GridBox(ListPanel):
     ... )
     """
 
-    nrows = param.Integer(default=None, bounds=(0, None), doc="""
-      Number of rows to reflow the layout into.""")
+    nrows = param.Integer(
+        default=None,
+        bounds=(0, None),
+        doc="""
+      Number of rows to reflow the layout into.""",
+    )
 
-    ncols = param.Integer(default=None, bounds=(0, None),  doc="""
-      Number of columns to reflow the layout into.""")
+    ncols = param.Integer(
+        default=None,
+        bounds=(0, None),
+        doc="""
+      Number of columns to reflow the layout into.""",
+    )
 
     _bokeh_model: ClassVar[Model] = BkGridBox
 
-    _linked_properties: ClassVar[Tuple[str,...]] = ()
+    _linked_properties: ClassVar[Tuple[str, ...]] = ()
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
-        'objects': 'children'
-    }
+    _rename: ClassVar[Mapping[str, str | None]] = {"objects": "children"}
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
-        'scroll': None, 'objects': None
-    }
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {"scroll": None, "objects": None}
 
-    _stylesheets: ClassVar[List[str]] = [
-        f'{CDN_DIST}css/gridbox.css'
-    ]
+    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/gridbox.css"]
 
     @classmethod
     def _flatten_grid(cls, layout, nrows=None, ncols=None):
@@ -82,7 +84,7 @@ class GridBox(ListPanel):
 
         def lcm(a, *rest):
             for b in rest:
-                a = (a*b) // gcd(a, b)
+                a = (a * b) // gcd(a, b)
             return a
 
         nonempty = lambda child: child.nrows != 0 and child.ncols != 0
@@ -95,16 +97,16 @@ class GridBox(ListPanel):
                     return Grid(0, 0, [])
 
                 nrows = lcm(*[child.nrows for child in children])
-                if not ncols: # This differs from bokeh.layout.grid
+                if not ncols:  # This differs from bokeh.layout.grid
                     ncols = sum([child.ncols for child in children])
 
                 items = []
                 offset = 0
                 for child in children:
-                    factor = nrows//child.nrows
+                    factor = nrows // child.nrows
 
-                    for (layout, r0, c0, r1, c1) in child.items:
-                        items.append((layout, factor*r0, c0 + offset, factor*r1, c1 + offset))
+                    for layout, r0, c0, r1, c1 in child.items:
+                        items.append((layout, factor * r0, c0 + offset, factor * r1, c1 + offset))
 
                     offset += child.ncols
 
@@ -114,17 +116,17 @@ class GridBox(ListPanel):
                 if not children:
                     return Grid(0, 0, [])
 
-                if not nrows: # This differs from bokeh.layout.grid
-                    nrows = sum([ child.nrows for child in children ])
-                ncols = lcm(*[ child.ncols for child in children ])
+                if not nrows:  # This differs from bokeh.layout.grid
+                    nrows = sum([child.nrows for child in children])
+                ncols = lcm(*[child.ncols for child in children])
 
                 items = []
                 offset = 0
                 for child in children:
-                    factor = ncols//child.ncols
+                    factor = ncols // child.ncols
 
-                    for (layout, r0, c0, r1, c1) in child.items:
-                        items.append((layout, r0 + offset, factor*c0, r1 + offset, factor*c1))
+                    for layout, r0, c0, r1, c1 in child.items:
+                        items.append((layout, r0 + offset, factor * c0, r1 + offset, factor * c1))
 
                     offset += child.nrows
 
@@ -135,7 +137,7 @@ class GridBox(ListPanel):
         grid = _flatten(layout, nrows, ncols)
 
         children = []
-        for (layout, r0, c0, r1, c1) in grid.items:
+        for layout, r0, c0, r1, c1 in grid.items:
             if layout is not None:
                 children.append((layout, r0, c0, r1 - r0, c1 - c0))
         return children
@@ -149,71 +151,72 @@ class GridBox(ListPanel):
         if nrows is not None or ncols is not None:
             N = len(children)
             if ncols is None:
-                ncols = int(math.ceil(N/nrows))
-            layout = _col([ _row(children[i:i+ncols]) for i in range(0, N, ncols) ])
+                ncols = int(math.ceil(N / nrows))
+            layout = _col([_row(children[i : i + ncols]) for i in range(0, N, ncols)])
         else:
+
             def traverse(children, level=0):
                 if isinstance(children, list):
                     container = _col if level % 2 == 0 else _row
-                    return container([ traverse(child, level+1) for child in children ])
+                    return container([traverse(child, level + 1) for child in children])
                 else:
                     return children
+
             layout = traverse(children)
         return cls._flatten_grid(layout, nrows, ncols)
 
     def _compute_css_classes(self, children):
         equal_widths, equal_heights = True, True
-        for (child, _, _, _, _) in children:
-            if child.sizing_mode and (child.sizing_mode.endswith('_both') or child.sizing_mode.endswith('_width')):
+        for child, _, _, _, _ in children:
+            if child.sizing_mode and (child.sizing_mode.endswith("_both") or child.sizing_mode.endswith("_width")):
                 equal_widths &= True
             else:
                 equal_widths = False
-            if child.sizing_mode and (child.sizing_mode.endswith('_both') or child.sizing_mode.endswith('_height')):
+            if child.sizing_mode and (child.sizing_mode.endswith("_both") or child.sizing_mode.endswith("_height")):
                 equal_heights &= True
             else:
                 equal_heights = False
         css_classes = []
         if equal_widths:
-            css_classes.append('equal-width')
+            css_classes.append("equal-width")
         if equal_heights:
-            css_classes.append('equal-height')
+            css_classes.append("equal-height")
         return css_classes
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self._bokeh_model()
         root = root or model
-        self._models[root.ref['id']] = (model, parent)
+        self._models[root.ref["id"]] = (model, parent)
         objects, _ = self._get_objects(model, [], doc, root, comm)
         children = self._get_children(objects, self.nrows, self.ncols)
         css_classes = self._compute_css_classes(children)
-        properties = {k: v for k, v in self._get_properties(doc).items() if k not in ('ncols', 'nrows')}
-        properties['css_classes'] = css_classes + properties.get('css_classes', [])
-        properties['children'] = children
+        properties = {k: v for k, v in self._get_properties(doc).items() if k not in ("ncols", "nrows")}
+        properties["css_classes"] = css_classes + properties.get("css_classes", [])
+        properties["children"] = children
         model.update(**properties)
         self._link_props(model, self._linked_properties, doc, root, comm)
         return model
 
     def _update_model(
-        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any], root: Model, model: Model, doc: Document, comm: Optional[Comm]
     ) -> None:
         from ..io import state
 
         msg = dict(msg)
         preprocess = any(self._rename.get(k, k) in self._preprocess_params for k in msg)
-        if self._rename['objects'] in msg or 'ncols' in msg or 'nrows' in msg:
-            if 'objects' in events:
-                old = events['objects'].old
+        if self._rename["objects"] in msg or "ncols" in msg or "nrows" in msg:
+            if "objects" in events:
+                old = events["objects"].old
             else:
                 old = self.objects
             objects, old_models = self._get_objects(model, old, doc, root, comm)
             children = self._get_children(objects, self.nrows, self.ncols)
-            msg[self._rename['objects']] = children
+            msg[self._rename["objects"]] = children
         else:
             old_models = None
 
         with hold(doc):
-            msg = {k: v for k, v in msg.items() if k not in ('nrows', 'ncols')}
+            msg = {k: v for k, v in msg.items() if k not in ("nrows", "ncols")}
             update = Panel._batch_update
             Panel._batch_update = True
             try:
@@ -221,7 +224,7 @@ class GridBox(ListPanel):
                     super(Panel, self)._update_model(events, msg, root, model, doc, comm)
                     if update:
                         return
-                    ref = root.ref['id']
+                    ref = root.ref["id"]
                     if ref in state._views and preprocess:
                         state._views[ref][0]._preprocess(root, self, old_models)
             finally:
@@ -229,55 +232,65 @@ class GridBox(ListPanel):
 
 
 class GridSpec(Panel):
+    objects = param.Dict(
+        default={},
+        doc="""
+        The dictionary of child objects that make up the grid.""",
+    )
 
-    objects = param.Dict(default={}, doc="""
-        The dictionary of child objects that make up the grid.""")
+    mode = param.ObjectSelector(
+        default="warn",
+        objects=["warn", "error", "override"],
+        doc="""
+        Whether to warn, error or simply override on overlapping assignment.""",
+    )
 
-    mode = param.ObjectSelector(default='warn', objects=['warn', 'error', 'override'], doc="""
-        Whether to warn, error or simply override on overlapping assignment.""")
+    ncols = param.Integer(
+        default=None,
+        bounds=(0, None),
+        doc="""
+        Limits the number of columns that can be assigned.""",
+    )
 
-    ncols = param.Integer(default=None, bounds=(0, None), doc="""
-        Limits the number of columns that can be assigned.""")
-
-    nrows = param.Integer(default=None, bounds=(0, None), doc="""
-        Limits the number of rows that can be assigned.""")
+    nrows = param.Integer(
+        default=None,
+        bounds=(0, None),
+        doc="""
+        Limits the number of rows that can be assigned.""",
+    )
 
     _bokeh_model: ClassVar[Model] = BkGridBox
 
     _linked_properties: ClassVar[Tuple[str]] = ()
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
-        'objects': 'children', 'mode': None, 'ncols': None, 'nrows': None
-    }
+    _rename: ClassVar[Mapping[str, str | None]] = {"objects": "children", "mode": None, "ncols": None, "nrows": None}
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
-        'objects': None, 'mode': None
-    }
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {"objects": None, "mode": None}
 
-    _preprocess_params: ClassVar[List[str]] = ['objects']
+    _preprocess_params: ClassVar[List[str]] = ["objects"]
 
-    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/gridspec.css']
+    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/gridspec.css"]
 
     def __init__(self, **params):
-        if 'objects' not in params:
-            params['objects'] = OrderedDict()
+        if "objects" not in params:
+            params["objects"] = OrderedDict()
         super().__init__(**params)
         self._updating = False
         self._update_nrows()
         self._update_ncols()
         self._update_grid_size()
 
-    @param.depends('nrows', watch=True)
+    @param.depends("nrows", watch=True)
     def _update_nrows(self):
         if not self._updating:
             self._rows_fixed = bool(self.nrows)
 
-    @param.depends('ncols', watch=True)
+    @param.depends("ncols", watch=True)
     def _update_ncols(self):
         if not self._updating:
             self._cols_fixed = self.ncols is not None
 
-    @param.depends('objects', watch=True)
+    @param.depends("objects", watch=True)
     def _update_grid_size(self):
         self._updating = True
         if not self._cols_fixed:
@@ -290,23 +303,23 @@ class GridSpec(Panel):
 
     def _init_params(self):
         params = super()._init_params()
-        if self.sizing_mode not in ['fixed', None]:
-            if 'min_width' not in params and 'width' in params:
-                params['min_width'] = params['width']
-            if 'min_height' not in params and 'height' in params:
-                params['min_height'] = params['height']
+        if self.sizing_mode not in ["fixed", None]:
+            if "min_width" not in params and "width" in params:
+                params["min_width"] = params["width"]
+            if "min_height" not in params and "height" in params:
+                params["min_height"] = params["height"]
         return params
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
         from ..pane.base import RerenderError
 
         if self.ncols and self.width:
-            width = self.width/self.ncols
+            width = self.width / self.ncols
         else:
             width = 0
 
         if self.nrows and self.height:
-            height = self.height/self.nrows
+            height = self.height / self.nrows
         else:
             height = 0
 
@@ -324,26 +337,25 @@ class GridSpec(Panel):
             x1 = (self.ncols) if x1 is None else x1
             y0 = 0 if y0 is None else y0
             y1 = (self.nrows) if y1 is None else y1
-            r, c, h, w = (y0, x0, y1-y0, x1-x0)
+            r, c, h, w = (y0, x0, y1 - y0, x1 - x0)
 
             properties = {}
-            if self.sizing_mode in ['fixed', None]:
+            if self.sizing_mode in ["fixed", None]:
                 if width:
-                    properties['width'] = int(w*width)
+                    properties["width"] = int(w * width)
                 if height:
-                    properties['height'] = int(h*height)
+                    properties["height"] = int(h * height)
             else:
-                properties['sizing_mode'] = self.sizing_mode
-                if 'width' in self.sizing_mode and height:
-                    properties['height'] = int(h*height)
-                elif 'height' in self.sizing_mode and width:
-                    properties['width'] = int(w*width)
+                properties["sizing_mode"] = self.sizing_mode
+                if "width" in self.sizing_mode and height:
+                    properties["height"] = int(h * height)
+                elif "height" in self.sizing_mode and width:
+                    properties["width"] = int(w * width)
 
-            obj.param.update(**{k: v for k, v in properties.items()
-                                   if not obj.param[k].readonly})
+            obj.param.update(**{k: v for k, v in properties.items() if not obj.param[k].readonly})
 
             if obj in old_objects:
-                child, _ = obj._models[root.ref['id']]
+                child, _ = obj._models[root.ref["id"]]
                 old_children.append(child)
             else:
                 try:
@@ -393,14 +405,14 @@ class GridSpec(Panel):
         for p in self.objects.values():
             p._cleanup(root)
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Public API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
     @property
     def grid(self):
-        grid = np.zeros((self.nrows, self.ncols), dtype='uint8')
-        for (y0, x0, y1, x1) in self.objects:
+        grid = np.zeros((self.nrows, self.ncols), dtype="uint8")
+        for y0, x0, y1, x1 in self.objects:
             grid[y0:y1, x0:x1] += 1
         return grid
 
@@ -418,9 +430,9 @@ class GridSpec(Panel):
         """
         p = dict(self.param.values(), **params)
         if not self._cols_fixed:
-            del p['ncols']
+            del p["ncols"]
         if not self._rows_fixed:
-            del p['nrows']
+            del p["nrows"]
         return type(self)(**p)
 
     def __iter__(self):
@@ -440,7 +452,7 @@ class GridSpec(Panel):
             deleted = [list(subgrid)[0][0]]
         for key in deleted:
             del self.objects[key]
-        self.param.trigger('objects')
+        self.param.trigger("objects")
 
     def __getitem__(self, index):
         if isinstance(index, tuple):
@@ -455,15 +467,19 @@ class GridSpec(Panel):
             xoff, yoff = gspec._xoffset, gspec._yoffset
             adjusted = []
             for (y0, x0, y1, x1), obj in gspec.objects.items():
-                if y0 is not None: y0 -= yoff
-                if y1 is not None: y1 -= yoff
-                if x0 is not None: x0 -= xoff
-                if x1 is not None: x1 -= xoff
+                if y0 is not None:
+                    y0 -= yoff
+                if y1 is not None:
+                    y1 -= yoff
+                if x0 is not None:
+                    x0 -= xoff
+                if x1 is not None:
+                    x1 -= xoff
                 if ((y0, x0, y1, x1), obj) not in adjusted:
                     adjusted.append(((y0, x0, y1, x1), obj))
             gspec.objects = OrderedDict(adjusted)
-            width_scale = gspec.ncols/float(self.ncols)
-            height_scale = gspec.nrows/float(self.nrows)
+            width_scale = gspec.ncols / float(self.ncols)
+            height_scale = gspec.nrows / float(self.nrows)
             if gspec.width:
                 gspec.width = int(gspec.width * width_scale)
             if gspec.height:
@@ -478,19 +494,20 @@ class GridSpec(Panel):
 
     def __setitem__(self, index, obj):
         from ..pane.base import panel
+
         if not isinstance(index, tuple):
-            raise IndexError('Must supply a 2D index for GridSpec assignment.')
+            raise IndexError("Must supply a 2D index for GridSpec assignment.")
 
         yidx, xidx = index
         if isinstance(xidx, slice):
             x0, x1 = (xidx.start, xidx.stop)
         else:
-            x0, x1 = (xidx, xidx+1)
+            x0, x1 = (xidx, xidx + 1)
 
         if isinstance(yidx, slice):
             y0, y1 = (yidx.start, yidx.stop)
         else:
-            y0, y1 = (yidx, yidx+1)
+            y0, y1 = (yidx, yidx + 1)
 
         l = 0 if x0 is None else x0
         r = self.ncols if x1 is None else x1
@@ -498,17 +515,13 @@ class GridSpec(Panel):
         b = self.nrows if y1 is None else y1
 
         if self._cols_fixed and (l >= self.ncols or r > self.ncols):
-            raise IndexError('Assigned object to column(s) out-of-bounds '
-                             'of the grid declared by `ncols`. which '
-                             f'was set to {self.ncols}.')
+            raise IndexError("Assigned object to column(s) out-of-bounds " "of the grid declared by `ncols`. which " f"was set to {self.ncols}.")
         if self._rows_fixed and (t >= self.nrows or b > self.nrows):
-            raise IndexError('Assigned object to column(s) out-of-bounds '
-                             'of the grid declared by `nrows`, which '
-                             f'was set to {self.nrows}.')
+            raise IndexError("Assigned object to column(s) out-of-bounds " "of the grid declared by `nrows`, which " f"was set to {self.nrows}.")
 
         key = (y0, x0, y1, x1)
         overlap = key in self.objects
-        clone = self.clone(objects=OrderedDict(self.objects), mode='override')
+        clone = self.clone(objects=OrderedDict(self.objects), mode="override")
         if not overlap:
             clone.objects[key] = panel(obj)
             clone._update_grid_size()
@@ -520,24 +533,24 @@ class GridSpec(Panel):
         overlap_grid = grid > 1
         new_objects = OrderedDict(self.objects)
         if overlap_grid.any():
-            overlapping = ''
+            overlapping = ""
             objects = []
-            for (yidx, xidx) in zip(*np.where(overlap_grid)):
+            for yidx, xidx in zip(*np.where(overlap_grid)):
                 try:
                     old_obj = self[yidx, xidx]
                 except Exception:
                     continue
                 if old_obj not in objects:
                     objects.append(old_obj)
-                    overlapping += '    (%d, %d): %s\n\n' % (yidx, xidx, old_obj)
-            overlap_text = ('Specified region overlaps with the following '
-                            'existing object(s) in the grid:\n\n'+overlapping+
-                            'The following shows a view of the grid '
-                            '(empty: 0, occupied: 1, overlapping: 2):\n\n'+
-                            str(grid.astype('uint8')))
-            if self.mode == 'error':
+                    overlapping += "    (%d, %d): %s\n\n" % (yidx, xidx, old_obj)
+            overlap_text = (
+                "Specified region overlaps with the following "
+                "existing object(s) in the grid:\n\n" + overlapping + "The following shows a view of the grid "
+                "(empty: 0, occupied: 1, overlapping: 2):\n\n" + str(grid.astype("uint8"))
+            )
+            if self.mode == "error":
                 raise IndexError(overlap_text)
-            elif self.mode == 'warn':
+            elif self.mode == "warn":
                 self.param.warning(overlap_text)
 
             subgrid = self._object_grid[index]

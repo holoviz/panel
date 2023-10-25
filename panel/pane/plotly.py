@@ -53,9 +53,12 @@ class Plotly(ModelPane):
 
     hover_data = param.Dict(doc="Hover callback data")
 
-    link_figure = param.Boolean(default=True, doc="""
+    link_figure = param.Boolean(
+        default=True,
+        doc="""
        Attach callbacks to the Plotly figure to update output when it
-       is modified in place.""")
+       is modified in place.""",
+    )
 
     relayout_data = param.Dict(nested_refs=True, doc="Relayout callback data")
 
@@ -65,7 +68,9 @@ class Plotly(ModelPane):
 
     viewport = param.Dict(nested_refs=True, doc="Current viewport state")
 
-    viewport_update_policy = param.Selector(default="mouseup", doc="""
+    viewport_update_policy = param.Selector(
+        default="mouseup",
+        doc="""
         Policy by which the viewport parameter is updated during user interactions.
 
         * "mouseup": updates are synchronized when mouse button is
@@ -73,32 +78,39 @@ class Plotly(ModelPane):
         * "continuous": updates are synchronized continually while panning
         * "throttle": updates are synchronized while panning, at
           intervals determined by the viewport_update_throttle parameter
-        """, objects=["mouseup", "continuous", "throttle"])
+        """,
+        objects=["mouseup", "continuous", "throttle"],
+    )
 
-    viewport_update_throttle = param.Integer(default=200, bounds=(0, None), doc="""
+    viewport_update_throttle = param.Integer(
+        default=200,
+        bounds=(0, None),
+        doc="""
         Time interval in milliseconds at which viewport updates are
-        synchronized when viewport_update_policy is "throttle".""")
+        synchronized when viewport_update_policy is "throttle".""",
+    )
 
-    _render_count = param.Integer(default=0, doc="""
-        Number of renders, increment to trigger re-render""")
+    _render_count = param.Integer(
+        default=0,
+        doc="""
+        Number of renders, increment to trigger re-render""",
+    )
 
     priority: ClassVar[float | bool | None] = 0.8
 
-    _stylesheets: ClassVar[List[str]] = [
-        f'{CDN_DIST}css/plotly.css'
-    ]
+    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/plotly.css"]
 
     _updates: ClassVar[bool] = True
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
-        'link_figure': None, 'object': None
-    }
+    _rename: ClassVar[Mapping[str, str | None]] = {"link_figure": None, "object": None}
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
-        return ((isinstance(obj, list) and obj and all(cls.applies(o) for o in obj)) or
-                hasattr(obj, 'to_plotly_json') or (isinstance(obj, dict)
-                                                   and 'data' in obj and 'layout' in obj))
+        return (
+            (isinstance(obj, list) and obj and all(cls.applies(o) for o in obj))
+            or hasattr(obj, "to_plotly_json")
+            or (isinstance(obj, dict) and "data" in obj and "layout" in obj)
+        )
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
@@ -108,10 +120,11 @@ class Plotly(ModelPane):
 
     def _to_figure(self, obj):
         import plotly.graph_objs as go
+
         if isinstance(obj, go.Figure):
             return obj
         elif isinstance(obj, dict):
-            data, layout = obj['data'], obj['layout']
+            data, layout = obj["data"], obj["layout"]
         elif isinstance(obj, tuple):
             data, layout = obj
         else:
@@ -122,7 +135,7 @@ class Plotly(ModelPane):
     @staticmethod
     def _get_sources(json):
         sources = []
-        traces = json.get('data', [])
+        traces = json.get("data", [])
         for trace in traces:
             data = {}
             Plotly._get_sources_for_trace(trace, data)
@@ -130,7 +143,7 @@ class Plotly(ModelPane):
         return sources
 
     @staticmethod
-    def _get_sources_for_trace(json, data, parent_path=''):
+    def _get_sources_for_trace(json, data, parent_path=""):
         for key, value in list(json.items()):
             full_path = key if not parent_path else "{}.{}".format(parent_path, key)
             if isinstance(value, np.ndarray):
@@ -142,30 +155,27 @@ class Plotly(ModelPane):
             elif isinstance(value, list) and value and isinstance(value[0], dict):
                 # recurse into object arrays:
                 for i, element in enumerate(value):
-                    element_path = full_path + '.' + str(i)
-                    Plotly._get_sources_for_trace(
-                        element, data=data, parent_path=element_path
-                    )
+                    element_path = full_path + "." + str(i)
+                    Plotly._get_sources_for_trace(element, data=data, parent_path=element_path)
 
-    @param.depends('object', 'link_figure', watch=True)
+    @param.depends("object", "link_figure", watch=True)
     def _update_figure(self):
         import plotly.graph_objs as go
 
-        if (self.object is None or type(self.object) is not go.Figure or
-            self.object is self._figure or not self.link_figure):
+        if self.object is None or type(self.object) is not go.Figure or self.object is self._figure or not self.link_figure:
             return
 
         # Monkey patch the message stubs used by FigureWidget.
         # We only patch `Figure` objects (not subclasses like FigureWidget) so
         # we don't interfere with subclasses that override these methods.
         fig = self.object
-        fig._send_addTraces_msg = lambda *_, **__: self._update_from_figure('add')
-        fig._send_moveTraces_msg = lambda *_, **__: self._update_from_figure('move')
-        fig._send_deleteTraces_msg = lambda *_, **__: self._update_from_figure('delete')
+        fig._send_addTraces_msg = lambda *_, **__: self._update_from_figure("add")
+        fig._send_moveTraces_msg = lambda *_, **__: self._update_from_figure("move")
+        fig._send_deleteTraces_msg = lambda *_, **__: self._update_from_figure("delete")
         fig._send_restyle_msg = self._send_restyle_msg
         fig._send_relayout_msg = self._send_relayout_msg
         fig._send_update_msg = self._send_update_msg
-        fig._send_animate_msg = lambda *_, **__: self._update_from_figure('animate')
+        fig._send_animate_msg = lambda *_, **__: self._update_from_figure("animate")
         self._figure = fig
 
     def _send_relayout_msg(self, relayout_data, source_view_id=None):
@@ -174,13 +184,13 @@ class Plotly(ModelPane):
     def _send_restyle_msg(self, restyle_data, trace_indexes=None, source_view_id=None):
         self._send_update_msg(restyle_data, {}, trace_indexes, source_view_id)
 
-    @param.depends('restyle_data', watch=True)
+    @param.depends("restyle_data", watch=True)
     def _update_figure_style(self):
         if self._figure is None or self.restyle_data is None:
             return
         self._figure.plotly_restyle(*self.restyle_data)
 
-    @param.depends('relayout_data', watch=True)
+    @param.depends("relayout_data", watch=True)
     def _update_figure_layout(self):
         if self._figure is None or self.relayout_data is None:
             return
@@ -193,28 +203,24 @@ class Plotly(ModelPane):
 
     @staticmethod
     def _clean_relayout_data(relayout_data):
-        return {
-            key: val for key, val in relayout_data.items() if not key.endswith("._derived")
-        }
+        return {key: val for key, val in relayout_data.items() if not key.endswith("._derived")}
 
-    def _send_update_msg(
-        self, restyle_data, relayout_data, trace_indexes=None, source_view_id=None
-    ):
+    def _send_update_msg(self, restyle_data, relayout_data, trace_indexes=None, source_view_id=None):
         if source_view_id:
             return
         trace_indexes = self._figure._normalize_trace_indexes(trace_indexes)
         msg = {}
         if relayout_data:
-            msg['relayout'] = relayout_data
+            msg["relayout"] = relayout_data
         if restyle_data:
-            msg['restyle'] = {'data': restyle_data, 'traces': trace_indexes}
+            msg["restyle"] = {"data": restyle_data, "traces": trace_indexes}
         for ref, (m, _) in self._models.items():
             self._apply_update([], msg, m, ref)
 
     def _update_from_figure(self, event, *args, **kwargs):
         self._event = event
         try:
-            self.param.trigger('object')
+            self.param.trigger("object")
         finally:
             self._event = None
 
@@ -228,10 +234,7 @@ class Plotly(ModelPane):
 
             try:
                 old = cds.data.get(key)[0]
-                update_array = (
-                    (type(old) != type(new)) or
-                    (new.shape != old.shape) or
-                    (new != old).any())
+                update_array = (type(old) != type(new)) or (new.shape != old.shape) or (new != old).any()
             except Exception:
                 update_array = True
 
@@ -253,7 +256,7 @@ class Plotly(ModelPane):
         For #382: Map datetime elements to strings.
         """
         json = fig.to_plotly_json()
-        data = json['data']
+        data = json["data"]
 
         for idx in range(len(data)):
             for key in data[idx]:
@@ -267,10 +270,9 @@ class Plotly(ModelPane):
         return json
 
     def _init_params(self):
-        viewport_params = [p for p in self.param if 'viewport' in p]
-        parameters = list(Layoutable.param)+viewport_params
-        params = {p: getattr(self, p) for p in parameters
-                  if getattr(self, p) is not None}
+        viewport_params = [p for p in self.param if "viewport" in p]
+        parameters = list(Layoutable.param) + viewport_params
+        params = {p: getattr(self, p) for p in parameters if getattr(self, p) is not None}
 
         if self.object is None:
             json, sources = {}, []
@@ -279,41 +281,34 @@ class Plotly(ModelPane):
             json = self._plotly_json_wrapper(fig)
             sources = Plotly._get_sources(json)
 
-        params['_render_count'] = self._render_count
-        params['config'] = self.config or {}
-        params['data'] = json.get('data', [])
-        params['data_sources'] = sources
-        params['layout'] = layout = json.get('layout', {})
-        params['frames'] = json.get('frames', [])
-        if layout.get('autosize') and self.sizing_mode is self.param.sizing_mode.default:
-            params['sizing_mode'] = 'stretch_both'
-            if 'styles' not in params:
-                params['styles'] = {}
+        params["_render_count"] = self._render_count
+        params["config"] = self.config or {}
+        params["data"] = json.get("data", [])
+        params["data_sources"] = sources
+        params["layout"] = layout = json.get("layout", {})
+        params["frames"] = json.get("frames", [])
+        if layout.get("autosize") and self.sizing_mode is self.param.sizing_mode.default:
+            params["sizing_mode"] = "stretch_both"
+            if "styles" not in params:
+                params["styles"] = {}
         return params
 
     def _process_param_change(self, params):
         props = super()._process_param_change(params)
-        if 'layout' in props or 'stylesheets' in props:
-            if 'layout' in props:
-                layout = props['layout']
+        if "layout" in props or "stylesheets" in props:
+            if "layout" in props:
+                layout = props["layout"]
             elif self._models:
                 # Improve lookup of current layout
                 layout = list(self._models.values())[0][0].layout
             else:
                 return props
-            btn_color = layout.get('template', {}).get('layout', {}).get('font', {}).get('color', 'black')
-            props['stylesheets'] = props.get('stylesheets', []) + [
-                f':host {{ --plotly-icon-color: gray; --plotly-active-icon-color: {btn_color}; }}'
-            ]
+            btn_color = layout.get("template", {}).get("layout", {}).get("font", {}).get("color", "black")
+            props["stylesheets"] = props.get("stylesheets", []) + [f":host {{ --plotly-icon-color: gray; --plotly-active-icon-color: {btn_color}; }}"]
         return props
 
-    def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
-    ) -> Model:
-        self._bokeh_model = lazy_load(
-            'panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm), root
-        )
+    def _get_model(self, doc: Document, root: Optional[Model] = None, parent: Optional[Model] = None, comm: Optional[Comm] = None) -> Model:
+        self._bokeh_model = lazy_load("panel.models.plotly", "PlotlyPlot", isinstance(comm, JupyterComm), root)
         return super()._get_model(doc, root, parent, comm)
 
     def _update(self, ref: str, model: Model) -> None:
@@ -324,10 +319,10 @@ class Plotly(ModelPane):
 
         fig = self._to_figure(self.object)
         json = self._plotly_json_wrapper(fig)
-        layout = json.get('layout')
-        frames = json.get('frames')
+        layout = json.get("layout")
+        frames = json.get("frames")
 
-        traces = json['data']
+        traces = json["data"]
         new_sources = []
         update_sources = False
         for i, trace in enumerate(traces):
@@ -346,16 +341,13 @@ class Plotly(ModelPane):
             update_layout = True
 
         # Determine if model needs updates
-        if (len(model.data) != len(traces)):
+        if len(model.data) != len(traces):
             update_data = True
         else:
             update_data = False
             for new, old in zip(traces, model.data):
                 try:
-                    update_data = (
-                        {k: v for k, v in new.items() if k != 'uid'} !=
-                        {k: v for k, v in old.items() if k != 'uid'}
-                    )
+                    update_data = {k: v for k, v in new.items() if k != "uid"} != {k: v for k, v in old.items() if k != "uid"}
                 except Exception:
                     update_data = True
                 if update_data:
@@ -368,28 +360,28 @@ class Plotly(ModelPane):
             update_frames = True
 
         updates = {}
-        if self.sizing_mode is self.param.sizing_mode.default and 'autosize' in layout:
-            autosize = layout.get('autosize')
+        if self.sizing_mode is self.param.sizing_mode.default and "autosize" in layout:
+            autosize = layout.get("autosize")
             styles = dict(model.styles)
-            if autosize and model.sizing_mode != 'stretch_both':
-                updates['sizing_mode'] = 'stretch_both'
-                styles['display'] = 'contents'
-            elif not autosize and model.sizing_mode != 'fixed':
-                updates['sizing_mode'] = 'fixed'
-                if 'display' in styles:
-                    del styles['display']
+            if autosize and model.sizing_mode != "stretch_both":
+                updates["sizing_mode"] = "stretch_both"
+                styles["display"] = "contents"
+            elif not autosize and model.sizing_mode != "fixed":
+                updates["sizing_mode"] = "fixed"
+                if "display" in styles:
+                    del styles["display"]
 
         if new_sources:
-            updates['data_sources'] = model.data_sources + new_sources
+            updates["data_sources"] = model.data_sources + new_sources
 
         if update_data:
-            updates['data'] = json.get('data')
+            updates["data"] = json.get("data")
 
         if update_layout:
-            updates['layout'] = layout
+            updates["layout"] = layout
 
         if update_frames:
-            updates['frames'] = frames or []
+            updates["frames"] = frames or []
 
         if updates:
             model.update(**updates)

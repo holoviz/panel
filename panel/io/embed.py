@@ -20,9 +20,9 @@ from ..util import param_watchers
 from .model import add_to_doc, diff
 from .state import state
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 # Private API
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 
 STATE_JS = """
 var state = null
@@ -41,6 +41,7 @@ state.set_state(cb_obj, {js_getter})
 def always_changed(enable):
     def matches(self, new, old):
         return False
+
     if enable:
         backup = Property.matches
         Property.matches = matches
@@ -54,25 +55,23 @@ def always_changed(enable):
 def record_events(doc):
     msg = diff(doc, binary=False)
     if msg is None:
-        return {'header': '{}', 'metadata': '{}', 'content': '{}'}
-    return {'header': msg.header_json, 'metadata': msg.metadata_json,
-            'content': msg.content_json}
+        return {"header": "{}", "metadata": "{}", "content": "{}"}
+    return {"header": msg.header_json, "metadata": msg.metadata_json, "content": msg.content_json}
 
 
-def save_dict(state, key=(), depth=0, max_depth=None, save_path='', load_path=None):
+def save_dict(state, key=(), depth=0, max_depth=None, save_path="", load_path=None):
     filename_dict = {}
     for k, v in state.items():
-        curkey = key+(k,)
+        curkey = key + (k,)
         if depth < max_depth:
-            filename_dict[k] = save_dict(v, curkey, depth+1, max_depth,
-                                         save_path, load_path)
+            filename_dict[k] = save_dict(v, curkey, depth + 1, max_depth, save_path, load_path)
         else:
-            filename = '_'.join([str(i) for i in curkey]) +'.json'
+            filename = "_".join([str(i) for i in curkey]) + ".json"
             filepath = os.path.join(save_path, filename)
             directory = os.path.dirname(filepath)
             if not os.path.exists(directory):
                 os.makedirs(directory)
-            with open(filepath, 'w') as f:
+            with open(filepath, "w") as f:
                 json.dump(v, f)
             refpath = filepath
             if load_path:
@@ -82,8 +81,7 @@ def save_dict(state, key=(), depth=0, max_depth=None, save_path='', load_path=No
 
 
 def get_watchers(reactive):
-    return [w for pwatchers in param_watchers(reactive).values()
-            for awatchers in pwatchers.values() for w in awatchers]
+    return [w for pwatchers in param_watchers(reactive).values() for awatchers in pwatchers.values() for w in awatchers]
 
 
 def param_to_jslink(model, widget):
@@ -96,29 +94,21 @@ def param_to_jslink(model, widget):
     param_pane = widget._param_pane
     pobj = param_pane.object
     pname = [k for k, v in param_pane._widgets.items() if v is widget]
-    watchers = [
-        w for w in get_watchers(widget) if w not in widget._internal_callbacks
-        and w not in param_pane._internal_callbacks
-    ]
+    watchers = [w for w in get_watchers(widget) if w not in widget._internal_callbacks and w not in param_pane._internal_callbacks]
 
     if isinstance(pobj, Reactive):
         tgt_links = [Watcher(*l[:-4]) for l in pobj._links]
-        tgt_watchers = [
-            w for w in get_watchers(pobj) if w not in pobj._internal_callbacks
-            and w not in tgt_links and w not in param_pane._internal_callbacks
-        ]
+        tgt_watchers = [w for w in get_watchers(pobj) if w not in pobj._internal_callbacks and w not in tgt_links and w not in param_pane._internal_callbacks]
     else:
         tgt_watchers = []
 
     for widget in param_pane._widgets.values():
         if isinstance(widget, LiteralInput):
-            widget.serializer = 'json'
+            widget.serializer = "json"
 
-    if (not pname or not isinstance(pobj, Reactive) or watchers or
-        pname[0] not in pobj._linkable_params or
-        (not isinstance(pobj, Widget) and tgt_watchers)):
+    if not pname or not isinstance(pobj, Reactive) or watchers or pname[0] not in pobj._linkable_params or (not isinstance(pobj, Widget) and tgt_watchers):
         return
-    return link_to_jslink(model, widget, 'value', pobj, pname[0])
+    return link_to_jslink(model, widget, "value", pobj, pname[0])
 
 
 def link_to_jslink(model, source, src_spec, target, tgt_spec):
@@ -126,16 +116,20 @@ def link_to_jslink(model, source, src_spec, target, tgt_spec):
     Converts links declared in Python into JS Links by using the
     declared forward and reverse JS transforms on the source and target.
     """
-    ref = model.ref['id']
+    ref = model.ref["id"]
 
-    if ((source._source_transforms.get(src_spec, False) is None) or
-        (target._target_transforms.get(tgt_spec, False) is None) or
-        ref not in source._models or ref not in target._models):
+    if (
+        (source._source_transforms.get(src_spec, False) is None)
+        or (target._target_transforms.get(tgt_spec, False) is None)
+        or ref not in source._models
+        or ref not in target._models
+    ):
         # We cannot jslink if either source or target declare
         # that they apply Python transforms
         return
 
     from ..links import JSLinkCallbackGenerator, Link
+
     properties = dict(value=target._rename.get(tgt_spec, tgt_spec))
     link = Link(source, target, bidirectional=True, properties=properties)
     JSLinkCallbackGenerator(model, link, source, target)
@@ -158,7 +152,7 @@ def links_to_jslinks(model, widget):
 
         mappings = []
         for pname, tgt_spec in link.links.items():
-            if Watcher(*link[:-4]) in param_watchers(widget)[pname]['value']:
+            if Watcher(*link[:-4]) in param_watchers(widget)[pname]["value"]:
                 mappings.append((pname, tgt_spec))
 
         if mappings:
@@ -174,13 +168,12 @@ def links_to_jslinks(model, widget):
     return jslinks
 
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 # Public API
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 
-def embed_state(panel, model, doc, max_states=1000, max_opts=3,
-                json=False, json_prefix='', save_path='./',
-                load_path=None, progress=True, states={}):
+
+def embed_state(panel, model, doc, max_states=1000, max_opts=3, json=False, json_prefix="", save_path="./", load_path=None, progress=True, states={}):
     """
     Embeds the state of the application on a State model which allows
     exporting a static version of an app. This works by finding all
@@ -223,7 +216,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     from ..pane import PaneBase
     from ..widgets import DiscreteSlider, Widget
 
-    ref = model.ref['id']
+    ref = model.ref["id"]
     if isinstance(panel, PaneBase) and ref in panel.layout._models:
         panel = panel.layout
 
@@ -232,7 +225,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
         return
     _, _, _, comm = state._views[ref]
 
-    model.tags.append('embedded')
+    model.tags.append("embedded")
 
     def is_embeddable(object):
         if not isinstance(object, Widget) or object.disabled:
@@ -241,8 +234,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
             return ref in object._composite[1]._models
         return ref in object._models
 
-    widgets = [w for w in panel.select(is_embeddable)
-               if w not in Link.registry]
+    widgets = [w for w in panel.select(is_embeddable) if w not in Link.registry]
     state_model = State()
 
     widget_data, merged, ignore = [], {}, []
@@ -253,10 +245,9 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
             if link is not None:
                 pobj = widget._param_pane.object
                 if isinstance(pobj, Widget):
-                    if not any(w not in pobj._internal_callbacks and w not in widget._param_pane._internal_callbacks
-                               for w in get_watchers(pobj)):
+                    if not any(w not in pobj._internal_callbacks and w not in widget._param_pane._internal_callbacks for w in get_watchers(pobj)):
                         ignore.append(pobj)
-                continue # Skip if we were able to attach JS link
+                continue  # Skip if we were able to attach JS link
 
         if widget._links:
             jslinks = links_to_jslinks(model, widget)
@@ -268,15 +259,14 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
             continue
 
         # Get data which will let us record the changes on widget events
-        w, w_model, vals, getter, on_change, js_getter = widget._get_embed_state(
-            model, states.get(widget), max_opts)
+        w, w_model, vals, getter, on_change, js_getter = widget._get_embed_state(model, states.get(widget), max_opts)
         w_type = w._widget_type
         if isinstance(w, DiscreteSlider):
-            w_model = w._composite[1]._models[ref][0].select_one({'type': w_type})
+            w_model = w._composite[1]._models[ref][0].select_one({"type": w_type})
         else:
             w_model = w._models[ref][0]
             if not isinstance(w_model, w_type):
-                w_model = w_model.select_one({'type': w_type})
+                w_model = w_model.select_one({"type": w_type})
 
         # If there is a widget with the same name, merge with it
         if widget.name and widget.name in merged:
@@ -284,14 +274,13 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
             merged[widget.name][1].append(w_model)
             continue
 
-        js_callback = CustomJS(code=STATE_JS.format(
-            id=state_model.ref['id'], js_getter=js_getter))
+        js_callback = CustomJS(code=STATE_JS.format(id=state_model.ref["id"], js_getter=js_getter))
         widget_data.append(([w], [w_model], vals, getter, js_callback, on_change))
         merged[widget.name] = widget_data[-1]
 
     # Ensure we recording state for widgets which could be JS linked
     values = []
-    for (ws, w_models, vals, getter, js_callback, on_change) in widget_data:
+    for ws, w_models, vals, getter, js_callback, on_change in widget_data:
         if ws[0] in ignore:
             continue
         for w_model in w_models:
@@ -300,7 +289,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
         # Bidirectionally link models with same name
         wm = w_models[0]
         for wmo in w_models[1:]:
-            attr = ws[0]._rename.get('value', 'value')
+            attr = ws[0]._rename.get("value", "value")
             wm.js_link(attr, wmo, attr)
             wmo.js_link(attr, wm, attr)
 
@@ -318,17 +307,18 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     if len(cross_product) > max_states:
         if config._doc_build:
             return
-        param.main.param.warning('The cross product of different application '
-                           'states is very large to explore (N=%d), consider '
-                           'reducing the number of options on the widgets or '
-                           'increase the max_states specified in the function '
-                           'to remove this warning' %
-                           len(cross_product))
+        param.main.param.warning(
+            "The cross product of different application "
+            "states is very large to explore (N=%d), consider "
+            "reducing the number of options on the widgets or "
+            "increase the max_states specified in the function "
+            "to remove this warning" % len(cross_product)
+        )
 
     nested_dict = lambda: defaultdict(nested_dict)
     state_dict = nested_dict()
     changes = False
-    for key in (tqdm(cross_product, leave=False, file=sys.stdout) if progress else cross_product):
+    for key in tqdm(cross_product, leave=False, file=sys.stdout) if progress else cross_product:
         sub_dict = state_dict
         skip = False
         for i, k in enumerate(key):
@@ -349,7 +339,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
         models = [m for v in values for m in v[1]]
         doc.callbacks._held_events = [e for e in doc.callbacks._held_events if e.model not in models]
         events = record_events(doc)
-        changes |= events['content'] != '{}'
+        changes |= events["content"] != "{}"
         if events:
             sub_dict.update(events)
 
@@ -364,14 +354,12 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
             pass
 
     if json:
-        random_dir = '_'.join([json_prefix, uuid.uuid4().hex])
+        random_dir = "_".join([json_prefix, uuid.uuid4().hex])
         save_path = os.path.join(save_path, random_dir)
         if load_path is not None:
             load_path = os.path.join(load_path, random_dir)
-        state_dict = save_dict(state_dict, max_depth=len(values)-1,
-                               save_path=save_path, load_path=load_path)
+        state_dict = save_dict(state_dict, max_depth=len(values) - 1, save_path=save_path, load_path=load_path)
 
-    state_model.update(json=json, state=state_dict, values=init_vals,
-                       widgets={m[0].ref['id']: i for i, (_, m, _, _) in enumerate(values)})
+    state_model.update(json=json, state=state_dict, values=init_vals, widgets={m[0].ref["id"]: i for i, (_, m, _, _) in enumerate(values)})
     doc.add_root(state_model)
     return state_model

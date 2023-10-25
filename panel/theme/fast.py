@@ -23,14 +23,14 @@ COLLAPSED_SVG_ICON = """
   <path d="M9 5.44446V12.5556" stroke-linecap="round" stroke-linejoin="round"></path>
   <path d="M5.44446 9H12.5556" stroke-linecap="round" stroke-linejoin="round"></path>
 </svg>
-""" # noqa
+"""  # noqa
 
 EXPANDED_SVG_ICON = """
 <svg style="stroke: var(--accent-fill-rest);" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" slot="expanded-icon">
   <path d="M15.2222 1H2.77778C1.79594 1 1 1.79594 1 2.77778V15.2222C1 16.2041 1.79594 17 2.77778 17H15.2222C16.2041 17 17 16.2041 17 15.2222V2.77778C17 1.79594 16.2041 1 15.2222 1Z" stroke-linecap="round" stroke-linejoin="round"></path>
   <path d="M5.44446 9H12.5556" stroke-linecap="round" stroke-linejoin="round"></path>
 </svg>
-""" # noqa
+"""  # noqa
 
 FONT_URL = "//fonts.googleapis.com/css?family=Open+Sans"
 
@@ -143,7 +143,7 @@ class FastWrapper(ReactiveHTML):
     _template = '<div id="fast-wrapper" class="fast-wrapper">${object}</div>'
 
     _scripts = {
-        'render': """
+        "render": """
         let accent, bg, luminance
         if (window._JUPYTERLAB) {
           accent = getComputedStyle(document.body).getPropertyValue('--jp-brand-color0').trim();
@@ -170,23 +170,22 @@ class FastWrapper(ReactiveHTML):
 DEFAULT_STYLE = FastStyle()
 
 DARK_STYLE = FastStyle(
-    background_color="#181818", #242424
+    background_color="#181818",  # 242424
     color="#ffffff",
     header_color="#ffffff",
     luminance=0.1,
     neutral_fill_card_rest="#212121",
     neutral_focus="#717171",
     neutral_foreground_rest="#e5e5e5",
-    shadow = False,
+    shadow=False,
 )
 
-class FastThemeMixin(param.Parameterized):
 
-    css = param.Filename(default=pathlib.Path(__file__).parent / 'css' / 'fast_variables.css')
+class FastThemeMixin(param.Parameterized):
+    css = param.Filename(default=pathlib.Path(__file__).parent / "css" / "fast_variables.css")
 
 
 class FastDefaultTheme(DefaultTheme):
-
     style = param.ClassSelector(default=DEFAULT_STYLE, class_=FastStyle)
 
     __abstract = True
@@ -197,19 +196,12 @@ class FastDefaultTheme(DefaultTheme):
 
 
 class FastDarkTheme(DarkTheme):
-
     style = param.ClassSelector(default=DARK_STYLE, class_=FastStyle)
 
     modifiers = {
-        Dial: {
-            'label_color': 'white'
-        },
-        Number: {
-            'default_color': 'var(--neutral-foreground-rest)'
-        },
-        String: {
-            'default_color': 'var(--neutral-foreground-rest)'
-        }
+        Dial: {"label_color": "white"},
+        Number: {"default_color": "var(--neutral-foreground-rest)"},
+        String: {"default_color": "var(--neutral-foreground-rest)"},
     }
 
     __abstract = True
@@ -220,42 +212,29 @@ class FastDarkTheme(DarkTheme):
 
 
 class Fast(Design):
-
     modifiers = {
-        Accordion: {
-            'active_header_background': 'var(--neutral-fill-active)'
-        },
-        Tabulator: {
-            'theme': 'fast'
-        },
-        Viewable: {
-            'stylesheets': [Inherit, f'{CDN_DIST}bundled/theme/fast.css']
-        }
+        Accordion: {"active_header_background": "var(--neutral-fill-active)"},
+        Tabulator: {"theme": "fast"},
+        Viewable: {"stylesheets": [Inherit, f"{CDN_DIST}bundled/theme/fast.css"]},
     }
 
     _resources = {
-        'font': {
-            'opensans': f'https:{FONT_URL}',
+        "font": {
+            "opensans": f"https:{FONT_URL}",
         },
-        'js_modules': {
-            'fast': f'{config.npm_cdn}/@microsoft/fast-components@2.30.6/dist/fast-components.js',
-            'fast-design': 'js/fast_design.js'
-        },
-        'bundle': True,
-        'tarball': {
-            'fast': {
-                'tar': 'https://registry.npmjs.org/@microsoft/fast-components/-/fast-components-2.30.6.tgz',
-                'src': 'package/',
-                'dest': '@microsoft/fast-components@2.30.6',
-                'exclude': ['*.d.ts', '*.json', '*.md', '*/esm/*']
+        "js_modules": {"fast": f"{config.npm_cdn}/@microsoft/fast-components@2.30.6/dist/fast-components.js", "fast-design": "js/fast_design.js"},
+        "bundle": True,
+        "tarball": {
+            "fast": {
+                "tar": "https://registry.npmjs.org/@microsoft/fast-components/-/fast-components-2.30.6.tgz",
+                "src": "package/",
+                "dest": "@microsoft/fast-components@2.30.6",
+                "exclude": ["*.d.ts", "*.json", "*.md", "*/esm/*"],
             }
-        }
+        },
     }
 
-    _themes = {
-        'default': FastDefaultTheme,
-        'dark': FastDarkTheme
-    }
+    _themes = {"default": FastDefaultTheme, "dark": FastDarkTheme}
 
     def _wrapper(self, model):
         return FastWrapper(design=None, object=model, style=self.theme.style)

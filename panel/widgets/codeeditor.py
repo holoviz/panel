@@ -34,53 +34,53 @@ class CodeEditor(Widget):
     >>> CodeEditor(value=py_code, language='python', theme='monokai')
     """
 
-    annotations = param.List(default=[], doc="""
-        List of annotations to add to the editor.""")
+    annotations = param.List(
+        default=[],
+        doc="""
+        List of annotations to add to the editor.""",
+    )
 
     filename = param.String(doc="Filename from which to deduce language")
 
-    language = param.String(default='text', doc="Language of the editor")
+    language = param.String(default="text", doc="Language of the editor")
 
-    print_margin = param.Boolean(default=False, doc="""
-        Whether to show the a print margin.""")
+    print_margin = param.Boolean(
+        default=False,
+        doc="""
+        Whether to show the a print margin.""",
+    )
 
-    readonly = param.Boolean(default=False, doc="""
-        Define if editor content can be modified. Alias for disabled.""")
+    readonly = param.Boolean(
+        default=False,
+        doc="""
+        Define if editor content can be modified. Alias for disabled.""",
+    )
 
-    theme = param.ObjectSelector(default="chrome", objects=list(ace_themes),
-                                 doc="Theme of the editor")
+    theme = param.ObjectSelector(default="chrome", objects=list(ace_themes), doc="Theme of the editor")
 
     value = param.String(doc="State of the current code in the editor")
 
     _rename: ClassVar[Mapping[str, str | None]] = {"value": "code", "name": None}
 
     def __init__(self, **params):
-        if 'readonly' in params:
-            params['disabled'] = params['readonly']
-        elif 'disabled' in params:
-            params['readonly'] = params['disabled']
+        if "readonly" in params:
+            params["disabled"] = params["readonly"]
+        elif "disabled" in params:
+            params["readonly"] = params["disabled"]
         super().__init__(**params)
-        self._internal_callbacks.append(
-            self.param.watch(self._update_disabled, ['disabled', 'readonly'])
-        )
-        self.jslink(self, readonly='disabled', bidirectional=True)
+        self._internal_callbacks.append(self.param.watch(self._update_disabled, ["disabled", "readonly"]))
+        self.jslink(self, readonly="disabled", bidirectional=True)
 
-    def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
-    ) -> Model:
+    def _get_model(self, doc: Document, root: Optional[Model] = None, parent: Optional[Model] = None, comm: Optional[Comm] = None) -> Model:
         if self._widget_type is None:
-            self._widget_type = lazy_load(
-                'panel.models.ace', 'AcePlot', isinstance(comm, JupyterComm),
-                root, ext='codeeditor'
-            )
+            self._widget_type = lazy_load("panel.models.ace", "AcePlot", isinstance(comm, JupyterComm), root, ext="codeeditor")
         return super()._get_model(doc, root, parent, comm)
 
     def _update_disabled(self, *events: param.parameterized.Event):
         for event in events:
-            if event.name == 'disabled':
+            if event.name == "disabled":
                 self.readonly = event.new
-            elif event.name == 'readonly':
+            elif event.name == "readonly":
                 self.disabled = event.new
 
 

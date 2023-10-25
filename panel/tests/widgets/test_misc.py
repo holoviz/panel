@@ -19,7 +19,7 @@ def test_progress_bounds():
 def test_file_download_label():
     file_download = FileDownload()
 
-    assert file_download.label == 'No file set'
+    assert file_download.label == "No file set"
 
     file_download = FileDownload(StringIO("data"), filename="abc.py")
 
@@ -27,19 +27,19 @@ def test_file_download_label():
 
     file_download = FileDownload(__file__)
 
-    assert file_download.label == 'Download test_misc.py'
+    assert file_download.label == "Download test_misc.py"
 
     file_download.auto = False
 
-    assert file_download.label == 'Transfer test_misc.py'
+    assert file_download.label == "Transfer test_misc.py"
 
     file_download.embed = True
 
-    assert file_download.label == 'Download test_misc.py'
+    assert file_download.label == "Download test_misc.py"
 
-    file_download.filename = 'abc.py'
+    file_download.filename = "abc.py"
 
-    assert file_download.label == 'Download abc.py'
+    assert file_download.label == "Download abc.py"
 
 
 def test_file_download_filename(tmpdir):
@@ -130,6 +130,7 @@ def test_file_download_data():
     file_download.data = None
     file_download._clicks += 1
     assert file_download.data is not None
+
 
 def test_file_path_download():
     path = Path(__file__)

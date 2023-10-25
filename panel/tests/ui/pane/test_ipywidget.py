@@ -13,7 +13,7 @@ try:
     import ipywidgets  # noqa
     import traitlets
 except Exception:
-    pytestmark = pytest.mark.skip('ipywidgets not available')
+    pytestmark = pytest.mark.skip("ipywidgets not available")
 
 try:
     import reacton
@@ -27,11 +27,13 @@ except Exception:
     anywidget = None
 requires_anywidget = pytest.mark.skipif(anywidget is None, reason="requires anywidget")
 
+
 @pytest.fixture(scope="module", autouse=True)
 def cleanup_ipywidgets():
     old_models = dict(Model.model_class_reverse_map)
     yield
     _default_resolver._known_models = old_models
+
 
 @requires_reacton
 def test_reacton(page):
@@ -48,31 +50,29 @@ def test_reacton(page):
 
         def test_effect():
             runs.append(button)
+
             def cleanup():
                 cleanups.append(button)
+
             return cleanup
+
         reacton.use_effect(test_effect, [])
 
         def my_click_handler():
             # trigger a new render with a new value for clicks
-            click.append(clicks+1)
-            set_clicks(clicks+1)
+            click.append(clicks + 1)
+            set_clicks(clicks + 1)
 
-        button = reacton.ipywidgets.Button(
-            description=f"Clicked {clicks} times",
-            on_click=my_click_handler
-        )
+        button = reacton.ipywidgets.Button(description=f"Clicked {clicks} times", on_click=my_click_handler)
         return button
 
-    reacton_app = Row(
-        Reacton(ButtonClick(), width=200, height=50)
-    )
+    reacton_app = Row(Reacton(ButtonClick(), width=200, height=50))
 
     serve_component(page, reacton_app)
 
     wait_until(lambda: bool(runs), page)
 
-    page.locator('button.jupyter-button').click()
+    page.locator("button.jupyter-button").click()
 
     wait_until(lambda: bool(click), page)
 
@@ -83,7 +83,6 @@ def test_reacton(page):
 
 @requires_anywidget()
 def test_anywidget(page):
-
     class CounterWidget(anywidget.AnyWidget):
         # Widget front-end JavaScript code
         _esm = """
@@ -108,10 +107,10 @@ def test_anywidget(page):
 
     serve_component(page, counter)
 
-    page.locator('.lm-Widget button').click()
+    page.locator(".lm-Widget button").click()
 
     wait_until(lambda: counter.count == 1, page)
 
-    page.locator('.lm-Widget button').click()
+    page.locator(".lm-Widget button").click()
 
     wait_until(lambda: counter.count == 2, page)

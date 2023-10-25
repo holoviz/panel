@@ -17,7 +17,7 @@ from ipywidgets._version import __protocol_version__
 from ipywidgets.widgets.widget import _remove_buffers
 
 # Stop ipywidgets_bokeh from patching the kernel
-ipykernel.kernelbase.Kernel._instance = ''
+ipykernel.kernelbase.Kernel._instance = ""
 
 from ipywidgets_bokeh.kernel import (
     BokehKernel, SessionWebsocket, WebsocketStream,
@@ -37,11 +37,13 @@ try:
     from comm.base_comm import BaseComm
 
     class TempComm(BaseComm):
-        def publish_msg(self, *args, **kwargs): pass
+        def publish_msg(self, *args, **kwargs):
+            pass
 
-    comm.create_comm = lambda *args, **kwargs: TempComm(target_name='panel-temp-comm', primary=False)
+    comm.create_comm = lambda *args, **kwargs: TempComm(target_name="panel-temp-comm", primary=False)
 except Exception:
     comm = None
+
 
 def _get_kernel(cls=None, doc=None):
     doc = doc or state.curdoc
@@ -49,8 +51,9 @@ def _get_kernel(cls=None, doc=None):
         return _ORIG_KERNEL
     elif doc in state._ipykernels:
         return state._ipykernels[doc]
-    state._ipykernels[doc] = kernel = PanelKernel(document=doc, key=str(id(doc)).encode('utf-8'))
+    state._ipykernels[doc] = kernel = PanelKernel(document=doc, key=str(id(doc)).encode("utf-8"))
     return kernel
+
 
 def _get_ipywidgets():
     # Support ipywidgets >=8.0 and <8.0
@@ -60,42 +63,39 @@ def _get_ipywidgets():
         widgets = Widget.widgets
     return widgets
 
+
 def _on_widget_constructed(widget, doc=None):
     doc = doc or state.curdoc
-    if not doc or getattr(widget, '_document', None) not in (doc, None):
+    if not doc or getattr(widget, "_document", None) not in (doc, None):
         return
     widget._document = doc
     kernel = _get_kernel(doc=doc)
-    if (widget.comm and widget.comm.target_name != 'panel-temp-comm' and
-        (not (comm and isinstance(widget.comm, comm.DummyComm)) and
-         isinstance(widget.comm.kernel, PanelKernel))):
+    if (
+        widget.comm
+        and widget.comm.target_name != "panel-temp-comm"
+        and (not (comm and isinstance(widget.comm, comm.DummyComm)) and isinstance(widget.comm.kernel, PanelKernel))
+    ):
         return
     wstate, buffer_paths, buffers = _remove_buffers(widget.get_state())
     args = {
-        'target_name': 'jupyter.widget',
-        'data': {
-            'state': wstate,
-            'buffer_paths': buffer_paths
-        },
-        'buffers': buffers,
-        'metadata': {
-            'version': __protocol_version__
-        }
+        "target_name": "jupyter.widget",
+        "data": {"state": wstate, "buffer_paths": buffer_paths},
+        "buffers": buffers,
+        "metadata": {"version": __protocol_version__},
     }
     if widget._model_id is not None:
-        args['comm_id'] = widget._model_id
+        args["comm_id"] = widget._model_id
     try:
         widget.comm = Comm(**args)
     except Exception as e:
-        if 'PANEL_IPYWIDGET' not in os.environ:
+        if "PANEL_IPYWIDGET" not in os.environ:
             raise e
     kernel.register_widget(widget)
 
 
 # Patch font-awesome CSS onto ipywidgets_bokeh IPyWidget
-IPyWidget.__css__ = [
-    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.css"
-]
+IPyWidget.__css__ = ["https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.css"]
+
 
 class MessageSentBuffers(TypedDict):
     kind: Literal["MessageSent"]
@@ -111,16 +111,9 @@ class MessageSentEventPatched(MessageSentEvent):
 
     def generate(self, references, buffers):
         if not isinstance(self.msg_data, bytes):
-            msg = MessageSent(
-                kind=self.kind,
-                msg_type=self.msg_type,
-                msg_data=self.msg_data
-            )
+            msg = MessageSent(kind=self.kind, msg_type=self.msg_type, msg_data=self.msg_data)
         else:
-            msg = MessageSentBuffers(
-                kind=self.kind,
-                msg_type=self.msg_type
-            )
+            msg = MessageSentBuffers(kind=self.kind, msg_type=self.msg_type)
             assert buffers is not None
             buffer_id = make_id()
             buf = (dict(id=buffer_id), self.msg_data)
@@ -129,17 +122,16 @@ class MessageSentEventPatched(MessageSentEvent):
 
 
 class PanelSessionWebsocket(SessionWebsocket):
-
     def __init__(self, *args, **kwargs):
         session.Session.__init__(self, *args, **kwargs)
-        self._document = kwargs.pop('document', None)
+        self._document = kwargs.pop("document", None)
         self._queue = []
         self._document.on_message("ipywidgets_bokeh", self.receive)
 
     def send(self, stream, msg_type, content=None, parent=None, ident=None, buffers=None, track=False, header=None, metadata=None):
         msg = self.msg(msg_type, content=content, parent=parent, header=header, metadata=metadata)
         try:
-            msg['channel'] = stream.channel
+            msg["channel"] = stream.channel
         except Exception:
             return
 
@@ -149,7 +141,7 @@ class PanelSessionWebsocket(SessionWebsocket):
             buffers = [packed] + buffers
             nbufs = len(buffers)
 
-            start = 4*(1 + nbufs)
+            start = 4 * (1 + nbufs)
             offsets = [start]
 
             for buffer in buffers[:-1]:
@@ -157,7 +149,7 @@ class PanelSessionWebsocket(SessionWebsocket):
                 offsets.append(start)
 
             u32 = lambda n: n.to_bytes(4, "big")
-            items = [u32(nbufs)] + [ u32(offset) for offset in offsets ] + buffers
+            items = [u32(nbufs)] + [u32(offset) for offset in offsets] + buffers
             data = b"".join(items)
         else:
             data = packed.decode("utf-8")
@@ -171,19 +163,20 @@ class PanelSessionWebsocket(SessionWebsocket):
             for event in self._queue:
                 self._document.callbacks.trigger_on_change(event)
         except Exception as e:
-            param.main.param.warning(f'ipywidgets event dispatch failed with: {e}')
+            param.main.param.warning(f"ipywidgets event dispatch failed with: {e}")
         finally:
             self._queue = []
 
-class ShellStream:
 
+class ShellStream:
     def flush(self, *args):
         pass
 
+
 class PanelKernel(Kernel):
-    implementation = 'panel'
+    implementation = "panel"
     implementation_version = __version__
-    banner = 'banner'
+    banner = "banner"
 
     shell_stream = Any(ShellStream(), allow_none=True)
 
@@ -194,14 +187,14 @@ class PanelKernel(Kernel):
         self.stream = self.iopub_socket = WebsocketStream(self.session)
         self.io_loop = IOLoop.current()
 
-        self.iopub_socket.channel = 'iopub'
+        self.iopub_socket.channel = "iopub"
         self.session.stream = self.iopub_socket
         self.comm_manager = CommManager(parent=self, kernel=self)
         self.shell = None
         self.session.auth = None
-        self.log = logging.getLogger('fake')
+        self.log = logging.getLogger("fake")
 
-        comm_msg_types = ['comm_open', 'comm_msg', 'comm_close']
+        comm_msg_types = ["comm_open", "comm_msg", "comm_close"]
         for msg_type in comm_msg_types:
             handler = getattr(self.comm_manager, msg_type)
             self.shell_handlers[msg_type] = self._wrap_handler(msg_type, handler)
@@ -217,12 +210,15 @@ class PanelKernel(Kernel):
 
     def _wrap_handler(self, msg_type, handler):
         doc = self.session._document
+
         def wrapper(*args, **kwargs):
-            if msg_type == 'comm_open':
+            if msg_type == "comm_open":
                 return
             with set_curdoc(doc):
                 state.execute(partial(handler, *args, **kwargs), schedule=True)
+
         return wrapper
+
 
 # Patch kernel and widget objects
 _ORIG_KERNEL = ipykernel.kernelbase.Kernel._instance

@@ -29,8 +29,6 @@ class FastGridTemplate(FastGridBaseTemplate):
     Please note the `FastListTemplate` cannot display in a notebook output cell.
     """
 
-    _css = FastGridBaseTemplate._css + [
-        pathlib.Path(__file__).parent / "fast_grid_template.css"
-    ]
+    _css = FastGridBaseTemplate._css + [pathlib.Path(__file__).parent / "fast_grid_template.css"]
 
     _template = pathlib.Path(__file__).parent / "fast_grid_template.html"

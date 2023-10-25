@@ -37,6 +37,7 @@ from ..util import fullpath
 
 log = logging.getLogger(__name__)
 
+
 def parse_var(s):
     """
     Parse a key, value pair, separated by '='
@@ -47,11 +48,11 @@ def parse_var(s):
     or
         foo="hello world"
     """
-    items = s.split('=')
-    key = items[0].strip() # we remove blanks around keys, as is logical
+    items = s.split("=")
+    key = items[0].strip()  # we remove blanks around keys, as is logical
     if len(items) > 1:
         # rejoin the rest:
-        value = '='.join(items[1:])
+        value = "=".join(items[1:])
     return (key, value)
 
 
@@ -63,7 +64,6 @@ def parse_vars(items):
 
 
 class AdminApplicationContext(ApplicationContext):
-
     def __init__(self, application, unused_timeout=15000, **kwargs):
         super().__init__(application, **kwargs)
         self._unused_timeout = unused_timeout
@@ -84,191 +84,124 @@ class AdminApplicationContext(ApplicationContext):
 
 
 class Serve(_BkServe):
-
     args = _BkServe.args + (
-        ('--static-dirs', dict(
-            metavar="KEY=VALUE",
-            nargs='+',
-            help=("Static directories to serve specified as key=value "
-                  "pairs mapping from URL route to static file directory.")
-        )),
-        ('--basic-auth', dict(
-            action = 'store',
-            type   = str,
-            help   = "Password or filepath to use with Basic Authentication."
-        )),
-        ('--oauth-provider', dict(
-            action = 'store',
-            type   = str,
-            help   = "The OAuth2 provider to use."
-        )),
-        ('--oauth-key', dict(
-            action  = 'store',
-            type    = str,
-            help    = "The OAuth2 key to use",
-        )),
-        ('--oauth-secret', dict(
-            action  = 'store',
-            type    = str,
-            help    = "The OAuth2 secret to use",
-        )),
-        ('--oauth-redirect-uri', dict(
-            action  = 'store',
-            type    = str,
-            help    = "The OAuth2 redirect URI",
-        )),
-        ('--oauth-extra-params', dict(
-            action  = 'store',
-            type    = str,
-            help    = "Additional parameters to use.",
-        )),
-        ('--oauth-jwt-user', dict(
-            action  = 'store',
-            type    = str,
-            help    = "The key in the ID JWT token to consider the user.",
-        )),
-        ('--oauth-encryption-key', dict(
-            action = 'store',
-            type    = str,
-            help    = "A random string used to encode the user information."
-        )),
-        ('--oauth-error-template', dict(
-            action = 'store',
-            type    = str,
-            help    = "A random string used to encode the user information."
-        )),
-        ('--oauth-expiry-days', dict(
-            action  = 'store',
-            type    = float,
-            help    = "Expiry off the OAuth cookie in number of days.",
-            default = 1
-        )),
-        ('--oauth-refresh-tokens', dict(
-            action  = 'store_true',
-            help    = "Whether to automatically OAuth access tokens when they expire.",
-        )),
-        ('--login-endpoint', dict(
-            action  = 'store',
-            type    = str,
-            help    = "Endpoint to serve the authentication login page on."
-        )),
-        ('--logout-endpoint', dict(
-            action  = 'store',
-            type    = str,
-            help    = "Endpoint to serve the authentication logout page on."
-        )),
-        ('--auth-template', dict(
-            action  = 'store',
-            type    = str,
-            help    = "Template to serve when user is unauthenticated."
-        )),
-        ('--logout-template', dict(
-            action  = 'store',
-            type    = str,
-            help    = "Template to serve logout page."
-        )),
-        ('--basic-login-template', dict(
-            action  = 'store',
-            type    = str,
-            help    = "Template to serve for Basic Authentication login page."
-        )),
-        ('--rest-provider', dict(
-            action = 'store',
-            type   = str,
-            help   = "The interface to use to serve REST API"
-        )),
-        ('--rest-endpoint', dict(
-            action  = 'store',
-            type    = str,
-            help    = "Endpoint to store REST API on.",
-            default = 'rest'
-        )),
-        ('--rest-session-info', dict(
-            action  = 'store_true',
-            help    = "Whether to serve session info on the REST API"
-        )),
-        ('--session-history', dict(
-            action  = 'store',
-            type    = int,
-            help    = "The length of the session history to record.",
-            default = 0
-        )),
-        ('--warm', dict(
-            action  = 'store_true',
-            help    = "Whether to execute scripts on startup to warm up the server."
-        )),
-        ('--admin', dict(
-            action  = 'store_true',
-            help    = "Whether to add an admin panel."
-        )),
-        ('--admin-endpoint', dict(
-            action = 'store',
-            type    = str,
-            help    = "Name to use for the admin endpoint.",
-            default = None
-        )),
-        ('--admin-log-level', dict(
-            action  = 'store',
-            default = None,
-            choices = ('debug', 'info', 'warning', 'error', 'critical'),
-            help    = "One of: debug (default), info, warning, error or critical",
-        )),
-        ('--profiler', dict(
-            action  = 'store',
-            type    = str,
-            help    = "The profiler to use by default, e.g. pyinstrument, snakeviz or memray."
-        )),
-        ('--autoreload', dict(
-            action  = 'store_true',
-            help    = "Whether to autoreload source when script changes."
-        )),
-        ('--num-threads', dict(
-            action  = 'store',
-            type    = int,
-            help    = "Whether to start a thread pool which events are dispatched to.",
-            default = None
-        )),
-        ('--setup', dict(
-            action  = 'store',
-            type    = str,
-            help    = "Path to a setup script to run before server starts.",
-            default = None
-        )),
-        ('--liveness', dict(
-            action  = 'store_true',
-            help    = "Whether to add a liveness endpoint."
-        )),
-        ('--liveness-endpoint', dict(
-            action  = 'store',
-            type    = str,
-            help    = "The endpoint for the liveness API.",
-            default = "liveness"
-        )),
-        ('--reuse-sessions', dict(
-            action  = 'store_true',
-            help    = "Whether to reuse sessions when serving the initial request.",
-        )),
-        ('--global-loading-spinner', dict(
-            action  = 'store_true',
-            help    = "Whether to add a global loading spinner to the application(s).",
-        )),
+        (
+            "--static-dirs",
+            dict(
+                metavar="KEY=VALUE", nargs="+", help=("Static directories to serve specified as key=value " "pairs mapping from URL route to static file directory.")
+            ),
+        ),
+        ("--basic-auth", dict(action="store", type=str, help="Password or filepath to use with Basic Authentication.")),
+        ("--oauth-provider", dict(action="store", type=str, help="The OAuth2 provider to use.")),
+        (
+            "--oauth-key",
+            dict(
+                action="store",
+                type=str,
+                help="The OAuth2 key to use",
+            ),
+        ),
+        (
+            "--oauth-secret",
+            dict(
+                action="store",
+                type=str,
+                help="The OAuth2 secret to use",
+            ),
+        ),
+        (
+            "--oauth-redirect-uri",
+            dict(
+                action="store",
+                type=str,
+                help="The OAuth2 redirect URI",
+            ),
+        ),
+        (
+            "--oauth-extra-params",
+            dict(
+                action="store",
+                type=str,
+                help="Additional parameters to use.",
+            ),
+        ),
+        (
+            "--oauth-jwt-user",
+            dict(
+                action="store",
+                type=str,
+                help="The key in the ID JWT token to consider the user.",
+            ),
+        ),
+        ("--oauth-encryption-key", dict(action="store", type=str, help="A random string used to encode the user information.")),
+        ("--oauth-error-template", dict(action="store", type=str, help="A random string used to encode the user information.")),
+        ("--oauth-expiry-days", dict(action="store", type=float, help="Expiry off the OAuth cookie in number of days.", default=1)),
+        (
+            "--oauth-refresh-tokens",
+            dict(
+                action="store_true",
+                help="Whether to automatically OAuth access tokens when they expire.",
+            ),
+        ),
+        ("--login-endpoint", dict(action="store", type=str, help="Endpoint to serve the authentication login page on.")),
+        ("--logout-endpoint", dict(action="store", type=str, help="Endpoint to serve the authentication logout page on.")),
+        ("--auth-template", dict(action="store", type=str, help="Template to serve when user is unauthenticated.")),
+        ("--logout-template", dict(action="store", type=str, help="Template to serve logout page.")),
+        ("--basic-login-template", dict(action="store", type=str, help="Template to serve for Basic Authentication login page.")),
+        ("--rest-provider", dict(action="store", type=str, help="The interface to use to serve REST API")),
+        ("--rest-endpoint", dict(action="store", type=str, help="Endpoint to store REST API on.", default="rest")),
+        ("--rest-session-info", dict(action="store_true", help="Whether to serve session info on the REST API")),
+        ("--session-history", dict(action="store", type=int, help="The length of the session history to record.", default=0)),
+        ("--warm", dict(action="store_true", help="Whether to execute scripts on startup to warm up the server.")),
+        ("--admin", dict(action="store_true", help="Whether to add an admin panel.")),
+        ("--admin-endpoint", dict(action="store", type=str, help="Name to use for the admin endpoint.", default=None)),
+        (
+            "--admin-log-level",
+            dict(
+                action="store",
+                default=None,
+                choices=("debug", "info", "warning", "error", "critical"),
+                help="One of: debug (default), info, warning, error or critical",
+            ),
+        ),
+        ("--profiler", dict(action="store", type=str, help="The profiler to use by default, e.g. pyinstrument, snakeviz or memray.")),
+        ("--autoreload", dict(action="store_true", help="Whether to autoreload source when script changes.")),
+        ("--num-threads", dict(action="store", type=int, help="Whether to start a thread pool which events are dispatched to.", default=None)),
+        ("--setup", dict(action="store", type=str, help="Path to a setup script to run before server starts.", default=None)),
+        ("--liveness", dict(action="store_true", help="Whether to add a liveness endpoint.")),
+        ("--liveness-endpoint", dict(action="store", type=str, help="The endpoint for the liveness API.", default="liveness")),
+        (
+            "--reuse-sessions",
+            dict(
+                action="store_true",
+                help="Whether to reuse sessions when serving the initial request.",
+            ),
+        ),
+        (
+            "--global-loading-spinner",
+            dict(
+                action="store_true",
+                help="Whether to add a global loading spinner to the application(s).",
+            ),
+        ),
     )
 
     # Supported file extensions
-    _extensions = ['.py', '.ipynb', '.md']
+    _extensions = [".py", ".ipynb", ".md"]
 
     def customize_applications(self, args, applications):
-        if args.index and not args.index.endswith('.html'):
+        if args.index and not args.index.endswith(".html"):
             index = args.index.split(os.path.sep)[-1]
             for ext in self._extensions:
                 if index.endswith(ext):
-                    index = index[:-len(ext)]
-            if f'/{index}' in applications:
-                applications['/'] = applications[f'/{index}']
+                    index = index[: -len(ext)]
+            if f"/{index}" in applications:
+                applications["/"] = applications[f"/{index}"]
         return super().customize_applications(args, applications)
 
     def warm_applications(self, applications, reuse_sessions):
         from ..io.session import generate_session
+
         for path, app in applications.items():
             session = generate_session(app)
             with set_curdoc(session.document):
@@ -282,18 +215,18 @@ class Serve(_BkServe):
             _cleanup_doc(session.document, destroy=not reuse_sessions)
 
     def customize_kwargs(self, args, server_kwargs):
-        '''Allows subclasses to customize ``server_kwargs``.
+        """Allows subclasses to customize ``server_kwargs``.
 
         Should modify and return a copy of the ``server_kwargs`` dictionary.
-        '''
+        """
         kwargs = dict(server_kwargs)
-        if 'index' not in kwargs:
-            kwargs['index'] = INDEX_HTML
-        elif kwargs['index'].endswith('.html'):
-            kwargs['index'] = os.path.abspath(kwargs['index'])
+        if "index" not in kwargs:
+            kwargs["index"] = INDEX_HTML
+        elif kwargs["index"].endswith(".html"):
+            kwargs["index"] = os.path.abspath(kwargs["index"])
 
         # Handle tranquilized functions in the supplied functions
-        kwargs['extra_patterns'] = patterns = kwargs.get('extra_patterns', [])
+        kwargs["extra_patterns"] = patterns = kwargs.get("extra_patterns", [])
 
         static_dirs = parse_vars(args.static_dirs) if args.static_dirs else {}
         patterns += get_static_routes(static_dirs)
@@ -305,15 +238,15 @@ class Serve(_BkServe):
             else:
                 files.append(f)
 
-        if args.index and not args.index.endswith('.html'):
+        if args.index and not args.index.endswith(".html"):
             found = False
             for ext in self._extensions:
-                index = args.index if args.index.endswith(ext) else f'{args.index}{ext}'
+                index = args.index if args.index.endswith(ext) else f"{args.index}{ext}"
                 if any(f.endswith(index) for f in files):
                     found = True
             # Check for directory style applications
             for f in files:
-                if '.' in os.path.basename(f): # Skip files with extension
+                if "." in os.path.basename(f):  # Skip files with extension
                     continue
                 if args.index == os.path.basename(f) or args.index == f:
                     found = True
@@ -346,10 +279,10 @@ class Serve(_BkServe):
             with open(setup_path) as f:
                 setup_source = f.read()
             nodes = ast.parse(setup_source, os.fspath(setup_path))
-            code = compile(nodes, filename=setup_path, mode='exec', dont_inherit=True)
-            module_name = 'panel_setup_module'
+            code = compile(nodes, filename=setup_path, mode="exec", dont_inherit=True)
+            module_name = "panel_setup_module"
             module = ModuleType(module_name)
-            module.__dict__['__file__'] = fullpath(setup_path)
+            module.__dict__["__file__"] = fullpath(setup_path)
             exec(code, module.__dict__)
             state._setup_module = module
 
@@ -358,9 +291,7 @@ class Serve(_BkServe):
             applications = build_single_handler_applications(files, argvs)
             if args.autoreload:
                 with record_modules():
-                    self.warm_applications(
-                        applications, args.reuse_sessions
-                    )
+                    self.warm_applications(applications, args.reuse_sessions)
             else:
                 self.warm_applications(applications, args.reuse_sessions)
 
@@ -378,14 +309,12 @@ class Serve(_BkServe):
             admin_path = "/admin"
             if args.admin_endpoint:
                 admin_path = args.admin_endpoint
-                admin_path = admin_path if admin_path.startswith('/') else f'/{admin_path}'
+                admin_path = admin_path if admin_path.startswith("/") else f"/{admin_path}"
 
             config._admin = True
             app = Application(FunctionHandler(admin_panel))
             unused_timeout = args.check_unused_sessions or 15000
-            state._admin_context = app_ctx = AdminApplicationContext(
-                app, unused_timeout=unused_timeout, url=admin_path
-            )
+            state._admin_context = app_ctx = AdminApplicationContext(app, unused_timeout=unused_timeout, url=admin_path)
             if all(not isinstance(handler, DocumentLifecycleHandler) for handler in app._handlers):
                 app.add(DocumentLifecycleHandler())
             app_patterns = []
@@ -404,15 +333,14 @@ class Serve(_BkServe):
                 r[2]["bokeh_websocket_path"] = websocket_path
             try:
                 import snakeviz
-                SNAKEVIZ_PATH = os.path.join(os.path.dirname(snakeviz.__file__), 'static')
-                app_patterns.append(
-                    ('/snakeviz/static/(.*)', StaticFileHandler, dict(path=SNAKEVIZ_PATH))
-                )
+
+                SNAKEVIZ_PATH = os.path.join(os.path.dirname(snakeviz.__file__), "static")
+                app_patterns.append(("/snakeviz/static/(.*)", StaticFileHandler, dict(path=SNAKEVIZ_PATH)))
             except Exception:
                 pass
             patterns.extend(app_patterns)
             if args.admin_log_level is not None:
-                if os.environ.get('PANEL_ADMIN_LOG_LEVEL'):
+                if os.environ.get("PANEL_ADMIN_LOG_LEVEL"):
                     raise ValueError(
                         "admin_log_level supplied both using the environment variable "
                         "PANEL_ADMIN_LOG_LEVEL and as an explicit argument, only the "
@@ -423,25 +351,19 @@ class Serve(_BkServe):
 
         config.session_history = args.session_history
         if args.rest_session_info:
-            pattern = REST_PROVIDERS['param'](files, 'rest')
+            pattern = REST_PROVIDERS["param"](files, "rest")
             patterns.extend(pattern)
-            state.publish('session_info', state, ['session_info'])
+            state.publish("session_info", state, ["session_info"])
 
         if args.num_threads is not None:
             if config.nthreads is not None:
-                raise ValueError(
-                    "Supply num_threads either using the environment variable "
-                    "PANEL_NUM_THREADS or as an explicit argument, not both."
-                )
+                raise ValueError("Supply num_threads either using the environment variable " "PANEL_NUM_THREADS or as an explicit argument, not both.")
             config.nthreads = args.num_threads
 
         if args.auth_template:
             authpath = pathlib.Path(args.auth_template)
             if not authpath.is_file():
-                raise ValueError(
-                    f"The supplied auth-template {args.auth_template} does not "
-                    "exist, ensure you supply and existing Jinja2 template."
-                )
+                raise ValueError(f"The supplied auth-template {args.auth_template} does not " "exist, ensure you supply and existing Jinja2 template.")
             config.auth_template = str(authpath.absolute())
 
         if args.logout_template:
@@ -450,26 +372,20 @@ class Serve(_BkServe):
             logout_template = None
 
         if args.basic_auth and config.basic_auth:
-            raise ValueError(
-                "Turn on Basic authentication using environment variable "
-                "or via explicit argument, not both"
-            )
+            raise ValueError("Turn on Basic authentication using environment variable " "or via explicit argument, not both")
 
         if args.basic_login_template:
             login_template = args.basic_login_template
             authpath = pathlib.Path(login_template)
             if not authpath.is_file():
-                raise ValueError(
-                    f"The supplied auth-template {login_template} does not "
-                    "exist, ensure you supply and existing Jinja2 template."
-                )
+                raise ValueError(f"The supplied auth-template {login_template} does not " "exist, ensure you supply and existing Jinja2 template.")
         else:
             login_template = None
 
-        login_endpoint = args.login_endpoint or '/login'
-        login_endpoint = login_endpoint if login_endpoint.startswith('/') else f'/{login_endpoint}'
-        logout_endpoint = args.logout_endpoint or '/logout'
-        logout_endpoint = logout_endpoint if logout_endpoint.startswith('/') else f'/{logout_endpoint}'
+        login_endpoint = args.login_endpoint or "/login"
+        login_endpoint = login_endpoint if login_endpoint.startswith("/") else f"/{login_endpoint}"
+        logout_endpoint = args.logout_endpoint or "/logout"
+        logout_endpoint = logout_endpoint if logout_endpoint.startswith("/") else f"/{logout_endpoint}"
 
         if args.oauth_error_template:
             error_template = str(pathlib.Path(args.oauth_error_template).absolute())
@@ -481,37 +397,25 @@ class Serve(_BkServe):
         if args.basic_auth:
             config.basic_auth = args.basic_auth
         if config.basic_auth:
-            kwargs['auth_provider'] = BasicAuthProvider(
-                login_endpoint=login_endpoint,
-                logout_endpoint=logout_endpoint,
-                login_template=login_template,
-                logout_template=logout_template
+            kwargs["auth_provider"] = BasicAuthProvider(
+                login_endpoint=login_endpoint, logout_endpoint=logout_endpoint, login_template=login_template, logout_template=logout_template
             )
 
         if args.cookie_secret and config.cookie_secret:
-            raise ValueError(
-                "Supply cookie secret either using environment "
-                "variable or via explicit argument, not both."
-            )
+            raise ValueError("Supply cookie secret either using environment " "variable or via explicit argument, not both.")
         elif args.cookie_secret:
             config.cookie_secret = args.cookie_secret
 
         # Check only one auth is used.
         if args.oauth_provider and config.oauth_provider:
-                raise ValueError(
-                    "Supply OAuth provider either using environment variable "
-                    "or via explicit argument, not both."
-                )
+            raise ValueError("Supply OAuth provider either using environment variable " "or via explicit argument, not both.")
         if args.oauth_provider:
             config.oauth_provider = args.oauth_provider
         if config.oauth_provider:
             config.oauth_refresh_tokens = args.oauth_refresh_tokens
             config.oauth_expiry = args.oauth_expiry_days
             if config.oauth_key and args.oauth_key:
-                raise ValueError(
-                    "Supply OAuth key either using environment variable "
-                    "or via explicit argument, not both."
-                )
+                raise ValueError("Supply OAuth key either using environment variable " "or via explicit argument, not both.")
             elif args.oauth_key:
                 config.oauth_key = args.oauth_key
             elif not config.oauth_key:
@@ -531,10 +435,7 @@ class Serve(_BkServe):
                 )
 
             if config.oauth_secret and args.oauth_secret:
-                raise ValueError(
-                    "Supply OAuth secret either using environment variable "
-                    "or via explicit argument, not both."
-                )
+                raise ValueError("Supply OAuth secret either using environment variable " "or via explicit argument, not both.")
             elif args.oauth_secret:
                 config.oauth_secret = args.oauth_secret
             elif not config.oauth_secret:
@@ -549,35 +450,33 @@ class Serve(_BkServe):
                 config.oauth_extra_params = ast.literal_eval(args.oauth_extra_params)
 
             if config.oauth_encryption_key and args.oauth_encryption_key:
-                raise ValueError(
-                    "Supply OAuth encryption key either using environment "
-                    "variable or via explicit argument, not both."
-                )
+                raise ValueError("Supply OAuth encryption key either using environment " "variable or via explicit argument, not both.")
             elif args.oauth_encryption_key:
-                encryption_key = args.oauth_encryption_key.encode('ascii')
+                encryption_key = args.oauth_encryption_key.encode("ascii")
                 try:
                     key = base64.urlsafe_b64decode(encryption_key)
                 except Exception:
-                    raise ValueError("OAuth encryption key was not a valid base64 "
-                                     "string. Generate an encryption key with "
-                                     "`panel oauth-secret` and ensure you did not "
-                                     "truncate the returned string.")
-                if len(key) != 32:
                     raise ValueError(
-                        "OAuth encryption key must be 32 url-safe "
-                        "base64-encoded bytes."
+                        "OAuth encryption key was not a valid base64 "
+                        "string. Generate an encryption key with "
+                        "`panel oauth-secret` and ensure you did not "
+                        "truncate the returned string."
                     )
+                if len(key) != 32:
+                    raise ValueError("OAuth encryption key must be 32 url-safe " "base64-encoded bytes.")
                 config.oauth_encryption_key = encryption_key
             elif not config.oauth_encryption_key:
-                print("WARNING: OAuth has not been configured with an "
-                      "encryption key and will potentially leak "
-                      "credentials in cookies and a JWT token embedded "
-                      "in the served website. Use at your own risk or "
-                      "generate a key with the `panel oauth-secret` CLI "
-                      "command and then provide it to `panel serve` "
-                      "using the PANEL_OAUTH_ENCRYPTION environment "
-                      "variable or the --oauth-encryption-key CLI "
-                      "argument.")
+                print(
+                    "WARNING: OAuth has not been configured with an "
+                    "encryption key and will potentially leak "
+                    "credentials in cookies and a JWT token embedded "
+                    "in the served website. Use at your own risk or "
+                    "generate a key with the `panel oauth-secret` CLI "
+                    "command and then provide it to `panel serve` "
+                    "using the PANEL_OAUTH_ENCRYPTION environment "
+                    "variable or the --oauth-encryption-key CLI "
+                    "argument."
+                )
 
             if config.oauth_encryption_key:
                 try:
@@ -590,7 +489,7 @@ class Serve(_BkServe):
                     )
                 state.encryption = Fernet(config.oauth_encryption_key)
 
-            kwargs['auth_provider'] = OAuthProvider(
+            kwargs["auth_provider"] = OAuthProvider(
                 login_endpoint=login_endpoint,
                 logout_endpoint=logout_endpoint,
                 login_template=login_template,
@@ -599,23 +498,17 @@ class Serve(_BkServe):
             )
 
             if args.oauth_redirect_uri and config.oauth_redirect_uri:
-                raise ValueError(
-                    "Supply OAuth redirect URI either using environment "
-                    "variable or via explicit argument, not both."
-                )
+                raise ValueError("Supply OAuth redirect URI either using environment " "variable or via explicit argument, not both.")
             elif args.oauth_redirect_uri:
                 config.oauth_redirect_uri = args.oauth_redirect_uri
 
             if args.oauth_jwt_user and config.oauth_jwt_user:
-                raise ValueError(
-                    "Supply OAuth JWT user either using environment "
-                    "variable or via explicit argument, not both."
-                )
+                raise ValueError("Supply OAuth JWT user either using environment " "variable or via explicit argument, not both.")
             elif args.oauth_jwt_user:
                 config.oauth_jwt_user = args.oauth_jwt_user
 
         if config.cookie_secret:
-            kwargs['cookie_secret'] = config.cookie_secret
+            kwargs["cookie_secret"] = config.cookie_secret
 
         return kwargs
 

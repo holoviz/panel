@@ -14,7 +14,7 @@ def tabs(document, comm):
     """Set up a tabs instance"""
     div1, div2 = Div(), Div()
 
-    return Tabs(('Tab1', div1), ('Tab2', div2))
+    return Tabs(("Tab1", div1), ("Tab2", div2))
 
 
 def assert_tab_is_similar(tab1, tab2):
@@ -24,9 +24,8 @@ def assert_tab_is_similar(tab1, tab2):
     assert tab1.title == tab2.title
 
 
-
 def test_tabs_basic_constructor(document, comm):
-    tabs = Tabs('plain', 'text')
+    tabs = Tabs("plain", "text")
 
     model = tabs.get_root(document, comm=comm)
 
@@ -35,14 +34,14 @@ def test_tabs_basic_constructor(document, comm):
     assert all(isinstance(c, BkPanel) for c in model.tabs)
     tab1, tab2 = model.tabs
 
-    assert 'plain' in tab1.child.text
-    assert 'text' in tab2.child.text
+    assert "plain" in tab1.child.text
+    assert "text" in tab2.child.text
 
 
 def test_tabs_constructor(document, comm):
     div1 = Div()
     div2 = Div()
-    tabs = Tabs(('Div1', div1), ('Div2', div2))
+    tabs = Tabs(("Div1", div1), ("Div2", div2))
 
     model = tabs.get_root(document, comm=comm)
 
@@ -51,16 +50,16 @@ def test_tabs_constructor(document, comm):
     assert all(isinstance(c, BkPanel) for c in model.tabs)
     tab1, tab2 = model.tabs
 
-    assert tab1.title == 'Div1'
+    assert tab1.title == "Div1"
     assert tab1.child is div1
-    assert tab2.title == 'Div2'
+    assert tab2.title == "Div2"
     assert tab2.child is div2
 
 
 def test_tabs_implicit_constructor(document, comm):
     div1, div2 = Div(), Div()
-    p1 = pn.panel(div1, name='Div1')
-    p2 = pn.panel(div2, name='Div2')
+    p1 = pn.panel(div1, name="Div1")
+    p2 = pn.panel(div2, name="Div2")
     tabs = Tabs(p1, p2)
 
     model = tabs.get_root(document, comm=comm)
@@ -70,17 +69,17 @@ def test_tabs_implicit_constructor(document, comm):
     assert all(isinstance(c, BkPanel) for c in model.tabs)
     tab1, tab2 = model.tabs
 
-    assert tab1.title == tab1.name == p1.name == 'Div1'
+    assert tab1.title == tab1.name == p1.name == "Div1"
     assert tab1.child is div1
-    assert tab2.title == tab2.name == p2.name == 'Div2'
+    assert tab2.title == tab2.name == p2.name == "Div2"
     assert tab2.child is div2
 
 
 def test_tabs_constructor_with_named_objects(document, comm):
     div1, div2 = Div(), Div()
-    p1 = pn.panel(div1, name='Div1')
-    p2 = pn.panel(div2, name='Div2')
-    tabs = Tabs(('Tab1', p1), ('Tab2', p2))
+    p1 = pn.panel(div1, name="Div1")
+    p2 = pn.panel(div2, name="Div2")
+    tabs = Tabs(("Tab1", p1), ("Tab2", p2))
 
     model = tabs.get_root(document, comm=comm)
 
@@ -89,29 +88,29 @@ def test_tabs_constructor_with_named_objects(document, comm):
     assert all(isinstance(c, BkPanel) for c in model.tabs)
     tab1, tab2 = model.tabs
 
-    assert tab1.title == 'Tab1'
-    assert tab1.name == p1.name == 'Div1'
+    assert tab1.title == "Tab1"
+    assert tab1.name == p1.name == "Div1"
     assert tab1.child is div1
-    assert tab2.title == 'Tab2'
-    assert tab2.name == p2.name =='Div2'
+    assert tab2.title == "Tab2"
+    assert tab2.name == p2.name == "Div2"
     assert tab2.child is div2
 
 
 def test_tabs_cleanup_panels(document, comm, tabs):
     model = tabs.get_root(document, comm=comm)
 
-    assert model.ref['id'] in tabs._panels
+    assert model.ref["id"] in tabs._panels
     tabs._cleanup(model)
-    assert model.ref['id'] not in tabs._panels
+    assert model.ref["id"] not in tabs._panels
 
 
 def test_tabs_add(document, comm):
     div1 = Div()
     div2 = Div()
-    tabs1 = Tabs(('Div1', div1), ('Div2', div2))
+    tabs1 = Tabs(("Div1", div1), ("Div2", div2))
     div3 = Div()
     div4 = Div()
-    tabs2 = Tabs(('Div3', div3), ('Div4', div4))
+    tabs2 = Tabs(("Div3", div3), ("Div4", div4))
 
     combined = tabs1 + tabs2
 
@@ -122,24 +121,24 @@ def test_tabs_add(document, comm):
     assert all(isinstance(c, BkPanel) for c in model.tabs)
     tab1, tab2, tab3, tab4 = model.tabs
 
-    assert tab1.title == 'Div1'
+    assert tab1.title == "Div1"
     assert tab1.child is div1
-    assert tab2.title == 'Div2'
+    assert tab2.title == "Div2"
     assert tab2.child is div2
-    assert tab3.title == 'Div3'
+    assert tab3.title == "Div3"
     assert tab3.child is div3
-    assert tab4.title == 'Div4'
+    assert tab4.title == "Div4"
     assert tab4.child is div4
 
 
 def test_tabs_add_list(document, comm):
     div1 = Div()
     div2 = Div()
-    tabs1 = Tabs(('Div1', div1), ('Div2', div2))
+    tabs1 = Tabs(("Div1", div1), ("Div2", div2))
     div3 = Div()
     div4 = Div()
 
-    combined = tabs1 + [('Div3', div3), ('Div4', div4)]
+    combined = tabs1 + [("Div3", div3), ("Div4", div4)]
 
     model = combined.get_root(document, comm=comm)
 
@@ -148,24 +147,24 @@ def test_tabs_add_list(document, comm):
     assert all(isinstance(c, BkPanel) for c in model.tabs)
     tab1, tab2, tab3, tab4 = model.tabs
 
-    assert tab1.title == 'Div1'
+    assert tab1.title == "Div1"
     assert tab1.child is div1
-    assert tab2.title == 'Div2'
+    assert tab2.title == "Div2"
     assert tab2.child is div2
-    assert tab3.title == 'Div3'
+    assert tab3.title == "Div3"
     assert tab3.child is div3
-    assert tab4.title == 'Div4'
+    assert tab4.title == "Div4"
     assert tab4.child is div4
 
 
 def test_tabs_radd_list(document, comm):
     div1 = Div()
     div2 = Div()
-    tabs1 = Tabs(('Div1', div1), ('Div2', div2))
+    tabs1 = Tabs(("Div1", div1), ("Div2", div2))
     div3 = Div()
     div4 = Div()
 
-    combined = [('Div3', div3), ('Div4', div4)] + tabs1
+    combined = [("Div3", div3), ("Div4", div4)] + tabs1
 
     model = combined.get_root(document, comm=comm)
 
@@ -174,26 +173,26 @@ def test_tabs_radd_list(document, comm):
     assert all(isinstance(c, BkPanel) for c in model.tabs)
     tab3, tab4, tab1, tab2 = model.tabs
 
-    assert tab1.title == 'Div1'
+    assert tab1.title == "Div1"
     assert tab1.child is div1
-    assert tab2.title == 'Div2'
+    assert tab2.title == "Div2"
     assert tab2.child is div2
-    assert tab3.title == 'Div3'
+    assert tab3.title == "Div3"
     assert tab3.child is div3
-    assert tab4.title == 'Div4'
+    assert tab4.title == "Div4"
     assert tab4.child is div4
 
 
 def test_tabs_set_panes(document, comm):
     div1, div2 = Div(), Div()
-    p1 = pn.panel(div1, name='Div1')
-    p2 = pn.panel(div2, name='Div2')
+    p1 = pn.panel(div1, name="Div1")
+    p2 = pn.panel(div2, name="Div2")
     tabs = Tabs(p1, p2)
 
     model = tabs.get_root(document, comm=comm)
 
     div3 = Div()
-    p3 = pn.panel(div3, name='Div3')
+    p3 = pn.panel(div3, name="Div3")
     tabs.objects = [p1, p2, p3]
 
     assert isinstance(model, BkTabs)
@@ -201,18 +200,18 @@ def test_tabs_set_panes(document, comm):
     assert all(isinstance(c, BkPanel) for c in model.tabs)
     tab1, tab2, tab3 = model.tabs
 
-    assert tab1.title == tab1.name == p1.name =='Div1'
+    assert tab1.title == tab1.name == p1.name == "Div1"
     assert tab1.child is div1
-    assert tab2.title == tab2.name == p2.name =='Div2'
+    assert tab2.title == tab2.name == p2.name == "Div2"
     assert tab2.child is div2
-    assert tab3.title == tab3.name == p3.name =='Div3'
+    assert tab3.title == tab3.name == p3.name == "Div3"
     assert tab3.child is div3
 
 
 def test_tabs_reverse(document, comm):
     div1, div2 = Div(), Div()
-    p1 = pn.panel(div1, name='Div1')
-    p2 = pn.panel(div2, name='Div2')
+    p1 = pn.panel(div1, name="Div1")
+    p2 = pn.panel(div2, name="Div2")
     tabs = Tabs(p1, p2)
 
     model = tabs.get_root(document, comm=comm)
@@ -220,9 +219,9 @@ def test_tabs_reverse(document, comm):
     tabs.reverse()
     tab1, tab2 = model.tabs
     assert tab1.child is div2
-    assert tab1.title == tab1.name == p2.name == 'Div2'
+    assert tab1.title == tab1.name == p2.name == "Div2"
     assert tab2.child is div1
-    assert tab2.title == tab2.name == p1.name == 'Div1'
+    assert tab2.title == tab2.name == p1.name == "Div1"
 
 
 def test_tabs_append(document, comm, tabs):
@@ -245,9 +244,9 @@ def test_empty_tabs_append(document, comm):
     model = tabs.get_root(document, comm=comm)
 
     div1 = Div()
-    tabs.append(('test title', div1))
+    tabs.append(("test title", div1))
     assert len(model.tabs) == 1
-    assert model.tabs[0].title == 'test title'
+    assert model.tabs[0].title == "test title"
 
 
 def test_tabs_close_tab_in_notebook(document, comm, tabs):
@@ -255,7 +254,7 @@ def test_tabs_close_tab_in_notebook(document, comm, tabs):
     old_tabs = list(model.tabs)
     _, div2 = tabs
 
-    tabs._comm_change(document, model.ref['id'], comm, None, 'tabs', old_tabs, [model.tabs[1]])
+    tabs._comm_change(document, model.ref["id"], comm, None, "tabs", old_tabs, [model.tabs[1]])
 
     assert len(tabs.objects) == 1
     assert tabs.objects[0] is div2
@@ -265,7 +264,7 @@ def test_tabs_close_tab_on_server(document, comm, tabs):
     model = tabs.get_root(document, comm=comm)
     _, div2 = tabs
 
-    tabs._server_change(document, model.ref['id'], None, 'tabs', model.tabs, model.tabs[1:])
+    tabs._server_change(document, model.ref["id"], None, "tabs", model.tabs, model.tabs[1:])
 
     assert len(tabs.objects) == 1
     assert tabs.objects[0] is div2
@@ -304,7 +303,7 @@ def test_tabs_append_uses_object_name(document, comm, tabs):
     tab1_before, tab2_before = model.tabs
 
     div3 = Div()
-    p3 = pn.panel(div3, name='Div3')
+    p3 = pn.panel(div3, name="Div3")
     tabs.append(p3)
 
     tab1, tab2, tab3 = model.tabs
@@ -312,7 +311,7 @@ def test_tabs_append_uses_object_name(document, comm, tabs):
     assert_tab_is_similar(tab2_before, tab2)
 
     assert tab3.child is div3
-    assert tab3.title == tab3.name == p3.name == 'Div3'
+    assert tab3.title == tab3.name == p3.name == "Div3"
 
 
 def test_tabs_append_with_tuple_and_unnamed_contents(document, comm, tabs):
@@ -320,14 +319,14 @@ def test_tabs_append_with_tuple_and_unnamed_contents(document, comm, tabs):
     tab1_before, tab2_before = model.tabs
 
     div3 = Div()
-    tabs.append(('Div3', div3))
+    tabs.append(("Div3", div3))
 
     tab1, tab2, tab3 = model.tabs
     assert_tab_is_similar(tab1_before, tab1)
     assert_tab_is_similar(tab2_before, tab2)
 
     assert tab3.child is div3
-    assert tab3.title == 'Div3'
+    assert tab3.title == "Div3"
 
 
 def test_tabs_append_with_tuple_and_named_contents(document, comm, tabs):
@@ -335,16 +334,16 @@ def test_tabs_append_with_tuple_and_named_contents(document, comm, tabs):
     tab1_before, tab2_before = model.tabs
 
     div3 = Div()
-    p3 = pn.panel(div3, name='Div3')
-    tabs.append(('Tab3', p3))
+    p3 = pn.panel(div3, name="Div3")
+    tabs.append(("Tab3", p3))
 
     tab1, tab2, tab3 = model.tabs
     assert_tab_is_similar(tab1_before, tab1)
     assert_tab_is_similar(tab2_before, tab2)
 
     assert tab3.child is div3
-    assert tab3.title == 'Tab3'
-    assert tab3.name == p3.name == 'Div3'
+    assert tab3.title == "Tab3"
+    assert tab3.name == p3.name == "Div3"
 
 
 def test_tabs_extend(document, comm, tabs):
@@ -382,7 +381,7 @@ def test_tabs_extend_uses_object_name(document, comm, tabs):
     tab1_before, tab2_before = model.tabs
 
     div3, div4 = Div(), Div()
-    p3, p4 = pn.panel(div3, name='Div3'), pn.panel(div4, name='Div4')
+    p3, p4 = pn.panel(div3, name="Div3"), pn.panel(div4, name="Div4")
     tabs.extend([p4, p3])
 
     tab1, tab2, tab3, tab4 = model.tabs
@@ -390,9 +389,9 @@ def test_tabs_extend_uses_object_name(document, comm, tabs):
     assert_tab_is_similar(tab2_before, tab2)
 
     assert tab3.child is div4
-    assert tab3.title == p4.name == 'Div4'
+    assert tab3.title == p4.name == "Div4"
     assert tab4.child is div3
-    assert tab4.title  == p3.name == 'Div3'
+    assert tab4.title == p3.name == "Div3"
 
 
 def test_tabs_extend_with_tuple_and_unnamed_contents(document, comm, tabs):
@@ -400,16 +399,16 @@ def test_tabs_extend_with_tuple_and_unnamed_contents(document, comm, tabs):
     tab1_before, tab2_before = model.tabs
 
     div3, div4 = Div(), Div()
-    tabs.extend([('Div4', div4), ('Div3', div3)])
+    tabs.extend([("Div4", div4), ("Div3", div3)])
 
     tab1, tab2, tab3, tab4 = model.tabs
     assert_tab_is_similar(tab1_before, tab1)
     assert_tab_is_similar(tab2_before, tab2)
 
     assert tab3.child is div4
-    assert tab3.title == 'Div4'
+    assert tab3.title == "Div4"
     assert tab4.child is div3
-    assert tab4.title == 'Div3'
+    assert tab4.title == "Div3"
 
 
 def test_tabs_extend_with_tuple_and_named_contents(document, comm, tabs):
@@ -417,19 +416,19 @@ def test_tabs_extend_with_tuple_and_named_contents(document, comm, tabs):
     tab1_before, tab2_before = model.tabs
 
     div3, div4 = Div(), Div()
-    p3, p4 = pn.panel(div3, name='Div3'), pn.panel(div4, name='Div4')
-    tabs.extend([('Tab4', p4), ('Tab3', p3)])
+    p3, p4 = pn.panel(div3, name="Div3"), pn.panel(div4, name="Div4")
+    tabs.extend([("Tab4", p4), ("Tab3", p3)])
 
     tab1, tab2, tab3, tab4 = model.tabs
     assert_tab_is_similar(tab1_before, tab1)
     assert_tab_is_similar(tab2_before, tab2)
 
     assert tab3.child is div4
-    assert tab3.title == 'Tab4'
-    assert tab3.name == p4.name == 'Div4'
+    assert tab3.title == "Tab4"
+    assert tab3.name == p4.name == "Div4"
     assert tab4.child is div3
-    assert tab4.title == 'Tab3'
-    assert tab4.name == p3.name == 'Div3'
+    assert tab4.title == "Tab3"
+    assert tab4.name == p3.name == "Div3"
 
 
 def test_tabs_insert(document, comm, tabs):
@@ -451,14 +450,14 @@ def test_tabs_insert_uses_object_name(document, comm, tabs):
     tab1_before, tab2_before = model.tabs
 
     div3 = Div()
-    p3 = pn.panel(div3, name='Div3')
+    p3 = pn.panel(div3, name="Div3")
     tabs.insert(1, p3)
 
     tab1, tab2, tab3 = model.tabs
 
     assert_tab_is_similar(tab1_before, tab1)
     assert tab2.child is div3
-    assert tab2.title == tab2.name == p3.name == 'Div3'
+    assert tab2.title == tab2.name == p3.name == "Div3"
     assert_tab_is_similar(tab2_before, tab3)
 
 
@@ -467,12 +466,12 @@ def test_tabs_insert_with_tuple_and_unnamed_contents(document, comm, tabs):
     tab1_before, tab2_before = model.tabs
 
     div3 = Div()
-    tabs.insert(1, ('Div3', div3))
+    tabs.insert(1, ("Div3", div3))
     tab1, tab2, tab3 = model.tabs
 
     assert_tab_is_similar(tab1_before, tab1)
     assert tab2.child is div3
-    assert tab2.title == 'Div3'
+    assert tab2.title == "Div3"
     assert_tab_is_similar(tab2_before, tab3)
 
 
@@ -481,14 +480,14 @@ def test_tabs_insert_with_tuple_and_named_contents(document, comm, tabs):
     tab1_before, tab2_before = model.tabs
 
     div3 = Div()
-    p3 = pn.panel(div3, name='Div3')
-    tabs.insert(1, ('Tab3', p3))
+    p3 = pn.panel(div3, name="Div3")
+    tabs.insert(1, ("Tab3", p3))
     tab1, tab2, tab3 = model.tabs
 
     assert_tab_is_similar(tab1_before, tab1)
     assert tab2.child is div3
-    assert tab2.title == 'Tab3'
-    assert tab2.name  == p3.name == 'Div3'
+    assert tab2.title == "Tab3"
+    assert tab2.name == p3.name == "Div3"
     assert_tab_is_similar(tab2_before, tab3)
 
 
@@ -501,12 +500,12 @@ def test_tabs_setitem(document, comm):
     model = tabs.get_root(document, comm=comm)
 
     tab1, tab2 = model.tabs
-    assert p1._models[model.ref['id']][0] is tab1.child
+    assert p1._models[model.ref["id"]][0] is tab1.child
     div3 = Div()
-    tabs[0] = ('C', div3)
+    tabs[0] = ("C", div3)
     tab1, tab2 = model.tabs
     assert tab1.child is div3
-    assert tab1.title == 'C'
+    assert tab1.title == "C"
     assert tab2.child is div2
     assert p1._models == {}
 
@@ -517,8 +516,7 @@ def test_tabs_clone():
     tabs = Tabs(pn.panel(div1), pn.panel(div2))
     clone = tabs.clone()
 
-    assert ([(k, v) for k, v in tabs.param.values().items() if k != 'name'] ==
-            [(k, v) for k, v in clone.param.values().items() if k != 'name'])
+    assert [(k, v) for k, v in tabs.param.values().items() if k != "name"] == [(k, v) for k, v in clone.param.values().items() if k != "name"]
 
 
 def test_tabs_clone_args():
@@ -535,10 +533,10 @@ def test_tabs_clone_kwargs():
     div1 = Div()
     div2 = Div()
     tabs = Tabs(div1, div2)
-    clone = tabs.clone(width=400, sizing_mode='stretch_height')
+    clone = tabs.clone(width=400, sizing_mode="stretch_height")
 
     assert clone.width == 400
-    assert clone.sizing_mode == 'stretch_height'
+    assert clone.sizing_mode == "stretch_height"
 
 
 def test_tabs_setitem_out_of_bounds(document, comm):
@@ -560,15 +558,15 @@ def test_tabs_setitem_replace_all(document, comm):
 
     model = layout.get_root(document, comm=comm)
 
-    assert p1._models[model.ref['id']][0] is model.tabs[0].child
+    assert p1._models[model.ref["id"]][0] is model.tabs[0].child
     div3 = Div()
     div4 = Div()
-    layout[:] = [('B', div3), ('C', div4)]
+    layout[:] = [("B", div3), ("C", div4)]
     tab1, tab2 = model.tabs
     assert tab1.child is div3
-    assert tab1.title == 'B'
+    assert tab1.title == "B"
     assert tab2.child is div4
-    assert tab2.title == 'C'
+    assert tab2.title == "C"
     assert p1._models == {}
     assert p2._models == {}
 
@@ -588,22 +586,22 @@ def test_tabs_setitem_replace_slice(document, comm):
     div1 = Div()
     div2 = Div()
     div3 = Div()
-    layout = Tabs(('A', div1), ('B', div2), ('C', div3))
+    layout = Tabs(("A", div1), ("B", div2), ("C", div3))
     p1, p2, p3 = layout.objects
 
     model = layout.get_root(document, comm=comm)
 
-    assert p1._models[model.ref['id']][0] is model.tabs[0].child
+    assert p1._models[model.ref["id"]][0] is model.tabs[0].child
     div3 = Div()
     div4 = Div()
-    layout[1:] = [('D', div3), ('E', div4)]
+    layout[1:] = [("D", div3), ("E", div4)]
     tab1, tab2, tab3 = model.tabs
     assert tab1.child is div1
-    assert tab1.title == 'A'
+    assert tab1.title == "A"
     assert tab2.child is div3
-    assert tab2.title == 'D'
+    assert tab2.title == "D"
     assert tab3.child is div4
-    assert tab3.title == 'E'
+    assert tab3.title == "E"
     assert p2._models == {}
     assert p3._models == {}
 
@@ -641,7 +639,7 @@ def test_tabs_pop(document, comm):
     model = tabs.get_root(document, comm=comm)
 
     tab1 = model.tabs[0]
-    assert p1._models[model.ref['id']][0] is tab1.child
+    assert p1._models[model.ref["id"]][0] is tab1.child
     tabs.pop(0)
     assert len(model.tabs) == 1
     tab1 = model.tabs[0]
@@ -658,7 +656,7 @@ def test_tabs_remove(document, comm):
     model = tabs.get_root(document, comm=comm)
 
     tab1 = model.tabs[0]
-    assert p1._models[model.ref['id']][0] is tab1.child
+    assert p1._models[model.ref["id"]][0] is tab1.child
     tabs.remove(p1)
     assert len(model.tabs) == 1
     tab1 = model.tabs[0]

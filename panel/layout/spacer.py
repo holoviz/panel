@@ -38,7 +38,7 @@ class Spacer(Reactive):
         model = self._bokeh_model(**self._get_properties(doc))
         if root is None:
             root = model
-        self._models[root.ref['id']] = (model, parent)
+        self._models[root.ref["id"]] = (model, parent)
         return model
 
 
@@ -60,7 +60,7 @@ class VSpacer(Spacer):
     ... )
     """
 
-    sizing_mode = param.Parameter(default='stretch_height', readonly=True)
+    sizing_mode = param.Parameter(default="stretch_height", readonly=True)
 
 
 class HSpacer(Spacer):
@@ -81,7 +81,7 @@ class HSpacer(Spacer):
     ... )
     """
 
-    sizing_mode = param.Parameter(default='stretch_width', readonly=True)
+    sizing_mode = param.Parameter(default="stretch_width", readonly=True)
 
 
 class Divider(Reactive):
@@ -105,14 +105,12 @@ class Divider(Reactive):
 
     _bokeh_model = BkDiv
 
-    _stylesheets: ClassVar[List[str]] = [
-        f'{CDN_DIST}css/divider.css'
-    ]
+    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/divider.css"]
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         properties = self._process_param_change(self._init_params())
-        model = self._bokeh_model(text='<hr>', **properties)
+        model = self._bokeh_model(text="<hr>", **properties)
         if root is None:
             root = model
-        self._models[root.ref['id']] = (model, parent)
+        self._models[root.ref["id"]] = (model, parent)
         return model

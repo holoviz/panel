@@ -35,24 +35,40 @@ class Voice(param.Parameterized):
     See https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesisVoice
     """
 
-    default = param.Boolean(constant=True, default=False, doc="""
+    default = param.Boolean(
+        constant=True,
+        default=False,
+        doc="""
         A Boolean indicating whether the voice is the default voice
-        for the current app language (True), or not (False.)""")
+        for the current app language (True), or not (False.)""",
+    )
 
-    lang = param.String(constant=True, doc="""
-        Returns a BCP 47 language tag indicating the language of the voice.""")
+    lang = param.String(
+        constant=True,
+        doc="""
+        Returns a BCP 47 language tag indicating the language of the voice.""",
+    )
 
-    local_service = param.Boolean(constant=True, doc="""
+    local_service = param.Boolean(
+        constant=True,
+        doc="""
         A Boolean indicating whether the voice is supplied by a local
         speech synthesizer service (True), or a remote speech
-        synthesizer service (False.)""")
+        synthesizer service (False.)""",
+    )
 
-    name = param.String(constant=True, doc="""
-        Returns a human-readable name that represents the voice.""")
+    name = param.String(
+        constant=True,
+        doc="""
+        Returns a human-readable name that represents the voice.""",
+    )
 
-    voice_uri = param.String(constant=True, doc="""
+    voice_uri = param.String(
+        constant=True,
+        doc="""
         Returns the type of URI and location of the speech synthesis
-        service for this voice.""")
+        service for this voice.""",
+    )
 
     @staticmethod
     def to_voices_list(voices):
@@ -87,31 +103,51 @@ class Utterance(param.Parameterized):
     See https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesisUtterance
     """
 
-    value = param.String(default="", doc="""
+    value = param.String(
+        default="",
+        doc="""
         The text that will be synthesised when the utterance is
         spoken. The text may be provided as plain text, or a
-        well-formed SSML document.""")
+        well-formed SSML document.""",
+    )
 
-    lang = param.ObjectSelector(default="", doc="""
-        The language of the utterance.""")
+    lang = param.ObjectSelector(
+        default="",
+        doc="""
+        The language of the utterance.""",
+    )
 
-    pitch = param.Number(default=1.0, bounds=(0.0, 2.0), doc="""
+    pitch = param.Number(
+        default=1.0,
+        bounds=(0.0, 2.0),
+        doc="""
         The pitch at which the utterance will be spoken at expressed
-        as a number between 0 and 2.""")
+        as a number between 0 and 2.""",
+    )
 
-    rate = param.Number(default=1.0, bounds=(0.1, 10.0), doc="""
+    rate = param.Number(
+        default=1.0,
+        bounds=(0.1, 10.0),
+        doc="""
         The speed at which the utterance will be spoken at expressed
-        as a number between 0.1 and 10.""" )
+        as a number between 0.1 and 10.""",
+    )
 
-    voice = param.ObjectSelector(doc="""
-        The voice that will be used to speak the utterance.""")
+    voice = param.ObjectSelector(
+        doc="""
+        The voice that will be used to speak the utterance."""
+    )
 
-    volume = param.Number(default=1.0, bounds=(0.0, 1.0), doc=""" The
+    volume = param.Number(
+        default=1.0,
+        bounds=(0.0, 1.0),
+        doc=""" The
         volume that the utterance will be spoken at expressed as a
-        number between 0 and 1.""")
+        number between 0 and 1.""",
+    )
 
     def __init__(self, **params):
-        voices = params.pop('voices', [])
+        voices = params.pop("voices", [])
         super().__init__(**params)
         self._voices_by_language = {}
         self.set_voices(voices)
@@ -188,57 +224,88 @@ class TextToSpeech(Utterance, Widget):
     >>> TextToSpeech(name="Speech Synthesis", value="Data apps are nice")
     """
 
-    auto_speak = param.Boolean(default=True, doc="""
-        Whether or not to automatically speak when the value changes.""")
+    auto_speak = param.Boolean(
+        default=True,
+        doc="""
+        Whether or not to automatically speak when the value changes.""",
+    )
 
-    cancel = param.Event(doc="""
-        Removes all utterances from the utterance queue.""")
+    cancel = param.Event(
+        doc="""
+        Removes all utterances from the utterance queue."""
+    )
 
-    pause = param.Event(doc="""
-        Puts the TextToSpeak object into a paused state.""")
+    pause = param.Event(
+        doc="""
+        Puts the TextToSpeak object into a paused state."""
+    )
 
-    resume = param.Event(doc="""
+    resume = param.Event(
+        doc="""
         Puts the TextToSpeak object into a non-paused state: resumes
-        it if it was already paused.""")
+        it if it was already paused."""
+    )
 
-    paused = param.Boolean(readonly=True, doc="""
+    paused = param.Boolean(
+        readonly=True,
+        doc="""
         A Boolean that returns true if the TextToSpeak object is in a
-        paused state.""")
+        paused state.""",
+    )
 
-    pending = param.Boolean(readonly=True, doc="""
+    pending = param.Boolean(
+        readonly=True,
+        doc="""
         A Boolean that returns true if the utterance queue contains
-        as-yet-unspoken utterances.""")
+        as-yet-unspoken utterances.""",
+    )
 
-    speak = param.Event(doc="""
-        Speak. I.e. send a new Utterance to the browser""")
+    speak = param.Event(
+        doc="""
+        Speak. I.e. send a new Utterance to the browser"""
+    )
 
-    speaking = param.Boolean(readonly=True, doc="""
+    speaking = param.Boolean(
+        readonly=True,
+        doc="""
         A Boolean that returns true if an utterance is currently in
         the process of being spoken — even if TextToSpeak is in a
-        paused state.""")
+        paused state.""",
+    )
 
-    voices = param.List(readonly=True, doc="""
+    voices = param.List(
+        readonly=True,
+        doc="""
         Returns a list of Voice objects representing all the available
-        voices on the current device.""")
+        voices on the current device.""",
+    )
 
     _voices = param.List()
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'auto_speak': None, 'lang': None, 'name': None, 'pitch': None,
-        'rate': None, 'speak': None, 'value': None, 'voice': None,
-        'voices': None, 'volume': None, '_voices': 'voices',
+        "auto_speak": None,
+        "lang": None,
+        "name": None,
+        "pitch": None,
+        "rate": None,
+        "speak": None,
+        "value": None,
+        "voice": None,
+        "voices": None,
+        "volume": None,
+        "_voices": "voices",
     }
 
     _widget_type: ClassVar[Type[Model]] = _BkTextToSpeech
 
     def _process_param_change(self, msg):
-        speak = msg.get('speak') or ('value' in msg and self.auto_speak)
+        speak = msg.get("speak") or ("value" in msg and self.auto_speak)
         msg = super()._process_param_change(msg)
         if speak:
-            msg['speak'] = self.to_dict()
+            msg["speak"] = self.to_dict()
         return msg
 
-    @param.depends('_voices', watch=True)
+    @param.depends("_voices", watch=True)
     def _update_voices(self):
         voices = []
         for _voice in self._voices:  # pylint: disable=not-an-iterable
@@ -250,7 +317,7 @@ class TextToSpeech(Utterance, Widget):
     def __repr__(self, depth=None):
         # We need to do this because otherwise a error is raised when used in notebook
         # due to infinite recursion
-        return f'TextToSpeech(name={self.name!r})'
+        return f"TextToSpeech(name={self.name!r})"
 
     def __str__(self):
-        return f'TextToSpeech(name={self.name!r})'
+        return f"TextToSpeech(name={self.name!r})"

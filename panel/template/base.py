@@ -60,33 +60,40 @@ if TYPE_CHECKING:
     from ..io.resources import ResourcesType
 
 
-_server_info: str = (
-    '<b>Running server:</b> <a target="_blank" href="https://localhost:{port}">'
-    'https://localhost:{port}</a>'
-)
+_server_info: str = '<b>Running server:</b> <a target="_blank" href="https://localhost:{port}">' "https://localhost:{port}</a>"
 
 FAVICON_URL: str = "/static/extensions/panel/images/favicon.ico"
 
 
 class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, ResourceComponent):
-
-    config = param.ClassSelector(default=_base_config(), class_=_base_config,
-                                 constant=True, doc="""
+    config = param.ClassSelector(
+        default=_base_config(),
+        class_=_base_config,
+        constant=True,
+        doc="""
         Configuration object declaring custom CSS and JS files to load
-        specifically for this template.""")
+        specifically for this template.""",
+    )
 
-    design = param.ClassSelector(class_=Design, default=Design,
-                                 is_instance=False, instantiate=False, doc="""
-        A Design applies themes to a template.""")
+    design = param.ClassSelector(
+        class_=Design,
+        default=Design,
+        is_instance=False,
+        instantiate=False,
+        doc="""
+        A Design applies themes to a template.""",
+    )
 
-    location = param.Boolean(default=False, doc="""
+    location = param.Boolean(
+        default=False,
+        doc="""
         Whether to add a Location component to this Template.
         Note if this is set to true, the Jinja2 template must
         either insert all available roots or explicitly embed
-        the location root with : {{ embed(roots.location) }}.""")
+        the location root with : {{ embed(roots.location) }}.""",
+    )
 
-    theme = param.ClassSelector(class_=Theme, default=DefaultTheme,
-                                constant=True, is_instance=False, instantiate=False)
+    theme = param.ClassSelector(class_=Theme, default=DefaultTheme, constant=True, is_instance=False, instantiate=False)
 
     # Dictionary of property overrides by Viewable type
     modifiers: ClassVar[Dict[Type[Viewable], Dict[str, Any]]] = {}
@@ -102,22 +109,13 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
     _js: ClassVar[Path | str | List[Path | str] | None] = None
 
     # External resources
-    _resources: ClassVar[Dict[str, Dict[str, str]]] = {
-        'css': {}, 'js': {}, 'js_modules': {}, 'tarball': {}
-    }
+    _resources: ClassVar[Dict[str, Dict[str, str]]] = {"css": {}, "js": {}, "js_modules": {}, "tarball": {}}
 
     __abstract = True
 
-    def __init__(
-        self, template: str | _Template, items=None,
-        nb_template: Optional[str | _Template] = None, **params
-    ):
-        config_params = {
-            p: v for p, v in params.items() if p in _base_config.param
-        }
-        super().__init__(**{
-            p: v for p, v in params.items() if p not in _base_config.param or p == 'name'
-        })
+    def __init__(self, template: str | _Template, items=None, nb_template: Optional[str | _Template] = None, **params):
+        config_params = {p: v for p, v in params.items() if p in _base_config.param}
+        super().__init__(**{p: v for p, v in params.items() if p not in _base_config.param or p == "name"})
         self.config.param.update(config_params)
 
         if isinstance(template, str):
@@ -130,45 +128,49 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
             self.nb_template = _env.from_string(nb_template)
         else:
             self.nb_template = nb_template or self.template
-        self._render_items: Dict[str, Tuple[Renderable, List[str]]]  = {}
+        self._render_items: Dict[str, Tuple[Renderable, List[str]]] = {}
         self._render_variables: Dict[str, Any] = {}
         self._documents: List[Document] = []
         self._server = None
         self._layout = self._build_layout()
         self._setup_design()
 
-    @param.depends('design', watch=True)
+    @param.depends("design", watch=True)
     def _setup_design(self):
         self._design = self.design(theme=self.theme)
 
     def _update_vars(self, *args) -> None:
-        self._render_variables['template_resources'] = self.resolve_resources()
+        self._render_variables["template_resources"] = self.resolve_resources()
 
     def _build_layout(self) -> Column:
         str_repr = Str(repr(self))
-        server_info = HTML('')
-        button = Button(name='Launch server')
+        server_info = HTML("")
+        button = Button(name="Launch server")
+
         def launch(event):
             if self._server:
-                button.name = 'Launch server'
-                server_info.object = ''
+                button.name = "Launch server"
+                server_info.object = ""
                 self._server.stop()
                 self._server = None
             else:
-                button.name = 'Stop server'
+                button.name = "Stop server"
                 self._server = self._get_server(start=True, show=True)
                 server_info.object = _server_info.format(port=self._server.port)
-        button.param.watch(launch, 'clicks')
+
+        button.param.watch(launch, "clicks")
         return Column(str_repr, server_info, button)
 
     def __repr__(self) -> str:
-        spacer = '\n    '
-        objs = spacer.join([
-            f'[{name}] {obj.__repr__(1)}'  # type: ignore
-            for name, (obj, _) in self._render_items.items()
-            if not name.startswith('_')
-        ])
-        return f'{type(self).__name__}{spacer}{objs}'
+        spacer = "\n    "
+        objs = spacer.join(
+            [
+                f"[{name}] {obj.__repr__(1)}"  # type: ignore
+                for name, (obj, _) in self._render_items.items()
+                if not name.startswith("_")
+            ]
+        )
+        return f"{type(self).__name__}{spacer}{objs}"
 
     def _apply_root(self, name: str, model: Model, tags: List[str]) -> None:
         pass
@@ -180,9 +182,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         self._documents.remove(doc)
 
     def _init_doc(
-        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
-        title: Optional[str] = None, notebook: bool = False,
-        location: bool | Location=True
+        self, doc: Optional[Document] = None, comm: Optional[Comm] = None, title: Optional[str] = None, notebook: bool = False, location: bool | Location = True
     ):
         # Initialize document
         document: Document = doc or curdoc_locked()
@@ -193,11 +193,11 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
             state._templates[document] = self
         if location and self.location:
             self._add_location(document, location)
-        document.on_session_destroyed(state._destroy_session) # type: ignore
-        document.on_session_destroyed(self._server_destroy) # type: ignore
+        document.on_session_destroyed(state._destroy_session)  # type: ignore
+        document.on_session_destroyed(self._server_destroy)  # type: ignore
 
-        if title or document.title == 'Bokeh Application':
-            title = title or 'Panel Application'
+        if title or document.title == "Bokeh Application":
+            title = title or "Panel Application"
             document.title = title
 
         # Initialize fake root. This is needed to ensure preprocessors
@@ -206,18 +206,17 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         col = Column()
         preprocess_root = col.get_root(document, comm, preprocess=False)
         col._hooks.append(self._design._apply_hooks)
-        ref = preprocess_root.ref['id']
+        ref = preprocess_root.ref["id"]
 
         # Add all render items to the document
         objs, models = [], []
         sizing_modes = {}
         for name, (obj, tags) in self._render_items.items():
-
             # Render root without pre-processing
             model = obj.get_root(document, comm, preprocess=False)
             model.name = name
             model.tags = model.tags + [tag for tag in tags if tag not in model.tags]
-            mref = model.ref['id']
+            mref = model.ref["id"]
             if isinstance(model, LayoutDOM):
                 sizing_modes[mref] = model.sizing_mode
                 if self._design._apply_hooks not in obj._hooks:
@@ -242,11 +241,11 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                 models.append(model)
 
             add_to_doc(model, document, hold=bool(comm))
-            document.on_session_destroyed(obj._server_destroy) # type: ignore
+            document.on_session_destroyed(obj._server_destroy)  # type: ignore
 
         # Here we ensure that the preprocessor is run across all roots
         # and set up session cleanup hooks for the fake root.
-        state._fake_roots.append(ref) # Ensure no update is run
+        state._fake_roots.append(ref)  # Ensure no update is run
         state._views[ref] = (col, preprocess_root, document, comm)
         col.objects = objs
         preprocess_root.children[:] = models
@@ -254,7 +253,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         self._design.apply(col, preprocess_root, isolated=False)
         col._preprocess(preprocess_root)
         col._documents[document] = preprocess_root
-        document.on_session_destroyed(col._server_destroy) # type: ignore
+        document.on_session_destroyed(col._server_destroy)  # type: ignore
 
         # Apply the jinja2 template and update template variables
         if notebook:
@@ -263,28 +262,27 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
             document.template = self.template
 
         self._update_vars()
-        document._template_variables['sizing_modes'] = sizing_modes
+        document._template_variables["sizing_modes"] = sizing_modes
         document._template_variables.update(self._render_variables)
         return document
 
-    def _repr_mimebundle_(
-        self, include=None, exclude=None
-    ) -> Tuple[Dict[str, str], Dict[str, Dict[str, str]]] | None:
+    def _repr_mimebundle_(self, include=None, exclude=None) -> Tuple[Dict[str, str], Dict[str, Dict[str, str]]] | None:
         loaded = panel_extension._loaded
-        if not loaded and 'holoviews' in sys.modules:
+        if not loaded and "holoviews" in sys.modules:
             import holoviews as hv
+
             loaded = hv.extension._loaded
         if not loaded:
             param.main.param.warning(
-                'Displaying Panel objects in the notebook requires '
-                'the panel extension to be loaded. Ensure you run '
-                'pn.extension() before displaying objects in the '
-                'notebook.'
+                "Displaying Panel objects in the notebook requires "
+                "the panel extension to be loaded. Ensure you run "
+                "pn.extension() before displaying objects in the "
+                "notebook."
             )
             return None
 
         try:
-            assert get_ipython().kernel is not None # type: ignore # noqa
+            assert get_ipython().kernel is not None  # type: ignore # noqa
             state._comm_manager = _JupyterCommManager
         except Exception:
             pass
@@ -294,29 +292,25 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         doc = Document()
         comm = state._comm_manager.get_server_comm()
         self._init_doc(doc, comm, notebook=True)
-        ref = doc.roots[0].ref['id']
-        manager = CommManager(
-            comm_id=comm.id, plot_id=ref, name='comm_manager'
-        )
+        ref = doc.roots[0].ref["id"]
+        manager = CommManager(comm_id=comm.id, plot_id=ref, name="comm_manager")
         client_comm = state._comm_manager.get_client_comm(
-            on_msg=partial(self._on_msg, ref, manager),
-            on_error=partial(self._on_error, ref),
-            on_stdout=partial(self._on_stdout, ref)
+            on_msg=partial(self._on_msg, ref, manager), on_error=partial(self._on_error, ref), on_stdout=partial(self._on_stdout, ref)
         )
         manager.client_comm_id = client_comm.id
         doc.add_root(manager)
 
-        if config.console_output != 'disable':
+        if config.console_output != "disable":
             handle = display(display_id=uuid.uuid4().hex)
             state._handles[ref] = (handle, [])
 
         return render_template(doc, comm, manager)
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Public API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
-    def resolve_resources(self, cdn: bool | Literal['auto'] = 'auto') -> ResourcesType:
+    def resolve_resources(self, cdn: bool | Literal["auto"] = "auto") -> ResourcesType:
         """
         Resolves the resources required for this template component.
 
@@ -333,38 +327,34 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         """
         cls = type(self)
         resource_types = super().resolve_resources(cdn=cdn)
-        js_files = resource_types['js']
-        js_modules = resource_types['js_modules']
-        css_files = resource_types['css']
-        raw_css = resource_types['raw_css']
+        js_files = resource_types["js"]
+        js_modules = resource_types["js_modules"]
+        css_files = resource_types["css"]
+        raw_css = resource_types["raw_css"]
 
         clsname = cls.__name__
         name = clsname.lower()
         dist_path = get_dist_path(cdn=cdn)
 
-        raw_css.extend(list(self.config.raw_css) + [loading_css(
-            config.loading_spinner, config.loading_color, config.loading_max_height
-        )])
+        raw_css.extend(list(self.config.raw_css) + [loading_css(config.loading_spinner, config.loading_color, config.loading_max_height)])
         for rname, res in self._design.resolve_resources(cdn).items():
             if isinstance(res, dict):
                 resource_types[rname].update(res)
             else:
-                resource_types[rname] += [
-                    r for r in res if res not in resource_types[rname]
-                ]
+                resource_types[rname] += [r for r in res if res not in resource_types[rname]]
 
         for rname, js in self.config.js_files.items():
-            if '//' not in js and state.rel_path:
-                js = f'{state.rel_path}/{js}'
+            if "//" not in js and state.rel_path:
+                js = f"{state.rel_path}/{js}"
             js_files[rname] = js
         for rname, js in self.config.js_modules.items():
-            if '//' not in js and state.rel_path:
-                js = f'{state.rel_path}/{js}'
+            if "//" not in js and state.rel_path:
+                js = f"{state.rel_path}/{js}"
             js_modules[rname] = js
         for i, css in enumerate(list(self.config.css_files)):
-            if '//' not in css and state.rel_path:
-                css = f'{state.rel_path}/{css}'
-            css_files[f'config_{i}'] = css
+            if "//" not in css and state.rel_path:
+                css = f"{state.rel_path}/{css}"
+            css_files[f"config_{i}"] = css
 
         # CSS files
         base_css = self._css
@@ -383,11 +373,11 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
 
             css_file = os.path.basename(css)
             if (BUNDLE_DIR / tmpl_name / css_file).is_file():
-                css_files[f'base_{css_file}'] = dist_path + f'bundled/{tmpl_name}/{css_file}'
+                css_files[f"base_{css_file}"] = dist_path + f"bundled/{tmpl_name}/{css_file}"
             elif isurl(css):
-                css_files[f'base_{css_file}'] = css
+                css_files[f"base_{css_file}"] = css
             elif resolve_custom_path(self, css):
-                css_files[f'base_{css_file}' ] = component_resource_path(self, '_css', css)
+                css_files[f"base_{css_file}"] = component_resource_path(self, "_css", css)
 
         # JS files
         base_js = self._js
@@ -405,19 +395,26 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                     tmpl_name = cls.__name__.lower()
             js_name = os.path.basename(js)
             if (BUNDLE_DIR / tmpl_name / js_name).is_file():
-                js_files[f'base_{js_name}'] = dist_path + f'bundled/{tmpl_name}/{js_name}'
+                js_files[f"base_{js_name}"] = dist_path + f"bundled/{tmpl_name}/{js_name}"
             elif isurl(js):
-                js_files[f'base_{js_name}'] = js
+                js_files[f"base_{js_name}"] = js
             elif resolve_custom_path(self, js):
-                js_files[f'base_{js_name}'] = component_resource_path(self, '_js', js)
+                js_files[f"base_{js_name}"] = component_resource_path(self, "_js", js)
 
         return resource_types
 
     def save(
-        self, filename: str | os.PathLike | IO, title: Optional[str] = None,
-        resources=None, embed: bool = False, max_states: int = 1000,
-        max_opts: int = 3, embed_json: bool = False, json_prefix: str='',
-        save_path: str='./', load_path: Optional[str] = None
+        self,
+        filename: str | os.PathLike | IO,
+        title: Optional[str] = None,
+        resources=None,
+        embed: bool = False,
+        max_states: int = 1000,
+        max_opts: int = 3,
+        embed_json: bool = False,
+        json_prefix: str = "",
+        save_path: str = "./",
+        load_path: Optional[str] = None,
     ) -> None:
         """
         Saves Panel objects to file.
@@ -449,15 +446,10 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
             raise ValueError("Embedding is not yet supported on Template.")
 
         return save(
-            self, filename, title, resources, self.template,
-            self._render_variables, embed, max_states, max_opts,
-            embed_json, json_prefix, save_path, load_path
+            self, filename, title, resources, self.template, self._render_variables, embed, max_states, max_opts, embed_json, json_prefix, save_path, load_path
         )
 
-    def server_doc(
-        self, doc: Optional[Document] = None, title: str = None,
-        location: bool | Location = True
-    ) -> Document:
+    def server_doc(self, doc: Optional[Document] = None, title: str = None, location: bool | Location = True) -> Document:
         """
         Returns a servable bokeh Document with the panel attached
 
@@ -479,10 +471,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         """
         return self._init_doc(doc, title=title, location=location)
 
-    def servable(
-        self, title: Optional[str] = None, location: bool | 'Location' = True,
-        area: str = 'main', target: Optional[str] = None
-    ) -> 'BaseTemplate':
+    def servable(self, title: Optional[str] = None, location: bool | "Location" = True, area: str = "main", target: Optional[str] = None) -> "BaseTemplate":
         """
         Serves the template and returns self to allow it to display
         itself in a notebook context.
@@ -509,10 +498,10 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         """
         if curdoc_locked().session_context and config.template:
             raise RuntimeError(
-                'Cannot mark template as servable if a global template '
-                'is defined. Either explicitly construct a template and '
-                'serve it OR set `pn.config.template`, whether directly '
-                'or via `pn.extension(template=...)`, not both.'
+                "Cannot mark template as servable if a global template "
+                "is defined. Either explicitly construct a template and "
+                "serve it OR set `pn.config.template`, whether directly "
+                "or via `pn.extension(template=...)`, not both."
             )
         return super().servable(title, location, area, target)
 
@@ -537,7 +526,6 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         return objects
 
 
-
 class TemplateActions(ReactiveHTML):
     """
     A component added to templates that allows triggering events such
@@ -551,8 +539,8 @@ class TemplateActions(ReactiveHTML):
     _template: ClassVar[str] = ""
 
     _scripts: ClassVar[Dict[str, List[str] | str]] = {
-        'open_modal': ["document.getElementById('pn-Modal').style.display = 'block'"],
-        'close_modal': ["document.getElementById('pn-Modal').style.display = 'none'"],
+        "open_modal": ["document.getElementById('pn-Modal').style.display = 'block'"],
+        "close_modal": ["document.getElementById('pn-Modal').style.display = 'none'"],
     }
 
 
@@ -565,93 +553,163 @@ class BasicTemplate(BaseTemplate):
     feel without having to write any Jinja2 template themselves.
     """
 
-    busy_indicator = param.ClassSelector(default=LoadingSpinner(width=20, height=20),
-                                         class_=BooleanIndicator, constant=True,
-                                         allow_None=True, doc="""
-        Visual indicator of application busy state.""")
+    busy_indicator = param.ClassSelector(
+        default=LoadingSpinner(width=20, height=20),
+        class_=BooleanIndicator,
+        constant=True,
+        allow_None=True,
+        doc="""
+        Visual indicator of application busy state.""",
+    )
 
-    collapsed_sidebar = param.Selector(default=False, constant=True, doc="""
-        Whether the sidebar (if present) is initially collapsed.""")
+    collapsed_sidebar = param.Selector(
+        default=False,
+        constant=True,
+        doc="""
+        Whether the sidebar (if present) is initially collapsed.""",
+    )
 
-    header = param.ClassSelector(class_=ListLike, constant=True, doc="""
-        A list-like container which populates the header bar.""")
+    header = param.ClassSelector(
+        class_=ListLike,
+        constant=True,
+        doc="""
+        A list-like container which populates the header bar.""",
+    )
 
-    main = param.ClassSelector(class_=ListLike, constant=True, doc="""
-        A list-like container which populates the main area.""")
+    main = param.ClassSelector(
+        class_=ListLike,
+        constant=True,
+        doc="""
+        A list-like container which populates the main area.""",
+    )
 
-    main_max_width = param.String(default="", doc="""
+    main_max_width = param.String(
+        default="",
+        doc="""
         The maximum width of the main area. For example '800px' or '80%'.
-        If the string is '' (default) no max width is set.""")
+        If the string is '' (default) no max width is set.""",
+    )
 
-    sidebar = param.ClassSelector(class_=ListLike, constant=True, doc="""
-        A list-like container which populates the sidebar.""")
+    sidebar = param.ClassSelector(
+        class_=ListLike,
+        constant=True,
+        doc="""
+        A list-like container which populates the sidebar.""",
+    )
 
-    sidebar_width = param.Integer(default=330, doc="""
-        The width of the sidebar in pixels. Default is 330.""")
+    sidebar_width = param.Integer(
+        default=330,
+        doc="""
+        The width of the sidebar in pixels. Default is 330.""",
+    )
 
-    modal = param.ClassSelector(class_=ListLike, constant=True, doc="""
-        A list-like container which populates the modal""")
+    modal = param.ClassSelector(
+        class_=ListLike,
+        constant=True,
+        doc="""
+        A list-like container which populates the modal""",
+    )
 
-    notifications = param.ClassSelector(class_=NotificationArea, constant=True, doc="""
+    notifications = param.ClassSelector(
+        class_=NotificationArea,
+        constant=True,
+        doc="""
         The NotificationArea instance attached to this template.
         Automatically added if config.notifications is set, but may
-        also be provided explicitly.""")
+        also be provided explicitly.""",
+    )
 
-    logo = param.String(doc="""
+    logo = param.String(
+        doc="""
         URI of logo to add to the header (if local file, logo is
-        base64 encoded as URI). Default is '', i.e. not shown.""")
+        base64 encoded as URI). Default is '', i.e. not shown."""
+    )
 
-    favicon = param.String(default=FAVICON_URL, doc="""
+    favicon = param.String(
+        default=FAVICON_URL,
+        doc="""
         URI of favicon to add to the document head (if local file, favicon is
-        base64 encoded as URI).""")
+        base64 encoded as URI).""",
+    )
 
-    title = param.String(default="Panel Application", doc="""
+    title = param.String(
+        default="Panel Application",
+        doc="""
         A title to show in the header. Also added to the document head
-        meta settings and as the browser tab title.""")
+        meta settings and as the browser tab title.""",
+    )
 
-    site = param.String(default="", doc="""
+    site = param.String(
+        default="",
+        doc="""
         Name of the site. Will be shown in the header and link to the
-        'site_url'. Default is '', i.e. not shown.""")
+        'site_url'. Default is '', i.e. not shown.""",
+    )
 
-    site_url = param.String(default="/", doc="""
-        Url of the site and logo. Default is '/'.""")
+    site_url = param.String(
+        default="/",
+        doc="""
+        Url of the site and logo. Default is '/'.""",
+    )
 
-    manifest = param.String(default=None, doc="""
-        Manifest to add to site.""")
+    manifest = param.String(
+        default=None,
+        doc="""
+        Manifest to add to site.""",
+    )
 
-    meta_description = param.String(doc="""
+    meta_description = param.String(
+        doc="""
         A meta description to add to the document head for search
-        engine optimization. For example 'P.A. Nelson'.""")
+        engine optimization. For example 'P.A. Nelson'."""
+    )
 
-    meta_keywords = param.String(doc="""
+    meta_keywords = param.String(
+        doc="""
         Meta keywords to add to the document head for search engine
-        optimization.""")
+        optimization."""
+    )
 
-    meta_author = param.String(doc="""
+    meta_author = param.String(
+        doc="""
         A meta author to add to the the document head for search
-        engine optimization. For example 'P.A. Nelson'.""")
+        engine optimization. For example 'P.A. Nelson'."""
+    )
 
-    meta_refresh = param.String(doc="""
+    meta_refresh = param.String(
+        doc="""
         A meta refresh rate to add to the document head. For example
         '30' will instruct the browser to refresh every 30
-        seconds. Default is '', i.e. no automatic refresh.""")
+        seconds. Default is '', i.e. no automatic refresh."""
+    )
 
-    meta_viewport = param.String(doc="""
-        A meta viewport to add to the header.""")
+    meta_viewport = param.String(
+        doc="""
+        A meta viewport to add to the header."""
+    )
 
-    base_url = param.String(doc="""
+    base_url = param.String(
+        doc="""
         Specifies the base URL for all relative URLs in a
-        page. Default is '', i.e. not the domain.""")
+        page. Default is '', i.e. not the domain."""
+    )
 
-    base_target = param.ObjectSelector(default="_self",
-        objects=["_blank", "_self", "_parent", "_top"], doc="""
-        Specifies the base Target for all relative URLs in a page.""")
+    base_target = param.ObjectSelector(
+        default="_self",
+        objects=["_blank", "_self", "_parent", "_top"],
+        doc="""
+        Specifies the base Target for all relative URLs in a page.""",
+    )
 
-    header_background = param.String(doc="""
-        Optional header background color override.""")
+    header_background = param.String(
+        doc="""
+        Optional header background color override."""
+    )
 
-    header_color = param.String(doc="""
-        Optional header text color override.""")
+    header_color = param.String(
+        doc="""
+        Optional header text color override."""
+    )
 
     location = param.Boolean(default=True, readonly=True)
 
@@ -667,58 +725,57 @@ class BasicTemplate(BaseTemplate):
     __abstract = True
 
     def __init__(self, **params):
-        template = self._template.read_text(encoding='utf-8')
-        if 'header' not in params:
-            params['header'] = ListLike()
+        template = self._template.read_text(encoding="utf-8")
+        if "header" not in params:
+            params["header"] = ListLike()
         else:
-            params['header'] = self._get_params(params['header'], self.param.header.class_)
-        if 'main' not in params:
-            params['main'] = ListLike()
+            params["header"] = self._get_params(params["header"], self.param.header.class_)
+        if "main" not in params:
+            params["main"] = ListLike()
         else:
-            params['main'] = self._get_params(params['main'], self.param.main.class_)
-        if 'sidebar' not in params:
-            params['sidebar'] = ListLike()
+            params["main"] = self._get_params(params["main"], self.param.main.class_)
+        if "sidebar" not in params:
+            params["sidebar"] = ListLike()
         else:
-            params['sidebar'] = self._get_params(params['sidebar'], self.param.sidebar.class_)
-        if 'modal' not in params:
-            params['modal'] = ListLike()
+            params["sidebar"] = self._get_params(params["sidebar"], self.param.sidebar.class_)
+        if "modal" not in params:
+            params["modal"] = ListLike()
         else:
-            params['modal'] = self._get_params(params['modal'], self.param.modal.class_)
-        if 'theme' in params:
-            if isinstance(params['theme'], str):
-                params['theme'] = THEMES[params['theme']]
+            params["modal"] = self._get_params(params["modal"], self.param.modal.class_)
+        if "theme" in params:
+            if isinstance(params["theme"], str):
+                params["theme"] = THEMES[params["theme"]]
         else:
-            params['theme'] = THEMES[config.theme]
-        if 'favicon' in params and isinstance(params['favicon'], PurePath):
-            params['favicon'] = str(params['favicon'])
-        if 'notifications' not in params and config.notifications:
-            params['notifications'] = state.notifications if state.curdoc else NotificationArea()
+            params["theme"] = THEMES[config.theme]
+        if "favicon" in params and isinstance(params["favicon"], PurePath):
+            params["favicon"] = str(params["favicon"])
+        if "notifications" not in params and config.notifications:
+            params["notifications"] = state.notifications if state.curdoc else NotificationArea()
 
         super().__init__(template=template, **params)
         self._js_area = HTML(margin=0, width=0, height=0)
-        if 'embed(roots.js_area)' in template:
-            self._render_items['js_area'] = (self._js_area, [])
-        if 'embed(roots.actions)' in template:
-            self._render_items['actions'] = (self._actions, [])
-        if 'embed(roots.notifications)' in template and self.notifications:
-            self._render_items['notifications'] = (self.notifications, [])
-            self._render_variables['notifications'] = True
-        if config.browser_info and 'embed(roots.browser_info)' in template and state.browser_info:
-            self._render_items['browser_info'] = (state.browser_info, [])
-            self._render_variables['browser_info'] = True
+        if "embed(roots.js_area)" in template:
+            self._render_items["js_area"] = (self._js_area, [])
+        if "embed(roots.actions)" in template:
+            self._render_items["actions"] = (self._actions, [])
+        if "embed(roots.notifications)" in template and self.notifications:
+            self._render_items["notifications"] = (self.notifications, [])
+            self._render_variables["notifications"] = True
+        if config.browser_info and "embed(roots.browser_info)" in template and state.browser_info:
+            self._render_items["browser_info"] = (state.browser_info, [])
+            self._render_variables["browser_info"] = True
         self._update_busy()
-        self.main.param.watch(self._update_render_items, ['objects'])
-        self.modal.param.watch(self._update_render_items, ['objects'])
-        self.sidebar.param.watch(self._update_render_items, ['objects'])
-        self.header.param.watch(self._update_render_items, ['objects'])
-        self.main.param.trigger('objects')
-        self.sidebar.param.trigger('objects')
-        self.header.param.trigger('objects')
-        self.modal.param.trigger('objects')
+        self.main.param.watch(self._update_render_items, ["objects"])
+        self.modal.param.watch(self._update_render_items, ["objects"])
+        self.sidebar.param.watch(self._update_render_items, ["objects"])
+        self.header.param.watch(self._update_render_items, ["objects"])
+        self.main.param.trigger("objects")
+        self.sidebar.param.trigger("objects")
+        self.header.param.trigger("objects")
+        self.modal.param.trigger("objects")
 
     def _init_doc(
-        self, doc: Optional[Document] = None, comm: Optional['Comm'] = None,
-        title: Optional[str]=None, notebook: bool = False, location: bool | Location = True
+        self, doc: Optional[Document] = None, comm: Optional["Comm"] = None, title: Optional[str] = None, notebook: bool = False, location: bool | Location = True
     ) -> Document:
         title = self.title if self.title != self.param.title.default else title
         if self.busy_indicator:
@@ -732,18 +789,18 @@ class BasicTemplate(BaseTemplate):
 
     def _update_vars(self, *args) -> None:
         super()._update_vars(*args)
-        self._render_variables['app_title'] = self.title
-        self._render_variables['meta_name'] = self.title
-        self._render_variables['site_title'] = self.site
-        self._render_variables['site_url'] = self.site_url
-        self._render_variables['manifest'] = self.manifest
-        self._render_variables['meta_description'] = self.meta_description
-        self._render_variables['meta_keywords'] = self.meta_keywords
-        self._render_variables['meta_author'] = self.meta_author
-        self._render_variables['meta_refresh'] = self.meta_refresh
-        self._render_variables['meta_viewport'] = self.meta_viewport
-        self._render_variables['base_url'] = self.base_url
-        self._render_variables['base_target'] = self.base_target
+        self._render_variables["app_title"] = self.title
+        self._render_variables["meta_name"] = self.title
+        self._render_variables["site_title"] = self.site
+        self._render_variables["site_url"] = self.site_url
+        self._render_variables["manifest"] = self.manifest
+        self._render_variables["meta_description"] = self.meta_description
+        self._render_variables["meta_keywords"] = self.meta_keywords
+        self._render_variables["meta_author"] = self.meta_author
+        self._render_variables["meta_refresh"] = self.meta_refresh
+        self._render_variables["meta_viewport"] = self.meta_viewport
+        self._render_variables["base_url"] = self.base_url
+        self._render_variables["base_target"] = self.base_target
         if os.path.isfile(self.logo):
             img = _panel(self.logo)
             if not isinstance(img, ImageBase):
@@ -757,42 +814,42 @@ class BasicTemplate(BaseTemplate):
                 raise ValueError(f"Could not determine file type of favicon: {self.favicon}.")
             favicon = img._b64(img._data(img.object))
         else:
-            if _settings.resources(default='server') == 'cdn' and self.favicon == FAVICON_URL:
+            if _settings.resources(default="server") == "cdn" and self.favicon == FAVICON_URL:
                 favicon = CDN_DIST + "images/favicon.ico"
             else:
                 favicon = self.favicon
-        self._render_variables['app_logo'] = logo
-        self._render_variables['app_favicon'] = favicon
-        self._render_variables['app_favicon_type'] = self._get_favicon_type(self.favicon)
-        self._render_variables['header_background'] = self.header_background
-        self._render_variables['header_color'] = self.header_color
-        self._render_variables['main_max_width'] = self.main_max_width
-        self._render_variables['sidebar_width'] = self.sidebar_width
-        self._render_variables['theme'] = self._design.theme
-        self._render_variables['collapsed_sidebar'] = self.collapsed_sidebar
+        self._render_variables["app_logo"] = logo
+        self._render_variables["app_favicon"] = favicon
+        self._render_variables["app_favicon_type"] = self._get_favicon_type(self.favicon)
+        self._render_variables["header_background"] = self.header_background
+        self._render_variables["header_color"] = self.header_color
+        self._render_variables["main_max_width"] = self.main_max_width
+        self._render_variables["sidebar_width"] = self.sidebar_width
+        self._render_variables["theme"] = self._design.theme
+        self._render_variables["collapsed_sidebar"] = self.collapsed_sidebar
 
     def _update_busy(self) -> None:
         if self.busy_indicator:
-            self._render_items['busy_indicator'] = (self.busy_indicator, [])
-        elif 'busy_indicator' in self._render_items:
-            del self._render_items['busy_indicator']
-        self._render_variables['busy'] = self.busy_indicator is not None
+            self._render_items["busy_indicator"] = (self.busy_indicator, [])
+        elif "busy_indicator" in self._render_items:
+            del self._render_items["busy_indicator"]
+        self._render_variables["busy"] = self.busy_indicator is not None
 
     def _update_render_items(self, event: param.parameterized.Event) -> None:
-        if event.obj is self and event.name == 'busy_indicator':
+        if event.obj is self and event.name == "busy_indicator":
             return self._update_busy()
         if event.obj is self.main:
-            tag = 'main'
+            tag = "main"
         elif event.obj is self.sidebar:
-            tag = 'nav'
+            tag = "nav"
         elif event.obj is self.header:
-            tag = 'header'
+            tag = "header"
         elif event.obj is self.modal:
-            tag = 'modal'
+            tag = "modal"
 
         old = event.old if isinstance(event.old, list) else list(event.old.values())
         for obj in old:
-            ref = f'{tag}-{str(id(obj))}'
+            ref = f"{tag}-{str(id(obj))}"
             if ref in self._render_items:
                 del self._render_items[ref]
 
@@ -806,16 +863,16 @@ class BasicTemplate(BaseTemplate):
 
         labels = {}
         for obj in new:
-            ref = f'{tag}-{str(id(obj))}'
+            ref = f"{tag}-{str(id(obj))}"
             if obj.name.startswith(type(obj).__name__):
-                labels[ref] = 'Content'
+                labels[ref] = "Content"
             else:
                 labels[ref] = obj.name
             self._render_items[ref] = (obj, [tag])
         tags = [tags for _, tags in self._render_items.values()]
-        self._render_variables['nav'] = any('nav' in ts for ts in tags)
-        self._render_variables['header'] = any('header' in ts for ts in tags)
-        self._render_variables['root_labels'] = labels
+        self._render_variables["nav"] = any("nav" in ts for ts in tags)
+        self._render_variables["header"] = any("header" in ts for ts in tags)
+        self._render_variables["root_labels"] = labels
 
     def _server_destroy(self, session_context: BokehSessionContext):
         super()._server_destroy(session_context)
@@ -866,9 +923,9 @@ class BasicTemplate(BaseTemplate):
         if class_ is ListLike:
             return ListLike(objects=value)
         if class_ is GridSpec:
-            grid = GridSpec(ncols=12, mode='override')
+            grid = GridSpec(ncols=12, mode="override")
             for index, item in enumerate(value):
-                grid[index, :]=item
+                grid[index, :] = item
             return grid
 
         return value
@@ -906,18 +963,15 @@ class Template(BaseTemplate):
     served as a standalone server and when used in the notebook.
     """
 
-    def __init__(
-        self, template: str | _Template, nb_template: str | _Template | None = None,
-        items: Optional[Dict[str, Any]] = None, **params
-    ):
+    def __init__(self, template: str | _Template, nb_template: str | _Template | None = None, items: Optional[Dict[str, Any]] = None, **params):
         super().__init__(template=template, nb_template=nb_template, items=items, **params)
         items = {} if items is None else items
         for name, item in items.items():
             self.add_panel(name, item)
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Public API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
     def add_panel(self, name: str, panel: Viewable, tags: List[str] = []) -> None:
         """
@@ -932,12 +986,14 @@ class Template(BaseTemplate):
           A Panel component to embed in the template.
         """
         if name in self._render_items:
-            raise ValueError('The name %s has already been used for '
-                             'another panel. Ensure each panel '
-                             'has a unique name by which it can be '
-                             'referenced in the template.' % name)
+            raise ValueError(
+                "The name %s has already been used for "
+                "another panel. Ensure each panel "
+                "has a unique name by which it can be "
+                "referenced in the template." % name
+            )
         self._render_items[name] = (_panel(panel), tags)
-        self._layout[0].object = repr(self) # type: ignore
+        self._layout[0].object = repr(self)  # type: ignore
 
     def add_variable(self, name: str, value: Any) -> None:
         """
@@ -952,8 +1008,10 @@ class Template(BaseTemplate):
           Any valid Jinja2 variable type.
         """
         if name in self._render_variables:
-            raise ValueError('The name %s has already been used for '
-                             'another variable. Ensure each variable '
-                             'has a unique name by which it can be '
-                             'referenced in the template.' % name)
+            raise ValueError(
+                "The name %s has already been used for "
+                "another variable. Ensure each variable "
+                "has a unique name by which it can be "
+                "referenced in the template." % name
+            )
         self._render_variables[name] = value

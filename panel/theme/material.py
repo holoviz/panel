@@ -62,10 +62,7 @@ MATERIAL_DARK_THEME = {
             "outline_line_color": MATERIAL_DARK_75,
             "outline_line_alpha": 0.25,
         },
-        "Grid": {
-            "grid_line_color": MATERIAL_TEXT_DIGITAL_DARK,
-            "grid_line_alpha": 0.25
-        },
+        "Grid": {"grid_line_color": MATERIAL_TEXT_DIGITAL_DARK, "grid_line_alpha": 0.25},
         "Axis": {
             "major_tick_line_alpha": 0,
             "major_tick_line_color": MATERIAL_TEXT_DIGITAL_DARK,
@@ -107,13 +104,13 @@ MATERIAL_DARK_THEME = {
         },
         "Title": {
             "text_font_size": "1.15em",
-        }
+        },
     }
 }
 
-class MaterialThemeMixin(param.Parameterized):
 
-    css = param.Filename(default=pathlib.Path(__file__).parent / 'css' / 'material_variables.css')
+class MaterialThemeMixin(param.Parameterized):
+    css = param.Filename(default=pathlib.Path(__file__).parent / "css" / "material_variables.css")
 
 
 class MaterialDefaultTheme(MaterialThemeMixin, DefaultTheme):
@@ -121,8 +118,7 @@ class MaterialDefaultTheme(MaterialThemeMixin, DefaultTheme):
     The MaterialDefaultTheme is a light theme.
     """
 
-    bokeh_theme = param.ClassSelector(
-        class_=(_BkTheme, str), default=_BkTheme(json=MATERIAL_THEME))
+    bokeh_theme = param.ClassSelector(class_=(_BkTheme, str), default=_BkTheme(json=MATERIAL_THEME))
 
 
 class MaterialDarkTheme(MaterialThemeMixin, DarkTheme):
@@ -130,57 +126,36 @@ class MaterialDarkTheme(MaterialThemeMixin, DarkTheme):
     The MaterialDarkTheme is a Dark Theme in the style of Material Design
     """
 
-    bokeh_theme = param.ClassSelector(
-        class_=(_BkTheme, str), default=_BkTheme(json=MATERIAL_DARK_THEME))
+    bokeh_theme = param.ClassSelector(class_=(_BkTheme, str), default=_BkTheme(json=MATERIAL_DARK_THEME))
 
     modifiers = {
-        Dial: {
-            'label_color': 'white'
-        },
-        Number: {
-            'default_color': 'var(--mdc-theme-on-background)'
-        },
-        String: {
-            'default_color': 'var(--mdc-theme-on-background)'
-        }
+        Dial: {"label_color": "white"},
+        Number: {"default_color": "var(--mdc-theme-on-background)"},
+        String: {"default_color": "var(--mdc-theme-on-background)"},
     }
 
 
 class Material(Design):
-
     modifiers = {
-        Accordion: {
-            'active_header_background': 'var(--mdc-theme-surface)'
-        },
+        Accordion: {"active_header_background": "var(--mdc-theme-surface)"},
         Card: {
-            'children': {'margin': (5, 10)},
-            'title_css_classes': ['mdc-card-title'],
-            'css_classes': ['mdc-card'],
-            'button_css_classes': ['mdc-button', 'mdc-card-button'],
-            'margin': (10, 5)
+            "children": {"margin": (5, 10)},
+            "title_css_classes": ["mdc-card-title"],
+            "css_classes": ["mdc-card"],
+            "button_css_classes": ["mdc-button", "mdc-card-button"],
+            "margin": (10, 5),
         },
-        Tabulator: {
-            'theme': 'materialize'
-        },
-        Viewable: {
-            'stylesheets': [Inherit, f'{CDN_DIST}bundled/theme/material.css']
-        }
+        Tabulator: {"theme": "materialize"},
+        Viewable: {"stylesheets": [Inherit, f"{CDN_DIST}bundled/theme/material.css"]},
     }
 
     _resources = {
-        'css': {
-            'material': f"{config.npm_cdn}/material-components-web@7.0.0/dist/material-components-web.min.css"
+        "css": {"material": f"{config.npm_cdn}/material-components-web@7.0.0/dist/material-components-web.min.css"},
+        "font": {
+            "roboto": "https://fonts.googleapis.com/css?family=Roboto:300,400,500",
+            "icons": "https://fonts.googleapis.com/css?family=Material+Icons&display=block",
         },
-        'font': {
-            'roboto': 'https://fonts.googleapis.com/css?family=Roboto:300,400,500',
-            'icons': 'https://fonts.googleapis.com/css?family=Material+Icons&display=block'
-        },
-        'js': {
-            'material': f"{config.npm_cdn}/material-components-web@7.0.0/dist/material-components-web.min.js"
-        }
+        "js": {"material": f"{config.npm_cdn}/material-components-web@7.0.0/dist/material-components-web.min.js"},
     }
 
-    _themes = {
-        'default': MaterialDefaultTheme,
-        'dark': MaterialDarkTheme
-    }
+    _themes = {"default": MaterialDefaultTheme, "dark": MaterialDarkTheme}

@@ -9,8 +9,8 @@ import pytest
 
 import panel as pn
 
-not_windows = pytest.mark.skipif(sys.platform == 'win32', reason="Does not work on Windows")
-not_osx = pytest.mark.skipif(sys.platform == 'darwin', reason="Sometimes fails on OSX")
+not_windows = pytest.mark.skipif(sys.platform == "win32", reason="Does not work on Windows")
+not_osx = pytest.mark.skipif(sys.platform == "darwin", reason="Sometimes fails on OSX")
 
 
 def test_terminal_constructor():
@@ -130,19 +130,13 @@ def get_app():
         options={"cursorBlink": True},
     )
 
-    write_to_terminal_button = pn.widgets.Button(
-        name="Write to the Terminal", button_type="primary"
-    )
+    write_to_terminal_button = pn.widgets.Button(name="Write to the Terminal", button_type="primary")
     write_to_terminal_button.on_click(lambda x: write_to_terminal(terminal))
 
-    special_characters_button = pn.widgets.Button(
-        name="Write special to the Terminal", button_type="primary"
-    )
+    special_characters_button = pn.widgets.Button(name="Write special to the Terminal", button_type="primary")
     special_characters_button.on_click(lambda x: _special_characters(terminal))
 
-    print_to_terminal_button = pn.widgets.Button(
-        name="Print to Terminal", button_type="primary"
-    )
+    print_to_terminal_button = pn.widgets.Button(name="Print to Terminal", button_type="primary")
     print_to_terminal_button.on_click(lambda x: print_to_terminal(terminal))
 
     logger = get_logger(terminal)
@@ -152,24 +146,14 @@ def get_app():
     stream_button = pn.widgets.Button(name="Stream", button_type="primary")
     stream_button.on_click(lambda x: [logger.info(uuid.uuid4()) for i in range(0, 300)])
 
-    run_ls_in_subprocess_button = pn.widgets.Button(
-        name="Run ls in subprocess", button_type="primary"
-    )
+    run_ls_in_subprocess_button = pn.widgets.Button(name="Run ls in subprocess", button_type="primary")
     run_ls_in_subprocess_button.on_click(lambda x: terminal.subprocess.run(args="ls"))
 
-    run_ls_l_in_subprocess_button = pn.widgets.Button(
-        name="Run ls -l in subprocess", button_type="primary"
-    )
-    run_ls_l_in_subprocess_button.on_click(
-        lambda x: terminal.subprocess.run("ls", "-l")
-    )
+    run_ls_l_in_subprocess_button = pn.widgets.Button(name="Run ls -l in subprocess", button_type="primary")
+    run_ls_l_in_subprocess_button.on_click(lambda x: terminal.subprocess.run("ls", "-l"))
 
-    run_bash_in_subprocess_button = pn.widgets.Button(
-        name="Run bash in subprocess", button_type="primary"
-    )
-    run_bash_in_subprocess_button.on_click(
-        lambda x: terminal.subprocess.run("bash")
-    )
+    run_bash_in_subprocess_button = pn.widgets.Button(name="Run bash in subprocess", button_type="primary")
+    run_bash_in_subprocess_button.on_click(lambda x: terminal.subprocess.run("bash"))
 
     template = pn.template.FastListTemplate(title="Panel - Terminal - PR in Progress!")
 

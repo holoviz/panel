@@ -38,7 +38,7 @@ def lower_camel_case_keys(attrs):
         Dictionary for which all the keys should be converted to camel-case
     """
     for snake_key in list(attrs.keys()):
-        if '_' not in snake_key:
+        if "_" not in snake_key:
             continue
         camel_key = lower_first_letter(to_camel_case(snake_key))
         attrs[camel_key] = attrs.pop(snake_key)
@@ -53,10 +53,10 @@ def to_camel_case(snake_case: str) -> str:
     snake_case : str
         Snake-cased string (e.g., "snake_cased") to be converted to camel-case (e.g., "camelCase")
     """
-    output_str = ''
+    output_str = ""
     should_upper_case = False
     for c in snake_case:
-        if c == '_':
+        if c == "_":
             should_upper_case = True
             continue
         output_str = output_str + c.upper() if should_upper_case else output_str + c
@@ -65,17 +65,16 @@ def to_camel_case(snake_case: str) -> str:
 
 
 def lower_first_letter(s: str) -> str:
-    return s[:1].lower() + s[1:] if s else ''
+    return s[:1].lower() + s[1:] if s else ""
 
 
 def recurse_data(data):
-    if hasattr(data, 'to_json'):
+    if hasattr(data, "to_json"):
         data = data.__dict__
     if isinstance(data, dict):
         data = dict(data)
         lower_camel_case_keys(data)
-        data = {k: recurse_data(v) if k != 'data' else v
-                for k, v in data.items()}
+        data = {k: recurse_data(v) if k != "data" else v for k, v in data.items()}
     elif isinstance(data, list):
         data = [recurse_data(d) for d in data]
     return data
@@ -100,29 +99,45 @@ class DeckGL(ModelPane):
     ... )
     """
 
-    mapbox_api_key = param.String(default=None, doc="""
-        The MapBox API key if not supplied by a PyDeck object.""")
+    mapbox_api_key = param.String(
+        default=None,
+        doc="""
+        The MapBox API key if not supplied by a PyDeck object.""",
+    )
 
-    tooltips = param.ClassSelector(default=True, class_=(bool, dict), doc="""
-        Whether to enable tooltips""")
+    tooltips = param.ClassSelector(
+        default=True,
+        class_=(bool, dict),
+        doc="""
+        Whether to enable tooltips""",
+    )
 
-    click_state = param.Dict(default={}, doc="""
-        Contains the last click event on the DeckGL plot.""")
+    click_state = param.Dict(
+        default={},
+        doc="""
+        Contains the last click event on the DeckGL plot.""",
+    )
 
-    hover_state = param.Dict(default={}, doc="""
-        The current hover state of the DeckGL plot.""")
+    hover_state = param.Dict(
+        default={},
+        doc="""
+        The current hover state of the DeckGL plot.""",
+    )
 
-    view_state = param.Dict(default={}, doc="""
-        The current view state of the DeckGL plot.""")
+    view_state = param.Dict(
+        default={},
+        doc="""
+        The current view state of the DeckGL plot.""",
+    )
 
-    throttle = param.Dict(default={'view': 200, 'hover': 200}, doc="""
+    throttle = param.Dict(
+        default={"view": 200, "hover": 200},
+        doc="""
         Throttling timeout (in milliseconds) for view state and hover
-        events sent from the frontend.""")
+        events sent from the frontend.""",
+    )
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
-        'click_state': 'clickState', 'hover_state': 'hoverState',
-        'view_state': 'viewState', 'tooltips': 'tooltip'
-    }
+    _rename: ClassVar[Mapping[str, str | None]] = {"click_state": "clickState", "hover_state": "hoverState", "view_state": "viewState", "tooltips": "tooltip"}
 
     _pydeck_encoders_are_added: ClassVar[bool] = False
 
@@ -140,8 +155,9 @@ class DeckGL(ModelPane):
 
     @classmethod
     def is_pydeck(cls, obj):
-        if 'pydeck' in sys.modules:
+        if "pydeck" in sys.modules:
             import pydeck
+
             return isinstance(obj, pydeck.bindings.deck.Deck)
         return False
 
@@ -155,7 +171,7 @@ class DeckGL(ModelPane):
 
     @classmethod
     def _update_sources(cls, json_data, sources):
-        layers = json_data.get('layers', [])
+        layers = json_data.get("layers", [])
 
         # Create index of sources by columns
         source_columns = defaultdict(list)
@@ -166,11 +182,10 @@ class DeckGL(ModelPane):
         # Process
         unprocessed, unused = [], list(sources)
         for layer in layers:
-            data = layer.get('data')
+            data = layer.get("data")
             if is_dataframe(data):
                 data = ColumnDataSource.from_df(data)
-            elif (isinstance(data, list) and data
-                  and isinstance(data[0], dict)):
+            elif isinstance(data, list) and data and isinstance(data[0], dict):
                 data = cls._process_data(data)
             else:
                 continue
@@ -179,7 +194,7 @@ class DeckGL(ModelPane):
             existing = source_columns.get(key)
             if existing:
                 index, cds = existing.pop()
-                layer['data'] = index
+                layer["data"] = index
                 updates = {}
                 for col, values in data.items():
                     if not np.array_equal(data[col], cds.data[col]):
@@ -197,14 +212,15 @@ class DeckGL(ModelPane):
             else:
                 cds = ColumnDataSource(data)
                 sources.append(cds)
-            layer['data'] = sources.index(cds)
+            layer["data"] = sources.index(cds)
 
     @classmethod
     def _add_pydeck_encoders(cls):
-        if cls._pydeck_encoders_are_added or 'pydeck' not in sys.modules:
+        if cls._pydeck_encoders_are_added or "pydeck" not in sys.modules:
             return
 
         from pydeck.types import String
+
         def pydeck_string_encoder(obj, serializer):
             return obj.value
 
@@ -212,8 +228,8 @@ class DeckGL(ModelPane):
 
     def _transform_deck_object(self, obj):
         data = dict(obj.__dict__)
-        mapbox_api_key = data.pop('mapbox_key', "") or self.mapbox_api_key
-        deck_widget = data.pop('deck_widget', None)
+        mapbox_api_key = data.pop("mapbox_key", "") or self.mapbox_api_key
+        deck_widget = data.pop("deck_widget", None)
         if isinstance(self.tooltips, dict) or deck_widget is None:
             tooltip = self.tooltips
         else:
@@ -221,9 +237,7 @@ class DeckGL(ModelPane):
         data = {k: v for k, v in recurse_data(data).items() if v is not None}
 
         if "initialViewState" in data:
-            data["initialViewState"]={
-                k:v for k, v in data["initialViewState"].items() if v is not None
-            }
+            data["initialViewState"] = {k: v for k, v in data["initialViewState"].items() if v is not None}
 
         self._add_pydeck_encoders()
 
@@ -237,45 +251,40 @@ class DeckGL(ModelPane):
                 data = json.loads(self.object)
             else:
                 data = dict(self.object)
-                data['layers'] = [dict(layer) for layer in data.get('layers', [])]
+                data["layers"] = [dict(layer) for layer in data.get("layers", [])]
             mapbox_api_key = self.mapbox_api_key
             tooltip = self.tooltips
         else:
             data, tooltip, mapbox_api_key = self._transform_deck_object(self.object)
 
         # Delete undefined width and height
-        for view in data.get('views', []):
-            if view.get('width', False) is None:
-                view.pop('width')
-            if view.get('height', False) is None:
-                view.pop('height')
+        for view in data.get("views", []):
+            if view.get("width", False) is None:
+                view.pop("width")
+            if view.get("height", False) is None:
+                view.pop("height")
 
         return dict(data=data, tooltip=tooltip, mapbox_api_key=mapbox_api_key or "")
 
-    def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
-    ) -> Model:
-        self._bokeh_model = DeckGLPlot = lazy_load(
-            'panel.models.deckgl', 'DeckGLPlot', isinstance(comm, JupyterComm), root
-        )
+    def _get_model(self, doc: Document, root: Optional[Model] = None, parent: Optional[Model] = None, comm: Optional[Comm] = None) -> Model:
+        self._bokeh_model = DeckGLPlot = lazy_load("panel.models.deckgl", "DeckGLPlot", isinstance(comm, JupyterComm), root)
         properties = self._get_properties(doc)
-        data = properties.pop('data')
-        properties['data_sources'] = sources = []
+        data = properties.pop("data")
+        properties["data_sources"] = sources = []
         self._update_sources(data, sources)
-        properties['layers'] = data.pop('layers', [])
-        properties['initialViewState'] = data.pop('initialViewState', {})
+        properties["layers"] = data.pop("layers", [])
+        properties["initialViewState"] = data.pop("initialViewState", {})
         model = DeckGLPlot(data=data, **properties)
         root = root or model
-        self._link_props(model, ['clickState', 'hoverState', 'viewState'], doc, root, comm)
+        self._link_props(model, ["clickState", "hoverState", "viewState"], doc, root, comm)
         self._models[root.ref["id"]] = (model, parent)
         return model
 
     def _update(self, ref: str, model: Model) -> None:
         properties = self._get_properties(model.document)
-        data = properties.pop('data')
+        data = properties.pop("data")
         self._update_sources(data, model.data_sources)
-        properties['data'] = data
-        properties['layers'] = data.pop('layers', [])
-        properties['initialViewState'] = data.pop('initialViewState', {})
+        properties["data"] = data
+        properties["layers"] = data.pop("layers", [])
+        properties["initialViewState"] = data.pop("initialViewState", {})
         model.update(**properties)

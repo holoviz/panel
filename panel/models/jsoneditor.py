@@ -13,8 +13,7 @@ from .layout import HTMLBox
 
 
 class JSONEditEvent(ModelEvent):
-
-    event_name = 'json_edit'
+    event_name = "json_edit"
 
     def __init__(self, model, data=None):
         self.data = data
@@ -32,7 +31,7 @@ class JSONEditor(HTMLBox):
 
     menu = Bool(True)
 
-    mode = Enum("tree", "view", "form", "code", "text", "preview", default='tree')
+    mode = Enum("tree", "view", "form", "code", "text", "preview", default="tree")
 
     search = Bool(True)
 
@@ -42,17 +41,11 @@ class JSONEditor(HTMLBox):
 
     templates = List(Any)
 
-    __javascript_raw__ = [
-        f"{config.npm_cdn}/jsoneditor@9.5.6/dist/jsoneditor.min.js"
-    ]
+    __javascript_raw__ = [f"{config.npm_cdn}/jsoneditor@9.5.6/dist/jsoneditor.min.js"]
 
-    __css_raw__ = [
-        f"{config.npm_cdn}/jsoneditor@9.5.6/dist/jsoneditor.min.css"
-    ]
+    __css_raw__ = [f"{config.npm_cdn}/jsoneditor@9.5.6/dist/jsoneditor.min.css"]
 
-    __resources__ = [
-        f"{config.npm_cdn}/jsoneditor@9.5.6/dist/img/jsoneditor-icons.svg"
-    ]
+    __resources__ = [f"{config.npm_cdn}/jsoneditor@9.5.6/dist/img/jsoneditor-icons.svg"]
 
     @classproperty
     def __javascript__(cls):
@@ -60,20 +53,14 @@ class JSONEditor(HTMLBox):
 
     @classproperty
     def __css__(cls):
-        return bundled_files(cls, 'css')
+        return bundled_files(cls, "css")
 
     @classproperty
     def __js_skip__(cls):
-        return {'JSONEditor': cls.__javascript__}
+        return {"JSONEditor": cls.__javascript__}
 
     __js_require__ = {
-        'paths': {
-            'jsoneditor': "//cdn.jsdelivr.net/npm/jsoneditor@9.5.6/dist/jsoneditor.min"
-        },
-        'exports': {'jsoneditor': 'JSONEditor'},
-        'shim': {
-            'jsoneditor': {
-                'exports': "JSONEditor"
-            }
-        }
+        "paths": {"jsoneditor": "//cdn.jsdelivr.net/npm/jsoneditor@9.5.6/dist/jsoneditor.min"},
+        "exports": {"jsoneditor": "JSONEditor"},
+        "shim": {"jsoneditor": {"exports": "JSONEditor"}},
     }

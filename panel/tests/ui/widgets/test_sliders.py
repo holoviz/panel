@@ -31,10 +31,10 @@ class _editable_text_input:
 @pytest.mark.parametrize(
     "widget,val1,val2,val3,func",
     [
-       (EditableIntSlider, 25, 24, 20, int),
-       (EditableFloatSlider, 25.5, 24.5, 19.5, float),
+        (EditableIntSlider, 25, 24, 20, int),
+        (EditableFloatSlider, 25.5, 24.5, 19.5, float),
     ],
-    ids=["EditableIntSlider", "EditableFloatSlider"]
+    ids=["EditableIntSlider", "EditableFloatSlider"],
 )
 def test_editableslider_textinput_end(page, widget, val1, val2, val3, func):
     widget = widget()
@@ -59,13 +59,14 @@ def test_editableslider_textinput_end(page, widget, val1, val2, val3, func):
     assert widget._slider.end == val3
     assert func(text_input.value) == val3
 
+
 @pytest.mark.parametrize(
     "widget,val1,val2,val3,func",
     [
-       (EditableIntSlider, -25, -24, -20, int),
-       (EditableFloatSlider, -25.5, -24.5, -19.5, float),
+        (EditableIntSlider, -25, -24, -20, int),
+        (EditableFloatSlider, -25.5, -24.5, -19.5, float),
     ],
-    ids=["EditableIntSlider", "EditableFloatSlider"]
+    ids=["EditableIntSlider", "EditableFloatSlider"],
 )
 def test_editableslider_textinput_start(page, widget, val1, val2, val3, func):
     widget = widget()
@@ -90,13 +91,14 @@ def test_editableslider_textinput_start(page, widget, val1, val2, val3, func):
     assert widget._slider.start == val3
     assert func(text_input.value) == val3
 
+
 @pytest.mark.parametrize(
     "widget",
     [
-       EditableIntSlider,
-       EditableFloatSlider,
+        EditableIntSlider,
+        EditableFloatSlider,
     ],
-    ids=["EditableIntSlider", "EditableFloatSlider"]
+    ids=["EditableIntSlider", "EditableFloatSlider"],
 )
 def test_editableslider_button_end(page, widget):
     widget = widget(step=1)
@@ -123,14 +125,7 @@ def test_editableslider_button_end(page, widget):
     assert widget._slider.end == end + step
 
 
-@pytest.mark.parametrize(
-    "widget",
-    [
-       EditableIntSlider,
-       EditableFloatSlider
-    ],
-    ids=["EditableIntSlider", "EditableFloatSlider"]
-)
+@pytest.mark.parametrize("widget", [EditableIntSlider, EditableFloatSlider], ids=["EditableIntSlider", "EditableFloatSlider"])
 def test_editableslider_button_start(page, widget):
     widget = widget(step=1)
     default_value = widget.value
@@ -158,9 +153,9 @@ def test_editableslider_button_start(page, widget):
 @pytest.mark.parametrize(
     "widget,val1,val2,val3,func",
     [
-       (EditableRangeSlider, 25.5, 24.5, 19.5, float),
+        (EditableRangeSlider, 25.5, 24.5, 19.5, float),
     ],
-    ids=["EditableRangeSlider"]
+    ids=["EditableRangeSlider"],
 )
 def test_editablerangeslider_textinput_end(page, widget, val1, val2, val3, func):
     widget = widget()
@@ -189,9 +184,9 @@ def test_editablerangeslider_textinput_end(page, widget, val1, val2, val3, func)
 @pytest.mark.parametrize(
     "widget,val1,val2,val3,func",
     [
-       (EditableRangeSlider, -25.5, -24.5, -19.5, float),
+        (EditableRangeSlider, -25.5, -24.5, -19.5, float),
     ],
-    ids=["EditableRangeSlider"]
+    ids=["EditableRangeSlider"],
 )
 def test_editablerangeslider_textinput_start(page, widget, val1, val2, val3, func):
     widget = widget()
@@ -220,9 +215,9 @@ def test_editablerangeslider_textinput_start(page, widget, val1, val2, val3, fun
 @pytest.mark.parametrize(
     "widget",
     [
-       EditableRangeSlider,
+        EditableRangeSlider,
     ],
-    ids=["EditableRangeSlider"]
+    ids=["EditableRangeSlider"],
 )
 def test_editablerangeslider_button_end(page, widget):
     widget = widget(step=1)
@@ -248,13 +243,12 @@ def test_editablerangeslider_button_end(page, widget):
     assert widget._slider.end == end + 2 * step
 
 
-
 @pytest.mark.parametrize(
     "widget",
     [
-       EditableRangeSlider,
+        EditableRangeSlider,
     ],
-    ids=["EditableRangeSlider"]
+    ids=["EditableRangeSlider"],
 )
 def test_editablerangeslider_button_start(page, widget):
     widget = widget(step=1)

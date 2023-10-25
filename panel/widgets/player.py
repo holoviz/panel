@@ -20,40 +20,58 @@ if TYPE_CHECKING:
 
 
 class PlayerBase(Widget):
-
-    direction = param.Integer(default=0, doc="""
+    direction = param.Integer(
+        default=0,
+        doc="""
         Current play direction of the Player (-1: playing in reverse,
-        0: paused, 1: playing)""")
+        0: paused, 1: playing)""",
+    )
 
-    interval = param.Integer(default=500, doc="""
+    interval = param.Integer(
+        default=500,
+        doc="""
         Interval between updates, in milliseconds. Default is 500, i.e.
-        two updates per second.""")
+        two updates per second.""",
+    )
 
     loop_policy = param.ObjectSelector(
-        default='once', objects=['once', 'loop', 'reflect'], doc="""
-        Policy used when player hits last frame""")
+        default="once",
+        objects=["once", "loop", "reflect"],
+        doc="""
+        Policy used when player hits last frame""",
+    )
 
-    show_loop_controls = param.Boolean(default=True, doc="""
-        Whether the loop controls radio buttons are shown""")
+    show_loop_controls = param.Boolean(
+        default=True,
+        doc="""
+        Whether the loop controls radio buttons are shown""",
+    )
 
-    step = param.Integer(default=1, doc="""
-        Number of frames to step forward and back by on each event.""")
+    step = param.Integer(
+        default=1,
+        doc="""
+        Number of frames to step forward and back by on each event.""",
+    )
 
     height = param.Integer(default=80)
 
-    width = param.Integer(default=510, allow_None=True, doc="""
+    width = param.Integer(
+        default=510,
+        allow_None=True,
+        doc="""
       Width of this component. If sizing_mode is set to stretch
-      or scale mode this will merely be used as a suggestion.""")
+      or scale mode this will merely be used as a suggestion.""",
+    )
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {"name": None}
 
     _widget_type: ClassVar[Type[Model]] = _BkPlayer
 
     __abstract = True
 
     def __init__(self, **params):
-        if 'value' in params and 'value_throttled' in self.param:
-            params['value_throttled'] = params['value']
+        if "value" in params and "value_throttled" in self.param:
+            params["value_throttled"] = params["value"]
         super().__init__(**params)
 
     def play(self):
@@ -64,7 +82,6 @@ class PlayerBase(Widget):
 
     def reverse(self):
         self.direction = -1
-
 
 
 class Player(PlayerBase):
@@ -87,19 +104,23 @@ class Player(PlayerBase):
 
     value = param.Integer(default=0, doc="Current player value")
 
-    value_throttled = param.Integer(default=0, constant=True, doc="""
-        Current throttled player value.""")
+    value_throttled = param.Integer(
+        default=0,
+        constant=True,
+        doc="""
+        Current throttled player value.""",
+    )
 
     _supports_embed: ClassVar[bool] = True
 
     def __init__(self, **params):
-        if 'length' in params:
-            if 'start' in params or 'end' in params:
-                raise ValueError('Supply either length or start and end to Player not both')
-            params['start'] = 0
-            params['end'] = params.pop('length')-1
-        elif params.get('start', 0) > 0 and 'value' not in params:
-            params['value'] = params['start']
+        if "length" in params:
+            if "start" in params or "end" in params:
+                raise ValueError("Supply either length or start and end to Player not both")
+            params["start"] = 0
+            params["end"] = params.pop("length") - 1
+        elif params.get("start", 0) > 0 and "value" not in params:
+            params["value"] = params["start"]
         super().__init__(**params)
 
     def _process_property_change(self, msg):
@@ -113,9 +134,7 @@ class Player(PlayerBase):
     def _get_embed_state(self, root, values=None, max_opts=3):
         if values is None:
             values = list(range(self.start, self.end, self.step))
-        return (self, self._models[root.ref['id']][0], values,
-                lambda x: x.value, 'value', 'cb_obj.value')
-
+        return (self, self._models[root.ref["id"]][0], values, lambda x: x.value, "value", "cb_obj.value")
 
 
 class DiscretePlayer(PlayerBase, SelectBase):
@@ -142,29 +161,29 @@ class DiscretePlayer(PlayerBase, SelectBase):
 
     value_throttled = param.Parameter(constant=True, doc="Current player value")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'options': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {"name": None, "options": None}
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {'value': None, 'value_throttled': None}
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {"value": None, "value_throttled": None}
 
     def _process_param_change(self, msg):
         values = self.values
-        if 'options' in msg:
-            msg['start'] = 0
-            msg['end'] = len(values) - 1
+        if "options" in msg:
+            msg["start"] = 0
+            msg["end"] = len(values) - 1
             if values and not isIn(self.value, values):
                 self.value = values[0]
-        if 'value' in msg:
-            value = msg['value']
+        if "value" in msg:
+            value = msg["value"]
             if isIn(value, values):
-                msg['value'] = indexOf(value, values)
+                msg["value"] = indexOf(value, values)
             elif values:
                 self.value = values[0]
-        if 'value_throttled' in msg:
-            del msg['value_throttled']
+        if "value_throttled" in msg:
+            del msg["value_throttled"]
         return super()._process_param_change(msg)
 
     def _process_property_change(self, msg):
-        for prop in ('value', 'value_throttled'):
+        for prop in ("value", "value_throttled"):
             if prop in msg:
                 value = msg.pop(prop)
                 if value < len(self.options):

@@ -11,49 +11,63 @@ from ..util import classproperty
 from .base import ListLike
 
 POSITIONS = [
-    'center',
-    'left-top',
-    'center-top',
-    'right-top',
-    'right-center',
-    'right-bottom',
-    'center-bottom',
-    'left-bottom',
-    'left-center',
+    "center",
+    "left-top",
+    "center-top",
+    "right-top",
+    "right-center",
+    "right-bottom",
+    "center-bottom",
+    "left-bottom",
+    "left-center",
 ]
 
-STATUS = [
-    "normalized",
-    "maximized",
-    "minimized",
-    "smallified",
-    "smallifiedmax",
-    "closed"
-]
+STATUS = ["normalized", "maximized", "minimized", "smallified", "smallifiedmax", "closed"]
+
 
 class FloatPanel(ListLike, ReactiveHTML):
     """
     Float provides a floating panel layout.
     """
 
-    config = param.Dict({}, doc="""
+    config = param.Dict(
+        {},
+        doc="""
        Additional jsPanel configuration with precedence over
-       parameter values.""")
+       parameter values.""",
+    )
 
-    contained = param.Boolean(default=True, doc="""
+    contained = param.Boolean(
+        default=True,
+        doc="""
        Whether the component is contained within parent container
-       or completely free floating.""")
+       or completely free floating.""",
+    )
 
-    position = param.Selector(default='right-top', objects=POSITIONS, doc="""
-       The initial position if the container is free-floating.""")
+    position = param.Selector(
+        default="right-top",
+        objects=POSITIONS,
+        doc="""
+       The initial position if the container is free-floating.""",
+    )
 
-    offsetx = param.Integer(default=None, bounds=(0, None), doc="""
-       Horizontal offset in pixels.""")
+    offsetx = param.Integer(
+        default=None,
+        bounds=(0, None),
+        doc="""
+       Horizontal offset in pixels.""",
+    )
 
-    offsety = param.Integer(default=None, bounds=(0, None), doc="""
-       Vertical offset in pixels.""")
+    offsety = param.Integer(
+        default=None,
+        bounds=(0, None),
+        doc="""
+       Vertical offset in pixels.""",
+    )
 
-    theme = param.String(default="primary", doc="""
+    theme = param.String(
+        default="primary",
+        doc="""
         The theme which can be one of:
 
         - Built-ins: 'default', 'primary', 'secondary', 'info',
@@ -63,12 +77,17 @@ class FloatPanel(ListLike, ReactiveHTML):
           from the Material Design Color System like 'purple900'
         - Additionally a theme string may include one of the modifiers
           'filled', 'filledlight', 'filleddark' or 'fillcolor'
-          separated from the theme color by a space like 'primary""")
+          separated from the theme color by a space like 'primary""",
+    )
 
-    status = param.Selector(default="normalized", objects=STATUS, doc="""
-        The current status of the panel.""")
+    status = param.Selector(
+        default="normalized",
+        objects=STATUS,
+        doc="""
+        The current status of the panel.""",
+    )
 
-    _extension_name = 'floatpanel'
+    _extension_name = "floatpanel"
 
     _template = """
     <div id="float" class="bk-root" style="padding:8px;padding-right:30px">
@@ -78,7 +97,7 @@ class FloatPanel(ListLike, ReactiveHTML):
     </div>
     """
 
-    _rename = {'loading': None}
+    _rename = {"loading": None}
 
     _scripts = {
         "render": """
@@ -157,33 +176,25 @@ class FloatPanel(ListLike, ReactiveHTML):
     ]
 
     __js_require__ = {
-        'paths': {
-            'jspanel': f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/jspanel",
-            'jspanel-modal': f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/modal/jspanel.modal",
-            'jspanel-tooltip': f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/tooltip/jspanel.tooltip",
-            'jspanel-hint': f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/hint/jspanel.hint",
-            'jspanel-layout': f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/layout/jspanel.layout",
-            'jspanel-contextmenu': f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/contextmenu/jspanel.contextmenu",
-            'jspanel-dock': f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/dock/jspanel.dock",
+        "paths": {
+            "jspanel": f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/jspanel",
+            "jspanel-modal": f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/modal/jspanel.modal",
+            "jspanel-tooltip": f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/tooltip/jspanel.tooltip",
+            "jspanel-hint": f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/hint/jspanel.hint",
+            "jspanel-layout": f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/layout/jspanel.layout",
+            "jspanel-contextmenu": f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/contextmenu/jspanel.contextmenu",
+            "jspanel-dock": f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/dock/jspanel.dock",
         },
-        'exports': {
-            'jspanel': 'jsPanel'
-        },
-        'shim': {
-            'jspanel': {
-                'exports': 'jsPanel'
-            }
-        }
+        "exports": {"jspanel": "jsPanel"},
+        "shim": {"jspanel": {"exports": "jsPanel"}},
     }
 
-    _stylesheets: ClassVar[List[str]] = [
-        f'{CDN_DIST}css/floatpanel.css'
-    ]
+    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/floatpanel.css"]
 
     @classproperty
     def __js_skip__(cls):
         return {
-            'jsPanel': cls.__javascript__,
+            "jsPanel": cls.__javascript__,
         }
 
     @classproperty
@@ -192,9 +203,9 @@ class FloatPanel(ListLike, ReactiveHTML):
 
     @classproperty
     def __css__(cls):
-        return bundled_files(cls, 'css')
+        return bundled_files(cls, "css")
 
-    def __init__(self, *objects, name='', **params):
+    def __init__(self, *objects, name="", **params):
         super().__init__(objects=list(objects), name=name, **params)
 
     def select(self, selector=None):

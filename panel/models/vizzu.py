@@ -13,8 +13,7 @@ from ..util import classproperty
 
 
 class VizzuEvent(ModelEvent):
-
-    event_name = 'vizzu_event'
+    event_name = "vizzu_event"
 
     def __init__(self, model, data=None):
         self.data = data
@@ -27,17 +26,13 @@ class VizzuChart(LayoutDOM):
     inside a Bokeh.
     """
 
-    __javascript_module_exports__ = ['Vizzu']
+    __javascript_module_exports__ = ["Vizzu"]
 
-    __javascript_modules__ = [
-        f"{config.npm_cdn}/vizzu@0.8.0/dist/vizzu.min.js"
-    ]
+    __javascript_modules__ = [f"{config.npm_cdn}/vizzu@0.8.0/dist/vizzu.min.js"]
 
     @classproperty
     def __js_skip__(cls):
-        return {
-            'Vizzu': cls.__javascript__[0]
-        }
+        return {"Vizzu": cls.__javascript__[0]}
 
     animation = Dict(String, Any)
 
@@ -45,9 +40,12 @@ class VizzuChart(LayoutDOM):
 
     columns = List(Dict(String, Any))
 
-    source = Instance(DataSource, help="""
+    source = Instance(
+        DataSource,
+        help="""
     Local data source to use when rendering glyphs on the plot.
-    """)
+    """,
+    )
 
     config = Dict(String, Any)
 

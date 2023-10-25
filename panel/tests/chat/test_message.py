@@ -14,7 +14,6 @@ from panel.widgets.input import FileInput, TextAreaInput, TextInput
 
 
 class TestChatMessage:
-
     def test_layout(self):
         message = ChatMessage(object="ABC")
         columns = message._composite.objects
@@ -78,10 +77,7 @@ class TestChatMessage:
         message.avatar = "https://assets.holoviz.org/panel/samples/jpg_sample.jpg"
         avatar_pane = columns[0][0].object()
         assert isinstance(avatar_pane, Image)
-        assert (
-            avatar_pane.object
-            == "https://assets.holoviz.org/panel/samples/jpg_sample.jpg"
-        )
+        assert avatar_pane.object == "https://assets.holoviz.org/panel/samples/jpg_sample.jpg"
 
         message.show_avatar = False
         avatar_pane = columns[0][0].object()
@@ -118,9 +114,7 @@ class TestChatMessage:
         assert isinstance(object_pane, TextInput)
         assert object_pane.value == "Also testing..."
 
-        message.object = _FileInputMessage(
-            contents=b"I am a file", file_name="test.txt", mime_type="text/plain"
-        )
+        message.object = _FileInputMessage(contents=b"I am a file", file_name="test.txt", mime_type="text/plain")
         object_pane = columns[1][1][0].object()
         assert isinstance(object_pane, Markdown)
         assert object_pane.object == "I am a file"

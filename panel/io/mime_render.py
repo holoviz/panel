@@ -29,25 +29,28 @@ from typing import Any, Dict, List
 
 import markdown
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 # Import API
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
+
 
 def _stdlibs():
     env_dir = str(pathlib.Path(sys.executable).parent.parent)
     modules = list(sys.builtin_module_names)
     for m in pkgutil.iter_modules():
-        mpath = getattr(m.module_finder, 'path', '')
-        if mpath.startswith(env_dir) and 'site-packages' not in mpath:
+        mpath = getattr(m.module_finder, "path", "")
+        if mpath.startswith(env_dir) and "site-packages" not in mpath:
             modules.append(m.name)
     return modules
 
+
 _STDLIBS = _stdlibs()
 _PACKAGE_MAP = {
-    'sklearn': 'scikit-learn',
+    "sklearn": "scikit-learn",
 }
-_IGNORED_PKGS = ['js', 'pyodide']
-_PANDAS_AUTODETECT = ['bokeh.sampledata', 'as_frame']
+_IGNORED_PKGS = ["js", "pyodide"]
+_PANDAS_AUTODETECT = ["bokeh.sampledata", "as_frame"]
+
 
 def find_imports(code: str) -> List[str]:
     """
@@ -94,16 +97,17 @@ def find_imports(code: str) -> List[str]:
             packages.extend(pkg)
         else:
             packages.append(pkg)
-    if any(pdd in code for pdd in _PANDAS_AUTODETECT) and 'pandas' not in packages:
-        packages.append('pandas')
+    if any(pdd in code for pdd in _PANDAS_AUTODETECT) and "pandas" not in packages:
+        packages.append("pandas")
     return [pkg for pkg in packages if pkg not in _IGNORED_PKGS]
 
-#---------------------------------------------------------------------
+
+# ---------------------------------------------------------------------
 # Execution API
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
+
 
 class WriteCallbackStream(io.StringIO):
-
     def __init__(self, on_write=None, escape=True):
         self._onwrite = on_write
         self._escape = escape
@@ -114,6 +118,7 @@ class WriteCallbackStream(io.StringIO):
             self._onwrite(escape(s) if self._escape else s)
         super().write(s)
 
+
 def _convert_expr(expr: ast.Expr) -> ast.Expression:
     """
     Converts an ast.Expr to and ast.Expression that can be compiled
@@ -121,9 +126,11 @@ def _convert_expr(expr: ast.Expr) -> ast.Expression:
     """
     expr.lineno = 0
     expr.col_offset = 0
-    return ast.Expression(expr.value, lineno=0, col_offset = 0)
+    return ast.Expression(expr.value, lineno=0, col_offset=0)
+
 
 _OUT_BUFFER = []
+
 
 def _display(*objs, **kwargs):
     """
@@ -133,12 +140,8 @@ def _display(*objs, **kwargs):
     """
     _OUT_BUFFER.extend(list(objs))
 
-def exec_with_return(
-    code: str,
-    global_context: Dict[str, Any] = None,
-    stdout: Any = None,
-    stderr: Any = None
-) -> Any:
+
+def exec_with_return(code: str, global_context: Dict[str, Any] = None, stdout: Any = None, stderr: Any = None) -> Any:
     """
     Executes a code snippet and returns the resulting output of the
     last line.
@@ -160,7 +163,7 @@ def exec_with_return(
     The return value of the executed code.
     """
     global_context = global_context if global_context else globals()
-    global_context['display'] = _display
+    global_context["display"] = _display
     code_ast = ast.parse(code)
 
     init_ast = copy.deepcopy(code_ast)
@@ -181,7 +184,7 @@ def exec_with_return(
             else:
                 exec(compile(last_ast, "<ast>", "exec"), global_context)
                 out = None
-            if code.strip().endswith(';'):
+            if code.strip().endswith(";"):
                 out = None
             if _OUT_BUFFER and out is None:
                 out = _OUT_BUFFER[-1]
@@ -192,9 +195,10 @@ def exec_with_return(
             _OUT_BUFFER.clear()
     return out
 
-#---------------------------------------------------------------------
+
+# ---------------------------------------------------------------------
 # MIME Render API
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 
 MIME_METHODS = {
     "__repr__": "text/plain",
@@ -208,35 +212,40 @@ MIME_METHODS = {
     "_repr_json_": "application/json",
     "_repr_javascript_": "application/javascript",
     "savefig": "image/png",
-    "to_html": "text/html"
+    "to_html": "text/html",
 }
 
 # Rendering function
 
+
 def render_svg(value, meta, mime):
-    return value, 'text/html'
+    return value, "text/html"
+
 
 def render_image(value, meta, mime):
     data = f"data:{mime};charset=utf-8;base64,{value}"
     attrs = " ".join(['{k}="{v}"' for k, v in meta.items()])
-    return f'<img src="{data}" {attrs}</img>', 'text/html'
+    return f'<img src="{data}" {attrs}</img>', "text/html"
+
 
 def render_javascript(value, meta, mime):
-    return f'<script>{value}</script>', 'text/html'
+    return f"<script>{value}</script>", "text/html"
+
 
 def render_markdown(value, meta, mime):
-    return (markdown.markdown(
-        value, extensions=["extra", "smarty", "codehilite"], output_format='html5'
-    ), 'text/html')
+    return (markdown.markdown(value, extensions=["extra", "smarty", "codehilite"], output_format="html5"), "text/html")
+
 
 def render_pdf(value, meta, mime):
-    data = value.encode('utf-8')
+    data = value.encode("utf-8")
     base64_pdf = base64.b64encode(data).decode("utf-8")
     src = f"data:application/pdf;base64,{base64_pdf}"
-    return f'<embed src="{src}" width="100%" height="100%" type="application/pdf">', 'text/html'
+    return f'<embed src="{src}" width="100%" height="100%" type="application/pdf">', "text/html"
+
 
 def identity(value, meta, mime):
     return value, mime
+
 
 MIME_RENDERERS = {
     "image/png": render_image,
@@ -249,6 +258,7 @@ MIME_RENDERERS = {
     "text/markdown": render_markdown,
     "text/plain": identity,
 }
+
 
 def eval_formatter(obj, print_method):
     """
@@ -267,6 +277,7 @@ def eval_formatter(obj, print_method):
         return {}, {}
     return None
 
+
 def format_mime(obj):
     """
     Formats object using _repr_x_ methods.
@@ -283,7 +294,7 @@ def format_mime(obj):
     for method, mime_type in reversed(list(MIME_METHODS.items())):
         if mime_type in format_dict:
             output = format_dict[mime_type]
-        elif isinstance(obj, type) and method != '__repr__':
+        elif isinstance(obj, type) and method != "__repr__":
             output = None
         else:
             output = eval_formatter(obj, method)
@@ -302,6 +313,6 @@ def format_mime(obj):
     else:
         meta = {}
     content, mime_type = MIME_RENDERERS[mime_type](output, meta, mime_type)
-    if mime_type == 'text/plain':
+    if mime_type == "text/plain":
         content = escape(content)
     return content, mime_type

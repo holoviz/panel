@@ -22,14 +22,10 @@ def transform_cmds(argv):
     Allows usage with anaconda-project by remapping the argv list provided
     into arguments accepted by Bokeh 0.12.7 or later.
     """
-    replacements = {
-        '--anaconda-project-host':'--allow-websocket-origin',
-        '--anaconda-project-port': '--port',
-        '--anaconda-project-address': '--address'
-    }
-    if 'PANEL_AE5_CDN' in os.environ:
+    replacements = {"--anaconda-project-host": "--allow-websocket-origin", "--anaconda-project-port": "--port", "--anaconda-project-address": "--address"}
+    if "PANEL_AE5_CDN" in os.environ:
         # Override AE5 default
-        os.environ['BOKEH_RESOURCES'] = 'cdn'
+        os.environ["BOKEH_RESOURCES"] = "cdn"
     transformed = []
     skip = False
     for arg in argv:
@@ -38,10 +34,10 @@ def transform_cmds(argv):
             continue
         if arg in replacements.keys():
             transformed.append(replacements[arg])
-        elif arg == '--anaconda-project-iframe-hosts':
+        elif arg == "--anaconda-project-iframe-hosts":
             skip = True
             continue
-        elif arg.startswith('--anaconda-project'):
+        elif arg.startswith("--anaconda-project"):
             continue
         else:
             transformed.append(arg)
@@ -49,15 +45,14 @@ def transform_cmds(argv):
 
 
 def main(args=None):
-    """Mirrors bokeh CLI and adds additional Panel specific commands """
+    """Mirrors bokeh CLI and adds additional Panel specific commands"""
     from bokeh.command.subcommands import all as bokeh_commands
+
     bokeh_commands = bokeh_commands + [OAuthSecret, Convert, Bundle]
 
-    parser = argparse.ArgumentParser(
-        prog="panel", epilog="See '<command> --help' to read about a specific subcommand."
-    )
+    parser = argparse.ArgumentParser(prog="panel", epilog="See '<command> --help' to read about a specific subcommand.")
 
-    parser.add_argument('-v', '--version', action='version', version=__version__)
+    parser.add_argument("-v", "--version", action="version", version=__version__)
 
     subs = parser.add_subparsers(help="Sub-commands")
 
@@ -81,25 +76,25 @@ def main(args=None):
         all_commands = sorted([c.name for c in bokeh_commands])
         die("ERROR: Must specify subcommand, one of: %s" % nice_join(all_commands))
 
-    if sys.argv[1] in ('--help', '-h'):
+    if sys.argv[1] in ("--help", "-h"):
         args = parser.parse_args(sys.argv[1:])
         args.invoke(args)
         sys.exit()
 
     if len(sys.argv) > 1 and any(sys.argv[1] == c.name for c in bokeh_commands):
         sys.argv = transform_cmds(sys.argv)
-        if sys.argv[1] == 'serve':
+        if sys.argv[1] == "serve":
             args = parser.parse_args(sys.argv[1:])
             try:
                 ret = args.invoke(args)
             except Exception as e:
                 die("ERROR: " + str(e))
-        elif sys.argv[1] == 'oauth-secret':
+        elif sys.argv[1] == "oauth-secret":
             ret = OAuthSecret(parser).invoke(args)
-        elif sys.argv[1] == 'convert':
+        elif sys.argv[1] == "convert":
             args = parser.parse_args(sys.argv[1:])
             ret = Convert(parser).invoke(args)
-        elif sys.argv[1] == 'bundle':
+        elif sys.argv[1] == "bundle":
             args = parser.parse_args(sys.argv[1:])
             ret = Bundle(parser).invoke(args)
         else:
@@ -112,7 +107,6 @@ def main(args=None):
         sys.exit(1)
     elif ret is not True and isinstance(ret, int) and ret != 0:
         sys.exit(ret)
-
 
 
 if __name__ == "__main__":

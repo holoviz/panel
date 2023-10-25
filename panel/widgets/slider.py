@@ -44,46 +44,60 @@ if TYPE_CHECKING:
 
 
 class _SliderBase(Widget):
-
     bar_color = param.Color(default="#e6e6e6", doc="""""")
 
-    direction = param.ObjectSelector(default='ltr', objects=['ltr', 'rtl'], doc="""
+    direction = param.ObjectSelector(
+        default="ltr",
+        objects=["ltr", "rtl"],
+        doc="""
         Whether the slider should go from left-to-right ('ltr') or
-        right-to-left ('rtl').""")
+        right-to-left ('rtl').""",
+    )
 
-    name = param.String(default=None, doc="""
+    name = param.String(
+        default=None,
+        doc="""
         The name of the widget. Also used as the label of the widget. If not set,
-        the widget has no label.""")
+        the widget has no label.""",
+    )
 
-    orientation = param.ObjectSelector(default='horizontal', objects=['horizontal', 'vertical'],
+    orientation = param.ObjectSelector(
+        default="horizontal",
+        objects=["horizontal", "vertical"],
         doc="""
         Whether the slider should be oriented horizontally or
-        vertically.""")
+        vertically.""",
+    )
 
-    show_value = param.Boolean(default=True, doc="""
-        Whether to show the widget value as a label or not.""")
+    show_value = param.Boolean(
+        default=True,
+        doc="""
+        Whether to show the widget value as a label or not.""",
+    )
 
-    tooltips = param.Boolean(default=True, doc="""
-        Whether the slider handle should display tooltips.""")
+    tooltips = param.Boolean(
+        default=True,
+        doc="""
+        Whether the slider handle should display tooltips.""",
+    )
 
     _widget_type: ClassVar[Type[Model]] = _BkSlider
 
     __abstract = True
 
     def __init__(self, **params):
-        if 'value' in params and 'value_throttled' in self.param:
-            params['value_throttled'] = params['value']
-        if 'orientation' == 'vertical':
-            params['height'] = self.param.width.default
+        if "value" in params and "value_throttled" in self.param:
+            params["value_throttled"] = params["value"]
+        if "orientation" == "vertical":
+            params["height"] = self.param.width.default
         super().__init__(**params)
 
     def __repr__(self, depth=0):
-        return '{cls}({params})'.format(cls=type(self).__name__,
-                                        params=', '.join(param_reprs(self, ['value_throttled'])))
+        return "{cls}({params})".format(cls=type(self).__name__, params=", ".join(param_reprs(self, ["value_throttled"])))
 
     @property
     def _linked_properties(self) -> Tuple[str]:
-        return super()._linked_properties + ('value_throttled',)
+        return super()._linked_properties + ("value_throttled",)
 
     def _process_property_change(self, msg):
         if config.throttled:
@@ -94,64 +108,65 @@ class _SliderBase(Widget):
         return super()._process_property_change(msg)
 
     def _update_model(
-        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any], root: Model, model: Model, doc: Document, comm: Optional[Comm]
     ) -> None:
-        if 'value_throttled' in msg:
-            del msg['value_throttled']
+        if "value_throttled" in msg:
+            del msg["value_throttled"]
 
         return super()._update_model(events, msg, root, model, doc, comm)
 
 
 class ContinuousSlider(_SliderBase):
-
-    format = param.ClassSelector(class_=(str, TickFormatter,), doc="""
-        A custom format string or Bokeh TickFormatter.""")
+    format = param.ClassSelector(
+        class_=(
+            str,
+            TickFormatter,
+        ),
+        doc="""
+        A custom format string or Bokeh TickFormatter.""",
+    )
 
     _supports_embed: ClassVar[bool] = True
 
     __abstract = True
 
     def __init__(self, **params):
-        if 'value' not in params:
-            params['value'] = params.get('start', self.start)
+        if "value" not in params:
+            params["value"] = params.get("start", self.start)
         super().__init__(**params)
 
     def _get_embed_state(self, root, values=None, max_opts=3):
-        ref = root.ref['id']
+        ref = root.ref["id"]
         w_model, parent = self._models[ref]
         _, _, doc, comm = state._views[ref]
 
         # Compute sampling
         start, end, step = w_model.start, w_model.end, w_model.step
         if values is None:
-            span = end-start
+            span = end - start
             dtype = int if isinstance(step, int) else float
-            if (span/step) > (max_opts-1):
-                step = dtype(span/(max_opts-1))
-            values = [dtype(v) for v in np.arange(start, end+step, step)]
+            if (span / step) > (max_opts - 1):
+                step = dtype(span / (max_opts - 1))
+            values = [dtype(v) for v in np.arange(start, end + step, step)]
         elif any(v < start or v > end for v in values):
-            raise ValueError('Supplied embed states for %s widget outside '
-                             'of valid range.' % type(self).__name__)
+            raise ValueError("Supplied embed states for %s widget outside " "of valid range." % type(self).__name__)
 
         # Replace model
-        layout_opts = {k: v for k, v in self.param.values().items()
-                       if k in Layoutable.param and k != 'name'}
+        layout_opts = {k: v for k, v in self.param.values().items() if k in Layoutable.param and k != "name"}
 
-        value = values[np.argmin(np.abs(np.array(values)-self.value))]
+        value = values[np.argmin(np.abs(np.array(values) - self.value))]
         dw = DiscreteSlider(options=values, value=value, name=self.name, **layout_opts)
-        dw.link(self, value='value')
+        dw.link(self, value="value")
         self._models.pop(ref)
         index = parent.children.index(w_model)
         with config.set(embed=True):
             w_model = dw._get_model(doc, root, parent, comm)
-        link = CustomJS(code=dw._jslink.code['value'], args={
-            'source': w_model.children[1], 'target': w_model.children[0]})
+        link = CustomJS(code=dw._jslink.code["value"], args={"source": w_model.children[1], "target": w_model.children[0]})
         parent.children[index] = w_model
         w_model = w_model.children[1]
-        w_model.js_on_change('value', link)
+        w_model.js_on_change("value", link)
 
-        return (dw, w_model, values, lambda x: x.value, 'value', 'cb_obj.value')
+        return (dw, w_model, values, lambda x: x.value, "value", "cb_obj.value")
 
 
 class FloatSlider(ContinuousSlider):
@@ -172,17 +187,22 @@ class FloatSlider(ContinuousSlider):
 
     step = param.Number(default=0.1, doc="The step size.")
 
-    value = param.Number(default=0.0, allow_None=True, doc="""
+    value = param.Number(
+        default=0.0,
+        allow_None=True,
+        doc="""
         The selected floating-point value of the slider. Updated when
-        the handle is dragged."""
+        the handle is dragged.""",
     )
 
-    value_throttled = param.Number(default=None, constant=True, doc="""
-         The value of the slider. Updated when the handle is released.""")
+    value_throttled = param.Number(
+        default=None,
+        constant=True,
+        doc="""
+         The value of the slider. Updated when the handle is released.""",
+    )
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': 'title', 'value_throttled': None
-    }
+    _rename: ClassVar[Mapping[str, str | None]] = {"name": "title", "value_throttled": None}
 
 
 class IntSlider(ContinuousSlider):
@@ -197,32 +217,47 @@ class IntSlider(ContinuousSlider):
     >>> IntSlider(value=5, start=0, end=10, step=1, name="Integer Value")
     """
 
-    start = param.Integer(default=0, doc="""
-        The lower bound.""")
+    start = param.Integer(
+        default=0,
+        doc="""
+        The lower bound.""",
+    )
 
-    end = param.Integer(default=1, doc="""
-        The upper bound.""")
+    end = param.Integer(
+        default=1,
+        doc="""
+        The upper bound.""",
+    )
 
-    step = param.Integer(default=1, doc="""
-        The step size.""")
+    step = param.Integer(
+        default=1,
+        doc="""
+        The step size.""",
+    )
 
-    value = param.Integer(default=0, allow_None=True, doc="""
-        The selected integer value of the slider. Updated when the handle is dragged.""")
+    value = param.Integer(
+        default=0,
+        allow_None=True,
+        doc="""
+        The selected integer value of the slider. Updated when the handle is dragged.""",
+    )
 
-    value_throttled = param.Integer(default=None, constant=True, doc="""
-        The value of the slider. Updated when the handle is released""")
+    value_throttled = param.Integer(
+        default=None,
+        constant=True,
+        doc="""
+        The value of the slider. Updated when the handle is released""",
+    )
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': 'title', 'value_throttled': None
-    }
+    _rename: ClassVar[Mapping[str, str | None]] = {"name": "title", "value_throttled": None}
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
-        if 'value' in msg:
-            msg['value'] = msg['value'] if msg['value'] is None else int(msg['value'])
-        if 'value_throttled' in msg:
-            throttled = msg['value_throttled']
-            msg['value_throttled'] = throttled if throttled is None else int(throttled)
+        if "value" in msg:
+            msg["value"] = msg["value"] if msg["value"] is None else int(msg["value"])
+        if "value_throttled" in msg:
+            throttled = msg["value_throttled"]
+            msg["value_throttled"] = throttled if throttled is None else int(throttled)
         return msg
 
 
@@ -245,60 +280,78 @@ class DateSlider(_SliderBase):
     ... )
     """
 
-    value = param.Date(default=None, doc="""
+    value = param.Date(
+        default=None,
+        doc="""
         The selected date value of the slider. Updated when the slider
         handle is dragged. Supports datetime.datetime, datetime.date
-        or np.datetime64 types.""")
+        or np.datetime64 types.""",
+    )
 
-    value_throttled = param.Date(default=None, constant=True, doc="""
-        The value of the slider. Updated when the slider handle is released.""")
+    value_throttled = param.Date(
+        default=None,
+        constant=True,
+        doc="""
+        The value of the slider. Updated when the slider handle is released.""",
+    )
 
-    start = param.Date(default=None, doc="""
-        The lower bound.""")
+    start = param.Date(
+        default=None,
+        doc="""
+        The lower bound.""",
+    )
 
-    end = param.Date(default=None, doc="""
-        The upper bound.""")
+    end = param.Date(
+        default=None,
+        doc="""
+        The upper bound.""",
+    )
 
-    as_datetime = param.Boolean(default=False, doc="""
-        Whether to store the date as a datetime.""")
+    as_datetime = param.Boolean(
+        default=False,
+        doc="""
+        Whether to store the date as a datetime.""",
+    )
 
-    step = param.Number(default=None, doc="""
-        The step parameter in milliseconds.""")
+    step = param.Number(
+        default=None,
+        doc="""
+        The step parameter in milliseconds.""",
+    )
 
-    format = param.String(default=None, doc="""
-        Datetime format used for parsing and formatting the date.""")
+    format = param.String(
+        default=None,
+        doc="""
+        Datetime format used for parsing and formatting the date.""",
+    )
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': 'title', 'as_datetime': None, 'value_throttled': None
-    }
+    _rename: ClassVar[Mapping[str, str | None]] = {"name": "title", "as_datetime": None, "value_throttled": None}
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
-        'value': None, 'value_throttled': None, 'start': None, 'end': None
-    }
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {"value": None, "value_throttled": None, "start": None, "end": None}
 
     _widget_type: ClassVar[Type[Model]] = _BkDateSlider
 
     def __init__(self, **params):
-        if 'value' not in params:
-            params['value'] = params.get('start', self.start)
+        if "value" not in params:
+            params["value"] = params.get("start", self.start)
         super().__init__(**params)
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
-        if 'value' in msg:
-            value = msg['value']
+        if "value" in msg:
+            value = msg["value"]
             if isinstance(value, dt.datetime):
                 value = datetime_as_utctimestamp(value)
-            msg['value'] = value
+            msg["value"] = value
         return msg
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
         transform = value_as_datetime if self.as_datetime else value_as_date
-        if 'value' in msg:
-            msg['value'] = transform(msg['value'])
-        if 'value_throttled' in msg:
-            msg['value_throttled'] = transform(msg['value_throttled'])
+        if "value" in msg:
+            msg["value"] = transform(msg["value"])
+        if "value_throttled" in msg:
+            msg["value_throttled"] = transform(msg["value_throttled"])
         return msg
 
 
@@ -318,36 +371,41 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
     ... )
     """
 
-    value = param.Parameter(doc="""
+    value = param.Parameter(
+        doc="""
         The selected value of the slider. Updated when the handle is
-        dragged. Must be one of the options.""")
+        dragged. Must be one of the options."""
+    )
 
-    value_throttled = param.Parameter(constant=True, doc="""
-        The value of the slider. Updated when the handle is released.""")
+    value_throttled = param.Parameter(
+        constant=True,
+        doc="""
+        The value of the slider. Updated when the handle is released.""",
+    )
 
-    options = param.ClassSelector(default=[], class_=(dict, list), doc="""
-        A list or dictionary of valid options.""")
+    options = param.ClassSelector(
+        default=[],
+        class_=(dict, list),
+        doc="""
+        A list or dictionary of valid options.""",
+    )
 
-    formatter = param.String(default='%.3g', doc="""
+    formatter = param.String(
+        default="%.3g",
+        doc="""
         A custom format string. Separate from format parameter since
-        formatting is applied in Python, not via the bokeh TickFormatter.""")
+        formatting is applied in Python, not via the bokeh TickFormatter.""",
+    )
 
+    _rename: ClassVar[Mapping[str, str | None]] = {"formatter": None}
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'formatter': None}
-
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
-        'value': None, 'value_throttled': None, 'options': None
-    }
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {"value": None, "value_throttled": None, "options": None}
 
     _supports_embed: ClassVar[bool] = True
 
-    _style_params: ClassVar[List[str]] = [
-        p for p in list(Layoutable.param) if p != 'name'
-    ] + ['orientation']
+    _style_params: ClassVar[List[str]] = [p for p in list(Layoutable.param) if p != "name"] + ["orientation"]
 
-    _slider_style_params: ClassVar[List[str]] = [
-        'bar_color', 'direction', 'disabled', 'orientation'
-    ]
+    _slider_style_params: ClassVar[List[str]] = ["bar_color", "direction", "disabled", "orientation"]
 
     _text_link = """
     var labels = {labels}
@@ -357,30 +415,27 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
     def __init__(self, **params):
         self._syncing = False
         super().__init__(**params)
-        if 'formatter' not in params and all(isinstance(v, (int, np.int_)) for v in self.values):
-            self.formatter = '%d'
+        if "formatter" not in params and all(isinstance(v, (int, np.int_)) for v in self.values):
+            self.formatter = "%d"
         if self.value is None and None not in self.values and self.options:
             self.value = self.values[0]
         elif self.value not in self.values and not (self.value is None or self.options):
-            raise ValueError('Value %s not a valid option, '
-                             'ensure that the supplied value '
-                             'is one of the declared options.'
-                             % self.value)
+            raise ValueError("Value %s not a valid option, " "ensure that the supplied value " "is one of the declared options." % self.value)
 
-        self._text = StaticText(margin=(5, 0, 0, 5), styles={'white-space': 'nowrap'})
+        self._text = StaticText(margin=(5, 0, 0, 5), styles={"white-space": "nowrap"})
         self._slider = None
         self._composite = Column(self._text, self._slider)
         self._update_options()
-        self.param.watch(self._update_options, ['options', 'formatter', 'name'])
-        self.param.watch(self._update_value, 'value')
-        self.param.watch(self._update_value, 'value_throttled')
+        self.param.watch(self._update_options, ["options", "formatter", "name"])
+        self.param.watch(self._update_value, "value")
+        self.param.watch(self._update_value, "value_throttled")
         self.param.watch(self._update_style, self._style_params)
 
     def _update_options(self, *events):
         values, labels = self.values, self.labels
         if not self.options and self.value is None:
             value = 0
-            label = (f'{self.name}: ' if self.name else '') + '<b>-</b>'
+            label = (f"{self.name}: " if self.name else "") + "<b>-</b>"
         elif self.value not in values:
             value = 0
             self.value = values[0]
@@ -389,21 +444,24 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
             value = values.index(self.value)
             label = labels[value]
         disabled = True if len(values) in (0, 1) else self.disabled
-        end = 1 if disabled else len(self.options)-1
+        end = 1 if disabled else len(self.options) - 1
 
         self._slider = IntSlider(
-            start=0, end=end, value=value, tooltips=False,
-            show_value=False, margin=(0, 5, 5, 5),
-            _supports_embed=False, disabled=disabled,
-            **{p: getattr(self, p) for p in self._slider_style_params if p != 'disabled'}
+            start=0,
+            end=end,
+            value=value,
+            tooltips=False,
+            show_value=False,
+            margin=(0, 5, 5, 5),
+            _supports_embed=False,
+            disabled=disabled,
+            **{p: getattr(self, p) for p in self._slider_style_params if p != "disabled"},
         )
         self._update_style()
-        js_code = self._text_link.format(
-            labels='['+', '.join([repr(l) for l in labels])+']'
-        )
-        self._jslink = self._slider.jslink(self._text, code={'value': js_code})
-        self._slider.param.watch(self._sync_value, 'value')
-        self._slider.param.watch(self._sync_value, 'value_throttled')
+        js_code = self._text_link.format(labels="[" + ", ".join([repr(l) for l in labels]) + "]")
+        self._jslink = self._slider.jslink(self._text, code={"value": js_code})
+        self._slider.param.watch(self._sync_value, "value")
+        self._slider.param.watch(self._sync_value, "value_throttled")
         self.param.watch(self._update_slider_params, self._slider_style_params)
         self._text.value = label
         self._composite[1] = self._slider
@@ -424,7 +482,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
                 setattr(self, event.name, values[0])
             return
         index = self.values.index(getattr(self, event.name))
-        if event.name == 'value':
+        if event.name == "value":
             self._text.value = self.labels[index]
         if self._syncing:
             return
@@ -437,7 +495,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
     def _update_style(self, *events):
         style = {p: getattr(self, p) for p in self._style_params}
-        margin = style.pop('margin')
+        margin = style.pop("margin")
         if isinstance(margin, tuple):
             if len(margin) == 2:
                 t = b = margin[0]
@@ -448,29 +506,25 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
             t = r = b = l = margin
         text_margin = (t, 0, 0, l)
         slider_margin = (0, r, b, l)
-        text_style = {k: v for k, v in style.items()
-                      if k not in ('style', 'orientation')}
+        text_style = {k: v for k, v in style.items() if k not in ("style", "orientation")}
         self._text.param.update(margin=text_margin, **text_style)
         self._slider.param.update(margin=slider_margin, **style)
         if self.width:
-            style['width'] = self.width + l + r
-        col_style = {k: v for k, v in style.items()
-                     if k != 'orientation'}
+            style["width"] = self.width + l + r
+        col_style = {k: v for k, v in style.items() if k != "orientation"}
         self._composite.param.update(**col_style)
 
     def _update_slider_params(self, *events):
         style = {e.name: e.new for e in events}
-        disabled = style.get('disabled', None)
+        disabled = style.get("disabled", None)
         if disabled is False:
             if len(self.values) in (0, 1):
-                self.param.warning(
-                    'A DiscreteSlider can only be disabled if it has more than 1 option.'
-                )
+                self.param.warning("A DiscreteSlider can only be disabled if it has more than 1 option.")
                 end = 1
-                del style['disabled']
+                del style["disabled"]
             else:
                 end = len(self.options) - 1
-            style['end'] = end
+            style["end"] = end
         self._slider.param.update(**style)
 
     def _sync_value(self, event):
@@ -492,34 +546,36 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
             self._syncing = False
 
     def _get_embed_state(self, root, values=None, max_opts=3):
-        model = self._composite[1]._models[root.ref['id']][0]
+        model = self._composite[1]._models[root.ref["id"]][0]
         if values is None:
             values = self.values
         elif any(v not in self.values for v in values):
-            raise ValueError("Supplieed embed states were not found "
-                             "in the %s widgets' values list." % type(self).__name__)
-        return self, model, values, lambda x: x.value, 'value', 'cb_obj.value'
+            raise ValueError("Supplieed embed states were not found " "in the %s widgets' values list." % type(self).__name__)
+        return self, model, values, lambda x: x.value, "value", "cb_obj.value"
 
     @property
     def labels(self):
         """The list of labels to display"""
-        title = (self.name + ': ' if self.name else '')
+        title = self.name + ": " if self.name else ""
         if isinstance(self.options, dict):
-            return [title + ('<b>%s</b>' % o) for o in self.options]
+            return [title + ("<b>%s</b>" % o) for o in self.options]
         else:
-            return [title + ('<b>%s</b>' % (o if isinstance(o, str) else (self.formatter % o)))
-                    for o in self.options]
+            return [title + ("<b>%s</b>" % (o if isinstance(o, str) else (self.formatter % o))) for o in self.options]
+
     @property
     def values(self):
         """The list of option values"""
         return list(self.options.values()) if isinstance(self.options, dict) else self.options
 
 
-
 class _RangeSliderBase(_SliderBase):
-
-    value = param.Tuple(length=2, allow_None=False, nested_refs=True, doc="""
-        The selected range of the slider. Updated when a handle is dragged.""")
+    value = param.Tuple(
+        length=2,
+        allow_None=False,
+        nested_refs=True,
+        doc="""
+        The selected range of the slider. Updated when a handle is dragged.""",
+    )
 
     value_start = param.Parameter(readonly=True, doc="""The lower value of the selected range.""")
 
@@ -528,17 +584,15 @@ class _RangeSliderBase(_SliderBase):
     __abstract = True
 
     def __init__(self, **params):
-        if 'value' not in params:
-            params['value'] = (
-                params.get('start', self.start), params.get('end', self.end)
-            )
-        if params['value'] is not None:
-            v1, v2 = params['value']
-            params['value_start'], params['value_end'] = resolve_value(v1), resolve_value(v2)
+        if "value" not in params:
+            params["value"] = (params.get("start", self.start), params.get("end", self.end))
+        if params["value"] is not None:
+            v1, v2 = params["value"]
+            params["value_start"], params["value_end"] = resolve_value(v1), resolve_value(v2)
         with edit_readonly(self):
             super().__init__(**params)
 
-    @param.depends('value', watch=True)
+    @param.depends("value", watch=True)
     def _sync_values(self):
         vs, ve = self.value
         with edit_readonly(self):
@@ -546,10 +600,10 @@ class _RangeSliderBase(_SliderBase):
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
-        if 'value' in msg:
-            msg['value'] = tuple(msg['value'])
-        if 'value_throttled' in msg:
-            msg['value_throttled'] = tuple(msg['value_throttled'])
+        if "value" in msg:
+            msg["value"] = tuple(msg["value"])
+        if "value_throttled" in msg:
+            msg["value_throttled"] = tuple(msg["value_throttled"])
         return msg
 
 
@@ -567,41 +621,72 @@ class RangeSlider(_RangeSliderBase):
     ... )
     """
 
-    value = param.Range(default=(0, 1), allow_None=False, nested_refs=True, doc=
-        """The selected range as a tuple of values. Updated when a handle is
-        dragged.""")
+    value = param.Range(
+        default=(0, 1),
+        allow_None=False,
+        nested_refs=True,
+        doc="""The selected range as a tuple of values. Updated when a handle is
+        dragged.""",
+    )
 
-    value_throttled = param.Range(default=None, constant=True, nested_refs=True, doc="""
+    value_throttled = param.Range(
+        default=None,
+        constant=True,
+        nested_refs=True,
+        doc="""
         The selected range as a tuple of floating point values. Updated when a handle is
-        released""")
+        released""",
+    )
 
-    value_start = param.Number(default=0, readonly=True, doc="""
-        The lower value of the selected range.""")
+    value_start = param.Number(
+        default=0,
+        readonly=True,
+        doc="""
+        The lower value of the selected range.""",
+    )
 
-    value_end = param.Number(default=1, readonly=True, doc="""
-        The upper value of the selected range.""")
+    value_end = param.Number(
+        default=1,
+        readonly=True,
+        doc="""
+        The upper value of the selected range.""",
+    )
 
-    start = param.Number(default=0, doc="""
-        The lower bound.""")
+    start = param.Number(
+        default=0,
+        doc="""
+        The lower bound.""",
+    )
 
-    end = param.Number(default=1, doc="""
-        The upper bound.""")
+    end = param.Number(
+        default=1,
+        doc="""
+        The upper bound.""",
+    )
 
-    step = param.Number(default=0.1, doc="""
-        The step size.""")
+    step = param.Number(
+        default=0.1,
+        doc="""
+        The step size.""",
+    )
 
-    format = param.ClassSelector(class_=(str, TickFormatter,), doc="""
-        A format string or bokeh TickFormatter.""")
+    format = param.ClassSelector(
+        class_=(
+            str,
+            TickFormatter,
+        ),
+        doc="""
+        A format string or bokeh TickFormatter.""",
+    )
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'value_start': None, 'value_end': None, 'value_throttled': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {"name": "title", "value_start": None, "value_end": None, "value_throttled": None}
 
     _widget_type: ClassVar[Type[Model]] = _BkRangeSlider
 
     def __init__(self, **params):
         super().__init__(**params)
         values = [self.value[0], self.value[1], self.start, self.end]
-        if (all(v is None or isinstance(v, int) for v in values) and
-            'step' not in params):
+        if all(v is None or isinstance(v, int) for v in values) and "step" not in params:
             self.step = 1
 
 
@@ -619,23 +704,30 @@ class IntRangeSlider(RangeSlider):
     ... )
     """
 
-    start = param.Integer(default=0, doc="""
-        The lower bound.""")
+    start = param.Integer(
+        default=0,
+        doc="""
+        The lower bound.""",
+    )
 
-    end = param.Integer(default=1, doc="""
-        The upper bound.""")
+    end = param.Integer(
+        default=1,
+        doc="""
+        The upper bound.""",
+    )
 
-    step = param.Integer(default=1, doc="""
-        The step size""")
+    step = param.Integer(
+        default=1,
+        doc="""
+        The step size""",
+    )
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
-        if 'value' in msg:
-            msg['value'] = tuple([v if v is None else int(v)
-                                  for v in msg['value']])
-        if 'value_throttled' in msg:
-            msg['value_throttled'] = tuple([v if v is None else int(v)
-                                            for v in msg['value_throttled']])
+        if "value" in msg:
+            msg["value"] = tuple([v if v is None else int(v) for v in msg["value"]])
+        if "value_throttled" in msg:
+            msg["value_throttled"] = tuple([v if v is None else int(v) for v in msg["value_throttled"]])
         return msg
 
 
@@ -659,66 +751,86 @@ class DateRangeSlider(_SliderBase):
     ... )
     """
 
-    value = param.DateRange(default=None, allow_None=False, doc="""
+    value = param.DateRange(
+        default=None,
+        allow_None=False,
+        doc="""
         The selected range as a tuple of values. Updated when one of the handles is
-        dragged. Supports datetime.datetime, datetime.date, and np.datetime64 ranges.""")
+        dragged. Supports datetime.datetime, datetime.date, and np.datetime64 ranges.""",
+    )
 
-    value_start = param.Date(default=None, readonly=True, doc="""
-        The lower value of the selected range.""")
+    value_start = param.Date(
+        default=None,
+        readonly=True,
+        doc="""
+        The lower value of the selected range.""",
+    )
 
-    value_end = param.Date(default=None, readonly=True, doc="""
-        The upper value of the selected range.""")
+    value_end = param.Date(
+        default=None,
+        readonly=True,
+        doc="""
+        The upper value of the selected range.""",
+    )
 
-    value_throttled = param.DateRange(default=None, constant=True, nested_refs=True, doc="""
+    value_throttled = param.DateRange(
+        default=None,
+        constant=True,
+        nested_refs=True,
+        doc="""
         The selected range as a tuple of values. Updated one of the handles is released. Supports
-        datetime.datetime, datetime.date and np.datetime64 ranges""")
+        datetime.datetime, datetime.date and np.datetime64 ranges""",
+    )
 
-    start = param.Date(default=None, doc="""
-        The lower bound.""")
+    start = param.Date(
+        default=None,
+        doc="""
+        The lower bound.""",
+    )
 
-    end = param.Date(default=None, doc="""
-        The upper bound.""")
+    end = param.Date(
+        default=None,
+        doc="""
+        The upper bound.""",
+    )
 
-    step = param.Number(default=1, doc="""
-        The step size in days. Default is 1 day.""")
+    step = param.Number(
+        default=1,
+        doc="""
+        The step size in days. Default is 1 day.""",
+    )
 
-    format = param.String(default=None, doc="""
-        Datetime format used for parsing and formatting the date.""")
+    format = param.String(
+        default=None,
+        doc="""
+        Datetime format used for parsing and formatting the date.""",
+    )
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
-        'value': None, 'value_throttled': None, 'start': None, 'end': None,
-        'step': None
-    }
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {"value": None, "value_throttled": None, "start": None, "end": None, "step": None}
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': 'title', 'value_start': None, 'value_end': None,
-        'value_throttled': None
-    }
+    _rename: ClassVar[Mapping[str, str | None]] = {"name": "title", "value_start": None, "value_end": None, "value_throttled": None}
 
     _widget_type: ClassVar[Type[Model]] = _BkDateRangeSlider
 
     def __init__(self, **params):
-        if 'value' not in params:
+        if "value" not in params:
             value_to_None = False
-            for attr in ['start', 'end']:
+            for attr in ["start", "end"]:
                 if params.get(attr, getattr(self, attr)):
                     continue
-                self.param.warning(
-                    f'Parameter {attr!r} must be set for the widget to be rendered.'
-                )
+                self.param.warning(f"Parameter {attr!r} must be set for the widget to be rendered.")
                 value_to_None = True
             if value_to_None:
-                params['value'] = None
+                params["value"] = None
             else:
-                params['value'] = (params.get('start', self.start),
-                                params.get('end', self.end))
-        if params['value'] is not None:
-            v1, v2 = params['value']
-            params['value_start'], params['value_end'] = resolve_value(v1), resolve_value(v2)
+                params["value"] = (params.get("start", self.start), params.get("end", self.end))
+        if params["value"] is not None:
+            v1, v2 = params["value"]
+            params["value_start"], params["value_end"] = resolve_value(v1), resolve_value(v2)
         with edit_readonly(self):
             super().__init__(**params)
 
-    @param.depends('value', watch=True)
+    @param.depends("value", watch=True)
     def _sync_values(self):
         vs, ve = self.value
         with edit_readonly(self):
@@ -726,29 +838,28 @@ class DateRangeSlider(_SliderBase):
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
-        if msg.get('value', 'unchanged') is None:
-            del msg['value']
-        elif 'value' in msg:
-            v1, v2 = msg['value']
+        if msg.get("value", "unchanged") is None:
+            del msg["value"]
+        elif "value" in msg:
+            v1, v2 = msg["value"]
             if isinstance(v1, dt.datetime):
                 v1 = datetime_as_utctimestamp(v1)
             if isinstance(v2, dt.datetime):
                 v2 = datetime_as_utctimestamp(v2)
-            msg['value'] = (v1, v2)
-        if msg.get('value_throttled', 'unchanged') is None:
-            del msg['value_throttled']
+            msg["value"] = (v1, v2)
+        if msg.get("value_throttled", "unchanged") is None:
+            del msg["value_throttled"]
         return msg
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
-        if 'value' in msg:
-            v1, v2 = msg['value']
-            msg['value'] = (value_as_datetime(v1), value_as_datetime(v2))
-        if 'value_throttled' in msg:
-            v1, v2 = msg['value_throttled']
-            msg['value_throttled'] = (value_as_datetime(v1), value_as_datetime(v2))
+        if "value" in msg:
+            v1, v2 = msg["value"]
+            msg["value"] = (value_as_datetime(v1), value_as_datetime(v2))
+        if "value_throttled" in msg:
+            v1, v2 = msg["value_throttled"]
+            msg["value_throttled"] = (value_as_datetime(v1), value_as_datetime(v2))
         return msg
-
 
 
 class DatetimeRangeSlider(DateRangeSlider):
@@ -788,11 +899,19 @@ class _EditableContinuousSlider(CompositeWidget):
     the bounds.
     """
 
-    editable = param.Boolean(default=True, doc="""
-        Whether the value is editable via the text input.""")
+    editable = param.Boolean(
+        default=True,
+        doc="""
+        Whether the value is editable via the text input.""",
+    )
 
-    show_value = param.Boolean(default=False, readonly=True, precedence=-1, doc="""
-        Whether to show the widget value.""")
+    show_value = param.Boolean(
+        default=False,
+        readonly=True,
+        precedence=-1,
+        doc="""
+        Whether to show the widget value.""",
+    )
 
     _composite_type: ClassVar[Type[Panel]] = Column
     _slider_widget: ClassVar[Type[Widget]]
@@ -800,30 +919,37 @@ class _EditableContinuousSlider(CompositeWidget):
     __abstract = True
 
     def __init__(self, **params):
-        if 'width' not in params and 'sizing_mode' not in params:
-            params['width'] = 300
+        if "width" not in params and "sizing_mode" not in params:
+            params["width"] = 300
         self._validate_init_bounds(params)
         super().__init__(**params)
-        self._label = StaticText(margin=0, align='end')
+        self._label = StaticText(margin=0, align="end")
         self._slider = self._slider_widget(
-            value=self.value, margin=(0, 0, 5, 0), sizing_mode='stretch_width',
+            value=self.value,
+            margin=(0, 0, 5, 0),
+            sizing_mode="stretch_width",
         )
-        self._slider.param.watch(self._sync_value, 'value')
-        self._slider.param.watch(self._sync_value, 'value_throttled')
+        self._slider.param.watch(self._sync_value, "value")
+        self._slider.param.watch(self._sync_value, "value_throttled")
 
         self._value_edit = self._input_widget(
-            margin=0, align='end', css_classes=['slider-edit'],
-            stylesheets=[f'{CDN_DIST}css/editable_slider.css'],
+            margin=0,
+            align="end",
+            css_classes=["slider-edit"],
+            stylesheets=[f"{CDN_DIST}css/editable_slider.css"],
             format=self.format,
         )
-        self._value_edit.param.watch(self._sync_value, 'value')
-        self._value_edit.param.watch(self._sync_value, 'value_throttled')
-        self._value_edit.jscallback(args={'slider': self._slider}, value="""
+        self._value_edit.param.watch(self._sync_value, "value")
+        self._value_edit.param.watch(self._sync_value, "value_throttled")
+        self._value_edit.jscallback(
+            args={"slider": self._slider},
+            value="""
         if (cb_obj.value < slider.start)
           slider.start = cb_obj.value
         else if (cb_obj.value > slider.end)
           slider.end = cb_obj.value
-        """)
+        """,
+        )
 
         label = Row(self._label, self._value_edit)
         self._composite.extend([label, self._slider])
@@ -867,47 +993,48 @@ class _EditableContinuousSlider(CompositeWidget):
         if "value" not in params and "end" in params:
             params["value"] = params["end"]
 
-    @param.depends('width', 'height', 'sizing_mode', watch=True)
+    @param.depends("width", "height", "sizing_mode", watch=True)
     def _update_layout(self):
         self._value_edit.sizing_mode = self.sizing_mode
-        if self.sizing_mode not in ('stretch_width', 'stretch_both'):
-            w = (self.width or 300)//4
+        if self.sizing_mode not in ("stretch_width", "stretch_both"):
+            w = (self.width or 300) // 4
             self._value_edit.width = w
 
-    @param.depends('disabled', 'editable', watch=True)
+    @param.depends("disabled", "editable", watch=True)
     def _update_editable(self):
         self._value_edit.disabled = (not self.editable) or self.disabled
 
-    @param.depends('disabled', watch=True)
+    @param.depends("disabled", watch=True)
     def _update_disabled(self):
         self._slider.disabled = self.disabled
 
-    @param.depends('name', watch=True)
+    @param.depends("name", watch=True)
     def _update_name(self):
         if self.name:
-            label = f'{self.name}:'
+            label = f"{self.name}:"
             margin = (0, 10, 0, 0)
         else:
-            label = ''
+            label = ""
             margin = (0, 0, 0, 0)
-        self._label.param.update(**{'margin': margin, 'value': label})
+        self._label.param.update(**{"margin": margin, "value": label})
 
-    @param.depends('start', 'end', 'step', 'bar_color', 'direction',
-                   'show_value', 'tooltips', 'format', watch=True)
+    @param.depends("start", "end", "step", "bar_color", "direction", "show_value", "tooltips", "format", watch=True)
     def _update_slider(self):
-        self._slider.param.update(**{
-            'format': self.format,
-            'start': self.start,
-            'end': self.end,
-            'step': self.step,
-            'bar_color': self.bar_color,
-            'direction': self.direction,
-            'show_value': self.show_value,
-            'tooltips': self.tooltips
-        })
+        self._slider.param.update(
+            **{
+                "format": self.format,
+                "start": self.start,
+                "end": self.end,
+                "step": self.step,
+                "bar_color": self.bar_color,
+                "direction": self.direction,
+                "show_value": self.show_value,
+                "tooltips": self.tooltips,
+            }
+        )
         self._value_edit.step = self.step
 
-    @param.depends('value', watch=True)
+    @param.depends("value", watch=True)
     def _update_value(self):
         self._slider.value = self.value
         self._value_edit.value = self.value
@@ -950,11 +1077,17 @@ class EditableFloatSlider(_EditableContinuousSlider, FloatSlider):
     ... )
     """
 
-    fixed_start = param.Number(default=None, doc="""
-        A fixed lower bound for the slider and input.""")
+    fixed_start = param.Number(
+        default=None,
+        doc="""
+        A fixed lower bound for the slider and input.""",
+    )
 
-    fixed_end = param.Number(default=None, doc="""
-        A fixed upper bound for the slider and input.""")
+    fixed_end = param.Number(
+        default=None,
+        doc="""
+        A fixed upper bound for the slider and input.""",
+    )
 
     _slider_widget: ClassVar[Type[Widget]] = FloatSlider
     _input_widget: ClassVar[Type[Widget]] = FloatInput
@@ -975,11 +1108,17 @@ class EditableIntSlider(_EditableContinuousSlider, IntSlider):
     ... )
     """
 
-    fixed_start = param.Integer(default=None, doc="""
-        A fixed lower bound for the slider and input.""")
+    fixed_start = param.Integer(
+        default=None,
+        doc="""
+        A fixed lower bound for the slider and input.""",
+    )
 
-    fixed_end = param.Integer(default=None, doc="""
-       A fixed upper bound for the slider and input.""")
+    fixed_end = param.Integer(
+        default=None,
+        doc="""
+       A fixed upper bound for the slider and input.""",
+    )
 
     _slider_widget: ClassVar[Type[Widget]] = IntSlider
     _input_widget: ClassVar[Type[Widget]] = IntInput
@@ -1000,62 +1139,88 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
     ... )
     """
 
-    value = param.Range(default=(0, 1), allow_None=False, doc="""
-        Current range value. Updated when a handle is dragged.""")
+    value = param.Range(
+        default=(0, 1),
+        allow_None=False,
+        doc="""
+        Current range value. Updated when a handle is dragged.""",
+    )
 
-    value_throttled = param.Range(default=None, constant=True, doc="""
-        The value of the slider. Updated when the handle is released.""")
+    value_throttled = param.Range(
+        default=None,
+        constant=True,
+        doc="""
+        The value of the slider. Updated when the handle is released.""",
+    )
 
-    start = param.Number(default=0., doc="Lower bound of the range.")
+    start = param.Number(default=0.0, doc="Lower bound of the range.")
 
-    end = param.Number(default=1., doc="Upper bound of the range.")
+    end = param.Number(default=1.0, doc="Upper bound of the range.")
 
-    fixed_start = param.Number(default=None, doc="""
-        A fixed lower bound for the slider and input.""")
+    fixed_start = param.Number(
+        default=None,
+        doc="""
+        A fixed lower bound for the slider and input.""",
+    )
 
-    fixed_end = param.Number(default=None, doc="""
-        A fixed upper bound for the slider and input.""")
+    fixed_end = param.Number(
+        default=None,
+        doc="""
+        A fixed upper bound for the slider and input.""",
+    )
 
     step = param.Number(default=0.1, doc="Slider and number input step.")
 
-    editable = param.Tuple(default=(True, True), doc="""
-        Whether the lower and upper values are editable.""")
+    editable = param.Tuple(
+        default=(True, True),
+        doc="""
+        Whether the lower and upper values are editable.""",
+    )
 
-    format = param.ClassSelector(default='0.0[0000]', class_=(str, TickFormatter,), doc="""
-        Allows defining a custom format string or bokeh TickFormatter.""")
+    format = param.ClassSelector(
+        default="0.0[0000]",
+        class_=(
+            str,
+            TickFormatter,
+        ),
+        doc="""
+        Allows defining a custom format string or bokeh TickFormatter.""",
+    )
 
-    show_value = param.Boolean(default=False, readonly=True, precedence=-1, doc="""
-        Whether to show the widget value.""")
+    show_value = param.Boolean(
+        default=False,
+        readonly=True,
+        precedence=-1,
+        doc="""
+        Whether to show the widget value.""",
+    )
 
     _composite_type: ClassVar[Type[Panel]] = Column
 
     def __init__(self, **params):
-        if 'width' not in params and 'sizing_mode' not in params:
-            params['width'] = 300
+        if "width" not in params and "sizing_mode" not in params:
+            params["width"] = 300
         self._validate_init_bounds(params)
         super().__init__(**params)
-        self._label = StaticText(margin=0, align='end')
+        self._label = StaticText(margin=0, align="end")
         self._slider = RangeSlider(margin=(0, 0, 5, 0), show_value=False)
-        self._slider.param.watch(self._sync_value, 'value')
-        self._slider.param.watch(self._sync_value, 'value_throttled')
-        self._start_edit = FloatInput(
-            css_classes=['slider-edit'], stylesheets=[f'{CDN_DIST}css/editable_slider.css'],
-            min_width=50, margin=0, format=self.format
-        )
+        self._slider.param.watch(self._sync_value, "value")
+        self._slider.param.watch(self._sync_value, "value_throttled")
+        self._start_edit = FloatInput(css_classes=["slider-edit"], stylesheets=[f"{CDN_DIST}css/editable_slider.css"], min_width=50, margin=0, format=self.format)
         self._end_edit = FloatInput(
-            css_classes=['slider-edit'], stylesheets=[f'{CDN_DIST}css/editable_slider.css'],
-            min_width=50, margin=(0, 0, 0, 10), format=self.format
+            css_classes=["slider-edit"], stylesheets=[f"{CDN_DIST}css/editable_slider.css"], min_width=50, margin=(0, 0, 0, 10), format=self.format
         )
-        self._start_edit.param.watch(self._sync_start_value, 'value')
-        self._start_edit.param.watch(self._sync_start_value, 'value_throttled')
-        self._end_edit.param.watch(self._sync_end_value, 'value')
-        self._end_edit.param.watch(self._sync_end_value, 'value_throttled')
+        self._start_edit.param.watch(self._sync_start_value, "value")
+        self._start_edit.param.watch(self._sync_start_value, "value_throttled")
+        self._end_edit.param.watch(self._sync_end_value, "value")
+        self._end_edit.param.watch(self._sync_end_value, "value_throttled")
 
-        sep = StaticText(value='...', margin=(0, 5, 0, 5), align='end')
-        edit = Row(self._label, self._start_edit, sep, self._end_edit,
-                   sizing_mode='stretch_width', margin=0)
+        sep = StaticText(value="...", margin=(0, 5, 0, 5), align="end")
+        edit = Row(self._label, self._start_edit, sep, self._end_edit, sizing_mode="stretch_width", margin=0)
         self._composite.extend([edit, self._slider])
-        self._start_edit.jscallback(args={'slider': self._slider, 'end': self._end_edit}, value="""
+        self._start_edit.jscallback(
+            args={"slider": self._slider, "end": self._end_edit},
+            value="""
         // start value always smaller than the end value
         if (cb_obj.value >= end.value) {
           cb_obj.value = end.value
@@ -1066,8 +1231,11 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         } else if (cb_obj.value > slider.end) {
           slider.end = cb_obj.value
         }
-        """)
-        self._end_edit.jscallback(args={'slider': self._slider ,'start': self._start_edit}, value="""
+        """,
+        )
+        self._end_edit.jscallback(
+            args={"slider": self._slider, "start": self._start_edit},
+            value="""
         // end value always larger than the start value
         if (cb_obj.value <= start.value) {
           cb_obj.value = start.value
@@ -1078,7 +1246,8 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         } else if (cb_obj.value > slider.end) {
           slider.end = cb_obj.value
         }
-        """)
+        """,
+        )
         self._update_editable()
         self._update_disabled()
         self._update_layout()
@@ -1123,51 +1292,52 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
             start = params.get("start", end - params.get("step", 1))
             params["value"] = (start, end)
 
-    @param.depends('disabled', watch=True)
+    @param.depends("disabled", watch=True)
     def _update_disabled(self):
         self._slider.disabled = self.disabled
 
-    @param.depends('disabled', 'editable', watch=True)
+    @param.depends("disabled", "editable", watch=True)
     def _update_editable(self):
         self._start_edit.disabled = (not self.editable[0]) or self.disabled
         self._end_edit.disabled = (not self.editable[1]) or self.disabled
 
-    @param.depends('name', watch=True)
+    @param.depends("name", watch=True)
     def _update_name(self):
         if self.name:
-            label = f'{self.name}:'
+            label = f"{self.name}:"
             margin = (0, 10, 0, 0)
         else:
-            label = ''
+            label = ""
             margin = (0, 0, 0, 0)
-        self._label.param.update(**{'margin': margin, 'value': label})
+        self._label.param.update(**{"margin": margin, "value": label})
 
-    @param.depends('width', 'height', 'sizing_mode', watch=True)
+    @param.depends("width", "height", "sizing_mode", watch=True)
     def _update_layout(self):
         self._start_edit.sizing_mode = self.sizing_mode
         self._end_edit.sizing_mode = self.sizing_mode
-        if self.sizing_mode not in ('stretch_width', 'stretch_both'):
-            w = (self.width or 300)//4
+        if self.sizing_mode not in ("stretch_width", "stretch_both"):
+            w = (self.width or 300) // 4
             self._start_edit.width = w
             self._end_edit.width = w
 
-    @param.depends('start', 'end', 'step', 'bar_color', 'direction',
-                   'show_value', 'tooltips', 'name', 'format', watch=True)
+    @param.depends("start", "end", "step", "bar_color", "direction", "show_value", "tooltips", "name", "format", watch=True)
     def _update_slider(self):
-        self._slider.param.update(**{
-            'format': self.format,
-            'start': self.start,
-            'end': self.end,
-            'step': self.step,
-            'bar_color': self.bar_color,
-            'direction': self.direction,
-            'show_value': self.show_value,
-            'tooltips': self.tooltips,
-        })
+        self._slider.param.update(
+            **{
+                "format": self.format,
+                "start": self.start,
+                "end": self.end,
+                "step": self.step,
+                "bar_color": self.bar_color,
+                "direction": self.direction,
+                "show_value": self.show_value,
+                "tooltips": self.tooltips,
+            }
+        )
         self._start_edit.step = self.step
         self._end_edit.step = self.step
 
-    @param.depends('value', watch=True)
+    @param.depends("value", watch=True)
     def _update_value(self):
         self._slider.value = self.value
         self._start_edit.value = self.value[0]
@@ -1178,24 +1348,20 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
             self.param.update(**{event.name: event.new})
 
     def _sync_start_value(self, event):
-        if event.name == 'value':
+        if event.name == "value":
             end = self.value[1] if self.value else self.end
         else:
             end = self.value_throttled[1] if self.value_throttled else self.end
         with param.edit_constant(self):
-            self.param.update(
-                **{event.name: (event.new, end)}
-            )
+            self.param.update(**{event.name: (event.new, end)})
 
     def _sync_end_value(self, event):
-        if event.name == 'value':
+        if event.name == "value":
             start = self.value[0] if self.value else self.start
         else:
             start = self.value_throttled[0] if self.value_throttled else self.start
         with param.edit_constant(self):
-            self.param.update(
-                **{event.name: (start, event.new)}
-            )
+            self.param.update(**{event.name: (start, event.new)})
 
     @param.depends("start", "end", "fixed_start", "fixed_end", watch=True)
     def _update_bounds(self):

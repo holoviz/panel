@@ -7,9 +7,7 @@ from ..compiler import (
 
 
 class Bundle(Subcommand):
-    ''' Subcommand to generate a new encryption key.
-
-    '''
+    """Subcommand to generate a new encryption key."""
 
     #: name for this subcommand
     name = "bundle"
@@ -17,38 +15,14 @@ class Bundle(Subcommand):
     help = "Bundle resources"
 
     args = (
-        ('--all', dict(
-            action  = 'store_true',
-            help    = "Whether to bundle everything"
-        )),
-        ('--resource-urls', dict(
-            action  = 'store_true',
-            help    = "Whether to bundle the global resources"
-        )),
-        ('--templates', dict(
-            action  = 'store_true',
-            help    = "Whether to bundle the template resources"
-        )),
-        ('--themes', dict(
-            action  = 'store_true',
-            help    = "Whether to bundle the theme resources"
-        )),
-        ('--models', dict(
-            action  = 'store_true',
-            help    = "Whether to bundle the model resources"
-        )),
-        ('--icons', dict(
-            action  = 'store_true',
-            help    = "Whether to bundle icons."
-        )),
-        ('--verbose', dict(
-            action  = 'store_true',
-            help    = "Whether to print progress"
-        )),
-        ('--only-local', dict(
-            action  = 'store_true',
-            help    = "Whether to bundle only local resources"
-        )),
+        ("--all", dict(action="store_true", help="Whether to bundle everything")),
+        ("--resource-urls", dict(action="store_true", help="Whether to bundle the global resources")),
+        ("--templates", dict(action="store_true", help="Whether to bundle the template resources")),
+        ("--themes", dict(action="store_true", help="Whether to bundle the theme resources")),
+        ("--models", dict(action="store_true", help="Whether to bundle the model resources")),
+        ("--icons", dict(action="store_true", help="Whether to bundle icons.")),
+        ("--verbose", dict(action="store_true", help="Whether to print progress")),
+        ("--only-local", dict(action="store_true", help="Whether to bundle only local resources")),
     )
 
     def invoke(self, args):

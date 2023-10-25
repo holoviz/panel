@@ -45,8 +45,11 @@ def _yield_abbreviations_for_parameter(parameter, kwargs):
         if name in kwargs:
             value = kwargs.pop(name)
         elif ann is not empty:
-            param.main.param.warning("Using function annotations to implicitly specify interactive controls is deprecated. "
-                               "Use an explicit keyword argument for the parameter instead.", DeprecationWarning)
+            param.main.param.warning(
+                "Using function annotations to implicitly specify interactive controls is deprecated. "
+                "Use an explicit keyword argument for the parameter instead.",
+                DeprecationWarning,
+            )
             value = ann
         elif default is not empty:
             value = default
@@ -63,27 +66,27 @@ def _yield_abbreviations_for_parameter(parameter, kwargs):
 
 
 class interactive(PaneBase):
+    default_layout = param.ClassSelector(default=Column, class_=(Panel), is_instance=False)
 
-    default_layout = param.ClassSelector(default=Column, class_=(Panel),
-                                         is_instance=False)
+    manual_update = param.Boolean(
+        default=False,
+        doc="""
+        Whether to update manually by clicking on button.""",
+    )
 
-    manual_update = param.Boolean(default=False, doc="""
-        Whether to update manually by clicking on button.""")
-
-    manual_name = param.String(default='Run Interact')
+    manual_name = param.String(default="Run Interact")
 
     _pane = param.ClassSelector(class_=Viewable)
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'_pane': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {"_pane": None}
 
     def __init__(self, object, params={}, **kwargs):
         if signature is None:
-            raise ImportError('interact requires either recent Python version '
-                              '(>=3.3 or IPython to inspect function signatures.')
+            raise ImportError("interact requires either recent Python version " "(>=3.3 or IPython to inspect function signatures.")
 
         super().__init__(object, **params)
 
-        self.throttled = kwargs.pop('throttled', False)
+        self.throttled = kwargs.pop("throttled", False)
         new_kwargs = self.find_abbreviations(kwargs)
         # Before we proceed, let's make sure that the user has passed a set of args+kwargs
         # that will lead to a valid call of the function. This protects against unspecified
@@ -94,11 +97,11 @@ class interactive(PaneBase):
             # if we can't inspect, we can't validate
             pass
         else:
-            getcallargs(object, **{n:v for n,v,_ in new_kwargs})
+            getcallargs(object, **{n: v for n, v, _ in new_kwargs})
 
         widgets = self.widgets_from_abbreviations(new_kwargs)
         if self.manual_update:
-            widgets.append(('manual', Button(name=self.manual_name)))
+            widgets.append(("manual", Button(name=self.manual_name)))
         self._widgets = OrderedDict(widgets)
         pane = self.object(**self.kwargs)
         if isinstance(pane, Viewable):
@@ -109,34 +112,31 @@ class interactive(PaneBase):
             self._internal = True
         self._inner_layout = Row(self._pane)
         widgets = [widget for _, widget in widgets if isinstance(widget, Widget)]
-        if 'name' in params:
-            widgets.insert(0, HTML('<h2>%s</h2>' % self.name))
+        if "name" in params:
+            widgets.insert(0, HTML("<h2>%s</h2>" % self.name))
         self.widget_box = Column(*widgets)
         self.layout.objects = [self.widget_box, self._inner_layout]
         self._link_widgets()
         self._sync_layout()
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Model API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         return self._inner_layout._get_model(doc, root, parent, comm)
 
-    @param.depends('_pane', '_pane.sizing_mode', '_pane.width_policy', '_pane.height_policy', watch=True)
+    @param.depends("_pane", "_pane.sizing_mode", "_pane.width_policy", "_pane.height_policy", watch=True)
     def _sync_layout(self):
-        if not hasattr(self, '_inner_layout'):
+        if not hasattr(self, "_inner_layout"):
             return
-        opts = {
-            k: v for k, v in self._pane.param.values().items()
-            if k in ('sizing_mode', 'width_policy', 'height_policy')
-        }
+        opts = {k: v for k, v in self._pane.param.values().items() if k in ("sizing_mode", "width_policy", "height_policy")}
         self._inner_layout.param.update(opts)
         self.layout.param.update(opts)
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Callback API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
     @property
     def _synced_params(self):
@@ -144,17 +144,16 @@ class interactive(PaneBase):
 
     def _link_widgets(self):
         if self.manual_update:
-            widgets = [('manual', self._widgets['manual'])]
+            widgets = [("manual", self._widgets["manual"])]
         else:
             widgets = self._widgets.items()
 
         for name, widget_obj in widgets:
+
             def update_pane(change):
                 # Try updating existing pane
                 new_object = self.object(**self.kwargs)
-                new_pane, internal = ReplacementPane._update_from_object(
-                    new_object, self._pane, self._internal
-                )
+                new_pane, internal = ReplacementPane._update_from_object(new_object, self._pane, self._internal)
                 if new_pane is None:
                     return
 
@@ -163,12 +162,12 @@ class interactive(PaneBase):
                 self._inner_layout[0] = new_pane
                 self._internal = internal
 
-            if self.throttled and hasattr(widget_obj, 'value_throttled'):
-                v = 'value_throttled'
+            if self.throttled and hasattr(widget_obj, "value_throttled"):
+                v = "value_throttled"
             else:
-                v = 'value'
+                v = "value"
 
-            pname = 'clicks' if name == 'manual' else v
+            pname = "clicks" if name == "manual" else v
             watcher = widget_obj.param.watch(update_pane, pname)
             self._internal_callbacks.append(watcher)
 
@@ -176,14 +175,13 @@ class interactive(PaneBase):
         self._inner_layout._cleanup(root)
         super()._cleanup(root)
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Public API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
     @property
     def kwargs(self):
-        return {k: widget.value for k, widget in self._widgets.items()
-                if k != 'manual'}
+        return {k: widget.value for k, widget in self._widgets.items() if k != "manual"}
 
     def signature(self):
         return signature(self.object)
@@ -197,12 +195,12 @@ class interactive(PaneBase):
             sig = self.signature()
         except (ValueError, TypeError):
             # can't inspect, no info from function; only use kwargs
-            return [ (key, value, value) for key, value in kwargs.items() ]
+            return [(key, value, value) for key, value in kwargs.items()]
 
         for parameter in sig.parameters.values():
             for name, value, default in _yield_abbreviations_for_parameter(parameter, kwargs):
                 if value is empty:
-                    raise ValueError('cannot find widget or abbreviation for argument: {!r}'.format(name))
+                    raise ValueError("cannot find widget or abbreviation for argument: {!r}".format(name))
                 new_kwargs.append((name, value, default))
         return new_kwargs
 
@@ -248,6 +246,7 @@ class _InteractFactory(object):
     kwargs: dict
       A dict of **kwargs to use for widgets.
     """
+
     def __init__(self, cls, options, kwargs=None):
         self.cls = cls
         self.opts = options
@@ -334,7 +333,7 @@ class _InteractFactory(object):
             #
             # Simply return the new factory
             return self
-        elif 'throttled' in check_argspec(f).args:
+        elif "throttled" in check_argspec(f).args:
             raise ValueError('A function cannot have "throttled" as an argument')
 
         # positional arg support in: https://gist.github.com/8851331

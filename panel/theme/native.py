@@ -11,24 +11,12 @@ from .base import (
 class NativeDefaultTheme(DefaultTheme):
     ""
 
-class NativeDarkTheme(DarkTheme):
 
-    modifiers = {
-        Number: {
-            'default_color': 'white'
-        }
-    }
+class NativeDarkTheme(DarkTheme):
+    modifiers = {Number: {"default_color": "white"}}
 
 
 class Native(Design):
+    modifiers = {Viewable: {"stylesheets": [Inherit, f"{CDN_DIST}bundled/theme/native.css"]}}
 
-    modifiers = {
-        Viewable: {
-            'stylesheets': [Inherit, f'{CDN_DIST}bundled/theme/native.css']
-        }
-    }
-
-    _themes = {
-        'dark': NativeDarkTheme,
-        'default': NativeDefaultTheme
-    }
+    _themes = {"dark": NativeDarkTheme, "default": NativeDefaultTheme}

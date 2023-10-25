@@ -42,13 +42,13 @@ template = """
 def test_template_links_axes(document, comm):
     tmplt = Template(template)
 
-    p1 = HoloViews(hv.Curve([1, 2, 3]), backend='bokeh')
-    p2 = HoloViews(hv.Curve([1, 2, 3]), backend='bokeh')
-    p3 = HoloViews(hv.Curve([1, 2, 3]), backend='bokeh')
+    p1 = HoloViews(hv.Curve([1, 2, 3]), backend="bokeh")
+    p2 = HoloViews(hv.Curve([1, 2, 3]), backend="bokeh")
+    p3 = HoloViews(hv.Curve([1, 2, 3]), backend="bokeh")
     row = Row(p2, p3)
 
-    tmplt.add_panel('A', p1)
-    tmplt.add_panel('B', row)
+    tmplt.add_panel("A", p1)
+    tmplt.add_panel("B", row)
 
     tmplt._init_doc(document, comm, notebook=True)
 
@@ -65,15 +65,15 @@ def test_template_session_destroy(document, comm):
     tmplt = Template(template)
 
     widget = FloatSlider()
-    row = Row('A', 'B')
+    row = Row("A", "B")
 
-    tmplt.add_panel('A', widget)
-    tmplt.add_panel('B', row)
+    tmplt.add_panel("A", widget)
+    tmplt.add_panel("B", row)
 
     tmplt._init_doc(document, comm, notebook=True)
     session_context = param.Parameterized()
     session_context._document = document
-    session_context.id = 'Some ID'
+    session_context.id = "Some ID"
 
     assert len(widget._models) == 2
     assert len(row._models) == 2
@@ -89,99 +89,97 @@ def test_template_session_destroy(document, comm):
     assert len(row[1]._models) == 0
 
 
-list_templates = [
-    t for t in param.concrete_descendents(BasicTemplate).values()
-    if not issubclass(t, ReactTemplate)
-]
+list_templates = [t for t in param.concrete_descendents(BasicTemplate).values() if not issubclass(t, ReactTemplate)]
 
-@pytest.mark.parametrize('template', list_templates)
+
+@pytest.mark.parametrize("template", list_templates)
 def test_basic_template(template, document, comm):
-    tmplt = template(title='BasicTemplate', header_background='blue', header_color='red')
+    tmplt = template(title="BasicTemplate", header_background="blue", header_color="red")
 
     tmplt._update_vars()
     tvars = tmplt._render_variables
 
-    assert tvars['app_title'] == 'BasicTemplate'
-    assert tvars['header_background'] == 'blue'
-    assert tvars['header_color'] == 'red'
-    assert tvars['nav'] == False
-    assert tvars['busy'] == True
-    assert tvars['header'] == False
+    assert tvars["app_title"] == "BasicTemplate"
+    assert tvars["header_background"] == "blue"
+    assert tvars["header_color"] == "red"
+    assert tvars["nav"] == False
+    assert tvars["busy"] == True
+    assert tvars["header"] == False
 
     titems = tmplt._render_items
 
-    assert titems['busy_indicator'] == (tmplt.busy_indicator, [])
+    assert titems["busy_indicator"] == (tmplt.busy_indicator, [])
 
-    markdown = Markdown('# Some title')
+    markdown = Markdown("# Some title")
     tmplt.main.append(markdown)
 
-    assert titems[f'main-{id(markdown)}'] == (markdown, ['main'])
+    assert titems[f"main-{id(markdown)}"] == (markdown, ["main"])
 
     slider = FloatSlider()
     tmplt.sidebar.append(slider)
 
-    assert titems[f'nav-{id(slider)}'] == (slider, ['nav'])
-    assert tvars['nav'] == True
+    assert titems[f"nav-{id(slider)}"] == (slider, ["nav"])
+    assert tvars["nav"] == True
 
     tmplt.sidebar[:] = []
-    assert tvars['nav'] == False
-    assert f'nav-{id(slider)}' not in titems
+    assert tvars["nav"] == False
+    assert f"nav-{id(slider)}" not in titems
 
-    subtitle = Markdown('## Some subtitle')
+    subtitle = Markdown("## Some subtitle")
     tmplt.header.append(subtitle)
 
-    assert titems[f'header-{id(subtitle)}'] == (subtitle, ['header'])
-    assert tvars['header'] == True
+    assert titems[f"header-{id(subtitle)}"] == (subtitle, ["header"])
+    assert tvars["header"] == True
 
     tmplt.header[:] = []
-    assert f'header-{id(subtitle)}' not in titems
-    assert tvars['header'] == False
+    assert f"header-{id(subtitle)}" not in titems
+    assert tvars["header"] == False
 
 
 def test_template_server_title():
-    tmpl = VanillaTemplate(title='Main title')
+    tmpl = VanillaTemplate(title="Main title")
 
     doc = Document()
 
     with patch_curdoc(doc):
-        doc = tmpl.server_doc(title='Ignored title')
+        doc = tmpl.server_doc(title="Ignored title")
 
-    assert doc.title == 'Main title'
+    assert doc.title == "Main title"
 
 
 def test_react_template(document, comm):
-    tmplt = ReactTemplate(title='BasicTemplate', header_background='blue', header_color='red')
+    tmplt = ReactTemplate(title="BasicTemplate", header_background="blue", header_color="red")
 
     tmplt._update_vars()
     tvars = tmplt._render_variables
 
-    assert tvars['app_title'] == 'BasicTemplate'
-    assert tvars['header_background'] == 'blue'
-    assert tvars['header_color'] == 'red'
-    assert tvars['nav'] == False
-    assert tvars['busy'] == True
-    assert tvars['header'] == False
-    assert tvars['rowHeight'] == tmplt.row_height
-    assert tvars['breakpoints'] == tmplt.breakpoints
-    assert tvars['cols'] == tmplt.cols
+    assert tvars["app_title"] == "BasicTemplate"
+    assert tvars["header_background"] == "blue"
+    assert tvars["header_color"] == "red"
+    assert tvars["nav"] == False
+    assert tvars["busy"] == True
+    assert tvars["header"] == False
+    assert tvars["rowHeight"] == tmplt.row_height
+    assert tvars["breakpoints"] == tmplt.breakpoints
+    assert tvars["cols"] == tmplt.cols
 
-    markdown = Markdown('# Some title')
+    markdown = Markdown("# Some title")
     tmplt.main[:4, :6] = markdown
 
-    markdown2 = Markdown('# Some title')
+    markdown2 = Markdown("# Some title")
     tmplt.main[:4, 6:] = markdown2
 
-    layouts = {'lg': [{'h': 4, 'i': '1', 'w': 6, 'x': 0, 'y': 0},
-                      {'h': 4, 'i': '2', 'w': 6, 'x': 6, 'y': 0}],
-               'md': [{'h': 4, 'i': '1', 'w': 6, 'x': 0, 'y': 0},
-                      {'h': 4, 'i': '2', 'w': 6, 'x': 6, 'y': 0}]
-               }
+    layouts = {
+        "lg": [{"h": 4, "i": "1", "w": 6, "x": 0, "y": 0}, {"h": 4, "i": "2", "w": 6, "x": 6, "y": 0}],
+        "md": [{"h": 4, "i": "1", "w": 6, "x": 0, "y": 0}, {"h": 4, "i": "2", "w": 6, "x": 6, "y": 0}],
+    }
 
     for size in layouts:
         for layout in layouts[size]:
-            layout.update({'minW': 0, 'minH': 0})
+            layout.update({"minW": 0, "minH": 0})
 
-    assert json.loads(tvars['layouts']) == layouts
+    assert json.loads(tvars["layouts"]) == layouts
+
 
 @pytest.mark.parametrize(["template_class"], [(t,) for t in LIST_TEMPLATES])
 def test_list_template_insert_order(template_class):
@@ -196,11 +194,12 @@ def test_list_template_insert_order(template_class):
     objs = list(template._render_items.values())[4:]
     ((obj1, tag1), (obj2, tag2), (obj3, tag3), (obj4, tag4)) = objs
 
-    assert tag1 == tag2 == tag3 == tag4 == ['main']
+    assert tag1 == tag2 == tag3 == tag4 == ["main"]
     assert obj1.object == 0
     assert obj2.object == 1
     assert obj3.object == 2
     assert obj4.object == 3
+
 
 @pytest.mark.parametrize(["template_class"], [(item,) for item in TEMPLATES])
 def test_constructor(template_class):
@@ -209,11 +208,13 @@ def test_constructor(template_class):
     template_class(header=item, sidebar=item, main=item)
     template_class(header=items, sidebar=items, main=items)
 
+
 def test_constructor_grid_spec():
     item = Markdown("Hello World")
     grid = GridSpec(ncols=12)
-    grid[0:2, 3:4]=item
+    grid[0:2, 3:4] = item
     ReactTemplate(main=grid)
+
 
 def test_grid_template_override():
     item = Markdown("First")
@@ -227,4 +228,4 @@ def test_grid_template_override():
     ((obj, tags),) = objs
 
     assert obj.object == "Second"
-    assert tags == ['main']
+    assert tags == ["main"]

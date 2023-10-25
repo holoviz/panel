@@ -6,7 +6,7 @@ from ..util import jb_available
 
 @jb_available
 def test_ipywidget(document):
-    pane = Str('A')
+    pane = Str("A")
     widget = ipywidget(pane, doc=document)
 
     assert widget._view_count == 0
@@ -28,8 +28,7 @@ def test_ipywidget(document):
     assert len(pane._models) == 1
     prev_id = list(pane._models)[0]
 
-    widget.notify_change({'new': 1, 'old': 1, 'name': '_view_count',
-                          'type': 'change', 'model': widget})
+    widget.notify_change({"new": 1, "old": 1, "name": "_view_count", "type": "change", "model": widget})
     assert prev_id in pane._models
     assert len(pane._models) == 1
 

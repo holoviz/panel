@@ -24,7 +24,8 @@ if state._is_pyodide:
     from .pyodide import serve
 else:
     from .server import serve  # noqa
-    if 'django' in sys.modules:
+
+    if "django" in sys.modules:
         try:
             from . import django  # noqa
         except ImportError:
@@ -43,5 +44,5 @@ __all__ = (
     "serve",
     "state",
     "unlocked",
-    "with_lock"
+    "with_lock",
 )

@@ -19,9 +19,7 @@ def test_constructor_with__href():
     # Given
     href = "https://panel.holoviz.org:443/how_to/layout/spacing.html?color=blue#margin-parameter"
     # When
-    actual = Location(
-        href="https://panel.holoviz.org:443/how_to/layout/spacing.html?color=blue#margin-parameter"
-    )
+    actual = Location(href="https://panel.holoviz.org:443/how_to/layout/spacing.html?color=blue#margin-parameter")
     # Then
     assert actual.href == href
     assert actual.hostname == ""

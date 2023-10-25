@@ -38,9 +38,10 @@ def ds_as_cds(dataset):
     return data
 
 
-_containers = ['hconcat', 'vconcat', 'layer']
+_containers = ["hconcat", "vconcat", "layer"]
 
-SCHEMA_REGEX = re.compile('^v(\d+)\.\d+\.\d+.json')
+SCHEMA_REGEX = re.compile("^v(\d+)\.\d+\.\d+.json")
+
 
 def _isin(obj, attr):
     if isinstance(obj, dict):
@@ -48,61 +49,60 @@ def _isin(obj, attr):
     else:
         return hasattr(obj, attr)
 
+
 def _get_type(spec, version):
     if version >= 5:
         if isinstance(spec, dict):
-            return spec.get('select', {}).get('type', 'interval')
+            return spec.get("select", {}).get("type", "interval")
         elif isinstance(spec.select, dict):
-            return spec.select.get('type', 'interval')
+            return spec.select.get("type", "interval")
         else:
-            return getattr(spec.select, 'type', 'interval')
+            return getattr(spec.select, "type", "interval")
     else:
         if isinstance(spec, dict):
-            return spec.get('type', 'interval')
+            return spec.get("type", "interval")
         else:
-            return getattr(spec, 'type', 'interval')
+            return getattr(spec, "type", "interval")
+
 
 def _get_dimensions(spec):
     dimensions = {}
-    responsive_height = spec.get('height') == 'container'
-    responsive_width = spec.get('width') == 'container'
+    responsive_height = spec.get("height") == "container"
+    responsive_width = spec.get("width") == "container"
     if responsive_height and responsive_width:
-        dimensions['sizing_mode'] = 'stretch_both'
+        dimensions["sizing_mode"] = "stretch_both"
     elif responsive_width:
-        dimensions['sizing_mode'] = 'stretch_width'
+        dimensions["sizing_mode"] = "stretch_width"
     elif responsive_height:
-        dimensions['sizing_mode'] = 'stretch_height'
+        dimensions["sizing_mode"] = "stretch_height"
     return dimensions
+
 
 def _get_schema_version(obj, default_version: int = 5) -> int:
     if Vega.is_altair(obj):
-        schema = obj.to_dict().get('$schema', '')
+        schema = obj.to_dict().get("$schema", "")
     else:
-        schema = obj.get('$schema', '')
-    version = schema.split('/')[-1]
+        schema = obj.get("$schema", "")
+    version = schema.split("/")[-1]
     match = SCHEMA_REGEX.fullmatch(version)
     if match is None or not match.groups():
         return default_version
     return int(match.groups()[0])
+
 
 def _get_selections(obj, version=None):
     if obj is None:
         return {}
     elif version is None:
         version = _get_schema_version(obj)
-    key = 'params' if version >= 5 else 'selection'
+    key = "params" if version >= 5 else "selection"
     selections = {}
     if _isin(obj, key):
         params = obj[key]
         if version >= 5 and isinstance(params, list):
-            params = {
-                p.name if hasattr(p, 'name') else p['name']: p for p in params
-                if getattr(p, 'param_type', None) == 'selection' or _isin(p, 'select')
-            }
+            params = {p.name if hasattr(p, "name") else p["name"]: p for p in params if getattr(p, "param_type", None) == "selection" or _isin(p, "select")}
         try:
-            selections.update({
-                name: _get_type(spec, version) for name, spec in params.items()
-            })
+            selections.update({name: _get_type(spec, version) for name, spec in params.items()})
         except (AttributeError, TypeError):
             pass
     for c in _containers:
@@ -111,15 +111,16 @@ def _get_selections(obj, version=None):
                 selections.update(_get_selections(subobj, version=version))
     return selections
 
+
 def _to_json(obj):
     if isinstance(obj, dict):
         json = dict(obj)
-        if 'data' in json:
-            data = json['data']
+        if "data" in json:
+            data = json["data"]
             if isinstance(data, dict):
-                json['data'] = dict(data)
+                json["data"] = dict(data)
             elif isinstance(data, list):
-                json['data'] = [dict(d) for d in data]
+                json["data"] = [dict(d) for d in data]
         return json
     return obj.to_dict()
 
@@ -146,31 +147,40 @@ class Vega(ModelPane):
     >>> Vega(some_vegalite_dict_or_altair_object, height=240)
     """
 
-    debounce = param.ClassSelector(default=20, class_=(int, dict), doc="""
+    debounce = param.ClassSelector(
+        default=20,
+        class_=(int, dict),
+        doc="""
         Declares the debounce time in milliseconds either for all
-        events or if a dictionary is provided for individual events.""")
+        events or if a dictionary is provided for individual events.""",
+    )
 
-    selection = param.ClassSelector(class_=param.Parameterized, doc="""
+    selection = param.ClassSelector(
+        class_=param.Parameterized,
+        doc="""
         The Selection object reflects any selections available on the
-        supplied vega plot into Python.""")
+        supplied vega plot into Python.""",
+    )
 
-    show_actions = param.Boolean(default=False, doc="""
-        Whether to show Vega actions.""")
+    show_actions = param.Boolean(
+        default=False,
+        doc="""
+        Whether to show Vega actions.""",
+    )
 
-    theme = param.ObjectSelector(default=None, allow_None=True, objects=[
-        'excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'dark',
-        'latimes', 'urbaninstitute', 'googlecharts'])
+    theme = param.ObjectSelector(
+        default=None, allow_None=True, objects=["excel", "ggplot2", "quartz", "vox", "fivethirtyeight", "dark", "latimes", "urbaninstitute", "googlecharts"]
+    )
 
     priority: ClassVar[float | bool | None] = 0.8
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
-        'selection': None, 'debounce': None, 'object': 'data'}
+    _rename: ClassVar[Mapping[str, str | None]] = {"selection": None, "debounce": None, "object": "data"}
 
     _updates: ClassVar[bool] = True
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
-        self.param.watch(self._update_selections, ['object'])
+        self.param.watch(self._update_selections, ["object"])
         self._update_selections()
 
     @property
@@ -181,106 +191,96 @@ class Vega(ModelPane):
     def _throttle(self):
         default = self.param.debounce.default
         if isinstance(self.debounce, dict):
-            throttle = {
-                sel: self.debounce.get(sel, default)
-                for sel in self._selections
-            }
+            throttle = {sel: self.debounce.get(sel, default) for sel in self._selections}
         else:
             throttle = {sel: self.debounce or default for sel in self._selections}
         return throttle
 
     def _update_selections(self, *args):
-        params = {
-            e: param.Dict(allow_refs=False) if stype == 'interval' else param.List(allow_refs=False)
-            for e, stype in self._selections.items()
-        }
-        if self.selection and (set(self.selection.param) - {'name'}) == set(params):
+        params = {e: param.Dict(allow_refs=False) if stype == "interval" else param.List(allow_refs=False) for e, stype in self._selections.items()}
+        if self.selection and (set(self.selection.param) - {"name"}) == set(params):
             self.selection.param.update({p: None for p in params})
             return
-        self.selection = type('Selection', (param.Parameterized,), params)()
+        self.selection = type("Selection", (param.Parameterized,), params)()
 
     @classmethod
     def is_altair(cls, obj):
-        if 'altair' in sys.modules:
+        if "altair" in sys.modules:
             import altair as alt
+
             return isinstance(obj, alt.api.TopLevelMixin)
         return False
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
-        if isinstance(obj, dict) and 'vega' in obj.get('$schema', '').lower():
+        if isinstance(obj, dict) and "vega" in obj.get("$schema", "").lower():
             return True
         return cls.is_altair(obj)
 
     def _get_sources(self, json, sources=None):
         sources = {} if sources is None else dict(sources)
-        datasets = json.get('datasets', {})
+        datasets = json.get("datasets", {})
         for name in list(datasets):
             if name in sources or isinstance(datasets[name], dict):
                 continue
             data = datasets.pop(name)
-            if isinstance(data, list) and any(isinstance(d, dict) and 'geometry' in d for d in data):
+            if isinstance(data, list) and any(isinstance(d, dict) and "geometry" in d for d in data):
                 # Handle geometry records types
                 datasets[name] = data
                 continue
             columns = set(data[0]) if data else []
             if self.is_altair(self.object):
                 import altair as alt
-                if (not isinstance(self.object.data, (alt.Data, alt.UrlData, type(alt.Undefined))) and
-                    columns == set(self.object.data)):
+
+                if not isinstance(self.object.data, (alt.Data, alt.UrlData, type(alt.Undefined))) and columns == set(self.object.data):
                     data = ColumnDataSource.from_df(self.object.data)
                 else:
                     data = ds_as_cds(data)
                 sources[name] = ColumnDataSource(data=data)
             else:
                 sources[name] = ColumnDataSource(data=ds_as_cds(data))
-        data = json.get('data', {})
+        data = json.get("data", {})
         if isinstance(data, dict):
-            data = data.pop('values', {})
+            data = data.pop("values", {})
             if data:
-                sources['data'] = ColumnDataSource(data=ds_as_cds(data))
+                sources["data"] = ColumnDataSource(data=ds_as_cds(data))
         elif isinstance(data, list):
             for d in data:
-                if 'values' in d:
-                    sources[d['name']] = ColumnDataSource(data=ds_as_cds(d.pop('values')))
+                if "values" in d:
+                    sources[d["name"]] = ColumnDataSource(data=ds_as_cds(d.pop("values")))
         return sources
 
     def _process_event(self, event):
-        name = event.data['type']
+        name = event.data["type"]
         stype = self._selections.get(name)
-        value = event.data['value']
-        if stype != 'interval':
+        value = event.data["value"]
+        if stype != "interval":
             value = list(value)
         self.selection.param.update(**{name: value})
 
     def _process_param_change(self, params):
         props = super()._process_param_change(params)
-        if 'data' in props and props['data'] is not None:
-            props['data'] = _to_json(props['data'])
+        if "data" in props and props["data"] is not None:
+            props["data"] = _to_json(props["data"])
         return props
 
     def _get_properties(self, doc, sources={}):
         props = super()._get_properties(doc)
-        data = props['data']
+        data = props["data"]
         if data is not None:
             sources = self._get_sources(data, sources)
         dimensions = _get_dimensions(data) if data else {}
-        props['data'] = data
-        props['data_sources'] = sources
-        props['events'] = list(self._selections)
-        props['throttle'] = self._throttle
+        props["data"] = data
+        props["data_sources"] = sources
+        props["events"] = list(self._selections)
+        props["throttle"] = self._throttle
         props.update(dimensions)
         return props
 
-    def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
-    ) -> Model:
-        self._bokeh_model = lazy_load(
-            'panel.models.vega', 'VegaPlot', isinstance(comm, JupyterComm), root
-        )
+    def _get_model(self, doc: Document, root: Optional[Model] = None, parent: Optional[Model] = None, comm: Optional[Comm] = None) -> Model:
+        self._bokeh_model = lazy_load("panel.models.vega", "VegaPlot", isinstance(comm, JupyterComm), root)
         model = super()._get_model(doc, root, parent, comm)
-        self._register_events('vega_event', model=model, doc=doc, comm=comm)
+        self._register_events("vega_event", model=model, doc=doc, comm=comm)
         return model
 
     def _update(self, ref: str, model: Model) -> None:

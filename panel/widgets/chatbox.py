@@ -31,35 +31,60 @@ class ChatRow(CompositeWidget):
 
     value = param.List(doc="""The objects to display""")
 
-    align_name = param.Selector(default="start", objects=["start", "end"], doc="""
-        Whether to show the name at the start or end of the row""")
+    align_name = param.Selector(
+        default="start",
+        objects=["start", "end"],
+        doc="""
+        Whether to show the name at the start or end of the row""",
+    )
 
-    default_message_callable = param.Callable(default=None, doc="""
+    default_message_callable = param.Callable(
+        default=None,
+        doc="""
         The type of Panel object or callable to use if an item in value is not
         already rendered as a Panel object; if None, uses the
         pn.panel function to render a displayable Panel object.
-        If the item is not serializable, will fall back to pn.panel.""")
+        If the item is not serializable, will fall back to pn.panel.""",
+    )
 
-    icon = param.String(default=None, doc="""
-        The icon to display adjacent to the value""")
+    icon = param.String(
+        default=None,
+        doc="""
+        The icon to display adjacent to the value""",
+    )
 
-    liked = param.Boolean(default=False, doc="""
-        Whether a user liked the message""")
+    liked = param.Boolean(
+        default=False,
+        doc="""
+        Whether a user liked the message""",
+    )
 
-    margin = Margin(default=0, doc="""
+    margin = Margin(
+        default=0,
+        doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
+        or a four-tuple (top, right, bottom, left).""",
+    )
 
-    show_name = param.Boolean(default=True, doc="""
-        Whether to show the name of the user""")
+    show_name = param.Boolean(
+        default=True,
+        doc="""
+        Whether to show the name of the user""",
+    )
 
-    show_like = param.Boolean(default=True, doc="""
-        Whether to show the like button""")
+    show_like = param.Boolean(
+        default=True,
+        doc="""
+        Whether to show the like button""",
+    )
 
-    styles = param.Dict(default={}, doc="""
+    styles = param.Dict(
+        default={},
+        doc="""
         Dictionary of CSS properties and values to apply
-        message to the bubble.""")
+        message to the bubble.""",
+    )
 
     _composite_type: ClassVar[Type[ListPanel]] = Column
 
@@ -113,19 +138,12 @@ class ChatRow(CompositeWidget):
         )
 
         # create heart icon next to chat
-        self._like = Toggle(
-            name="♡", width=30, height=30, align="end", visible=show_like
-        )
+        self._like = Toggle(name="♡", width=30, height=30, align="end", visible=show_like)
         self._like.link(self, value="liked", bidirectional=True)
         self._like.param.watch(self._update_like, "value")
 
         # layout objects
-        message_layout = {
-            p: getattr(self, p)
-            for p in Layoutable.param
-            if p not in ("name", "height", "margin", "styles")
-            and getattr(self, p) is not None
-        }
+        message_layout = {p: getattr(self, p) for p in Layoutable.param if p not in ("name", "height", "margin", "styles") and getattr(self, p) is not None}
         horizontal_align = message_layout.get("align", "start")
         if isinstance(horizontal_align, tuple):
             horizontal_align = horizontal_align[0]
@@ -163,9 +181,7 @@ class ChatRow(CompositeWidget):
 
         self._composite[:] = [row]
 
-    def _serialize_obj(
-        self, obj: Any
-    ) -> Viewable:
+    def _serialize_obj(self, obj: Any) -> Viewable:
         """
         Convert an object to a Panel object.
         """
@@ -175,12 +191,8 @@ class ChatRow(CompositeWidget):
         stylesheets = ["p { margin-block-start: 0.2em; margin-block-end: 0.2em;}"]
         text_styles = {"color": self._bubble_styles.get("color")}
         try:
-            if self.default_message_callable is None or issubclass(
-                self.default_message_callable, PaneBase
-            ):
-                panel_obj = (self.default_message_callable or _panel)(
-                    obj, stylesheets=stylesheets, styles=text_styles
-                )
+            if self.default_message_callable is None or issubclass(self.default_message_callable, PaneBase):
+                panel_obj = (self.default_message_callable or _panel)(obj, stylesheets=stylesheets, styles=text_styles)
             else:
                 panel_obj = self.default_message_callable(value=obj)
         except ValueError:
@@ -216,49 +228,84 @@ class ChatBox(CompositeWidget):
     >>> ChatBox(value=[{"You": "Hello!"}, {"Bot": ["How may I help?", "I'm a bot."]}])
     """
 
-    value = param.List(default=[], item_type=Dict, doc="""
+    value = param.List(
+        default=[],
+        item_type=Dict,
+        doc="""
         List of messages as dicts, mapping user to message(s),
         e.g. `[{'You': ['Welcome!', 'Good bye!']}]` The message(s) can be
-        any Python object that can be rendered by Panel.""")
+        any Python object that can be rendered by Panel.""",
+    )
 
-    primary_name = param.String(default=None, doc="""Name of the primary user (the one who inputs messages);
-        the first key found in value will be used if unspecified.""")
+    primary_name = param.String(
+        default=None,
+        doc="""Name of the primary user (the one who inputs messages);
+        the first key found in value will be used if unspecified.""",
+    )
 
-    allow_input = param.Boolean(default=True, doc="""
-        Whether to allow the primary user to interactively enter messages.""")
+    allow_input = param.Boolean(
+        default=True,
+        doc="""
+        Whether to allow the primary user to interactively enter messages.""",
+    )
 
-    allow_likes = param.Boolean(default=False, doc="""
-        Whether to allow the primary user to interactively like messages.""")
+    allow_likes = param.Boolean(
+        default=False,
+        doc="""
+        Whether to allow the primary user to interactively like messages.""",
+    )
 
-    ascending = param.Boolean(default=False, doc="""
+    ascending = param.Boolean(
+        default=False,
+        doc="""
         Whether to display messages in ascending time order.  If true,
         the latest messages and message_input_widgets will be at the
-        bottom of the chat box. Otherwise, they will be at the top.""")
+        bottom of the chat box. Otherwise, they will be at the top.""",
+    )
 
-    default_message_callable = param.Callable(default=None, doc="""
+    default_message_callable = param.Callable(
+        default=None,
+        doc="""
         The type of Panel object to use for items in value if they are
         not already rendered as a Panel object; if None, uses the
         pn.panel function to render a displayable Panel object.
         If the item is not serializable, will fall back to pn.panel.
-        """)
+        """,
+    )
 
-    message_icons = param.Dict(default={}, doc="""
+    message_icons = param.Dict(
+        default={},
+        doc="""
         Dictionary mapping name of messages to their icons,
-        e.g. `[{'You': 'path/to/icon.png'}]`""")
+        e.g. `[{'You': 'path/to/icon.png'}]`""",
+    )
 
-    message_colors = param.Dict(default={}, doc="""
+    message_colors = param.Dict(
+        default={},
+        doc="""
         Dictionary mapping name of messages to their colors, e.g.
-        `[{'You': 'red'}]`""")
+        `[{'You': 'red'}]`""",
+    )
 
-    message_hue = param.Integer(default=None, bounds=(0, 360), doc="""
-        Base hue of the message bubbles if message_colors is not specified for a user.""")
+    message_hue = param.Integer(
+        default=None,
+        bounds=(0, 360),
+        doc="""
+        Base hue of the message bubbles if message_colors is not specified for a user.""",
+    )
 
-    message_input_widgets = param.List(default=[TextInput], doc="""
+    message_input_widgets = param.List(
+        default=[TextInput],
+        doc="""
         List of widgets to use for message input. Multiple widgets will
-        be nested under tabs.""")
+        be nested under tabs.""",
+    )
 
-    show_names = param.Boolean(default=True, doc="""
-        Whether to show chat participant's names below the message.""")
+    show_names = param.Boolean(
+        default=True,
+        doc="""
+        Whether to show chat participant's names below the message.""",
+    )
 
     _composite_type: ClassVar[Type[ListPanel]] = Column
 
@@ -271,11 +318,7 @@ class ChatBox(CompositeWidget):
         super().__init__(**params)
 
         # Set up layout
-        layout = {
-            p: getattr(self, p)
-            for p in Layoutable.param
-            if p not in ("name", "styles", "margin") and getattr(self, p) is not None
-        }
+        layout = {p: getattr(self, p) for p in Layoutable.param if p not in ("name", "styles", "margin") and getattr(self, p) is not None}
         chat_layout = layout.copy()
         chat_layout.update(
             styles={
@@ -416,9 +459,7 @@ class ChatBox(CompositeWidget):
         """
         return next(iter(dict_))
 
-    def _separate_user_message(
-        self, user_message: Dict[str, Union[List[Any], Any]]
-    ) -> Tuple[str, str]:
+    def _separate_user_message(self, user_message: Dict[str, Union[List[Any], Any]]) -> Tuple[str, str]:
         """
         Separate the user and message from a dictionary.
         """
@@ -456,14 +497,10 @@ class ChatBox(CompositeWidget):
         # try to get input color; if not generate one and save
         if user in self.message_colors:
             colors = self.message_colors[user]
-            background, color = (
-                colors if isinstance(colors, tuple) else (colors, "black")
-            )
+            background, color = colors if isinstance(colors, tuple) else (colors, "black")
         elif self.message_hue:
             if len(self._default_colors) == 0:
-                self._default_colors = self._generate_default_hsl(
-                    self._current_hue, increment=88
-                )
+                self._default_colors = self._generate_default_hsl(self._current_hue, increment=88)
             background, color = self._default_colors.pop()
             self.message_colors[user] = (background, color)
         else:
@@ -512,9 +549,7 @@ class ChatBox(CompositeWidget):
             show_name = user != previous_user if self.show_names else False
             previous_user = user
 
-            message_row = self._instantiate_message_row(
-                user, message_contents, show_name
-            )
+            message_row = self._instantiate_message_row(user, message_contents, show_name)
 
             # try to rebuild liked status
             if len(self._chat_log.objects) > i:

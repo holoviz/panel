@@ -32,14 +32,13 @@ from .io.logging import panel_log_handler
 from .io.state import state
 from .util import param_watchers
 
-__version__ = str(param.version.Version(
-    fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
+__version__ = str(param.version.Version(fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
 
-_LOCAL_DEV_VERSION = any(v in __version__ for v in ('post', 'dirty')) and not state._is_pyodide
+_LOCAL_DEV_VERSION = any(v in __version__ for v in ("post", "dirty")) and not state._is_pyodide
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 # Public API
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
 
@@ -62,20 +61,31 @@ def validate_config(config, parameter, value):
 
 
 class _base_config(param.Parameterized):
+    css_files = param.List(
+        default=[],
+        doc="""
+        External CSS files to load.""",
+    )
 
-    css_files = param.List(default=[], doc="""
-        External CSS files to load.""")
-
-    js_files = param.Dict(default={}, doc="""
+    js_files = param.Dict(
+        default={},
+        doc="""
         External JS files to load. Dictionary should map from exported
-        name to the URL of the JS file.""")
+        name to the URL of the JS file.""",
+    )
 
-    js_modules = param.Dict(default={}, doc="""
+    js_modules = param.Dict(
+        default={},
+        doc="""
         External JS files to load as modules. Dictionary should map from
-        exported name to the URL of the JS file.""")
+        exported name to the URL of the JS file.""",
+    )
 
-    raw_css = param.List(default=[], doc="""
-        List of raw CSS strings to add to load.""")
+    raw_css = param.List(
+        default=[],
+        doc="""
+        List of raw CSS strings to add to load.""",
+    )
 
 
 class _config(_base_config):
@@ -100,15 +110,24 @@ class _config(_base_config):
     >>> pn.config.loading_spinner = 'bar'
     """
 
-    admin_plugins = param.List(default=[], item_type=tuple, doc="""
+    admin_plugins = param.List(
+        default=[],
+        item_type=tuple,
+        doc="""
         A list of tuples containing a title and a function that returns
-        an additional panel to be rendered into the admin page.""")
+        an additional panel to be rendered into the admin page.""",
+    )
 
-    apply_signatures = param.Boolean(default=True, doc="""
+    apply_signatures = param.Boolean(
+        default=True,
+        doc="""
         Whether to set custom Signature which allows tab-completion
-        in some IDEs and environments.""")
+        in some IDEs and environments.""",
+    )
 
-    authorize_callback = param.Callable(default=None, doc="""
+    authorize_callback = param.Callable(
+        default=None,
+        doc="""
         Authorization callback that is invoked when authentication
         is enabled. The callback is given the user information returned
         by the configured Auth provider and should return True or False
@@ -117,210 +136,372 @@ class _config(_base_config):
         which is the requested path the user is making. If the user
         is authenticated and has explicit access to the path, then
         the callback should return True otherwise it should return
-        False.""")
+        False.""",
+    )
 
-    auth_template = param.Path(default=None, doc="""
+    auth_template = param.Path(
+        default=None,
+        doc="""
         A jinja2 template rendered when the authorize_callback determines
-        that a user in not authorized to access the application.""")
+        that a user in not authorized to access the application.""",
+    )
 
-    autoreload = param.Boolean(default=False, doc="""
-        Whether to autoreload server when script changes.""")
+    autoreload = param.Boolean(
+        default=False,
+        doc="""
+        Whether to autoreload server when script changes.""",
+    )
 
-    basic_auth_template = param.Path(default=None, doc="""
+    basic_auth_template = param.Path(
+        default=None,
+        doc="""
         A jinja2 template to override the default Basic Authentication
-        login page.""")
+        login page.""",
+    )
 
-    browser_info = param.Boolean(default=True, doc="""
-        Whether to request browser info from the frontend.""")
+    browser_info = param.Boolean(
+        default=True,
+        doc="""
+        Whether to request browser info from the frontend.""",
+    )
 
-    defer_load = param.Boolean(default=False, doc="""
-        Whether to defer load of rendered functions.""")
+    defer_load = param.Boolean(
+        default=False,
+        doc="""
+        Whether to defer load of rendered functions.""",
+    )
 
-    design = param.ClassSelector(class_=None, is_instance=False, doc="""
-        The design system to use to style components.""")
+    design = param.ClassSelector(
+        class_=None,
+        is_instance=False,
+        doc="""
+        The design system to use to style components.""",
+    )
 
-    disconnect_notification = param.String(doc="""
+    disconnect_notification = param.String(
+        doc="""
         The notification to display to the user when the connection
-        to the server is dropped.""")
+        to the server is dropped."""
+    )
 
-    exception_handler = param.Callable(default=None, doc="""
-        General exception handler for events.""")
+    exception_handler = param.Callable(
+        default=None,
+        doc="""
+        General exception handler for events.""",
+    )
 
-    global_css = param.List(default=[], doc="""
-        List of raw CSS to be added to the header.""")
+    global_css = param.List(
+        default=[],
+        doc="""
+        List of raw CSS to be added to the header.""",
+    )
 
-    global_loading_spinner = param.Boolean(default=False, doc="""
-        Whether to add a global loading spinner for the whole application.""")
+    global_loading_spinner = param.Boolean(
+        default=False,
+        doc="""
+        Whether to add a global loading spinner for the whole application.""",
+    )
 
-    layout_compatibility = param.Selector(default='warn', objects=['warn', 'error'], doc="""
+    layout_compatibility = param.Selector(
+        default="warn",
+        objects=["warn", "error"],
+        doc="""
         Provide compatibility for older layout specifications. Incompatible
         specifications will trigger warnings by default but can be set to error.
-        Compatibility to be set to error by default in Panel 1.1.""")
+        Compatibility to be set to error by default in Panel 1.1.""",
+    )
 
-    load_entry_points = param.Boolean(default=True, doc="""
-        Load entry points from external packages.""")
+    load_entry_points = param.Boolean(
+        default=True,
+        doc="""
+        Load entry points from external packages.""",
+    )
 
-    loading_indicator = param.Boolean(default=False, doc="""
-        Whether a loading indicator is shown by default while panes are updating.""")
+    loading_indicator = param.Boolean(
+        default=False,
+        doc="""
+        Whether a loading indicator is shown by default while panes are updating.""",
+    )
 
-    loading_spinner = param.Selector(default='arc', objects=[
-        'arc', 'arcs', 'bar', 'dots', 'petal'], doc="""
-        Loading indicator to use when component loading parameter is set.""")
+    loading_spinner = param.Selector(
+        default="arc",
+        objects=["arc", "arcs", "bar", "dots", "petal"],
+        doc="""
+        Loading indicator to use when component loading parameter is set.""",
+    )
 
-    loading_color = param.Color(default='#c3c3c3', doc="""
-        Color of the loading indicator.""")
+    loading_color = param.Color(
+        default="#c3c3c3",
+        doc="""
+        Color of the loading indicator.""",
+    )
 
-    loading_max_height = param.Integer(default=400, doc="""
-        Maximum height of the loading indicator.""")
+    loading_max_height = param.Integer(
+        default=400,
+        doc="""
+        Maximum height of the loading indicator.""",
+    )
 
-    notifications = param.Boolean(default=False, doc="""
-        Whether to enable notifications functionality.""")
+    notifications = param.Boolean(
+        default=False,
+        doc="""
+        Whether to enable notifications functionality.""",
+    )
 
-    profiler = param.Selector(default=None, allow_None=True, objects=[
-        'pyinstrument', 'snakeviz', 'memray'], doc="""
-        The profiler engine to enable.""")
+    profiler = param.Selector(
+        default=None,
+        allow_None=True,
+        objects=["pyinstrument", "snakeviz", "memray"],
+        doc="""
+        The profiler engine to enable.""",
+    )
 
-    ready_notification = param.String(doc="""
+    ready_notification = param.String(
+        doc="""
         The notification to display when the application is ready and
-        fully loaded.""")
+        fully loaded."""
+    )
 
-    reuse_sessions = param.Boolean(default=False, doc="""
+    reuse_sessions = param.Boolean(
+        default=False,
+        doc="""
         Whether to reuse a session for the initial request to speed up
         the initial page render. Note that if the initial page differs
         between sessions, e.g. because it uses query parameters to modify
         the rendered content, then this option will result in the wrong
         content being rendered. Define a session_key_func to ensure that
-        reused sessions are only reused when appropriate.""")
+        reused sessions are only reused when appropriate.""",
+    )
 
-    session_key_func = param.Callable(default=None, doc="""
+    session_key_func = param.Callable(
+        default=None,
+        doc="""
         Used in conjunction with the reuse_sessions option, the
         session_key_func is given a tornado.httputil.HTTPServerRequest
-        and should return a key that uniquely captures a session.""")
+        and should return a key that uniquely captures a session.""",
+    )
 
-    safe_embed = param.Boolean(default=False, doc="""
+    safe_embed = param.Boolean(
+        default=False,
+        doc="""
         Ensure all bokeh property changes trigger events which are
         embedded. Useful when only partial updates are made in an
-        app, e.g. when working with HoloViews.""")
+        app, e.g. when working with HoloViews.""",
+    )
 
-    session_history = param.Integer(default=0, bounds=(-1, None), doc="""
+    session_history = param.Integer(
+        default=0,
+        bounds=(-1, None),
+        doc="""
         If set to a non-negative value this determines the maximum length
         of the pn.state.session_info dictionary, which tracks
         information about user sessions. A value of -1 indicates an
-        unlimited history.""")
+        unlimited history.""",
+    )
 
-    sizing_mode = param.ObjectSelector(default=None, objects=[
-        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
-        'scale_width', 'scale_height', 'scale_both', None], doc="""
-        Specify the default sizing mode behavior of panels.""")
+    sizing_mode = param.ObjectSelector(
+        default=None,
+        objects=["fixed", "stretch_width", "stretch_height", "stretch_both", "scale_width", "scale_height", "scale_both", None],
+        doc="""
+        Specify the default sizing mode behavior of panels.""",
+    )
 
-    template = param.ObjectSelector(default=None, doc="""
-        The default template to render served applications into.""")
+    template = param.ObjectSelector(
+        default=None,
+        doc="""
+        The default template to render served applications into.""",
+    )
 
-    throttled = param.Boolean(default=False, doc="""
-        If sliders and inputs should be throttled until release of mouse.""")
+    throttled = param.Boolean(
+        default=False,
+        doc="""
+        If sliders and inputs should be throttled until release of mouse.""",
+    )
 
     _admin = param.Boolean(default=False, doc="Whether the admin panel was enabled.")
 
     _admin_endpoint = param.String(default=None, doc="Name to use for the admin endpoint.")
 
-    _admin_log_level = param.Selector(
-        default='DEBUG', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-        doc="Log level of the Admin Panel logger")
+    _admin_log_level = param.Selector(default="DEBUG", objects=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], doc="Log level of the Admin Panel logger")
 
     _comms = param.ObjectSelector(
-        default='default', objects=['default', 'ipywidgets', 'vscode', 'colab'], doc="""
+        default="default",
+        objects=["default", "ipywidgets", "vscode", "colab"],
+        doc="""
         Whether to render output in Jupyter with the default Jupyter
-        extension or use the jupyter_bokeh ipywidget model.""")
+        extension or use the jupyter_bokeh ipywidget model.""",
+    )
 
-    _console_output = param.ObjectSelector(default='accumulate', allow_None=True,
-                                 objects=['accumulate', 'replace', 'disable',
-                                          False], doc="""
+    _console_output = param.ObjectSelector(
+        default="accumulate",
+        allow_None=True,
+        objects=["accumulate", "replace", "disable", False],
+        doc="""
         How to log errors and stdout output triggered by callbacks
-        from Javascript in the notebook.""")
+        from Javascript in the notebook.""",
+    )
 
-    _cookie_secret = param.String(default=None, doc="""
-        Configure to enable getting/setting secure cookies.""")
+    _cookie_secret = param.String(
+        default=None,
+        doc="""
+        Configure to enable getting/setting secure cookies.""",
+    )
 
-    _embed = param.Boolean(default=False, allow_None=True, doc="""
-        Whether plot data will be embedded.""")
+    _embed = param.Boolean(
+        default=False,
+        allow_None=True,
+        doc="""
+        Whether plot data will be embedded.""",
+    )
 
-    _embed_json = param.Boolean(default=False, doc="""
-        Whether to save embedded state to json files.""")
+    _embed_json = param.Boolean(
+        default=False,
+        doc="""
+        Whether to save embedded state to json files.""",
+    )
 
-    _embed_json_prefix = param.String(default='', doc="""
-        Prefix for randomly generated json directories.""")
+    _embed_json_prefix = param.String(
+        default="",
+        doc="""
+        Prefix for randomly generated json directories.""",
+    )
 
-    _embed_load_path = param.String(default=None, doc="""
-        Where to load json files for embedded state.""")
+    _embed_load_path = param.String(
+        default=None,
+        doc="""
+        Where to load json files for embedded state.""",
+    )
 
-    _embed_save_path = param.String(default='./', doc="""
-        Where to save json files for embedded state.""")
+    _embed_save_path = param.String(
+        default="./",
+        doc="""
+        Where to save json files for embedded state.""",
+    )
 
-    _log_level = param.Selector(
-        default='WARNING', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-        doc="Log level of Panel loggers")
+    _log_level = param.Selector(default="WARNING", objects=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], doc="Log level of Panel loggers")
 
-    _npm_cdn = param.Selector(default='https://cdn.jsdelivr.net/npm',
-        objects=['https://unpkg.com', 'https://cdn.jsdelivr.net/npm'],  doc="""
+    _npm_cdn = param.Selector(
+        default="https://cdn.jsdelivr.net/npm",
+        objects=["https://unpkg.com", "https://cdn.jsdelivr.net/npm"],
+        doc="""
         The CDN to load NPM packages from if resources are served from
         CDN. Allows switching between https://unpkg.com and
-        https://cdn.jsdelivr.net/npm for most resources.""")
+        https://cdn.jsdelivr.net/npm for most resources.""",
+    )
 
-    _nthreads = param.Integer(default=None, doc="""
+    _nthreads = param.Integer(
+        default=None,
+        doc="""
         When set to a non-None value a thread pool will be started.
         Whenever an event arrives from the frontend it will be
-        dispatched to the thread pool to be processed.""")
+        dispatched to the thread pool to be processed.""",
+    )
 
-    _basic_auth = param.ClassSelector(default=None, class_=(dict, str), allow_None=True, doc="""
+    _basic_auth = param.ClassSelector(
+        default=None,
+        class_=(dict, str),
+        allow_None=True,
+        doc="""
         Password, dictionary with a mapping from username to password
         or filepath containing JSON to use with the basic auth
-        provider.""")
+        provider.""",
+    )
 
     _oauth_provider = param.ObjectSelector(
-        default=None, allow_None=True, objects=[], doc="""
-        Select between a list of authentication providers.""")
+        default=None,
+        allow_None=True,
+        objects=[],
+        doc="""
+        Select between a list of authentication providers.""",
+    )
 
-    _oauth_expiry = param.Number(default=1, bounds=(0, None), doc="""
-        Expiry of the OAuth cookie in number of days.""")
+    _oauth_expiry = param.Number(
+        default=1,
+        bounds=(0, None),
+        doc="""
+        Expiry of the OAuth cookie in number of days.""",
+    )
 
-    _oauth_key = param.String(default=None, doc="""
-        A client key to provide to the OAuth provider.""")
+    _oauth_key = param.String(
+        default=None,
+        doc="""
+        A client key to provide to the OAuth provider.""",
+    )
 
-    _oauth_secret = param.String(default=None, doc="""
-        A client secret to provide to the OAuth provider.""")
+    _oauth_secret = param.String(
+        default=None,
+        doc="""
+        A client secret to provide to the OAuth provider.""",
+    )
 
-    _oauth_jwt_user = param.String(default=None, doc="""
-        The key in the ID JWT token to consider the user.""")
+    _oauth_jwt_user = param.String(
+        default=None,
+        doc="""
+        The key in the ID JWT token to consider the user.""",
+    )
 
-    _oauth_redirect_uri = param.String(default=None, doc="""
-        A redirect URI to provide to the OAuth provider.""")
+    _oauth_redirect_uri = param.String(
+        default=None,
+        doc="""
+        A redirect URI to provide to the OAuth provider.""",
+    )
 
-    _oauth_encryption_key = param.ClassSelector(default=None, class_=bytes, doc="""
-        A random string used to encode OAuth related user information.""")
+    _oauth_encryption_key = param.ClassSelector(
+        default=None,
+        class_=bytes,
+        doc="""
+        A random string used to encode OAuth related user information.""",
+    )
 
-    _oauth_extra_params = param.Dict(default={}, doc="""
-        Additional parameters required for OAuth provider.""")
+    _oauth_extra_params = param.Dict(
+        default={},
+        doc="""
+        Additional parameters required for OAuth provider.""",
+    )
 
-    _oauth_refresh_tokens = param.Boolean(default=False, doc="""
-        Whether to automatically refresh access tokens in the background.""")
+    _oauth_refresh_tokens = param.Boolean(
+        default=False,
+        doc="""
+        Whether to automatically refresh access tokens in the background.""",
+    )
 
-    _inline = param.Boolean(default=_LOCAL_DEV_VERSION, allow_None=True, doc="""
+    _inline = param.Boolean(
+        default=_LOCAL_DEV_VERSION,
+        allow_None=True,
+        doc="""
         Whether to inline JS and CSS resources. If disabled, resources
-        are loaded from CDN if one is available.""")
+        are loaded from CDN if one is available.""",
+    )
 
-    _theme = param.ObjectSelector(default=None, objects=['default', 'dark'], allow_None=True, doc="""
-        The theme to apply to components.""")
+    _theme = param.ObjectSelector(
+        default=None,
+        objects=["default", "dark"],
+        allow_None=True,
+        doc="""
+        The theme to apply to components.""",
+    )
 
     # Global parameters that are shared across all sessions
     _globals = [
-        'admin_plugins', 'autoreload', 'comms', 'cookie_secret',
-        'nthreads', 'oauth_provider', 'oauth_expiry', 'oauth_key',
-        'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
-        'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
-        'layout_compatibility', 'oauth_refresh_tokens'
+        "admin_plugins",
+        "autoreload",
+        "comms",
+        "cookie_secret",
+        "nthreads",
+        "oauth_provider",
+        "oauth_expiry",
+        "oauth_key",
+        "oauth_secret",
+        "oauth_jwt_user",
+        "oauth_redirect_uri",
+        "oauth_encryption_key",
+        "oauth_extra_params",
+        "npm_cdn",
+        "layout_compatibility",
+        "oauth_refresh_tokens",
     ]
 
-    _truthy = ['True', 'true', '1', True, 1]
+    _truthy = ["True", "true", "1", True, 1]
 
     _session_config = WeakKeyDictionary()
 
@@ -328,12 +509,12 @@ class _config(_base_config):
         super().__init__(**params)
         self._validating = False
         for p in self.param:
-            if p.startswith('_') and p[1:] not in self._globals:
-                setattr(self, p+'_', None)
+            if p.startswith("_") and p[1:] not in self._globals:
+                setattr(self, p + "_", None)
         if self.log_level:
             panel_log_handler.setLevel(self.log_level)
 
-    @param.depends('_nthreads', watch=True, on_init=True)
+    @param.depends("_nthreads", watch=True, on_init=True)
     def _set_thread_pool(self):
         if self.nthreads is None:
             if state._thread_pool is not None:
@@ -345,27 +526,25 @@ class _config(_base_config):
         threads = self.nthreads if self.nthreads else None
         state._thread_pool = ThreadPoolExecutor(max_workers=threads)
 
-    @param.depends('notifications', watch=True)
+    @param.depends("notifications", watch=True)
     def _setup_notifications(self):
         from .io.notifications import NotificationArea
         from .reactive import ReactiveHTMLMetaclass
-        if self.notifications and 'notifications' not in ReactiveHTMLMetaclass._loaded_extensions:
-            ReactiveHTMLMetaclass._loaded_extensions.add('notifications')
+
+        if self.notifications and "notifications" not in ReactiveHTMLMetaclass._loaded_extensions:
+            ReactiveHTMLMetaclass._loaded_extensions.add("notifications")
         if not state.curdoc:
             state._notification = NotificationArea()
 
-    @param.depends('disconnect_notification', 'ready_notification', watch=True)
+    @param.depends("disconnect_notification", "ready_notification", watch=True)
     def _enable_notifications(self):
         if self.disconnect_notification or self.ready_notification:
             self.notifications = True
 
     @contextmanager
     def set(self, **kwargs):
-        values = [(k, v) for k, v in self.param.values().items() if k != 'name']
-        overrides = [
-            (k, getattr(self, k+'_')) for k in self.param
-            if k.startswith('_') and k[1:] not in self._globals
-        ]
+        values = [(k, v) for k, v in self.param.values().items() if k != "name"]
+        overrides = [(k, getattr(self, k + "_")) for k in self.param if k.startswith("_") and k[1:] not in self._globals]
         for k, v in kwargs.items():
             setattr(self, k, v)
         try:
@@ -373,47 +552,48 @@ class _config(_base_config):
         finally:
             self.param.update(**dict(values))
             for k, v in overrides:
-                setattr(self, k+'_', v)
+                setattr(self, k + "_", v)
 
     def __setattr__(self, attr, value):
         from .io.state import state
 
         # _param__private added in Param 2
-        if hasattr(self, '_param__private'):
-            init = getattr(self._param__private, 'initialized', False)
+        if hasattr(self, "_param__private"):
+            init = getattr(self._param__private, "initialized", False)
         else:
-            init = getattr(self, 'initialized', False)
-        if not init or (attr.startswith('_') and attr.endswith('_')) or attr == '_validating':
+            init = getattr(self, "initialized", False)
+        if not init or (attr.startswith("_") and attr.endswith("_")) or attr == "_validating":
             return super().__setattr__(attr, value)
-        value = getattr(self, f'_{attr}_hook', lambda x: x)(value)
+        value = getattr(self, f"_{attr}_hook", lambda x: x)(value)
         if attr in self._globals or self.param._TRIGGER:
-            super().__setattr__(attr if attr in self.param else f'_{attr}', value)
+            super().__setattr__(attr if attr in self.param else f"_{attr}", value)
         elif state.curdoc is not None:
             if attr in self.param:
                 validate_config(self, attr, value)
-            elif f'_{attr}' in self.param:
-                validate_config(self, f'_{attr}', value)
+            elif f"_{attr}" in self.param:
+                validate_config(self, f"_{attr}", value)
             else:
-                raise AttributeError(f'{attr!r} is not a valid config parameter.')
+                raise AttributeError(f"{attr!r} is not a valid config parameter.")
             if state.curdoc not in self._session_config:
                 self._session_config[state.curdoc] = {}
             self._session_config[state.curdoc][attr] = value
-            watchers = param_watchers(self).get(attr, {}).get('value', [])
+            watchers = param_watchers(self).get(attr, {}).get("value", [])
             for w in watchers:
                 w.fn()
-        elif f'_{attr}' in self.param and hasattr(self, f'_{attr}_'):
-            validate_config(self, f'_{attr}', value)
-            super().__setattr__(f'_{attr}_', value)
+        elif f"_{attr}" in self.param and hasattr(self, f"_{attr}_"):
+            validate_config(self, f"_{attr}", value)
+            super().__setattr__(f"_{attr}_", value)
         else:
             super().__setattr__(attr, value)
 
-    @param.depends('_log_level', watch=True)
+    @param.depends("_log_level", watch=True)
     def _update_log_level(self):
         panel_log_handler.setLevel(self._log_level)
 
-    @param.depends('_admin_log_level', watch=True)
+    @param.depends("_admin_log_level", watch=True)
     def _update_admin_log_level(self):
         from .io.admin import log_handler as admin_log_handler
+
         admin_log_handler.setLevel(self._log_level)
 
     def __getattribute__(self, attr):
@@ -425,37 +605,36 @@ class _config(_base_config):
         """
         from .io.state import state
 
-        if attr == '_param__private':
-            return super().__getattribute__('_param__private')
+        if attr == "_param__private":
+            return super().__getattribute__("_param__private")
 
         # _param__private added in Param 2
         try:
-            init = super().__getattribute__('_param__private').initialized
+            init = super().__getattribute__("_param__private").initialized
         except AttributeError:
-            init = super().__getattribute__('initialized')
-        global_params = super().__getattribute__('_globals')
-        if init and not attr.startswith('__'):
-            params = super().__getattribute__('param')
+            init = super().__getattribute__("initialized")
+        global_params = super().__getattribute__("_globals")
+        if init and not attr.startswith("__"):
+            params = super().__getattribute__("param")
         else:
             params = []
-        session_config = super().__getattribute__('_session_config')
+        session_config = super().__getattribute__("_session_config")
         curdoc = state.curdoc
         if curdoc and curdoc not in session_config:
             session_config[curdoc] = {}
-        if (attr in ('raw_css', 'global_css', 'css_files', 'js_files', 'js_modules') and
-            curdoc and attr not in session_config[curdoc]):
+        if attr in ("raw_css", "global_css", "css_files", "js_files", "js_modules") and curdoc and attr not in session_config[curdoc]:
             new_obj = copy.copy(super().__getattribute__(attr))
             setattr(self, attr, new_obj)
-        if attr in global_params or attr == 'theme':
+        if attr in global_params or attr == "theme":
             return super().__getattribute__(attr)
         elif curdoc and curdoc in session_config and attr in session_config[curdoc]:
             return session_config[curdoc][attr]
-        elif f'_{attr}' in params and getattr(self, f'_{attr}_') is not None:
-            return super().__getattribute__(f'_{attr}_')
+        elif f"_{attr}" in params and getattr(self, f"_{attr}_") is not None:
+            return super().__getattribute__(f"_{attr}_")
         return super().__getattribute__(attr)
 
     def _console_output_hook(self, value):
-        return value if value else 'disable'
+        return value if value else "disable"
 
     def _template_hook(self, value):
         if isinstance(value, str):
@@ -464,143 +643,140 @@ class _config(_base_config):
 
     @property
     def _doc_build(self):
-        return os.environ.get('PANEL_DOC_BUILD')
+        return os.environ.get("PANEL_DOC_BUILD")
 
     @property
     def admin_endpoint(self):
-        return os.environ.get('PANEL_ADMIN_ENDPOINT', self._admin_endpoint)
+        return os.environ.get("PANEL_ADMIN_ENDPOINT", self._admin_endpoint)
 
     @property
     def admin_log_level(self):
-        admin_log_level = os.environ.get('PANEL_ADMIN_LOG_LEVEL', self._admin_log_level)
+        admin_log_level = os.environ.get("PANEL_ADMIN_LOG_LEVEL", self._admin_log_level)
         return admin_log_level.upper() if admin_log_level else None
 
     @property
     def console_output(self):
         if self._doc_build:
-            return 'disable'
+            return "disable"
         else:
-            return os.environ.get('PANEL_CONSOLE_OUTPUT', _config._console_output)
+            return os.environ.get("PANEL_CONSOLE_OUTPUT", _config._console_output)
 
     @property
     def embed(self):
-        return os.environ.get('PANEL_EMBED', _config._embed) in self._truthy
+        return os.environ.get("PANEL_EMBED", _config._embed) in self._truthy
 
     @property
     def comms(self):
-        return os.environ.get('PANEL_COMMS', self._comms)
+        return os.environ.get("PANEL_COMMS", self._comms)
 
     @property
     def embed_json(self):
-        return os.environ.get('PANEL_EMBED_JSON', _config._embed_json) in self._truthy
+        return os.environ.get("PANEL_EMBED_JSON", _config._embed_json) in self._truthy
 
     @property
     def embed_json_prefix(self):
-        return os.environ.get('PANEL_EMBED_JSON_PREFIX', _config._embed_json_prefix)
+        return os.environ.get("PANEL_EMBED_JSON_PREFIX", _config._embed_json_prefix)
 
     @property
     def embed_save_path(self):
-        return os.environ.get('PANEL_EMBED_SAVE_PATH', _config._embed_save_path)
+        return os.environ.get("PANEL_EMBED_SAVE_PATH", _config._embed_save_path)
 
     @property
     def embed_load_path(self):
-        return os.environ.get('PANEL_EMBED_LOAD_PATH', _config._embed_load_path)
+        return os.environ.get("PANEL_EMBED_LOAD_PATH", _config._embed_load_path)
 
     @property
     def inline(self):
-        return os.environ.get('PANEL_INLINE', _config._inline) in self._truthy
+        return os.environ.get("PANEL_INLINE", _config._inline) in self._truthy
 
     @property
     def log_level(self):
-        log_level = os.environ.get('PANEL_LOG_LEVEL', self._log_level)
+        log_level = os.environ.get("PANEL_LOG_LEVEL", self._log_level)
         return log_level.upper() if log_level else None
 
     @property
     def npm_cdn(self):
-        return os.environ.get('PANEL_NPM_CDN', _config._npm_cdn)
+        return os.environ.get("PANEL_NPM_CDN", _config._npm_cdn)
 
     @property
     def nthreads(self):
-        nthreads = os.environ.get('PANEL_NUM_THREADS', self._nthreads)
+        nthreads = os.environ.get("PANEL_NUM_THREADS", self._nthreads)
         return None if nthreads is None else int(nthreads)
 
     @property
     def basic_auth(self):
-        provider = os.environ.get('PANEL_BASIC_AUTH', self._oauth_provider)
+        provider = os.environ.get("PANEL_BASIC_AUTH", self._oauth_provider)
         return provider.lower() if provider else None
 
     @property
     def oauth_provider(self):
-        provider = os.environ.get('PANEL_OAUTH_PROVIDER', self._oauth_provider)
+        provider = os.environ.get("PANEL_OAUTH_PROVIDER", self._oauth_provider)
         return provider.lower() if provider else None
 
     @property
     def oauth_expiry(self):
-        provider = os.environ.get('PANEL_OAUTH_EXPIRY', self._oauth_expiry)
+        provider = os.environ.get("PANEL_OAUTH_EXPIRY", self._oauth_expiry)
         return float(provider)
 
     @property
     def oauth_key(self):
-        return os.environ.get('PANEL_OAUTH_KEY', self._oauth_key)
+        return os.environ.get("PANEL_OAUTH_KEY", self._oauth_key)
 
     @property
     def cookie_secret(self):
-        return os.environ.get(
-            'PANEL_COOKIE_SECRET',
-            os.environ.get('BOKEH_COOKIE_SECRET', self._cookie_secret)
-        )
+        return os.environ.get("PANEL_COOKIE_SECRET", os.environ.get("BOKEH_COOKIE_SECRET", self._cookie_secret))
 
     @property
     def oauth_secret(self):
-        return os.environ.get('PANEL_OAUTH_SECRET', self._oauth_secret)
+        return os.environ.get("PANEL_OAUTH_SECRET", self._oauth_secret)
 
     @property
     def oauth_redirect_uri(self):
-        return os.environ.get('PANEL_OAUTH_REDIRECT_URI', self._oauth_redirect_uri)
+        return os.environ.get("PANEL_OAUTH_REDIRECT_URI", self._oauth_redirect_uri)
 
     @property
     def oauth_jwt_user(self):
-        return os.environ.get('PANEL_OAUTH_JWT_USER', self._oauth_jwt_user)
+        return os.environ.get("PANEL_OAUTH_JWT_USER", self._oauth_jwt_user)
 
     @property
     def oauth_refresh_tokens(self):
-        refresh = os.environ.get('PANEL_OAUTH_REFRESH_TOKENS', self._oauth_refresh_tokens)
+        refresh = os.environ.get("PANEL_OAUTH_REFRESH_TOKENS", self._oauth_refresh_tokens)
         if isinstance(refresh, bool):
             return refresh
-        return refresh.lower() in ('1', 'true')
+        return refresh.lower() in ("1", "true")
 
     @property
     def oauth_encryption_key(self):
-        return os.environ.get('PANEL_OAUTH_ENCRYPTION', self._oauth_encryption_key)
+        return os.environ.get("PANEL_OAUTH_ENCRYPTION", self._oauth_encryption_key)
 
     @property
     def oauth_extra_params(self):
-        if 'PANEL_OAUTH_EXTRA_PARAMS' in os.environ:
-            return ast.literal_eval(os.environ['PANEL_OAUTH_EXTRA_PARAMS'])
+        if "PANEL_OAUTH_EXTRA_PARAMS" in os.environ:
+            return ast.literal_eval(os.environ["PANEL_OAUTH_EXTRA_PARAMS"])
         else:
             return self._oauth_extra_params
 
     @property
     def theme(self):
         curdoc = state.curdoc
-        if curdoc and 'theme' in self._session_config.get(curdoc, {}):
-            return self._session_config[curdoc]['theme']
+        if curdoc and "theme" in self._session_config.get(curdoc, {}):
+            return self._session_config[curdoc]["theme"]
         elif self._theme_:
             return self._theme_
         elif isinstance(state.session_args, dict) and state.session_args:
-            theme = state.session_args.get('theme', [b'default'])[0].decode('utf-8')
+            theme = state.session_args.get("theme", [b"default"])[0].decode("utf-8")
             if theme in self.param._theme.objects:
                 return theme
-        return 'default'
+        return "default"
 
 
-if hasattr(_config.param, 'objects'):
+if hasattr(_config.param, "objects"):
     _params = _config.param.objects()
 else:
     _params = _config.param.params()
 
-config = _config(**{k: None if p.allow_None else getattr(_config, k)
-                    for k, p in _params.items() if k != 'name'})
+config = _config(**{k: None if p.allow_None else getattr(_config, k) for k, p in _params.items() if k != "name"})
+
 
 class panel_extension(_pyviz_extension):
     """
@@ -632,41 +808,41 @@ class panel_extension(_pyviz_extension):
     _loaded = False
 
     _imports = {
-        'ace': 'panel.models.ace',
-        'codeeditor': 'panel.models.ace',
-        'deckgl': 'panel.models.deckgl',
-        'echarts': 'panel.models.echarts',
-        'ipywidgets': 'panel.io.ipywidget',
-        'jsoneditor': 'panel.models.jsoneditor',
-        'katex': 'panel.models.katex',
-        'mathjax': 'panel.models.mathjax',
-        'perspective': 'panel.models.perspective',
-        'plotly': 'panel.models.plotly',
-        'tabulator': 'panel.models.tabulator',
-        'terminal': 'panel.models.terminal',
-        'texteditor': 'panel.models.quill',
-        'vizzu': 'panel.models.vizzu',
-        'vega': 'panel.models.vega',
-        'vtk': 'panel.models.vtk'
+        "ace": "panel.models.ace",
+        "codeeditor": "panel.models.ace",
+        "deckgl": "panel.models.deckgl",
+        "echarts": "panel.models.echarts",
+        "ipywidgets": "panel.io.ipywidget",
+        "jsoneditor": "panel.models.jsoneditor",
+        "katex": "panel.models.katex",
+        "mathjax": "panel.models.mathjax",
+        "perspective": "panel.models.perspective",
+        "plotly": "panel.models.plotly",
+        "tabulator": "panel.models.tabulator",
+        "terminal": "panel.models.terminal",
+        "texteditor": "panel.models.quill",
+        "vizzu": "panel.models.vizzu",
+        "vega": "panel.models.vega",
+        "vtk": "panel.models.vtk",
     }
 
     # Check whether these are loaded before rendering (if any item
     # in the list is available the extension will be confidered as
     # loaded)
     _globals = {
-        'deckgl': ['deck'],
-        'echarts': ['echarts'],
-        'floatpanel': ['jsPanel'],
-        'gridstack': ['GridStack'],
-        'katex': ['katex'],
-        'mathjax': ['MathJax'],
-        'perspective': ['perspective'],
-        'plotly': ['Plotly'],
-        'tabulator': ['Tabulator'],
-        'terminal': ['Terminal', 'xtermjs'],
-        'vega': ['vega'],
-        'vizzu': ['Vizzu'],
-        'vtk': ['vtk']
+        "deckgl": ["deck"],
+        "echarts": ["echarts"],
+        "floatpanel": ["jsPanel"],
+        "gridstack": ["GridStack"],
+        "katex": ["katex"],
+        "mathjax": ["MathJax"],
+        "perspective": ["perspective"],
+        "plotly": ["Plotly"],
+        "tabulator": ["Tabulator"],
+        "terminal": ["Terminal", "xtermjs"],
+        "vega": ["vega"],
+        "vizzu": ["Vizzu"],
+        "vtk": ["vtk"],
     }
 
     _loaded_extensions = []
@@ -675,26 +851,29 @@ class panel_extension(_pyviz_extension):
 
     def __call__(self, *args, **params):
         from .reactive import ReactiveHTML, ReactiveHTMLMetaclass
-        reactive_exts = {
-            v._extension_name: v for k, v in param.concrete_descendents(ReactiveHTML).items()
-        }
+
+        reactive_exts = {v._extension_name: v for k, v in param.concrete_descendents(ReactiveHTML).items()}
         newly_loaded = [arg for arg in args if arg not in panel_extension._loaded_extensions]
         if state.curdoc and state.curdoc not in state._extensions_:
             state._extensions_[state.curdoc] = []
-        if params.get('ready_notification') or params.get('disconnect_notification'):
-            params['notifications'] = True
-        if params.get('notifications', config.notifications) and 'notifications' not in args:
-            args += ('notifications',)
+        if params.get("ready_notification") or params.get("disconnect_notification"):
+            params["notifications"] = True
+        if params.get("notifications", config.notifications) and "notifications" not in args:
+            args += ("notifications",)
         for arg in args:
-            if arg == 'notifications' and 'notifications' not in params:
-                params['notifications'] = True
-            if arg == 'ipywidgets':
+            if arg == "notifications" and "notifications" not in params:
+                params["notifications"] = True
+            if arg == "ipywidgets":
                 from .io.resources import CSS_URLS
-                params['css_files'] = params.get('css_files', []) + [CSS_URLS['font-awesome']]
+
+                params["css_files"] = params.get("css_files", []) + [CSS_URLS["font-awesome"]]
             if arg in self._imports:
                 try:
-                    if (arg == 'ipywidgets' and get_ipython() and # noqa (get_ipython)
-                        "PANEL_IPYWIDGET" not in os.environ):
+                    if (
+                        arg == "ipywidgets"
+                        and get_ipython()  # noqa (get_ipython)
+                        and "PANEL_IPYWIDGET" not in os.environ
+                    ):
                         continue
                 except Exception:
                     pass
@@ -704,7 +883,7 @@ class panel_extension(_pyviz_extension):
                 if module in sys.modules:
                     for model in sys.modules[module].__dict__.values():
                         if isinstance(model, type) and issubclass(model, Model):
-                            qual = getattr(model, '__qualified_model__', None)
+                            qual = getattr(model, "__qualified_model__", None)
                             if qual and qual not in _default_resolver.known_models:
                                 _default_resolver.add(model)
                 else:
@@ -719,33 +898,26 @@ class panel_extension(_pyviz_extension):
                     state._extensions.append(arg)
                 ReactiveHTMLMetaclass._loaded_extensions.add(arg)
             else:
-                self.param.warning('%s extension not recognized and '
-                                   'will be skipped.' % arg)
+                self.param.warning("%s extension not recognized and " "will be skipped." % arg)
 
         for k, v in params.items():
-            if k == 'design' and isinstance(v, str):
+            if k == "design" and isinstance(v, str):
                 from .theme import Design
+
                 try:
-                    importlib.import_module(f'panel.theme.{self._design}')
+                    importlib.import_module(f"panel.theme.{self._design}")
                 except Exception:
                     pass
-                designs = {
-                    p.lower(): t for p, t in param.concrete_descendents(Design).items()
-                }
+                designs = {p.lower(): t for p, t in param.concrete_descendents(Design).items()}
                 if v not in designs:
-                    raise ValueError(
-                        f'Design {v!r} was not recognized, available design '
-                        f'systems include: {list(designs)}.'
-                    )
+                    raise ValueError(f"Design {v!r} was not recognized, available design " f"systems include: {list(designs)}.")
                 setattr(config, k, designs[v])
-            elif k in ('css_files', 'raw_css', 'global_css'):
+            elif k in ("css_files", "raw_css", "global_css"):
                 if not isinstance(v, list):
-                    raise ValueError('%s should be supplied as a list, '
-                                     'not as a %s type.' %
-                                     (k, type(v).__name__))
+                    raise ValueError("%s should be supplied as a list, " "not as a %s type." % (k, type(v).__name__))
                 existing = getattr(config, k)
                 existing.extend([new for new in v if new not in existing])
-            elif k == 'js_files':
+            elif k == "js_files":
                 getattr(config, k).update(v)
             else:
                 setattr(config, k, v)
@@ -757,22 +929,23 @@ class panel_extension(_pyviz_extension):
         panel_extension._loaded = True
 
         # Short circuit pyvista extension load if VTK is already initialized
-        if loaded and args == ('vtk',) and 'vtk' in self._loaded_extensions:
+        if loaded and args == ("vtk",) and "vtk" in self._loaded_extensions:
             curframe = inspect.currentframe()
             calframe = inspect.getouterframes(curframe, 2)
-            if len(calframe) >= 3 and 'pyvista' in calframe[2].filename:
+            if len(calframe) >= 3 and "pyvista" in calframe[2].filename:
                 return
 
-        if 'holoviews' in sys.modules:
+        if "holoviews" in sys.modules:
             import holoviews as hv
             import holoviews.plotting.bokeh  # noqa
-            loaded = loaded or getattr(hv.extension, '_loaded', False)
+
+            loaded = loaded or getattr(hv.extension, "_loaded", False)
 
             if hv.Store.current_backend in hv.Store.renderers:
                 backend = hv.Store.current_backend
             else:
-                backend = 'bokeh'
-            if hasattr(hv.Store, 'set_current_backend'):
+                backend = "bokeh"
+            if hasattr(hv.Store, "set_current_backend"):
                 hv.Store.set_current_backend(backend)
             else:
                 hv.Store.current_backend = backend
@@ -782,19 +955,19 @@ class panel_extension(_pyviz_extension):
 
         # Abort if IPython not found
         try:
-            ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
+            ip = params.pop("ip", None) or get_ipython()  # noqa (get_ipython)
         except Exception:
             return
 
         from .io.notebook import load_notebook, mime_renderer
 
         try:
-            unregister_display_accessor('_ipython_display_')
+            unregister_display_accessor("_ipython_display_")
         except KeyError:
             pass
 
         try:
-            register_display_accessor('_repr_mimebundle_', mime_renderer)
+            register_display_accessor("_repr_mimebundle_", mime_renderer)
         except Exception:
             pass
 
@@ -802,34 +975,31 @@ class panel_extension(_pyviz_extension):
 
         panel_extension._loaded_extensions += newly_loaded
 
-        if hasattr(ip, 'kernel') and not loaded and not config._doc_build:
+        if hasattr(ip, "kernel") and not loaded and not config._doc_build:
             # TODO: JLab extension and pyviz_comms should be changed
             #       to allow multiple cleanup comms to be registered
-            _JupyterCommManager.get_client_comm(self._process_comm_msg,
-                                                "hv-extension-comm")
+            _JupyterCommManager.get_client_comm(self._process_comm_msg, "hv-extension-comm")
             state._comm_manager = _JupyterCommManager
 
-        if 'ipywidgets' in sys.modules and config.embed:
+        if "ipywidgets" in sys.modules and config.embed:
             # In embedded mode the ipywidgets_bokeh model must be loaded
-            __import__(self._imports['ipywidgets'])
+            __import__(self._imports["ipywidgets"])
 
-        nb_loaded = published = getattr(self, '_repeat_execution_in_cell', False)
-        if 'holoviews' in sys.modules:
-            if getattr(hv.extension, '_loaded', False):
+        nb_loaded = published = getattr(self, "_repeat_execution_in_cell", False)
+        if "holoviews" in sys.modules:
+            if getattr(hv.extension, "_loaded", False):
                 nb_loaded = True
             else:
-                with param.logging_level('ERROR'):
+                with param.logging_level("ERROR"):
                     hv.plotting.Renderer.load_nb(config.inline)
-                    if hasattr(hv.plotting.Renderer, '_render_with_panel'):
+                    if hasattr(hv.plotting.Renderer, "_render_with_panel"):
                         nb_loaded = True
 
         # Disable simple ids, old state and multiple tabs in notebooks can cause IDs to clash
         bk_settings.simple_ids.set_value(False)
 
-        if hasattr(ip, 'kernel'):
-            load_notebook(
-                config.inline, reloading=nb_loaded
-            )
+        if hasattr(ip, "kernel"):
+            load_notebook(config.inline, reloading=nb_loaded)
 
         if not published:
             self._display_globals()
@@ -849,7 +1019,7 @@ class panel_extension(_pyviz_extension):
         called_before = self._comms_detected_before
         self._comms_detected_before = True
 
-        if 'comms' in params:
+        if "comms" in params:
             config.comms = params.pop("comms")
             return
 
@@ -875,35 +1045,28 @@ class panel_extension(_pyviz_extension):
         for cls in reversed(list(descendants.values())):
             if cls.__doc__ is None:
                 pass
-            elif cls.__doc__.startswith('params'):
-                prefix = cls.__doc__.split('\n')[0]
-                cls.__doc__ = cls.__doc__.replace(prefix, '')
+            elif cls.__doc__.startswith("params"):
+                prefix = cls.__doc__.split("\n")[0]
+                cls.__doc__ = cls.__doc__.replace(prefix, "")
             sig = inspect.signature(cls.__init__)
             sig_params = list(sig.parameters.values())
-            if not sig_params or sig_params[-1] != Parameter('params', Parameter.VAR_KEYWORD):
+            if not sig_params or sig_params[-1] != Parameter("params", Parameter.VAR_KEYWORD):
                 continue
             parameters = sig_params[:-1]
 
             processed_kws, keyword_groups = set(), []
             for cls in reversed(cls.mro()):
                 keyword_group = []
-                for (k, v) in sorted(cls.__dict__.items()):
-                    if (isinstance(v, param.Parameter) and k not in processed_kws
-                        and not v.readonly):
+                for k, v in sorted(cls.__dict__.items()):
+                    if isinstance(v, param.Parameter) and k not in processed_kws and not v.readonly:
                         keyword_group.append(k)
                         processed_kws.add(k)
                 keyword_groups.append(keyword_group)
 
-            parameters += [
-                Parameter(name, Parameter.KEYWORD_ONLY)
-                for kws in reversed(keyword_groups) for name in kws
-                if name not in sig.parameters
-            ]
-            kwarg_name = '_kwargs' if 'kwargs' in processed_kws else 'kwargs'
+            parameters += [Parameter(name, Parameter.KEYWORD_ONLY) for kws in reversed(keyword_groups) for name in kws if name not in sig.parameters]
+            kwarg_name = "_kwargs" if "kwargs" in processed_kws else "kwargs"
             parameters.append(Parameter(kwarg_name, Parameter.VAR_KEYWORD))
-            cls.__init__.__signature__ = Signature(
-                parameters, return_annotation=sig.return_annotation
-            )
+            cls.__init__.__signature__ = Signature(parameters, return_annotation=sig.return_annotation)
 
     def _load_entry_points(self):
         """
@@ -914,16 +1077,19 @@ class panel_extension(_pyviz_extension):
         if it won't be used.
         """
         from .entry_points import load_entry_points
-        load_entry_points('panel.extension')
+
+        load_entry_points("panel.extension")
 
     def _ignore_bokeh_warnings(self):
         from bokeh.util.warnings import BokehUserWarning
+
         warnings.filterwarnings("ignore", category=BokehUserWarning, message="reference already known")
 
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 # Private API
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
+
 
 def _cleanup_panel(msg_id):
     """
@@ -945,12 +1111,12 @@ def _cleanup_server(server_id):
     server.stop()
     for doc in docs:
         for root in doc.roots:
-            if root.ref['id'] in viewable._models:
+            if root.ref["id"] in viewable._models:
                 viewable._cleanup(root)
 
 
 panel_extension.add_delete_action(_cleanup_panel)
-if hasattr(panel_extension, 'add_server_delete_action'):
+if hasattr(panel_extension, "add_server_delete_action"):
     panel_extension.add_server_delete_action(_cleanup_server)
 
-__all__ = ['config', 'panel_extension']
+__all__ = ["config", "panel_extension"]

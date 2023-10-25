@@ -38,7 +38,6 @@ if TYPE_CHECKING:
 
 
 class SelectBase(Widget):
-
     options = param.ClassSelector(default=[], class_=(dict, list))
 
     __abstract = True
@@ -65,9 +64,7 @@ class SelectBase(Widget):
         return OrderedDict(zip(self.labels, self.values))
 
 
-
 class SingleSelectBase(SelectBase):
-
     value = param.Parameter(default=None)
 
     _supports_embed: ClassVar[bool] = True
@@ -84,26 +81,26 @@ class SingleSelectBase(SelectBase):
         msg = super()._process_param_change(msg)
         labels, values = self.labels, self.values
         unique = len(set(self.unicode_values)) == len(labels)
-        if 'value' in msg:
-            val = msg['value']
+        if "value" in msg:
+            val = msg["value"]
             if isIn(val, values):
                 unicode_values = self.unicode_values if unique else labels
-                msg['value'] = unicode_values[indexOf(val, values)]
+                msg["value"] = unicode_values[indexOf(val, values)]
             elif values:
                 self.value = self.values[0]
             else:
                 self.value = None
-                msg['value'] = ''
+                msg["value"] = ""
 
-        if 'options' in msg:
+        if "options" in msg:
             if isinstance(self.options, dict):
                 if unique:
-                    options = [(v, l) for l,v in zip(labels, self.unicode_values)]
+                    options = [(v, l) for l, v in zip(labels, self.unicode_values)]
                 else:
                     options = labels
-                msg['options'] = options
+                msg["options"] = options
             else:
-                msg['options'] = self.unicode_values
+                msg["options"] = self.unicode_values
             val = self.value
             if values:
                 if not isIn(val, values):
@@ -118,29 +115,26 @@ class SingleSelectBase(SelectBase):
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
-        if 'value' in msg:
+        if "value" in msg:
             if not self.values:
                 pass
-            elif msg['value'] == '':
-                msg['value'] = self.values[0] if self.values else None
+            elif msg["value"] == "":
+                msg["value"] = self.values[0] if self.values else None
             else:
-                if isIn(msg['value'], self.unicode_values):
-                    idx = indexOf(msg['value'], self.unicode_values)
+                if isIn(msg["value"], self.unicode_values):
+                    idx = indexOf(msg["value"], self.unicode_values)
                 else:
-                    idx = indexOf(msg['value'], self.labels)
-                msg['value'] = self._items[self.labels[idx]]
-        msg.pop('options', None)
+                    idx = indexOf(msg["value"], self.labels)
+                msg["value"] = self._items[self.labels[idx]]
+        msg.pop("options", None)
         return msg
 
     def _get_embed_state(self, root, values=None, max_opts=3):
         if values is None:
             values = self.values
         elif any(v not in self.values for v in values):
-            raise ValueError("Supplied embed states were not found "
-                             "in the %s widgets values list." %
-                             type(self).__name__)
-        return (self, self._models[root.ref['id']][0], values,
-                lambda x: x.value, 'value', 'cb_obj.value')
+            raise ValueError("Supplied embed states were not found " "in the %s widgets values list." % type(self).__name__)
+        return (self, self._models[root.ref["id"]][0], values, lambda x: x.value, "value", "cb_obj.value")
 
 
 class Select(SingleSelectBase):
@@ -159,38 +153,55 @@ class Select(SingleSelectBase):
     >>> Select(name='Study', options=['Biology', 'Chemistry', 'Physics'])
     """
 
-    description = param.String(default=None, doc="""
-        An HTML string describing the function of this component.""")
+    description = param.String(
+        default=None,
+        doc="""
+        An HTML string describing the function of this component.""",
+    )
 
-    disabled_options = param.List(default=[], nested_refs=True, doc="""
+    disabled_options = param.List(
+        default=[],
+        nested_refs=True,
+        doc="""
         Optional list of ``options`` that are disabled, i.e. unusable and
         un-clickable. If ``options`` is a dictionary the list items must be
-        dictionary values.""")
+        dictionary values.""",
+    )
 
-    groups = param.Dict(default=None, nested_refs=True, doc="""
+    groups = param.Dict(
+        default=None,
+        nested_refs=True,
+        doc="""
         Dictionary whose keys are used to visually group the options
         and whose values are either a list or a dictionary of options
         to select from. Mutually exclusive with ``options``  and valid only
-        if ``size`` is 1.""")
+        if ``size`` is 1.""",
+    )
 
-    size = param.Integer(default=1, bounds=(1, None), doc="""
+    size = param.Integer(
+        default=1,
+        bounds=(1, None),
+        doc="""
         Declares how many options are displayed at the same time.
         If set to 1 displays options as dropdown otherwise displays
-        scrollable area.""")
+        scrollable area.""",
+    )
 
-    width = param.Integer(default=300, allow_None=True, doc="""
+    width = param.Integer(
+        default=300,
+        allow_None=True,
+        doc="""
       Width of this component. If sizing_mode is set to stretch
-      or scale mode this will merely be used as a suggestion.""")
+      or scale mode this will merely be used as a suggestion.""",
+    )
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'groups': None,
+        "groups": None,
     }
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
-        'size': None, 'groups': None
-    }
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {"size": None, "groups": None}
 
-    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/select.css']
+    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/select.css"]
 
     @property
     def _widget_type(self):
@@ -200,94 +211,53 @@ class Select(SingleSelectBase):
         super().__init__(**params)
         if self.size == 1:
             self.param.size.constant = True
-        self._internal_callbacks.extend([
-            self.param.watch(
-                self._validate_options_groups,
-                ['options', 'groups']
-            ),
-            self.param.watch(
-                self._validate_disabled_options,
-                ['options', 'disabled_options', 'value']
-            ),
-        ])
+        self._internal_callbacks.extend(
+            [
+                self.param.watch(self._validate_options_groups, ["options", "groups"]),
+                self.param.watch(self._validate_disabled_options, ["options", "disabled_options", "value"]),
+            ]
+        )
         self._validate_options_groups()
         self._validate_disabled_options()
 
     def _validate_disabled_options(self, *events):
         if self.disabled_options and self.disabled_options == self.values:
-            raise ValueError(
-                f'All the options of a {type(self).__name__} '
-                'widget cannot be disabled.'
-            )
-        not_in_opts = [
-            dopts
-            for dopts in self.disabled_options
-            if dopts not in (self.values or [])
-        ]
+            raise ValueError(f"All the options of a {type(self).__name__} " "widget cannot be disabled.")
+        not_in_opts = [dopts for dopts in self.disabled_options if dopts not in (self.values or [])]
         if not_in_opts:
-            raise ValueError(
-                f'Cannot disable non existing options of {type(self).__name__}: {not_in_opts}'
-            )
+            raise ValueError(f"Cannot disable non existing options of {type(self).__name__}: {not_in_opts}")
         if len(events) == 1:
-            if events[0].name == 'value' and self.value in self.disabled_options:
-                raise ValueError(
-                    f'Cannot set the value of {type(self).__name__} to '
-                    f'{self.value!r} as it is a disabled option.'
-                )
-            elif events[0].name == 'disabled_options' and self.value in self.disabled_options:
-                raise ValueError(
-                    f'Cannot set disabled_options of {type(self).__name__} to a list that '
-                    f'includes the current value {self.value!r}.'
-                )
+            if events[0].name == "value" and self.value in self.disabled_options:
+                raise ValueError(f"Cannot set the value of {type(self).__name__} to " f"{self.value!r} as it is a disabled option.")
+            elif events[0].name == "disabled_options" and self.value in self.disabled_options:
+                raise ValueError(f"Cannot set disabled_options of {type(self).__name__} to a list that " f"includes the current value {self.value!r}.")
         if self.value in self.disabled_options:
-            raise ValueError(
-                f'Cannot initialize {type(self).__name__} with value {self.value!r} '
-                'as it is one of the disabled options.'
-            )
+            raise ValueError(f"Cannot initialize {type(self).__name__} with value {self.value!r} " "as it is one of the disabled options.")
 
     def _validate_options_groups(self, *events):
         if self.options and self.groups:
-            raise ValueError(
-                f'{type(self).__name__} options and groups parameters '
-                'are mutually exclusive.'
-            )
+            raise ValueError(f"{type(self).__name__} options and groups parameters " "are mutually exclusive.")
         if self.size > 1 and self.groups:
-            raise ValueError(
-                f'{type(self).__name__} with size > 1 doe not support the'
-                ' `groups` parameter, use `options` instead.'
-            )
+            raise ValueError(f"{type(self).__name__} with size > 1 doe not support the" " `groups` parameter, use `options` instead.")
 
     def _process_param_change(self, msg: Dict[str, Any]) -> Dict[str, Any]:
-        groups_provided = 'groups' in msg
+        groups_provided = "groups" in msg
         msg = super()._process_param_change(msg)
-        if groups_provided or 'options' in msg and self.groups:
+        if groups_provided or "options" in msg and self.groups:
             groups = self.groups
-            if (all(isinstance(values, dict) for values in groups.values()) is False
-               and  all(isinstance(values, list) for values in groups.values()) is False):
-                raise ValueError(
-                    'The values of the groups dictionary must be all of '
-                    'the dictionary or the list type.'
-                )
+            if all(isinstance(values, dict) for values in groups.values()) is False and all(isinstance(values, list) for values in groups.values()) is False:
+                raise ValueError("The values of the groups dictionary must be all of " "the dictionary or the list type.")
             labels, values = self.labels, self.values
             unique = len(set(self.unicode_values)) == len(labels)
             if groups:
                 if isinstance(next(iter(self.groups.values())), dict):
                     if unique:
-                        options = {
-                            group: [(str(value), label) for label, value in subd.items()]
-                            for group, subd in groups.items()
-                        }
+                        options = {group: [(str(value), label) for label, value in subd.items()] for group, subd in groups.items()}
                     else:
-                        options = {
-                            group: [str(v) for v in self.groups[group]]
-                            for group in groups.keys()
-                        }
-                    msg['options'] = options
+                        options = {group: [str(v) for v in self.groups[group]] for group in groups.keys()}
+                    msg["options"] = options
                 else:
-                    msg['options'] = {
-                        group: [(str(value), str(value)) for value in values]
-                        for group, values in groups.items()
-                    }
+                    msg["options"] = {group: [(str(value), str(value)) for value in values] for group, values in groups.items()}
             val = self.value
             if values:
                 if not isIn(val, values):
@@ -332,76 +302,88 @@ class ColorMap(SingleSelectBase):
     >>> ColorMap(name='Reds', options={'Reds': ['white', 'red'], 'Blues': ['#ffffff', '#0000ff']})
     """
 
-    options = param.Dict(default={}, doc="""
-        Dictionary of colormaps""")
+    options = param.Dict(
+        default={},
+        doc="""
+        Dictionary of colormaps""",
+    )
 
-    ncols = param.Integer(default=1, doc="""
-        Number of columns of swatches to display.""")
+    ncols = param.Integer(
+        default=1,
+        doc="""
+        Number of columns of swatches to display.""",
+    )
 
-    swatch_height = param.Integer(default=20, doc="""
-        Height of the color swatches.""")
+    swatch_height = param.Integer(
+        default=20,
+        doc="""
+        Height of the color swatches.""",
+    )
 
-    swatch_width = param.Integer(default=100, doc="""
-        Width of the color swatches.""")
+    swatch_width = param.Integer(
+        default=100,
+        doc="""
+        Width of the color swatches.""",
+    )
 
     value = param.Parameter(default=None, doc="The selected colormap.")
 
     value_name = param.String(default=None, doc="Name of the selected colormap.")
 
-    _rename = {'options': 'items', 'value_name': None}
+    _rename = {"options": "items", "value_name": None}
 
     @property
     def _widget_type(self) -> Type[Model]:
         try:
             from bokeh.models import ColorMap
         except Exception:
-            raise ImportError('ColorMap widget requires bokeh version >= 3.3.0.')
+            raise ImportError("ColorMap widget requires bokeh version >= 3.3.0.")
         return ColorMap
 
-    @param.depends('value_name', watch=True, on_init=True)
+    @param.depends("value_name", watch=True, on_init=True)
     def _sync_value_name(self):
         if self.value_name and self.value_name in self.options:
             self.value = self.options[self.value_name]
 
-    @param.depends('value', watch=True, on_init=True)
+    @param.depends("value", watch=True, on_init=True)
     def _sync_value(self):
         if self.value:
             idx = indexOf(self.value, self.values)
             self.value_name = self.labels[idx]
 
     def _process_param_change(self, params):
-        if 'options' in params:
+        if "options" in params:
             options = []
-            for name, cmap in params.pop('options').items():
-                if 'matplotlib' in getattr(cmap, '__module__', ''):
-                    N = getattr(cmap, 'N', 10)
+            for name, cmap in params.pop("options").items():
+                if "matplotlib" in getattr(cmap, "__module__", ""):
+                    N = getattr(cmap, "N", 10)
                     samples = np.linspace(0, 1, N)
-                    rgba_tmpl = 'rgba({0}, {1}, {2}, {3:.3g})'
-                    cmap = [
-                        rgba_tmpl.format(*(rgba[:3]*255).astype(int), rgba[-1])
-                        for rgba in cmap(samples)
-                    ]
+                    rgba_tmpl = "rgba({0}, {1}, {2}, {3:.3g})"
+                    cmap = [rgba_tmpl.format(*(rgba[:3] * 255).astype(int), rgba[-1]) for rgba in cmap(samples)]
                 options.append((name, cmap))
-            params['options'] = options
-        if 'value' in params and not isinstance(params['value'], (str, type(None))):
-            idx = indexOf(params['value'], self.values)
-            params['value'] = self.labels[idx]
-        return {
-            self._property_mapping.get(p, p): v for p, v in params.items()
-            if self._property_mapping.get(p, False) is not None
-        }
+            params["options"] = options
+        if "value" in params and not isinstance(params["value"], (str, type(None))):
+            idx = indexOf(params["value"], self.values)
+            params["value"] = self.labels[idx]
+        return {self._property_mapping.get(p, p): v for p, v in params.items() if self._property_mapping.get(p, False) is not None}
 
 
 class _MultiSelectBase(SingleSelectBase):
-
     value = param.List(default=[])
 
-    width = param.Integer(default=300, allow_None=True, doc="""
+    width = param.Integer(
+        default=300,
+        allow_None=True,
+        doc="""
       Width of this component. If sizing_mode is set to stretch
-      or scale mode this will merely be used as a suggestion.""")
+      or scale mode this will merely be used as a suggestion.""",
+    )
 
-    description = param.String(default=None, doc="""
-        An HTML string describing the function of this component.""")
+    description = param.String(
+        default=None,
+        doc="""
+        An HTML string describing the function of this component.""",
+    )
 
     _supports_embed: ClassVar[bool] = False
 
@@ -410,23 +392,21 @@ class _MultiSelectBase(SingleSelectBase):
     def _process_param_change(self, msg):
         msg = super(SingleSelectBase, self)._process_param_change(msg)
         labels, values = self.labels, self.values
-        if 'value' in msg:
-            msg['value'] = [labels[indexOf(v, values)] for v in msg['value']
-                            if isIn(v, values)]
+        if "value" in msg:
+            msg["value"] = [labels[indexOf(v, values)] for v in msg["value"] if isIn(v, values)]
 
-        if 'options' in msg:
-            msg['options'] = labels
+        if "options" in msg:
+            msg["options"] = labels
             if any(not isIn(v, values) for v in self.value):
                 self.value = [v for v in self.value if isIn(v, values)]
         return msg
 
     def _process_property_change(self, msg):
         msg = super(SingleSelectBase, self)._process_property_change(msg)
-        if 'value' in msg:
+        if "value" in msg:
             labels = self.labels
-            msg['value'] = [self._items[v] for v in msg['value']
-                            if v in labels]
-        msg.pop('options', None)
+            msg["value"] = [self._items[v] for v in msg["value"] if v in labels]
+        msg.pop("options", None)
         return msg
 
 
@@ -449,11 +429,14 @@ class MultiSelect(_MultiSelectBase):
     ... )
     """
 
-    size = param.Integer(default=4, doc="""
+    size = param.Integer(
+        default=4,
+        doc="""
         The number of items displayed at once (i.e. determines the
-        widget height).""")
+        widget height).""",
+    )
 
-    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/select.css']
+    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/select.css"]
 
     _widget_type: ClassVar[Type[Model]] = _BkMultiSelect
 
@@ -481,27 +464,52 @@ class MultiChoice(_MultiSelectBase):
     ... )
     """
 
-    delete_button = param.Boolean(default=True, doc="""
-        Whether to display a button to delete a selected option.""")
+    delete_button = param.Boolean(
+        default=True,
+        doc="""
+        Whether to display a button to delete a selected option.""",
+    )
 
-    max_items = param.Integer(default=None, bounds=(1, None), doc="""
-        Maximum number of options that can be selected.""")
+    max_items = param.Integer(
+        default=None,
+        bounds=(1, None),
+        doc="""
+        Maximum number of options that can be selected.""",
+    )
 
-    option_limit = param.Integer(default=None, bounds=(1, None), doc="""
-        Maximum number of options to display at once.""")
+    option_limit = param.Integer(
+        default=None,
+        bounds=(1, None),
+        doc="""
+        Maximum number of options to display at once.""",
+    )
 
-    search_option_limit = param.Integer(default=None, bounds=(1, None), doc="""
-        Maximum number of options to display at once if search string is entered.""")
+    search_option_limit = param.Integer(
+        default=None,
+        bounds=(1, None),
+        doc="""
+        Maximum number of options to display at once if search string is entered.""",
+    )
 
-    placeholder = param.String(default='', doc="""
-        String displayed when no selection has been made.""")
+    placeholder = param.String(
+        default="",
+        doc="""
+        String displayed when no selection has been made.""",
+    )
 
-    solid = param.Boolean(default=True, doc="""
-        Whether to display widget with solid or light style.""")
+    solid = param.Boolean(
+        default=True,
+        doc="""
+        Whether to display widget with solid or light style.""",
+    )
 
-    width = param.Integer(default=300, allow_None=True, doc="""
+    width = param.Integer(
+        default=300,
+        allow_None=True,
+        doc="""
       Width of this component. If sizing_mode is set to stretch
-      or scale mode this will merely be used as a suggestion.""")
+      or scale mode this will merely be used as a suggestion.""",
+    )
 
     _widget_type: ClassVar[Type[Model]] = _BkMultiChoice
 
@@ -528,77 +536,104 @@ class AutocompleteInput(Widget):
     ... )
     """
 
-    case_sensitive = param.Boolean(default=True, doc="""
-        Enable or disable case sensitivity.""")
+    case_sensitive = param.Boolean(
+        default=True,
+        doc="""
+        Enable or disable case sensitivity.""",
+    )
 
-    min_characters = param.Integer(default=2, doc="""
+    min_characters = param.Integer(
+        default=2,
+        doc="""
         The number of characters a user must type before
-        completions are presented.""")
+        completions are presented.""",
+    )
 
-    options = param.List(default=[], doc="""
+    options = param.List(
+        default=[],
+        doc="""
         A list of completion strings. This will be used to guide the
-        user upon typing the beginning of a desired value.""")
+        user upon typing the beginning of a desired value.""",
+    )
 
-    placeholder = param.String(default='', doc="""
-        Placeholder for empty input field.""")
+    placeholder = param.String(
+        default="",
+        doc="""
+        Placeholder for empty input field.""",
+    )
 
-    restrict = param.Boolean(default=True, doc="""
+    restrict = param.Boolean(
+        default=True,
+        doc="""
         Set to False in order to allow users to enter text that is not
-        present in the list of completion strings.""")
+        present in the list of completion strings.""",
+    )
 
-    value = param.String(default='', allow_None=True, doc="""
-      Initial or entered text value updated when <enter> key is pressed.""")
+    value = param.String(
+        default="",
+        allow_None=True,
+        doc="""
+      Initial or entered text value updated when <enter> key is pressed.""",
+    )
 
-    value_input = param.String(default='', allow_None=True, doc="""
-      Initial or entered text value updated on every key press.""")
+    value_input = param.String(
+        default="",
+        allow_None=True,
+        doc="""
+      Initial or entered text value updated on every key press.""",
+    )
 
-    width = param.Integer(default=300, allow_None=True, doc="""
+    width = param.Integer(
+        default=300,
+        allow_None=True,
+        doc="""
       Width of this component. If sizing_mode is set to stretch
-      or scale mode this will merely be used as a suggestion.""")
+      or scale mode this will merely be used as a suggestion.""",
+    )
 
-    description = param.String(default=None, doc="""
-        An HTML string describing the function of this component.""")
+    description = param.String(
+        default=None,
+        doc="""
+        An HTML string describing the function of this component.""",
+    )
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'options': 'completions'}
+    _rename: ClassVar[Mapping[str, str | None]] = {"name": "title", "options": "completions"}
 
     _widget_type: ClassVar[Type[Model]] = _BkAutocompleteInput
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
-        if 'completions' in msg:
-            if self.restrict and not isIn(self.value, msg['completions']):
-                msg['value'] = self.value = ''
+        if "completions" in msg:
+            if self.restrict and not isIn(self.value, msg["completions"]):
+                msg["value"] = self.value = ""
         return msg
 
 
 class _RadioGroupBase(SingleSelectBase):
-
     _supports_embed = False
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': None, 'options': 'labels', 'value': 'active'
-    }
+    _rename: ClassVar[Mapping[str, str | None]] = {"name": None, "options": "labels", "value": "active"}
 
-    _source_transforms = {'value': "source.labels[value]"}
+    _source_transforms = {"value": "source.labels[value]"}
 
-    _target_transforms = {'value': "target.labels.indexOf(value)"}
+    _target_transforms = {"value": "target.labels.indexOf(value)"}
 
     __abstract = True
 
     def _process_param_change(self, msg):
         msg = super(SingleSelectBase, self)._process_param_change(msg)
         values = self.values
-        if 'active' in msg:
-            value = msg['active']
+        if "active" in msg:
+            value = msg["active"]
             if value in values:
-                msg['active'] = indexOf(value, values)
+                msg["active"] = indexOf(value, values)
             else:
                 if self.value is not None:
                     self.value = None
-                msg['active'] = None
+                msg["active"] = None
 
-        if 'labels' in msg:
-            msg['labels'] = self.labels
+        if "labels" in msg:
+            msg["labels"] = self.labels
             value = self.value
             if not isIn(value, values):
                 self.value = None
@@ -606,24 +641,20 @@ class _RadioGroupBase(SingleSelectBase):
 
     def _process_property_change(self, msg):
         msg = super(SingleSelectBase, self)._process_property_change(msg)
-        if 'value' in msg:
-            index = msg['value']
+        if "value" in msg:
+            index = msg["value"]
             if index is None:
-                msg['value'] = None
+                msg["value"] = None
             else:
-                msg['value'] = list(self.values)[index]
+                msg["value"] = list(self.values)[index]
         return msg
 
     def _get_embed_state(self, root, values=None, max_opts=3):
         if values is None:
             values = self.values
         elif any(v not in self.values for v in values):
-            raise ValueError("Supplied embed states were not found in "
-                             "the %s widgets values list." %
-                             type(self).__name__)
-        return (self, self._models[root.ref['id']][0], values,
-                lambda x: x.active, 'active', 'cb_obj.active')
-
+            raise ValueError("Supplied embed states were not found in " "the %s widgets values list." % type(self).__name__)
+        return (self, self._models[root.ref["id"]][0], values, lambda x: x.active, "active", "cb_obj.active")
 
 
 class RadioButtonGroup(_RadioGroupBase, _ButtonBase, TooltipMixin):
@@ -645,18 +676,18 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase, TooltipMixin):
     ... )
     """
 
-    orientation = param.Selector(default='horizontal',
-        objects=['horizontal', 'vertical'], doc="""
-        Button group orientation, either 'horizontal' (default) or 'vertical'.""")
+    orientation = param.Selector(
+        default="horizontal",
+        objects=["horizontal", "vertical"],
+        doc="""
+        Button group orientation, either 'horizontal' (default) or 'vertical'.""",
+    )
 
-    _source_transforms = {
-        'value': "source.labels[value]", 'button_style': None, 'description': None
-    }
+    _source_transforms = {"value": "source.labels[value]", "button_style": None, "description": None}
 
     _supports_embed: ClassVar[bool] = True
 
     _widget_type: ClassVar[Type[Model]] = _BkRadioButtonGroup
-
 
 
 class RadioBoxGroup(_RadioGroupBase):
@@ -677,25 +708,26 @@ class RadioBoxGroup(_RadioGroupBase):
     ... )
     """
 
-    inline = param.Boolean(default=False, doc="""
+    inline = param.Boolean(
+        default=False,
+        doc="""
         Whether the items be arrange vertically (``False``) or
-        horizontally in-line (``True``).""")
+        horizontally in-line (``True``).""",
+    )
 
     _supports_embed: ClassVar[bool] = True
 
     _widget_type: ClassVar[Type[Model]] = _BkRadioBoxGroup
 
 
-
 class _CheckGroupBase(SingleSelectBase):
-
     value = param.List(default=[])
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'options': 'labels', 'value': 'active'}
+    _rename: ClassVar[Mapping[str, str | None]] = {"name": None, "options": "labels", "value": "active"}
 
-    _source_transforms = {'value': "value.map((index) => source.labels[index])"}
+    _source_transforms = {"value": "value.map((index) => source.labels[index])"}
 
-    _target_transforms = {'value': "value.map((label) => target.labels.indexOf(label))"}
+    _target_transforms = {"value": "value.map((label) => target.labels.indexOf(label))"}
 
     _supports_embed = False
 
@@ -704,25 +736,22 @@ class _CheckGroupBase(SingleSelectBase):
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         values = self.values
-        if 'active' in msg:
-            msg['active'] = [indexOf(v, values) for v in msg['active']
-                             if isIn(v, values)]
-        if 'labels' in msg:
-            msg['labels'] = self.labels
+        if "active" in msg:
+            msg["active"] = [indexOf(v, values) for v in msg["active"] if isIn(v, values)]
+        if "labels" in msg:
+            msg["labels"] = self.labels
             if any(not isIn(v, values) for v in self.value):
                 self.value = [v for v in self.value if isIn(v, values)]
-            msg["active"] = [indexOf(v, values) for v in self.value
-                             if isIn(v, values)]
-        msg.pop('title', None)
+            msg["active"] = [indexOf(v, values) for v in self.value if isIn(v, values)]
+        msg.pop("title", None)
         return msg
 
     def _process_property_change(self, msg):
         msg = super(SingleSelectBase, self)._process_property_change(msg)
-        if 'value' in msg:
+        if "value" in msg:
             values = self.values
-            msg['value'] = [values[a] for a in msg['value']]
+            msg["value"] = [values[a] for a in msg["value"]]
         return msg
-
 
 
 class CheckButtonGroup(_CheckGroupBase, _ButtonBase, TooltipMixin):
@@ -744,14 +773,14 @@ class CheckButtonGroup(_CheckGroupBase, _ButtonBase, TooltipMixin):
     ... )
     """
 
-    orientation = param.Selector(default='horizontal',
-        objects=['horizontal', 'vertical'], doc="""
-        Button group orientation, either 'horizontal' (default) or 'vertical'.""")
+    orientation = param.Selector(
+        default="horizontal",
+        objects=["horizontal", "vertical"],
+        doc="""
+        Button group orientation, either 'horizontal' (default) or 'vertical'.""",
+    )
 
-    _source_transforms = {
-        'value': "value.map((index) => source.labels[index])", 'button_style': None,
-        'description': None
-    }
+    _source_transforms = {"value": "value.map((index) => source.labels[index])", "button_style": None, "description": None}
 
     _widget_type: ClassVar[Type[Model]] = _BkCheckboxButtonGroup
 
@@ -775,12 +804,14 @@ class CheckBoxGroup(_CheckGroupBase):
     ... )
     """
 
-    inline = param.Boolean(default=False, doc="""
+    inline = param.Boolean(
+        default=False,
+        doc="""
         Whether the items be arrange vertically (``False``) or
-        horizontally in-line (``True``).""")
+        horizontally in-line (``True``).""",
+    )
 
     _widget_type: ClassVar[Type[Model]] = _BkCheckboxGroup
-
 
 
 class ToggleGroup(SingleSelectBase):
@@ -801,32 +832,27 @@ class ToggleGroup(SingleSelectBase):
            is an 'object'.
     """
 
-    _widgets_type = ['button', 'box']
-    _behaviors = ['check', 'radio']
+    _widgets_type = ["button", "box"]
+    _behaviors = ["check", "radio"]
 
-    def __new__(cls, widget_type='button', behavior='check', **params):
-
+    def __new__(cls, widget_type="button", behavior="check", **params):
         if widget_type not in ToggleGroup._widgets_type:
-            raise ValueError('widget_type {} is not valid. Valid options are {}'
-                             .format(widget_type, ToggleGroup._widgets_type))
+            raise ValueError("widget_type {} is not valid. Valid options are {}".format(widget_type, ToggleGroup._widgets_type))
         if behavior not in ToggleGroup._behaviors:
-            raise ValueError('behavior {} is not valid. Valid options are {}'
-                             .format(widget_type, ToggleGroup._behaviors))
+            raise ValueError("behavior {} is not valid. Valid options are {}".format(widget_type, ToggleGroup._behaviors))
 
-        if behavior == 'check':
-            if widget_type == 'button':
+        if behavior == "check":
+            if widget_type == "button":
                 return CheckButtonGroup(**params)
             else:
                 return CheckBoxGroup(**params)
         else:
-            if isinstance(params.get('value'), list):
-                raise ValueError('Radio buttons require a single value, '
-                                 'found: %s' % params['value'])
-            if widget_type == 'button':
+            if isinstance(params.get("value"), list):
+                raise ValueError("Radio buttons require a single value, " "found: %s" % params["value"])
+            if widget_type == "button":
                 return RadioButtonGroup(**params)
             else:
                 return RadioBoxGroup(**params)
-
 
 
 class CrossSelector(CompositeWidget, MultiSelect):
@@ -845,117 +871,115 @@ class CrossSelector(CompositeWidget, MultiSelect):
     ... )
     """
 
-    width = param.Integer(default=600, allow_None=True, doc="""
+    width = param.Integer(
+        default=600,
+        allow_None=True,
+        doc="""
         The number of options shown at once (note this is the
-        only way to control the height of this widget)""")
+        only way to control the height of this widget)""",
+    )
 
-    height = param.Integer(default=200, allow_None=True, doc="""
+    height = param.Integer(
+        default=200,
+        allow_None=True,
+        doc="""
         The number of options shown at once (note this is the
-        only way to control the height of this widget)""")
+        only way to control the height of this widget)""",
+    )
 
-    filter_fn = param.Callable(default=re.search, doc="""
+    filter_fn = param.Callable(
+        default=re.search,
+        doc="""
         The filter function applied when querying using the text
         fields, defaults to re.search. Function is two arguments, the
-        query or pattern and the item label.""")
+        query or pattern and the item label.""",
+    )
 
-    size = param.Integer(default=10, doc="""
+    size = param.Integer(
+        default=10,
+        doc="""
         The number of options shown at once (note this is the only way
-        to control the height of this widget)""")
+        to control the height of this widget)""",
+    )
 
-    definition_order = param.Integer(default=True, doc="""
+    definition_order = param.Integer(
+        default=True,
+        doc="""
        Whether to preserve definition order after filtering. Disable
        to allow the order of selection to define the order of the
-       selected list.""")
+       selected list.""",
+    )
 
     def __init__(self, **params):
         super().__init__(**params)
         # Compute selected and unselected values
 
         labels, values = self.labels, self.values
-        selected = [
-            labels[indexOf(v, values)] for v in params.get('value', [])
-            if isIn(v, values)
-        ]
+        selected = [labels[indexOf(v, values)] for v in params.get("value", []) if isIn(v, values)]
         unselected = [k for k in labels if k not in selected]
         layout = dict(
-            sizing_mode='stretch_both', margin=0,
+            sizing_mode="stretch_both",
+            margin=0,
             styles=dict(background=self.background),
         )
-        self._lists = {
-            False: MultiSelect(options=unselected, size=self.size, **layout),
-            True: MultiSelect(options=selected, size=self.size, **layout)
-        }
-        self._lists[False].param.watch(self._update_selection, 'value')
-        self._lists[True].param.watch(self._update_selection, 'value')
+        self._lists = {False: MultiSelect(options=unselected, size=self.size, **layout), True: MultiSelect(options=selected, size=self.size, **layout)}
+        self._lists[False].param.watch(self._update_selection, "value")
+        self._lists[True].param.watch(self._update_selection, "value")
 
         # Define buttons
-        self._buttons = {
-            False: Button(name='\u276e\u276e', width=50),
-            True: Button(name='\u276f\u276f', width=50)
-        }
+        self._buttons = {False: Button(name="\u276e\u276e", width=50), True: Button(name="\u276f\u276f", width=50)}
 
-        self._buttons[False].param.watch(self._apply_selection, 'clicks')
-        self._buttons[True].param.watch(self._apply_selection, 'clicks')
+        self._buttons[False].param.watch(self._apply_selection, "clicks")
+        self._buttons[True].param.watch(self._apply_selection, "clicks")
 
         # Define search
         self._search = {
-            False: TextInput(
-                placeholder='Filter available options',
-                margin=(0, 0, 10, 0), width_policy='max'
-            ),
-            True: TextInput(
-                placeholder='Filter selected options',
-                margin=(0, 0, 10, 0), width_policy='max'
-            )
+            False: TextInput(placeholder="Filter available options", margin=(0, 0, 10, 0), width_policy="max"),
+            True: TextInput(placeholder="Filter selected options", margin=(0, 0, 10, 0), width_policy="max"),
         }
-        self._search[False].param.watch(self._filter_options, 'value_input')
-        self._search[True].param.watch(self._filter_options, 'value_input')
+        self._search[False].param.watch(self._filter_options, "value_input")
+        self._search[True].param.watch(self._filter_options, "value_input")
 
         self._placeholder = TextAreaInput(
-            placeholder=("To select an item highlight it on the left "
-                         "and use the arrow button to move it to the right."),
-            disabled=True, **layout
+            placeholder=("To select an item highlight it on the left " "and use the arrow button to move it to the right."), disabled=True, **layout
         )
         right = self._lists[True] if self.value else self._placeholder
 
         # Define Layout
         self._unselected = Column(self._search[False], self._lists[False], **layout)
         self._selected = Column(self._search[True], right, **layout)
-        buttons = Column(self._buttons[True], self._buttons[False], margin=(0, 5), align='center')
+        buttons = Column(self._buttons[True], self._buttons[False], margin=(0, 5), align="center")
 
-        self._composite[:] = [
-            self._unselected, buttons, self._selected
-        ]
+        self._composite[:] = [self._unselected, buttons, self._selected]
 
         self._selections = {False: [], True: []}
-        self._query = {False: '', True: ''}
+        self._query = {False: "", True: ""}
 
         self._update_disabled()
         self._update_width()
 
-    @param.depends('width', watch=True)
+    @param.depends("width", watch=True)
     def _update_width(self):
-        width = int(self.width // 2. - 50)
+        width = int(self.width // 2.0 - 50)
         self._search[False].width = width
         self._search[True].width = width
         self._lists[False].width = width
         self._lists[True].width = width
 
-    @param.depends('size', watch=True)
+    @param.depends("size", watch=True)
     def _update_size(self):
         self._lists[False].size = self.size
         self._lists[True].size = self.size
 
-    @param.depends('disabled', watch=True)
+    @param.depends("disabled", watch=True)
     def _update_disabled(self):
         self._buttons[False].disabled = self.disabled
         self._buttons[True].disabled = self.disabled
 
-    @param.depends('value', watch=True)
+    @param.depends("value", watch=True)
     def _update_value(self):
         labels, values = self.labels, self.values
-        selected = [labels[indexOf(v, values)] for v in self.value
-                    if isIn(v, values)]
+        selected = [labels[indexOf(v, values)] for v in self.value if isIn(v, values)]
         unselected = [k for k in labels if k not in selected]
         self._lists[True].options = selected
         self._lists[True].value = []
@@ -966,7 +990,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
         elif not len(self._lists[True].options) and self._selected[-1] is not self._placeholder:
             self._selected[-1] = self._placeholder
 
-    @param.depends('options', watch=True)
+    @param.depends("options", watch=True)
     def _update_options(self):
         """
         Updates the options of each of the sublists after the options
@@ -1012,7 +1036,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
         Updates the current selection in each list.
         """
         selected = event.obj is self._lists[True]
-        self._selections[selected] = [v for v in event.new if v != '']
+        self._selections[selected] = [v for v in event.new if v != ""]
 
     def _apply_selection(self, event):
         """
@@ -1025,7 +1049,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
         old = self._lists[selected].options
         other = self._lists[not selected].options
 
-        merged = OrderedDict([(k, k) for k in list(old)+list(new)])
+        merged = OrderedDict([(k, k) for k in list(old) + list(new)])
         leftovers = OrderedDict([(k, k) for k in other if k not in new])
         self._lists[selected].options = merged if merged else {}
         self._lists[not selected].options = leftovers if leftovers else {}
@@ -1033,7 +1057,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
             self._selected[-1] = self._lists[True]
         else:
             self._selected[-1] = self._placeholder
-        self.value = [self._items[o] for o in self._lists[True].options if o != '']
+        self.value = [self._items[o] for o in self._lists[True].options if o != ""]
         self._apply_filters()
 
     def _get_model(self, doc, root=None, parent=None, comm=None):

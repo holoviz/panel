@@ -14,10 +14,7 @@ import param
 from ..io.resources import CDN_DIST
 from .markup import Markdown
 
-ALERT_TYPES = [
-    "primary", "secondary", "success", "danger",
-    "warning", "info", "light", "dark"
-]
+ALERT_TYPES = ["primary", "secondary", "success", "danger", "warning", "info", "light", "dark"]
 
 
 class Alert(Markdown):
@@ -36,11 +33,9 @@ class Alert(Markdown):
 
     priority: ClassVar[float | bool | None] = 0
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'alert_type': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {"alert_type": None}
 
-    _stylesheets: ClassVar[List[str]] = [
-        f'{CDN_DIST}css/alerts.css'
-    ]
+    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/alerts.css"]
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
@@ -53,8 +48,6 @@ class Alert(Markdown):
         super().__init__(object, **params)
 
     def _process_param_change(self, params):
-        if 'css_classes' in params or 'alert_type' in params:
-            params['css_classes'] = self.css_classes + [
-                'alert', f'alert-{self.alert_type}'
-            ]
+        if "css_classes" in params or "alert_type" in params:
+            params["css_classes"] = self.css_classes + ["alert", f"alert-{self.alert_type}"]
         return super()._process_param_change(params)

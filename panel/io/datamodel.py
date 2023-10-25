@@ -16,13 +16,14 @@ from .state import state
 
 
 class Parameterized(bokeh.core.property.bases.Property):
-    """ Accept a Parameterized object.
+    """Accept a Parameterized object.
 
     This property only exists to support type validation, e.g. for "accepts"
     clauses. It is not serializable itself, and is not useful to add to
     Bokeh models directly.
 
     """
+
     def validate(self, value, detail=True):
         super().validate(value, detail)
 
@@ -34,7 +35,7 @@ class Parameterized(bokeh.core.property.bases.Property):
 
 
 class ParameterizedList(bokeh.core.property.bases.Property):
-    """ Accept a list of Parameterized objects.
+    """Accept a list of Parameterized objects.
 
     This property only exists to support type validation, e.g. for "accepts"
     clauses. It is not serializable itself, and is not useful to add to
@@ -53,6 +54,7 @@ class ParameterizedList(bokeh.core.property.bases.Property):
 
 
 _DATA_MODELS = weakref.WeakKeyDictionary()
+
 
 # The Bokeh Color property has `_default_help` set which causes
 # an error to be raise when Nullable is called on it. This converter
@@ -77,14 +79,11 @@ PARAM_MAPPING = {
     pm.CalendarDateRange: lambda p, kwargs: bp.Tuple(bp.Date, bp.Date, **kwargs),
     pm.ClassSelector: lambda p, kwargs: (
         (bp.Instance(DataModel, **kwargs), [(Parameterized, create_linked_datamodel)])
-        if isinstance(p.class_, type) and issubclass(p.class_, pm.Parameterized) else
-        bp.Any(**kwargs)
+        if isinstance(p.class_, type) and issubclass(p.class_, pm.Parameterized)
+        else bp.Any(**kwargs)
     ),
     pm.Color: color_param_to_ppt,
-    pm.DataFrame: lambda p, kwargs: (
-        bp.ColumnData(bp.Any, bp.Seq(bp.Any), **kwargs),
-        [(bp.PandasDataFrame, lambda x: ColumnDataSource._data_from_df(x))]
-    ),
+    pm.DataFrame: lambda p, kwargs: (bp.ColumnData(bp.Any, bp.Seq(bp.Any), **kwargs), [(bp.PandasDataFrame, lambda x: ColumnDataSource._data_from_df(x))]),
     pm.DateRange: lambda p, kwargs: bp.Tuple(bp.Datetime, bp.Datetime, **kwargs),
     pm.Date: lambda p, kwargs: bp.Datetime(**kwargs),
     pm.Dict: lambda p, kwargs: bp.Dict(bp.String, bp.Any, **kwargs),
@@ -97,7 +96,6 @@ PARAM_MAPPING = {
     pm.String: lambda p, kwargs: bp.String(**kwargs),
     pm.Tuple: lambda p, kwargs: bp.Tuple(*(bp.Any for p in range(p.length)), **kwargs),
 }
-
 
 
 def construct_data_model(parameterized, name=None, ignore=[], types={}):
@@ -134,10 +132,10 @@ def construct_data_model(parameterized, name=None, ignore=[], types={}):
         prop = PARAM_MAPPING.get(ptype)
         if isinstance(parameterized, Syncable):
             pname = parameterized._rename.get(pname, pname)
-        if pname == 'name' or pname is None:
+        if pname == "name" or pname is None:
             continue
-        nullable = getattr(p, 'allow_None', False)
-        kwargs = {'default': p.default, 'help': p.doc}
+        nullable = getattr(p, "allow_None", False)
+        kwargs = {"default": p.default, "help": p.doc}
         if prop is None:
             bk_prop, accepts = bp.Any(**kwargs), []
         else:
@@ -171,7 +169,7 @@ def create_linked_datamodel(obj, root=None):
     elif isinstance(obj, pm.Parameterized):
         cls = type(obj)
     else:
-        raise TypeError('Can only create DataModel for Parameterized class or instance.')
+        raise TypeError("Can only create DataModel for Parameterized class or instance.")
     if cls in _DATA_MODELS:
         model = _DATA_MODELS[cls]
     else:
@@ -190,18 +188,15 @@ def create_linked_datamodel(obj, root=None):
             _changing.remove(attr)
 
     def cb_param(*events):
-        update = {
-            event.name: event.new for event in events
-            if event.name not in _changing
-        }
+        update = {event.name: event.new for event in events if event.name not in _changing}
         try:
             _changing.extend(list(update))
 
-            tags = [tag for tag in model.tags if tag.startswith('__ref:')]
+            tags = [tag for tag in model.tags if tag.startswith("__ref:")]
             if root:
-                ref = root.ref['id']
+                ref = root.ref["id"]
             elif tags:
-                ref = tags[0].split('__ref:')[-1]
+                ref = tags[0].split("__ref:")[-1]
             else:
                 ref = None
 
@@ -210,7 +205,7 @@ def create_linked_datamodel(obj, root=None):
                 if comm or state._unblocked(doc):
                     with unlocked():
                         model.update(**update)
-                    if comm and 'embedded' not in root.tags:
+                    if comm and "embedded" not in root.tags:
                         push(doc, comm)
                 else:
                     cb = partial(model.update, **update)

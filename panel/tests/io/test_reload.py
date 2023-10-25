@@ -13,21 +13,24 @@ from panel.io.state import state
 def test_record_modules_not_stdlib():
     with record_modules():
         import audioop  # noqa
-    assert ((_modules == set()) or (_modules == set(['audioop'])))
+    assert (_modules == set()) or (_modules == set(["audioop"]))
     _modules.clear()
+
 
 def test_check_file():
     modify_times = {}
     _check_file(modify_times, __file__)
     assert modify_times[__file__] == os.stat(__file__).st_mtime
 
+
 def test_file_in_blacklist():
-    filepath = '/home/panel/lib/python/site-packages/panel/__init__.py'
+    filepath = "/home/panel/lib/python/site-packages/panel/__init__.py"
     assert in_blacklist(filepath)
-    filepath = '/home/panel/.config/panel.py'
+    filepath = "/home/panel/.config/panel.py"
     assert in_blacklist(filepath)
-    filepath = '/home/panel/development/panel/__init__.py'
+    filepath = "/home/panel/development/panel/__init__.py"
     assert not in_blacklist(filepath)
+
 
 def test_watch():
     filepath = os.path.abspath(__file__)
@@ -36,13 +39,14 @@ def test_watch():
     # Cleanup
     _watched_files.clear()
 
+
 @pytest.mark.flaky(max_runs=3)
 def test_reload_on_update():
     location = Location()
     state._location = location
     filepath = os.path.abspath(__file__)
     watch(filepath)
-    modify_times = {filepath: os.stat(__file__).st_mtime-1}
+    modify_times = {filepath: os.stat(__file__).st_mtime - 1}
     _reload_on_update(modify_times)
     assert location.reload
 

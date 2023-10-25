@@ -9,27 +9,21 @@ from ..io.resources import JS_VERSION, bundled_files
 from ..util import classproperty
 from .layout import HTMLBox
 
-PERSPECTIVE_THEMES = [
-    'material', 'material-dark', 'monokai', 'solarized', 'solarized-dark', 'vaporwave'
-]
+PERSPECTIVE_THEMES = ["material", "material-dark", "monokai", "solarized", "solarized-dark", "vaporwave"]
 
-PERSPECTIVE_VERSION = '1.9.3'
+PERSPECTIVE_VERSION = "1.9.3"
 
 THEME_PATH = f"@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/css/"
 THEME_URL = f"{config.npm_cdn}/{THEME_PATH}"
 PANEL_CDN = f"{config.npm_cdn}/@holoviz/panel@{JS_VERSION}/dist/bundled/perspective/{THEME_PATH}"
 
-CSS_URLS = [
-    f"{THEME_URL}fonts.css",
-    f"{THEME_URL}themes.css",
-    f"{THEME_URL}variables.css"
-]
+CSS_URLS = [f"{THEME_URL}fonts.css", f"{THEME_URL}themes.css", f"{THEME_URL}variables.css"]
 for theme in PERSPECTIVE_THEMES:
-    CSS_URLS.append(f'{THEME_URL}{theme}.css')
+    CSS_URLS.append(f"{THEME_URL}{theme}.css")
+
 
 class PerspectiveClickEvent(ModelEvent):
-
-    event_name = 'perspective-click'
+    event_name = "perspective-click"
 
     def __init__(self, model, config, column_names, row):
         self.config = config
@@ -38,13 +32,10 @@ class PerspectiveClickEvent(ModelEvent):
         super().__init__(model=model)
 
     def __repr__(self):
-        return (
-            f'{type(self).__name__}(config={self.config}, '
-            f'column_names={self.column_names}, row={self.row}'
-        )
+        return f"{type(self).__name__}(config={self.config}, " f"column_names={self.column_names}, row={self.row}"
+
 
 class Perspective(HTMLBox):
-
     aggregates = Either(Dict(String, Any), Null())
 
     split_by = Either(List(String), Null())
@@ -106,4 +97,4 @@ class Perspective(HTMLBox):
 
     @classproperty
     def __css__(cls):
-        return bundled_files(cls, 'css')
+        return bundled_files(cls, "css")

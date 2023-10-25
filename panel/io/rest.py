@@ -23,33 +23,40 @@ class HTTPError(web.HTTPError):
 
 
 class BaseHandler(web.RequestHandler):
-
     def write_error(self, status_code, **kwargs):
-        self.set_header('Content-Type', 'application/json')
+        self.set_header("Content-Type", "application/json")
         if self.settings.get("serve_traceback") and "exc_info" in kwargs:
             # in debug mode, try to send a traceback
             lines = []
             for line in traceback.format_exception(*kwargs["exc_info"]):
                 lines.append(line)
-            self.finish(json.dumps({
-                'error': {
-                    'code': status_code,
-                    'message': self._reason,
-                    'traceback': lines,
-                }
-            }))
+            self.finish(
+                json.dumps(
+                    {
+                        "error": {
+                            "code": status_code,
+                            "message": self._reason,
+                            "traceback": lines,
+                        }
+                    }
+                )
+            )
         else:
-            self.finish(json.dumps({
-                'error': {
-                    'code': status_code,
-                    'message': self._reason,
-                }
-            }))
+            self.finish(
+                json.dumps(
+                    {
+                        "error": {
+                            "code": status_code,
+                            "message": self._reason,
+                        }
+                    }
+                )
+            )
+
 
 class ParamHandler(BaseHandler):
-
     def __init__(self, app, request, **kwargs):
-        self.root = kwargs.pop('root', None)
+        self.root = kwargs.pop("root", None)
         super().__init__(app, request, **kwargs)
 
     @classmethod
@@ -63,21 +70,18 @@ class ParamHandler(BaseHandler):
             if p not in parameterized.param:
                 reason = f"'{p}' query parameter not recognized."
                 raise HTTPError(reason=reason, status_code=400)
-        return {p: parameterized.param.deserialize_value(p, v)
-                for p, v in parameters.items()}
+        return {p: parameterized.param.deserialize_value(p, v) for p, v in parameters.items()}
 
     async def get(self):
         path = self.request.path
-        endpoint = path[path.index(self.root)+len(self.root):]
-        parameterized, parameters, _ = state._rest_endpoints.get(
-            endpoint, (None, None, None)
-        )
+        endpoint = path[path.index(self.root) + len(self.root) :]
+        parameterized, parameters, _ = state._rest_endpoints.get(endpoint, (None, None, None))
         if not parameterized:
             return
         args = parse_qs(self.request.query)
         params = self.deserialize(parameterized[0], args)
         parameterized[0].param.update(**params)
-        self.set_header('Content-Type', 'application/json')
+        self.set_header("Content-Type", "application/json")
         self.write(self.serialize(parameterized[0], parameters))
 
 
@@ -87,20 +91,20 @@ def build_tranquilize_application(files):
 
     functions = []
     for filename in files:
-        extension = filename.split('.')[-1]
-        if extension == 'py':
+        extension = filename.split(".")[-1]
+        if extension == "py":
             source = ScriptHandler(filename)
-        elif extension == 'ipynb':
+        elif extension == "ipynb":
             try:
                 import nbconvert  # noqa
-            except ImportError as e: # pragma no cover
+            except ImportError as e:  # pragma no cover
                 raise ImportError("Please install nbconvert to serve Jupyter Notebooks.") from e
 
             source = NotebookHandler(filename)
         else:
-            raise UnsupportedFileType('{} is not a script (.py) or notebook (.ipynb)'.format(filename))
+            raise UnsupportedFileType("{} is not a script (.py) or notebook (.ipynb)".format(filename))
         functions.extend(source.tranquilized_functions)
-    return make_app(functions, 'Panel REST API', prefix='rest/')
+    return make_app(functions, "Panel REST API", prefix="rest/")
 
 
 def tranquilizer_rest_provider(files, endpoint):
@@ -142,41 +146,39 @@ def param_rest_provider(files, endpoint):
     A Tornado routing pattern containing the route and handler
     """
     for filename in files:
-        extension = filename.split('.')[-1]
-        if extension == 'py':
+        extension = filename.split(".")[-1]
+        if extension == "py":
             try:
                 run_path(filename)
             except Exception:
                 param.main.param.warning("Could not run app script on REST server startup.")
-        elif extension == 'ipynb':
+        elif extension == "ipynb":
             try:
                 import nbconvert  # noqa
             except ImportError:
                 raise ImportError("Please install nbconvert to serve Jupyter Notebooks.")
             from nbconvert import ScriptExporter
+
             exporter = ScriptExporter()
             source, _ = exporter.from_filename(filename)
             source_dir = os.path.dirname(filename)
-            with tempfile.NamedTemporaryFile(mode='w', dir=source_dir, delete=True) as tmp:
+            with tempfile.NamedTemporaryFile(mode="w", dir=source_dir, delete=True) as tmp:
                 tmp.write(source)
                 tmp.flush()
                 try:
-                    run_path(tmp.name, init_globals={'get_ipython': MagicMock()})
+                    run_path(tmp.name, init_globals={"get_ipython": MagicMock()})
                 except Exception:
                     param.main.param.warning("Could not run app notebook on REST server startup.")
         else:
-            raise ValueError('{} is not a script (.py) or notebook (.ipynb)'.format(filename))
+            raise ValueError("{} is not a script (.py) or notebook (.ipynb)".format(filename))
 
-    if endpoint and not endpoint.endswith('/'):
-        endpoint += '/'
+    if endpoint and not endpoint.endswith("/"):
+        endpoint += "/"
     return [((r"^/%s.*" % endpoint if endpoint else r"^.*"), ParamHandler, dict(root=endpoint))]
 
 
-REST_PROVIDERS = {
-    'tranquilizer': tranquilizer_rest_provider,
-    'param': param_rest_provider
-}
+REST_PROVIDERS = {"tranquilizer": tranquilizer_rest_provider, "param": param_rest_provider}
 
 # Populate REST Providers from external extensions
-for entry_point in entry_points_for('panel.io.rest'):
+for entry_point in entry_points_for("panel.io.rest"):
     REST_PROVIDERS[entry_point.name] = entry_point.load()

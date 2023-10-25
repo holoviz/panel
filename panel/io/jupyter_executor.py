@@ -33,13 +33,12 @@ from .state import set_curdoc, state
 
 @dataclass
 class _RequestProxy:
-
     arguments: Dict[str, List[bytes]]
     cookies: Dict[str, str]
     headers: Dict[str, str | List[str]]
 
-class Mimebundle:
 
+class Mimebundle:
     def __init__(self, mimebundle):
         self._mimebundle = mimebundle
 
@@ -70,8 +69,7 @@ class PanelExecutor(WSHandler):
         self._context = None
 
         self.resources = Resources(
-            mode=os.environ.get('BOKEH_RESOURCES', 'server'), root_url=self.root_url,
-            path_versioner=StaticHandler.append_version, absolute=True
+            mode=os.environ.get("BOKEH_RESOURCES", "server"), root_url=self.root_url, path_versioner=StaticHandler.append_version, absolute=True
         )
         self._set_state()
         try:
@@ -83,18 +81,15 @@ class PanelExecutor(WSHandler):
 
     def _get_payload(self, token: str) -> Dict[str, Any]:
         payload = get_token_payload(token)
-        if ('cookies' in payload and 'headers' in payload
-            and 'Cookie' not in payload['headers']):
+        if "cookies" in payload and "headers" in payload and "Cookie" not in payload["headers"]:
             # Restore Cookie header from cookies dictionary
-            payload['headers']['Cookie'] = '; '.join([
-                f'{k}={v}' for k, v in payload['cookies'].items()
-            ])
+            payload["headers"]["Cookie"] = "; ".join([f"{k}={v}" for k, v in payload["cookies"].items()])
         return payload
 
     def _set_state(self):
         state._jupyter_kernel_context = True
         with edit_readonly(state):
-            state.base_url = self.root_url + '/'
+            state.base_url = self.root_url + "/"
             state.rel_path = self.root_url
 
     def _receive_msg(self, msg) -> None:
@@ -102,7 +97,7 @@ class PanelExecutor(WSHandler):
 
     async def _receive_msg_async(self, msg) -> None:
         try:
-            message = await self._receive(msg['content']['data'])
+            message = await self._receive(msg["content"]["data"])
         except Exception as e:
             # If you go look at self._receive, it's catching the
             # expected error types... here we have something weird.
@@ -118,23 +113,21 @@ class PanelExecutor(WSHandler):
             self._internal_error(f"server failed to handle a message: {e}")
 
     def _internal_error(self, msg: str) -> None:
-        self.comm.send(msg, {'status': 'internal_error'})
+        self.comm.send(msg, {"status": "internal_error"})
 
     def _protocol_error(self, msg: str) -> None:
-        self.comm.send(msg, {'status': 'protocol_error'})
+        self.comm.send(msg, {"status": "protocol_error"})
 
     def _create_server_session(self) -> ServerSession:
         doc = Document()
 
-        self._context = session_context = BokehSessionContext(
-            self.session_id, None, doc
-        )
+        self._context = session_context = BokehSessionContext(self.session_id, None, doc)
 
         # using private attr so users only have access to a read-only property
         session_context._request = _RequestProxy(
-            arguments={k: [v.encode('utf-8') for v in vs] for k, vs in self.payload.get('arguments', {}).items()},
-            cookies=self.payload.get('cookies'),
-            headers=self.payload.get('headers')
+            arguments={k: [v.encode("utf-8") for v in vs] for k, vs in self.payload.get("arguments", {}).items()},
+            cookies=self.payload.get("cookies"),
+            headers=self.payload.get("headers"),
         )
         session_context._token = self.token
 
@@ -142,10 +135,11 @@ class PanelExecutor(WSHandler):
         # use the _attribute to set the public property .session_context
         doc._session_context = weakref.ref(session_context)
 
-        if self.path.endswith('.yaml') or self.path.endswith('.yml'):
+        if self.path.endswith(".yaml") or self.path.endswith(".yml"):
             from lumen.command import (
                 build_single_handler_application as build_lumen_app,
             )
+
             app = build_lumen_app(self.path, argv=None)
         else:
             app = build_single_handler_application(self.path)
@@ -157,11 +151,8 @@ class PanelExecutor(WSHandler):
         session_context._set_session(session)
         return session
 
-    async def write_message(
-        self, message: Union[bytes, str, Dict[str, Any]],
-        binary: bool = False, locked: bool = True
-    ) -> None:
-        metadata = {'binary': binary}
+    async def write_message(self, message: Union[bytes, str, Dict[str, Any]], binary: bool = False, locked: bool = True) -> None:
+        metadata = {"binary": binary}
         if binary:
             self.comm.send({}, metadata=metadata, buffers=[message])
         else:
@@ -173,26 +164,23 @@ class PanelExecutor(WSHandler):
         be served by the `PanelJupyterHandler`.
         """
         if self.session is None:
-            return Mimebundle({'text/error': f'Session did not start correctly: {self.exception}'})
+            return Mimebundle({"text/error": f"Session did not start correctly: {self.exception}"})
         with set_curdoc(self.session.document):
             if not self.session.document.roots:
-                return Mimebundle({
-                    'text/error': (
-                        "The Panel application being served did not serve any contents. "
-                        "Ensure you mark one or more Panel components in your notebook or "
-                        "script with .servable(), e.g. pn.Row('Hello World!').servable()."
-                    )
-                })
+                return Mimebundle(
+                    {
+                        "text/error": (
+                            "The Panel application being served did not serve any contents. "
+                            "Ensure you mark one or more Panel components in your notebook or "
+                            "script with .servable(), e.g. pn.Row('Hello World!').servable()."
+                        )
+                    }
+                )
             html = server_html_page_for_session(
                 self.session,
                 resources=self.resources,
                 title=self.session.document.title,
                 template=self.session.document.template,
-                template_variables=self.session.document.template_variables
+                template_variables=self.session.document.template_variables,
             )
-        return Mimebundle({
-            'text/html': html,
-            'application/bokeh-extensions': {
-                name: str(ext) for name, ext in extension_dirs.items()
-            }
-        })
+        return Mimebundle({"text/html": html, "application/bokeh-extensions": {name: str(ext) for name, ext in extension_dirs.items()}})

@@ -36,14 +36,14 @@ def test_notification_explicit(document):
 
 def test_template_pass_config_params_constructor(document):
     custom_config = {
-        'raw_css': ['html { background-color: purple; }'],
-        'css_files': ['stylesheet.css'],
-        'js_files': {'foo': 'foo.js'},
-        'js_modules': {'bar': 'bar.js'},
+        "raw_css": ["html { background-color: purple; }"],
+        "css_files": ["stylesheet.css"],
+        "js_files": {"foo": "foo.js"},
+        "js_modules": {"bar": "bar.js"},
     }
     tmpl = VanillaTemplate(**custom_config)
     config = tmpl.config.param.values()
-    del config['name']
+    del config["name"]
     assert config == custom_config
 
 
@@ -54,5 +54,5 @@ def test_template_multi_refs():
     tmpl.main.append(button)
 
     assert len(tmpl._render_items) == 6
-    assert f'nav-{id(button)}' in tmpl._render_items
-    assert f'main-{id(button)}' in tmpl._render_items
+    assert f"nav-{id(button)}" in tmpl._render_items
+    assert f"main-{id(button)}" in tmpl._render_items

@@ -1,5 +1,3 @@
-
-
 import pytest
 
 from panel.chat.interface import ChatInterface
@@ -158,6 +156,7 @@ class TestChatInterface:
         chat_interface.show_send = False
         assert not chat_interface.show_send
         assert not send_button.visible
+
 
 class TestChatInterfaceWidgetsSizingMode:
     def test_none(self):

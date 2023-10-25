@@ -60,10 +60,11 @@ from .state import state
 
 logger = logging.getLogger(__name__)
 
-KERNEL_TIMEOUT = 60 # Timeout for kernel startup (including app startup)
-CONNECTION_TIMEOUT = 30 # Timeout for WS connection to open
+KERNEL_TIMEOUT = 60  # Timeout for kernel startup (including app startup)
+CONNECTION_TIMEOUT = 30  # Timeout for WS connection to open
 
-KERNEL_ERROR_TEMPLATE = _env.get_template('kernel_error.html')
+KERNEL_ERROR_TEMPLATE = _env.get_template("kernel_error.html")
+
 
 async def ensure_async(obj: Awaitable | Any) -> Any:
     """Convert a non-awaitable object to a coroutine if needed,
@@ -73,7 +74,7 @@ async def ensure_async(obj: Awaitable | Any) -> Any:
         try:
             result = await obj
         except RuntimeError as e:
-            if str(e) == 'cannot reuse already awaited coroutine':
+            if str(e) == "cannot reuse already awaited coroutine":
                 # obj is already the coroutine's result
                 return obj
             raise
@@ -81,30 +82,36 @@ async def ensure_async(obj: Awaitable | Any) -> Any:
     # obj doesn't need to be awaited
     return obj
 
+
 def url_path_join(*pieces):
     """Join components of url into a relative url
     Use to prevent double slash when joining subpath. This will leave the
     initial and final / in place
     """
-    initial = pieces[0].startswith('/')
-    final = pieces[-1].endswith('/')
-    stripped = [s.strip('/') for s in pieces]
-    result = '/'.join(s for s in stripped if s)
-    if initial: result = '/' + result
-    if final: result = result + '/'
-    if result == '//': result = '/'
+    initial = pieces[0].startswith("/")
+    final = pieces[-1].endswith("/")
+    stripped = [s.strip("/") for s in pieces]
+    result = "/".join(s for s in stripped if s)
+    if initial:
+        result = "/" + result
+    if final:
+        result = result + "/"
+    if result == "//":
+        result = "/"
     return result
 
+
 def get_server_root_dir(settings):
-    if 'server_root_dir' in settings:
+    if "server_root_dir" in settings:
         # notebook >= 5.0.0 has this in the settings
-        root_dir = settings['server_root_dir']
+        root_dir = settings["server_root_dir"]
     else:
         # This copies the logic added in the notebook in
         #  https://github.com/jupyter/notebook/pull/2234
-        contents_manager = settings['contents_manager']
+        contents_manager = settings["contents_manager"]
         root_dir = contents_manager.root_dir
     return os.path.expanduser(root_dir)
+
 
 EXECUTION_TEMPLATE = """
 import os
@@ -119,6 +126,7 @@ from panel.io.jupyter_executor import PanelExecutor
 executor = PanelExecutor(app, '{{ token }}', '{{ root_url }}')
 executor.render()
 """
+
 
 def generate_executor(path: str, token: str, root_url: str) -> str:
     """
@@ -140,9 +148,8 @@ def generate_executor(path: str, token: str, root_url: str) -> str:
     The code to be executed inside the kernel.
     """
     execute_template = _env.from_string(EXECUTION_TEMPLATE)
-    return textwrap.dedent(
-        execute_template.render(path=path, token=token, root_url=root_url)
-    )
+    return textwrap.dedent(execute_template.render(path=path, token=token, root_url=root_url))
+
 
 class PanelJupyterHandler(JupyterHandler):
     """
@@ -158,7 +165,7 @@ class PanelJupyterHandler(JupyterHandler):
 
     def initialize(self, **kwargs):
         super().initialize(**kwargs)
-        self.notebook_path = kwargs.pop('notebook_path', [])
+        self.notebook_path = kwargs.pop("notebook_path", [])
         self.kernel_started = False
 
     async def _get_info(self, msg_id, timeout=KERNEL_TIMEOUT):
@@ -166,28 +173,28 @@ class PanelJupyterHandler(JupyterHandler):
         result, comm_id, extension_dirs = None, None, None
         while result is None or comm_id is None or extension_dirs is None:
             if time.monotonic() > deadline:
-                raise TimeoutError('Timed out while waiting for kernel to open Comm channel to Panel application.')
+                raise TimeoutError("Timed out while waiting for kernel to open Comm channel to Panel application.")
             try:
                 msg = await ensure_async(self.kernel.iopub_channel.get_msg(timeout=None))
             except Empty:
                 if not await ensure_async(self.kernel.is_alive()):
                     raise RuntimeError("Kernel died before establishing Comm connection to Panel application.")
                 continue
-            if msg['parent_header'].get('msg_id') != msg_id:
+            if msg["parent_header"].get("msg_id") != msg_id:
                 continue
-            msg_type = msg['header']['msg_type']
-            if msg_type == 'execute_result':
-                data = msg['content']['data']
-                if 'text/error' in data:
-                    raise RuntimeError(data['text/error'])
-                extension_dirs = data['application/bokeh-extensions']
-                result = data['text/html']
-            elif msg_type == 'comm_open' and msg['content']['target_name'] == self.session_id:
-                comm_id = msg['content']['comm_id']
-            elif msg_type == 'stream' and msg['content']['name'] == 'stderr':
-                logger.error(msg['content']['text'])
+            msg_type = msg["header"]["msg_type"]
+            if msg_type == "execute_result":
+                data = msg["content"]["data"]
+                if "text/error" in data:
+                    raise RuntimeError(data["text/error"])
+                extension_dirs = data["application/bokeh-extensions"]
+                result = data["text/html"]
+            elif msg_type == "comm_open" and msg["content"]["target_name"] == self.session_id:
+                comm_id = msg["content"]["comm_id"]
+            elif msg_type == "stream" and msg["content"]["name"] == "stderr":
+                logger.error(msg["content"]["text"])
             elif msg_type == "error":
-                logger.error(msg['content']['traceback'])
+                logger.error(msg["content"]["traceback"])
         return result, comm_id, extension_dirs
 
     @tornado.web.authenticated
@@ -199,41 +206,39 @@ class PanelJupyterHandler(JupyterHandler):
         else:
             notebook_path = str((root_dir / rel_path).absolute())
 
-        if (
-            self.notebook_path and path
-        ):  # when we are in single notebook mode but have a path
+        if self.notebook_path and path:  # when we are in single notebook mode but have a path
             self.redirect_to_file(path)
             return
 
         cwd = os.path.dirname(notebook_path)
-        root_url = url_path_join(self.base_url, 'panel-preview')
+        root_url = url_path_join(self.base_url, "panel-preview")
 
         # Compose reply
-        self.set_header('Content-Type', 'text/html')
-        self.set_header('Cache-Control', 'no-cache, no-store, must-revalidate')
-        self.set_header('Pragma', 'no-cache')
-        self.set_header('Expires', '0')
+        self.set_header("Content-Type", "text/html")
+        self.set_header("Cache-Control", "no-cache, no-store, must-revalidate")
+        self.set_header("Pragma", "no-cache")
+        self.set_header("Expires", "0")
 
         # Provision a kernel with the desired kernelspec
-        if self.request.arguments.get('kernel'):
-            requested_kernel = self.request.arguments.pop('kernel')[0].decode('utf-8')
-        elif notebook_path.endswith('.ipynb'):
+        if self.request.arguments.get("kernel"):
+            requested_kernel = self.request.arguments.pop("kernel")[0].decode("utf-8")
+        elif notebook_path.endswith(".ipynb"):
             with open(notebook_path) as f:
                 nb = json.load(f)
-            requested_kernel = nb.get('metadata', {}).get('kernelspec', {}).get('name')
+            requested_kernel = nb.get("metadata", {}).get("kernelspec", {}).get("name")
         else:
             requested_kernel = None
 
         if requested_kernel:
             available_kernels = list(self.kernel_manager.kernel_spec_manager.find_kernel_specs())
             if requested_kernel not in available_kernels:
-                logger.error('Could not start server session, no such kernel %r.', requested_kernel)
+                logger.error("Could not start server session, no such kernel %r.", requested_kernel)
                 html = KERNEL_ERROR_TEMPLATE.render(
-                    base_url=f'{root_url}/',
+                    base_url=f"{root_url}/",
                     kernels=available_kernels,
-                    error_type='Kernel error',
+                    error_type="Kernel error",
                     error=f"No such kernel '{requested_kernel}'",
-                    title='Panel: Kernel not found'
+                    title="Panel: Kernel not found",
                 )
                 self.finish(html)
                 return
@@ -256,15 +261,8 @@ class PanelJupyterHandler(JupyterHandler):
 
         # Run PanelExecutor inside the kernel
         self.session_id = generate_session_id()
-        args = {
-            k: [v.decode('utf-8') for v in vs]
-            for k, vs in self.request.arguments.items()
-        }
-        payload = {
-            'arguments': args,
-            'headers': dict(self.request.headers.items()),
-            'cookies': dict(self.request.cookies.items())
-        }
+        args = {k: [v.decode("utf-8") for v in vs] for k, vs in self.request.arguments.items()}
+        payload = {"arguments": args, "headers": dict(self.request.headers.items()), "cookies": dict(self.request.cookies.items())}
         token = generate_jwt_token(self.session_id, extra_payload=payload)
         source = generate_executor(notebook_path, token, root_url)
         msg_id = self.kernel.execute(source)
@@ -276,11 +274,11 @@ class PanelJupyterHandler(JupyterHandler):
             await self.kernel_manager.shutdown_kernel(kernel_id, now=True)
             html = ERROR_TEMPLATE.render(
                 npm_cdn=config.npm_cdn,
-                base_url=f'{root_url}/',
+                base_url=f"{root_url}/",
                 error_type="Kernel error",
                 error="Failed to start kernel",
                 error_msg=str(e),
-                title="Panel: Kernel Error"
+                title="Panel: Kernel Error",
             )
             self.finish(html)
         else:
@@ -308,7 +306,7 @@ class PanelWSProxy(WSHandler, JupyterHandler):
 
     def __init__(self, tornado_app, *args, **kw) -> None:
         # Note: tornado_app is stored as self.application
-        kw['application_context'] = None
+        kw["application_context"] = None
         super().__init__(tornado_app, *args, **kw)
 
     def initialize(self, *args, **kwargs):
@@ -330,15 +328,15 @@ class PanelWSProxy(WSHandler, JupyterHandler):
 
     @tornado.web.authenticated
     async def open(self, path, *args, **kwargs) -> None:
-        ''' Initialize a connection to a client.
+        """Initialize a connection to a client.
 
         Returns:
             None
 
-        '''
+        """
         token = self._token
 
-        if self.selected_subprotocol != 'bokeh':
+        if self.selected_subprotocol != "bokeh":
             self.close()
             raise ProtocolError("Subprotocol header is not 'bokeh'")
         elif token is None:
@@ -347,10 +345,10 @@ class PanelWSProxy(WSHandler, JupyterHandler):
 
         now = calendar.timegm(dt.datetime.utcnow().utctimetuple())
         payload = get_token_payload(token)
-        if 'session_expiry' not in payload:
+        if "session_expiry" not in payload:
             self.close()
             raise ProtocolError("Session expiry has not been provided")
-        elif now >= payload['session_expiry']:
+        elif now >= payload["session_expiry"]:
             self.close()
             raise ProtocolError("Token is expired.")
 
@@ -369,7 +367,7 @@ class PanelWSProxy(WSHandler, JupyterHandler):
         self.kernel, self.comm_id, self.kernel_id, _ = kernel_info
         state._kernels[self.session_id] = kernel_info[:-1] + (True,)
 
-        msg = protocol.create('ACK')
+        msg = protocol.create("ACK")
         await self.send_message(msg)
 
         self._ping_job.start()
@@ -386,24 +384,24 @@ class PanelWSProxy(WSHandler, JupyterHandler):
                     raise RuntimeError("Kernel died before expected shutdown of Panel app.")
                 continue
 
-            msg_type = msg['header']['msg_type']
-            if msg_type == 'stream' and msg['content']['name'] == 'stderr':
-                logger.error(msg['content']['text'])
+            msg_type = msg["header"]["msg_type"]
+            if msg_type == "stream" and msg["content"]["name"] == "stderr":
+                logger.error(msg["content"]["text"])
                 continue
-            elif not (msg_type == 'comm_msg' and msg['content']['comm_id'] == self.comm_id):
+            elif not (msg_type == "comm_msg" and msg["content"]["comm_id"] == self.comm_id):
                 continue
-            content, metadata = msg['content'], msg['metadata']
-            status = metadata.get('status')
+            content, metadata = msg["content"], msg["metadata"]
+            status = metadata.get("status")
 
-            if status == 'protocol_error':
-                return self._protocol_error(content['data'])
-            elif status == 'internal_error':
-                return self._internal_error(content['data'])
-            binary = metadata.get('binary')
+            if status == "protocol_error":
+                return self._protocol_error(content["data"])
+            elif status == "internal_error":
+                return self._internal_error(content["data"])
+            binary = metadata.get("binary")
             if binary:
-                fragment = msg['buffers'][0].tobytes()
+                fragment = msg["buffers"][0].tobytes()
             else:
-                fragment = content['data']
+                fragment = content["data"]
                 if isinstance(fragment, dict):
                     fragment = json.dumps(fragment)
             message = await self._receive(fragment)
@@ -419,13 +417,13 @@ class PanelWSProxy(WSHandler, JupyterHandler):
         """
         Clean up when the connection is closed.
         """
-        logger.info('WebSocket connection closed: code=%s, reason=%r', self.close_code, self.close_reason)
+        logger.info("WebSocket connection closed: code=%s, reason=%r", self.close_code, self.close_reason)
         if self.session_id in state._kernels:
             del state._kernels[self.session_id]
         self._ping_job.stop()
         self._shutdown_futures = [
             asyncio.ensure_future(self.kernel.shutdown(reply=True)),
-            asyncio.ensure_future(self.kernel_manager.shutdown_kernel(self.kernel_id, now=True))
+            asyncio.ensure_future(self.kernel_manager.shutdown_kernel(self.kernel_id, now=True)),
         ]
         self.kernel = None
 
@@ -437,17 +435,12 @@ def _load_jupyter_server_extension(notebook_app):
     notebook_app.web_app.add_handlers(
         host_pattern=r".*$",
         host_handlers=[
-            (urljoin(base_url, r"panel-preview/static/extensions/(.*)"),
-             MultiRootStaticHandler, dict(root=extension_dirs)),
-            (urljoin(base_url, r"panel-preview/static/(.*)"),
-             StaticHandler),
-            (urljoin(base_url, r"panel-preview/render/(.*)/ws"),
-             PanelWSProxy),
-            (urljoin(base_url, r"panel-preview/render/(.*)"),
-             PanelJupyterHandler, {}),
-            (urljoin(base_url, r"panel_dist/(.*)"),
-             StaticFileHandler, dict(path=DIST_DIR))
-        ]
+            (urljoin(base_url, r"panel-preview/static/extensions/(.*)"), MultiRootStaticHandler, dict(root=extension_dirs)),
+            (urljoin(base_url, r"panel-preview/static/(.*)"), StaticHandler),
+            (urljoin(base_url, r"panel-preview/render/(.*)/ws"), PanelWSProxy),
+            (urljoin(base_url, r"panel-preview/render/(.*)"), PanelJupyterHandler, {}),
+            (urljoin(base_url, r"panel_dist/(.*)"), StaticFileHandler, dict(path=DIST_DIR)),
+        ],
     )
 
 

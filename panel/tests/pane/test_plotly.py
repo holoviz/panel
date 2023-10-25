@@ -8,6 +8,7 @@ try:
     import plotly.figure_factory as ff
     import plotly.graph_objs as go
     import plotly.io as pio
+
     pio.templates.default = None
 except Exception:
     plotly = None
@@ -41,32 +42,32 @@ def test_get_plotly_pane_type_from_trace():
 
 @plotly_available
 def test_plotly_pane_single_trace(document, comm):
-    trace = go.Scatter(x=[0, 1], y=[2, 3], uid='Test')
-    pane = Plotly({'data': [trace], 'layout': {'width': 350}})
+    trace = go.Scatter(x=[0, 1], y=[2, 3], uid="Test")
+    pane = Plotly({"data": [trace], "layout": {"width": 350}})
 
     # Create pane
     model = pane.get_root(document, comm=comm)
     assert isinstance(model, PlotlyPlot)
-    assert pane._models[model.ref['id']][0] is model
+    assert pane._models[model.ref["id"]][0] is model
     assert len(model.data) == 1
-    assert model.data[0]['type'] == 'scatter'
-    assert model.data[0]['x'] == [0, 1]
-    assert model.data[0]['y'] == [2, 3]
-    assert model.layout == {'width': 350}
+    assert model.data[0]["type"] == "scatter"
+    assert model.data[0]["x"] == [0, 1]
+    assert model.data[0]["y"] == [2, 3]
+    assert model.layout == {"width": 350}
     assert len(model.data_sources) == 1
     assert model.data_sources[0].data == {}
 
     # Replace Pane.object
     new_trace = go.Bar(x=[2, 3], y=[4, 5])
-    pane.object = {'data': new_trace, 'layout': {'width': 350}}
+    pane.object = {"data": new_trace, "layout": {"width": 350}}
     assert len(model.data) == 1
-    assert model.data[0]['type'] == 'bar'
-    assert model.data[0]['x'] == [2, 3]
-    assert model.data[0]['y'] == [4, 5]
-    assert model.layout == {'width': 350}
+    assert model.data[0]["type"] == "bar"
+    assert model.data[0]["x"] == [2, 3]
+    assert model.data[0]["y"] == [4, 5]
+    assert model.layout == {"width": 350}
     assert len(model.data_sources) == 1
     assert model.data_sources[0].data == {}
-    assert pane._models[model.ref['id']][0] is model
+    assert pane._models[model.ref["id"]][0] is model
 
     # Cleanup
     pane._cleanup(model)
@@ -82,7 +83,7 @@ def test_plotly_pane_datetime_list_transform(document, comm):
     pane = Plotly(fig)
 
     model = pane.get_root(document, comm)
-    assert all(isinstance(v, str) for v in model.data[0]['x'])
+    assert all(isinstance(v, str) for v in model.data[0]["x"])
 
 
 @plotly_available
@@ -94,7 +95,7 @@ def test_plotly_pane_datetime_array_transform(document, comm):
     pane = Plotly(fig)
 
     model = pane.get_root(document, comm)
-    assert model.data_sources[0].data['x'][0].dtype.kind == 'U'
+    assert model.data_sources[0].data["x"][0].dtype.kind == "U"
 
 
 @plotly_available
@@ -106,58 +107,57 @@ def test_plotly_pane_datetime64_list_transform(document, comm):
     pane = Plotly(fig)
 
     model = pane.get_root(document, comm)
-    assert all(isinstance(v, str) for v in model.data[0]['x'])
+    assert all(isinstance(v, str) for v in model.data[0]["x"])
 
 
 @plotly_available
 def test_plotly_pane_datetime64_array_transform(document, comm):
-    index = np.array([dt.datetime(2019, 1, i) for i in range(1, 11)]).astype('M8[us]')
+    index = np.array([dt.datetime(2019, 1, i) for i in range(1, 11)]).astype("M8[us]")
     data = np.random.randn(10)
     traces = [go.Scatter(x=index, y=data)]
     fig = go.Figure(traces)
     pane = Plotly(fig)
 
     model = pane.get_root(document, comm)
-    assert model.data_sources[0].data['x'][0].dtype.kind in 'SU'
+    assert model.data_sources[0].data["x"][0].dtype.kind in "SU"
 
 
 @plotly_available
 def test_plotly_pane_numpy_to_cds_traces(document, comm):
     trace = go.Scatter(x=np.array([1, 2]), y=np.array([2, 3]))
-    pane = Plotly({'data': [trace], 'layout': {'width': 350}})
+    pane = Plotly({"data": [trace], "layout": {"width": 350}})
 
     # Create pane
     model = pane.get_root(document, comm=comm)
     assert isinstance(model, PlotlyPlot)
     assert len(model.data) == 1
-    assert model.data[0]['type'] == 'scatter'
-    assert 'x' not in model.data[0]
-    assert 'y' not in model.data[0]
-    assert model.layout == {'width': 350}
+    assert model.data[0]["type"] == "scatter"
+    assert "x" not in model.data[0]
+    assert "y" not in model.data[0]
+    assert model.layout == {"width": 350}
     assert len(model.data_sources) == 1
     cds = model.data_sources[0]
-    assert np.array_equal(cds.data['x'][0], np.array([1, 2]))
-    assert np.array_equal(cds.data['y'][0], np.array([2, 3]))
+    assert np.array_equal(cds.data["x"][0], np.array([1, 2]))
+    assert np.array_equal(cds.data["y"][0], np.array([2, 3]))
 
     # Replace Pane.object
-    new_trace = [go.Scatter(x=np.array([5, 6]), y=np.array([6, 7])),
-                 go.Bar(x=np.array([2, 3]), y=np.array([4, 5]))]
-    pane.object = {'data': new_trace, 'layout': {'width': 350}}
+    new_trace = [go.Scatter(x=np.array([5, 6]), y=np.array([6, 7])), go.Bar(x=np.array([2, 3]), y=np.array([4, 5]))]
+    pane.object = {"data": new_trace, "layout": {"width": 350}}
     assert len(model.data) == 2
-    assert model.data[0]['type'] == 'scatter'
-    assert 'x' not in model.data[0]
-    assert 'y' not in model.data[0]
-    assert model.data[1]['type'] == 'bar'
-    assert 'x' not in model.data[1]
-    assert 'y' not in model.data[1]
-    assert model.layout == {'width': 350}
+    assert model.data[0]["type"] == "scatter"
+    assert "x" not in model.data[0]
+    assert "y" not in model.data[0]
+    assert model.data[1]["type"] == "bar"
+    assert "x" not in model.data[1]
+    assert "y" not in model.data[1]
+    assert model.layout == {"width": 350}
     assert len(model.data_sources) == 2
     cds = model.data_sources[0]
-    assert np.array_equal(cds.data['x'][0], np.array([5, 6]))
-    assert np.array_equal(cds.data['y'][0], np.array([6, 7]))
+    assert np.array_equal(cds.data["x"][0], np.array([5, 6]))
+    assert np.array_equal(cds.data["y"][0], np.array([6, 7]))
     cds2 = model.data_sources[1]
-    assert np.array_equal(cds2.data['x'][0], np.array([2, 3]))
-    assert np.array_equal(cds2.data['y'][0], np.array([4, 5]))
+    assert np.array_equal(cds2.data["x"][0], np.array([2, 3]))
+    assert np.array_equal(cds2.data["y"][0], np.array([4, 5]))
 
     # Cleanup
     pane._cleanup(model)
@@ -168,20 +168,20 @@ def test_plotly_pane_numpy_to_cds_traces(document, comm):
 def test_plotly_autosize(document, comm):
     trace = go.Scatter(x=[0, 1], y=[2, 3])
 
-    pane = Plotly(dict(data=[trace], layout={'autosize': True}))
+    pane = Plotly(dict(data=[trace], layout={"autosize": True}))
 
     model = pane.get_root(document, comm=comm)
-    model.sizing_mode == 'stretch_both'
+    model.sizing_mode == "stretch_both"
 
-    pane.object['layout']['autosize'] = False
-    pane.param.trigger('object')
-    model.sizing_mode == 'fixed'
+    pane.object["layout"]["autosize"] = False
+    pane.param.trigger("object")
+    model.sizing_mode == "fixed"
 
     pane._cleanup(model)
 
-    pane = Plotly(dict(data=[trace], layout={'autosize': True}), sizing_mode='fixed')
+    pane = Plotly(dict(data=[trace], layout={"autosize": True}), sizing_mode="fixed")
     model = pane.get_root(document, comm=comm)
-    model.sizing_mode == 'fixed'
+    model.sizing_mode == "fixed"
 
     pane._cleanup(model)
 
@@ -213,7 +213,7 @@ def test_clean_relayout_data():
 
 @plotly_available
 def test_plotly_swap_traces(document, comm):
-    data_bar = pd.DataFrame({'Count': [1, 2, 3, 4], 'Category': ["A", "B", "C", "D"]})
+    data_bar = pd.DataFrame({"Count": [1, 2, 3, 4], "Category": ["A", "B", "C", "D"]})
     data_cts = np.random.randn(1000)
 
     bar_plot = px.bar(x=data_bar["Category"], y=data_bar["Count"])
@@ -226,17 +226,16 @@ def test_plotly_swap_traces(document, comm):
         histnorm="probability",
     )
 
-
     plotly = Plotly(bar_plot)
 
     model = plotly.get_root(document, comm)
 
     assert len(model.data_sources) == 1
     cds = model.data_sources[0]
-    assert (cds.data['x'] == data_bar.Category.values).all()
-    assert (cds.data['y'] == data_bar.Count.values).all()
+    assert (cds.data["x"] == data_bar.Category.values).all()
+    assert (cds.data["y"] == data_bar.Count.values).all()
 
     plotly.object = dist_plot
 
-    assert 'x' not in cds.data
-    assert len(cds.data['y'][0]) == 500
+    assert "x" not in cds.data
+    assert len(cds.data["y"][0]) == 500

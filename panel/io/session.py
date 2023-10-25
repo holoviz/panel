@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
+
 class ServerSessionStub(ServerSession):
     """
     Stubs out ServerSession methods since the session is only used for
@@ -32,28 +33,15 @@ class ServerSessionStub(ServerSession):
     def _session_callback_removed(self, event):
         return
 
+
 def generate_session(application):
     secret_key = settings.secret_key_bytes()
     sign_sessions = settings.sign_sessions()
-    session_id = generate_session_id(
-        secret_key=secret_key,
-        signed=sign_sessions
-    )
-    token = generate_jwt_token(
-        session_id,
-        secret_key=secret_key,
-        signed=sign_sessions,
-        extra_payload={'headers': {}, 'cookies': {}, 'arguments': {}}
-    )
+    session_id = generate_session_id(secret_key=secret_key, signed=sign_sessions)
+    token = generate_jwt_token(session_id, secret_key=secret_key, signed=sign_sessions, extra_payload={"headers": {}, "cookies": {}, "arguments": {}})
     doc = Document()
-    session_context = BokehSessionContext(
-        session_id,
-        None,
-        doc
-    )
-    session_context._request = _RequestProxy(
-        None, arguments={}, cookies={}, headers={}
-    )
+    session_context = BokehSessionContext(session_id, None, doc)
+    session_context._request = _RequestProxy(None, arguments={}, cookies={}, headers={})
     doc._session_context = lambda: session_context
     application.initialize_document(doc)
 

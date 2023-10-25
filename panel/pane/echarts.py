@@ -35,20 +35,34 @@ class ECharts(ModelPane):
     >>> ECharts(some_echart_dict_or_pyecharts_object, height=480, width=640)
     """
 
-    object = param.Parameter(default=None, doc="""
-        The Echarts object being wrapped. Can be an Echarts dictionary or a pyecharts chart""")
+    object = param.Parameter(
+        default=None,
+        doc="""
+        The Echarts object being wrapped. Can be an Echarts dictionary or a pyecharts chart""",
+    )
 
-    options = param.Parameter(default=None, doc="""
+    options = param.Parameter(
+        default=None,
+        doc="""
         An optional dict of options passed to Echarts.setOption. Allows to fine-tune the rendering behavior.
         For example, you might want to use `options={ "replaceMerge": ['series'] })` when updating
         the `objects` with a value containing a smaller number of series.
-        """)
+        """,
+    )
 
-    renderer = param.ObjectSelector(default="canvas", objects=["canvas", "svg"], doc="""
-       Whether to render as HTML canvas or SVG""")
+    renderer = param.ObjectSelector(
+        default="canvas",
+        objects=["canvas", "svg"],
+        doc="""
+       Whether to render as HTML canvas or SVG""",
+    )
 
-    theme = param.ObjectSelector(default="default", objects=["default", "light", "dark"], doc="""
-       Theme to apply to plots.""")
+    theme = param.ObjectSelector(
+        default="default",
+        objects=["default", "light", "dark"],
+        doc="""
+       Theme to apply to plots.""",
+    )
 
     priority: ClassVar[float | bool | None] = None
 
@@ -73,8 +87,9 @@ class ECharts(ModelPane):
 
     @classmethod
     def is_pyecharts(cls, obj):
-        if 'pyecharts' in sys.modules:
+        if "pyecharts" in sys.modules:
             import pyecharts
+
             return isinstance(obj, pyecharts.charts.chart.Chart)
         return False
 
@@ -90,48 +105,38 @@ class ECharts(ModelPane):
     def _get_js_events(self, ref):
         js_events = defaultdict(list)
         for event, specs in self._js_callbacks.items():
-            for (query, code, args) in specs:
-                models = {
-                    name: viewable._models[ref][0] for name, viewable in args.items()
-                    if ref in viewable._models
-                }
-                js_events[event].append({'query': query, 'callback': CustomJS(code=code, args=models)})
+            for query, code, args in specs:
+                models = {name: viewable._models[ref][0] for name, viewable in args.items() if ref in viewable._models}
+                js_events[event].append({"query": query, "callback": CustomJS(code=code, args=models)})
         return dict(js_events)
 
     def _process_param_change(self, params):
         props = super()._process_param_change(params)
-        if 'data' not in props:
+        if "data" not in props:
             return props
-        data = props['data'] or {}
+        data = props["data"] or {}
         if not isinstance(data, dict):
             w, h = data.width, data.height
-            props['data'] = data = json.loads(data.dump_options())
+            props["data"] = data = json.loads(data.dump_options())
             if not self.height and h:
-                props['height'] = int(h.replace('px', ''))
+                props["height"] = int(h.replace("px", ""))
             if not self.width and w:
-                props['width'] = int(w.replace('px', ''))
+                props["width"] = int(w.replace("px", ""))
         else:
-            props['data'] = data
-        if data.get('responsive'):
-            props['sizing_mode'] = 'stretch_both'
+            props["data"] = data
+        if data.get("responsive"):
+            props["sizing_mode"] = "stretch_both"
         return props
 
     def _get_properties(self, document: Document):
         props = super()._get_properties(document)
-        props['event_config'] = {
-            event: list(queries) for event, queries in self._py_callbacks.items()
-        }
+        props["event_config"] = {event: list(queries) for event, queries in self._py_callbacks.items()}
         return props
 
-    def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
-    ) -> Model:
-        self._bokeh_model = lazy_load(
-            'panel.models.echarts', 'ECharts', isinstance(comm, JupyterComm), root
-        )
+    def _get_model(self, doc: Document, root: Optional[Model] = None, parent: Optional[Model] = None, comm: Optional[Comm] = None) -> Model:
+        self._bokeh_model = lazy_load("panel.models.echarts", "ECharts", isinstance(comm, JupyterComm), root)
         model = super()._get_model(doc, root, parent, comm)
-        self._register_events('echarts_event', model=model, doc=doc, comm=comm)
+        self._register_events("echarts_event", model=model, doc=doc, comm=comm)
         return model
 
     def on_event(self, event: str, callback: Callable, query: str | None = None):
@@ -152,7 +157,7 @@ class ECharts(ModelPane):
         self._py_callbacks[event][query].append(callback)
         event_config = {event: list(queries) for event, queries in self._py_callbacks.items()}
         for ref, (model, _) in self._models.items():
-            self._apply_update({}, {'event_config': event_config}, model, ref)
+            self._apply_update({}, {"event_config": event_config}, model, ref)
 
     def js_on_event(self, event: str, callback: str | CustomJS, query: str | None = None, **args):
         """
@@ -178,15 +183,16 @@ class ECharts(ModelPane):
         self._js_callbacks[event].append((query, callback, args))
         for ref, (model, _) in self._models.items():
             js_events = self._get_js_events(ref)
-            self._apply_update({}, {'js_events': js_events}, model, ref)
+            self._apply_update({}, {"js_events": js_events}, model, ref)
 
 
 def setup_js_callbacks(root_view, root_model):
-    if 'panel.models.echarts' not in sys.modules:
+    if "panel.models.echarts" not in sys.modules:
         return
-    ref = root_model.ref['id']
+    ref = root_model.ref["id"]
     for pane in root_view.select(ECharts):
         if ref in pane._models:
             pane._models[ref][0].js_events = pane._get_js_events(ref)
+
 
 Viewable._preprocessing_hooks.append(setup_js_callbacks)

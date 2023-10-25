@@ -88,5 +88,5 @@ __all__ = (
     "Vizzu",
     "VTK",
     "VTKVolume",
-    "YT"
+    "YT",
 )

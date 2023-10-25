@@ -20,7 +20,6 @@ from .terminal import Terminal
 
 
 class TermFormatter(logging.Formatter):
-
     def __init__(self, *args, only_last=True, **kwargs):
         """
         Standard logging.Formatter with the default option of prompting
@@ -43,8 +42,8 @@ class TermFormatter(logging.Formatter):
         exc_text = None
         if record.exc_info:
             exc_text = super().formatException(record.exc_info)
-            last = exc_text.rfind('File')
-            if last >0 and self.only_last:
+            last = exc_text.rfind("File")
+            if last > 0 and self.only_last:
                 exc_text = exc_text[last:]
         if exc_text:
             if s[-1:] != "\n":
@@ -58,7 +57,6 @@ class TermFormatter(logging.Formatter):
 
 
 class CheckFilter(logging.Filter):
-
     def add_debugger(self, debugger):
         """
         Add a debugger to this logging filter.
@@ -75,7 +73,7 @@ class CheckFilter(logging.Filter):
         self.debugger = debugger
 
     def _update_debugger(self, record):
-        if not hasattr(self, 'debugger'):
+        if not hasattr(self, "debugger"):
             return
         if record.levelno >= 40:
             self.debugger._number_of_errors += 1
@@ -84,21 +82,18 @@ class CheckFilter(logging.Filter):
         elif record.levelno < 30:
             self.debugger._number_of_infos += 1
 
-    def filter(self,record):
+    def filter(self, record):
         """
         Will filter out messages coming from a different bokeh document than
         the document where the debugger is embedded in server mode.
         Returns True if no debugger was added.
         """
-        if not hasattr(self, 'debugger'):
+        if not hasattr(self, "debugger"):
             return True
-
 
         if state.curdoc and state.curdoc.session_context:
             session_id = state.curdoc.session_context.id
-            widget_session_ids = set(m.document.session_context.id
-                                     for m in sum(self.debugger._models.values(),
-                                                  tuple()) if m.document.session_context)
+            widget_session_ids = set(m.document.session_context.id for m in sum(self.debugger._models.values(), tuple()) if m.document.session_context)
 
             if session_id not in widget_session_ids:
                 return False
@@ -107,7 +102,6 @@ class CheckFilter(logging.Filter):
 
 
 class DebuggerButtons(ReactiveHTML):
-
     terminal_output = param.String()
 
     debug_name = param.String()
@@ -147,12 +141,9 @@ class DebuggerButtons(ReactiveHTML):
         }
         """
 
-    _scripts: ClassVar[Dict[str, str | List[str]]] = {
-        'click': js_cb,
-        'click_clear': "data.clears += 1"
-    }
+    _scripts: ClassVar[Dict[str, str | List[str]]] = {"click": js_cb, "click_clear": "data.clears += 1"}
 
-    _dom_events: ClassVar[Dict[str, List[str]]] = {'clear_btn': ['click']}
+    _dom_events: ClassVar[Dict[str, List[str]]] = {"clear_btn": ["click"]}
 
 
 class Debugger(Card):
@@ -163,66 +154,87 @@ class Debugger(Card):
     `logger = logging.getLogger('panel.callbacks')`
     """
 
-    _number_of_errors = param.Integer(bounds=(0, None), precedence=-1, doc="""
-        Number of logged errors since last acknowledged.""")
+    _number_of_errors = param.Integer(
+        bounds=(0, None),
+        precedence=-1,
+        doc="""
+        Number of logged errors since last acknowledged.""",
+    )
 
-    _number_of_warnings = param.Integer(bounds=(0, None), precedence=-1, doc="""
-        Number of logged warnings since last acknowledged.""")
+    _number_of_warnings = param.Integer(
+        bounds=(0, None),
+        precedence=-1,
+        doc="""
+        Number of logged warnings since last acknowledged.""",
+    )
 
-    _number_of_infos = param.Integer(bounds=(0, None), precedence=-1, doc="""
-        Number of logged information since last acknowledged.""")
+    _number_of_infos = param.Integer(
+        bounds=(0, None),
+        precedence=-1,
+        doc="""
+        Number of logged information since last acknowledged.""",
+    )
 
-    only_last = param.Boolean(default=True, doc="""
-        Whether only the last stack is printed or the full.""")
+    only_last = param.Boolean(
+        default=True,
+        doc="""
+        Whether only the last stack is printed or the full.""",
+    )
 
-    level = param.Integer(default=logging.ERROR, doc="""
-        Logging level to print in the debugger terminal.""")
+    level = param.Integer(
+        default=logging.ERROR,
+        doc="""
+        Logging level to print in the debugger terminal.""",
+    )
 
     formatter_args = param.Dict(
-        default={'fmt': "%(asctime)s [%(name)s - %(levelname)s]: %(message)s"},
-        precedence=-1, doc="""
+        default={"fmt": "%(asctime)s [%(name)s - %(levelname)s]: %(message)s"},
+        precedence=-1,
+        doc="""
         Arguments to pass to the logging formatter. See the standard
-        python logging libraries.""")
+        python logging libraries.""",
+    )
 
-    logger_names = param.List(default=['panel'], item_type=str,
-        bounds=(1, None), precedence=-1, doc="""
-        Loggers which will be prompted in the debugger terminal.""")
+    logger_names = param.List(
+        default=["panel"],
+        item_type=str,
+        bounds=(1, None),
+        precedence=-1,
+        doc="""
+        Loggers which will be prompted in the debugger terminal.""",
+    )
 
     _rename: ClassVar[Mapping[str, str | None]] = dict(
-        Card._rename, **{
-        '_number_of_errors': None,
-        '_number_of_warnings': None,
-        '_number_of_infos': None,
-        'only_last': None,
-        'level': None,
-        'formatter_args': None,
-        'logger_names': None,
-    })
+        Card._rename,
+        **{
+            "_number_of_errors": None,
+            "_number_of_warnings": None,
+            "_number_of_infos": None,
+            "only_last": None,
+            "level": None,
+            "formatter_args": None,
+            "logger_names": None,
+        },
+    )
 
-    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/debugger.css']
+    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/debugger.css"]
 
     def __init__(self, **params):
         super().__init__(**params)
-        #change default css
-        self.button_css_classes = ['debugger-card-button']
-        self.css_classes = ['debugger-card']
-        self.header_css_classes = ['debugger-card-header']
-        self.title_css_classes = ['debugger-card-title']
+        # change default css
+        self.button_css_classes = ["debugger-card-button"]
+        self.css_classes = ["debugger-card"]
+        self.header_css_classes = ["debugger-card-header"]
+        self.title_css_classes = ["debugger-card-title"]
 
-        smode = 'stretch_width' if self.height else 'stretch_both'
+        smode = "stretch_width" if self.height else "stretch_both"
         height = self.height or self.min_height
-        terminal = Terminal(
-            min_height=200, sizing_mode=smode, name=self.name,
-            margin=0, height=(height-70) if height else None
-        )
+        terminal = Terminal(min_height=200, sizing_mode=smode, name=self.name, margin=0, height=(height - 70) if height else None)
 
         stream_handler = logging.StreamHandler(terminal)
         stream_handler.terminator = "  \n"
 
-        formatter = TermFormatter(
-            **self.formatter_args,
-            only_last=self.only_last
-        )
+        formatter = TermFormatter(**self.formatter_args, only_last=self.only_last)
 
         stream_handler.setFormatter(formatter)
         stream_handler.setLevel(self.level)
@@ -239,10 +251,10 @@ class Debugger(Card):
         self.terminal = terminal
         self.stream_handler = stream_handler
 
-        #callbacks for header
-        self.param.watch(self.update_log_counts,'_number_of_errors')
-        self.param.watch(self.update_log_counts,'_number_of_warnings')
-        self.param.watch(self.update_log_counts,'_number_of_infos')
+        # callbacks for header
+        self.param.watch(self.update_log_counts, "_number_of_errors")
+        self.param.watch(self.update_log_counts, "_number_of_warnings")
+        self.param.watch(self.update_log_counts, "_number_of_infos")
 
         # Buttons
         self.btns = DebuggerButtons(stylesheets=self._stylesheets)
@@ -252,29 +264,24 @@ class Debugger(Card):
         clr = """
         target.data.terminal_output = ''
         """
-        self.terminal.jslink(self.btns, code={'_output': inc})
-        self.terminal.jslink(self.btns, code={'_clears': clr})
-        self.btns.jslink(self.terminal, clears='_clears')
-        self.terminal.param.watch(self.acknowledge_errors, ['_clears'])
+        self.terminal.jslink(self.btns, code={"_output": inc})
+        self.terminal.jslink(self.btns, code={"_clears": clr})
+        self.btns.jslink(self.terminal, clears="_clears")
+        self.terminal.param.watch(self.acknowledge_errors, ["_clears"])
 
-        self.jslink(self.btns, name='debug_name')
+        self.jslink(self.btns, name="debug_name")
 
-        #set header
-        self.title = ''
+        # set header
+        self.title = ""
 
-        #body
-        self.append(
-            Row(
-                f'### {self.name}', HSpacer(), self.btns,
-                sizing_mode='stretch_width', align=('end','start')
-            )
-        )
+        # body
+        self.append(Row(f"### {self.name}", HSpacer(), self.btns, sizing_mode="stretch_width", align=("end", "start")))
         self.append(terminal)
 
-        #make it an uneditable card
-        self.param['objects'].constant = True
+        # make it an uneditable card
+        self.param["objects"].constant = True
 
-        #by default it should be collapsed and small.
+        # by default it should be collapsed and small.
         self.collapsed = True
 
     def update_log_counts(self, event):
@@ -284,9 +291,9 @@ class Debugger(Card):
         if self._number_of_warnings:
             title.append(f'<span style="color:rgb(190,160,20);">w: </span>{self._number_of_warnings}')
         if self._number_of_infos:
-            title.append(f'i: {self._number_of_infos}')
+            title.append(f"i: {self._number_of_infos}")
 
-        self.title = ', '.join(title)
+        self.title = ", ".join(title)
 
     def acknowledge_errors(self, event):
         self._number_of_errors = 0

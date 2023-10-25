@@ -31,8 +31,7 @@ def manualtest_all_view():
             pn.Param(
                 alert,
                 parameters=["object", "alert_type"],
-                widgets={"object":
-                pn.widgets.TextAreaInput},
+                widgets={"object": pn.widgets.TextAreaInput},
             ),
         )
         alerts.append(alert_app)

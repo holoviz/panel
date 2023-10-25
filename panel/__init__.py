@@ -110,5 +110,5 @@ __all__ = (
     "state",
     "viewable",
     "widgets",
-    "widget"
+    "widget",
 )

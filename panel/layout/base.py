@@ -29,8 +29,8 @@ if TYPE_CHECKING:
 
     from ..viewable import Viewable
 
-_row = namedtuple("row", ["children"]) # type: ignore
-_col = namedtuple("col", ["children"]) # type: ignore
+_row = namedtuple("row", ["children"])  # type: ignore
+_col = namedtuple("col", ["children"])  # type: ignore
 
 
 class Panel(Reactive):
@@ -51,61 +51,60 @@ class Panel(Reactive):
     _preprocess_params: ClassVar[List[str]] = []
 
     # Parameter -> Bokeh property renaming
-    _rename: ClassVar[Mapping[str, str | None]] = {'objects': 'children'}
+    _rename: ClassVar[Mapping[str, str | None]] = {"objects": "children"}
 
     __abstract = True
 
     def __repr__(self, depth: int = 0, max_depth: int = 10) -> str:
         if depth > max_depth:
-            return '...'
-        spacer = '\n' + ('    ' * (depth+1))
+            return "..."
+        spacer = "\n" + ("    " * (depth + 1))
         cls = type(self).__name__
-        params = param_reprs(self, ['objects'])
-        objs = ['[%d] %s' % (i, obj.__repr__(depth+1)) for i, obj in enumerate(self)]
+        params = param_reprs(self, ["objects"])
+        objs = ["[%d] %s" % (i, obj.__repr__(depth + 1)) for i, obj in enumerate(self)]
         if not params and not objs:
-            return super().__repr__(depth+1)
+            return super().__repr__(depth + 1)
         elif not params:
-            template = '{cls}{spacer}{objs}'
+            template = "{cls}{spacer}{objs}"
         elif not objs:
-            template = '{cls}({params})'
+            template = "{cls}({params})"
         else:
-            template = '{cls}({params}){spacer}{objs}'
-        return template.format(
-            cls=cls, params=', '.join(params),
-            objs=('%s' % spacer).join(objs), spacer=spacer)
+            template = "{cls}({params}){spacer}{objs}"
+        return template.format(cls=cls, params=", ".join(params), objs=("%s" % spacer).join(objs), spacer=spacer)
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Callback API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
     def _update_model(
-        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any], root: Model, model: Model, doc: Document, comm: Optional[Comm]
     ) -> None:
         msg = dict(msg)
         inverse = {v: k for k, v in self._property_mapping.items() if v is not None}
         preprocess = any(inverse.get(k, k) in self._preprocess_params for k in msg)
 
         # ALERT: Find a better way to handle this
-        if 'styles' in msg and root is model and 'overflow-x' in msg['styles']:
-            del msg['styles']['overflow-x']
+        if "styles" in msg and root is model and "overflow-x" in msg["styles"]:
+            del msg["styles"]["overflow-x"]
 
-        obj_key = self._property_mapping['objects']
+        obj_key = self._property_mapping["objects"]
         if obj_key in msg:
-            old = events['objects'].old
+            old = events["objects"].old
             children, old_children = self._get_objects(model, old, doc, root, comm)
             msg[obj_key] = children
 
-            msg.update(self._compute_sizing_mode(
-                children,
-                dict(
-                    sizing_mode=msg.get('sizing_mode', model.sizing_mode),
-                    styles=msg.get('styles', model.styles),
-                    width=msg.get('width', model.width),
-                    min_width=msg.get('min_width', model.min_width),
-                    margin=msg.get('margin', model.margin)
+            msg.update(
+                self._compute_sizing_mode(
+                    children,
+                    dict(
+                        sizing_mode=msg.get("sizing_mode", model.sizing_mode),
+                        styles=msg.get("styles", model.styles),
+                        width=msg.get("width", model.width),
+                        min_width=msg.get("min_width", model.min_width),
+                        margin=msg.get("margin", model.margin),
+                    ),
                 )
-            ))
+            )
         else:
             old_children = None
 
@@ -118,25 +117,24 @@ class Panel(Reactive):
                     if update:
                         return
                     from ..io import state
-                    ref = root.ref['id']
+
+                    ref = root.ref["id"]
                     if ref in state._views and preprocess:
                         state._views[ref][0]._preprocess(root, self, old_children)
             finally:
                 Panel._batch_update = update
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Model API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
-    def _get_objects(
-        self, model: Model, old_objects: List[Viewable], doc: Document,
-        root: Model, comm: Optional[Comm] = None
-    ):
+    def _get_objects(self, model: Model, old_objects: List[Viewable], doc: Document, root: Model, comm: Optional[Comm] = None):
         """
         Returns new child models for the layout while reusing unchanged
         models and cleaning up any dropped objects.
         """
         from ..pane.base import RerenderError, panel
+
         new_models, old_models = [], []
         for i, pane in enumerate(self.objects):
             pane = panel(pane)
@@ -147,10 +145,10 @@ class Panel(Reactive):
                 obj._cleanup(root)
 
         current_objects = list(self.objects)
-        ref = root.ref['id']
+        ref = root.ref["id"]
         for i, pane in enumerate(self.objects):
             if pane in old_objects and ref in pane._models:
-                child, _ = pane._models[root.ref['id']]
+                child, _ = pane._models[root.ref["id"]]
                 old_models.append(child)
             else:
                 try:
@@ -163,18 +161,15 @@ class Panel(Reactive):
             new_models.append(child)
         return new_models, old_models
 
-    def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
-    ) -> Model:
+    def _get_model(self, doc: Document, root: Optional[Model] = None, parent: Optional[Model] = None, comm: Optional[Comm] = None) -> Model:
         if self._bokeh_model is None:
-            raise ValueError(f'{type(self).__name__} did not define a _bokeh_model.')
+            raise ValueError(f"{type(self).__name__} did not define a _bokeh_model.")
         model = self._bokeh_model()
         root = root or model
-        self._models[root.ref['id']] = (model, parent)
+        self._models[root.ref["id"]] = (model, parent)
         objects, _ = self._get_objects(model, [], doc, root, comm)
         props = self._get_properties(doc)
-        props[self._property_mapping['objects']] = objects
+        props[self._property_mapping["objects"]] = objects
         props.update(self._compute_sizing_mode(objects, props))
         model.update(**props)
         self._link_props(model, self._linked_properties, doc, root, comm)
@@ -207,9 +202,9 @@ class Panel(Reactive):
           and provide this as min_width and min_height settings to
           ensure sufficient space is available.
         """
-        margin = props.get('margin', self.margin)
-        sizing_mode = props.get('sizing_mode', self.sizing_mode)
-        if sizing_mode == 'fixed':
+        margin = props.get("margin", self.margin)
+        sizing_mode = props.get("sizing_mode", self.sizing_mode)
+        if sizing_mode == "fixed":
             return {}
 
         # Iterate over children and determine responsiveness along
@@ -218,11 +213,11 @@ class Panel(Reactive):
         all_expand_height, expand_width, expand_height, scale = True, False, False, False
         for child in children:
             smode = child.sizing_mode
-            if smode and 'scale' in smode:
+            if smode and "scale" in smode:
                 scale = True
 
-            width_expanded = smode in ('stretch_width', 'stretch_both', 'scale_width', 'scale_both')
-            height_expanded = smode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both')
+            width_expanded = smode in ("stretch_width", "stretch_both", "scale_width", "scale_both")
+            height_expanded = smode in ("stretch_height", "stretch_both", "scale_height", "scale_both")
             expand_width |= width_expanded
             expand_height |= height_expanded
             if width_expanded:
@@ -234,11 +229,11 @@ class Panel(Reactive):
             if width:
                 if isinstance(margin, tuple):
                     if len(margin) == 2:
-                        width += margin[1]*2
+                        width += margin[1] * 2
                     else:
                         width += margin[1] + margin[3]
                 else:
-                    width += margin*2
+                    width += margin * 2
                 widths.append(width)
 
             if height_expanded:
@@ -252,62 +247,57 @@ class Panel(Reactive):
             if height:
                 if isinstance(margin, tuple):
                     if len(margin) == 2:
-                        height += margin[0]*2
+                        height += margin[0] * 2
                     else:
                         height += margin[0] + margin[2]
                 else:
-                    height += margin*2
+                    height += margin * 2
                 heights.append(height)
 
         # Infer new sizing mode based on children
-        mode = 'scale' if scale else 'stretch'
-        if self._direction == 'horizontal':
+        mode = "scale" if scale else "stretch"
+        if self._direction == "horizontal":
             allow_height_scale = all_expand_height
         else:
             allow_height_scale = True
         if expand_width and expand_height and not self.width and not self.height:
-            if allow_height_scale or 'both' in (sizing_mode or ''):
-                sizing_mode = f'{mode}_both'
+            if allow_height_scale or "both" in (sizing_mode or ""):
+                sizing_mode = f"{mode}_both"
             else:
-                sizing_mode = f'{mode}_width'
+                sizing_mode = f"{mode}_width"
         elif expand_width and not self.width:
-            sizing_mode = f'{mode}_width'
+            sizing_mode = f"{mode}_width"
         elif expand_height and not self.height and allow_height_scale:
-            sizing_mode = f'{mode}_height'
+            sizing_mode = f"{mode}_height"
         if sizing_mode is None:
-            return {'sizing_mode': props.get('sizing_mode')}
+            return {"sizing_mode": props.get("sizing_mode")}
 
-        properties = {'sizing_mode': sizing_mode}
-        if ((sizing_mode.endswith('_width') or sizing_mode.endswith('_both')) and
-            widths and 'min_width' not in properties):
-            width_op = max if self._direction == 'vertical' else sum
+        properties = {"sizing_mode": sizing_mode}
+        if (sizing_mode.endswith("_width") or sizing_mode.endswith("_both")) and widths and "min_width" not in properties:
+            width_op = max if self._direction == "vertical" else sum
             min_width = width_op(widths)
             op_widths = [min_width]
-            if 'max_width' in properties:
-                op_widths.append(properties['max_width'])
-            properties['min_width'] = min(op_widths)
-        if ((sizing_mode.endswith('_height') or sizing_mode.endswith('_both')) and
-            heights and 'min_height' not in properties):
-            height_op = max if self._direction == 'horizontal' else sum
+            if "max_width" in properties:
+                op_widths.append(properties["max_width"])
+            properties["min_width"] = min(op_widths)
+        if (sizing_mode.endswith("_height") or sizing_mode.endswith("_both")) and heights and "min_height" not in properties:
+            height_op = max if self._direction == "horizontal" else sum
             min_height = height_op(heights)
             op_heights = [min_height]
-            if 'max_height' in properties:
-                op_heights.append(properties['max_height'])
-            properties['min_height'] = min(op_heights)
+            if "max_height" in properties:
+                op_heights.append(properties["max_height"])
+            properties["min_height"] = min(op_heights)
         return properties
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Public API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
-    def get_root(
-        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
-        preprocess: bool = True
-    ) -> Model:
+    def get_root(self, doc: Optional[Document] = None, comm: Optional[Comm] = None, preprocess: bool = True) -> Model:
         root = super().get_root(doc, comm, preprocess)
         # ALERT: Find a better way to handle this
-        if hasattr(root, 'styles') and 'overflow-x' in root.styles:
-            del root.styles['overflow-x']
+        if hasattr(root, "styles") and "overflow-x" in root.styles:
+            del root.styles["overflow-x"]
         return root
 
     def select(self, selector=None):
@@ -332,11 +322,13 @@ class Panel(Reactive):
 
 
 class ListLike(param.Parameterized):
+    objects = param.List(
+        default=[],
+        doc="""
+        The list of child objects that make up the layout.""",
+    )
 
-    objects = param.List(default=[], doc="""
-        The list of child objects that make up the layout.""")
-
-    _preprocess_params: ClassVar[List[str]] = ['objects']
+    _preprocess_params: ClassVar[List[str]] = ["objects"]
 
     def __getitem__(self, index: int | slice) -> Viewable | List[Viewable]:
         return self.objects[index]
@@ -348,65 +340,59 @@ class ListLike(param.Parameterized):
         for obj in self.objects:
             yield obj
 
-    def __iadd__(self, other: Iterable[Any]) -> 'ListLike':
+    def __iadd__(self, other: Iterable[Any]) -> "ListLike":
         self.extend(other)
         return self
 
-    def __add__(self, other: Iterable[Any]) -> 'ListLike':
+    def __add__(self, other: Iterable[Any]) -> "ListLike":
         if isinstance(other, ListLike):
             other = other.objects
         else:
             other = list(other)
-        return self.clone(*(self.objects+other))
+        return self.clone(*(self.objects + other))
 
-    def __radd__(self, other: Iterable[Any]) -> 'ListLike':
+    def __radd__(self, other: Iterable[Any]) -> "ListLike":
         if isinstance(other, ListLike):
             other = other.objects
         else:
             other = list(other)
-        return self.clone(*(other+self.objects))
+        return self.clone(*(other + self.objects))
 
     def __contains__(self, obj: Viewable) -> bool:
         return obj in self.objects
 
     def __setitem__(self, index: int | slice, panes: Iterable[Any]) -> None:
         from ..pane import panel
+
         new_objects = list(self)
         if not isinstance(index, slice):
-            start, end = index, index+1
+            start, end = index, index + 1
             if start > len(self.objects):
-                raise IndexError('Index %d out of bounds on %s '
-                                 'containing %d objects.' %
-                                 (end, type(self).__name__, len(self.objects)))
+                raise IndexError("Index %d out of bounds on %s " "containing %d objects." % (end, type(self).__name__, len(self.objects)))
             panes = [panes]
         else:
             start = index.start or 0
             end = len(self) if index.stop is None else index.stop
             if index.start is None and index.stop is None:
                 if not isinstance(panes, list):
-                    raise IndexError('Expected a list of objects to '
-                                     'replace the objects in the %s, '
-                                     'got a %s type.' %
-                                     (type(self).__name__, type(panes).__name__))
+                    raise IndexError(
+                        "Expected a list of objects to " "replace the objects in the %s, " "got a %s type." % (type(self).__name__, type(panes).__name__)
+                    )
                 expected = len(panes)
-                new_objects = [None]*expected # type: ignore
+                new_objects = [None] * expected  # type: ignore
                 end = expected
             elif end > len(self.objects):
-                raise IndexError('Index %d out of bounds on %s '
-                                 'containing %d objects.' %
-                                 (end, type(self).__name__, len(self.objects)))
+                raise IndexError("Index %d out of bounds on %s " "containing %d objects." % (end, type(self).__name__, len(self.objects)))
             else:
-                expected = end-start
+                expected = end - start
             if not isinstance(panes, list) or len(panes) != expected:
-                raise IndexError('Expected a list of %d objects to set '
-                                 'on the %s to match the supplied slice.' %
-                                 (expected, type(self).__name__))
+                raise IndexError("Expected a list of %d objects to set " "on the %s to match the supplied slice." % (expected, type(self).__name__))
         for i, pane in zip(range(start, end), panes):
             new_objects[i] = panel(pane)
 
         self.objects = new_objects
 
-    def clone(self, *objects: Any, **params: Any) -> 'ListLike':
+    def clone(self, *objects: Any, **params: Any) -> "ListLike":
         """
         Makes a copy of the layout sharing the same parameters.
 
@@ -420,16 +406,14 @@ class ListLike(param.Parameterized):
         Cloned layout object
         """
         if not objects:
-            if 'objects' in params:
-                objects = params.pop('objects')
+            if "objects" in params:
+                objects = params.pop("objects")
             else:
                 objects = self.objects
-        elif 'objects' in params:
-            raise ValueError("A %s's objects should be supplied either "
-                             "as arguments or as a keyword, not both."
-                             % type(self).__name__)
+        elif "objects" in params:
+            raise ValueError("A %s's objects should be supplied either " "as arguments or as a keyword, not both." % type(self).__name__)
         p = dict(self.param.values(), **params)
-        del p['objects']
+        del p["objects"]
         return type(self)(*objects, **p)
 
     def append(self, obj: Any) -> None:
@@ -441,6 +425,7 @@ class ListLike(param.Parameterized):
         obj (object): Panel component to add to the layout.
         """
         from ..pane import panel
+
         new_objects = list(self)
         new_objects.append(panel(obj))
         self.objects = new_objects
@@ -466,6 +451,7 @@ class ListLike(param.Parameterized):
         objects (list): List of panel components to add to the layout.
         """
         from ..pane import panel
+
         new_objects = list(self)
         new_objects.extend(list(map(panel, objects)))
         self.objects = new_objects
@@ -494,6 +480,7 @@ class ListLike(param.Parameterized):
         object (object): Panel components to insert in the layout.
         """
         from ..pane import panel
+
         new_objects = list(self)
         new_objects.insert(index, panel(obj))
         self.objects = new_objects
@@ -533,33 +520,34 @@ class ListLike(param.Parameterized):
 
 
 class NamedListLike(param.Parameterized):
+    objects = param.List(
+        default=[],
+        doc="""
+        The list of child objects that make up the layout.""",
+    )
 
-    objects = param.List(default=[], doc="""
-        The list of child objects that make up the layout.""")
-
-    _preprocess_params: ClassVar[List[str]] = ['objects']
+    _preprocess_params: ClassVar[List[str]] = ["objects"]
 
     def __init__(self, *items: List[Any | Tuple[str, Any]], **params: Any):
-        if 'objects' in params:
+        if "objects" in params:
             if items:
-                raise ValueError('%s objects should be supplied either '
-                                 'as positional arguments or as a keyword, '
-                                 'not both.' % type(self).__name__)
-            items = params.pop('objects')
-        params['objects'], self._names = self._to_objects_and_names(items)
+                raise ValueError("%s objects should be supplied either " "as positional arguments or as a keyword, " "not both." % type(self).__name__)
+            items = params.pop("objects")
+        params["objects"], self._names = self._to_objects_and_names(items)
         super().__init__(**params)
         self._panels = defaultdict(dict)
-        self.param.watch(self._update_names, 'objects')
+        self.param.watch(self._update_names, "objects")
         # ALERT: Ensure that name update happens first, should be
         #        replaced by watch precedence support in param
-        param_watchers(self)['objects']['value'].reverse()
+        param_watchers(self)["objects"]["value"].reverse()
 
     def _to_object_and_name(self, item):
         from ..pane import panel
+
         if isinstance(item, tuple):
             name, item = item
         else:
-            name = getattr(item, 'name', None)
+            name = getattr(item, "name", None)
         pane = panel(item, name=name)
         name = param_name(pane.name) if name is None else name
         return pane, name
@@ -588,9 +576,9 @@ class NamedListLike(param.Parameterized):
     def _update_active(self, *events: param.parameterized.Event) -> None:
         pass
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Public API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
     def __getitem__(self, index) -> Viewable | List[Viewable]:
         return self.objects[index]
@@ -602,11 +590,11 @@ class NamedListLike(param.Parameterized):
         for obj in self.objects:
             yield obj
 
-    def __iadd__(self, other: Iterable[Any]) -> 'NamedListLike':
+    def __iadd__(self, other: Iterable[Any]) -> "NamedListLike":
         self.extend(other)
         return self
 
-    def __add__(self, other: Iterable[Any]) -> 'NamedListLike':
+    def __add__(self, other: Iterable[Any]) -> "NamedListLike":
         if isinstance(other, NamedListLike):
             added = list(zip(other._names, other.objects))
         elif isinstance(other, ListLike):
@@ -614,9 +602,9 @@ class NamedListLike(param.Parameterized):
         else:
             added = list(other)
         objects = list(zip(self._names, self.objects))
-        return self.clone(*(objects+added))
+        return self.clone(*(objects + added))
 
-    def __radd__(self, other: Iterable[Any]) -> 'NamedListLike':
+    def __radd__(self, other: Iterable[Any]) -> "NamedListLike":
         if isinstance(other, NamedListLike):
             added = list(zip(other._names, other.objects))
         elif isinstance(other, ListLike):
@@ -624,45 +612,38 @@ class NamedListLike(param.Parameterized):
         else:
             added = list(other)
         objects = list(zip(self._names, self.objects))
-        return self.clone(*(added+objects))
+        return self.clone(*(added + objects))
 
     def __setitem__(self, index: int | slice, panes: Iterable[Any]) -> None:
         new_objects = list(self)
         if not isinstance(index, slice):
             if index > len(self.objects):
-                raise IndexError('Index %d out of bounds on %s '
-                                 'containing %d objects.' %
-                                 (index, type(self).__name__, len(self.objects)))
-            start, end = index, index+1
+                raise IndexError("Index %d out of bounds on %s " "containing %d objects." % (index, type(self).__name__, len(self.objects)))
+            start, end = index, index + 1
             panes = [panes]
         else:
             start = index.start or 0
             end = len(self.objects) if index.stop is None else index.stop
             if index.start is None and index.stop is None:
                 if not isinstance(panes, list):
-                    raise IndexError('Expected a list of objects to '
-                                     'replace the objects in the %s, '
-                                     'got a %s type.' %
-                                     (type(self).__name__, type(panes).__name__))
+                    raise IndexError(
+                        "Expected a list of objects to " "replace the objects in the %s, " "got a %s type." % (type(self).__name__, type(panes).__name__)
+                    )
                 expected = len(panes)
-                new_objects = [None]*expected # type: ignore
-                self._names = [None]*len(panes)
+                new_objects = [None] * expected  # type: ignore
+                self._names = [None] * len(panes)
                 end = expected
             else:
-                expected = end-start
+                expected = end - start
                 if end > len(self.objects):
-                    raise IndexError('Index %d out of bounds on %s '
-                                     'containing %d objects.' %
-                                     (end, type(self).__name__, len(self.objects)))
+                    raise IndexError("Index %d out of bounds on %s " "containing %d objects." % (end, type(self).__name__, len(self.objects)))
             if not isinstance(panes, list) or len(panes) != expected:
-                raise IndexError('Expected a list of %d objects to set '
-                                 'on the %s to match the supplied slice.' %
-                                 (expected, type(self).__name__))
+                raise IndexError("Expected a list of %d objects to set " "on the %s to match the supplied slice." % (expected, type(self).__name__))
         for i, pane in zip(range(start, end), panes):
             new_objects[i], self._names[i] = self._to_object_and_name(pane)
         self.objects = new_objects
 
-    def clone(self, *objects: Any, **params: Any) -> 'NamedListLike':
+    def clone(self, *objects: Any, **params: Any) -> "NamedListLike":
         """
         Makes a copy of the Tabs sharing the same parameters.
 
@@ -677,16 +658,14 @@ class NamedListLike(param.Parameterized):
         """
         if objects:
             overrides = objects
-        elif 'objects' in params:
-            raise ValueError('Tabs objects should be supplied either '
-                             'as positional arguments or as a keyword, '
-                             'not both.')
-        elif 'objects' in params:
-            overrides = params.pop('objects')
+        elif "objects" in params:
+            raise ValueError("Tabs objects should be supplied either " "as positional arguments or as a keyword, " "not both.")
+        elif "objects" in params:
+            overrides = params.pop("objects")
         else:
             overrides = tuple(zip(self._names, self.objects))
         p = dict(self.param.values(), **params)
-        del p['objects']
+        del p["objects"]
         return type(self)(*overrides, **params)
 
     def append(self, pane: Any) -> None:
@@ -783,87 +762,92 @@ class ListPanel(ListLike, Panel):
     An abstract baseclass for Panel objects with list-like children.
     """
 
-    scroll = param.Boolean(default=False, doc="""
+    scroll = param.Boolean(
+        default=False,
+        doc="""
         Whether to add scrollbars if the content overflows the size
-        of the container.""")
+        of the container.""",
+    )
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'scroll': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {"scroll": None}
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {'scroll': None}
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {"scroll": None}
 
     __abstract = True
 
     def __init__(self, *objects: Any, **params: Any):
         from ..pane import panel
+
         if objects:
-            if 'objects' in params:
-                raise ValueError("A %s's objects should be supplied either "
-                                 "as positional arguments or as a keyword, "
-                                 "not both." % type(self).__name__)
-            params['objects'] = [panel(pane) for pane in objects]
-        elif 'objects' in params:
-            objects = params['objects']
+            if "objects" in params:
+                raise ValueError("A %s's objects should be supplied either " "as positional arguments or as a keyword, " "not both." % type(self).__name__)
+            params["objects"] = [panel(pane) for pane in objects]
+        elif "objects" in params:
+            objects = params["objects"]
             if not resolve_ref(objects) or iscoroutinefunction(objects):
-                params['objects'] = [panel(pane) for pane in objects]
+                params["objects"] = [panel(pane) for pane in objects]
         super(Panel, self).__init__(**params)
 
     @property
     def _linked_properties(self):
-        return tuple(
-            self._property_mapping.get(p, p) for p in self.param
-            if p not in ListPanel.param and self._property_mapping.get(p, p) is not None
-        )
+        return tuple(self._property_mapping.get(p, p) for p in self.param if p not in ListPanel.param and self._property_mapping.get(p, p) is not None)
 
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        if 'scroll' in params:
-            scroll = params['scroll']
-            css_classes = params.get('css_classes', self.css_classes)
+        if "scroll" in params:
+            scroll = params["scroll"]
+            css_classes = params.get("css_classes", self.css_classes)
             if scroll:
                 if self._direction is not None:
-                    css_classes += [f'scrollable-{self._direction}']
+                    css_classes += [f"scrollable-{self._direction}"]
                 else:
-                    css_classes += ['scrollable']
-            params['css_classes'] = css_classes
+                    css_classes += ["scrollable"]
+            params["css_classes"] = css_classes
         return super()._process_param_change(params)
 
     def _cleanup(self, root: Model | None = None) -> None:
-        if root is not None and root.ref['id'] in state._fake_roots:
-            state._fake_roots.remove(root.ref['id'])
+        if root is not None and root.ref["id"] in state._fake_roots:
+            state._fake_roots.remove(root.ref["id"])
         super()._cleanup(root)
         for p in self.objects:
             p._cleanup(root)
 
 
 class NamedListPanel(NamedListLike, Panel):
+    active = param.Integer(
+        default=0,
+        bounds=(0, None),
+        doc="""
+        Index of the currently displayed objects.""",
+    )
 
-    active = param.Integer(default=0, bounds=(0, None), doc="""
-        Index of the currently displayed objects.""")
-
-    scroll = param.Boolean(default=False, doc="""
+    scroll = param.Boolean(
+        default=False,
+        doc="""
         Whether to add scrollbars if the content overflows the size
-        of the container.""")
+        of the container.""",
+    )
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'scroll': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {"scroll": None}
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {'scroll': None}
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {"scroll": None}
 
     __abstract = True
 
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        if 'scroll' in params:
-            scroll = params['scroll']
-            css_classes = params.get('css_classes', self.css_classes)
+        if "scroll" in params:
+            scroll = params["scroll"]
+            css_classes = params.get("css_classes", self.css_classes)
             if scroll:
                 if self._direction is not None:
-                    css_classes += [f'scrollable-{self._direction}']
+                    css_classes += [f"scrollable-{self._direction}"]
                 else:
-                    css_classes += ['scrollable']
-            params['css_classes'] = css_classes
+                    css_classes += ["scrollable"]
+            params["css_classes"] = css_classes
         return super()._process_param_change(params)
 
     def _cleanup(self, root: Model | None = None) -> None:
-        if root is not None and root.ref['id'] in state._fake_roots:
-            state._fake_roots.remove(root.ref['id'])
+        if root is not None and root.ref["id"] in state._fake_roots:
+            state._fake_roots.remove(root.ref["id"])
         super()._cleanup(root)
         for p in self.objects:
             p._cleanup(root)
@@ -887,9 +871,9 @@ class Row(ListPanel):
 
     _bokeh_model: ClassVar[Type[Model]] = BkRow
 
-    _direction = 'horizontal'
+    _direction = "horizontal"
 
-    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/listpanel.css']
+    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/listpanel.css"]
 
 
 class Column(ListPanel):
@@ -908,47 +892,46 @@ class Column(ListPanel):
     >>> pn.Column(some_widget, some_pane, some_python_object)
     """
 
-    scroll_position = param.Integer(default=None, doc="""
+    scroll_position = param.Integer(
+        default=None,
+        doc="""
         Current scroll position of the Column. Setting this value
         will update the scroll position of the Column. Setting to
-        0 will scroll to the top.""")
+        0 will scroll to the top.""",
+    )
 
-    auto_scroll_limit = param.Integer(bounds=(0, None), doc="""
+    auto_scroll_limit = param.Integer(
+        bounds=(0, None),
+        doc="""
         Max pixel distance from the latest object in the Column to
         activate automatic scrolling upon update. Setting to 0
-        disables auto-scrolling.""")
+        disables auto-scrolling.""",
+    )
 
-    scroll_button_threshold = param.Integer(bounds=(0, None), doc="""
+    scroll_button_threshold = param.Integer(
+        bounds=(0, None),
+        doc="""
         Min pixel distance from the latest object in the Column to
         display the scroll button. Setting to 0
-        disables the scroll button.""")
+        disables the scroll button.""",
+    )
 
-    view_latest = param.Boolean(default=False, doc="""
+    view_latest = param.Boolean(
+        default=False,
+        doc="""
         Whether to scroll to the latest object on init. If not
-        enabled the view will be on the first object.""")
+        enabled the view will be on the first object.""",
+    )
 
     _bokeh_model: ClassVar[Type[Model]] = PnColumn
 
-    _direction = 'vertical'
+    _direction = "vertical"
 
-    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/listpanel.css']
+    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/listpanel.css"]
 
-    @param.depends(
-        "scroll_position",
-        "auto_scroll_limit",
-        "scroll_button_threshold",
-        "view_latest",
-        watch=True,
-        on_init=True
-    )
+    @param.depends("scroll_position", "auto_scroll_limit", "scroll_button_threshold", "view_latest", watch=True, on_init=True)
     def _set_scrollable(self):
-        self.scroll = (
-            self.scroll or
-            bool(self.scroll_position) or
-            bool(self.auto_scroll_limit) or
-            bool(self.scroll_button_threshold) or
-            self.view_latest
-        )
+        self.scroll = self.scroll or bool(self.scroll_position) or bool(self.auto_scroll_limit) or bool(self.scroll_button_threshold) or self.view_latest
 
 
 class WidgetBox(ListPanel):
@@ -970,39 +953,43 @@ class WidgetBox(ListPanel):
     >>> pn.WidgetBox(some_widget, another_widget)
     """
 
-    css_classes = param.List(default=['panel-widget-box'], doc="""
-        CSS classes to apply to the layout.""")
+    css_classes = param.List(
+        default=["panel-widget-box"],
+        doc="""
+        CSS classes to apply to the layout.""",
+    )
 
-    disabled = param.Boolean(default=False, doc="""
-        Whether the widget is disabled.""")
+    disabled = param.Boolean(
+        default=False,
+        doc="""
+        Whether the widget is disabled.""",
+    )
 
-    horizontal = param.Boolean(default=False, doc="""
+    horizontal = param.Boolean(
+        default=False,
+        doc="""
         Whether to lay out the widgets in a Row layout as opposed
-        to a Column layout.""")
+        to a Column layout.""",
+    )
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
-        'disabled': None, 'horizontal': None
-    }
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {"disabled": None, "horizontal": None}
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
-        'disabled': None, 'objects': 'children', 'horizontal': None
-    }
+    _rename: ClassVar[Mapping[str, str | None]] = {"disabled": None, "objects": "children", "horizontal": None}
 
-    _stylesheets: ClassVar[list[str]] = [
-        f'{CDN_DIST}css/widgetbox.css', f'{CDN_DIST}css/listpanel.css'
-    ]
+    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/widgetbox.css", f"{CDN_DIST}css/listpanel.css"]
 
     @property
-    def _bokeh_model(self) -> Type[Model]: # type: ignore
+    def _bokeh_model(self) -> Type[Model]:  # type: ignore
         return BkRow if self.horizontal else PnColumn
 
     @property
     def _direction(self):
-        return 'vertical' if self.horizontal else 'vertical'
+        return "vertical" if self.horizontal else "vertical"
 
-    @param.depends('disabled', 'objects', watch=True)
+    @param.depends("disabled", "objects", watch=True)
     def _disable_widgets(self) -> None:
         from ..widgets import Widget
+
         for obj in self.select(Widget):
             obj.disabled = self.disabled
 

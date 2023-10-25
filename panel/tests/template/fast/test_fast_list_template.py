@@ -9,7 +9,7 @@ def test_template_theme_parameter():
     # Not '#3f3f3f' which is for the Vanilla theme
 
     doc = template.server_doc(Document())
-    assert doc.theme._json['attrs']['figure']['background_fill_color']=="#181818"
+    assert doc.theme._json["attrs"]["figure"]["background_fill_color"] == "#181818"
 
     assert isinstance(template._design.theme, FastDarkTheme)
 
@@ -27,5 +27,5 @@ def test_accepts_colors_by_name():
 def test_accent():
     accent = "yellow"
     template = FastListTemplate(accent=accent)
-    assert template.accent_base_color==accent
-    assert template.header_background==accent
+    assert template.accent_base_color == accent
+    assert template.header_background == accent

@@ -27,13 +27,14 @@ from panel.config import panel_extension
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
 
-CUSTOM_MARKS = ('ui', 'jupyter', 'subprocess')
+CUSTOM_MARKS = ("ui", "jupyter", "subprocess")
 
 config.apply_signatures = False
 
 JUPYTER_PORT = 8887
-JUPYTER_TIMEOUT = 15 # s
+JUPYTER_TIMEOUT = 15  # s
 JUPYTER_PROCESS = None
+
 
 def port_open(port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -49,10 +50,11 @@ def get_default_port():
     worker_idx = int(re.sub(r"\D", "", worker_id))
     return 9001 + (worker_idx * worker_count * 10)
 
+
 def start_jupyter():
     global JUPYTER_PORT, JUPYTER_PROCESS
-    args = ['jupyter', 'server', '--port', str(JUPYTER_PORT), "--NotebookApp.token=''"]
-    JUPYTER_PROCESS = process = Popen(args, stdout=PIPE, stderr=PIPE, bufsize=1, encoding='utf-8')
+    args = ["jupyter", "server", "--port", str(JUPYTER_PORT), "--NotebookApp.token=''"]
+    JUPYTER_PROCESS = process = Popen(args, stdout=PIPE, stderr=PIPE, bufsize=1, encoding="utf-8")
     deadline = time.monotonic() + JUPYTER_TIMEOUT
     while True:
         line = process.stderr.readline()
@@ -64,57 +66,44 @@ def start_jupyter():
             host = "http://localhost:"
             break
         if time.monotonic() > deadline:
-            raise TimeoutError(
-                'jupyter server did not start within {timeout} seconds.'
-            )
+            raise TimeoutError("jupyter server did not start within {timeout} seconds.")
     JUPYTER_PORT = int(line.split(host)[-1][:4])
+
 
 def cleanup_jupyter():
     if JUPYTER_PROCESS is not None:
         os.kill(JUPYTER_PROCESS.pid, signal.SIGTERM)
 
+
 @pytest.fixture
 def jupyter_preview(request):
     path = pathlib.Path(request.fspath.dirname)
     rel = path.relative_to(pathlib.Path(request.config.invocation_dir).absolute())
-    return f'http://localhost:{JUPYTER_PORT}/panel-preview/render/{str(rel)}'
+    return f"http://localhost:{JUPYTER_PORT}/panel-preview/render/{str(rel)}"
+
 
 atexit.register(cleanup_jupyter)
 optional_markers = {
-    "ui": {
-        "help": "<Command line help text for flag1...>",
-        "marker-descr": "UI test marker",
-        "skip-reason": "Test only runs with the --ui option."
-    },
-    "jupyter": {
-        "help": "Runs Jupyter related tests",
-        "marker-descr": "Jupyter test marker",
-        "skip-reason": "Test only runs with the --jupyter option."
-    },
+    "ui": {"help": "<Command line help text for flag1...>", "marker-descr": "UI test marker", "skip-reason": "Test only runs with the --ui option."},
+    "jupyter": {"help": "Runs Jupyter related tests", "marker-descr": "Jupyter test marker", "skip-reason": "Test only runs with the --jupyter option."},
     "subprocess": {
         "help": "Runs tests that fork the process",
         "marker-descr": "Subprocess test marker",
-        "skip-reason": "Test only runs with the --subprocess option."
+        "skip-reason": "Test only runs with the --subprocess option.",
     },
-    "docs": {
-        "help": "Runs docs specific tests",
-        "marker-descr": "Docs test marker",
-        "skip-reason": "Test only runs with the --docs option."
-    }
+    "docs": {"help": "Runs docs specific tests", "marker-descr": "Docs test marker", "skip-reason": "Test only runs with the --docs option."},
 }
 
 
 def pytest_addoption(parser):
     for marker, info in optional_markers.items():
-        parser.addoption("--{}".format(marker), action="store_true",
-                         default=False, help=info['help'])
+        parser.addoption("--{}".format(marker), action="store_true", default=False, help=info["help"])
 
 
 def pytest_configure(config):
     for marker, info in optional_markers.items():
-        config.addinivalue_line("markers",
-                                "{}: {}".format(marker, info['marker-descr']))
-    if getattr(config.option, 'jupyter') and not port_open(JUPYTER_PORT):
+        config.addinivalue_line("markers", "{}: {}".format(marker, info["marker-descr"]))
+    if getattr(config.option, "jupyter") and not port_open(JUPYTER_PORT):
         start_jupyter()
 
 
@@ -142,7 +131,9 @@ def context(context):
     context.set_default_timeout(20_000)
     yield context
 
+
 PORT = [get_default_port()]
+
 
 @pytest.fixture
 def document():
@@ -156,6 +147,7 @@ def server_document():
     doc._session_context = lambda: session_context
     with set_curdoc(doc):
         yield doc
+
 
 @pytest.fixture
 def comm():
@@ -173,19 +165,16 @@ def port():
 
 @pytest.fixture
 def dataframe():
-    return pd.DataFrame({
-        'int': [1, 2, 3],
-        'float': [3.14, 6.28, 9.42],
-        'str': ['A', 'B', 'C']
-    }, index=[1, 2, 3], columns=['int', 'float', 'str'])
+    return pd.DataFrame({"int": [1, 2, 3], "float": [3.14, 6.28, 9.42], "str": ["A", "B", "C"]}, index=[1, 2, 3], columns=["int", "float", "str"])
 
 
 @pytest.fixture
 def hv_bokeh():
     import holoviews as hv
-    hv.renderer('bokeh')
+
+    hv.renderer("bokeh")
     prev_backend = hv.Store.current_backend
-    hv.Store.current_backend = 'bokeh'
+    hv.Store.current_backend = "bokeh"
     yield
     hv.Store.current_backend = prev_backend
 
@@ -193,11 +182,13 @@ def hv_bokeh():
 @pytest.fixture
 def get_display_handle():
     cleanup = []
+
     def display_handle(model):
-        cleanup.append(model.ref['id'])
+        cleanup.append(model.ref["id"])
         handle = {}
-        state._handles[model.ref['id']] = (handle, [])
+        state._handles[model.ref["id"]] = (handle, [])
         return handle
+
     yield display_handle
     for ref in cleanup:
         if ref in state._handles:
@@ -207,9 +198,10 @@ def get_display_handle():
 @pytest.fixture
 def hv_mpl():
     import holoviews as hv
-    hv.renderer('matplotlib')
+
+    hv.renderer("matplotlib")
     prev_backend = hv.Store.current_backend
-    hv.Store.current_backend = 'matplotlib'
+    hv.Store.current_backend = "matplotlib"
     yield
     hv.Store.current_backend = prev_backend
 
@@ -229,13 +221,9 @@ def tmpdir(request, tmpdir_factory):
 @pytest.fixture()
 def html_server_session():
     port = 5050
-    html = HTML('<h1>Title</h1>')
+    html = HTML("<h1>Title</h1>")
     server = serve(html, port=port, show=False, start=False)
-    session = pull_session(
-        session_id='Test',
-        url="http://localhost:{:d}/".format(server.port),
-        io_loop=server.io_loop
-    )
+    session = pull_session(session_id="Test", url="http://localhost:{:d}/".format(server.port), io_loop=server.io_loop)
     yield html, server, session, port
     try:
         server.stop()
@@ -246,13 +234,9 @@ def html_server_session():
 @pytest.fixture()
 def markdown_server_session():
     port = 5051
-    html = Markdown('#Title')
+    html = Markdown("#Title")
     server = serve(html, port=port, show=False, start=False)
-    session = pull_session(
-        session_id='Test',
-        url="http://localhost:{:d}/".format(server.port),
-        io_loop=server.io_loop
-    )
+    session = pull_session(session_id="Test", url="http://localhost:{:d}/".format(server.port), io_loop=server.io_loop)
     yield html, server, session, port
     try:
         server.stop()
@@ -265,23 +249,16 @@ def multiple_apps_server_sessions(port):
     """Serve multiple apps and yield a factory to allow
     parameterizing the slugs and the titles."""
     servers = []
+
     def create_sessions(slugs, titles):
         app1_slug, app2_slug = slugs
-        apps = {
-            app1_slug: Markdown('First app'),
-            app2_slug: Markdown('Second app')
-        }
+        apps = {app1_slug: Markdown("First app"), app2_slug: Markdown("Second app")}
         server = serve(apps, port=port, title=titles, show=False, start=False)
         servers.append(server)
-        session1 = pull_session(
-            url=f"http://localhost:{server.port:d}/app1",
-            io_loop=server.io_loop
-        )
-        session2 = pull_session(
-            url=f"http://localhost:{server.port:d}/app2",
-            io_loop=server.io_loop
-        )
+        session1 = pull_session(url=f"http://localhost:{server.port:d}/app1", io_loop=server.io_loop)
+        session2 = pull_session(url=f"http://localhost:{server.port:d}/app2", io_loop=server.io_loop)
         return session1, session2
+
     yield create_sessions
     for server in servers:
         try:
@@ -310,18 +287,20 @@ def set_env_var(env_var, value):
     else:
         os.environ[env_var] = old_value
 
+
 @pytest.fixture(autouse=True)
 def module_cleanup():
     """
     Cleanup Panel extensions after each test.
     """
     from bokeh.core.has_props import _default_resolver
+
     to_reset = list(panel_extension._imports.values())
 
     _default_resolver._known_models = {
-        name: model for name, model in _default_resolver._known_models.items()
-        if not any(model.__module__.startswith(tr) for tr in to_reset)
+        name: model for name, model in _default_resolver._known_models.items() if not any(model.__module__.startswith(tr) for tr in to_reset)
     }
+
 
 @pytest.fixture(autouse=True)
 def server_cleanup():
@@ -333,25 +312,29 @@ def server_cleanup():
     finally:
         state.reset()
 
+
 @pytest.fixture(autouse=True)
 def cache_cleanup():
     state.clear_caches()
 
+
 @pytest.fixture
 def py_file():
-    tf = tempfile.NamedTemporaryFile(mode='w', suffix='.py')
+    tf = tempfile.NamedTemporaryFile(mode="w", suffix=".py")
     try:
         yield tf
     finally:
         tf.close()
 
+
 @pytest.fixture
 def html_file():
-    tf = tempfile.NamedTemporaryFile(mode='w', suffix='.html')
+    tf = tempfile.NamedTemporaryFile(mode="w", suffix=".html")
     try:
         yield tf
     finally:
         tf.close()
+
 
 @pytest.fixture
 def threads():
@@ -360,6 +343,7 @@ def threads():
         yield 4
     finally:
         config.nthreads = None
+
 
 @pytest.fixture
 def reuse_sessions():
@@ -372,9 +356,11 @@ def reuse_sessions():
         state._sessions.clear()
         state._session_key_funcs.clear()
 
+
 @pytest.fixture
 def nothreads():
     yield
+
 
 @pytest.fixture
 def change_test_dir(request):

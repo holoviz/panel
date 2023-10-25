@@ -36,7 +36,7 @@ from pyviz_comms import CommManager as _CommManager
 from ..util import decode_token, parse_timedelta
 from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 
-_state_logger = logging.getLogger('panel.state')
+_state_logger = logging.getLogger("panel.state")
 
 if TYPE_CHECKING:
     from concurrent.futures import Future
@@ -69,6 +69,7 @@ def set_curdoc(doc: Document):
     finally:
         state._curdoc.reset(token)
 
+
 def curdoc_locked() -> Document:
     try:
         doc = _curdoc()
@@ -78,9 +79,13 @@ def curdoc_locked() -> Document:
         doc = doc._doc
     return doc
 
-class _Undefined: pass
+
+class _Undefined:
+    pass
+
 
 Tat = Union[dt.datetime, Callable[[dt.datetime], dt.datetime], TIterator[dt.datetime]]
+
 
 class _state(param.Parameterized):
     """
@@ -88,41 +93,70 @@ class _state(param.Parameterized):
     apps to indicate their state to a user.
     """
 
-    base_url = param.String(default='/', readonly=True, doc="""
-       Base URL for all server paths.""")
+    base_url = param.String(
+        default="/",
+        readonly=True,
+        doc="""
+       Base URL for all server paths.""",
+    )
 
-    busy = param.Boolean(default=False, readonly=True, doc="""
+    busy = param.Boolean(
+        default=False,
+        readonly=True,
+        doc="""
        Whether the application is currently busy processing a user
-       callback.""")
+       callback.""",
+    )
 
-    cache = param.Dict(default={}, doc="""
+    cache = param.Dict(
+        default={},
+        doc="""
        Global location you can use to cache large datasets or expensive computation results
-       across multiple client sessions for a given server.""")
+       across multiple client sessions for a given server.""",
+    )
 
-    encryption = param.Parameter(default=None, doc="""
+    encryption = param.Parameter(
+        default=None,
+        doc="""
        Object with encrypt and decrypt methods to support encryption
-       of secret variables including OAuth information.""")
+       of secret variables including OAuth information.""",
+    )
 
-    rel_path = param.String(default='', readonly=True, doc="""
+    rel_path = param.String(
+        default="",
+        readonly=True,
+        doc="""
        Relative path from the current app being served to the root URL.
        If application is embedded in a different server via autoload.js
-       this will instead reflect an absolute path.""")
+       this will instead reflect an absolute path.""",
+    )
 
-    session_info = param.Dict(default={'total': 0, 'live': 0,
-                                       'sessions': OrderedDict()}, doc="""
-       Tracks information and statistics about user sessions.""")
+    session_info = param.Dict(
+        default={"total": 0, "live": 0, "sessions": OrderedDict()},
+        doc="""
+       Tracks information and statistics about user sessions.""",
+    )
 
-    webdriver = param.Parameter(default=None, doc="""
-      Selenium webdriver used to export bokeh models to pngs.""")
+    webdriver = param.Parameter(
+        default=None,
+        doc="""
+      Selenium webdriver used to export bokeh models to pngs.""",
+    )
 
-    _busy_counter = param.Integer(default=0, doc="""
-       Count of active callbacks current being processed.""")
+    _busy_counter = param.Integer(
+        default=0,
+        doc="""
+       Count of active callbacks current being processed.""",
+    )
 
-    _memoize_cache = param.Dict(default={}, doc="""
-       A dictionary used by the cache decorator.""")
+    _memoize_cache = param.Dict(
+        default={},
+        doc="""
+       A dictionary used by the cache decorator.""",
+    )
 
     # Holds temporary curdoc overrides per thread
-    _curdoc = ContextVar('curdoc', default=None)
+    _curdoc = ContextVar("curdoc", default=None)
 
     # Whether to hold comm events
     _hold: ClassVar[bool] = False
@@ -141,20 +175,20 @@ class _state(param.Parameterized):
     _ipykernels: ClassVar[WeakKeyDictionary[Document, Any]] = WeakKeyDictionary()
 
     # Locations
-    _browser: ClassVar[BrowserInfo | None] = None # Global BrowserInfo, e.g. for notebook context
-    _browsers: ClassVar[WeakKeyDictionary[Document, BrowserInfo]] = WeakKeyDictionary() # Server browser indexed by document
+    _browser: ClassVar[BrowserInfo | None] = None  # Global BrowserInfo, e.g. for notebook context
+    _browsers: ClassVar[WeakKeyDictionary[Document, BrowserInfo]] = WeakKeyDictionary()  # Server browser indexed by document
 
     # Locations
-    _location: ClassVar[Location | None] = None # Global location, e.g. for notebook context
-    _locations: ClassVar[WeakKeyDictionary[Document, Location]] = WeakKeyDictionary() # Server locations indexed by document
+    _location: ClassVar[Location | None] = None  # Global location, e.g. for notebook context
+    _locations: ClassVar[WeakKeyDictionary[Document, Location]] = WeakKeyDictionary()  # Server locations indexed by document
 
     # Locations
-    _notification: ClassVar[NotificationArea | None] = None # Global location, e.g. for notebook context
-    _notifications: ClassVar[WeakKeyDictionary[Document, NotificationArea]] = WeakKeyDictionary() # Server locations indexed by document
+    _notification: ClassVar[NotificationArea | None] = None  # Global location, e.g. for notebook context
+    _notifications: ClassVar[WeakKeyDictionary[Document, NotificationArea]] = WeakKeyDictionary()  # Server locations indexed by document
 
     # Templates
     _template: ClassVar[BaseTemplate | None] = None
-    _templates: ClassVar[WeakKeyDictionary[Document, BaseTemplate]] = WeakKeyDictionary() # Server templates indexed by document
+    _templates: ClassVar[WeakKeyDictionary[Document, BaseTemplate]] = WeakKeyDictionary()  # Server templates indexed by document
 
     # An index of all currently active views
     _views: ClassVar[Dict[str, Tuple[Viewable, Model, Document, Comm | None]]] = {}
@@ -204,7 +238,7 @@ class _state(param.Parameterized):
     _extensions_: ClassVar[WeakKeyDictionary[Document, List[str]]] = WeakKeyDictionary()
 
     # Locks
-    _cache_locks: ClassVar[Dict[str, threading.Lock]] = {'main': threading.Lock()}
+    _cache_locks: ClassVar[Dict[str, threading.Lock]] = {"main": threading.Lock()}
 
     # Sessions
     _sessions = {}
@@ -217,19 +251,18 @@ class _state(param.Parameterized):
     def __repr__(self) -> str:
         server_info = []
         for server, panel, docs in self._servers.values():
-            server_info.append(
-                "{}:{:d} - {!r}".format(server.address or "localhost", server.port, panel)
-            )
+            server_info.append("{}:{:d} - {!r}".format(server.address or "localhost", server.port, panel))
         if not server_info:
             return "state(servers=[])"
         return "state(servers=[\n  {}\n])".format(",\n  ".join(server_info))
 
     @property
-    def _ioloop(self) -> 'IOLoop':
+    def _ioloop(self) -> "IOLoop":
         if state._is_pyodide:
             return asyncio.get_running_loop()
         else:
             from tornado.ioloop import IOLoop
+
             return IOLoop.current()
 
     @property
@@ -254,7 +287,7 @@ class _state(param.Parameterized):
 
     @property
     def _is_pyodide(self) -> bool:
-        return '_pyodide' in sys.modules
+        return "_pyodide" in sys.modules
 
     @property
     def _thread_id(self) -> int | None:
@@ -268,11 +301,11 @@ class _state(param.Parameterized):
     def _unblocked(self, doc: Document) -> bool:
         return doc is self.curdoc and self._thread_id in (self._current_thread, None)
 
-    @param.depends('_busy_counter', watch=True)
+    @param.depends("_busy_counter", watch=True)
     def _update_busy_counter(self):
         self.busy = self._busy_counter >= 1
 
-    @param.depends('busy', watch=True)
+    @param.depends("busy", watch=True)
     def _update_busy(self) -> None:
         for indicator in self._indicators:
             indicator.value = self.busy
@@ -281,26 +314,25 @@ class _state(param.Parameterized):
         if not self.curdoc.session_context:
             return
         from .server import logger
+
         session_id = self.curdoc.session_context.id
-        session_info = self.session_info['sessions'].get(session_id, {})
-        if session_info.get('rendered') is not None:
+        session_info = self.session_info["sessions"].get(session_id, {})
+        if session_info.get("rendered") is not None:
             return
         logger.info(LOG_SESSION_RENDERED, id(self.curdoc))
-        self.session_info['live'] += 1
-        session_info.update({
-            'rendered': dt.datetime.now().timestamp()
-        })
-        self.param.trigger('session_info')
+        self.session_info["live"] += 1
+        session_info.update({"rendered": dt.datetime.now().timestamp()})
+        self.param.trigger("session_info")
 
     def _destroy_session(self, session_context):
         session_id = session_context.id
-        sessions = self.session_info['sessions']
-        if session_id in sessions and sessions[session_id]['ended'] is None:
+        sessions = self.session_info["sessions"]
+        if session_id in sessions and sessions[session_id]["ended"] is None:
             session = sessions[session_id]
-            if session['rendered'] is not None:
-                self.session_info['live'] -= 1
-            session['ended'] = dt.datetime.now().timestamp()
-            self.param.trigger('session_info')
+            if session["rendered"] is not None:
+                self.session_info["live"] -= 1
+            session["ended"] = dt.datetime.now().timestamp()
+            self.param.trigger("session_info")
         doc = session_context._document
 
         # Cleanup periodic callbacks
@@ -334,12 +366,14 @@ class _state(param.Parameterized):
         stack = self._stacks.get(current_thread, None)
         if stack is None:
             from .cache import _Stack
+
             stack = _Stack()
             self._stacks[current_thread] = stack
         return stack
 
     def _get_callback(self, endpoint: str):
         _updating: Dict[int, bool] = {}
+
         def link(*events):
             event = events[0]
             obj = event.cls if event.obj is None else event.obj
@@ -347,8 +381,7 @@ class _state(param.Parameterized):
             if obj not in parameterizeds:
                 return
             updating = _updating.get(id(obj), [])
-            values = {event.name: event.new for event in events
-                      if event.name not in updating}
+            values = {event.name: event.new for event in events if event.name not in updating}
             if not values:
                 return
             _updating[id(obj)] = list(values)
@@ -366,6 +399,7 @@ class _state(param.Parameterized):
                             _updating[id(obj)] = not_updated
                         else:
                             del _updating[id(obj)]
+
         return link
 
     def _schedule_on_load(self, doc: Document, event) -> None:
@@ -384,6 +418,7 @@ class _state(param.Parameterized):
 
         from ..config import config
         from .profile import profile_ctx
+
         with set_curdoc(doc):
             if (doc and doc in self._launching) or not config.profiler:
                 for cb in callbacks:
@@ -393,8 +428,8 @@ class _state(param.Parameterized):
                 for cb in callbacks:
                     self.execute(cb, schedule=False)
             path = doc.session_context.request.path
-            self._profiles[(path+':on_load', config.profiler)] += sessions
-            self.param.trigger('_profiles')
+            self._profiles[(path + ":on_load", config.profiler)] += sessions
+            self.param.trigger("_profiles")
 
     async def _scheduled_cb(self, name: str) -> None:
         if name not in self._scheduled:
@@ -407,7 +442,7 @@ class _state(param.Parameterized):
             del self._scheduled[name]
         if at is not None:
             now = dt.datetime.now().timestamp()
-            call_time_seconds = (at - now)
+            call_time_seconds = at - now
             self._ioloop.call_later(delay=call_time_seconds, callback=partial(self._scheduled_cb, name))
         try:
             res = cb()
@@ -423,6 +458,7 @@ class _state(param.Parameterized):
                 return callback(*args, **kw)
             except Exception as e:
                 self._handle_exception(e)
+
         return wrapper
 
     def _handle_future_exception(self, future: Future, doc: Document = None) -> None:
@@ -435,20 +471,21 @@ class _state(param.Parameterized):
 
     def _handle_exception(self, exception) -> None:
         from ..config import config
+
         if config.exception_handler:
             config.exception_handler(exception)
         elif isinstance(exception, BaseException):
             raise exception
         else:
-            self.log(f'Exception of unknown type raised: {exception}', level='error')
+            self.log(f"Exception of unknown type raised: {exception}", level="error")
 
     def _register_session_destroyed(self, session_context: BokehSessionContext):
         for cb in self._on_session_destroyed:
             session_context._document.on_session_destroyed(cb)
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Public Methods
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
     def as_cached(self, key: str, fn: Callable[[], T], ttl: int = None, **kwargs) -> T:
         """
@@ -482,9 +519,9 @@ class _state(param.Parameterized):
         Returns the value returned by the cache or the value in
         the cache.
         """
-        key = (key,)+tuple((k, v) for k, v in sorted(kwargs.items()))
+        key = (key,) + tuple((k, v) for k, v in sorted(kwargs.items()))
         new_expiry = time.monotonic() + ttl if ttl else None
-        with self._cache_locks['main']:
+        with self._cache_locks["main"]:
             if key in self._cache_locks:
                 lock = self._cache_locks[key]
             else:
@@ -503,9 +540,7 @@ class _state(param.Parameterized):
         return ret
 
     def add_periodic_callback(
-        self, callback: Callable[[], None] | Coroutine[Any, Any, None],
-        period: int=500, count: Optional[int] = None, timeout: int = None,
-        start: bool=True
+        self, callback: Callable[[], None] | Coroutine[Any, Any, None], period: int = 500, count: Optional[int] = None, timeout: int = None, start: bool = True
     ) -> PeriodicCallback:
         """
         Schedules a periodic callback to be run at an interval set by
@@ -530,9 +565,8 @@ class _state(param.Parameterized):
         Return a PeriodicCallback object with start and stop methods.
         """
         from .callbacks import PeriodicCallback
-        cb = PeriodicCallback(
-            callback=callback, period=period, count=count, timeout=timeout
-        )
+
+        cb = PeriodicCallback(callback=callback, period=period, count=count, timeout=timeout)
         if start:
             cb.start()
         if self.curdoc:
@@ -541,7 +575,7 @@ class _state(param.Parameterized):
             self._periodic[self.curdoc].append(cb)
         return cb
 
-    def cancel_task(self, name: str, wait: bool=False):
+    def cancel_task(self, name: str, wait: bool = False):
         """
         Cancel a task scheduled using the `state.schedule_task` method by name.
 
@@ -553,7 +587,7 @@ class _state(param.Parameterized):
             Whether to wait until after the next execution.
         """
         if name not in self._scheduled:
-            raise KeyError(f'No task with the name {name!r} has been scheduled.')
+            raise KeyError(f"No task with the name {name!r} has been scheduled.")
         if wait:
             self._scheduled[name] = (None, self._scheduled[name][1])
         else:
@@ -565,7 +599,7 @@ class _state(param.Parameterized):
         """
         for cache in self._memoize_cache.values():
             cache.clear()
-            if hasattr(cache, 'directory'):
+            if hasattr(cache, "directory"):
                 cache.cache.close()
                 try:
                     shutil.rmtree(cache.directory)
@@ -573,11 +607,7 @@ class _state(param.Parameterized):
                     pass
         self._memoize_cache.clear()
 
-    def execute(
-        self,
-        callback: Callable([], None),
-        schedule: bool | Literal['auto'] = 'auto'
-    ) -> None:
+    def execute(self, callback: Callable([], None), schedule: bool | Literal["auto"] = "auto") -> None:
         """
         Executes both synchronous and asynchronous callbacks
         appropriately depending on the context the application is
@@ -599,7 +629,7 @@ class _state(param.Parameterized):
         doc = self.curdoc
         if param.parameterized.iscoroutinefunction(cb):
             param.parameterized.async_executor(callback)
-        elif doc and doc.session_context and (schedule == True or (schedule == 'auto' and not self._unblocked(doc))):
+        elif doc and doc.session_context and (schedule == True or (schedule == "auto" and not self._unblocked(doc))):
             doc.add_next_tick_callback(self._handle_exception_wrapper(callback))
         else:
             try:
@@ -621,8 +651,8 @@ class _state(param.Parameterized):
         Profiling output wrapped in a pane.
         """
         from .profile import get_profiles
-        return get_profiles({(n, e): ps for (n, e), ps in state._profiles.items()
-                             if n == profile})[0][1]
+
+        return get_profiles({(n, e): ps for (n, e), ps in state._profiles.items() if n == profile})[0][1]
 
     def kill_all_servers(self) -> None:
         """
@@ -641,7 +671,7 @@ class _state(param.Parameterized):
                 pass
         self._servers = {}
 
-    def log(self, msg: str, level: str = 'info') -> None:
+    def log(self, msg: str, level: str = "info") -> None:
         """
         Logs user messages to the Panel logger.
 
@@ -677,9 +707,9 @@ class _state(param.Parameterized):
         elif self.curdoc not in self._onload:
             self._onload[self.curdoc] = []
             try:
-                self.curdoc.on_event('document_ready', partial(self._schedule_on_load, self.curdoc))
+                self.curdoc.on_event("document_ready", partial(self._schedule_on_load, self.curdoc))
             except AttributeError:
-                pass # Document already cleaned up
+                pass  # Document already cleaned up
         self._onload[self.curdoc].append(callback)
 
     def on_session_created(self, callback: Callable[[BokehSessionContext], None]) -> None:
@@ -707,10 +737,7 @@ class _state(param.Parameterized):
                 self._on_session_created.append(self._register_session_destroyed)
             self._on_session_destroyed.append(callback)
 
-    def publish(
-        self, endpoint: str, parameterized: param.Parameterized,
-        parameters: Optional[List[str]] = None
-    ) -> None:
+    def publish(self, endpoint: str, parameterized: param.Parameterized, parameters: Optional[List[str]] = None) -> None:
         """
         Publish parameters on a Parameterized object as a REST API.
 
@@ -725,7 +752,7 @@ class _state(param.Parameterized):
         """
         if parameters is None:
             parameters = list(parameterized.param)
-        if endpoint.startswith('/'):
+        if endpoint.startswith("/"):
             endpoint = endpoint[1:]
         if endpoint in self._rest_endpoints:
             parameterizeds, old_parameters, cb = self._rest_endpoints[endpoint]
@@ -760,10 +787,7 @@ class _state(param.Parameterized):
         self._on_session_created.clear()
         self._on_session_destroyed.clear()
 
-    def schedule_task(
-        self, name: str, callback: Callable[[], None], at: Tat =None,
-        period: str | dt.timedelta = None, cron: Optional[str] = None
-    ) -> None:
+    def schedule_task(self, name: str, callback: Callable[[], None], at: Tat = None, period: str | dt.timedelta = None, cron: Optional[str] = None) -> None:
         """
         Schedules a task at a specific time or on a schedule.
 
@@ -821,7 +845,7 @@ class _state(param.Parameterized):
                     "adding a new task under the same name."
                 )
             return
-        if getattr(callback, '__module__', '').startswith('bokeh_app_'):
+        if getattr(callback, "__module__", "").startswith("bokeh_app_"):
             raise RuntimeError(
                 "Cannot schedule a task from within the context of an "
                 "application. Either import the task callback from a "
@@ -832,6 +856,7 @@ class _state(param.Parameterized):
         if cron is None:
             if isinstance(period, str):
                 period = parse_timedelta(period)
+
             def dgen():
                 if isinstance(at, Iterator):
                     while True:
@@ -850,20 +875,20 @@ class _state(param.Parameterized):
                 while True:
                     yield new_time.timestamp()
                     new_time += period
+
             diter = dgen()
         else:
             from croniter import croniter
+
             base = dt.datetime.now() if at is None else at
             diter = croniter(cron, base)
         now = dt.datetime.now().timestamp()
         try:
-            call_time_seconds = (next(diter) - now)
+            call_time_seconds = next(diter) - now
         except StopIteration:
             return
         self._scheduled[name] = (diter, callback)
-        self._ioloop.call_later(
-            delay=call_time_seconds, callback=partial(self._scheduled_cb, name)
-        )
+        self._ioloop.call_later(delay=call_time_seconds, callback=partial(self._scheduled_cb, name))
 
     def sync_busy(self, indicator: BooleanIndicator) -> None:
         """
@@ -875,19 +900,19 @@ class _state(param.Parameterized):
         indicator: An BooleanIndicator to sync with the busy property
         """
         if not isinstance(indicator.param.value, param.Boolean):
-            raise ValueError("Busy indicator must have a value parameter"
-                             "of Boolean type.")
+            raise ValueError("Busy indicator must have a value parameter" "of Boolean type.")
         if indicator not in self._indicators:
             self._indicators.append(indicator)
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Public Properties
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
     def _decode_cookie(self, cookie_name, cookie=None):
         from tornado.web import decode_signed_value
 
         from ..config import config
+
         cookie = self.cookies.get(cookie_name)
         if cookie is None:
             return None
@@ -896,21 +921,21 @@ class _state(param.Parameterized):
 
     def _decrypt_cookie(self, cookie):
         if self.encryption is None:
-            return cookie.decode('utf-8')
-        return self.encryption.decrypt(cookie).decode('utf-8')
+            return cookie.decode("utf-8")
+        return self.encryption.decrypt(cookie).decode("utf-8")
 
     @property
     def access_token(self) -> str | None:
         """
         Returns the OAuth access_token if enabled.
         """
-        if self.user in self._oauth_user_overrides and 'refresh_token' in self._oauth_user_overrides:
-            return self._oauth_user_overrides[self.user]['access_token']
-        access_token = self._decode_cookie('access_token')
+        if self.user in self._oauth_user_overrides and "refresh_token" in self._oauth_user_overrides:
+            return self._oauth_user_overrides[self.user]["access_token"]
+        access_token = self._decode_cookie("access_token")
         if not access_token:
             return
         decoded_token = decode_token(access_token)
-        if decoded_token['exp'] <= dt.datetime.now(dt.timezone.utc).timestamp():
+        if decoded_token["exp"] <= dt.datetime.now(dt.timezone.utc).timestamp():
             return None
         return access_token
 
@@ -922,13 +947,14 @@ class _state(param.Parameterized):
         if not self.curdoc:
             return
         app_url = self.curdoc.session_context.server_context.application_context.url
-        app_url = app_url[1:] if app_url.startswith('/') else app_url
+        app_url = app_url[1:] if app_url.startswith("/") else app_url
         return urljoin(self.base_url, app_url)
 
     @property
     def browser_info(self) -> BrowserInfo | None:
         from ..config import config
         from .browser import BrowserInfo
+
         if config.browser_info and self.curdoc and self.curdoc.session_context and self.curdoc not in self._browsers:
             browser = self._browsers[self.curdoc] = BrowserInfo()
         elif self.curdoc is None:
@@ -946,7 +972,7 @@ class _state(param.Parameterized):
         """
         try:
             doc = curdoc_locked()
-            pyodide_session = self._is_pyodide and 'pyodide_kernel' not in sys.modules
+            pyodide_session = self._is_pyodide and "pyodide_kernel" not in sys.modules
             if doc and (doc.session_context or pyodide_session):
                 return doc
         finally:
@@ -992,6 +1018,7 @@ class _state(param.Parameterized):
     def location(self) -> Location | None:
         if self.curdoc and self.curdoc not in self._locations:
             from .location import Location
+
             if self.curdoc.session_context:
                 loc = Location.from_request(self.curdoc.session_context.request)
             else:
@@ -1006,18 +1033,21 @@ class _state(param.Parameterized):
     @property
     def log_terminal(self):
         from .admin import log_terminal
+
         return log_terminal
 
     @property
     def notifications(self) -> NotificationArea | None:
         from ..config import config
+
         if config.notifications and self.curdoc and self.curdoc.session_context and self.curdoc not in self._notifications:
             from .notifications import NotificationArea
+
             js_events = {}
             if config.ready_notification:
-                js_events['document_ready'] = {'type': 'success', 'message': config.ready_notification, 'duration': 3000}
+                js_events["document_ready"] = {"type": "success", "message": config.ready_notification, "duration": 3000}
             if config.disconnect_notification:
-                js_events['connection_lost'] = {'type': 'error', 'message': config.disconnect_notification}
+                js_events["connection_lost"] = {"type": "error", "message": config.disconnect_notification}
             self._notifications[self.curdoc] = notifications = NotificationArea(js_events=js_events)
             return notifications
         elif self.curdoc is None or self.curdoc.session_context is None:
@@ -1030,16 +1060,16 @@ class _state(param.Parameterized):
         """
         Returns the OAuth refresh_token if enabled and available.
         """
-        if self.user in self._oauth_user_overrides and 'refresh_token' in self._oauth_user_overrides:
-            return self._oauth_user_overrides[self.user]['refresh_token']
-        refresh_token = self._decode_cookie('refresh_token')
+        if self.user in self._oauth_user_overrides and "refresh_token" in self._oauth_user_overrides:
+            return self._oauth_user_overrides[self.user]["refresh_token"]
+        refresh_token = self._decode_cookie("refresh_token")
         if not refresh_token:
             return
         try:
             decoded_token = decode_token(refresh_token)
         except ValueError:
             return refresh_token
-        if decoded_token['exp'] <= dt.datetime.now(dt.timezone.utc).timestamp():
+        if decoded_token["exp"] <= dt.datetime.now(dt.timezone.utc).timestamp():
             return None
         return refresh_token
 
@@ -1050,7 +1080,7 @@ class _state(param.Parameterized):
         being served using `panel serve`.
         """
         try:
-            return inspect.stack()[1].frame.f_globals['__name__'].startswith('bokeh_app_')
+            return inspect.stack()[1].frame.f_globals["__name__"].startswith("bokeh_app_")
         except Exception:
             return False
 
@@ -1064,6 +1094,7 @@ class _state(param.Parameterized):
     @property
     def template(self) -> BaseTemplate | None:
         from ..config import config
+
         if self.curdoc in self._templates:
             return self._templates[self.curdoc]
         elif self.curdoc is None and self._template:
@@ -1083,17 +1114,19 @@ class _state(param.Parameterized):
         from tornado.web import decode_signed_value
 
         from ..config import config
-        user = self.cookies.get('user')
+
+        user = self.cookies.get("user")
         if user is None or config.cookie_secret is None:
             return None
-        return decode_signed_value(config.cookie_secret, 'user', user).decode('utf-8')
+        return decode_signed_value(config.cookie_secret, "user", user).decode("utf-8")
 
     @property
     def user_info(self) -> Dict[str, Any] | None:
         """
         Returns the OAuth user information if enabled.
         """
-        id_token = self._decode_cookie('id_token')
+        id_token = self._decode_cookie("id_token")
         return decode_token(id_token)
+
 
 state = _state()

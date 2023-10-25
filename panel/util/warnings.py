@@ -17,9 +17,7 @@ __all__ = (
 )
 
 
-def warn(
-    message: str, category: type[Warning] | None = None, stacklevel: int | None = None
-) -> None:
+def warn(message: str, category: type[Warning] | None = None, stacklevel: int | None = None) -> None:
     if stacklevel is None:
         stacklevel = find_stack_level()
 
@@ -57,7 +55,6 @@ def deprecated(
     new: str | None = None,
     extra: str | None = None,
 ) -> None:
-
     import panel as pn
 
     current_version = Version(pn.__version__)
@@ -66,11 +63,9 @@ def deprecated(
     if isinstance(remove_version, str):
         remove_version = Version(remove_version)
 
-    if remove_version <= base_version and not (current_version.is_prerelease and current_version.pre[0] != 'rc'):
+    if remove_version <= base_version and not (current_version.is_prerelease and current_version.pre[0] != "rc"):
         # This error is mainly for developers to remove the deprecated.
-        raise ValueError(
-            f"{old!r} should have been removed in {remove_version}, current version {current_version}."
-        )
+        raise ValueError(f"{old!r} should have been removed in {remove_version}, current version {current_version}.")
 
     message = f"{old!r} is deprecated and will be removed in version {remove_version}."
 

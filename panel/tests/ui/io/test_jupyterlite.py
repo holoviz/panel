@@ -8,20 +8,19 @@ import pytest
 try:
     from playwright.sync_api import expect
 except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
+    pytestmark = pytest.mark.skip("playwright not available")
 
 pytestmark = pytest.mark.ui
 
+
 @pytest.fixture()
 def launch_jupyterlite():
-    process = Popen(
-        ["python", "-m", "http.server", "8123", "--directory", 'lite/dist/'], stdout=PIPE
-    )
+    process = Popen(["python", "-m", "http.server", "8123", "--directory", "lite/dist/"], stdout=PIPE)
     retries = 5
     while retries > 0:
         conn = HTTPConnection("localhost:8123")
         try:
-            conn.request("HEAD", 'index.html')
+            conn.request("HEAD", "index.html")
             response = conn.getresponse()
             if response is not None:
                 break
@@ -47,8 +46,8 @@ def test_jupyterlite_execution(launch_jupyterlite, page):
         page.locator('[data-command="runmenu:run"]').click()
         page.wait_for_timeout(500)
 
-    page.locator('.noUi-handle').click(timeout=120 * 1000)
+    page.locator(".noUi-handle").click(timeout=120 * 1000)
 
-    page.keyboard.press('ArrowRight')
+    page.keyboard.press("ArrowRight")
 
-    expect(page.locator('.bk-panel-models-markup-HTML').locator('div').locator('pre')).to_have_text('0.1')
+    expect(page.locator(".bk-panel-models-markup-HTML").locator("div").locator("pre")).to_have_text("0.1")

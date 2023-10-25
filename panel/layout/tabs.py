@@ -39,15 +39,24 @@ class Tabs(NamedListPanel):
     >>> pn.Tabs(('Scatter', plot1), some_pane_with_a_name)
     """
 
-    closable = param.Boolean(default=False, doc="""
-        Whether it should be possible to close tabs.""")
+    closable = param.Boolean(
+        default=False,
+        doc="""
+        Whether it should be possible to close tabs.""",
+    )
 
-    dynamic = param.Boolean(default=False, doc="""
-        Dynamically populate only the active tab.""")
+    dynamic = param.Boolean(
+        default=False,
+        doc="""
+        Dynamically populate only the active tab.""",
+    )
 
     tabs_location = param.ObjectSelector(
-        default='above', objects=['above', 'below', 'left', 'right'], doc="""
-        The location of the tabs relative to the tab contents.""")
+        default="above",
+        objects=["above", "below", "left", "right"],
+        doc="""
+        The location of the tabs relative to the tab contents.""",
+    )
 
     height = param.Integer(default=None, bounds=(0, None))
 
@@ -55,50 +64,48 @@ class Tabs(NamedListPanel):
 
     _bokeh_model: ClassVar[Type[Model]] = BkTabs
 
-    _direction: ClassVar[str | None] = 'vertical'
+    _direction: ClassVar[str | None] = "vertical"
 
-    _js_transforms: ClassVar[Mapping[str, str]] = {'tabs': """
+    _js_transforms: ClassVar[Mapping[str, str]] = {
+        "tabs": """
     var ids = [];
     for (var t of value) {{ ids.push(t.id) }};
     var value = ids;
-    """}
-
-    _manual_params: ClassVar[List[str]] = ['closable']
-
-    _rename: ClassVar[Mapping[str, str | None]] = {
-        'closable': None, 'dynamic': None, 'name': None, 'objects': 'tabs'
+    """
     }
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
-        'dynamic': None, 'objects': None
-    }
+    _manual_params: ClassVar[List[str]] = ["closable"]
+
+    _rename: ClassVar[Mapping[str, str | None]] = {"closable": None, "dynamic": None, "name": None, "objects": "tabs"}
+
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {"dynamic": None, "objects": None}
 
     def __init__(self, *objects, **params):
         super().__init__(*objects, **params)
         self._rendered = defaultdict(dict)
-        self.param.active.bounds = (-1, len(self)-1)
-        self.param.watch(self._update_active, ['dynamic', 'active'])
+        self.param.active.bounds = (-1, len(self) - 1)
+        self.param.watch(self._update_active, ["dynamic", "active"])
 
     def _update_names(self, event):
         # No active tabs will have a value of -1
-        self.param.active.bounds = (-1, len(event.new)-1)
+        self.param.active.bounds = (-1, len(event.new) - 1)
         super()._update_names(event)
 
     def _cleanup(self, root: Model | None = None) -> None:
         super()._cleanup(root)
         if root:
-            if root.ref['id'] in self._panels:
-                del self._panels[root.ref['id']]
-            if root.ref['id'] in self._rendered:
-                del self._rendered[root.ref['id']]
+            if root.ref["id"] in self._panels:
+                del self._panels[root.ref["id"]]
+            if root.ref["id"] in self._rendered:
+                del self._rendered[root.ref["id"]]
 
     @property
     def _preprocess_params(self):
-        return NamedListPanel._preprocess_params + (['active'] if self.dynamic else [])
+        return NamedListPanel._preprocess_params + (["active"] if self.dynamic else [])
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Callback API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
     def _process_close(self, ref, attr, old, new):
         """
@@ -118,7 +125,7 @@ class Tabs(NamedListPanel):
         if attr in self._changing.get(ref, []):
             self._changing[ref].remove(attr)
             return
-        if attr == 'tabs':
+        if attr == "tabs":
             old, new = self._process_close(ref, attr, old, new)
             if new is None:
                 return
@@ -128,7 +135,7 @@ class Tabs(NamedListPanel):
         if attr in self._changing.get(ref, []):
             self._changing[ref].remove(attr)
             return
-        if attr == 'tabs':
+        if attr == "tabs":
             old, new = self._process_close(ref, attr, old, new)
             if new is None:
                 return
@@ -136,21 +143,21 @@ class Tabs(NamedListPanel):
 
     def _update_active(self, *events):
         for event in events:
-            if event.name == 'dynamic' or (self.dynamic and event.name == 'active'):
-                self.param.trigger('objects')
+            if event.name == "dynamic" or (self.dynamic and event.name == "active"):
+                self.param.trigger("objects")
                 return
 
     def _compute_sizing_mode(self, children, props):
         children = [child.child for child in children]
         return super()._compute_sizing_mode(children, props)
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Model API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
     def _manual_update(self, events, model, doc, root, parent, comm):
         for event in events:
-            if event.name == 'closable':
+            if event.name == "closable":
                 for child in model.tabs:
                     child.closable = event.new
 
@@ -160,17 +167,19 @@ class Tabs(NamedListPanel):
         models and cleaning up any dropped objects.
         """
         from ..pane.base import RerenderError, panel
+
         new_models, old_models = [], []
         if len(self._names) != len(self):
-            raise ValueError('Tab names do not match objects, ensure '
-                             'that the Tabs.objects are not modified '
-                             'directly. Found %d names, expected %d.' %
-                             (len(self._names), len(self)))
+            raise ValueError(
+                "Tab names do not match objects, ensure "
+                "that the Tabs.objects are not modified "
+                "directly. Found %d names, expected %d." % (len(self._names), len(self))
+            )
         for i, (name, pane) in enumerate(zip(self._names, self)):
             pane = panel(pane, name=name)
             self.objects[i] = pane
 
-        ref = root.ref['id']
+        ref = root.ref["id"]
         panels = self._panels[ref]
         rendered = self._rendered[ref]
         for obj in old_objects:
@@ -185,16 +194,12 @@ class Tabs(NamedListPanel):
             pref = id(pane)
             hidden = self.dynamic and i != self.active
             panel = panels.get(pref)
-            prev_hidden = (
-                hasattr(panel, 'child') and isinstance(panel.child, BkSpacer) and
-                panel.child.tags == ['hidden']
-            )
+            prev_hidden = hasattr(panel, "child") and isinstance(panel.child, BkSpacer) and panel.child.tags == ["hidden"]
 
             # If object has not changed, we have not toggled between
             # hidden and unhidden state or the tabs are not
             # dynamic then reuse the panel
-            if (pane in old_objects and pref in panels and
-                (not (hidden ^ prev_hidden) or not (self.dynamic or prev_hidden))):
+            if pane in old_objects and pref in panels and (not (hidden ^ prev_hidden) or not (self.dynamic or prev_hidden)):
                 new_models.append(panel)
                 continue
 
@@ -202,10 +207,8 @@ class Tabs(NamedListPanel):
                 child = rendered[pref]
                 old_models.append(child)
             elif hidden:
-                child = BkSpacer(**{k: v for k, v in pane.param.values().items()
-                                    if k in Layoutable.param and v is not None and
-                                    k not in ('name', 'design')})
-                child.tags = ['hidden']
+                child = BkSpacer(**{k: v for k, v in pane.param.values().items() if k in Layoutable.param and v is not None and k not in ("name", "design")})
+                child.tags = ["hidden"]
             else:
                 try:
                     rendered[pref] = child = pane._get_model(doc, root, model, comm)
@@ -215,8 +218,6 @@ class Tabs(NamedListPanel):
                     e.layout = None
                     return self._get_objects(model, current_objects[:i], doc, root, comm)
 
-            panel = panels[pref] = BkTabPanel(
-                title=name, name=pane.name, child=child, closable=self.closable
-            )
+            panel = panels[pref] = BkTabPanel(title=name, name=pane.name, child=child, closable=self.closable)
             new_models.append(panel)
         return new_models, old_models

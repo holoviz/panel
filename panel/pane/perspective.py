@@ -31,9 +31,8 @@ if TYPE_CHECKING:
 
 DEFAULT_THEME = "material"
 
-THEMES = [
-    'material', 'material-dark', 'monokai', 'solarized', 'solarized-dark', 'vaporwave'
-]
+THEMES = ["material", "material-dark", "monokai", "solarized", "solarized-dark", "vaporwave"]
+
 
 class Plugin(Enum):
     """The plugins (grids/charts) available in Perspective.  Pass these into
@@ -94,6 +93,7 @@ def deconstruct_pandas(data, kwargs=None):
       `group_by`, and `split_by`.
     """
     import pandas as pd
+
     kwargs = kwargs or {}
     kwargs = {"columns": [], "group_by": [], "split_by": []}
 
@@ -106,11 +106,7 @@ def deconstruct_pandas(data, kwargs=None):
                 if isinstance(v, pd.CategoricalDtype):
                     data[k] = data[k].astype(str)
 
-    if (
-        isinstance(data, pd.DataFrame)
-        and isinstance(data.columns, pd.MultiIndex)
-        and isinstance(data.index, pd.MultiIndex)
-    ):
+    if isinstance(data, pd.DataFrame) and isinstance(data.columns, pd.MultiIndex) and isinstance(data.index, pd.MultiIndex):
         # Row and col pivots
         kwargs["group_by"].extend([str(c) for c in data.index.names])
 
@@ -166,27 +162,8 @@ def deconstruct_pandas(data, kwargs=None):
         # Finally, remap any values columns to have column name 'value'
         data.index.names = new_names
         data = data.reset_index()  # copy
-        data.columns = [
-            str(c)
-            if c
-            in ["index"]
-            + kwargs["group_by"]
-            + kwargs["split_by"]
-            + kwargs["columns"]
-            else "value"
-            for c in data.columns
-        ]
-        kwargs["columns"].extend(
-            [
-                "value"
-                for c in data.columns
-                if c
-                not in ["index"]
-                + kwargs["group_by"]
-                + kwargs["split_by"]
-                + kwargs["columns"]
-            ]
-        )
+        data.columns = [str(c) if c in ["index"] + kwargs["group_by"] + kwargs["split_by"] + kwargs["columns"] else "value" for c in data.columns]
+        kwargs["columns"].extend(["value" for c in data.columns if c not in ["index"] + kwargs["group_by"] + kwargs["split_by"] + kwargs["columns"]])
     elif isinstance(data, pd.DataFrame) and isinstance(data.columns, pd.MultiIndex):
         # Col pivots
         if data.index.name:
@@ -210,19 +187,8 @@ def deconstruct_pandas(data, kwargs=None):
                     kwargs["split_by"].append(str(val))
 
         data.index.names = new_names
-        data.columns = [
-            str(c)
-            if c in ["index"] + kwargs["group_by"] + kwargs["split_by"]
-            else "value"
-            for c in data.columns
-        ]
-        kwargs["columns"].extend(
-            [
-                "value"
-                for c in data.columns
-                if c not in ["index"] + kwargs["group_by"] + kwargs["split_by"]
-            ]
-        )
+        data.columns = [str(c) if c in ["index"] + kwargs["group_by"] + kwargs["split_by"] else "value" for c in data.columns]
+        kwargs["columns"].extend(["value" for c in data.columns if c not in ["index"] + kwargs["group_by"] + kwargs["split_by"]])
 
     elif isinstance(data, pd.DataFrame) and isinstance(data.index, pd.MultiIndex):
         # Row pivots
@@ -267,80 +233,132 @@ class Perspective(ModelPane, ReactiveData):
     >>> Perspective(df, plugin='hypergrid', theme='material-dark')
     """
 
-    aggregates = param.Dict(default=None, nested_refs=True, doc="""
-      How to aggregate. For example {"x": "distinct count"}""")
+    aggregates = param.Dict(
+        default=None,
+        nested_refs=True,
+        doc="""
+      How to aggregate. For example {"x": "distinct count"}""",
+    )
 
-    columns = param.List(default=None, nested_refs=True, doc="""
-        A list of source columns to show as columns. For example ["x", "y"]""")
+    columns = param.List(
+        default=None,
+        nested_refs=True,
+        doc="""
+        A list of source columns to show as columns. For example ["x", "y"]""",
+    )
 
-    editable = param.Boolean(default=True, allow_None=True, doc="""
-      Whether items are editable.""")
+    editable = param.Boolean(
+        default=True,
+        allow_None=True,
+        doc="""
+      Whether items are editable.""",
+    )
 
-    expressions = param.List(default=None, nested_refs=True, doc="""
+    expressions = param.List(
+        default=None,
+        nested_refs=True,
+        doc="""
       A list of expressions computing new columns from existing columns.
-      For example [""x"+"index""]""")
+      For example [""x"+"index""]""",
+    )
 
-    split_by = param.List(default=None, nested_refs=True, doc="""
-      A list of source columns to pivot by. For example ["x", "y"]""")
+    split_by = param.List(
+        default=None,
+        nested_refs=True,
+        doc="""
+      A list of source columns to pivot by. For example ["x", "y"]""",
+    )
 
-    filters = param.List(default=None, nested_refs=True, doc="""
-      How to filter. For example [["x", "<", 3],["y", "contains", "abc"]]""")
+    filters = param.List(
+        default=None,
+        nested_refs=True,
+        doc="""
+      How to filter. For example [["x", "<", 3],["y", "contains", "abc"]]""",
+    )
 
-    min_width = param.Integer(default=420, bounds=(0, None), doc="""
-        Minimal width of the component (in pixels) if width is adjustable.""")
+    min_width = param.Integer(
+        default=420,
+        bounds=(0, None),
+        doc="""
+        Minimal width of the component (in pixels) if width is adjustable.""",
+    )
 
-    object = param.Parameter(doc="""
-      The plot data declared as a dictionary of arrays or a DataFrame.""")
+    object = param.Parameter(
+        doc="""
+      The plot data declared as a dictionary of arrays or a DataFrame."""
+    )
 
-    group_by = param.List(default=None, doc="""
-      A list of source columns to group by. For example ["x", "y"]""")
+    group_by = param.List(
+        default=None,
+        doc="""
+      A list of source columns to group by. For example ["x", "y"]""",
+    )
 
-    selectable = param.Boolean(default=True, allow_None=True, doc="""
-      Whether items are selectable.""")
+    selectable = param.Boolean(
+        default=True,
+        allow_None=True,
+        doc="""
+      Whether items are selectable.""",
+    )
 
-    sort = param.List(default=None, doc="""
-      How to sort. For example[["x","desc"]]""")
+    sort = param.List(
+        default=None,
+        doc="""
+      How to sort. For example[["x","desc"]]""",
+    )
 
-    plugin = param.ObjectSelector(default=Plugin.GRID.value, objects=Plugin.options(), doc="""
-      The name of a plugin to display the data. For example hypergrid or d3_xy_scatter.""")
+    plugin = param.ObjectSelector(
+        default=Plugin.GRID.value,
+        objects=Plugin.options(),
+        doc="""
+      The name of a plugin to display the data. For example hypergrid or d3_xy_scatter.""",
+    )
 
-    plugin_config = param.Dict(default={}, nested_refs=True, doc="""
-      Configuration for the PerspectiveViewerPlugin.""")
+    plugin_config = param.Dict(
+        default={},
+        nested_refs=True,
+        doc="""
+      Configuration for the PerspectiveViewerPlugin.""",
+    )
 
-    toggle_config = param.Boolean(default=True, doc="""
-      Whether to show the config menu.""")
+    toggle_config = param.Boolean(
+        default=True,
+        doc="""
+      Whether to show the config menu.""",
+    )
 
-    theme = param.ObjectSelector(default='material', objects=THEMES, doc="""
-      The style of the PerspectiveViewer. For example material-dark""")
+    theme = param.ObjectSelector(
+        default="material",
+        objects=THEMES,
+        doc="""
+      The style of the PerspectiveViewer. For example material-dark""",
+    )
 
     priority: ClassVar[float | bool | None] = None
 
     _bokeh_model: ClassVar[Type[Model] | None] = None
 
-    _data_params: ClassVar[List[str]] = ['object']
+    _data_params: ClassVar[List[str]] = ["object"]
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
-        'selection': None
-    }
+    _rename: ClassVar[Mapping[str, str | None]] = {"selection": None}
 
     _updates: ClassVar[bool] = True
 
-    _stylesheets: ClassVar[List[str]] = [
-        f'{CDN_DIST}css/perspective-datatable.css'
-    ]
+    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/perspective-datatable.css"]
 
     @classmethod
     def applies(cls, object):
         if isinstance(object, dict) and all(isinstance(v, (list, np.ndarray)) for v in object.values()):
             return 0 if object else None
-        elif 'pandas' in sys.modules:
+        elif "pandas" in sys.modules:
             import pandas as pd
+
             if isinstance(object, pd.DataFrame):
                 return 0
         return False
 
     def __init__(self, object=None, **params):
-        click_handler = params.pop('on_click', None)
+        click_handler = params.pop("on_click", None)
         self._on_click_callbacks = []
         super().__init__(object, **params)
         if click_handler:
@@ -357,14 +375,10 @@ class Perspective(ModelPane, ReactiveData):
             ncols = len(df.columns)
             data = {col: df[col].values for col in df.columns}
             if kwargs:
-                self.param.update(**{
-                    k: v for k, v in kwargs.items()
-                    if getattr(self, k) is None
-                })
+                self.param.update(**{k: v for k, v in kwargs.items() if getattr(self, k) is None})
         cols = set(self._as_digit(c) for c in df)
         if len(cols) != ncols:
-            raise ValueError("Integer columns must be unique when "
-                             "converted to strings.")
+            raise ValueError("Integer columns must be unique when " "converted to strings.")
         return df, {str(k): v for k, v in data.items()}
 
     def _filter_properties(self, properties):
@@ -373,74 +387,73 @@ class Perspective(ModelPane, ReactiveData):
 
     def _get_properties(self, doc, source=None):
         props = super()._get_properties(doc)
-        del props['object']
-        if props.get('toggle_config'):
-            props['height'] = self.height or 300
+        del props["object"]
+        if props.get("toggle_config"):
+            props["height"] = self.height or 300
         else:
-            props['height'] = self.height or 150
+            props["height"] = self.height or 150
         if source is None:
             source = ColumnDataSource(data=self._data)
         else:
             source.data = self._data
-        props['source'] = source
-        props['schema'] = schema = {}
+        props["source"] = source
+        props["schema"] = schema = {}
         for col, array in source.data.items():
             if not isinstance(array, np.ndarray):
                 array = np.asarray(array)
             kind = array.dtype.kind
-            if kind == 'M':
-                schema[col] = 'datetime'
-            elif kind in 'ui':
-                schema[col] = 'integer'
-            elif kind == 'b':
-                schema[col] = 'boolean'
-            elif kind == 'f':
-                schema[col] = 'float'
-            elif kind in 'sU':
-                schema[col] = 'string'
+            if kind == "M":
+                schema[col] = "datetime"
+            elif kind in "ui":
+                schema[col] = "integer"
+            elif kind == "b":
+                schema[col] = "boolean"
+            elif kind == "f":
+                schema[col] = "float"
+            elif kind in "sU":
+                schema[col] = "string"
             else:
                 if len(array):
                     value = array[0]
                     if isinstance(value, dt.date):
-                        schema[col] = 'date'
+                        schema[col] = "date"
                     elif isinstance(value, datetime_types):
-                        schema[col] = 'datetime'
+                        schema[col] = "datetime"
                     elif isinstance(value, str):
-                        schema[col] = 'string'
+                        schema[col] = "string"
                     elif isinstance(value, (float, np.floating)):
-                        schema[col] = 'float'
+                        schema[col] = "float"
                     elif isinstance(value, (int, np.integer)):
-                        schema[col] = 'integer'
+                        schema[col] = "integer"
                     else:
-                        schema[col] = 'string'
+                        schema[col] = "string"
                 else:
-                    schema[col] = 'string'
+                    schema[col] = "string"
         return props
 
     def _get_theme(self, theme, resources=None):
         from ..models.perspective import THEME_URL
-        theme_url = f'{THEME_URL}{theme}.css'
+
+        theme_url = f"{THEME_URL}{theme}.css"
         if self._bokeh_model is not None:
             self._bokeh_model.__css_raw__ = self._bokeh_model.__css_raw__[:3] + [theme_url]
         return theme_url
 
     def _process_param_change(self, params):
-        if 'stylesheets' in params or 'theme' in params:
-            self._get_theme(params.get('theme', self.theme))
-            css = getattr(self._bokeh_model, '__css__', [])
-            params['stylesheets'] = [
-                ImportedStyleSheet(url=ss) for ss in css
-            ] + params.get('stylesheets', self.stylesheets)
+        if "stylesheets" in params or "theme" in params:
+            self._get_theme(params.get("theme", self.theme))
+            css = getattr(self._bokeh_model, "__css__", [])
+            params["stylesheets"] = [ImportedStyleSheet(url=ss) for ss in css] + params.get("stylesheets", self.stylesheets)
         props = super()._process_param_change(params)
-        for p in ('columns', 'group_by', 'split_by'):
+        for p in ("columns", "group_by", "split_by"):
             if props.get(p):
                 props[p] = [None if col is None else str(col) for col in props[p]]
-        if props.get('sort'):
-            props['sort'] = [[str(col), *args] for col, *args in props['sort']]
-        if props.get('filters'):
-            props['filters'] = [[str(col), *args] for col, *args in props['filters']]
-        if props.get('aggregates'):
-            props['aggregates'] = {str(col): agg for col, agg in props['aggregates'].items()}
+        if props.get("sort"):
+            props["sort"] = [[str(col), *args] for col, *args in props["sort"]]
+        if props.get("filters"):
+            props["filters"] = [[str(col), *args] for col, *args in props["filters"]]
+        if props.get("aggregates"):
+            props["aggregates"] = {str(col): agg for col, agg in props["aggregates"].items()}
         return props
 
     def _as_digit(self, col):
@@ -452,34 +465,29 @@ class Perspective(ModelPane, ReactiveData):
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
-        for prop in ('columns', 'group_by', 'split_by'):
+        for prop in ("columns", "group_by", "split_by"):
             if prop not in msg:
                 continue
             msg[prop] = [self._as_digit(col) for col in msg[prop]]
-        if msg.get('sort'):
-            msg['sort'] = [[self._as_digit(col), *args] for col, *args in msg['sort']]
-        if msg.get('filters'):
-            msg['filters'] = [[self._as_digit(col), *args] for col, *args in msg['filters']]
-        if msg.get('aggregates'):
-            msg['aggregates'] = {self._as_digit(col): agg for col, agg in msg['aggregates'].items()}
+        if msg.get("sort"):
+            msg["sort"] = [[self._as_digit(col), *args] for col, *args in msg["sort"]]
+        if msg.get("filters"):
+            msg["filters"] = [[self._as_digit(col), *args] for col, *args in msg["filters"]]
+        if msg.get("aggregates"):
+            msg["aggregates"] = {self._as_digit(col): agg for col, agg in msg["aggregates"].items()}
         return msg
 
-    def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
-    ) -> Model:
-        self._bokeh_model = lazy_load(
-            'panel.models.perspective', 'Perspective', isinstance(comm, JupyterComm), root
-        )
+    def _get_model(self, doc: Document, root: Optional[Model] = None, parent: Optional[Model] = None, comm: Optional[Comm] = None) -> Model:
+        self._bokeh_model = lazy_load("panel.models.perspective", "Perspective", isinstance(comm, JupyterComm), root)
         model = super()._get_model(doc, root, parent, comm)
-        self._register_events('perspective-click', model=model, doc=doc, comm=comm)
+        self._register_events("perspective-click", model=model, doc=doc, comm=comm)
         return model
 
     def _update(self, ref: str, model: Model) -> None:
         model.update(**self._get_properties(model.document, source=model.source))
 
     def _process_event(self, event):
-        if event.event_name == 'perspective-click':
+        if event.event_name == "perspective-click":
             for cb in self._on_click_callbacks:
                 state.execute(partial(cb, event), schedule=False)
 

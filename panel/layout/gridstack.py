@@ -35,21 +35,29 @@ class GridStack(ReactiveHTML, GridSpec):
     >>> gstack[0:2, 9:12] = pn.Spacer(styles=dict(background='purple'))
     """
 
-    allow_resize = param.Boolean(default=True, doc="""
-        Allow resizing the grid cells.""")
+    allow_resize = param.Boolean(
+        default=True,
+        doc="""
+        Allow resizing the grid cells.""",
+    )
 
-    allow_drag = param.Boolean(default=True, doc="""
-        Allow dragging the grid cells.""")
+    allow_drag = param.Boolean(
+        default=True,
+        doc="""
+        Allow dragging the grid cells.""",
+    )
 
-    state = param.List(doc="""
+    state = param.List(
+        doc="""
         Current state of the grid (updated as items are resized and
-        dragged).""")
+        dragged)."""
+    )
 
     width = param.Integer(default=None)
 
     height = param.Integer(default=None)
 
-    _extension_name = 'gridstack'
+    _extension_name = "gridstack"
 
     _template = """
     <div id="grid" class="grid-stack" style="width: 100%; height: 100%">
@@ -59,10 +67,10 @@ class GridStack(ReactiveHTML, GridSpec):
       </div>
     {% endfor %}
     </div>
-    """ # noqa
+    """  # noqa
 
     _scripts = {
-        'render': """
+        "render": """
         const options = {
           column: data.ncols,
           disableResize: !data.allow_resize,
@@ -93,7 +101,7 @@ class GridStack(ReactiveHTML, GridSpec):
         state.gridstack = gridstack
         state.init = false
         """,
-        'after_layout': """
+        "after_layout": """
         self.nrows()
         if (!state.init) {
           state.init = true
@@ -101,10 +109,10 @@ class GridStack(ReactiveHTML, GridSpec):
         }
         state.gridstack.engine._notify()
         """,
-        'allow_drag':   "state.gridstack.enableMove(data.allow_drag)",
-        'allow_resize': "state.gridstack.enableResize(data.allow_resize)",
-        'ncols':        "state.gridstack.column(data.ncols)",
-        'nrows': """
+        "allow_drag": "state.gridstack.enableMove(data.allow_drag)",
+        "allow_resize": "state.gridstack.enableResize(data.allow_resize)",
+        "ncols": "state.gridstack.column(data.ncols)",
+        "nrows": """
         state.gridstack.opts.row = data.nrows
         if (data.nrows) {
           const height = model.height || grid.offsetHeight || model.min_height;
@@ -113,44 +121,27 @@ class GridStack(ReactiveHTML, GridSpec):
           state.gridstack.cellHeight('auto')
         }
         """,
-        "remove": "state.gridstack.destroy()"
+        "remove": "state.gridstack.destroy()",
     }
 
-    __css_raw__ = [
-        f'{config.npm_cdn}/gridstack@7.2.3/dist/gridstack.min.css',
-        f'{config.npm_cdn}/gridstack@7.2.3/dist/gridstack-extra.min.css'
-    ]
+    __css_raw__ = [f"{config.npm_cdn}/gridstack@7.2.3/dist/gridstack.min.css", f"{config.npm_cdn}/gridstack@7.2.3/dist/gridstack-extra.min.css"]
 
-    __javascript_raw__ = [
-        f'{config.npm_cdn}/gridstack@7.2.3/dist/gridstack-all.js'
-    ]
+    __javascript_raw__ = [f"{config.npm_cdn}/gridstack@7.2.3/dist/gridstack-all.js"]
 
     __js_require__ = {
-        'paths': {
-            'gridstack': f'{config.npm_cdn}/gridstack@7.2.3/dist/gridstack-all'
-        },
-        'exports': {
-            'gridstack': 'GridStack'
-        },
-        'shim': {
-            'gridstack': {
-                'exports': 'GridStack'
-            }
-        }
+        "paths": {"gridstack": f"{config.npm_cdn}/gridstack@7.2.3/dist/gridstack-all"},
+        "exports": {"gridstack": "GridStack"},
+        "shim": {"gridstack": {"exports": "GridStack"}},
     }
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
-        'nrows': 'nrows', 'ncols': 'ncols', 'objects': 'objects'
-    }
+    _rename: ClassVar[Mapping[str, str | None]] = {"nrows": "nrows", "ncols": "ncols", "objects": "objects"}
 
-    _stylesheets: ClassVar[List[str]] = [
-        f'{CDN_DIST}css/gridstack.css'
-    ]
+    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/gridstack.css"]
 
     @classproperty
     def __js_skip__(cls):
         return {
-            'GridStack': cls.__javascript__[0:1],
+            "GridStack": cls.__javascript__[0:1],
         }
 
     @classproperty
@@ -159,27 +150,27 @@ class GridStack(ReactiveHTML, GridSpec):
 
     @classproperty
     def __css__(cls):
-        return bundled_files(cls, 'css')
+        return bundled_files(cls, "css")
 
-    @param.depends('state', watch=True)
+    @param.depends("state", watch=True)
     def _update_objects(self):
         objects = OrderedDict()
         object_ids = {str(id(obj)): obj for obj in self}
         for p in self.state:
-            objects[(p['y0'], p['x0'], p['y1'], p['x1'])] = object_ids[p['id']]
+            objects[(p["y0"], p["x0"], p["y1"], p["x1"])] = object_ids[p["id"]]
         self.objects.clear()
         self.objects.update(objects)
         self._update_sizing()
 
-    @param.depends('objects', watch=True)
+    @param.depends("objects", watch=True)
     def _update_sizing(self):
         if self.ncols and self.width:
-            width = self.width/self.ncols
+            width = self.width / self.ncols
         else:
             width = 0
 
         if self.nrows and self.height:
-            height = self.height/self.nrows
+            height = self.height / self.nrows
         else:
             height = 0
 
@@ -188,21 +179,18 @@ class GridStack(ReactiveHTML, GridSpec):
             x1 = (self.ncols) if x1 is None else x1
             y0 = 0 if y0 is None else y0
             y1 = (self.nrows) if y1 is None else y1
-            h, w = y1-y0, x1-x0
+            h, w = y1 - y0, x1 - x0
 
             properties = {}
-            if self.sizing_mode in ['fixed', None]:
+            if self.sizing_mode in ["fixed", None]:
                 if width:
-                    properties['width'] = int(w*width)
+                    properties["width"] = int(w * width)
                 if height:
-                    properties['height'] = int(h*height)
+                    properties["height"] = int(h * height)
             else:
-                properties['sizing_mode'] = self.sizing_mode
-                if 'width' in self.sizing_mode and height:
-                    properties['height'] = int(h*height)
-                elif 'height' in self.sizing_mode and width:
-                    properties['width'] = int(w*width)
-            obj.param.update(**{
-                k: v for k, v in properties.items()
-                if not obj.param[k].readonly
-            })
+                properties["sizing_mode"] = self.sizing_mode
+                if "width" in self.sizing_mode and height:
+                    properties["height"] = int(h * height)
+                elif "height" in self.sizing_mode and width:
+                    properties["width"] = int(w * width)
+            obj.param.update(**{k: v for k, v in properties.items() if not obj.param[k].readonly})

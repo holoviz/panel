@@ -23,20 +23,16 @@ MOMENT_SRC = f"{config.npm_cdn}/luxon/build/global/luxon.min.js"
 
 THEME_PATH = f"tabulator-tables@{TABULATOR_VERSION}/dist/css/"
 THEME_URL = f"{config.npm_cdn}/{THEME_PATH}"
-TABULATOR_THEMES = [
-    'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
-    'bootstrap4', 'bootstrap4', 'bootstrap5', 'materialize', 'bulma',
-    'semantic-ui'
-]
+TABULATOR_THEMES = ["default", "site", "simple", "midnight", "modern", "bootstrap", "bootstrap4", "bootstrap4", "bootstrap5", "materialize", "bulma", "semantic-ui"]
 # Theme names were renamed in Tabulator 5.0.
 _TABULATOR_THEMES_MAPPING = {
-    'bootstrap': 'bootstrap3',
-    'semantic-ui': 'semanticui',
+    "bootstrap": "bootstrap3",
+    "semantic-ui": "semanticui",
 }
 
-class TableEditEvent(ModelEvent):
 
-    event_name = 'table-edit'
+class TableEditEvent(ModelEvent):
+    event_name = "table-edit"
 
     def __init__(self, model, column, row, pre=False, value=None, old=None):
         self.column = column
@@ -47,14 +43,11 @@ class TableEditEvent(ModelEvent):
         super().__init__(model=model)
 
     def __repr__(self):
-        return (
-            f'{type(self).__name__}(column={self.column}, row={self.row}, '
-            f'value={self.value}, old={self.old})'
-        )
+        return f"{type(self).__name__}(column={self.column}, row={self.row}, " f"value={self.value}, old={self.old})"
+
 
 class CellClickEvent(ModelEvent):
-
-    event_name = 'cell-click'
+    event_name = "cell-click"
 
     def __init__(self, model, column, row, value=None):
         self.column = column
@@ -63,20 +56,17 @@ class CellClickEvent(ModelEvent):
         super().__init__(model=model)
 
     def __repr__(self):
-        return (
-            f'{type(self).__name__}(column={self.column}, row={self.row}, '
-            f'value={self.value})'
-        )
+        return f"{type(self).__name__}(column={self.column}, row={self.row}, " f"value={self.value})"
 
 
 CSS_URLS = []
 for theme in TABULATOR_THEMES:
-    if theme == 'default':
-        _theme_file = 'tabulator.min.css'
+    if theme == "default":
+        _theme_file = "tabulator.min.css"
     else:
         theme = _TABULATOR_THEMES_MAPPING.get(theme, theme)
-        _theme_file = f'tabulator_{theme}.min.css'
-    CSS_URLS.append(f'{THEME_URL}{_theme_file}')
+        _theme_file = f"tabulator_{theme}.min.css"
+    CSS_URLS.append(f"{THEME_URL}{_theme_file}")
 
 
 class DataTabulator(HTMLBox):
@@ -90,9 +80,12 @@ class DataTabulator(HTMLBox):
 
     configuration = Dict(String, Any)
 
-    columns = List(Instance(TableColumn), help="""
+    columns = List(
+        Instance(TableColumn),
+        help="""
     The list of child column widgets.
-    """)
+    """,
+    )
 
     download = Bool(default=False)
 
@@ -116,7 +109,7 @@ class DataTabulator(HTMLBox):
 
     indexes = List(String)
 
-    layout = Enum('fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table', 'fit_columns', default="fit_data")
+    layout = Enum("fit_data", "fit_data_fill", "fit_data_stretch", "fit_data_table", "fit_columns", default="fit_data")
 
     source = Instance(ColumnDataSource)
 
@@ -142,16 +135,10 @@ class DataTabulator(HTMLBox):
 
     @classproperty
     def __css__(cls):
-        cls.__css_raw__ = [
-            url for url in cls.__css_raw__ if 'simple' in url or
-            len(cls.__css_raw__) == 1
-        ]
-        return bundled_files(cls, 'css')
+        cls.__css_raw__ = [url for url in cls.__css_raw__ if "simple" in url or len(cls.__css_raw__) == 1]
+        return bundled_files(cls, "css")
 
-    __javascript_raw__ = [
-        JS_SRC,
-        MOMENT_SRC
-    ]
+    __javascript_raw__ = [JS_SRC, MOMENT_SRC]
 
     @classproperty
     def __javascript__(cls):
@@ -159,15 +146,6 @@ class DataTabulator(HTMLBox):
 
     @classproperty
     def __js_skip__(cls):
-        return {'Tabulator': cls.__javascript__[:1], 'moment': cls.__javascript__[1:]}
+        return {"Tabulator": cls.__javascript__[:1], "moment": cls.__javascript__[1:]}
 
-    __js_require__ = {
-        'paths': {
-            'tabulator': JS_SRC[:-3],
-            'moment': MOMENT_SRC[:-3]
-        },
-        'exports': {
-            'tabulator': 'Tabulator',
-            'moment': 'moment'
-        }
-    }
+    __js_require__ = {"paths": {"tabulator": JS_SRC[:-3], "moment": MOMENT_SRC[:-3]}, "exports": {"tabulator": "Tabulator", "moment": "moment"}}

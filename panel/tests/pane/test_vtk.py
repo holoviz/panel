@@ -33,14 +33,14 @@ pyvista_available = pytest.mark.skipif(True or (vtk is None), reason="requires p
 
 
 def make_render_window():
-    #cone actor
+    # cone actor
     cone = vtk.vtkConeSource()
     coneMapper = vtk.vtkPolyDataMapper()
     coneMapper.SetInputConnection(cone.GetOutputPort())
     coneActor = vtk.vtkActor()
     coneActor.SetMapper(coneMapper)
 
-    #text actor following camera
+    # text actor following camera
     text = vtk.vtkVectorText()
     text.SetText("Origin")
     textMapper = vtk.vtkPolyDataMapper()
@@ -57,24 +57,26 @@ def make_render_window():
     renWin.AddRenderer(ren)
     return renWin
 
+
 @pytest.fixture
 def pyvista_render_window():
     """
     Allow to download and create a more complex example easily
     """
     from pyvista import examples
-    sphere = pv.Sphere() #test actor
-    globe = examples.load_globe() #test texture
-    head = examples.download_head() #test volume
-    uniform = examples.load_uniform() #test structured grid
+
+    sphere = pv.Sphere()  # test actor
+    globe = examples.load_globe()  # test texture
+    head = examples.download_head()  # test volume
+    uniform = examples.load_uniform()  # test structured grid
 
     scalars = sphere.points[:, 2]
-    sphere.point_data["values"] = scalars #allow to test scalars
+    sphere.point_data["values"] = scalars  # allow to test scalars
     sphere.set_active_scalars("values")
 
     uniform.set_active_scalars("Spatial Cell Data")
 
-    #test datasetmapper
+    # test datasetmapper
     threshed = uniform.threshold_percent([0.15, 0.50], invert=True)
     bodies = threshed.split_bodies()
     mapper = vtk.vtkCompositePolyDataMapper2()
@@ -90,6 +92,7 @@ def pyvista_render_window():
     pl.add_volume(head)
     yield pl.ren_win
     pv.close_all()
+
 
 def make_image_data():
     image_data = vtk.vtkImageData()
@@ -107,12 +110,12 @@ def make_image_data():
 
 
 def test_get_vtkjs_pane_type_from_url():
-    url = r'https://raw.githubusercontent.com/Kitware/vtk-js/master/Data/StanfordDragon.vtkjs'
+    url = r"https://raw.githubusercontent.com/Kitware/vtk-js/master/Data/StanfordDragon.vtkjs"
     assert PaneBase.get_pane_type(url) is VTKJS
 
 
 def test_get_vtkjs_pane_type_from_file():
-    file = r'StanfordDragon.vtkjs'
+    file = r"StanfordDragon.vtkjs"
     assert PaneBase.get_pane_type(file) is VTKJS
 
 
@@ -123,7 +126,7 @@ def test_get_vtk_pane_type_from_render_window():
 
 
 def test_get_vtkvol_pane_type_from_np_array():
-    assert PaneBase.get_pane_type(np.array([]).reshape((0,0,0))) is VTKVolume
+    assert PaneBase.get_pane_type(np.array([]).reshape((0, 0, 0))) is VTKVolume
 
 
 @vtk_available
@@ -131,32 +134,33 @@ def test_get_vtkvol_pane_type_from_vtk_image():
     image_data = make_image_data()
     assert PaneBase.get_pane_type(image_data) is VTKVolume
 
+
 @pytest.mark.skip(reason="vtk=9.0.1=no_osmesa not currently available")
 def test_vtkjs_pane(document, comm, tmp_path):
     # from url
-    url = r'https://raw.githubusercontent.com/Kitware/vtk-js/master/Data/StanfordDragon.vtkjs'
+    url = r"https://raw.githubusercontent.com/Kitware/vtk-js/master/Data/StanfordDragon.vtkjs"
 
     pane_from_url = VTK(url)
 
     # Create pane
     model = pane_from_url.get_root(document, comm=comm)
     assert isinstance(model, VTKJSPlot)
-    assert pane_from_url._models[model.ref['id']][0] is model
+    assert pane_from_url._models[model.ref["id"]][0] is model
     assert isinstance(model.data, str)
 
     with BytesIO(base64.b64decode(model.data.encode())) as in_memory:
         with ZipFile(in_memory) as zf:
             filenames = zf.namelist()
             assert len(filenames) == 9
-            assert 'StanfordDragon.obj/index.json' in filenames
+            assert "StanfordDragon.obj/index.json" in filenames
 
     # Export Update and Read
-    tmpfile = os.path.join(*tmp_path.joinpath('export.vtkjs').parts)
+    tmpfile = os.path.join(*tmp_path.joinpath("export.vtkjs").parts)
     pane_from_url.export_vtkjs(filename=tmpfile)
-    with open(tmpfile, 'rb') as  file_exported:
+    with open(tmpfile, "rb") as file_exported:
         pane_from_url.object = file_exported
 
-    #test from file
+    # test from file
     pane_from_file = VTK(tmpfile)
     model_from_file = pane_from_file.get_root(document, comm=comm)
     assert isinstance(pane_from_file, VTKJS)
@@ -172,7 +176,7 @@ def test_vtk_pane_from_renwin(document, comm):
     # Create pane
     model = pane.get_root(document, comm=comm)
     assert isinstance(model, VTKSynchronizedPlot)
-    assert pane._models[model.ref['id']][0] is model
+    assert pane._models[model.ref["id"]][0] is model
 
     # Check array release when actor are removed from scene
     ctx = pane._contexts[model.id]
@@ -190,6 +194,7 @@ def test_vtk_pane_from_renwin(document, comm):
     assert pane._contexts == {}
     assert pane._models == {}
 
+
 @vtk_available
 def test_vtk_serialize_on_instantiation(document, comm, tmp_path):
     renWin = make_render_window()
@@ -199,16 +204,15 @@ def test_vtk_serialize_on_instantiation(document, comm, tmp_path):
     model = pane.get_root(document, comm=comm)
     assert isinstance(model, VTKSynchronizedPlot)
 
-    pane.param.trigger('object')
+    pane.param.trigger("object")
 
     # test export to file
-    tmpfile = os.path.join(*tmp_path.joinpath('scene').parts)
+    tmpfile = os.path.join(*tmp_path.joinpath("scene").parts)
     exported_file = pane.export_scene(filename=tmpfile)
-    assert exported_file.endswith('.synch')
+    assert exported_file.endswith(".synch")
 
     # test import from file
-    imported_pane = VTK.import_scene(filename=exported_file,
-                                     synchronizable=False)
+    imported_pane = VTK.import_scene(filename=exported_file, synchronizable=False)
     assert isinstance(imported_pane, VTKRenderWindow)
 
 
@@ -278,11 +282,11 @@ def test_vtk_pane_more_complex(pyvista_render_window, document, comm, tmp_path):
     # Create pane
     model = pane.get_root(document, comm=comm)
     assert isinstance(model, VTKSynchronizedPlot)
-    assert pane._models[model.ref['id']][0] is model
+    assert pane._models[model.ref["id"]][0] is model
 
     colorbars_infered = pane.construct_colorbars().object
 
-    assert len(colorbars_infered.below) == 2 # infer only actor color bars
+    assert len(colorbars_infered.below) == 2  # infer only actor color bars
     assert all(isinstance(cb, ColorBar) for cb in colorbars_infered.below)
 
     colorbars_in_scene = pane.construct_colorbars(infer=False).object()
@@ -290,22 +294,21 @@ def test_vtk_pane_more_complex(pyvista_render_window, document, comm, tmp_path):
     assert all(isinstance(cb, ColorBar) for cb in colorbars_in_scene.below)
     # add axes
     pane.axes = dict(
-        origin = [-5, 5, -2],
-        xticker = {'ticks': np.linspace(-5,5,5)},
-        yticker = {'ticks': np.linspace(-5,5,5)},
-        zticker = {'ticks': np.linspace(-2,2,5),
-                   'labels': [''] + [str(int(item)) for item in np.linspace(-2,2,5)[1:]]},
-        fontsize = 12,
-        digits = 1,
-        grid_opacity = 0.5,
-        show_grid=True
+        origin=[-5, 5, -2],
+        xticker={"ticks": np.linspace(-5, 5, 5)},
+        yticker={"ticks": np.linspace(-5, 5, 5)},
+        zticker={"ticks": np.linspace(-2, 2, 5), "labels": [""] + [str(int(item)) for item in np.linspace(-2, 2, 5)[1:]]},
+        fontsize=12,
+        digits=1,
+        grid_opacity=0.5,
+        show_grid=True,
     )
     assert isinstance(model.axes, VTKAxes)
 
     # test export to file
-    tmpfile = os.path.join(*tmp_path.joinpath('scene').parts)
+    tmpfile = os.path.join(*tmp_path.joinpath("scene").parts)
     exported_file = pane.export_scene(filename=tmpfile)
-    assert exported_file.endswith('.synch')
+    assert exported_file.endswith(".synch")
 
     # test import from file
     # (TODO test if the scene imported is identical to the one exported)
@@ -324,38 +327,37 @@ def test_vtkvol_pane_from_np_array(document, comm):
     pane = VTKVolume()
     model = pane.get_root(document, comm=comm)
 
-    pane.object = np.ones((10,10,10))
+    pane.object = np.ones((10, 10, 10))
     from operator import eq
 
     # Create pane
     assert isinstance(model, VTKVolumePlot)
-    assert pane._models[model.ref['id']][0] is model
-    assert np.all(np.frombuffer(base64.b64decode(model.data['buffer'].encode())) == 1)
-    assert all([eq(getattr(pane, k), getattr(model, k))
-                for k in ['slice_i', 'slice_j', 'slice_k']])
+    assert pane._models[model.ref["id"]][0] is model
+    assert np.all(np.frombuffer(base64.b64decode(model.data["buffer"].encode())) == 1)
+    assert all([eq(getattr(pane, k), getattr(model, k)) for k in ["slice_i", "slice_j", "slice_k"]])
 
     # Test update data
-    pane.object = 2*np.ones((10,10,10))
-    assert np.all(np.frombuffer(base64.b64decode(model.data['buffer'].encode())) == 2)
+    pane.object = 2 * np.ones((10, 10, 10))
+    assert np.all(np.frombuffer(base64.b64decode(model.data["buffer"].encode())) == 2)
 
     # Test size limitation of date sent
-    pane.max_data_size = 0.1 # limit data size to 0.1MB
+    pane.max_data_size = 0.1  # limit data size to 0.1MB
     # with uint8
-    data = (255*np.random.rand(50,50,50)).astype(np.uint8)
-    assert data.nbytes/1e6 > 0.1
+    data = (255 * np.random.rand(50, 50, 50)).astype(np.uint8)
+    assert data.nbytes / 1e6 > 0.1
     pane.object = data
-    data_model = np.frombuffer(base64.b64decode(model.data['buffer'].encode()))
-    assert data_model.nbytes/1e6 <= 0.1
+    data_model = np.frombuffer(base64.b64decode(model.data["buffer"].encode()))
+    assert data_model.nbytes / 1e6 <= 0.1
     # with float64
-    data = np.random.rand(50,50,50)
-    assert data.nbytes/1e6 > 0.1
+    data = np.random.rand(50, 50, 50)
+    assert data.nbytes / 1e6 > 0.1
     pane.object = data
-    data_model = np.frombuffer(base64.b64decode(model.data['buffer'].encode()), dtype=np.float64)
-    assert data_model.nbytes/1e6 <= 0.1
+    data_model = np.frombuffer(base64.b64decode(model.data["buffer"].encode()), dtype=np.float64)
+    assert data_model.nbytes / 1e6 <= 0.1
 
     # Test conversion of the slice_i number with subsample array
-    param = pane._process_property_change({'slice_i': (np.cbrt(data_model.size)-1)//2})
-    assert param == {'slice_i': (50-1)//2}
+    param = pane._process_property_change({"slice_i": (np.cbrt(data_model.size) - 1) // 2})
+    assert param == {"slice_i": (50 - 1) // 2}
 
     # Cleanup
     pane._cleanup(model)
@@ -371,12 +373,12 @@ def test_vtkvol_pane_from_image_data(document, comm):
     # Create pane
     model = pane.get_root(document, comm=comm)
     assert isinstance(model, VTKVolumePlot)
-    assert pane._models[model.ref['id']][0] is model
-    assert all([eq(getattr(pane, k), getattr(model, k))
-                for k in ['slice_i', 'slice_j', 'slice_k']])
+    assert pane._models[model.ref["id"]][0] is model
+    assert all([eq(getattr(pane, k), getattr(model, k)) for k in ["slice_i", "slice_j", "slice_k"]])
     # Cleanup
     pane._cleanup(model)
     assert pane._models == {}
+
 
 @vtk_available
 def test_vtkvol_serialization_coherence(document, comm):
@@ -388,7 +390,7 @@ def test_vtkvol_serialization_coherence(document, comm):
     data_matrix[45:50, 45:74, 45:100] = 150
 
     origin = (0, 10, 20)
-    spacing = (3,2,1)
+    spacing = (3, 2, 1)
 
     data_matrix_c = np.ascontiguousarray(data_matrix)
     data_matrix_f = np.asfortranarray(data_matrix)
@@ -396,7 +398,7 @@ def test_vtkvol_serialization_coherence(document, comm):
     image_data.SetDimensions(*data_matrix.shape)
     image_data.SetOrigin(*origin)
     image_data.SetSpacing(*spacing)
-    vtk_arr = numpy_support.numpy_to_vtk(data_matrix.ravel(order='F'))
+    vtk_arr = numpy_support.numpy_to_vtk(data_matrix.ravel(order="F"))
     image_data.GetPointData().SetScalars(vtk_arr)
 
     p_c = VTKVolume(data_matrix_c, origin=origin, spacing=spacing)
@@ -407,10 +409,8 @@ def test_vtkvol_serialization_coherence(document, comm):
     vd_f = p_f._get_volume_data()
     vd_id = p_id._get_volume_data()
     data_decoded = np.frombuffer(base64.b64decode(vd_c["buffer"]), dtype=vd_c["dtype"]).reshape(vd_c["dims"], order="F")
-    assert np.alltrue(data_decoded==data_matrix)
+    assert np.alltrue(data_decoded == data_matrix)
     assert vd_id == vd_c == vd_f
-
-
 
     p_c_ds = VTKVolume(data_matrix_c, origin=origin, spacing=spacing, max_data_size=0.1)
     p_f_ds = VTKVolume(data_matrix_f, origin=origin, spacing=spacing, max_data_size=0.1)

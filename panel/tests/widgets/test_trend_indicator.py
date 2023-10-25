@@ -13,6 +13,7 @@ from panel.widgets import IntSlider, Trend
 def test_constructor():
     Trend(name="Test")
 
+
 def test_deprecated_parameter():
     with warns(PanelDeprecationWarning):
         Trend(title="Test")
@@ -30,7 +31,7 @@ def test_trend_auto_value(document, comm):
     model = trend.get_root(document, comm)
 
     assert model.value == 4000
-    assert model.value_change == ((4000/3900) - 1)
+    assert model.value_change == ((4000 / 3900) - 1)
 
 
 def test_trend_auto_value_stream(document, comm):
@@ -40,12 +41,12 @@ def test_trend_auto_value_stream(document, comm):
 
     model = trend.get_root(document, comm)
 
-    trend.stream({'x': [6], 'y': [4100]}, rollover=5)
+    trend.stream({"x": [6], "y": [4100]}, rollover=5)
 
     assert model.value == 4100
-    assert model.value_change == ((4100/4000) - 1)
-    assert len(model.source.data['x']) == 5
-    assert model.source.data['x'][-1] == 6
+    assert model.value_change == ((4100 / 4000) - 1)
+    assert len(model.source.data["x"]) == 5
+    assert model.source.data["x"][-1] == 6
 
 
 def manualtest_app():

@@ -32,31 +32,55 @@ class Location(Syncable):
     browser.
     """
 
-    href = param.String(readonly=True, doc="""
-        The full url, e.g. 'https://localhost:80?color=blue#interact'""")
+    href = param.String(
+        readonly=True,
+        doc="""
+        The full url, e.g. 'https://localhost:80?color=blue#interact'""",
+    )
 
-    hostname = param.String(readonly=True, doc="""
-        hostname in window.location e.g. 'panel.holoviz.org'""")
+    hostname = param.String(
+        readonly=True,
+        doc="""
+        hostname in window.location e.g. 'panel.holoviz.org'""",
+    )
 
-    pathname = param.String(regex=r"^$|[\/].*$", doc="""
-        pathname in window.location e.g. '/user_guide/Interact.html'""")
+    pathname = param.String(
+        regex=r"^$|[\/].*$",
+        doc="""
+        pathname in window.location e.g. '/user_guide/Interact.html'""",
+    )
 
-    protocol = param.String(readonly=True, doc="""
-        protocol in window.location e.g. 'http:' or 'https:'""")
+    protocol = param.String(
+        readonly=True,
+        doc="""
+        protocol in window.location e.g. 'http:' or 'https:'""",
+    )
 
-    port = param.String(readonly=True, doc="""
-        port in window.location e.g. '80'""")
+    port = param.String(
+        readonly=True,
+        doc="""
+        port in window.location e.g. '80'""",
+    )
 
-    search = param.String(regex=r"^$|\?", doc="""
-        search in window.location e.g. '?color=blue'""")
+    search = param.String(
+        regex=r"^$|\?",
+        doc="""
+        search in window.location e.g. '?color=blue'""",
+    )
 
-    hash = param.String(regex=r"^$|#", doc="""
-        hash in window.location e.g. '#interact'""")
+    hash = param.String(
+        regex=r"^$|#",
+        doc="""
+        hash in window.location e.g. '#interact'""",
+    )
 
-    reload = param.Boolean(default=False, doc="""
+    reload = param.Boolean(
+        default=False,
+        doc="""
         Reload the page when the location is updated. For multipage
         apps this should be set to True, For single page apps this
-        should be set to False""")
+        should be set to False""",
+    )
 
     # Mapping from parameter name to bokeh model property name
     _rename: ClassVar[Mapping[str, str | None]] = {"name": None}
@@ -65,38 +89,39 @@ class Location(Syncable):
     def from_request(cls, request):
         try:
             from bokeh.server.contexts import _RequestProxy
+
             if not isinstance(request, _RequestProxy) or request._request is None:
                 return cls()
         except ImportError:
             return cls()
 
         params = {}
-        href = ''
+        href = ""
         if request.protocol:
-            params['protocol'] = href = f'{request.protocol}:'
+            params["protocol"] = href = f"{request.protocol}:"
         if request.host:
-            href += f'//{request.host}'
-            if ':' in request.host:
-                params['hostname'], params['port'] = request.host.split(':')
+            href += f"//{request.host}"
+            if ":" in request.host:
+                params["hostname"], params["port"] = request.host.split(":")
             else:
-                params['hostname'] = request.host
+                params["hostname"] = request.host
         if request.uri:
             search = hash = None
             href += request.uri
-            if '?' in request.uri and '#' in request.uri:
-                params['pathname'], query = request.uri.split('?')
-                search, hash = query.split('#')
-            elif '?' in request.uri:
-                params['pathname'], search = request.uri.split('?')
-            elif '#' in request.uri:
-                params['pathname'], hash = request.uri.split('#')
+            if "?" in request.uri and "#" in request.uri:
+                params["pathname"], query = request.uri.split("?")
+                search, hash = query.split("#")
+            elif "?" in request.uri:
+                params["pathname"], search = request.uri.split("?")
+            elif "#" in request.uri:
+                params["pathname"], hash = request.uri.split("#")
             else:
-                params['pathname'] = request.uri
+                params["pathname"] = request.uri
             if search:
-                params['search'] = f'?{search}'
+                params["search"] = f"?{search}"
             if hash:
-                params['hash'] = f'#{hash}'
-        params['href'] = href
+                params["hash"] = f"#{hash}"
+        params["href"] = href
         loc = cls()
         with edit_readonly(loc):
             loc.param.update(params)
@@ -106,25 +131,19 @@ class Location(Syncable):
         super().__init__(**params)
         self._synced = []
         self._syncing = False
-        self.param.watch(self._update_synced, ['search'])
+        self.param.watch(self._update_synced, ["search"])
 
-    def _get_model(
-        self, doc: 'Document', root: Optional['Model'] = None,
-        parent: Optional['Model'] = None, comm: Optional['Comm'] = None
-    ) -> 'Model':
+    def _get_model(self, doc: "Document", root: Optional["Model"] = None, parent: Optional["Model"] = None, comm: Optional["Comm"] = None) -> "Model":
         model = _BkLocation(**self._process_param_change(self._init_params()))
         root = root or model
-        self._models[root.ref['id']] = (model, parent)
+        self._models[root.ref["id"]] = (model, parent)
         self._link_props(model, self._linked_properties, doc, root, comm)
         return model
 
-    def get_root(
-        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
-        preprocess: bool = True
-    ) -> 'Model':
+    def get_root(self, doc: Optional[Document] = None, comm: Optional[Comm] = None, preprocess: bool = True) -> "Model":
         doc = create_doc_if_none_exists(doc)
         root = self._get_model(doc, comm=comm)
-        ref = root.ref['id']
+        ref = root.ref["id"]
         state._views[ref] = (self, root, doc, comm)
         self._documents[doc] = root
         return root
@@ -141,7 +160,7 @@ class Location(Syncable):
         if root:
             if root.document in self._documents:
                 del self._documents[root.document]
-            ref = root.ref['id']
+            ref = root.ref["id"]
         else:
             ref = None
         super()._cleanup(root)
@@ -175,9 +194,7 @@ class Location(Syncable):
                 if on_error:
                     on_error(mapped)
 
-    def _update_query(
-        self, *events: param.parameterized.Event, query: Optional[Dict[str, Any]] = None
-    ) -> None:
+    def _update_query(self, *events: param.parameterized.Event, query: Optional[Dict[str, Any]] = None) -> None:
         if self._syncing:
             return
         serialized = query or {}
@@ -206,11 +223,13 @@ class Location(Syncable):
     def update_query(self, **kwargs: Mapping[str, Any]) -> None:
         query = self.query_params
         query.update(kwargs)
-        self.search = '?' + urlparse.urlencode(query)
+        self.search = "?" + urlparse.urlencode(query)
 
     def sync(
-        self, parameterized: param.Parameterized, parameters: Optional[List[str] | Dict[str, str]] = None,
-        on_error: Optional[Callable[[Dict[str, Any]], None]] = None
+        self,
+        parameterized: param.Parameterized,
+        parameters: Optional[List[str] | Dict[str, str]] = None,
+        on_error: Optional[Callable[[Dict[str, Any]], None]] = None,
     ) -> None:
         """
         Syncs the parameters of a Parameterized object with the query
@@ -231,7 +250,7 @@ class Location(Syncable):
           fails. The callback is passed a dictionary of parameter
           values, which could not be applied.
         """
-        parameters = parameters or [p for p in parameterized.param if p != 'name']
+        parameters = parameters or [p for p in parameterized.param if p != "name"]
         if not isinstance(parameters, dict):
             parameters = dict(zip(parameters, parameters))
         watcher = parameterized.param.watch(self._update_query, list(parameters))
@@ -267,8 +286,7 @@ class Location(Syncable):
         matches = [s for s in self._synced if s[0] is parameterized]
         if not matches:
             ptype = type(parameterized)
-            raise ValueError(f"Cannot unsync {ptype} object since it "
-                             "was never synced in the first place.")
+            raise ValueError(f"Cannot unsync {ptype} object since it " "was never synced in the first place.")
         synced, unsynced = [], []
         for p, params, watcher, on_error in self._synced:
             if parameterized is not p:
@@ -279,10 +297,9 @@ class Location(Syncable):
                 unsynced.extend(list(params.values()))
             else:
                 unsynced.extend([q for p, q in params.items() if p in parameters])
-                new_params = {p: q for p, q in params.items()
-                              if p not in parameters}
+                new_params = {p: q for p, q in params.items() if p not in parameters}
                 new_watcher = parameterized.param.watch(watcher.fn, list(new_params))
                 synced.append((p, new_params, new_watcher, on_error))
         self._synced = synced
         query = {k: v for k, v in self.query_params.items() if k not in unsynced}
-        self.search = '?' + urlparse.urlencode(query) if query else ''
+        self.search = "?" + urlparse.urlencode(query) if query else ""

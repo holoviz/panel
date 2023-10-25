@@ -20,23 +20,39 @@ class Swipe(ListLike, ReactiveHTML):
     the other side.
     """
 
-    objects = param.List(default=[], bounds=(0, 2), doc="""
-        The list of child objects that make up the layout.""", precedence=-1)
+    objects = param.List(
+        default=[],
+        bounds=(0, 2),
+        doc="""
+        The list of child objects that make up the layout.""",
+        precedence=-1,
+    )
 
-    slider_width = param.Integer(default=5, bounds=(0, 25), doc="""
-        The width of the slider in pixels""")
+    slider_width = param.Integer(
+        default=5,
+        bounds=(0, 25),
+        doc="""
+        The width of the slider in pixels""",
+    )
 
-    slider_color = param.Color(default="black", doc="""
-        The color of the slider""")
+    slider_color = param.Color(
+        default="black",
+        doc="""
+        The color of the slider""",
+    )
 
-    value = param.Integer(default=50, bounds=(0, 100), doc="""
-        The percentage of the *after* panel to show.""")
+    value = param.Integer(
+        default=50,
+        bounds=(0, 100),
+        doc="""
+        The percentage of the *after* panel to show.""",
+    )
 
     _before = param.Parameter()
 
     _after = param.Parameter()
 
-    _direction: ClassVar[str | None] = 'vertical'
+    _direction: ClassVar[str | None] = "vertical"
 
     _template = """
     <div id="container" class="swipe-container">
@@ -53,13 +69,13 @@ class Swipe(ListLike, ReactiveHTML):
     """
 
     _scripts = {
-        'render': """
+        "render": """
           self.adjustSlider()
         """,
-        'after_layout': """
+        "after_layout": """
           self.value()
         """,
-        'drag': """
+        "drag": """
           function endDrag() {
              document.removeEventListener('mouseup', endDrag);
              document.removeEventListener('mousemove', handleDrag);
@@ -77,35 +93,31 @@ class Swipe(ListLike, ReactiveHTML):
            document.addEventListener('mouseup', endDrag);
            document.addEventListener('mousemove', handleDrag);
         """,
-        'value': """
+        "value": """
            before.style.clipPath = `polygon(0% 0%, calc(${data.value}% + 5px) 0%, calc(${data.value}% + 5px) 100%, 0% 100%)`
            after.style.clipPath = `polygon(calc(${data.value}% + 5px) 0%, 100% 0%, 100% 100%, calc(${data.value}% + 5px) 100%)`
            self.adjustSlider()
         """,
-        'slider_width': "self.adjustSlider()",
-        'adjustSlider': """
+        "slider_width": "self.adjustSlider()",
+        "adjustSlider": """
            halfWidth = parseInt(data.slider_width/2)
            slider.style.marginLeft = `calc(${data.value}% + 5px - ${halfWidth}px)`
-        """
+        """,
     }
 
-    _stylesheets: ClassVar[List[str]] = [
-        f'{CDN_DIST}css/swipe.css'
-    ]
+    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/swipe.css"]
 
     def __init__(self, *objects, **params):
-        if 'objects' in params and objects:
-            raise ValueError(
-                "Either supply objects as an positional argument or "
-                "as a keyword argument, not both."
-            )
+        if "objects" in params and objects:
+            raise ValueError("Either supply objects as an positional argument or " "as a keyword argument, not both.")
         from ..pane.base import panel
-        objects = params.pop('objects', objects)
+
+        objects = params.pop("objects", objects)
         if not objects:
             objects = [None, None]
         super().__init__(objects=[panel(obj) for obj in objects], **params)
 
-    @param.depends('objects', watch=True, on_init=True)
+    @param.depends("objects", watch=True, on_init=True)
     def _update_layout(self):
         self._before = self.before
         self._after = self.after

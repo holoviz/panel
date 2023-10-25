@@ -7,20 +7,19 @@ from ..config import config
 
 LOADING_INDICATOR_CSS_CLASS = "pn-loading"
 
+
 def _add_css_classes(item, css_classes):
     if not item.css_classes:
         item.css_classes = css_classes
     else:
-        new_classes = [css_class for css_class in css_classes
-                       if css_class not in item.css_classes]
+        new_classes = [css_class for css_class in css_classes if css_class not in item.css_classes]
         item.css_classes = item.css_classes + new_classes
 
 
 def _remove_css_classes(item, css_classes):
     if not item.css_classes:
         return
-    item.css_classes = [css_class for css_class in item.css_classes
-                        if css_class not in css_classes]
+    item.css_classes = [css_class for css_class in item.css_classes if css_class not in css_classes]
 
 
 def start_loading_spinner(*objects):
@@ -40,10 +39,11 @@ def start_loading_spinner(*objects):
     objects: tuple
         The panels to add the loading indicator to.
     """
-    css_classes = [LOADING_INDICATOR_CSS_CLASS, f'pn-{config.loading_spinner}']
+    css_classes = [LOADING_INDICATOR_CSS_CLASS, f"pn-{config.loading_spinner}"]
     for item in objects:
         if hasattr(item, "css_classes"):
             _add_css_classes(item, css_classes)
+
 
 def stop_loading_spinner(*objects):
     """
@@ -54,7 +54,7 @@ def stop_loading_spinner(*objects):
     objects: tuple
         The panels to remove the loading indicator from.
     """
-    css_classes = [LOADING_INDICATOR_CSS_CLASS, f'pn-{config.loading_spinner}']
+    css_classes = [LOADING_INDICATOR_CSS_CLASS, f"pn-{config.loading_spinner}"]
     for item in objects:
         if hasattr(item, "css_classes"):
             _remove_css_classes(item, css_classes)

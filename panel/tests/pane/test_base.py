@@ -17,23 +17,19 @@ from panel.param import Param, ParamMethod, ReactiveExpr
 from panel.tests.util import check_layoutable_properties
 from panel.util import param_watchers
 
-SKIP_PANES = (
-    Bokeh, HoloViews, Interactive, IPyWidget, Param, ParamMethod, RGGPlot,
-    ReactiveExpr, Vega, interactive, ChatMessage
-)
+SKIP_PANES = (Bokeh, HoloViews, Interactive, IPyWidget, Param, ParamMethod, RGGPlot, ReactiveExpr, Vega, interactive, ChatMessage)
 
-all_panes = [w for w in param.concrete_descendents(PaneBase).values()
-             if not w.__name__.startswith('_') and not
-             issubclass(w, SKIP_PANES)
-             and w.__module__.startswith('panel')]
+all_panes = [
+    w for w in param.concrete_descendents(PaneBase).values() if not w.__name__.startswith("_") and not issubclass(w, SKIP_PANES) and w.__module__.startswith("panel")
+]
 
 
 def test_pane_repr(document, comm):
-    pane = pn.panel('Some text', width=400)
-    assert repr(pane) == 'Markdown(str, width=400)'
+    pane = pn.panel("Some text", width=400)
+    assert repr(pane) == "Markdown(str, width=400)"
 
 
-@pytest.mark.parametrize('pane', all_panes)
+@pytest.mark.parametrize("pane", all_panes)
 def test_pane_layout_properties(pane, document, comm):
     try:
         p = pane()
@@ -43,7 +39,7 @@ def test_pane_layout_properties(pane, document, comm):
     check_layoutable_properties(p, model)
 
 
-@pytest.mark.parametrize('pane', all_panes+[Bokeh, HoloViews])
+@pytest.mark.parametrize("pane", all_panes + [Bokeh, HoloViews])
 def test_pane_linkable_params(pane, document, comm):
     try:
         p = pane()
@@ -60,7 +56,8 @@ def test_pane_linkable_params(pane, document, comm):
     finally:
         CallbackGenerator.error = False
 
-@pytest.mark.parametrize('pane', all_panes+[Bokeh])
+
+@pytest.mark.parametrize("pane", all_panes + [Bokeh])
 def test_pane_loading_param(pane, document, comm):
     try:
         p = pane()
@@ -68,31 +65,30 @@ def test_pane_loading_param(pane, document, comm):
         pytest.skip("Dependent library could not be imported.")
 
     root = p.get_root(document, comm)
-    model = p._models[root.ref['id']][0]
+    model = p._models[root.ref["id"]][0]
 
     p.loading = True
 
-    css_classes = [LOADING_INDICATOR_CSS_CLASS, f'pn-{config.loading_spinner}']
+    css_classes = [LOADING_INDICATOR_CSS_CLASS, f"pn-{config.loading_spinner}"]
     assert all(cls in model.css_classes for cls in css_classes)
 
     p.loading = False
 
     assert not any(cls in model.css_classes for cls in css_classes)
 
-@pytest.mark.parametrize('pane', all_panes+[Bokeh])
+
+@pytest.mark.parametrize("pane", all_panes + [Bokeh])
 def test_pane_untracked_watchers(pane, document, comm):
     # Ensures internal code correctly detects
     try:
         p = pane()
     except ImportError:
         pytest.skip("Dependent library could not be imported.")
-    watchers = [
-        w for pwatchers in param_watchers(p).values()
-        for awatchers in pwatchers.values() for w in awatchers
-    ]
-    assert len([wfn for wfn in watchers if wfn not in p._internal_callbacks and not hasattr(wfn.fn, '_watcher_name')]) == 0
+    watchers = [w for pwatchers in param_watchers(p).values() for awatchers in pwatchers.values() for w in awatchers]
+    assert len([wfn for wfn in watchers if wfn not in p._internal_callbacks and not hasattr(wfn.fn, "_watcher_name")]) == 0
 
-@pytest.mark.parametrize('pane', all_panes)
+
+@pytest.mark.parametrize("pane", all_panes)
 def test_pane_clone(pane):
     try:
         p = pane()
@@ -100,17 +96,19 @@ def test_pane_clone(pane):
         pytest.skip("Dependent library could not be imported.")
     clone = p.clone()
 
-    assert ([(k, v) for k, v in sorted(p.param.values().items()) if k not in ('name', '_pane')] ==
-            [(k, v) for k, v in sorted(clone.param.values().items()) if k not in ('name', '_pane')])
+    assert [(k, v) for k, v in sorted(p.param.values().items()) if k not in ("name", "_pane")] == [
+        (k, v) for k, v in sorted(clone.param.values().items()) if k not in ("name", "_pane")
+    ]
 
 
-@pytest.mark.parametrize('pane', all_panes)
+@pytest.mark.parametrize("pane", all_panes)
 def test_pane_signature(pane):
     from inspect import Parameter, signature
+
     parameters = signature(pane).parameters
     assert len(parameters) == 2
-    assert 'object' in parameters
-    assert parameters['object'] == Parameter('object', Parameter.POSITIONAL_OR_KEYWORD, default=None)
+    assert "object" in parameters
+    assert parameters["object"] == Parameter("object", Parameter.POSITIONAL_OR_KEYWORD, default=None)
 
 
 def test_pane_pad_layout_by_margin():

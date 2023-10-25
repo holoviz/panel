@@ -8,16 +8,15 @@ class Align(Parameter):
     to the (vertical, horizontal) alignment.
     """
 
-    def __init__(self, default='start', **params):
+    def __init__(self, default="start", **params):
         super().__init__(default=default, **params)
         self._validate(default)
 
     def _validate(self, val):
         self._validate_value(val, self.allow_None)
 
-    def _validate_value(self, val, allow_None, valid=('auto', 'start', 'center', 'end')):
-        if ((val is None and allow_None) or val in valid or
-            (isinstance(val, tuple) and len(val) == 2 and all(v in valid for v in val))):
+    def _validate_value(self, val, allow_None, valid=("auto", "start", "center", "end")):
+        if (val is None and allow_None) or val in valid or (isinstance(val, tuple) and len(val) == 2 and all(v in valid for v in val)):
             return
         raise ValueError(
             f"Align parameter {self.name!r} must be one of 'start', "
@@ -40,12 +39,9 @@ class Aspect(Parameter):
         self._validate_value(val, self.allow_None)
 
     def _validate_value(self, val, allow_None):
-        if (val is None and allow_None) or val == 'auto' or _is_number(val):
+        if (val is None and allow_None) or val == "auto" or _is_number(val):
             return
-        raise ValueError(
-            f"Aspect parameter {self.name!r} only takes numeric values "
-            "or the literal 'auto'."
-        )
+        raise ValueError(f"Aspect parameter {self.name!r} only takes numeric values " "or the literal 'auto'.")
 
 
 class Margin(Parameter):
@@ -64,18 +60,13 @@ class Margin(Parameter):
         if val is None and allow_None:
             return
         if not isinstance(val, (tuple, int)):
-            raise ValueError(
-                f'Margin parameter {self.name!r} only takes integer and '
-                f'tuple values, not values of not {type(val)!r}.'
-            )
+            raise ValueError(f"Margin parameter {self.name!r} only takes integer and " f"tuple values, not values of not {type(val)!r}.")
 
     def _validate_length(self, val):
         if not isinstance(val, tuple) or len(val) in (2, 4):
             return
         raise ValueError(
-            f'Margin parameter {self.name!r} only takes integer and '
-            f'tuple values of length 2 (vertical, horizontal) or 4 '
-            '(top, right, bottom, left).'
+            f"Margin parameter {self.name!r} only takes integer and " f"tuple values of length 2 (vertical, horizontal) or 4 " "(top, right, bottom, left)."
         )
 
     def _validate(self, val):
@@ -85,11 +76,11 @@ class Margin(Parameter):
     @classmethod
     def serialize(cls, value):
         if value is None:
-            return 'null'
+            return "null"
         return list(value) if isinstance(value, tuple) else value
 
     @classmethod
     def deserialize(cls, value):
-        if value == 'null':
+        if value == "null":
             return None
         return tuple(value) if isinstance(value, list) else value

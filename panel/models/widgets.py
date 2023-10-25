@@ -34,14 +34,20 @@ class Player(Widget):
 
     interval = Int(500, help="Interval between updates")
 
-    direction = Int(0, help="""
+    direction = Int(
+        0,
+        help="""
         Current play direction of the Player (-1: playing in reverse,
-        0: paused, 1: playing)""")
+        0: paused, 1: playing)""",
+    )
 
-    loop_policy = Enum('once', 'reflect', 'loop', default='once')
+    loop_policy = Enum("once", "reflect", "loop", default="once")
 
-    show_loop_controls = Bool(True, help="""Whether the loop controls
-        radio buttons are shown""")
+    show_loop_controls = Bool(
+        True,
+        help="""Whether the loop controls
+        radio buttons are shown""",
+    )
 
     width = Override(default=400)
 
@@ -49,32 +55,39 @@ class Player(Widget):
 
 
 class SingleSelect(InputWidget):
-    ''' Single-select widget.
+    """Single-select widget."""
 
-    '''
-
-    disabled_options = List(Any, default=[], help="""
+    disabled_options = List(
+        Any,
+        default=[],
+        help="""
     List of options to disable.
-    """)
+    """,
+    )
 
-    options = List(Either(String, Tuple(String, String)), help="""
+    options = List(
+        Either(String, Tuple(String, String)),
+        help="""
     Available selection options. Options may be provided either as a list of
     possible string values, or as a list of tuples, each of the form
     ``(value, label)``. In the latter case, the visible widget text for each
     value will be corresponding given label.
-    """)
+    """,
+    )
 
-    size = Int(default=4, help="""
+    size = Int(
+        default=4,
+        help="""
     The number of visible options in the dropdown list. (This uses the
     ``select`` HTML element's ``size`` attribute. Some browsers might not
     show less than 3 options.)
-    """)
+    """,
+    )
 
     value = Nullable(String, help="Initial or selected value.")
 
 
 class Audio(HTMLBox):
-
     loop = Bool(False, help="""Whether the audio should loop""")
 
     paused = Bool(False, help="""Whether the audio is paused""")
@@ -83,11 +96,17 @@ class Audio(HTMLBox):
 
     autoplay = Bool(False, help="""Whether the audio is playing automatically""")
 
-    time = Float(0, help="""
-        The current time stamp of the audio playback""")
+    time = Float(
+        0,
+        help="""
+        The current time stamp of the audio playback""",
+    )
 
-    throttle = Int(250, help="""
-        The frequency at which the time value is updated in milliseconds.""")
+    throttle = Int(
+        250,
+        help="""
+        The frequency at which the time value is updated in milliseconds.""",
+    )
 
     value = Any(help="Encoded file data")
 
@@ -95,7 +114,6 @@ class Audio(HTMLBox):
 
 
 class Video(HTMLBox):
-
     loop = Bool(False, help="""Whether the video should loop""")
 
     paused = Bool(False, help="""Whether the video is paused""")
@@ -104,11 +122,17 @@ class Video(HTMLBox):
 
     autoplay = Bool(False, help="""Whether the video is playing automatically""")
 
-    time = Float(0, help="""
-        The current time stamp of the video playback""")
+    time = Float(
+        0,
+        help="""
+        The current time stamp of the video playback""",
+    )
 
-    throttle = Int(250, help="""
-        The frequency at which the time value is updated in milliseconds.""")
+    throttle = Int(
+        250,
+        help="""
+        The frequency at which the time value is updated in milliseconds.""",
+    )
 
     value = Any(help="Encoded file data")
 
@@ -116,16 +140,18 @@ class Video(HTMLBox):
 
 
 class VideoStream(HTMLBox):
-
-    format = Enum('png', 'jpeg', default='png')
+    format = Enum("png", "jpeg", default="png")
 
     paused = Bool(False, help="""Whether the video is paused""")
 
     snapshot = Bool(False, help="""On change generate a snapshot of the current video frame""")
 
-    timeout = Nullable(Int, help="""
+    timeout = Nullable(
+        Int,
+        help="""
         The timeout between snapshots (if None snapshot only generated
-        when snapshot property is changed""")
+        when snapshot property is changed""",
+    )
 
     value = Any(help="""Snapshot Data""")
 
@@ -135,11 +161,9 @@ class VideoStream(HTMLBox):
 
 
 class Progress(HTMLBox):
-
     active = Bool(True, help="""Whether to animate the bar""")
 
-    bar_color = Enum('primary', 'secondary', 'success', 'info',
-                     'danger', 'warning', 'light', 'dark', default='primary')
+    bar_color = Enum("primary", "secondary", "success", "info", "danger", "warning", "light", "dark", default="primary")
 
     max = Int(100, help="""Maximum value""")
 
@@ -149,92 +173,111 @@ class Progress(HTMLBox):
 
 
 class FileDownload(InputWidget):
-
     auto = Bool(False, help="""Whether to download on click""")
 
-    button_type = Enum(ButtonType, help="""
+    button_type = Enum(
+        ButtonType,
+        help="""
     A style for the button, signifying it's role.
-    """)
+    """,
+    )
 
-    clicks = Int(0, help="""
+    clicks = Int(
+        0,
+        help="""
     A private property that used to trigger ``on_click`` event handler.
-    """)
+    """,
+    )
 
     data = String(help="""Encoded URI data.""")
 
     embed = Bool(False, help="""Whether the data is pre-embedded.""")
 
-    icon = Nullable(Instance(Icon), help="""
+    icon = Nullable(
+        Instance(Icon),
+        help="""
     An optional image appearing to the left of button's text. An instance of
     :class:`~bokeh.models.Icon` (such as :class:`~bokeh.models.BuiltinIcon`,
     :class:`~bokeh.models.SVGIcon`, or :class:`~bokeh.models.TablerIcon`).`
-    """)
+    """,
+    )
 
     label = String("", help="""The text label for the button to display.""")
 
     filename = String(help="""Filename to use on download""")
 
-    _transfers = Int(0, help="""
+    _transfers = Int(
+        0,
+        help="""
     A private property to create and click the link.
-    """)
+    """,
+    )
 
-    title = Override(default='')
+    title = Override(default="")
 
 
 class CustomSelect(Select):
-    ''' Custom widget that extends the base Bokeh Select
+    """Custom widget that extends the base Bokeh Select
     by adding a parameter to disable one or more options.
 
-    '''
-    disabled_options = List(Any, default=[], help="""
+    """
+
+    disabled_options = List(
+        Any,
+        default=[],
+        help="""
     List of options to disable.
-    """)
+    """,
+    )
 
     size = Int(default=1)
 
 
 class TooltipIcon(Widget):
-    description = Instance(
-        Tooltip,
-        default=Tooltip(content="Help text", position="right"),
-        help="""The tooltip held by the icon"""
-    )
+    description = Instance(Tooltip, default=Tooltip(content="Help text", position="right"), help="""The tooltip held by the icon""")
 
 
 class TextAreaInput(BkTextAreaInput):
-
     auto_grow = Bool(
         default=False,
         help="""
         Whether the text area should automatically grow vertically to
-        accommodate the current text."""
+        accommodate the current text.""",
     )
 
-    max_rows = Nullable(Int(), help="""
+    max_rows = Nullable(
+        Int(),
+        help="""
         Maximum number of rows the input area can grow to if auto_grow
-        is enabled."""
+        is enabled.""",
     )
 
 
 class Button(bkButton):
-
-    tooltip = Nullable(Instance(Tooltip), help="""
+    tooltip = Nullable(
+        Instance(Tooltip),
+        help="""
     A tooltip with plain text or rich HTML contents, providing general help or
     description of a widget's or component's function.
-    """)
+    """,
+    )
 
 
 class CheckboxButtonGroup(bkCheckboxButtonGroup):
-
-    tooltip = Nullable(Instance(Tooltip), help="""
+    tooltip = Nullable(
+        Instance(Tooltip),
+        help="""
     A tooltip with plain text or rich HTML contents, providing general help or
     description of a widget's or component's function.
-    """)
+    """,
+    )
 
 
 class RadioButtonGroup(bkRadioButtonGroup):
-
-    tooltip = Nullable(Instance(Tooltip), help="""
+    tooltip = Nullable(
+        Instance(Tooltip),
+        help="""
     A tooltip with plain text or rich HTML contents, providing general help or
     description of a widget's or component's function.
-    """)
+    """,
+    )

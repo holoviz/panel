@@ -15,8 +15,9 @@ from ..util import edit_readonly, function_name
 from .logging import LOG_PERIODIC_END, LOG_PERIODIC_START
 from .state import curdoc_locked, state
 
-log = logging.getLogger('panel.callbacks')
-_periodic_logger = logging.getLogger(f'{__name__}.PeriodicCallback')
+log = logging.getLogger("panel.callbacks")
+_periodic_logger = logging.getLogger(f"{__name__}.PeriodicCallback")
+
 
 class PeriodicCallback(param.Parameterized):
     """
@@ -29,50 +30,70 @@ class PeriodicCallback(param.Parameterized):
     the running parameter to True or False respectively.
     """
 
-    callback = param.Callable(doc="""
-        The callback to execute periodically.""")
+    callback = param.Callable(
+        doc="""
+        The callback to execute periodically."""
+    )
 
-    counter = param.Integer(default=0, doc="""
-        Counts the number of executions.""")
+    counter = param.Integer(
+        default=0,
+        doc="""
+        Counts the number of executions.""",
+    )
 
-    count = param.Integer(default=None, doc="""
+    count = param.Integer(
+        default=None,
+        doc="""
         Number of times the callback will be executed, by default
-        this is unlimited.""")
+        this is unlimited.""",
+    )
 
-    log = param.Boolean(default=True, doc="""
-        Whether the periodic callback should log its actions.""")
+    log = param.Boolean(
+        default=True,
+        doc="""
+        Whether the periodic callback should log its actions.""",
+    )
 
-    period = param.Integer(default=500, doc="""
-        Period in milliseconds at which the callback is executed.""")
+    period = param.Integer(
+        default=500,
+        doc="""
+        Period in milliseconds at which the callback is executed.""",
+    )
 
-    timeout = param.Integer(default=None, doc="""
+    timeout = param.Integer(
+        default=None,
+        doc="""
         Timeout in milliseconds from the start time at which the callback
-        expires.""")
+        expires.""",
+    )
 
-    running = param.Boolean(default=False, doc="""
-        Toggles whether the periodic callback is currently running.""")
+    running = param.Boolean(
+        default=False,
+        doc="""
+        Toggles whether the periodic callback is currently running.""",
+    )
 
     def __init__(self, **params):
-        self._background = params.pop('background', False)
+        self._background = params.pop("background", False)
         super().__init__(**params)
         self._start_time = None
         self._cb = None
         self._updating = False
         self._doc = None
 
-    @param.depends('running', watch=True)
+    @param.depends("running", watch=True)
     def _start(self):
         if not self.running or self._updating:
             return
         self.start()
 
-    @param.depends('running', watch=True)
+    @param.depends("running", watch=True)
     def _stop(self):
         if self.running or self._updating:
             return
         self.stop()
 
-    @param.depends('period', watch=True)
+    @param.depends("period", watch=True)
     def _update_period(self):
         if self._cb:
             self.stop()
@@ -80,6 +101,7 @@ class PeriodicCallback(param.Parameterized):
 
     def _exec_callback(self, post=False):
         from .state import set_curdoc
+
         try:
             with set_curdoc(self._doc):
                 if self.running:
@@ -96,9 +118,7 @@ class PeriodicCallback(param.Parameterized):
     def _post_callback(self):
         cbname = function_name(self.callback)
         if self._doc and self.log:
-            _periodic_logger.info(
-                LOG_PERIODIC_END, id(self._doc), cbname, self.counter
-            )
+            _periodic_logger.info(LOG_PERIODIC_END, id(self._doc), cbname, self.counter)
         if not self._background:
             with edit_readonly(state):
                 state._busy_counter -= 1
@@ -115,13 +135,8 @@ class PeriodicCallback(param.Parameterized):
                 state._busy_counter += 1
         cbname = function_name(self.callback)
         if self._doc and self.log:
-            _periodic_logger.info(
-                LOG_PERIODIC_START, id(self._doc), cbname, self.counter
-            )
-        is_async = (
-            inspect.isasyncgenfunction(self.callback) or
-            inspect.iscoroutinefunction(self.callback)
-        )
+            _periodic_logger.info(LOG_PERIODIC_START, id(self._doc), cbname, self.counter)
+        is_async = inspect.isasyncgenfunction(self.callback) or inspect.iscoroutinefunction(self.callback)
         if state._thread_pool and not is_async:
             future = state._thread_pool.submit(self._exec_callback, True)
             future.add_done_callback(partial(state._handle_future_exception, doc=self._doc))
@@ -131,7 +146,7 @@ class PeriodicCallback(param.Parameterized):
             if inspect.isawaitable(cb):
                 await cb
         except Exception:
-            log.exception('Periodic callback failed.')
+            log.exception("Periodic callback failed.")
             raise
         finally:
             self._post_callback()
@@ -146,7 +161,7 @@ class PeriodicCallback(param.Parameterized):
         while True:
             start = time.monotonic()
             await func()
-            timeout = (self.period/1000.) - (time.monotonic()-start)
+            timeout = (self.period / 1000.0) - (time.monotonic() - start)
             if timeout > 0:
                 await asyncio.sleep(timeout)
 
@@ -158,7 +173,7 @@ class PeriodicCallback(param.Parameterized):
         Starts running the periodic callback.
         """
         if self._cb is not None:
-            raise RuntimeError('Periodic callback has already started.')
+            raise RuntimeError("Periodic callback has already started.")
         if not self.running:
             try:
                 self._updating = True
@@ -167,9 +182,7 @@ class PeriodicCallback(param.Parameterized):
                 self._updating = False
         self._start_time = time.time()
         if state._is_pyodide:
-            self._cb = asyncio.create_task(
-                self._async_repeat(self._periodic_callback)
-            )
+            self._cb = asyncio.create_task(self._async_repeat(self._periodic_callback))
         elif state.curdoc and state.curdoc.session_context:
             self._doc = state.curdoc
             if state._unblocked(state.curdoc):
@@ -178,6 +191,7 @@ class PeriodicCallback(param.Parameterized):
                 self._doc.add_next_tick_callback(self.start)
         else:
             from tornado.ioloop import PeriodicCallback
+
             self._cb = PeriodicCallback(lambda: asyncio.create_task(self._periodic_callback()), self.period)
             self._cb.start()
 
@@ -206,8 +220,5 @@ class PeriodicCallback(param.Parameterized):
         self._cb = None
         doc = self._doc or curdoc_locked()
         if doc:
-            doc.callbacks.session_destroyed_callbacks = {
-                cb for cb in doc.callbacks.session_destroyed_callbacks
-                if cb is not self._cleanup
-            }
+            doc.callbacks.session_destroyed_callbacks = {cb for cb in doc.callbacks.session_destroyed_callbacks if cb is not self._cleanup}
             self._doc = None

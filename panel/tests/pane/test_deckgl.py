@@ -22,7 +22,7 @@ def test_get_pydeck_pane_type_from_deck():
 
 @pydeck_available
 def test_pydeck_pane_deck(document, comm):
-    deck = pydeck.Deck(tooltip=True, api_keys={'mapbox': 'ABC'})
+    deck = pydeck.Deck(tooltip=True, api_keys={"mapbox": "ABC"})
     pane = panel(deck)
 
     # Create pane
@@ -30,12 +30,12 @@ def test_pydeck_pane_deck(document, comm):
     assert isinstance(model, DeckGLPlot)
     assert pane._models[model.ref["id"]][0] is model
     expected = {
-        'mapProvider': 'carto',
-        'mapStyle': 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
-        'views': [{'@@type': 'MapView', 'controller': True}]
+        "mapProvider": "carto",
+        "mapStyle": "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+        "views": [{"@@type": "MapView", "controller": True}],
     }
-    if 'tooltip' in model.data: # Handle pydeck 0.8.0b4
-        expected['tooltip'] = True
+    if "tooltip" in model.data:  # Handle pydeck 0.8.0b4
+        expected["tooltip"] = True
     assert model.data == expected
     assert model.mapbox_api_key == deck.mapbox_key
     assert model.tooltip == deck.deck_widget.tooltip
@@ -68,99 +68,100 @@ def test_deckgl_empty_constructor(document, comm):
 
 
 def test_deckgl_construct_layer(document, comm):
-    pane = DeckGL({'layers': [{'data': [{'a': 1, 'b': 2}, {'a': 3, 'b': 7}]}]})
+    pane = DeckGL({"layers": [{"data": [{"a": 1, "b": 2}, {"a": 3, "b": 7}]}]})
 
     model = pane.get_root(document, comm)
 
-    assert model.layers == [{'data': 0}]
+    assert model.layers == [{"data": 0}]
     assert len(model.data_sources) == 1
     data = model.data_sources[0].data
-    assert np.array_equal(data['a'], np.array([1, 3]))
-    assert np.array_equal(data['b'], np.array([2, 7]))
+    assert np.array_equal(data["a"], np.array([1, 3]))
+    assert np.array_equal(data["b"], np.array([2, 7]))
 
 
 def test_deckgl_update_layer(document, comm):
-    layer = {'data': [{'a': 1, 'b': 2}, {'a': 3, 'b': 7}]}
-    pane = DeckGL({'layers': [layer]})
+    layer = {"data": [{"a": 1, "b": 2}, {"a": 3, "b": 7}]}
+    pane = DeckGL({"layers": [layer]})
 
     model = pane.get_root(document, comm)
 
     cds = model.data_sources[0]
     old_data = cds.data
-    a_vals = cds.data['a']
-    layer['data'] = [{'a': 1, 'b': 3}, {'a': 3, 'b': 9}]
-    pane.param.trigger('object')
+    a_vals = cds.data["a"]
+    layer["data"] = [{"a": 1, "b": 3}, {"a": 3, "b": 9}]
+    pane.param.trigger("object")
 
-    assert cds.data['a'] is a_vals
+    assert cds.data["a"] is a_vals
     assert cds.data is old_data
-    assert np.array_equal(cds.data['b'], np.array([3, 9]))
+    assert np.array_equal(cds.data["b"], np.array([3, 9]))
 
 
 def test_deckgl_update_layer_columns(document, comm):
-    layer = {'data': [{'a': 1, 'b': 2}, {'a': 3, 'b': 7}]}
-    pane = DeckGL({'layers': [layer]})
+    layer = {"data": [{"a": 1, "b": 2}, {"a": 3, "b": 7}]}
+    pane = DeckGL({"layers": [layer]})
 
     model = pane.get_root(document, comm)
 
     cds = model.data_sources[0]
     old_data = cds.data
-    layer['data'] = [{'c': 1, 'b': 3}, {'c': 3, 'b': 9}]
-    pane.param.trigger('object')
+    layer["data"] = [{"c": 1, "b": 3}, {"c": 3, "b": 9}]
+    pane.param.trigger("object")
 
-    assert 'a' not in cds.data
+    assert "a" not in cds.data
     assert cds.data is not old_data
-    assert np.array_equal(cds.data['b'], np.array([3, 9]))
-    assert np.array_equal(cds.data['c'], np.array([1, 3]))
+    assert np.array_equal(cds.data["b"], np.array([3, 9]))
+    assert np.array_equal(cds.data["c"], np.array([1, 3]))
 
 
 def test_deckgl_append_layer(document, comm):
-    layer = {'data': [{'a': 1, 'b': 2}, {'a': 3, 'b': 7}]}
-    pane = DeckGL({'layers': [layer]})
+    layer = {"data": [{"a": 1, "b": 2}, {"a": 3, "b": 7}]}
+    pane = DeckGL({"layers": [layer]})
 
     model = pane.get_root(document, comm)
 
-    pane.object['layers'].append({'data': [{'c': 1, 'b': 3}, {'c': 3, 'b': 9}]})
-    pane.param.trigger('object')
+    pane.object["layers"].append({"data": [{"c": 1, "b": 3}, {"c": 3, "b": 9}]})
+    pane.param.trigger("object")
 
     assert len(model.layers) == 2
     assert len(model.data_sources) == 2
     cds1, cds2 = model.data_sources
     old_data = cds1.data
-    a_vals, b_vals = old_data['a'], old_data['b']
+    a_vals, b_vals = old_data["a"], old_data["b"]
     layer1, layer2 = model.layers
-    assert layer1['data'] == 0
-    assert layer2['data'] == 1
+    assert layer1["data"] == 0
+    assert layer2["data"] == 1
 
     assert cds1.data is old_data
-    assert cds1.data['a'] is a_vals
-    assert cds1.data['b'] is b_vals
-    assert np.array_equal(cds2.data['b'], np.array([3, 9]))
-    assert np.array_equal(cds2.data['c'], np.array([1, 3]))
+    assert cds1.data["a"] is a_vals
+    assert cds1.data["b"] is b_vals
+    assert np.array_equal(cds2.data["b"], np.array([3, 9]))
+    assert np.array_equal(cds2.data["c"], np.array([1, 3]))
 
 
 def test_deckgl_insert_layer(document, comm):
-    layer = {'data': [{'a': 1, 'b': 2}, {'a': 3, 'b': 7}]}
-    pane = DeckGL({'layers': [layer]})
+    layer = {"data": [{"a": 1, "b": 2}, {"a": 3, "b": 7}]}
+    pane = DeckGL({"layers": [layer]})
 
     model = pane.get_root(document, comm)
 
-    pane.object['layers'].insert(0, {'data': [{'c': 1, 'b': 3}, {'c': 3, 'b': 9}]})
-    pane.param.trigger('object')
+    pane.object["layers"].insert(0, {"data": [{"c": 1, "b": 3}, {"c": 3, "b": 9}]})
+    pane.param.trigger("object")
 
     assert len(model.layers) == 2
     assert len(model.data_sources) == 2
     cds1, cds2 = model.data_sources
     old_data = cds1.data
-    a_vals, b_vals = old_data['a'], old_data['b']
+    a_vals, b_vals = old_data["a"], old_data["b"]
     layer1, layer2 = model.layers
-    assert layer1['data'] == 1
-    assert layer2['data'] == 0
+    assert layer1["data"] == 1
+    assert layer2["data"] == 0
 
     assert cds1.data is old_data
-    assert cds1.data['a'] is a_vals
-    assert cds1.data['b'] is b_vals
-    assert np.array_equal(cds2.data['b'], np.array([3, 9]))
-    assert np.array_equal(cds2.data['c'], np.array([1, 3]))
+    assert cds1.data["a"] is a_vals
+    assert cds1.data["b"] is b_vals
+    assert np.array_equal(cds2.data["b"], np.array([3, 9]))
+    assert np.array_equal(cds2.data["c"], np.array([1, 3]))
+
 
 @pydeck_available
 def test_pydeck_mapbox_api_key_issue_5790(document, comm):
@@ -169,6 +170,7 @@ def test_pydeck_mapbox_api_key_issue_5790(document, comm):
 
     model = pane_w_key.get_root(document, comm=comm)
     assert model.mapbox_api_key == "ABC"
+
 
 @pydeck_available
 def test_pydeck_no_min_max_zoom_issue_5790(document, comm):
@@ -186,27 +188,27 @@ def test_pydeck_no_min_max_zoom_issue_5790(document, comm):
     model = pane.get_root(document, comm=comm)
     assert model.initialViewState == state_w_no_min_max_zoom
 
+
 @pydeck_available
 def test_pydeck_type_string_can_be_serialized_issue_5790(document, comm):
     serializer = Serializer(references=document.models.synced_references)
     data = [
-                {
-                    "name": "24th St. Mission (24TH)",
-                    "code": "24",
-                    "address": "2800 Mission Street, San Francisco CA 94110",
-                    "entries": 12817,
-                    "exits": 12529,
-                    # "coordinates": [-122.418466, 37.752254]
-                }
+        {
+            "name": "24th St. Mission (24TH)",
+            "code": "24",
+            "address": "2800 Mission Street, San Francisco CA 94110",
+            "entries": 12817,
+            "exits": 12529,
+            # "coordinates": [-122.418466, 37.752254]
+        }
     ]
-
 
     layer = pydeck.Layer(
         "TextLayer",
         data,
         get_text_anchor=pydeck.types.String("middle"),
         get_alignment_baseline=pydeck.types.String("center"),
-        size_units = pydeck.types.String("meters")   # <--- The key addition to switch to meters as the units.
+        size_units=pydeck.types.String("meters"),  # <--- The key addition to switch to meters as the units.
     )
     deck = pydeck.Deck(layers=[layer])
     pane = DeckGL(deck)

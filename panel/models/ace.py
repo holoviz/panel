@@ -18,16 +18,16 @@ class AcePlot(HTMLBox):
     """
 
     __javascript_raw__ = [
-        'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ace.js',
-        'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ext-language_tools.js',
-        'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ext-modelist.js'
+        "https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ace.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ext-language_tools.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ext-modelist.js",
     ]
 
     __tarball__ = {
-        'tar': 'https://registry.npmjs.org/ace-builds/-/ace-builds-1.4.11.tgz',
-        'src': 'package/src-min/',
-        'dest': 'ajax/libs/1.4.11',
-        'exclude': ['*snippets/*']
+        "tar": "https://registry.npmjs.org/ace-builds/-/ace-builds-1.4.11.tgz",
+        "src": "package/src-min/",
+        "dest": "ajax/libs/1.4.11",
+        "exclude": ["*snippets/*"],
     }
 
     @classproperty
@@ -36,25 +36,21 @@ class AcePlot(HTMLBox):
 
     @classproperty
     def __js_skip__(cls):
-        return {'ace': cls.__javascript__}
+        return {"ace": cls.__javascript__}
 
     __js_require__ = {
-        'paths': {
-            ('ace', ('ace/ace', 'ace/ext-language_tools', 'ace/ext-modelist')): '//cdnjs.cloudflare.com/ajax/libs/ace/1.4.7'},
-        'exports': {'ace/ace': 'ace'},
-        'shim': {
-            'ace/ext-language_tools': { 'deps': ["ace/ace"] },
-            'ace/ext-modelist': { 'deps': ["ace/ace"] }
-        }
+        "paths": {("ace", ("ace/ace", "ace/ext-language_tools", "ace/ext-modelist")): "//cdnjs.cloudflare.com/ajax/libs/ace/1.4.7"},
+        "exports": {"ace/ace": "ace"},
+        "shim": {"ace/ext-language_tools": {"deps": ["ace/ace"]}, "ace/ext-modelist": {"deps": ["ace/ace"]}},
     }
 
-    code = String(default='')
+    code = String(default="")
 
-    theme = Enum(ace_themes, default='chrome')
+    theme = Enum(ace_themes, default="chrome")
 
     filename = Nullable(String())
 
-    language = String(default='')
+    language = String(default="")
 
     annotations = List(Dict(String, Any), default=[])
 

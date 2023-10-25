@@ -26,7 +26,7 @@ from .input import TextInput
 from .select import CrossSelector
 
 
-def _scan_path(path: str, file_pattern='*') -> Tuple[List[str], List[str]]:
+def _scan_path(path: str, file_pattern="*") -> Tuple[List[str], List[str]]:
     """
     Scans the supplied path for files and directories and optionally
     filters the files with the file keyword, returning a list of sorted
@@ -45,8 +45,7 @@ def _scan_path(path: str, file_pattern='*') -> Tuple[List[str], List[str]]:
     """
     paths = [os.path.join(path, p) for p in os.listdir(path)]
     dirs = [p for p in paths if os.path.isdir(p)]
-    files = [p for p in paths if os.path.isfile(p) and
-             fnmatch(os.path.basename(p), file_pattern)]
+    files = [p for p in paths if os.path.isfile(p) and fnmatch(os.path.basename(p), file_pattern)]
     for p in paths:
         if not os.path.islink(p):
             continue
@@ -72,71 +71,90 @@ class FileSelector(CompositeWidget):
     >>> FileSelector(directory='~', file_pattern='*.png')
     """
 
-    directory = param.String(default=os.getcwd(), doc="""
-        The directory to explore.""")
+    directory = param.String(
+        default=os.getcwd(),
+        doc="""
+        The directory to explore.""",
+    )
 
-    file_pattern = param.String(default='*', doc="""
-        A glob-like pattern to filter the files.""")
+    file_pattern = param.String(
+        default="*",
+        doc="""
+        A glob-like pattern to filter the files.""",
+    )
 
-    only_files = param.Boolean(default=False, doc="""
-        Whether to only allow selecting files.""")
+    only_files = param.Boolean(
+        default=False,
+        doc="""
+        Whether to only allow selecting files.""",
+    )
 
-    show_hidden = param.Boolean(default=False, doc="""
+    show_hidden = param.Boolean(
+        default=False,
+        doc="""
         Whether to show hidden files and directories (starting with
-        a period).""")
+        a period).""",
+    )
 
-    size = param.Integer(default=10, doc="""
+    size = param.Integer(
+        default=10,
+        doc="""
         The number of options shown at once (note this is the only
-        way to control the height of this widget)""")
+        way to control the height of this widget)""",
+    )
 
-    refresh_period = param.Integer(default=None, doc="""
+    refresh_period = param.Integer(
+        default=None,
+        doc="""
         If set to non-None value indicates how frequently to refresh
-        the directory contents in milliseconds.""")
+        the directory contents in milliseconds.""",
+    )
 
-    root_directory = param.String(default=None, doc="""
+    root_directory = param.String(
+        default=None,
+        doc="""
         If set, overrides directory parameter as the root directory
-        beyond which users cannot navigate.""")
+        beyond which users cannot navigate.""",
+    )
 
-    value = param.List(default=[], doc="""
-        List of selected files.""")
+    value = param.List(
+        default=[],
+        doc="""
+        List of selected files.""",
+    )
 
     _composite_type: ClassVar[Type[ListPanel]] = Column
 
     def __init__(self, directory: AnyStr | os.PathLike | None = None, **params):
         from ..pane import Markdown
+
         if directory is not None:
-            params['directory'] = fullpath(directory)
-        if 'root_directory' in params:
-            root = params['root_directory']
-            params['root_directory'] = fullpath(root)
-        if params.get('width') and params.get('height') and 'sizing_mode' not in params:
-            params['sizing_mode'] = None
+            params["directory"] = fullpath(directory)
+        if "root_directory" in params:
+            root = params["root_directory"]
+            params["root_directory"] = fullpath(root)
+        if params.get("width") and params.get("height") and "sizing_mode" not in params:
+            params["sizing_mode"] = None
 
         super().__init__(**params)
 
         # Set up layout
-        layout = {p: getattr(self, p) for p in Layoutable.param
-                  if p not in ('name', 'height', 'margin') and getattr(self, p) is not None}
-        sel_layout = dict(layout, sizing_mode='stretch_width', height=300, margin=0)
-        self._selector = CrossSelector(
-            filter_fn=lambda p, f: fnmatch(f, p), size=self.size, **sel_layout
-        )
+        layout = {p: getattr(self, p) for p in Layoutable.param if p not in ("name", "height", "margin") and getattr(self, p) is not None}
+        sel_layout = dict(layout, sizing_mode="stretch_width", height=300, margin=0)
+        self._selector = CrossSelector(filter_fn=lambda p, f: fnmatch(f, p), size=self.size, **sel_layout)
 
-        self._back = Button(name='◀', width=40, height=40, margin=(5, 10, 0, 0), disabled=True, align='center')
-        self._forward = Button(name='▶', width=40, height=40, margin=(5, 10, 0, 0), disabled=True, align='center')
-        self._up = Button(name='⬆', width=40, height=40, margin=(5, 10, 0, 0), disabled=True, align='center')
-        self._directory = TextInput(value=self.directory, margin=(5, 10, 0, 0), width_policy='max')
-        self._go = Button(name='⬇', disabled=True, width=40, height=40, margin=(5, 5, 0, 0), align='center')
-        self._reload = Button(name='↻', width=40, height=40, margin=(5, 0, 0, 10), align='center')
-        self._nav_bar = Row(
-            self._back, self._forward, self._up, self._directory, self._go, self._reload,
-            **dict(layout, width=None, margin=0, width_policy='max')
-        )
+        self._back = Button(name="◀", width=40, height=40, margin=(5, 10, 0, 0), disabled=True, align="center")
+        self._forward = Button(name="▶", width=40, height=40, margin=(5, 10, 0, 0), disabled=True, align="center")
+        self._up = Button(name="⬆", width=40, height=40, margin=(5, 10, 0, 0), disabled=True, align="center")
+        self._directory = TextInput(value=self.directory, margin=(5, 10, 0, 0), width_policy="max")
+        self._go = Button(name="⬇", disabled=True, width=40, height=40, margin=(5, 5, 0, 0), align="center")
+        self._reload = Button(name="↻", width=40, height=40, margin=(5, 0, 0, 10), align="center")
+        self._nav_bar = Row(self._back, self._forward, self._up, self._directory, self._go, self._reload, **dict(layout, width=None, margin=0, width_policy="max"))
         self._composite[:] = [self._nav_bar, Divider(margin=0), self._selector]
-        style = 'h4 { margin-block-start: 0; margin-block-end: 0;}'
-        self._selector._selected.insert(0, Markdown('#### Selected files', margin=0, stylesheets=[style]))
-        self._selector._unselected.insert(0, Markdown('#### File Browser', margin=0, stylesheets=[style]))
-        self.link(self._selector, size='size')
+        style = "h4 { margin-block-start: 0; margin-block-end: 0;}"
+        self._selector._selected.insert(0, Markdown("#### Selected files", margin=0, stylesheets=[style]))
+        self._selector._unselected.insert(0, Markdown("#### File Browser", margin=0, stylesheets=[style]))
+        self.link(self._selector, size="size")
 
         # Set up state
         self._stack = []
@@ -145,18 +163,18 @@ class FileSelector(CompositeWidget):
         self._update_files(True)
 
         # Set up callback
-        self.link(self._directory, directory='value')
-        self._selector.param.watch(self._update_value, 'value')
+        self.link(self._directory, directory="value")
+        self._selector.param.watch(self._update_value, "value")
         self._go.on_click(self._update_files)
         self._reload.on_click(self._update_files)
         self._up.on_click(self._go_up)
         self._back.on_click(self._go_back)
         self._forward.on_click(self._go_forward)
-        self._directory.param.watch(self._dir_change, 'value')
-        self._selector._lists[False].param.watch(self._select, 'value')
-        self._selector._lists[False].param.watch(self._filter_blacklist, 'options')
+        self._directory.param.watch(self._dir_change, "value")
+        self._selector._lists[False].param.watch(self._select, "value")
+        self._selector._lists[False].param.watch(self._filter_blacklist, "options")
         self._periodic = PeriodicCallback(callback=self._refresh, period=self.refresh_period or 0)
-        self.param.watch(self._update_periodic, 'refresh_period')
+        self.param.watch(self._update_periodic, "refresh_period")
         if self.refresh_period:
             self._periodic.start()
 
@@ -189,15 +207,13 @@ class FileSelector(CompositeWidget):
     def _refresh(self):
         self._update_files(refresh=True)
 
-    def _update_files(
-        self, event: Optional[param.parameterized.Event] = None, refresh: bool = False
-    ):
+    def _update_files(self, event: Optional[param.parameterized.Event] = None, refresh: bool = False):
         path = fullpath(self._directory.value)
-        refresh = refresh or (event and getattr(event, 'obj', None) is self._reload)
+        refresh = refresh or (event and getattr(event, "obj", None) is self._reload)
         if refresh:
             path = self._cwd
         elif not os.path.isdir(path):
-            self._selector.options = ['Entered path is not valid']
+            self._selector.options = ["Entered path is not valid"]
             self._selector.disabled = True
             return
         elif event is not None and (not self._stack or path != self._stack[-1]):
@@ -208,7 +224,7 @@ class FileSelector(CompositeWidget):
         if not refresh:
             self._go.disabled = True
         self._up.disabled = path == self._root_directory
-        if self._position == len(self._stack)-1:
+        if self._position == len(self._stack) - 1:
             self._forward.disabled = True
         if 0 <= self._position and len(self._stack) > 1:
             self._back.disabled = False
@@ -222,9 +238,8 @@ class FileSelector(CompositeWidget):
             elif os.path.isfile(check):
                 files.append(s)
 
-        paths = [p for p in sorted(dirs)+sorted(files)
-                 if self.show_hidden or not os.path.basename(p).startswith('.')]
-        abbreviated = [('📁' if f in dirs else '')+os.path.relpath(f, self._cwd) for f in paths]
+        paths = [p for p in sorted(dirs) + sorted(files) if self.show_hidden or not os.path.basename(p).startswith(".")]
+        abbreviated = [("📁" if f in dirs else "") + os.path.relpath(f, self._cwd) for f in paths]
         options = OrderedDict(zip(abbreviated, paths))
         self._selector.options = options
         self._selector.value = selected
@@ -236,13 +251,11 @@ class FileSelector(CompositeWidget):
         from the blacklist.
         """
         dirs, files = _scan_path(self._cwd, self.file_pattern)
-        paths = [('📁' if p in dirs else '')+os.path.relpath(p, self._cwd) for p in dirs+files]
+        paths = [("📁" if p in dirs else "") + os.path.relpath(p, self._cwd) for p in dirs + files]
         blacklist = self._selector._lists[False]
         options = OrderedDict(self._selector._items)
         self._selector.options.clear()
-        self._selector.options.update([
-            (k, v) for k, v in options.items() if k in paths or v in self.value
-        ])
+        self._selector.options.update([(k, v) for k, v in options.items() if k in paths or v in self.value])
         blacklist.options = [o for o in blacklist.options if o in paths]
 
     def _select(self, event: param.parameterized.Event):
@@ -250,7 +263,7 @@ class FileSelector(CompositeWidget):
             self._directory.value = self._cwd
             return
 
-        relpath = event.new[0].replace('📁', '')
+        relpath = event.new[0].replace("📁", "")
         sel = fullpath(os.path.join(self._cwd, relpath))
         if os.path.isdir(sel):
             self._directory.value = sel

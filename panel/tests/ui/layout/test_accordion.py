@@ -8,7 +8,7 @@ from panel.tests.util import serve_component
 try:
     from playwright.sync_api import expect
 except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
+    pytestmark = pytest.mark.skip("playwright not available")
 
 pytestmark = pytest.mark.ui
 
@@ -16,8 +16,8 @@ pytestmark = pytest.mark.ui
 @pytest.fixture
 def accordion_components():
     # divs with mock css classes for easy search for elements in the Accordion
-    d0 = Div(name='Div 0', text='Text 0')
-    d1 = Div(name='Div 1', text='Text 1')
+    d0 = Div(name="Div 0", text="Text 0")
+    d1 = Div(name="Div 1", text="Text 1")
     return d0, d1
 
 
@@ -38,7 +38,7 @@ def test_accordion_default(page, accordion_components):
     accordion = Accordion(d0, d1)
     serve_component(page, accordion)
 
-    accordion_elements = page.locator('.accordion')
+    accordion_elements = page.locator(".accordion")
     # there are 2 card in this accordion
     expect(accordion_elements).to_have_count(len(accordion_components))
 
@@ -66,17 +66,17 @@ def test_accordion_default(page, accordion_components):
 def test_accordion_card_name(page, accordion_components):
     d0, d1 = accordion_components
     accordion = Accordion(
-        ('Card 0', d0),
-        ('Card 1', d1),
+        ("Card 0", d0),
+        ("Card 1", d1),
     )
     serve_component(page, accordion)
 
-    accordion_elements = page.locator('.accordion')
+    accordion_elements = page.locator(".accordion")
     d0_object = accordion_elements.nth(0)
     d1_object = accordion_elements.nth(1)
     # cards name
-    expect(d0_object).to_contain_text('Card 0')
-    expect(d1_object).to_contain_text('Card 1')
+    expect(d0_object).to_contain_text("Card 0")
+    expect(d1_object).to_contain_text("Card 1")
 
 
 def test_accordion_active(page, accordion_components):
@@ -84,7 +84,7 @@ def test_accordion_active(page, accordion_components):
     accordion = Accordion(d0, d1, active=[0])
     serve_component(page, accordion)
 
-    accordion_elements = page.locator('.accordion')
+    accordion_elements = page.locator(".accordion")
     # there are 2 card in this accordion
     expect(accordion_elements).to_have_count(len(accordion_components))
 
@@ -107,7 +107,7 @@ def test_accordion_objects(page, accordion_components):
     # change the entire list of objects in the accordion
     new_objects = [d0]
     accordion.objects = new_objects
-    accordion_elements = page.locator('.accordion')
+    accordion_elements = page.locator(".accordion")
     expect(accordion_elements).to_have_count(len(new_objects))
 
 
@@ -116,7 +116,7 @@ def test_accordion_toggle(page, accordion_components):
     accordion = Accordion(d0, d1, toggle=True)
     serve_component(page, accordion)
 
-    accordion_elements = page.locator('.accordion')
+    accordion_elements = page.locator(".accordion")
     # there are 2 card in this accordion
     expect(accordion_elements).to_have_count(len(accordion_components))
 
@@ -141,7 +141,7 @@ def test_accordion_append(page, accordion_components):
     accordion = Accordion()
     serve_component(page, accordion)
 
-    accordion_elements = page.locator('.accordion')
+    accordion_elements = page.locator(".accordion")
     # empty accordion
     expect(accordion_elements).to_have_count(0)
 
@@ -168,10 +168,10 @@ def test_accordion_extend(page, accordion_components):
     accordion = Accordion(d0, d1)
     serve_component(page, accordion)
 
-    accordion_elements = page.locator('.accordion')
+    accordion_elements = page.locator(".accordion")
     expect(accordion_elements).to_have_count(len(accordion_components))
 
-    d2 = Div(name='Div 2', text='Text 2')
+    d2 = Div(name="Div 2", text="Text 2")
     additional_list = [d2]
     # add new list of elements to the accordion
     accordion.extend(additional_list)
@@ -191,7 +191,7 @@ def test_accordion_clear(page, accordion_components):
     accordion = Accordion(d0, d1)
     serve_component(page, accordion)
 
-    accordion_elements = page.locator('.accordion')
+    accordion_elements = page.locator(".accordion")
     expect(accordion_elements).to_have_count(len(accordion_components))
 
     # clear all contents of the accordion
@@ -205,7 +205,7 @@ def test_accordion_insert(page, accordion_components):
     accordion = Accordion(d0, d1)
     serve_component(page, accordion)
 
-    accordion_elements = page.locator('.accordion')
+    accordion_elements = page.locator(".accordion")
     expect(accordion_elements).to_have_count(len(accordion_components))
 
     # order of the elements
@@ -215,7 +215,7 @@ def test_accordion_insert(page, accordion_components):
     expect(d0_object).to_contain_text(d0.name)
     expect(d1_object).to_contain_text(d1.name)
 
-    inserted_div = Div(name='Inserted Div', text='Inserted text')
+    inserted_div = Div(name="Inserted Div", text="Inserted text")
     # insert new component
     accordion.insert(index=1, pane=inserted_div)
     expect(accordion_elements).to_have_count(len(accordion_components) + 1)
@@ -235,7 +235,7 @@ def test_accordion_pop(page, accordion_components):
     accordion = Accordion(d0, d1)
     serve_component(page, accordion)
 
-    accordion_elements = page.locator('.accordion')
+    accordion_elements = page.locator(".accordion")
     expect(accordion_elements).to_have_count(len(accordion_components))
 
     # remove first component
@@ -251,7 +251,7 @@ def test_accordion_remove(page, accordion_components):
     accordion = Accordion(d0, d1)
     serve_component(page, accordion)
 
-    accordion_elements = page.locator('.accordion')
+    accordion_elements = page.locator(".accordion")
     expect(accordion_elements).to_have_count(len(accordion_components))
 
     # remove first component

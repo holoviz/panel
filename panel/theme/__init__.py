@@ -14,15 +14,4 @@ from .fast import Fast
 from .material import Material
 from .native import Native
 
-__all__ = (
-    "THEMES",
-    "Bootstrap",
-    "DarkTheme",
-    "DefaultTheme",
-    "Design",
-    "Fast",
-    "Inherit",
-    "Material",
-    "Native",
-    "Theme"
-)
+__all__ = ("THEMES", "Bootstrap", "DarkTheme", "DefaultTheme", "Design", "Fast", "Inherit", "Material", "Native", "Theme")

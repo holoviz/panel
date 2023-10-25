@@ -37,9 +37,9 @@ if TYPE_CHECKING:
 
     from ..viewable import Viewable
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 # Private API
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 
 _WAIT_SCRIPT = """
 // add private window prop to check that render is complete
@@ -58,10 +58,8 @@ else
 
 bokeh.io.export._WAIT_SCRIPT = _WAIT_SCRIPT
 
-def save_png(
-    model: Model, filename: str, resources=CDN, template=None,
-    template_variables=None, timeout: int = 5
-) -> None:
+
+def save_png(model: Model, filename: str, resources=CDN, template=None, template_variables=None, timeout: int = 5) -> None:
     """
     Saves a bokeh model to png
 
@@ -81,6 +79,7 @@ def save_png(
       The maximum amount of time (in seconds) to wait for
     """
     from bokeh.io.webdriver import webdriver_control
+
     if not state.webdriver:
         state.webdriver = webdriver_control.create()
 
@@ -104,13 +103,11 @@ def save_png(
         """
 
     try:
+
         def get_layout_html(obj, resources, width, height, **kwargs):
             resources = Resources.from_bokeh(resources)
-            return file_html(
-                obj, resources, title="", template=template,
-                template_variables=template_variables or {},
-                _always_new=True
-            )
+            return file_html(obj, resources, title="", template=template, template_variables=template_variables or {}, _always_new=True)
+
         old_layout_fn = bokeh.io.export.get_layout_html
         bokeh.io.export.get_layout_html = get_layout_html
         img = get_screenshot_as_png(model, driver=webdriver, timeout=timeout, resources=resources)
@@ -124,6 +121,7 @@ def save_png(
     finally:
         if template:
             bokeh.io.export.get_layout_html = old_layout_fn
+
 
 def _title_from_models(models: Iterable[Model], title: str) -> str:
     if title is not None:
@@ -139,11 +137,15 @@ def _title_from_models(models: Iterable[Model], title: str) -> str:
 
     return DEFAULT_TITLE
 
+
 def file_html(
-    models: Model | Document | List[Model], resources: Resources | None,
-    title: Optional[str] = None, template: Template | str = BASE_TEMPLATE,
-    template_variables: Dict[str, Any] = {}, theme: ThemeLike = None,
-    _always_new: bool = False
+    models: Model | Document | List[Model],
+    resources: Resources | None,
+    title: Optional[str] = None,
+    template: Template | str = BASE_TEMPLATE,
+    template_variables: Dict[str, Any] = {},
+    theme: ThemeLike = None,
+    _always_new: bool = False,
 ):
     models_seq = []
     if isinstance(models, Model):
@@ -153,31 +155,38 @@ def file_html(
     else:
         models_seq = models
 
-    template_variables['dist_url'] = CDN_DIST
+    template_variables["dist_url"] = CDN_DIST
 
     with OutputDocumentFor(models_seq, apply_theme=theme, always_new=_always_new):
-        (docs_json, render_items) = standalone_docs_json_and_render_items(
-            models_seq, suppress_callback_warning=True
-        )
+        (docs_json, render_items) = standalone_docs_json_and_render_items(models_seq, suppress_callback_warning=True)
         title = _title_from_models(models_seq, title)
         bundle = bundle_resources(models_seq, resources)
-        return html_page_for_render_items(
-            bundle, docs_json, render_items, title=title, template=template,
-            template_variables=template_variables
-        )
+        return html_page_for_render_items(bundle, docs_json, render_items, title=title, template=template, template_variables=template_variables)
 
-#---------------------------------------------------------------------
+
+# ---------------------------------------------------------------------
 # Public API
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
+
 
 def save(
-    panel: Viewable, filename: str | os.PathLike | IO, title: Optional[str]=None,
-    resources: BkResources | None = None, template: Template | str | None = None,
-    template_variables: Dict[str, Any] = None, embed: bool = False,
-    max_states: int = 1000, max_opts: int = 3, embed_json: bool = False,
-    json_prefix: str = '', save_path: str = './', load_path: Optional[str] = None,
-    progress: bool = True, embed_states={}, as_png=None,
-    **kwargs
+    panel: Viewable,
+    filename: str | os.PathLike | IO,
+    title: Optional[str] = None,
+    resources: BkResources | None = None,
+    template: Template | str | None = None,
+    template_variables: Dict[str, Any] = None,
+    embed: bool = False,
+    max_states: int = 1000,
+    max_opts: int = 3,
+    embed_json: bool = False,
+    json_prefix: str = "",
+    save_path: str = "./",
+    load_path: Optional[str] = None,
+    progress: bool = True,
+    embed_states={},
+    as_png=None,
+    **kwargs,
 ) -> None:
     """
     Saves Panel objects to file.
@@ -225,7 +234,7 @@ def save(
         panel = panel.layout
 
     if as_png is None:
-        as_png = isinstance(filename, str) and filename.endswith('png')
+        as_png = isinstance(filename, str) and filename.endswith("png")
 
     if isinstance(panel, Document):
         doc = panel
@@ -234,17 +243,16 @@ def save(
 
     if resources is None:
         resources = CDN
-        mode = 'cdn'
+        mode = "cdn"
     elif isinstance(resources, str):
-        if resources.lower() == 'cdn':
+        if resources.lower() == "cdn":
             resources = CDN
-            mode = 'cdn'
-        elif resources.lower() == 'inline':
+            mode = "cdn"
+        elif resources.lower() == "inline":
             resources = INLINE
-            mode = 'inline'
+            mode = "inline"
         else:
-            raise ValueError("Resources %r not recognized, specify one "
-                             "of 'CDN' or 'INLINE'." % resources)
+            raise ValueError("Resources %r not recognized, specify one " "of 'CDN' or 'INLINE'." % resources)
     elif isinstance(resources, BkResources):
         mode = resources.mode
 
@@ -259,38 +267,32 @@ def save(
         else:
             model = panel.get_root(doc, comm)
             if embed:
-                embed_state(
-                    panel, model, doc, max_states, max_opts, embed_json,
-                    json_prefix, save_path, load_path, progress, embed_states
-                )
+                embed_state(panel, model, doc, max_states, max_opts, embed_json, json_prefix, save_path, load_path, progress, embed_states)
             else:
                 add_to_doc(model, doc, True)
 
     if as_png:
-        return save_png(
-            model, resources=resources, filename=filename, template=template,
-            template_variables=template_variables, **kwargs
-        )
-    elif isinstance(filename, str) and not filename.endswith('.html'):
-        filename = filename + '.html'
+        return save_png(model, resources=resources, filename=filename, template=template, template_variables=template_variables, **kwargs)
+    elif isinstance(filename, str) and not filename.endswith(".html"):
+        filename = filename + ".html"
 
     kwargs = {}
     if title is None:
-        title = 'Panel'
+        title = "Panel"
 
     if template:
-        kwargs['template'] = template
+        kwargs["template"] = template
     if template_variables:
-        kwargs['template_variables'] = template_variables
+        kwargs["template_variables"] = template_variables
 
     resources = Resources.from_bokeh(resources, absolute=True)
 
     # Set resource mode
     with set_resource_mode(resources):
         html = file_html(doc, resources, title, **kwargs)
-    if hasattr(filename, 'write'):
+    if hasattr(filename, "write"):
         if isinstance(filename, io.BytesIO):
-            html = html.encode('utf-8')
+            html = html.encode("utf-8")
         filename.write(html)
     else:
         with io.open(filename, mode="w", encoding="utf-8") as f:

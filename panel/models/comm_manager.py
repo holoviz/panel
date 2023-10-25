@@ -6,7 +6,6 @@ from bokeh.protocol import Protocol
 
 
 class CommManager(Model):
-
     plot_id = Required(Nullable(String))
 
     comm_id = Required(Nullable(String))
@@ -22,11 +21,11 @@ class CommManager(Model):
         self._protocol = Protocol()
 
     def assemble(self, msg):
-        header = msg['header']
-        buffers = msg.pop('_buffers') or {}
-        header['num_buffers'] = len(buffers)
-        cls = self._protocol._messages[header['msgtype']]
-        msg_obj = cls(header, msg['metadata'], msg['content'])
-        for (bid, buff) in buffers.items():
-            msg_obj.assemble_buffer({'id': bid}, buff.tobytes())
+        header = msg["header"]
+        buffers = msg.pop("_buffers") or {}
+        header["num_buffers"] = len(buffers)
+        cls = self._protocol._messages[header["msgtype"]]
+        msg_obj = cls(header, msg["metadata"], msg["content"])
+        for bid, buff in buffers.items():
+            msg_obj.assemble_buffer({"id": bid}, buff.tobytes())
         return msg_obj

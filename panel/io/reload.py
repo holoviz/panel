@@ -31,17 +31,12 @@ DEFAULT_FOLDER_BLACKLIST = [
     "**/virtualenv",
 ]
 
-IGNORED_MODULES = [
-    'bokeh_app',
-    'panel.'
-]
+IGNORED_MODULES = ["bokeh_app", "panel."]
 
 
 def in_blacklist(filepath):
-    return any(
-        file_is_in_folder_glob(filepath, blacklisted_folder)
-        for blacklisted_folder in DEFAULT_FOLDER_BLACKLIST
-    )
+    return any(file_is_in_folder_glob(filepath, blacklisted_folder) for blacklisted_folder in DEFAULT_FOLDER_BLACKLIST)
+
 
 def file_is_in_folder_glob(filepath, folderpath_glob):
     """
@@ -65,6 +60,7 @@ def file_is_in_folder_glob(filepath, folderpath_glob):
     file_dir = os.path.dirname(filepath) + "/"
     return fnmatch.fnmatch(file_dir, folderpath_glob)
 
+
 def autoreload_watcher():
     """
     Installs a periodic callback which checks for changes in watched
@@ -76,6 +72,7 @@ def autoreload_watcher():
     _callbacks[state.curdoc] = pcb = PeriodicCallback(callback=cb, background=True)
     pcb.start()
 
+
 def watch(filename):
     """
     Add a file to the watch list.
@@ -83,6 +80,7 @@ def watch(filename):
     All imported modules are watched by default.
     """
     _watched_files.add(filename)
+
 
 @contextmanager
 def record_modules():
@@ -101,7 +99,7 @@ def record_modules():
             spec = getattr(module, "__spec__", None)
             if spec is None:
                 filepath = getattr(module, "__file__", None)
-                if filepath is None: # no user
+                if filepath is None:  # no user
                     continue
             else:
                 filepath = spec.origin
@@ -111,11 +109,12 @@ def record_modules():
             if filepath is None or in_blacklist(filepath):
                 continue
 
-            if not os.path.isfile(filepath): # e.g. built-in
+            if not os.path.isfile(filepath):  # e.g. built-in
                 continue
             _modules.add(module_name)
         except Exception:
             continue
+
 
 def _reload(module=None):
     if module is not None:
@@ -131,6 +130,7 @@ def _reload(module=None):
     for loc in state._locations.values():
         loc.reload = True
 
+
 def _check_file(modify_times, path, module=None):
     try:
         modified = os.stat(path).st_mtime
@@ -142,6 +142,7 @@ def _check_file(modify_times, path, module=None):
     if modify_times[path] != modified:
         _reload(module)
         modify_times[path] = modified
+
 
 def _reload_on_update(modify_times):
     for module_name in _modules:

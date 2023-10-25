@@ -155,9 +155,8 @@ def test_bind_bound_function_to_kwarg():
 
 
 def test_bind_bare_emits_warning(caplog):
-
     def foo():
-        return 'bar'
+        return "bar"
 
     ParamFunction(foo)
 
@@ -166,7 +165,6 @@ def test_bind_bare_emits_warning(caplog):
 
     found = False
     for log_record in caplog.records:
-        if (log_record.levelname == 'WARNING' and
-           "The function 'foo' does not have any dependencies and will never update" in log_record.message):
+        if log_record.levelname == "WARNING" and "The function 'foo' does not have any dependencies and will never update" in log_record.message:
             found = True
     assert found

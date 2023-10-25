@@ -12,13 +12,10 @@ class QuillInput(HTMLBox):
     WYSIWYG text editor based on Quill.js
     """
 
-    __css_raw__ = [
-        'https://cdn.quilljs.com/1.3.7/quill.bubble.css',
-        'https://cdn.quilljs.com/1.3.7/quill.snow.css'
-    ]
+    __css_raw__ = ["https://cdn.quilljs.com/1.3.7/quill.bubble.css", "https://cdn.quilljs.com/1.3.7/quill.snow.css"]
 
     __javascript_raw__ = [
-        'https://cdn.quilljs.com/1.3.7/quill.js',
+        "https://cdn.quilljs.com/1.3.7/quill.js",
     ]
 
     @classproperty
@@ -27,22 +24,20 @@ class QuillInput(HTMLBox):
 
     @classproperty
     def __css__(cls):
-        return bundled_files(cls, 'css')
+        return bundled_files(cls, "css")
 
     @classproperty
     def __js_skip__(cls):
-        return {'Quill': cls.__javascript__}
+        return {"Quill": cls.__javascript__}
 
     __js_require__ = {
-        'paths': {
-            'Quill': 'https://cdn.quilljs.com/1.3.7/quill',
+        "paths": {
+            "Quill": "https://cdn.quilljs.com/1.3.7/quill",
         },
-        'exports': {
-            'Quill': 'Quill'
-        }
+        "exports": {"Quill": "Quill"},
     }
 
-    mode = Enum("bubble", "toolbar", default='toolbar')
+    mode = Enum("bubble", "toolbar", default="toolbar")
 
     placeholder = String()
 

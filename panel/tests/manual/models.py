@@ -126,26 +126,20 @@ latex1 = pn.pane.LaTeX(
 # Model: location
 
 # Model: mathjax
-latex2 = pn.pane.LaTeX(
-    "$\sum_{j}{\sum_{i}{a*w_{j, i}}}$", renderer="mathjax", styles={"font-size": "18pt"}
-)
+latex2 = pn.pane.LaTeX("$\sum_{j}{\sum_{i}{a*w_{j, i}}}$", renderer="mathjax", styles={"font-size": "18pt"})
 
 # Model: perspective
 _data = {"x": [1, 2, 3], "y": [1, 2, 3]}
 perspective = pn.pane.Perspective(_data)
 
 # Model: player
-player = pn.widgets.Player(
-    name="Player", start=0, end=100, value=32, loop_policy="loop"
-)
+player = pn.widgets.Player(name="Player", start=0, end=100, value=32, loop_policy="loop")
 
 # Model: plotly
 try:
     import plotly.express as _px
 
-    plotly = pn.pane.Plotly(
-        _px.line({"Day": range(7), "Orders": range(7)}, x="Day", y="Orders")
-    )
+    plotly = pn.pane.Plotly(_px.line({"Day": range(7), "Orders": range(7)}, x="Day", y="Orders"))
 except ImportError:
     plotly = "Need to have plotly installed"
 
@@ -155,9 +149,9 @@ progress = pn.indicators.Progress(name="Progress", value=20, width=200, height=2
 # Model: quill
 text_editor = pn.widgets.TextEditor(placeholder="Enter some text", width=500)
 
+
 # Model: reactive_html
 class _Slideshow(pn.reactive.ReactiveHTML):
-
     index = param.Integer(default=0)
 
     _template = '<img id="slideshow" src="https://picsum.photos/800/300?image=${index}" onclick="${_img_click}"></img>'
@@ -204,14 +198,7 @@ trend = pn.indicators.Trend(name="Price", data=_data, width=200, height=200)
 try:
     import altair as _alt
 
-    _chart = (
-        _alt.Chart(autompg)
-        .mark_circle(size=60)
-        .encode(
-            x="hp", y="mpg", color="origin", tooltip=["name", "origin", "hp", "mpg"]
-        )
-        .interactive()
-    )
+    _chart = _alt.Chart(autompg).mark_circle(size=60).encode(x="hp", y="mpg", color="origin", tooltip=["name", "origin", "hp", "mpg"]).interactive()
 
     vega = pn.pane.Vega(_chart)
 except ImportError:
@@ -245,7 +232,7 @@ combined = pn.Column(
             pn.layout.Divider(),
             sizing_mode="stretch_width",
         )
-        for w, n, in zip(widgets, names)
+        for w, n in zip(widgets, names)
     ]
 )
 

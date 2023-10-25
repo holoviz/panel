@@ -75,9 +75,7 @@ def test_chat_box_chat_log_overflow(document, comm):
 
 
 def test_chat_box_input_widgets(document, comm):
-    chat_box = ChatBox(
-        message_input_widgets=[FileInput(name="Communicate with files!")]
-    )
+    chat_box = ChatBox(message_input_widgets=[FileInput(name="Communicate with files!")])
     assert chat_box._send_button
     message_input = chat_box._message_inputs["Communicate with files!"]
     assert isinstance(message_input, FileInput)
@@ -285,9 +283,7 @@ def test_chat_box_message_colors_with_hue(document, comm):
         {"user1": "Hello"},
         {"user2": "Hi"},
     ]
-    chat_box = ChatBox(
-        value=value.copy(), message_colors={"user1": "red"}, message_hue=210
-    )
+    chat_box = ChatBox(value=value.copy(), message_colors={"user1": "red"}, message_hue=210)
     assert chat_box.message_colors["user1"] == "red"
     # random generated colors are hexcodes
     assert chat_box.message_colors["user2"][0].startswith("hsl")
@@ -301,9 +297,7 @@ def test_chat_box_generate_color(document, comm):
         {"user4": "Hi"},
         {"user5": "Hi"},
     ]
-    chat_box = ChatBox(
-        value=value.copy(), message_colors={"user1": "red"}, message_hue=290
-    )
+    chat_box = ChatBox(value=value.copy(), message_colors={"user1": "red"}, message_hue=290)
     assert chat_box.message_colors["user1"] == "red"
     assert chat_box.message_colors["user2"][0] == "hsl(290, 15%, 60%)"
     assert chat_box.message_colors["user3"][0] == "hsl(290, 30%, 55%)"
@@ -407,9 +401,7 @@ def test_chat_box_replace_value(document, comm):
 
 
 def test_chat_row(document, comm):
-    chat_row = ChatRow(
-        value=["Hello"], name="user1", styles={"background": "black"}, show_name=True
-    )
+    chat_row = ChatRow(value=["Hello"], name="user1", styles={"background": "black"}, show_name=True)
 
     name = chat_row._name
     assert name.object == "user1"
@@ -452,9 +444,7 @@ def test_chat_row_hide_like(document, comm):
 
 
 def test_chat_row_default_message_callable(document, comm):
-    chat_row = ChatRow(
-        value=["Hello", TextInput(value="Input")], default_message_callable=TextInput
-    )
+    chat_row = ChatRow(value=["Hello", TextInput(value="Input")], default_message_callable=TextInput)
 
     for obj in chat_row._bubble:
         assert isinstance(obj, TextInput)

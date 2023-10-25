@@ -13,9 +13,7 @@ except ImportError:
     pytestmark = pytest.mark.skip("playwright not available")
 
 
-@pytest.mark.parametrize(
-    "value", ["Test", Tooltip(content="Test", position="right")], ids=["str", "Tooltip"]
-)
+@pytest.mark.parametrize("value", ["Test", Tooltip(content="Test", position="right")], ids=["str", "Tooltip"])
 def test_plaintext_tooltip(page, value):
     tooltip_icon = TooltipIcon(value="Test")
 

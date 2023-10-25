@@ -62,69 +62,127 @@ class Layoutable(param.Parameterized):
     for all Panel components with a visual representation.
     """
 
-    align = Align(default='start', doc="""
+    align = Align(
+        default="start",
+        doc="""
         Whether the object should be aligned with the start, end or
         center of its container. If set as a tuple it will declare
-        (vertical, horizontal) alignment.""")
+        (vertical, horizontal) alignment.""",
+    )
 
-    aspect_ratio = Aspect(default=None, doc="""
+    aspect_ratio = Aspect(
+        default=None,
+        doc="""
         Describes the proportional relationship between component's
         width and height.  This works if any of component's dimensions
         are flexible in size. If set to a number, ``width / height =
         aspect_ratio`` relationship will be maintained.  Otherwise, if
         set to ``"auto"``, component's preferred width and height will
         be used to determine the aspect (if not set, no aspect will be
-        preserved).""")
+        preserved).""",
+    )
 
-    background = param.Parameter(default=None, doc="""
-        Background color of the component.""")
+    background = param.Parameter(
+        default=None,
+        doc="""
+        Background color of the component.""",
+    )
 
-    css_classes = param.List(default=[], nested_refs=True, doc="""
-        CSS classes to apply to the layout.""")
+    css_classes = param.List(
+        default=[],
+        nested_refs=True,
+        doc="""
+        CSS classes to apply to the layout.""",
+    )
 
-    design = param.ObjectSelector(default=None, objects=[], doc="""
-        The design system to use to style components.""")
+    design = param.ObjectSelector(
+        default=None,
+        objects=[],
+        doc="""
+        The design system to use to style components.""",
+    )
 
-    height = param.Integer(default=None, bounds=(0, None), doc="""
+    height = param.Integer(
+        default=None,
+        bounds=(0, None),
+        doc="""
         The height of the component (in pixels).  This can be either
-        fixed or preferred height, depending on height sizing policy.""")
+        fixed or preferred height, depending on height sizing policy.""",
+    )
 
-    min_width = param.Integer(default=None, bounds=(0, None), doc="""
-        Minimal width of the component (in pixels) if width is adjustable.""")
+    min_width = param.Integer(
+        default=None,
+        bounds=(0, None),
+        doc="""
+        Minimal width of the component (in pixels) if width is adjustable.""",
+    )
 
-    min_height = param.Integer(default=None, bounds=(0, None), doc="""
-        Minimal height of the component (in pixels) if height is adjustable.""")
+    min_height = param.Integer(
+        default=None,
+        bounds=(0, None),
+        doc="""
+        Minimal height of the component (in pixels) if height is adjustable.""",
+    )
 
-    max_width = param.Integer(default=None, bounds=(0, None), doc="""
-        Minimal width of the component (in pixels) if width is adjustable.""")
+    max_width = param.Integer(
+        default=None,
+        bounds=(0, None),
+        doc="""
+        Minimal width of the component (in pixels) if width is adjustable.""",
+    )
 
-    max_height = param.Integer(default=None, bounds=(0, None), doc="""
-        Minimal height of the component (in pixels) if height is adjustable.""")
+    max_height = param.Integer(
+        default=None,
+        bounds=(0, None),
+        doc="""
+        Minimal height of the component (in pixels) if height is adjustable.""",
+    )
 
-    margin = Margin(default=0, doc="""
+    margin = Margin(
+        default=0,
+        doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
+        or a four-tuple (top, right, bottom, left).""",
+    )
 
-    styles = param.Dict(default={}, nested_refs=True, doc="""
+    styles = param.Dict(
+        default={},
+        nested_refs=True,
+        doc="""
         Dictionary of CSS rules to apply to DOM node wrapping the
-        component.""")
+        component.""",
+    )
 
-    stylesheets = param.List(default=[], nested_refs=True, doc="""
+    stylesheets = param.List(
+        default=[],
+        nested_refs=True,
+        doc="""
         List of stylesheets defined as URLs pointing to .css files
-        or raw CSS defined as a string.""")
+        or raw CSS defined as a string.""",
+    )
 
-    tags = param.List(default=[], nested_refs=True, doc="""
+    tags = param.List(
+        default=[],
+        nested_refs=True,
+        doc="""
         List of arbitrary tags to add to the component.
         Can be useful for templating or for storing metadata on
-        the model.""")
+        the model.""",
+    )
 
-    width = param.Integer(default=None, bounds=(0, None), doc="""
+    width = param.Integer(
+        default=None,
+        bounds=(0, None),
+        doc="""
         The width of the component (in pixels). This can be either
-        fixed or preferred width, depending on width sizing policy.""")
+        fixed or preferred width, depending on width sizing policy.""",
+    )
 
     width_policy = param.ObjectSelector(
-        default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
+        default="auto",
+        objects=["auto", "fixed", "fit", "min", "max"],
+        doc="""
         Describes how the component should maintain its width.
 
         ``"auto"``
@@ -153,10 +211,13 @@ class Layoutable(param.Parameterized):
             preferred width (if set). The width of the component may
             shrink or grow depending on the parent layout, aspect
             management and other factors.
-    """)
+    """,
+    )
 
     height_policy = param.ObjectSelector(
-        default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
+        default="auto",
+        objects=["auto", "fixed", "fit", "min", "max"],
+        doc="""
         Describes how the component should maintain its height.
 
         ``"auto"``
@@ -185,11 +246,13 @@ class Layoutable(param.Parameterized):
             preferred height (if set). The height of the component may
             shrink or grow depending on the parent layout, aspect
             management and other factors.
-    """)
+    """,
+    )
 
-    sizing_mode = param.ObjectSelector(default=None, objects=[
-        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
-        'scale_width', 'scale_height', 'scale_both', None], doc="""
+    sizing_mode = param.ObjectSelector(
+        default=None,
+        objects=["fixed", "stretch_width", "stretch_height", "stretch_both", "scale_width", "scale_height", "scale_both", None],
+        doc="""
         How the component should size itself.
 
         This is a high-level setting for maintaining width and height
@@ -236,67 +299,69 @@ class Layoutable(param.Parameterized):
             Component will responsively resize to both the available
             width and height, while maintaining the original or
             provided aspect ratio.
-    """)
+    """,
+    )
 
-    visible = param.Boolean(default=True, doc="""
+    visible = param.Boolean(
+        default=True,
+        doc="""
         Whether the component is visible. Setting visible to false will
-        hide the component entirely.""")
+        hide the component entirely.""",
+    )
 
     __abstract = True
 
     def __init__(self, **params):
-        sizing_mode = params.get('sizing_mode')
-        if (sizing_mode in ('stretch_width', 'scale_width', 'stretch_both', 'scale_both') and
-            params.get('width') is not None):
+        sizing_mode = params.get("sizing_mode")
+        if sizing_mode in ("stretch_width", "scale_width", "stretch_both", "scale_both") and params.get("width") is not None:
             error = (
                 f"Providing a width-responsive sizing_mode ({params['sizing_mode']!r}) "
                 "and a fixed width is not supported. Converting fixed width to min_width. "
                 "If you intended the component to be fully width-responsive remove the height"
                 "setting, otherwise change it to min_height."
             )
-            if config.layout_compatibility == 'warn':
-                error += ' To error on the incorrect specification disable the config.layout_compatibility option.'
+            if config.layout_compatibility == "warn":
+                error += " To error on the incorrect specification disable the config.layout_compatibility option."
                 self.param.warning(error)
             else:
                 raise ValueError(error)
-            params['min_width'] = params.pop('width')
-        if (sizing_mode in ('stretch_height', 'scale_height', 'stretch_both', 'scale_both') and
-            params.get('height') is not None):
+            params["min_width"] = params.pop("width")
+        if sizing_mode in ("stretch_height", "scale_height", "stretch_both", "scale_both") and params.get("height") is not None:
             error = (
                 f"Providing a height-responsive sizing_mode ({params['sizing_mode']!r}) "
                 "and a fixed height is not supported. Converting fixed height to min_height. "
                 "If you intended the component to be fully height-responsive remove the height "
                 "setting, otherwise change it to min_height."
             )
-            if config.layout_compatibility == 'warn':
-                error += ' To error on the incorrect specification disable the config.layout_compatibility option.'
+            if config.layout_compatibility == "warn":
+                error += " To error on the incorrect specification disable the config.layout_compatibility option."
                 self.param.warning(error)
             else:
                 raise ValueError(error)
-            params['min_height'] = params.pop('height')
-        if (params.get('width') is not None and
-            params.get('height') is not None and
-            params.get('width_policy') is None and
-            params.get('height_policy') is None and
-            'sizing_mode' not in params):
-            params['sizing_mode'] = 'fixed'
-        elif (not (self.param.sizing_mode.constant or self.param.sizing_mode.readonly) and
-              type(self).sizing_mode is None and 'sizing_mode' not in params):
-            if config.sizing_mode == 'stretch_both':
-                if params.get('height') is not None:
-                    params['sizing_mode'] = 'stretch_width'
-                elif params.get('width') is not None:
-                    params['sizing_mode'] = 'stretch_height'
+            params["min_height"] = params.pop("height")
+        if (
+            params.get("width") is not None
+            and params.get("height") is not None
+            and params.get("width_policy") is None
+            and params.get("height_policy") is None
+            and "sizing_mode" not in params
+        ):
+            params["sizing_mode"] = "fixed"
+        elif not (self.param.sizing_mode.constant or self.param.sizing_mode.readonly) and type(self).sizing_mode is None and "sizing_mode" not in params:
+            if config.sizing_mode == "stretch_both":
+                if params.get("height") is not None:
+                    params["sizing_mode"] = "stretch_width"
+                elif params.get("width") is not None:
+                    params["sizing_mode"] = "stretch_height"
                 else:
-                    params['sizing_mode'] = config.sizing_mode
-            elif config.sizing_mode == 'stretch_width' and 'width' not in params:
-                params['sizing_mode'] = config.sizing_mode
-            elif config.sizing_mode == 'stretch_height' and 'height' not in params:
-                params['sizing_mode'] = config.sizing_mode
-        if 'design' not in params and self.param.design.default is None:
-            params['design'] = config.design
+                    params["sizing_mode"] = config.sizing_mode
+            elif config.sizing_mode == "stretch_width" and "width" not in params:
+                params["sizing_mode"] = config.sizing_mode
+            elif config.sizing_mode == "stretch_height" and "height" not in params:
+                params["sizing_mode"] = config.sizing_mode
+        if "design" not in params and self.param.design.default is None:
+            params["design"] = config.design
         super().__init__(**params)
-
 
 
 class ServableMixin:
@@ -304,21 +369,17 @@ class ServableMixin:
     Mixin to define methods shared by objects which can served.
     """
 
-    def _modify_doc(
-        self, server_id: str, title: str, doc: Document, location: Optional['Location']
-    ) -> Document:
+    def _modify_doc(self, server_id: str, title: str, doc: Document, location: Optional["Location"]) -> Document:
         """
         Callback to handle FunctionHandler document creation.
         """
         if server_id:
             state._servers[server_id][2].append(doc)
-        return self.server_doc(doc, title, location) # type: ignore
+        return self.server_doc(doc, title, location)  # type: ignore
 
-    def _add_location(
-        self, doc: Document, location: Optional['Location' | bool],
-        root: Optional['Model'] = None
-    ) -> 'Location':
+    def _add_location(self, doc: Document, location: Optional["Location" | bool], root: Optional["Model"] = None) -> "Location":
         from .io.location import Location
+
         if isinstance(location, Location):
             loc = location
             state._locations[doc] = loc
@@ -331,19 +392,16 @@ class ServableMixin:
             loc_model = loc.get_root(doc)
         else:
             loc_model = loc._get_model(doc, root)
-        loc_model.name = 'location'
-        doc.on_session_destroyed(loc._server_destroy) # type: ignore
+        loc_model.name = "location"
+        doc.on_session_destroyed(loc._server_destroy)  # type: ignore
         doc.add_root(loc_model)
         return loc
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Public API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
-    def servable(
-        self, title: Optional[str] = None, location: bool | 'Location' = True,
-        area: str = 'main', target: Optional[str] = None
-    ) -> 'ServableMixin':
+    def servable(self, title: Optional[str] = None, location: bool | "Location" = True, area: str = "main", target: Optional[str] = None) -> "ServableMixin":
         """
         Serves the object or adds it to the configured
         pn.state.template if in a `panel serve` context, writes to the
@@ -371,28 +429,29 @@ class ServableMixin:
         The Panel object itself
         """
         if curdoc_locked().session_context:
-            logger = logging.getLogger('bokeh')
+            logger = logging.getLogger("bokeh")
             for handler in logger.handlers:
                 if isinstance(handler, logging.StreamHandler):
                     handler.setLevel(logging.WARN)
             if config.template:
-                area = target or area or 'main'
+                area = target or area or "main"
                 template = state.template
                 assert template is not None
                 if template.title == template.param.title.default and title:
                     template.title = title
-                if area == 'main':
+                if area == "main":
                     template.main.append(self)
-                elif area == 'sidebar':
+                elif area == "sidebar":
                     template.sidebar.append(self)
-                elif area == 'modal':
+                elif area == "modal":
                     template.modal.append(self)
-                elif area == 'header':
+                elif area == "header":
                     template.header.append(self)
             else:
-                self.server_doc(title=title, location=location) # type: ignore
-        elif state._is_pyodide and 'pyodide_kernel' not in sys.modules:
+                self.server_doc(title=title, location=location)  # type: ignore
+        elif state._is_pyodide and "pyodide_kernel" not in sys.modules:
             from .io.pyodide import _IN_WORKER, _get_pyscript_target, write
+
             if _IN_WORKER:
                 return self
             try:
@@ -404,10 +463,17 @@ class ServableMixin:
         return self
 
     def show(
-        self, title: Optional[str] = None, port: int = 0, address: Optional[str] = None,
-        websocket_origin: Optional[str] = None, threaded: bool = False, verbose: bool = True,
-        open: bool = True, location: bool | 'Location' = True, **kwargs
-    ) -> 'StoppableThread' | 'Server':
+        self,
+        title: Optional[str] = None,
+        port: int = 0,
+        address: Optional[str] = None,
+        websocket_origin: Optional[str] = None,
+        threaded: bool = False,
+        verbose: bool = True,
+        open: bool = True,
+        location: bool | "Location" = True,
+        **kwargs,
+    ) -> "StoppableThread" | "Server":
         """
         Starts a Bokeh server and displays the Viewable in a new tab.
 
@@ -442,9 +508,17 @@ class ServableMixin:
           was launched on (if threaded=True)
         """
         return serve(
-            self, port=port, address=address, websocket_origin=websocket_origin,
-            show=open, start=True, title=title, verbose=verbose,
-            location=location, threaded=threaded, **kwargs
+            self,
+            port=port,
+            address=address,
+            websocket_origin=websocket_origin,
+            show=open,
+            start=True,
+            title=title,
+            verbose=verbose,
+            location=location,
+            threaded=threaded,
+            **kwargs,
         )
 
 
@@ -466,47 +540,43 @@ class MimeRenderMixin:
         try:
             patch.apply_to_document(doc, comm.id if comm else None)
         except DeserializationError:
-            self.param.warning(
-                "Comm received message that could not be deserialized."
-            )
+            self.param.warning("Comm received message that could not be deserialized.")
         finally:
             doc.unhold()
             if held:
                 doc.hold(held)
 
     def _on_error(self, ref: str, error: Exception) -> None:
-        if ref not in state._handles or config.console_output in [None, 'disable']:
+        if ref not in state._handles or config.console_output in [None, "disable"]:
             return
         handle, accumulator = state._handles[ref]
-        formatted = '\n<pre>'+escape(traceback.format_exc())+'</pre>\n'
-        if config.console_output == 'accumulate':
+        formatted = "\n<pre>" + escape(traceback.format_exc()) + "</pre>\n"
+        if config.console_output == "accumulate":
             accumulator.append(formatted)
-        elif config.console_output == 'replace':
+        elif config.console_output == "replace":
             accumulator[:] = [formatted]
         if accumulator:
-            handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
+            handle.update({"text/html": "\n".join(accumulator)}, raw=True)
 
     def _on_stdout(self, ref: str, stdout: Any) -> None:
-        if ref not in state._handles or config.console_output is [None, 'disable']:
+        if ref not in state._handles or config.console_output is [None, "disable"]:
             return
         handle, accumulator = state._handles[ref]
         formatted = ["%s</br>" % o for o in stdout]
-        if config.console_output == 'accumulate':
+        if config.console_output == "accumulate":
             accumulator.extend(formatted)
-        elif config.console_output == 'replace':
+        elif config.console_output == "replace":
             accumulator[:] = formatted
         if accumulator:
-            handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
+            handle.update({"text/html": "\n".join(accumulator)}, raw=True)
 
     def _render_mimebundle(self, model: Model, doc: Document, comm: Comm, location: Location | None = None):
         from .models.comm_manager import CommManager
 
-        ref = model.ref['id']
+        ref = model.ref["id"]
         manager = CommManager(comm_id=comm.id, plot_id=ref)
         client_comm = state._comm_manager.get_client_comm(
-            on_msg=partial(self._on_msg, ref, manager),
-            on_error=partial(self._on_error, ref),
-            on_stdout=partial(self._on_stdout, ref)
+            on_msg=partial(self._on_msg, ref, manager), on_error=partial(self._on_error, ref), on_stdout=partial(self._on_stdout, ref)
         )
         self._comms[ref] = (comm, client_comm)
         manager.client_comm_id = client_comm.id
@@ -531,15 +601,12 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         self._kernels = {}
         super().__init__(**params)
         self._found_links = set()
-        self._logger = logging.getLogger(f'{__name__}.{type(self).__name__}')
+        self._logger = logging.getLogger(f"{__name__}.{type(self).__name__}")
 
-    def _log(self, msg: str, *args, level: str = 'debug') -> None:
-        getattr(self._logger, level)(f'Session %s {msg}', id(state.curdoc), *args)
+    def _log(self, msg: str, *args, level: str = "debug") -> None:
+        getattr(self._logger, level)(f"Session %s {msg}", id(state.curdoc), *args)
 
-    def _get_model(
-        self, doc: Document, root: Optional['Model'] = None,
-        parent: Optional['Model'] = None, comm: Optional[Comm] = None
-    ) -> 'Model':
+    def _get_model(self, doc: Document, root: Optional["Model"] = None, parent: Optional["Model"] = None, comm: Optional[Comm] = None) -> "Model":
         """
         Converts the objects being wrapped by the viewable into a
         bokeh model that can be composed in a bokeh layout.
@@ -572,11 +639,11 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         """
         if root is None:
             return
-        ref = root.ref['id']
+        ref = root.ref["id"]
         if ref in state._handles:
             del state._handles[ref]
 
-    def _preprocess(self, root: 'Model', changed=None, old_models=None) -> None:
+    def _preprocess(self, root: "Model", changed=None, old_models=None) -> None:
         """
         Applies preprocessing hooks to the root model.
 
@@ -587,14 +654,14 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         so they can be skipped (see https://github.com/holoviz/panel/pull/4989)
         """
         changed = self if changed is None else changed
-        hooks = self._preprocessing_hooks+self._hooks
+        hooks = self._preprocessing_hooks + self._hooks
         for hook in hooks:
             try:
                 hook(self, root, changed, old_models)
             except TypeError:
                 hook(self, root)
 
-    def _render_model(self, doc: Optional[Document] = None, comm: Optional[Comm] = None) -> 'Model':
+    def _render_model(self, doc: Optional[Document] = None, comm: Optional[Comm] = None) -> "Model":
         if doc is None:
             doc = Document()
         if comm is None:
@@ -602,12 +669,16 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         model = self.get_root(doc, comm)
 
         if config.embed:
-            embed_state(self, model, doc,
-                        json=config.embed_json,
-                        json_prefix=config.embed_json_prefix,
-                        save_path=config.embed_save_path,
-                        load_path=config.embed_load_path,
-                        progress=False)
+            embed_state(
+                self,
+                model,
+                doc,
+                json=config.embed_json,
+                json_prefix=config.embed_json_prefix,
+                save_path=config.embed_save_path,
+                load_path=config.embed_load_path,
+                progress=False,
+            )
         else:
             add_to_doc(model, doc)
         return model
@@ -615,7 +686,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
     def _init_params(self) -> Mapping[str, Any]:
         return {k: v for k, v in self.param.values().items() if v is not None}
 
-    def _server_destroy(self, session_context: 'BokehSessionContext') -> None:
+    def _server_destroy(self, session_context: "BokehSessionContext") -> None:
         """
         Server lifecycle hook triggered when session is destroyed.
         """
@@ -623,20 +694,16 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         if doc not in self._documents:
             return
         root = self._documents[doc]
-        ref = root.ref['id']
+        ref = root.ref["id"]
         self._cleanup(root)
         del self._documents[doc]
         if ref in state._views:
             del state._views[ref]
 
     def __repr__(self, depth: int = 0) -> str:
-        return '{cls}({params})'.format(cls=type(self).__name__,
-                                        params=', '.join(param_reprs(self)))
+        return "{cls}({params})".format(cls=type(self).__name__, params=", ".join(param_reprs(self)))
 
-    def get_root(
-        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
-        preprocess: bool = True
-    ) -> Model:
+    def get_root(self, doc: Optional[Document] = None, comm: Optional[Comm] = None, preprocess: bool = True) -> Model:
         """
         Returns the root model and applies pre-processing hooks
 
@@ -668,7 +735,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
             root_view = self
             if preprocess:
                 self._preprocess(root)
-        ref = root.ref['id']
+        ref = root.ref["id"]
         state._views[ref] = (root_view, root, doc, comm)
         return root
 
@@ -683,29 +750,34 @@ class Viewable(Renderable, Layoutable, ServableMixin):
     objects to be displayed in the notebook and on bokeh server.
     """
 
-    loading = param.Boolean(doc="""
+    loading = param.Boolean(
+        doc="""
         Whether or not the Viewable is loading. If True a loading spinner
-        is shown on top of the Viewable.""")
+        is shown on top of the Viewable."""
+    )
 
-    _preprocessing_hooks: ClassVar[List[Callable[['Viewable', 'Model'], None]]] = []
+    _preprocessing_hooks: ClassVar[List[Callable[["Viewable", "Model"], None]]] = []
 
     def __init__(self, **params):
-        hooks = params.pop('hooks', [])
+        hooks = params.pop("hooks", [])
         super().__init__(**params)
         self._hooks = hooks
 
         self._update_loading()
         self._update_background()
         self._update_design()
-        self._internal_callbacks.extend([
-            self.param.watch(self._update_background, 'background'),
-            self.param.watch(self._update_design, 'design'),
-            self.param.watch(self._update_loading, 'loading')
-        ])
+        self._internal_callbacks.extend(
+            [
+                self.param.watch(self._update_background, "background"),
+                self.param.watch(self._update_design, "design"),
+                self.param.watch(self._update_loading, "loading"),
+            ]
+        )
 
     def _update_design(self, *_):
         from .theme import Design
         from .theme.native import Native
+
         if isinstance(self.design, Design):
             self._design = self.design
         elif self.design:
@@ -724,13 +796,13 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             return
 
         # Warning
-        prev = f'{type(self).name}(..., background={self.background!r})'
+        prev = f"{type(self).name}(..., background={self.background!r})"
         new = f"{type(self).name}(..., styles={{'background': {self.background!r}}})"
         deprecated("1.4", prev, new)
 
         self.styles = dict(self.styles, background=self.background)
 
-    def _render_model(self, doc: Optional[Document] = None, comm: Optional[Comm] = None) -> 'Model':
+    def _render_model(self, doc: Optional[Document] = None, comm: Optional[Comm] = None) -> "Model":
         if doc is None:
             doc = Document()
         if comm is None:
@@ -741,12 +813,16 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             doc.theme = self._design.theme.bokeh_theme
 
         if config.embed:
-            embed_state(self, model, doc,
-                        json=config.embed_json,
-                        json_prefix=config.embed_json_prefix,
-                        save_path=config.embed_save_path,
-                        load_path=config.embed_load_path,
-                        progress=False)
+            embed_state(
+                self,
+                model,
+                doc,
+                json=config.embed_json,
+                json_prefix=config.embed_json_prefix,
+                save_path=config.embed_save_path,
+                load_path=config.embed_load_path,
+                progress=False,
+            )
         else:
             add_to_doc(model, doc)
         return model
@@ -761,48 +837,50 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             # PyScript otherwise we are probabably in JupyterLite
             if not _IN_WORKER:
                 target = _get_pyscript_target()
-                return {'text/html': render_script(self, target)}, {}
+                return {"text/html": render_script(self, target)}, {}
 
         loaded = panel_extension._loaded
-        if not loaded and 'holoviews' in sys.modules:
+        if not loaded and "holoviews" in sys.modules:
             import holoviews as hv  # type: ignore
+
             loaded = hv.extension._loaded
 
-        if config.comms in ('vscode', 'ipywidgets'):
+        if config.comms in ("vscode", "ipywidgets"):
             widget = ipywidget(self)
-            if hasattr(widget, '_repr_mimebundle_'):
+            if hasattr(widget, "_repr_mimebundle_"):
                 return widget._repr_mimebundle_(include=include, exclude=exclude), {}
             plaintext = repr(widget)
             if len(plaintext) > 110:
-                plaintext = plaintext[:110] + '…'
+                plaintext = plaintext[:110] + "…"
             data = {
-                'text/plain': plaintext,
+                "text/plain": plaintext,
             }
             if widget._view_name is not None:
-                data['application/vnd.jupyter.widget-view+json'] = {
-                    'version_major': 2,
-                    'version_minor': 0,
-                    'model_id': widget._model_id
-                }
-            if config.comms == 'vscode':
+                data["application/vnd.jupyter.widget-view+json"] = {"version_major": 2, "version_minor": 0, "model_id": widget._model_id}
+            if config.comms == "vscode":
                 from IPython.display import display  # type: ignore
+
                 display(data, raw=True)
-                return {'text/html': '<div style="display: none"></div>'}, {}
+                return {"text/html": '<div style="display: none"></div>'}, {}
             return data, {}
 
         if not loaded:
-            self.param.warning('Displaying Panel objects in the notebook '
-                               'requires the panel extension to be loaded. '
-                               'Ensure you run pn.extension() before '
-                               'displaying objects in the notebook.')
+            self.param.warning(
+                "Displaying Panel objects in the notebook "
+                "requires the panel extension to be loaded. "
+                "Ensure you run pn.extension() before "
+                "displaying objects in the notebook."
+            )
             return None
 
-        if config.comms == 'colab':
+        if config.comms == "colab":
             from .io.notebook import load_notebook
+
             load_notebook(config.inline)
 
         try:
             from IPython import get_ipython  # type: ignore
+
             assert get_ipython().kernel is not None
             state._comm_manager = JupyterCommManager
         except Exception:
@@ -811,6 +889,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         if not state._views:
             # Initialize the global Location
             from .io.location import Location
+
             state._location = location = Location()
         else:
             location = None
@@ -823,10 +902,10 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
         bundle, meta = self._render_mimebundle(model, doc, comm, location)
 
-        if config.console_output != 'disable' and not state._is_pyodide:
+        if config.console_output != "disable" and not state._is_pyodide:
             from IPython.display import display
 
-            ref = model.ref['id']
+            ref = model.ref["id"]
             handle = display(display_id=uuid.uuid4().hex)
             state._handles[ref] = (handle, [])
 
@@ -835,11 +914,11 @@ class Viewable(Renderable, Layoutable, ServableMixin):
     def __str__(self) -> str:
         return self.__repr__()
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Public API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
-    def clone(self, **params) -> 'Viewable':
+    def clone(self, **params) -> "Viewable":
         """
         Makes a copy of the object sharing the same parameters.
 
@@ -852,9 +931,9 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         Cloned Viewable object
         """
         inherited = {
-            p: v for p, v in self.param.values().items()
-            if not self.param[p].readonly and v is not self.param[p].default
-            and not (v is None and not self.param[p].allow_None)
+            p: v
+            for p, v in self.param.values().items()
+            if not self.param[p].readonly and v is not self.param[p].default and not (v is None and not self.param[p].allow_None)
         }
         return type(self)(**dict(inherited, **params))
 
@@ -862,12 +941,10 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         """
         Prints a compositional repr of the class.
         """
-        deprecated('1.4', f'{type(self).__name__}.pprint', 'print')
+        deprecated("1.4", f"{type(self).__name__}.pprint", "print")
         print(self)
 
-    def select(
-        self, selector: Optional[type | Callable[['Viewable'], bool]] = None
-    ) -> List['Viewable']:
+    def select(self, selector: Optional[type | Callable[["Viewable"], bool]] = None) -> List["Viewable"]:
         """
         Iterates over the Viewable and any potential children in the
         applying the Selector.
@@ -882,14 +959,16 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         -------
         viewables: list(Viewable)
         """
-        if (selector is None or
-            (isinstance(selector, type) and isinstance(self, selector)) or
-            (callable(selector) and not isinstance(selector, type) and selector(self))):
+        if (
+            selector is None
+            or (isinstance(selector, type) and isinstance(self, selector))
+            or (callable(selector) and not isinstance(selector, type) and selector(self))
+        ):
             return [self]
         else:
             return []
 
-    def app(self, notebook_url: str = "localhost:8888", port: int = 0) -> 'Server':
+    def app(self, notebook_url: str = "localhost:8888", port: int = 0) -> "Server":
         """
         Displays a bokeh server app inline in the notebook.
 
@@ -900,13 +979,19 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         port: int (optional, default=0)
           Allows specifying a specific port
         """
-        deprecated('1.4', f'{type(self).__name__}.app', 'panel.io.notebook.show_server')
+        deprecated("1.4", f"{type(self).__name__}.app", "panel.io.notebook.show_server")
         return show_server(self, notebook_url, port)
 
     def embed(
-        self, max_states: int = 1000, max_opts: int = 3, json: bool = False,
-        json_prefix: str = '', save_path: str = './', load_path: Optional[str] = None,
-        progress: bool = False, states={}
+        self,
+        max_states: int = 1000,
+        max_opts: int = 3,
+        json: bool = False,
+        json_prefix: str = "",
+        save_path: str = "./",
+        load_path: Optional[str] = None,
+        progress: bool = False,
+        states={},
     ) -> None:
         """
         Renders a static version of a panel in a notebook by evaluating
@@ -933,19 +1018,26 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         states: dict (default={})
           A dictionary specifying the widget values to embed for each widget
         """
-        return render_embed(
-            self, max_states, max_opts, json, json_prefix, save_path,
-            load_path, progress, states
-        )
+        return render_embed(self, max_states, max_opts, json, json_prefix, save_path, load_path, progress, states)
 
     def save(
-        self, filename: str | os.PathLike | IO, title: Optional[str] = None,
-        resources: Resources | None = None, template: str | Template | None = None,
-        template_variables: Dict[str, Any] = {}, embed: bool = False,
-        max_states: int = 1000, max_opts: int = 3, embed_json: bool = False,
-        json_prefix: str='', save_path: str='./', load_path: Optional[str] = None,
-        progress: bool = True, embed_states: Dict[Any, Any] = {},
-        as_png: bool | None = None, **kwargs
+        self,
+        filename: str | os.PathLike | IO,
+        title: Optional[str] = None,
+        resources: Resources | None = None,
+        template: str | Template | None = None,
+        template_variables: Dict[str, Any] = {},
+        embed: bool = False,
+        max_states: int = 1000,
+        max_opts: int = 3,
+        embed_json: bool = False,
+        json_prefix: str = "",
+        save_path: str = "./",
+        load_path: Optional[str] = None,
+        progress: bool = True,
+        embed_states: Dict[Any, Any] = {},
+        as_png: bool | None = None,
+        **kwargs,
     ) -> None:
         """
         Saves Panel objects to file.
@@ -985,16 +1077,26 @@ class Viewable(Renderable, Layoutable, ServableMixin):
           string and ends with png.
         """
         return save(
-            self, filename, title, resources, template,
-            template_variables, embed, max_states, max_opts,
-            embed_json, json_prefix, save_path, load_path, progress,
-            embed_states, as_png, **kwargs
+            self,
+            filename,
+            title,
+            resources,
+            template,
+            template_variables,
+            embed,
+            max_states,
+            max_opts,
+            embed_json,
+            json_prefix,
+            save_path,
+            load_path,
+            progress,
+            embed_states,
+            as_png,
+            **kwargs,
         )
 
-    def server_doc(
-        self, doc: Optional[Document] = None, title: Optional[str] = None,
-        location: bool | 'Location' = True
-    ) -> Document:
+    def server_doc(self, doc: Optional[Document] = None, title: Optional[str] = None, location: bool | "Location" = True) -> Document:
         """
         Returns a serveable bokeh Document with the panel attached
 
@@ -1015,8 +1117,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
           The bokeh document the panel was attached to
         """
         doc = init_doc(doc)
-        if title or doc.title == 'Bokeh Application':
-            title = title or 'Panel Application'
+        if title or doc.title == "Bokeh Application":
+            title = title or "Panel Application"
             doc.title = title
 
         if self._design:
@@ -1025,24 +1127,24 @@ class Viewable(Renderable, Layoutable, ServableMixin):
                 model = self.get_root(doc)
             else:
                 model = wrapper.get_root(doc)
-                ref = model.ref['id']
+                ref = model.ref["id"]
                 state._views[ref] = (wrapper, model, doc, None)
         else:
             model = self.get_root(doc)
 
         doc.on_session_destroyed(state._destroy_session)
-        doc.on_session_destroyed(self._server_destroy) # type: ignore
+        doc.on_session_destroyed(self._server_destroy)  # type: ignore
         self._documents[doc] = model
         add_to_doc(model, doc)
         if location:
             self._add_location(doc, location, model)
         if config.notifications and doc is state.curdoc:
             notification_model = state.notifications.get_root(doc)
-            notification_model.name = 'notifications'
+            notification_model.name = "notifications"
             doc.add_root(notification_model)
         if config.browser_info and doc is state.curdoc:
             browser_model = state.browser_info._get_model(doc, model)
-            browser_model.name = 'browser_info'
+            browser_model.name = "browser_info"
             doc.add_root(browser_model)
         return doc
 
@@ -1072,23 +1174,24 @@ class Viewer(param.Parameterized):
 
         return view
 
-    def servable(
-        self, title: Optional[str]=None, location: bool | 'Location' = True,
-        area: str = 'main', target: Optional[str] = None
-    ) -> Viewable:
+    def servable(self, title: Optional[str] = None, location: bool | "Location" = True, area: str = "main", target: Optional[str] = None) -> Viewable:
         return self._create_view().servable(title, location, area, target)
 
     servable.__doc__ = ServableMixin.servable.__doc__
 
     def show(
-        self, title: Optional[str] = None, port: int = 0, address: Optional[str] = None,
-        websocket_origin: Optional[str] = None, threaded: bool = False, verbose: bool = True,
-        open: bool = True, location: bool | 'Location' = True, **kwargs
-    ) -> threading.Thread | 'Server':
-        return self._create_view().show(
-            title, port, address, websocket_origin, threaded,
-            verbose, open, location, **kwargs
-        )
+        self,
+        title: Optional[str] = None,
+        port: int = 0,
+        address: Optional[str] = None,
+        websocket_origin: Optional[str] = None,
+        threaded: bool = False,
+        verbose: bool = True,
+        open: bool = True,
+        location: bool | "Location" = True,
+        **kwargs,
+    ) -> threading.Thread | "Server":
+        return self._create_view().show(title, port, address, websocket_origin, threaded, verbose, open, location, **kwargs)
 
     show.__doc__ = ServableMixin.show.__doc__
 
@@ -1096,8 +1199,4 @@ class Viewer(param.Parameterized):
         return self._create_view()._repr_mimebundle_(include, exclude)
 
 
-__all__ = (
-    "Layoutable",
-    "Viewable",
-    "Viewer"
-)
+__all__ = ("Layoutable", "Viewable", "Viewer")

@@ -30,9 +30,10 @@ if TYPE_CHECKING:
     from bokeh.protocol.message import Message
     from pyviz_comms import Comm
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 # Private API
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
+
 
 class comparable_array(np.ndarray):
     """
@@ -45,6 +46,7 @@ class comparable_array(np.ndarray):
     def __ne__(self, other: Any) -> bool:
         return not np.array_equal(self, other, equal_nan=True)
 
+
 def monkeypatch_events(events: List[DocumentChangedEvent]) -> None:
     """
     Patch events applies patches to events that are to be dispatched
@@ -52,22 +54,21 @@ def monkeypatch_events(events: List[DocumentChangedEvent]) -> None:
     """
     for e in events:
         # Patch ColumnDataChangedEvents which reference non-existing columns
-        if isinstance(getattr(e, 'hint', None), ColumnDataChangedEvent):
-            e.hint.cols = None # type: ignore
+        if isinstance(getattr(e, "hint", None), ColumnDataChangedEvent):
+            e.hint.cols = None  # type: ignore
         # Patch ModelChangedEvents which change an array property (see https://github.com/bokeh/bokeh/issues/11735)
-        elif (isinstance(e, ModelChangedEvent) and isinstance(e.model, DataModel) and
-              isinstance(e.new, np.ndarray)):
-                new_array = comparable_array(e.new.shape, e.new.dtype, e.new)
-                e.new = new_array
-                e.serializable_new = new_array
+        elif isinstance(e, ModelChangedEvent) and isinstance(e.model, DataModel) and isinstance(e.new, np.ndarray):
+            new_array = comparable_array(e.new.shape, e.new.dtype, e.new)
+            e.new = new_array
+            e.serializable_new = new_array
 
-#---------------------------------------------------------------------
+
+# ---------------------------------------------------------------------
 # Public API
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 
-def diff(
-    doc: Document, binary: bool = True, events: Optional[List[DocumentChangedEvent]] = None
-) -> Message[Any] | None:
+
+def diff(doc: Document, binary: bool = True, events: Optional[List[DocumentChangedEvent]] = None) -> Message[Any] | None:
     """
     Returns a json diff required to update an existing plot with
     the latest plot data.
@@ -84,7 +85,7 @@ def diff(
     serializer = Serializer(references=doc.models.synced_references, deferred=binary)
     patch_json = PatchJson(events=serializer.encode(patch_events))
     header = patch_doc.create_header()
-    msg = patch_doc(header, {'use_buffers': binary}, patch_json)
+    msg = patch_doc(header, {"use_buffers": binary}, patch_json)
     doc.callbacks._held_events = [e for e in doc.callbacks._held_events if e not in patch_events]
     doc.models.flush_synced(lambda model: not serializer.has_ref(model))
     if binary:
@@ -92,17 +93,19 @@ def diff(
             msg.add_buffer(buffer)
     return msg
 
+
 def remove_root(obj: Model, replace: Document | None = None) -> None:
     """
     Removes the document from any previously displayed bokeh object
     """
-    for model in obj.select({'type': Model}):
+    for model in obj.select({"type": Model}):
         prev_doc = model.document
         model._document = None
         if prev_doc:
             prev_doc.remove_root(model)
         if replace:
             model._document = replace
+
 
 def add_to_doc(obj: Model, doc: Document, hold: bool = False):
     """
@@ -114,22 +117,25 @@ def add_to_doc(obj: Model, doc: Document, hold: bool = False):
     if doc.callbacks.hold_value is None and hold:
         doc.hold()
 
+
 def patch_cds_msg(model, msg):
     """
     Required for handling messages containing JSON serialized typed
     array from the frontend.
     """
-    for event in msg.get('content', {}).get('events', []):
-        if event.get('kind') != 'ModelChanged' or event.get('attr') != 'data':
+    for event in msg.get("content", {}).get("events", []):
+        if event.get("kind") != "ModelChanged" or event.get("attr") != "data":
             continue
-        cds = model.select_one({'id': event.get('model').get('id')})
+        cds = model.select_one({"id": event.get("model").get("id")})
         if not isinstance(cds, ColumnDataSource):
             continue
-        for col, values in event.get('new', {}).items():
+        for col, values in event.get("new", {}).items():
             if isinstance(values, dict):
-                event['new'][col] = [v for _, v in sorted(values.items())]
+                event["new"][col] = [v for _, v in sorted(values.items())]
 
-_DEFAULT_IGNORED_REPR = frozenset(['children', 'text', 'name', 'toolbar', 'renderers', 'below', 'center', 'left', 'right'])
+
+_DEFAULT_IGNORED_REPR = frozenset(["children", "text", "name", "toolbar", "renderers", "below", "center", "left", "right"])
+
 
 def bokeh_repr(obj: Model, depth: int = 0, ignored: Optional[Iterable[str]] = None) -> str:
     """
@@ -140,6 +146,7 @@ def bokeh_repr(obj: Model, depth: int = 0, ignored: Optional[Iterable[str]] = No
         ignored = _DEFAULT_IGNORED_REPR
 
     from ..viewable import Viewable
+
     if isinstance(obj, Viewable):
         obj = obj.get_root(Document())
 
@@ -151,24 +158,25 @@ def bokeh_repr(obj: Model, depth: int = 0, ignored: Optional[Iterable[str]] = No
         if k in ignored:
             continue
         if isinstance(v, Model):
-            v = '%s()' % type(v).__name__
+            v = "%s()" % type(v).__name__
         else:
             v = repr(v)
         if len(v) > 30:
-            v = v[:30] + '...'
-        props.append('%s=%s' % (k, v))
-    props_repr = ', '.join(props)
+            v = v[:30] + "..."
+        props.append("%s=%s" % (k, v))
+    props_repr = ", ".join(props)
     if isinstance(obj, FlexBox):
-        r += '{cls}(children=[\n'.format(cls=cls)
-        for obj in obj.children: # type: ignore
-            r += textwrap.indent(bokeh_repr(obj, depth=depth+1) + ',\n', '  ')
-        r += '], %s)' % props_repr
+        r += "{cls}(children=[\n".format(cls=cls)
+        for obj in obj.children:  # type: ignore
+            r += textwrap.indent(bokeh_repr(obj, depth=depth + 1) + ",\n", "  ")
+        r += "], %s)" % props_repr
     else:
-        r += '{cls}({props})'.format(cls=cls, props=props_repr)
+        r += "{cls}({props})".format(cls=cls, props=props_repr)
     return r
 
+
 @contextmanager
-def hold(doc: Document, policy: HoldPolicyType = 'combine', comm: Comm | None = None):
+def hold(doc: Document, policy: HoldPolicyType = "combine", comm: Comm | None = None):
     """
     Context manager that holds events on a particular Document
     allowing them all to be collected and dispatched when the context
@@ -203,5 +211,6 @@ def hold(doc: Document, policy: HoldPolicyType = 'combine', comm: Comm | None = 
         else:
             if comm is not None:
                 from .notebook import push
+
                 push(doc, comm)
             doc.unhold()

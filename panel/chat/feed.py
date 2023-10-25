@@ -120,81 +120,135 @@ class ChatFeed(ListPanel):
     >>> chat_feed.send("Hello World!", user="New User", avatar="😊")
     """
 
-    auto_scroll_limit = param.Integer(default=200, bounds=(0, None), doc="""
+    auto_scroll_limit = param.Integer(
+        default=200,
+        bounds=(0, None),
+        doc="""
         Max pixel distance from the latest object in the Column to
         activate automatic scrolling upon update. Setting to 0
-        disables auto-scrolling.""",)
+        disables auto-scrolling.""",
+    )
 
-    callback = param.Callable(allow_refs=False, doc="""
+    callback = param.Callable(
+        allow_refs=False,
+        doc="""
         Callback to execute when a user sends a message or
         when `respond` is called. The signature must include
         the previous message value `contents`, the previous `user` name,
-        and the component `instance`.""")
+        and the component `instance`.""",
+    )
 
     callback_exception = param.ObjectSelector(
-        default="summary", objects=["raise", "summary", "verbose", "ignore"], doc="""
+        default="summary",
+        objects=["raise", "summary", "verbose", "ignore"],
+        doc="""
         How to handle exceptions raised by the callback.
         If "raise", the exception will be raised.
         If "summary", a summary will be sent to the chat feed.
         If "verbose", the full traceback will be sent to the chat feed.
         If "ignore", the exception will be ignored.
-        """)
+        """,
+    )
 
-    callback_user = param.String(default="Assistant", doc="""
-        The default user name to use for the message provided by the callback.""")
+    callback_user = param.String(
+        default="Assistant",
+        doc="""
+        The default user name to use for the message provided by the callback.""",
+    )
 
-    card_params = param.Dict(default={}, doc="""
-        Params to pass to Card, like `header`, `header_background`, `header_color`, etc.""")
+    card_params = param.Dict(
+        default={},
+        doc="""
+        Params to pass to Card, like `header`, `header_background`, `header_color`, etc.""",
+    )
 
-    collapsible = param.Boolean(default=False, readonly=True, doc="""
-        Whether the Card should be expandable and collapsible.""")
+    collapsible = param.Boolean(
+        default=False,
+        readonly=True,
+        doc="""
+        Whether the Card should be expandable and collapsible.""",
+    )
 
-    disabled = param.Boolean(default=False, doc="""
-       Whether the feed is disabled.""")
+    disabled = param.Boolean(
+        default=False,
+        doc="""
+       Whether the feed is disabled.""",
+    )
 
-    message_params = param.Dict(default={}, doc="""
+    message_params = param.Dict(
+        default={},
+        doc="""
         Params to pass to each ChatMessage, like `reaction_icons`, `timestamp_format`,
-        `show_avatar`, `show_user`, and `show_timestamp`.""")
+        `show_avatar`, `show_user`, and `show_timestamp`.""",
+    )
 
-    header = param.Parameter(doc="""
+    header = param.Parameter(
+        doc="""
         The header of the chat feed; commonly used for the title.
-        Can be a string, pane, or widget.""")
+        Can be a string, pane, or widget."""
+    )
 
-    margin = Margin(default=5, doc="""
+    margin = Margin(
+        default=5,
+        doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
+        or a four-tuple (top, right, bottom, left).""",
+    )
 
-    objects = param.List(default=[], doc="""
-        The list of child objects that make up the layout.""")
+    objects = param.List(
+        default=[],
+        doc="""
+        The list of child objects that make up the layout.""",
+    )
 
-    placeholder_text = param.String(default="", doc="""
+    placeholder_text = param.String(
+        default="",
+        doc="""
         If placeholder is the default LoadingSpinner the text to display
-        next to it.""")
+        next to it.""",
+    )
 
-    placeholder_threshold = param.Number(default=1, bounds=(0, None), doc="""
+    placeholder_threshold = param.Number(
+        default=1,
+        bounds=(0, None),
+        doc="""
         Min duration in seconds of buffering before displaying the placeholder.
-        If 0, the placeholder will be disabled.""")
+        If 0, the placeholder will be disabled.""",
+    )
 
-    renderers = param.HookList(doc="""
+    renderers = param.HookList(
+        doc="""
         A callable or list of callables that accept the value and return a
         Panel object to render the value. If a list is provided, will
         attempt to use the first renderer that does not raise an
         exception. If None, will attempt to infer the renderer
-        from the value.""")
+        from the value."""
+    )
 
-    scroll_button_threshold = param.Integer(default=100, bounds=(0, None),doc="""
+    scroll_button_threshold = param.Integer(
+        default=100,
+        bounds=(0, None),
+        doc="""
         Min pixel distance from the latest object in the Column to
         display the scroll button. Setting to 0
-        disables the scroll button.""")
+        disables the scroll button.""",
+    )
 
-    view_latest = param.Boolean(default=True, doc="""
+    view_latest = param.Boolean(
+        default=True,
+        doc="""
         Whether to scroll to the latest object on init. If not
-        enabled the view will be on the first object.""")
+        enabled the view will be on the first object.""",
+    )
 
-    _placeholder = param.ClassSelector(class_=ChatMessage, allow_refs=False, doc="""
+    _placeholder = param.ClassSelector(
+        class_=ChatMessage,
+        allow_refs=False,
+        doc="""
         The placeholder wrapped in a ChatMessage object;
-        primarily to prevent recursion error in _update_placeholder.""")
+        primarily to prevent recursion error in _update_placeholder.""",
+    )
 
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_feed.css"]
 
@@ -212,7 +266,7 @@ class ChatFeed(ListPanel):
             width=self.param.width,
             max_width=self.param.max_width,
             min_width=self.param.min_width,
-            visible=self.param.visible
+            visible=self.param.visible,
         )
         # we separate out chat log for the auto scroll feature
         self._chat_log = Column(
@@ -221,12 +275,13 @@ class ChatFeed(ListPanel):
             scroll_button_threshold=self.scroll_button_threshold,
             css_classes=["chat-feed-log"],
             stylesheets=self._stylesheets,
-            **linked_params
+            **linked_params,
         )
-        self.link(self._chat_log, objects='objects', bidirectional=True)
+        self.link(self._chat_log, objects="objects", bidirectional=True)
         # we have a card for the title
         self._card = Card(
-            self._chat_log, VSpacer(),
+            self._chat_log,
+            VSpacer(),
             margin=self.param.margin,
             align=self.param.align,
             header=self.header,
@@ -240,17 +295,14 @@ class ChatFeed(ListPanel):
             title_css_classes=["chat-feed-title"],
             styles={"padding": "0px"},
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
-            **linked_params
+            **linked_params,
         )
 
         # handle async callbacks using this trick
         self._callback_trigger = Button(visible=False)
         self._callback_trigger.on_click(self._prepare_response)
 
-    def _get_model(
-        self, doc: Document, root: Model | None = None,
-        parent: Model | None = None, comm: Comm | None = None
-    ) -> Model:
+    def _get_model(self, doc: Document, root: Model | None = None, parent: Model | None = None, comm: Comm | None = None) -> Model:
         return self._card._get_model(doc, root, parent, comm)
 
     def _cleanup(self, root: Model | None = None) -> None:
@@ -259,9 +311,7 @@ class ChatFeed(ListPanel):
 
     @param.depends("placeholder_text", watch=True, on_init=True)
     def _update_placeholder(self):
-        loading_avatar = SVG(
-            PLACEHOLDER_SVG, sizing_mode=None, css_classes=["rotating-placeholder"]
-        )
+        loading_avatar = SVG(PLACEHOLDER_SVG, sizing_mode=None, css_classes=["rotating-placeholder"])
         self._placeholder = ChatMessage(
             self.placeholder_text,
             user=" ",
@@ -306,10 +356,7 @@ class ChatFeed(ListPanel):
         elif "value" in value:
             value["object"] = value.pop("value")
         elif "object" not in value:
-            raise ValueError(
-                f"If 'value' is a dict, it must contain an 'object' key, "
-                f"e.g. {{'object': 'Hello World'}}; got {value!r}"
-            )
+            raise ValueError(f"If 'value' is a dict, it must contain an 'object' key, " f"e.g. {{'object': 'Hello World'}}; got {value!r}")
         message_params = dict(value, renderers=self.renderers, **self.message_params)
         if user:
             message_params["user"] = user
@@ -320,9 +367,7 @@ class ChatFeed(ListPanel):
         message = ChatMessage(**message_params)
         return message
 
-    def _upsert_message(
-        self, value: Any, message: ChatMessage | None = None
-    ) -> ChatMessage | None:
+    def _upsert_message(self, value: Any, message: ChatMessage | None = None) -> ChatMessage | None:
         """
         Replace the placeholder message with the response or update
         the message's value with the response.
@@ -410,9 +455,7 @@ class ChatFeed(ListPanel):
         if self.placeholder_threshold == 0:
             return
 
-        callable_is_async = asyncio.iscoroutinefunction(
-            self.callback
-        ) or isasyncgenfunction(self.callback)
+        callable_is_async = asyncio.iscoroutinefunction(self.callback) or isasyncgenfunction(self.callback)
         start = asyncio.get_event_loop().time()
         while not task.done() and num_entries == len(self._chat_log):
             duration = asyncio.get_event_loop().time() - start
@@ -486,10 +529,7 @@ class ChatFeed(ListPanel):
         """
         if isinstance(value, ChatMessage):
             if user is not None or avatar is not None:
-                raise ValueError(
-                    "Cannot set user or avatar when explicitly sending "
-                    "a ChatMessage. Set them directly on the ChatMessage."
-                )
+                raise ValueError("Cannot set user or avatar when explicitly sending " "a ChatMessage. Set them directly on the ChatMessage.")
             message = value
         else:
             if not isinstance(value, dict):
@@ -532,10 +572,7 @@ class ChatFeed(ListPanel):
         The message that was updated.
         """
         if isinstance(value, ChatMessage) and (user is not None or avatar is not None):
-            raise ValueError(
-                "Cannot set user or avatar when explicitly streaming "
-                "a ChatMessage. Set them directly on the ChatMessage."
-            )
+            raise ValueError("Cannot set user or avatar when explicitly streaming " "a ChatMessage. Set them directly on the ChatMessage.")
         elif message:
             if isinstance(value, (str, dict)):
                 message.stream(value)
@@ -610,8 +647,10 @@ class ChatFeed(ListPanel):
         viewables: list(Viewable)
         """
         selected = []
-        if (selector is None or
-            (isinstance(selector, type) and isinstance(self, selector)) or
-            (callable(selector) and not isinstance(selector, type) and selector(self))):
+        if (
+            selector is None
+            or (isinstance(selector, type) and isinstance(self, selector))
+            or (callable(selector) and not isinstance(selector, type) and selector(self))
+        ):
             selected.append(self)
         return selected + self._card.select(selector)

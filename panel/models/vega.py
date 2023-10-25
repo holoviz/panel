@@ -13,8 +13,7 @@ from ..util import classproperty
 
 
 class VegaEvent(ModelEvent):
-
-    event_name = 'vega_event'
+    event_name = "vega_event"
 
     def __init__(self, model, data=None):
         self.data = data
@@ -27,11 +26,7 @@ class VegaPlot(LayoutDOM):
     a Bokeh plot.
     """
 
-    __javascript_raw__ = [
-        f"{config.npm_cdn}/vega@5",
-        f"{config.npm_cdn}/vega-lite@5",
-        f"{config.npm_cdn}/vega-embed@6"
-    ]
+    __javascript_raw__ = [f"{config.npm_cdn}/vega@5", f"{config.npm_cdn}/vega-lite@5", f"{config.npm_cdn}/vega-embed@6"]
 
     @classproperty
     def __javascript__(cls):
@@ -39,19 +34,15 @@ class VegaPlot(LayoutDOM):
 
     @classproperty
     def __js_skip__(cls):
-        return {
-            'vega': cls.__javascript__[:1],
-            'vegaLite': cls.__javascript__[1:2],
-            'vegaEmbed': cls.__javascript__[2:]
-        }
+        return {"vega": cls.__javascript__[:1], "vegaLite": cls.__javascript__[1:2], "vegaEmbed": cls.__javascript__[2:]}
 
     __js_require__ = {
-        'paths': {
-            "vega-embed":  f"{config.npm_cdn}/vega-embed@6/build/vega-embed.min",
+        "paths": {
+            "vega-embed": f"{config.npm_cdn}/vega-embed@6/build/vega-embed.min",
             "vega-lite": f"{config.npm_cdn}/vega-lite@5/build/vega-lite.min",
-            "vega": f"{config.npm_cdn}/vega@5/build/vega.min"
+            "vega": f"{config.npm_cdn}/vega@5/build/vega.min",
         },
-        'exports': {'vega-embed': 'vegaEmbed', 'vega': 'vega', 'vega-lite': 'vl'}
+        "exports": {"vega-embed": "vegaEmbed", "vega": "vega", "vega-lite": "vl"},
     }
 
     data = Nullable(Dict(String, Any))
@@ -62,7 +53,6 @@ class VegaPlot(LayoutDOM):
 
     show_actions = Bool(False)
 
-    theme = Nullable(Enum('excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'dark',
-                 'latimes', 'urbaninstitute', 'googlecharts', default=None))
+    theme = Nullable(Enum("excel", "ggplot2", "quartz", "vox", "fivethirtyeight", "dark", "latimes", "urbaninstitute", "googlecharts", default=None))
 
     throttle = Dict(String, Int)

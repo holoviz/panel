@@ -211,10 +211,12 @@ class ChatCopyIcon(ReactiveHTML):
         </div>
     """
 
-    _scripts = {"copy_to_clipboard": """
+    _scripts = {
+        "copy_to_clipboard": """
         navigator.clipboard.writeText(`${data.value}`);
         data.fill = "currentColor";
         setTimeout(() => data.fill = "none", 50);
-    """}
+    """
+    }
 
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_copy_icon.css"]

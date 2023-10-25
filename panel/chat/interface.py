@@ -64,55 +64,98 @@ class ChatInterface(ChatFeed):
     )
     """
 
-    auto_send_types = param.List(doc="""
+    auto_send_types = param.List(
+        doc="""
         The widget types to automatically send when the user presses enter
         or clicks away from the widget. If not provided, defaults to
-        `[TextInput]`.""")
+        `[TextInput]`."""
+    )
 
-    avatar = param.ClassSelector(class_=(str, BinaryIO), doc="""
+    avatar = param.ClassSelector(
+        class_=(str, BinaryIO),
+        doc="""
         The avatar to use for the user. Can be a single character text, an emoji,
         or anything supported by `pn.pane.Image`. If not set, uses the
-        first character of the name.""")
+        first character of the name.""",
+    )
 
-    reset_on_send = param.Boolean(default=True, doc="""
+    reset_on_send = param.Boolean(
+        default=True,
+        doc="""
         Whether to reset the widget's value after sending a message;
-        has no effect for `TextInput`.""")
+        has no effect for `TextInput`.""",
+    )
 
-    show_send = param.Boolean(default=True, doc="""
-        Whether to show the send button.""")
+    show_send = param.Boolean(
+        default=True,
+        doc="""
+        Whether to show the send button.""",
+    )
 
-    show_rerun = param.Boolean(default=True, doc="""
-        Whether to show the rerun button.""")
+    show_rerun = param.Boolean(
+        default=True,
+        doc="""
+        Whether to show the rerun button.""",
+    )
 
-    show_undo = param.Boolean(default=True, doc="""
-        Whether to show the undo button.""")
+    show_undo = param.Boolean(
+        default=True,
+        doc="""
+        Whether to show the undo button.""",
+    )
 
-    show_clear = param.Boolean(default=True, doc="""
-        Whether to show the clear button.""")
+    show_clear = param.Boolean(
+        default=True,
+        doc="""
+        Whether to show the clear button.""",
+    )
 
-    show_button_name = param.Boolean(default=None, doc="""
-        Whether to show the button name.""")
+    show_button_name = param.Boolean(
+        default=None,
+        doc="""
+        Whether to show the button name.""",
+    )
 
-    user = param.String(default="User", doc="""
-        Name of the ChatInterface user.""")
+    user = param.String(
+        default="User",
+        doc="""
+        Name of the ChatInterface user.""",
+    )
 
-    widgets = param.ClassSelector(class_=(Widget, list), allow_refs=False, doc="""
+    widgets = param.ClassSelector(
+        class_=(Widget, list),
+        allow_refs=False,
+        doc="""
         Widgets to use for the input. If not provided, defaults to
-        `[TextInput]`.""")
+        `[TextInput]`.""",
+    )
 
-    _widgets = param.Dict(default={}, allow_refs=False, doc="""
-        The input widgets.""")
+    _widgets = param.Dict(
+        default={},
+        allow_refs=False,
+        doc="""
+        The input widgets.""",
+    )
 
-    _input_container = param.ClassSelector(class_=Row, doc="""
+    _input_container = param.ClassSelector(
+        class_=Row,
+        doc="""
         The input message row that wraps the input layout (Tabs / Row)
         to easily swap between Tabs and Rows, depending on
-        number of widgets.""")
+        number of widgets.""",
+    )
 
-    _input_layout = param.ClassSelector(class_=(Row, Tabs), doc="""
-        The input layout that contains the input widgets.""")
+    _input_layout = param.ClassSelector(
+        class_=(Row, Tabs),
+        doc="""
+        The input layout that contains the input widgets.""",
+    )
 
-    _button_data = param.Dict(default={}, doc="""
-        Metadata and data related to the buttons.""")
+    _button_data = param.Dict(
+        default={},
+        doc="""
+        Metadata and data related to the buttons.""",
+    )
 
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_interface.css"]
 
@@ -135,10 +178,7 @@ class ChatInterface(ChatFeed):
             if not getattr(self, f"show_{action}", True):
                 button_icons.pop(action)
         self._button_data = {
-            name: _ChatButtonData(
-                index=index, name=name, icon=icon, objects=[], buttons=[]
-            )
-            for index, (name, icon) in enumerate(button_icons.items())
+            name: _ChatButtonData(index=index, name=name, icon=icon, objects=[], buttons=[]) for index, (name, icon) in enumerate(button_icons.items())
         }
         self._input_container = Row(
             css_classes=["chat-interface-input-container"],
@@ -213,10 +253,7 @@ class ChatInterface(ChatFeed):
             auto_send_types = tuple(self.auto_send_types) or (TextInput,)
             if isinstance(widget, auto_send_types) and widget in new_widgets:
                 widget.param.watch(self._click_send, "value")
-            widget.param.update(
-                sizing_mode="stretch_width",
-                css_classes=["chat-interface-input-widget"]
-            )
+            widget.param.update(sizing_mode="stretch_width", css_classes=["chat-interface-input-widget"])
 
             buttons = []
             for button_data in self._button_data.values():
@@ -229,8 +266,8 @@ class ChatInterface(ChatFeed):
                     max_width=show_expr.rx.where(90, 45),
                     max_height=50,
                     margin=(5, 5, 5, 0),
-                    align="start",
-                    visible=self.param[f'show_{action}']
+                    align="end",
+                    visible=self.param[f"show_{action}"],
                 )
                 self._link_disabled_loading(button)
                 button.on_click(getattr(self, f"_click_{action}"))
@@ -243,7 +280,7 @@ class ChatInterface(ChatFeed):
                 sizing_mode="stretch_width",
                 css_classes=["chat-interface-input-row"],
                 stylesheets=self._stylesheets,
-                align="start",
+                align="end",
             )
             input_layout.append((name, message_row))
 

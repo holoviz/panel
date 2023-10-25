@@ -30,38 +30,40 @@ def isfile(path: str) -> bool:
     """Safe version of os.path.isfile robust to path length issues on Windows"""
     try:
         return os.path.isfile(path)
-    except (TypeError, ValueError): # path too long for Windows
+    except (TypeError, ValueError):  # path too long for Windows
         return False
 
 
 def isurl(obj: Any, formats: Iterable[str] | None = None) -> bool:
     if not isinstance(obj, str):
         return False
-    lower_string = obj.lower().split('?')[0].split('#')[0]
-    return (
-        lower_string.startswith('http://')
-        or lower_string.startswith('https://')
-    ) and (formats is None or any(lower_string.endswith('.'+fmt) for fmt in formats))
+    lower_string = obj.lower().split("?")[0].split("#")[0]
+    return (lower_string.startswith("http://") or lower_string.startswith("https://")) and (
+        formats is None or any(lower_string.endswith("." + fmt) for fmt in formats)
+    )
 
 
 def is_dataframe(obj) -> bool:
-    if 'pandas' not in sys.modules:
+    if "pandas" not in sys.modules:
         return False
     import pandas as pd
+
     return isinstance(obj, pd.DataFrame)
 
 
 def is_series(obj) -> bool:
-    if 'pandas' not in sys.modules:
+    if "pandas" not in sys.modules:
         return False
     import pandas as pd
+
     return isinstance(obj, pd.Series)
 
 
 def is_mpl_axes(obj) -> bool:
-    if 'matplotlib' not in sys.modules:
+    if "matplotlib" not in sys.modules:
         return False
     from matplotlib.axes import Axes
+
     return isinstance(obj, Axes)
 
 
@@ -84,18 +86,18 @@ def is_parameterized(obj) -> bool:
     """
     Whether an object is a Parameterized class or instance.
     """
-    return (isinstance(obj, param.Parameterized) or
-            (isinstance(obj, type) and issubclass(obj, param.Parameterized)))
+    return isinstance(obj, param.Parameterized) or (isinstance(obj, type) and issubclass(obj, param.Parameterized))
 
 
 def is_holoviews(obj: Any) -> bool:
     """
     Whether the object is a HoloViews type that can be rendered.
     """
-    if 'holoviews' not in sys.modules:
+    if "holoviews" not in sys.modules:
         return False
     from holoviews.core.dimension import Dimensioned
     from holoviews.plotting import Plot
+
     return isinstance(obj, (Dimensioned, Plot))
 
 
@@ -106,11 +108,7 @@ def isdatetime(value) -> bool:
     if is_series(value) and len(value):
         return isinstance(value.iloc[0], datetime_types)
     elif isinstance(value, np.ndarray):
-        return (
-            value.dtype.kind == "M" or
-            (value.dtype.kind == "O" and len(value) != 0 and
-             isinstance(value[0], datetime_types))
-        )
+        return value.dtype.kind == "M" or (value.dtype.kind == "O" and len(value) != 0 and isinstance(value[0], datetime_types))
     elif isinstance(value, list):
         return all(isinstance(d, datetime_types) for d in value)
     else:

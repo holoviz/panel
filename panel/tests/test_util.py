@@ -32,15 +32,14 @@ def test_get_function_dependencies():
 
 def test_get_parameterized_dependencies():
     class Test(param.Parameterized):
-
         a = param.Parameter()
         b = param.Parameter()
 
-        @param.depends('a')
+        @param.depends("a")
         def dep_a(self):
             return
 
-        @param.depends('dep_a', 'b')
+        @param.depends("dep_a", "b")
         def dep_ab(self):
             return
 
@@ -52,14 +51,12 @@ def test_get_parameterized_dependencies():
 
 def test_get_parameterized_subobject_dependencies():
     class A(param.Parameterized):
-
         value = param.Parameter()
 
     class B(param.Parameterized):
-
         a = param.ClassSelector(default=A(), class_=A)
 
-        @param.depends('a.value')
+        @param.depends("a.value")
         def dep_a_value(self):
             return
 
@@ -67,22 +64,23 @@ def test_get_parameterized_subobject_dependencies():
 
     assert extract_dependencies(test.dep_a_value) == [test.a.param.value]
 
+
 def test_render_mimebundle(document, comm):
     div = Div()
     data, metadata = render_mimebundle(div, document, comm)
 
-    assert metadata == {'application/vnd.holoviews_exec.v0+json': {'id': div.ref['id']}}
-    assert 'application/vnd.holoviews_exec.v0+json' in data
-    assert 'text/html' in data
-    assert data['application/vnd.holoviews_exec.v0+json'] == ''
+    assert metadata == {"application/vnd.holoviews_exec.v0+json": {"id": div.ref["id"]}}
+    assert "application/vnd.holoviews_exec.v0+json" in data
+    assert "text/html" in data
+    assert data["application/vnd.holoviews_exec.v0+json"] == ""
 
 
 def test_abbreviated_repr_dict():
-    assert abbreviated_repr({'key': 'some really, really long string'}) == "{'key': 'some really, ...}"
+    assert abbreviated_repr({"key": "some really, really long string"}) == "{'key': 'some really, ...}"
 
 
 def test_abbreviated_repr_list():
-    assert abbreviated_repr(['some really, really long string']) == "['some really, ...]"
+    assert abbreviated_repr(["some really, really long string"]) == "['some really, ...]"
 
 
 def test_abbreviated_repr_ordereddict():
@@ -91,7 +89,7 @@ def test_abbreviated_repr_ordereddict():
     else:
         expected = "OrderedDict([('key', ...])"
 
-    result = abbreviated_repr(OrderedDict([('key', 'some really, really long string')]))
+    result = abbreviated_repr(OrderedDict([("key", "some really, really long string")]))
     assert result == expected
 
 
@@ -110,8 +108,8 @@ def test_parse_query():
 def test_parse_query_singe_quoted():
     query = "?str=abc&json=%5B%27def%27%5D"
     expected_results = {
-        "str": 'abc',
-        "json": ['def'],
+        "str": "abc",
+        "json": ["def"],
     }
     results = parse_query(query)
     assert expected_results == results

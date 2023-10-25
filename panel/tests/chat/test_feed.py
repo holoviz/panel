@@ -146,9 +146,7 @@ class TestChatFeed:
         assert chat_feed.objects[0].user == "Person"
         assert chat_feed.objects[0].avatar == "P"
 
-        updated_entry = chat_feed.stream(
-            " Appended message", user="New Person", message=message, avatar="N"
-        )
+        updated_entry = chat_feed.stream(" Appended message", user="New Person", message=message, avatar="N")
         assert len(chat_feed.objects) == 1
         assert chat_feed.objects[0] is updated_entry
         assert chat_feed.objects[0].object == "Streaming message Appended message"
@@ -163,16 +161,12 @@ class TestChatFeed:
     def test_stream_with_user_avatar(self, chat_feed):
         user = "Bob"
         avatar = "👨"
-        message = chat_feed.stream(
-            "Streaming with user and avatar", user=user, avatar=avatar
-        )
+        message = chat_feed.stream("Streaming with user and avatar", user=user, avatar=avatar)
         assert message.user == user
         assert message.avatar == avatar
 
     def test_stream_dict(self, chat_feed):
-        message = chat_feed.stream(
-            {"object": "Streaming message", "user": "Person", "avatar": "P"}
-        )
+        message = chat_feed.stream({"object": "Streaming message", "user": "Person", "avatar": "P"})
         assert len(chat_feed.objects) == 1
         assert chat_feed.objects[0] is message
         assert chat_feed.objects[0].object == "Streaming message"
@@ -293,9 +287,7 @@ class TestChatFeed:
         chat_feed.send("Message 1")
         assert chat_feed.objects[0].width == 420
 
-    @pytest.mark.parametrize(
-        "user", ["system", "System", " System", " system ", "system-"]
-    )
+    @pytest.mark.parametrize("user", ["system", "System", " System", " system ", "system-"])
     def test_default_avatars_default(self, chat_feed, user):
         chat_feed.send("Message 1", user=user)
 
@@ -315,9 +307,7 @@ class TestChatFeed:
         assert chat_feed.objects[0].avatar == "👨"
 
     def test_default_avatars_superseded_in_entry(self, chat_feed):
-        chat_feed.send(
-            ChatMessage(**{"user": "System", "avatar": "👨", "object": "Message 1"})
-        )
+        chat_feed.send(ChatMessage(**{"user": "System", "avatar": "👨", "object": "Message 1"}))
 
         assert chat_feed.objects[0].user == "System"
         assert chat_feed.objects[0].avatar == "👨"
@@ -495,9 +485,6 @@ class TestChatFeedCallback:
         assert chat_feed.objects[1].user == callback_avatar or "Assistant"
         assert chat_feed.objects[1].avatar == callback_avatar or "🤖"
 
-
-
-
     @pytest.mark.asyncio
     async def test_async_yield(self, chat_feed):
         async def echo(contents, user, instance):
@@ -548,9 +535,7 @@ class TestChatFeedCallback:
 
         chat_feed.placeholder_threshold = 0
         chat_feed.callback = echo
-        chat_feed.append = MagicMock(
-            side_effect=lambda message: chat_feed._chat_log.append(message)
-        )
+        chat_feed.append = MagicMock(side_effect=lambda message: chat_feed._chat_log.append(message))
         chat_feed.send("Message", respond=True)
         # only append sent message
         assert chat_feed.append.call_count == 2
@@ -561,9 +546,7 @@ class TestChatFeedCallback:
             yield "hey testing"
 
         chat_feed.callback = echo
-        chat_feed.append = MagicMock(
-            side_effect=lambda message: chat_feed._chat_log.append(message)
-        )
+        chat_feed.append = MagicMock(side_effect=lambda message: chat_feed._chat_log.append(message))
         chat_feed.send("Message", respond=True)
         # append sent message and placeholder
         chat_feed.append.call_args_list[1].args[0] == chat_feed._placeholder
@@ -575,9 +558,7 @@ class TestChatFeedCallback:
 
         chat_feed.placeholder_threshold = 5
         chat_feed.callback = echo
-        chat_feed.append = MagicMock(
-            side_effect=lambda message: chat_feed._chat_log.append(message)
-        )
+        chat_feed.append = MagicMock(side_effect=lambda message: chat_feed._chat_log.append(message))
         chat_feed.send("Message", respond=True)
         chat_feed.append.call_args_list[1].args[0] != chat_feed._placeholder
 
@@ -588,9 +569,7 @@ class TestChatFeedCallback:
 
         chat_feed.placeholder_threshold = 5
         chat_feed.callback = echo
-        chat_feed.append = MagicMock(
-            side_effect=lambda message: chat_feed._chat_log.append(message)
-        )
+        chat_feed.append = MagicMock(side_effect=lambda message: chat_feed._chat_log.append(message))
         chat_feed.send("Message", respond=True)
         chat_feed.append.call_args_list[1].args[0] != chat_feed._placeholder
 
@@ -601,9 +580,7 @@ class TestChatFeedCallback:
 
         chat_feed.placeholder_threshold = 0.1
         chat_feed.callback = echo
-        chat_feed.append = MagicMock(
-            side_effect=lambda message: chat_feed._chat_log.append(message)
-        )
+        chat_feed.append = MagicMock(side_effect=lambda message: chat_feed._chat_log.append(message))
         chat_feed.send("Message", respond=True)
         chat_feed.append.call_args_list[1].args[0] == chat_feed._placeholder
 
@@ -614,9 +591,7 @@ class TestChatFeedCallback:
 
         chat_feed.placeholder_threshold = 0.1
         chat_feed.callback = echo
-        chat_feed.append = MagicMock(
-            side_effect=lambda message: chat_feed._chat_log.append(message)
-        )
+        chat_feed.append = MagicMock(side_effect=lambda message: chat_feed._chat_log.append(message))
         chat_feed.send("Message", respond=True)
         chat_feed.append.call_args_list[1].args[0] == chat_feed._placeholder
 
@@ -632,9 +607,7 @@ class TestChatFeedCallback:
 
         chat_feed.placeholder_threshold = 5
         chat_feed.callback = echo
-        chat_feed.append = MagicMock(
-            side_effect=lambda message: chat_feed._chat_log.append(message)
-        )
+        chat_feed.append = MagicMock(side_effect=lambda message: chat_feed._chat_log.append(message))
         chat_feed.send("Message", respond=True)
         chat_feed.append.call_args_list[1].args[0] == chat_feed._placeholder
 
@@ -689,9 +662,7 @@ class TestChatFeedCallback:
         chat_feed.callback = callback
         chat_feed.callback_exception = "verbose"
         chat_feed.send("Message", respond=True)
-        assert chat_feed.objects[-1].object.startswith(
-            "```python\nTraceback (most recent call last):"
-        )
+        assert chat_feed.objects[-1].object.startswith("```python\nTraceback (most recent call last):")
         assert chat_feed.objects[-1].user == "Exception"
 
     def test_callback_exception_ignore(self, chat_feed):

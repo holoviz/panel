@@ -44,7 +44,7 @@ bokeh_version = Version(bokeh.__version__)
 # Discussion on why https://github.com/bokeh/bokeh/pull/10449/files#r479988469
 BOKEH_JS_NAT = -9223372036854776.0
 
-PARAM_NAME_PATTERN = re.compile(r'^.*\d{5}$')
+PARAM_NAME_PATTERN = re.compile(r"^.*\d{5}$")
 
 HTML_SANITIZER = bleach.sanitizer.Cleaner(strip=True)
 
@@ -53,9 +53,10 @@ def hashable(x):
     if isinstance(x, MutableSequence):
         return tuple(x)
     elif isinstance(x, MutableMapping):
-        return tuple([(k,v) for k,v in x.items()])
+        return tuple([(k, v) for k, v in x.items()])
     else:
         return x
+
 
 def indexOf(obj, objs):
     """
@@ -71,15 +72,15 @@ def indexOf(obj, objs):
                 return i
         except Exception:
             pass
-    raise ValueError('%s not in list' % obj)
+    raise ValueError("%s not in list" % obj)
 
 
 def param_name(name: str) -> str:
     """
     Removes the integer id from a Parameterized class name.
     """
-    match = re.findall(r'\D+(\d{5,})', name)
-    return name[:name.index(match[0])] if match else name
+    match = re.findall(r"\D+(\d{5,})", name)
+    return name[: name.index(match[0])] if match else name
 
 
 def recursive_parameterized(parameterized: param.Parameterized, objects=None) -> list[param.Parameterized]:
@@ -95,36 +96,36 @@ def recursive_parameterized(parameterized: param.Parameterized, objects=None) ->
     return objects
 
 
-def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
+def abbreviated_repr(value, max_length=25, natural_breaks=(",", " ")):
     """
     Returns an abbreviated repr for the supplied object. Attempts to
     find a natural break point while adhering to the maximum length.
     """
     if isinstance(value, list):
-        vrepr = '[' + ', '.join([abbreviated_repr(v) for v in value]) + ']'
+        vrepr = "[" + ", ".join([abbreviated_repr(v) for v in value]) + "]"
     if isinstance(value, param.Parameterized):
         vrepr = type(value).__name__
     else:
         vrepr = repr(value)
     if len(vrepr) > max_length:
         # Attempt to find natural cutoff point
-        abbrev = vrepr[max_length//2:]
+        abbrev = vrepr[max_length // 2 :]
         natural_break = None
         for brk in natural_breaks:
             if brk in abbrev:
-                natural_break = abbrev.index(brk) + max_length//2
+                natural_break = abbrev.index(brk) + max_length // 2
                 break
         if natural_break and natural_break < max_length:
             max_length = natural_break + 1
 
-        end_char = ''
+        end_char = ""
         if isinstance(value, list):
-            end_char = ']'
+            end_char = "]"
         elif isinstance(value, OrderedDict):
-            end_char = '])'
+            end_char = "])"
         elif isinstance(value, (dict, set)):
-            end_char = '}'
-        return vrepr[:max_length+1] + '...' + end_char
+            end_char = "}"
+        return vrepr[: max_length + 1] + "..." + end_char
     return vrepr
 
 
@@ -146,18 +147,25 @@ def param_reprs(parameterized, skip=None):
                     equal = False
             else:
                 try:
-                    equal = bool(v==default)
+                    equal = bool(v == default)
                 except Exception:
                     equal = False
 
-        if equal: continue
-        elif v is None: continue
-        elif isinstance(v, str) and v == '': continue
-        elif isinstance(v, list) and v == []: continue
-        elif isinstance(v, dict) and v == {}: continue
-        elif (skip and p in skip) or (p == 'name' and v.startswith(cls)): continue
-        else: v = abbreviated_repr(v)
-        param_reprs.append(f'{p}={v}')
+        if equal:
+            continue
+        elif v is None:
+            continue
+        elif isinstance(v, str) and v == "":
+            continue
+        elif isinstance(v, list) and v == []:
+            continue
+        elif isinstance(v, dict) and v == {}:
+            continue
+        elif (skip and p in skip) or (p == "name" and v.startswith(cls)):
+            continue
+        else:
+            v = abbreviated_repr(v)
+        param_reprs.append(f"{p}={v}")
     return param_reprs
 
 
@@ -184,16 +192,16 @@ def extract_dependencies(function):
     """
     Extract references from a method or function that declares the references.
     """
-    subparameters = list(function._dinfo['dependencies'])+list(function._dinfo['kw'].values())
+    subparameters = list(function._dinfo["dependencies"]) + list(function._dinfo["kw"].values())
     params = []
     for p in subparameters:
         if isinstance(p, str):
             owner = get_method_owner(function)
-            *subps, p = p.split('.')
+            *subps, p = p.split(".")
             for subp in subps:
                 owner = getattr(owner, subp, None)
                 if owner is None:
-                    raise ValueError('Cannot depend on undefined sub-parameter {p!r}.')
+                    raise ValueError("Cannot depend on undefined sub-parameter {p!r}.")
             if p in owner.param:
                 pobj = owner.param[p]
                 if pobj not in params:
@@ -243,7 +251,7 @@ def parse_query(query: str) -> dict[str, Any]:
             parsed_query[k] = int(v)
         elif is_number(v):
             parsed_query[k] = float(v)
-        elif v.startswith('[') or v.startswith('{'):
+        elif v.startswith("[") or v.startswith("{"):
             try:
                 parsed_query[k] = json.loads(v)
             except Exception:
@@ -258,9 +266,9 @@ def parse_query(query: str) -> dict[str, Any]:
 def base64url_encode(input):
     if isinstance(input, str):
         input = input.encode("utf-8")
-    encoded = base64.urlsafe_b64encode(input).decode('ascii')
+    encoded = base64.urlsafe_b64encode(input).decode("ascii")
     # remove padding '=' chars that cause trouble
-    return str(encoded.rstrip('='))
+    return str(encoded.rstrip("="))
 
 
 def base64url_decode(input):
@@ -280,15 +288,14 @@ def decode_token(token, signed=True):
     Decodes a signed or unsigned JWT token.
     """
     if signed and "." in token:
-        signing_input, _ = token.encode('utf-8').rsplit(b".", 1)
+        signing_input, _ = token.encode("utf-8").rsplit(b".", 1)
         _, payload_segment = signing_input.split(b".", 1)
     else:
         payload_segment = token
-    return json.loads(base64url_decode(payload_segment).decode('utf-8'))
+    return json.loads(base64url_decode(payload_segment).decode("utf-8"))
 
 
 class classproperty:
-
     def __init__(self, f):
         self.f = f
 
@@ -300,8 +307,8 @@ def url_path(url: str) -> str:
     """
     Strips the protocol and domain from a URL returning just the path.
     """
-    subpaths = url.split('//')[1:]
-    return '/'.join('/'.join(subpaths).split('/')[1:])
+    subpaths = url.split("//")[1:]
+    return "/".join("/".join(subpaths).split("/")[1:])
 
 
 # This functionality should be contributed to param
@@ -323,45 +330,44 @@ def edit_readonly(parameterized: param.Parameterized) -> Iterator:
     except Exception:
         raise
     finally:
-        for (p, readonly) in zip(params, readonlys):
+        for p, readonly in zip(params, readonlys):
             p.readonly = readonly
-        for (p, constant) in zip(params, constants):
+        for p, constant in zip(params, constants):
             p.constant = constant
 
 
 def lazy_load(module, model, notebook=False, root=None, ext=None):
     from ..config import panel_extension as extension
     from ..io.state import state
-    external_modules = {
-        module: ext for ext, module in extension._imports.items()
-    }
-    ext = ext or module.split('.')[-1]
+
+    external_modules = {module: ext for ext, module in extension._imports.items()}
+    ext = ext or module.split(".")[-1]
     ext_name = external_modules[module]
     loaded_extensions = state._extensions
     loaded = loaded_extensions is None or ext_name in loaded_extensions
     if module in sys.modules and loaded:
         model_cls = getattr(sys.modules[module], model)
-        if f'{model_cls.__module__}.{model}' not in Model.model_class_reverse_map:
+        if f"{model_cls.__module__}.{model}" not in Model.model_class_reverse_map:
             _default_resolver.add(model_cls)
         return model_cls
 
     if notebook:
         param.main.param.warning(
-            f'{model} was not imported on instantiation and may not '
-            'render in a notebook. Restart the notebook kernel and '
-            'ensure you load it as part of the extension using:'
-            f'\n\npn.extension(\'{ext}\')\n'
+            f"{model} was not imported on instantiation and may not "
+            "render in a notebook. Restart the notebook kernel and "
+            "ensure you load it as part of the extension using:"
+            f"\n\npn.extension('{ext}')\n"
         )
     elif not loaded and state._is_launching:
         # If we are still launching the application it is not too late
         # to automatically load the extension and therefore ensure it
         # is included in the resources added to the served page
         param.main.param.warning(
-            f'pn.extension was initialized but {ext!r} extension was not '
-            'loaded. Since the application is still launching the extension '
-            'was loaded automatically but we strongly recommend you load '
-            'the extension explicitly with the following argument(s):'
-            f'\n\npn.extension({ext!r})\n'
+            f"pn.extension was initialized but {ext!r} extension was not "
+            "loaded. Since the application is still launching the extension "
+            "was loaded automatically but we strongly recommend you load "
+            "the extension explicitly with the following argument(s):"
+            f"\n\npn.extension({ext!r})\n"
         )
         if loaded_extensions is None:
             state._extensions_[state.curdoc] = [ext_name]
@@ -369,17 +375,17 @@ def lazy_load(module, model, notebook=False, root=None, ext=None):
             loaded_extensions.append(ext_name)
     elif not loaded:
         param.main.param.warning(
-            f'pn.extension was initialized but {ext!r} extension was not '
-            'loaded. In order for the required resources to be initialized '
-            'ensure the extension is loaded with the following argument(s):'
-            f'\n\npn.extension({ext!r})\n'
+            f"pn.extension was initialized but {ext!r} extension was not "
+            "loaded. In order for the required resources to be initialized "
+            "ensure the extension is loaded with the following argument(s):"
+            f"\n\npn.extension({ext!r})\n"
         )
-    elif root is not None and root.ref['id'] in state._views:
+    elif root is not None and root.ref["id"] in state._views:
         param.main.param.warning(
-            f'{model} was not imported on instantiation may not '
-            'render in the served application. Ensure you add the '
-            'following to the top of your application:'
-            f'\n\npn.extension(\'{ext}\')\n'
+            f"{model} was not imported on instantiation may not "
+            "render in the served application. Ensure you add the "
+            "following to the top of your application:"
+            f"\n\npn.extension('{ext}')\n"
         )
     return getattr(import_module(module), model)
 
@@ -392,13 +398,12 @@ def updating(fn):
             fn(self, *args, **kwargs)
         finally:
             self._updating = updating
+
     return wrapped
 
 
 def clone_model(bokeh_model, include_defaults=False, include_undefined=False):
-    properties = bokeh_model.properties_with_values(
-        include_defaults=include_defaults, include_undefined=include_undefined
-    )
+    properties = bokeh_model.properties_with_values(include_defaults=include_defaults, include_undefined=include_undefined)
     return type(bokeh_model)(**properties)
 
 
@@ -408,12 +413,13 @@ def function_name(func) -> str:
     """
     while isinstance(func, partial):
         func = func.func
-    if hasattr(func, '__name__'):
+    if hasattr(func, "__name__"):
         return func.__name__
     return str(func)
 
 
-_period_regex = re.compile(r'((?P<weeks>\d+?)w)?((?P<days>\d+?)d)?((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?\.?\d*?)s)?')
+_period_regex = re.compile(r"((?P<weeks>\d+?)w)?((?P<days>\d+?)d)?((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?\.?\d*?)s)?")
+
 
 def parse_timedelta(time_str: str) -> dt.timedelta | None:
     parts = _period_regex.match(time_str)
@@ -421,15 +427,14 @@ def parse_timedelta(time_str: str) -> dt.timedelta | None:
         return None
     parts_dict = parts.groupdict()
     time_params = {}
-    for (name, p) in parts_dict.items():
+    for name, p in parts_dict.items():
         if p:
             time_params[name] = float(p)
     return dt.timedelta(**time_params)
 
 
 def fullpath(path: AnyStr | os.PathLike) -> AnyStr | os.PathLike:
-    """Expanduser and then abspath for a given path
-    """
+    """Expanduser and then abspath for a given path"""
     return os.path.abspath(os.path.expanduser(path))
 
 
@@ -462,10 +467,12 @@ def relative_to(path, other_path):
     except Exception:
         return False
 
+
 _unset = object()
 
+
 def param_watchers(parameterized, value=_unset):
-    if Version(param.__version__) <= Version('2.0.0a2'):
+    if Version(param.__version__) <= Version("2.0.0a2"):
         if value is not _unset:
             parameterized._param_watchers = value
         else:

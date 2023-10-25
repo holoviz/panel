@@ -20,7 +20,7 @@ def test_tqdm():
 
     assert tqdm.value == 3
     assert tqdm.max == 3
-    assert tqdm.text.startswith('100% 3/3')
+    assert tqdm.text.startswith("100% 3/3")
 
     assert isinstance(tqdm.progress, pn.widgets.indicators.Progress)
     assert isinstance(tqdm.text_pane, pn.pane.Str)
@@ -28,7 +28,7 @@ def test_tqdm():
 
 
 def test_process_map():
-    pytest.skip('Skip due to issues pickling callers on Parameterized objects.')
+    pytest.skip("Skip due to issues pickling callers on Parameterized objects.")
 
     tqdm_obj = Tqdm()
     # make sure the bar starts at zero
@@ -49,16 +49,16 @@ def test_tqdm_leave_false():
 
     assert tqdm.value == 0
     assert tqdm.max == 3
-    assert tqdm.text == ''
+    assert tqdm.text == ""
 
 
 def test_tqdm_color():
     tqdm = Tqdm()
 
-    for index in tqdm(range(0, 3), colour='red'):
+    for index in tqdm(range(0, 3), colour="red"):
         pass
 
-    assert tqdm.text_pane.styles == {'color': 'red'}
+    assert tqdm.text_pane.styles == {"color": "red"}
 
 
 def get_tqdm_app():
@@ -77,7 +77,7 @@ def get_tqdm_app():
     df = pd.DataFrame(np.random.randint(0, 100, (100000, 6)))
 
     def run_df(*events):
-        df.progress_apply(lambda x: x ** 2)
+        df.progress_apply(lambda x: x**2)
 
     pandas_button = pn.widgets.Button(name="Pandas Apply", button_type="success")
     pandas_button.on_click(run_df)
@@ -93,6 +93,7 @@ def get_tqdm_app():
     )
     return template
 
+
 def get_tqdm_app_simple():
     import time
 
@@ -104,9 +105,8 @@ def get_tqdm_app_simple():
 
     button = pn.widgets.Button(name="Run Loop", button_type="primary")
     button.on_click(run)
-    return pn.Column(
-        tqdm, button
-    )
+    return pn.Column(tqdm, button)
+
 
 if pn.state.served:
     # get_tqdm_app_simple().servable()

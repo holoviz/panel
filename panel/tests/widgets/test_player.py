@@ -3,8 +3,7 @@ from panel.widgets import DiscretePlayer
 
 
 def test_discrete_player(document, comm):
-    discrete_player = DiscretePlayer(name='DiscretePlayer', value=1.,
-                                     options=[0.1, 1., 10, 100])
+    discrete_player = DiscretePlayer(name="DiscretePlayer", value=1.0, options=[0.1, 1.0, 10, 100])
 
     widget = discrete_player.get_root(document, comm=comm)
 
@@ -15,7 +14,7 @@ def test_discrete_player(document, comm):
     assert widget.step == 1
 
     widget.value = 2
-    discrete_player._process_events({'value': 2})
+    discrete_player._process_events({"value": 2})
     assert discrete_player.value == 10
 
     discrete_player.value = 100

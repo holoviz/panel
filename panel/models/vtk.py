@@ -16,6 +16,7 @@ from .layout import HTMLBox
 
 vtk_cdn = f"{config.npm_cdn}/vtk.js@20.0.1/vtk.js"
 
+
 class VTKAxes(Model):
     """
     A Bokeh model for axes
@@ -55,13 +56,13 @@ class AbstractVTKPlot(HTMLBox):
 
     @classproperty
     def __js_skip__(cls):
-        return {'vtk': cls.__javascript__}
+        return {"vtk": cls.__javascript__}
 
     __js_require__ = {
         "paths": {"vtk": vtk_cdn[:-3]},
         "shim": {
             "vtk": {"exports": "vtk"},
-        }
+        },
     }
 
     axes = Instance(VTKAxes)
@@ -79,7 +80,6 @@ class AbstractVTKPlot(HTMLBox):
     width = Override(default=300)
 
     annotations = List(Dict(String, Any))
-
 
 
 class VTKSynchronizedPlot(AbstractVTKPlot):
@@ -119,8 +119,11 @@ class VTKVolumePlot(AbstractVTKPlot):
 
     colormap = String(help="Colormap Name")
 
-    controller_expanded = Bool(default=True, help="""
-        If True the volume controller panel options is expanded in the view""")
+    controller_expanded = Bool(
+        default=True,
+        help="""
+        If True the volume controller panel options is expanded in the view""",
+    )
 
     data = Nullable(Dict(String, Any))
 
@@ -132,13 +135,13 @@ class VTKVolumePlot(AbstractVTKPlot):
 
     edge_gradient = Float(default=0.2)
 
-    interpolation = Enum(enumeration('fast_linear','linear','nearest'))
+    interpolation = Enum(enumeration("fast_linear", "linear", "nearest"))
 
     mapper = Dict(String, Any)
 
     nan_opacity = Float(default=1)
 
-    render_background = String(default='#52576e')
+    render_background = String(default="#52576e")
 
     rescale = Bool(default=False)
 
@@ -154,4 +157,4 @@ class VTKVolumePlot(AbstractVTKPlot):
 
     specular = Float(default=0.3)
 
-    specular_power = Float(default=8.)
+    specular_power = Float(default=8.0)

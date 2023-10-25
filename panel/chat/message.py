@@ -133,59 +133,98 @@ class ChatMessage(PaneBase):
     >>> ChatMessage(object="Hello world!", user="New User", avatar="😊")
     """
 
-    avatar = param.ClassSelector(default="", class_=(str, BinaryIO, ImageBase), doc="""
+    avatar = param.ClassSelector(
+        default="",
+        class_=(str, BinaryIO, ImageBase),
+        doc="""
         The avatar to use for the user. Can be a single character
         text, an emoji, or anything supported by `pn.pane.Image`. If
         not set, checks if the user is available in the
         default_avatars mapping; else uses the first character of the
-        name.""")
+        name.""",
+    )
 
-    avatar_lookup = param.Callable(default=None, doc="""
+    avatar_lookup = param.Callable(
+        default=None,
+        doc="""
         A function that can lookup an `avatar` from a user name. The
         function signature should be `(user: str) -> Avatar`. If this
-        is set, `default_avatars` is disregarded.""")
+        is set, `default_avatars` is disregarded.""",
+    )
 
-    css_classes = param.List(default=["chat-message"],doc="""
-        The CSS classes to apply to the widget.""")
+    css_classes = param.List(
+        default=["chat-message"],
+        doc="""
+        The CSS classes to apply to the widget.""",
+    )
 
-    default_avatars = param.Dict(default=DEFAULT_AVATARS, doc="""
+    default_avatars = param.Dict(
+        default=DEFAULT_AVATARS,
+        doc="""
         A default mapping of user names to their corresponding avatars
         to use when the user is specified but the avatar is. You can
-        modify, but not replace the dictionary.""")
+        modify, but not replace the dictionary.""",
+    )
 
     max_width = param.Integer(default=1200, bounds=(0, None))
 
-    object = param.Parameter(allow_refs=False, doc="""
-        The message contents. Can be any Python object that panel can display.""")
+    object = param.Parameter(
+        allow_refs=False,
+        doc="""
+        The message contents. Can be any Python object that panel can display.""",
+    )
 
-    reactions = param.List(doc="""
-        Reactions to associate with the message.""")
+    reactions = param.List(
+        doc="""
+        Reactions to associate with the message."""
+    )
 
-    reaction_icons = param.ClassSelector(class_=(ChatReactionIcons, dict), doc="""
+    reaction_icons = param.ClassSelector(
+        class_=(ChatReactionIcons, dict),
+        doc="""
         A mapping of reactions to their reaction icons; if not provided
-        defaults to `{"favorite": "heart"}`.""",)
+        defaults to `{"favorite": "heart"}`.""",
+    )
 
-    timestamp = param.Date(doc="""
-        Timestamp of the message. Defaults to the creation time.""")
+    timestamp = param.Date(
+        doc="""
+        Timestamp of the message. Defaults to the creation time."""
+    )
 
     timestamp_format = param.String(default="%H:%M", doc="The timestamp format.")
 
-    show_avatar = param.Boolean(default=True, doc="""
-         Whether to display the avatar of the user.""")
+    show_avatar = param.Boolean(
+        default=True,
+        doc="""
+         Whether to display the avatar of the user.""",
+    )
 
-    show_user = param.Boolean(default=True, doc="""
-        Whether to display the name of the user.""")
+    show_user = param.Boolean(
+        default=True,
+        doc="""
+        Whether to display the name of the user.""",
+    )
 
-    show_timestamp = param.Boolean(default=True, doc="""
-        Whether to display the timestamp of the message.""")
+    show_timestamp = param.Boolean(
+        default=True,
+        doc="""
+        Whether to display the timestamp of the message.""",
+    )
 
-    show_reaction_icons = param.Boolean(default=True, doc="""
-        Whether to display the reaction icons.""")
+    show_reaction_icons = param.Boolean(
+        default=True,
+        doc="""
+        Whether to display the reaction icons.""",
+    )
 
-    show_copy_icon = param.Boolean(default=True, doc="""
-        Whether to display the copy icon.""")
+    show_copy_icon = param.Boolean(
+        default=True,
+        doc="""
+        Whether to display the copy icon.""",
+    )
 
-    renderers = param.HookList(doc="""
+    renderers = param.HookList(
+        doc="""
         A callable or list of callables that accept the object and return a
         Panel object to render the object. If a list is provided, will
         attempt to use the first renderer that does not raise an
@@ -193,8 +232,11 @@ class ChatMessage(PaneBase):
         from the object."""
     )
 
-    user = param.Parameter(default="User", doc="""
-        Name of the user who sent the message.""")
+    user = param.Parameter(
+        default="User",
+        doc="""
+        Name of the user who sent the message.""",
+    )
 
     _object_panel = param.Parameter(doc="The rendered object panel.")
 
@@ -207,22 +249,16 @@ class ChatMessage(PaneBase):
         from ..param import ParamMethod  # circular imports
 
         self._exit_stack = ExitStack()
-        self.chat_copy_icon = ChatCopyIcon(
-            visible=False, width=15, height=15, css_classes=["copy-icon"]
-        )
+        self.chat_copy_icon = ChatCopyIcon(visible=False, width=15, height=15, css_classes=["copy-icon"])
         if params.get("timestamp") is None:
             params["timestamp"] = datetime.datetime.utcnow()
         if params.get("reaction_icons") is None:
             params["reaction_icons"] = {"favorite": "heart"}
         if isinstance(params["reaction_icons"], dict):
-            params["reaction_icons"] = ChatReactionIcons(
-                options=params["reaction_icons"], width=15, height=15
-            )
+            params["reaction_icons"] = ChatReactionIcons(options=params["reaction_icons"], width=15, height=15)
         super().__init__(object=object, **params)
         self.reaction_icons.link(self, value="reactions", bidirectional=True)
-        self.reaction_icons.link(
-            self, visible="show_reaction_icons", bidirectional=True
-        )
+        self.reaction_icons.link(self, visible="show_reaction_icons", bidirectional=True)
         self.param.trigger("reactions", "show_reaction_icons")
         if not self.avatar:
             self.param.trigger("avatar_lookup")
@@ -239,37 +275,29 @@ class ChatMessage(PaneBase):
             sizing_mode=None,
         )
         center_row = Row(
-            ParamMethod(self._render_object, **render_kwargs),
-            self.reaction_icons,
-            css_classes=["center"],
-            stylesheets=self._stylesheets,
-            sizing_mode=None
+            ParamMethod(self._render_object, **render_kwargs), self.reaction_icons, css_classes=["center"], stylesheets=self._stylesheets, sizing_mode=None
         )
         right_col = Column(
             Row(
                 HTML(
-                    self.param.user, height=20, css_classes=["name"],
-                    visible=self.param.show_user, stylesheets=self._stylesheets,
+                    self.param.user,
+                    height=20,
+                    css_classes=["name"],
+                    visible=self.param.show_user,
+                    stylesheets=self._stylesheets,
                 ),
                 self.chat_copy_icon,
                 stylesheets=self._stylesheets,
                 sizing_mode="stretch_width",
             ),
             center_row,
-            HTML(
-                self.param.timestamp.rx().strftime(self.param.timestamp_format),
-                css_classes=["timestamp"],
-                visible=self.param.show_timestamp
-            ),
+            HTML(self.param.timestamp.rx().strftime(self.param.timestamp_format), css_classes=["timestamp"], visible=self.param.show_timestamp),
             css_classes=["right"],
             stylesheets=self._stylesheets,
-            sizing_mode=None
+            sizing_mode=None,
         )
-        viewable_params = {
-            p: self.param[p] for p in self.param if p in Viewable.param
-            if p in Viewable.param and p != 'name'
-        }
-        viewable_params['stylesheets'] = self._stylesheets + self.param.stylesheets.rx()
+        viewable_params = {p: self.param[p] for p in self.param if p in Viewable.param if p in Viewable.param and p != "name"}
+        viewable_params["stylesheets"] = self._stylesheets + self.param.stylesheets.rx()
         self._composite.param.update(**viewable_params)
         self._composite[:] = [left_col, right_col]
 
@@ -277,12 +305,9 @@ class ChatMessage(PaneBase):
     def _synced_params(self) -> List[str]:
         return []
 
-    def _get_model(
-        self, doc: Document, root: Model | None = None,
-        parent: Model | None = None, comm: Comm | None = None
-    ) -> Model:
+    def _get_model(self, doc: Document, root: Model | None = None, parent: Model | None = None, comm: Comm | None = None) -> Model:
         model = self._composite._get_model(doc, root, parent, comm)
-        ref = (root or model).ref['id']
+        ref = (root or model).ref["id"]
         self._models[ref] = (model, parent)
         return model
 
@@ -304,9 +329,7 @@ class ChatMessage(PaneBase):
         # update with the user input
         updated_avatars.update(self.default_avatars)
         # correct the keys to be alpha numeric
-        updated_avatars = {
-            self._to_alpha_numeric(key): value for key, value in updated_avatars.items()
-        }
+        updated_avatars = {self._to_alpha_numeric(key): value for key, value in updated_avatars.items()}
         # now lookup the avatar
         return updated_avatars.get(alpha_numeric_key, self.avatar)
 
@@ -323,9 +346,7 @@ class ChatMessage(PaneBase):
             contents = self._exit_stack.enter_context(BytesIO(contents))
             renderer = partial(PDF, embed=True)
         elif mime_type.startswith("audio/"):
-            file = self._exit_stack.enter_context(
-                NamedTemporaryFile(suffix=".mp3", delete=False)
-            )
+            file = self._exit_stack.enter_context(NamedTemporaryFile(suffix=".mp3", delete=False))
             file.write(contents)
             file.seek(0)
             contents = file.name
@@ -550,10 +571,7 @@ class ChatMessage(PaneBase):
                 updates["avatar"] = avatar
         elif isinstance(value, ChatMessage):
             if user is not None or avatar is not None:
-                raise ValueError(
-                    "Cannot set user or avatar when explicitly sending "
-                    "a ChatMessage. Set them directly on the ChatMessage."
-                )
+                raise ValueError("Cannot set user or avatar when explicitly sending " "a ChatMessage. Set them directly on the ChatMessage.")
             updates = value.param.values()
         else:
             updates["object"] = value

@@ -30,24 +30,21 @@ from .state import curdoc_locked, state
 
 logger = logging.getLogger(__name__)
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 # Private API
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 
-DISPATCH_EVENTS = (
-    ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
-    ModelChangedEvent
-)
+DISPATCH_EVENTS = (ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent, ModelChangedEvent)
+
 
 @dataclasses.dataclass
 class Request:
-    headers : dict
-    cookies : dict
-    arguments : dict
+    headers: dict
+    cookies: dict
+    arguments: dict
 
 
 class MockSessionContext(SessionContext):
-
     def __init__(self, *args, document=None, **kwargs):
         self._document = document
         super().__init__(*args, server_context=None, session_id=None, **kwargs)
@@ -72,17 +69,19 @@ def _dispatch_events(doc: Document, events: List[DocumentChangedEvent]) -> None:
     for event in events:
         doc.callbacks.trigger_on_change(event)
 
+
 def _cleanup_doc(doc, destroy=True):
     for callback in doc.session_destroyed_callbacks:
         try:
             callback(None)
         except Exception:
             pass
-    if hasattr(doc.callbacks, '_change_callbacks'):
+    if hasattr(doc.callbacks, "_change_callbacks"):
         doc.callbacks._change_callbacks[None] = {}
 
     # Remove views
     from ..viewable import Viewable
+
     views = {}
     for ref, (pane, root, vdoc, comm) in list(state._views.items()):
         if vdoc is doc:
@@ -115,9 +114,11 @@ def _cleanup_doc(doc, destroy=True):
     # Destroy document
     doc.destroy(None)
 
-#---------------------------------------------------------------------
+
+# ---------------------------------------------------------------------
 # Public API
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
+
 
 def create_doc_if_none_exists(doc: Optional[Document]) -> Document:
     curdoc = doc or curdoc_locked()
@@ -126,6 +127,7 @@ def create_doc_if_none_exists(doc: Optional[Document]) -> Document:
     elif not isinstance(curdoc, Document):
         curdoc = curdoc._doc
     return curdoc
+
 
 def init_doc(doc: Optional[Document]) -> Document:
     curdoc = create_doc_if_none_exists(doc)
@@ -138,22 +140,24 @@ def init_doc(doc: Optional[Document]) -> Document:
 
     if config.global_loading_spinner:
         curdoc.js_on_event(
-            'document_ready', CustomJS(code=f"""
+            "document_ready",
+            CustomJS(
+                code=f"""
             const body = document.getElementsByTagName('body')[0]
             body.classList.remove({LOADING_INDICATOR_CSS_CLASS!r}, {config.loading_spinner!r})
-            """)
+            """
+            ),
         )
 
     session_id = curdoc.session_context.id
-    sessions = state.session_info['sessions']
+    sessions = state.session_info["sessions"]
     if session_id not in sessions:
         return curdoc
 
-    sessions[session_id].update({
-        'started': dt.datetime.now().timestamp()
-    })
-    curdoc.on_event('document_ready', state._init_session)
+    sessions[session_id].update({"started": dt.datetime.now().timestamp()})
+    curdoc.on_event("document_ready", state._init_session)
     return curdoc
+
 
 def with_lock(func: Callable) -> Callable:
     """
@@ -171,53 +175,50 @@ def with_lock(func: Callable) -> Callable:
       Function wrapped to execute without a Document lock.
     """
     if inspect.iscoroutinefunction(func):
+
         @wraps(func)
         async def wrapper(*args, **kw):
             return await func(*args, **kw)
     else:
+
         @wraps(func)
         def wrapper(*args, **kw):
             return func(*args, **kw)
-    wrapper.lock = True # type: ignore
+
+    wrapper.lock = True  # type: ignore
     return wrapper
+
 
 def dispatch_tornado(conn, events):
     from tornado.websocket import WebSocketHandler
+
     socket = conn._socket
-    ws_conn = getattr(socket, 'ws_connection', False)
-    if not ws_conn or ws_conn.is_closing(): # type: ignore
+    ws_conn = getattr(socket, "ws_connection", False)
+    if not ws_conn or ws_conn.is_closing():  # type: ignore
         return []
-    msg = conn.protocol.create('PATCH-DOC', events)
+    msg = conn.protocol.create("PATCH-DOC", events)
     futures = [
         WebSocketHandler.write_message(socket, msg.header_json),
         WebSocketHandler.write_message(socket, msg.metadata_json),
-        WebSocketHandler.write_message(socket, msg.content_json)
+        WebSocketHandler.write_message(socket, msg.content_json),
     ]
     for buffer in msg._buffers:
         header = json.dumps(buffer.ref)
         payload = buffer.to_bytes()
-        futures.extend([
-            WebSocketHandler.write_message(socket, header),
-            WebSocketHandler.write_message(socket, payload, binary=True)
-        ])
+        futures.extend([WebSocketHandler.write_message(socket, header), WebSocketHandler.write_message(socket, payload, binary=True)])
     return futures
+
 
 def dispatch_django(conn, events):
     socket = conn._socket
-    msg = conn.protocol.create('PATCH-DOC', events)
-    futures = [
-        socket.send(text_data=msg.header_json),
-        socket.send(text_data=msg.metadata_json),
-        socket.send(text_data=msg.content_json)
-    ]
+    msg = conn.protocol.create("PATCH-DOC", events)
+    futures = [socket.send(text_data=msg.header_json), socket.send(text_data=msg.metadata_json), socket.send(text_data=msg.content_json)]
     for buffer in msg._buffers:
         header = json.dumps(buffer.ref)
         payload = buffer.to_bytes()
-        futures.extend([
-            socket.send(text_data=header),
-            socket.send(binary_data=payload)
-        ])
+        futures.extend([socket.send(text_data=header), socket.send(binary_data=payload)])
     return futures
+
 
 @contextmanager
 def unlocked() -> Iterator:
@@ -227,8 +228,8 @@ def unlocked() -> Iterator:
     on current sessions.
     """
     curdoc = state.curdoc
-    session_context = getattr(curdoc, 'session_context', None)
-    session = getattr(session_context, 'session', None)
+    session_context = getattr(curdoc, "session_context", None)
+    session = getattr(session_context, "session", None)
     if curdoc is None or session_context is None or session is None or state._jupyter_kernel_context:
         yield
         return
@@ -238,6 +239,7 @@ def unlocked() -> Iterator:
         return
 
     from tornado.websocket import WebSocketClosedError, WebSocketHandler
+
     connections = session._subscribed_connections
 
     curdoc.hold()
@@ -247,7 +249,7 @@ def unlocked() -> Iterator:
         locked = False
         for conn in connections:
             socket = conn._socket
-            if hasattr(socket, 'write_lock') and socket.write_lock._block._value == 0:
+            if hasattr(socket, "write_lock") and socket.write_lock._block._value == 0:
                 locked = True
                 break
 
@@ -295,6 +297,7 @@ def unlocked() -> Iterator:
         except RuntimeError:
             if remaining_events:
                 curdoc.add_next_tick_callback(partial(_dispatch_events, curdoc, remaining_events))
+
 
 @contextmanager
 def immediate_dispatch(doc: Document | None = None):
