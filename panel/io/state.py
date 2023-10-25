@@ -1093,7 +1093,10 @@ class _state(param.Parameterized):
         """
         Returns the OAuth user information if enabled.
         """
-        id_token = self._decode_cookie('id_token')
-        return decode_token(id_token)
+        try:
+            id_token = self._decode_cookie('id_token')
+            return decode_token(id_token)
+        except TypeError:
+            return {"user": "guest", "username": "guest"}
 
 state = _state()

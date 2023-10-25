@@ -849,7 +849,8 @@ class BasicAuthProvider(AuthProvider):
 
     def __init__(
         self, login_endpoint=None, logout_endpoint=None,
-        login_template=None, logout_template=None, error_template=None
+        login_template=None, logout_template=None, error_template=None,
+        guest_endpoints=None
     ):
         if error_template is None:
             self._error_template = ERROR_TEMPLATE
@@ -868,6 +869,7 @@ class BasicAuthProvider(AuthProvider):
                 self._login_template = _env.from_string(f.read())
         self._login_endpoint = login_endpoint or '/login'
         self._logout_endpoint = logout_endpoint or '/logout'
+        self._guest_endpoints = guest_endpoints or []
 
         state.on_session_destroyed(self._remove_user)
         super().__init__()
@@ -879,10 +881,17 @@ class BasicAuthProvider(AuthProvider):
         if not state._active_users[user]:
             del state._active_users[user]
 
+    def _is_guest(self, uri):
+        return True if uri in self._guest_endpoints else False
+
     @property
     def get_user(self):
         def get_user(request_handler):
             user = request_handler.get_secure_cookie("user", max_age_days=config.oauth_expiry)
+
+            if user is None and self._is_guest(request_handler.request.uri):
+                user = "guest".encode('utf-8')
+
             if user:
                 user = user.decode('utf-8')
                 if user and isinstance(request_handler, WebSocketHandler):
@@ -927,6 +936,10 @@ class OAuthProvider(BasicAuthProvider):
         async def get_user(handler):
             user = handler.get_secure_cookie('user', max_age_days=config.oauth_expiry)
             user = user.decode('utf-8') if user else None
+
+            if user is None and self._is_guest(handler.request.uri):
+                user = "guest"
+
             if user and isinstance(handler, WebSocketHandler):
                 state._active_users[user] += 1
             if not config.oauth_refresh_tokens or user is None:
