@@ -387,8 +387,8 @@ class ColorMap(SingleSelectBase):
             idx = indexOf(params['value'], self.values)
             params['value'] = self.labels[idx]
         return {
-            self._rename.get(p, p): v for p, v in params.items()
-            if self._rename.get(p, False) is not None
+            self._property_mapping.get(p, p): v for p, v in params.items()
+            if self._property_mapping.get(p, False) is not None
         }
 
 
