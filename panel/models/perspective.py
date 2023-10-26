@@ -10,7 +10,8 @@ from ..util import classproperty
 from .layout import HTMLBox
 
 PERSPECTIVE_THEMES = [
-    'pro', 'pro-dark', 'monokai', 'solarized', 'solarized-dark', 'vaporwave', "gruvbox", "gruvbox-dark", "dracula"
+    'monokai', 'solarized', 'solarized-dark', 'vaporwave', 'dracula',
+    'pro', 'pro-dark', 'gruvbox', 'gruvbox-dark',
 ]
 
 PERSPECTIVE_VERSION = '2.6.0'
@@ -75,7 +76,8 @@ class Perspective(HTMLBox):
 
     theme = Enum(*PERSPECTIVE_THEMES, default="pro")
 
-    # pylint: disable=line-too-long
+    __javascript_module_exports__ = ['perspective']
+
     __javascript_modules__ = [
         f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/cdn/perspective.js",
         f"{config.npm_cdn}/@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer.js",

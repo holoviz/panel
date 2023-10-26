@@ -6,8 +6,8 @@ import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 import type {Attrs} from "@bokehjs/core/types"
 
 const THEMES: any = {
-  'material-dark': 'Material Dark',
-  'material': 'Material Light',
+  'pro-dark': 'Pro Dark',
+  'pro': 'Pro Light',
   'vaporwave': 'Vaporwave',
   'solarized': 'Solarized',
   'solarized-dark': 'Solarized Dark',
@@ -295,7 +295,7 @@ export class Perspective extends HTMLBox {
       toggle_config:    [ Boolean,                           true ],
       sort:             [ Nullable(Array(Array(String))),    null ],
       source:           [ Ref(ColumnDataSource),                  ],
-      theme:            [ String,                      'material' ]
+      theme:            [ String,                           'pro' ]
     }))
   }
 }
