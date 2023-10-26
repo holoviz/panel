@@ -891,6 +891,7 @@ class BasicAuthProvider(AuthProvider):
 
             if user is None and self._is_guest(request_handler.request.uri):
                 user = "guest".encode('utf-8')
+                state.cookies["user"] = "guest"
 
             if user:
                 user = user.decode('utf-8')
@@ -939,6 +940,7 @@ class OAuthProvider(BasicAuthProvider):
 
             if user is None and self._is_guest(handler.request.uri):
                 user = "guest"
+                state.cookies["user"] = "guest"
 
             if user and isinstance(handler, WebSocketHandler):
                 state._active_users[user] += 1

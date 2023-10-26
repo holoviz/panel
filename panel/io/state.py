@@ -1084,6 +1084,9 @@ class _state(param.Parameterized):
 
         from ..config import config
         user = self.cookies.get('user')
+        if user == "guest":
+            return "guest"
+
         if user is None or config.cookie_secret is None:
             return None
         return decode_signed_value(config.cookie_secret, 'user', user).decode('utf-8')
