@@ -275,7 +275,7 @@ def base64url_decode(input):
     return base64.urlsafe_b64decode(input)
 
 
-def decode_token(token, signed=True):
+def decode_token(token: str, signed: bool = True) -> dict[str, Any]:
     """
     Decodes a signed or unsigned JWT token.
     """
