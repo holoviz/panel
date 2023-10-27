@@ -1043,7 +1043,7 @@ class ReactiveExpr(PaneBase):
         objects=[WidgetBox, Row, Column], constant=True, default=WidgetBox, doc="""
         The layout object to display the widgets in.""")
 
-    widget_location = param.Selector(default='left', objects=[
+    widget_location = param.Selector(default='left_top', objects=[
         'left', 'right', 'top', 'bottom', 'top_left',
         'top_right', 'bottom_left', 'bottom_right',
         'left_top', 'right_top', 'right_bottom'], doc="""
