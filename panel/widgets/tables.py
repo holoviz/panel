@@ -30,7 +30,7 @@ from ..io.state import state
 from ..reactive import Reactive, ReactiveData
 from ..util import (
     BOKEH_JS_NAT, clone_model, datetime_as_utctimestamp, isdatetime, lazy_load,
-    updating,
+    styler_update, updating,
 )
 from .base import Widget
 from .button import Button
@@ -1337,8 +1337,11 @@ class Tabulator(BaseTable):
                 return {}
             if styler is None:
                 return {}
-            styler._todo = self.style._todo
-            styler._compute()
+            styler._todo = styler_update(self.style, df)
+            try:
+                styler._compute()
+            except Exception:
+                styler._todo = []
         else:
             styler = self._computed_styler
         if styler is None:
