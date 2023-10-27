@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 
     from ..layout.base import ListPanel
 
-    T = TypeVar('T', bound='Widget')
+    T = TypeVar('T')
 
 
 class Widget(Reactive):
@@ -75,7 +75,7 @@ class Widget(Reactive):
         super().__init__(**params)
 
     @classmethod
-    def from_param(cls, parameter: param.Parameter, **params) -> T:
+    def from_param(cls: Type[T], parameter: param.Parameter, **params) -> T:
         """
         Construct a widget from a Parameter and link the two
         bi-directionally.
