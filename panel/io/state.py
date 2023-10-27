@@ -1083,10 +1083,11 @@ class _state(param.Parameterized):
         from tornado.web import decode_signed_value
 
         from ..config import config
-        user = self.cookies.get('user')
-        if user == "guest":
+        is_guest = self.cookies.get('is_guest')
+        if is_guest:
             return "guest"
 
+        user = self.cookies.get('user')
         if user is None or config.cookie_secret is None:
             return None
         return decode_signed_value(config.cookie_secret, 'user', user).decode('utf-8')
@@ -1096,10 +1097,12 @@ class _state(param.Parameterized):
         """
         Returns the OAuth user information if enabled.
         """
-        try:
-            id_token = self._decode_cookie('id_token')
-            return decode_token(id_token)
-        except TypeError:
-            return {"user": "guest", "username": "guest"}
+        is_guest = self.cookies.get('is_guest')
+        if is_guest:
+            return {"user": "guest"}
+        id_token = self._decode_cookie('id_token')
+        if id_token is None:
+            return None
+        return decode_token(id_token)
 
 state = _state()

@@ -149,8 +149,15 @@ class Serve(_BkServe):
         )),
         ('--oauth-guest-endpoints', dict(
             action  = 'store',
-            type    = str,
-            help    = "Guest endpoints.",
+            nargs   = '*',
+            help    = "List of endpoints that can be accessed as a guest without authenticating.",
+        )),
+        ('--oauth-optional', dict(
+            action  = 'store_true',
+            help    = (
+                "Whether the user will be forced to go through login flow "
+                "or if they can access all applications as a guest."
+            )
         )),
         ('--login-endpoint', dict(
             action  = 'store',
@@ -484,7 +491,9 @@ class Serve(_BkServe):
             error_template = None
 
         if args.oauth_guest_endpoints:
-            config.oauth_guest_endpoints = ast.literal_eval(args.oauth_guest_endpoints)
+            config.oauth_guest_endpoints = args.oauth_guest_endpoints
+        if args.oauth_optional:
+            config.oauth_optional = args.oauth_optional
 
         if args.basic_auth:
             config.basic_auth = args.basic_auth

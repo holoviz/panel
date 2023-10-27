@@ -302,7 +302,11 @@ class _config(_base_config):
         Additional parameters required for OAuth provider.""")
 
     _oauth_guest_endpoints = param.List(default=None, doc="""
-        Guest endpoints.""")
+        List of endpoints that can be accessed as a guest without authenticating.""")
+
+    _oauth_optional = param.Boolean(default=False, doc="""
+        Whether the user will be forced to go through login flow or if
+        they can access all applications as a guest.""")
 
     _oauth_refresh_tokens = param.Boolean(default=False, doc="""
         Whether to automatically refresh access tokens in the background.""")
@@ -320,7 +324,8 @@ class _config(_base_config):
         'nthreads', 'oauth_provider', 'oauth_expiry', 'oauth_key',
         'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
         'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
-        'layout_compatibility', 'oauth_refresh_tokens', 'oauth_guest_endpoints'
+        'layout_compatibility', 'oauth_refresh_tokens', 'oauth_guest_endpoints',
+        'oauth_optional'
     ]
 
     _truthy = ['True', 'true', '1', True, 1]
@@ -589,6 +594,13 @@ class _config(_base_config):
             return ast.literal_eval(os.environ['PANEL_OAUTH_GUEST_ENDPOINTS'])
         else:
             return self._oauth_guest_endpoints
+
+    @property
+    def oauth_optional(self):
+        optional = os.environ.get('PANEL_OAUTH_OPTIONAL', self._oauth_optional)
+        if isinstance(optional, bool):
+            return optional
+        return optional.lower() in ('1', 'true')
 
     @property
     def theme(self):

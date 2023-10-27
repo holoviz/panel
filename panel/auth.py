@@ -406,6 +406,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
             log.error("%s token payload did not contain expected %r.",
                       type(self).__name__, user_key)
             raise HTTPError(400, "OAuth token payload missing user information")
+        self.clear_cookie('is_guest')
         self.set_secure_cookie('user', user, expires_days=config.oauth_expiry)
         if state.encryption:
             access_token = state.encryption.encrypt(access_token.encode('utf-8'))
@@ -813,8 +814,10 @@ class BasicLoginHandler(RequestHandler):
 
     def set_current_user(self, user):
         if not user:
+            self.clear_cookie("is_guest")
             self.clear_cookie("user")
             return
+        self.clear_cookie("is_guest")
         self.set_secure_cookie("user", user, expires_days=config.oauth_expiry)
         id_token = base64url_encode(json.dumps({'user': user}))
         if state.encryption:
@@ -875,28 +878,37 @@ class BasicAuthProvider(AuthProvider):
         super().__init__()
 
     def _remove_user(self, session_context):
+        guest_cookie = session_context.request.cookies.get('is_guest')
         user_cookie = session_context.request.cookies.get('user')
-        user = decode_signed_value(config.cookie_secret, 'user', user_cookie).decode('utf-8')
+        if guest_cookie:
+            user = 'guest'
+        else:
+            user = decode_signed_value(
+                config.cookie_secret, 'user', user_cookie
+            ).decode('utf-8')
         state._active_users[user] -= 1
         if not state._active_users[user]:
             del state._active_users[user]
 
-    def _is_guest(self, uri):
-        return True if uri in self._guest_endpoints else False
+    def _allow_guest(self, uri):
+        if config.oauth_optional and not (uri == self._login_endpoint or '?code=' in uri):
+            return True
+        return True if uri.replace('/ws', '') in self._guest_endpoints else False
 
     @property
     def get_user(self):
         def get_user(request_handler):
             user = request_handler.get_secure_cookie("user", max_age_days=config.oauth_expiry)
-
-            if user is None and self._is_guest(request_handler.request.uri):
-                user = "guest".encode('utf-8')
-                state.cookies["user"] = "guest"
-
             if user:
                 user = user.decode('utf-8')
-                if user and isinstance(request_handler, WebSocketHandler):
-                    state._active_users[user] += 1
+            elif self._allow_guest(request_handler.request.uri):
+                user = "guest"
+                request_handler.request.cookies["is_guest"] = "1"
+                if not isinstance(request_handler, WebSocketHandler):
+                    request_handler.set_cookie("is_guest", "1", expires_days=config.oauth_expiry)
+
+            if user and isinstance(request_handler, WebSocketHandler):
+                state._active_users[user] += 1
             return user
         return get_user
 
@@ -935,15 +947,7 @@ class OAuthProvider(BasicAuthProvider):
     @property
     def get_user_async(self):
         async def get_user(handler):
-            user = handler.get_secure_cookie('user', max_age_days=config.oauth_expiry)
-            user = user.decode('utf-8') if user else None
-
-            if user is None and self._is_guest(handler.request.uri):
-                user = "guest"
-                state.cookies["user"] = "guest"
-
-            if user and isinstance(handler, WebSocketHandler):
-                state._active_users[user] += 1
+            user = super(OAuthProvider, self).get_user(handler)
             if not config.oauth_refresh_tokens or user is None:
                 return user
 

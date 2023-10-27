@@ -1021,6 +1021,8 @@ def get_server(
     oauth_encryption_key: Optional[str] = None,
     oauth_jwt_user: Optional[str] = None,
     oauth_refresh_tokens: Optional[bool] = None,
+    oauth_guest_endpoints: Optional[bool] = None,
+    oauth_optional: Optional[bool] = None,
     login_endpoint: Optional[str] = None,
     logout_endpoint: Optional[str] = None,
     login_template: Optional[str] = None,
@@ -1089,6 +1091,11 @@ def get_server(
     oauth_encryption_key: str (optional, default=None)
       A random encryption key used for encrypting OAuth user
       information and access tokens.
+    oauth_guest_endpoints: list (optional, default=None)
+      List of endpoints that can be accessed as a guest without authenticating.
+    oauth_optional: bool (optional, default=None)
+      Whether the user will be forced to go through login flow or if
+      they can access all applications as a guest.
     oauth_refresh_tokens: bool (optional, default=None)
       Whether to automatically refresh OAuth access tokens when they expire.
     login_endpoint: str (optional, default=None)
@@ -1243,6 +1250,10 @@ def get_server(
         config.oauth_redirect_uri = oauth_redirect_uri # type: ignore
     if oauth_refresh_tokens is not None:
         config.oauth_refresh_tokens = oauth_refresh_tokens
+    if oauth_optional is not None:
+        config.oauth_optional = oauth_optional
+    if oauth_guest_endpoints is not None:
+        config.oauth_guest_endpoints = oauth_guest_endpoints
     if oauth_jwt_user is not None:
         config.oauth_jwt_user = oauth_jwt_user
     opts['cookie_secret'] = config.cookie_secret
