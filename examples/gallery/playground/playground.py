@@ -55,8 +55,23 @@ pn.pane.Matplotlib(fig0, dpi=144).servable()
 }
 EXAMPLES = {key: EXAMPLES[key] for key in sorted(EXAMPLES)}
 
-TEMPLATE = """
-<div id="pn-container" style="height:100%;width:100%;border: 1px solid black"></div>
+LOADING_SPINNER = """
+<svg id="loading" xmlns="http://www.w3.org/2000/svg" style="margin: auto; background: none; display: block; shape-rendering: auto;" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid">
+<rect x="15" y="30" width="10" height="40" fill="#424242">
+  <animate attributeName="opacity" dur="1s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.5 0 0.5 1;0.5 0 0.5 1" values="1;0.2;1" begin="-0.6"/>
+</rect><rect x="35" y="30" width="10" height="40" fill="#424242">
+  <animate attributeName="opacity" dur="1s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.5 0 0.5 1;0.5 0 0.5 1" values="1;0.2;1" begin="-0.4"/>
+</rect><rect x="55" y="30" width="10" height="40" fill="#424242">
+  <animate attributeName="opacity" dur="1s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.5 0 0.5 1;0.5 0 0.5 1" values="1;0.2;1" begin="-0.2"/>
+</rect><rect x="75" y="30" width="10" height="40" fill="#424242">
+  <animate attributeName="opacity" dur="1s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.5 0 0.5 1;0.5 0 0.5 1" values="1;0.2;1" begin="-1"/>
+</rect></svg>
+"""
+
+TEMPLATE = f"""
+<div id="pn-container" style="height:100%;width:100%;border: 1px solid black">
+    {LOADING_SPINNER}
+</div>
 """
 
 
@@ -81,14 +96,12 @@ class PanelPlayground(ReactiveHTML):
 
     _scripts = {
         "render": """
+data.running=true;
 state.main = document.createElement('div');
 state.code=""
 state.ready=false;
-data.running=true;
 
 state.log = (message)=>{
-    console.log(message);
-    data.log_message = "\\n"
     data.log_message = message
 }
 
@@ -153,6 +166,13 @@ main().then(()=>{self.runCode()})
         "code": """
     if (!data.running){self.runCode()}else{state.log("The code is already running.")}
     """,
+        "running": """
+    if (data.running==true){
+        setTimeout(() => {
+            if (data.running){loading.style.display="block";}
+        }, "200");
+    } else {loading.style.display="none"}
+    """
     }
 
 
