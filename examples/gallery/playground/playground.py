@@ -14,6 +14,37 @@ pn.extension("terminal")
 pn.panel("Hello World").servable()
 """
 
+TRANSFORMERS_EXAMPLE = '''\
+import panel as pn
+
+MODEL = "sentiment-analysis"
+pn.chat.ChatMessage.default_avatars["hugging face"] = "🤗"
+
+pn.extension(design="material")
+
+@pn.cache
+async def _get_pipeline(model):
+    from transformers_js import import_transformers_js
+    transformers = await import_transformers_js()
+    return await transformers.pipeline(model)
+
+async def callback(contents: str, user: str, instance: pn.chat.ChatInterface):
+    pipe = await _get_pipeline(MODEL)
+    response = await pipe(contents)
+    label, score = response[0]["label"], round(response[0]["score"], 2)
+    return f"""I feel a {label} vibe here (score: {score})"""
+
+welcome_message = pn.chat.ChatMessage(
+    f"I'm a Hugging Face Transformers `{MODEL}` model.\\n\\nPlease *send a message*!",
+    user="Hugging Face",
+)
+
+pn.chat.ChatInterface(
+    welcome_message, placeholder_text="Loading the model ...",
+    callback=callback, callback_user="Hugging Face",
+).servable()
+'''
+
 EXAMPLES = {
     "Hello World": HELLO_WORLD_EXAMPLE,
     "Reactive Expressions": """
@@ -52,6 +83,7 @@ fig0.colorbar(strm.lines)
 
 pn.pane.Matplotlib(fig0, dpi=144).servable()
 """,
+    "Hugging Face Transformers": TRANSFORMERS_EXAMPLE,
 }
 EXAMPLES = {key: EXAMPLES[key] for key in sorted(EXAMPLES)}
 
@@ -114,7 +146,7 @@ async function main() {
     state.log("Loading packages")
     await pyodide.runPythonAsync(`
     import micropip
-    await micropip.install(['https://cdn.holoviz.org/panel/wheels/bokeh-3.3.0-py3-none-any.whl', 'https://cdn.holoviz.org/panel/1.3.0/dist/wheels/panel-1.3.0-py3-none-any.whl', 'pyodide-http==0.2.1', 'param', "matplotlib"]);
+    await micropip.install(['https://cdn.holoviz.org/panel/wheels/bokeh-3.3.0-py3-none-any.whl', 'https://cdn.holoviz.org/panel/1.3.0/dist/wheels/panel-1.3.0-py3-none-any.whl', 'pyodide-http==0.2.1', 'param', "matplotlib", "transformers_js_py"]);
     `);
 }
 main().then(()=>{self.runCode()})
@@ -194,7 +226,7 @@ pn.Row(
         "#### Examples",
         examples,
         "#### Status",
-        playground.param.running,
+        pn.widgets.Checkbox.from_param(playground.param.running, disabled=True),
         pn.pane.Str(playground.param.log_message, name="Status"),
         width=300,
     ),
