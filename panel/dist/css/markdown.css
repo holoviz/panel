@@ -340,6 +340,7 @@ pre {
   white-space: nowrap;
 }
 
-.codehilite > pre > code {
+.codehilite > pre > code,
+.codehilite > code {
   white-space: break-spaces;
 }

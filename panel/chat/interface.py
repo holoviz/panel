@@ -74,7 +74,7 @@ class ChatInterface(ChatFeed):
         or anything supported by `pn.pane.Image`. If not set, uses the
         first character of the name.""")
 
-    reset_on_send = param.Boolean(default=False, doc="""
+    reset_on_send = param.Boolean(default=True, doc="""
         Whether to reset the widget's value after sending a message;
         has no effect for `TextInput`.""")
 
