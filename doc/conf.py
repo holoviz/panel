@@ -208,7 +208,7 @@ CardDirective.run = patched_card_run
 def _get_pyodide_version():
     if PYODIDE_VERSION.startswith("v"):
         return PYODIDE_VERSION[1:]
-    raise NotImplementedError(F"{PY_VERSION=} is not valid")
+    raise NotImplementedError(F"{PYODIDE_VERSION=} is not valid")
 
 def update_versions(app, docname, source):
     # Inspired by: https://stackoverflow.com/questions/8821511
