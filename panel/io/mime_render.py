@@ -45,6 +45,7 @@ def _stdlibs():
 _STDLIBS = _stdlibs()
 _PACKAGE_MAP = {
     'sklearn': 'scikit-learn',
+    'transformers_js': 'transformers-js-py',
 }
 _IGNORED_PKGS = ['js', 'pyodide']
 _PANDAS_AUTODETECT = ['bokeh.sampledata', 'as_frame']

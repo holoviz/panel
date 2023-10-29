@@ -48,6 +48,12 @@ def test_find_import_imports_multiline():
     """
     assert find_imports(code) == ['numpy', 'scipy']
 
+def test_find_import_replacement():
+    code = """
+    import transformers_js
+    """
+    assert find_imports(code) == ['transformers-js-py']
+
 def test_exec_with_return_multi_line():
     assert exec_with_return('a = 1\nb = 2\na + b') == 3
 
