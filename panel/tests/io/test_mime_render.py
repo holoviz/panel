@@ -1,7 +1,7 @@
 import pathlib
 
 from panel.io.mime_render import (
-    WriteCallbackStream, exec_with_return, find_imports, format_mime,
+    WriteCallbackStream, exec_with_return, find_requirements, format_mime,
 )
 
 
@@ -34,19 +34,25 @@ def test_find_imports_stdlibs():
     import base64
     import pathlib
     """
-    assert find_imports(code) == []
+    assert find_requirements(code) == []
 
 def test_find_import_stdlibs_multiline():
     code = """
     import re, io, time
     """
-    assert find_imports(code) == []
+    assert find_requirements(code) == []
 
 def test_find_import_imports_multiline():
     code = """
     import numpy, scipy
     """
-    assert find_imports(code) == ['numpy', 'scipy']
+    assert find_requirements(code) == ['numpy', 'scipy']
+
+def test_find_import_replacement():
+    code = """
+    import transformers_js
+    """
+    assert find_requirements(code) == ['transformers-js-py']
 
 def test_exec_with_return_multi_line():
     assert exec_with_return('a = 1\nb = 2\na + b') == 3
