@@ -50,9 +50,9 @@ _PACKAGE_MAP = {
 _IGNORED_PKGS = ['js', 'pyodide']
 _PANDAS_AUTODETECT = ['bokeh.sampledata', 'as_frame']
 
-def find_imports(code: str) -> List[str]:
+def find_requirements(code: str) -> List[str]:
     """
-    Finds the imports in a string of code.
+    Finds the packages required in a string of code.
 
     Parameters
     ----------
@@ -62,7 +62,7 @@ def find_imports(code: str) -> List[str]:
     Returns
     -------
     ``List[str]``
-        A list of module names that are imported in the code.
+        A list of package names that are to be installed for the code to be able to run.
 
     Examples
     --------

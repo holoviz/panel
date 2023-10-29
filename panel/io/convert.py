@@ -26,7 +26,7 @@ from .. import __version__, config
 from ..util import base_version, escape
 from .loading import LOADING_INDICATOR_CSS_CLASS
 from .markdown import build_single_handler_application
-from .mime_render import find_imports
+from .mime_render import find_requirements
 from .resources import (
     BASE_TEMPLATE, CDN_DIST, CDN_ROOT, DIST_DIR, INDEX_TEMPLATE, Resources,
     _env as _pn_env, bundle_resources, loading_css, set_resource_mode,
@@ -235,7 +235,7 @@ def script_to_html(
         )
 
     if requirements == 'auto':
-        requirements = find_imports(source)
+        requirements = find_requirements(source)
     elif isinstance(requirements, str) and pathlib.Path(requirements).is_file():
         requirements = pathlib.Path(requirements).read_text(encoding='utf-8').splitlines()
         try:
