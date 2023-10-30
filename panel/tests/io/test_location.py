@@ -161,3 +161,6 @@ def test_server_location_populate_from_request():
     assert loc.hostname == 'localhost'
     assert loc.pathname == '/'
     assert loc.search == '?foo=1'
+
+def test_iframe_srcdoc_location():
+    Location(pathname="srcdoc")
