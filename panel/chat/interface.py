@@ -210,8 +210,13 @@ class ChatInterface(ChatFeed):
             # for longer form messages, like TextArea / Ace, don't
             # submit when clicking away; only if they manually click
             # the send button
-            auto_send_types = tuple(self.auto_send_types) or (TextInput,)
-            if isinstance(widget, auto_send_types) and widget in new_widgets:
+            # note, explicitly not isinstance because
+            # TextAreaInput will trigger auto send!
+            auto_send = (
+                isinstance(widget, tuple(self.auto_send_types)) or
+                type(widget) is TextInput
+            )
+            if auto_send and widget in new_widgets:
                 widget.param.watch(self._click_send, "value")
             widget.param.update(
                 sizing_mode="stretch_width",

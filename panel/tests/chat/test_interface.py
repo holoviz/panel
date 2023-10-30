@@ -67,6 +67,17 @@ class TestChatInterface:
     def test_click_send(self, chat_interface: ChatInterface):
         chat_interface.widgets = [TextAreaInput()]
         chat_interface.active_widget.value = "Message"
+        # since it's TextAreaInput and NOT TextInput, need to manually send
+        assert len(chat_interface.objects) == 0
+        chat_interface._click_send(None)
+        assert len(chat_interface.objects) == 1
+        assert chat_interface.objects[0].object == "Message"
+
+    @pytest.mark.parametrize("widget", [TextInput(), TextAreaInput()])
+    def test_auto_send_types(self, chat_interface: ChatInterface, widget):
+        chat_interface.auto_send_types = [TextAreaInput]
+        chat_interface.widgets = [widget]
+        chat_interface.active_widget.value = "Message"
         assert len(chat_interface.objects) == 1
         assert chat_interface.objects[0].object == "Message"
 
