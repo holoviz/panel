@@ -2,6 +2,7 @@
 #   Check out the docs at: https://pre-commit.com/
 
 default_stages: [commit]
+exclude: '^lite/files'
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
