@@ -72,7 +72,7 @@ pn.Param(settings).servable()
 ```
 
 <video controls="" poster="../../_static/location_example_app.png">
-    <source src="https://user-images.githubusercontent.com/42288570/278546043-196f416a-0588-4f95-b8c3-4e12755c00ba.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
+    <source src="https://assets.holoviz.org/panel/how_to/state/sync_url.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
     Your browser does not support the video tag.
 </video>
 
