@@ -2,9 +2,7 @@
 
 This guide addresses how to access and manipulate the URL.
 
-This powerful technique enables you to save the state of your app via the url.
-You can bookmark the url or share the url
-with friends or colleagues to open the app in the exact same state later.
+This powerful technique enables you to save the state of your app via the url. You can bookmark the URL or share the URL with friends or colleagues to open the app in the exact same state later.
 
 ## Access
 
