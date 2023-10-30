@@ -44,7 +44,7 @@ def test_jupyterlite_execution(launch_jupyterlite, page):
 
     page.locator('text="Getting_Started.ipynb"').first.dblclick()
     for _ in range(6):
-        page.locator('[data-command="runmenu:run"]').click()
+        page.locator('button[data-command="notebook:run-cell-and-select-next"]').click()
         page.wait_for_timeout(500)
 
     page.locator('.noUi-handle').click(timeout=120 * 1000)
