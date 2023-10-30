@@ -7,7 +7,7 @@ try:
 except ImportError:
     pytestmark = pytest.mark.skip("playwright not available")
 
-from panel.config import extension
+from panel.config import panel_extension as extension
 from panel.pane import Markdown
 from panel.tests.util import serve_component
 
