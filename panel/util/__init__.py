@@ -37,6 +37,7 @@ from .checks import (  # noqa
     datetime_types, is_dataframe, is_holoviews, is_number, is_parameterized,
     is_series, isdatetime, isfile, isIn, isurl,
 )
+from .warnings import warn
 
 bokeh_version = Version(bokeh.__version__)
 
@@ -247,7 +248,13 @@ def parse_query(query: str) -> dict[str, Any]:
             try:
                 parsed_query[k] = json.loads(v)
             except Exception:
-                parsed_query[k] = ast.literal_eval(v)
+                try:
+                    parsed_query[k] = ast.literal_eval(v)
+                except Exception:
+                    warn(
+                        f'Could not parse value {v!r} of query parameter {k}.',
+                        category=RuntimeWarning
+                    )
         elif v.lower() in ("true", "false"):
             parsed_query[k] = v.lower() == "true"
         else:
