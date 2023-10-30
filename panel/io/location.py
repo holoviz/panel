@@ -38,7 +38,7 @@ class Location(Syncable):
     hostname = param.String(readonly=True, doc="""
         hostname in window.location e.g. 'panel.holoviz.org'""")
 
-    pathname = param.String(regex=r"^$|[\/].*$", doc="""
+    pathname = param.String(regex=r"^$|[\/]|srcdoc$", doc="""
         pathname in window.location e.g. '/user_guide/Interact.html'""")
 
     protocol = param.String(readonly=True, doc="""
