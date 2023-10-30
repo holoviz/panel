@@ -1099,7 +1099,7 @@ class _state(param.Parameterized):
         """
         is_guest = self.cookies.get('is_guest')
         if is_guest:
-            return {"user": "guest"}
+            return {"user": "guest", "username": "guest"}
         id_token = self._decode_cookie('id_token')
         if id_token is None:
             return None

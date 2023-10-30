@@ -885,7 +885,11 @@ class BasicAuthProvider(AuthProvider):
         else:
             user = decode_signed_value(
                 config.cookie_secret, 'user', user_cookie
-            ).decode('utf-8')
+            )
+            if user:
+                user = user.decode('utf-8')
+        if not user:
+            return
         state._active_users[user] -= 1
         if not state._active_users[user]:
             del state._active_users[user]
