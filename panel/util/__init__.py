@@ -501,3 +501,41 @@ def flatten(line):
             yield from flatten(element)
         else:
             yield element
+
+
+def styler_update(styler, new_df):
+    """
+    Updates the todo items on a pandas Styler object to apply to a new
+    DataFrame.
+
+    Arguments
+    ---------
+    styler: pandas.io.formats.style.Styler
+      Styler objects
+    new_df: pd.DataFrame
+      New DataFrame to update the styler to do items
+
+    Returns
+    -------
+    todos: list
+    """
+    todos = []
+    for todo in styler._todo:
+        if not isinstance(todo, tuple):
+            todos.append(todo)
+            continue
+        ops = []
+        for op in todo:
+            if not isinstance(op, tuple):
+                ops.append(op)
+                continue
+            op_fn = str(op[0])
+            if ('_background_gradient' in op_fn or '_bar' in op_fn) and op[1] in (0, 1):
+                applies = np.array([
+                    new_df[col].dtype.kind in 'uif' for col in new_df.columns
+                ])
+                op = (op[0], op[1], applies)
+            ops.append(op)
+        todo = tuple(ops)
+        todos.append(todo)
+    return todos
