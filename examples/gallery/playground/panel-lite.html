@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-3.3.0.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.3.0.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.3.0.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@holoviz/panel@1.3.0/dist/panel.min.js"></script>
+
+    <link rel="stylesheet" href="https://pyscript.net/releases/2023.05.1/pyscript.css" />
+    <script defer src="https://pyscript.net/releases/2023.05.1/pyscript.js"></script>
+  </head>
+  <body>
+    <button onclick="">Import matplotlib package</button>
+    <button onclick="">Update Code</button>
+    <py-config>
+       packages = [
+          "https://cdn.holoviz.org/panel/1.3.0/dist/wheels/bokeh-3.3.0-py3-none-any.whl",
+          "https://cdn.holoviz.org/panel/1.3.0/dist/wheels/panel-1.3.0-py3-none-any.whl"
+       ]
+    </py-config>
+    <div id="simple_app"></div>
+    <py-script>
+      import panel as pn
+
+      pn.extension(sizing_mode="stretch_width")
+
+      slider = pn.widgets.FloatSlider(start=0, end=10, name='Amplitude')
+
+      def callback(new):
+         return f'Amplitude is: {new}'
+
+      pn.Row(slider, pn.bind(callback, slider)).servable(target='simple_app');
+    </py-script>
+  </body>
+</html>
