@@ -20,6 +20,7 @@ from bokeh.models.widgets import (
     CheckboxGroup as _BkCheckboxGroup, MultiChoice as _BkMultiChoice,
     MultiSelect as _BkMultiSelect, RadioGroup as _BkRadioBoxGroup,
 )
+from param import bind
 
 from ..io.resources import CDN_DIST
 from ..layout import Column
@@ -317,6 +318,64 @@ class Select(SingleSelectBase):
                 return [v for subd in self.groups.values() for v in subd.values()]
             else:
                 return list(itertools.chain(*self.groups.values()))
+
+
+
+class NestedSelect(CompositeWidget):
+
+    value = param.Dict(doc="""
+        The selected value, e.g. {"Value 0": "Value 1": "Value 2"}""")
+
+    options = param.Dict(doc="""
+        The options to select from. The options may be nested dictionaries or lists.""")
+
+    level_names = param.List(doc="""
+        The names of the levels, e.g. ["Level 0", "Level 1", "Level 2"]""")
+
+    _composite_type = Column
+
+    def __init__(self, **params):
+        super().__init__(**params)
+
+        level = 0
+        self._selects = {}
+        options = self.options.copy()
+        while isinstance(options, dict):
+            options_keys = list(options.keys())
+            try:
+                name = self.level_names[level]
+            except IndexError:
+                name = ""
+
+            select = Select(options=options_keys, name=name)
+            bind(self._update_values, value=select, level=level, watch=True)
+
+            self._selects[level] = select
+            key = options_keys[0]
+            value = options[key]
+            options = value
+            level += 1
+        self._selects[level] = Select(
+            options=options, name=self.level_names[-1]
+        )
+        self._composite[:] = list(self._selects.values())
+
+    def _update_values(self, value, level):
+        values = [self._selects[l].value for l in range(level + 1)]
+        options = self.options.copy()
+        for value in values:
+            options = options[value]
+            original_value = self._selects[level + 1].value
+
+            select_options = list(options)
+            has_original_value = original_value in select_options
+            self._selects[level + 1].param.update(
+                options=select_options
+            )
+
+            if has_original_value:
+                # or else the nested levels will not update
+                self._selects[level + 1].param.trigger("value")
 
 
 class ColorMap(SingleSelectBase):
