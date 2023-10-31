@@ -50,6 +50,7 @@ BOKEH_CDN_WHL = f'{CDN_ROOT}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PYODIDE_URL = f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/full/pyodide.js'
 PYODIDE_PYC_URL = f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/pyc/pyodide.js'
 PYSCRIPT_CSS = f'<link rel="stylesheet" href="https://pyscript.net/releases/{PYSCRIPT_VERSION}/pyscript.css" />'
+PYSCRIPT_CSS_OVERRIDES = f'<link rel="stylsheet" href="{CDN_DIST}css/pyscript.css" />'
 PYSCRIPT_JS = f'<script defer src="https://pyscript.net/releases/{PYSCRIPT_VERSION}/pyscript.js"></script>'
 PYODIDE_JS = f'<script src="{PYODIDE_URL}"></script>'
 PYODIDE_PYC_JS = f'<script src="{PYODIDE_URL}"></script>'
@@ -174,7 +175,7 @@ def script_to_html(
     filename: str | os.PathLike | IO,
     requirements: Literal['auto'] | List[str] = 'auto',
     js_resources: Literal['auto'] | List[str] = 'auto',
-    css_resources: Literal['auto'] | List[str] | None = None,
+    css_resources: Literal['auto'] | List[str] | None = 'auto',
     runtime: Runtimes = 'pyodide',
     prerender: bool = True,
     panel_version: Literal['auto', 'local'] | str = 'auto',
@@ -278,9 +279,10 @@ def script_to_html(
     if runtime == 'pyscript':
         if js_resources == 'auto':
             js_resources = [PYSCRIPT_JS]
-        css_resources = []
         if css_resources == 'auto':
-            css_resources = [PYSCRIPT_CSS]
+            css_resources = [PYSCRIPT_CSS, PYSCRIPT_CSS_OVERRIDES]
+        elif not css_resources:
+            css_resources = []
         pyenv = ','.join([repr(req) for req in reqs])
         plot_script = f'<py-config>\npackages = [{pyenv}]\n</py-config>\n<py-script>{code}</py-script>'
     else:
