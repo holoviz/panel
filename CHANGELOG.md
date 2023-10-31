@@ -1,5 +1,39 @@
 # Releases
 
+## Version 1.3.1
+
+Date: 2023-10-31
+
+This micro-release primarily ships a variety of bug and regression fixes focusing on auth, the chat components, and WASM (i.e. PyScript and Pyodide) support. It also adds an enhancement to the auth components that now makes it possible to let users access applications as a guest. Many thanks to
+our new contributors @art3xa, @polivbr and @tupui as well as our core development team including @MarcSkovMadsen, @maximlt, @ahuang11 and @philippjfr.
+
+### Enhancements
+
+- Add support for authenticating as guest using OAuth and basic auth components ([#5743](https://github.com/holoviz/panel/pull/5743))
+
+### Bug fixes
+
+- Ensure `ColorMap` widget correctly handles shared layout and display parameters ([#5732](https://github.com/holoviz/panel/pull/5732))
+- Fix accessing refreshed `access_token` ([#5734](https://github.com/holoviz/panel/pull/5734))
+- Ensure `Markdown` code blocks always wrap ([#5738](https://github.com/holoviz/panel/pull/5738))
+- Fix returning `state.user_info` if no `id_token` is present in cookies ([#5747](https://github.com/holoviz/panel/pull/5747))
+- Fix `Widget.from_param` type annotation ([#5754](https://github.com/holoviz/panel/pull/5754))
+- Fix auto send for `ChatInterface` with `TextAreaInput` ([#5762](https://github.com/holoviz/panel/pull/5762))
+- Add support for iframe `srcdoc` on `Location` ([#5774](https://github.com/holoviz/panel/pull/5774))
+- Ensure `Tabulator.style` applies correctly with changing data ([#5757](https://github.com/holoviz/panel/pull/5757))
+- Ensure `panel convert` can correctly detect `transformers_js` import ([#5772](https://github.com/holoviz/panel/pull/5772))
+- Adjust `ReactiveHTML` css resources for relative paths ([#5779](https://github.com/holoviz/panel/pull/5779))
+- Ensure invalid query parameters warn instead of erroring ([#5781](https://github.com/holoviz/panel/pull/5781))
+- Apply pyscript CSS by default without the splashscreen ([#5784](https://github.com/holoviz/panel/pull/5784))
+- Ensure components which require DOM element to be attached can be rendered in `Card` ([#5786](https://github.com/holoviz/panel/pull/5786))
+
+### Documentation
+
+- Fix typo in examples/reference/widgets/StaticText.ipynb ([#5739](https://github.com/holoviz/panel/pull/5739))
+- Add `ReactiveExpr` reference docs and change default widget location ([#5755](https://github.com/holoviz/panel/pull/5755), [#5760](https://github.com/holoviz/panel/pull/5760))
+- Fix pyscript WASM example ([#5771](https://github.com/holoviz/panel/pull/5771))
+- Improve documentation for deep linking docs ([#5752](https://github.com/holoviz/panel/pull/5752))
+
 ## Version 1.3.0
 
 Date: 2023-10-23
