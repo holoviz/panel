@@ -8,6 +8,7 @@ import base64
 import datetime as dt
 import inspect
 import json
+import logging
 import numbers
 import os
 import pathlib
@@ -37,7 +38,8 @@ from .checks import (  # noqa
     datetime_types, is_dataframe, is_holoviews, is_number, is_parameterized,
     is_series, isdatetime, isfile, isIn, isurl,
 )
-from .warnings import warn
+
+log = logging.getLogger('panel.util')
 
 bokeh_version = Version(bokeh.__version__)
 
@@ -251,9 +253,9 @@ def parse_query(query: str) -> dict[str, Any]:
                 try:
                     parsed_query[k] = ast.literal_eval(v)
                 except Exception:
-                    warn(
-                        f'Could not parse value {v!r} of query parameter {k}.',
-                        category=RuntimeWarning
+                    log.warning(
+                        f'Could not parse value {v!r} of query parameter {k}. '
+                        'Parameter will be ignored.'
                     )
         elif v.lower() in ("true", "false"):
             parsed_query[k] = v.lower() == "true"
