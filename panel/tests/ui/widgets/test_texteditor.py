@@ -2,16 +2,15 @@ import sys
 
 import pytest
 
+pytest.importorskip("playwright")
+
+from playwright.sync_api import expect
+
 from panel import depends
 from panel.layout import Column
 from panel.pane import HTML
 from panel.tests.util import serve_component, wait_until
 from panel.widgets import RadioButtonGroup, TextEditor
-
-try:
-    from playwright.sync_api import expect
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
 
 pytestmark = pytest.mark.ui
 

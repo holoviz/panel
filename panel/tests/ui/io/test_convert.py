@@ -9,12 +9,9 @@ from subprocess import PIPE, Popen
 
 import pytest
 
-try:
-    from playwright.sync_api import expect
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
+pytest.importorskip("playwright")
 
-pytestmark = pytest.mark.ui
+from playwright.sync_api import expect
 
 from panel.config import config
 from panel.io.convert import BOKEH_LOCAL_WHL, PANEL_LOCAL_WHL, convert_apps
@@ -25,6 +22,8 @@ if not (PANEL_LOCAL_WHL.is_file() and BOKEH_LOCAL_WHL.is_file()):
         "version. Build wheels for pyodide using `python scripts/build_pyodide_wheels.py`.",
         allow_module_level=True
     )
+
+pytestmark = pytest.mark.ui
 
 _worker_id = os.environ.get("PYTEST_XDIST_WORKER", "0")
 HTTP_PORT = 5990 + int(re.sub(r"\D", "", _worker_id))

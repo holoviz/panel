@@ -2,14 +2,14 @@ import datetime
 
 import pytest
 
+pytest.importorskip("playwright")
+
+from playwright.sync_api import expect
+
 from panel.tests.util import serve_component, wait_until
 from panel.widgets import DatetimePicker, DatetimeRangePicker, TextAreaInput
 
-try:
-    from playwright.sync_api import expect
-    pytestmark = pytest.mark.ui
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
+pytestmark = pytest.mark.ui
 
 
 @pytest.fixture

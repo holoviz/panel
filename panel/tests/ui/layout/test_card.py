@@ -1,13 +1,12 @@
 import pytest
 
+pytest.importorskip("playwright")
+
+from playwright.sync_api import expect
+
 from panel import Card
 from panel.tests.util import serve_component
 from panel.widgets import FloatSlider, TextInput
-
-try:
-    from playwright.sync_api import expect
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
 
 pytestmark = pytest.mark.ui
 

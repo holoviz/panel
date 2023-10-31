@@ -1,14 +1,14 @@
 import param
 import pytest
 
-try:
-    from playwright.sync_api import expect
-    pytestmark = pytest.mark.ui
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
+pytest.importorskip("playwright")
+
+from playwright.sync_api import expect
 
 from panel.reactive import ReactiveHTML
 from panel.tests.util import serve_component, wait_until
+
+pytestmark = pytest.mark.ui
 
 
 class ReactiveComponent(ReactiveHTML):

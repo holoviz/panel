@@ -7,27 +7,24 @@ import pandas as pd
 import param
 import pytest
 
+pytest.importorskip("playwright")
+
 from bokeh.models.widgets.tables import (
     BooleanFormatter, CheckboxEditor, DateEditor, DateFormatter,
     HTMLTemplateFormatter, IntEditor, NumberEditor, NumberFormatter,
     ScientificFormatter, SelectEditor, StringEditor, StringFormatter,
     TextEditor,
 )
+from playwright.sync_api import expect
 
-from panel.layout.base import Column
-
-try:
-    from playwright.sync_api import expect
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
-
-pytestmark = pytest.mark.ui
-
-from panel import state
 from panel.depends import bind
+from panel.io.state import state
+from panel.layout.base import Column
 from panel.models.tabulator import _TABULATOR_THEMES_MAPPING
 from panel.tests.util import get_ctrl_modifier, serve_component, wait_until
 from panel.widgets import Select, Tabulator
+
+pytestmark = pytest.mark.ui
 
 
 @pytest.fixture

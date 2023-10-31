@@ -1,16 +1,14 @@
 import pytest
 
-pytestmark = pytest.mark.ui
+pytest.importorskip("playwright")
 
 from bokeh.models import Tooltip
+from playwright.sync_api import expect
 
 from panel.tests.util import serve_component
 from panel.widgets import TooltipIcon
 
-try:
-    from playwright.sync_api import expect
-except ImportError:
-    pytestmark = pytest.mark.skip("playwright not available")
+pytestmark = pytest.mark.ui
 
 
 @pytest.mark.parametrize(

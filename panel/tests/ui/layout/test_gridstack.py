@@ -1,15 +1,14 @@
 import pytest
 
-try:
-    from playwright.sync_api import expect
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
+pytest.importorskip("playwright")
 
-pytestmark = pytest.mark.ui
+from playwright.sync_api import expect
 
 from panel import Column, Spacer
 from panel.layout.gridstack import GridStack
 from panel.tests.util import serve_component
+
+pytestmark = pytest.mark.ui
 
 
 def test_gridstack(page):

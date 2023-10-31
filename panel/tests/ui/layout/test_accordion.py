@@ -1,14 +1,12 @@
 import pytest
 
+pytest.importorskip("playwright")
+
 from bokeh.models import Div
+from playwright.sync_api import expect
 
 from panel import Accordion
 from panel.tests.util import serve_component
-
-try:
-    from playwright.sync_api import expect
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
 
 pytestmark = pytest.mark.ui
 

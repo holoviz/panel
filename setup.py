@@ -130,7 +130,7 @@ _tests_core = [
     'pytest',
     'nbval',
     'flaky',
-    'pytest-asyncio',
+    'pytest-asyncio <0.22',
     'pytest-xdist',
     'pytest-cov',
     'pre-commit',
@@ -229,7 +229,7 @@ extras_require['all_pip'] = sorted(set(extras_require['all']) - set(_conda_only)
 # non-python dependencies). Note that setup_requires isn't used
 # because it doesn't work well with pip.
 extras_require['build'] = [
-    'param >=2.0.0rc6',
+    'param >=2.0.0',
     'setuptools >=42',
     'requests',
     'packaging',

@@ -1,14 +1,14 @@
 import pytest
 
-try:
-    from playwright.sync_api import expect
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
+pytest.importorskip("playwright")
+
+from playwright.sync_api import expect
 
 from panel import Column, Spacer
 from panel.tests.util import serve_component, wait_until
 
 pytestmark = pytest.mark.ui
+
 
 def test_column_scroll(page):
     col = Column(

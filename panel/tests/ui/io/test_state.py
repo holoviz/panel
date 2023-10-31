@@ -1,17 +1,14 @@
 import pytest
 
-pytestmark = pytest.mark.ui
+pytest.importorskip("playwright")
 
-try:
-    from playwright.sync_api import expect
-    pytestmark = pytest.mark.ui
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
+from playwright.sync_api import expect
 
 from panel.io.state import state
 from panel.pane import Markdown
 from panel.tests.util import serve_component
 
+pytestmark = pytest.mark.ui
 
 def test_on_load(page):
     def app():

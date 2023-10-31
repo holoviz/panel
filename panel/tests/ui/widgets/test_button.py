@@ -1,18 +1,16 @@
 import pytest
 
-pytestmark = pytest.mark.ui
+pytest.importorskip("playwright")
 
 from bokeh.models import Tooltip
+from playwright.sync_api import expect
 
 from panel.tests.util import serve_component, wait_until
 from panel.widgets import (
     Button, CheckButtonGroup, RadioButtonGroup, TooltipIcon,
 )
 
-try:
-    from playwright.sync_api import expect
-except ImportError:
-    pytestmark = pytest.mark.skip("playwright not available")
+pytestmark = pytest.mark.ui
 
 
 def test_button_click(page):
