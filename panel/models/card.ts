@@ -85,9 +85,11 @@ export class CardView extends ColumnView {
       header.after_render()
     }
 
+    if (this.model.collapsed)
+      return
+
     for (const child_view of this.child_views.slice(1)) {
-      if (!this.model.collapsed)
-        this.shadow_el.appendChild(child_view.el)
+      this.shadow_el.appendChild(child_view.el)
       child_view.render()
       child_view.after_render()
     }
@@ -109,6 +111,8 @@ export class CardView extends ColumnView {
         this.shadow_el.removeChild(child_view.el)
 	child_view.model.visible = false
       } else {
+	child_view.render()
+	child_view.after_render()
         this.shadow_el.appendChild(child_view.el)
 	child_view.model.visible = true
       }
