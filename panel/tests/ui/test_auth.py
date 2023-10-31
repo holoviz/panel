@@ -3,17 +3,17 @@ import pathlib
 
 import pytest
 
-try:
-    from playwright.sync_api import expect
-    pytestmark = pytest.mark.ui
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
+pytest.importorskip("playwright")
+
+from playwright.sync_api import expect
 
 from panel.config import config
 from panel.pane import Markdown
 from panel.tests.util import (
     run_panel_serve, serve_component, unix_only, wait_for_port, write_file,
 )
+
+pytestmark = pytest.mark.ui
 
 
 @unix_only

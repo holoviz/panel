@@ -1,26 +1,20 @@
 import pytest
 
-try:
-    import plotly
-    import plotly.graph_objs as go
-    import plotly.io as pio
-    pio.templates.default = None
-except Exception:
-    plotly = None
-plotly_available = pytest.mark.skipif(plotly is None, reason="requires plotly")
+pytest.importorskip("playwright")
+pytest.importorskip("plotly")
 
 import numpy as np
+import plotly.graph_objs as go
+import plotly.io as pio
+
+from playwright.sync_api import expect
 
 from panel.pane import Plotly
 from panel.tests.util import serve_component, wait_until
 
-try:
-    from playwright.sync_api import expect
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
-
 pytestmark = pytest.mark.ui
 
+pio.templates.default = None
 
 @pytest.fixture
 def plotly_2d_plot():
@@ -52,7 +46,6 @@ def plotly_3d_plot():
     return plot_3d, title
 
 
-@plotly_available
 def test_plotly_no_console_errors(page, plotly_2d_plot):
     msgs, _ = serve_component(page, plotly_2d_plot)
 
@@ -61,7 +54,6 @@ def test_plotly_no_console_errors(page, plotly_2d_plot):
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 
-@plotly_available
 def test_plotly_2d_plot(page, plotly_2d_plot):
     serve_component(page, plotly_2d_plot)
 
@@ -88,7 +80,6 @@ def test_plotly_2d_plot(page, plotly_2d_plot):
     }, page)
 
 
-@plotly_available
 @pytest.mark.flaky(max_runs=3)
 def test_plotly_3d_plot(page, plotly_3d_plot):
     plot_3d, title = plotly_3d_plot
@@ -114,7 +105,6 @@ def test_plotly_3d_plot(page, plotly_3d_plot):
     expect(modebar).to_have_count(1)
 
 
-@plotly_available
 @pytest.mark.flaky(max_runs=3)
 def test_plotly_hover_data(page, plotly_2d_plot):
     hover_data = []
@@ -146,7 +136,6 @@ def test_plotly_hover_data(page, plotly_2d_plot):
     wait_until(lambda: plotly_2d_plot.hover_data is None, page)
 
 
-@plotly_available
 @pytest.mark.flaky(max_runs=3)
 def test_plotly_click_data(page, plotly_2d_plot):
     serve_component(page, plotly_2d_plot)
@@ -169,7 +158,6 @@ def test_plotly_click_data(page, plotly_2d_plot):
     }, page)
 
 
-@plotly_available
 @pytest.mark.flaky(max_runs=3)
 def test_plotly_select_data(page, plotly_2d_plot):
     serve_component(page, plotly_2d_plot)

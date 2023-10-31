@@ -1,10 +1,8 @@
 import pytest
 
-try:
-    from playwright.sync_api import expect
-    pytestmark = pytest.mark.ui
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
+pytest.importorskip("playwright")
+
+from playwright.sync_api import expect
 
 from panel.config import config
 from panel.io.state import state
@@ -13,6 +11,7 @@ from panel.template import BootstrapTemplate
 from panel.tests.util import serve_component
 from panel.widgets import Button
 
+pytestmark = pytest.mark.ui
 
 def test_notifications_no_template(page):
     def callback(event):
