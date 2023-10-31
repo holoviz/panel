@@ -635,7 +635,14 @@ class panel_extension(_pyviz_extension):
     - Update the global configuration `pn.config`
     (keyword arguments).
 
-    Reference: https://github.com/holoviz/panel/issues/3404
+    Parameters
+    ----------
+    *args : list[str]
+        Positional arguments listing the extension to load. For example "plotly",
+        "tabulator".
+    **params : dict[str,Any]
+        Keyword arguments to be set on the `pn.config` element. See
+        https://panel.holoviz.org/api/config.html
 
     :Example:
 
