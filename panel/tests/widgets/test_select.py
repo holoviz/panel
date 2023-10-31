@@ -6,7 +6,8 @@ import pytest
 from panel.pane import panel
 from panel.tests.util import mpl_available
 from panel.widgets import (
-    ColorMap, CrossSelector, MultiChoice, MultiSelect, Select, ToggleGroup,
+    ColorMap, CrossSelector, MultiChoice, MultiSelect, NestedSelect, Select,
+    ToggleGroup,
 )
 
 
@@ -216,6 +217,31 @@ def test_select_change_options_on_watch(document, comm):
     select.value = 1
     assert model.value == str(list(select.options.values())[0])
     assert model.options == [(str(v),k) for k,v in select.options.items()]
+
+
+def test_nested_select(document, comm):
+    d = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    select = NestedSelect(options=d, level_names=["product", "variable", "level"])
+    select.value = {"Andrew": {"temp": 925}}
+    assert select.value == {"Andrew": {"temp": 925}}
+
+
+def test_nested_select_update_on_options(document, comm):
+    ...
+
+
+def test_nested_select_update_on_value(document, comm):
+    # maybe put this in UI
+    ...
 
 
 @pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
