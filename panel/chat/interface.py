@@ -453,4 +453,4 @@ class ChatInterface(ChatFeed):
                 "user": [self.user],
                 "assistant": [self.callback_user],
             }
-        super().serialize_for_transformers(role_names, default_role, format_func)
+        return super().serialize_for_transformers(role_names, default_role, format_func)
