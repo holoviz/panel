@@ -219,7 +219,7 @@ class _config(_base_config):
     throttled = param.Boolean(default=False, doc="""
         If sliders and inputs should be throttled until release of mouse.""")
 
-    _admin = param.Boolean(default=False, doc="Whether the admin panel was enabled.")
+    _admin = param.Boolean(default=False, doc="Whether the admin panel is enabled.")
 
     _admin_endpoint = param.String(default=None, doc="Name to use for the admin endpoint.")
 
@@ -263,8 +263,8 @@ class _config(_base_config):
     _npm_cdn = param.Selector(default='https://cdn.jsdelivr.net/npm',
         objects=['https://unpkg.com', 'https://cdn.jsdelivr.net/npm'],  doc="""
         The CDN to load NPM packages from if resources are served from
-        CDN. Allows switching between https://unpkg.com and
-        https://cdn.jsdelivr.net/npm for most resources.""")
+        CDN. Allows switching between [https://unpkg.com](https://unpkg.com) and
+        [https://cdn.jsdelivr.net/npm](https://cdn.jsdelivr.net/npm) for most resources.""")
 
     _nthreads = param.Integer(default=None, doc="""
         When set to a non-None value a thread pool will be started.
@@ -473,6 +473,10 @@ class _config(_base_config):
     @property
     def _doc_build(self):
         return os.environ.get('PANEL_DOC_BUILD')
+
+    @property
+    def admin(self):
+        return self._admin
 
     @property
     def admin_endpoint(self):
