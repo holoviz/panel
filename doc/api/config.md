@@ -13,6 +13,8 @@ pn.extension(embed=True)
 os.environ['PANEL_EMBED'] = 'True'
 ```
 
+To see the fual details and current configuration run `?pn.config` in an ipython terminal or Notebook.
+
 ## Options Summary
 
 `admin`
@@ -240,7 +242,3 @@ os.environ['PANEL_EMBED'] = 'True'
 
 `throttled`
 : If sliders and inputs should be throttled until release of mouse.
-
-## Options Details
-
-To see the full details including types and default values run `?pn.config` in an ipython terminal or Notebook.
