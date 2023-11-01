@@ -91,12 +91,9 @@ You can open it via the *Command Palette*
 
 ![Panel in VS Code simple browser](../../_static/images/vs_code_simple-browser_command_palette.png)
 
-To make it even simpler, you can add a task
+To make it even simpler, you can add a task to `/.vscode/tasks.json`
 
 ```json
-# 📄 File: /.vscode/tasks.json
------------------------------------
-
 {
     "version": "2.0.0",
     "tasks": [
@@ -119,12 +116,9 @@ To make it even simpler, you can add a task
 }
 ```
 
-and keybinding
+and keybinding to `keybindings.json`
 
 ```json
-# 📄 File: keybindings.json
------------------------------------
-
 [
   {
     "key": "ctrl+shift+b",
