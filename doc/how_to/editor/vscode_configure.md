@@ -91,7 +91,7 @@ You can open it via the *Command Palette*
 
 ![Panel in VS Code simple browser](../../_static/images/vs_code_simple-browser_command_palette.png)
 
-To make it even simpler, you can add a task to `/.vscode/tasks.json`
+To make it even simpler, you can add a task to `.vscode/tasks.json`
 
 ```json
 {
