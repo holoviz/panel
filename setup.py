@@ -213,7 +213,7 @@ extras_require = {
     'tests': _tests,
     'recommended': _recommended,
     'doc': _recommended + [
-        'nbsite ==0.8.2',
+        'nbsite >=0.8.2',
         'lxml',
         'pandas <2.1.0' # Avoid deprecation warnings
     ],
