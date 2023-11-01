@@ -2,8 +2,6 @@
 
 The `pn.config` object holds global configuration options for Panel.
 
-To see the current configuration run `?pn.config` in an ipython terminal or Notebook.
-
 The options can be set directly on the global config instance, via
 keyword arguments to [`pn.extension`](cheatsheet#pn-extension) or via environment variables.
 
