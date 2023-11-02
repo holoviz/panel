@@ -74,12 +74,12 @@ from ..config import config
 from ..util import edit_readonly, fullpath
 from ..util.warnings import warn
 from .document import init_doc, unlocked, with_lock  # noqa
+from .handlers import build_single_handler_application
 from .liveness import LivenessHandler
 from .loading import LOADING_INDICATOR_CSS_CLASS
 from .logging import (
     LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING,
 )
-from .markdown import build_single_handler_application
 from .profile import profile_ctx
 from .resources import (
     BASE_TEMPLATE, CDN_DIST, COMPONENT_PATH, ERROR_TEMPLATE, LOCAL_DIST,
