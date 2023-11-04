@@ -20,6 +20,7 @@ from bokeh.models.widgets import (
     CheckboxGroup as _BkCheckboxGroup, MultiChoice as _BkMultiChoice,
     MultiSelect as _BkMultiSelect, RadioGroup as _BkRadioBoxGroup,
 )
+
 from ..io.resources import CDN_DIST
 from ..layout import Column
 from ..models import (
