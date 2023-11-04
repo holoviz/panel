@@ -219,8 +219,8 @@ def test_select_change_options_on_watch(document, comm):
     assert model.options == [(str(v),k) for k,v in select.options.items()]
 
 
-def test_nested_select(document, comm):
-    d = {
+def test_nested_select_defaults(document, comm):
+    options = {
         "Andrew": {
             "temp": [1000, 925, 700, 500, 300],
             "vorticity": [500, 300],
@@ -230,18 +230,91 @@ def test_nested_select(document, comm):
             "windspeed": [700, 500, 300],
         },
     }
-    select = NestedSelect(options=d, level_names=["product", "variable", "level"])
-    select.value = {"Andrew": {"temp": 925}}
-    assert select.value == {"Andrew": {"temp": 925}}
+    select = NestedSelect(options=options)
+    assert select.value == ("Andrew", "temp", 1000)
+    assert select.options == options
+    assert select.level_names == []
 
 
-def test_nested_select_update_on_options(document, comm):
-    ...
+def test_nested_select_init_value(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    select = NestedSelect(options=options, value=("Ben", "temp", 300))
+    assert ...
+
+def test_nested_select_init_labels(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    select = NestedSelect(options=options, labels=["Name", "Var", "Level"])
+    assert ...
 
 
-def test_nested_select_update_on_value(document, comm):
-    # maybe put this in UI
-    ...
+def test_nested_select_update_options(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    select = NestedSelect(options=options, value=("Ben", "temp", 300))
+    select.options = {
+        "August": {
+            "temp": [500, 300],
+        }
+    }
+    assert ...
+
+
+def test_nested_select_update_value(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    select = NestedSelect(options=options, value=("Ben", "temp", 300))
+    select.value = ("Ben", "windspeed", 700)
+    assert ...
+
+
+def test_nested_select_update_labels(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    select = NestedSelect(options=options, value=("Ben", "temp", 300))
+    select.labels = ["user", "wx_var", "lev"]
+    assert ...
 
 
 @pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])

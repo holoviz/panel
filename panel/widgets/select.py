@@ -20,8 +20,6 @@ from bokeh.models.widgets import (
     CheckboxGroup as _BkCheckboxGroup, MultiChoice as _BkMultiChoice,
     MultiSelect as _BkMultiSelect, RadioGroup as _BkRadioBoxGroup,
 )
-from param import bind
-
 from ..io.resources import CDN_DIST
 from ..layout import Column
 from ..models import (
@@ -320,62 +318,89 @@ class Select(SingleSelectBase):
                 return list(itertools.chain(*self.groups.values()))
 
 
-
 class NestedSelect(CompositeWidget):
+    """
+    The `NestedSelect` widget is composed of multiple widgets, where subsequent select options
+    depend on the parent's value.
 
-    value = param.Dict(doc="""
-        The selected value, e.g. {"Value 0": "Value 1": "Value 2"}""")
+    Reference: https://panel.holoviz.org/reference/widgets/NestedSelect.html
 
-    options = param.Dict(doc="""
-        The options to select from. The options may be nested dictionaries or lists.""")
+    :Example:
 
-    level_names = param.List(doc="""
-        The names of the levels, e.g. ["Level 0", "Level 1", "Level 2"]""")
+    >>> NestedSelect(
+            options={
+                "gfs": {"tmp": [1000, 500], "pcp": [1000]},
+                "name": {"tmp": [1000, 925, 850, 700, 500], "pcp": [1000]},
+            },
+            labels=["model", "var", "level"],
+        )
+    """
+
+    value = param.Tuple(doc="The value of all the Select widgets as a tuple.")
+
+    options = param.Dict(doc="The options to select from. The options may be nested dictionaries or lists.")
+
+    labels = param.List(doc="The widgets' labels.")
+
+    _selects = param.List(doc="The nested select widgets.")
 
     _composite_type = Column
 
     def __init__(self, **params):
         super().__init__(**params)
+        self._update_selects()
 
-        level = 0
-        self._selects = {}
+    @param.depends("options", "labels", watch=True)
+    def _update_selects(self):
+        """
+        When options is changed, reflect changes on the select widgets.
+        """
+        self._selects = []
         options = self.options.copy()
+        i = 0
         while isinstance(options, dict):
-            options_keys = list(options.keys())
-            try:
-                name = self.level_names[level]
-            except IndexError:
-                name = ""
+            options_keys = self._init_select(options, self._get_label(i))
+            options = options[options_keys[0]]
+            i += 1
+        self._init_select(options, self._get_label(i))
+        self.param["value"].length = len(self._selects)
+        self._update_value()
+        self._composite[:] = self._selects
 
-            select = Select(options=options_keys, name=name)
-            bind(self._update_values, value=select, level=level, watch=True)
+    def _get_label(self, i):
+        if not self.labels:
+            return ""
+        return self.labels[i]
 
-            self._selects[level] = select
-            key = options_keys[0]
-            value = options[key]
-            options = value
-            level += 1
-        self._selects[level] = Select(
-            options=options, name=self.level_names[-1]
-        )
-        self._composite[:] = list(self._selects.values())
+    def _init_select(self, options, label):
+        """
+        Helper method to initialize a select widget.
+        """
+        options_keys = list(options.keys()) if isinstance(options, dict) else options
+        select = Select(options=options_keys, name=label)
+        select.param.watch(self._update_select_options, "value")
+        self._selects.append(select)
+        return options_keys
 
-    def _update_values(self, value, level):
-        values = [self._selects[l].value for l in range(level + 1)]
+    def _update_select_options(self, event):
+        """
+        When a select widget's value is changed, update to the latest options.
+        """
         options = self.options.copy()
-        for value in values:
-            options = options[value]
-            original_value = self._selects[level + 1].value
+        for i, select in enumerate(self._selects[:-1]):
+            options = options[select.value]
+            if isinstance(options, dict):
+                next_options = list(options.keys())
+            else:
+                next_options = options
+            self._selects[i + 1].options = next_options
+        self._update_value()
 
-            select_options = list(options)
-            has_original_value = original_value in select_options
-            self._selects[level + 1].param.update(
-                options=select_options
-            )
-
-            if has_original_value:
-                # or else the nested levels will not update
-                self._selects[level + 1].param.trigger("value")
+    def _update_value(self):
+        """
+        Gather values from all the select widgets to update the class' value.
+        """
+        self.value = tuple((select.value for select in self._selects))
 
 
 class ColorMap(SingleSelectBase):
