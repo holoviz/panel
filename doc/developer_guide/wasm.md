@@ -10,8 +10,7 @@ You can build the smaller wheels for Pyodide using
 python scripts/build_pyodide_wheels.py
 ```
 
-The wheels are saved to `panel/dist/wheels` You confirm they have been build using `ls`.
-It could look like below depending on the current version of Panel.
+The wheels are saved to `panel/dist/wheels` You can confirm they have been build using `ls`.
 
 ```bash
 $ ls panel/dist/wheels
@@ -81,4 +80,5 @@ When you are done testing remember to delete your temporary files.
 ## Automated tests
 
 You can add or update the pytests for `panel convert` in the
-`panel/tests/ui/io/test_convert.py` file.
+[`panel/tests/ui/io/test_convert.py`](https://github.com/holoviz/panel/blob/main/panel/tests/ui/io/test_convert.py)
+file.
