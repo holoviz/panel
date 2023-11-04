@@ -53,7 +53,7 @@ PYSCRIPT_CSS = f'<link rel="stylesheet" href="https://pyscript.net/releases/{PYS
 PYSCRIPT_CSS_OVERRIDES = f'<link rel="stylsheet" href="{CDN_DIST}css/pyscript.css" />'
 PYSCRIPT_JS = f'<script defer src="https://pyscript.net/releases/{PYSCRIPT_VERSION}/pyscript.js"></script>'
 PYODIDE_JS = f'<script src="{PYODIDE_URL}"></script>'
-PYODIDE_PYC_JS = f'<script src="{PYODIDE_URL}"></script>'
+PYODIDE_PYC_JS = f'<script src="{PYODIDE_PYC_URL}"></script>'
 
 MINIMUM_VERSIONS = {}
 
