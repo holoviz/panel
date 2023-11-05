@@ -17,10 +17,11 @@ $ ls panel/dist/wheels
 bokeh-3.3.0-py3-none-any.whl  panel-1.3.1.post2+g2327be04-py3-none-any.whl
 ```
 
-You can add the flag `--no-deps` after the first build to speed up the process.
+You can add an output path like `.` and the flag `--no-deps` after the first build to speed up
+the process when iterating.
 
 ```bash
-python scripts/build_pyodide_wheels.py --no-deps
+python scripts/build_pyodide_wheels.py . --no-deps
 ```
 
 ## Manual Testing
