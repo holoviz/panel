@@ -3,6 +3,7 @@ Script that removes large files from bokeh wheel and repackages it
 to be included in the NPM bundle.
 """
 
+import argparse
 import glob
 import os
 import pathlib
@@ -13,7 +14,16 @@ import zipfile
 
 PANEL_BASE = pathlib.Path(__file__).parent.parent
 
-sp = subprocess.Popen(['pip', 'wheel', '.', '-w', str(PANEL_BASE / 'build')], env=dict(os.environ, PANEL_LITE='1'))
+parser = argparse.ArgumentParser()
+parser.add_argument('--no-deps', action='store_true', default=False, help="Don't install package dependencies.")
+args = parser.parse_args()
+
+command = ['pip', 'wheel', '.', '-w', str(PANEL_BASE / 'build')]
+
+if args.no_deps:
+    command.append("--no-deps")
+
+sp = subprocess.Popen(command, env=dict(os.environ, PANEL_LITE='1'))
 sp.wait()
 
 if len(sys.argv) > 1:

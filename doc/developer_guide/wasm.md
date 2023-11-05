@@ -17,6 +17,12 @@ $ ls panel/dist/wheels
 bokeh-3.3.0-py3-none-any.whl  panel-1.3.1.post2+g2327be04-py3-none-any.whl
 ```
 
+You can add the flag `--no-deps` after the first build to speed up the process.
+
+```bash
+python scripts/build_pyodide_wheels.py --no-deps
+```
+
 ## Manual Testing
 
 You can convert and test Panel apps manually using the `convert_apps` function. You will have to use the arguments `panel_version='local'` and `inline=True`.
@@ -45,7 +51,7 @@ if __name__=="__main__":
         dest_path=app_path.parent,
         runtime="pyodide",
         build_pwa=False,
-        prerender=False,
+        prerender=True,
         build_index=False,
         panel_version="local", # required for manual testing
         inline=True, # required for manual testing
