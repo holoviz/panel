@@ -66,7 +66,7 @@ To convert the `app.py` to `app.html` run
 python convert.py
 ```
 
-To test in the browser you will have to copy the `.whl` files to `.`
+To test in the browser you will have to copy (or build) the `.whl` files to `.`
 
 ```bash
 cp /home/jovyan/repos/private/panel/panel/dist/wheels/* .
