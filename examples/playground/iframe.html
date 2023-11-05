@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>My Page</title>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-3.3.0.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-gl-3.3.0.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.3.0.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.3.0.min.js"></script>
+    <script type="text/javascript" src="https://cdn.holoviz.org/panel/1.3.0/dist/panel.min.js"></script>
+	<script src="./panel-lite-iframe.js"></script>
+</head>
+<body>
+	<div id="main"></div>
+    <div id="loading-spinner" style="width:100%">Loading Pyodide...</div>
+    <script>
+        async function main(){
+            window.pyodide = await loadPyodideAndPackages(jsglobals=window)
+            await runCode(welcome)
+        }
+        main()
+    </script>
+</body>
+</html>
