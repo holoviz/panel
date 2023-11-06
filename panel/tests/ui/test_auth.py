@@ -11,8 +11,8 @@ from panel.config import config
 from panel.io.state import state
 from panel.pane import Markdown
 from panel.tests.util import (
-    run_panel_serve, serve_component, unix_only, wait_for_port,
-    wait_until, write_file,
+    run_panel_serve, serve_component, unix_only, wait_for_port, wait_until,
+    write_file,
 )
 
 pytestmark = pytest.mark.ui
