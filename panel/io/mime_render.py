@@ -34,6 +34,8 @@ import markdown
 #---------------------------------------------------------------------
 
 def _stdlibs():
+    if sys.version_info[:2] >= (3, 10):
+        return sys.stdlib_module_names
     env_dir = str(pathlib.Path(sys.executable).parent.parent)
     modules = list(sys.builtin_module_names)
     for m in pkgutil.iter_modules():

@@ -33,6 +33,8 @@ def test_find_imports_stdlibs():
     import os
     import base64
     import pathlib
+    import random
+    from datetime import datetime, timedelta
     """
     assert find_requirements(code) == []
 
