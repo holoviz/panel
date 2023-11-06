@@ -32,18 +32,19 @@ class ServerSessionStub(ServerSession):
     def _session_callback_removed(self, event):
         return
 
-def generate_session(application):
+def generate_session(application, request=None, payload=None, initialize=True):
     secret_key = settings.secret_key_bytes()
     sign_sessions = settings.sign_sessions()
     session_id = generate_session_id(
         secret_key=secret_key,
         signed=sign_sessions
     )
+    payload = payload or {}
     token = generate_jwt_token(
         session_id,
         secret_key=secret_key,
         signed=sign_sessions,
-        extra_payload={'headers': {}, 'cookies': {}, 'arguments': {}}
+        extra_payload=payload
     )
     doc = Document()
     session_context = BokehSessionContext(
@@ -52,10 +53,15 @@ def generate_session(application):
         doc
     )
     session_context._request = _RequestProxy(
-        None, arguments={}, cookies={}, headers={}
+        request,
+        arguments=payload.get('arguments'),
+        cookies=payload.get('cookies'),
+        headers=payload.get('headers')
     )
+    session_context._token = token
     doc._session_context = lambda: session_context
-    application.initialize_document(doc)
+    if initialize:
+        application.initialize_document(doc)
 
     # We have to unset any session callbacks so bokeh does not attempt
     # to schedule them on the event loop
