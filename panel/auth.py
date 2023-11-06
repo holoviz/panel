@@ -94,11 +94,13 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         'User-Agent': 'Tornado OAuth'
     }
 
-    _access_token_header = None
+    _DEFAULT_SCOPES = ['openid', 'email', 'profile', 'offline_access']
 
     _EXTRA_TOKEN_PARAMS = {
         'grant_type':    'authorization_code'
     }
+
+    _access_token_header = None
 
     _state_cookie = None
 
@@ -111,7 +113,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         if 'scope' in config.oauth_extra_params:
             return config.oauth_extra_params['scope']
         elif 'PANEL_OAUTH_SCOPE' not in os.environ:
-            return ['openid', 'email', 'profile', 'offline_access']
+            return self._DEFAULT_SCOPES
         return [scope for scope in os.environ['PANEL_OAUTH_SCOPE'].split(',')]
 
     async def get_authenticated_user(self, redirect_uri, client_id, state,
@@ -758,10 +760,9 @@ class GoogleLoginHandler(OAuthLoginHandler):
     _API_BASE_HEADERS = {
         "Content-Type": "application/x-www-form-urlencoded; charset=utf-8"
     }
-
+    _DEFAULT_SCOPES = ['openid', 'email', 'profile']
     _OAUTH_AUTHORIZE_URL = "https://accounts.google.com/o/oauth2/v2/auth"
     _OAUTH_ACCESS_TOKEN_URL = "https://accounts.google.com/o/oauth2/token"
-
     _USER_KEY = 'email'
 
 
