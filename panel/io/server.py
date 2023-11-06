@@ -538,15 +538,13 @@ class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
                 return None, None
             elif not authorized:
                 auth_error = (
-                    f'Authorization callback errored. Could not validate user name "{state.user}" '
-                    f'for the given app "{self.request.path}".'
+                    f'Access denied! User {state.user!r} is not authorized '
+                    f'for the given app {self.request.path!r}.'
                 )
-                if authorized:
-                    auth_error = None
+            if authorized:
+                auth_error = None
         except Exception:
             auth_error = f'Authorization callback errored. Could not validate user {state.user}.'
-        else:
-            authorized = True
         return authorized, auth_error
 
     def _render_auth_error(self, auth_error):
@@ -567,19 +565,20 @@ class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
     async def get(self, *args, **kwargs):
         # Run global authorization callback
         payload = self._generate_token_payload()
-        print('!!!!!!!')
         if config.authorize_callback:
             temp_session = generate_session(
                 self.application, self.request, payload, initialize=False
             )
             with set_curdoc(temp_session.document):
                 authorized, auth_error = self._authorize()
+            print('>>>>', authorized)
             if authorized is None:
                 return
             elif not authorized:
                 self._render_auth_error(auth_error)
                 page = self.set_header("Content-Type", 'text/html')
                 self.write(page)
+                return
 
         app = self.application
         with self._session_prefix():
