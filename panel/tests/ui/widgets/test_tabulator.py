@@ -1935,6 +1935,39 @@ def test_tabulator_header_filters_set_from_client(page, df_mixed):
     wait_until(lambda: widget.current_view.equals(expected_filter_df), page)
 
 
+def test_tabulator_header_filters_multiselect(page, df_mixed):
+    header_filters = {
+        'str': {
+            'type': 'list',
+            'func': 'in',
+            'valuesLookup': True,
+            'autocomplete': False,
+            'multiselect': True
+        },
+    }
+    widget = Tabulator(df_mixed, header_filters=header_filters, widths=dict(str=200))
+
+    serve_component(page, widget)
+
+    str_header = page.locator('input[type="search"]')
+    str_header.click()
+    cmp, col = 'in', 'str'
+    val = ['A', 'D']
+    for v in val:
+        item = page.locator(f'.tabulator-edit-list-item:has-text("{v}")')
+        item.click()
+    # Validating the filters doesn't have a very nice behavior, you need to lose
+    # focus on the multiselect by clicking somewhere else.
+    # Delay required before clicking for the focus to be lost and the filters accounted for.
+    page.wait_for_timeout(200)
+    page.locator('text="idx0"').click()
+    expected_filter_df = df_mixed.query(f'{col} {cmp} {val}')
+    expected_filter = {'field': col, 'type': cmp, 'value': val}
+    expect(page.locator('.tabulator-row')).to_have_count(len(expected_filter_df))
+    wait_until(lambda: widget.filters == [expected_filter], page)
+    wait_until(lambda: widget.current_view.equals(expected_filter_df), page)
+
+
 def test_tabulator_download(page, df_mixed, df_mixed_as_string):
     widget = Tabulator(df_mixed)
 
