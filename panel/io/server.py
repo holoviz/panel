@@ -571,7 +571,6 @@ class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
             )
             with set_curdoc(temp_session.document):
                 authorized, auth_error = self._authorize()
-            print('>>>>', authorized)
             if authorized is None:
                 return
             elif not authorized:
