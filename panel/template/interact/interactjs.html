@@ -118,7 +118,7 @@
       {% for doc in docs %}
       {% for root in doc.roots %}
       {% if "main" in root.tags %}
-      <div class="draggable">
+      <div class="draggable" cell-id="{{ root.tags[-2] }}" data-x="{{ root.tags[-3].get('x') if root.tags|length == 3 else 0 }}" data-y="{{ root.tags[-3].get('y') if root.tags|length == 3 else 0 }}">
 	{{ embed(root) | indent(4) }}
       </div>
       {% endif %}
@@ -168,10 +168,59 @@
     }
   }
 
+  for (var draggable of document.getElementsByClassName('draggable')) {
+    var x = (parseFloat(draggable.getAttribute('data-x')) || 0)
+    var y = (parseFloat(draggable.getAttribute('data-y')) || 0)
+    draggable.style.transform = 'translate(' + x + 'px, ' + y + 'px)'
+  }
 
+  var interactable = interact('.draggable')
+  .resizable({
+    // resize from all edges and corners
+    edges: { left: true, right: true, bottom: true, top: true },
 
-interact('.draggable')
+    listeners: {
+      end (event) {
+	event.target.style.removeProperty('border')
+	event.target.style.removeProperty('border-radius')
+      },
+      move (event) {
+        var target = event.target
+        var x = (parseFloat(target.getAttribute('data-x')) || 0)
+        var y = (parseFloat(target.getAttribute('data-y')) || 0)
+
+        // update the element's style
+        target.style.width = event.rect.width + 'px'
+        target.style.height = event.rect.height + 'px'
+	target.style.border = '1px dotted black'
+	target.style.borderRadius = '5px';
+
+        // translate when resizing from top or left edges
+        x += event.deltaRect.left
+        y += event.deltaRect.top
+
+        target.style.transform = 'translate(' + x + 'px,' + y + 'px)'
+
+        target.setAttribute('data-x', x)
+        target.setAttribute('data-y', y)
+      }
+    },
+    modifiers: [
+      // keep the edges inside the parent
+      interact.modifiers.restrictEdges({
+        outer: 'parent'
+      }),
+
+      // minimum size
+      interact.modifiers.restrictSize({
+        min: { width: 100, height: 50 }
+      })
+    ],
+
+    inertia: true
+  })
   .draggable({
+
     // enable inertial throwing
     inertia: true,
     // keep the element within the area of it's parent
@@ -179,30 +228,36 @@ interact('.draggable')
       interact.modifiers.restrictRect({
         restriction: 'parent',
         endOnly: true
-      })
+      }),
+      interact.modifiers.snap({
+        targets: [
+          function (x, y) {
+            var newX = Math.round(x / 20) * 20;
+            var newY = Math.round(y / 20) * 20;
+            return {x: newX, y: newY};
+          }],
+      }),
     ],
     // enable autoScroll
     autoScroll: true,
-
     listeners: {
       // call this function on every dragmove event
       move: dragMoveListener,
 
       // call this function on every dragend event
       end (event) {
-        var textEl = event.target.querySelector('p')
-
-        textEl && (textEl.textContent =
-          'moved a distance of ' +
-          (Math.sqrt(Math.pow(event.pageX - event.x0, 2) +
-                     Math.pow(event.pageY - event.y0, 2) | 0))
-            .toFixed(2) + 'px')
+	event.target.style.removeProperty('border')
+	event.target.style.removeProperty('border-radius')
       }
     }
   })
 
 function dragMoveListener (event) {
   var target = event.target
+
+  target.style.border = '1px dotted black'
+  target.style.borderRadius = '5px';
+
   // keep the dragged position in the data-x/data-y attributes
   var x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx
   var y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy
@@ -217,6 +272,20 @@ function dragMoveListener (event) {
 
 // this function is used later in the resizing and gesture demos
 window.dragMoveListener = dragMoveListener
+
+async function onWindowResize () {
+    console.log('resize')
+  // start a resize action and wait for inertia to finish
+  await interactable.reflow({ name: 'drag', axis: 'x' })
+
+  // start a drag action
+  await interactable.reflow({
+    name: 'resize',
+    edges: { left: true, bottom: true },
+  })
+}
+
+window.addEventListener('resize', onWindowResize)
 </script>
 
 {{ embed(roots.js_area) }}

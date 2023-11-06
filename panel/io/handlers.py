@@ -21,7 +21,7 @@ from bokeh.document import Document
 from bokeh.io.doc import patch_curdoc
 from bokeh.util.dependencies import import_required
 
-log = logging.get_logger('panel.io.handlers')
+log = logging.getLogger('panel.io.handlers')
 
 @contextmanager
 def _monkeypatch_io(loggers: dict[str, Callable[..., None]]) -> dict[str, Any]:
@@ -134,6 +134,10 @@ class NotebookHandler(CodeHandler):
             filename (str) : a path to a Jupyter notebook (".ipynb") file
 
         '''
+        self._stale = True
+        super().__init__(source=self._parse(filename), filename=filename)
+
+    def _parse(self, filename):
         nbformat = import_required('nbformat', 'The Bokeh notebook application handler requires Jupyter Notebook to be installed.')
         nbconvert = import_required('nbconvert', 'The Bokeh notebook application handler requires Jupyter Notebook to be installed.')
 
@@ -172,8 +176,7 @@ class NotebookHandler(CodeHandler):
 
         preprocessors = [StripMagicsProcessor()]
 
-        with open(filename, encoding="utf-8") as f:
-            nb_string = nbformat.read(f, nbformat.NO_CONVERT)
+        nb_string = nbformat.read(filename, nbformat.NO_CONVERT)
         exporter = nbconvert.NotebookExporter()
 
         for preprocessor in preprocessors:
@@ -185,6 +188,8 @@ class NotebookHandler(CodeHandler):
         cell_count = 0
         code = ['from panel import state as _pn_state']
         for cell in nb['cells']:
+            cell_id = cell.get('id', None)
+            position = cell['metadata'].get('panel-interact-position', {})
             if cell['cell_type'] == 'code':
                 if not len(cell['source']):
                     continue
@@ -199,13 +204,18 @@ class NotebookHandler(CodeHandler):
                     try:
                         ast.parse(cell_out, mode='eval')
                         code.append(f'_cell_out__{cell_count} = {cell_out}')
-                        code.append(f'_pn_state._cell_outputs.append(_cell_out__{cell_count})')
+                        code.append(f'_pn_state._cell_outputs.append(({cell_id!r}, {position}, _cell_out__{cell_count}))')
                     except SyntaxError:
                         code.append(cell_out)
                 else:
                     code.append(cell_out)
+            elif cell['cell_type'] == 'markdown':
+                md = ''.join(cell['source'])
+                code.append(f'_pn_state._cell_outputs.append(({cell_id!r}, {position}, {md!r}))')
+            cell_count += 1
         code = '\n'.join(code)
-        super().__init__(source=code, filename=filename)
+        self._stale = False
+        return code
 
     def modify_document(self, doc: Document) -> None:
         ''' Run Bokeh application code to update a ``Document``
@@ -214,6 +224,11 @@ class NotebookHandler(CodeHandler):
             doc (Document) : a ``Document`` to update
 
         '''
+        path = self._runner._path
+        if self._stale:
+            source = self._parse(path)
+            nodes = ast.parse(source, os.fspath(path))
+            self._runner._code = compile(nodes, filename=path, mode='exec', dont_inherit=True)
 
         module = self._runner.new_module()
 
@@ -230,16 +245,34 @@ class NotebookHandler(CodeHandler):
 
         with _monkeypatch_io(self._loggers):
             with patch_curdoc(doc):
+                from ..config import panel_extension
+                from ..pane import panel
+                from .state import state
+
                 self._runner.run(module, self._make_post_doc_check(doc))
                 if not doc.roots:
-                    from ..config import panel_extension
-                    from ..pane import panel
-                    from .state import state
-                    panel_extension(template='interact')
-                    state.template.title = os.path.basename(self._runner._path)
-                    for out in state._cell_outputs:
-                        panel(out).servable()
+                    panel_extension(template='muuri')
+                    state.template.title = os.path.basename(path)
+                    state.template.param.watch(self._update_position_metadata, 'positions')
+                    for cell_id, pos, out in state._cell_outputs:
+                        if out is None:
+                            continue
+                        pout = panel(out)
+                        pout.tags += [pos, cell_id]
+                        pout.sizing_mode = "stretch_width"
+                        pout.servable()
                 state._cell_outputs.clear()
+
+    def _update_position_metadata(self, event):
+        import nbformat
+        nb = nbformat.read(self._runner._path, nbformat.NO_CONVERT)
+        for cell in nb['cells']:
+            if 'id' not in cell:
+                continue
+            if cell['id'] in event.new:
+                cell['metadata']['panel-interact-position'] = event.new[cell['id']]
+        nbformat.write(nb, self._runner.path)
+        self._stale = True
 
 
 def build_single_handler_application(path, argv=None):
