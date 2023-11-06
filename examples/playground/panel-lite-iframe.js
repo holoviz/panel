@@ -15,7 +15,7 @@ const htmlTemplate=`
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-gl-3.3.0.min.js"></script>
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.3.0.min.js"></script>
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.3.0.min.js"></script>
-    <script type="text/javascript" src="https://cdn.holoviz.org/panel/1.3.0/dist/panel.min.js"></script>
+    <script type="text/javascript" src="https://cdn.holoviz.org/panel/1.3.1/dist/panel.min.js"></script>
 </head>
 <body>
     <div>I am a new template</div>
@@ -75,7 +75,7 @@ async function loadPyodideAndPackages(jsglobals){
     window.micropip = _pyodide.pyimport("micropip");
     window.envSpec=[
         'https://cdn.holoviz.org/panel/wheels/bokeh-3.3.0-py3-none-any.whl',
-        'https://cdn.holoviz.org/panel/1.3.0/dist/wheels/panel-1.3.0-py3-none-any.whl',
+        'https://cdn.holoviz.org/panel/1.3.1/dist/wheels/panel-1.3.1-py3-none-any.whl',
         'pyodide-http==0.2.1'
     ]
     await window.micropip.install(window.envSpec)
