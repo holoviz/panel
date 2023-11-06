@@ -103,7 +103,7 @@ def _get_html(code):
     file = StringIO(code)
 
     try:
-        html, _ = script_to_html(file)
+        html, _ = script_to_html(file, prerender=False)
     except Exception as ex:
         html = f"Exception: {ex}"
         print(ex)
