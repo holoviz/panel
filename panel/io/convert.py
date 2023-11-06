@@ -53,7 +53,7 @@ PYSCRIPT_CSS = f'<link rel="stylesheet" href="https://pyscript.net/releases/{PYS
 PYSCRIPT_CSS_OVERRIDES = f'<link rel="stylsheet" href="{CDN_DIST}css/pyscript.css" />'
 PYSCRIPT_JS = f'<script defer src="https://pyscript.net/releases/{PYSCRIPT_VERSION}/pyscript.js"></script>'
 PYODIDE_JS = f'<script src="{PYODIDE_URL}"></script>'
-PYODIDE_PYC_JS = f'<script src="{PYODIDE_URL}"></script>'
+PYODIDE_PYC_JS = f'<script src="{PYODIDE_PYC_URL}"></script>'
 
 MINIMUM_VERSIONS = {}
 
@@ -382,6 +382,7 @@ def convert_app(
     panel_version: Literal['auto', 'local'] | str = 'auto',
     http_patch: bool = True,
     inline: bool = False,
+    compiled: bool = False,
     verbose: bool = True,
 ):
     if dest_path is None:
@@ -395,7 +396,7 @@ def convert_app(
                 app, requirements=requirements, runtime=runtime,
                 prerender=prerender, manifest=manifest,
                 panel_version=panel_version, http_patch=http_patch,
-                inline=inline
+                inline=inline, compiled=compiled
             )
     except KeyboardInterrupt:
         return
@@ -463,6 +464,7 @@ def convert_apps(
     panel_version: Literal['auto', 'local'] | str = 'auto',
     http_patch: bool = True,
     inline: bool = False,
+    compiled: bool = False,
     verbose: bool = True,
 ):
     """
@@ -504,6 +506,8 @@ def convert_apps(
         to allow urllib3 and requests to work.
     inline: bool
         Whether to inline resources.
+    compiled: bool
+        Whether to use the compiled and faster version of Pyodide.
     """
     if isinstance(apps, str):
         apps = [apps]
@@ -530,7 +534,7 @@ def convert_apps(
         'requirements': app_requirements, 'runtime': runtime,
         'prerender': prerender, 'manifest': manifest,
         'panel_version': panel_version, 'http_patch': http_patch,
-        'inline': inline, 'verbose': verbose
+        'inline': inline, 'verbose': verbose, 'compiled': compiled
     }
 
     if state._is_pyodide:

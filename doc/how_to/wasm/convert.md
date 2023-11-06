@@ -5,19 +5,23 @@ Writing an HTML file from scratch with all the Javascript and Python dependencie
 The ``panel convert`` command has the following options:
 
     positional arguments:
-      SCRIPTs               The scripts or notebooks to convert
+    DIRECTORY-OR-SCRIPT   The app directories or scripts to serve (serve empty document if not specified)
 
-    optional arguments:
-      -h, --help            Show this help message and exit
-      --to                  The format to convert to, one of 'pyodide', 'pyodide-worker' or 'pyscript'
-      --out                 Directory to export files to
-      --title               Custom title for the application(s)
-      --skip-embed          Whether to skip the prerendering while pyodide loads.
-      --index               Whether to create an index if multiple files are served.
-      --pwa                 Whether to add files to allow serving the application as a Progressive Web App.
-      --requirements        List of Python requirements to add to the converted file. By default it will automatically try to infer dependencies based on your imports and Panel will automatically be included.
-      --watch               Watches files for changes and rebuilds them when they are updated.
-      --disable-http-patch  Disables patching of http requests using pyodide-http library.
+    options:
+    -h, --help            show this help message and exit
+    --to TO               The format to convert to, one of 'pyodide' (default), 'pyodide-worker' or 'pyscript'
+    --compiled            Whether to use the compiled and faster version of Pyodide.
+    --out OUT             The directory to write the file to.
+    --title TITLE         A custom title for the application(s).
+    --skip-embed          Whether to skip embedding pre-rendered content in the converted file to display content while app is loading.
+    --index               Whether to create an index if multiple files are served.
+    --pwa                 Whether to add files to serve applications as a Progressive Web App.
+    --requirements REQUIREMENTS [REQUIREMENTS ...]
+                            Explicit requirements to add to the converted file, a single requirements.txt file or a JSON file containing requirements per app. By default requirements are inferred from the code.
+    --disable-http-patch  Whether to disable patching http requests using the pyodide-http library.
+    --watch               Watch the files
+    --num-procs NUM_PROCS
+                            The number of processes to start in parallel to convert the apps.
 
 ## Example
 
