@@ -1,0 +1,79 @@
+.muuri-grid {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.muuri-grid-item {
+  box-shadow:
+    color-mix(in srgb, var(--panel-shadow-color, 'black') 30%, transparent) 0px
+      1px 2px 0px,
+    color-mix(in srgb, var(--panel-shadow-color, 'black') 15%, transparent) 0px
+      1px 3px 1px;
+  display: block;
+  margin: 10px;
+  padding: 10px;
+  position: absolute;
+  width: calc(100% - 40px);
+  z-index: 1;
+}
+
+.muuri-grid-item.muuri-item-hidden {
+  z-index: 0;
+}
+
+.muuri-grid-item.muuri-item-releasing {
+  z-index: 2;
+}
+
+.muuri-grid-item.muuri-item-dragging {
+  z-index: 3;
+}
+
+.muuri-delete-handle {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 24px;
+  height: 24px;
+  z-index: 10000;
+  background-image: url('data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjMDAwMDAwIiBoZWlnaHQ9IjI0cHgiIHdpZHRoPSIyNHB4IiB2ZXJzaW9uPSIxLjEiIGlkPSJDYXBhXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIA0KCSB2aWV3Qm94PSIwIDAgMjcuOTY1IDI3Ljk2NSIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+DQo8Zz4NCgk8ZyBpZD0iYzE0Ml94Ij4NCgkJPHBhdGggZD0iTTEzLjk4LDBDNi4yNTksMCwwLDYuMjYxLDAsMTMuOTgzYzAsNy43MjEsNi4yNTksMTMuOTgyLDEzLjk4LDEzLjk4MmM3LjcyNSwwLDEzLjk4NS02LjI2MiwxMy45ODUtMTMuOTgyDQoJCQlDMjcuOTY1LDYuMjYxLDIxLjcwNSwwLDEzLjk4LDB6IE0xOS45OTIsMTcuNzY5bC0yLjIyNywyLjIyNGMwLDAtMy41MjMtMy43OC0zLjc4Ni0zLjc4Yy0wLjI1OSwwLTMuNzgzLDMuNzgtMy43ODMsMy43OA0KCQkJbC0yLjIyOC0yLjIyNGMwLDAsMy43ODQtMy40NzIsMy43ODQtMy43ODFjMC0wLjMxNC0zLjc4NC0zLjc4Ny0zLjc4NC0zLjc4N2wyLjIyOC0yLjIyOWMwLDAsMy41NTMsMy43ODIsMy43ODMsMy43ODINCgkJCWMwLjIzMiwwLDMuNzg2LTMuNzgyLDMuNzg2LTMuNzgybDIuMjI3LDIuMjI5YzAsMC0zLjc4NSwzLjUyMy0zLjc4NSwzLjc4N0MxNi4yMDcsMTQuMjM5LDE5Ljk5MiwxNy43NjksMTkuOTkyLDE3Ljc2OXoiLz4NCgk8L2c+DQoJPGcgaWQ9IkNhcGFfMV8xMDRfIj4NCgk8L2c+DQo8L2c+DQo8L3N2Zz4NCg==');
+  opacity: 0;
+  transition-delay: 0.5s;
+  transition: 0.5s;
+}
+
+.muuri-delete-handle:hover {
+  transition: 0.5s;
+  opacity: 1 !important;
+}
+
+.muuri-delete-handle:focus {
+  opacity: 1 !important;
+}
+
+.muuri-drag-handle {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 24px;
+  height: 24px;
+  z-index: 10000;
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0Ij48cGF0aCBmaWxsPSJub25lIiBkPSJNMCAwaDI0djI0SDB6Ii8+PHBhdGggZD0iTTE2IDEzbDYuOTY0IDQuMDYyLTIuOTczLjg1IDIuMTI1IDMuNjgxLTEuNzMyIDEtMi4xMjUtMy42OC0yLjIyMyAyLjE1TDE2IDEzem0tMi03aDJ2Mmg1YTEgMSAwIDAgMSAxIDF2NGgtMnYtM0gxMHYxMGg0djJIOWExIDEgMCAwIDEtMS0xdi01SDZ2LTJoMlY5YTEgMSAwIDAgMSAxLTFoNVY2ek00IDE0djJIMnYtMmgyem0wLTR2Mkgydi0yaDJ6bTAtNHYySDJWNmgyem0wLTR2MkgyVjJoMnptNCAwdjJINlYyaDJ6bTQgMHYyaC0yVjJoMnptNCAwdjJoLTJWMmgyeiIvPjwvc3ZnPg==');
+  opacity: 0 !important;
+  transition-delay: 0.5s;
+  transition: 0.5s;
+}
+
+.muuri-drag-handle:hover {
+  transition: 0.5s;
+  opacity: 1 !important;
+}
+
+.muuri-drag-handle:focus {
+  opacity: 1 !important;
+}
+
+.draggable {
+  width: fit-content;
+}

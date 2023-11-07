@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import ast
-import json
 import logging
 import os
 import re
+import sys
+import textwrap
 
 from contextlib import contextmanager
+from functools import partial
 from types import ModuleType
 from typing import IO, Any, Callable
 
@@ -23,6 +25,9 @@ from bokeh.util.dependencies import import_required
 
 log = logging.getLogger('panel.io.handlers')
 
+CELL_DISPLAY = []
+
+
 @contextmanager
 def _monkeypatch_io(loggers: dict[str, Callable[..., None]]) -> dict[str, Any]:
     import bokeh.io as io
@@ -33,6 +38,31 @@ def _monkeypatch_io(loggers: dict[str, Callable[..., None]]) -> dict[str, Any]:
     yield
     for f in old:
         setattr(io, f, old[f])
+
+
+@contextmanager
+def set_env_vars(**env_vars):
+    old = {var: os.environ.get(var) for var in env_vars}
+    os.environ.update(env_vars)
+    yield
+    for var, value in old.items():
+        if value is None:
+            del os.environ[var]
+        else:
+            os.environ[var] = value
+
+
+def get_figure():
+    if 'matplotlib.pyplot' not in sys.modules:
+        return None
+    import matplotlib.pyplot as plt
+    fig = plt.gcf()
+    if fig.get_axes():
+        return fig
+
+
+def display(*args, **kwargs):
+    CELL_DISPLAY.extend(args)
 
 
 def extract_code(
@@ -83,23 +113,45 @@ def extract_code(
         out.append(f'pn.state.template.title = {title.strip()!r}')
     return '\n'.join(out)
 
-def extract_cells(
-    filehandle: IO, supported_syntax: tuple[str, ...] = ('{pyodide}', 'python')
-) -> str:
-    notebook = json.loads(filehandle.read())
-    code = ['import panel as pn', "pn.extension(template='interact')"]
-    for cell in notebook['cells']:
-        if cell['cell_type'] == 'code':
-            if not len(cell['source']):
-                continue
-            for line in cell['source'][:-1]:
-                code.append(line)
-            cell_out = cell['source'][-1]
-            if not cell_out.rstrip().endswith(';') and not cell_out.startswith('import '):
-                code.append(f'pn.panel({cell_out}).servable()')
-            else:
-                code.append(cell_out)
-    return '\n'.join(code)
+
+def capture_code_cell(cell):
+    """
+    Parses a code cell and generates wrapper code to capture the
+    return value of the cell and any other outputs published inside
+    the cell.
+    """
+    code = []
+    if not len(cell['source']):
+        return code
+    source = cell['source'].split('\n')
+    for line in source[:-1]:
+        line = (line
+            .replace('get_ipython().run_line_magic', '')
+            .replace('get_ipython().magic', '')
+        )
+        code.append(line)
+    cell_out = source[-1]
+    if cell_out.rstrip().endswith(';'):
+        code.append(cell_out)
+        return code
+    try:
+        ast.parse(cell_out, mode='eval')
+    except SyntaxError:
+        code.append(cell_out)
+        return code
+    cell_id = cell['id']
+    cell_code = textwrap.dedent(f"""
+    _pn__state._cell_outputs[{cell_id!r}].append({cell_out})
+    for _cell__out in _CELL__DISPLAY:
+        _pn__state._cell_outputs[{cell_id!r}].append(_cell__out)
+    _CELL__DISPLAY.clear()
+    _fig__out = _get__figure()
+    if _fig__out:
+        _pn__state._cell_outputs[{cell_id!r}].append(_fig__out)
+    """)
+    code.append(cell_code)
+    return code
+
 
 class MarkdownHandler(CodeHandler):
     ''' Modify Bokeh documents by creating Dashboard from a Markdown file.
@@ -176,44 +228,33 @@ class NotebookHandler(CodeHandler):
 
         preprocessors = [StripMagicsProcessor()]
 
-        nb_string = nbformat.read(filename, nbformat.NO_CONVERT)
+        nb = nbformat.read(filename, nbformat.NO_CONVERT)
         exporter = nbconvert.NotebookExporter()
 
         for preprocessor in preprocessors:
             exporter.register_preprocessor(preprocessor)
 
-        nb_string, _ = exporter.from_notebook_node(nb_string)
-        nb = json.loads(nb_string)
+        nb_string, _ = exporter.from_notebook_node(nb)
+        nb = nbformat.reads(nb_string, 4)
+        nb = nbformat.v4.upgrade(nb)
 
-        cell_count = 0
-        code = ['from panel import state as _pn_state']
+        code = [
+            'from panel import state as _pn__state',
+            'from panel.io.handlers import CELL_DISPLAY as _CELL__DISPLAY, display, get_figure as _get__figure\n'
+        ]
         for cell in nb['cells']:
-            cell_id = cell.get('id', None)
-            position = cell['metadata'].get('panel-interact-position', {})
+            cell_id = cell['id']
+            layout = cell['metadata'].get('panel-layout', {})
+            layout_code = f'_pn__state._cell_layouts[{cell_id!r}] = {layout!r}'
+            code.append(layout_code)
             if cell['cell_type'] == 'code':
-                if not len(cell['source']):
-                    continue
-                for line in cell['source'][:-1]:
-                    line = (line
-                        .replace('get_ipython().run_line_magic', '')
-                        .replace('get_ipython().magic', '')
-                    )
-                    code.append(line)
-                cell_out = cell['source'][-1]
-                if not cell_out.rstrip().endswith(';'):
-                    try:
-                        ast.parse(cell_out, mode='eval')
-                        code.append(f'_cell_out__{cell_count} = {cell_out}')
-                        code.append(f'_pn_state._cell_outputs.append(({cell_id!r}, {position}, _cell_out__{cell_count}))')
-                    except SyntaxError:
-                        code.append(cell_out)
-                else:
-                    code.append(cell_out)
+                cell_code = capture_code_cell(cell)
+                code += cell_code
             elif cell['cell_type'] == 'markdown':
                 md = ''.join(cell['source'])
-                code.append(f'_pn_state._cell_outputs.append(({cell_id!r}, {position}, {md!r}))')
-            cell_count += 1
+                code.append(f'_pn__state._cell_outputs.append(({cell_id!r}, {md!r}))')
         code = '\n'.join(code)
+        nbformat.write(nb, filename)
         self._stale = False
         return code
 
@@ -245,32 +286,69 @@ class NotebookHandler(CodeHandler):
 
         with _monkeypatch_io(self._loggers):
             with patch_curdoc(doc):
-                from ..config import panel_extension
-                from ..pane import panel
+                from ..config import config
+                from ..layout import Column
                 from .state import state
 
-                self._runner.run(module, self._make_post_doc_check(doc))
-                if not doc.roots:
-                    panel_extension(template='muuri')
-                    state.template.title = os.path.basename(path)
-                    state.template.param.watch(self._update_position_metadata, 'positions')
-                    for cell_id, pos, out in state._cell_outputs:
-                        if out is None:
-                            continue
-                        pout = panel(out)
-                        pout.tags += [pos, cell_id]
-                        pout.sizing_mode = "stretch_width"
-                        pout.servable()
-                state._cell_outputs.clear()
+                with set_env_vars(MPLBACKEND='agg'):
+                    self._runner.run(module, self._make_post_doc_check(doc))
 
-    def _update_position_metadata(self, event):
+                if doc.roots:
+                    return
+
+                config.template = 'editable'
+                state.template.title = os.path.basename(path)
+
+                layouts, outputs, cells = {}, {}, {}
+                for cell_id, out in state._cell_outputs.items():
+                    pout = Column(
+                        *(o for o in out if o is not None),
+                        sizing_mode='stretch_width'
+                    )
+                    for po in pout:
+                        po.sizing_mode = 'stretch_width'
+                    outputs[cell_id] = pout
+                    layouts[id(pout)] = state._cell_layouts[cell_id]
+                    cells[cell_id] = id(pout)
+                    pout.servable()
+
+                # Reorder outputs based on notebook metadata
+                import nbformat
+                nb = nbformat.read(self._runner._path, nbformat.NO_CONVERT)
+                ordered = {}
+                for cell_id in nb['metadata'].get('panel-cell-order', []):
+                    if cell_id not in cells:
+                        continue
+                    obj_id = cells[cell_id]
+                    ordered[obj_id] = layouts[obj_id]
+                for obj_id, spec in layouts.items():
+                    if obj_id not in ordered:
+                        ordered[obj_id] = spec
+
+                # Set up state
+                state.template.layout = ordered
+                state._cell_outputs.clear()
+                # Note: Big memory leak
+                state.template.param.watch(
+                    partial(self._update_position_metadata, outputs), 'layout'
+                )
+
+    def _update_position_metadata(self, outputs, event):
         import nbformat
         nb = nbformat.read(self._runner._path, nbformat.NO_CONVERT)
+        cell_ids = {}
         for cell in nb['cells']:
             if 'id' not in cell:
                 continue
-            if cell['id'] in event.new:
-                cell['metadata']['panel-interact-position'] = event.new[cell['id']]
+            if cell['id'] in outputs:
+                out = outputs[cell['id']]
+                cell_ids[id(out)] = cell['id']
+                spec = dict(event.new[id(out)])
+                del spec['id']
+                cell['metadata']['panel-layout'] = spec
+        nb['metadata']['panel-cell-order'] = [
+            cell_ids[obj_id] for obj_id in event.new
+        ]
         nbformat.write(nb, self._runner.path)
         self._stale = True
 

@@ -56,6 +56,7 @@ from tornado.web import StaticFileHandler
 
 from ..config import config
 from .resources import DIST_DIR, ERROR_TEMPLATE, _env
+from .server import COMPONENT_PATH, ComponentResourceHandler
 from .state import state
 
 logger = logging.getLogger(__name__)
@@ -446,7 +447,9 @@ def _load_jupyter_server_extension(notebook_app):
             (urljoin(base_url, r"panel-preview/render/(.*)"),
              PanelJupyterHandler, {}),
             (urljoin(base_url, r"panel_dist/(.*)"),
-             StaticFileHandler, dict(path=DIST_DIR))
+             StaticFileHandler, dict(path=DIST_DIR)),
+            (urljoin(base_url, f'panel-preview/{COMPONENT_PATH}(.*)'),
+             ComponentResourceHandler, {})
         ]
     )
 

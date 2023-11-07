@@ -116,6 +116,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         config_params = {
             p: v for p, v in params.items() if p in _base_config.param
         }
+        self._render_items: Dict[str, Tuple[Renderable, List[str]]]  = {}
+        self._render_variables: Dict[str, Any] = {}
         super().__init__(**{
             p: v for p, v in params.items() if p not in _base_config.param or p == 'name'
         })
@@ -130,8 +132,6 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
             self.nb_template = _env.from_string(nb_template)
         else:
             self.nb_template = nb_template or self.template
-        self._render_items: Dict[str, Tuple[Renderable, List[str]]]  = {}
-        self._render_variables: Dict[str, Any] = {}
         self._documents: List[Document] = []
         self._server = None
         self._layout = self._build_layout()

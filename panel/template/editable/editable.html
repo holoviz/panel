@@ -115,15 +115,20 @@
       {% if main_max_width %}
       <div style="margin-left: auto; margin-right: auto; max-width: {{main_max_width}}">
       {% endif %}
+
+      <div id="main-grid" class="muuri-grid">
       {% for doc in docs %}
       {% for root in doc.roots %}
       {% if "main" in root.tags %}
-      <div class="draggable" cell-id="{{ root.tags[-2] }}" data-x="{{ root.tags[-3].get('x') if root.tags|length == 3 else 0 }}" data-y="{{ root.tags[-3].get('y') if root.tags|length == 3 else 0 }}">
-	{{ embed(root) | indent(4) }}
+      <div class="muuri-grid-item" data-id="{{ root.id }}">
+	<span class="muuri-drag-handle"></span>
+	<span class="muuri-delete-handle"></span>
+        {{ embed(root) | indent(4) }}
       </div>
       {% endif %}
       {% endfor %}
       {% endfor %}
+
       {% if main_max_width %}
       </div>
       {% endif %}
@@ -168,124 +173,100 @@
     }
   }
 
-  for (var draggable of document.getElementsByClassName('draggable')) {
-    var x = (parseFloat(draggable.getAttribute('data-x')) || 0)
-    var y = (parseFloat(draggable.getAttribute('data-y')) || 0)
-    draggable.style.transform = 'translate(' + x + 'px, ' + y + 'px)'
+  var layout = {{ muuri_layout|json  }}
+  var els = {}
+  for (var el of document.querySelectorAll("[data-id]")) {
+    els[el.getAttribute('data-id')] = el;
+  }
+  var items = []
+  for (var spec of layout) {
+    items.push(els[spec.id])
+  }
+  for (var el_id in els) {
+    var el = els[el_id]
+    if (!items.includes(el)) {
+      items.push(el)
+    }
+  }
+  var grid = new Muuri('.muuri-grid', {
+    items: items,
+    dragEnabled: true,
+    dragHandle: '.muuri-drag-handle'
+  });
+
+  function resize_item(item, width, height, notify = true) {
+    var child = item.children[2].children[0]
+    var screen_width = document.getElementsByClassName('muuri-grid')[0].clientWidth
+    if (((width/100) * screen_width) < 100) {
+      width = Math.round((100/screen_width) * 100)
+    }
+    item.style.width = `calc( ${width}% - 20px)`;
+    item.style.height = Math.round(Math.max(height, 10) / 10) * 10 + 'px';
+    if (notify) {
+      grid.refreshItems()
+      grid.layout()
+    }
+    if (child && (height < child.getBoundingClientRect().height)) {
+      item.style.overflowY = 'auto';
+    } else {
+      item.style.removeProperty('overflow-y')
+    }
   }
 
-  var interactable = interact('.draggable')
+  var hidden = []
+  for (var spec of layout) {
+    var el = els[spec.id]
+    var item = grid.getItem(el)
+    if (spec.visible === false) {
+      hidden.push(item)
+    }
+    resize_item(el, spec.width, spec.height, false)
+  }
+  grid.refreshItems()
+  if (hidden.length) {
+    grid.hide(hidden, {instant: true, layout: false})
+  }
+  grid.layout()
+
+  for (var handle of document.getElementsByClassName('muuri-delete-handle')) {
+    handle.addEventListener("click", (event) => {
+      grid.hide([grid.getItem(event.target.parentElement)], {instant: true})
+    })
+  }
+
+  window.resizeableGrid = interact('.muuri-grid-item')
   .resizable({
     // resize from all edges and corners
-    edges: { left: true, right: true, bottom: true, top: true },
-
+    edges: { right: true, bottom: true },
     listeners: {
       end (event) {
 	event.target.style.removeProperty('border')
 	event.target.style.removeProperty('border-radius')
       },
       move (event) {
-        var target = event.target
-        var x = (parseFloat(target.getAttribute('data-x')) || 0)
-        var y = (parseFloat(target.getAttribute('data-y')) || 0)
-
-        // update the element's style
-        target.style.width = event.rect.width + 'px'
-        target.style.height = event.rect.height + 'px'
-	target.style.border = '1px dotted black'
-	target.style.borderRadius = '5px';
-
-        // translate when resizing from top or left edges
-        x += event.deltaRect.left
-        y += event.deltaRect.top
-
-        target.style.transform = 'translate(' + x + 'px,' + y + 'px)'
-
-        target.setAttribute('data-x', x)
-        target.setAttribute('data-y', y)
-      }
-    },
-    modifiers: [
-      // keep the edges inside the parent
-      interact.modifiers.restrictEdges({
-        outer: 'parent'
-      }),
-
-      // minimum size
-      interact.modifiers.restrictSize({
-        min: { width: 100, height: 50 }
-      })
-    ],
-
-    inertia: true
-  })
-  .draggable({
-
-    // enable inertial throwing
-    inertia: true,
-    // keep the element within the area of it's parent
-    modifiers: [
-      interact.modifiers.restrictRect({
-        restriction: 'parent',
-        endOnly: true
-      }),
-      interact.modifiers.snap({
-        targets: [
-          function (x, y) {
-            var newX = Math.round(x / 20) * 20;
-            var newY = Math.round(y / 20) * 20;
-            return {x: newX, y: newY};
-          }],
-      }),
-    ],
-    // enable autoScroll
-    autoScroll: true,
-    listeners: {
-      // call this function on every dragmove event
-      move: dragMoveListener,
-
-      // call this function on every dragend event
-      end (event) {
-	event.target.style.removeProperty('border')
-	event.target.style.removeProperty('border-radius')
+	var style = getComputedStyle(event.target)
+	var top = parseInt(style.getPropertyValue('padding-top').slice(0, -2))
+	var bottom = parseInt(style.getPropertyValue('padding-bottom').slice(0, -2))
+	var screen_width = window.muuriGrid.getElement().clientWidth
+	resize_item(event.target, Math.round((event.rect.width/screen_width)*100), event.rect.height-(top+bottom))
       }
     }
   })
 
-function dragMoveListener (event) {
-  var target = event.target
+  window.muuriGrid = grid;
 
-  target.style.border = '1px dotted black'
-  target.style.borderRadius = '5px';
-
-  // keep the dragged position in the data-x/data-y attributes
-  var x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx
-  var y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy
-
-  // translate the element
-  target.style.transform = 'translate(' + x + 'px, ' + y + 'px)'
-
-  // update the posiion attributes
-  target.setAttribute('data-x', x)
-  target.setAttribute('data-y', y)
-}
-
-// this function is used later in the resizing and gesture demos
-window.dragMoveListener = dragMoveListener
-
-async function onWindowResize () {
-    console.log('resize')
-  // start a resize action and wait for inertia to finish
-  await interactable.reflow({ name: 'drag', axis: 'x' })
-
-  // start a drag action
-  await interactable.reflow({
-    name: 'resize',
-    edges: { left: true, bottom: true },
-  })
-}
-
-window.addEventListener('resize', onWindowResize)
+  window.addEventListener('resize', function(event) {
+    var screen_width = document.getElementsByClassName('muuri-grid')[0].clientWidth
+    for (const item of grid.getItems()) {
+      var width = item.getWidth()
+      if (width < 100) {
+	width = Math.round((100/screen_width) * 100)
+	resize_item(item.getElement(), width, item.getHeight(), false)
+      }
+    }
+    grid.refreshItems()
+    grid.layout()
+  }, true);
 </script>
 
 {{ embed(roots.js_area) }}
