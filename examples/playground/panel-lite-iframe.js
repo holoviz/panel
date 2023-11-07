@@ -92,6 +92,8 @@ async function convertToHTML(code){
 from io import StringIO
 from panel.io import convert
 from panel.io.convert import script_to_html
+from panel.io.resources import set_resource_mode
+from bokeh.settings import settings as bk_settings
 
 code = \"\"\"
 ${fixPanel}
@@ -103,10 +105,14 @@ def _get_html(code):
     file = StringIO(code)
 
     try:
-        html, _ = script_to_html(file, prerender=False)
+        bk_settings.simple_ids.set_value(True)
+        with set_resource_mode('cdn'):
+            html, _ = script_to_html(file, prerender=False)
     except Exception as ex:
         html = f"Exception: {ex}"
         print(ex)
+    finally:
+        bk_settings.simple_ids.set_value(False)
 
 
     return html.replace("v0.23.4", "v0.24.1")
