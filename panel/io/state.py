@@ -19,7 +19,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import partial, wraps
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Coroutine, Dict,
+    TYPE_CHECKING, Any, Awaitable, Callable, ClassVar, Coroutine, Dict,
     Iterator as TIterator, List, Literal, Optional, Tuple, Type, TypeVar,
     Union,
 )
@@ -658,7 +658,7 @@ class _state(param.Parameterized):
             msg = LOG_USER_MSG.format(msg=msg)
         getattr(_state_logger, level.lower())(msg, *args)
 
-    def onload(self, callback: Callable[[], None] | Coroutine[Any, Any, None]):
+    def onload(self, callback: Callable[[], None | Awaitable[None]] | Coroutine[Any, Any, None]):
         """
         Callback that is triggered when a session has been served.
 
