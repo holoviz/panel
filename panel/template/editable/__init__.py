@@ -27,6 +27,8 @@ class TemplateEditor(ReactiveHTML):
 
     layout = param.List()
 
+    breakpoints = param.List([(500, 0.5), (1000, 0.8), (1200, 1), (1600, 1.5)])
+
     _scripts = {
         'render': """
         function save_layout() {
@@ -116,6 +118,5 @@ class EditableTemplate(VanillaTemplate):
             self._render_items[ref] = (editor, ['header'])
 
     def _sync_positions(self, event):
-        # Are ids really unique?
-        ids = {next(iter(obj._models)): id(obj) for obj in self.main}
+        ids = {mid: id(obj) for obj in self.main for mid in obj._models}
         self.layout = {ids[item['id']]: item for item in event.new}

@@ -79,6 +79,7 @@
       {% if app_title %}
       <a class="title" href="" >&nbsp;{{ app_title }}</a>
       {% endif %}
+      <button id="grid-reset">Reset</button>
     </div>
     <div id="header-items">
     {% for doc in docs %}
@@ -191,27 +192,60 @@
   var grid = new Muuri('.muuri-grid', {
     items: items,
     dragEnabled: true,
-    dragHandle: '.muuri-drag-handle'
+    dragHandle: '.muuri-drag-handle',
+    layout: {fillGaps: true}
   });
 
-  function resize_item(item, width, height, notify = true) {
+  function scroll(item) {
     var child = item.children[2].children[0]
-    var screen_width = document.getElementsByClassName('muuri-grid')[0].clientWidth
-    if (((width/100) * screen_width) < 100) {
-      width = Math.round((100/screen_width) * 100)
-    }
-    item.style.width = `calc( ${width}% - 20px)`;
-    item.style.height = Math.round(Math.max(height, 10) / 10) * 10 + 'px';
-    if (notify) {
-      grid.refreshItems()
-      grid.layout()
-    }
-    if (child && (height < child.getBoundingClientRect().height)) {
+    if (child && (child.scrollHeight > child.clientHeight)) {
       item.style.overflowY = 'auto';
     } else {
       item.style.removeProperty('overflow-y')
     }
   }
+
+  function resize_item(item, width, height, notify = true) {
+    var screen_width = document.getElementsByClassName('muuri-grid')[0].clientWidth
+    if (((width/100) * screen_width) < 100) {
+      width = (100/screen_width) * 100
+    }
+    item.style.width = `calc( ${width}% - 40px)`;
+    item.style.height = Math.round(Math.max(height, 10) / 10) * 10 + 'px';
+    if (notify) {
+      grid.refreshItems()
+      grid.layout()
+    }
+    scroll(item)
+  }
+
+  function reset() {
+    var items = grid.getItems()
+    for (var item of items) {
+      var el = item.getElement()
+      var style = getComputedStyle(el)
+      var top = parseInt(style.getPropertyValue('padding-top').slice(0, -2))
+      var bottom = parseInt(style.getPropertyValue('padding-bottom').slice(0, -2))
+      if (!item.isVisible()) {
+	var height = 100
+      } else {
+	var height = item.getHeight()
+      }
+      resize_item(el, 100, height-(top+bottom), false)
+    }
+    grid.refreshItems()
+    grid.show(items)
+    var order = []
+    for (var el of document.getElementsByClassName('muuri-grid-item')) {
+      order.push(grid.getItem(el))
+    }
+    grid.sort(order)
+  }
+
+  var reset_button = document.getElementById("grid-reset")
+  reset_button.addEventListener("click", function() {
+    reset()
+  })
 
   var hidden = []
   for (var spec of layout) {
@@ -248,7 +282,7 @@
 	var top = parseInt(style.getPropertyValue('padding-top').slice(0, -2))
 	var bottom = parseInt(style.getPropertyValue('padding-bottom').slice(0, -2))
 	var screen_width = window.muuriGrid.getElement().clientWidth
-	resize_item(event.target, Math.round((event.rect.width/screen_width)*100), event.rect.height-(top+bottom))
+	resize_item(event.target, (event.rect.width/screen_width)*100, event.rect.height-(top+bottom))
       }
     }
   })
@@ -258,13 +292,8 @@
   window.addEventListener('resize', function(event) {
     var screen_width = document.getElementsByClassName('muuri-grid')[0].clientWidth
     for (const item of grid.getItems()) {
-      var width = item.getWidth()
-      if (width < 100) {
-	width = Math.round((100/screen_width) * 100)
-	resize_item(item.getElement(), width, item.getHeight(), false)
-      }
+      scroll(item.getElement())
     }
-    grid.refreshItems()
     grid.layout()
   }, true);
 </script>

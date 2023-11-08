@@ -252,7 +252,7 @@ class NotebookHandler(CodeHandler):
                 code += cell_code
             elif cell['cell_type'] == 'markdown':
                 md = ''.join(cell['source'])
-                code.append(f'_pn__state._cell_outputs.append(({cell_id!r}, {md!r}))')
+                code.append(f'_pn__state._cell_outputs[{cell_id!r}].append({md!r})')
         code = '\n'.join(code)
         nbformat.write(nb, filename)
         self._stale = False
