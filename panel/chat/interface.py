@@ -304,7 +304,7 @@ class ChatInterface(ChatFeed):
         """
         custom_callback = self.custom_callbacks.get(key)
         if custom_callback is not None:
-            custom_callback(event, self)
+            custom_callback(self, event)
 
     def _click_send(self, event: param.parameterized.Event | None = None) -> None:
         """
