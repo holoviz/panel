@@ -1237,7 +1237,7 @@ class Tabulator(BaseTable):
         if event.event_name == 'table-edit':
             if event.pre:
                 import pandas as pd
-                filter_df = pd.DataFrame([event.value], columns=[event.column])
+                filter_df = pd.DataFrame({event.column: [event.value]})
                 filters = self._get_header_filters(filter_df)
                 # Check if edited cell was filtered
                 if filters and filters[0].any():

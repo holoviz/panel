@@ -381,3 +381,17 @@ def change_test_dir(request):
     os.chdir(request.fspath.dirname)
     yield
     os.chdir(request.config.invocation_dir)
+
+@pytest.fixture
+def exception_handler_accumulator():
+    exceptions = []
+
+    def eh(exception):
+        exceptions.append(exception)
+
+    old_eh = config.exception_handler
+    config.exception_handler = eh
+    try:
+        yield exceptions
+    finally:
+        config.exception_handler = old_eh

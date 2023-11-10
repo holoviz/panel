@@ -681,6 +681,46 @@ def test_tabulator_editors_tabulator_list_default(page):
     expect(page.locator('.tabulator-edit-list')).to_have_text('AB')
 
 
+def test_tabulator_editors_tabulator_multiselect(page, exception_handler_accumulator):
+    # https://github.com/holoviz/panel/issues/5556
+    df = pd.DataFrame({"tags": ['', '', '']}, index=['foo1', 'foo2', 'foo3'],
+    )
+    tabulator_editors = {
+        'tags': {
+            'type': 'list',
+            'values': ['red', 'green', 'blue', 'orange'],
+            'multiselect': True,
+        }
+    }
+    widget = Tabulator(value=df, editors=tabulator_editors)
+    clicks = []
+    widget.on_click(clicks.append)
+
+    serve_component(page, widget)
+
+    cell = page.locator('.tabulator-cell:visible').nth(3)
+    cell.click()
+    val = ['red', 'blue']
+    for v in val:
+        item = page.locator(f'.tabulator-edit-list-item:has-text("{v}")')
+        item.click()
+    # Validating the filters doesn't have a very nice behavior, you need to lose
+    # focus on the multiselect by clicking somewhere else.
+    # Delay required before clicking for the focus to be lost and the filters accounted for.
+    page.wait_for_timeout(200)
+    page.locator('text="foo1"').click()
+
+    cell.click()
+    val = ['red', 'blue']
+    for v in val:
+        item = page.locator(f'.tabulator-edit-list-item:has-text("{v}")')
+        item.click()
+    page.wait_for_timeout(200)
+    page.locator('text="foo1"').click()
+
+    assert not exception_handler_accumulator
+
+
 @pytest.mark.parametrize('layout', Tabulator.param['layout'].objects)
 def test_tabulator_column_layouts(page, df_mixed, layout):
     widget = Tabulator(df_mixed, layout=layout)
