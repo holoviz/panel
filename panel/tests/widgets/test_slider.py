@@ -174,11 +174,11 @@ def test_date_range_slider(document, comm):
     widget.value = ((datetime(2018, 9, 3)-epoch).total_seconds()*1000,
                     (datetime(2018, 9, 6)-epoch).total_seconds()*1000)
     date_slider._process_events({'value': widget.value})
-    assert date_slider.value == (datetime(2018, 9, 3), datetime(2018, 9, 6))
+    assert date_slider.value == (date(2018, 9, 3), date(2018, 9, 6))
     value_throttled = ((datetime(2018, 9, 3)-epoch).total_seconds()*1000,
                     (datetime(2018, 9, 6)-epoch).total_seconds()*1000)
     date_slider._process_events({'value_throttled': value_throttled})
-    assert date_slider.value == (datetime(2018, 9, 3), datetime(2018, 9, 6))
+    assert date_slider.value == (date(2018, 9, 3), date(2018, 9, 6))
 
     date_slider.value = (datetime(2018, 9, 4), datetime(2018, 9, 6))
     assert widget.value == (1536019200000, 1536192000000)
@@ -194,7 +194,7 @@ def test_date_range_slider(document, comm):
         date_slider._process_events(
             {'value_throttled': epoch_times(datetime(2021, 2, 15), datetime(2021, 5, 15))}
         )
-        assert date_slider.value == (datetime(2021, 2, 15), datetime(2021, 5, 15))
+        assert date_slider.value == (date(2021, 2, 15), date(2021, 5, 15))
 
         date_slider.value = (datetime(2021, 2, 12), datetime(2021, 5, 12))
         assert widget.value == (1613088000000, 1620777600000)
