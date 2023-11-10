@@ -20,7 +20,7 @@ jobs:
     name: Run pre-commit
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pre-commit@v0.1a17
+      - uses: holoviz-dev/holoviz_tasks/pre-commit@v0.1a19
   unit_test_suite:
     name: Unit tests on ${{ matrix.os }} with Python ${{ matrix.python-version }}
     needs: [pre_commit]
@@ -48,7 +48,7 @@ jobs:
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
       OMP_NUM_THREADS: 1
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a18
+      - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
@@ -138,7 +138,7 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a18
+      - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
         with:
           name: ui_test_suite
           python-version: 3.9
@@ -212,7 +212,7 @@ jobs:
       SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
     steps:
       # Add back when this works on Python 3.12
-      # - uses: holoviz-dev/holoviz_tasks/install@v0.1a18
+      # - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
       #   with:
       #     name: core_test_suite
       #     python-version: ${{ matrix.python-version }}
@@ -229,7 +229,7 @@ jobs:
         run: git fetch --prune --tags --unshallow -f
       - uses: actions/setup-node@v3
         with:
-          node-version: 16.x
+          node-version: 18.x
       - uses: actions/setup-python@v4
         with:
           python-version: "3.12"
