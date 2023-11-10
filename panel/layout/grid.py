@@ -229,6 +229,31 @@ class GridBox(ListPanel):
 
 
 class GridSpec(Panel):
+    """
+    The `GridSpec` is an *array like* layout that allows arranging multiple Panel
+    objects in a grid using a simple API to assign objects to individual grid cells or
+    to a grid span.
+
+    Other layout containers function like lists, but a GridSpec has an API similar
+    to a 2D array, making it possible to use 2D assignment to populate, index, and slice
+    the grid.
+
+    See `GridStack` for a similar layout that allows the user to resize and drag the
+    cells.
+
+    Reference: https://panel.holoviz.org/reference/layouts/GridSpec.html
+
+    :Example:
+
+    >>> import panel as pn
+    >>> gspec = pn.GridSpec(width=800, height=600)
+    >>> gspec[:,   0  ] = pn.Spacer(styles=dict(background='red'))
+    >>> gspec[0,   1:3] = pn.Spacer(styles=dict(background='green'))
+    >>> gspec[1,   2:4] = pn.Spacer(styles=dict(background='orange'))
+    >>> gspec[2,   1:4] = pn.Spacer(styles=dict(background='blue'))
+    >>> gspec[0:1, 3:4] = pn.Spacer(styles=dict(background='purple'))
+    >>> gspec
+    """
 
     objects = param.Dict(default={}, doc="""
         The dictionary of child objects that make up the grid.""")
