@@ -2,7 +2,7 @@
 
 This guide addresses how to defer long running, bound and displayed functions with `defer_load`. You can use this to improve the user experience of your app.
 
-If you need to defer and orchestrate multiple, dependent tasks then check out the [Defer Long Running Tasks Guide](defer_load.md).
+If you need to defer and orchestrate multiple, dependent tasks then check out the [Defer Long Running Tasks Guide](load.md).
 
 ---
 
