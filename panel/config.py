@@ -447,7 +447,7 @@ class _config(_base_config):
         except AttributeError:
             init = super().__getattribute__('initialized')
 
-        if attr==param:
+        if attr=="param":
             return super().__getattribute__('_param__private')
 
         if init and not attr.startswith('__'):
