@@ -336,7 +336,7 @@ class _config(_base_config):
         super().__init__(**params)
         self._validating = False
         self._parameter_set = set(self.param)
-        for p in self.param:
+        for p in self._parameter_set:
             if p.startswith('_') and p[1:] not in _config._globals:
                 setattr(self, p+'_', None)
         if self.log_level:
@@ -372,7 +372,7 @@ class _config(_base_config):
     def set(self, **kwargs):
         values = [(k, v) for k, v in self.param.values().items() if k != 'name']
         overrides = [
-            (k, getattr(self, k+'_')) for k in self.param
+            (k, getattr(self, k+'_')) for k in self._parameter_set
             if k.startswith('_') and k[1:] not in _config._globals
         ]
         for k, v in kwargs.items():
@@ -398,9 +398,9 @@ class _config(_base_config):
         if attr in _config._globals or self.param._TRIGGER:
             super().__setattr__(attr if attr in self.param else f'_{attr}', value)
         elif state.curdoc is not None:
-            if attr in self.param:
+            if attr in self._parameter_set:
                 validate_config(self, attr, value)
-            elif f'_{attr}' in self.param:
+            elif f'_{attr}' in self._parameter_set:
                 validate_config(self, f'_{attr}', value)
             else:
                 raise AttributeError(f'{attr!r} is not a valid config parameter.')
@@ -410,7 +410,7 @@ class _config(_base_config):
             watchers = param_watchers(self).get(attr, {}).get('value', [])
             for w in watchers:
                 w.fn()
-        elif f'_{attr}' in self.param and hasattr(self, f'_{attr}_'):
+        elif f'_{attr}' in self._parameter_set and hasattr(self, f'_{attr}_'):
             validate_config(self, f'_{attr}', value)
             super().__setattr__(f'_{attr}_', value)
         else:
