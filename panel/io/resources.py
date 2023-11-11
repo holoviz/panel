@@ -4,6 +4,7 @@ resources via the panel.config object.
 """
 from __future__ import annotations
 
+import functools
 import importlib
 import json
 import logging
@@ -73,6 +74,10 @@ _env.lstrip_blocks = True
 _env.filters['json'] = lambda obj: Markup(json.dumps(obj))
 _env.filters['conffilter'] = conffilter
 _env.filters['sorted'] = sorted
+
+@functools.cache
+def parse_template(*args, **kwargs):
+    return _env.from_string(*args, **kwargs)
 
 # Handle serving of the panel extension before session is loaded
 RESOURCE_MODE = 'server'

@@ -28,8 +28,8 @@ from ..io.model import add_to_doc
 from ..io.notebook import render_template
 from ..io.notifications import NotificationArea
 from ..io.resources import (
-    BUNDLE_DIR, CDN_DIST, ResourceComponent, _env, component_resource_path,
-    get_dist_path, loading_css, resolve_custom_path,
+    BUNDLE_DIR, CDN_DIST, ResourceComponent, component_resource_path,
+    get_dist_path, loading_css, parse_template, resolve_custom_path,
 )
 from ..io.save import save
 from ..io.state import curdoc_locked, state
@@ -122,12 +122,12 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
 
         if isinstance(template, str):
             self._code: str | None = template
-            self.template = _env.from_string(template)
+            self.template = parse_template(template)
         else:
             self._code = None
             self.template = template
         if isinstance(nb_template, str):
-            self.nb_template = _env.from_string(nb_template)
+            self.nb_template = parse_template(nb_template)
         else:
             self.nb_template = nb_template or self.template
         self._render_items: Dict[str, Tuple[Renderable, List[str]]]  = {}
