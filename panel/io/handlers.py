@@ -139,9 +139,11 @@ def capture_code_cell(cell):
     except SyntaxError:
         code.append(cell_out)
         return code
+    if '#' in cell_out:
+        cell_out = cell_out[:cell_out.index('#')]
     cell_id = cell['id']
     cell_code = textwrap.dedent(f"""
-    _pn__state._cell_outputs[{cell_id!r}].append({cell_out})
+    _pn__state._cell_outputs[{cell_id!r}].append(({cell_out}))
     for _cell__out in _CELL__DISPLAY:
         _pn__state._cell_outputs[{cell_id!r}].append(_cell__out)
     _CELL__DISPLAY.clear()
@@ -252,7 +254,7 @@ class NotebookHandler(CodeHandler):
                 code += cell_code
             elif cell['cell_type'] == 'markdown':
                 md = ''.join(cell['source'])
-                code.append(f'_pn__state._cell_outputs[{cell_id!r}].append({md!r})')
+                code.append(f'_pn__state._cell_outputs[{cell_id!r}].append("""{md}""")')
         code = '\n'.join(code)
         nbformat.write(nb, filename)
         self._stale = False
