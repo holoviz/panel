@@ -438,7 +438,7 @@ class _config(_base_config):
 
         # ATTRS[attr]+=1
         # print(ATTRS)
-        if attr in ('_param__private', '__class__', 'npm_cdn'):
+        if attr in ('_param__private', '__class__', 'npm_cdn', 'param'):
             return super().__getattribute__(attr)
 
         # _param__private added in Param 2
@@ -448,10 +448,10 @@ class _config(_base_config):
             init = super().__getattribute__('initialized')
 
         if attr=="param":
-            return super().__getattribute__('_param__private')
+            return super().__getattribute__(attr)
 
         if init and not attr.startswith('__'):
-            params = super().__getattribute__('param')
+            params = set(super().__getattribute__('param'))
         else:
             params = []
         session_config = super().__getattribute__('_session_config')
