@@ -79,7 +79,6 @@
       {% if app_title %}
       <a class="title" href="" >&nbsp;{{ app_title }}</a>
       {% endif %}
-      <button id="grid-reset">Reset</button>
     </div>
     <div id="header-items">
     {% for doc in docs %}
@@ -90,11 +89,14 @@
     {% endfor %}
     {% endfor %}
     </div>
-    {% if busy %}
-    <div class="pn-busy-container">
-      {{ embed(roots.busy_indicator) | indent(6) }}
-    </div>
+    <div id="header-indicators">
+      <div id="grid-reset"></div>
+      {% if busy %}
+      <div class="pn-busy-container">
+	{{ embed(roots.busy_indicator) | indent(6) }}
+      </div>
     {% endif %}
+    </div>
   </nav>
 
   <div id="content">
