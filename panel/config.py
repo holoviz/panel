@@ -37,16 +37,6 @@ __version__ = str(param.version.Version(
 
 _LOCAL_DEV_VERSION = any(v in __version__ for v in ('post', 'dirty')) and not state._is_pyodide
 
-_CONFIG_PARAMS = set() # To be populated later
-_CONFIG_GLOBAL_PARAMS = {
-    'admin_plugins', 'autoreload', 'comms', 'cookie_secret',
-    'nthreads', 'oauth_provider', 'oauth_expiry', 'oauth_key',
-    'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
-    'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
-    'layout_compatibility', 'oauth_refresh_tokens', 'oauth_guest_endpoints',
-    'oauth_optional'
-}
-
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
@@ -328,15 +318,26 @@ class _config(_base_config):
         The theme to apply to components.""")
 
     # Global parameters that are shared across all sessions
+    _globals = {
+        'admin_plugins', 'autoreload', 'comms', 'cookie_secret',
+        'nthreads', 'oauth_provider', 'oauth_expiry', 'oauth_key',
+        'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
+        'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
+        'layout_compatibility', 'oauth_refresh_tokens', 'oauth_guest_endpoints',
+        'oauth_optional'
+    }
+
     _truthy = ['True', 'true', '1', True, 1]
 
     _session_config = WeakKeyDictionary()
 
     def __init__(self, **params):
+        self._parameter_set = set()
         super().__init__(**params)
         self._validating = False
+        self._parameter_set = set(self.param)
         for p in self.param:
-            if p.startswith('_') and p[1:] not in _CONFIG_GLOBAL_PARAMS:
+            if p.startswith('_') and p[1:] not in _config._globals:
                 setattr(self, p+'_', None)
         if self.log_level:
             panel_log_handler.setLevel(self.log_level)
@@ -372,7 +373,7 @@ class _config(_base_config):
         values = [(k, v) for k, v in self.param.values().items() if k != 'name']
         overrides = [
             (k, getattr(self, k+'_')) for k in self.param
-            if k.startswith('_') and k[1:] not in _CONFIG_GLOBAL_PARAMS
+            if k.startswith('_') and k[1:] not in _config._globals
         ]
         for k, v in kwargs.items():
             setattr(self, k, v)
@@ -394,7 +395,7 @@ class _config(_base_config):
         if not init or (attr.startswith('_') and attr.endswith('_')) or attr == '_validating':
             return super().__setattr__(attr, value)
         value = getattr(self, f'_{attr}_hook', lambda x: x)(value)
-        if attr in _CONFIG_GLOBAL_PARAMS or self.param._TRIGGER:
+        if attr in _config._globals or self.param._TRIGGER:
             super().__setattr__(attr if attr in self.param else f'_{attr}', value)
         elif state.curdoc is not None:
             if attr in self.param:
@@ -431,25 +432,10 @@ class _config(_base_config):
         ensure that even on first access mutable parameters do not
         end up being modified.
         """
-        from .io.state import state
-
-        if attr in ('_param__private', '__class__', 'npm_cdn', 'param'):
+        if attr in ('_param__private', '_globals', '_parameter_set', '__class__', 'param'):
             return super().__getattribute__(attr)
 
-        # _param__private added in Param 2
-        try:
-            init = super().__getattribute__('_param__private').initialized
-        except AttributeError:
-            init = super().__getattribute__('initialized')
-
-        global _CONFIG_PARAMS
-        if not _CONFIG_PARAMS and init:
-            _CONFIG_PARAMS = set(super().__getattribute__('param'))
-
-        if init and not attr.startswith('__'):
-            _params=_CONFIG_PARAMS
-        else:
-            _params = ()
+        from .io.state import state
 
         session_config = super().__getattribute__('_session_config')
         curdoc = state.curdoc
@@ -459,11 +445,11 @@ class _config(_base_config):
             curdoc and attr not in session_config[curdoc]):
             new_obj = copy.copy(super().__getattribute__(attr))
             setattr(self, attr, new_obj)
-        if attr in _CONFIG_GLOBAL_PARAMS or attr == 'theme':
+        if attr in self._globals or attr == 'theme':
             return super().__getattribute__(attr)
         elif curdoc and curdoc in session_config and attr in session_config[curdoc]:
             return session_config[curdoc][attr]
-        elif f'_{attr}' in _params and getattr(self, f'_{attr}_') is not None:
+        elif f'_{attr}' in self._parameter_set and getattr(self, f'_{attr}_') is not None:
             return super().__getattribute__(f'_{attr}_')
         return super().__getattribute__(attr)
 
