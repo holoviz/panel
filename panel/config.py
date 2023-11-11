@@ -55,6 +55,7 @@ GLOBALS = {
 from collections import defaultdict
 
 ATTRS = defaultdict(lambda: 0)
+_PARAMS = None
 
 def validate_config(config, parameter, value):
     """
@@ -450,10 +451,15 @@ class _config(_base_config):
         if attr=="param":
             return super().__getattribute__(attr)
 
+        global _PARAMS
+        if not _PARAMS and init:
+            _PARAMS = set(super().__getattribute__('param'))
+
         if init and not attr.startswith('__'):
-            params = set(super().__getattribute__('param'))
+            _params=_PARAMS
         else:
-            params = []
+            _params = {}
+
         session_config = super().__getattribute__('_session_config')
         curdoc = state.curdoc
         if curdoc and curdoc not in session_config:
@@ -466,7 +472,7 @@ class _config(_base_config):
             return super().__getattribute__(attr)
         elif curdoc and curdoc in session_config and attr in session_config[curdoc]:
             return session_config[curdoc][attr]
-        elif f'_{attr}' in params and getattr(self, f'_{attr}_') is not None:
+        elif f'_{attr}' in _params and getattr(self, f'_{attr}_') is not None:
             return super().__getattribute__(f'_{attr}_')
         return super().__getattribute__(attr)
 
