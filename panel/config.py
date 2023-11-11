@@ -324,7 +324,7 @@ class _config(_base_config):
         'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
         'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
         'layout_compatibility', 'oauth_refresh_tokens', 'oauth_guest_endpoints',
-        'oauth_optional'
+        'oauth_optional', 'admin'
     }
 
     _truthy = ['True', 'true', '1', True, 1]
