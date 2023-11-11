@@ -43,6 +43,18 @@ _LOCAL_DEV_VERSION = any(v in __version__ for v in ('post', 'dirty')) and not st
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
 
+GLOBALS = {
+    'admin_plugins', 'autoreload', 'comms', 'cookie_secret',
+    'nthreads', 'oauth_provider', 'oauth_expiry', 'oauth_key',
+    'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
+    'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
+    'layout_compatibility', 'oauth_refresh_tokens', 'oauth_guest_endpoints',
+    'oauth_optional'
+}
+
+from collections import defaultdict
+
+ATTRS = defaultdict(lambda: 0)
 
 def validate_config(config, parameter, value):
     """
@@ -319,15 +331,6 @@ class _config(_base_config):
         The theme to apply to components.""")
 
     # Global parameters that are shared across all sessions
-    _globals = [
-        'admin_plugins', 'autoreload', 'comms', 'cookie_secret',
-        'nthreads', 'oauth_provider', 'oauth_expiry', 'oauth_key',
-        'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
-        'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
-        'layout_compatibility', 'oauth_refresh_tokens', 'oauth_guest_endpoints',
-        'oauth_optional'
-    ]
-
     _truthy = ['True', 'true', '1', True, 1]
 
     _session_config = WeakKeyDictionary()
@@ -336,7 +339,7 @@ class _config(_base_config):
         super().__init__(**params)
         self._validating = False
         for p in self.param:
-            if p.startswith('_') and p[1:] not in self._globals:
+            if p.startswith('_') and p[1:] not in GLOBALS:
                 setattr(self, p+'_', None)
         if self.log_level:
             panel_log_handler.setLevel(self.log_level)
@@ -372,7 +375,7 @@ class _config(_base_config):
         values = [(k, v) for k, v in self.param.values().items() if k != 'name']
         overrides = [
             (k, getattr(self, k+'_')) for k in self.param
-            if k.startswith('_') and k[1:] not in self._globals
+            if k.startswith('_') and k[1:] not in GLOBALS
         ]
         for k, v in kwargs.items():
             setattr(self, k, v)
@@ -394,7 +397,7 @@ class _config(_base_config):
         if not init or (attr.startswith('_') and attr.endswith('_')) or attr == '_validating':
             return super().__setattr__(attr, value)
         value = getattr(self, f'_{attr}_hook', lambda x: x)(value)
-        if attr in self._globals or self.param._TRIGGER:
+        if attr in GLOBALS or self.param._TRIGGER:
             super().__setattr__(attr if attr in self.param else f'_{attr}', value)
         elif state.curdoc is not None:
             if attr in self.param:
@@ -433,15 +436,20 @@ class _config(_base_config):
         """
         from .io.state import state
 
-        if attr == '_param__private':
-            return super().__getattribute__('_param__private')
+        # ATTRS[attr]+=1
+        # print(ATTRS)
+        if attr in ('_param__private', '__class__', 'npm_cdn'):
+            return super().__getattribute__(attr)
 
         # _param__private added in Param 2
         try:
             init = super().__getattribute__('_param__private').initialized
         except AttributeError:
             init = super().__getattribute__('initialized')
-        global_params = super().__getattribute__('_globals')
+
+        if attr==param:
+            return super().__getattribute__('_param__private')
+
         if init and not attr.startswith('__'):
             params = super().__getattribute__('param')
         else:
@@ -454,7 +462,7 @@ class _config(_base_config):
             curdoc and attr not in session_config[curdoc]):
             new_obj = copy.copy(super().__getattribute__(attr))
             setattr(self, attr, new_obj)
-        if attr in global_params or attr == 'theme':
+        if attr in GLOBALS or attr == 'theme':
             return super().__getattribute__(attr)
         elif curdoc and curdoc in session_config and attr in session_config[curdoc]:
             return session_config[curdoc][attr]
