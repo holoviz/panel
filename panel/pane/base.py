@@ -40,6 +40,9 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
+def _should_inherit(self, p, v):
+        _p = self.param[p]
+        return not _p.readonly and v is not _p.default and (v is not None or _p.allow_None)
 
 def panel(obj: Any, **kwargs) -> Viewable:
     """
@@ -369,10 +372,6 @@ class PaneBase(Reactive):
         """
         return None
 
-    def _should_inherit(self, p, v):
-        _p = self.param[p]
-        return not _p.readonly and v is not _p.default and (v is not None or _p.allow_None)
-
     def clone(self: T, object: Optional[Any] = None, **params) -> T:
         """
         Makes a copy of the Pane sharing the same parameters.
@@ -387,7 +386,7 @@ class PaneBase(Reactive):
         Cloned Pane object
         """
         inherited = {
-            p: v for p, v in self.param.values().items() if self._should_inherit(p, v)
+            p: v for p, v in self.param.values().items() if _should_inherit(self, p, v)
         }
         params = dict(inherited, **params)
         old_object = params.pop('object', None)
