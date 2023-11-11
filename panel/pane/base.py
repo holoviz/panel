@@ -32,17 +32,13 @@ from ..reactive import Reactive
 from ..util import param_reprs, param_watchers
 from ..util.checks import is_dataframe, is_series
 from ..viewable import (
-    Layoutable, ServableMixin, Viewable, Viewer,
+    Layoutable, ServableMixin, Viewable, Viewer, _get_items_to_inherit,
 )
 
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
-
-def _clone_should_inherit(self, p, v):
-        _p = self.param[p]
-        return v is not _p.default and not _p.readonly and (v is not None or _p.allow_None)
 
 def panel(obj: Any, **kwargs) -> Viewable:
     """
@@ -385,9 +381,7 @@ class PaneBase(Reactive):
         -------
         Cloned Pane object
         """
-        inherited = {
-            p: v for p, v in self.param.values().items() if _clone_should_inherit(self, p, v)
-        }
+        inherited = _get_items_to_inherit(self)
         params = dict(inherited, **params)
         old_object = params.pop('object', None)
         if object is None:

@@ -55,6 +55,15 @@ if TYPE_CHECKING:
     from .io.location import Location
     from .io.server import StoppableThread
 
+def _should_inherit(self, p, v):
+        _p = self.param[p]
+        return v is not _p.default and not _p.readonly and (v is not None or _p.allow_None)
+
+def _get_items_to_inherit(self: param.Parameterized)->Dict:
+    return {
+        p: v for p, v in self.param.values().items()
+        if _should_inherit(self, p, v)
+    }
 
 class Layoutable(param.Parameterized):
     """
@@ -672,7 +681,6 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         state._views[ref] = (root_view, root, doc, comm)
         return root
 
-
 class Viewable(Renderable, Layoutable, ServableMixin):
     """
     Viewable is the baseclass all visual components in the panel
@@ -851,11 +859,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         -------
         Cloned Viewable object
         """
-        inherited = {
-            p: v for p, v in self.param.values().items()
-            if not self.param[p].readonly and v is not self.param[p].default
-            and not (v is None and not self.param[p].allow_None)
-        }
+        inherited = _get_items_to_inherit(self)
         return type(self)(**dict(inherited, **params))
 
     def pprint(self) -> None:
