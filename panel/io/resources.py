@@ -62,8 +62,11 @@ with open(Path(__file__).parent.parent / 'package.json') as f:
 def get_env():
     ''' Get the correct Jinja2 Environment, also for frozen scripts.
     '''
-    local_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '_templates'))
-    return Environment(loader=FileSystemLoader(local_path))
+    internal_path = pathlib.Path(__file__).parent / '..' / '_templates'
+    template_path = pathlib.Path(__file__).parent / '..' / 'template'
+    return Environment(loader=FileSystemLoader([
+        str(internal_path.resolve()), str(template_path.resolve())
+    ]))
 
 def conffilter(value):
     return json.dumps(OrderedDict(value)).replace('"', '\'')
