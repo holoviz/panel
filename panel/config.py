@@ -332,10 +332,8 @@ class _config(_base_config):
     _session_config = WeakKeyDictionary()
 
     def __init__(self, **params):
-        self._parameter_set = set()
         super().__init__(**params)
         self._validating = False
-        self._parameter_set = set(self.param)
         for p in self._parameter_set:
             if p.startswith('_') and p[1:] not in _config._globals:
                 setattr(self, p+'_', None)
@@ -372,7 +370,7 @@ class _config(_base_config):
     def set(self, **kwargs):
         values = [(k, v) for k, v in self.param.values().items() if k != 'name']
         overrides = [
-            (k, getattr(self, k+'_')) for k in self._parameter_set
+            (k, getattr(self, k+'_')) for k in _config._parameter_set
             if k.startswith('_') and k[1:] not in _config._globals
         ]
         for k, v in kwargs.items():
@@ -398,9 +396,9 @@ class _config(_base_config):
         if attr in _config._globals or self.param._TRIGGER:
             super().__setattr__(attr if attr in self.param else f'_{attr}', value)
         elif state.curdoc is not None:
-            if attr in self._parameter_set:
+            if attr in _config._parameter_set:
                 validate_config(self, attr, value)
-            elif f'_{attr}' in self._parameter_set:
+            elif f'_{attr}' in _config._parameter_set:
                 validate_config(self, f'_{attr}', value)
             else:
                 raise AttributeError(f'{attr!r} is not a valid config parameter.')
@@ -410,7 +408,7 @@ class _config(_base_config):
             watchers = param_watchers(self).get(attr, {}).get('value', [])
             for w in watchers:
                 w.fn()
-        elif f'_{attr}' in self._parameter_set and hasattr(self, f'_{attr}_'):
+        elif f'_{attr}' in _config._parameter_set and hasattr(self, f'_{attr}_'):
             validate_config(self, f'_{attr}', value)
             super().__setattr__(f'_{attr}_', value)
         else:
@@ -449,7 +447,7 @@ class _config(_base_config):
             return super().__getattribute__(attr)
         elif curdoc and curdoc in session_config and attr in session_config[curdoc]:
             return session_config[curdoc][attr]
-        elif f'_{attr}' in self._parameter_set and getattr(self, f'_{attr}_') is not None:
+        elif f'_{attr}' in _config._parameter_set and getattr(self, f'_{attr}_') is not None:
             return super().__getattribute__(f'_{attr}_')
         return super().__getattribute__(attr)
 
@@ -615,7 +613,7 @@ if hasattr(_config.param, 'objects'):
     _params = _config.param.objects()
 else:
     _params = _config.param.params()
-
+_config._parameter_set = set(_params)
 config = _config(**{k: None if p.allow_None else getattr(_config, k)
                     for k, p in _params.items() if k != 'name'})
 
