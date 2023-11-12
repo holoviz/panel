@@ -810,7 +810,7 @@ class panel_extension(_pyviz_extension):
             else:
                 hv.Store.current_backend = backend
 
-        if config.load_entry_points:
+        if not loaded and config.load_entry_points:
             self._load_entry_points()
 
         # Abort if IPython not found
