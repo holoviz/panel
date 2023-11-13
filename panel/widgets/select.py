@@ -656,6 +656,8 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase, TooltipMixin):
         objects=['horizontal', 'vertical'], doc="""
         Button group orientation, either 'horizontal' (default) or 'vertical'.""")
 
+    _rename: ClassVar[Mapping[str, str | None]] = {**_RadioGroupBase._rename, **TooltipMixin._rename}
+
     _source_transforms = {
         'value': "source.labels[value]", 'button_style': None, 'description': None
     }
@@ -754,6 +756,8 @@ class CheckButtonGroup(_CheckGroupBase, _ButtonBase, TooltipMixin):
     orientation = param.Selector(default='horizontal',
         objects=['horizontal', 'vertical'], doc="""
         Button group orientation, either 'horizontal' (default) or 'vertical'.""")
+
+    _rename: ClassVar[Mapping[str, str | None]] = {**_CheckGroupBase._rename, **TooltipMixin._rename}
 
     _source_transforms = {
         'value': "value.map((index) => source.labels[index])", 'button_style': None,
