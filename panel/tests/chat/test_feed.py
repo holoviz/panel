@@ -23,10 +23,12 @@ LAYOUT_PARAMETERS = {
 }
 
 
+@pytest.fixture
+def chat_feed():
+    return ChatFeed()
+
+
 class TestChatFeed:
-    @pytest.fixture
-    def chat_feed(self):
-        return ChatFeed()
 
     def test_hide_header(self, chat_feed):
         assert chat_feed.header is None
