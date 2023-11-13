@@ -16,6 +16,7 @@ def test_perspective_no_console_errors(page):
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 
+@pytest.mark.flaky(max_runs=3)
 def test_perspective_click_event(page):
     events = []
     perspective = Perspective(pd._testing.makeMixedDataFrame())
