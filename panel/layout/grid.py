@@ -202,7 +202,8 @@ class GridBox(ListPanel):
 
         msg = dict(msg)
         preprocess = any(self._rename.get(k, k) in self._preprocess_params for k in msg)
-        if self._rename['objects'] in msg or 'ncols' in msg or 'nrows' in msg:
+        update_children = self._rename['objects'] in msg
+        if update_children or 'ncols' in msg or 'nrows' in msg:
             if 'objects' in events:
                 old = events['objects'].old
             else:
@@ -218,7 +219,7 @@ class GridBox(ListPanel):
             update = Panel._batch_update
             Panel._batch_update = True
             try:
-                with freeze_doc(doc, model, msg):
+                with freeze_doc(doc, model, msg, force=update_children):
                     super(Panel, self)._update_model(events, msg, root, model, doc, comm)
                     if update:
                         return
