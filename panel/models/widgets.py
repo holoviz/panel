@@ -223,6 +223,11 @@ class Button(bkButton):
     description of a widget's or component's function.
     """)
 
+    tooltip_delay = Int(500, help="""
+    Delay (in milliseconds) to display the tooltip after the cursor has
+    hovered over the Button, default is 500ms.
+    """)
+
 
 class CheckboxButtonGroup(bkCheckboxButtonGroup):
 
@@ -231,10 +236,20 @@ class CheckboxButtonGroup(bkCheckboxButtonGroup):
     description of a widget's or component's function.
     """)
 
+    tooltip_delay = Int(500, help="""
+    Delay (in milliseconds) to display the tooltip after the cursor has
+    hovered over the Button, default is 500ms.
+    """)
+
 
 class RadioButtonGroup(bkRadioButtonGroup):
 
     tooltip = Nullable(Instance(Tooltip), help="""
     A tooltip with plain text or rich HTML contents, providing general help or
     description of a widget's or component's function.
+    """)
+
+    tooltip_delay = Int(500, help="""
+    Delay (in milliseconds) to display the tooltip after the cursor has
+    hovered over the Button, default is 500ms.
     """)
