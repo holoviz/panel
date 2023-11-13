@@ -45,19 +45,19 @@ def test_editableslider_textinput_end(page, widget, val1, val2, val3, func):
 
     text_input.value = val1
     wait_until(lambda: widget.value == val1, page)
-    assert widget._slider.end == val1
-    assert func(text_input.value) == val1
+    wait_until(lambda: widget._slider.end == val1, page)
+    wait_until(lambda: func(text_input.value) == val1, page)
 
     text_input.value = val2
     wait_until(lambda: widget.value == val2, page)
-    assert widget._slider.end == val1
-    assert func(text_input.value) == val2
+    wait_until(lambda: widget._slider.end == val1, page)
+    wait_until(lambda: func(text_input.value) == val2, page)
 
     # Setting fixed end
     widget.fixed_end = val3
     wait_until(lambda: widget.value == val3, page)
-    assert widget._slider.end == val3
-    assert func(text_input.value) == val3
+    wait_until(lambda: widget._slider.end == val3, page)
+    wait_until(lambda: func(text_input.value) == val3, page)
 
 @pytest.mark.parametrize(
     "widget,val1,val2,val3,func",
@@ -76,19 +76,19 @@ def test_editableslider_textinput_start(page, widget, val1, val2, val3, func):
 
     text_input.value = val1
     wait_until(lambda: widget.value == val1, page)
-    assert widget._slider.start == val1
-    assert func(text_input.value) == val1
+    wait_until(lambda: widget._slider.start == val1, page)
+    wait_until(lambda: func(text_input.value) == val1, page)
 
     text_input.value = val2
     wait_until(lambda: widget.value == val2, page)
-    assert widget._slider.start == val1
-    assert func(text_input.value) == val2
+    wait_until(lambda: widget._slider.start == val1, page)
+    wait_until(lambda: func(text_input.value) == val2, page)
 
     # Setting fixed start
     widget.fixed_start = val3
     wait_until(lambda: widget.value == val3, page)
-    assert widget._slider.start == val3
-    assert func(text_input.value) == val3
+    wait_until(lambda: widget._slider.start == val3, page)
+    wait_until(lambda: func(text_input.value) == val3, page)
 
 @pytest.mark.parametrize(
     "widget",
@@ -111,16 +111,16 @@ def test_editableslider_button_end(page, widget):
 
     up.click()
     wait_until(lambda: widget.value == default_value + step, page)
-    assert widget.value == default_value + step
-    assert widget._slider.end == end
+    wait_until(lambda: widget.value == default_value + step, page)
+    wait_until(lambda: widget._slider.end == end, page)
 
     up.click()
     wait_until(lambda: widget.value == default_value + 2 * step, page)
-    assert widget._slider.end == end + step
+    wait_until(lambda: widget._slider.end == end + step, page)
 
     down.click()
     wait_until(lambda: widget.value == default_value + step, page)
-    assert widget._slider.end == end + step
+    wait_until(lambda: widget._slider.end == end + step, page)
 
 
 @pytest.mark.parametrize(
@@ -144,15 +144,15 @@ def test_editableslider_button_start(page, widget):
 
     down.click()
     wait_until(lambda: widget.value == default_value - step, page)
-    assert widget._slider.start == start - step
+    wait_until(lambda: widget._slider.start == start - step, page)
 
     down.click()
     wait_until(lambda: widget.value == default_value - 2 * step, page)
-    assert widget._slider.start == start - 2 * step
+    wait_until(lambda: widget._slider.start == start - 2 * step, page)
 
     up.click()
     wait_until(lambda: widget.value == default_value - step, page)
-    assert widget._slider.start == start - 2 * step
+    wait_until(lambda: widget._slider.start == start - 2 * step, page)
 
 
 @pytest.mark.parametrize(
@@ -171,19 +171,19 @@ def test_editablerangeslider_textinput_end(page, widget, val1, val2, val3, func)
 
     text_input.value = val1
     wait_until(lambda: widget.value == (0, val1), page)
-    assert widget._slider.end == val1
-    assert func(text_input.value) == val1
+    wait_until(lambda: widget._slider.end == val1, page)
+    wait_until(lambda: func(text_input.value) == val1, page)
 
     text_input.value = val2
     wait_until(lambda: widget.value == (0, val2), page)
-    assert widget._slider.end == val1
-    assert func(text_input.value) == val2
+    wait_until(lambda: widget._slider.end == val1, page)
+    wait_until(lambda: func(text_input.value) == val2, page)
 
     # Setting fixed end
     widget.fixed_end = val3
     wait_until(lambda: widget.value == (0, val3), page)
-    assert widget._slider.end == val3
-    assert func(text_input.value) == val3
+    wait_until(lambda: widget._slider.end == val3, page)
+    wait_until(lambda: func(text_input.value) == val3, page)
 
 
 @pytest.mark.parametrize(
@@ -202,19 +202,19 @@ def test_editablerangeslider_textinput_start(page, widget, val1, val2, val3, fun
 
     text_input.value = val1
     wait_until(lambda: widget.value == (val1, 1), page)
-    assert widget._slider.start == val1
-    assert func(text_input.value) == val1
+    wait_until(lambda: widget._slider.start == val1, page)
+    wait_until(lambda: func(text_input.value) == val1, page)
 
     text_input.value = val2
     wait_until(lambda: widget.value == (val2, 1), page)
-    assert widget._slider.start == val1
-    assert func(text_input.value) == val2
+    wait_until(lambda: widget._slider.start == val1, page)
+    wait_until(lambda: func(text_input.value) == val2, page)
 
     # Setting fixed start
     widget.fixed_start = val3
     wait_until(lambda: widget.value == (val3, 1), page)
-    assert widget._slider.start == val3
-    assert func(text_input.value) == val3
+    wait_until(lambda: widget._slider.start == val3, page)
+    wait_until(lambda: func(text_input.value) == val3, page)
 
 
 @pytest.mark.parametrize(
@@ -237,15 +237,15 @@ def test_editablerangeslider_button_end(page, widget):
 
     up.click()
     wait_until(lambda: widget.value == (0, default_value[1] + step), page)
-    assert widget._slider.end == end + step
+    wait_until(lambda: widget._slider.end == end + step, page)
 
     up.click()
     wait_until(lambda: widget.value == (0, default_value[1] + 2 * step), page)
-    assert widget._slider.end == end + 2 * step
+    wait_until(lambda: widget._slider.end == end + 2 * step, page)
 
     down.click()
     wait_until(lambda: widget.value == (0, default_value[1] + step), page)
-    assert widget._slider.end == end + 2 * step
+    wait_until(lambda: widget._slider.end == end + 2 * step, page)
 
 
 
@@ -269,15 +269,15 @@ def test_editablerangeslider_button_start(page, widget):
 
     down.click()
     wait_until(lambda: widget.value == (default_value[0] - step, 1), page)
-    assert widget._slider.start == start - step
+    wait_until(lambda: widget._slider.start == start - step, page)
 
     down.click()
     wait_until(lambda: widget.value == (default_value[0] - 2 * step, 1), page)
-    assert widget._slider.start == start - 2 * step
+    wait_until(lambda: widget._slider.start == start - 2 * step, page)
 
     up.click()
     wait_until(lambda: widget.value == (default_value[0] - step, 1), page)
-    assert widget._slider.start == start - 2 * step
+    wait_until(lambda: widget._slider.start == start - 2 * step, page)
 
 
 def test_editablerangeslider_no_overlap(page):
