@@ -2188,7 +2188,7 @@ def test_tabulator_styling_init(page, df_mixed):
     expect(max_cell).to_have_css('background-color', _color_mapping['yellow'])
     expect(page.locator('text="false"')).to_have_css('color', _color_mapping['red'])
 
-@pytest.mark.flayky(max_runs=3)
+@pytest.mark.flaky(max_runs=3)
 def test_tabulator_patching_and_styling(page, df_mixed):
     df_styled = df_mixed.style.apply(highlight_max, subset=['int'])
     widget = Tabulator(df_styled)
