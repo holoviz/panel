@@ -39,10 +39,12 @@ export class CheckboxButtonGroupView extends bkCheckboxButtonGroupView {
         visible,
       })
     }
+    let timer: number
     this.el.addEventListener("mouseenter", () => {
-      setTimeout(() => toggle(true), this.model.tooltip_delay)
+      timer = setTimeout(() => toggle(true), this.model.tooltip_delay)
     })
     this.el.addEventListener("mouseleave", () => {
+      clearTimeout(timer)
       toggle(false)
     })
   }
