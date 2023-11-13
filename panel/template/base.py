@@ -15,6 +15,7 @@ from typing import (
     Type,
 )
 
+import jinja2
 import param
 
 from bokeh.document.document import Document
@@ -29,7 +30,7 @@ from ..io.notebook import render_template
 from ..io.notifications import NotificationArea
 from ..io.resources import (
     BUNDLE_DIR, CDN_DIST, ResourceComponent, _env, component_resource_path,
-    get_dist_path, loading_css, resolve_custom_path,
+    get_dist_path, loading_css, parse_template, resolve_custom_path,
 )
 from ..io.save import save
 from ..io.state import curdoc_locked, state
@@ -119,7 +120,6 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
             p: v for p, v in params.items() if p not in _base_config.param or p == 'name'
         })
         self.config.param.update(config_params)
-
         if isinstance(template, str):
             self._code: str | None = template
             self.template = _env.from_string(template)
@@ -667,7 +667,12 @@ class BasicTemplate(BaseTemplate):
     __abstract = True
 
     def __init__(self, **params):
-        template = self._template.read_text(encoding='utf-8')
+        tmpl_string = self._template.read_text(encoding='utf-8')
+        try:
+            template = _env.get_template(str(self._template.relative_to(Path(__file__).parent)))
+        except jinja2.exceptions.TemplateNotFound:
+            template = parse_template(tmpl_string)
+
         if 'header' not in params:
             params['header'] = ListLike()
         else:
@@ -696,14 +701,14 @@ class BasicTemplate(BaseTemplate):
 
         super().__init__(template=template, **params)
         self._js_area = HTML(margin=0, width=0, height=0)
-        if 'embed(roots.js_area)' in template:
+        if 'embed(roots.js_area)' in tmpl_string:
             self._render_items['js_area'] = (self._js_area, [])
-        if 'embed(roots.actions)' in template:
+        if 'embed(roots.actions)' in tmpl_string:
             self._render_items['actions'] = (self._actions, [])
-        if 'embed(roots.notifications)' in template and self.notifications:
+        if 'embed(roots.notifications)' in tmpl_string and self.notifications:
             self._render_items['notifications'] = (self.notifications, [])
             self._render_variables['notifications'] = True
-        if config.browser_info and 'embed(roots.browser_info)' in template and state.browser_info:
+        if config.browser_info and 'embed(roots.browser_info)' in tmpl_string and state.browser_info:
             self._render_items['browser_info'] = (state.browser_info, [])
             self._render_variables['browser_info'] = True
         self._update_busy()
