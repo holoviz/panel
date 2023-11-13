@@ -15,6 +15,7 @@ import param
 from bokeh.models import Row as BkRow
 from param.parameterized import iscoroutinefunction, resolve_ref
 
+from ..io.document import freeze_doc
 from ..io.model import hold
 from ..io.resources import CDN_DIST
 from ..io.state import state
@@ -91,7 +92,8 @@ class Panel(Reactive):
             del msg['styles']['overflow-x']
 
         obj_key = self._property_mapping['objects']
-        if obj_key in msg:
+        update_children = obj_key in msg
+        if update_children:
             old = events['objects'].old
             children, old_children = self._get_objects(model, old, doc, root, comm)
             msg[obj_key] = children
@@ -113,7 +115,7 @@ class Panel(Reactive):
             update = Panel._batch_update
             Panel._batch_update = True
             try:
-                with doc.models.freeze():
+                with freeze_doc(doc, model, msg, force=update_children):
                     super()._update_model(events, msg, root, model, doc, comm)
                     if update:
                         return
