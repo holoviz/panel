@@ -16,6 +16,7 @@ import param
 
 from bokeh.models import FlexBox as BkFlexBox, GridBox as BkGridBox
 
+from ..io.document import freeze_doc
 from ..io.model import hold
 from ..io.resources import CDN_DIST
 from .base import (
@@ -217,7 +218,7 @@ class GridBox(ListPanel):
             update = Panel._batch_update
             Panel._batch_update = True
             try:
-                with doc.models.freeze():
+                with freeze_doc(doc, model, msg):
                     super(Panel, self)._update_model(events, msg, root, model, doc, comm)
                     if update:
                         return
