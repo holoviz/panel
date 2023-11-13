@@ -237,7 +237,7 @@ x = pn.widgets.IntSlider(name='x', start=0, end=100)
 def square(x):
     return f'{x} squared is {x**2}'
 
-pn.Row(pn.bind(square, x))
+pn.Row(x, pn.bind(square, x))
 ```
 
 The `pn.bind` function lets us bind a widget or a *Parameter* **object** to a function that returns an item to be displayed. Once bound, the function can be added to a layout or rendered directly using `pn.panel` and `.servable()`. In this way you can express reactivity between widgets and output very easily. Even better, if you use a Panel-aware library like hvPlot, you often don't even need to write and bind a function explicitly, as hvPlot's [.interactive](https://hvplot.holoviz.org/user_guide/Interactive.html) DataFrames already create reactive pipelines by accepting widgets and parameters for most arguments and options.
