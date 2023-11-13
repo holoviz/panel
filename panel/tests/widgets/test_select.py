@@ -250,6 +250,12 @@ def test_nested_select_init_value(document, comm):
     select = NestedSelect(options=options, value=("Ben", "temp", 300))
     assert ...
 
+
+def test_nested_select_init_empty(document, comm):
+    select = NestedSelect()
+    assert ...
+
+
 def test_nested_select_init_labels(document, comm):
     options = {
         "Andrew": {
