@@ -1099,6 +1099,11 @@ class Tabulator(BaseTable):
         A function which given a DataFrame should return a list of
         rows by integer index, which are selectable.""")
 
+    sortable = param.ClassSelector(default=True, class_=(bool, dict), doc="""
+        Whether the columns in the table should be sortable.
+        Can either be specified as a simple boolean toggling the behavior
+        on and off or as a dictionary specifying the option per column.""")
+
     theme = param.ObjectSelector(
         default="simple", objects=[
             'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
@@ -1120,7 +1125,7 @@ class Tabulator(BaseTable):
     ]
 
     _config_params: ClassVar[List[str]] = [
-        'frozen_columns', 'groups', 'selectable', 'hierarchical'
+        'frozen_columns', 'groups', 'selectable', 'hierarchical', 'sortable'
     ]
 
     _content_params: ClassVar[List[str]] = _data_params + ['expanded', 'row_content', 'embed_content']
@@ -1132,7 +1137,8 @@ class Tabulator(BaseTable):
     _rename: ClassVar[Mapping[str, str | None]] = {
         'selection': None, 'row_content': None, 'row_height': None,
         'text_align': None, 'embed_content': None, 'header_align': None,
-        'header_filters': None, 'styles': 'cell_styles', 'title_formatters': None
+        'header_filters': None, 'styles': 'cell_styles',
+        'title_formatters': None, 'sortable': None
     }
 
     # Determines the maximum size limits beyond which (local, remote)
@@ -1264,9 +1270,10 @@ class Tabulator(BaseTable):
         return theme_url
 
     def _update_columns(self, event, model):
+        print(event.name)
         if event.name not in self._config_params:
             super()._update_columns(event, model)
-            if (event.name in ('editors', 'formatters') and
+            if (event.name in ('editors', 'formatters', 'sortable') and
                 not any(isinstance(v, (str, dict)) for v in event.new.values())):
                 # If no tabulator editor/formatter was changed we can skip
                 # update to config
@@ -1738,39 +1745,44 @@ class Tabulator(BaseTable):
             for group, group_cols in self.groups.items()
         }
         for i, column in enumerate(ordered):
+            field = column.field
             matching_groups = [
                 group for group, group_cols in grouping.items()
-                if column.field in group_cols
+                if field in group_cols
             ]
-            col_dict = {'field': column.field}
+            col_dict = dict(field=field)
+            if isinstance(self.sortable, dict):
+                col_dict['headerSort'] = self.sortable.get(field, True)
+            elif not self.sortable:
+                col_dict['headerSort'] = self.sortable
             if isinstance(self.text_align, str):
                 col_dict['hozAlign'] = self.text_align
-            elif column.field in self.text_align:
-                col_dict['hozAlign'] = self.text_align[column.field]
+            elif field in self.text_align:
+                col_dict['hozAlign'] = self.text_align[field]
             if isinstance(self.header_align, str):
                 col_dict['headerHozAlign'] = self.header_align
-            elif column.field in self.header_align:
-                col_dict['headerHozAlign'] = self.header_align[column.field]
-            formatter = self.formatters.get(column.field)
+            elif field in self.header_align:
+                col_dict['headerHozAlign'] = self.header_align[field]
+            formatter = self.formatters.get(field)
             if isinstance(formatter, str):
                 col_dict['formatter'] = formatter
             elif isinstance(formatter, dict):
                 formatter = dict(formatter)
                 col_dict['formatter'] = formatter.pop('type')
                 col_dict['formatterParams'] = formatter
-            title_formatter = self.title_formatters.get(column.field)
+            title_formatter = self.title_formatters.get(field)
             if title_formatter:
                 col_dict['titleFormatter'] = title_formatter
             elif isinstance(title_formatter, dict):
                 formatter = dict(title_formatter)
                 col_dict['titleFormatter'] = title_formatter.pop('type')
                 col_dict['titleFormatterParams'] = title_formatter
-            col_name = self._renamed_cols[column.field]
-            if column.field in self.indexes:
+            col_name = self._renamed_cols[field]
+            if field in self.indexes:
                 if len(self.indexes) == 1:
                     dtype = self.value.index.dtype
                 else:
-                    dtype = self.value.index.get_level_values(self.indexes.index(column.field)).dtype
+                    dtype = self.value.index.get_level_values(self.indexes.index(field)).dtype
             else:
                 dtype = self.value.dtypes[col_name]
             if dtype.kind == 'M':
@@ -1779,8 +1791,8 @@ class Tabulator(BaseTable):
                 col_dict['sorter'] = 'number'
             elif dtype.kind == 'b':
                 col_dict['sorter'] = 'boolean'
-            editor = self.editors.get(column.field)
-            if column.field in self.editors and editor is None:
+            editor = self.editors.get(field)
+            if field in self.editors and editor is None:
                 col_dict['editable'] = False
             if isinstance(editor, str):
                 col_dict['editor'] = editor
@@ -1791,16 +1803,16 @@ class Tabulator(BaseTable):
             if col_dict.get('editor') in ['select', 'autocomplete']:
                 self.param.warning(
                     f'The {col_dict["editor"]!r} editor has been deprecated, use '
-                    f'instead the "list" editor type to configure column {column.field!r}'
+                    f'instead the "list" editor type to configure column {field!r}'
                 )
                 col_dict['editor'] = 'list'
                 if col_dict.get('editorParams', {}).get('values', False) is True:
                     del col_dict['editorParams']['values']
                     col_dict['editorParams']['valuesLookup']
-            if column.field in self.frozen_columns or i in self.frozen_columns:
+            if field in self.frozen_columns or i in self.frozen_columns:
                 col_dict['frozen'] = True
-            if isinstance(self.widths, dict) and isinstance(self.widths.get(column.field), str):
-                col_dict['width'] = self.widths[column.field]
+            if isinstance(self.widths, dict) and isinstance(self.widths.get(field), str):
+                col_dict['width'] = self.widths[field]
             col_dict.update(self._get_filter_spec(column))
             if matching_groups:
                 group = matching_groups[0]
