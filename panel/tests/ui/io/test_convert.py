@@ -26,7 +26,7 @@ if not (PANEL_LOCAL_WHL.is_file() and BOKEH_LOCAL_WHL.is_file()):
 pytestmark = pytest.mark.ui
 
 _worker_id = os.environ.get("PYTEST_XDIST_WORKER", "0")
-HTTP_PORT = 5990 + int(re.sub(r"\D", "", _worker_id))
+HTTP_PORT = 50000 + int(re.sub(r"\D", "", _worker_id))
 
 button_app = """
 import panel as pn
