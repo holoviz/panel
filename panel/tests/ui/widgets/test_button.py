@@ -64,24 +64,45 @@ def test_button_tooltip(page, button_fn, button_locator, description):
     expect(tooltip).to_have_count(0)
 
 
-def test_button_tooltip_with_delay(page):
-    pn_button = Button(name="test", description="Test", description_delay=300)
+@pytest.mark.parametrize(
+    "button_fn,button_locator",
+    [
+        (lambda **kw: Button(**kw), ".bk-btn"),
+        (lambda **kw: CheckButtonGroup(options=["A", "B"], **kw), ".bk-btn-group"),
+        (lambda **kw: RadioButtonGroup(options=["A", "B"], **kw), ".bk-btn-group"),
+    ],
+    ids=["Button", "CheckButtonGroup", "RadioButtonGroup"],
+)
+def test_button_tooltip_with_delay(page, button_fn, button_locator):
+    pn_button = button_fn(name="test", description="Test", description_delay=300)
 
     exp = Expect()
     exp.set_options(timeout=200)
 
     serve_component(page, pn_button)
 
-    button = page.locator(".bk-btn")
+    button = page.locator(button_locator)
     expect(button).to_have_count(1)
     tooltip = page.locator(".bk-tooltip-content")
     expect(tooltip).to_have_count(0)
 
     # Hovering over the button should not show the tooltip
-    page.hover(".bk-btn")
+    page.hover(button_locator)
     tooltip = page.locator(".bk-tooltip-content")
     exp(tooltip).to_have_count(0)
 
     # After 100 ms the tooltip should be visible
     page.wait_for_timeout(200)
     exp(tooltip).to_have_count(1)
+
+    # Removing hover should hide the tooltip
+    page.hover("body")
+    tooltip = page.locator(".bk-tooltip-content")
+    exp(tooltip).to_have_count(0)
+
+    # Hovering over the button for a short time should not show the tooltip
+    page.hover(button_locator)
+    page.wait_for_timeout(50)
+    page.hover("body")
+    page.wait_for_timeout(300)
+    exp(tooltip).to_have_count(0)
