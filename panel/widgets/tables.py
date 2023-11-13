@@ -1753,7 +1753,7 @@ class Tabulator(BaseTable):
             col_dict = dict(field=field)
             if isinstance(self.sortable, dict):
                 col_dict['headerSort'] = self.sortable.get(field, True)
-            else:
+            elif not self.sortable:
                 col_dict['headerSort'] = self.sortable
             if isinstance(self.text_align, str):
                 col_dict['hozAlign'] = self.text_align
