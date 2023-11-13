@@ -24,11 +24,9 @@ import panel as pn
 
 pn.extension(template="bootstrap")
 
-
 def some_long_running_task():
     time.sleep(5)
     return "# Wow. That took some time. Are you still here?"
-
 
 pn.panel(some_long_running_task).servable()
 ```
@@ -39,8 +37,7 @@ Now lets learn how to defer long running tasks to after the application has load
 
 ## Defer all Tasks
 
-Its easy defer the execution of all bound and displayed functions with
-`pn.extension(..., defer_load=True)`.
+Its easy defer the execution of all bound and displayed functions with `pn.extension(..., defer_load=True)`.
 
 ```python
 import time
@@ -67,15 +64,12 @@ import panel as pn
 
 pn.extension(loading_indicator=True, template="bootstrap")
 
-
 def short_running_task():
     return "# I'm shown on load"
-
 
 def long_running_task():
     time.sleep(3)
     return "# I'm deferred and shown after load"
-
 
 pn.Column(
     short_running_task,
@@ -84,3 +78,7 @@ pn.Column(
 ```
 
 ![panel-defer-specific-example](https://assets.holoviz.org/panel/gifs/defer_specific_task.gif)
+
+```{note}
+If you [enable threading](../concurrency/threading.md) by setting `config.nthreads` or `--num-threads` on the commandline deferred callbacks will be executed concurrently on separate threads.
+```

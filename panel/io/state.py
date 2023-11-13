@@ -604,7 +604,10 @@ class _state(param.Parameterized):
         doc = self.curdoc
         if schedule == 'thread':
             if not state._thread_pool:
-                raise RuntimeError('Cannot execute callback on thread')
+                raise RuntimeError(
+                    'Cannot execute callback on thread. Ensure you have '
+                    'enabled threading setting `config.nthreads`.'
+                )
             future = state._thread_pool.submit(partial(self._execute_on_thread, doc, callback))
             future.add_done_callback(self._handle_future_exception)
         elif param.parameterized.iscoroutinefunction(callback):
