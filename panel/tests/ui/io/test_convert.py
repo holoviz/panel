@@ -2,7 +2,9 @@ import os
 import pathlib
 import re
 import shutil
+import sys
 import tempfile
+import time
 import uuid
 
 from subprocess import PIPE, Popen
@@ -115,8 +117,10 @@ def http_serve():
         pass
 
     process = Popen(
-        ["python", "-m", "http.server", str(HTTP_PORT), "--directory", str(temp_path)], stdout=PIPE
+        [sys.executable, "-m", "http.server", str(HTTP_PORT), "--directory", str(temp_path)], stdout=PIPE,
     )
+    time.sleep(10)  # Wait for server to start
+
     def write(app):
         app_name = uuid.uuid4().hex
         app_path = temp_path / f'{app_name}.py'
