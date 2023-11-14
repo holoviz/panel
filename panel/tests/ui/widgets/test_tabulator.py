@@ -170,7 +170,6 @@ def test_tabulator_default(page, df_mixed, df_mixed_as_string):
         assert cols.nth(i).get_attribute('aria-sort') == 'none'
 
 
-@pytest.mark.flaky(max_runs=3)
 def test_tabulator_value_changed(page, df_mixed):
     widget = Tabulator(df_mixed)
 
@@ -1420,7 +1419,6 @@ def test_tabulator_selection_selectable_rows(page, df_mixed):
     assert widget.selected_dataframe.equals(expected_selected)
 
 
-@pytest.mark.flaky(max_runs=3)
 def test_tabulator_row_content(page, df_mixed):
     widget = Tabulator(df_mixed, row_content=lambda i: f"{i['str']}-row-content")
 
@@ -2188,7 +2186,6 @@ def test_tabulator_styling_init(page, df_mixed):
     expect(max_cell).to_have_css('background-color', _color_mapping['yellow'])
     expect(page.locator('text="false"')).to_have_css('color', _color_mapping['red'])
 
-
 def test_tabulator_patching_and_styling(page, df_mixed):
     df_styled = df_mixed.style.apply(highlight_max, subset=['int'])
     widget = Tabulator(df_styled)
@@ -2306,7 +2303,6 @@ def test_tabulator_sorters_on_init_multiple(page):
     # This fails
     assert int(first_index_rendered) == expected_first_index
 
-
 def test_tabulator_sorters_set_after_init(page, df_mixed):
     widget = Tabulator(df_mixed)
 
@@ -2360,7 +2356,6 @@ def test_tabulator_sorters_pagination_no_page_reset(page, df_mixed):
     assert widget.page == 2
 
 
-@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize('pagination', ['remote', 'local'])
 def test_tabulator_sorters_pagination(page, df_mixed, pagination):
     widget = Tabulator(df_mixed, pagination=pagination, page_size=2)
@@ -2558,7 +2553,6 @@ def test_tabulator_edit_event_and_header_filters(page):
     assert widget.current_view.equals(df.query('col1 == "a"'))
 
 
-@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize('show_index', [True, False])
 @pytest.mark.parametrize('index_name', ['index', 'foo'])
 def test_tabulator_edit_event_and_header_filters_same_column(page, show_index, index_name):
@@ -3247,8 +3241,10 @@ def test_tabulator_sorter_default_number(page):
             table_values = [int(v) for v in tabulator_column_values(page, 'x')]
         except Exception:
             return False
-        assert table_values == list(df2['x'].sort_values(ascending=False))
-
+        if table_values:
+            assert table_values == list(df2['x'].sort_values(ascending=False))
+        else:
+            return False
     wait_until(x_values, page)
 
 

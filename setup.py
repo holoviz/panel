@@ -129,7 +129,7 @@ _tests_core = [
     'parameterized',
     'pytest',
     'nbval',
-    'flaky',
+    'pytest-rerunfailures',
     'pytest-asyncio <0.22',
     'pytest-xdist',
     'pytest-cov',

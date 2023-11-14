@@ -9,7 +9,7 @@ from panel.tests.util import wait_until
 pytestmark = [pytest.mark.jupyter, pytest.mark.ui]
 
 
-@pytest.mark.flaky(max_runs=3)
+
 def test_jupyter_server(page, jupyter_preview):
     page.goto(f"{jupyter_preview}/app.py", timeout=30000)
 
@@ -23,14 +23,14 @@ def test_jupyter_server(page, jupyter_preview):
 
     wait_until(lambda: page.text_content('pre') == '2', page)
 
-@pytest.mark.flaky(max_runs=3)
+
 def test_jupyter_server_custom_resources(page, jupyter_preview):
     page.goto(f"{jupyter_preview}/app.py", timeout=30000)
 
     assert page.locator('.bk-Row').evaluate("""(element) =>
         window.getComputedStyle(element).getPropertyValue('background-color')""") == 'rgb(128, 0, 128)'
 
-@pytest.mark.flaky(max_runs=3)
+
 def test_jupyter_server_kernel_error(page, jupyter_preview):
     page.goto(f"{jupyter_preview}/app.py?kernel=blah", timeout=30000)
 
@@ -44,7 +44,7 @@ def test_jupyter_server_kernel_error(page, jupyter_preview):
 
     wait_until(lambda: page.text_content('pre') == '1', page)
 
-@pytest.mark.flaky(max_runs=3)
+
 def test_jupyter_server_session_arg_theme(page, jupyter_preview):
     page.goto(f"{jupyter_preview}/app.py?theme=dark", timeout=30000)
 
