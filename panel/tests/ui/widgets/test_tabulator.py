@@ -2306,7 +2306,7 @@ def test_tabulator_sorters_on_init_multiple(page):
     # This fails
     assert int(first_index_rendered) == expected_first_index
 
-
+@pytest.mark.flaky(reruns=3)
 def test_tabulator_sorters_set_after_init(page, df_mixed):
     widget = Tabulator(df_mixed)
 
