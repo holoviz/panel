@@ -3248,8 +3248,10 @@ def test_tabulator_sorter_default_number(page):
             table_values = [int(v) for v in tabulator_column_values(page, 'x')]
         except Exception:
             return False
-        assert table_values == list(df2['x'].sort_values(ascending=False))
-
+        if table_values:
+            assert table_values == list(df2['x'].sort_values(ascending=False))
+        else:
+            return False
     wait_until(x_values, page)
 
 
