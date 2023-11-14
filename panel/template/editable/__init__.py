@@ -55,11 +55,16 @@ class TemplateEditor(ReactiveHTML):
 
 
 class EditableTemplate(VanillaTemplate):
+    """
+    The EditableTemplate builds on top of Muuri and interact.js to
+    allow interactively dragging, resizing and hiding components on a
+    grid.
+    """
 
     editable = param.Boolean(default=True, doc="""
       Whether the template layout should be editable.""")
 
-    layout = param.Dict(allow_refs=True, doc="""
+    layout = param.Dict(default={}, allow_refs=True, doc="""
       The layout definition of the template indexed by the id of
       each component in the main area.""")
 
@@ -84,6 +89,7 @@ class EditableTemplate(VanillaTemplate):
         self._render_variables['muuri_layout'] = [
             dict(item, id=ids[iid]) for iid, item in self.layout.items()
         ]
+        self._render_variables['editable'] = self.editable
         super()._update_vars()
 
     def _init_doc(

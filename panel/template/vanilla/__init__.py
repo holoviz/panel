@@ -14,7 +14,8 @@ from ..base import BasicTemplate
 
 class VanillaTemplate(BasicTemplate):
     """
-    VanillaTemplate is built on top of Vanilla web components.
+    The VanillaTemplate is a basic template that depends solely on
+    vanilla HTML and JS, i.e. does not require any specific framework.
     """
 
     design = param.ClassSelector(class_=Design, default=Native,

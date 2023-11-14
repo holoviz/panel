@@ -1,6 +1,7 @@
 {% extends "vanilla/vanilla.html" %}
 
 {% block header_end %}
+{% if editable %}
 <div id="header-indicators">
   <div id="grid-reset"></div>
   {% if busy %}
@@ -9,6 +10,7 @@
   </div>
   {% endif %}
 </div>
+{% endif %}
 {% endblock %}
 
 {% block main %}
@@ -90,7 +92,7 @@
   }
   var grid = new Muuri('.muuri-grid', {
     items: items,
-    dragEnabled: true,
+    dragEnabled: {{ editable|json }},
     dragHandle: '.muuri-drag-handle',
     layout: {fillGaps: true}
   });
@@ -117,6 +119,33 @@
     }
     scroll(item)
   }
+
+  var hidden = []
+  for (var spec of layout) {
+    var el = els[spec.id]
+    var item = grid.getItem(el)
+    if (spec.visible === false) {
+      hidden.push(item)
+    }
+    resize_item(el, spec.width, spec.height, false)
+  }
+  grid.refreshItems()
+  if (hidden.length) {
+    grid.hide(hidden, {instant: true, layout: false})
+  }
+  grid.layout()
+
+  window.muuriGrid = grid;
+
+  window.addEventListener('resize', function(event) {
+    var screen_width = document.getElementsByClassName('muuri-grid')[0].clientWidth
+    for (const item of grid.getItems()) {
+      scroll(item.getElement())
+    }
+    grid.layout()
+  }, true);
+
+  {% if editable %}
 
   function reset() {
     var items = grid.getItems()
@@ -146,21 +175,6 @@
     reset()
   })
 
-  var hidden = []
-  for (var spec of layout) {
-    var el = els[spec.id]
-    var item = grid.getItem(el)
-    if (spec.visible === false) {
-      hidden.push(item)
-    }
-    resize_item(el, spec.width, spec.height, false)
-  }
-  grid.refreshItems()
-  if (hidden.length) {
-    grid.hide(hidden, {instant: true, layout: false})
-  }
-  grid.layout()
-
   for (var handle of document.getElementsByClassName('muuri-delete-handle')) {
     handle.addEventListener("click", (event) => {
       grid.hide([grid.getItem(event.target.parentElement)], {instant: true})
@@ -185,16 +199,7 @@
       }
     }
   })
-
-  window.muuriGrid = grid;
-
-  window.addEventListener('resize', function(event) {
-    var screen_width = document.getElementsByClassName('muuri-grid')[0].clientWidth
-    for (const item of grid.getItems()) {
-      scroll(item.getElement())
-    }
-    grid.layout()
-  }, true);
+  {% endif %}
 </script>
 {% endblock %}
 
