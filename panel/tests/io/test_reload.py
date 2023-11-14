@@ -36,7 +36,7 @@ def test_watch():
     # Cleanup
     _watched_files.clear()
 
-@pytest.mark.flaky(max_runs=3)
+@pytest.mark.flaky(reruns=3)
 def test_reload_on_update():
     location = Location()
     state._location = location
