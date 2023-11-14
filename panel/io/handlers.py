@@ -140,7 +140,7 @@ def capture_code_cell(cell):
 
     # Remove code comments
     if '#' in cell_out:
-        cell_out = cell_out[:cell_out.index('#')]
+        cell_out = cell_out[:cell_out.index('#')].rstrip()
 
     # Use eval mode to check whether cell ends in a statement or an
     # expression that will be rendered
