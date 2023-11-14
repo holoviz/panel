@@ -13,7 +13,7 @@ from functools import partial
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from typing import (
-    TYPE_CHECKING, Any, BinaryIO, ClassVar, Dict, List, Union,
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Union,
 )
 
 import param
@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
-Avatar = Union[str, BytesIO, ImageBase]
+Avatar = Union[str, BytesIO, bytes, ImageBase]
 AvatarDict = Dict[str, Avatar]
 
 USER_LOGO = "🧑"
@@ -133,7 +133,7 @@ class ChatMessage(PaneBase):
     >>> ChatMessage(object="Hello world!", user="New User", avatar="😊")
     """
 
-    avatar = param.ClassSelector(default="", class_=(str, BinaryIO, ImageBase), doc="""
+    avatar = param.ClassSelector(default="", class_=(str, BytesIO, bytes, ImageBase), doc="""
         The avatar to use for the user. Can be a single character
         text, an emoji, or anything supported by `pn.pane.Image`. If
         not set, checks if the user is available in the
@@ -425,7 +425,7 @@ class ChatMessage(PaneBase):
         if isinstance(avatar, ImageBase):
             avatar_pane = avatar
             avatar_pane.param.update(width=35, height=35)
-        elif len(avatar) == 1:
+        elif not isinstance(avatar, (BytesIO, bytes)) and len(avatar) == 1:
             # single character
             avatar_pane = HTML(avatar)
         else:
@@ -527,7 +527,7 @@ class ChatMessage(PaneBase):
         self,
         value: dict | ChatMessage | Any,
         user: str | None = None,
-        avatar: str | BinaryIO | None = None,
+        avatar: str | bytes | BytesIO | None = None,
     ):
         """
         Updates the message with a new value, user and avatar.
@@ -538,7 +538,7 @@ class ChatMessage(PaneBase):
             The message contents to send.
         user : str | None
             The user to send as; overrides the message message's user if provided.
-        avatar : str | BinaryIO | None
+        avatar : str | bytes | BytesIO | None
             The avatar to use; overrides the message message's avatar if provided.
         """
         updates = {}
