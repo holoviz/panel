@@ -382,9 +382,6 @@ class TestChatFeed:
 
 
 class TestChatFeedCallback:
-    @pytest.fixture
-    def chat_feed(self) -> ChatFeed:
-        return ChatFeed()
 
     def test_user_avatar(self, chat_feed):
         ChatMessage.default_avatars["bob"] = "👨"
