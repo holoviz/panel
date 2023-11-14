@@ -703,14 +703,15 @@ class BasicTemplate(BaseTemplate):
 
         super().__init__(template=template, **params)
         self._js_area = HTML(margin=0, width=0, height=0)
-        if 'embed(roots.js_area)' in tmpl_string:
+        state_roots = '{% block state_roots %}' in tmpl_string
+        if state_roots or 'embed(roots.js_area)' in tmpl_string:
             self._render_items['js_area'] = (self._js_area, [])
-        if 'embed(roots.actions)' in tmpl_string:
+        if state_roots or 'embed(roots.actions)' in tmpl_string:
             self._render_items['actions'] = (self._actions, [])
-        if 'embed(roots.notifications)' in tmpl_string and self.notifications:
+        if (state_roots or 'embed(roots.notifications)' in tmpl_string) and self.notifications:
             self._render_items['notifications'] = (self.notifications, [])
             self._render_variables['notifications'] = True
-        if config.browser_info and 'embed(roots.browser_info)' in tmpl_string and state.browser_info:
+        if config.browser_info and ('embed(roots.browser_info)' in tmpl_string or state_roots) and state.browser_info:
             self._render_items['browser_info'] = (state.browser_info, [])
             self._render_variables['browser_info'] = True
         self._update_busy()

@@ -262,14 +262,8 @@
   ReactDOM.render(<ResponsiveGrid />, document.getElementById('responsive-grid'));
 </script>
 
-{{ embed(roots.js_area) }}
-{{ embed(roots.actions) }}
-{{ embed(roots.location) }}
-{% if notifications %}
-{{ embed(roots.notifications) }}
-{% endif %}
-{% if browser_info %}
-{{ embed(roots.browser_info) }}
-{% endif %}
+{% block state_roots %}
+{{ super() }}
+{% endblock %}
 
 {% endblock %}
