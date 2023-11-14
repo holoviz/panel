@@ -293,7 +293,7 @@ class ChatFeed(ListPanel):
         self,
         value: dict,
         user: str | None = None,
-        avatar: str | BytesIO | None = None,
+        avatar: str | bytes | BytesIO | None = None,
     ) -> ChatMessage | None:
         """
         Builds a ChatMessage from the value.
@@ -458,7 +458,7 @@ class ChatFeed(ListPanel):
         self,
         value: ChatMessage | dict | Any,
         user: str | None = None,
-        avatar: str | BytesIO | None = None,
+        avatar: str | bytes | BytesIO | None = None,
         respond: bool = True,
     ) -> ChatMessage | None:
         """
@@ -472,7 +472,7 @@ class ChatFeed(ListPanel):
             The message contents to send.
         user : str | None
             The user to send as; overrides the message message's user if provided.
-        avatar : str | BytesIO | None
+        avatar : str | bytes | BytesIO | None
             The avatar to use; overrides the message message's avatar if provided.
         respond : bool
             Whether to execute the callback.
@@ -501,7 +501,7 @@ class ChatFeed(ListPanel):
         self,
         value: str,
         user: str | None = None,
-        avatar: str | BytesIO | None = None,
+        avatar: str | bytes | BytesIO | None = None,
         message: ChatMessage | None = None,
     ) -> ChatMessage | None:
         """
@@ -519,7 +519,7 @@ class ChatFeed(ListPanel):
             The new token value to stream.
         user : str | None
             The user to stream as; overrides the message's user if provided.
-        avatar : str | BytesIO | None
+        avatar : str | bytes | BytesIO | None
             The avatar to use; overrides the message's avatar if provided.
         message : ChatMessage | None
             The message to update.

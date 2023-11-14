@@ -527,7 +527,7 @@ class ChatMessage(PaneBase):
         self,
         value: dict | ChatMessage | Any,
         user: str | None = None,
-        avatar: str | BytesIO | None = None,
+        avatar: str | bytes | BytesIO | None = None,
     ):
         """
         Updates the message with a new value, user and avatar.
@@ -538,7 +538,7 @@ class ChatMessage(PaneBase):
             The message contents to send.
         user : str | None
             The user to send as; overrides the message message's user if provided.
-        avatar : str | BytesIO | None
+        avatar : str | bytes | BytesIO | None
             The avatar to use; overrides the message message's avatar if provided.
         """
         updates = {}
