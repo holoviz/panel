@@ -24,10 +24,12 @@ if TYPE_CHECKING:
 
 
 class TemplateEditor(ReactiveHTML):
+    """
+    Component responsible for watching the template for changes and syncing
+    the current layout state with Python.
+    """
 
     layout = param.List()
-
-    breakpoints = param.List([(500, 0.5), (1000, 0.8), (1200, 1), (1600, 1.5)])
 
     _scripts = {
         'render': """
@@ -54,13 +56,16 @@ class TemplateEditor(ReactiveHTML):
 
 class EditableTemplate(VanillaTemplate):
 
-    editable = param.Boolean(default=True)
+    editable = param.Boolean(default=True, doc="""
+      Whether the template layout should be editable.""")
 
-    layout = param.Dict(allow_refs=True)
+    layout = param.Dict(allow_refs=True, doc="""
+      The layout definition of the template indexed by the id of
+      each component in the main area.""")
 
     _css = [
         pathlib.Path(__file__).parent.parent / 'vanilla' / "vanilla.css",
-        pathlib.Path(__file__).parent / "editable.css"
+        pathlib.Path(__file__).parent / 'editable.css'
     ]
 
     _resources: ClassVar[Dict[str, Dict[str, str]]] = {
@@ -111,11 +116,12 @@ class EditableTemplate(VanillaTemplate):
 
     @param.depends('editable', watch=True, on_init=True)
     def _add_editor(self) -> None:
-        if self.editable:
-            editor = TemplateEditor()
-            editor.param.watch(self._sync_positions, 'layout')
-            ref = f'header-{str(id(editor))}'
-            self._render_items[ref] = (editor, ['header'])
+        if not self.editable:
+            return
+        editor = TemplateEditor()
+        editor.param.watch(self._sync_positions, 'layout')
+        ref = f'header-{str(id(editor))}'
+        self._render_items[ref] = (editor, ['header'])
 
     def _sync_positions(self, event):
         ids = {mid: id(obj) for obj in self.main for mid in obj._models}

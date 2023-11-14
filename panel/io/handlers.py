@@ -132,16 +132,25 @@ def capture_code_cell(cell):
         )
         code.append(line)
     cell_out = source[-1]
+
+    # Skip cells ending in semi-colon
     if cell_out.rstrip().endswith(';'):
         code.append(cell_out)
         return code
+
+    # Remove code comments
+    if '#' in cell_out:
+        cell_out = cell_out[:cell_out.index('#')]
+
+    # Use eval mode to check whether cell ends in a statement or an
+    # expression that will be rendered
     try:
         ast.parse(cell_out, mode='eval')
     except SyntaxError:
         code.append(cell_out)
         return code
-    if '#' in cell_out:
-        cell_out = cell_out[:cell_out.index('#')]
+
+    # Capture cell outputs
     cell_id = cell['id']
     cell_code = textwrap.dedent(f"""
     _pn__state._cell_outputs[{cell_id!r}].append(({cell_out}))
@@ -181,6 +190,11 @@ class NotebookHandler(CodeHandler):
     ''' Modify Bokeh documents by creating Dashboard from a notebook file.
 
     '''
+
+    _imports = [
+        'from panel import state as _pn__state',
+        'from panel.io.handlers import CELL_DISPLAY as _CELL__DISPLAY, display, get_figure as _get__figure\n'
+    ]
 
     def __init__(self, *, filename: PathLike, argv: list[str] = [], package: ModuleType | None = None) -> None:
         '''
@@ -241,15 +255,10 @@ class NotebookHandler(CodeHandler):
         nb = nbformat.reads(nb_string, 4)
         nb = nbformat.v4.upgrade(nb)
 
-        code = [
-            'from panel import state as _pn__state',
-            'from panel.io.handlers import CELL_DISPLAY as _CELL__DISPLAY, display, get_figure as _get__figure\n'
-        ]
+        code = list(self._imports)
         for cell in nb['cells']:
             cell_id = cell['id']
-            layout = cell['metadata'].get('panel-layout', {})
-            layout_code = f'_pn__state._cell_layouts[{cell_id!r}] = {layout!r}'
-            code.append(layout_code)
+            state._cell_layouts[self][cell_id] = cell['metadata'].get('panel-layout', {})
             if cell['cell_type'] == 'code':
                 cell_code = capture_code_cell(cell)
                 code += cell_code
@@ -300,6 +309,7 @@ class NotebookHandler(CodeHandler):
                     state._cell_outputs.clear()
                     return
 
+                # If no contents we add all cell outputs to the editable template
                 config.template = 'editable'
                 state.template.title = os.path.basename(path)
 
@@ -312,7 +322,7 @@ class NotebookHandler(CodeHandler):
                     for po in pout:
                         po.sizing_mode = 'stretch_width'
                     outputs[cell_id] = pout
-                    layouts[id(pout)] = state._cell_layouts[cell_id]
+                    layouts[id(pout)] = state._cell_layouts[self][cell_id]
                     cells[cell_id] = id(pout)
                     pout.servable()
 
@@ -352,9 +362,7 @@ class NotebookHandler(CodeHandler):
                 spec = dict(event.new[id(out)])
                 del spec['id']
                 cell['metadata']['panel-layout'] = spec
-        nb['metadata']['panel-cell-order'] = [
-            cell_ids[obj_id] for obj_id in event.new
-        ]
+        nb['metadata']['panel-cell-order'] = [cell_ids[obj_id] for obj_id in event.new]
         nbformat.write(nb, self._runner.path)
         self._stale = True
 
