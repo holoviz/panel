@@ -107,10 +107,11 @@
   }
 
   function resize_item(item, width, height, notify = true) {
-    var screen_width = document.getElementsByClassName('muuri-grid')[0].clientWidth
+    var screen_width = document.getElementsByClassName('muuri-grid')[0].clientWidth-20
     if (((width/100) * screen_width) < 100) {
-      width = (100/screen_width) * 100
+      width = (100/screen_width) * 100;
     }
+    width = Math.min(100, width);
     item.style.width = `calc( ${width}% - 40px)`;
     item.style.height = Math.round(Math.max(height, 10) / 10) * 10 + 'px';
     if (notify) {
@@ -138,7 +139,6 @@
   window.muuriGrid = grid;
 
   window.addEventListener('resize', function(event) {
-    var screen_width = document.getElementsByClassName('muuri-grid')[0].clientWidth
     for (const item of grid.getItems()) {
       scroll(item.getElement())
     }
@@ -194,7 +194,7 @@
 	var style = getComputedStyle(event.target)
 	var top = parseInt(style.getPropertyValue('padding-top').slice(0, -2))
 	var bottom = parseInt(style.getPropertyValue('padding-bottom').slice(0, -2))
-	var screen_width = window.muuriGrid.getElement().clientWidth
+	var screen_width = window.muuriGrid.getElement().clientWidth-20;
 	resize_item(event.target, (event.rect.width/screen_width)*100, event.rect.height-(top+bottom))
       }
     }

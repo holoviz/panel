@@ -342,6 +342,7 @@ class NotebookHandler(CodeHandler):
                 # Set up state
                 state.template.layout = ordered
                 state.template.param.watch(self._update_position_metadata, 'layout')
+                state._session_outputs[doc] = outputs
                 state._cell_outputs.clear()
 
     def _update_position_metadata(self, event):

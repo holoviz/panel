@@ -35,13 +35,16 @@ class TemplateEditor(ReactiveHTML):
         'render': """
         function save_layout() {
           var layout = [];
-          var screen_width = window.muuriGrid.getElement().clientWidth
+          var screen_width = window.muuriGrid.getElement().clientWidth-20;
           for (var item of window.muuriGrid.getItems()) {
             var el = item.getElement();
+            const style = getComputedStyle(el)
+            const top = parseInt(style.getPropertyValue('padding-top').slice(0, -2))
+            const bottom = parseInt(style.getPropertyValue('padding-bottom').slice(0, -2))
             layout.push({
               id: el.getAttribute('data-id'),
               width: Math.round((item.getWidth() / screen_width) * 100),
-              height: item.getHeight(),
+              height: item.getHeight()-top-bottom,
               visible: item.isVisible(),
             })
           }
@@ -99,11 +102,15 @@ class EditableTemplate(VanillaTemplate):
     ):
         ret = super()._init_doc(doc, comm, title, notebook, location)
         doc.js_on_event('document_ready', CustomJS(code="""
-          for (var item of document.getElementsByClassName('muuri-grid-item')) {
-            const child = item.children[1].children[0]
-            const bounds = item.getBoundingClientRect()
-            const screen_width = window.muuriGrid.getElement().clientWidth
-            resize_item(item, Math.round((bounds.width / screen_width) * 100), bounds.height, false)
+          for (const item of document.getElementsByClassName('muuri-grid-item')) {
+            const style = getComputedStyle(item)
+            const top = parseInt(style.getPropertyValue('padding-top').slice(0, -2))
+            const bottom = parseInt(style.getPropertyValue('padding-bottom').slice(0, -2))
+            const child = item.children[1].children[0];
+            const bounds = item.getBoundingClientRect();
+            const screen_width = window.muuriGrid.getElement().clientWidth-20;
+            const relative_width = Math.round((bounds.width / (screen_width)) * 100);
+            resize_item(item, relative_width, bounds.height-top-bottom, false)
           }
           for (var root of roots) {
             if (root.tags.includes('main')) {
