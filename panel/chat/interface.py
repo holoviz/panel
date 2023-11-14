@@ -109,14 +109,15 @@ class ChatInterface(ChatFeed):
         `[TextInput]`.""")
 
     button_properties = param.Dict(default={}, doc="""
-        A mapping of button names to its properties (`callback`, `post_callback`, `icon`).
-        This can be used to update default buttons' properties, or create new buttons
-        to be added to the ChatInterface input row. The callback signature must accept two
-        positional args `interface` and `event`, where `instance` is the ChatInterface instance
-        and event is the button click event. Button names that overlap with
-        the default buttons (`send`, `rerun`, `undo`, `clear`) will override the default icon
-        if specified, but does not overwrite the default callback--only prepends to it.
-        Keys that do not overlap will create new buttons, and each require callback or post_callback.
+        Allows overriding or adding buttons by providing a mapping from the button name to
+        a dictionary containing the `icon`, `callback` and `post_callback`. Specifying button
+        names that match one of the default buttons (`send`, `rerun`, `undo`, `clear`) allows
+        overriding the default icon but does not overwrite the default callback, instead
+        prepending the callback. Specifying button names as keys that do not match one of the
+        existing names will create new buttons and must provide a callback or post_callback.
+        The signature of provided callbacks must accept two positional arguments: `instance`
+        and `event`, where `instance` is the ChatInterface instance and event is the button click
+        event. 
         """)
 
     _widgets = param.Dict(default={}, allow_refs=False, doc="""
@@ -333,10 +334,10 @@ class ChatInterface(ChatFeed):
         return decorate
 
     def _click_send(
-            self,
-            event: param.parameterized.Event | None = None,
-            instance: Self | None = None
-        ) -> None:
+        self,
+        event: param.parameterized.Event | None = None,
+        instance: Self | None = None
+    ) -> None:
         """
         Send the input when the user presses Enter.
         """
@@ -408,10 +409,10 @@ class ChatInterface(ChatFeed):
             self._toggle_revert(button_data, False)
 
     def _click_rerun(
-            self,
-            event: param.parameterized.Event | None = None,
-            instance: Self | None = None
-        ) -> None:
+        self,
+        event: param.parameterized.Event | None = None,
+        instance: Self | None = None
+    ) -> None:
         """
         Upon clicking the rerun button, rerun the last user message,
         which can trigger the callback again.
@@ -423,10 +424,10 @@ class ChatInterface(ChatFeed):
         self.send(value=messages[0], respond=True)
 
     def _click_undo(
-            self,
-            event: param.parameterized.Event | None = None,
-            instance: Self | None = None
-        ) -> None:
+        self,
+        event: param.parameterized.Event | None = None,
+        instance: Self | None = None
+    ) -> None:
         """
         Upon clicking the undo button, undo (remove) messages
         up to the last user message. If the button is clicked
@@ -447,10 +448,10 @@ class ChatInterface(ChatFeed):
             self._reset_button_data()
 
     def _click_clear(
-            self,
-            event: param.parameterized.Event | None = None,
-            instance: Self | None = None
-        ) -> None:
+        self,
+        event: param.parameterized.Event | None = None,
+        instance: Self | None = None
+    ) -> None:
         """
         Upon clicking the clear button, clear the chat log.
         If the button is clicked again without performing any
