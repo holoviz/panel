@@ -1,6 +1,9 @@
 
 
+from io import BytesIO
+
 import pytest
+import requests
 
 from panel.chat.interface import ChatInterface
 from panel.layout import Row, Tabs
@@ -32,6 +35,12 @@ class TestChatInterface:
     def test_init_avatar_image(self, chat_interface):
         chat_interface.avatar = Image("https://panel.holoviz.org/_static/logo_horizontal.png")
         assert chat_interface.avatar.object == "https://panel.holoviz.org/_static/logo_horizontal.png"
+
+    @pytest.mark.parametrize("type_", [bytes, BytesIO])
+    def test_init_avatar_bytes(self, type_, chat_interface):
+        with requests.get("https://panel.holoviz.org/_static/logo_horizontal.png") as resp:
+            chat_interface.avatar = type_(resp.content)
+        assert isinstance(chat_interface.avatar, type_)
 
     def test_init_custom_widgets(self):
         widgets = [TextInput(name="Text"), FileInput()]
