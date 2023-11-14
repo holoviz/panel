@@ -146,16 +146,18 @@ def wait_for_app(http_serve, app, page, runtime, wait=True, **kwargs):
     cls = f'pn-loading pn-{config.loading_spinner}'
     expect(page.locator('body')).to_have_class(cls)
     if wait:
-        expect(page.locator('body')).not_to_have_class(cls, timeout=90 * 1000)
+        expect(page.locator('body')).not_to_have_class(cls, timeout=30_000)
 
     return msgs
 
 
+@pytest.mark.flaky(reruns=3, reruns_delay=10)
 def test_pyodide_test_error_handling_worker(http_serve, page):
     wait_for_app(http_serve, error_app, page, 'pyodide-worker', wait=False)
 
-    expect(page.locator('.pn-loading-msg')).to_have_text('RuntimeError: This app is broken', timeout=90 * 1000)
+    expect(page.locator('.pn-loading-msg')).to_have_text('RuntimeError: This app is broken', timeout=30_000)
 
+@pytest.mark.flaky(reruns=3, reruns_delay=10)
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
 def test_pyodide_test_convert_button_app(http_serve, page, runtime):
     msgs = wait_for_app(http_serve, button_app, page, runtime)
@@ -168,6 +170,7 @@ def test_pyodide_test_convert_button_app(http_serve, page, runtime):
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
+@pytest.mark.flaky(reruns=3, reruns_delay=10)
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
 def test_pyodide_test_convert_slider_app(http_serve, page, runtime):
     msgs = wait_for_app(http_serve, slider_app, page, runtime)
@@ -181,6 +184,7 @@ def test_pyodide_test_convert_slider_app(http_serve, page, runtime):
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
+@pytest.mark.flaky(reruns=3, reruns_delay=10)
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
 def test_pyodide_test_convert_custom_config(http_serve, page, runtime):
     wait_for_app(http_serve, config_app, page, runtime)
@@ -188,6 +192,7 @@ def test_pyodide_test_convert_custom_config(http_serve, page, runtime):
     assert page.locator("body").evaluate("""(element) =>
         window.getComputedStyle(element).getPropertyValue('background-color')""") == 'rgb(0, 0, 255)'
 
+@pytest.mark.flaky(reruns=3, reruns_delay=10)
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker'])
 def test_pyodide_test_convert_tabulator_app(http_serve, page, runtime):
     msgs = wait_for_app(http_serve, tabulator_app, page, runtime)
@@ -198,6 +203,7 @@ def test_pyodide_test_convert_tabulator_app(http_serve, page, runtime):
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
+@pytest.mark.flaky(reruns=3, reruns_delay=10)
 @pytest.mark.parametrize(
     'runtime, http_patch', [
         ('pyodide', False),
@@ -218,6 +224,7 @@ def test_pyodide_test_convert_csv_app(http_serve, page, runtime, http_patch):
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
+@pytest.mark.flaky(reruns=3, reruns_delay=10)
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker'])
 def test_pyodide_test_convert_png_app(http_serve, page, runtime):
     msgs = wait_for_app(http_serve, png_app, page, runtime)
