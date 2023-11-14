@@ -8,7 +8,6 @@ import sys
 import textwrap
 
 from contextlib import contextmanager
-from functools import partial
 from types import ModuleType
 from typing import IO, Any, Callable
 
@@ -22,6 +21,8 @@ from bokeh.core.types import PathLike
 from bokeh.document import Document
 from bokeh.io.doc import patch_curdoc
 from bokeh.util.dependencies import import_required
+
+from .state import state
 
 log = logging.getLogger('panel.io.handlers')
 
@@ -188,8 +189,8 @@ class NotebookHandler(CodeHandler):
             filename (str) : a path to a Jupyter notebook (".ipynb") file
 
         '''
-        self._stale = True
         super().__init__(source=self._parse(filename), filename=filename)
+        self._stale = False
 
     def _parse(self, filename):
         nbformat = import_required('nbformat', 'The Bokeh notebook application handler requires Jupyter Notebook to be installed.')
@@ -256,8 +257,7 @@ class NotebookHandler(CodeHandler):
                 md = ''.join(cell['source'])
                 code.append(f'_pn__state._cell_outputs[{cell_id!r}].append("""{md}""")')
         code = '\n'.join(code)
-        nbformat.write(nb, filename)
-        self._stale = False
+        self._nb = nb
         return code
 
     def modify_document(self, doc: Document) -> None:
@@ -272,6 +272,7 @@ class NotebookHandler(CodeHandler):
             source = self._parse(path)
             nodes = ast.parse(source, os.fspath(path))
             self._runner._code = compile(nodes, filename=path, mode='exec', dont_inherit=True)
+            self._stale = False
 
         module = self._runner.new_module()
 
@@ -296,6 +297,7 @@ class NotebookHandler(CodeHandler):
                     self._runner.run(module, self._make_post_doc_check(doc))
 
                 if doc.roots:
+                    state._cell_outputs.clear()
                     return
 
                 config.template = 'editable'
@@ -329,19 +331,21 @@ class NotebookHandler(CodeHandler):
 
                 # Set up state
                 state.template.layout = ordered
+                state.template.param.watch(self._update_position_metadata, 'layout')
                 state._cell_outputs.clear()
-                # Note: Big memory leak
-                state.template.param.watch(
-                    partial(self._update_position_metadata, outputs), 'layout'
-                )
 
-    def _update_position_metadata(self, outputs, event):
+    def _update_position_metadata(self, event):
+        """
+        Maps EditableTemplate update events to cells in the original
+        notebook and then overwrites notebook metadata with updated
+        layout information.
+        """
         import nbformat
-        nb = nbformat.read(self._runner._path, nbformat.NO_CONVERT)
+        nb = self._nb
+        doc = event.obj._documents[-1]
+        outputs = state._session_outputs[doc]
         cell_ids = {}
         for cell in nb['cells']:
-            if 'id' not in cell:
-                continue
             if cell['id'] in outputs:
                 out = outputs[cell['id']]
                 cell_ids[id(out)] = cell['id']
@@ -356,7 +360,7 @@ class NotebookHandler(CodeHandler):
 
 
 def build_single_handler_application(path, argv=None):
-    if not os.path.isfile(path) and not (path.endswith(".md") or path.endswith(".ipynb")):
+    if not os.path.isfile(path) or not (path.endswith(".md") or path.endswith(".ipynb")):
         return _build_application(path, argv)
 
     from .server import Application
