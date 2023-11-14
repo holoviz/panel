@@ -425,78 +425,77 @@ class NestedSelect(CompositeWidget):
                 break
 
         options = self.options.copy()
-        for i, select in enumerate(self._selects[:-1]):
-            try:
-                options = options[select.value]
-            except (IndexError, TypeError):
-                self._hide_extra_selects(i)
-                break
-
-            if i < start_i:
-                # If the select widget is before the one that triggered the event,
-                # then we don't need to update it; we just need to subset options.
-                continue
-
-            next_select = self._selects[i + 1]
-            if isinstance(options, dict):
-                next_options = list(options.keys())
-            else:
-                next_options = options
-            if i < len(self.value) - 1:
-                next_value = self.value[i + 1]
-            else:
-                next_value = next_select.value
-            if next_value not in next_options:
-                next_value = next_options[0]
-            next_select.param.update(
-                options=next_options,
-                value=next_value
-            )
-            if not next_select.visible:
-                next_select.visible = True
-
-        with param.discard_events(self):
-            # do not run _update_select_options_programmatically
-            # simply sync the value
-            self.value = self._gather_values_from_widgets()
-
-    @param.depends("value", watch=True)
-    def _update_select_options_programmatically(self):
-        """
-        When value is passed, update to the latest options.
-        """
-        original_value = self._gather_values_from_widgets()
-        self._selects[0].value = self.value[0]
-
-        options = self.options.copy()
-        try:
-            for i in range(self._max_nesting_depth):
+        with param.batch_watch(self):
+            for i, select in enumerate(self._selects[:-1]):
                 try:
-                    options = options[self.value[i]]
+                    options = options[select.value]
                 except (IndexError, TypeError):
                     self._hide_extra_selects(i)
                     break
+
+                if i < start_i:
+                    # If the select widget is before the one that triggered the event,
+                    # then we don't need to update it; we just need to subset options.
+                    continue
 
                 next_select = self._selects[i + 1]
                 if isinstance(options, dict):
                     next_options = list(options.keys())
                 else:
                     next_options = options
-                next_value = self.value[i + 1]
-                if next_value not in next_options:
-                    raise ValueError(
-                        f"Failed to set value; {next_value!r} "
-                        f"must be one of {next_options!r}."
-                    )
+
                 next_select.param.update(
                     options=next_options,
-                    value=next_value
+                    visible=True
                 )
-                if not next_select.visible:
-                    next_select.visible = True
-        except:
-            self.value = original_value
-            raise
+
+        self.value = self._gather_values_from_widgets()
+
+    @param.depends("value", watch=True)
+    def _update_select_options_programmatically(self):
+        """
+        When value is passed, update to the latest options.
+        """
+        options = self.options.copy()
+        set_value = self.value
+        original_value = self._gather_values_from_widgets()
+
+        with param.batch_watch(self):
+            try:
+                with param.discard_events(self):
+                    self._selects[0].value = set_value[0]
+                for i in range(self._max_nesting_depth):
+                    try:
+                        options = options[set_value[i]]
+                    except (IndexError, TypeError):
+                        self._hide_extra_selects(i)
+                        break
+
+                    next_select = self._selects[i + 1]
+                    if isinstance(options, dict):
+                        next_options = list(options.keys())
+                    else:
+                        next_options = options
+
+                    if i >= len(set_value) - 1:
+                        next_value = next_options[0]
+                    else:
+                        next_value = set_value[i + 1]
+                        if next_value not in next_options:
+                            raise ValueError(
+                                f"Failed to set value; {next_value!r} "
+                                f"must be one of {next_options!r}."
+                            )
+
+                    with param.discard_events(self):
+                        next_select.param.update(
+                            options=next_options,
+                            value=next_value,
+                            visible=True
+                        )
+            except Exception:
+                self.value = original_value
+                raise
 
     def _hide_extra_selects(self, i):
         for select in self._selects[i + 1:]:
