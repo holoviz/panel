@@ -133,8 +133,7 @@ class EditableTemplate(VanillaTemplate):
             return
         editor = TemplateEditor()
         editor.param.watch(self._sync_positions, 'layout')
-        ref = f'header-{str(id(editor))}'
-        self._render_items[ref] = (editor, ['header'])
+        self._render_items['editor'] = (editor, [])
 
     def _sync_positions(self, event):
         ids = {mid: id(obj) for obj in self.main for mid in obj._models}
