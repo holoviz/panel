@@ -181,7 +181,7 @@ class Button(_ClickButton, TooltipMixin):
         Toggles from False to True while the event is being processed.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'clicks': None, 'name': 'label', 'value': None,
+        **TooltipMixin._rename, 'clicks': None, 'name': 'label', 'value': None,
     }
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {

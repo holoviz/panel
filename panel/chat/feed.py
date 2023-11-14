@@ -13,7 +13,7 @@ from inspect import (
 )
 from io import BytesIO
 from typing import (
-    TYPE_CHECKING, Any, BinaryIO, ClassVar, Dict, List, Union,
+    TYPE_CHECKING, Any, ClassVar, List,
 )
 
 import param
@@ -23,7 +23,7 @@ from ..io.resources import CDN_DIST
 from ..layout import Column, ListPanel
 from ..layout.card import Card
 from ..layout.spacer import VSpacer
-from ..pane.image import SVG, ImageBase
+from ..pane.image import SVG
 from ..widgets.button import Button
 from .message import ChatMessage
 
@@ -31,9 +31,6 @@ if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
-
-Avatar = Union[str, BytesIO, ImageBase]
-AvatarDict = Dict[str, Avatar]
 
 USER_LOGO = "🧑"
 ASSISTANT_LOGO = "🤖"
@@ -296,7 +293,7 @@ class ChatFeed(ListPanel):
         self,
         value: dict,
         user: str | None = None,
-        avatar: str | BinaryIO | None = None,
+        avatar: str | bytes | BytesIO | None = None,
     ) -> ChatMessage | None:
         """
         Builds a ChatMessage from the value.
@@ -461,7 +458,7 @@ class ChatFeed(ListPanel):
         self,
         value: ChatMessage | dict | Any,
         user: str | None = None,
-        avatar: str | BinaryIO | None = None,
+        avatar: str | bytes | BytesIO | None = None,
         respond: bool = True,
     ) -> ChatMessage | None:
         """
@@ -475,7 +472,7 @@ class ChatFeed(ListPanel):
             The message contents to send.
         user : str | None
             The user to send as; overrides the message message's user if provided.
-        avatar : str | BinaryIO | None
+        avatar : str | bytes | BytesIO | None
             The avatar to use; overrides the message message's avatar if provided.
         respond : bool
             Whether to execute the callback.
@@ -504,7 +501,7 @@ class ChatFeed(ListPanel):
         self,
         value: str,
         user: str | None = None,
-        avatar: str | BinaryIO | None = None,
+        avatar: str | bytes | BytesIO | None = None,
         message: ChatMessage | None = None,
     ) -> ChatMessage | None:
         """
@@ -522,7 +519,7 @@ class ChatFeed(ListPanel):
             The new token value to stream.
         user : str | None
             The user to stream as; overrides the message's user if provided.
-        avatar : str | BinaryIO | None
+        avatar : str | bytes | BytesIO | None
             The avatar to use; overrides the message's avatar if provided.
         message : ChatMessage | None
             The message to update.

@@ -22,6 +22,7 @@ from panel.layout import Row
 from panel.models import HTML as BkHTML
 from panel.models.tabulator import TableEditEvent
 from panel.pane import Markdown
+from panel.param import ParamFunction
 from panel.reactive import ReactiveHTML
 from panel.template import BootstrapTemplate
 from panel.tests.util import serve_and_request, serve_and_wait, wait_until
@@ -459,6 +460,80 @@ def test_serve_can_serve_bokeh_app_from_file():
     path = pathlib.Path(__file__).parent / "io"/"bk_app.py"
     server = get_server({"bk-app": path})
     assert "/bk-app" in server._tornado.applications
+
+
+def test_server_thread_pool_on_load(threads, port):
+    counts = []
+
+    def cb(count=[0]):
+        count[0] += 1
+        counts.append(count[0])
+        time.sleep(0.5)
+        count[0] -= 1
+
+    def app():
+        state.onload(cb, threaded=True)
+        state.onload(cb, threaded=True)
+
+        # Simulate rendering
+        def loaded():
+            state._schedule_on_load(state.curdoc, None)
+        state.execute(loaded, schedule=True)
+
+        return 'App'
+
+    serve_and_request(app)
+
+    # Checks whether onload callback was executed concurrently
+    wait_until(lambda: len(counts) > 0 and max(counts) > 1)
+
+
+def test_server_thread_pool_execute(threads, port):
+    counts = []
+
+    def cb(count=[0]):
+        count[0] += 1
+        counts.append(count[0])
+        time.sleep(0.5)
+        count[0] -= 1
+
+    def app():
+        state.execute(cb, schedule='thread')
+        state.execute(cb, schedule='thread')
+        return 'App'
+
+    serve_and_request(app)
+
+    # Checks whether execute was executed concurrently
+    wait_until(lambda: len(counts) > 0 and max(counts) > 1)
+
+
+def test_server_thread_pool_defer_load(threads, port):
+    counts = []
+
+    def cb(count=[0]):
+        count[0] += 1
+        counts.append(count[0])
+        time.sleep(0.5)
+        value = counts[-1]
+        count[0] -= 1
+        return value
+
+    def app():
+        # Simulate rendering
+        def loaded():
+            state._schedule_on_load(state.curdoc, None)
+        state.execute(loaded, schedule=True)
+
+        return Row(
+            ParamFunction(cb, defer_load=True),
+            ParamFunction(cb, defer_load=True),
+        )
+
+    serve_and_request(app)
+
+    # Checks whether defer_load callback was executed concurrently
+    wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
 def test_server_thread_pool_change_event(threads, port):

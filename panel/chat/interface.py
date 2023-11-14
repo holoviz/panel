@@ -7,12 +7,14 @@ through a frontend input UI.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import BinaryIO, ClassVar, List
+from io import BytesIO
+from typing import ClassVar, List
 
 import param
 
 from ..io.resources import CDN_DIST
 from ..layout import Row, Tabs
+from ..pane.image import ImageBase
 from ..viewable import Viewable
 from ..widgets.base import Widget
 from ..widgets.button import Button
@@ -69,7 +71,7 @@ class ChatInterface(ChatFeed):
         or clicks away from the widget. If not provided, defaults to
         `[TextInput]`.""")
 
-    avatar = param.ClassSelector(class_=(str, BinaryIO), doc="""
+    avatar = param.ClassSelector(class_=(str, BytesIO, bytes, ImageBase), doc="""
         The avatar to use for the user. Can be a single character text, an emoji,
         or anything supported by `pn.pane.Image`. If not set, uses the
         first character of the name.""")

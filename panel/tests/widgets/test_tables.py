@@ -559,6 +559,19 @@ def test_tabulator_config_editor_dict(document, comm):
     assert model.configuration['columns'][2] == {'field': 'B', 'sorter': 'number', 'editor': 'list', 'editorParams': {'valuesLookup': True}}
 
 
+def test_tabulator_sortable_bool(dataframe, document, comm):
+    table = Tabulator(dataframe, sortable=False)
+    model = table.get_root(document, comm)
+    assert not any(col['headerSort'] for col in model.configuration['columns'])
+
+
+def test_tabulator_sortable_dict(dataframe, document, comm):
+    table = Tabulator(dataframe, sortable={'int': False})
+    model = table.get_root(document, comm)
+    assert all(not col['headerSort'] if col['field'] == 'int' else col['headerSort']
+               for col in model.configuration['columns'])
+
+
 def test_tabulator_groups(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df, groups={'Number': ['A', 'B'], 'Other': ['C', 'D']})
@@ -2084,6 +2097,15 @@ def test_tabulator_formatter_update(dataframe, document, comm):
     formatter.format = '0.0'
     model_formatter = model.columns[2].formatter
     assert model_formatter.format == formatter.format
+
+def test_tabulator_sortable_update(dataframe, document, comm):
+    table = Tabulator(dataframe, sortable={'int': False})
+    model = table.get_root(document, comm)
+    assert not model.configuration['columns'][1]['headerSort']
+
+    table.sortable = {'int': True, 'float': False}
+    assert model.configuration['columns'][1]['headerSort']
+    assert not model.configuration['columns'][2]['headerSort']
 
 def test_tabulator_hidden_columns_fix():
     # Checks for: https://github.com/holoviz/panel/issues/4102

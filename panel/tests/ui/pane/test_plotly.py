@@ -80,7 +80,6 @@ def test_plotly_2d_plot(page, plotly_2d_plot):
     }, page)
 
 
-@pytest.mark.flaky(max_runs=3)
 def test_plotly_3d_plot(page, plotly_3d_plot):
     plot_3d, title = plotly_3d_plot
 
@@ -105,7 +104,6 @@ def test_plotly_3d_plot(page, plotly_3d_plot):
     expect(modebar).to_have_count(1)
 
 
-@pytest.mark.flaky(max_runs=3)
 def test_plotly_hover_data(page, plotly_2d_plot):
     hover_data = []
     plotly_2d_plot.param.watch(lambda e: hover_data.append(e.new), 'hover_data')
@@ -136,7 +134,6 @@ def test_plotly_hover_data(page, plotly_2d_plot):
     wait_until(lambda: plotly_2d_plot.hover_data is None, page)
 
 
-@pytest.mark.flaky(max_runs=3)
 def test_plotly_click_data(page, plotly_2d_plot):
     serve_component(page, plotly_2d_plot)
 
@@ -158,7 +155,6 @@ def test_plotly_click_data(page, plotly_2d_plot):
     }, page)
 
 
-@pytest.mark.flaky(max_runs=3)
 def test_plotly_select_data(page, plotly_2d_plot):
     serve_component(page, plotly_2d_plot)
 

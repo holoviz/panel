@@ -1885,7 +1885,7 @@ async def test_param_async_generator_multiple(document, comm):
     root = pane.get_root(document, comm)
 
     assert root.children[0].text == '&lt;pre&gt; &lt;/pre&gt;'
-    await asyncio.sleep(0.01)
+    await asyncio.sleep(0.1)
     assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
     await asyncio.sleep(0.1)
     assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'

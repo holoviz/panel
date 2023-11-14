@@ -39,10 +39,12 @@ export class RadioButtonGroupView extends bkRadioButtonGroupView {
         visible,
       })
     }
+    let timer: number
     this.el.addEventListener("mouseenter", () => {
-      toggle(true)
+      timer = setTimeout(() => toggle(true), this.model.tooltip_delay)
     })
     this.el.addEventListener("mouseleave", () => {
+      clearTimeout(timer)
       toggle(false)
     })
   }
@@ -54,6 +56,7 @@ export namespace RadioButtonGroup {
 
   export type Props = bkRadioButtonGroup.Props & {
     tooltip: p.Property<Tooltip | null>
+    tooltip_delay: p.Property<number>
   }
 }
 
@@ -72,8 +75,9 @@ export class RadioButtonGroup extends bkRadioButtonGroup {
   static {
     this.prototype.default_view = RadioButtonGroupView
 
-    this.define<RadioButtonGroup.Props>(({Nullable, Ref}) => ({
+    this.define<RadioButtonGroup.Props>(({Nullable, Ref, Number}) => ({
       tooltip: [ Nullable(Ref(Tooltip)), null ],
+      tooltip_delay: [ Number, 500],
     }))
   }
 }

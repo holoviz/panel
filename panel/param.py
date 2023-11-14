@@ -942,7 +942,10 @@ class ParamMethod(ReplacementPane):
         if not self._evaled:
             deferred = self.defer_load and not state.loaded
             if deferred:
-                state.onload(partial(self._replace_pane, force=True))
+                state.onload(
+                    partial(self._replace_pane, force=True),
+                    threaded=bool(state._thread_pool)
+                )
             self._replace_pane(force=not deferred)
         return super()._get_model(doc, root, parent, comm)
 

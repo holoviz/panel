@@ -170,7 +170,6 @@ def test_column_view_latest(page):
     expect(column).not_to_have_js_property('scrollTop', '0')
 
 
-@pytest.mark.flaky(max_runs=3)
 def test_column_scroll_position_init(page):
     col = Column(
         Spacer(styles=dict(background='red'), width=200, height=200),

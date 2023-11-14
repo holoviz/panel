@@ -4,6 +4,7 @@ resources via the panel.config object.
 """
 from __future__ import annotations
 
+import functools
 import importlib
 import json
 import logging
@@ -61,8 +62,11 @@ with open(Path(__file__).parent.parent / 'package.json') as f:
 def get_env():
     ''' Get the correct Jinja2 Environment, also for frozen scripts.
     '''
-    local_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '_templates'))
-    return Environment(loader=FileSystemLoader(local_path))
+    internal_path = pathlib.Path(__file__).parent / '..' / '_templates'
+    template_path = pathlib.Path(__file__).parent / '..' / 'template'
+    return Environment(loader=FileSystemLoader([
+        str(internal_path.resolve()), str(template_path.resolve())
+    ]))
 
 def conffilter(value):
     return json.dumps(OrderedDict(value)).replace('"', '\'')
@@ -73,6 +77,10 @@ _env.lstrip_blocks = True
 _env.filters['json'] = lambda obj: Markup(json.dumps(obj))
 _env.filters['conffilter'] = conffilter
 _env.filters['sorted'] = sorted
+
+@functools.cache
+def parse_template(*args, **kwargs):
+    return _env.from_string(*args, **kwargs)
 
 # Handle serving of the panel extension before session is loaded
 RESOURCE_MODE = 'server'
