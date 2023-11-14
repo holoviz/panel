@@ -150,7 +150,7 @@ def wait_for_app(http_serve, app, page, runtime, wait=True, **kwargs):
     cls = f'pn-loading pn-{config.loading_spinner}'
     expect(page.locator('body')).to_have_class(cls)
     if wait:
-        expect(page.locator('body')).not_to_have_class(cls, timeout=90_000)
+        expect(page.locator('body')).not_to_have_class(cls, timeout=120_000)
 
     return msgs
 
@@ -159,7 +159,7 @@ def wait_for_app(http_serve, app, page, runtime, wait=True, **kwargs):
 def test_pyodide_test_error_handling_worker(http_serve, page):
     wait_for_app(http_serve, error_app, page, 'pyodide-worker', wait=False)
 
-    expect(page.locator('.pn-loading-msg')).to_have_text('RuntimeError: This app is broken', timeout=90_000)
+    expect(page.locator('.pn-loading-msg')).to_have_text('RuntimeError: This app is broken', timeout=120_000)
 
 
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
