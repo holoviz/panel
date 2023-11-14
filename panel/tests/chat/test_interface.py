@@ -4,6 +4,7 @@ import pytest
 
 from panel.chat.interface import ChatInterface
 from panel.layout import Row, Tabs
+from panel.pane import Image
 from panel.widgets.button import Button
 from panel.widgets.input import FileInput, TextAreaInput, TextInput
 
@@ -27,6 +28,10 @@ class TestChatInterface:
             widget = inputs[index + 1]
             assert isinstance(widget, Button)
             assert widget.name == button_data.name.title()
+
+    def test_init_avatar_image(self, chat_interface):
+        chat_interface.avatar = Image("https://panel.holoviz.org/_static/logo_horizontal.png")
+        assert chat_interface.avatar.object == "https://panel.holoviz.org/_static/logo_horizontal.png"
 
     def test_init_custom_widgets(self):
         widgets = [TextInput(name="Text"), FileInput()]
