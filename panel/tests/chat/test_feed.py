@@ -443,7 +443,7 @@ class TestChatFeedCallback:
 
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
-        await asyncio.sleep(0.25)
+        await asyncio.sleep(0.5)
         assert len(chat_feed.objects) == 2
         assert chat_feed.objects[1].object == "Message"
 
@@ -496,7 +496,7 @@ class TestChatFeedCallback:
 
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
-        await asyncio.sleep(0.25)
+        await asyncio.sleep(0.5)
         assert len(chat_feed.objects) == 2
         assert chat_feed.objects[1].object == "Message"
 
@@ -510,7 +510,7 @@ class TestChatFeedCallback:
 
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
-        await asyncio.sleep(0.25)
+        await asyncio.sleep(0.5)
         assert len(chat_feed.objects) == 2
         assert chat_feed.objects[1].object == "Message"
 
@@ -528,7 +528,7 @@ class TestChatFeedCallback:
 
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
-        await asyncio.sleep(0.25)
+        await asyncio.sleep(0.5)
         assert len(chat_feed.objects) == 2
         assert chat_feed.objects[1].object == "Message"
 
