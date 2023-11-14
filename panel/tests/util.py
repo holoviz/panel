@@ -219,7 +219,7 @@ def serve_component(page, app, suffix='', wait=True, **kwargs):
     msgs = []
     page.on("console", lambda msg: msgs.append(msg))
     port = serve_and_wait(app, page, **kwargs)
-    page.goto(f"http://localhost:{port}{suffix}")
+    page.goto(f"http://127.0.0.1:{port}{suffix}")
 
     if wait:
         wait_until(lambda: any("Websocket connection 0 is now open" in str(msg) for msg in msgs), page, interval=10)
@@ -229,14 +229,14 @@ def serve_component(page, app, suffix='', wait=True, **kwargs):
 
 def serve_and_request(app, suffix="", n=1, port=None, **kwargs):
     port = serve_and_wait(app, port=port, **kwargs)
-    reqs = [requests.get(f"http://localhost:{port}{suffix}") for i in range(n)]
+    reqs = [requests.get(f"http://127.0.0.1:{port}{suffix}") for i in range(n)]
     return reqs[0] if len(reqs) == 1 else reqs
 
 
 def wait_for_server(port, prefix=None, timeout=3):
     start = time.time()
     prefix = prefix or ""
-    url = f"http://localhost:{port}{prefix}/liveness"
+    url = f"http://127.0.0.1:{port}{prefix}/liveness"
     while True:
         try:
             if requests.get(url).ok:
