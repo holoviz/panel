@@ -2,6 +2,7 @@
 
 <!-- goes in body -->
 {% block preamble %}
+    {% block metadata %}
     {%- if app_favicon %}
     <link rel="icon" href="{{ app_favicon }}" type="{{favicon_type}}">
     {% endif -%}
@@ -32,6 +33,7 @@
     {%- if manifest %}
     <link rel="manifest" href="{{ manifest_url }}">
     {% endif -%}
+    {% endblock %}
 {% endblock %}
 
 {% block postamble %}

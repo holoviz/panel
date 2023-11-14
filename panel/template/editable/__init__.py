@@ -43,7 +43,7 @@ class TemplateEditor(ReactiveHTML):
             const bottom = parseInt(style.getPropertyValue('padding-bottom').slice(0, -2))
             layout.push({
               id: el.getAttribute('data-id'),
-              width: Math.round((item.getWidth() / screen_width) * 100),
+              width: (item.getWidth() / screen_width) * 100,
               height: item.getHeight()-top-bottom,
               visible: item.isVisible(),
             })
