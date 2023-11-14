@@ -145,7 +145,7 @@ def wait_for_app(http_serve, app, page, runtime, wait=True, **kwargs):
     msgs = []
     page.on("console", lambda msg: msgs.append(msg))
 
-    page.goto(f"http://localhost:{HTTP_PORT}/{app_path.name[:-3]}.html")
+    page.goto(f"http://127.0.0.1:{HTTP_PORT}/{app_path.name[:-3]}.html")
 
     cls = f'pn-loading pn-{config.loading_spinner}'
     expect(page.locator('body')).to_have_class(cls)
