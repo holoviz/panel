@@ -13,7 +13,7 @@ from inspect import (
 )
 from io import BytesIO
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Literal,
+    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List,
 )
 
 import param
@@ -593,10 +593,8 @@ class ChatFeed(ListPanel):
 
     def serialize_for_transformers(
         self,
-        user_names: List[str] = "user",
-        assistant_names: List[str] | None = None,
-        system_names: List[str] = "system",
-        system_role: Literal["system", "assistant", "exclude"] = "system",
+        role_names: Dict[str, str | List[str]] | None = None,
+        default_role: str | None = "assistant",
         format_func: Callable = None
     ) -> List[Dict[str, Any]]:
         """
@@ -604,19 +602,15 @@ class ChatFeed(ListPanel):
 
         Arguments
         ---------
-        user_names : list(str)
-            The names to use for the user role.
-        assistant_names : list(str) | None
-            The names to use for the assistant role.
-            If None, defaults to the callback_user.
-        system_names : list(str)
-            The names to use for the system role.
-        system_role : str
-            Because not all models support a system role, this argument
-            allows you to specify how to handle the system role.
-            If "system", the system messages will be used for the "system" role.
-            If "assistant", the system messages will be used for the "assistant" role.
-            If "exclude", the system messages will be excluded from the export.
+        role_names : dict(str, str | list(str)) | None
+            A dictionary mapping the role to the ChatMessage's user name.
+            If not set, defaults to `{"user": ["user"], "assistant": ["assistant"]}`.
+            The keys and values are case insensitive as the strings will all be lowercased.
+            The values can be a string or a list of strings, e.g.
+            `{"user": "user", "assistant": ["executor", "langchain"]}`.
+        default_role : str
+            The default role to use if the user name is not found in role_names.
+            If this is set to None, raises a ValueError if the user name is not found.
         format_func : callable
             A custom function to format the ChatMessage's object. The function must
             accept one positional argument and return a string. If not provided,
@@ -624,52 +618,45 @@ class ChatFeed(ListPanel):
 
         Returns
         -------
-        A list of dictionaries with the following keys:
-        - role: "user", "assistant", or "system"
-        - content: the message contents, serialized as a string.
+        A list of dictionaries with a role and content keys.
         """
-        assistant_names = [self.callback_user] if assistant_names is None else assistant_names
+        if role_names is None:
+            role_names = {
+                "user": ["user"],
+                "assistant": ["assistant"],
+            }
 
-        lowercase_user_names = [name.lower() for name in user_names]
-        lowercase_assistant_names = [name.lower() for name in assistant_names]
-        lowercase_system_names = [name.lower() for name in system_names]
-
-        if system_role == "assistant":
-            lowercase_assistant_names.extend(lowercase_system_names)
-            lowercase_system_names = []
-        elif system_role == "system":
-            lowercase_system_names.extend(lowercase_assistant_names)
-        elif system_role != "exclude":
-            raise ValueError(
-                f"system_role must be one of 'system', 'assistant', or 'exclude'; "
-                f"got {system_role!r}"
-            )
+        names_role = {}
+        for role, names in role_names.items():
+            # reverse the role_names dict and pd.explode list of names
+            # as keys for efficient look up
+            if isinstance(names, str):
+                names = [names]
+            for name in names:
+                names_role[name.lower()] = role
 
         messages = []
         for message in self._chat_log.objects:
+
             lowercase_name = message.user.lower()
-            if lowercase_name in lowercase_user_names:
-                role = "user"
-            elif lowercase_name in lowercase_assistant_names:
-                role = "assistant"
-            elif lowercase_name in lowercase_system_names:
-                if system_role == "exclude":
-                    continue
-                role = "system"
-            else:
+            if lowercase_name not in names_role and not default_role:
                 raise ValueError(
-                    f"Name {message.user!r} was not specified in user_names, "
-                    f"assistant_names, or system_names."
+                    f"User {message.user!r} not found in role_names; "
+                    f"got {role_names!r}."
                 )
+
+            role = names_role.get(lowercase_name, default_role)
 
             if format_func:
                 content = format_func(message.object)
+                if not isinstance(content, str):
+                    raise ValueError(
+                        f"The provided format_func must return a string; "
+                        f"it returned a {type(content)} type"
+                    )
             else:
                 content = str(message)
-            if not isinstance(content, str):
-                raise ValueError(
-                    f"format_func must return a string; got {type(content)}"
-                )
+
             messages.append({"role": role, "content": content})
         return messages
 
