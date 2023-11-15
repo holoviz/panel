@@ -6,7 +6,6 @@ from __future__ import annotations
 import ast
 import base64
 import datetime as dt
-import inspect
 import json
 import logging
 import numbers
@@ -18,12 +17,11 @@ import urllib.parse as urlparse
 
 from collections import OrderedDict, defaultdict
 from collections.abc import MutableMapping, MutableSequence
-from contextlib import contextmanager
 from datetime import datetime
 from functools import partial
 from html import escape  # noqa
 from importlib import import_module
-from typing import Any, AnyStr, Iterator
+from typing import Any, AnyStr
 
 import bleach
 import bokeh
@@ -37,6 +35,10 @@ from packaging.version import Version
 from .checks import (  # noqa
     datetime_types, is_dataframe, is_holoviews, is_number, is_parameterized,
     is_series, isdatetime, isfile, isIn, isurl,
+)
+from .parameters import (  # noqa
+    edit_readonly, extract_dependencies, get_method_owner, param_watchers,
+    recursive_parameterized,
 )
 
 log = logging.getLogger('panel.util')
@@ -85,17 +87,6 @@ def param_name(name: str) -> str:
     return name[:name.index(match[0])] if match else name
 
 
-def recursive_parameterized(parameterized: param.Parameterized, objects=None) -> list[param.Parameterized]:
-    """
-    Recursively searches a Parameterized object for other Parmeterized
-    objects.
-    """
-    objects = [] if objects is None else objects
-    objects.append(parameterized)
-    for p in parameterized.param.values().values():
-        if isinstance(p, param.Parameterized) and not any(p is o for o in objects):
-            recursive_parameterized(p, objects)
-    return objects
 
 
 def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
@@ -172,42 +163,6 @@ def full_groupby(l, key=lambda x: x):
     for item in l:
         d[key(item)].append(item)
     return d.items()
-
-
-def get_method_owner(meth):
-    """
-    Returns the instance owning the supplied instancemethod or
-    the class owning the supplied classmethod.
-    """
-    if inspect.ismethod(meth):
-        return meth.__self__
-
-
-def extract_dependencies(function):
-    """
-    Extract references from a method or function that declares the references.
-    """
-    subparameters = list(function._dinfo['dependencies'])+list(function._dinfo['kw'].values())
-    params = []
-    for p in subparameters:
-        if isinstance(p, str):
-            owner = get_method_owner(function)
-            *subps, p = p.split('.')
-            for subp in subps:
-                owner = getattr(owner, subp, None)
-                if owner is None:
-                    raise ValueError('Cannot depend on undefined sub-parameter {p!r}.')
-            if p in owner.param:
-                pobj = owner.param[p]
-                if pobj not in params:
-                    params.append(pobj)
-            else:
-                for sp in extract_dependencies(getattr(owner, p)):
-                    if sp not in params:
-                        params.append(sp)
-        elif p not in params:
-            params.append(p)
-    return params
 
 
 def value_as_datetime(value):
@@ -311,31 +266,6 @@ def url_path(url: str) -> str:
     """
     subpaths = url.split('//')[1:]
     return '/'.join('/'.join(subpaths).split('/')[1:])
-
-
-# This functionality should be contributed to param
-# See https://github.com/holoviz/param/issues/379
-@contextmanager
-def edit_readonly(parameterized: param.Parameterized) -> Iterator:
-    """
-    Temporarily set parameters on Parameterized object to readonly=False
-    to allow editing them.
-    """
-    params = parameterized.param.objects("existing").values()
-    readonlys = [p.readonly for p in params]
-    constants = [p.constant for p in params]
-    for p in params:
-        p.readonly = False
-        p.constant = False
-    try:
-        yield
-    except Exception:
-        raise
-    finally:
-        for (p, readonly) in zip(params, readonlys):
-            p.readonly = readonly
-        for (p, constant) in zip(params, constants):
-            p.constant = constant
 
 
 def lazy_load(module, model, notebook=False, root=None, ext=None):
@@ -470,20 +400,6 @@ def relative_to(path, other_path):
         return True
     except Exception:
         return False
-
-_unset = object()
-
-def param_watchers(parameterized, value=_unset):
-    if Version(param.__version__) <= Version('2.0.0a2'):
-        if value is not _unset:
-            parameterized._param_watchers = value
-        else:
-            return parameterized._param_watchers
-    else:
-        if value is not _unset:
-            parameterized.param.watchers = value
-        else:
-            return parameterized.param.watchers
 
 
 def flatten(line):

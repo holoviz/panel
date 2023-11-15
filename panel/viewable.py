@@ -45,6 +45,7 @@ from .io.notebook import (
 from .io.save import save
 from .io.state import curdoc_locked, set_curdoc, state
 from .util import escape, param_reprs
+from .util.parameters import get_params_to_inherit
 from .util.warnings import deprecated
 
 if TYPE_CHECKING:
@@ -672,7 +673,6 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         state._views[ref] = (root_view, root, doc, comm)
         return root
 
-
 class Viewable(Renderable, Layoutable, ServableMixin):
     """
     Viewable is the baseclass all visual components in the panel
@@ -851,11 +851,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         -------
         Cloned Viewable object
         """
-        inherited = {
-            p: v for p, v in self.param.values().items()
-            if not self.param[p].readonly and v is not self.param[p].default
-            and not (v is None and not self.param[p].allow_None)
-        }
+        inherited = get_params_to_inherit(self)
         return type(self)(**dict(inherited, **params))
 
     def pprint(self) -> None:
