@@ -13,7 +13,7 @@ from inspect import (
 )
 from io import BytesIO
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List,
+    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Literal,
 )
 
 import param
@@ -595,7 +595,7 @@ class ChatFeed(ListPanel):
         self,
         role_names: Dict[str, str | List[str]] | None = None,
         default_role: str | None = "assistant",
-        format_func: Callable = None
+        custom_serializer: Callable = None
     ) -> List[Dict[str, Any]]:
         """
         Exports the chat log for use with transformers.
@@ -611,7 +611,7 @@ class ChatFeed(ListPanel):
         default_role : str
             The default role to use if the user name is not found in role_names.
             If this is set to None, raises a ValueError if the user name is not found.
-        format_func : callable
+        custom_serializer : callable
             A custom function to format the ChatMessage's object. The function must
             accept one positional argument and return a string. If not provided,
             uses the serialize method on ChatMessage.
@@ -647,11 +647,11 @@ class ChatFeed(ListPanel):
 
             role = names_role.get(lowercase_name, default_role)
 
-            if format_func:
-                content = format_func(message.object)
+            if custom_serializer:
+                content = custom_serializer(message.object)
                 if not isinstance(content, str):
                     raise ValueError(
-                        f"The provided format_func must return a string; "
+                        f"The provided custom_serializer must return a string; "
                         f"it returned a {type(content)} type"
                     )
             else:
@@ -659,6 +659,39 @@ class ChatFeed(ListPanel):
 
             messages.append({"role": role, "content": content})
         return messages
+
+    def serialize(
+        self,
+        format: Literal["transformers"] = "transformers",
+        custom_serializer: Callable | None = None,
+        **serialize_kwargs
+    ):
+        """
+        Exports the chat log.
+
+        Arguments
+        ---------
+        format : str
+            The format to export the chat log as; currently only
+            supports "transformers".
+        custom_serializer : callable
+            A custom function to format the ChatMessage's object. The function must
+            accept one positional argument. If not provided,
+            uses the serialize method on ChatMessage.
+        **serialize_kwargs
+            Additional keyword arguments to use for the specified format;
+            i.e. if the format is "transformers", the kwargs to use for
+            `serialize_for_transformers`: `role_names` and `default_role`.
+
+        Returns
+        -------
+        The chat log serialized in the specified format.
+        """
+        if format == "transformers":
+            return self.serialize_for_transformers(
+                custom_serializer=custom_serializer, **serialize_kwargs
+            )
+        raise NotImplementedError(f"Format {format!r} is not supported.")
 
     def select(self, selector=None):
         """

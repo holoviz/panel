@@ -712,6 +712,10 @@ class TestChatFeedSerializeForTransformers:
             {"role": "assistant", "content": "I'm a bot"},
         ]
 
+    def test_empty(self):
+        chat_feed = ChatFeed()
+        assert chat_feed.serialize_for_transformers() == []
+
     def test_case_insensitivity(self):
         chat_feed = ChatFeed()
         chat_feed.send("I'm a user", user="USER")
@@ -754,8 +758,8 @@ class TestChatFeedSerializeForTransformers:
             {"role": "assistant", "content": "I'm the assistant"},
         ]
 
-    def test_format_func(self):
-        def format_func(obj):
+    def test_custom_serializer(self):
+        def custom_serializer(obj):
             if isinstance(obj, str):
                 return "new string"
             else:
@@ -764,13 +768,13 @@ class TestChatFeedSerializeForTransformers:
         chat_feed = ChatFeed()
         chat_feed.send("I'm the user", user="user")
         chat_feed.send(3, user="assistant")
-        assert chat_feed.serialize_for_transformers(format_func=format_func) == [
+        assert chat_feed.serialize_for_transformers(custom_serializer=custom_serializer) == [
             {"role": "user", "content": "new string"},
             {"role": "assistant", "content": "0"},
         ]
 
-    def test_format_func_invalid_output(self):
-        def format_func(obj):
+    def test_custom_serializer_invalid_output(self):
+        def custom_serializer(obj):
             if isinstance(obj, str):
                 return "new string"
             else:
@@ -780,4 +784,23 @@ class TestChatFeedSerializeForTransformers:
         chat_feed.send("I'm the user", user="user")
         chat_feed.send(3, user="assistant")
         with pytest.raises(ValueError, match="must return a string"):
-            chat_feed.serialize_for_transformers(format_func=format_func)
+            chat_feed.serialize_for_transformers(custom_serializer=custom_serializer)
+
+class TestChatFeedSerialize:
+
+    def test_transformers_format(self):
+        chat_feed = ChatFeed()
+        chat_feed.send("I'm a user", user="user")
+        chat_feed.send("I'm the assistant", user="assistant")
+        chat_feed.send("I'm a bot", user="bot")
+        assert chat_feed.serialize(format="transformers") == [
+            {"role": "user", "content": "I'm a user"},
+            {"role": "assistant", "content": "I'm the assistant"},
+            {"role": "assistant", "content": "I'm a bot"},
+        ]
+
+    def test_invalid(self):
+        with pytest.raises(NotImplementedError, match="is not supported"):
+            chat_feed = ChatFeed()
+            chat_feed.send("I'm a user", user="user")
+            chat_feed.serialize(format="atransform")

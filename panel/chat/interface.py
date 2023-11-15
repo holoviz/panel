@@ -423,7 +423,7 @@ class ChatInterface(ChatFeed):
         self,
         role_names: Dict[str, str | List[str]] | None = None,
         default_role: str | None = "assistant",
-        format_func: Callable = None
+        custom_serializer: Callable = None
     ) -> List[Dict[str, Any]]:
         """
         Exports the chat log for use with transformers.
@@ -439,7 +439,7 @@ class ChatInterface(ChatFeed):
         default_role : str
             The default role to use if the user name is not found in role_names.
             If this is set to None, raises a ValueError if the user name is not found.
-        format_func : callable
+        custom_serializer : callable
             A custom function to format the ChatMessage's object. The function must
             accept one positional argument and return a string. If not provided,
             uses the serialize method on ChatMessage.
@@ -453,4 +453,4 @@ class ChatInterface(ChatFeed):
                 "user": [self.user],
                 "assistant": [self.callback_user],
             }
-        return super().serialize_for_transformers(role_names, default_role, format_func)
+        return super().serialize_for_transformers(role_names, default_role, custom_serializer)
