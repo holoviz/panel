@@ -109,15 +109,18 @@ class ChatInterface(ChatFeed):
         `[TextInput]`.""")
 
     button_properties = param.Dict(default={}, doc="""
-        Allows overriding or adding buttons by providing a mapping from the button name to
-        a dictionary containing the `icon`, `callback` and `post_callback`. Specifying button
-        names that match one of the default buttons (`send`, `rerun`, `undo`, `clear`) allows
-        overriding the default icon but does not overwrite the default callback, instead
-        prepending the callback. Specifying button names as keys that do not match one of the
-        existing names will create new buttons and must provide a callback or post_callback.
-        The signature of provided callbacks must accept two positional arguments: `instance`
-        and `event`, where `instance` is the ChatInterface instance and event is the button click
-        event.
+        Allows addition of functionality or customization of buttons
+        by supplying a mapping from the button name to a dictionary
+        containing the `icon`, `callback`, and/or `post_callback` keys.
+        If the button names correspond to default buttons
+        (send, rerun, undo, clear), the default icon can be
+        updated and if a `callback` key value pair is provided,
+        the specified callback functionality runs before the existing one.
+        For button names that don't match existing ones,
+        new buttons are created and must include a `callback` or `post_callback` key.
+        The provided callbacks should have a signature that accepts
+        two positional arguments: instance (the ChatInterface instance)
+        and event (the button click event).
         """)
 
     _widgets = param.Dict(default={}, allow_refs=False, doc="""
