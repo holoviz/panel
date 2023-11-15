@@ -40,6 +40,27 @@ def test_editable_template_order(page):
     assert md2_bbox['y'] < md1_bbox['y']
 
 
+def test_editable_template_reset_order(page):
+    md1 = Markdown('1')
+    md2 = Markdown('2')
+
+    tmpl = EditableTemplate(layout={id(md2): {'width': 50, 'height': 50}})
+
+    tmpl.main[:] = [md1, md2]
+
+    serve_component(page, tmpl)
+
+    items = page.locator(".muuri-grid-item")
+    md1_bbox = items.nth(0).bounding_box()
+    md2_bbox = items.nth(1).bounding_box()
+    assert md2_bbox['y'] < md1_bbox['y']
+
+    page.locator('#grid-reset').click()
+
+    wait_until(lambda: items.nth(1).bounding_box()['y'] > items.nth(0).bounding_box()['y'], page)
+    wait_until(lambda: list(tmpl.layout) == [id(md1), id(md2)], page)
+
+
 def test_editable_template_size(page):
     md1 = Markdown('1')
     md2 = Markdown('2')
@@ -55,6 +76,27 @@ def test_editable_template_size(page):
     assert md2_bbox['height'] == 60
 
 
+def test_editable_template_reset_size(page):
+    md1 = Markdown('1')
+    md2 = Markdown('2')
+
+    tmpl = EditableTemplate(layout={id(md2): {'width': 50, 'height': 50}})
+
+    tmpl.main[:] = [md1, md2]
+
+    serve_component(page, tmpl)
+
+    items = page.locator(".muuri-grid-item")
+    md1_bbox = items.nth(0).bounding_box()
+    md2_bbox = items.nth(1).bounding_box()
+    assert md2_bbox['y'] < md1_bbox['y']
+
+    page.locator('#grid-reset').click()
+
+    wait_until(lambda: items.nth(1).bounding_box()['width'] > (md2_bbox['width'] * 2), page)
+    wait_until(lambda: tmpl.layout[id(md2)]['width'] == 100, page)
+
+
 def test_editable_template_visible(page):
     md1 = Markdown('1')
     md2 = Markdown('2')
@@ -67,6 +109,25 @@ def test_editable_template_visible(page):
 
     md2_item = page.locator(".muuri-grid-item").nth(1)
     expect(md2_item).to_have_class('muuri-grid-item muuri-item-hidden muuri-item')
+
+
+def test_editable_template_reset_visible(page):
+    md1 = Markdown('1')
+    md2 = Markdown('2')
+
+    tmpl = EditableTemplate(layout={id(md2): {'width': 50, 'height': 50, 'visible': False}})
+
+    tmpl.main[:] = [md1, md2]
+
+    serve_component(page, tmpl)
+
+    md2_item = page.locator(".muuri-grid-item").nth(1)
+    expect(md2_item).to_have_class('muuri-grid-item muuri-item-hidden muuri-item')
+
+    page.locator('#grid-reset').click()
+
+    expect(md2_item).to_have_class('muuri-grid-item muuri-item muuri-item-shown')
+    wait_until(lambda: tmpl.layout[id(md2)]['visible'], page)
 
 
 def test_editable_template_delete_item(page):

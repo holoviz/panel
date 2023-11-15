@@ -33,10 +33,11 @@ class TemplateEditor(ReactiveHTML):
 
     _scripts = {
         'render': """
+        var grid = window.muuriGrid;
         function save_layout() {
           var layout = [];
-          var screen_width = window.muuriGrid.getElement().clientWidth-20;
-          for (var item of window.muuriGrid.getItems()) {
+          var screen_width = grid.getElement().clientWidth-20;
+          for (var item of grid.getItems()) {
             var el = item.getElement();
             const style = getComputedStyle(el)
             const top = parseInt(style.getPropertyValue('padding-top').slice(0, -2))
@@ -50,8 +51,7 @@ class TemplateEditor(ReactiveHTML):
           }
           data.layout = layout
         }
-        window.muuriGrid.on('move', save_layout)
-        window.muuriGrid.on('hideEnd', save_layout)
+        grid.on('layoutEnd', save_layout)
         window.resizeableGrid.on('resizeend', save_layout)
         """
     }
@@ -138,4 +138,6 @@ class EditableTemplate(VanillaTemplate):
 
     def _sync_positions(self, event):
         ids = {mid: id(obj) for obj in self.main for mid in obj._models}
-        self.layout = {ids[item['id']]: item for item in event.new}
+        self.layout.clear()
+        self.layout.update({ids[item['id']]: item for item in event.new})
+        self.param.trigger('layout')
