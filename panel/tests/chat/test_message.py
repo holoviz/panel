@@ -1,20 +1,30 @@
 import datetime
+import pathlib
 
+from io import BytesIO
+
+import pandas as pd
 import pytest
 
 from panel import Param, bind
 from panel.chat.icon import ChatReactionIcons
 from panel.chat.message import ChatMessage, _FileInputMessage
 from panel.layout import Column, Row
-from panel.pane.image import SVG, Image
-from panel.pane.markup import HTML, Markdown
+from panel.pane.image import PNG, SVG, Image
+from panel.pane.markup import HTML, DataFrame, Markdown
+from panel.pane.media import Audio
 from panel.tests.util import mpl_available, mpl_figure
 from panel.widgets.button import Button
-from panel.widgets.input import FileInput, TextAreaInput, TextInput
+from panel.widgets.input import (
+    FileInput, IntInput, TextAreaInput, TextInput,
+)
 
+ASSETS = pathlib.Path(__file__).parent.parent / 'pane' / 'assets'
+
+PNG_FILE = 'https://assets.holoviz.org/panel/samples/png_sample.png'
+SVG_FILE = 'https://assets.holoviz.org/panel/samples/svg_sample.svg'
 
 class TestChatMessage:
-
     def test_layout(self):
         message = ChatMessage(object="ABC")
         columns = message._composite.objects
@@ -87,7 +97,9 @@ class TestChatMessage:
         avatar_pane = columns[0][0].object()
         assert not avatar_pane.visible
 
-        message.avatar = SVG("https://tabler-icons.io/static/tabler-icons/icons/user.svg")
+        message.avatar = SVG(
+            "https://tabler-icons.io/static/tabler-icons/icons/user.svg"
+        )
         avatar_pane = columns[0][0].object()
         assert isinstance(avatar_pane, SVG)
 
@@ -193,7 +205,9 @@ class TestChatMessage:
 
     def test_default_avatars(self):
         assert isinstance(ChatMessage.default_avatars, dict)
-        assert ChatMessage(user="Assistant").avatar == ChatMessage(user="assistant").avatar
+        assert (
+            ChatMessage(user="Assistant").avatar == ChatMessage(user="assistant").avatar
+        )
         assert ChatMessage(object="Hello", user="NoDefaultUserAvatar").avatar == ""
 
     def test_default_avatars_depends_on_user(self):
@@ -234,3 +248,54 @@ class TestChatMessage:
         message = ChatMessage(object=component())
         assert not message.chat_copy_icon.visible
         assert not message.chat_copy_icon.value
+
+    def test_serialize_text_prefix_with_viewable_type(self):
+        message = ChatMessage(Markdown("string"))
+        assert message.serialize() == "Markdown='string'"
+
+    def test_serialize_text_prefix_with_viewable_name(self):
+        message = ChatMessage(Markdown("string", name="Important Name"))
+        assert message.serialize() == "Important Name='string'"
+
+    def test_serialize_text_prefix_with_viewable_and_container_type(self):
+        message = ChatMessage(Column(Markdown("string")))
+        assert message.serialize() == "Column(Markdown='string')"
+
+    def test_serialize_text_prefix_with_viewable_and_container_name(self):
+        message = ChatMessage(
+            Column(Markdown("string", name="Important Name"), name="Test Col")
+        )
+        assert message.serialize() == "Test Col(Important Name='string')"
+
+    def test_serialize_multiple_objects_in_container(self):
+        message = ChatMessage(
+            Column(Markdown("markdown"), HTML("html"))
+        )
+        assert message.serialize() == "Column(\n    Markdown='markdown',\n    HTML='html'\n)"
+
+    def test_serialize_nested_objects_in_container(self):
+        message = ChatMessage(
+            Row(
+                Column(IntInput(name='int val')),
+                Column(Markdown("markdown"), HTML("html"))
+            )
+        )
+        assert message.serialize() == "Row(\n    Column(int val=0),\n    Column(\n        Markdown='markdown',\n        HTML='html'\n    )\n)"  # noqa
+
+    def test_serialize_png_url(self):
+        message = ChatMessage(PNG(PNG_FILE))
+        assert message.serialize() == "PNG='https://assets.holoviz.org/panel/samples/png_sample.png'"
+
+    def test_serialize_svg_embed(self):
+        svg = SVG(SVG_FILE, embed=True, alt_text="abc")
+        with BytesIO(svg._data(SVG_FILE)) as buf:
+            message = ChatMessage(SVG(buf))
+        assert message.serialize() == "SVG"
+
+    def test_serialize_audio(self):
+        message = ChatMessage(Audio(str(ASSETS / 'mp3.mp3')))
+        assert message.serialize() == f"Audio='{ASSETS / 'mp3.mp3'}'"
+
+    def test_serialize_dataframe(self):
+        message = ChatMessage(DataFrame(pd.DataFrame({'a': [1, 2, 3]})))
+        assert message.serialize() == "DataFrame=   a\n0  1\n1  2\n2  3"

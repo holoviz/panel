@@ -274,6 +274,76 @@ class ChatMessage(PaneBase):
         self._composite.param.update(**viewable_params)
         self._composite[:] = [left_col, right_col]
 
+    def _get_obj_label(self, obj):
+        """
+        Get the label for the object; defaults to specified object name;
+        if unspecified, defaults to the type name.
+        """
+        label = obj.name
+        type_name = type(obj).__name__
+        # If the name is just type + ID, simply use type
+        # e.g. Column10241 -> Column
+        if label.startswith(type_name) or not label:
+            label = type_name
+        return label
+
+    def _serialize_recursively(
+        self,
+        obj: Any,
+        prefix_with_viewable_label: bool = True,
+        prefix_with_container_label: bool = True
+    ) -> str:
+        """
+        Recursively serialize the object to a string.
+        """
+        if isinstance(obj, Iterable) and not isinstance(obj, str):
+            content = tuple(
+                self._serialize_recursively(
+                    o,
+                    prefix_with_viewable_label=prefix_with_viewable_label,
+                    prefix_with_container_label=prefix_with_container_label
+                ) for o in obj
+            )
+            if prefix_with_container_label:
+                if len(content) == 1:
+                    return f"{self._get_obj_label(obj)}({content[0]})"
+                else:
+                    indented_content = indent(",\n".join(content), prefix=" " * 4)
+                    # outputs like:
+                    # Row(
+                    #   1,
+                    #   "str",
+                    # )
+                    return f"{self._get_obj_label(obj)}(\n{indented_content}\n)"
+            else:
+                # outputs like:
+                # (1, "str")
+                return f"({', '.join(content)})"
+
+        string = obj
+        if hasattr(obj, "value"):
+            string = obj.value
+        elif hasattr(obj, "object"):
+            string = obj.object
+
+        if hasattr(string, "decode") or isinstance(string, BytesIO):
+            self.param.warning(
+                f"Serializing byte-like objects are not supported yet; "
+                f"using the label of the object as a placeholder for {obj}"
+            )
+            return self._get_obj_label(obj)
+
+        if prefix_with_viewable_label and isinstance(obj, Viewable):
+            label = self._get_obj_label(obj)
+            string = f"{label}={string!r}"
+        return string
+
+    def __str__(self) -> str:
+        """
+        Serialize the message object to a string.
+        """
+        return self.serialize()
+
     @property
     def _synced_params(self) -> List[str]:
         return []
@@ -560,7 +630,11 @@ class ChatMessage(PaneBase):
             updates["object"] = value
         self.param.update(**updates)
 
-    def serialize(self, obj: Any, include_name: bool = True, include_iterable_type: bool = True) -> str:
+    def serialize(
+        self,
+        prefix_with_viewable_label: bool = True,
+        prefix_with_container_label: bool = True
+    ) -> str:
         """
         Format the object to a string.
 
@@ -568,42 +642,20 @@ class ChatMessage(PaneBase):
         ---------
         obj : Any
             The object to format.
-        include_name : bool
-            Whether to include the name of the object.
-        include_iterable_type : bool
-            Whether to include the type of the object if it is iterable.
-        """
-        if isinstance(obj, Iterable) and not isinstance(obj, str):
-            content = (self.serialize(o) for o in obj)
-            if include_iterable_type:
-                indented_content = indent(",\n".join(content), prefix=" " * 4)
-                # outputs like:
-                # Row(
-                #   1,
-                #   "str",
-                # )
-                return f"{type(obj).__name__}(\n{indented_content}\n)"
-            else:
-                # outputs like:
-                # (1, "str")
-                return f"({', '.join(content)})"
+        prefix_with_viewable_label : bool
+            Whether to include the name of the Viewable, or type
+            of the viewable if no name is specified.
+        prefix_with_container_label : bool
+            Whether to include the name of the container, or type
+            of the container if no name is specified.
 
-        if hasattr(obj, "value"):
-            string = obj.value
-        elif hasattr(obj, "object"):
-            string = obj.object
-
-        if include_name:
-            if include_name:
-                label = obj.name
-                type_name = type(obj).__name__
-                if label.startswith(type_name) or not label:
-                    label = type_name
-            string = f"{label}: {string!r}"
-        return string
-
-    def __str__(self) -> str:
+        Returns
+        -------
+        str
+            The serialized string.
         """
-        Serialize the message object to a string.
-        """
-        return self.serialize(self.object)
+        return self._serialize_recursively(
+            self.object,
+            prefix_with_viewable_label=prefix_with_viewable_label,
+            prefix_with_container_label=prefix_with_container_label,
+        )

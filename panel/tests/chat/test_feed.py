@@ -483,9 +483,6 @@ class TestChatFeedCallback:
         assert chat_feed.objects[1].user == callback_avatar or "Assistant"
         assert chat_feed.objects[1].avatar == callback_avatar or "🤖"
 
-
-
-
     @pytest.mark.asyncio
     async def test_async_yield(self, chat_feed):
         async def echo(contents, user, instance):
@@ -700,3 +697,87 @@ class TestChatFeedCallback:
         with pytest.raises(ZeroDivisionError, match="division by zero"):
             chat_feed.send("Message", respond=True)
         wait_until(lambda: len(chat_feed.objects) == 1)
+
+
+class TestChatFeedSerializeForTransformers:
+
+    def test_defaults(self):
+        chat_feed = ChatFeed()
+        chat_feed.send("I'm a user", user="user")
+        chat_feed.send("I'm the assistant", user="assistant")
+        chat_feed.send("I'm a bot", user="bot")
+        assert chat_feed.serialize_for_transformers() == [
+            {"role": "user", "content": "I'm a user"},
+            {"role": "assistant", "content": "I'm the assistant"},
+            {"role": "assistant", "content": "I'm a bot"},
+        ]
+
+    def test_case_insensitivity(self):
+        chat_feed = ChatFeed()
+        chat_feed.send("I'm a user", user="USER")
+        chat_feed.send("I'm the assistant", user="ASSISTant")
+        chat_feed.send("I'm a bot", user="boT")
+        assert chat_feed.serialize_for_transformers() == [
+            {"role": "user", "content": "I'm a user"},
+            {"role": "assistant", "content": "I'm the assistant"},
+            {"role": "assistant", "content": "I'm a bot"},
+        ]
+
+    def test_default_role(self):
+        chat_feed = ChatFeed()
+        chat_feed.send("I'm a user", user="user")
+        chat_feed.send("I'm the assistant", user="assistant")
+        chat_feed.send("I'm a bot", user="bot")
+        assert chat_feed.serialize_for_transformers(default_role="system") == [
+            {"role": "user", "content": "I'm a user"},
+            {"role": "assistant", "content": "I'm the assistant"},
+            {"role": "system", "content": "I'm a bot"},
+        ]
+
+    def test_empty_default_role(self):
+        chat_feed = ChatFeed()
+        chat_feed.send("I'm a user", user="user")
+        chat_feed.send("I'm the assistant", user="assistant")
+        chat_feed.send("I'm a bot", user="bot")
+        with pytest.raises(ValueError, match="not found in role_names"):
+            chat_feed.serialize_for_transformers(default_role="")
+
+    def test_role_names(self):
+        chat_feed = ChatFeed()
+        chat_feed.send("I'm the user", user="Andrew")
+        chat_feed.send("I'm another user", user="August")
+        chat_feed.send("I'm the assistant", user="Bot")
+        role_names = {"user": ["Andrew", "August"], "assistant": "Bot"}
+        assert chat_feed.serialize_for_transformers(role_names=role_names) == [
+            {"role": "user", "content": "I'm the user"},
+            {"role": "user", "content": "I'm another user"},
+            {"role": "assistant", "content": "I'm the assistant"},
+        ]
+
+    def test_format_func(self):
+        def format_func(obj):
+            if isinstance(obj, str):
+                return "new string"
+            else:
+                return "0"
+
+        chat_feed = ChatFeed()
+        chat_feed.send("I'm the user", user="user")
+        chat_feed.send(3, user="assistant")
+        assert chat_feed.serialize_for_transformers(format_func=format_func) == [
+            {"role": "user", "content": "new string"},
+            {"role": "assistant", "content": "0"},
+        ]
+
+    def test_format_func_invalid_output(self):
+        def format_func(obj):
+            if isinstance(obj, str):
+                return "new string"
+            else:
+                return 0
+
+        chat_feed = ChatFeed()
+        chat_feed.send("I'm the user", user="user")
+        chat_feed.send(3, user="assistant")
+        with pytest.raises(ValueError, match="must return a string"):
+            chat_feed.serialize_for_transformers(format_func=format_func)

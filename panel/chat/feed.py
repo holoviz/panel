@@ -604,10 +604,10 @@ class ChatFeed(ListPanel):
         ---------
         role_names : dict(str, str | list(str)) | None
             A dictionary mapping the role to the ChatMessage's user name.
-            If not set, defaults to `{"user": ["user"], "assistant": ["assistant"]}`.
-            The keys and values are case insensitive as the strings will all be lowercased.
-            The values can be a string or a list of strings, e.g.
-            `{"user": "user", "assistant": ["executor", "langchain"]}`.
+            Defaults to `{"user": ["user"], "assistant": [self.callback_user]}`
+            if not set. The keys and values are case insensitive as the strings
+            will all be lowercased. The values can be a string or a list of strings,
+            e.g. `{"user": "user", "assistant": ["executor", "langchain"]}`.
         default_role : str
             The default role to use if the user name is not found in role_names.
             If this is set to None, raises a ValueError if the user name is not found.
@@ -623,7 +623,7 @@ class ChatFeed(ListPanel):
         if role_names is None:
             role_names = {
                 "user": ["user"],
-                "assistant": ["assistant"],
+                "assistant": [self.callback_user],
             }
 
         names_role = {}
