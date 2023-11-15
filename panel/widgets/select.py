@@ -333,19 +333,19 @@ class NestedSelect(CompositeWidget):
                 "gfs": {"tmp": [1000, 500], "pcp": [1000]},
                 "name": {"tmp": [1000, 925, 850, 700, 500], "pcp": [1000]},
             },
-            labels=["model", "var", "level"],
+            levels=["model", "var", "level"],
         )
     """
 
-    value = param.List(default=None, doc="The value of all the Select widgets as a tuple.")
+    value = param.Dict(default=None, doc="The value of all the Select widgets.")
 
     options = param.Dict(doc="The options to select from. The options may be nested dictionaries or lists.")
 
-    labels = param.List(doc="The widgets' labels.")
+    levels = param.List(doc="The widgets' levels.")
 
     _selects = param.List(doc="The nested select widgets.")
 
-    _max_nesting_depth = param.Integer(doc="The number of levels of the nested select widgets.")
+    _max_depth = param.Integer(doc="The number of levels of the nested select widgets.")
 
     _composite_type = Column
 
@@ -358,30 +358,42 @@ class NestedSelect(CompositeWidget):
         """
         Gather values from all the select widgets to update the class' value.
         """
-        return [select.value for select in self._selects if select.visible]
+        values = {}
+        for i, select in enumerate(self._selects):
+            level = self.levels[i]
+            if isinstance(level, dict):
+                name = level["name"]
+            else:
+                name = level
+            values[name] = select.value
+        return values
 
-    def _find_max_nesting_depth(self, d, depth=1):
+    def _find_max_depth(self, d, depth=1):
         if not isinstance(d, dict):
             return depth
 
         max_depth = depth
         for value in d.values():
             if isinstance(value, dict):
-                max_depth = max(max_depth, self._find_max_nesting_depth(value, depth + 1))
+                max_depth = max(max_depth, self._find_max_depth(value, depth + 1))
         return max_depth
 
-    @param.depends("options", "labels", watch=True)
+    @param.depends("options", "levels", watch=True)
     def _update_selects(self):
         """
         When options is changed, reflect changes on the select widgets.
         """
-        self._max_nesting_depth = self._find_max_nesting_depth(self.options)
+        self._max_depth = self._find_max_depth(self.options) + 1
+        if not self.levels:
+            self.levels = [i for i in range(self._max_depth)]
+        elif len(self.levels) != self._max_depth:
+            raise ValueError(f"levels must be of length {self._max_depth}")
 
         self._selects = []
         options = self.options.copy() or []
 
         visible = True
-        for i in range(self._max_nesting_depth + 1):
+        for i in range(self._max_depth):
             value = self._init_select_widget(i, options, visible)
             try:
                 options = options[value]
@@ -390,11 +402,6 @@ class NestedSelect(CompositeWidget):
 
         self._composite[:] = self._selects
 
-    def _get_i_label(self, i):
-        if not self.labels:
-            return ""
-        return self.labels[i]
-
     def _get_i_value(self, i, options):
         if not options:
             return
@@ -402,7 +409,16 @@ class NestedSelect(CompositeWidget):
         if not self.value or i > len(self.value) - 1:
             return options[0]
         else:
-            return self.value[i]
+            name = self.levels[i]["name"]
+            return self.value[name]
+
+    def _extract_level_metadata(self, i):
+        level = self.levels[i]
+        if isinstance(level, int):
+            return
+        elif isinstance(level, str):
+            level = {"name": level}
+        return level["name"],level.get("widget", Select)
 
     def _init_select_widget(self, i, options, visible):
         """
@@ -410,8 +426,11 @@ class NestedSelect(CompositeWidget):
         """
         options = list(options.keys()) if isinstance(options, dict) else options
         value = self._get_i_value(i, options)
-        label = self._get_i_label(i)
-        select = Select(options=options, value=value, name=label, visible=visible)
+        name, widget_type = self._extract_level_metadata(i)
+        widget_kwargs = dict(options=options, value=value, name=name, visible=visible)
+        if name is None:
+            widget_kwargs.pop("name")
+        select = widget_type(**widget_kwargs)
         select.param.watch(self._update_select_widget_options_interactively, "value")
         self._selects.append(select)
         return value
@@ -427,11 +446,7 @@ class NestedSelect(CompositeWidget):
         options = self.options.copy()
         with param.batch_watch(self):
             for i, select in enumerate(self._selects[:-1]):
-                try:
-                    options = options[select.value]
-                except (IndexError, TypeError):
-                    self._hide_extra_selects(i)
-                    break
+                options = options[select.value]
 
                 if i < start_i:
                     # If the select widget is before the one that triggered the event,
@@ -457,19 +472,15 @@ class NestedSelect(CompositeWidget):
         When value is passed, update to the latest options.
         """
         options = self.options.copy()
-        set_value = self.value
+        set_value = list(self.value.values())
         original_value = self._gather_values_from_widgets()
 
         with param.batch_watch(self):
             try:
                 with param.discard_events(self):
                     self._selects[0].value = set_value[0]
-                for i in range(self._max_nesting_depth):
-                    try:
-                        options = options[set_value[i]]
-                    except (IndexError, TypeError):
-                        self._hide_extra_selects(i)
-                        break
+                for i in range(self._max_depth - 1):
+                    options = options[set_value[i]]
 
                     next_select = self._selects[i + 1]
                     if isinstance(options, dict):
@@ -496,10 +507,6 @@ class NestedSelect(CompositeWidget):
             except Exception:
                 self.value = original_value
                 raise
-
-    def _hide_extra_selects(self, i):
-        for select in self._selects[i + 1:]:
-            select.visible = False
 
 
 class ColorMap(SingleSelectBase):
