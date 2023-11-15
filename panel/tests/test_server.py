@@ -295,6 +295,24 @@ def test_server_schedule_repeat():
 
     wait_until(lambda: state.cache['count'] > 0)
 
+def test_server_schedule_threaded(threads):
+    counts = []
+    def periodic_cb(count=[0]):
+        count[0] += 1
+        counts.append(count[0])
+        time.sleep(0.5)
+        count[0] += -1
+
+    def app():
+        state.schedule_task('periodic1', periodic_cb, period='0.5s', threaded=True)
+        state.schedule_task('periodic2', periodic_cb, period='0.5s', threaded=True)
+        return '# state.schedule test'
+
+    serve_and_request(app)
+
+    # Checks whether scheduled callback was executed concurrently
+    wait_until(lambda: len(counts) > 0 and max(counts) > 1)
+
 
 def test_server_schedule_at():
     def periodic_cb():
