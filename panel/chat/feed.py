@@ -591,7 +591,7 @@ class ChatFeed(ListPanel):
         self._chat_log.clear()
         return cleared_entries
 
-    def serialize_for_transformers(
+    def _serialize_for_transformers(
         self,
         role_names: Dict[str, str | List[str]] | None = None,
         default_role: str | None = "assistant",
@@ -599,26 +599,6 @@ class ChatFeed(ListPanel):
     ) -> List[Dict[str, Any]]:
         """
         Exports the chat log for use with transformers.
-
-        Arguments
-        ---------
-        role_names : dict(str, str | list(str)) | None
-            A dictionary mapping the role to the ChatMessage's user name.
-            Defaults to `{"user": ["user"], "assistant": [self.callback_user]}`
-            if not set. The keys and values are case insensitive as the strings
-            will all be lowercased. The values can be a string or a list of strings,
-            e.g. `{"user": "user", "assistant": ["executor", "langchain"]}`.
-        default_role : str
-            The default role to use if the user name is not found in role_names.
-            If this is set to None, raises a ValueError if the user name is not found.
-        custom_serializer : callable
-            A custom function to format the ChatMessage's object. The function must
-            accept one positional argument and return a string. If not provided,
-            uses the serialize method on ChatMessage.
-
-        Returns
-        -------
-        A list of dictionaries with a role and content keys.
         """
         if role_names is None:
             role_names = {
@@ -679,16 +659,26 @@ class ChatFeed(ListPanel):
             accept one positional argument. If not provided,
             uses the serialize method on ChatMessage.
         **serialize_kwargs
-            Additional keyword arguments to use for the specified format;
-            i.e. if the format is "transformers", the kwargs to use for
-            `serialize_for_transformers`: `role_names` and `default_role`.
+            Additional keyword arguments to use for the specified format.
+            Valid keyword arguments for formats are described below.
+
+            - transformers
+            role_names : dict(str, str | list(str)) | None
+                A dictionary mapping the role to the ChatMessage's user name.
+                Defaults to `{"user": ["user"], "assistant": [self.callback_user]}`
+                if not set. The keys and values are case insensitive as the strings
+                will all be lowercased. The values can be a string or a list of strings,
+                e.g. `{"user": "user", "assistant": ["executor", "langchain"]}`.
+            default_role : str
+                The default role to use if the user name is not found in role_names.
+                If this is set to None, raises a ValueError if the user name is not found.
 
         Returns
         -------
         The chat log serialized in the specified format.
         """
         if format == "transformers":
-            return self.serialize_for_transformers(
+            return self._serialize_for_transformers(
                 custom_serializer=custom_serializer, **serialize_kwargs
             )
         raise NotImplementedError(f"Format {format!r} is not supported.")

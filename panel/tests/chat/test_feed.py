@@ -706,7 +706,7 @@ class TestChatFeedSerializeForTransformers:
         chat_feed.send("I'm a user", user="user")
         chat_feed.send("I'm the assistant", user="assistant")
         chat_feed.send("I'm a bot", user="bot")
-        assert chat_feed.serialize_for_transformers() == [
+        assert chat_feed.serialize() == [
             {"role": "user", "content": "I'm a user"},
             {"role": "assistant", "content": "I'm the assistant"},
             {"role": "assistant", "content": "I'm a bot"},
@@ -714,14 +714,14 @@ class TestChatFeedSerializeForTransformers:
 
     def test_empty(self):
         chat_feed = ChatFeed()
-        assert chat_feed.serialize_for_transformers() == []
+        assert chat_feed.serialize() == []
 
     def test_case_insensitivity(self):
         chat_feed = ChatFeed()
         chat_feed.send("I'm a user", user="USER")
         chat_feed.send("I'm the assistant", user="ASSISTant")
         chat_feed.send("I'm a bot", user="boT")
-        assert chat_feed.serialize_for_transformers() == [
+        assert chat_feed.serialize() == [
             {"role": "user", "content": "I'm a user"},
             {"role": "assistant", "content": "I'm the assistant"},
             {"role": "assistant", "content": "I'm a bot"},
@@ -732,7 +732,7 @@ class TestChatFeedSerializeForTransformers:
         chat_feed.send("I'm a user", user="user")
         chat_feed.send("I'm the assistant", user="assistant")
         chat_feed.send("I'm a bot", user="bot")
-        assert chat_feed.serialize_for_transformers(default_role="system") == [
+        assert chat_feed.serialize(default_role="system") == [
             {"role": "user", "content": "I'm a user"},
             {"role": "assistant", "content": "I'm the assistant"},
             {"role": "system", "content": "I'm a bot"},
@@ -744,7 +744,7 @@ class TestChatFeedSerializeForTransformers:
         chat_feed.send("I'm the assistant", user="assistant")
         chat_feed.send("I'm a bot", user="bot")
         with pytest.raises(ValueError, match="not found in role_names"):
-            chat_feed.serialize_for_transformers(default_role="")
+            chat_feed.serialize(default_role="")
 
     def test_role_names(self):
         chat_feed = ChatFeed()
@@ -752,7 +752,7 @@ class TestChatFeedSerializeForTransformers:
         chat_feed.send("I'm another user", user="August")
         chat_feed.send("I'm the assistant", user="Bot")
         role_names = {"user": ["Andrew", "August"], "assistant": "Bot"}
-        assert chat_feed.serialize_for_transformers(role_names=role_names) == [
+        assert chat_feed.serialize(role_names=role_names) == [
             {"role": "user", "content": "I'm the user"},
             {"role": "user", "content": "I'm another user"},
             {"role": "assistant", "content": "I'm the assistant"},
@@ -768,7 +768,7 @@ class TestChatFeedSerializeForTransformers:
         chat_feed = ChatFeed()
         chat_feed.send("I'm the user", user="user")
         chat_feed.send(3, user="assistant")
-        assert chat_feed.serialize_for_transformers(custom_serializer=custom_serializer) == [
+        assert chat_feed.serialize(custom_serializer=custom_serializer) == [
             {"role": "user", "content": "new string"},
             {"role": "assistant", "content": "0"},
         ]
@@ -784,9 +784,9 @@ class TestChatFeedSerializeForTransformers:
         chat_feed.send("I'm the user", user="user")
         chat_feed.send(3, user="assistant")
         with pytest.raises(ValueError, match="must return a string"):
-            chat_feed.serialize_for_transformers(custom_serializer=custom_serializer)
+            chat_feed.serialize(custom_serializer=custom_serializer)
 
-class TestChatFeedSerialize:
+class TestChatFeedSerializeBase:
 
     def test_transformers_format(self):
         chat_feed = ChatFeed()

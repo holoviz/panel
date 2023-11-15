@@ -419,7 +419,7 @@ class ChatInterface(ChatFeed):
         if isinstance(self._input_layout, Tabs):
             self._input_layout.active = index
 
-    def serialize_for_transformers(
+    def _serialize_for_transformers(
         self,
         role_names: Dict[str, str | List[str]] | None = None,
         default_role: str | None = "assistant",
@@ -453,4 +453,4 @@ class ChatInterface(ChatFeed):
                 "user": [self.user],
                 "assistant": [self.callback_user],
             }
-        return super().serialize_for_transformers(role_names, default_role, custom_serializer)
+        return super()._serialize_for_transformers(role_names, default_role, custom_serializer)
