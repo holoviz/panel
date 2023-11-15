@@ -13,7 +13,7 @@ from inspect import (
 )
 from io import BytesIO
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, List,
+    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Literal,
 )
 
 import param
@@ -590,6 +590,88 @@ class ChatFeed(ListPanel):
         cleared_entries = self._chat_log.objects
         self._chat_log.clear()
         return cleared_entries
+
+    def serialize_for_transformers(
+        self,
+        user_names: List[str] = "user",
+        assistant_names: List[str] | None = None,
+        system_names: List[str] = "system",
+        system_role: Literal["system", "assistant", "exclude"] = "system",
+        format_func: Callable = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Exports the chat log for use with transformers.
+
+        Arguments
+        ---------
+        user_names : list(str)
+            The names to use for the user role.
+        assistant_names : list(str) | None
+            The names to use for the assistant role.
+            If None, defaults to the callback_user.
+        system_names : list(str)
+            The names to use for the system role.
+        system_role : str
+            Because not all models support a system role, this argument
+            allows you to specify how to handle the system role.
+            If "system", the system messages will be used for the "system" role.
+            If "assistant", the system messages will be used for the "assistant" role.
+            If "exclude", the system messages will be excluded from the export.
+        format_func : callable
+            A custom function to format the ChatMessage's object. The function must
+            accept one positional argument and return a string. If not provided,
+            uses the serialize method on ChatMessage.
+
+        Returns
+        -------
+        A list of dictionaries with the following keys:
+        - role: "user", "assistant", or "system"
+        - content: the message contents, serialized as a string.
+        """
+        assistant_names = [self.callback_user] if assistant_names is None else assistant_names
+
+        lowercase_user_names = [name.lower() for name in user_names]
+        lowercase_assistant_names = [name.lower() for name in assistant_names]
+        lowercase_system_names = [name.lower() for name in system_names]
+
+        if system_role == "assistant":
+            lowercase_assistant_names.extend(lowercase_system_names)
+            lowercase_system_names = []
+        elif system_role == "system":
+            lowercase_system_names.extend(lowercase_assistant_names)
+        elif system_role != "exclude":
+            raise ValueError(
+                f"system_role must be one of 'system', 'assistant', or 'exclude'; "
+                f"got {system_role!r}"
+            )
+
+        messages = []
+        for message in self._chat_log.objects:
+            lowercase_name = message.user.lower()
+            if lowercase_name in lowercase_user_names:
+                role = "user"
+            elif lowercase_name in lowercase_assistant_names:
+                role = "assistant"
+            elif lowercase_name in lowercase_system_names:
+                if system_role == "exclude":
+                    continue
+                role = "system"
+            else:
+                raise ValueError(
+                    f"Name {message.user!r} was not specified in user_names, "
+                    f"assistant_names, or system_names."
+                )
+
+            if format_func:
+                content = format_func(message.object)
+            else:
+                content = str(message)
+            if not isinstance(content, str):
+                raise ValueError(
+                    f"format_func must return a string; got {type(content)}"
+                )
+            messages.append({"role": role, "content": content})
+        return messages
 
     def select(self, selector=None):
         """

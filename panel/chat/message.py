@@ -12,8 +12,9 @@ from dataclasses import dataclass
 from functools import partial
 from io import BytesIO
 from tempfile import NamedTemporaryFile
+from textwrap import indent
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, List, Union,
+    TYPE_CHECKING, Any, ClassVar, Dict, Iterable, List, Union,
 )
 
 import param
@@ -558,3 +559,51 @@ class ChatMessage(PaneBase):
         else:
             updates["object"] = value
         self.param.update(**updates)
+
+    def serialize(self, obj: Any, include_name: bool = True, include_iterable_type: bool = True) -> str:
+        """
+        Format the object to a string.
+
+        Arguments
+        ---------
+        obj : Any
+            The object to format.
+        include_name : bool
+            Whether to include the name of the object.
+        include_iterable_type : bool
+            Whether to include the type of the object if it is iterable.
+        """
+        if isinstance(obj, Iterable) and not isinstance(obj, str):
+            content = (self.serialize(o) for o in obj)
+            if include_iterable_type:
+                indented_content = indent(",\n".join(content), prefix=" " * 4)
+                # outputs like:
+                # Row(
+                #   1,
+                #   "str",
+                # )
+                return f"{type(obj).__name__}(\n{indented_content}\n)"
+            else:
+                # outputs like:
+                # (1, "str")
+                return f"({', '.join(content)})"
+
+        if hasattr(obj, "value"):
+            string = obj.value
+        elif hasattr(obj, "object"):
+            string = obj.object
+
+        if include_name:
+            if include_name:
+                label = obj.name
+                type_name = type(obj).__name__
+                if label.startswith(type_name) or not label:
+                    label = type_name
+            string = f"{label}: {string!r}"
+        return string
+
+    def __str__(self) -> str:
+        """
+        Serialize the message object to a string.
+        """
+        return self.serialize(self.object)
