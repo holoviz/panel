@@ -473,6 +473,11 @@ input[type='file']:active {
   );
 }
 
+.bk-btn a {
+  text-decoration: none;
+  color: inherit;
+}
+
 :host(.solid) .bk-btn.bk-btn-default {
   background-color: var(--neutral-fill-rest);
   color: var(--neutral-foreground-rest);
