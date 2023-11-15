@@ -15,10 +15,9 @@
 
 {% block main %}
 <div class="main" id="main">
-  {% if main_max_width %}
+  {% if main_max_width -%}
   <div style="margin-left: auto; margin-right: auto; max-width: {{main_max_width}}">
   {% endif %}
-
   <div id="main-grid" class="muuri-grid">
     {% for doc in docs %}
     {% for root in doc.roots %}
@@ -33,7 +32,7 @@
     {% endfor %}
     {% endfor %}
   </div>
-  {% if main_max_width %}
+  {%- if main_max_width %}
   </div>
   {% endif %}
 
@@ -122,7 +121,7 @@
     grid.hide(hidden.map(el => grid.getItem(el)), {instant: true, layout: false});
   }
   grid.refreshSortData();
-  grid.refreshItems()
+  grid.refreshItems();
   grid.sort('id', {layout: false});
   grid.layout()
 
@@ -132,6 +131,7 @@
     for (const item of grid.getItems()) {
       scroll(item.getElement())
     }
+    grid.refreshItems()
     grid.layout()
   }, true);
 
@@ -171,18 +171,52 @@
     // resize from all edges and corners
     edges: { right: '.muuri-handle.resize', bottom: '.muuri-handle.resize' },
     listeners: {
-      end (event) {
-	event.target.style.removeProperty('border')
-	event.target.style.removeProperty('border-radius')
-      },
       move (event) {
 	var style = getComputedStyle(event.target)
 	var top = parseInt(style.getPropertyValue('padding-top').slice(0, -2))
 	var bottom = parseInt(style.getPropertyValue('padding-bottom').slice(0, -2))
 	var screen_width = window.muuriGrid.getElement().clientWidth-20;
-	resize_item(event.target, (event.rect.width/screen_width)*100, event.rect.height-(top+bottom))
+	event.target.style.zIndex = 100
+	resize_item(event.target, (event.rect.width/screen_width)*100, event.rect.height-(top+bottom), false)
+      },
+      end (event) {
+	event.target.style.removeProperty('z-index')
+	grid.refreshItems()
+	grid.layout()
       }
-    }
+    },
+    modifiers: [
+      interact.modifiers.restrictSize({
+        min: { width: 100, height: 50 }
+      }),
+      interact.modifiers.snapEdges({
+	offset: 'parent',
+	targets: [
+	  // Snap to other items or right edge if within 25 pixels
+	  function (x, y, interaction) {
+	    var target = {range: 25}
+	    const grid_bbox = grid.getElement().getBoundingClientRect()
+	    for (var item of document.getElementsByClassName('muuri-grid-item')) {
+	      var bbox = item.getBoundingClientRect()
+	      if (item !== interaction.element) {
+		var bottom = (bbox.top + bbox.height) - grid_bbox.top
+		var right = (bbox.left + bbox.width) - grid_bbox.left
+		if (Math.abs(right - x) < target.range) {
+		  target.x = right + 10
+		}
+		if (Math.abs(bottom - y) < target.range) {
+		  target.y = bottom
+		}
+	      }
+	    }
+	    if ((grid_bbox.width - x) < target.range) {
+	      target.x = grid_bbox.width-5
+	    }
+	    return target
+	  }
+	]
+      })
+    ]
   })
   {% endif %}
 </script>

@@ -18,7 +18,7 @@
 }
 
 #main {
-  padding: 10px 0 0 5px;
+  padding: 10px 0 0 0;
 }
 
 .muuri-grid {
@@ -28,6 +28,7 @@
 }
 
 .muuri-grid-item {
+  background-color: var(--panel-background-color, white);
   box-shadow:
     color-mix(in srgb, var(--panel-shadow-color, 'black') 30%, transparent) 0px
       1px 2px 0px,
