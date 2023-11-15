@@ -32,6 +32,7 @@ from ..util import (
     BOKEH_JS_NAT, clone_model, datetime_as_utctimestamp, isdatetime, lazy_load,
     styler_update, updating,
 )
+from ..util.warnings import warn
 from .base import Widget
 from .button import Button
 from .input import TextInput
@@ -176,33 +177,17 @@ class BaseTable(ReactiveData, Widget):
             col_kwargs = {}
             kind = data.dtype.kind
             editor: CellEditor
-            formatter: CellFormatter
+            formatter: CellFormatter | None = self.formatters.get(col)
             if kind == 'i':
-                formatter = NumberFormatter(text_align='right')
                 editor = IntEditor()
             elif kind == 'b':
-                formatter = StringFormatter(text_align='center')
                 editor = CheckboxEditor()
             elif kind == 'f':
-                formatter = NumberFormatter(format='0,0.0[00000]', text_align='right')
                 editor = NumberEditor()
             elif isdatetime(data) or kind == 'M':
-                if len(data) and isinstance(data.values[0], dt.date):
-                    date_format = '%Y-%m-%d'
-                else:
-                    date_format = '%Y-%m-%d %H:%M:%S'
-                formatter = DateFormatter(format=date_format, text_align='right')
                 editor = DateEditor()
             else:
-                formatter = StringFormatter()
                 editor = StringEditor()
-
-            if isinstance(self.text_align, str):
-                formatter.text_align = self.text_align
-            elif col in self.text_align:
-                formatter.text_align = self.text_align[col]
-            elif col in self.indexes:
-                formatter.text_align = 'left'
 
             if col in self.editors and not isinstance(self.editors[col], (dict, str)):
                 editor = self.editors[col]
@@ -212,10 +197,43 @@ class BaseTable(ReactiveData, Widget):
             if col in indexes or editor is None:
                 editor = CellEditor()
 
-            if col in self.formatters and not isinstance(self.formatters[col], (dict, str)):
-                formatter = self.formatters[col]
+            if formatter is None or isinstance(formatter, (dict, str)):
+                if kind == 'i':
+                    formatter = NumberFormatter(text_align='right')
+                elif kind == 'b':
+                    formatter = StringFormatter(text_align='center')
+                elif kind == 'f':
+                    formatter = NumberFormatter(format='0,0.0[00000]', text_align='right')
+                elif isdatetime(data) or kind == 'M':
+                    if len(data) and isinstance(data.values[0], dt.date):
+                        date_format = '%Y-%m-%d'
+                    else:
+                        date_format = '%Y-%m-%d %H:%M:%S'
+                    formatter = DateFormatter(format=date_format, text_align='right')
+                else:
+                    formatter = StringFormatter()
+
+                default_text_align = True
+            else:
                 if isinstance(formatter, CellFormatter):
                     formatter = clone_model(formatter)
+                if hasattr(formatter, 'text_align'):
+                    default_text_align = type(formatter).text_align.class_default(formatter) == formatter.text_align
+                else:
+                    default_text_align = True
+
+            if isinstance(self.text_align, str):
+                formatter.text_align = self.text_align
+                if not default_text_align:
+                    msg = f"The 'text_align' in Tabulator.formatters[{col!r}] is overridden by Tabulator.text_align"
+                    warn(msg, RuntimeWarning)
+            elif col in self.text_align:
+                formatter.text_align = self.text_align[col]
+                if not default_text_align:
+                    msg = f"The 'text_align' in Tabulator.formatters[{col!r}] is overridden by Tabulator.text_align[{col!r}]"
+                    warn(msg, RuntimeWarning)
+            elif col in self.indexes:
+                formatter.text_align = 'left'
 
             if isinstance(self.widths, int):
                 col_kwargs['width'] = self.widths

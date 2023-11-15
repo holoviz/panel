@@ -2113,3 +2113,26 @@ def test_tabulator_hidden_columns_fix():
     table = Tabulator(pd.DataFrame(), show_index=False)
     table.hidden_columns = ["a", "b", "c"]
     assert table.hidden_columns == ["a", "b", "c"]
+
+@pytest.mark.parametrize('align', [{"x": "right"}, "right"], ids=["dict", "str"])
+def test_bokeh_formatter_with_text_align(align):
+    # https://github.com/holoviz/panel/issues/5807
+    data = pd.DataFrame({"x": [1.1, 2.0, 3.47]})
+    formatters = {"x": NumberFormatter(format="0.0")}
+    assert formatters["x"].text_align == "left"  # default
+    model = Tabulator(data, formatters=formatters, text_align=align)
+    columns = model._get_column_definitions("x", data)
+    output = columns[0].formatter.text_align
+    assert output == "right"
+
+@pytest.mark.parametrize('align', [{"x": "right"}, "right"], ids=["dict", "str"])
+def test_bokeh_formatter_with_text_align_conflict(align):
+    # https://github.com/holoviz/panel/issues/5807
+    data = pd.DataFrame({"x": [1.1, 2.0, 3.47]})
+    formatters = {"x": NumberFormatter(format="0.0", text_align="center")}
+    model = Tabulator(data, formatters=formatters, text_align=align)
+    msg = r"The 'text_align' in Tabulator\.formatters\['x'\] is overridden by Tabulator\.text_align"
+    with pytest.warns(RuntimeWarning, match=msg):
+        columns = model._get_column_definitions("x", data)
+    output = columns[0].formatter.text_align
+    assert output == "right"
