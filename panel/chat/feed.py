@@ -660,18 +660,17 @@ class ChatFeed(ListPanel):
             uses the serialize method on ChatMessage.
         **serialize_kwargs
             Additional keyword arguments to use for the specified format.
-            Valid keyword arguments for formats are described below.
 
-            - transformers
-            role_names : dict(str, str | list(str)) | None
-                A dictionary mapping the role to the ChatMessage's user name.
-                Defaults to `{"user": ["user"], "assistant": [self.callback_user]}`
-                if not set. The keys and values are case insensitive as the strings
-                will all be lowercased. The values can be a string or a list of strings,
-                e.g. `{"user": "user", "assistant": ["executor", "langchain"]}`.
-            default_role : str
-                The default role to use if the user name is not found in role_names.
-                If this is set to None, raises a ValueError if the user name is not found.
+            - format="transformers"
+              role_names : dict(str, str | list(str)) | None
+                  A dictionary mapping the role to the ChatMessage's user name.
+                  Defaults to `{"user": ["user"], "assistant": [self.callback_user]}`
+                  if not set. The keys and values are case insensitive as the strings
+                  will all be lowercased. The values can be a string or a list of strings,
+                  e.g. `{"user": "user", "assistant": ["executor", "langchain"]}`.
+              default_role : str
+                  The default role to use if the user name is not found in role_names.
+                  If this is set to None, raises a ValueError if the user name is not found.
 
         Returns
         -------
