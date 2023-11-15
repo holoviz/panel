@@ -45,7 +45,7 @@ from .io.notebook import (
 from .io.save import save
 from .io.state import curdoc_locked, set_curdoc, state
 from .util import escape, param_reprs
-from .util.param import get_params_to_inherit
+from .util.parameters import get_params_to_inherit
 from .util.warnings import deprecated
 
 if TYPE_CHECKING:

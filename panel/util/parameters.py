@@ -96,3 +96,16 @@ def param_watchers(parameterized: param.Parameterized, value=_unset):
             parameterized.param.watchers = value
         else:
             return parameterized.param.watchers
+
+
+def recursive_parameterized(parameterized: param.Parameterized, objects=None) -> list[param.Parameterized]:
+    """
+    Recursively searches a Parameterized object for other Parmeterized
+    objects.
+    """
+    objects = [] if objects is None else objects
+    objects.append(parameterized)
+    for p in parameterized.param.values().values():
+        if isinstance(p, param.Parameterized) and not any(p is o for o in objects):
+            recursive_parameterized(p, objects)
+    return objects

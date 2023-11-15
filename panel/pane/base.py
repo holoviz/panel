@@ -31,7 +31,7 @@ from ..models import ReactiveHTML as _BkReactiveHTML
 from ..reactive import Reactive
 from ..util import param_reprs, param_watchers
 from ..util.checks import is_dataframe, is_series
-from ..util.param import get_params_to_inherit
+from ..util.parameters import get_params_to_inherit
 from ..viewable import (
     Layoutable, ServableMixin, Viewable, Viewer,
 )

@@ -36,8 +36,9 @@ from .checks import (  # noqa
     datetime_types, is_dataframe, is_holoviews, is_number, is_parameterized,
     is_series, isdatetime, isfile, isIn, isurl,
 )
-from .param import (  # noqa
+from .parameters import (  # noqa
     edit_readonly, extract_dependencies, get_method_owner, param_watchers,
+    recursive_parameterized,
 )
 
 log = logging.getLogger('panel.util')
@@ -86,17 +87,6 @@ def param_name(name: str) -> str:
     return name[:name.index(match[0])] if match else name
 
 
-def recursive_parameterized(parameterized: param.Parameterized, objects=None) -> list[param.Parameterized]:
-    """
-    Recursively searches a Parameterized object for other Parmeterized
-    objects.
-    """
-    objects = [] if objects is None else objects
-    objects.append(parameterized)
-    for p in parameterized.param.values().values():
-        if isinstance(p, param.Parameterized) and not any(p is o for o in objects):
-            recursive_parameterized(p, objects)
-    return objects
 
 
 def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
