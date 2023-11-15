@@ -31,8 +31,9 @@ from ..models import ReactiveHTML as _BkReactiveHTML
 from ..reactive import Reactive
 from ..util import param_reprs, param_watchers
 from ..util.checks import is_dataframe, is_series
+from ..util.param import get_params_to_inherit
 from ..viewable import (
-    Layoutable, ServableMixin, Viewable, Viewer, _get_items_to_inherit,
+    Layoutable, ServableMixin, Viewable, Viewer,
 )
 
 if TYPE_CHECKING:
@@ -381,7 +382,7 @@ class PaneBase(Reactive):
         -------
         Cloned Pane object
         """
-        inherited = _get_items_to_inherit(self)
+        inherited = get_params_to_inherit(self)
         params = dict(inherited, **params)
         old_object = params.pop('object', None)
         if object is None:
