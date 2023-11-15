@@ -45,6 +45,7 @@ from .io.notebook import (
 from .io.save import save
 from .io.state import curdoc_locked, set_curdoc, state
 from .util import escape, param_reprs
+from .util.param import get_params_to_inherit
 from .util.warnings import deprecated
 
 if TYPE_CHECKING:
@@ -55,15 +56,6 @@ if TYPE_CHECKING:
     from .io.location import Location
     from .io.server import StoppableThread
 
-def _should_inherit(self, p, v):
-        _p = self.param[p]
-        return v is not _p.default and not _p.readonly and (v is not None or _p.allow_None)
-
-def _get_items_to_inherit(self: param.Parameterized)->Dict:
-    return {
-        p: v for p, v in self.param.values().items()
-        if _should_inherit(self, p, v)
-    }
 
 class Layoutable(param.Parameterized):
     """
@@ -859,7 +851,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         -------
         Cloned Viewable object
         """
-        inherited = _get_items_to_inherit(self)
+        inherited = get_params_to_inherit(self)
         return type(self)(**dict(inherited, **params))
 
     def pprint(self) -> None:
