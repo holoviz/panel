@@ -35,17 +35,17 @@ class TemplateEditor(ReactiveHTML):
         'render': """
         var grid = window.muuriGrid;
         function save_layout() {
-          var layout = [];
-          var screen_width = grid.getElement().clientWidth-20;
-          for (var item of grid.getItems()) {
-            var el = item.getElement();
-            const style = getComputedStyle(el)
-            const top = parseInt(style.getPropertyValue('padding-top').slice(0, -2))
-            const bottom = parseInt(style.getPropertyValue('padding-bottom').slice(0, -2))
+          const layout = [];
+          const screen_width = grid.getElement().clientWidth;
+          for (const item of grid.getItems()) {
+            const el = item.getElement();
+            const {left, right, top} = item.getMargin();
+            const width = item.getWidth()+left+right;
+            const height = item.getHeight()-top;
             layout.push({
               id: el.getAttribute('data-id'),
-              width: (item.getWidth() / screen_width) * 100,
-              height: item.getHeight()-top-bottom,
+              width: (width / screen_width) * 100,
+              height: height,
               visible: item.isVisible(),
             })
           }
@@ -103,19 +103,16 @@ class EditableTemplate(VanillaTemplate):
     ):
         ret = super()._init_doc(doc, comm, title, notebook, location)
         doc.js_on_event('document_ready', CustomJS(code="""
-          for (const item of document.getElementsByClassName('muuri-grid-item')) {
-            const style = getComputedStyle(item)
-            const top = parseInt(style.getPropertyValue('padding-top').slice(0, -2))
-            const bottom = parseInt(style.getPropertyValue('padding-bottom').slice(0, -2))
-            const child = item.children[1].children[0];
-            const bounds = item.getBoundingClientRect();
-            const screen_width = window.muuriGrid.getElement().clientWidth-20;
-            const relative_width = Math.round((bounds.width / (screen_width)) * 100);
-            resize_item(item, relative_width, bounds.height-top-bottom, false)
+          const screen_width = window.muuriGrid.getElement().clientWidth;
+          for (const item of window.muuriGrid.getItems()) {
+            const {left, right} = item.getMargin();
+            const width = item.getWidth()+left+right;
+            const relative_width = Math.round((width / screen_width) * 100);
+            resize_item(item.getElement(), relative_width, item.getHeight(), false);
           }
           for (var root of roots) {
             if (root.tags.includes('main')) {
-              root.sizing_mode = 'stretch_both'
+              root.sizing_mode = 'stretch_both';
               if (root.children) {
                 for (var child of root) {
                   child.sizing_mode = 'stretch_both'

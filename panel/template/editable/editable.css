@@ -36,9 +36,9 @@
       1px 3px 1px;
   display: block;
   margin: 10px;
-  padding: 10px;
+  padding: 5px;
   position: absolute;
-  width: calc(100% - 40px);
+  width: calc(100% - 30px);
   z-index: 1;
 }
 

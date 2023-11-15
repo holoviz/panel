@@ -62,8 +62,8 @@
     document.getElementById("sidebar-button").onclick = openNav;
   }
 
-  var modal = document.getElementById("pn-Modal");
-  var span = document.getElementById("pn-closeModal");
+  const modal = document.getElementById("pn-Modal");
+  const span = document.getElementById("pn-closeModal");
 
   span.onclick = function() {
     modal.style.display = "none";
@@ -76,7 +76,7 @@
   }
 
   function scroll(item) {
-    var child = item.children[2].children[0]
+    const child = item.children[2].children[0]
     if (child && (child.scrollHeight > item.clientHeight)) {
       item.style.overflowY = 'auto';
     } else {
@@ -85,13 +85,13 @@
   }
 
   function resize_item(item, width, height, notify = true) {
-    var screen_width = document.getElementsByClassName('muuri-grid')[0].clientWidth-20
+    const screen_width = document.getElementsByClassName('muuri-grid')[0].clientWidth
     if (((width/100) * screen_width) < 100) {
       width = (100/screen_width) * 100;
     }
     width = Math.min(100, width);
-    item.style.width = `calc( ${width}% - 40px)`;
-    item.style.height = Math.round(Math.max(height, 10) / 10) * 10 + 'px';
+    item.style.width = `calc( ${width}% - 30px)`;
+    item.style.height = `${height}px`;
     if (notify) {
       grid.refreshItems()
       grid.layout()
@@ -100,23 +100,23 @@
   }
 
   // Initialize grid
-  var layout = {{ muuri_layout|json  }}
-  var ids = layout.map(s => s.id)
-  var grid = new Muuri('.muuri-grid', {
+  const layout = {{ muuri_layout|json  }}
+  const ids = layout.map(s => s.id)
+  const grid = new Muuri('.muuri-grid', {
     sortData: {id: (item, el) => {
-      var index = ids.indexOf(el.getAttribute('data-id'))
+      const index = ids.indexOf(el.getAttribute('data-id'))
       return index === -1 ? Infinity : index;
     }},
     dragEnabled: {{ editable|json }},
     dragHandle: '.muuri-handle.drag',
     layout: {fillGaps: true}
   });
-  for (var spec of layout) {
+  for (const spec of layout) {
     if (spec.width && spec.height) {
       resize_item(document.querySelector(`[data-id="${spec.id}"]`), spec.width, spec.height, false)
     }
   }
-  var hidden = [...document.querySelectorAll('.muuri-item-hidden')]
+  const hidden = [...document.querySelectorAll('.muuri-item-hidden')]
   if (hidden.length) {
     grid.hide(hidden.map(el => grid.getItem(el)), {instant: true, layout: false});
   }
@@ -138,31 +138,25 @@
   // Set up reset, hide and resize actions
   {% if editable %}
 
-  var reset_button = document.getElementById("grid-reset")
+  const reset_button = document.getElementById("grid-reset")
   reset_button.addEventListener("click", function() {
-    var items = grid.getItems()
-    for (var item of items) {
-      var el = item.getElement()
-      var style = getComputedStyle(el)
-      var top = parseInt(style.getPropertyValue('padding-top').slice(0, -2))
-      var bottom = parseInt(style.getPropertyValue('padding-bottom').slice(0, -2))
-      if (!item.isVisible()) {
-	var height = 100
-      } else {
-	var height = item.getHeight()
-      }
-      resize_item(el, 100, height-(top+bottom), false)
+    const items = grid.getItems();
+    for (const item of items) {
+      const el = item.getElement();
+      const margin = item.getMargin();
+      const height = item.isVisible() ? item.getHeight() : 100;
+      resize_item(el, 100, height-margin.top-margin.bottom, false);
     }
-    grid.refreshItems()
-    grid.show(items, {layout: false})
-    var order = [...document.getElementsByClassName('muuri-grid-item')]
-    grid.sort(order.map(el => grid.getItem(el)), {layout: false})
-    grid.layout()
+    grid.refreshItems();
+    grid.show(items, {layout: false});
+    const order = [...document.getElementsByClassName('muuri-grid-item')];
+    grid.sort(order.map(el => grid.getItem(el)), {layout: false});
+    grid.layout();
   })
 
-  for (var handle of document.querySelectorAll('.muuri-handle.delete')) {
+  for (const handle of document.querySelectorAll('.muuri-handle.delete')) {
     handle.addEventListener("click", (event) => {
-      grid.hide([grid.getItem(event.target.parentElement)], {instant: true})
+      grid.hide([grid.getItem(event.target.parentElement)], {instant: true});
     })
   }
 
@@ -172,12 +166,13 @@
     edges: { right: '.muuri-handle.resize', bottom: '.muuri-handle.resize' },
     listeners: {
       move (event) {
-	var style = getComputedStyle(event.target)
-	var top = parseInt(style.getPropertyValue('padding-top').slice(0, -2))
-	var bottom = parseInt(style.getPropertyValue('padding-bottom').slice(0, -2))
-	var screen_width = window.muuriGrid.getElement().clientWidth-20;
-	event.target.style.zIndex = 100
-	resize_item(event.target, (event.rect.width/screen_width)*100, event.rect.height-(top+bottom), false)
+	const item = grid.getItem(event.target);
+	const {top, bottom} = item.getMargin();
+	const screen_width = grid.getElement().clientWidth;
+	const width = (event.rect.width/screen_width)*100
+	const height = event.rect.height-top-bottom;
+	event.target.style.zIndex = 100;
+	resize_item(event.target, width, height, false);
       },
       end (event) {
 	event.target.style.removeProperty('z-index')
@@ -194,23 +189,25 @@
 	targets: [
 	  // Snap to other items or right edge if within 25 pixels
 	  function (x, y, interaction) {
-	    var target = {range: 25}
+	    const target = {range: 25}
 	    const grid_bbox = grid.getElement().getBoundingClientRect()
-	    for (var item of document.getElementsByClassName('muuri-grid-item')) {
-	      var bbox = item.getBoundingClientRect()
-	      if (item !== interaction.element) {
-		var bottom = (bbox.top + bbox.height) - grid_bbox.top
-		var right = (bbox.left + bbox.width) - grid_bbox.left
-		if (Math.abs(right - x) < target.range) {
-		  target.x = right + 10
-		}
-		if (Math.abs(bottom - y) < target.range) {
-		  target.y = bottom
-		}
+	    for (const item of grid.getItems()) {
+	      if (item === interaction.element) {
+		continue
+	      }
+	      const {top, left} = item.getPosition();
+	      const margin = item.getMargin()
+	      const bottom = (top + item.getHeight()) + margin.top + margin.bottom;
+	      const right = (left + item.getWidth()) + margin.left + margin.right;
+	      if (Math.abs(right - x) < target.range) {
+		target.x = right + margin.right
+	      }
+	      if (Math.abs(bottom - y) < target.range) {
+		target.y = bottom
 	      }
 	    }
 	    if ((grid_bbox.width - x) < target.range) {
-	      target.x = grid_bbox.width-5
+	      target.x = grid_bbox.width+10
 	    }
 	    return target
 	  }
