@@ -117,7 +117,7 @@ class ChatInterface(ChatFeed):
         existing names will create new buttons and must provide a callback or post_callback.
         The signature of provided callbacks must accept two positional arguments: `instance`
         and `event`, where `instance` is the ChatInterface instance and event is the button click
-        event. 
+        event.
         """)
 
     _widgets = param.Dict(default={}, allow_refs=False, doc="""
