@@ -23,15 +23,16 @@
     {% for doc in docs %}
     {% for root in doc.roots %}
     {% if "main" in root.tags %}
-    <div class="muuri-grid-item" data-id="{{ root.id }}">
-      <span class="muuri-drag-handle"></span>
-      <span class="muuri-delete-handle"></span>
+    <div class="muuri-grid-item {{ 'muuri-item-shown' if layout.get(root.id, {'visible': True}).get('visible', True) else 'muuri-item-hidden' }}" data-id="{{ root.id }}">
+      <span class="muuri-handle drag"></span>
+      <span class="muuri-handle delete"></span>
       {{ embed(root) | indent(4) }}
+      <span class="muuri-handle resize"></span>
     </div>
     {% endif %}
     {% endfor %}
     {% endfor %}
-
+  </div>
   {% if main_max_width %}
   </div>
   {% endif %}
@@ -75,31 +76,9 @@
     }
   }
 
-  var layout = {{ muuri_layout|json  }}
-  var els = {}
-  for (var el of document.querySelectorAll("[data-id]")) {
-    els[el.getAttribute('data-id')] = el;
-  }
-  var items = []
-  for (var spec of layout) {
-    items.push(els[spec.id])
-  }
-  for (var el_id in els) {
-    var el = els[el_id]
-    if (!items.includes(el)) {
-      items.push(el)
-    }
-  }
-  var grid = new Muuri('.muuri-grid', {
-    items: items,
-    dragEnabled: {{ editable|json }},
-    dragHandle: '.muuri-drag-handle',
-    layout: {fillGaps: true}
-  });
-
   function scroll(item) {
     var child = item.children[2].children[0]
-    if (child && (child.scrollHeight > child.clientHeight)) {
+    if (child && (child.scrollHeight > item.clientHeight)) {
       item.style.overflowY = 'auto';
     } else {
       item.style.removeProperty('overflow-y')
@@ -121,19 +100,30 @@
     scroll(item)
   }
 
-  var hidden = []
+  // Initialize grid
+  var layout = {{ muuri_layout|json  }}
+  var ids = layout.map(s => s.id)
+  var grid = new Muuri('.muuri-grid', {
+    sortData: {id: (item, el) => {
+      var index = ids.indexOf(el.getAttribute('data-id'))
+      return index === -1 ? Infinity : index;
+    }},
+    dragEnabled: {{ editable|json }},
+    dragHandle: '.muuri-handle.drag',
+    layout: {fillGaps: true}
+  });
+  var hidden = [...document.querySelectorAll('.muuri-item-hidden')]
+  if (hidden.length) {
+    grid.hide(hidden.map(el => grid.getItem(el)), {instant: true});
+  }
+  grid.refreshSortData();
+  grid.sort('id');
   for (var spec of layout) {
-    var el = els[spec.id]
-    var item = grid.getItem(el)
-    if (spec.visible === false) {
-      hidden.push(item)
+    if (spec.width && spec.height) {
+      resize_item(document.querySelector(`[data-id="${spec.id}"]`), spec.width, spec.height, false)
     }
-    resize_item(el, spec.width, spec.height, false)
   }
   grid.refreshItems()
-  if (hidden.length) {
-    grid.hide(hidden, {instant: true, layout: false})
-  }
   grid.layout()
 
   window.muuriGrid = grid;
@@ -145,8 +135,8 @@
     grid.layout()
   }, true);
 
+  // Set up reset, hide and resize actions
   {% if editable %}
-
   function reset() {
     var items = grid.getItems()
     for (var item of items) {
@@ -159,6 +149,7 @@
       } else {
 	var height = item.getHeight()
       }
+      console.log(el)
       resize_item(el, 100, height-(top+bottom), false)
     }
     grid.refreshItems()
@@ -175,7 +166,7 @@
     reset()
   })
 
-  for (var handle of document.getElementsByClassName('muuri-delete-handle')) {
+  for (var handle of document.querySelectorAll('.muuri-handle.delete')) {
     handle.addEventListener("click", (event) => {
       grid.hide([grid.getItem(event.target.parentElement)], {instant: true})
     })
@@ -184,7 +175,7 @@
   window.resizeableGrid = interact('.muuri-grid-item')
   .resizable({
     // resize from all edges and corners
-    edges: { right: true, bottom: true },
+    edges: { right: '.muuri-handle.resize', bottom: '.muuri-handle.resize' },
     listeners: {
       end (event) {
 	event.target.style.removeProperty('border')

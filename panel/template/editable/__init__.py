@@ -89,9 +89,10 @@ class EditableTemplate(VanillaTemplate):
 
     def _update_vars(self):
         ids = {id(obj): next(iter(obj._models)) for obj in self.main}
-        self._render_variables['muuri_layout'] = [
-            dict(item, id=ids[iid]) for iid, item in self.layout.items()
-        ]
+        self._render_variables['layout'] = layout = {
+            ids[iid]: dict(item, id=ids[iid]) for iid, item in self.layout.items()
+        }
+        self._render_variables['muuri_layout'] = list(layout.values())
         self._render_variables['editable'] = self.editable
         super()._update_vars()
 

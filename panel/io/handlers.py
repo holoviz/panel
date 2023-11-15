@@ -315,12 +315,17 @@ class NotebookHandler(CodeHandler):
 
                 layouts, outputs, cells = {}, {}, {}
                 for cell_id, out in state._cell_outputs.items():
+                    spec = state._cell_layouts[self].get(cell_id, {})
+                    if 'width' in spec and 'height' in spec:
+                        sizing_mode = 'stretch_both'
+                    else:
+                        sizing_mode = 'stretch_width'
                     pout = Column(
                         *(o for o in out if o is not None),
-                        sizing_mode='stretch_width'
+                        sizing_mode=sizing_mode
                     )
                     for po in pout:
-                        po.sizing_mode = 'stretch_width'
+                        po.sizing_mode = sizing_mode
                     outputs[cell_id] = pout
                     layouts[id(pout)] = state._cell_layouts[self][cell_id]
                     cells[cell_id] = id(pout)
