@@ -397,7 +397,7 @@ class _state(param.Parameterized):
             self.param.trigger('_profiles')
         self._loaded[doc] = True
 
-    async def _scheduled_cb(self, name: str) -> None:
+    async def _scheduled_cb(self, name: str, threaded: bool = False) -> None:
         if name not in self._scheduled:
             return
         diter, cb = self._scheduled[name]
@@ -411,9 +411,7 @@ class _state(param.Parameterized):
             call_time_seconds = (at - now)
             self._ioloop.call_later(delay=call_time_seconds, callback=partial(self._scheduled_cb, name))
         try:
-            res = cb()
-            if inspect.isawaitable(res):
-                await res
+            self.execute(cb, schedule='thread' if threaded else 'auto')
         except Exception as e:
             self._handle_exception(e)
 
@@ -777,7 +775,8 @@ class _state(param.Parameterized):
 
     def schedule_task(
         self, name: str, callback: Callable[[], None], at: Tat =None,
-        period: str | dt.timedelta = None, cron: Optional[str] = None
+        period: str | dt.timedelta = None, cron: Optional[str] = None,
+        threaded : bool = False
     ) -> None:
         """
         Schedules a task at a specific time or on a schedule.
@@ -825,6 +824,9 @@ class _state(param.Parameterized):
 
         cron: str
           A cron expression (requires croniter to parse)
+        threaded: bool
+          Whether the callback should be run on a thread (requires
+          config.nthreads to be set).
         """
         if name in self._scheduled:
             if callback is not self._scheduled[name][1]:
@@ -877,7 +879,7 @@ class _state(param.Parameterized):
             return
         self._scheduled[name] = (diter, callback)
         self._ioloop.call_later(
-            delay=call_time_seconds, callback=partial(self._scheduled_cb, name)
+            delay=call_time_seconds, callback=partial(self._scheduled_cb, name, threaded)
         )
 
     def sync_busy(self, indicator: BooleanIndicator) -> None:
