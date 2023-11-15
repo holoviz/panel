@@ -2131,7 +2131,7 @@ def test_bokeh_formatter_with_text_align_conflict(align):
     data = pd.DataFrame({"x": [1.1, 2.0, 3.47]})
     formatters = {"x": NumberFormatter(format="0.0", text_align="center")}
     model = Tabulator(data, formatters=formatters, text_align=align)
-    msg = r"text_align in formatters\['x'\] is overridden by text_align"
+    msg = r"The 'text_align' in Tabulator\.formatters\['x'\] is overridden by Tabulator\.text_align"
     with pytest.warns(RuntimeWarning, match=msg):
         columns = model._get_column_definitions("x", data)
     output = columns[0].formatter.text_align
