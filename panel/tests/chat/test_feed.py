@@ -28,6 +28,7 @@ def chat_feed():
     return ChatFeed()
 
 
+@pytest.mark.xdist_group("chat")
 class TestChatFeed:
 
     def test_hide_header(self, chat_feed):
@@ -381,6 +382,7 @@ class TestChatFeed:
         assert chat_feed.objects[0].object == "Mutated"
 
 
+@pytest.mark.xdist_group("chat")
 class TestChatFeedCallback:
 
     def test_user_avatar(self, chat_feed):
@@ -699,6 +701,7 @@ class TestChatFeedCallback:
         wait_until(lambda: len(chat_feed.objects) == 1)
 
 
+@pytest.mark.xdist_group("chat")
 class TestChatFeedSerializeForTransformers:
 
     def test_defaults(self):
@@ -786,6 +789,8 @@ class TestChatFeedSerializeForTransformers:
         with pytest.raises(ValueError, match="must return a string"):
             chat_feed.serialize(custom_serializer=custom_serializer)
 
+
+@pytest.mark.xdist_group("chat")
 class TestChatFeedSerializeBase:
 
     def test_transformers_format(self):
