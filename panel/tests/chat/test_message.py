@@ -138,6 +138,7 @@ class TestChatMessage:
         assert isinstance(object_pane, Markdown)
         assert object_pane.object == "I am a file"
 
+    @pytest.mark.flaky(reruns=3, reason="Minute can change during test run")
     def test_update_timestamp(self):
         message = ChatMessage()
         columns = message._composite.objects
