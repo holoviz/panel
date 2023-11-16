@@ -1,4 +1,5 @@
 import datetime
+import os
 import pathlib
 
 from io import BytesIO
@@ -292,6 +293,7 @@ class TestChatMessage:
             message = ChatMessage(SVG(buf))
         assert message.serialize() == "SVG"
 
+    @pytest.mark.skipif(os.name == 'nt', reason="Wrong Windows path")
     def test_serialize_audio(self):
         message = ChatMessage(Audio(str(ASSETS / 'mp3.mp3')))
         assert message.serialize() == f"Audio='{ASSETS / 'mp3.mp3'}'"
