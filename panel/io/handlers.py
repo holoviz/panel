@@ -311,6 +311,10 @@ class NotebookHandler(CodeHandler):
 
                 # If no contents we add all cell outputs to the editable template
                 config.template = 'editable'
+                persist = state._jupyter_kernel_context
+                editable = 'editable' in state.session_args
+                if not (editable or persist):
+                    state.template.editable = False
                 state.template.title = os.path.basename(path)
 
                 layouts, outputs, cells = {}, {}, {}
@@ -346,7 +350,8 @@ class NotebookHandler(CodeHandler):
 
                 # Set up state
                 state.template.layout = ordered
-                state.template.param.watch(self._update_position_metadata, 'layout')
+                if persist:
+                    state.template.param.watch(self._update_position_metadata, 'layout')
                 state._session_outputs[doc] = outputs
                 state._cell_outputs.clear()
 

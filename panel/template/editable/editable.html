@@ -3,7 +3,8 @@
 {% block header_end %}
 {% if editable %}
 <div id="header-indicators">
-  <div id="grid-reset"></div>
+  <div id="grid-reset" class="header-icon"></div>
+  <div id="grid-save" class="header-icon"></div>
   {% if busy %}
   <div class="pn-busy-container">
     {{ embed(roots.busy_indicator) | indent(6) }}
@@ -23,10 +24,12 @@
     {% for root in doc.roots %}
     {% if "main" in root.tags %}
     <div class="muuri-grid-item {{ 'muuri-item-shown' if layout.get(root.id, {'visible': True}).get('visible', True) else 'muuri-item-hidden' }}" data-id="{{ root.id }}">
+      {{ embed(root) | indent(4) }}
+      {% if editable %}
       <span class="muuri-handle drag"></span>
       <span class="muuri-handle delete"></span>
-      {{ embed(root) | indent(4) }}
       <span class="muuri-handle resize"></span>
+      {% endif %}
     </div>
     {% endif %}
     {% endfor %}
@@ -76,12 +79,28 @@
   }
 
   function scroll(item) {
-    const child = item.children[2].children[0]
+    const child = item.children[0].children[0]
     if (child && (child.scrollHeight > item.clientHeight)) {
       item.style.overflowY = 'auto';
     } else {
       item.style.removeProperty('overflow-y')
     }
+  }
+
+  function export_layout() {
+    const layout = [];
+    for (const item of grid.getItems()) {
+      const el = item.getElement();
+      const height = el.style.height.slice(null, -2);
+      const width = el.style.width.split('(')[1].split('%')[0];
+      layout.push({
+        id: el.getAttribute('data-id'),
+        width: parseFloat(width),
+        height: parseFloat(height),
+        visible: item.isVisible(),
+      })
+    }
+    return layout;
   }
 
   function resize_item(item, width, height, notify = true) {
@@ -99,8 +118,20 @@
     scroll(item)
   }
 
+  function getFromLS(key) {
+    let ls = {};
+    if (window.localStorage) {
+      try {
+        ls = JSON.parse(window.localStorage.getItem(window.location.origin + window.location.pathname)) || {};
+      } catch (e) {
+        /*Ignore*/
+      }
+    }
+    return ls[key];
+  }
+
   // Initialize grid
-  const layout = {{ muuri_layout|json  }}
+  const layout = getFromLS('grid-layout') || {{ muuri_layout|json  }}
   const ids = layout.map(s => s.id)
   const grid = new Muuri('.muuri-grid', {
     sortData: {id: (item, el) => {
@@ -123,14 +154,12 @@
   grid.refreshSortData();
   grid.refreshItems();
   grid.sort('id', {layout: false});
-  grid.layout()
+  grid.layout({instant: true})
 
   window.muuriGrid = grid;
 
   window.addEventListener('resize', function(event) {
-    for (const item of grid.getItems()) {
-      scroll(item.getElement())
-    }
+    grid.getItems().map(item => scroll(item.getElement()))
     grid.refreshItems()
     grid.layout()
   }, true);
@@ -152,6 +181,7 @@
     const order = [...document.getElementsByClassName('muuri-grid-item')];
     grid.sort(order.map(el => grid.getItem(el)), {layout: false});
     grid.layout();
+    order.map(scroll);
   })
 
   for (const handle of document.querySelectorAll('.muuri-handle.delete')) {
@@ -159,6 +189,23 @@
       grid.hide([grid.getItem(event.target.parentElement)], {instant: true});
     })
   }
+
+  function saveToLS(key, value) {
+    if (window.localStorage) {
+      window.localStorage.setItem(
+        window.location.origin + window.location.pathname,
+        JSON.stringify({
+          [key]: value
+        })
+      );
+    }
+  }
+
+  const save_button = document.getElementById("grid-save")
+  save_button.addEventListener("click", function() {
+    const layout = export_layout()
+    saveToLS('grid-layout', value)
+  })
 
   window.resizeableGrid = interact('.muuri-grid-item')
   .resizable({

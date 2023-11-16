@@ -13,6 +13,7 @@ import param
 
 from bokeh.models import CustomJS
 
+from ...config import config
 from ...reactive import ReactiveHTML
 from ..vanilla import VanillaTemplate
 
@@ -36,23 +37,23 @@ class TemplateEditor(ReactiveHTML):
         var grid = window.muuriGrid;
         function save_layout() {
           const layout = [];
-          const screen_width = grid.getElement().clientWidth;
           for (const item of grid.getItems()) {
             const el = item.getElement();
-            const {left, right, top} = item.getMargin();
-            const width = item.getWidth()+left+right;
-            const height = item.getHeight()-top;
+            const height = el.style.height.slice(null, -2);
+            const width = el.style.width.split('(')[1].split('%')[0];
             layout.push({
               id: el.getAttribute('data-id'),
-              width: (width / screen_width) * 100,
-              height: height,
+              width: parseFloat(width),
+              height: parseFloat(height),
               visible: item.isVisible(),
             })
           }
-          data.layout = layout
+          data.layout = layout;
         }
         grid.on('layoutEnd', save_layout)
-        window.resizeableGrid.on('resizeend', save_layout)
+        if (window.resizeableGrid) {
+          window.resizeableGrid.on('resizeend', save_layout)
+        }
         """
     }
 
@@ -79,9 +80,9 @@ class EditableTemplate(VanillaTemplate):
     _resources: ClassVar[Dict[str, Dict[str, str]]] = {
         "css": {"lato": "https://fonts.googleapis.com/css?family=Lato&subset=latin,latin-ext"},
         "js": {
-            "interactjs": "https://cdn.jsdelivr.net/npm/interactjs@1.10.19/dist/interact.min.js",
-            "muuri": "https://cdn.jsdelivr.net/npm/muuri@0.9.5/dist/muuri.min.js",
-            "web-animation": "https://cdn.jsdelivr.net/npm/web-animations-js@2.3.2/web-animations.min.js"
+            "interactjs": f"{config.npm_cdn}/interactjs@1.10.19/dist/interact.min.js",
+            "muuri": f"{config.npm_cdn}/muuri@0.9.5/dist/muuri.min.js",
+            "web-animation": f"{config.npm_cdn}/web-animations-js@2.3.2/web-animations.min.js"
         },
     }
 
@@ -103,26 +104,18 @@ class EditableTemplate(VanillaTemplate):
     ):
         ret = super()._init_doc(doc, comm, title, notebook, location)
         doc.js_on_event('document_ready', CustomJS(code="""
-          const screen_width = window.muuriGrid.getElement().clientWidth;
-          for (const item of window.muuriGrid.getItems()) {
-            const {left, right} = item.getMargin();
-            const width = item.getWidth()+left+right;
-            const relative_width = Math.round((width / screen_width) * 100);
-            resize_item(item.getElement(), relative_width, item.getHeight(), false);
-          }
-          for (var root of roots) {
-            if (root.tags.includes('main')) {
-              root.sizing_mode = 'stretch_both';
-              if (root.children) {
-                for (var child of root) {
-                  child.sizing_mode = 'stretch_both'
-                }
+          window.muuriGrid.getItems().map(item => scroll(item.getElement()));
+          for (const root of roots) {
+            root.sizing_mode = 'stretch_both';
+            if (root.children) {
+              for (const child of root) {
+                child.sizing_mode = 'stretch_both'
               }
             }
           }
           window.muuriGrid.refreshItems();
           window.muuriGrid.layout();
-        """, args={'roots': doc.roots}))
+        """, args={'roots': [root for root in doc.roots if 'main' in root.tags]}))
         return ret
 
     @param.depends('editable', watch=True, on_init=True)
