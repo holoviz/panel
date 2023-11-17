@@ -44,7 +44,9 @@ if TYPE_CHECKING:
     from bokeh.models.sources import DataDict
     from pyviz_comms import Comm
 
-    from ..models.tabulator import CellClickEvent, TableEditEvent
+    from ..models.tabulator import (
+        CellClickEvent, SelectionEvent, TableEditEvent,
+    )
 
 
 def _convert_datetime_array_ignore_list(v):
@@ -292,21 +294,21 @@ class BaseTable(ReactiveData, Widget):
 
     @updating
     def _update_cds(self, *events: param.parameterized.Event):
-        old_processed = self._processed
+        # old_processed = self._processed
         self._processed, data = self._get_data()
         self._update_index_mapping()
         # If there is a selection we have to compute new index
-        if self.selection and old_processed is not None:
-            indexes = list(self._processed.index)
-            selection = []
-            for sel in self.selection:
-                try:
-                    iv = old_processed.index[sel]
-                    idx = indexes.index(iv)
-                    selection.append(idx)
-                except Exception:
-                    continue
-            self.selection = selection
+        # if self.selection and old_processed is not None:
+        #     indexes = list(self._processed.index)
+        #     selection = []
+        #     for sel in self.selection:
+        #         try:
+        #             iv = old_processed.index[sel]
+        #             idx = indexes.index(iv)
+        #             selection.append(idx)
+        #         except Exception:
+        #             continue
+        #     self.selection = selection
         self._data = {k: _convert_datetime_array_ignore_list(v) for k, v in data.items()}
         msg = {'data': self._data}
         for ref, (m, _) in self._models.items():
@@ -1241,7 +1243,12 @@ class Tabulator(BaseTable):
             p._cleanup(root)
         super()._cleanup(root)
 
-    def _process_event(self, event):
+    def _process_event(self, event) -> None:
+
+        if event.event_name == 'selection-change':
+            self._update_selection(event)
+            return
+
         event_col = self._renamed_cols.get(event.column, event.column)
         if self.pagination == 'remote':
             nrows = self.page_size
@@ -1564,14 +1571,16 @@ class Tabulator(BaseTable):
                 try:
                     iloc = self._processed.index.get_loc(v)
                     self._validate_iloc(v ,iloc)
-                    indices.append(iloc)
+                    indices.append((v, iloc))
                 except KeyError:
                     continue
             nrows = self.page_size
             start = (self.page-1)*nrows
             end = start+nrows
-            kwargs['indices'] = [ind-start for ind in indices
-                                 if ind>=start and ind<end]
+            p_range = self._processed.index[start:end]
+            kwargs['indices'] = [iloc for ind, iloc in indices
+                                 if ind in p_range]
+            print(indices, kwargs['indices'])
         super()._update_selected(*events, **kwargs)
 
     def _update_column(self, column: str, array: np.ndarray):
@@ -1592,22 +1601,25 @@ class Tabulator(BaseTable):
         with pd.option_context('mode.chained_assignment', None):
             self._processed.loc[index, column] = array
 
-    def _update_selection(self, indices: List[int]):
+    def _update_selection(self, indices: List[int] | SelectionEvent):
         if self.pagination != 'remote':
             self.selection = indices
             return
         nrows = self.page_size
         start = (self.page-1)*nrows
-        index = self._processed.iloc[[start+ind for ind in indices]].index
-        indices = []
+        index = self._processed.iloc[[start+indices.index]].index
+        ilocs = self.selection
         for v in index.values:
             try:
                 iloc = self.value.index.get_loc(v)
                 self._validate_iloc(v, iloc)
-                indices.append(iloc)
             except KeyError:
                 continue
-        self.selection = indices
+            if indices.selected:
+                ilocs.append(iloc)
+            else:
+                ilocs.remove(iloc)
+        self.selection = list(dict.fromkeys(ilocs))
 
     def _get_properties(self, doc: Document) -> Dict[str, Any]:
         properties = super()._get_properties(doc)
