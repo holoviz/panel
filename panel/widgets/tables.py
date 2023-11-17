@@ -1659,7 +1659,7 @@ class Tabulator(BaseTable):
             child_panels, doc, root, parent, comm
         )
         self._link_props(model, ['page', 'sorters', 'expanded', 'filters'], doc, root, comm)
-        self._register_events('cell-click', 'table-edit', model=model, doc=doc, comm=comm)
+        self._register_events('cell-click', 'table-edit', 'selection-change', model=model, doc=doc, comm=comm)
         return model
 
     def _get_filter_spec(self, column: TableColumn) -> Dict[str, Any]:
