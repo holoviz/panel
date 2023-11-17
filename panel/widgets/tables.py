@@ -298,7 +298,7 @@ class BaseTable(ReactiveData, Widget):
         self._processed, data = self._get_data()
         self._update_index_mapping()
         # If there is a selection we have to compute new index
-        if self.selection and old_processed is not None and self.pagination != 'remote':
+        if self.selection and old_processed is not None:
             indexes = list(self._processed.index)
             selection = []
             for sel in self.selection:
@@ -1539,6 +1539,8 @@ class Tabulator(BaseTable):
         elif events and all(e.name in page_events for e in events) and not self.pagination:
             self._processed, _ = self._get_data()
             return
+        elif self.pagination == 'remote':
+            self._processed = None
         recompute = not all(
             e.name in ('page', 'page_size', 'pagination') for e in events
         )
@@ -1607,15 +1609,15 @@ class Tabulator(BaseTable):
             return
         if isinstance(indices, list):
             selected = True
-        else:
-            # Selection event
+            ilocs = []
+        else:  # SelectionEvent
             selected = indices.selected
             indices = [indices.index]
+            ilocs = self.selection
 
         nrows = self.page_size
         start = (self.page-1)*nrows
         index = self._processed.iloc[[start+ind for ind in indices]].index
-        ilocs = self.selection
         for v in index.values:
             try:
                 iloc = self.value.index.get_loc(v)
