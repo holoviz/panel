@@ -294,21 +294,21 @@ class BaseTable(ReactiveData, Widget):
 
     @updating
     def _update_cds(self, *events: param.parameterized.Event):
-        # old_processed = self._processed
+        old_processed = self._processed
         self._processed, data = self._get_data()
         self._update_index_mapping()
         # If there is a selection we have to compute new index
-        # if self.selection and old_processed is not None:
-        #     indexes = list(self._processed.index)
-        #     selection = []
-        #     for sel in self.selection:
-        #         try:
-        #             iv = old_processed.index[sel]
-        #             idx = indexes.index(iv)
-        #             selection.append(idx)
-        #         except Exception:
-        #             continue
-        #     self.selection = selection
+        if self.selection and old_processed is not None and self.pagination != 'remote':
+            indexes = list(self._processed.index)
+            selection = []
+            for sel in self.selection:
+                try:
+                    iv = old_processed.index[sel]
+                    idx = indexes.index(iv)
+                    selection.append(idx)
+                except Exception:
+                    continue
+            self.selection = selection
         self._data = {k: _convert_datetime_array_ignore_list(v) for k, v in data.items()}
         msg = {'data': self._data}
         for ref, (m, _) in self._models.items():
@@ -1605,9 +1605,16 @@ class Tabulator(BaseTable):
         if self.pagination != 'remote':
             self.selection = indices
             return
+        if isinstance(indices, list):
+            selected = True
+        else:
+            # Selection event
+            selected = indices.selected
+            indices = [indices.index]
+
         nrows = self.page_size
         start = (self.page-1)*nrows
-        index = self._processed.iloc[[start+indices.index]].index
+        index = self._processed.iloc[[start+ind for ind in indices]].index
         ilocs = self.selection
         for v in index.values:
             try:
@@ -1615,7 +1622,7 @@ class Tabulator(BaseTable):
                 self._validate_iloc(v, iloc)
             except KeyError:
                 continue
-            if indices.selected:
+            if selected:
                 ilocs.append(iloc)
             else:
                 ilocs.remove(iloc)
