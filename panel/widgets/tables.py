@@ -1578,7 +1578,7 @@ class Tabulator(BaseTable):
             start = (self.page-1)*nrows
             end = start+nrows
             p_range = self._processed.index[start:end]
-            kwargs['indices'] = [iloc for ind, iloc in indices
+            kwargs['indices'] = [iloc - start for ind, iloc in indices
                                  if ind in p_range]
             print(indices, kwargs['indices'])
         super()._update_selected(*events, **kwargs)
