@@ -366,7 +366,14 @@ export class DataTabulatorView extends HTMLBoxView {
     this.connect(p.frozen_rows.change, () => this.setFrozen())
     this.connect(p.sorters.change, () => this.setSorters())
     this.connect(p.theme_classes.change, () => this.setCSSClasses(this.tabulator.element))
-    this.connect(this.model.source.properties.data.change, () => this.setData())
+    this.connect(this.model.source.properties.data.change, () => {
+      console.log("Before: ", this.model.source.selected.indices)
+      this._selection_updating = true
+      this.setData()
+      this._selection_updating = false
+      this.postUpdate()
+      console.log("After : ",this.model.source.selected.indices)
+    })
     this.connect(this.model.source.streaming, () => this.addData())
     this.connect(this.model.source.patching, () => {
       const inds = this.model.source.selected.indices
