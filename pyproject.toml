@@ -53,7 +53,7 @@ skip = "doc/generate_modules.py,examples/reference/templates/FastGridTemplate.ip
 write-changes = true
 
 [tool.pytest.ini_options]
-addopts = "-v --pyargs --doctest-ignore-import-errors"
+addopts = "-v --pyargs --doctest-ignore-import-errors --color=yes"
 norecursedirs = "doc .git dist build _build .ipynb_checkpoints panel/examples"
 xfail_strict = true
 filterwarnings = [
