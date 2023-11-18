@@ -58,6 +58,12 @@ code_expr = """
 code_expr_comment = """
 1+1 # Some comment"""
 
+code_multi_line = """
+pd.read_csv(
+    'test.csv'
+)"""
+
+
 def test_extract_panel_block():
     f = StringIO(md1)
     assert extract_code(f) == "import panel as pn\n\n\n\npn.Row(1, 2, 3).servable()\n"
@@ -78,7 +84,7 @@ def test_capture_code_cell_statement():
     assert capture_code_cell({'id': 'foo', 'source': code_statement}) == ['', 'import panel']
 
 def test_capture_code_cell_loop():
-    assert capture_code_cell({'id': 'foo', 'source': code_loop}) == ['', 'for i in range(10):', '    print(i)']
+    assert capture_code_cell({'id': 'foo', 'source': code_loop}) == ['', 'for i in range(10):\n    print(i)']
 
 def test_capture_code_cell_expression_semicolon():
     assert capture_code_cell({'id': 'foo', 'source': code_expr_semicolon}) == ['', '1+1;']
@@ -87,6 +93,21 @@ def test_capture_code_cell_expression():
     assert capture_code_cell({'id': 'foo', 'source': code_expr}) == [
         '', """
 _pn__state._cell_outputs['foo'].append((1+1))
+for _cell__out in _CELL__DISPLAY:
+    _pn__state._cell_outputs['foo'].append(_cell__out)
+_CELL__DISPLAY.clear()
+_fig__out = _get__figure()
+if _fig__out:
+    _pn__state._cell_outputs['foo'].append(_fig__out)
+"""]
+
+
+def test_capture_code_cell_multi_line_expression():
+    assert capture_code_cell({'id': 'foo', 'source': code_multi_line}) == [
+        '', """
+_pn__state._cell_outputs['foo'].append((pd.read_csv(
+    'test.csv'
+)))
 for _cell__out in _CELL__DISPLAY:
     _pn__state._cell_outputs['foo'].append(_cell__out)
 _CELL__DISPLAY.clear()

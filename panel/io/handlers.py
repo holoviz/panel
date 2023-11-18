@@ -5,7 +5,6 @@ import logging
 import os
 import re
 import sys
-import textwrap
 
 from contextlib import contextmanager
 from types import ModuleType
@@ -124,6 +123,7 @@ def capture_code_cell(cell):
     code = []
     if not len(cell['source']):
         return code
+
     source = cell['source'].split('\n')
     for line in source[:-1]:
         line = (line
@@ -132,6 +132,15 @@ def capture_code_cell(cell):
         )
         code.append(line)
     cell_out = source[-1]
+
+    # Expand last statement or expression until it can be parsed
+    parses = False
+    while not parses:
+        try:
+            ast.parse(cell_out)
+            parses = True
+        except SyntaxError:
+            cell_out = f'{code.pop()}\n{cell_out}'
 
     # Skip cells ending in semi-colon
     if cell_out.rstrip().endswith(';'):
@@ -152,16 +161,15 @@ def capture_code_cell(cell):
 
     # Capture cell outputs
     cell_id = cell['id']
-    cell_code = textwrap.dedent(f"""
-    _pn__state._cell_outputs[{cell_id!r}].append(({cell_out}))
-    for _cell__out in _CELL__DISPLAY:
-        _pn__state._cell_outputs[{cell_id!r}].append(_cell__out)
-    _CELL__DISPLAY.clear()
-    _fig__out = _get__figure()
-    if _fig__out:
-        _pn__state._cell_outputs[{cell_id!r}].append(_fig__out)
-    """)
-    code.append(cell_code)
+    code.append(f"""
+_pn__state._cell_outputs[{cell_id!r}].append(({cell_out}))
+for _cell__out in _CELL__DISPLAY:
+    _pn__state._cell_outputs[{cell_id!r}].append(_cell__out)
+_CELL__DISPLAY.clear()
+_fig__out = _get__figure()
+if _fig__out:
+    _pn__state._cell_outputs[{cell_id!r}].append(_fig__out)
+""")
     return code
 
 
