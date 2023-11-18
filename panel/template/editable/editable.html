@@ -89,14 +89,27 @@
 
   function export_layout() {
     const layout = [];
-    for (const item of grid.getItems()) {
+    const items = grid.getItems();
+    const el_ids = items.map((item) => item.getElement().getAttribute('data-id'))
+    for (const item of items) {
       const el = item.getElement();
-      const height = el.style.height.slice(null, -2);
-      const width = el.style.width.split('(')[1].split('%')[0];
+      let height = el.style.height.slice(null, -2);
+      if (!height) {
+        const {top} = item.getMargin();
+        height = item.getHeight()-top;
+      } else {
+        height = parseFloat(height);
+      }
+      let width;
+      if (el.style.width.length) {
+        width = parseFloat(el.style.width.split('(')[1].split('%')[0]);
+      } else {
+        width = 100;
+      }
       layout.push({
-        id: el.getAttribute('data-id'),
-        width: parseFloat(width),
-        height: parseFloat(height),
+        index: el_ids.indexOf(el.getAttribute('data-id')),
+        width: width,
+        height: height,
         visible: item.isVisible(),
       })
     }
@@ -127,7 +140,14 @@
         /*Ignore*/
       }
     }
-    return ls[key];
+    const specs = ls[key];
+    if (specs == null)
+      return
+    const els = document.querySelectorAll("[data-id]")
+    for (const spec of specs) {
+      spec['id'] = els[spec.index].getAttribute('data-id')
+    }
+    return specs
   }
 
   // Initialize grid
@@ -143,8 +163,9 @@
     layout: {fillGaps: true}
   });
   for (const spec of layout) {
-    if (spec.width && spec.height) {
-      resize_item(document.querySelector(`[data-id="${spec.id}"]`), spec.width, spec.height, false)
+    const el = document.querySelector(`[data-id="${spec.id}"]`);
+    if (el && spec.width && spec.height) {
+      resize_item(el, spec.width, spec.height, false)
     }
   }
   const hidden = [...document.querySelectorAll('.muuri-item-hidden')]
@@ -204,7 +225,7 @@
   const save_button = document.getElementById("grid-save")
   save_button.addEventListener("click", function() {
     const layout = export_layout()
-    saveToLS('grid-layout', value)
+    saveToLS('grid-layout', layout)
   })
 
   window.resizeableGrid = interact('.muuri-grid-item')

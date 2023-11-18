@@ -39,12 +39,23 @@ class TemplateEditor(ReactiveHTML):
           const layout = [];
           for (const item of grid.getItems()) {
             const el = item.getElement();
-            const height = el.style.height.slice(null, -2);
-            const width = el.style.width.split('(')[1].split('%')[0];
+            let height = el.style.height.slice(null, -2);
+            if (!height) {
+              const {top} = item.getMargin();
+              height = item.getHeight()-top;
+            } else {
+              height = parseFloat(height);
+            }
+            let width;
+            if (el.style.width.length) {
+              width = parseFloat(el.style.width.split('(')[1].split('%')[0]);
+            } else {
+              width = 100;
+            }
             layout.push({
               id: el.getAttribute('data-id'),
-              width: parseFloat(width),
-              height: parseFloat(height),
+              width: width,
+              height: height,
               visible: item.isVisible(),
             })
           }
