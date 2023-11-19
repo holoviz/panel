@@ -97,10 +97,20 @@ export class ReactiveHTMLView extends HTMLBoxView {
   _mutation_observers: MutationObserver[] = []
   _script_fns: any = {}
   _state: any = {}
+  _watchers: any = {}
 
   initialize(): void {
     super.initialize()
     this.html = htmlDecode(this.model.html) || this.model.html
+
+    this.model.data.watch = (callback: any, prop: string) => {
+      const watcher = this.model.data.properties[prop].change.connect(() => {
+        callback(prop, null, this.model.data[prop])
+      });
+      if (!(prop in this._watchers))
+	this._watchers[prop] = []
+      this._watchers[prop].push(watcher)
+    }
   }
 
   _recursive_connect(model: any, update_children: boolean, path: string): void {
@@ -474,7 +484,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
     const views = [...root.owner.query((view) => view.model.id == '${this.root.model.id}')]
     if (views.length == 1) {
       const view = views[0]
-      render({model: view.model.data, el: view.container})
+      render({model: view.model, data: view.model.data, el: view.container})
     }
     `;
     this.container.append(dyn);
