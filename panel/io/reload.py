@@ -12,7 +12,6 @@ from .state import state
 
 _watched_files = set()
 _modules = set()
-_callbacks = {}
 
 # List of paths to ignore
 DEFAULT_FOLDER_DENYLIST = [
@@ -64,7 +63,6 @@ def file_is_in_folder_glob(filepath, folderpath_glob):
 
     file_dir = os.path.dirname(filepath) + "/"
     return fnmatch.fnmatch(file_dir, folderpath_glob)
-
 
 async def async_file_watcher():
     files = list(_watched_files)
