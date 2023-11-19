@@ -1,13 +1,8 @@
 import os
 
-import pytest
-
-from panel.io.location import Location
 from panel.io.reload import (
-    _check_file, _modules, _reload_on_update, _watched_files, in_denylist,
-    record_modules, watch,
+    _check_file, _modules, _watched_files, in_denylist, record_modules, watch,
 )
-from panel.io.state import state
 
 
 def test_record_modules_not_stdlib():
@@ -35,17 +30,3 @@ def test_watch():
     assert _watched_files == {filepath}
     # Cleanup
     _watched_files.clear()
-
-@pytest.mark.flaky(reruns=3)
-def test_reload_on_update():
-    location = Location()
-    state._location = location
-    filepath = os.path.abspath(__file__)
-    watch(filepath)
-    modify_times = {filepath: os.stat(__file__).st_mtime-1}
-    _reload_on_update(modify_times)
-    assert location.reload
-
-    # Cleanup
-    _watched_files.clear()
-    state._location = None

@@ -802,9 +802,9 @@ def modify_document(self, doc: 'Document'):
     bk_set_curdoc(doc)
 
     if config.autoreload:
-        from .reload import autoreload_watcher
+        from .reload import setup_autoreload_watcher
         set_curdoc(doc)
-        state.onload(autoreload_watcher)
+        state.onload(setup_autoreload_watcher)
 
     sessions = []
 

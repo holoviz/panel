@@ -93,7 +93,7 @@ async def async_file_watcher():
                     del sys.modules[module]
         _reload()
 
-def autoreload_watcher():
+def setup_autoreload_watcher():
     """
     Installs a periodic callback which checks for changes in watched
     files and sys.modules.
