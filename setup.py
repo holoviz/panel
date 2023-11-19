@@ -113,6 +113,7 @@ install_requires = [
     'bleach',
     'typing_extensions',
     'pandas >=1.2',
+    'watchfiles'
 ]
 
 _recommended = [

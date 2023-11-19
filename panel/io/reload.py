@@ -4,10 +4,10 @@ import sys
 import types
 
 from contextlib import contextmanager
-from functools import partial
+
+from watchfiles import awatch
 
 from ..util import fullpath
-from .callbacks import PeriodicCallback
 from .state import state
 
 _watched_files = set()
@@ -65,6 +65,34 @@ def file_is_in_folder_glob(filepath, folderpath_glob):
     file_dir = os.path.dirname(filepath) + "/"
     return fnmatch.fnmatch(file_dir, folderpath_glob)
 
+
+async def async_file_watcher():
+    files = list(_watched_files)
+    modules = {}
+    for module_name in _modules:
+        # Some modules play games with sys.modules (e.g. email/__init__.py
+        # in the standard library), and occasionally this can cause strange
+        # failures in getattr.  Just ignore anything that's not an ordinary
+        # module.
+        if module_name not in sys.modules:
+            continue
+        module = sys.modules[module_name]
+        if not isinstance(module, types.ModuleType):
+            continue
+        path = getattr(module, "__file__", None)
+        if not path:
+            continue
+        if path.endswith(".pyc") or path.endswith(".pyo"):
+            path = path[:-1]
+        modules[path] = module_name
+        files.append(path)
+    async for changes in awatch(*files):
+        for _, path in changes:
+            if path in modules:
+                if module in sys.modules:
+                    del sys.modules[modules[path]]
+        _reload()
+
 def autoreload_watcher():
     """
     Installs a periodic callback which checks for changes in watched
@@ -72,9 +100,7 @@ def autoreload_watcher():
     """
     if not state.curdoc or not state.curdoc.session_context.server_context:
         return
-    cb = partial(_reload_on_update, {})
-    _callbacks[state.curdoc] = pcb = PeriodicCallback(callback=cb, background=True)
-    pcb.start()
+    state.execute(async_file_watcher)
 
 def watch(filename):
     """
@@ -117,14 +143,7 @@ def record_modules():
         except Exception:
             continue
 
-def _reload(module=None):
-    if module is not None:
-        for module in _modules:
-            if module in sys.modules:
-                del sys.modules[module]
-    for cb in _callbacks.values():
-        cb.stop()
-    _callbacks.clear()
+def _reload():
     if state.location is not None:
         # In case session has been cleaned up
         state.location.reload = True
@@ -142,23 +161,3 @@ def _check_file(modify_times, path, module=None):
     if modify_times[path] != modified:
         _reload(module)
         modify_times[path] = modified
-
-def _reload_on_update(modify_times):
-    for module_name in _modules:
-        # Some modules play games with sys.modules (e.g. email/__init__.py
-        # in the standard library), and occasionally this can cause strange
-        # failures in getattr.  Just ignore anything that's not an ordinary
-        # module.
-        if module_name not in sys.modules:
-            continue
-        module = sys.modules[module_name]
-        if not isinstance(module, types.ModuleType):
-            continue
-        path = getattr(module, "__file__", None)
-        if not path:
-            continue
-        if path.endswith((".pyc", ".pyo")):
-            path = path[:-1]
-        _check_file(modify_times, path, module_name)
-    for path in _watched_files:
-        _check_file(modify_times, path)
