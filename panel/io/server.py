@@ -81,7 +81,6 @@ from .logging import (
 )
 from .markdown import build_single_handler_application
 from .profile import profile_ctx
-from .reload import autoreload_watcher
 from .resources import (
     BASE_TEMPLATE, CDN_DIST, COMPONENT_PATH, ERROR_TEMPLATE, LOCAL_DIST,
     Resources, _env, bundle_resources, patch_model_css, resolve_custom_path,
@@ -803,6 +802,7 @@ def modify_document(self, doc: 'Document'):
     bk_set_curdoc(doc)
 
     if config.autoreload:
+        from .reload import autoreload_watcher
         set_curdoc(doc)
         state.onload(autoreload_watcher)
 
