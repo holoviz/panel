@@ -147,7 +147,6 @@ jobs:
           cache: true
           nodejs: true
           playwright: true
-          playwright-version: "1.38.0"
         id: install
       - name: doit develop_install
         run: |
