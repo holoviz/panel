@@ -84,11 +84,13 @@ async def async_file_watcher():
             path = path[:-1]
         modules[path] = module_name
         files.append(path)
+
     async for changes in awatch(*files):
         for _, path in changes:
             if path in modules:
+                module = modules[path]
                 if module in sys.modules:
-                    del sys.modules[modules[path]]
+                    del sys.modules[module]
         _reload()
 
 def autoreload_watcher():
