@@ -3301,6 +3301,9 @@ class Test_CheckboxSelection_RemotePagination:
     def get_checkboxes(self, page):
         return page.locator('input[type="checkbox"]')
 
+    def goto_page(self, page, page_number):
+        page.locator(f'button.tabulator-page[data-page="{page_number}"]').click()
+
     def test_full_firstpage(self, page):
         serve_component(page, self.widget)
         checkboxes = self.get_checkboxes(page)
@@ -3317,10 +3320,21 @@ class Test_CheckboxSelection_RemotePagination:
         serve_component(page, self.widget)
         checkboxes = self.get_checkboxes(page)
 
-        # Select all items on page
         checkboxes.nth(1).click()
         self.check_selected(page, [0])
 
-        # Deselect last one
         checkboxes.nth(1).click()
         self.check_selected(page, [])
+
+    def test_one_item_first_page_goto_second_page(self, page):
+        serve_component(page, self.widget)
+        checkboxes = self.get_checkboxes(page)
+
+        checkboxes.nth(1).click()
+        self.check_selected(page, [0], 1)
+
+        self.goto_page(page, 2)
+        self.check_selected(page, [0], 0)
+
+        self.goto_page(page, 1)
+        self.check_selected(page, [0], 1)
