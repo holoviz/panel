@@ -56,14 +56,14 @@ class SelectionEvent(ModelEvent):
 
     event_name = 'selection-change'
 
-    def __init__(self, model, index, selected):
-        self.index = index
+    def __init__(self, model, indices, selected):
+        self.indices = indices
         self.selected = selected
         super().__init__(model=model)
 
     def __repr__(self):
         return (
-            f'{type(self).__name__}(index={self.index}, selected={self.selected})'
+            f'{type(self).__name__}(indices={self.indices}, selected={self.selected})'
         )
 
 

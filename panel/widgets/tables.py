@@ -1610,7 +1610,7 @@ class Tabulator(BaseTable):
             ilocs = []
         else:  # SelectionEvent
             selected = indices.selected
-            indices = [indices.index]
+            indices = indices.indices
             ilocs = self.selection
 
         nrows = self.page_size
