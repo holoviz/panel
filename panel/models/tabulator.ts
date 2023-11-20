@@ -367,12 +367,10 @@ export class DataTabulatorView extends HTMLBoxView {
     this.connect(p.sorters.change, () => this.setSorters())
     this.connect(p.theme_classes.change, () => this.setCSSClasses(this.tabulator.element))
     this.connect(this.model.source.properties.data.change, () => {
-      console.log("Before: ", this.model.source.selected.indices)
       this._selection_updating = true
       this.setData()
       this._selection_updating = false
       this.postUpdate()
-      console.log("After : ",this.model.source.selected.indices)
     })
     this.connect(this.model.source.streaming, () => this.addData())
     this.connect(this.model.source.patching, () => {
@@ -1127,12 +1125,10 @@ export class DataTabulatorView extends HTMLBoxView {
       if (selected_index !== null) {
         this._selection_updating = true
         this.model.trigger_event(new SelectionEvent(selected_index, selected=true))
-        console.log("Selected :", selected_index)
       }
       if (deselected_index !== null) {
         this._selection_updating = true
         this.model.trigger_event(new SelectionEvent(deselected_index, selected=false))
-        console.log("Deselected: ", deselected_index)
       }
     } else {
       const indices: number[] = data.map((row: any) => row._index)

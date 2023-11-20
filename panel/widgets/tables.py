@@ -1295,7 +1295,6 @@ class Tabulator(BaseTable):
         return theme_url
 
     def _update_columns(self, event, model):
-        print(event.name)
         if event.name not in self._config_params:
             super()._update_columns(event, model)
             if (event.name in ('editors', 'formatters', 'sortable') and
@@ -1582,7 +1581,6 @@ class Tabulator(BaseTable):
             p_range = self._processed.index[start:end]
             kwargs['indices'] = [iloc - start for ind, iloc in indices
                                  if ind in p_range]
-            print(indices, kwargs['indices'])
         super()._update_selected(*events, **kwargs)
 
     def _update_column(self, column: str, array: np.ndarray):

@@ -1413,6 +1413,7 @@ def test_tabulator_paginated_sorted_selection(document, comm):
     table._process_events({'indices': [1]})
     assert table.selection == [1]
 
+
 def test_tabulator_stream_dataframe(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df)
