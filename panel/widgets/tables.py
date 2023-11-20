@@ -1244,7 +1244,6 @@ class Tabulator(BaseTable):
         super()._cleanup(root)
 
     def _process_event(self, event) -> None:
-
         if event.event_name == 'selection-change':
             self._update_selection(event)
             return
@@ -1538,7 +1537,11 @@ class Tabulator(BaseTable):
         elif events and all(e.name in page_events for e in events) and not self.pagination:
             self._processed, _ = self._get_data()
             return
-        elif self.pagination == 'remote':
+        elif (
+            self.pagination == 'remote'
+            and isinstance(self.selectable, str)
+            and "checkbox" in self.selectable
+        ):
             self._processed = None
         recompute = not all(
             e.name in ('page', 'page_size', 'pagination') for e in events
@@ -1568,11 +1571,11 @@ class Tabulator(BaseTable):
         if self.pagination == 'remote' and self.value is not None:
             index = self.value.iloc[self.selection].index
             indices = []
-            for v in index.values:
+            for ind in index.values:
                 try:
-                    iloc = self._processed.index.get_loc(v)
-                    self._validate_iloc(v ,iloc)
-                    indices.append((v, iloc))
+                    iloc = self._processed.index.get_loc(ind)
+                    self._validate_iloc(ind ,iloc)
+                    indices.append((ind, iloc))
                 except KeyError:
                     continue
             nrows = self.page_size
