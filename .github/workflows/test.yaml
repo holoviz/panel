@@ -147,7 +147,6 @@ jobs:
           cache: true
           nodejs: true
           playwright: true
-          playwright-version: "1.38.0"
         id: install
       - name: doit develop_install
         run: |
@@ -170,7 +169,7 @@ jobs:
           python ./scripts/panelite/generate_panelite_content.py
           jupyter lite build --lite-dir lite --output-dir lite/dist
       - name: Wait for JupyterLab
-        uses: ifaxity/wait-on-action@v1
+        uses: ifaxity/wait-on-action@v1.1.0
         with:
           resource: http-get://localhost:8887/lab
           timeout: 180000
@@ -187,6 +186,7 @@ jobs:
         with:
           name: ui_screenshots
           path: ./ui_screenshots
+          if-no-files-found: ignore
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:

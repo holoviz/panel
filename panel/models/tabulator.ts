@@ -226,12 +226,12 @@ const dateEditor = function(cell: any, onRendered: any, success: any, cancel: an
   input.addEventListener("blur", onChange);
 
   //submit new value on enter
-  input.addEventListener("keydown", function(e){
-    if(e.keyCode == 13)
-      onChange()
+  input.addEventListener("keydown", (e) => {
+    if (e.key == "Enter")
+      setTimeout(onChange, 100)
 
-    if(e.keyCode == 27)
-      cancel()
+    if (e.key == "Escape")
+      setTimeout(cancel, 100)
   });
 
   return input;
@@ -280,12 +280,12 @@ const datetimeEditor = function(cell: any, onRendered: any, success: any, cancel
   input.addEventListener("blur", onChange);
 
   //submit new value on enter
-  input.addEventListener("keydown", function(e){
-    if(e.keyCode == 13)
-      onChange()
+  input.addEventListener("keydown", (e) => {
+    if (e.key == "Enter")
+      setTimeout(onChange, 100)
 
-    if(e.keyCode == 27)
-      cancel()
+    if (e.key == "Escape")
+      setTimeout(cancel, 100)
   });
 
   return input;
