@@ -9,6 +9,7 @@ import datetime as dt
 import difflib
 import inspect
 import logging
+import pathlib
 import re
 import sys
 import textwrap
@@ -21,6 +22,7 @@ from typing import (
     Tuple, Type, Union,
 )
 
+import jinja2
 import numpy as np
 import param
 
@@ -1597,6 +1599,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         self._attrs = {}
         self._panes = {}
         self._event_callbacks = defaultdict(lambda: defaultdict(list))
+        self._watching_esm = False
 
     @classmethod
     def _loaded(cls) -> bool:
@@ -1645,6 +1648,21 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             ] + props['stylesheets']
         return props
 
+    def _render_esm(self):
+        if isinstance(self._esm, pathlib.PurePath):
+            esm = self._esm.read_text()
+        else:
+            esm = self._esm
+        esm = textwrap.dedent(esm)
+        template = jinja2.Template(esm)
+        return template.render({})
+
+    async def _watch_esm(self):
+        import watchfiles
+        async for _ in watchfiles.awatch(self._esm):
+            for ref, (model, _) in self._models.items():
+                self._apply_update({}, {'esm': self._render_esm()}, model, ref)
+
     def _init_params(self) -> Dict[str, Any]:
         ignored = list(Reactive.param)
         for child in self._parser.children.values():
@@ -1670,7 +1688,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             'attrs': self._attrs,
             'callbacks': self._node_callbacks,
             'data': self._data_model(**self._process_param_change(data_params)),
-            'esm': textwrap.dedent(self._esm),
+            'esm': self._render_esm(),
             'events': self._get_events(),
             'html': escape(textwrap.dedent(html)),
             'nodes': nodes,
@@ -1760,8 +1778,6 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         return self._process_children(doc, root, model, comm, new_models)
 
     def _get_template(self) -> Tuple[str, List[str], Mapping[str, List[Tuple[str, List[str], str]]]]:
-        import jinja2
-
         # Replace loop variables with indexed child parameter e.g.:
         #   {% for obj in objects %}
         #     ${obj}
@@ -1892,11 +1908,18 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
         ref = root.ref['id']
         data_model: DataModel = model.data # type: ignore
+        for p, v in data_model.properties_with_values().items():
+            if isinstance(v, DataModel):
+                v.tags.append(f"__ref:{ref}")
         self._patch_datamodel_ref(data_model.properties_with_values(), ref)
         model.update(children=self._get_children(doc, root, model, comm))
         self._register_events('dom_event', model=model, doc=doc, comm=comm)
         self._link_props(data_model, self._linked_properties, doc, root, comm)
         self._models[ref] = (model, parent)
+        if isinstance(self._esm, pathlib.PurePath) and not self._watching_esm:
+            state.execute(self._watch_esm)
+            self._watching_esm = True
+        self._models[root.ref['id']] = (model, parent)
         return model
 
     def _process_event(self, event: 'Event') -> None:
@@ -1954,7 +1977,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                     data_msg[prop] = HTML_SANITIZER.clean(v)
                 elif prop in model.data.properties():
                     data_msg[prop] = v
-            elif prop in list(Reactive.param)+['events']:
+            elif prop in list(Reactive.param)+['events', 'esm']:
                 model_msg[prop] = v
             elif (
                 (prop in self.param) and (
