@@ -44,7 +44,7 @@ export class CellClickEvent extends ModelEvent {
 }
 
 export class SelectionEvent extends ModelEvent {
-  constructor(readonly indices: Array<number>, readonly selected: boolean) {
+  constructor(readonly indices: number[], readonly selected: boolean) {
     super()
   }
 
@@ -1120,15 +1120,15 @@ export class DataTabulatorView extends HTMLBoxView {
     )
       return
     if (this.model.pagination === 'remote') {
-      let selected_index = selected.map((x: any) => x._row.data._index)
-      let deselected_index = deselected.map((x: any) => x._row.data._index)
-      if (selected_index.length > 0) {
+      let selected_indices = selected.map((x: any) => x._row.data._index)
+      let deselected_indices = deselected.map((x: any) => x._row.data._index)
+      if (selected_indices.length > 0) {
         this._selection_updating = true
-        this.model.trigger_event(new SelectionEvent(selected_index, selected=true))
+        this.model.trigger_event(new SelectionEvent(selected_indices, selected=true))
       }
-      if (deselected_index.length > 0) {
+      if (deselected_indices.length > 0) {
         this._selection_updating = true
-        this.model.trigger_event(new SelectionEvent(deselected_index, selected=false))
+        this.model.trigger_event(new SelectionEvent(deselected_indices, selected=false))
       }
     } else {
       const indices: number[] = data.map((row: any) => row._index)
