@@ -3277,3 +3277,50 @@ def test_tabulator_update_hidden_columns(page):
         (title.bounding_box()['x'] == cell.bounding_box()['x']) and
         (title.bounding_box()['width'] == cell.bounding_box()['width'])
     ), page)
+
+
+class Test_CheckboxSelection_RemotePagination:
+
+    def setup_method(self):
+        self.widget = Tabulator(
+            value=pd.DataFrame(np.arange(20) + 100),
+            disabled=True,
+            pagination="remote",
+            page_size=10,
+            selectable="checkbox",
+            header_filters=True,
+        )
+
+    def check_selected(self, page, expected, ui_count=None):
+        if ui_count is None:
+            ui_count = len(expected)
+
+        expect(page.locator('.tabulator-selected')).to_have_count(ui_count)
+        wait_until(lambda: self.widget.selection == expected, page)
+
+    def get_checkboxes(self, page):
+        return page.locator('input[type="checkbox"]')
+
+    def test_full_firstpage(self, page):
+        serve_component(page, self.widget)
+        checkboxes = self.get_checkboxes(page)
+
+        # Select all items on page
+        checkboxes.nth(0).click()
+        self.check_selected(page, list(range(10)))
+
+        # Deselect last one
+        checkboxes.last.click()
+        self.check_selected(page, list(range(9)))
+
+    def test_one_item_first_page(self, page):
+        serve_component(page, self.widget)
+        checkboxes = self.get_checkboxes(page)
+
+        # Select all items on page
+        checkboxes.nth(1).click()
+        self.check_selected(page, [0])
+
+        # Deselect last one
+        checkboxes.nth(1).click()
+        self.check_selected(page, [])
