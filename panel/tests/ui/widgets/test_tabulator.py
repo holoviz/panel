@@ -3304,6 +3304,15 @@ class Test_CheckboxSelection_RemotePagination:
     def goto_page(self, page, page_number):
         page.locator(f'button.tabulator-page[data-page="{page_number}"]').click()
 
+    def click_sorting(self, page):
+        page.locator('div.tabulator-col-title').get_by_text("index").click()
+        page.wait_for_timeout(100)
+
+    def set_filtering(self, page, number):
+        number_input = page.locator('input[type="number"]').first
+        number_input.fill(str(number))
+        number_input.press("Enter")
+
     def test_full_firstpage(self, page):
         serve_component(page, self.widget)
         checkboxes = self.get_checkboxes(page)
@@ -3338,3 +3347,77 @@ class Test_CheckboxSelection_RemotePagination:
 
         self.goto_page(page, 1)
         self.check_selected(page, [0], 1)
+
+    def test_one_item_both_pages_python(self, page):
+        serve_component(page, self.widget)
+
+        self.widget.selection = [0, 10]
+        self.check_selected(page, [0, 10], 1)
+
+        self.goto_page(page, 2)
+        self.check_selected(page, [0, 10], 1)
+
+    @pytest.mark.parametrize("selection", (0, 10), ids=["page1", "page2"])
+    def test_sorting(self, page, selection):
+        self.widget.selection = [selection]
+        serve_component(page, self.widget)
+        self.check_selected(page, [selection], int(selection == 0))
+
+        # First sort ascending
+        self.click_sorting(page)
+        self.check_selected(page, [selection], int(selection == 0))
+
+        # Then sort descending
+        self.click_sorting(page)
+        self.check_selected(page, [selection], int(selection == 10))
+
+        # Then back to ascending
+        self.click_sorting(page)
+        self.check_selected(page, [selection], int(selection == 0))
+
+    def test_sorting_all(self, page):
+        serve_component(page, self.widget)
+        checkboxes = self.get_checkboxes(page)
+
+        # Select all items on page
+        checkboxes.nth(0).click()
+
+        # First sort ascending
+        self.click_sorting(page)
+        self.check_selected(page, list(range(10)), 10)
+
+        # Then sort descending
+        self.click_sorting(page)
+        self.check_selected(page, list(range(10)), 0)
+
+        # Then back to ascending
+        self.click_sorting(page)
+        self.check_selected(page, list(range(10)), 10)
+
+    @pytest.mark.parametrize("selection", (0, 10), ids=["page1", "page2"])
+    def test_filtering(self, page, selection):
+        self.widget.selection = [selection]
+        serve_component(page, self.widget)
+        self.check_selected(page, [selection], int(selection == 0))
+
+        self.set_filtering(page, selection)
+        self.check_selected(page, [selection], 1)
+
+        self.set_filtering(page, 1)
+        self.check_selected(page, [selection], 0)
+
+    def test_filtering_all(self, page):
+        serve_component(page, self.widget)
+        checkboxes = self.get_checkboxes(page)
+
+        # Select all items on page
+        checkboxes.nth(0).click()
+
+        for n in range(10):
+            self.set_filtering(page, n)
+            self.check_selected(page, list(range(10)), 1)
+
+        for n in range(10, 20):
+            self.set_filtering(page, n)
+            self.check_selected(page, list(range(10)), 0)
+            expect(page.locator('.tabulator')).to_have_count(1)
