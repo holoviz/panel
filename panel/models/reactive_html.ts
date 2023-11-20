@@ -1,5 +1,14 @@
-import {render} from 'preact';
-import {useCallback} from 'preact/hooks';
+import {render, Component} from 'preact';
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useErrorBoundary,
+  useLayoutEffect,
+  useState,
+  useReducer
+} from 'preact/hooks';
+
 import {html} from 'htm/preact';
 
 import {div} from "@bokehjs/core/dom"
@@ -91,6 +100,17 @@ export class ReactiveHTMLView extends HTMLBoxView {
   model: ReactiveHTML
   html: string
   container: HTMLDivElement
+  ns: any = {
+    Component,
+    html,
+    useCallback,
+    useContext,
+    useEffect,
+    useErrorBoundary,
+    useLayoutEffect,
+    useState,
+    useReducer
+  }
   _parent: any = null
   _changing: boolean = false
   _event_listeners: any = {}
@@ -149,6 +169,9 @@ export class ReactiveHTMLView extends HTMLBoxView {
     this.connect(this.model.properties.children.change, async () => {
       this.html = htmlDecode(this.model.html) || this.model.html
       await this.rebuild()
+    })
+    this.connect(this.model.properties.esm.change, () => {
+      this.invalidate_render()
     })
     this._recursive_connect(this.model.data, true, '')
     this.connect(this.model.properties.events.change, () => {
@@ -458,8 +481,8 @@ export class ReactiveHTMLView extends HTMLBoxView {
 
   private _update(property: string | null = null): void {
     if (property == null || (this.html.indexOf(`\${${property}}`) > -1)) {
-      this._render_esm()
       const rendered = this._render_html(this.html)
+      this._render_esm()
       if (rendered == null)
 	return
       try {
@@ -475,19 +498,28 @@ export class ReactiveHTMLView extends HTMLBoxView {
     if (!this.model.esm)
 	return
 
+    const defs = []
+    for (const exp in this.ns)
+      defs.push(`const ${exp} = view.ns['${exp}'];\n`)
+    const def_string = defs.join('    ')
+
     let dyn = document.createElement("script")
     dyn.type = "module"
     dyn.innerHTML = `
+    const root = Bokeh.index['${this.root.model.id}']
+    const views = [...root.owner.query((view) => view.model.id == '${this.model.id}')]
+    const view = views[0]
+    ${def_string}
     ${this.model.esm}
 
-    const root = Bokeh.index['${this.root.model.id}']
-    const views = [...root.owner.query((view) => view.model.id == '${this.root.model.id}')]
-    if (views.length == 1) {
-      const view = views[0]
-      render({model: view.model, data: view.model.data, el: view.container})
-    }
-    `;
-    this.container.append(dyn);
+    const rendered = render({model: view.model, data: view.model.data, el: view.container})
+    view.render_esm(rendered);`;
+    this.container.appendChild(dyn)
+  }
+
+  render_esm(rendered: any): void {
+    if (rendered)
+      render(rendered, this.container)
   }
 
   private _update_model(el: any, name: string): void {
