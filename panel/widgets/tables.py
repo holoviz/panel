@@ -44,7 +44,9 @@ if TYPE_CHECKING:
     from bokeh.models.sources import DataDict
     from pyviz_comms import Comm
 
-    from ..models.tabulator import CellClickEvent, TableEditEvent
+    from ..models.tabulator import (
+        CellClickEvent, SelectionEvent, TableEditEvent,
+    )
 
 
 def _convert_datetime_array_ignore_list(v):
@@ -1241,7 +1243,11 @@ class Tabulator(BaseTable):
             p._cleanup(root)
         super()._cleanup(root)
 
-    def _process_event(self, event):
+    def _process_event(self, event) -> None:
+        if event.event_name == 'selection-change':
+            self._update_selection(event)
+            return
+
         event_col = self._renamed_cols.get(event.column, event.column)
         if self.pagination == 'remote':
             nrows = self.page_size
@@ -1288,7 +1294,6 @@ class Tabulator(BaseTable):
         return theme_url
 
     def _update_columns(self, event, model):
-        print(event.name)
         if event.name not in self._config_params:
             super()._update_columns(event, model)
             if (event.name in ('editors', 'formatters', 'sortable') and
@@ -1532,6 +1537,12 @@ class Tabulator(BaseTable):
         elif events and all(e.name in page_events for e in events) and not self.pagination:
             self._processed, _ = self._get_data()
             return
+        elif (
+            self.pagination == 'remote'
+            and isinstance(self.selectable, str)
+            and "checkbox" in self.selectable
+        ):
+            self._processed = None
         recompute = not all(
             e.name in ('page', 'page_size', 'pagination') for e in events
         )
@@ -1558,20 +1569,23 @@ class Tabulator(BaseTable):
     def _update_selected(self, *events: param.parameterized.Event, indices=None):
         kwargs = {}
         if self.pagination == 'remote' and self.value is not None:
+            # Compute integer indexes of the selected rows
+            # on the displayed page
             index = self.value.iloc[self.selection].index
             indices = []
-            for v in index.values:
+            for ind in index.values:
                 try:
-                    iloc = self._processed.index.get_loc(v)
-                    self._validate_iloc(v ,iloc)
-                    indices.append(iloc)
+                    iloc = self._processed.index.get_loc(ind)
+                    self._validate_iloc(ind ,iloc)
+                    indices.append((ind, iloc))
                 except KeyError:
                     continue
             nrows = self.page_size
             start = (self.page-1)*nrows
             end = start+nrows
-            kwargs['indices'] = [ind-start for ind in indices
-                                 if ind>=start and ind<end]
+            p_range = self._processed.index[start:end]
+            kwargs['indices'] = [iloc - start for ind, iloc in indices
+                                 if ind in p_range]
         super()._update_selected(*events, **kwargs)
 
     def _update_column(self, column: str, array: np.ndarray):
@@ -1592,22 +1606,32 @@ class Tabulator(BaseTable):
         with pd.option_context('mode.chained_assignment', None):
             self._processed.loc[index, column] = array
 
-    def _update_selection(self, indices: List[int]):
+    def _update_selection(self, indices: List[int] | SelectionEvent):
         if self.pagination != 'remote':
             self.selection = indices
             return
+        if isinstance(indices, list):
+            selected = True
+            ilocs = []
+        else:  # SelectionEvent
+            selected = indices.selected
+            indices = indices.indices
+            ilocs = self.selection
+
         nrows = self.page_size
         start = (self.page-1)*nrows
         index = self._processed.iloc[[start+ind for ind in indices]].index
-        indices = []
         for v in index.values:
             try:
                 iloc = self.value.index.get_loc(v)
                 self._validate_iloc(v, iloc)
-                indices.append(iloc)
             except KeyError:
                 continue
-        self.selection = indices
+            if selected:
+                ilocs.append(iloc)
+            else:
+                ilocs.remove(iloc)
+        self.selection = list(dict.fromkeys(ilocs))
 
     def _get_properties(self, doc: Document) -> Dict[str, Any]:
         properties = super()._get_properties(doc)
@@ -1659,7 +1683,7 @@ class Tabulator(BaseTable):
             child_panels, doc, root, parent, comm
         )
         self._link_props(model, ['page', 'sorters', 'expanded', 'filters'], doc, root, comm)
-        self._register_events('cell-click', 'table-edit', model=model, doc=doc, comm=comm)
+        self._register_events('cell-click', 'table-edit', 'selection-change', model=model, doc=doc, comm=comm)
         return model
 
     def _get_filter_spec(self, column: TableColumn) -> Dict[str, Any]:
