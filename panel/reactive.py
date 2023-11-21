@@ -9,7 +9,6 @@ import datetime as dt
 import difflib
 import inspect
 import logging
-import pathlib
 import re
 import sys
 import textwrap
@@ -1316,17 +1315,19 @@ class ReactiveData(SyncableData):
         super(ReactiveData, self)._process_events(events)
 
 
+class ReactiveMetaBase(ParameterizedMetaclass):
 
-class ReactiveHTMLMetaclass(ParameterizedMetaclass):
+    _loaded_extensions: ClassVar[Set[str]] = set()
+
+    _name_counter: ClassVar[Counter] = Counter()
+
+
+class ReactiveHTMLMetaclass(ReactiveMetaBase):
     """
     Parses the ReactiveHTML._template of the class and initializes
     variables, callbacks and the data model to sync the parameters and
     HTML attributes.
     """
-
-    _loaded_extensions: ClassVar[Set[str]] = set()
-
-    _name_counter: ClassVar[Counter] = Counter()
 
     _script_regex: ClassVar[str] = r"script\([\"|'](.*)[\"|']\)"
 
@@ -1424,13 +1425,62 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
         # Create model with unique name
         ReactiveHTMLMetaclass._name_counter[name] += 1
         model_name = f'{name}{ReactiveHTMLMetaclass._name_counter[name]}'
+
         mcs._data_model = construct_data_model(
             mcs, name=model_name, ignore=ignored, types=types
         )
 
 
+class ReactiveCustomBase(Reactive):
 
-class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
+    __css__: ClassVar[Optional[List[str]]] = None
+    __javascript__: ClassVar[Optional[List[str]]] = None
+    __javascript_modules__: ClassVar[Optional[List[str]]] = None
+
+    @classmethod
+    def _loaded(cls) -> bool:
+        """
+        Whether the component has been loaded.
+        """
+        return (
+            cls._extension_name is None or
+            (cls._extension_name in ReactiveMetaBase._loaded_extensions and
+             (state._extensions is None or (cls._extension_name in state._extensions)))
+        )
+
+    def _process_param_change(self, params):
+        props = super()._process_param_change(params)
+        if 'stylesheets' in params:
+            css = getattr(self, '__css__', []) or []
+            if state.rel_path:
+                css = [
+                    ss if ss.startswith('http') else f'{state.rel_path}/{ss}'
+                    for ss in css
+                ]
+            props['stylesheets'] = [
+                ImportedStyleSheet(url=ss) for ss in css
+            ] + props['stylesheets']
+        return props
+
+    def _set_on_model(self, msg: Mapping[str, Any], root: Model, model: Model) -> None:
+        if not msg:
+            return
+        old = self._changing.get(root.ref['id'], [])
+        self._changing[root.ref['id']] = [
+            attr for attr, value in msg.items()
+            if not model.lookup(attr).property.matches(getattr(model, attr), value)
+        ]
+        try:
+            model.update(**msg)
+        finally:
+            if old:
+                self._changing[root.ref['id']] = old
+            else:
+                del self._changing[root.ref['id']]
+
+
+
+class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
     """
     ReactiveHTML provides bi-directional syncing of arbitrary HTML
     attributes and DOM properties with parameters on the subclass.
@@ -1556,8 +1606,6 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
     _extension_name: ClassVar[Optional[str]] = None
 
-    _esm: ClassVar[str] = ""
-
     _template: ClassVar[str] = ""
 
     _scripts: ClassVar[Mapping[str, str | List[str]]] = {}
@@ -1565,10 +1613,6 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     _script_assignment: ClassVar[str] = (
         r'data\.([^[^\d\W]\w*)[ ]*[\+,\-,\*,\\,%,\*\*,<<,>>,>>>,&,\^,|,\&\&,\|\|,\?\?]*='
     )
-
-    __css__: ClassVar[Optional[List[str]]] = None
-    __javascript__: ClassVar[Optional[List[str]]] = None
-    __javascript_modules__: ClassVar[Optional[List[str]]] = None
 
     __abstract = True
 
@@ -1599,18 +1643,6 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         self._attrs = {}
         self._panes = {}
         self._event_callbacks = defaultdict(lambda: defaultdict(list))
-        self._watching_esm = False
-
-    @classmethod
-    def _loaded(cls) -> bool:
-        """
-        Whether the component has been loaded.
-        """
-        return (
-            cls._extension_name is None or
-            (cls._extension_name in ReactiveHTMLMetaclass._loaded_extensions and
-             (state._extensions is None or (cls._extension_name in state._extensions)))
-        )
 
     def _cleanup(self, root: Model | None = None) -> None:
         for _child, panes in self._panes.items():
@@ -1633,35 +1665,6 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         children: Dict[str, List[Model]]
     ) -> Dict[str, List[Model]]:
         return children
-
-    def _process_param_change(self, params):
-        props = super()._process_param_change(params)
-        if 'stylesheets' in params:
-            css = getattr(self, '__css__', []) or []
-            if state.rel_path:
-                css = [
-                    ss if ss.startswith('http') else f'{state.rel_path}/{ss}'
-                    for ss in css
-                ]
-            props['stylesheets'] = [
-                ImportedStyleSheet(url=ss) for ss in css
-            ] + props['stylesheets']
-        return props
-
-    def _render_esm(self):
-        if isinstance(self._esm, pathlib.PurePath):
-            esm = self._esm.read_text()
-        else:
-            esm = self._esm
-        esm = textwrap.dedent(esm)
-        template = jinja2.Template(esm)
-        return template.render({})
-
-    async def _watch_esm(self):
-        import watchfiles
-        async for _ in watchfiles.awatch(self._esm):
-            for ref, (model, _) in self._models.items():
-                self._apply_update({}, {'esm': self._render_esm()}, model, ref)
 
     def _init_params(self) -> Dict[str, Any]:
         ignored = list(Reactive.param)
@@ -1688,7 +1691,6 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             'attrs': self._attrs,
             'callbacks': self._node_callbacks,
             'data': self._data_model(**self._process_param_change(data_params)),
-            'esm': self._render_esm(),
             'events': self._get_events(),
             'html': escape(textwrap.dedent(html)),
             'nodes': nodes,
@@ -1901,7 +1903,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 f'\n\npn.extension(\'{self._extension_name}\')\n'
             )
         if self._extension_name:
-            ReactiveHTMLMetaclass._loaded_extensions.add(self._extension_name)
+            ReactiveMetaBase._loaded_extensions.add(self._extension_name)
 
         if not root:
             root = model
@@ -1915,7 +1917,6 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         model.update(children=self._get_children(doc, root, model, comm))
         self._register_events('dom_event', model=model, doc=doc, comm=comm)
         self._link_props(data_model, self._linked_properties, doc, root, comm)
-        self._models[ref] = (model, parent)
         if isinstance(self._esm, pathlib.PurePath) and not self._watching_esm:
             state.execute(self._watch_esm)
             self._watching_esm = True
@@ -1945,6 +1946,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         for cb in event_cbs:
             cb(event)
 
+<<<<<<< HEAD
     def _set_on_model(self, msg: Mapping[str, Any], root: Model, model: Model) -> None:
         if not msg:
             return
@@ -1964,6 +1966,8 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         if isinstance(model, DataModel):
             self._patch_datamodel_ref(model.properties_with_values(), ref)
 
+=======
+>>>>>>> c113d3a23 (Pull out ReactiveESM)
     def _update_model(
         self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
         root: Model, model: Model, doc: Document, comm: Optional[Comm]
@@ -1977,7 +1981,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                     data_msg[prop] = HTML_SANITIZER.clean(v)
                 elif prop in model.data.properties():
                     data_msg[prop] = v
-            elif prop in list(Reactive.param)+['events', 'esm']:
+            elif prop in list(Reactive.param)+['events']:
                 model_msg[prop] = v
             elif (
                 (prop in self.param) and (
