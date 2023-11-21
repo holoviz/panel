@@ -1,16 +1,17 @@
 import {render} from 'preact';
+import {useCallback} from 'preact/hooks';
 import {html} from 'htm/preact';
 
 import {div} from "@bokehjs/core/dom"
 import {isArray} from "@bokehjs/core/util/types"
 import * as p from "@bokehjs/core/properties"
-import {Model} from "@bokehjs/model"
 import {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
 
 import {dict_to_records} from "./data"
 import {serializeEvent} from "./event-to-object"
 import {DOMEvent, htmlDecode} from "./html"
 import {HTMLBox, HTMLBoxView} from "./layout"
+
 
 function serialize_attrs(attrs: any): any {
   const serialized: any = {}
@@ -85,6 +86,7 @@ function element_lookup(root: ShadowRoot, el_id: string): HTMLElement | null {
   return el
 }
 
+
 export class ReactiveHTMLView extends HTMLBoxView {
   model: ReactiveHTML
   html: string
@@ -95,7 +97,6 @@ export class ReactiveHTMLView extends HTMLBoxView {
   _mutation_observers: MutationObserver[] = []
   _script_fns: any = {}
   _state: any = {}
-  _watchers: any = {}
 
   initialize(): void {
     super.initialize()

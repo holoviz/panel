@@ -1917,9 +1917,6 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
         model.update(children=self._get_children(doc, root, model, comm))
         self._register_events('dom_event', model=model, doc=doc, comm=comm)
         self._link_props(data_model, self._linked_properties, doc, root, comm)
-        if isinstance(self._esm, pathlib.PurePath) and not self._watching_esm:
-            state.execute(self._watch_esm)
-            self._watching_esm = True
         self._models[root.ref['id']] = (model, parent)
         return model
 
@@ -1946,28 +1943,11 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
         for cb in event_cbs:
             cb(event)
 
-<<<<<<< HEAD
     def _set_on_model(self, msg: Mapping[str, Any], root: Model, model: Model) -> None:
-        if not msg:
-            return
-        ref = root.ref['id']
-        old = self._changing.get(ref, [])
-        self._changing[ref] = [
-            attr for attr, value in msg.items()
-            if not model.lookup(attr).property.matches(getattr(model, attr), value)
-        ]
-        try:
-            model.update(**msg)
-        finally:
-            if old:
-                self._changing[ref] = old
-            else:
-                del self._changing[ref]
+        super()._set_on_model(msg, root, model)
         if isinstance(model, DataModel):
-            self._patch_datamodel_ref(model.properties_with_values(), ref)
+            self._patch_datamodel_ref(model.properties_with_values(), root.ref['id'])
 
-=======
->>>>>>> c113d3a23 (Pull out ReactiveESM)
     def _update_model(
         self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
         root: Model, model: Model, doc: Document, comm: Optional[Comm]
