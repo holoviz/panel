@@ -1569,6 +1569,8 @@ class Tabulator(BaseTable):
     def _update_selected(self, *events: param.parameterized.Event, indices=None):
         kwargs = {}
         if self.pagination == 'remote' and self.value is not None:
+            # Compute integer indexes of the selected rows
+            # on the displayed page
             index = self.value.iloc[self.selection].index
             indices = []
             for ind in index.values:
