@@ -45,6 +45,7 @@ This micro-release focuses on a number of performance improvements, speeding up 
 
 - Updates for Numpy 2.0 compatibility ([#5817](https://github.com/holoviz/panel/pull/5817))
 - Improve notebook handling when loading bokeh dev versions ([#5820](https://github.com/holoviz/panel/pull/5820))
+- Support for rendering into DOM from PyScript Next worker ([#5820](https://github.com/holoviz/panel/pull/5911))
 
 ### Documentation
 
