@@ -14,6 +14,7 @@ from typing import (
 )
 
 import bokeh
+import js
 import param
 
 import pyodide # isort: split
@@ -48,7 +49,17 @@ os.environ['BOKEH_RESOURCES'] = 'cdn'
 try:
     from js import document as js_document  # noqa
     _IN_WORKER = False
+    _IN_PYSCRIPT_WORKER = False
 except Exception:
+    try:
+        # PyScript Next Worker support
+        from pyscript import RUNNING_IN_WORKER as _IN_PYSCRIPT_WORKER
+        if _IN_PYSCRIPT_WORKER:
+            from pyscript import document, window
+            js.document = document
+            js.Bokeh = window.Bokeh
+    except Exception:
+        _IN_PYSCRIPT_WORKER = False
     _IN_WORKER = True
 
 try:
@@ -313,13 +324,12 @@ async def _link_model(ref: str, doc: Document) -> None:
     doc: bokeh.document.Document
         The bokeh Document to sync the rendered Model with.
     """
-    from js import Bokeh
-    rendered = Bokeh.index.object_keys()
+    rendered = js.Bokeh.index.object_keys()
     if ref not in rendered:
         await asyncio.sleep(0.1)
         await _link_model(ref, doc)
         return
-    views = Bokeh.index.object_values()
+    views = js.Bokeh.index.object_values()
     view = views[rendered.indexOf(ref)]
     _link_docs(doc, view.model.document)
 
@@ -443,14 +453,11 @@ async def write(target: str, obj: Any) -> None:
     obj: Viewable
         Object to render into the DOM node
     """
-
-    from js import Bokeh
-
     from ..pane import panel as as_panel
 
     obj = as_panel(obj)
     pydoc, model_json = _model_json(obj, target)
-    views = await Bokeh.embed.embed_item(JSON.parse(model_json))
+    views = await js.Bokeh.embed.embed_item(JSON.parse(model_json))
     jsdoc = list(views.roots)[0].model.document
     _link_docs(pydoc, jsdoc)
     pydoc.unhold()
@@ -505,8 +512,7 @@ async def write_doc(doc: Document | None = None) -> Tuple[str, str, str]:
 
     # Test whether we have access to DOM
     try:
-        from js import Bokeh, document
-        root_els = document.querySelectorAll('[data-root-id]')
+        root_els = js.document.querySelectorAll('[data-root-id]')
         for el in root_els:
             el.innerHTML = ''
     except Exception:
@@ -516,7 +522,7 @@ async def write_doc(doc: Document | None = None) -> Tuple[str, str, str]:
 
     # If we have DOM access render and sync the document
     if root_els is not None:
-        views = await Bokeh.embed.embed_items(JSON.parse(docs_json), JSON.parse(render_items))
+        views = await js.Bokeh.embed.embed_items(JSON.parse(docs_json), JSON.parse(render_items))
         jsdoc = list(views[0].roots)[0].model.document
         _link_docs(pydoc, jsdoc)
         sync_location()
