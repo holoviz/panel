@@ -222,8 +222,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
             log.debug("%s access token request failed.", type(self).__name__)
             self._raise_error(e.response, status=401)
 
-        body = decode_response_body(response)
-        if not body:
+        if not response.body or (body:= decode_response_body(response)):
             log.debug("%s token endpoint did not return a valid access token.", type(self).__name__)
             self._raise_error(response)
 
@@ -237,7 +236,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         expires_in = body.get('expires_in')
         if expires_in:
             expires_in = int(expires_in)
-        if 'id_token' in body:
+        if id_token:= body.get('id_token'):
             log.debug("%s successfully obtained tokens.", type(self).__name__)
             id_token = body['id_token']
             user = self._on_auth(id_token, access_token, refresh_token, expires_in)
@@ -438,12 +437,24 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         _, e, _ = kwargs['exc_info']
         self.clear_all_cookies()
         self.set_header("Content-Type", 'text/html')
+        if isinstance(e, HTTPError):
+            error, error_msg = e.reason, e.log_message
+        else:
+            provider = self.__class__.__name__.replace('LoginHandler', '')
+            log.error(
+                f'{provider} OAuth provider encountered unexpected '
+                f'error: {e}'
+            )
+            error, error_msg = (
+                '500: Internal Server Error',
+                'Server encountered unexpected problem.'
+            )
         self.write(self._error_template.render(
             npm_cdn=config.npm_cdn,
             title='Panel: Authentication Error',
             error_type='Authentication Error',
-            error=e.reason,
-            error_msg=e.log_message
+            error=error,
+            error_msg=error_msg
         ))
 
 
