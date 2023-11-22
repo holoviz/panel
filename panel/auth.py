@@ -222,7 +222,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
             log.debug("%s access token request failed.", type(self).__name__)
             self._raise_error(e.response, status=401)
 
-        if not response.body or (body:= decode_response_body(response)):
+        if not response.body or not (body:= decode_response_body(response)):
             log.debug("%s token endpoint did not return a valid access token.", type(self).__name__)
             self._raise_error(response)
 
