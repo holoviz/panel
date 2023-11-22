@@ -393,8 +393,10 @@ class ServableMixin:
             else:
                 self.server_doc(title=title, location=location) # type: ignore
         elif state._is_pyodide and 'pyodide_kernel' not in sys.modules:
-            from .io.pyodide import _IN_WORKER, _get_pyscript_target, write
-            if _IN_WORKER:
+            from .io.pyodide import (
+                _IN_PYSCRIPT_WORKER, _IN_WORKER, _get_pyscript_target, write,
+            )
+            if _IN_WORKER and not _IN_PYSCRIPT_WORKER:
                 return self
             try:
                 target = target or _get_pyscript_target()
