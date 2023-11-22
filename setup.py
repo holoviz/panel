@@ -214,6 +214,7 @@ extras_require = {
     'recommended': _recommended,
     'doc': _recommended + [
         'nbsite >=0.8.2',
+        'myst-nb >=0.17,<1',
         'lxml',
         'pandas <2.1.0' # Avoid deprecation warnings
     ],
