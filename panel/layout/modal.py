@@ -1,11 +1,15 @@
-"""The `Modal` is an element that displays in front of and deactivates all other page content."""
+"""The `Modal` is an element that displays in front of and deactivates all other page content.
+
+Use it to focus your users attention on a specific piece of information or a
+specific action.
+"""
 import param
 
 from ..reactive import ReactiveHTML
 from .base import NamedListLike
 
 # See https://a11y-dialog.netlify.app/
-JS_FILE = "https://cdn.jsdelivr.net/npm/a11y-dialog@7/dist/a11y-dialog.min.js"
+JS_FILE = "https://cdn.jsdelivr.net/npm/a11y-dialog@8/dist/a11y-dialog.min.js"
 
 STYLE = """
 .dialog-container,
@@ -93,8 +97,11 @@ fast-design-system-provider .pnx-dialog-close:hover {
 """
 
 class Modal(ReactiveHTML, NamedListLike):  # pylint: disable=too-many-ancestors
-    """The `Modal` layout is a *pop up* element that displays in front of and deactivates
+    """The `Modal` layout is a *pop up*, element that displays in front of and deactivates
     all other page content.
+
+    Use it to focus your users attention on a specific piece of information or a
+    specific action.
 
     You will need to include the `Modal` in a layout or your template. It will not be
     shown before you trigger the `open` event or equivalently set `is_open=True`.
@@ -112,19 +119,16 @@ class Modal(ReactiveHTML, NamedListLike):  # pylint: disable=too-many-ancestors
     >>> modal = Modal(pn.panel("Hi. I am the Panel Modal!", width=200))
     >>> pn.Column(modal.param.open, modal).servable()
     """
+    show_close_button = param.Boolean(True, doc="Whether to show a close button in the modal")
 
     is_open = param.Boolean(doc="""
         Whether or not the modal is open. Set to True to open. Set to False to close.""")
-    show_close_button = param.Boolean(True, doc="Whether to show a close button in the modal")
-
     open = param.Event(doc="Click here to open the modal")
     close = param.Event(doc="Click here to close the modal")
 
-    style = param.String(STYLE, doc="The css styles applied to the modal")
-
     def __init__(self, *objects, **params):  # pylint: disable=redefined-builtin
+        params["sizing_mode"]="fixed"
         params["height"] = params["width"] = params["margin"] = 0
-
         NamedListLike.__init__(self, *objects, **params)
         ReactiveHTML.__init__(self, objects=self.objects, **params)
 
@@ -142,11 +146,9 @@ class Modal(ReactiveHTML, NamedListLike):  # pylint: disable=too-many-ancestors
 
 
     _template = """
-<style id="pnx_dialog_style">
-{{style}}
-</style>
+<style id="pnx_dialog_style">""" + STYLE + """</style>
 <div id="pnx_dialog" class="dialog-container bk-root" aria-hidden="true">
-<div class="dialog-overlay" data-a11y-dialog-hide></div>
+<div id="pnx_overlay" class="dialog-overlay" data-a11y-dialog-hide></div>
   <div id="pnx_dialog_content" class="dialog-content" role="document">
     <button id="pnx_dialog_close" data-a11y-dialog-hide class="pnx-dialog-close" aria-label="Close this dialog window">
       <svg class="svg-icon" viewBox="0 0 20 20">
