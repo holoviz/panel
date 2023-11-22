@@ -421,7 +421,7 @@ class BaseTable(ReactiveData, Widget):
         for col_name, filt in self._filters:
             if col_name is not None and col_name not in df.columns:
                 continue
-            if isinstance(filt, (FunctionType, MethodType)):
+            if isinstance(filt, (FunctionType, MethodType, partial)):
                 df = filt(df)
                 continue
             if isinstance(filt, param.Parameter):
@@ -561,7 +561,7 @@ class BaseTable(ReactiveData, Widget):
         """
         if isinstance(filter, (tuple, list, set)) or np.isscalar(filter):
             deps = []
-        elif isinstance(filter, (FunctionType, MethodType)):
+        elif isinstance(filter, (FunctionType, MethodType, partial)):
             deps = list(filter._dinfo['kw'].values()) if hasattr(filter, '_dinfo') else []
         else:
             filter = transform_reference(filter)
