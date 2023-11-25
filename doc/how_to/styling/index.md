@@ -1,6 +1,7 @@
 # Style Components
 
-Panel provides a comprehensive system for applying designs, themes and custom styling for components. This section will take you through these concepts.
+Panel provides a comprehensive system for applying designs, themes and custom styling for components.
+This section will take you through these concepts.
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -49,6 +50,41 @@ How to control the visibility of a component.
 
 ::::
 
+This section will show you how to style the most common plotting libraries for use with Panel.
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`star;2.5em;sd-mr-1 sd-animate-grow50` Altair
+:link: altair
+:link-type: doc
+
+How to style an Altair plot
+:::
+
+:::{grid-item-card} {octicon}`graph;2.5em;sd-mr-1 sd-animate-grow50` Matplotlib
+:link: matplotlib
+:link-type: doc
+
+How to style a Matplotlib plot
+:::
+
+:::{grid-item-card} {octicon}`pencil;2.5em;sd-mr-1 sd-animate-grow50` Plotly
+:link: plotly
+:link-type: doc
+
+How to style a Plotly plot
+:::
+
+:::{grid-item-card} {octicon}`star;2.5em;sd-mr-1 sd-animate-grow50` Vega
+:link: vega
+:link-type: doc
+
+How to style a Vega plot
+:::
+
+::::
+
 ```{toctree}
 :titlesonly:
 :hidden:
@@ -59,4 +95,8 @@ themes
 apply_css
 load_icon
 visibility
+altair
+matplotlib
+plotly
+vega
 ```
