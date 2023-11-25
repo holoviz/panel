@@ -8,20 +8,18 @@ The gif below displays an example of what can be achieved with a little styling 
 
 ![PlotlyStyle.gif](https://assets.holoviews.org/panel/thumbnails/gallery/styles/plotly-styles.gif)
 
-## A Plotly Express plot with dark theme and accent color
+## A Plotly Express plot with a custom theme and accent color
 
 In this example we will give the Plotly Express plot a dark theme and a custom accent color.
 
 ```{pyodide}
 import pandas as pd
 import plotly.express as px
+import plotly.io as pio
 
 import panel as pn
 
-pn.extension("plotly", sizing_mode="stretch_width")
-
-ACCENT_COLOR = "#F08080"
-TEMPLATE = "plotly_dark"  # "ggplot2", "seaborn", "simple_white", "plotly", "plotly_white", "plotly_dark", "presentation", "xgridoff", "ygridoff", "gridon", "none"
+pn.extension("plotly")
 
 data = pd.DataFrame(
     [
@@ -36,18 +34,28 @@ data = pd.DataFrame(
     columns=["Day", "Orders"],
 )
 
-fig = px.line(
-    data,
-    x="Day",
-    y="Orders",
-    template=TEMPLATE,
-    color_discrete_sequence=(ACCENT_COLOR,),
-    title=f"Orders: '{TEMPLATE}' theme",
-)
-fig.update_traces(mode="lines+markers", marker=dict(size=10), line=dict(width=4))
-fig.layout.autosize = True
+def plot(template, color):
+    fig = px.line(
+        data,
+        x="Day",
+        y="Orders",
+        template=template,
+        color_discrete_sequence=(color,),
+        title=f"Template: {template}",
+    )
+    fig.update_traces(mode="lines+markers", marker=dict(size=10), line=dict(width=4))
+    fig.layout.autosize = True
+    return fig
 
-pn.pane.Plotly(fig, height=500, sizing_mode="stretch_width").servable()
+templates = sorted(pio.templates)
+template = pn.widgets.Select(value="plotly_dark", options=templates, name="Template")
+color = pn.widgets.ColorPicker(value="#F08080", name="Color")
+
+pn.Column(
+    "**Plotly Templates**: " + ", ".join(templates),
+    pn.Row(template, color),
+    pn.pane.Plotly(pn.bind(plot, template, color), sizing_mode="stretch_width")
+).servable()
 ```
 
 ## A Plotly `go.Figure` plot with dark theme
@@ -60,7 +68,7 @@ import plotly.graph_objects as go
 
 import panel as pn
 
-pn.extension("plotly", sizing_mode="stretch_width")
+pn.extension("plotly")
 
 TEMPLATE = "plotly_dark"  # "ggplot2", "seaborn", "simple_white", "plotly", "plotly_white", "plotly_dark", "presentation", "xgridoff", "ygridoff", "gridon", "none"
 
@@ -72,7 +80,7 @@ fig = go.Figure(
         title="Mt Bruno Elevation",
     ))
 fig.layout.autosize = True
-fig.update_layout(template=TEMPLATE, title=f"Mt Bruno Elevation: {TEMPLATE}' theme")
+fig.update_layout(template=TEMPLATE, title=f"Mt Bruno Elevation in a '{TEMPLATE}' template")
 
 pn.pane.Plotly(fig, height=500, sizing_mode="stretch_width").servable()
 ```

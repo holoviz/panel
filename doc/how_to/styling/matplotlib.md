@@ -10,44 +10,48 @@ The gif below displays an example of what can be achieved with a little styling 
 
 ![Matplotlib + FastListTemlate Styling Example](https://assets.holoviews.org/panel/thumbnails/gallery/styles/matplotlib-styles.gif)
 
-## A Matplotlib plot with dark theme and accent color
+## A Matplotlib plot with custom style and accent color
 
-In this example we will give the Matplotlib plot a dark theme and a custom accent color.
+In this example we will give the Matplotlib plot a custom style and accent color.
 
 ```{pyodide}
-import matplotlib.pyplot as plt
 import numpy as np
 
 from matplotlib.figure import Figure
-
+import matplotlib.pyplot as plt
 import panel as pn
 
 pn.extension()
 
-ACCENT_COLOR = "#F08080"
-STYLE = "dark_background"
 
-x = np.arange(-2, 8, .1)
-y = .1 * x ** 3 - x ** 2 + 3 * x + 2
+def plot(style, color):
+    x = np.arange(-2, 8, 0.1)
+    y = 0.1 * x**3 - x**2 + 3 * x + 2
+
+    plt.style.use("default")  # reset to not be affected by previous style changes
+    plt.style.use(style)  # change to the specified style
+
+    fig0 = Figure(figsize=(12, 6))
+    ax0 = fig0.subplots()
+    ax0.plot(x, y, linewidth=10.0, color=color)
+    ax0.set_title(f"Matplotlib Style: {style}")
+
+    plt.style.use("default")  # reset to not affect style of other plots
+
+    return fig0
 
 
-plt.style.use("default") # reset to not be affected by previous style changes
-plt.style.use(STYLE) # change to the specified style
+styles = sorted(plt.style.available)
+style = pn.widgets.Select(value="dark_background", options=styles, name="Style")
+color = pn.widgets.ColorPicker(value="#F08080", name="Color")
 
-fig0 = Figure(figsize=(12, 6))
-ax0 = fig0.subplots()
-ax0.plot(x, y, linewidth=10.0, color=ACCENT_COLOR)
-ax0.set_title(f'Matplotlib Style: {STYLE}');
-
-plt.style.use("default") # reset to not affect style of other plots
-
-pn.pane.Matplotlib(fig0, max_height=500, sizing_mode="scale_height").servable()
-```
-
-## The Matplotlib Styles
-
-Lets list the available styles for your convenience
-
-```{pyodide}
-pn.panel(plt.style.available).servable()
+pn.Column(
+    "**Matplotlib Styles**: " + ", ".join(styles),
+    pn.Row(style, color),
+    pn.pane.Matplotlib(
+        pn.bind(plot, style=style, color=color),
+        max_height=500,
+        sizing_mode="scale_height",
+    ),
+).servable()
 ```
