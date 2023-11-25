@@ -55,32 +55,69 @@ This section will show you how to style the most common plotting libraries for u
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`star;2.5em;sd-mr-1 sd-animate-grow50` Altair
+:::{grid-item-card} Altair
 :link: altair
 :link-type: doc
+
+```{image} https://altair-viz.github.io/_static/altair-logo-light.png
+:width: 125px
+:align: center
+:name: Altair
+```
 
 How to style an Altair plot
 :::
 
-:::{grid-item-card} {octicon}`graph;2.5em;sd-mr-1 sd-animate-grow50` Matplotlib
+:::{grid-item-card} ECharts
+:link: echarts
+:link-type: doc
+
+```{image} https://echarts.apache.org/en/images/logo.png
+:width: 125px
+:align: center
+:name: ECharts
+```
+
+How to style an ECharts plot
+:::
+
+:::{grid-item-card} Matplotlib
 :link: matplotlib
 :link-type: doc
+
+```{image} https://matplotlib.org/stable/_images/sphx_glr_logos2_003.png
+:width: 125px
+:align: center
+:name: Matplotlib
+```
 
 How to style a Matplotlib plot
 :::
 
-:::{grid-item-card} {octicon}`pencil;2.5em;sd-mr-1 sd-animate-grow50` Plotly
+:::{grid-item-card} Plotly
 :link: plotly
 :link-type: doc
+
+```{image} https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Plotly-logo.png/800px-Plotly-logo.png
+:width: 125px
+:align: center
+:name: Plotly
+```
 
 How to style a Plotly plot
 :::
 
-:::{grid-item-card} {octicon}`star;2.5em;sd-mr-1 sd-animate-grow50` Vega
+:::{grid-item-card} Vega Lite
 :link: vega
 :link-type: doc
 
-How to style a Vega plot
+```{image} https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Vega-Lite_Logo.svg/200px-Vega-Lite_Logo.svg.png
+:width: 125px
+:align: center
+:name: Vega
+```
+
+How to style a Vega Lite plot
 :::
 
 ::::
@@ -96,6 +133,7 @@ apply_css
 load_icon
 visibility
 altair
+echarts
 matplotlib
 plotly
 vega
