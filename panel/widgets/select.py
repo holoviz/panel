@@ -341,7 +341,12 @@ class NestedSelect(CompositeWidget):
 
     options = param.Dict(doc="The options to select from. The options may be nested dictionaries or lists.")
 
-    levels = param.List(doc="The widgets' levels.")
+    levels = param.List(default=None, doc="""
+        Either a list of strings or a list of dictionaries. If a list of strings, the strings
+        are used as the names of the levels. If a list of dictionaries, each dictionary may
+        have a "name" key, which is used as the name of the level, a "type" key, which
+        is used as the type of widget, and any corresponding widget keyword arguments.
+    """)
 
     _selects = param.List(doc="The nested select widgets.")
 
@@ -361,7 +366,7 @@ class NestedSelect(CompositeWidget):
         for i, select in enumerate(self._selects):
             level = self.levels[i]
             if isinstance(level, dict):
-                name = level["name"]
+                name = level.get("name", i)
             else:
                 name = level
             values[name] = select.value
@@ -425,21 +430,24 @@ class NestedSelect(CompositeWidget):
         # level names specified in self.levels override those specified in self.value
         if name not in self.value:
             old_name = list(self.value.keys())[i]
-            self.value[name] = self.value.pop(old_name)
-        # if non existent value is passed, options[0] is selected
-        if self.value[name] not in options:
-            return options[0]
+            value = self.value[old_name]
+        else:
+            value = self.value[name]
 
-        return self.value[name]
+        if value not in options:
+            value = options[0]
+
+        return value
 
     def _extract_level_metadata(self, i):
         level = self.levels[i]
         if isinstance(level, int):
-            return None, Select
-
+            return Select, {}
         elif isinstance(level, str):
-            level = {"name": level}
-        return level["name"],level.get("widget", Select)
+            return Select, {"name": level}
+        widget_type = level.get("type", Select)
+        widget_kwargs = {k: v for k, v in level.items() if k != "type"}
+        return widget_type, widget_kwargs
 
     def _init_select_widget(self, i, options, visible):
         """
@@ -447,10 +455,11 @@ class NestedSelect(CompositeWidget):
         """
         options = list(options.keys()) if isinstance(options, dict) else options
         value = self._get_i_value(i, options)
-        name, widget_type = self._extract_level_metadata(i)
-        widget_kwargs = dict(options=options, value=value, name=name, visible=visible)
-        if name is None:
-            widget_kwargs.pop("name")
+        widget_type, widget_kwargs = self._extract_level_metadata(i)
+        widget_kwargs["options"] = options
+        widget_kwargs["value"] = value
+        if "visible" not in widget_kwargs:
+            widget_kwargs["visible"] = visible
         select = widget_type(**widget_kwargs)
         select.param.watch(self._update_select_widget_options_interactively, "value")
         self._selects.append(select)
