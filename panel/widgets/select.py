@@ -392,8 +392,10 @@ class NestedSelect(CompositeWidget):
 
         self._selects = []
         if self.options is None:
-            return
-        options = self.options.copy()
+            options = {}
+        else:
+            options = self.options.copy()
+
         visible = True
         for i in range(self._max_depth):
             value = self._init_select_widget(i, options, visible)
@@ -405,7 +407,9 @@ class NestedSelect(CompositeWidget):
                 visible = False
 
         self._composite[:] = self._selects
-        self.value = self._gather_values_from_widgets()
+
+        if self.options is not None:
+            self.value = self._gather_values_from_widgets()
 
     def _get_i_value(self, i, options):
         if not options:
