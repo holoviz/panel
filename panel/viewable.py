@@ -45,6 +45,7 @@ from .io.notebook import (
 from .io.save import save
 from .io.state import curdoc_locked, set_curdoc, state
 from .util import escape, param_reprs
+from .util.parameters import get_params_to_inherit
 from .util.warnings import deprecated
 
 if TYPE_CHECKING:
@@ -392,8 +393,10 @@ class ServableMixin:
             else:
                 self.server_doc(title=title, location=location) # type: ignore
         elif state._is_pyodide and 'pyodide_kernel' not in sys.modules:
-            from .io.pyodide import _IN_WORKER, _get_pyscript_target, write
-            if _IN_WORKER:
+            from .io.pyodide import (
+                _IN_PYSCRIPT_WORKER, _IN_WORKER, _get_pyscript_target, write,
+            )
+            if _IN_WORKER and not _IN_PYSCRIPT_WORKER:
                 return self
             try:
                 target = target or _get_pyscript_target()
@@ -672,7 +675,6 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         state._views[ref] = (root_view, root, doc, comm)
         return root
 
-
 class Viewable(Renderable, Layoutable, ServableMixin):
     """
     Viewable is the baseclass all visual components in the panel
@@ -851,11 +853,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         -------
         Cloned Viewable object
         """
-        inherited = {
-            p: v for p, v in self.param.values().items()
-            if not self.param[p].readonly and v is not self.param[p].default
-            and not (v is None and not self.param[p].allow_None)
-        }
+        inherited = get_params_to_inherit(self)
         return type(self)(**dict(inherited, **params))
 
     def pprint(self) -> None:

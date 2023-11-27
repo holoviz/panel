@@ -108,6 +108,7 @@ Use `add_periodic_callback` to stream data to a `Tabulator` widget.
 :maxdepth: 2
 
 async
+defer_load
 load
 session
 periodic

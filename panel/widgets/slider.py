@@ -743,10 +743,10 @@ class DateRangeSlider(_SliderBase):
         msg = super()._process_property_change(msg)
         if 'value' in msg:
             v1, v2 = msg['value']
-            msg['value'] = (value_as_datetime(v1), value_as_datetime(v2))
+            msg['value'] = (value_as_date(v1), value_as_date(v2))
         if 'value_throttled' in msg:
             v1, v2 = msg['value_throttled']
-            msg['value_throttled'] = (value_as_datetime(v1), value_as_datetime(v2))
+            msg['value_throttled'] = (value_as_date(v1), value_as_date(v2))
         return msg
 
 

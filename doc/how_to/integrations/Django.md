@@ -117,7 +117,7 @@ The sliders app is in `examples/apps/django/sliders`. We will cover the followin
 
   * `sliders/views.py` and `templates/base.html`: getting the Bokeh app into a Django view
 
-![screenshot of sliders app](../../_static/sliders.png)
+![screenshot of sliders app](../../_static/images/django_sliders.png)
 
 To start with, in `sliders/sinewave.py` we create a parameterized object to serve as a placeholder for your own, existing code:
 

@@ -736,6 +736,13 @@ class AutocompleteInput(Widget):
         Set to False in order to allow users to enter text that is not
         present in the list of completion strings.""")
 
+    search_strategy = param.Selector(default='starts_with',
+        objects=['starts_with', 'includes'], doc="""
+        Define how to search the list of completion strings. The default option
+        `"starts_with"` means that the user's text must match the start of a
+        completion string. Using `"includes"` means that the user's text can
+        match any substring of a completion string.""")
+
     value = param.String(default='', allow_None=True, doc="""
       Initial or entered text value updated when <enter> key is pressed.""")
 
@@ -839,6 +846,8 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase, TooltipMixin):
         objects=['horizontal', 'vertical'], doc="""
         Button group orientation, either 'horizontal' (default) or 'vertical'.""")
 
+    _rename: ClassVar[Mapping[str, str | None]] = {**_RadioGroupBase._rename, **TooltipMixin._rename}
+
     _source_transforms = {
         'value': "source.labels[value]", 'button_style': None, 'description': None
     }
@@ -937,6 +946,8 @@ class CheckButtonGroup(_CheckGroupBase, _ButtonBase, TooltipMixin):
     orientation = param.Selector(default='horizontal',
         objects=['horizontal', 'vertical'], doc="""
         Button group orientation, either 'horizontal' (default) or 'vertical'.""")
+
+    _rename: ClassVar[Mapping[str, str | None]] = {**_CheckGroupBase._rename, **TooltipMixin._rename}
 
     _source_transforms = {
         'value': "value.map((index) => source.labels[index])", 'button_style': None,

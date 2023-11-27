@@ -58,7 +58,7 @@ layout.servable()
 
 ![panel-onload-example](https://assets.holoviz.org/panel/gifs/onload_callback.gif)
 
-Note that `pn.state.onload` accepts both *sync* and *async* functions.
+Note that `pn.state.onload` accepts both *sync* and *async* functions and also accepts a `threaded` argument, which, when combined with [enabling `config.nthreads`](../concurrency/threading.md) will run the callbacks concurrently on separate threads.
 
 This example could also be implemented using a *bound and displayed function*. We recommend using that method together with `defer_load` when possible. See the [Defer Bound and Displayed Functions Guide](defer_load.md).
 

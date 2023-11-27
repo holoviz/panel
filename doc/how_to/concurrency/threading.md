@@ -41,3 +41,7 @@ In a threaded context on the other hand the two clicks will be processed concurr
 > Finished processing 1th click.
 > Finished processing 2th click.
 ```
+
+```{note}
+Note that the global ThreadPool is used to dispatch events triggered by changes in parameters, events (such as click events), [`defer_load`](../callbacks/defer_load.md) callbacks and optionally [`onload` callbacks](../callbacks/load.md).
+```

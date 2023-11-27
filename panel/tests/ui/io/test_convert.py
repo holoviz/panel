@@ -2,7 +2,9 @@ import os
 import pathlib
 import re
 import shutil
+import sys
 import tempfile
+import time
 import uuid
 
 from subprocess import PIPE, Popen
@@ -25,8 +27,13 @@ if not (PANEL_LOCAL_WHL.is_file() and BOKEH_LOCAL_WHL.is_file()):
 
 pytestmark = pytest.mark.ui
 
+if os.name == "wt":
+    TIMEOUT = 150_000
+else:
+    TIMEOUT = 90_000
+
 _worker_id = os.environ.get("PYTEST_XDIST_WORKER", "0")
-HTTP_PORT = 5990 + int(re.sub(r"\D", "", _worker_id))
+HTTP_PORT = 50000 + int(re.sub(r"\D", "", _worker_id))
 
 button_app = """
 import panel as pn
@@ -115,8 +122,10 @@ def http_serve():
         pass
 
     process = Popen(
-        ["python", "-m", "http.server", str(HTTP_PORT), "--directory", str(temp_path)], stdout=PIPE
+        [sys.executable, "-m", "http.server", str(HTTP_PORT), "--directory", str(temp_path)], stdout=PIPE,
     )
+    time.sleep(10)  # Wait for server to start
+
     def write(app):
         app_name = uuid.uuid4().hex
         app_path = temp_path / f'{app_name}.py'
@@ -141,20 +150,22 @@ def wait_for_app(http_serve, app, page, runtime, wait=True, **kwargs):
     msgs = []
     page.on("console", lambda msg: msgs.append(msg))
 
-    page.goto(f"http://localhost:{HTTP_PORT}/{app_path.name[:-3]}.html")
+    page.goto(f"http://127.0.0.1:{HTTP_PORT}/{app_path.name[:-3]}.html")
 
     cls = f'pn-loading pn-{config.loading_spinner}'
     expect(page.locator('body')).to_have_class(cls)
     if wait:
-        expect(page.locator('body')).not_to_have_class(cls, timeout=90 * 1000)
+        expect(page.locator('body')).not_to_have_class(cls, timeout=TIMEOUT)
 
     return msgs
+
 
 
 def test_pyodide_test_error_handling_worker(http_serve, page):
     wait_for_app(http_serve, error_app, page, 'pyodide-worker', wait=False)
 
-    expect(page.locator('.pn-loading-msg')).to_have_text('RuntimeError: This app is broken', timeout=90 * 1000)
+    expect(page.locator('.pn-loading-msg')).to_have_text('RuntimeError: This app is broken', timeout=TIMEOUT)
+
 
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
 def test_pyodide_test_convert_button_app(http_serve, page, runtime):
@@ -167,6 +178,7 @@ def test_pyodide_test_convert_button_app(http_serve, page, runtime):
     expect(page.locator('pre:not([class])')).to_have_text('1')
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
+
 
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
 def test_pyodide_test_convert_slider_app(http_serve, page, runtime):
@@ -181,12 +193,14 @@ def test_pyodide_test_convert_slider_app(http_serve, page, runtime):
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
+
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
 def test_pyodide_test_convert_custom_config(http_serve, page, runtime):
     wait_for_app(http_serve, config_app, page, runtime)
 
     assert page.locator("body").evaluate("""(element) =>
         window.getComputedStyle(element).getPropertyValue('background-color')""") == 'rgb(0, 0, 255)'
+
 
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker'])
 def test_pyodide_test_convert_tabulator_app(http_serve, page, runtime):
@@ -197,6 +211,7 @@ def test_pyodide_test_convert_tabulator_app(http_serve, page, runtime):
     page.wait_for_timeout(1)
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
+
 
 @pytest.mark.parametrize(
     'runtime, http_patch', [
@@ -217,6 +232,7 @@ def test_pyodide_test_convert_csv_app(http_serve, page, runtime, http_patch):
     assert titles[1:] == expected_titles
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
+
 
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker'])
 def test_pyodide_test_convert_png_app(http_serve, page, runtime):

@@ -11,6 +11,7 @@ from ..reactive import ReactiveHTML
 from ..util import classproperty
 from .datamodel import _DATA_MODELS, construct_data_model
 from .resources import CSS_URLS, bundled_files
+from .state import state
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -81,7 +82,6 @@ class NotificationAreaBase(ReactiveHTML):
         preprocess: bool = True
     ) -> 'Model':
         root = super().get_root(doc, comm, preprocess)
-
         for event, notification in self.js_events.items():
             doc.js_on_event(event, CustomJS(code=f"""
             var config = {{
@@ -94,6 +94,7 @@ class NotificationAreaBase(ReactiveHTML):
             notifications.data.properties.notifications.change.emit()
             """, args={'notifications': root}))
         self._documents[doc] = root
+        state._views[root.ref['id']] = (self, root, doc, comm)
         return root
 
     def send(self, message, duration=3000, type=None, background=None, icon=None):

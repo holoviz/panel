@@ -196,7 +196,11 @@ Panel bundles external resources required for custom models and templates into t
 
 #### Next Steps
 
-You will likely want to check out the [Testing Guide](testing.md).
+You will likely want to check out the
+
+- [Extensions Guide](extensions.md)
+- [Testing Guide](testing.md).
+- [WASM Guide](wasm.md)
 
 ## Useful Links
 
@@ -212,6 +216,8 @@ You will likely want to check out the [Testing Guide](testing.md).
 :hidden:
 :maxdepth: 2
 
+extensions
 testing
+wasm
 Developing custom models <Developing_Custom_Models>
 ```

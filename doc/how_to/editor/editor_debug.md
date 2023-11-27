@@ -6,7 +6,7 @@ This guide addresses how to debug apps in your favorite IDE or editor.
 
 The simplest way to debug is to insert a `breakpoint()` in your code and then serve your app from a terminal. Type `help` in the debugger to see the available *commands*.
 
-<img src="../../_static/terminal-breakpoint.png" styles="max-height:300px;max-width:100%"></img>
+<img src="../../_static/images/terminal-breakpoint.png" styles="max-height:300px;max-width:100%"></img>
 
 If your editor or IDE provides *integrated debugging* you can also use that in one of two ways.
 

@@ -313,6 +313,7 @@ def test_holoviews_updates_widgets(document, comm):
     assert isinstance(layout.children[1].children[0], BkColumn)
     assert isinstance(layout.children[1].children[0].children[1], BkSlider)
 
+
 @hv_available
 def test_holoviews_widgets_update_plot(document, comm):
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
@@ -325,6 +326,23 @@ def test_holoviews_widgets_update_plot(document, comm):
     hv_pane.widget_box[0].value = 1
     hv_pane.widget_box[1].value = chr(65+1)
     assert cds.data['y'] == np.array([1])
+
+
+@hv_available
+def test_holoviews_dynamic_widgets_with_unit_updates_plot(document, comm):
+    def function(f):
+        return hv.Curve((x, np.sin(f*x)))
+
+    x = np.linspace(0, 10)
+    factor = hv.Dimension('factor', unit='m', values=[1, 2, 3, 4, 5])
+    dmap = hv.DynamicMap(function, kdims=factor)
+    hv_pane = HoloViews(dmap, backend='bokeh')
+    layout = hv_pane.get_root(document, comm)
+
+    cds = layout.children[0].select_one({'type': ColumnDataSource})
+    np.testing.assert_array_equal(cds.data['y'], np.sin(x))
+    hv_pane.widget_box[0].value = 3
+    np.testing.assert_array_equal(cds.data['y'], np.sin(3*x))
 
 
 @hv_available
