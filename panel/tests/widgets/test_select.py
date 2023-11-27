@@ -414,6 +414,21 @@ def test_nested_select_update_all(document, comm):
     assert select.levels == new_levels
 
 
+def test_nested_select_disabled(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+    }
+    select = NestedSelect(options=options, levels=["Name", "Var", "Level"])
+    select.disabled = True
+    assert select._widgets[0].disabled
+
+    select.disabled = False
+    assert not select._widgets[0].disabled
+
+
 def test_nested_select_custom_widgets(document, comm):
     options = {
         "Andrew": {
@@ -433,9 +448,9 @@ def test_nested_select_custom_widgets(document, comm):
             {"name": "lvl", "type": DiscreteSlider},
         ],
     )
-    widget_0 = select._selects[0]
-    widget_1 = select._selects[1]
-    widget_2 = select._selects[2]
+    widget_0 = select._widgets[0]
+    widget_1 = select._widgets[1]
+    widget_2 = select._widgets[2]
     assert isinstance(widget_0, Select)
     assert isinstance(widget_1, Select)
     assert isinstance(widget_2, DiscreteSlider)
