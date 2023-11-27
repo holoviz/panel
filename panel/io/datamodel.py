@@ -206,11 +206,11 @@ def create_linked_datamodel(obj, root=None):
                 ref = None
 
             if ref and ref in state._views:
-                _, _, doc, comm = state._views[ref]
+                _, root_model, doc, comm = state._views[ref]
                 if comm or state._unblocked(doc):
                     with unlocked():
                         model.update(**update)
-                    if comm and 'embedded' not in root.tags:
+                    if comm and 'embedded' not in root_model.tags:
                         push(doc, comm)
                 else:
                     cb = partial(model.update, **update)
