@@ -61,7 +61,7 @@ Now we can activate this app on the command line:
 panel serve app.py --show
 ```
 
-<img src="../../_static/template_bootstrap.png" alt="example panel app with bootstrap template">
+<img src="../../_static/images/template_bootstrap.png" alt="example panel app with bootstrap template">
 
 ## Global Template
 
@@ -106,7 +106,7 @@ Now, we can activate this app on the command line:
 panel serve app_global.py --show
 ```
 
-<img src="../../_static/template_bootstrap.png" alt="example panel app with bootstrap template">
+<img src="../../_static/images/template_bootstrap.png" alt="example panel app with bootstrap template">
 
 ## Related Resources
 
