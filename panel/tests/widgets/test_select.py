@@ -231,9 +231,9 @@ def test_nested_select_defaults(document, comm):
         },
     }
     select = NestedSelect(options=options)
-    assert select.value == ("Andrew", "temp", 1000)
+    assert select.value == {2: 1000, 0: 'Andrew', 1: 'temp'}
     assert select.options == options
-    assert select.level_names == []
+    assert select.levels == [0,1,2]
 
 
 def test_nested_select_init_value(document, comm):
@@ -247,16 +247,23 @@ def test_nested_select_init_value(document, comm):
             "windspeed": [700, 500, 300],
         },
     }
-    select = NestedSelect(options=options, value=("Ben", "temp", 300))
-    assert ...
+    value = {2: 1000, 0: 'Andrew', 1: 'temp'}
+    select = NestedSelect(options=options, value=value)
+    assert select.value == value
+    assert select.options == options
+    assert select.levels == [0,1,2]
 
 
 def test_nested_select_init_empty(document, comm):
+    #with pytest.raises(Exception):
     select = NestedSelect()
-    assert ...
+    assert select.value is None
+    assert select.options is None
+    assert select.levels == [0]
 
 
-def test_nested_select_init_labels(document, comm):
+def test_nested_select_init_levels(document, comm):
+
     options = {
         "Andrew": {
             "temp": [1000, 925, 700, 500, 300],
@@ -267,8 +274,11 @@ def test_nested_select_init_labels(document, comm):
             "windspeed": [700, 500, 300],
         },
     }
-    select = NestedSelect(options=options, labels=["Name", "Var", "Level"])
-    assert ...
+    levels = ["Name", "Var", "Level"]
+    select = NestedSelect(options=options, levels=levels)
+    assert select.value == {'Level': 1000, 'Name': 'Andrew', 'Var': 'temp'}
+    assert select.options == options
+    assert select.levels == levels
 
 
 def test_nested_select_update_options(document, comm):
@@ -282,13 +292,18 @@ def test_nested_select_update_options(document, comm):
             "windspeed": [700, 500, 300],
         },
     }
-    select = NestedSelect(options=options, value=("Ben", "temp", 300))
-    select.options = {
+    levels = ["Name", "Var", "Level"]
+    select = NestedSelect(options=options, levels=levels, value={'Level': 1000, 'Name': 'Andrew', 'Var': 'temp'})
+    options = {
+
         "August": {
             "temp": [500, 300],
         }
     }
-    assert ...
+    select.options = options
+    assert select.options == options
+    assert select.value == {'Level': 500, 'Name': 'August', 'Var': 'temp'}
+    assert select.levels == levels
 
 
 def test_nested_select_update_value(document, comm):
@@ -302,12 +317,16 @@ def test_nested_select_update_value(document, comm):
             "windspeed": [700, 500, 300],
         },
     }
-    select = NestedSelect(options=options, value=("Ben", "temp", 300))
-    select.value = ("Ben", "windspeed", 700)
-    assert ...
+    levels = ["Name", "Var", "Level"]
+    select = NestedSelect(options=options, levels=levels, value={'Name': 'Ben', 'Var': 'temp', 'Level': 300})
+    value = {'Name': 'Ben', 'Var': 'windspeed', 'Level': 700}
+    select.value = value
+    assert select.options == options
+    assert select.value == value
+    assert select.levels == levels
 
 
-def test_nested_select_update_labels(document, comm):
+def test_nested_select_update_levels(document, comm):
     options = {
         "Andrew": {
             "temp": [1000, 925, 700, 500, 300],
@@ -318,9 +337,13 @@ def test_nested_select_update_labels(document, comm):
             "windspeed": [700, 500, 300],
         },
     }
-    select = NestedSelect(options=options, value=("Ben", "temp", 300))
-    select.labels = ["user", "wx_var", "lev"]
-    assert ...
+    select = NestedSelect(options=options, levels=["Name", "Var", "Level"], value={'Name': 'Ben', 'Var': 'temp', 'Level': 300})
+    levels = ["user", "wx_var", "lev"]
+    select.levels = levels
+    assert select.options == options
+    assert select.value == {'user': 'Ben', 'wx_var': 'temp', 'lev': 300}
+    assert select.levels == levels
+
 
 
 @pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])

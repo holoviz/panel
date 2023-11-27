@@ -352,7 +352,6 @@ class NestedSelect(CompositeWidget):
     def __init__(self, **params):
         super().__init__(**params)
         self._update_selects()
-        self.value = self._gather_values_from_widgets()
 
     def _gather_values_from_widgets(self):
         """
@@ -369,7 +368,9 @@ class NestedSelect(CompositeWidget):
         return values
 
     def _find_max_depth(self, d, depth=1):
-        if not isinstance(d, dict):
+        if d is None:
+            return 0
+        elif not isinstance(d, dict):
             return depth
 
         max_depth = depth
@@ -390,17 +391,21 @@ class NestedSelect(CompositeWidget):
             raise ValueError(f"levels must be of length {self._max_depth}")
 
         self._selects = []
-        options = self.options.copy() or []
-
+        if self.options is None:
+            return
+        options = self.options.copy()
         visible = True
         for i in range(self._max_depth):
             value = self._init_select_widget(i, options, visible)
+            if value is None:
+                continue
             try:
                 options = options[value]
             except (IndexError, TypeError):
                 visible = False
 
         self._composite[:] = self._selects
+        self.value = self._gather_values_from_widgets()
 
     def _get_i_value(self, i, options):
         if not options:
@@ -409,13 +414,25 @@ class NestedSelect(CompositeWidget):
         if not self.value or i > len(self.value) - 1:
             return options[0]
         else:
-            name = self.levels[i]["name"]
-            return self.value[name]
+            if isinstance(self.levels[i], dict):
+                name = self.levels[i]["name"]
+            else:
+                name = self.levels[i]
+        # level names specified in self.levels override those specified in self.value
+        if name not in self.value:
+            old_name = list(self.value.keys())[i]
+            self.value[name] = self.value.pop(old_name)
+        # if non existent value is passed, options[0] is selected
+        if self.value[name] not in options:
+            return options[0]
+
+        return self.value[name]
 
     def _extract_level_metadata(self, i):
         level = self.levels[i]
         if isinstance(level, int):
-            return
+            return None, Select
+
         elif isinstance(level, str):
             level = {"name": level}
         return level["name"],level.get("widget", Select)
@@ -442,7 +459,8 @@ class NestedSelect(CompositeWidget):
         for start_i, select in enumerate(self._selects):
             if select is event.obj:
                 break
-
+        if self.options is None:
+            return
         options = self.options.copy()
         with param.batch_watch(self):
             for i, select in enumerate(self._selects[:-1]):
@@ -471,6 +489,8 @@ class NestedSelect(CompositeWidget):
         """
         When value is passed, update to the latest options.
         """
+        if self.options is None:
+            return
         options = self.options.copy()
         set_value = list(self.value.values())
         original_value = self._gather_values_from_widgets()
