@@ -15,6 +15,8 @@ from typing import (
 
 import param
 
+from typing_extensions import Self
+
 from ..io.resources import CDN_DIST
 from ..layout import Row, Tabs
 from ..pane.image import ImageBase
@@ -106,7 +108,16 @@ class ChatInterface(ChatFeed):
         Widgets to use for the input. If not provided, defaults to
         `[TextInput]`.""")
 
-    custom_callbacks = param.Dict(default={})
+    button_properties = param.Dict(default={}, doc="""
+        A mapping of button names to its properties (`callback`, `post_callback`, `icon`).
+        This can be used to update default buttons' properties, or create new buttons
+        to be added to the ChatInterface input row. The callback signature must accept two
+        positional args `interface` and `event`, where `instance` is the ChatInterface instance
+        and event is the button click event. Button names that overlap with
+        the default buttons (`send`, `rerun`, `undo`, `clear`) will override the default icon
+        if specified, but does not overwrite the default callback--only prepends to it.
+        Keys that do not overlap will create new buttons, and each require callback or post_callback.
+        """)
 
     _widgets = param.Dict(default={}, allow_refs=False, doc="""
         The input widgets.""")
@@ -132,43 +143,6 @@ class ChatInterface(ChatFeed):
             params["widgets"] = [widgets]
         active = params.pop("active", None)
         super().__init__(*objects, **params)
-
-        self._button_icons = {
-            "send": "send",
-            "rerun": "repeat-once",
-            "undo": "arrow-back",
-            "clear": "trash",
-        }
-        for action in list(self._button_icons):
-            if not getattr(self, f"show_{action}", True):
-                self._button_icons.pop(action)
-        self._button_data = {
-            name: _ChatButtonData(
-                index=index,
-                name=name,
-                icon=icon,
-                objects=[],
-                buttons=[],
-                callback=getattr(self, f"_click_{name}")
-            )
-            for index, (name, icon) in enumerate(self._button_icons.items())
-        }
-        for custom_name_icon, custom_callback in self.custom_callbacks.items():
-            if isinstance(custom_name_icon, tuple):
-                name, icon = custom_name_icon
-            else:
-                name = custom_name_icon
-                icon = None
-            if name.lower() in self._button_icons:
-                continue  # will be added manually in the _click_* methods
-            self._button_data[name] = _ChatButtonData(
-                index=len(self._button_icons),
-                name=name,
-                icon=icon,
-                objects=[],
-                buttons=[],
-                callback=custom_callback,
-            )
 
         self._input_container = Row(
             css_classes=["chat-interface-input-container"],
@@ -201,7 +175,7 @@ class ChatInterface(ChatFeed):
         if self.show_button_name is None:
             self.show_button_name = self.width is None or self.width >= 400
 
-    @param.depends("widgets", watch=True)
+    @param.depends("widgets", "button_properties", watch=True)
     def _init_widgets(self):
         """
         Initialize the input widgets.
@@ -210,6 +184,42 @@ class ChatInterface(ChatFeed):
         -------
         The input widgets.
         """
+        default_button_properties = {
+            "send": {"icon": "send", "_default_callback": self._click_send},
+            "rerun": {"icon": "repeat", "_default_callback": self._click_rerun},
+            "undo": {"icon": "arrow-back", "_default_callback": self._click_undo},
+            "clear": {"icon": "trash", "_default_callback": self._click_clear},
+        }
+        self._allow_revert = len(self.button_properties) == 0
+
+        button_properties = {**default_button_properties, **self.button_properties}
+        for index, (name, properties) in enumerate(button_properties.items()):
+            name = name.lower()
+            callback = properties.get("callback")
+            post_callback = properties.get("post_callback")
+            default_properties = default_button_properties.get(name) or {}
+            if default_properties:
+                default_callback = default_properties["_default_callback"]
+                callback = (
+                    self._wrap_callbacks(callback=callback, post_callback=post_callback)(default_callback)
+                    if callback is not None else default_callback
+                )
+            elif callback is not None and post_callback is not None:
+                callback = self._wrap_callbacks(post_callback=post_callback)(callback)
+            elif callback is None and post_callback is not None:
+                callback = post_callback
+            elif callback is None and post_callback is None:
+                raise ValueError(f"A 'callback' key is required for the {name!r} button")
+            icon = properties.get("icon") or default_properties.get("icon")
+            self._button_data[name] = _ChatButtonData(
+                index=index,
+                name=name,
+                icon=icon,
+                objects=[],
+                buttons=[],
+                callback=callback,
+            )
+
         widgets = self.widgets
         if isinstance(self.widgets, Widget):
             widgets = [self.widgets]
@@ -272,11 +282,7 @@ class ChatInterface(ChatFeed):
                     visible=visible
                 )
                 self._link_disabled_loading(button)
-
-                if button_data.name not in self._button_icons.keys():
-                    callback = partial(button_data.callback, self)
-                else:
-                    callback = button_data.callback
+                callback = partial(button_data.callback, self)
                 button.on_click(callback)
                 buttons.append(button)
                 button_data.buttons.append(button)
@@ -298,15 +304,39 @@ class ChatInterface(ChatFeed):
         self._input_container.objects = [input_layout]
         self._input_layout = input_layout
 
-    def _prepend_custom_callback(self, key, event):
+    def _wrap_callbacks(
+            self,
+            callback: Callable | None = None,
+            post_callback: Callable | None = None
+        ):
         """
-        Prepend a custom callback to the existing callback.
+        Wrap the callback and post callback around the default callback.
         """
-        custom_callback = self.custom_callbacks.get(key)
-        if custom_callback is not None:
-            custom_callback(self, event)
+        def decorate(default_callback: Callable):
+            def wrapper(self, event: param.parameterized.Event):
+                if callback is not None:
+                    try:
+                        self.disabled = True
+                        callback(self, event)
+                    finally:
+                        self.disabled = False
 
-    def _click_send(self, event: param.parameterized.Event | None = None) -> None:
+                default_callback(self, event)
+
+                if post_callback is not None:
+                    try:
+                        self.disabled = True
+                        post_callback(self, event)
+                    finally:
+                        self.disabled = False
+            return wrapper
+        return decorate
+
+    def _click_send(
+            self,
+            event: param.parameterized.Event | None = None,
+            instance: Self | None = None
+        ) -> None:
         """
         Send the input when the user presses Enter.
         """
@@ -314,8 +344,6 @@ class ChatInterface(ChatFeed):
         # before allowing another input
         if self.disabled:
             return
-
-        self._prepend_custom_callback("send", event)
 
         active_widget = self.active_widget
         value = active_widget.value
@@ -379,49 +407,64 @@ class ChatInterface(ChatFeed):
             button_data.objects.clear()
             self._toggle_revert(button_data, False)
 
-    def _click_rerun(self, event):
+    def _click_rerun(
+            self,
+            event: param.parameterized.Event | None = None,
+            instance: Self | None = None
+        ) -> None:
         """
         Upon clicking the rerun button, rerun the last user message,
         which can trigger the callback again.
         """
-        self._prepend_custom_callback("rerun", event)
         count = self._get_last_user_entry_index()
         messages = self.undo(count)
         if not messages:
             return
         self.send(value=messages[0], respond=True)
 
-    def _click_undo(self, event):
+    def _click_undo(
+            self,
+            event: param.parameterized.Event | None = None,
+            instance: Self | None = None
+        ) -> None:
         """
         Upon clicking the undo button, undo (remove) messages
         up to the last user message. If the button is clicked
         again without performing any other actions, revert the undo.
         """
-        self._prepend_custom_callback("undo", event)
         undo_data = self._button_data["undo"]
         undo_objects = undo_data.objects
         if not undo_objects:
             self._reset_button_data()
             count = self._get_last_user_entry_index()
             undo_data.objects = self.undo(count)
-            self._toggle_revert(undo_data, True)
+            if self._allow_revert:
+                self._toggle_revert(undo_data, True)
+            else:
+                undo_data.objects = []
         else:
             self.extend(undo_objects)
             self._reset_button_data()
 
-    def _click_clear(self, event):
+    def _click_clear(
+            self,
+            event: param.parameterized.Event | None = None,
+            instance: Self | None = None
+        ) -> None:
         """
         Upon clicking the clear button, clear the chat log.
         If the button is clicked again without performing any
         other actions, revert the clear.
         """
-        self._prepend_custom_callback("clear", event)
         clear_data = self._button_data["clear"]
         clear_objects = clear_data.objects
         if not clear_objects:
             self._reset_button_data()
             clear_data.objects = self.clear()
-            self._toggle_revert(clear_data, True)
+            if self._allow_revert:
+                self._toggle_revert(clear_data, True)
+            else:
+                clear_data.objects = []
         else:
             self[:] = clear_objects.copy()
             self._reset_button_data()
