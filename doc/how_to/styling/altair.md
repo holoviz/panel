@@ -35,7 +35,7 @@ def plot(theme, color):
             color=color
         )
         .properties(
-            height=400,
+            height=300,
             width="container",
         )
         .interactive()
@@ -46,9 +46,10 @@ theme = pn.widgets.Select(value="dark", options=themes, name="Theme")
 color = pn.widgets.ColorPicker(value="#F08080", name="Color")
 
 pn.Column(
-    "**Altair Themes**: " + ", ".join(themes),
     pn.Row(theme, color),
-    pn.pane.Vega(pn.bind(plot, theme=theme, color=color), height=400, sizing_mode="stretch_width"),
+    pn.pane.Vega(pn.bind(plot, theme=theme, color=color), height=350, sizing_mode="stretch_width"),
+    "**Altair Themes**: " + ", ".join(themes),
+    styles={"border": "1px solid lightgray"}
 ).servable()
 ```
 

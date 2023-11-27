@@ -52,9 +52,9 @@ template = pn.widgets.Select(value="plotly_dark", options=templates, name="Templ
 color = pn.widgets.ColorPicker(value="#F08080", name="Color")
 
 pn.Column(
-    "**Plotly Templates**: " + ", ".join(templates),
     pn.Row(template, color),
-    pn.pane.Plotly(pn.bind(plot, template, color), sizing_mode="stretch_width")
+    pn.pane.Plotly(pn.bind(plot, template, color), sizing_mode="stretch_width"),
+    "**Plotly Templates**: " + ", ".join(templates),
 ).servable()
 ```
 

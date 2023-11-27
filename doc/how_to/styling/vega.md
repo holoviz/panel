@@ -29,7 +29,7 @@ vegalite = {
     "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
     "description": "A simple bar chart with rounded corners at the end of the bar.",
     "width": "container",
-    "height": 400,
+    "height": 300,
     "data": {
     "values": [
         {"a": "A", "b": 28},
@@ -53,5 +53,5 @@ vegalite = {
 
 vegalite["config"] = VEGA_THEME
 
-pn.pane.Vega(vegalite, height=400, sizing_mode="stretch_width").servable()
+pn.pane.Vega(vegalite, height=350, sizing_mode="stretch_width").servable()
 ```

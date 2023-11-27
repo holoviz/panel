@@ -46,12 +46,12 @@ style = pn.widgets.Select(value="dark_background", options=styles, name="Style")
 color = pn.widgets.ColorPicker(value="#F08080", name="Color")
 
 pn.Column(
-    "**Matplotlib Styles**: " + ", ".join(styles),
     pn.Row(style, color),
     pn.pane.Matplotlib(
         pn.bind(plot, style=style, color=color),
         height=400,
         sizing_mode="fixed",
     ),
+    "**Matplotlib Styles**: " + ", ".join(styles),
 ).servable()
 ```
