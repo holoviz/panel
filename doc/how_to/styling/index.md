@@ -59,7 +59,7 @@ This section will show you how to style the most common plotting libraries for u
 :link: altair
 :link-type: doc
 
-```{image} ../../_static/logos/altair.png
+```{image} ../../_static/logos/altair-logo.png
 :width: 125px
 :align: center
 :name: Altair
@@ -72,7 +72,7 @@ How to style an Altair plot
 :link: echarts
 :link-type: doc
 
-```{image} ../../_static/logos/echarts.png
+```{image} ../../_static/logos/echarts-logo.png
 :width: 125px
 :align: center
 :name: ECharts
@@ -85,7 +85,7 @@ How to style an ECharts plot
 :link: matplotlib
 :link-type: doc
 
-```{image} ../../_static/logos/matplotlib.png
+```{image} ../../_static/logos/matplotlib-logo.png
 :width: 125px
 :align: center
 :name: Matplotlib
@@ -98,7 +98,7 @@ How to style a Matplotlib plot
 :link: plotly
 :link-type: doc
 
-```{image} ../../_static/logos/plotly.png
+```{image} ../../_static/logos/plotly-logo.png
 :width: 125px
 :align: center
 :name: Plotly
@@ -111,7 +111,7 @@ How to style a Plotly plot
 :link: vega
 :link-type: doc
 
-```{image} ../../_static/logos/vegalite.png
+```{image} ../../_static/logos/vegalite-logo.png
 :width: 125px
 :align: center
 :name: Vega
