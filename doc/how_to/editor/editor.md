@@ -39,8 +39,8 @@ The `--show` flag will open a browser tab with the live app and the ``--autorelo
 
 In VS Code this looks like
 
-![VS Code Script](../../_static/vscode-script.png)
+![VS Code Script](../../_static/images/vscode-script.png)
 
 The app looks like
 
-![App Developed in an Editor](../../_static/editor_server_app.png)
+![App Developed in an Editor](../../_static/images/editor_server_app.png)
