@@ -50,8 +50,8 @@ pn.Column(
     pn.Row(style, color),
     pn.pane.Matplotlib(
         pn.bind(plot, style=style, color=color),
-        max_height=500,
-        sizing_mode="scale_height",
+        height=400,
+        sizing_mode="fixed",
     ),
 ).servable()
 ```

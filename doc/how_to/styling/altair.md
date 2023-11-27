@@ -1,6 +1,6 @@
 # Style Altair Plots
 
-This guide addresses how to style Altair plots displayed using the [Vega pane](../../../examples/reference/panes/Vega.ipynb).
+This guide addresses how to style Altair plots displayed using the [Vega pane](../../../examples/reference/panes/Vega).
 
 You can select the theme of Altair plots using [`altair.themes.enable`](https://altair-viz.github.io/user_guide/customization.html#changing-the-theme) and an accent color using the `configure_mark` method. The list of themes is available via `altair.themes.names()`.
 
@@ -35,7 +35,7 @@ def plot(theme, color):
             color=color
         )
         .properties(
-            height="container",
+            height=400,
             width="container",
         )
         .interactive()
@@ -48,7 +48,7 @@ color = pn.widgets.ColorPicker(value="#F08080", name="Color")
 pn.Column(
     "**Altair Themes**: " + ", ".join(themes),
     pn.Row(theme, color),
-    pn.pane.Vega(pn.bind(plot, theme=theme, color=color), max_height=500, sizing_mode="stretch_width"),
+    pn.pane.Vega(pn.bind(plot, theme=theme, color=color), height=400, sizing_mode="stretch_width"),
 ).servable()
 ```
 
