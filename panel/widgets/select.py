@@ -426,6 +426,7 @@ class NestedSelect(CompositeWidget):
         level = self.levels[i]
         if isinstance(level, int):
             return None, Select
+
         elif isinstance(level, str):
             level = {"name": level}
         return level["name"],level.get("widget", Select)

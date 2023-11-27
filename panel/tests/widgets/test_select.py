@@ -253,8 +253,7 @@ def test_nested_select_init_value(document, comm):
     assert select.value == value
     assert select.options == options
     assert select.levels == [0,1,2]
-        
-
+       
 
 def test_nested_select_init_empty(document, comm):
     with pytest.raises(Exception):
@@ -262,6 +261,7 @@ def test_nested_select_init_empty(document, comm):
 
 
 def test_nested_select_init_levels(document, comm):
+
     options = {
         "Andrew": {
             "temp": [1000, 925, 700, 500, 300],
@@ -293,6 +293,7 @@ def test_nested_select_update_options(document, comm):
     levels = ["Name", "Var", "Level"]
     select = NestedSelect(options=options, levels = levels, value={'Level': 1000, 'Name': 'Andrew', 'Var': 'temp'})
     options = {
+
         "August": {
             "temp": [500, 300],
         }
@@ -322,6 +323,7 @@ def test_nested_select_update_value(document, comm):
     assert select.value == value
     assert select.levels == levels
 
+
 def test_nested_select_update_labels(document, comm):
     options = {
         "Andrew": {
@@ -339,6 +341,7 @@ def test_nested_select_update_labels(document, comm):
     assert select.options == options
     assert select.value == {'user': 'Ben', 'wx_var': 'temp', 'lev': 300}
     assert select.levels == levels
+
 
 
 @pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
