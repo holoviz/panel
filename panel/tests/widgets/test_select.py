@@ -253,7 +253,7 @@ def test_nested_select_init_value(document, comm):
     assert select.value == value
     assert select.options == options
     assert select.levels == [0,1,2]
-       
+
 
 def test_nested_select_init_empty(document, comm):
     with pytest.raises(Exception):

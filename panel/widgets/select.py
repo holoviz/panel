@@ -412,14 +412,14 @@ class NestedSelect(CompositeWidget):
                 name = self.levels[i]["name"]
             else:
                 name = self.levels[i]
-        # level names specified in self.levels override those specified in self.value 
+        # level names specified in self.levels override those specified in self.value
         if name not in self.value:
             old_name = list(self.value.keys())[i]
             self.value[name] = self.value.pop(old_name)
-        # if non existant value is passed, options[0] is selected
+        # if non existent value is passed, options[0] is selected
         if self.value[name] not in options:
             return options[0]
-    
+
         return self.value[name]
 
     def _extract_level_metadata(self, i):
