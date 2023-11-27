@@ -255,8 +255,11 @@ def test_nested_select_init_value(document, comm):
 
 
 def test_nested_select_init_empty(document, comm):
-    with pytest.raises(Exception):
-        NestedSelect()
+    #with pytest.raises(Exception):
+    select = NestedSelect()
+    assert select.value is None
+    assert select.options is None
+    assert select.levels == [0]
 
 
 def test_nested_select_init_levels(document, comm):
