@@ -1847,6 +1847,21 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 linked_properties.append(children_param)
         return tuple(linked_properties)
 
+    @classmethod
+    def _patch_datamodel_ref(cls, props, ref):
+        """
+        Ensure all DataModels have reference to the root model to ensure
+        that they can be cleaned up correctly.
+        """
+        if isinstance(props, dict):
+            for v in props.values():
+                cls._patch_datamodel_ref(v, ref)
+        elif isinstance(props, list):
+            for v in props:
+                cls._patch_datamodel_ref(v, ref)
+        elif isinstance(props, DataModel):
+            props.tags.append(f"__ref:{ref}")
+
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
@@ -1872,14 +1887,13 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         if not root:
             root = model
 
+        ref = root.ref['id']
         data_model: DataModel = model.data # type: ignore
-        for p, v in data_model.properties_with_values().items():
-            if isinstance(v, DataModel):
-                v.tags.append(f"__ref:{root.ref['id']}")
+        self._patch_datamodel_ref(data_model.properties_with_values(), ref)
         model.update(children=self._get_children(doc, root, model, comm))
         self._register_events('dom_event', model=model, doc=doc, comm=comm)
         self._link_props(data_model, self._linked_properties, doc, root, comm)
-        self._models[root.ref['id']] = (model, parent)
+        self._models[ref] = (model, parent)
         return model
 
     def _process_event(self, event: 'Event') -> None:
@@ -1908,8 +1922,9 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     def _set_on_model(self, msg: Mapping[str, Any], root: Model, model: Model) -> None:
         if not msg:
             return
-        old = self._changing.get(root.ref['id'], [])
-        self._changing[root.ref['id']] = [
+        ref = root.ref['id']
+        old = self._changing.get(ref, [])
+        self._changing[ref] = [
             attr for attr, value in msg.items()
             if not model.lookup(attr).property.matches(getattr(model, attr), value)
         ]
@@ -1917,9 +1932,11 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             model.update(**msg)
         finally:
             if old:
-                self._changing[root.ref['id']] = old
+                self._changing[ref] = old
             else:
-                del self._changing[root.ref['id']]
+                del self._changing[ref]
+        if isinstance(model, DataModel):
+            self._patch_datamodel_ref(model.properties_with_values(), ref)
 
     def _update_model(
         self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
