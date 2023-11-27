@@ -39,7 +39,7 @@ To configure the integrated debugger for Panel, you will need to add a debugging
 
 In use it looks like
 
-![Integrated Debugging of a Panel app in VS Code](../../_static/vscode-integrated-debugging.png)
+![Integrated Debugging of a Panel app in VS Code](../../_static/images/vscode-integrated-debugging.png)
 
 ## Extensions
 
@@ -79,12 +79,12 @@ Ensure you install `jupyter_bokeh` with `pip install jupyter_bokeh` or `conda in
 
 You can see a notebook in action below.
 
-![Panel in VS Code Notebook Environment](../../_static/vscode-notebook.png)
+![Panel in VS Code Notebook Environment](../../_static/images/vscode-notebook.png)
 
 ## Snippets
 
 To speed up your workflow you can configure [*user defined snippets*](https://code.visualstudio.com/docs/editor/userdefinedsnippets) like these [example Panel snippets](../../_static/json/vscode-snippets-python.json). When you start typing `import panel` you will get the option to select between the snippets as shown below.
 
-![Panel VS Code Snippets](../../_static/vscode-snippets-python.png)
+![Panel VS Code Snippets](../../_static/images/vscode-snippets-python.png)
 
 The snippets will be available in the script, notebook and the interactive environments.

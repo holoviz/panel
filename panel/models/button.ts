@@ -36,10 +36,12 @@ export class ButtonView extends BkButtonView {
         visible,
       })
     }
+    let timer: number
     this.el.addEventListener("mouseenter", () => {
-      toggle(true)
+      timer = setTimeout(() => toggle(true), this.model.tooltip_delay)
     })
     this.el.addEventListener("mouseleave", () => {
+      clearTimeout(timer)
       toggle(false)
     })
   }
@@ -51,6 +53,7 @@ export namespace Button {
 
   export type Props = BkButton.Props & {
     tooltip: p.Property<Tooltip | null>
+    tooltip_delay: p.Property<number>
   }
 }
 
@@ -69,8 +72,9 @@ export class Button extends BkButton {
   static {
     this.prototype.default_view = ButtonView
 
-    this.define<Button.Props>(({Nullable, Ref}) => ({
+    this.define<Button.Props>(({Nullable, Ref, Number}) => ({
       tooltip: [ Nullable(Ref(Tooltip)), null ],
+      tooltip_delay: [ Number, 500],
     }))
   }
 }

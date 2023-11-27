@@ -6,8 +6,9 @@ import pytest
 
 from bokeh.models.widgets.tables import (
     AvgAggregator, CellEditor, CheckboxEditor, DataCube, DateEditor,
-    DateFormatter, IntEditor, MinAggregator, NumberEditor, NumberFormatter,
-    SelectEditor, StringEditor, StringFormatter, SumAggregator,
+    DateFormatter, HTMLTemplateFormatter, IntEditor, MinAggregator,
+    NumberEditor, NumberFormatter, SelectEditor, StringEditor, StringFormatter,
+    SumAggregator,
 )
 from packaging.version import Version
 from pandas._testing import (
@@ -557,6 +558,19 @@ def test_tabulator_config_editor_dict(document, comm):
     model = table.get_root(document, comm)
 
     assert model.configuration['columns'][2] == {'field': 'B', 'sorter': 'number', 'editor': 'list', 'editorParams': {'valuesLookup': True}}
+
+
+def test_tabulator_sortable_bool(dataframe, document, comm):
+    table = Tabulator(dataframe, sortable=False)
+    model = table.get_root(document, comm)
+    assert not any(col['headerSort'] for col in model.configuration['columns'])
+
+
+def test_tabulator_sortable_dict(dataframe, document, comm):
+    table = Tabulator(dataframe, sortable={'int': False})
+    model = table.get_root(document, comm)
+    assert all(not col['headerSort'] if col['field'] == 'int' else col['headerSort']
+               for col in model.configuration['columns'])
 
 
 def test_tabulator_groups(document, comm):
@@ -2085,9 +2099,53 @@ def test_tabulator_formatter_update(dataframe, document, comm):
     model_formatter = model.columns[2].formatter
     assert model_formatter.format == formatter.format
 
+def test_tabulator_sortable_update(dataframe, document, comm):
+    table = Tabulator(dataframe, sortable={'int': False})
+    model = table.get_root(document, comm)
+    assert not model.configuration['columns'][1]['headerSort']
+
+    table.sortable = {'int': True, 'float': False}
+    assert model.configuration['columns'][1]['headerSort']
+    assert not model.configuration['columns'][2]['headerSort']
+
 def test_tabulator_hidden_columns_fix():
     # Checks for: https://github.com/holoviz/panel/issues/4102
     #             https://github.com/holoviz/panel/issues/5209
     table = Tabulator(pd.DataFrame(), show_index=False)
     table.hidden_columns = ["a", "b", "c"]
     assert table.hidden_columns == ["a", "b", "c"]
+
+@pytest.mark.parametrize('align', [{"x": "right"}, "right"], ids=["dict", "str"])
+def test_bokeh_formatter_with_text_align(align):
+    # https://github.com/holoviz/panel/issues/5807
+    data = pd.DataFrame({"x": [1.1, 2.0, 3.47]})
+    formatters = {"x": NumberFormatter(format="0.0")}
+    assert formatters["x"].text_align == "left"  # default
+    model = Tabulator(data, formatters=formatters, text_align=align)
+    columns = model._get_column_definitions("x", data)
+    output = columns[0].formatter.text_align
+    assert output == "right"
+
+@pytest.mark.parametrize('align', [{"x": "right"}, "right"], ids=["dict", "str"])
+def test_bokeh_formatter_with_text_align_conflict(align):
+    # https://github.com/holoviz/panel/issues/5807
+    data = pd.DataFrame({"x": [1.1, 2.0, 3.47]})
+    formatters = {"x": NumberFormatter(format="0.0", text_align="center")}
+    model = Tabulator(data, formatters=formatters, text_align=align)
+    msg = r"The 'text_align' in Tabulator\.formatters\['x'\] is overridden by Tabulator\.text_align"
+    with pytest.warns(RuntimeWarning, match=msg):
+        columns = model._get_column_definitions("x", data)
+    output = columns[0].formatter.text_align
+    assert output == "right"
+
+def test_bokeh_formatter_index_with_no_textalign():
+    df = pd.DataFrame({"A": [1, 2, 3], "B": [1, 2, 3]})
+    df = df.set_index("A")
+
+    index_format = HTMLTemplateFormatter(
+        template='<a href="https://www.google.com/search?code=<%= value %>"><%= value %></a>'
+    )
+
+    table = Tabulator(df, formatters={"A": index_format})
+    serve_and_request(table)
+    wait_until(lambda: bool(table._models))

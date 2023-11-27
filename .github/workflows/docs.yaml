@@ -37,7 +37,7 @@ jobs:
       DISPLAY: ":99.0"
       PANEL_IPYWIDGET: 1
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a15
+      - uses: holoviz-dev/holoviz_tasks/install@v0.1a18
         with:
           name: doc_build
           python-version: "3.9"
@@ -53,7 +53,13 @@ jobs:
         if: steps.install.outputs.cache-hit != 'true'
         run: |
           conda activate test-environment
-          pip install --use-deprecated=legacy-resolver pyecharts ipywidgets_bokeh==1.4.0.dev3
+          pip install --use-deprecated=legacy-resolver pyecharts ipywidgets_bokeh==1.5.0
+      - name: install bokeh-dev
+        if: |
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
+          (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+        run: |
+          pip install --pre --upgrade bokeh
       - name: bokeh sampledata
         run: |
           conda activate test-environment

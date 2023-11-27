@@ -31,6 +31,7 @@ from ..models import ReactiveHTML as _BkReactiveHTML
 from ..reactive import Reactive
 from ..util import param_reprs, param_watchers
 from ..util.checks import is_dataframe, is_series
+from ..util.parameters import get_params_to_inherit
 from ..viewable import (
     Layoutable, ServableMixin, Viewable, Viewer,
 )
@@ -39,7 +40,6 @@ if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
-
 
 def panel(obj: Any, **kwargs) -> Viewable:
     """
@@ -382,11 +382,7 @@ class PaneBase(Reactive):
         -------
         Cloned Pane object
         """
-        inherited = {
-            p: v for p, v in self.param.values().items()
-            if not self.param[p].readonly and v is not self.param[p].default
-            and not (v is None and not self.param[p].allow_None)
-        }
+        inherited = get_params_to_inherit(self)
         params = dict(inherited, **params)
         old_object = params.pop('object', None)
         if object is None:

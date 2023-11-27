@@ -12,8 +12,9 @@ from dataclasses import dataclass
 from functools import partial
 from io import BytesIO
 from tempfile import NamedTemporaryFile
+from textwrap import indent
 from typing import (
-    TYPE_CHECKING, Any, BinaryIO, ClassVar, Dict, List, Union,
+    TYPE_CHECKING, Any, ClassVar, Dict, Iterable, List, Union,
 )
 
 import param
@@ -36,7 +37,7 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
-Avatar = Union[str, BytesIO, ImageBase]
+Avatar = Union[str, BytesIO, bytes, ImageBase]
 AvatarDict = Dict[str, Avatar]
 
 USER_LOGO = "🧑"
@@ -133,7 +134,7 @@ class ChatMessage(PaneBase):
     >>> ChatMessage(object="Hello world!", user="New User", avatar="😊")
     """
 
-    avatar = param.ClassSelector(default="", class_=(str, BinaryIO, ImageBase), doc="""
+    avatar = param.ClassSelector(default="", class_=(str, BytesIO, bytes, ImageBase), doc="""
         The avatar to use for the user. Can be a single character
         text, an emoji, or anything supported by `pn.pane.Image`. If
         not set, checks if the user is available in the
@@ -272,6 +273,76 @@ class ChatMessage(PaneBase):
         viewable_params['stylesheets'] = self._stylesheets + self.param.stylesheets.rx()
         self._composite.param.update(**viewable_params)
         self._composite[:] = [left_col, right_col]
+
+    def _get_obj_label(self, obj):
+        """
+        Get the label for the object; defaults to specified object name;
+        if unspecified, defaults to the type name.
+        """
+        label = obj.name
+        type_name = type(obj).__name__
+        # If the name is just type + ID, simply use type
+        # e.g. Column10241 -> Column
+        if label.startswith(type_name) or not label:
+            label = type_name
+        return label
+
+    def _serialize_recursively(
+        self,
+        obj: Any,
+        prefix_with_viewable_label: bool = True,
+        prefix_with_container_label: bool = True
+    ) -> str:
+        """
+        Recursively serialize the object to a string.
+        """
+        if isinstance(obj, Iterable) and not isinstance(obj, str):
+            content = tuple(
+                self._serialize_recursively(
+                    o,
+                    prefix_with_viewable_label=prefix_with_viewable_label,
+                    prefix_with_container_label=prefix_with_container_label
+                ) for o in obj
+            )
+            if prefix_with_container_label:
+                if len(content) == 1:
+                    return f"{self._get_obj_label(obj)}({content[0]})"
+                else:
+                    indented_content = indent(",\n".join(content), prefix=" " * 4)
+                    # outputs like:
+                    # Row(
+                    #   1,
+                    #   "str",
+                    # )
+                    return f"{self._get_obj_label(obj)}(\n{indented_content}\n)"
+            else:
+                # outputs like:
+                # (1, "str")
+                return f"({', '.join(content)})"
+
+        string = obj
+        if hasattr(obj, "value"):
+            string = obj.value
+        elif hasattr(obj, "object"):
+            string = obj.object
+
+        if hasattr(string, "decode") or isinstance(string, BytesIO):
+            self.param.warning(
+                f"Serializing byte-like objects are not supported yet; "
+                f"using the label of the object as a placeholder for {obj}"
+            )
+            return self._get_obj_label(obj)
+
+        if prefix_with_viewable_label and isinstance(obj, Viewable):
+            label = self._get_obj_label(obj)
+            string = f"{label}={string!r}"
+        return string
+
+    def __str__(self) -> str:
+        """
+        Serialize the message object to a string.
+        """
+        return self.serialize()
 
     @property
     def _synced_params(self) -> List[str]:
@@ -425,7 +496,7 @@ class ChatMessage(PaneBase):
         if isinstance(avatar, ImageBase):
             avatar_pane = avatar
             avatar_pane.param.update(width=35, height=35)
-        elif len(avatar) == 1:
+        elif not isinstance(avatar, (BytesIO, bytes)) and len(avatar) == 1:
             # single character
             avatar_pane = HTML(avatar)
         else:
@@ -527,7 +598,7 @@ class ChatMessage(PaneBase):
         self,
         value: dict | ChatMessage | Any,
         user: str | None = None,
-        avatar: str | BinaryIO | None = None,
+        avatar: str | bytes | BytesIO | None = None,
     ):
         """
         Updates the message with a new value, user and avatar.
@@ -538,7 +609,7 @@ class ChatMessage(PaneBase):
             The message contents to send.
         user : str | None
             The user to send as; overrides the message message's user if provided.
-        avatar : str | BinaryIO | None
+        avatar : str | bytes | BytesIO | None
             The avatar to use; overrides the message message's avatar if provided.
         """
         updates = {}
@@ -558,3 +629,33 @@ class ChatMessage(PaneBase):
         else:
             updates["object"] = value
         self.param.update(**updates)
+
+    def serialize(
+        self,
+        prefix_with_viewable_label: bool = True,
+        prefix_with_container_label: bool = True
+    ) -> str:
+        """
+        Format the object to a string.
+
+        Arguments
+        ---------
+        obj : Any
+            The object to format.
+        prefix_with_viewable_label : bool
+            Whether to include the name of the Viewable, or type
+            of the viewable if no name is specified.
+        prefix_with_container_label : bool
+            Whether to include the name of the container, or type
+            of the container if no name is specified.
+
+        Returns
+        -------
+        str
+            The serialized string.
+        """
+        return self._serialize_recursively(
+            self.object,
+            prefix_with_viewable_label=prefix_with_viewable_label,
+            prefix_with_container_label=prefix_with_container_label,
+        )

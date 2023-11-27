@@ -178,6 +178,7 @@ def test_cache_with_args():
     assert fn(0, 0) == 0
     assert fn(0, 0) == 0
 
+@pytest.mark.asyncio
 async def test_async_cache_with_args():
     global OFFSET
     OFFSET.clear()

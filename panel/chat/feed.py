@@ -13,7 +13,7 @@ from inspect import (
 )
 from io import BytesIO
 from typing import (
-    TYPE_CHECKING, Any, BinaryIO, ClassVar, Dict, List, Union,
+    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Literal,
 )
 
 import param
@@ -23,7 +23,7 @@ from ..io.resources import CDN_DIST
 from ..layout import Column, ListPanel
 from ..layout.card import Card
 from ..layout.spacer import VSpacer
-from ..pane.image import SVG, ImageBase
+from ..pane.image import SVG
 from ..widgets.button import Button
 from .message import ChatMessage
 
@@ -31,9 +31,6 @@ if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
-
-Avatar = Union[str, BytesIO, ImageBase]
-AvatarDict = Dict[str, Avatar]
 
 USER_LOGO = "🧑"
 ASSISTANT_LOGO = "🤖"
@@ -296,7 +293,7 @@ class ChatFeed(ListPanel):
         self,
         value: dict,
         user: str | None = None,
-        avatar: str | BinaryIO | None = None,
+        avatar: str | bytes | BytesIO | None = None,
     ) -> ChatMessage | None:
         """
         Builds a ChatMessage from the value.
@@ -461,7 +458,7 @@ class ChatFeed(ListPanel):
         self,
         value: ChatMessage | dict | Any,
         user: str | None = None,
-        avatar: str | BinaryIO | None = None,
+        avatar: str | bytes | BytesIO | None = None,
         respond: bool = True,
     ) -> ChatMessage | None:
         """
@@ -475,7 +472,7 @@ class ChatFeed(ListPanel):
             The message contents to send.
         user : str | None
             The user to send as; overrides the message message's user if provided.
-        avatar : str | BinaryIO | None
+        avatar : str | bytes | BytesIO | None
             The avatar to use; overrides the message message's avatar if provided.
         respond : bool
             Whether to execute the callback.
@@ -504,7 +501,7 @@ class ChatFeed(ListPanel):
         self,
         value: str,
         user: str | None = None,
-        avatar: str | BinaryIO | None = None,
+        avatar: str | bytes | BytesIO | None = None,
         message: ChatMessage | None = None,
     ) -> ChatMessage | None:
         """
@@ -522,7 +519,7 @@ class ChatFeed(ListPanel):
             The new token value to stream.
         user : str | None
             The user to stream as; overrides the message's user if provided.
-        avatar : str | BinaryIO | None
+        avatar : str | bytes | BytesIO | None
             The avatar to use; overrides the message's avatar if provided.
         message : ChatMessage | None
             The message to update.
@@ -593,6 +590,97 @@ class ChatFeed(ListPanel):
         cleared_entries = self._chat_log.objects
         self._chat_log.clear()
         return cleared_entries
+
+    def _serialize_for_transformers(
+        self,
+        role_names: Dict[str, str | List[str]] | None = None,
+        default_role: str | None = "assistant",
+        custom_serializer: Callable = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Exports the chat log for use with transformers.
+        """
+        if role_names is None:
+            role_names = {
+                "user": ["user"],
+                "assistant": [self.callback_user],
+            }
+
+        names_role = {}
+        for role, names in role_names.items():
+            # reverse the role_names dict and pd.explode list of names
+            # as keys for efficient look up
+            if isinstance(names, str):
+                names = [names]
+            for name in names:
+                names_role[name.lower()] = role
+
+        messages = []
+        for message in self._chat_log.objects:
+
+            lowercase_name = message.user.lower()
+            if lowercase_name not in names_role and not default_role:
+                raise ValueError(
+                    f"User {message.user!r} not found in role_names; "
+                    f"got {role_names!r}."
+                )
+
+            role = names_role.get(lowercase_name, default_role)
+
+            if custom_serializer:
+                content = custom_serializer(message.object)
+                if not isinstance(content, str):
+                    raise ValueError(
+                        f"The provided custom_serializer must return a string; "
+                        f"it returned a {type(content)} type"
+                    )
+            else:
+                content = str(message)
+
+            messages.append({"role": role, "content": content})
+        return messages
+
+    def serialize(
+        self,
+        format: Literal["transformers"] = "transformers",
+        custom_serializer: Callable | None = None,
+        **serialize_kwargs
+    ):
+        """
+        Exports the chat log.
+
+        Arguments
+        ---------
+        format : str
+            The format to export the chat log as; currently only
+            supports "transformers".
+        custom_serializer : callable
+            A custom function to format the ChatMessage's object. The function must
+            accept one positional argument. If not provided,
+            uses the serialize method on ChatMessage.
+        **serialize_kwargs
+            Additional keyword arguments to use for the specified format.
+
+            - format="transformers"
+              role_names : dict(str, str | list(str)) | None
+                  A dictionary mapping the role to the ChatMessage's user name.
+                  Defaults to `{"user": ["user"], "assistant": [self.callback_user]}`
+                  if not set. The keys and values are case insensitive as the strings
+                  will all be lowercased. The values can be a string or a list of strings,
+                  e.g. `{"user": "user", "assistant": ["executor", "langchain"]}`.
+              default_role : str
+                  The default role to use if the user name is not found in role_names.
+                  If this is set to None, raises a ValueError if the user name is not found.
+
+        Returns
+        -------
+        The chat log serialized in the specified format.
+        """
+        if format == "transformers":
+            return self._serialize_for_transformers(
+                custom_serializer=custom_serializer, **serialize_kwargs
+            )
+        raise NotImplementedError(f"Format {format!r} is not supported.")
 
     def select(self, selector=None):
         """

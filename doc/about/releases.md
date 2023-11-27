@@ -1,6 +1,62 @@
 # Releases
 
-See [the HoloViz blog](https://blog.holoviz.org/tag/panel.html) for a visual summary of the major features added in each release.
+See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual summary of the major features added in each release.
+
+## Version 1.3.2
+
+Date: 2023-11-22
+
+This micro-release focuses on a number of performance improvements, speeding up the initial rendering of simple apps by 2x in many cases. In addition it includes a number of smaller enhancements for various widgets, better support for async and threading and a number of bug fixes related to authentication, the `Tabulator` widget and a few other items. We are very pleased to welcome @isumitjha and @fohria as new contributors and want to thank our core team including @maximlt, @Hoxbro, @MarcSkovMadsen, @ahuang11 and @philippjfr for their continuing contributions.
+
+### Performance
+
+- Speed up `Pane.clone` ([#5848](https://github.com/holoviz/panel/pull/5848))
+- Speed up `config` attribute access ([#5851](https://github.com/holoviz/panel/pull/5851))
+- Cache templates loaded from string ([#5854](https://github.com/holoviz/panel/pull/5854))
+- Only load extension entrypoints once ([#5855](https://github.com/holoviz/panel/pull/5855))
+- Do not freeze document models unless needed ([#5864](https://github.com/holoviz/panel/pull/5864))
+
+### Enhancements
+
+- Use the compiled version of Pyodide by default ([#5808](https://github.com/holoviz/panel/pull/5808))
+- Add support for `AutocompleteInput.search_strategy` parameter ([#5832](https://github.com/holoviz/panel/pull/5832))
+- Use `stdlib_module_names` when determining pyodide dependencies  ([#5818](https://github.com/holoviz/panel/pull/5818))
+- Add `Tabulator.sortable` parameter ([#5827](https://github.com/holoviz/panel/pull/5827))
+- Add delay for tooltip to show up for buttons ([#5860](https://github.com/holoviz/panel/pull/5860))
+- Add `serialize` method on `ChatMessage` and `ChatFeed` ([#5764](https://github.com/holoviz/panel/pull/5764))
+- Allow running onload and defer_load tasks on threads ([#5865](https://github.com/holoviz/panel/pull/5865))
+- Allow Image panes for `ChatMessage.avatar` ([#5870](https://github.com/holoviz/panel/pull/5870))
+- Allow async callbacks on `FileDownload` ([#5878](https://github.com/holoviz/panel/pull/5878))
+- Allow running scheduled tasks on threads ([#5879](https://github.com/holoviz/panel/pull/5879))
+
+### Bug fixes
+
+- Fix Google OAuth default scopes ([#5823](https://github.com/holoviz/panel/pull/5823))
+- Fix logic for cleaning up OAuth user ([#5824](https://github.com/holoviz/panel/pull/5824))
+- Set `text_align` correctly if `Tabulator` is given Bokeh `formatter` ([#5866](https://github.com/holoviz/panel/pull/5866))
+- Fix `FileDownload` `embed=True` style for `Fast` design ([#5875](https://github.com/holoviz/panel/pull/5875))
+- Enable `Tabulator` selection across pages with `pagination="remote"` and `selectable="checkbox"` ([#5889](https://github.com/holoviz/panel/pull/5889))
+- Fix rendering of `VTK` colorbar ([#5902](https://github.com/holoviz/panel/pull/5902))
+- Ensure HoloViews `DynamicMap` updates when widget dimension has unit ([#5904](https://github.com/holoviz/panel/pull/5904))
+- Add space between `MaterialTemplate` app and site title separator ([#5905](https://github.com/holoviz/panel/pull/5905))
+- Consistently handle errors during authentication ([#5909](https://github.com/holoviz/panel/pull/5909))
+
+### Compatibility
+
+- Updates for Numpy 2.0 compatibility ([#5817](https://github.com/holoviz/panel/pull/5817))
+- Improve notebook handling when loading bokeh dev versions ([#5820](https://github.com/holoviz/panel/pull/5820))
+- Support for rendering into DOM from PyScript Next worker ([#5820](https://github.com/holoviz/panel/pull/5911))
+
+### Documentation
+
+- Enhance `extension` and `config` docs ([#5790](https://github.com/holoviz/panel/pull/5790))
+- Document setting a *multiselect* header filter on `Tabulator` ([#5825](https://github.com/holoviz/panel/pull/5825))
+- Add missing `GridSpec` docs ([#5840](https://github.com/holoviz/panel/pull/5840))
+- Fix for getting_started widgets example ([#5859](https://github.com/holoviz/panel/pull/5859))
+- Add more references to Panel Chat Examples ([#5881](https://github.com/holoviz/panel/pull/5881))
+- Document `Tabulator` fontawesome css ([#5892](https://github.com/holoviz/panel/pull/5892))
+- Fix broken link to panel tagged items in holoviz blog ([#5903](https://github.com/holoviz/panel/pull/5903))
+- MenuButton docs improvements ([#5907](https://github.com/holoviz/panel/pull/5907))
 
 ## Version 1.3.1
 

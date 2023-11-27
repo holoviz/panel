@@ -17,7 +17,13 @@ class TooltipMixin(Widget):
     description = param.ClassSelector(default=None, class_=(str, BkTooltip, TooltipIcon), doc="""
         The description in the tooltip.""")
 
-    _rename: ClassVar[Mapping[str, str | None]]  = {'description': 'tooltip'}
+    description_delay = param.Integer(default=500, doc="""
+        Delay (in milliseconds) to display the tooltip after the cursor has
+        hovered over the Button, default is 500ms.""")
+
+    _rename: ClassVar[Mapping[str, str | None]]  = {
+        'description': 'tooltip', 'description_delay': 'tooltip_delay'
+    }
 
     def _process_param_change(self, params) -> dict[str, Any]:
         desc = params.get('description')

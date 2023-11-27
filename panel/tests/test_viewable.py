@@ -100,3 +100,18 @@ def test_non_viewer_class():
             return 42
 
     panel(Example())
+
+@pytest.mark.parametrize('viewable', all_viewables)
+def test_clone(viewable):
+    v = Viewable()
+    clone = v.clone()
+
+    assert ([(k, v) for k, v in sorted(v.param.values().items()) if k not in ('name')] ==
+            [(k, v) for k, v in sorted(clone.param.values().items()) if k not in ('name')])
+
+def test_clone_with_non_defaults():
+    v= Viewable(loading=True)
+    clone = v.clone()
+
+    assert ([(k, v) for k, v in sorted(v.param.values().items()) if k not in ('name')] ==
+            [(k, v) for k, v in sorted(clone.param.values().items()) if k not in ('name')])

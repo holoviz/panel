@@ -309,8 +309,9 @@ class HoloViews(PaneBase):
             key = tuple(w.value for w in widgets)
             if plot.dynamic:
                 widget_dims = [w.name for w in widgets]
+                dim_labels = [kdim.pprint_label for kdim in plot.dimensions]
                 key = [key[widget_dims.index(kdim)] if kdim in widget_dims else None
-                       for kdim in plot.dimensions]
+                       for kdim in dim_labels]
                 key = wrap_tuple_streams(tuple(key), plot.dimensions, plot.streams)
 
         if plot.backend == 'bokeh':
