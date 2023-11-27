@@ -230,11 +230,10 @@ def test_nested_select_defaults(document, comm):
             "windspeed": [700, 500, 300],
         },
     }
-    levels = ["Person", "Variable", "Height"]
-    select = NestedSelect(options=options, levels=levels)
-    assert select.value == {'Height': 1000, 'Person': 'Andrew', 'Variable': 'temp'}
+    select = NestedSelect(options=options)
+    assert select.value == {2: 1000, 0: 'Andrew', 1: 'temp'}
     assert select.options == options
-    assert select.levels == levels
+    assert select.levels == [0,1,2]
 
 
 def test_nested_select_init_value(document, comm):
@@ -291,7 +290,7 @@ def test_nested_select_update_options(document, comm):
         },
     }
     levels = ["Name", "Var", "Level"]
-    select = NestedSelect(options=options, levels = levels, value={'Level': 1000, 'Name': 'Andrew', 'Var': 'temp'})
+    select = NestedSelect(options=options, levels=levels, value={'Level': 1000, 'Name': 'Andrew', 'Var': 'temp'})
     options = {
 
         "August": {
@@ -316,7 +315,7 @@ def test_nested_select_update_value(document, comm):
         },
     }
     levels = ["Name", "Var", "Level"]
-    select = NestedSelect(options=options, levels = levels, value={'Name': 'Ben', 'Var': 'temp', 'Level': 300})
+    select = NestedSelect(options=options, levels=levels, value={'Name': 'Ben', 'Var': 'temp', 'Level': 300})
     value = {'Name': 'Ben', 'Var': 'windspeed', 'Level': 700}
     select.value = value
     assert select.options == options
@@ -324,7 +323,7 @@ def test_nested_select_update_value(document, comm):
     assert select.levels == levels
 
 
-def test_nested_select_update_labels(document, comm):
+def test_nested_select_update_levels(document, comm):
     options = {
         "Andrew": {
             "temp": [1000, 925, 700, 500, 300],
@@ -335,7 +334,7 @@ def test_nested_select_update_labels(document, comm):
             "windspeed": [700, 500, 300],
         },
     }
-    select = NestedSelect(options=options, levels = ["Name", "Var", "Level"], value={'Name': 'Ben', 'Var': 'temp', 'Level': 300})
+    select = NestedSelect(options=options, levels=["Name", "Var", "Level"], value={'Name': 'Ben', 'Var': 'temp', 'Level': 300})
     levels = ["user", "wx_var", "lev"]
     select.levels = levels
     assert select.options == options
