@@ -3312,6 +3312,7 @@ class Test_Selection_RemotePagination:
 
     def goto_page(self, page, page_number):
         page.locator(f'button.tabulator-page[data-page="{page_number}"]').click()
+        page.wait_for_timeout(100)
 
     def click_sorting(self, page):
         page.locator('div.tabulator-col-title').get_by_text("index").click()
