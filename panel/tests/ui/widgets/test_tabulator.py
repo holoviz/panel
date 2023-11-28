@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import datetime as dt
 
+from contextlib import contextmanager
+
 import numpy as np
 import pandas as pd
 import param
@@ -3277,6 +3279,113 @@ def test_tabulator_update_hidden_columns(page):
         (title.bounding_box()['x'] == cell.bounding_box()['x']) and
         (title.bounding_box()['width'] == cell.bounding_box()['width'])
     ), page)
+
+
+class Test_Selection_RemotePagination:
+
+    def setup_method(self):
+        self.widget = Tabulator(
+            value=pd.DataFrame(np.arange(20) + 100),
+            disabled=True,
+            pagination="remote",
+            page_size=10,
+            selectable=True,
+            header_filters=True,
+        )
+
+    def check_selected(self, page, expected, ui_count=None):
+        if ui_count is None:
+            ui_count = len(expected)
+
+        expect(page.locator('.tabulator-selected')).to_have_count(ui_count)
+        wait_until(lambda: self.widget.selection == expected, page)
+
+    @contextmanager
+    def hold_down_ctrl(self, page):
+        key = get_ctrl_modifier()
+        page.keyboard.down(key)
+        yield
+        page.keyboard.up(key)
+
+    def get_rows(self, page):
+        return page.locator('.tabulator-row[role="row"]')
+
+    def goto_page(self, page, page_number):
+        page.locator(f'button.tabulator-page[data-page="{page_number}"]').click()
+
+    def click_sorting(self, page):
+        page.locator('div.tabulator-col-title').get_by_text("index").click()
+        page.wait_for_timeout(100)
+
+    def set_filtering(self, page, number):
+        number_input = page.locator('input[type="number"]').first
+        number_input.fill(str(number))
+        number_input.press("Enter")
+
+    def test_one_item_first_page(self, page):
+        serve_component(page, self.widget)
+        rows = self.get_rows(page)
+
+        rows.nth(0).click()
+        self.check_selected(page, [0])
+
+        with self.hold_down_ctrl(page):
+            rows.nth(0).click()
+        self.check_selected(page, [])
+
+    def test_one_item_first_page_goto_second_page(self, page):
+        serve_component(page, self.widget)
+        rows = self.get_rows(page)
+
+        rows.nth(0).click()
+        self.check_selected(page, [0], 1)
+
+        self.goto_page(page, 2)
+        self.check_selected(page, [0], 0)
+
+        self.goto_page(page, 1)
+        self.check_selected(page, [0], 1)
+
+    def test_one_item_both_pages_python(self, page):
+        serve_component(page, self.widget)
+
+        self.widget.selection = [0, 10]
+        self.check_selected(page, [0, 10], 1)
+
+        self.goto_page(page, 2)
+        self.check_selected(page, [0, 10], 1)
+
+    # Failing
+    @pytest.mark.parametrize("selection", (0, 10), ids=["page1", "page2"])
+    def test_sorting(self, page, selection):
+        self.widget.selection = [selection]
+        serve_component(page, self.widget)
+        self.check_selected(page, [selection], int(selection == 0))
+
+        # First sort ascending
+        self.click_sorting(page)
+        self.check_selected(page, [selection], int(selection == 0))
+
+        # Then sort descending
+        self.click_sorting(page)
+        self.check_selected(page, [selection], int(selection == 10))
+
+        # Then back to ascending
+        self.click_sorting(page)
+        self.check_selected(page, [selection], int(selection == 0))
+
+    # Failing
+    @pytest.mark.parametrize("selection", (0, 10), ids=["page1", "page2"])
+    def test_filtering(self, page, selection):
+        self.widget.selection = [selection]
+        serve_component(page, self.widget)
+        self.check_selected(page, [selection], int(selection == 0))
+
+        self.set_filtering(page, selection)
+        self.check_selected(page, [selection], 1)
+
+        self.set_filtering(page, 1)
+        self.check_selected(page, [selection], 0)
 
 
 class Test_CheckboxSelection_RemotePagination:
