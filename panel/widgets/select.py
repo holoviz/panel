@@ -358,6 +358,9 @@ class NestedSelect(CompositeWidget):
 
     _max_depth = param.Integer(doc="The number of levels of the nested select widgets.")
 
+    _levels = param.List(doc="""
+        The internal rep of levels to prevent overwriting user provided levels.""")
+
     _composite_type = Column
 
     def __init__(self, **params):
@@ -370,7 +373,7 @@ class NestedSelect(CompositeWidget):
         """
         values = {}
         for i, select in enumerate(self._widgets):
-            level = self.levels[i]
+            level = self._levels[i]
             if isinstance(level, dict):
                 name = level.get("name", i)
             else:
@@ -379,7 +382,7 @@ class NestedSelect(CompositeWidget):
         return values
 
     def _find_max_depth(self, d, depth=1):
-        if d is None:
+        if d is None or len(d) == 0:
             return 0
         elif not isinstance(d, dict):
             return depth
@@ -388,6 +391,8 @@ class NestedSelect(CompositeWidget):
         for value in d.values():
             if isinstance(value, dict):
                 max_depth = max(max_depth, self._find_max_depth(value, depth + 1))
+            if len(value) == 0:
+                max_depth -= 1
         return max_depth
 
     @param.depends("options", "levels", watch=True)
@@ -397,9 +402,11 @@ class NestedSelect(CompositeWidget):
         """
         self._max_depth = self._find_max_depth(self.options) + 1
         if not self.levels:
-            self.levels = [i for i in range(self._max_depth)]
+            self._levels = [i for i in range(self._max_depth)]
         elif len(self.levels) != self._max_depth:
             raise ValueError(f"levels must be of length {self._max_depth}")
+        else:
+            self._levels = self.levels
 
         self._widgets = []
         if self.options is None:
@@ -407,46 +414,21 @@ class NestedSelect(CompositeWidget):
         else:
             options = self.options.copy()
 
-        visible = True
         for i in range(self._max_depth):
-            value = self._init_select_widget(i, options, visible)
-            if value is None:
-                continue
-            try:
+            value = self._init_widget(i, options)
+            if isinstance(options, dict) and len(options) > 0 and value is not None:
                 options = options[value]
-            except (IndexError, TypeError):
-                visible = False
 
         self._composite[:] = self._widgets
 
         if self.options is not None:
             self.value = self._gather_values_from_widgets()
 
-    def _get_i_value(self, i, options):
-        if not options:
-            return
-
-        if not self.value or i > len(self.value) - 1:
-            return options[0]
-        else:
-            if isinstance(self.levels[i], dict):
-                name = self.levels[i]["name"]
-            else:
-                name = self.levels[i]
-        # level names specified in self.levels override those specified in self.value
-        if name not in self.value:
-            old_name = list(self.value.keys())[i]
-            value = self.value[old_name]
-        else:
-            value = self.value[name]
-
-        if value not in options:
-            value = options[0]
-
-        return value
-
     def _extract_level_metadata(self, i):
-        level = self.levels[i]
+        """
+        Extract the widget type and keyword arguments from the level metadata.
+        """
+        level = self._levels[i]
         if isinstance(level, int):
             return Select, {}
         elif isinstance(level, str):
@@ -455,40 +437,80 @@ class NestedSelect(CompositeWidget):
         widget_kwargs = {k: v for k, v in level.items() if k != "type"}
         return widget_type, widget_kwargs
 
-    def _init_select_widget(self, i, options, visible):
+    def _lookup_value(self, i, options, values, name=None, error=False):
+        """
+        Look up the value of the select widget at index i or by name.
+        """
+        if values is None or len(options) == 0 or i >= len(values):
+            value = None
+        elif name is None:
+            # get by index
+            value = list(values.values())[i]
+        elif isinstance(self._levels[0], int):
+            # get by levels keys, which are enumerations
+            value = values.get(i)
+        else:
+            # get by levels keys, which are strings
+            value = values.get(name)
+
+        if options and value not in options:
+            if value is not None and error:
+                raise ValueError(
+                    f"Failed to set value {value!r} for level {name!r}, "
+                    f"must be one of {options!r}."
+                )
+            else:
+                value = options[0]
+        return value
+
+    def _init_widget(self, i, options):
         """
         Helper method to initialize a select widget.
         """
         options = list(options.keys()) if isinstance(options, dict) else options
-        value = self._get_i_value(i, options)
         widget_type, widget_kwargs = self._extract_level_metadata(i)
+        value = self._lookup_value(i, options, self.value, error=False)
         widget_kwargs["options"] = options
         widget_kwargs["value"] = value
         if "visible" not in widget_kwargs:
-            widget_kwargs["visible"] = visible
+            # first select widget always visible
+            widget_kwargs["visible"] = i == 0 or len(options) > 0
         widget = widget_type(**widget_kwargs)
         self.link(widget, disabled="disabled")
-        widget.param.watch(self._update_select_widget_options_interactively, "value")
+        widget.param.watch(self._update_widget_options_interactively, "value")
         self._widgets.append(widget)
         return value
 
-    def _update_select_widget_options_interactively(self, event):
+    def _update_widget_options_interactively(self, event):
         """
         When a select widget's value is changed, update to the latest options.
         """
+        if self.options is None:
+            return
+
+        # little optimization to avoid looping through all the
+        # widgets and updating their value
         for start_i, select in enumerate(self._widgets):
             if select is event.obj:
                 break
-        if self.options is None:
-            return
+
         options = self.options.copy()
+        # batch watch to prevent continuously triggering
+        # this function when updating the select widgets
         with param.batch_watch(self):
             for i, select in enumerate(self._widgets[:-1]):
-                options = options[select.value]
+                if select.value is None:
+                    options = {}
+                    visible = False
+                elif options:
+                    options = options[select.value]
+                    visible = True
 
                 if i < start_i:
-                    # If the select widget is before the one that triggered the event,
-                    # then we don't need to update it; we just need to subset options.
+                    # If the select widget is before the one
+                    # that triggered the event,
+                    # then we don't need to update it;
+                    # we just need to subset options.
                     continue
 
                 next_select = self._widgets[i + 1]
@@ -499,53 +521,54 @@ class NestedSelect(CompositeWidget):
 
                 next_select.param.update(
                     options=next_options,
-                    visible=True
+                    visible=visible
                 )
-
-        self.value = self._gather_values_from_widgets()
+            self.value = self._gather_values_from_widgets()
 
     @param.depends("value", watch=True)
-    def _update_select_options_programmatically(self):
+    def _update_options_programmatically(self):
         """
         When value is passed, update to the latest options.
         """
         if self.options is None:
             return
+
+        # must define these or else it gets mutated in the loop
         options = self.options.copy()
-        set_value = list(self.value.values())
-        original_value = self._gather_values_from_widgets()
+        set_values = self.value.copy()
+        original_values = self._gather_values_from_widgets()
+
+        if set_values == original_values:
+            return
 
         with param.batch_watch(self):
             try:
-                with param.discard_events(self):
-                    self._widgets[0].value = set_value[0]
-                for i in range(self._max_depth - 1):
-                    options = options[set_value[i]]
-
-                    next_select = self._widgets[i + 1]
+                for i in range(self._max_depth):
+                    curr_select = self._widgets[i]
                     if isinstance(options, dict):
-                        next_options = list(options.keys())
+                        curr_options = list(options.keys())
                     else:
-                        next_options = options
-
-                    if i >= len(set_value) - 1:
-                        next_value = next_options[0]
-                    else:
-                        next_value = set_value[i + 1]
-                        if next_value not in next_options:
-                            raise ValueError(
-                                f"Failed to set value; {next_value!r} "
-                                f"must be one of {next_options!r}."
-                            )
+                        curr_options = options
+                    curr_value = self._lookup_value(
+                        i, curr_options, set_values,
+                        name=curr_select.name, error=True
+                    )
+                    print(curr_value)
 
                     with param.discard_events(self):
-                        next_select.param.update(
-                            options=next_options,
-                            value=next_value,
-                            visible=True
+                        curr_select.param.update(
+                            options=curr_options,
+                            value=curr_value,
+                            visible=len(curr_options) > 0
                         )
+                    if curr_value is None:
+                        break
+                    if i < self._max_depth - 1:
+                        options = options[curr_value]
             except Exception:
-                self.value = original_value
+                # revert to original values if there is an error
+                # so it's not in a limbo state
+                self.value = original_values
                 raise
 
 

@@ -233,7 +233,7 @@ def test_nested_select_defaults(document, comm):
     select = NestedSelect(options=options)
     assert select.value == {2: 1000, 0: 'Andrew', 1: 'temp'}
     assert select.options == options
-    assert select.levels == [0, 1, 2]
+    assert select.levels == []
     assert select._max_depth == 3
 
 
@@ -252,7 +252,7 @@ def test_nested_select_init_value(document, comm):
     select = NestedSelect(options=options, value=value)
     assert select.value == value
     assert select.options == options
-    assert select.levels == [0, 1, 2]
+    assert select.levels == []
 
 
 def test_nested_select_init_empty(document, comm):
@@ -260,7 +260,7 @@ def test_nested_select_init_empty(document, comm):
     select = NestedSelect()
     assert select.value is None
     assert select.options is None
-    assert select.levels == [0]
+    assert select.levels == []
 
 
 def test_nested_select_init_levels(document, comm):
@@ -427,6 +427,88 @@ def test_nested_select_disabled(document, comm):
 
     select.disabled = False
     assert not select._widgets[0].disabled
+
+
+def test_nested_select_partial_options_init(document, comm):
+    options = {
+        "Ben": {},
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+    }
+    levels = ["Name", "Var", "Level"]
+    select = NestedSelect(
+        options=options,
+        levels=levels,
+    )
+    assert select._widgets[0].value == 'Ben'
+    assert select._widgets[1].value is None
+    assert select._widgets[2].value is None
+    assert select._widgets[0].visible
+    assert not select._widgets[1].visible
+    assert not select._widgets[2].visible
+    assert select.value == {'Name': 'Ben', 'Var': None, 'Level': None}
+
+
+def test_nested_select_partial_options_set(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+    }
+    select = NestedSelect(options=options)
+    select.options = {"Ben": {}}
+    assert select._widgets[0].value == 'Ben'
+    assert select._widgets[0].visible
+    assert select.value == {0: 'Ben'}
+
+
+def test_nested_select_partial_value_init(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    levels = ["Name", "Var", "Level"]
+    select = NestedSelect(
+        options=options,
+        levels=levels,
+        value={'Name': 'Ben'}
+    )
+    assert select._widgets[0].value == 'Ben'
+    assert select._widgets[1].value == "temp"
+    assert select._widgets[2].value == 500
+    assert select._widgets[0].visible
+    assert select._widgets[1].visible
+    assert select._widgets[2].visible
+    assert select.value == {'Name': 'Ben', 'Var': 'temp', 'Level': 500}
+
+
+def test_nested_select_partial_value_set(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    levels = ["Name", "Var", "Level"]
+    select = NestedSelect(
+        options=options,
+        levels=levels,
+    )
+    select.value = {'Name': 'Ben'}
+    assert select.value == {'Name': 'Ben', 'Var': 'temp', 'Level': 500}
 
 
 def test_nested_select_custom_widgets(document, comm):
