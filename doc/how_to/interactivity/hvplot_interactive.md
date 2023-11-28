@@ -29,9 +29,9 @@ year_widget = pn.widgets.IntSlider(name="year", start=2007, end=2009)
 Let's then use these to filter the data. We can do this by using `hvplot.interactive` and passing the `species_widget` as the `species` parameter and the `year_widget` as the `year` parameter. In our case, we want the year always to be greater than or equal to the widget's value.
 
 ```{pyodide}
-import hvplot.pandas  # Enable interactive
+import param 
 
-idf = df.interactive()
+idf = param.rx(df)
 idf = idf[(idf["species"] == species_widget) & (idf["year"] >= year_widget)]
 
 idf.head()
