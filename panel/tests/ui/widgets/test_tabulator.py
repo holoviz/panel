@@ -3377,7 +3377,6 @@ class Test_Selection_RemotePagination:
         self.goto_page(page, 2)
         self.check_selected(page, [0, 10], 1)
 
-    # Failing
     def test_one_item_both_pages(self, page):
         serve_component(page, self.widget)
 
@@ -3391,7 +3390,6 @@ class Test_Selection_RemotePagination:
             rows.nth(0).click()
         self.check_selected(page, [0, 10], 1)
 
-    # Failing
     def test_one_item_and_then_second_page(self, page):
         serve_component(page, self.widget)
 
@@ -3404,7 +3402,6 @@ class Test_Selection_RemotePagination:
         rows.nth(0).click()
         self.check_selected(page, [10], 1)
 
-    # Failing
     @pytest.mark.parametrize("selection", (0, 10), ids=["page1", "page2"])
     def test_sorting(self, page, selection):
         self.widget.selection = [selection]
@@ -3423,7 +3420,6 @@ class Test_Selection_RemotePagination:
         self.click_sorting(page)
         self.check_selected(page, [selection], int(selection == 0))
 
-    # Failing
     @pytest.mark.parametrize("selection", (0, 10), ids=["page1", "page2"])
     def test_filtering(self, page, selection):
         self.widget.selection = [selection]
