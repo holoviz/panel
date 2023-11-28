@@ -553,7 +553,6 @@ class NestedSelect(CompositeWidget):
                         i, curr_options, set_values,
                         name=curr_select.name, error=True
                     )
-                    print(curr_value)
 
                     with param.discard_events(self):
                         curr_select.param.update(
