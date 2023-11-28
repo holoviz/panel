@@ -1611,7 +1611,7 @@ class Tabulator(BaseTable):
             ilocs = []
         else:  # SelectionEvent
             selected = indices.selected
-            ilocs = [] if indices.flush else self.selection
+            ilocs = [] if indices.flush else self.selection.copy()
             indices = indices.indices
 
         nrows = self.page_size
@@ -1628,7 +1628,6 @@ class Tabulator(BaseTable):
             elif iloc in ilocs:
                 ilocs.remove(iloc)
         self.selection = list(dict.fromkeys(ilocs))
-        self.param.trigger('selection')
 
     def _get_properties(self, doc: Document) -> Dict[str, Any]:
         properties = super()._get_properties(doc)
