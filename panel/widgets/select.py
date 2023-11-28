@@ -441,11 +441,11 @@ class NestedSelect(CompositeWidget):
         """
         Look up the value of the select widget at index i or by name.
         """
-        if values is None or len(options) == 0 or i >= len(values):
+        if values is None or len(options) == 0:
             value = None
         elif name is None:
             # get by index
-            value = list(values.values())[i]
+            value = list(values.values())[i] if i < len(values) else None
         elif isinstance(self._levels[0], int):
             # get by levels keys, which are enumerations
             value = values.get(i)
