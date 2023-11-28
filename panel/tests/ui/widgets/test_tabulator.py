@@ -3333,6 +3333,27 @@ class Test_Selection_RemotePagination:
             rows.nth(0).click()
         self.check_selected(page, [])
 
+    def test_one_item_first_page_and_then_another(self, page):
+        serve_component(page, self.widget)
+        rows = self.get_rows(page)
+
+        rows.nth(0).click()
+        self.check_selected(page, [0])
+
+        rows.nth(1).click()
+        self.check_selected(page, [1])
+
+    def test_two_items_first_page(self, page):
+        serve_component(page, self.widget)
+        rows = self.get_rows(page)
+
+        rows.nth(0).click()
+        self.check_selected(page, [0])
+
+        with self.hold_down_ctrl(page):
+            rows.nth(1).click()
+        self.check_selected(page, [0, 1])
+
     def test_one_item_first_page_goto_second_page(self, page):
         serve_component(page, self.widget)
         rows = self.get_rows(page)
@@ -3354,6 +3375,33 @@ class Test_Selection_RemotePagination:
 
         self.goto_page(page, 2)
         self.check_selected(page, [0, 10], 1)
+
+    # Failing
+    def test_one_item_both_pages(self, page):
+        serve_component(page, self.widget)
+
+        rows = self.get_rows(page)
+        rows.nth(0).click()
+        self.check_selected(page, [0], 1)
+
+        self.goto_page(page, 2)
+        rows = self.get_rows(page)
+        with self.hold_down_ctrl(page):
+            rows.nth(0).click()
+        self.check_selected(page, [0, 10], 1)
+
+    # Failing
+    def test_one_item_and_then_second_page(self, page):
+        serve_component(page, self.widget)
+
+        rows = self.get_rows(page)
+        rows.nth(0).click()
+        self.check_selected(page, [0], 1)
+
+        self.goto_page(page, 2)
+        rows = self.get_rows(page)
+        rows.nth(0).click()
+        self.check_selected(page, [10], 1)
 
     # Failing
     @pytest.mark.parametrize("selection", (0, 10), ids=["page1", "page2"])
