@@ -1097,10 +1097,10 @@ export class DataTabulatorView extends HTMLBoxView {
     } else if (e.shiftKey && selected.indices.length) {
       const start = selected.indices[selected.indices.length-1]
       if (index>start) {
-        for (let i = start; i<=index; i++)
+        for (let i = start; i<index; i++)
           indices.push(i)
       } else {
-        for (let i = start; i>=index; i--)
+        for (let i = start; i>index; i--)
           indices.push(i)
       }
     }
