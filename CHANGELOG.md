@@ -1,5 +1,33 @@
 # Releases
 
+## Version 1.3.3
+
+Date: 2023-11-29
+
+This micro-release primarily addresses two important regressions related to the Tabulator `text_align` option and OAuth failing if the `id_token` does not contain the required user information. We are very excited to welcome @TBym to the growing list of contributors and thank the core maintainers @Hoxbro, @ahuang11, @MarcSkovMadsen and @philippjfr for their contributions to this release.
+
+### Enhancements
+
+- Allow passing partial function to tabulator filter ([#5912](https://github.com/holoviz/panel/pull/5912))
+- Allow defining custom callbacks for `ChatInterface` buttons ([#5839](https://github.com/holoviz/panel/pull/5839))
+
+### Bug fixes
+
+- Fix regression when setting `text_align` and `HTMLTemplateFormatter` on `Tabulator` ([#5922](https://github.com/holoviz/panel/pull/5922))
+- Ensure notifications are correctly destroyed ([#5924](https://github.com/holoviz/panel/pull/5924))
+- Fix header overflow issues in `FastGridTemplate` ([#5935](https://github.com/holoviz/panel/pull/5935))
+- Ensure `Audio` model respects sizing ([#5936](https://github.com/holoviz/panel/pull/5936))
+- Persist Tabulator selection across pages when `pagination='remote'` for all selection modes ([#5929](https://github.com/holoviz/panel/pull/5929))
+- Ensure `Tabulator` styler subset logic is not lost ([#5938](https://github.com/holoviz/panel/pull/5938))
+- Fix regression in OAuth when `id_token` does not contain user key ([#5939](https://github.com/holoviz/panel/pull/5939))
+- Ensure Vega/Altair plot with responsive width/height respects fixed width/height value when set ([#5940](https://github.com/holoviz/panel/pull/5940))
+
+### Documentation
+
+- Restore plot styling guides in how-to guide ([#5919](https://github.com/holoviz/panel/pull/5919))
+- Document support for emojis on Button labels ([#5926](https://github.com/holoviz/panel/pull/5926))
+- Update and improve `SVG` pane reference docs ([#5934](https://github.com/holoviz/panel/pull/5934))
+
 ## Version 1.3.2
 
 Date: 2023-11-22
