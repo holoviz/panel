@@ -1627,7 +1627,10 @@ class Tabulator(BaseTable):
                 ilocs.append(iloc)
             elif iloc in ilocs:
                 ilocs.remove(iloc)
-        self.selection = list(dict.fromkeys(ilocs))
+        ilocs = list(dict.fromkeys(ilocs))
+        if isinstance(self.selectable, int) and not isinstance(self.selectable, bool):
+            ilocs = ilocs[len(ilocs) - self.selectable:]
+        self.selection = ilocs
 
     def _get_properties(self, doc: Document) -> Dict[str, Any]:
         properties = super()._get_properties(doc)

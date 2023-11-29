@@ -3481,7 +3481,6 @@ class Test_RemotePagination_Selection(Test_RemotePagination):
             rows.nth(2).click()
         self.check_selected(page, [0, 1, 2])
 
-
         self.goto_page(page, 2)
         rows = self.get_rows(page)
         with self.hold_down_shift(page):
@@ -3491,6 +3490,73 @@ class Test_RemotePagination_Selection(Test_RemotePagination):
 
         self.goto_page(page, 1)
         self.check_selected(page, [0, 1, 2, 10, 11, 12], 3)
+
+
+class Test_RemotePagination_NumberSelection(Test_RemotePagination):
+
+    def setup_method(self):
+        self.widget = Tabulator(
+            value=pd.DataFrame(np.arange(20) + 100),
+            disabled=True,
+            pagination="remote",
+            page_size=10,
+            selectable=2,
+            header_filters=True,
+        )
+
+    def test_selectable_integer_page_1(self, page):
+        serve_component(page, self.widget)
+
+        rows = self.get_rows(page)
+        with self.hold_down_ctrl(page):
+            rows.nth(0).click()
+            rows.nth(1).click()
+        self.check_selected(page, [0, 1])
+
+        with self.hold_down_ctrl(page):
+            rows.nth(2).click()
+        self.check_selected(page, [1, 2])
+
+        self.goto_page(page, 2)
+        self.check_selected(page, [1, 2], 0)
+
+        self.goto_page(page, 1)
+        self.check_selected(page, [1, 2])
+
+    def test_selectable_integer_page_2(self, page):
+        serve_component(page, self.widget)
+
+        self.goto_page(page, 2)
+        rows = self.get_rows(page)
+        with self.hold_down_ctrl(page):
+            rows.nth(0).click()
+            rows.nth(1).click()
+        self.check_selected(page, [10, 11])
+
+        with self.hold_down_ctrl(page):
+            rows.nth(2).click()
+        self.check_selected(page, [11, 12])
+
+        self.goto_page(page, 1)
+        self.check_selected(page, [11, 12], 0)
+
+    def test_selectable_integer_both_pages(self, page):
+        serve_component(page, self.widget)
+
+        rows = self.get_rows(page)
+        with self.hold_down_ctrl(page):
+            rows.nth(0).click()
+            rows.nth(1).click()
+        self.check_selected(page, [0, 1])
+
+        self.goto_page(page, 2)
+        rows = self.get_rows(page)
+        with self.hold_down_ctrl(page):
+            rows.nth(0).click()
+        self.check_selected(page, [1, 10], 1)
+
+        self.goto_page(page, 1)
+        self.check_selected(page, [1, 10], 1)
 
 
 class Test_RemotePagination_CheckboxSelection(Test_RemotePagination):
