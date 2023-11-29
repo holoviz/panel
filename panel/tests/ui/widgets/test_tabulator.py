@@ -3307,6 +3307,13 @@ class Test_Selection_RemotePagination:
         yield
         page.keyboard.up(key)
 
+    @contextmanager
+    def hold_down_shift(self, page):
+        key = "Shift"
+        page.keyboard.down(key)
+        yield
+        page.keyboard.up(key)
+
     def get_rows(self, page):
         return page.locator('.tabulator-row[role="row"]')
 
@@ -3432,6 +3439,55 @@ class Test_Selection_RemotePagination:
         self.set_filtering(page, 1)
         self.check_selected(page, [selection], 0)
 
+    def test_shift_select_page_1(self, page):
+        serve_component(page, self.widget)
+
+        rows = self.get_rows(page)
+        with self.hold_down_shift(page):
+            rows.nth(0).click()
+            rows.nth(2).click()
+        self.check_selected(page, [0, 1, 2])
+
+        self.goto_page(page, 2)
+        self.check_selected(page, [0, 1, 2], 0)
+
+        self.goto_page(page, 1)
+        self.check_selected(page, [0, 1, 2])
+
+    def test_shift_select_page_2(self, page):
+        serve_component(page, self.widget)
+
+        self.check_selected(page, [])
+
+        self.goto_page(page, 2)
+        rows = self.get_rows(page)
+        with self.hold_down_shift(page):
+            rows.nth(0).click()
+            rows.nth(2).click()
+        self.check_selected(page, [10, 11, 12])
+
+        self.goto_page(page, 1)
+        self.check_selected(page, [10, 11, 12], 0)
+
+    def test_shift_select_both_pages(self, page):
+        serve_component(page, self.widget)
+
+        rows = self.get_rows(page)
+        with self.hold_down_shift(page):
+            rows.nth(0).click()
+            rows.nth(2).click()
+        self.check_selected(page, [0, 1, 2])
+
+
+        self.goto_page(page, 2)
+        rows = self.get_rows(page)
+        with self.hold_down_shift(page):
+            rows.nth(0).click()
+            rows.nth(2).click()
+        self.check_selected(page, [0, 1, 2, 10, 11, 12], 3)
+
+        self.goto_page(page, 1)
+        self.check_selected(page, [0, 1, 2, 10, 11, 12], 3)
 
 class Test_CheckboxSelection_RemotePagination:
 
