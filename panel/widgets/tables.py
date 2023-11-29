@@ -1849,7 +1849,6 @@ class Tabulator(BaseTable):
                 col_dict['editor'] = 'list'
                 if col_dict.get('editorParams', {}).get('values', False) is True:
                     del col_dict['editorParams']['values']
-                    col_dict['editorParams']['valuesLookup']
             if field in self.frozen_columns or i in self.frozen_columns:
                 col_dict['frozen'] = True
             if isinstance(self.widths, dict) and isinstance(self.widths.get(field), str):
