@@ -1072,8 +1072,8 @@ export class DataTabulatorView extends HTMLBoxView {
     const index: number = row._row.data._index
 
     if (this.model.pagination === 'remote') {
-      let includes = this.model.source.selected.indices.indexOf(index) == -1
-      let flush = !(e.ctrlKey || e.metaKey || e.shiftKey)
+      const includes = this.model.source.selected.indices.indexOf(index) == -1
+      const flush = !(e.ctrlKey || e.metaKey || e.shiftKey)
       if (e.shiftKey && selected.indices.length) {
         const start = selected.indices[selected.indices.length-1]
         if (index>start) {
