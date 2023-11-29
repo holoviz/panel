@@ -3281,17 +3281,7 @@ def test_tabulator_update_hidden_columns(page):
     ), page)
 
 
-class Test_Selection_RemotePagination:
-
-    def setup_method(self):
-        self.widget = Tabulator(
-            value=pd.DataFrame(np.arange(20) + 100),
-            disabled=True,
-            pagination="remote",
-            page_size=10,
-            selectable=True,
-            header_filters=True,
-        )
+class Test_RemotePagination:
 
     def check_selected(self, page, expected, ui_count=None):
         if ui_count is None:
@@ -3329,6 +3319,19 @@ class Test_Selection_RemotePagination:
         number_input = page.locator('input[type="number"]').first
         number_input.fill(str(number))
         number_input.press("Enter")
+
+
+class Test_RemotePagination_Selection(Test_RemotePagination):
+
+    def setup_method(self):
+        self.widget = Tabulator(
+            value=pd.DataFrame(np.arange(20) + 100),
+            disabled=True,
+            pagination="remote",
+            page_size=10,
+            selectable=True,
+            header_filters=True,
+        )
 
     def test_one_item_first_page(self, page):
         serve_component(page, self.widget)
@@ -3489,7 +3492,8 @@ class Test_Selection_RemotePagination:
         self.goto_page(page, 1)
         self.check_selected(page, [0, 1, 2, 10, 11, 12], 3)
 
-class Test_CheckboxSelection_RemotePagination:
+
+class Test_RemotePagination_CheckboxSelection(Test_RemotePagination):
 
     def setup_method(self):
         self.widget = Tabulator(
@@ -3501,27 +3505,8 @@ class Test_CheckboxSelection_RemotePagination:
             header_filters=True,
         )
 
-    def check_selected(self, page, expected, ui_count=None):
-        if ui_count is None:
-            ui_count = len(expected)
-
-        expect(page.locator('.tabulator-selected')).to_have_count(ui_count)
-        wait_until(lambda: self.widget.selection == expected, page)
-
     def get_checkboxes(self, page):
         return page.locator('input[type="checkbox"]')
-
-    def goto_page(self, page, page_number):
-        page.locator(f'button.tabulator-page[data-page="{page_number}"]').click()
-
-    def click_sorting(self, page):
-        page.locator('div.tabulator-col-title').get_by_text("index").click()
-        page.wait_for_timeout(100)
-
-    def set_filtering(self, page, number):
-        number_input = page.locator('input[type="number"]').first
-        number_input.fill(str(number))
-        number_input.press("Enter")
 
     def test_full_firstpage(self, page):
         serve_component(page, self.widget)
