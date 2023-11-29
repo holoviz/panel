@@ -242,7 +242,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
             except HTTPError:
                 pass
             else:
-                log.debug("%s successfully obtained tokens.", type(self).__name__)
+                log.debug("%s successfully obtained access_token and id_token.", type(self).__name__)
                 return user, access_token, refresh_token, expires_in
 
         user_headers = dict(self._API_BASE_HEADERS)
