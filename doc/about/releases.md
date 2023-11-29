@@ -2,7 +2,7 @@
 
 See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual summary of the major features added in each release.
 
-## Version 1.3.3
+## Version 1.3.4
 
 Date: 2023-11-29
 

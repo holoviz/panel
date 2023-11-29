@@ -1,6 +1,6 @@
 # Releases
 
-## Version 1.3.3
+## Version 1.3.4
 
 Date: 2023-11-29
 
