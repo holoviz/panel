@@ -237,9 +237,13 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         if expires_in:
             expires_in = int(expires_in)
         if id_token:= body.get('id_token'):
-            log.debug("%s successfully obtained tokens.", type(self).__name__)
-            user = self._on_auth(id_token, access_token, refresh_token, expires_in)
-            return user, access_token, refresh_token, expires_in
+            try:
+                user = self._on_auth(id_token, access_token, refresh_token, expires_in)
+            except HTTPError:
+                pass
+            else:
+                log.debug("%s successfully obtained access_token and id_token.", type(self).__name__)
+                return user, access_token, refresh_token, expires_in
 
         user_headers = dict(self._API_BASE_HEADERS)
         if self._access_token_header:
@@ -250,6 +254,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         else:
             user_url = '{}{}'.format(self._OAUTH_USER_URL, body['access_token'])
 
+        log.debug("%s requesting OpenID userinfo.", type(self).__name__)
         try:
             user_response = await http.fetch(user_url, headers=user_headers)
             id_token = decode_response_body(user_response)
@@ -257,14 +262,14 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
             id_token = None
 
         if not id_token:
-            log.debug("%s could not obtain id_token, falling back to decoding access_token.", type(self).__name__)
+            log.debug("%s could not obtain userinfo or id_token, falling back to decoding access_token.", type(self).__name__)
             try:
                 id_token = decode_token(body['access_token'])
             except Exception:
                 log.debug("%s could not decode access_token.", type(self).__name__)
                 self._raise_error(response, body, status=401)
 
-        log.debug("%s successfully obtained tokens.", type(self).__name__)
+        log.debug("%s successfully obtained access_token and userinfo.", type(self).__name__)
         user = self._on_auth(id_token, access_token, refresh_token, expires_in)
         return user, access_token, refresh_token, expires_in
 
