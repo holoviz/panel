@@ -3283,6 +3283,18 @@ def test_tabulator_update_hidden_columns(page):
 
 class Test_RemotePagination:
 
+    @pytest.fixture(autouse=True)
+    def setup_widget(self, page):
+        self.widget = Tabulator(
+            value=pd.DataFrame(np.arange(20) + 100),
+            disabled=True,
+            pagination="remote",
+            page_size=10,
+            selectable=self.selectable,
+            header_filters=True,
+        )
+        serve_component(page, self.widget)
+
     def check_selected(self, page, expected, ui_count=None):
         if ui_count is None:
             ui_count = len(expected)
@@ -3322,18 +3334,7 @@ class Test_RemotePagination:
 
 
 class Test_RemotePagination_Selection(Test_RemotePagination):
-
-    @pytest.fixture(autouse=True)
-    def setup_widget(self, page):
-        self.widget = Tabulator(
-            value=pd.DataFrame(np.arange(20) + 100),
-            disabled=True,
-            pagination="remote",
-            page_size=10,
-            selectable=True,
-            header_filters=True,
-        )
-        serve_component(page, self.widget)
+    selectable = True
 
     def test_one_item_first_page(self, page):
         rows = self.get_rows(page)
@@ -3477,18 +3478,7 @@ class Test_RemotePagination_Selection(Test_RemotePagination):
 
 
 class Test_RemotePagination_NumberSelection(Test_RemotePagination):
-
-    @pytest.fixture(autouse=True)
-    def setup_widget(self, page):
-        self.widget = Tabulator(
-            value=pd.DataFrame(np.arange(20) + 100),
-            disabled=True,
-            pagination="remote",
-            page_size=10,
-            selectable=2,
-            header_filters=True,
-        )
-        serve_component(page, self.widget)
+    selectable = 2
 
     def test_selectable_integer_page_1(self, page):
         rows = self.get_rows(page)
@@ -3540,18 +3530,7 @@ class Test_RemotePagination_NumberSelection(Test_RemotePagination):
 
 
 class Test_RemotePagination_CheckboxSelection(Test_RemotePagination):
-
-    @pytest.fixture(autouse=True)
-    def setup_widget(self, page):
-        self.widget = Tabulator(
-            value=pd.DataFrame(np.arange(20) + 100),
-            disabled=True,
-            pagination="remote",
-            page_size=10,
-            selectable="checkbox",
-            header_filters=True,
-        )
-        serve_component(page, self.widget)
+    selectable="checkbox"
 
     def get_checkboxes(self, page):
         return page.locator('input[type="checkbox"]')
