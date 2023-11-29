@@ -450,6 +450,7 @@ def styler_update(styler, new_df):
             todos.append(todo)
             continue
         ops = []
+        print(todo)
         for op in todo:
             if not isinstance(op, tuple):
                 ops.append(op)
@@ -459,6 +460,8 @@ def styler_update(styler, new_df):
                 applies = np.array([
                     new_df[col].dtype.kind in 'uif' for col in new_df.columns
                 ])
+                if len(op[2]) == len(applies):
+                    applies = np.logical_and(applies, op[2])
                 op = (op[0], op[1], applies)
             ops.append(op)
         todo = tuple(ops)
