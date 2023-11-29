@@ -450,7 +450,6 @@ def styler_update(styler, new_df):
             todos.append(todo)
             continue
         ops = []
-        print(todo)
         for op in todo:
             if not isinstance(op, tuple):
                 ops.append(op)
