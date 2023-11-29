@@ -46,7 +46,10 @@ export class EChartsView extends HTMLBoxView {
     this.connect(this.model.properties.data.change, () => this._plot())
     const {width, height, renderer, theme, event_config, js_events} = this.model.properties
     this.on_change([width, height], () => this._resize())
-    this.on_change([theme, renderer], () => this.render())
+    this.on_change([theme, renderer], () => {
+        this.render()
+        this._chart.resize()
+    })
     this.on_change([event_config, js_events], () => this._subscribe())
   }
 

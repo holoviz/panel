@@ -62,4 +62,4 @@ class ECharts(LayoutDOM):
 
     renderer = Enum("canvas", "svg")
 
-    theme = Enum("default", "light", "dark")
+    theme = String("default")
