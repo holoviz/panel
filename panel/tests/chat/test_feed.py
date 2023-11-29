@@ -553,7 +553,7 @@ class TestChatFeedCallback:
         )
         chat_feed.send("Message", respond=True)
         # append sent message and placeholder
-        chat_feed.append.call_args_list[1].args[0] == chat_feed._placeholder
+        assert chat_feed.append.call_args_list[1].args[0] == chat_feed._placeholder
 
     def test_placeholder_threshold_under(self, chat_feed):
         async def echo(contents, user, instance):
@@ -566,7 +566,7 @@ class TestChatFeedCallback:
             side_effect=lambda message: chat_feed._chat_log.append(message)
         )
         chat_feed.send("Message", respond=True)
-        chat_feed.append.call_args_list[1].args[0] != chat_feed._placeholder
+        assert chat_feed.append.call_args_list[1].args[0] != chat_feed._placeholder
 
     def test_placeholder_threshold_under_generator(self, chat_feed):
         async def echo(contents, user, instance):
@@ -579,7 +579,7 @@ class TestChatFeedCallback:
             side_effect=lambda message: chat_feed._chat_log.append(message)
         )
         chat_feed.send("Message", respond=True)
-        chat_feed.append.call_args_list[1].args[0] != chat_feed._placeholder
+        assert chat_feed.append.call_args_list[1].args[0] != chat_feed._placeholder
 
     def test_placeholder_threshold_exceed(self, chat_feed):
         async def echo(contents, user, instance):
@@ -592,7 +592,7 @@ class TestChatFeedCallback:
             side_effect=lambda message: chat_feed._chat_log.append(message)
         )
         chat_feed.send("Message", respond=True)
-        chat_feed.append.call_args_list[1].args[0] == chat_feed._placeholder
+        assert chat_feed.append.call_args_list[1].args[0] == chat_feed._placeholder
 
     def test_placeholder_threshold_exceed_generator(self, chat_feed):
         async def echo(contents, user, instance):
@@ -605,7 +605,7 @@ class TestChatFeedCallback:
             side_effect=lambda message: chat_feed._chat_log.append(message)
         )
         chat_feed.send("Message", respond=True)
-        chat_feed.append.call_args_list[1].args[0] == chat_feed._placeholder
+        assert chat_feed.append.call_args_list[1].args[0] == chat_feed._placeholder
 
     def test_placeholder_threshold_sync(self, chat_feed):
         """
@@ -623,7 +623,7 @@ class TestChatFeedCallback:
             side_effect=lambda message: chat_feed._chat_log.append(message)
         )
         chat_feed.send("Message", respond=True)
-        chat_feed.append.call_args_list[1].args[0] == chat_feed._placeholder
+        assert chat_feed.append.call_args_list[1].args[0] == chat_feed._placeholder
 
     def test_renderers_pane(self, chat_feed):
         chat_feed.renderers = [HTML]
