@@ -56,7 +56,7 @@ class SelectionEvent(ModelEvent):
 
     event_name = 'selection-change'
 
-    def __init__(self, model, indices, selected):
+    def __init__(self, model, indices, selected, flush):
         """ Selection Event
 
         Parameters
@@ -67,14 +67,17 @@ class SelectionEvent(ModelEvent):
             A list of changed indices selected/deselected rows.
         selected : bool
             If true the rows were selected, if false they were deselected.
+        flush : bool
+            Whether the current selection should be emptied before adding the new indices.
         """
         self.indices = indices
         self.selected = selected
+        self.flush = flush
         super().__init__(model=model)
 
     def __repr__(self):
         return (
-            f'{type(self).__name__}(indices={self.indices}, selected={self.selected})'
+            f'{type(self).__name__}(indices={self.indices}, selected={self.selected}, flush={self.flush})'
         )
 
 

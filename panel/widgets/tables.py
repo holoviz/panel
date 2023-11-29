@@ -1537,11 +1537,7 @@ class Tabulator(BaseTable):
         elif events and all(e.name in page_events for e in events) and not self.pagination:
             self._processed, _ = self._get_data()
             return
-        elif (
-            self.pagination == 'remote'
-            and isinstance(self.selectable, str)
-            and "checkbox" in self.selectable
-        ):
+        elif self.pagination == 'remote':
             self._processed = None
         recompute = not all(
             e.name in ('page', 'page_size', 'pagination') for e in events
@@ -1615,8 +1611,8 @@ class Tabulator(BaseTable):
             ilocs = []
         else:  # SelectionEvent
             selected = indices.selected
+            ilocs = [] if indices.flush else self.selection.copy()
             indices = indices.indices
-            ilocs = self.selection
 
         nrows = self.page_size
         start = (self.page-1)*nrows
@@ -1629,9 +1625,12 @@ class Tabulator(BaseTable):
                 continue
             if selected:
                 ilocs.append(iloc)
-            else:
+            elif iloc in ilocs:
                 ilocs.remove(iloc)
-        self.selection = list(dict.fromkeys(ilocs))
+        ilocs = list(dict.fromkeys(ilocs))
+        if isinstance(self.selectable, int) and not isinstance(self.selectable, bool):
+            ilocs = ilocs[len(ilocs) - self.selectable:]
+        self.selection = ilocs
 
     def _get_properties(self, doc: Document) -> Dict[str, Any]:
         properties = super()._get_properties(doc)

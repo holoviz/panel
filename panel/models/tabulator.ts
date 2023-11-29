@@ -44,12 +44,12 @@ export class CellClickEvent extends ModelEvent {
 }
 
 export class SelectionEvent extends ModelEvent {
-  constructor(readonly indices: number[], readonly selected: boolean) {
+  constructor(readonly indices: number[], readonly selected: boolean, readonly flush: boolean = false) {
     super()
   }
 
   protected get event_values(): Attrs {
-    return {model: this.origin, indices: this.indices, selected: this.selected}
+    return {model: this.origin, indices: this.indices, selected: this.selected, flush: this.flush}
   }
 
   static {
@@ -1070,6 +1070,28 @@ export class DataTabulatorView extends HTMLBoxView {
     let indices: number[] = []
     const selected = this.model.source.selected
     const index: number = row._row.data._index
+
+    if (this.model.pagination === 'remote') {
+      const includes = this.model.source.selected.indices.indexOf(index) == -1
+      const flush = !(e.ctrlKey || e.metaKey || e.shiftKey)
+      if (e.shiftKey && selected.indices.length) {
+        const start = selected.indices[selected.indices.length-1]
+        if (index>start) {
+          for (let i = start; i<=index; i++)
+            indices.push(i)
+        } else {
+          for (let i = start; i>=index; i--)
+            indices.push(i)
+        }
+      } else {
+        indices.push(index)
+      }
+      this._selection_updating = true
+      this.model.trigger_event(new SelectionEvent(indices, includes, flush))
+      this._selection_updating = false
+      return
+    }
+
     if (e.ctrlKey || e.metaKey) {
       indices = [...this.model.source.selected.indices]
     } else if (e.shiftKey && selected.indices.length) {
@@ -1124,11 +1146,11 @@ export class DataTabulatorView extends HTMLBoxView {
       let deselected_indices = deselected.map((x: any) => x._row.data._index)
       if (selected_indices.length > 0) {
         this._selection_updating = true
-        this.model.trigger_event(new SelectionEvent(selected_indices, selected=true))
+        this.model.trigger_event(new SelectionEvent(selected_indices, true, false))
       }
       if (deselected_indices.length > 0) {
         this._selection_updating = true
-        this.model.trigger_event(new SelectionEvent(deselected_indices, selected=false))
+        this.model.trigger_event(new SelectionEvent(deselected_indices, false, false))
       }
     } else {
       const indices: number[] = data.map((row: any) => row._index)
