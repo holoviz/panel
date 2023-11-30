@@ -10,7 +10,6 @@ from functools import partial
 
 try:
     from watchfiles import awatch
-    raise ValueError
 except Exception:
     async def awatch(*files, stop_event=None):
         modify_times = {}
@@ -18,7 +17,7 @@ except Exception:
         while not stop_event.is_set():
             changes = set()
             for path in files:
-                change = _check_file(modify_times, path)
+                change = _check_file(path, modify_times)
                 if change:
                     changes.add((change, path))
             if changes:
@@ -98,7 +97,7 @@ async def async_file_watcher(curdoc):
         path = getattr(module, "__file__", None)
         if not path:
             continue
-        if path.endswith(".pyc") or path.endswith(".pyo"):
+        if path.endswith((".pyc", ".pyo")):
             path = path[:-1]
         modules[path] = module_name
         files.append(path)
@@ -110,6 +109,7 @@ async def async_file_watcher(curdoc):
         if not curdoc.session_context:
             stop_event.set()
 
+    # Keep handle on task to avoid weakref from being collected
     stop_on_task = asyncio.create_task(stop_on_destroy())  # noqa
 
     async for changes in awatch(*files, stop_event=stop_event):
@@ -186,17 +186,37 @@ def _reload():
     for loc in state._locations.values():
         loc.reload = True
 
-def _check_file(modify_times, path):
+def _check_file(path, modify_times):
+    """
+    Checks if a file was modified or deleted and then returns a code,
+    modeled after watchfiles, indicating the type of change:
+
+    - 0: No change
+    - 2: File modified
+    - 3: File deleted
+
+    Arguments
+    ---------
+    path: str | os.PathLike
+      Path of the file to check for modification
+    modify_times: dict[str, int]
+      Dictionary of modification times for different paths.
+
+    Returns
+    -------
+    Status code indicating type of change.
+    """
+    last_modified = modify_times.get(path)
     try:
         modified = os.stat(path).st_mtime
     except FileNotFoundError:
-        if path in modify_times:
+        if last_modified:
             return 3
     except Exception:
         return 0
-    if path not in modify_times:
+    if last_modified is None:
         modify_times[path] = modified
         return 0
-    elif modify_times[path] != modified:
+    elif last_modified != modified:
         modify_times[path] = modified
         return 2
