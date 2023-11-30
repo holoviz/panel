@@ -1,11 +1,29 @@
+import asyncio
 import fnmatch
 import os
 import sys
 import types
+import warnings
 
 from contextlib import contextmanager
+from functools import partial
 
-from watchfiles import awatch
+try:
+    from watchfiles import awatch
+    raise ValueError
+except Exception:
+    async def awatch(*files, stop_event=None):
+        modify_times = {}
+        stop_event = stop_event if stop_event else asyncio.Event()
+        while not stop_event.is_set():
+            changes = set()
+            for path in files:
+                change = _check_file(modify_times, path)
+                if change:
+                    changes.add((change, path))
+            if changes:
+                yield changes
+            await asyncio.sleep(0.5)
 
 from ..util import fullpath
 from .state import state
@@ -64,7 +82,7 @@ def file_is_in_folder_glob(filepath, folderpath_glob):
     file_dir = os.path.dirname(filepath) + "/"
     return fnmatch.fnmatch(file_dir, folderpath_glob)
 
-async def async_file_watcher():
+async def async_file_watcher(curdoc):
     files = list(_watched_files)
     modules = {}
     for module_name in _modules:
@@ -85,7 +103,16 @@ async def async_file_watcher():
         modules[path] = module_name
         files.append(path)
 
-    async for changes in awatch(*files):
+    stop_event = asyncio.Event()
+
+    async def stop_on_destroy():
+        await asyncio.sleep(1)
+        if not curdoc.session_context:
+            stop_event.set()
+
+    stop_on_task = asyncio.create_task(stop_on_destroy())  # noqa
+
+    async for changes in awatch(*files, stop_event=stop_event):
         for _, path in changes:
             if path in modules:
                 module = modules[path]
@@ -98,9 +125,18 @@ def setup_autoreload_watcher():
     Installs a periodic callback which checks for changes in watched
     files and sys.modules.
     """
+    try:
+        import watchfiles  # noqa
+    except Exception:
+        warnings.warn(
+            '--autoreload functionality now depends on the watchfiles '
+            'library. In future versions autoreload will not work without '
+            'watchfiles being installed. Since it provides a much better '
+            'user experience consider installing it today.', FutureWarning
+        )
     if not state.curdoc or not state.curdoc.session_context.server_context:
         return
-    state.execute(async_file_watcher)
+    state.execute(partial(async_file_watcher, state.curdoc))
 
 def watch(filename):
     """
@@ -150,14 +186,17 @@ def _reload():
     for loc in state._locations.values():
         loc.reload = True
 
-def _check_file(modify_times, path, module=None):
+def _check_file(modify_times, path):
     try:
         modified = os.stat(path).st_mtime
+    except FileNotFoundError:
+        if path in modify_times:
+            return 3
     except Exception:
-        return
+        return 0
     if path not in modify_times:
         modify_times[path] = modified
-        return
-    if modify_times[path] != modified:
-        _reload(module)
+        return 0
+    elif modify_times[path] != modified:
         modify_times[path] = modified
+        return 2

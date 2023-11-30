@@ -24,6 +24,7 @@ from pyviz_comms import Comm
 
 from panel import config, serve
 from panel.config import panel_extension
+from panel.io.reload import _modules, _watched_files
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
 
@@ -156,6 +157,7 @@ def server_document():
     doc._session_context = lambda: session_context
     with set_curdoc(doc):
         yield doc
+    doc._session_context = None
 
 @pytest.fixture
 def comm():
@@ -332,6 +334,8 @@ def server_cleanup():
         yield
     finally:
         state.reset()
+        _watched_files.clear()
+        _modules.clear()
 
 @pytest.fixture(autouse=True)
 def cache_cleanup():
