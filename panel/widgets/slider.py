@@ -903,7 +903,7 @@ class _EditableContinuousSlider(CompositeWidget):
             bar_color=self.bar_color,
             direction=self.direction,
             show_value=self.show_value,
-            tooltips=self.tooltip
+            tooltips=self.tooltips
         )
         self._value_edit.step = self.step
 
