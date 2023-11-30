@@ -446,7 +446,7 @@ class Gauge(ValueIndicator):
         if 'panel.models.echarts' not in sys.modules:
             from ..models.echarts import ECharts
         else:
-            ECharts = getattr(sys.modules['panel.models.echarts'], 'ECharts')
+            ECharts = sys.modules['panel.models.echarts'].ECharts
         return ECharts
 
     def __init__(self, **params):

@@ -42,6 +42,7 @@ ignore = [
     "E701", # Multiple statements on one line
 ]
 select = [
+    "B",
     "E",
     "F",
     "W",
