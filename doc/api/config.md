@@ -70,7 +70,7 @@ Default: None | Type: Callable
 
 ### `autoreload`
 
-Whether to autoreload server when script changes.
+Whether to autoreload the page whenever the script or one of its dependencies changes.
 
 Default: False | Type: Boolean
 

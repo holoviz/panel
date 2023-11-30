@@ -14,8 +14,11 @@ or even serve a number of apps at once:
 
 For development it can be particularly helpful to use the ``--autoreload`` option to `panel serve` as that will automatically reload the page whenever the application code or any of its imports change.
 
-The ``panel serve`` command has the following options:
+```{note}
+We recommend installing `watchfiles`, which will provide a significantly better user experience when using `--autoreload`.
+```
 
+The ``panel serve`` command has the following options:
 
 ``` console
 positional arguments:
