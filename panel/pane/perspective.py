@@ -53,9 +53,9 @@ class Plugin(Enum):
     SUNBURST_D3 = "d3_sunburst"  # d3fc
     HEATMAP_D3 = "d3_heatmap"  # d3fc
     CANDLESTICK = "d3_candlestick"  # d3fc
-    CANDLESTICK_D3 = "d3_candlestick"  # d3fc
+    CANDLESTICK_D3 = "d3_candlestick"  # noqa: PIE796, d3fc
     OHLC = "d3_ohlc"  # d3fc
-    OHLC_D3 = "d3_ohlc"  # d3fc
+    OHLC_D3 = "d3_ohlc"  # noqa: PIE796, d3fc
 
     @staticmethod
     def options():
