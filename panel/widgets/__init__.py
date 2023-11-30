@@ -52,8 +52,8 @@ from .misc import FileDownload, JSONEditor, VideoStream  # noqa
 from .player import DiscretePlayer, Player  # noqa
 from .select import (  # noqa
     AutocompleteInput, CheckBoxGroup, CheckButtonGroup, ColorMap,
-    CrossSelector, MultiChoice, MultiSelect, RadioBoxGroup, RadioButtonGroup,
-    Select, ToggleGroup,
+    CrossSelector, MultiChoice, MultiSelect, NestedSelect, RadioBoxGroup,
+    RadioButtonGroup, Select, ToggleGroup,
 )
 from .slider import (  # noqa
     DateRangeSlider, DateSlider, DatetimeRangeSlider, DiscreteSlider,
@@ -115,6 +115,7 @@ __all__ = (
     "MenuButton",
     "MultiChoice",
     "MultiSelect",
+    "NestedSelect",
     "Number",
     "NumberInput",
     "PasswordInput",
