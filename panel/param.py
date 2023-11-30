@@ -924,10 +924,10 @@ class ParamMethod(ReplacementPane):
                         deps.append(p)
             self._replace_pane()
 
-        for _, params in full_groupby(params, lambda x: (x.inst or x.cls, x.what)):
-            p = params[0]
+        for _, sub_params in full_groupby(params, lambda x: (x.inst or x.cls, x.what)):
+            p = sub_params[0]
             pobj = (p.inst or p.cls)
-            ps = [_p.name for _p in params]
+            ps = [_p.name for _p in sub_params]
             if isinstance(pobj, Reactive) and self.loading_indicator:
                 props = {p: 'loading' for p in ps if p in pobj._linkable_params}
                 if props:
