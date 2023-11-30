@@ -67,7 +67,6 @@ try:
     pyodide_http.patch_all()
 except Exception:
     pyodide_http = None
-    pass
 
 try:
     # Patch fsspec with synchronous http support

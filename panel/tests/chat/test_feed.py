@@ -316,7 +316,7 @@ class TestChatFeed:
 
     def test_default_avatars_superseded_in_entry(self, chat_feed):
         chat_feed.send(
-            ChatMessage(**{"user": "System", "avatar": "👨", "object": "Message 1"})
+            ChatMessage(user="System", avatar="👨", object="Message 1")
         )
 
         assert chat_feed.objects[0].user == "System"

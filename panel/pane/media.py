@@ -36,7 +36,6 @@ class TensorLikeMeta(type):
 class TensorLike(metaclass=TensorLikeMeta):
     """A class similar to torch.Tensor. We don't want to make PyTorch a dependency of this project
     """
-    pass
 
 class _MediaBase(ModelPane):
 
