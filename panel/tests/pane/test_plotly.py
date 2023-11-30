@@ -171,17 +171,17 @@ def test_plotly_autosize(document, comm):
     pane = Plotly(dict(data=[trace], layout={'autosize': True}))
 
     model = pane.get_root(document, comm=comm)
-    model.sizing_mode == 'stretch_both'
+    assert model.sizing_mode == 'stretch_both'
 
     pane.object['layout']['autosize'] = False
     pane.param.trigger('object')
-    model.sizing_mode == 'fixed'
+    assert model.sizing_mode == 'fixed'
 
     pane._cleanup(model)
 
     pane = Plotly(dict(data=[trace], layout={'autosize': True}), sizing_mode='fixed')
     model = pane.get_root(document, comm=comm)
-    model.sizing_mode == 'fixed'
+    assert model.sizing_mode == 'fixed'
 
     pane._cleanup(model)
 
