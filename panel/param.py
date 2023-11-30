@@ -1084,7 +1084,7 @@ class ReactiveExpr(PaneBase):
             self.layout[:] = [self._generate_layout()]
 
     @classmethod
-    def applies(self, object):
+    def applies(cls, object):
         return isinstance(object, param.rx)
 
     @classmethod
