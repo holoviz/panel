@@ -372,11 +372,11 @@ class Param(PaneBase):
                     pane = Param(parameterized, name=parameterized.name,
                                  **kwargs)
                     if isinstance(self._expand_layout, Tabs):
-                        title = self.object.param[pname].label
+                        title = self.object.param[parameter].label
                         pane = (title, pane)
                     self._expand_layout.append(pane)
 
-            def update_pane(change, parameter=pname):
+            def update_pane(change, parameter=pname, toggle=toggle):
                 "Adds or removes subpanel from layout"
                 layout = self._expand_layout
                 existing = [p for p in layout.objects if isinstance(p, Param)
