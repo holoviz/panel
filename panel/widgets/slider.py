@@ -895,16 +895,16 @@ class _EditableContinuousSlider(CompositeWidget):
     @param.depends('start', 'end', 'step', 'bar_color', 'direction',
                    'show_value', 'tooltips', 'format', watch=True)
     def _update_slider(self):
-        self._slider.param.update(**{
-            'format': self.format,
-            'start': self.start,
-            'end': self.end,
-            'step': self.step,
-            'bar_color': self.bar_color,
-            'direction': self.direction,
-            'show_value': self.show_value,
-            'tooltips': self.tooltips
-        })
+        self._slider.param.update(
+            format=self.format,
+            start=self.start,
+            end=self.end,
+            step=self.step,
+            bar_color=self.bar_color,
+            direction=self.direction,
+            show_value=self.show_value,
+            tooltips=self.tooltip
+        )
         self._value_edit.step = self.step
 
     @param.depends('value', watch=True)
@@ -1154,16 +1154,16 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
     @param.depends('start', 'end', 'step', 'bar_color', 'direction',
                    'show_value', 'tooltips', 'name', 'format', watch=True)
     def _update_slider(self):
-        self._slider.param.update(**{
-            'format': self.format,
-            'start': self.start,
-            'end': self.end,
-            'step': self.step,
-            'bar_color': self.bar_color,
-            'direction': self.direction,
-            'show_value': self.show_value,
-            'tooltips': self.tooltips,
-        })
+        self._slider.param.update(
+            format=self.format,
+            start=self.start,
+            end=self.end,
+            step=self.step,
+            bar_color=self.bar_color,
+            direction=self.direction,
+            show_value=self.show_value,
+            tooltips=self.tooltips
+        )
         self._start_edit.step = self.step
         self._end_edit.step = self.step
 
