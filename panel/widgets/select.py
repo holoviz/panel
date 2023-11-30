@@ -545,7 +545,7 @@ class NestedSelect(CompositeWidget):
 
         # little optimization to avoid looping through all the
         # widgets and updating their value
-        for start_i, select in enumerate(self._widgets):
+        for start_i, select in enumerate(self._widgets):  # noqa: B007
             if select is event.obj:
                 break
 

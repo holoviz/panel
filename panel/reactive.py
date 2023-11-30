@@ -1372,7 +1372,7 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
         mcs._node_callbacks: Dict[str, List[Tuple[str, str]]]  = {}
         mcs._inline_callbacks = []
         for node, attrs in mcs._parser.attrs.items():
-            for (attr, parameters, template) in attrs:
+            for (attr, parameters, _template) in attrs:
                 for p in parameters:
                     if p in mcs.param or '.' in p:
                         continue
@@ -1608,7 +1608,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         )
 
     def _cleanup(self, root: Model | None = None) -> None:
-        for child, panes in self._panes.items():
+        for _child, panes in self._panes.items():
             for pane in panes:
                 pane._cleanup(root)
         super()._cleanup(root)
@@ -1739,7 +1739,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             elif children_param in self._panes:
                 # Find existing models
                 old_panes = self._panes[children_param]
-                for i, pane in enumerate(child_panes):
+                for pane in child_panes:
                     if pane in old_panes and root.ref['id'] in pane._models:
                         child, _ = pane._models[root.ref['id']]
                     else:

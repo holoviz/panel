@@ -215,7 +215,7 @@ class _state(param.Parameterized):
 
     def __repr__(self) -> str:
         server_info = []
-        for server, panel, docs in self._servers.values():
+        for server, panel, _docs in self._servers.values():
             server_info.append(
                 "{}:{:d} - {!r}".format(server.address or "localhost", server.port, panel)
             )
