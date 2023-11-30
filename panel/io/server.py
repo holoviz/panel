@@ -1290,7 +1290,7 @@ def get_server(
     if verbose:
         address = server.address or 'localhost'
         url = f"http://{address}:{server.port}{server.prefix}"
-        print(f"Launching server at {url}")
+        print(f"Launching server at {url}")  # noqa: T201
 
     state._servers[server_id] = (server, panel, [])
     state._server_config[server._tornado] = server_config

@@ -45,10 +45,14 @@ select = [
     "E",
     "F",
     "W",
+    "T20",
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "panel/tests/ui/jupyter_server_test_config.py" = ["F821"]
+"panel/compiler.py" = ["T201"]
+"panel/io/convert.py" = ["T201"]
+"panel/pane/vtk/synchronizable_*.py" = ["T201"]
 
 [tool.codespell]
 ignore-words-list = "nd,doubleclick"

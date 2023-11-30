@@ -342,7 +342,6 @@ class TestChatFeed:
 
     def test_no_recursion_error(self, chat_feed):
         chat_feed.send("Some time ago, there was a recursion error like this")
-        print(chat_feed.objects)
 
     def test_chained_response(self, chat_feed):
         async def callback(contents, user, instance):

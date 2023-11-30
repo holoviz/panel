@@ -861,7 +861,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         Prints a compositional repr of the class.
         """
         deprecated('1.4', f'{type(self).__name__}.pprint', 'print')
-        print(self)
+        print(self)  # noqa: T201
 
     def select(
         self, selector: Optional[type | Callable[['Viewable'], bool]] = None
