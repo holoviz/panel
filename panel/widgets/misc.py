@@ -198,7 +198,7 @@ class FileDownload(IconMixin):
                     filename = self.filename or self._file_path.name
                 except TypeError:
                     raise ValueError('Must provide filename if file-like '
-                                     'object is provided.')
+                                     'object is provided.') from None
                 label = '%s %s' % (label, filename)
             self.label = label
             self._default_label = True

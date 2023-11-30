@@ -1797,7 +1797,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 f"{type(self).__name__} could not render "
                 f"template, errored with:\n\n{type(e).__name__}: {e}.\n"
                 f"Full template:\n\n{template_string}"
-            )
+            ) from e
 
         # Parse templated HTML
         parser = ReactiveHTMLParser(self.__class__, template=False)

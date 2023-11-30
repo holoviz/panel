@@ -169,9 +169,9 @@ class PanelJupyterHandler(JupyterHandler):
                 raise TimeoutError('Timed out while waiting for kernel to open Comm channel to Panel application.')
             try:
                 msg = await ensure_async(self.kernel.iopub_channel.get_msg(timeout=None))
-            except Empty:
+            except Empty as e:
                 if not await ensure_async(self.kernel.is_alive()):
-                    raise RuntimeError("Kernel died before establishing Comm connection to Panel application.")
+                    raise RuntimeError("Kernel died before establishing Comm connection to Panel application.") from e
                 continue
             if msg['parent_header'].get('msg_id') != msg_id:
                 continue
@@ -381,9 +381,9 @@ class PanelWSProxy(WSHandler, JupyterHandler):
                 break
             try:
                 msg = await ensure_async(self.kernel.iopub_channel.get_msg(timeout=None))
-            except Empty:
+            except Empty as e:
                 if not await ensure_async(self.kernel.is_alive()):
-                    raise RuntimeError("Kernel died before expected shutdown of Panel app.")
+                    raise RuntimeError("Kernel died before expected shutdown of Panel app.") from e
                 continue
 
             msg_type = msg['header']['msg_type']
