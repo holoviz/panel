@@ -18,6 +18,7 @@ from typing import (
 )
 
 import param
+import pytz
 
 from ..io.resources import CDN_DIST
 from ..layout import Column, Row
@@ -171,6 +172,12 @@ class ChatMessage(PaneBase):
 
     timestamp_format = param.String(default="%H:%M", doc="The timestamp format.")
 
+    timestamp_tz = param.ObjectSelector(default=None, objects=pytz.all_timezones, doc="""
+        The timezone to used for the creation timestamp; only applicable
+        if timestamp is not set. If None, uses the default timezone of
+        datetime.datetime.now(); see `pytz.all_timezones` for a list of valid timezones.
+    """)
+
     show_avatar = param.Boolean(default=True, doc="""
          Whether to display the avatar of the user.""")
 
@@ -212,7 +219,10 @@ class ChatMessage(PaneBase):
             visible=False, width=15, height=15, css_classes=["copy-icon"]
         )
         if params.get("timestamp") is None:
-            params["timestamp"] = datetime.datetime.utcnow()
+            tz = None
+            if "timestamp_tz" in params:
+                tz = pytz.timezone(params.get("timestamp_tz"))
+            params["timestamp"] = datetime.datetime.now(tz=tz)
         if params.get("reaction_icons") is None:
             params["reaction_icons"] = {"favorite": "heart"}
         if isinstance(params["reaction_icons"], dict):

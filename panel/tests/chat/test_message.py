@@ -6,6 +6,7 @@ from io import BytesIO
 
 import pandas as pd
 import pytest
+import pytz
 
 from panel import Param, bind
 from panel.chat.icon import ChatReactionIcons
@@ -140,11 +141,18 @@ class TestChatMessage:
 
     @pytest.mark.flaky(reruns=3, reason="Minute can change during test run")
     def test_update_timestamp(self):
-        message = ChatMessage()
+        message = ChatMessage(timestamp_tz="UTC")
         columns = message._composite.objects
         timestamp_pane = columns[1][2]
         assert isinstance(timestamp_pane, HTML)
         dt_str = datetime.datetime.utcnow().strftime("%H:%M")
+        assert timestamp_pane.object == dt_str
+
+        message = ChatMessage(timestamp_tz="US/Pacific")
+        columns = message._composite.objects
+        timestamp_pane = columns[1][2]
+        assert isinstance(timestamp_pane, HTML)
+        dt_str = datetime.datetime.now(tz=pytz.timezone("US/Pacific")).strftime("%H:%M")
         assert timestamp_pane.object == dt_str
 
         special_dt = datetime.datetime(2023, 6, 24, 15)
