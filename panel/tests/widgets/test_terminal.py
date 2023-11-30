@@ -114,7 +114,7 @@ def get_logger(term):
 
 
 def _special_characters(term, iterations=1):
-    for _ in range(0, iterations):
+    for _ in range(iterations):
         term.write("Danish Characters: æøåÆØÅ\n")
         term.write("Emoji: Python 🐍  Panel ❤️  LOL 😊 \n")
         term.write("Links: https://awesome-panel.org\n")
@@ -150,7 +150,7 @@ def get_app():
     log_button.on_click(lambda x: logger.info("Hello Info Logger"))
 
     stream_button = pn.widgets.Button(name="Stream", button_type="primary")
-    stream_button.on_click(lambda x: [logger.info(uuid.uuid4()) for i in range(0, 300)])
+    stream_button.on_click(lambda x: [logger.info(uuid.uuid4()) for i in range(300)])
 
     run_ls_in_subprocess_button = pn.widgets.Button(
         name="Run ls in subprocess", button_type="primary"

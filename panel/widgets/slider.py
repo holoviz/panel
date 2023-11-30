@@ -890,7 +890,7 @@ class _EditableContinuousSlider(CompositeWidget):
         else:
             label = ''
             margin = (0, 0, 0, 0)
-        self._label.param.update(**{'margin': margin, 'value': label})
+        self._label.param.update(margin=margin, value=label)
 
     @param.depends('start', 'end', 'step', 'bar_color', 'direction',
                    'show_value', 'tooltips', 'format', watch=True)
@@ -1140,7 +1140,7 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         else:
             label = ''
             margin = (0, 0, 0, 0)
-        self._label.param.update(**{'margin': margin, 'value': label})
+        self._label.param.update(margin=margin, value=label)
 
     @param.depends('width', 'height', 'sizing_mode', watch=True)
     def _update_layout(self):
