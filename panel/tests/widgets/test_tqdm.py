@@ -81,7 +81,6 @@ def get_tqdm_app():
 
     pandas_button = pn.widgets.Button(name="Pandas Apply", button_type="success")
     pandas_button.on_click(run_df)
-    pandas_button
 
     component = pn.Column(button, pandas_button, tqdm, sizing_mode="stretch_width")
     template = pn.template.FastListTemplate(
