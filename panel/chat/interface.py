@@ -135,6 +135,9 @@ class ChatInterface(ChatFeed):
     _button_data = param.Dict(default={}, doc="""
         Metadata and data related to the buttons.""")
 
+    _buttons = param.Dict(default={}, doc="""
+        The rendered buttons.""")
+
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_interface.css"]
 
     def __init__(self, *objects, **params):
@@ -188,6 +191,7 @@ class ChatInterface(ChatFeed):
         """
         default_button_properties = {
             "send": {"icon": "send", "_default_callback": self._click_send},
+            "stop": {"icon": "player-stop", "_default_callback": self._click_stop},
             "rerun": {"icon": "repeat", "_default_callback": self._click_rerun},
             "undo": {"icon": "arrow-back", "_default_callback": self._click_undo},
             "clear": {"icon": "trash", "_default_callback": self._click_clear},
@@ -265,11 +269,11 @@ class ChatInterface(ChatFeed):
                 css_classes=["chat-interface-input-widget"]
             )
 
-            buttons = []
+            self._buttons = {}
             for button_data in self._button_data.values():
                 action = button_data.name
                 try:
-                    visible = self.param[f'show_{action}']
+                    visible = self.param[f'show_{action}'] if action != "stop" else False
                 except KeyError:
                     visible = True
                 show_expr = self.param.show_button_name.rx()
@@ -283,15 +287,16 @@ class ChatInterface(ChatFeed):
                     align="start",
                     visible=visible
                 )
-                self._link_disabled_loading(button)
+                if action != "stop":
+                    self._link_disabled_loading(button)
                 callback = partial(button_data.callback, self)
                 button.on_click(callback)
-                buttons.append(button)
+                self._buttons[action] = button
                 button_data.buttons.append(button)
 
             message_row = Row(
                 widget,
-                *buttons,
+                *list(self._buttons.values()),
                 sizing_mode="stretch_width",
                 css_classes=["chat-interface-input-row"],
                 stylesheets=self._stylesheets,
@@ -369,6 +374,16 @@ class ChatInterface(ChatFeed):
             return  # no message entered
         self._reset_button_data()
         self.send(value=value, user=self.user, avatar=self.avatar, respond=True)
+
+    def _click_stop(
+        self,
+        event: param.parameterized.Event | None = None,
+        instance: "ChatInterface" | None = None
+    ) -> None:
+        """
+        Cancel the input when the user presses the Stop button.
+        """
+        self.stop()
 
     def _get_last_user_entry_index(self) -> int:
         """
@@ -547,3 +562,14 @@ class ChatInterface(ChatFeed):
                 "assistant": [self.callback_user],
             }
         return super()._serialize_for_transformers(role_names, default_role, custom_serializer)
+
+    @param.depends("_async_task", watch=True)
+    async def _update_input_disabled(self):
+        if self._async_task is not None:
+            with param.batch_watch(self):
+                self._buttons["send"].visible = False
+                self._buttons["stop"].visible = True
+        else:
+            with param.batch_watch(self):
+                self._buttons["send"].visible = True
+                self._buttons["stop"].visible = False

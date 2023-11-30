@@ -193,6 +193,9 @@ class ChatFeed(ListPanel):
         The placeholder wrapped in a ChatMessage object;
         primarily to prevent recursion error in _update_placeholder.""")
 
+    _async_task = param.ClassSelector(class_=asyncio.Task, allow_None=True, doc="""
+        The current, cancellable async task being executed.""")
+
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_feed.css"]
 
     def __init__(self, *objects, **params):
@@ -407,9 +410,15 @@ class ChatFeed(ListPanel):
         if self.placeholder_threshold == 0:
             return
 
-        callable_is_async = asyncio.iscoroutinefunction(
-            self.callback
-        ) or isasyncgenfunction(self.callback)
+        callable_is_async = (
+            asyncio.iscoroutinefunction(self.callback) or
+            isasyncgenfunction(self.callback)
+        )  # noqa: E501
+        if callable_is_async:
+            self._async_task = task
+        else:
+            self._async_task = None
+
         start = asyncio.get_event_loop().time()
         while not task.done() and num_entries == len(self._chat_log):
             duration = asyncio.get_event_loop().time() - start
@@ -434,7 +443,9 @@ class ChatFeed(ListPanel):
                 return
 
             num_entries = len(self._chat_log)
-            task = asyncio.create_task(self._handle_callback(message))
+            task = asyncio.create_task(
+                self._handle_callback(message)
+            )
             await self._schedule_placeholder(task, num_entries)
             await task
             task.result()
@@ -449,6 +460,7 @@ class ChatFeed(ListPanel):
             else:
                 raise e
         finally:
+            self._async_task = None
             self._replace_placeholder(None)
             self.disabled = disabled
 
@@ -558,6 +570,14 @@ class ChatFeed(ListPanel):
         Executes the callback with the latest message in the chat log.
         """
         self._callback_trigger.param.trigger("clicks")
+
+    def stop(self) -> bool:
+        """
+        Cancels the current callback task.
+        """
+        if self._async_task is None:
+            return False
+        return self._async_task.cancel()
 
     def undo(self, count: int = 1) -> List[Any]:
         """
