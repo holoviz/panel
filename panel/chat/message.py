@@ -173,7 +173,7 @@ class ChatMessage(PaneBase):
     timestamp_format = param.String(default="%H:%M", doc="The timestamp format.")
 
     timestamp_tz = param.ObjectSelector(default=None, objects=pytz.all_timezones, doc="""
-        The timezone to used for the creation timestamp; only applicable
+        The timezone to use for the creation timestamp; only applicable
         if timestamp is not set. If None, uses the default timezone of
         datetime.datetime.now(); see `pytz.all_timezones` for a list of valid timezones.
     """)
