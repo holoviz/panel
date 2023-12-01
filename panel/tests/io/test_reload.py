@@ -21,7 +21,7 @@ def test_record_modules_not_stdlib():
 
 def test_check_file():
     modify_times = {}
-    _check_file(modify_times, __file__)
+    _check_file(__file__, modify_times)
     assert modify_times[__file__] == os.stat(__file__).st_mtime
 
 def test_file_in_denylist():
@@ -40,14 +40,15 @@ def test_watch():
     _watched_files.clear()
 
 @pytest.mark.flaky(reruns=3)
-async def test_reload_on_update(server_document):
+async def test_reload_on_update(server_document, stop_event):
     location = Location()
     state._locations[server_document] = location
+    state._loaded[server_document] = True
     with tempfile.NamedTemporaryFile() as temp:
         temp.write(b'Foo')
         temp.flush()
         watch(temp.name)
-        task = asyncio.create_task(async_file_watcher(server_document))
+        task = asyncio.create_task(async_file_watcher(stop_event))
         await asyncio.sleep(0.51)
         temp.write(b'Bar')
         temp.flush()
@@ -56,14 +57,15 @@ async def test_reload_on_update(server_document):
     del task
 
 @pytest.mark.flaky(reruns=3)
-async def test_reload_on_delete(server_document):
+async def test_reload_on_delete(server_document, stop_event):
     location = Location()
     state._locations[server_document] = location
+    state._loaded[server_document] = True
     with tempfile.NamedTemporaryFile() as temp:
         temp.write(b'Foo')
         temp.flush()
         watch(temp.name)
-        task = asyncio.create_task(async_file_watcher(server_document))
+        task = asyncio.create_task(async_file_watcher(stop_event))
 
     await async_wait_until(lambda: location.reload)
     del task

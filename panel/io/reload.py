@@ -1,12 +1,12 @@
 import asyncio
 import fnmatch
+import logging
 import os
 import sys
 import types
 import warnings
 
 from contextlib import contextmanager
-from functools import partial
 
 try:
     from watchfiles import awatch
@@ -26,6 +26,8 @@ except Exception:
 
 from ..util import fullpath
 from .state import state
+
+_reload_logger = logging.getLogger('panel.io.reload')
 
 _watched_files = set()
 _modules = set()
@@ -81,7 +83,7 @@ def file_is_in_folder_glob(filepath, folderpath_glob):
     file_dir = os.path.dirname(filepath) + "/"
     return fnmatch.fnmatch(file_dir, folderpath_glob)
 
-async def async_file_watcher(curdoc):
+async def async_file_watcher(stop_event=None):
     files = list(_watched_files)
     modules = {}
     for module_name in _modules:
@@ -102,25 +104,15 @@ async def async_file_watcher(curdoc):
         modules[path] = module_name
         files.append(path)
 
-    stop_event = asyncio.Event()
-
-    async def stop_on_destroy():
-        await asyncio.sleep(1)
-        if not curdoc.session_context:
-            stop_event.set()
-
-    # Keep handle on task to avoid weakref from being collected
-    stop_on_task = asyncio.create_task(stop_on_destroy())  # noqa
-
     async for changes in awatch(*files, stop_event=stop_event):
         for _, path in changes:
             if path in modules:
                 module = modules[path]
                 if module in sys.modules:
                     del sys.modules[module]
-        _reload()
+        _reload(changes)
 
-def setup_autoreload_watcher():
+async def setup_autoreload_watcher(stop_event=None):
     """
     Installs a periodic callback which checks for changes in watched
     files and sys.modules.
@@ -134,9 +126,8 @@ def setup_autoreload_watcher():
             'watchfiles being installed. Since it provides a much better '
             'user experience consider installing it today.', FutureWarning
         )
-    if not state.curdoc or not state.curdoc.session_context.server_context:
-        return
-    state.execute(partial(async_file_watcher, state.curdoc))
+    _reload_logger.debug('Setting up global autoreload watcher.')
+    await async_file_watcher(stop_event=stop_event)
 
 def watch(filename):
     """
@@ -179,12 +170,17 @@ def record_modules():
         except Exception:
             continue
 
-def _reload():
-    if state.location is not None:
-        # In case session has been cleaned up
-        state.location.reload = True
-    for loc in state._locations.values():
-        loc.reload = True
+def _reload(changes):
+    _reload_logger.debug('Changes detected by autoreload watcher, reloading sessions.')
+    for doc, loc in state._locations.items():
+        if not doc.session_context:
+            continue
+        elif state._loaded.get(doc):
+            loc.reload = True
+            continue
+        def reload_session(event):
+            loc.reload = True
+        doc.on_event('document_ready', reload_session)
 
 def _check_file(path, modify_times):
     """

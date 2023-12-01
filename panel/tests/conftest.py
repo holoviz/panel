@@ -1,6 +1,7 @@
 """
 A module containing testing utilities and fixtures.
 """
+import asyncio
 import atexit
 import os
 import pathlib
@@ -149,7 +150,6 @@ PORT = [get_default_port()]
 def document():
     return Document()
 
-
 @pytest.fixture
 def server_document():
     doc = Document()
@@ -163,6 +163,13 @@ def server_document():
 def comm():
     return Comm()
 
+@pytest.fixture
+def stop_event():
+    event = asyncio.Event()
+    try:
+        yield
+    finally:
+        event.set()
 
 @pytest.fixture
 def port():

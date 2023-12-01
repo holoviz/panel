@@ -377,6 +377,7 @@ class Server(BokehServer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._autoreload_stop_event = None
         if state._admin_context:
             state._admin_context._loop = self._loop
 
@@ -384,11 +385,17 @@ class Server(BokehServer):
         super().start()
         if state._admin_context:
             self._loop.add_callback(state._admin_context.run_load_hook)
+        if config.autoreload:
+            from .reload import setup_autoreload_watcher
+            self._autoreload_stop_event = stop_event = asyncio.Event()
+            self._loop.add_callback(setup_autoreload_watcher, stop_event=stop_event)
 
     def stop(self, wait: bool = True) -> None:
         super().stop(wait=wait)
         if state._admin_context:
             state._admin_context.run_unload_hook()
+        if self._autoreload_stop_event:
+            self._autoreload_stop_event.set()
 
 bokeh.server.server.Server = Server
 
@@ -800,11 +807,6 @@ def modify_document(self, doc: 'Document'):
     except RuntimeError:
         old_doc = None
     bk_set_curdoc(doc)
-
-    if config.autoreload:
-        from .reload import setup_autoreload_watcher
-        set_curdoc(doc)
-        state.onload(setup_autoreload_watcher)
 
     sessions = []
 
