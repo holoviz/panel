@@ -84,7 +84,6 @@ def check_layoutable_properties(layoutable, model):
 
     layoutable.css_classes = ['custom_class']
     if isinstance(layoutable, Alert):
-        print(model.css_classes)
         assert model.css_classes == ['markdown', 'custom_class', 'alert', 'alert-primary']
     elif isinstance(layoutable, Markdown):
         assert model.css_classes == ['markdown', 'custom_class']
@@ -257,11 +256,11 @@ def run_panel_serve(args, cwd=None):
     except Exception as e:
         p.terminate()
         p.wait()
-        print("An error occurred: %s", e)
+        print("An error occurred: %s", e)  # noqa: T201
         try:
             out = p.stdout.read().decode()
-            print("\n---- subprocess stdout follows ----\n")
-            print(out)
+            print("\n---- subprocess stdout follows ----\n")  # noqa: T201
+            print(out)  # noqa: T201
         except Exception:
             pass
         raise

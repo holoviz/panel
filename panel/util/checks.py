@@ -39,8 +39,7 @@ def isurl(obj: Any, formats: Iterable[str] | None = None) -> bool:
         return False
     lower_string = obj.lower().split('?')[0].split('#')[0]
     return (
-        lower_string.startswith('http://')
-        or lower_string.startswith('https://')
+        lower_string.startswith(("http://", "https://"))
     ) and (formats is None or any(lower_string.endswith('.'+fmt) for fmt in formats))
 
 

@@ -560,7 +560,6 @@ class CallbackGenerator(object):
         Applies any necessary initialization to the source and target
         models.
         """
-        pass
 
     def validate(self) -> None:
         pass

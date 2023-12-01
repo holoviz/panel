@@ -17,4 +17,4 @@ class OAuthSecret(Subcommand):
     def invoke(self, args):
         from cryptography.fernet import Fernet
         key = Fernet.generate_key()
-        print(key.decode('utf-8'))
+        print(key.decode('utf-8'))  # noqa: T201

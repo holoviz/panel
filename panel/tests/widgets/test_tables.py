@@ -595,7 +595,6 @@ def test_tabulator_groups(document, comm):
 
 
 def test_tabulator_numeric_groups(document, comm):
-    print(document)
     df = pd.DataFrame(np.random.rand(10, 3))
     table = Tabulator(df, groups={'Number': [0, 1]})
 
