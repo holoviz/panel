@@ -1187,7 +1187,7 @@ def get_server(
                     continue
             if isinstance(app, pathlib.Path):
                 app = str(app) # enables serving apps from Paths
-            if (isinstance(app, str) and (app.endswith(".py") or app.endswith(".ipynb") or app.endswith('.md'))
+            if (isinstance(app, str) and app.endswith(('.py', '.ipynb', '.md'))
                 and os.path.isfile(app)):
                 apps[slug] = app = build_single_handler_application(app)
                 app._admin = admin
@@ -1199,7 +1199,7 @@ def get_server(
     else:
         if isinstance(panel, pathlib.Path):
             panel = str(panel) # enables serving apps from Paths
-        if (isinstance(panel, str) and (panel.endswith(".py") or panel.endswith(".ipynb") or panel.endswith('.md'))
+        if (isinstance(panel, str) and panel.endswith(('.py', '.ipynb', '.md'))
             and os.path.isfile(panel)):
             apps = {'/': build_single_handler_application(panel)}
         else:
@@ -1290,7 +1290,7 @@ def get_server(
     if verbose:
         address = server.address or 'localhost'
         url = f"http://{address}:{server.port}{server.prefix}"
-        print(f"Launching server at {url}")
+        print(f"Launching server at {url}")  # noqa: T201
 
     state._servers[server_id] = (server, panel, [])
     state._server_config[server._tornado] = server_config

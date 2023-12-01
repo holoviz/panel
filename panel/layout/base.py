@@ -280,7 +280,7 @@ class Panel(Reactive):
             return {'sizing_mode': props.get('sizing_mode')}
 
         properties = {'sizing_mode': sizing_mode}
-        if ((sizing_mode.endswith('_width') or sizing_mode.endswith('_both')) and
+        if (sizing_mode.endswith(("_width", "_both")) and
             widths and 'min_width' not in properties):
             width_op = max if self._direction == 'vertical' else sum
             min_width = width_op(widths)
@@ -288,7 +288,7 @@ class Panel(Reactive):
             if 'max_width' in properties:
                 op_widths.append(properties['max_width'])
             properties['min_width'] = min(op_widths)
-        if ((sizing_mode.endswith('_height') or sizing_mode.endswith('_both')) and
+        if (sizing_mode.endswith(("_height", "_both")) and
             heights and 'min_height' not in properties):
             height_op = max if self._direction == 'horizontal' else sum
             min_height = height_op(heights)
