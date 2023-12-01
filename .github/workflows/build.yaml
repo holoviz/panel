@@ -55,9 +55,53 @@ jobs:
       - name: conda build
         run: |
           bash ./scripts/build_conda.sh
-      - name: build pyodide wheels for CDN
+      - name: conda dev deploy
+        if: (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
-          python ./scripts/build_pyodide_wheels.py
+          VERSION="$(echo "$(ls dist/*.whl)" | cut -d- -f2)"
+          FILE="$CONDA_PREFIX/conda-bld/noarch/panel-$VERSION-py_0.tar.bz2"
+          anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev $FILE
+      - name: conda main deploy
+        if: (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+        run: |
+          VERSION="$(echo "$(ls dist/*.whl)" | cut -d- -f2)"
+          FILE="$CONDA_PREFIX/conda-bld/noarch/panel-$VERSION-py_0.tar.bz2"
+          anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev --label=main $FILE
+
+  npm_build:
+    name: Build NPM Packages
+    runs-on: 'ubuntu-latest'
+    defaults:
+      run:
+        shell: bash -l {0}
+    env:
+      CHANS_DEV: "-c pyviz/label/dev -c bokeh/label/dev -c conda-forge"
+      PKG_TEST_PYTHON: "--test-python=py39"
+      PYTHON_VERSION: "3.9"
+      MPLBACKEND: "Agg"
+    steps:
+      - name: remove nodejs
+        run: |
+          sudo rm /usr/local/bin/node
+          sudo rm /usr/local/bin/npm
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: "100"
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          python-version: 3.9
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '18'
+      - name: Fetch unshallow
+        run: git fetch --prune --tags --unshallow -f
+      - name: Set output
+        id: vars
+        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: npm setup
         run: |
           echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_API_TOKEN }}" > $HOME/.npmrc
@@ -69,36 +113,64 @@ jobs:
           cd ./panel
           npm publish --dry-run
           cd ..
-      - name: conda dev deploy
-        if: (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
-        run: |
-          VERSION="$(echo "$(ls dist/*.whl)" | cut -d- -f2)"
-          FILE="$CONDA_PREFIX/conda-bld/noarch/panel-$VERSION-py_0.tar.bz2"
-          anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev $FILE
       - name: npm dev deploy
         if: (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
           cd ./panel
           npm publish --tag dev
           cd ..
-      - name: conda main deploy
-        if: (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
-        run: |
-          VERSION="$(echo "$(ls dist/*.whl)" | cut -d- -f2)"
-          FILE="$CONDA_PREFIX/conda-bld/noarch/panel-$VERSION-py_0.tar.bz2"
-          anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev --label=main $FILE
       - name: npm main deploy
         if: (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
           cd ./panel
           npm publish --tag latest
           cd ..
+
+  cdn:
+    name: Build CDN
+    runs-on: 'ubuntu-latest'
+    defaults:
+      run:
+        shell: bash -l {0}
+    env:
+      CHANS_DEV: "-c pyviz/label/dev -c bokeh/label/dev -c conda-forge"
+      PKG_TEST_PYTHON: "--test-python=py39"
+      PYTHON_VERSION: "3.9"
+      MPLBACKEND: "Agg"
+    steps:
+      - name: remove nodejs
+        run: |
+          sudo rm /usr/local/bin/node
+          sudo rm /usr/local/bin/npm
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: "100"
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          python-version: 3.9
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '18'
+      - name: Fetch unshallow
+        run: git fetch --prune --tags --unshallow -f
+      - name: Set output
+        id: vars
+        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+      - name: build pyodide wheels for CDN
+        run: |
+          python ./scripts/build_pyodide_wheels.py
+          SETUPTOOLS_ENABLE_FEATURES="legacy-editable" python -m pip install -ve .
       - name: Deploy to cdn.holoviz.org
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: 'us-east-1'
         run: python scripts/cdn_upload.py
+
   pip_build:
     name: Build PyPI Packages
     runs-on: 'ubuntu-latest'
