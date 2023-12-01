@@ -141,6 +141,13 @@ class TestChatMessage:
 
     @pytest.mark.flaky(reruns=3, reason="Minute can change during test run")
     def test_update_timestamp(self):
+        message = ChatMessage()
+        columns = message._composite.objects
+        timestamp_pane = columns[1][2]
+        assert isinstance(timestamp_pane, HTML)
+        dt_str = datetime.datetime.now().strftime("%H:%M")
+        assert timestamp_pane.object == dt_str
+
         message = ChatMessage(timestamp_tz="UTC")
         columns = message._composite.objects
         timestamp_pane = columns[1][2]

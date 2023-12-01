@@ -16,11 +16,12 @@ from textwrap import indent
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Dict, Iterable, List, Union,
 )
+from zoneinfo import ZoneInfo
 
 import param
-import pytz
 
 from ..io.resources import CDN_DIST
+from ..io.state import state
 from ..layout import Column, Row
 from ..pane.base import PaneBase, panel as _panel
 from ..pane.image import (
@@ -172,10 +173,11 @@ class ChatMessage(PaneBase):
 
     timestamp_format = param.String(default="%H:%M", doc="The timestamp format.")
 
-    timestamp_tz = param.ObjectSelector(default=None, objects=pytz.all_timezones, doc="""
-        The timezone to use for the creation timestamp; only applicable
-        if timestamp is not set. If None, uses the default timezone of
-        datetime.datetime.now(); see `pytz.all_timezones` for a list of valid timezones.
+    timestamp_tz = param.String(default=None, doc="""
+        The timezone to used for the creation timestamp; only applicable
+        if timestamp is not set. If None, tries to use pn.state.browser_info.timezone,
+        else, the default tz of datetime.datetime.now(); see `zoneinfo.available_timezones()`
+        for a list of valid timezones.
     """)
 
     show_avatar = param.Boolean(default=True, doc="""
@@ -219,9 +221,11 @@ class ChatMessage(PaneBase):
             visible=False, width=15, height=15, css_classes=["copy-icon"]
         )
         if params.get("timestamp") is None:
-            tz = None
-            if "timestamp_tz" in params:
-                tz = pytz.timezone(params.get("timestamp_tz"))
+            tz = params.get("timestamp_tz")
+            if tz is not None:
+                tz = ZoneInfo(tz)
+            elif state.browser_info.timezone:
+                tz = ZoneInfo(state.browser_info.timezone)
             params["timestamp"] = datetime.datetime.now(tz=tz)
         if params.get("reaction_icons") is None:
             params["reaction_icons"] = {"favorite": "heart"}
