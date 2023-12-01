@@ -13,7 +13,7 @@ on:
 
 jobs:
   conda_build:
-    name: Build Conda Packages
+    name: Build Conda Package
     runs-on: 'ubuntu-latest'
     defaults:
       run:
@@ -38,7 +38,7 @@ jobs:
         with:
           miniconda-version: "latest"
           python-version: 3.9
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v4
         with:
           node-version: '18'
       - name: Fetch unshallow
@@ -52,6 +52,7 @@ jobs:
           conda config --append channels pyviz/label/dev
           conda config --append channels bokeh/label/dev
           conda install -y conda-build anaconda-client build
+          echo "CONDA_PREFIX=$CONDA_PREFIX >> $GITHUB_OUTPUT
       - name: conda build
         run: |
           bash ./scripts/build_conda.sh
@@ -75,7 +76,7 @@ jobs:
           anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev --label=main $FILE
 
   npm_build:
-    name: Build NPM Packages
+    name: Build NPM Package
     runs-on: 'ubuntu-latest'
     defaults:
       run:
@@ -100,7 +101,7 @@ jobs:
         with:
           miniconda-version: "latest"
           python-version: 3.9
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v4
         with:
           node-version: '18'
       - name: Fetch unshallow
@@ -118,14 +119,14 @@ jobs:
           SETUPTOOLS_ENABLE_FEATURES="legacy-editable" python -m pip install -ve .
           cd ./panel
           TARBALL=$(npm pack .)
-          echo $TARBALL > $GITHUB_OUTPUT
+          echo "TARBALL=$TARBALL >> $GITHUB_OUTPUT
           npm publish --dry-run $TARBALL
           cd ..
       - uses: actions/upload-artifact@v3
         if: always()
         with:
           name: npm_build
-          path: $ {{ env.TARBALL }}
+          path: ./panel/${{ env.TARBALL }}
           if-no-files-found: error
       - name: npm dev deploy
         if: (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
@@ -166,7 +167,7 @@ jobs:
         with:
           miniconda-version: "latest"
           python-version: 3.9
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v4
         with:
           node-version: '18'
       - name: Fetch unshallow
@@ -194,7 +195,7 @@ jobs:
         run: python scripts/cdn_upload.py
 
   pip_build:
-    name: Build PyPI Packages
+    name: Build PyPI Package
     runs-on: 'ubuntu-latest'
     defaults:
       run:
@@ -220,7 +221,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v4
         with:
           node-version: '18'
       - name: Fetch unshallow
