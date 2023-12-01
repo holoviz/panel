@@ -49,7 +49,7 @@ jobs:
           conda config --append channels pyviz/label/dev
           conda config --append channels bokeh/label/dev
           conda install -y conda-build anaconda-client build
-          echo "CONDA_PREFIX=$CONDA_PREFIX" >> $GITHUB_OUTPUT
+          echo "CONDA_PREFIX=$CONDA_PREFIX" >> $GITHUB_ENV
       - name: conda build
         run: |
           bash ./scripts/build_conda.sh
@@ -108,7 +108,7 @@ jobs:
           SETUPTOOLS_ENABLE_FEATURES="legacy-editable" python -m pip install -ve .
           cd ./panel
           TARBALL=$(npm pack .)
-          echo "TARBALL=$TARBALL" >> $GITHUB_OUTPUT
+          echo "TARBALL=$TARBALL" >> $GITHUB_ENV
           npm publish --dry-run $TARBALL
           cd ..
       - uses: actions/upload-artifact@v3
