@@ -55,6 +55,12 @@ jobs:
       - name: conda build
         run: |
           bash ./scripts/build_conda.sh
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: conda_build
+          path: ${{ env.CONDA_PREFIX }}/conda-bld/noarch
+          if-no-files-found: error
       - name: conda dev deploy
         if: (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
@@ -111,19 +117,27 @@ jobs:
         run: |
           SETUPTOOLS_ENABLE_FEATURES="legacy-editable" python -m pip install -ve .
           cd ./panel
-          npm publish --dry-run
+          TARBALL=$(npm pack .)
+          echo $TARBALL > $GITHUB_OUTPUT
+          npm publish --dry-run $TARBALL
           cd ..
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: npm_build
+          path: $ {{ env.TARBALL }}
+          if-no-files-found: error
       - name: npm dev deploy
         if: (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
           cd ./panel
-          npm publish --tag dev
+          npm publish  --tag dev $TARBALL
           cd ..
       - name: npm main deploy
         if: (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
           cd ./panel
-          npm publish --tag latest
+          npm publish --tag latest $TARBALL
           cd ..
 
   cdn:
@@ -164,6 +178,14 @@ jobs:
         run: |
           python ./scripts/build_pyodide_wheels.py
           SETUPTOOLS_ENABLE_FEATURES="legacy-editable" python -m pip install -ve .
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: cdn_wheels
+          path: |
+            ./build/panel*.whl
+            ./build/bokeh*.whl
+          if-no-files-found: error
       - name: Deploy to cdn.holoviz.org
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
