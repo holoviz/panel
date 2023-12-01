@@ -605,7 +605,7 @@ class Resources(BkResources):
                 resource = resource.replace(cdn_base, CDN_DIST)
             if self.mode == 'server':
                 resource = resource.replace(CDN_DIST, LOCAL_DIST)
-            if (resource.startswith(state.base_url) or resource.startswith('static/')):
+            if resource.startswith((state.base_url, "static/")):
                 if resource.startswith(state.base_url):
                     resource = resource[len(state.base_url):]
                 if state.rel_path:

@@ -118,7 +118,7 @@ class Convert(Subcommand):
                     verbose=True
                 )
             except KeyboardInterrupt:
-                print("Aborted while building docs.")
+                print("Aborted while building docs.")  # noqa: T201
                 break
             built = True
             prev_hashes = hashes

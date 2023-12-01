@@ -1103,7 +1103,7 @@ def test_expand_param_subobject_tabs(document, comm):
 
 def test_param_js_callbacks(document, comm):
     class JsButton(param.Parameterized):
-        param_btn = param.Action(default=lambda self: print('Action Python Response'), label='Action')
+        param_btn = param.Action(default=lambda self: print('Action Python Response'), label='Action')  # noqa: T201
 
     param_button = Param(JsButton())
     code = "console.log('Action button clicked')"

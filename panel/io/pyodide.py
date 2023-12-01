@@ -67,7 +67,6 @@ try:
     pyodide_http.patch_all()
 except Exception:
     pyodide_http = None
-    pass
 
 try:
     # Patch fsspec with synchronous http support
@@ -282,7 +281,7 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
         pydoc.unhold()
         pydoc.callbacks.trigger_event(DocumentReady())
     except Exception as e:
-        print(f'Error raised while processing Document events: {e}')
+        print(f'Error raised while processing Document events: {e}')  # noqa: T201
 
 def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None, setter: str | None = None):
     """

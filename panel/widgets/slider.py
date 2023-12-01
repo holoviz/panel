@@ -697,6 +697,8 @@ class DateRangeSlider(_SliderBase):
 
     _widget_type: ClassVar[Type[Model]] = _BkDateRangeSlider
 
+    _property_conversion = staticmethod(value_as_date)
+
     def __init__(self, **params):
         if 'value' not in params:
             value_to_None = False
@@ -743,10 +745,10 @@ class DateRangeSlider(_SliderBase):
         msg = super()._process_property_change(msg)
         if 'value' in msg:
             v1, v2 = msg['value']
-            msg['value'] = (value_as_date(v1), value_as_date(v2))
+            msg['value'] = (self._property_conversion(v1), self._property_conversion(v2))
         if 'value_throttled' in msg:
             v1, v2 = msg['value_throttled']
-            msg['value_throttled'] = (value_as_date(v1), value_as_date(v2))
+            msg['value_throttled'] = (self._property_conversion(v1), self._property_conversion(v2))
         return msg
 
 
@@ -771,6 +773,8 @@ class DatetimeRangeSlider(DateRangeSlider):
     ...     name="A tuple of datetimes"
     ... )
     """
+
+    _property_conversion = staticmethod(value_as_datetime)
 
     @property
     def _widget_type(self):
@@ -890,21 +894,21 @@ class _EditableContinuousSlider(CompositeWidget):
         else:
             label = ''
             margin = (0, 0, 0, 0)
-        self._label.param.update(**{'margin': margin, 'value': label})
+        self._label.param.update(margin=margin, value=label)
 
     @param.depends('start', 'end', 'step', 'bar_color', 'direction',
                    'show_value', 'tooltips', 'format', watch=True)
     def _update_slider(self):
-        self._slider.param.update(**{
-            'format': self.format,
-            'start': self.start,
-            'end': self.end,
-            'step': self.step,
-            'bar_color': self.bar_color,
-            'direction': self.direction,
-            'show_value': self.show_value,
-            'tooltips': self.tooltips
-        })
+        self._slider.param.update(
+            format=self.format,
+            start=self.start,
+            end=self.end,
+            step=self.step,
+            bar_color=self.bar_color,
+            direction=self.direction,
+            show_value=self.show_value,
+            tooltips=self.tooltips
+        )
         self._value_edit.step = self.step
 
     @param.depends('value', watch=True)
@@ -1140,7 +1144,7 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         else:
             label = ''
             margin = (0, 0, 0, 0)
-        self._label.param.update(**{'margin': margin, 'value': label})
+        self._label.param.update(margin=margin, value=label)
 
     @param.depends('width', 'height', 'sizing_mode', watch=True)
     def _update_layout(self):
@@ -1154,16 +1158,16 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
     @param.depends('start', 'end', 'step', 'bar_color', 'direction',
                    'show_value', 'tooltips', 'name', 'format', watch=True)
     def _update_slider(self):
-        self._slider.param.update(**{
-            'format': self.format,
-            'start': self.start,
-            'end': self.end,
-            'step': self.step,
-            'bar_color': self.bar_color,
-            'direction': self.direction,
-            'show_value': self.show_value,
-            'tooltips': self.tooltips,
-        })
+        self._slider.param.update(
+            format=self.format,
+            start=self.start,
+            end=self.end,
+            step=self.step,
+            bar_color=self.bar_color,
+            direction=self.direction,
+            show_value=self.show_value,
+            tooltips=self.tooltips
+        )
         self._start_edit.step = self.step
         self._end_edit.step = self.step
 

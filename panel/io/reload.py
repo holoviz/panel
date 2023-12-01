@@ -157,7 +157,7 @@ def _reload_on_update(modify_times):
         path = getattr(module, "__file__", None)
         if not path:
             continue
-        if path.endswith(".pyc") or path.endswith(".pyo"):
+        if path.endswith((".pyc", ".pyo")):
             path = path[:-1]
         _check_file(modify_times, path, module_name)
     for path in _watched_files:
