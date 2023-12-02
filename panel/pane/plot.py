@@ -194,11 +194,11 @@ _height_regex = re.compile(rb'height="[\d\.]+pt"')
 
 def _make_matplotlib_svg_responsive(input_str):
     output_str = _width_regex.sub(b'width="100%"', input_str)
-    output_str = _height_regex.sub(b'height="auto"', output_str)
+    output_str = _height_regex.sub(b'height="100%"', output_str)
     return output_str
 
 def _make_matplotlib_svg_not_preserve_aspect_ratio(input_str):
-    return input_str.replace(b'height="auto"', b'height="auto" preserveAspectRatio="none"')
+    return input_str.replace(b'height="100%"', b'height="100%" preserveAspectRatio="none"')
 
 class Matplotlib(Image, IPyWidget):
     """
