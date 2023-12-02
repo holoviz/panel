@@ -221,7 +221,7 @@ class Matplotlib(Image, IPyWidget):
     dpi = param.Integer(default=144, bounds=(1, None), doc="""
         Scales the dpi of the matplotlib figure.""")
 
-    encode = param.Boolean(default=True, doc="""
+    encode = param.Boolean(default=False, doc="""
         Whether to encode SVG out as base64.""")
 
     format = param.Selector(default='png', objects=['png', 'svg'], doc="""
