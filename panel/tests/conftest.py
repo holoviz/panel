@@ -167,7 +167,7 @@ def comm():
 def stop_event():
     event = asyncio.Event()
     try:
-        yield
+        yield event
     finally:
         event.set()
 

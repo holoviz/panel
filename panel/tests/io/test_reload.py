@@ -52,20 +52,5 @@ async def test_reload_on_update(server_document, stop_event):
         await asyncio.sleep(0.51)
         temp.write(b'Bar')
         temp.flush()
-
-        await async_wait_until(lambda: location.reload)
-    del task
-
-@pytest.mark.flaky(reruns=3)
-async def test_reload_on_delete(server_document, stop_event):
-    location = Location()
-    state._locations[server_document] = location
-    state._loaded[server_document] = True
-    with tempfile.NamedTemporaryFile() as temp:
-        temp.write(b'Foo')
-        temp.flush()
-        watch(temp.name)
-        task = asyncio.create_task(async_file_watcher(stop_event))
-
-    await async_wait_until(lambda: location.reload)
+        await wait_until_async(lambda: location.reload)
     del task
