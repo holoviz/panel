@@ -8,6 +8,7 @@ import itertools
 import re
 
 from collections import OrderedDict
+from types import FunctionType
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Type,
 )
@@ -341,7 +342,7 @@ class NestedSelect(CompositeWidget):
         The value from all the Select widgets; the keys are the levels names.
         If no levels names are specified, the keys are the levels indices.""")
 
-    options = param.Dict(doc="""
+    options = param.ClassSelector(class_=(dict, FunctionType), doc="""
         The options to select from. The options may be nested dictionaries or lists.""")
 
     levels = param.List(doc="""
@@ -364,21 +365,26 @@ class NestedSelect(CompositeWidget):
     _composite_type = Column
 
     def __init__(self, **params):
+        if params.get("value") is None:
+            params["value"] = {}
         super().__init__(**params)
         self._update_widgets()
 
-    def _gather_values_from_widgets(self):
+    def _gather_values_from_widgets(self, up_to_i=None):
         """
         Gather values from all the select widgets to update the class' value.
         """
         values = {}
         for i, select in enumerate(self._widgets):
+            if up_to_i is not None and i >= up_to_i:
+                break
             level = self._levels[i]
             if isinstance(level, dict):
                 name = level.get("name", i)
             else:
                 name = level
             values[name] = select.value
+
         return values
 
     def _find_max_depth(self, d, depth=1):
@@ -395,12 +401,24 @@ class NestedSelect(CompositeWidget):
                 max_depth -= 1
         return max_depth
 
+    def _resolve_callable_options(self, i, options) -> dict | list:
+        level = self.levels[i]
+        value = self._gather_values_from_widgets(up_to_i=i)
+        options = options(level, value)
+        return options
+
     @param.depends("options", "levels", watch=True)
     def _update_widgets(self):
         """
         When options is changed, reflect changes on the select widgets.
         """
-        self._max_depth = self._find_max_depth(self.options) + 1
+        if not self.levels:
+            if callable(self.options):
+                raise ValueError("levels must be specified if options is callable")
+            self._max_depth = self._find_max_depth(self.options) + 1
+        else:
+            self._max_depth = len(self.levels)
+
         if not self.levels:
             self._levels = [i for i in range(self._max_depth)]
         elif len(self.levels) != self._max_depth:
@@ -409,15 +427,29 @@ class NestedSelect(CompositeWidget):
             self._levels = self.levels
 
         self._widgets = []
-        if self.options is None:
-            options = {}
-        else:
+
+        # use [] as default because it's the last level if options is None
+        options = (self.options or [])
+        if isinstance(self.options, dict):
             options = self.options.copy()
 
         for i in range(self._max_depth):
+            if callable(options):
+                options = self._resolve_callable_options(i, options)
+
             value = self._init_widget(i, options)
             if isinstance(options, dict) and len(options) > 0 and value is not None:
                 options = options[value]
+            elif i < self._max_depth - 1 and not isinstance(options, dict):
+                raise ValueError(
+                    f"The level, {self.levels[i]!r} is not the last nested level, "
+                    f"so it must be a dict, but got {options!r}"
+                )
+            elif not isinstance(options, list):
+                raise ValueError(
+                    f"The level, {self.levels[i]!r} is the last nested level, "
+                    f"so it must be a list, got {options!r}"
+                )
 
         self._composite[:] = self._widgets
 
@@ -467,7 +499,9 @@ class NestedSelect(CompositeWidget):
         """
         Helper method to initialize a select widget.
         """
-        options = list(options.keys()) if isinstance(options, dict) else options
+        if isinstance(options, dict):
+            options = list(options.keys())
+
         widget_type, widget_kwargs = self._extract_level_metadata(i)
         value = self._lookup_value(i, options, self.value, error=False)
         widget_kwargs["options"] = options
@@ -494,7 +528,8 @@ class NestedSelect(CompositeWidget):
             if select is event.obj:
                 break
 
-        options = self.options.copy()
+        options = self.options if callable(self.options) else self.options.copy()
+
         # batch watch to prevent continuously triggering
         # this function when updating the select widgets
         with param.batch_watch(self):
@@ -503,7 +538,8 @@ class NestedSelect(CompositeWidget):
                     options = {}
                     visible = False
                 elif options:
-                    options = options[select.value]
+                    if isinstance(options, dict):
+                        options = options[select.value]
                     visible = True
 
                 if i < start_i:
@@ -514,10 +550,17 @@ class NestedSelect(CompositeWidget):
                     continue
 
                 next_select = self._widgets[i + 1]
-                if isinstance(options, dict):
+                if callable(options):
+                    options = self._resolve_callable_options(i + 1, options)
+                    next_options = list(options)
+                elif isinstance(options, dict):
                     next_options = list(options.keys())
-                else:
+                elif isinstance(options, list):
                     next_options = options
+                else:
+                    raise NotImplementedError(
+                        "options must be a dict, list, or callable that returns those types."
+                    )
 
                 next_select.param.update(
                     options=next_options,
@@ -534,7 +577,7 @@ class NestedSelect(CompositeWidget):
             return
 
         # must define these or else it gets mutated in the loop
-        options = self.options.copy()
+        options = self.options if callable(self.options) else self.options.copy()
         set_values = self.value.copy()
         original_values = self._gather_values_from_widgets()
 
