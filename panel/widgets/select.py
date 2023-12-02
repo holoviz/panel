@@ -343,14 +343,15 @@ class NestedSelect(CompositeWidget):
         If no levels names are specified, the keys are the levels indices.""")
 
     options = param.ClassSelector(class_=(dict, FunctionType), doc="""
-        The options to select from. The options may be nested dictionaries or lists.""")
+        The options to select from. The options may be nested dictionaries, lists,
+        or callables that return those types.""")
 
     levels = param.List(doc="""
         Either a list of strings or a list of dictionaries. If a list of strings, the strings
         are used as the names of the levels. If a list of dictionaries, each dictionary may
         have a "name" key, which is used as the name of the level, a "type" key, which
         is used as the type of widget, and any corresponding widget keyword arguments.
-    """)
+        Must be specified if options is callable.""")
 
     disabled = param.Boolean(default=False, doc="""
         Whether the widget is disabled.""")
