@@ -120,7 +120,7 @@ jobs:
         if: (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
           cd ./panel
-          npm publish  --tag dev $TARBALL
+          npm publish --tag dev $TARBALL
           cd ..
       - name: npm main deploy
         if: (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
