@@ -344,7 +344,10 @@ class NestedSelect(CompositeWidget):
 
     options = param.ClassSelector(class_=(dict, FunctionType), doc="""
         The options to select from. The options may be nested dictionaries, lists,
-        or callables that return those types.""")
+        or callables that return those types. If callables are used, the callables
+        must accept `level` and `value` keyword arguments, where `level` is the
+        level that updated and `value` is a dictionary of the current values, containing keys
+        up to the level that was updated.""")
 
     levels = param.List(doc="""
         Either a list of strings or a list of dictionaries. If a list of strings, the strings
@@ -418,7 +421,7 @@ class NestedSelect(CompositeWidget):
     def _resolve_callable_options(self, i, options) -> dict | list:
         level = self.levels[i]
         value = self._gather_values_from_widgets(up_to_i=i)
-        options = options(level, value)
+        options = options(level=level, value=value)
         return options
 
     @param.depends("options", "levels", watch=True)
