@@ -545,6 +545,72 @@ def test_nested_select_custom_widgets(document, comm):
     assert widget_2.options == [1000, 925, 700, 500, 300]
 
 
+def test_nested_select_callable_top_level(document, comm):
+    def list_options(level, value):
+        if level == "time_step":
+            options = {"Daily": list_options, "Monthly": list_options}
+        elif level == "level_type":
+            options = {f"{value['time_step']}_upper": list_options, f"{value['time_step']}_lower": list_options}
+        else:
+            options = [f"{value['level_type']}.json", f"{value['level_type']}.csv"]
+
+        return options
+
+    select = NestedSelect(
+        options=list_options,
+        levels=["time_step", "level_type", "file"],
+    )
+    assert select._widgets[0].options == ["Daily", "Monthly"]
+    assert select._widgets[1].options == ["Daily_upper", "Daily_lower"]
+    assert select._widgets[2].options == ["Daily_upper.json", "Daily_upper.csv"]
+    assert select.value == {"time_step": "Daily", "level_type": "Daily_upper", "file": "Daily_upper.json"}
+    assert select._max_depth == 3
+
+    select.value = {"time_step": "Monthly"}
+    assert select._widgets[0].options == ["Daily", "Monthly"]
+    assert select._widgets[1].options == ["Monthly_upper", "Monthly_lower"]
+    assert select._widgets[2].options == ["Monthly_upper.json", "Monthly_upper.csv"]
+    assert select.value == {"time_step": "Monthly", "level_type": "Monthly_upper", "file": "Monthly_upper.json"}
+    assert select._max_depth == 3
+
+
+def test_nested_select_callable_mid_level(document, comm):
+    def list_options(level, value):
+        if level == "level_type":
+            options = {f"{value['time_step']}_upper": list_options, f"{value['time_step']}_lower": list_options}
+        else:
+            options = [f"{value['level_type']}.json", f"{value['level_type']}.csv"]
+
+        return options
+
+    select = NestedSelect(
+        options={"Daily": list_options, "Monthly": list_options},
+        levels=["time_step", "level_type", "file"],
+    )
+    assert select._widgets[0].options == ["Daily", "Monthly"]
+    assert select._widgets[1].options == ["Daily_upper", "Daily_lower"]
+    assert select._widgets[2].options == ["Daily_upper.json", "Daily_upper.csv"]
+    assert select.value == {"time_step": "Daily", "level_type": "Daily_upper", "file": "Daily_upper.json"}
+    assert select._max_depth == 3
+
+    select.value = {"time_step": "Monthly"}
+    assert select._widgets[0].options == ["Daily", "Monthly"]
+    assert select._widgets[1].options == ["Monthly_upper", "Monthly_lower"]
+    assert select._widgets[2].options == ["Monthly_upper.json", "Monthly_upper.csv"]
+    assert select.value == {"time_step": "Monthly", "level_type": "Monthly_upper", "file": "Monthly_upper.json"}
+    assert select._max_depth == 3
+
+
+def test_nested_select_callable_must_have_levels(document, comm):
+    def list_options(level, value):
+        pass
+
+    with pytest.raises(ValueError, match="levels must be specified"):
+        NestedSelect(
+            options={"Daily": list_options, "Monthly": list_options},
+        )
+
+
 @pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
 @pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
 def test_select_disabled_options_init(options, size, document, comm):
