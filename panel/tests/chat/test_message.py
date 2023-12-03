@@ -3,10 +3,10 @@ import os
 import pathlib
 
 from io import BytesIO
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import pytest
-import pytz
 
 from panel import Param, bind
 from panel.chat.icon import ChatReactionIcons
@@ -159,7 +159,7 @@ class TestChatMessage:
         columns = message._composite.objects
         timestamp_pane = columns[1][2]
         assert isinstance(timestamp_pane, HTML)
-        dt_str = datetime.datetime.now(tz=pytz.timezone("US/Pacific")).strftime("%H:%M")
+        dt_str = datetime.datetime.now(tz=ZoneInfo("US/Pacific")).strftime("%H:%M")
         assert timestamp_pane.object == dt_str
 
         special_dt = datetime.datetime(2023, 6, 24, 15)
