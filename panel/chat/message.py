@@ -602,10 +602,12 @@ class ChatMessage(PaneBase):
             if "active" not in object_panel.css_classes:
                 object_panel.css_classes = [*object_panel.css_classes, "active"]
         elif self.streaming_state == "waiting":
+            css_classes = []
             if "active" not in object_panel.css_classes:
-                object_panel.css_classes = [*object_panel.css_classes, "active"]
+                css_classes.append("active")
             if "waiting" not in object_panel.css_classes:
-                object_panel.css_classes = [*object_panel.css_classes, "waiting"]
+                css_classes.append("waiting")
+            object_panel.css_classes = [*object_panel.css_classes, *css_classes]
         elif self.streaming_state is None:
             object_panel.css_classes = [
                 css_class
