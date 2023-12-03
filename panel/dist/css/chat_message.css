@@ -97,3 +97,24 @@
 .avatar.rotating-placeholder {
   animation: icon-rotation 1.28s infinite cubic-bezier(0.68, -0.55, 0.27, 1.55);
 }
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+:host(.active) p::after {
+  content: ' ●';
+  display: inline;
+}
+
+:host(.waiting) p::after {
+  animation: fadeOut 1s infinite cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}

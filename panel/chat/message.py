@@ -186,6 +186,11 @@ class ChatMessage(PaneBase):
     show_copy_icon = param.Boolean(default=True, doc="""
         Whether to display the copy icon.""")
 
+    streaming_state = param.ObjectSelector(objects=["active", "waiting", None], doc="""
+        The state of the streaming animation. If set to "active", the dot
+        will be solid. If set to "waiting", the dot will be shown, but
+        the dot will fade in and out. If set to None, the dot will not be shown.""")
+
     renderers = param.HookList(doc="""
         A callable or list of callables that accept the object and return a
         Panel object to render the object. If a list is provided, will
@@ -273,6 +278,7 @@ class ChatMessage(PaneBase):
         viewable_params['stylesheets'] = self._stylesheets + self.param.stylesheets.rx()
         self._composite.param.update(**viewable_params)
         self._composite[:] = [left_col, right_col]
+        self._toggle_streaming()
 
     def _get_obj_label(self, obj):
         """
@@ -431,7 +437,15 @@ class ChatMessage(PaneBase):
         is_markup = isinstance(obj, HTMLBasePane) and not isinstance(obj, FileBase)
         if is_markup:
             if len(str(obj.object)) > 0:  # only show a background if there is content
-                obj.css_classes = [*obj.css_classes, "message"]
+                css_classes = [*obj.css_classes, "message"]
+                if self.streaming_state == "active":
+                    css_classes.append("streaming")
+                elif self.streaming_state == "waiting":
+                    css_classes.append("waiting")
+                obj.param.update(
+                    css_classes=css_classes,
+                    stylesheets=[*obj.stylesheets, *self._stylesheets],
+                )
             obj.sizing_mode = None
         else:
             if obj.sizing_mode is None and not obj.width:
@@ -557,24 +571,12 @@ class ChatMessage(PaneBase):
         self._composite._cleanup(root)
         return super()._cleanup(root)
 
-    def stream(self, token: str):
-        """
-        Updates the message with the new token traversing the object to
-        allow updating nested objects. When traversing a nested Panel
-        the last object that supports rendering strings is updated, e.g.
-        in a layout of `Column(Markdown(...), Image(...))` the Markdown
-        pane is updated.
-
-        Arguments
-        ---------
-        token: str
-          The token to stream to the text pane.
-        """
+    def _traverse_objects_for_streaming(self, obj):
         i = -1
         parent_panel = None
-        object_panel = self
-        attr = "object"
+        object_panel = self._object_panel
         obj = self.object
+        attr = "object"
         while not isinstance(obj, str) or isinstance(object_panel, ImageBase):
             object_panel = obj
             if hasattr(obj, "objects"):
@@ -592,6 +594,43 @@ class ChatMessage(PaneBase):
                 obj = parent_panel
                 parent_panel = None
                 i -= 1
+        return object_panel, obj, attr
+
+    @param.depends("streaming_state", watch=True)
+    def _toggle_streaming(self):
+        object_panel = self._traverse_objects_for_streaming(self.object)[0]
+        if self.streaming_state == "active":
+            if "waiting" in object_panel.css_classes:
+                object_panel.css_classes.remove("waiting")
+            if "streaming" not in object_panel.css_classes:
+                object_panel.css_classes = [*object_panel.css_classes, "streaming"]
+        elif self.streaming_state == "waiting":
+            if "streaming" not in object_panel.css_classes:
+                object_panel.css_classes = [*object_panel.css_classes, "streaming"]
+            if "waiting" not in object_panel.css_classes:
+                object_panel.css_classes = [*object_panel.css_classes, "waiting"]
+        elif self.streaming_state is None:
+            object_panel.css_classes = [
+                css_class
+                for css_class in object_panel.css_classes
+                if css_class not in ("streaming", "waiting")
+            ]
+        print(object_panel.css_classes)
+
+    def stream(self, token: str):
+        """
+        Updates the message with the new token traversing the object to
+        allow updating nested objects. When traversing a nested Panel
+        the last object that supports rendering strings is updated, e.g.
+        in a layout of `Column(Markdown(...), Image(...))` the Markdown
+        pane is updated.
+
+        Arguments
+        ---------
+        token: str
+          The token to stream to the text pane.
+        """
+        object_panel, obj, attr = self._traverse_objects_for_streaming(self.object)
         setattr(object_panel, attr, obj + token)
 
     def update(
