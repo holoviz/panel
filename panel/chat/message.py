@@ -278,7 +278,6 @@ class ChatMessage(PaneBase):
         viewable_params['stylesheets'] = self._stylesheets + self.param.stylesheets.rx()
         self._composite.param.update(**viewable_params)
         self._composite[:] = [left_col, right_col]
-        self._toggle_streaming()
 
     def _get_obj_label(self, obj):
         """
@@ -437,15 +436,11 @@ class ChatMessage(PaneBase):
         is_markup = isinstance(obj, HTMLBasePane) and not isinstance(obj, FileBase)
         if is_markup:
             if len(str(obj.object)) > 0:  # only show a background if there is content
-                css_classes = [*obj.css_classes, "message"]
-                if self.streaming_state == "active":
-                    css_classes.append("streaming")
-                elif self.streaming_state == "waiting":
-                    css_classes.append("waiting")
                 obj.param.update(
-                    css_classes=css_classes,
+                    css_classes=[*obj.css_classes, "message"],
                     stylesheets=[*obj.stylesheets, *self._stylesheets],
                 )
+                self._toggle_streaming_css(obj)
             obj.sizing_mode = None
         else:
             if obj.sizing_mode is None and not obj.width:
@@ -597,25 +592,26 @@ class ChatMessage(PaneBase):
         return object_panel, obj, attr
 
     @param.depends("streaming_state", watch=True)
-    def _toggle_streaming(self):
-        object_panel = self._traverse_objects_for_streaming(self.object)[0]
+    def _toggle_streaming_css(self, object_panel=None):
+        if object_panel is None:
+            object_panel = self._traverse_objects_for_streaming(self.object)[0]
+
         if self.streaming_state == "active":
             if "waiting" in object_panel.css_classes:
                 object_panel.css_classes.remove("waiting")
-            if "streaming" not in object_panel.css_classes:
-                object_panel.css_classes = [*object_panel.css_classes, "streaming"]
+            if "active" not in object_panel.css_classes:
+                object_panel.css_classes = [*object_panel.css_classes, "active"]
         elif self.streaming_state == "waiting":
-            if "streaming" not in object_panel.css_classes:
-                object_panel.css_classes = [*object_panel.css_classes, "streaming"]
+            if "active" not in object_panel.css_classes:
+                object_panel.css_classes = [*object_panel.css_classes, "active"]
             if "waiting" not in object_panel.css_classes:
                 object_panel.css_classes = [*object_panel.css_classes, "waiting"]
         elif self.streaming_state is None:
             object_panel.css_classes = [
                 css_class
                 for css_class in object_panel.css_classes
-                if css_class not in ("streaming", "waiting")
+                if css_class not in ("active", "waiting")
             ]
-        print(object_panel.css_classes)
 
     def stream(self, token: str):
         """
