@@ -372,7 +372,7 @@ class Matplotlib(Image, IPyWidget):
 
         if self.format=="svg":
             value = _make_matplotlib_svg_responsive(value)
-            if  not self.fixed_aspect:
+            if not self.fixed_aspect:
                 value = _make_matplotlib_svg_not_preserve_aspect_ratio(value)
 
         return value
