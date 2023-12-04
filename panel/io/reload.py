@@ -15,7 +15,7 @@ _modules = set()
 _callbacks = {}
 
 # List of paths to ignore
-DEFAULT_FOLDER_denylist = [
+DEFAULT_FOLDER_DENYLIST = [
     "**/.*",
     "**/anaconda",
     "**/anaconda2",
