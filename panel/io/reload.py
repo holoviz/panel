@@ -40,7 +40,7 @@ IGNORED_MODULES = [
 def in_denylist(filepath):
     return any(
         file_is_in_folder_glob(filepath, denylisted_folder)
-        for denylisted_folder in DEFAULT_FOLDER_denylist
+        for denylisted_folder in DEFAULT_FOLDER_DENYLIST
     )
 
 def file_is_in_folder_glob(filepath, folderpath_glob):
