@@ -1,5 +1,8 @@
 
 
+import asyncio
+import time
+
 from io import BytesIO
 
 import pytest
@@ -85,7 +88,53 @@ class TestChatInterface:
         assert len(chat_interface.objects) == 0
         chat_interface._click_send(None)
         assert len(chat_interface.objects) == 1
-        assert chat_interface.objects[0].object == "Message"
+
+    def test_show_stop(self, chat_interface: ChatInterface):
+        async def callback(msg, user, instance):
+            yield "A"
+            await asyncio.sleep(2)
+            yield "B"  # should not reach this point
+
+        chat_interface.callback = callback
+        chat_interface.show_stop = False
+        chat_interface.send("Message", respond=True)
+        send_button = chat_interface._input_layout[1]
+        stop_button = chat_interface._input_layout[2]
+        assert send_button.name == "Send"
+        assert stop_button.name == "Stop"
+        assert send_button.visible
+        assert not stop_button.visible
+
+    def test_click_stop_for_async(self, chat_interface: ChatInterface):
+        async def callback(msg, user, instance):
+            yield "A"
+            send_button = instance._input_layout[1]
+            stop_button = instance._input_layout[2]
+            assert send_button.name == "Send"
+            assert stop_button.name == "Stop"
+            assert instance._click_stop(None)
+            await asyncio.sleep(2)
+            yield "B"  # should not reach this point
+
+        chat_interface.callback = callback
+        with pytest.raises(asyncio.CancelledError):
+            chat_interface.send("Message", respond=True)
+        assert chat_interface.objects[-1].object == "A"
+
+    def test_click_stop_for_sync(self, chat_interface: ChatInterface):
+        def callback(msg, user, instance):
+            yield "A"
+            send_button = instance._input_layout[1]
+            stop_button = instance._input_layout[2]
+            assert send_button.name == "Send"
+            assert stop_button.name == "Stop"
+            instance._click_stop(None)
+            time.sleep(2)
+            yield "B"
+
+        chat_interface.callback = callback
+        chat_interface.send("Message", respond=True)
+        assert chat_interface.objects[-1].object == "B"
 
     @pytest.mark.parametrize("widget", [TextInput(), TextAreaInput()])
     def test_auto_send_types(self, chat_interface: ChatInterface, widget):

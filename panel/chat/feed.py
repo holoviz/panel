@@ -193,7 +193,7 @@ class ChatFeed(ListPanel):
         The placeholder wrapped in a ChatMessage object;
         primarily to prevent recursion error in _update_placeholder.""")
 
-    _async_task = param.ClassSelector(class_=asyncio.Task, allow_None=True, doc="""
+    _stoppable_task = param.ClassSelector(class_=asyncio.Task, allow_None=True, doc="""
         The current, cancellable async task being executed.""")
 
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_feed.css"]
@@ -415,9 +415,9 @@ class ChatFeed(ListPanel):
             isasyncgenfunction(self.callback)
         )  # noqa: E501
         if callable_is_async:
-            self._async_task = task
+            self._stoppable_task = task
         else:
-            self._async_task = None
+            self._stoppable_task = None
 
         start = asyncio.get_event_loop().time()
         while not task.done() and num_entries == len(self._chat_log):
@@ -443,9 +443,7 @@ class ChatFeed(ListPanel):
                 return
 
             num_entries = len(self._chat_log)
-            task = asyncio.create_task(
-                self._handle_callback(message)
-            )
+            task = asyncio.create_task(self._handle_callback(message))
             await self._schedule_placeholder(task, num_entries)
             await task
             task.result()
@@ -460,7 +458,7 @@ class ChatFeed(ListPanel):
             else:
                 raise e
         finally:
-            self._async_task = None
+            self._stoppable_task = None
             self._replace_placeholder(None)
             self.disabled = disabled
 
@@ -574,10 +572,15 @@ class ChatFeed(ListPanel):
     def stop(self) -> bool:
         """
         Cancels the current callback task.
+
+        Returns
+        -------
+        Whether the task was successfully stopped; if no task is stoppable,
+        returns False.
         """
-        if self._async_task is None:
+        if self._stoppable_task is None:
             return False
-        return self._async_task.cancel()
+        return self._stoppable_task.cancel()
 
     def undo(self, count: int = 1) -> List[Any]:
         """

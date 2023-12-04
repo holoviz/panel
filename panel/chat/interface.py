@@ -87,6 +87,10 @@ class ChatInterface(ChatFeed):
     show_send = param.Boolean(default=True, doc="""
         Whether to show the send button.""")
 
+    show_stop = param.Boolean(default=True, doc="""
+        Whether to show the stop button; has no effect
+        if `callback` is not async.""")
+
     show_rerun = param.Boolean(default=True, doc="""
         Whether to show the rerun button.""")
 
@@ -379,11 +383,11 @@ class ChatInterface(ChatFeed):
         self,
         event: param.parameterized.Event | None = None,
         instance: "ChatInterface" | None = None
-    ) -> None:
+    ) -> bool:
         """
         Cancel the input when the user presses the Stop button.
         """
-        self.stop()
+        return self.stop()
 
     def _get_last_user_entry_index(self) -> int:
         """
@@ -563,9 +567,12 @@ class ChatInterface(ChatFeed):
             }
         return super()._serialize_for_transformers(role_names, default_role, custom_serializer)
 
-    @param.depends("_async_task", watch=True)
+    @param.depends("_stoppable_task", watch=True)
     async def _update_input_disabled(self):
-        if self._async_task is not None:
+        if not self.show_stop:
+            return
+
+        if self._stoppable_task is not None:
             with param.batch_watch(self):
                 self._buttons["send"].visible = False
                 self._buttons["stop"].visible = True

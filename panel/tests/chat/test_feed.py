@@ -699,6 +699,29 @@ class TestChatFeedCallback:
             chat_feed.send("Message", respond=True)
         wait_until(lambda: len(chat_feed.objects) == 1)
 
+    def test_callback_stop_async(self, chat_feed):
+        async def callback(msg, user, instance):
+            yield "A"
+            assert chat_feed.stop()
+            await asyncio.sleep(2)
+            yield "B"  # should not reach this point
+
+        chat_feed.callback = callback
+        with pytest.raises(asyncio.CancelledError):
+            chat_feed.send("Message", respond=True)
+        assert chat_feed.objects[-1].object == "A"
+
+    def test_callback_stop_not_async(self, chat_feed):
+        def callback(msg, user, instance):
+            message = instance.stream("A")
+            assert not chat_feed.stop()  # has no effect
+            time.sleep(2)
+            instance.stream("B", message=message)
+
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        assert chat_feed.objects[-1].object == "AB"
+
 
 @pytest.mark.xdist_group("chat")
 class TestChatFeedSerializeForTransformers:
