@@ -433,6 +433,9 @@ def cache(
 
     def clear(session_context=None):
         global func_hash
+        # clear called before anything is cached.
+        if 'func_hash' not in globals():
+            return
         if func_hash is None:
             return
         if to_disk:
