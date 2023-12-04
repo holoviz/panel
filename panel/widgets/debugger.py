@@ -189,15 +189,15 @@ class Debugger(Card):
         Loggers which will be prompted in the debugger terminal.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = dict(
-        Card._rename, **{
-        '_number_of_errors': None,
-        '_number_of_warnings': None,
-        '_number_of_infos': None,
-        'only_last': None,
-        'level': None,
-        'formatter_args': None,
-        'logger_names': None,
-    })
+        Card._rename,
+        _number_of_errors=None,
+        _number_of_warnings=None,
+        _number_of_infos=None,
+        only_last=None,
+        level=None,
+        formatter_args=None,
+        logger_names=None
+    )
 
     _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/debugger.css']
 

@@ -274,7 +274,7 @@ class Param(PaneBase):
             if v == self.param[p].default: continue
             elif v is None: continue
             elif isinstance(v, str) and v == '': continue
-            elif p == 'object' or (p == 'name' and (v.startswith(obj_cls) or v.startswith(cls))): continue
+            elif p == 'object' or (p == 'name' and v.startswith((obj_cls, cls))): continue
             elif p == 'parameters' and v == parameters: continue
             try:
                 params.append('%s=%s' % (p, abbreviated_repr(v)))
@@ -1084,7 +1084,7 @@ class ReactiveExpr(PaneBase):
             self.layout[:] = [self._generate_layout()]
 
     @classmethod
-    def applies(self, object):
+    def applies(cls, object):
         return isinstance(object, param.rx)
 
     @classmethod

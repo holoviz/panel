@@ -587,7 +587,7 @@ class Serve(_BkServe):
                     )
                 config.oauth_encryption_key = encryption_key
             elif not config.oauth_encryption_key:
-                print("WARNING: OAuth has not been configured with an "
+                print("WARNING: OAuth has not been configured with an " # noqa: T201
                       "encryption key and will potentially leak "
                       "credentials in cookies and a JWT token embedded "
                       "in the served website. Use at your own risk or "

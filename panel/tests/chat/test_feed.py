@@ -316,7 +316,7 @@ class TestChatFeed:
 
     def test_default_avatars_superseded_in_entry(self, chat_feed):
         chat_feed.send(
-            ChatMessage(**{"user": "System", "avatar": "👨", "object": "Message 1"})
+            ChatMessage(user="System", avatar="👨", object="Message 1")
         )
 
         assert chat_feed.objects[0].user == "System"
@@ -342,7 +342,6 @@ class TestChatFeed:
 
     def test_no_recursion_error(self, chat_feed):
         chat_feed.send("Some time ago, there was a recursion error like this")
-        print(chat_feed.objects)
 
     def test_chained_response(self, chat_feed):
         async def callback(contents, user, instance):

@@ -74,7 +74,7 @@ def test_exec_captures_print():
 
 def test_exec_captures_error():
     def capture_stderr(stderr):
-        print()
+        print()  # noqa: T201
     stderr = WriteCallbackStream(capture_stderr)
     assert exec_with_return('raise ValueError("bar")', stderr=stderr) is None
     assert 'ValueError: bar' in stderr.getvalue()

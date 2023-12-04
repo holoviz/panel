@@ -201,7 +201,7 @@ def parse_query(query: str) -> dict[str, Any]:
             parsed_query[k] = int(v)
         elif is_number(v):
             parsed_query[k] = float(v)
-        elif v.startswith('[') or v.startswith('{'):
+        elif v.startswith(('[', '{')):
             try:
                 parsed_query[k] = json.loads(v)
             except Exception:
