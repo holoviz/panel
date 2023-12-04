@@ -571,7 +571,7 @@ class ChatFeed(ListPanel):
 
     def stop(self) -> bool:
         """
-        Cancels the current callback task.
+        Cancels the current callback task if possible.
 
         Returns
         -------

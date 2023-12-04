@@ -88,8 +88,8 @@ class ChatInterface(ChatFeed):
         Whether to show the send button.""")
 
     show_stop = param.Boolean(default=True, doc="""
-        Whether to show the stop button; has no effect
-        if `callback` is not async.""")
+        Whether to show the stop button temporarily replacing the send button during
+        callback; has no effect if `callback` is not async.""")
 
     show_rerun = param.Boolean(default=True, doc="""
         Whether to show the rerun button.""")
@@ -385,7 +385,7 @@ class ChatInterface(ChatFeed):
         instance: "ChatInterface" | None = None
     ) -> bool:
         """
-        Cancel the input when the user presses the Stop button.
+        Cancel the callback when the user presses the Stop button.
         """
         return self.stop()
 
