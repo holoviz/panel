@@ -95,6 +95,10 @@ PLACEHOLDER_SVG = """
 """  # noqa: E501
 
 
+class StopCallback(Exception):
+    pass
+
+
 class ChatFeed(ListPanel):
     """
     A widget to display a list of `ChatMessage` objects and interact with them.
@@ -196,6 +200,9 @@ class ChatFeed(ListPanel):
 
     _callback_future = param.ClassSelector(class_=asyncio.Future, allow_None=True, doc="""
         The current, cancellable async task being executed.""")
+
+    _callback_is_running = param.Boolean(default=False, doc="""
+        Whether the callback is currently running.""")
 
     _callback_is_async = param.Boolean(default=False, doc="""
         Whether the callback is an async function.""")
@@ -342,6 +349,8 @@ class ChatFeed(ListPanel):
         if value is None:
             # don't add new message if the callback returns None
             return
+        elif self._callback_future is not None and self._callback_future.cancelled():
+            raise StopCallback("Callback was stopped.")
 
         user = self.callback_user
         avatar = None
@@ -434,7 +443,10 @@ class ChatFeed(ListPanel):
 
         disabled = self.disabled
         try:
-            self.disabled = True
+            with param.batch_watch(self):
+                self.disabled = True
+                self._callback_is_running = True
+
             message = self._chat_log[-1]
             if not isinstance(message, ChatMessage):
                 return
@@ -453,6 +465,8 @@ class ChatFeed(ListPanel):
             if not future.cancelled():
                 response = future.result()
                 await self._serialize_response(response)
+        except StopCallback:
+            pass  # callback was stopped by user
         except Exception as e:
             send_kwargs = dict(user="Exception", respond=False)
             if self.callback_exception == "summary":
@@ -464,9 +478,10 @@ class ChatFeed(ListPanel):
             else:
                 raise e
         finally:
-            self._callback_future = None
-            self._replace_placeholder(None)
-            self.disabled = disabled
+            with param.batch_watch(self):
+                self._replace_placeholder(None)
+                self.disabled = disabled
+                self._callback_is_running = False
 
     async def _wrap_async_callback(self, contents, message: ChatMessage) -> None:
         return self.callback(contents, message.user, self)
@@ -547,8 +562,8 @@ class ChatFeed(ListPanel):
         -------
         The message that was updated.
         """
-        if message is not None and (self._callback_future is None or self._callback_future.cancelled()):
-            return
+        if self._callback_future is not None and self._callback_future.cancelled():
+            raise StopCallback("Callback was stopped.")
 
         if isinstance(value, ChatMessage) and (user is not None or avatar is not None):
             raise ValueError(
@@ -590,11 +605,9 @@ class ChatFeed(ListPanel):
         Whether the task was successfully stopped; if no task is stoppable,
         returns False.
         """
-        print(self._callback_future, "CANCELLING")
         if self._callback_future is None:
             return False
         cancel_result = self._callback_future.cancel()
-        print(self._callback_future.cancelled(), "CANCELLED")
         return cancel_result
 
     def undo(self, count: int = 1) -> List[Any]:

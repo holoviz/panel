@@ -567,16 +567,13 @@ class ChatInterface(ChatFeed):
             }
         return super()._serialize_for_transformers(role_names, default_role, custom_serializer)
 
-    @param.depends("_callback_future", watch=True)
+    @param.depends("_callback_is_running", watch=True)
     async def _update_input_disabled(self):
-        if not self.show_stop:
-            return
-
-        if self._callback_future is not None:
-            with param.batch_watch(self):
-                self._buttons["send"].visible = False
-                self._buttons["stop"].visible = True
-        else:
+        if not self.show_stop or not self._callback_is_running:
             with param.batch_watch(self):
                 self._buttons["send"].visible = True
                 self._buttons["stop"].visible = False
+        else:
+            with param.batch_watch(self):
+                self._buttons["send"].visible = False
+                self._buttons["stop"].visible = True
