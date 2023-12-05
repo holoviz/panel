@@ -367,21 +367,6 @@ class ChatFeed(ListPanel):
         self._replace_placeholder(new_message)
         return new_message
 
-    def _extract_contents(self, message: ChatMessage) -> Any:
-        """
-        Extracts the contents from the message's panel object.
-        """
-        value = message._object_panel
-        if hasattr(value, "object"):
-            contents = value.object
-        elif hasattr(value, "objects"):
-            contents = value.objects
-        elif hasattr(value, "value"):
-            contents = value.value
-        else:
-            contents = value
-        return contents
-
     async def _serialize_response(self, response: Any) -> ChatMessage | None:
         """
         Serializes the response by iterating over it and
@@ -439,16 +424,25 @@ class ChatFeed(ListPanel):
                 return
 
             num_entries = len(self._chat_log)
-            loop = asyncio.get_event_loop()
-            contents = self._extract_contents(message)
 
-            if asyncio.iscoroutinefunction(self.callback):
-                future = loop.create_task(self._wrap_async_callback(contents, message))
+            value = message._object_panel
+            if hasattr(value, "object"):
+                contents = value.object
+            elif hasattr(value, "objects"):
+                contents = value.objects
+            elif hasattr(value, "value"):
+                contents = value.value
             else:
-                future = loop.run_in_executor(None, partial(self.callback, contents, message.user, self))
+                contents = value
+            callback_args = (contents, message.user, self)
+
+            loop = asyncio.get_event_loop()
+            if asyncio.iscoroutinefunction(self.callback):
+                future = loop.create_task(self.callback(*callback_args))
+            else:
+                future = loop.run_in_executor(None, partial(self.callback, *callback_args))
             self._callback_future = future
             await self._schedule_placeholder(future, num_entries)
-
             await future
             if not future.cancelled():
                 response = future.result()
@@ -470,12 +464,6 @@ class ChatFeed(ListPanel):
                 self._replace_placeholder(None)
                 self.disabled = disabled
                 self._callback_is_running = False
-
-    async def _wrap_async_callback(self, contents, message: ChatMessage) -> None:
-        """
-        Primarily used to wrap async generators or else create_task crashes.
-        """
-        return self.callback(contents, message.user, self)
 
     # Public API
 

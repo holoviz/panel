@@ -667,26 +667,30 @@ class TestChatFeedCallback:
             chat_feed.send("Message", respond=True)
         wait_until(lambda: len(chat_feed.objects) == 1)
 
-    def test_callback_stop_async(self, chat_feed):
+    @pytest.mark.asyncio
+    async def test_callback_stop_async(self, chat_feed):
         async def callback(msg, user, instance):
             yield "A"
-            assert chat_feed.stop()
-            await asyncio.sleep(2)
+            await asyncio.sleep(3)
             yield "B"  # should not reach this point
 
         chat_feed.callback = callback
         chat_feed.send("Message", respond=True)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.stop()
         assert chat_feed.objects[-1].object == "A"
 
-    def test_callback_stop_not_async(self, chat_feed):
+    @pytest.mark.asyncio
+    async def test_callback_stop_not_async(self, chat_feed):
         def callback(msg, user, instance):
             message = instance.stream("A")
-            assert chat_feed.stop()
-            time.sleep(2)
+            time.sleep(3)
             instance.stream("B", message=message)  # should not reach this point
 
         chat_feed.callback = callback
         chat_feed.send("Message", respond=True)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.stop()
         assert chat_feed.objects[-1].object == "A"
 
 
