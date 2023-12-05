@@ -525,7 +525,7 @@ input[type='file']:active {
 
 :host(.outline) .bk-btn.bk-btn-default.bk-active {
   color: var(--foreground-on-accent-rest);
-  box-shadow: inset 0px 3px 5px rgb(0 0 0 / 25%);
+  box-shadow: none;
 }
 
 :host(.outline) .bk-btn-group .bk-btn-default.bk-active {
@@ -533,10 +533,11 @@ input[type='file']:active {
   color: var(--foreground-on-accent-active);
 }
 
+:host(.outline) .bk-btn-group .bk-btn-primary.bk-active,
 :host(.solid) .bk-btn.bk-btn-primary,
 :host(.solid) .bk-btn.bk-btn-primary[disabled],
 :host(.solid) .bk-btn.bk-btn-primary[disabled]:hover {
-  background: var(--accent-fill-rest);
+  background-color: var(--accent-fill-rest);
   border-color: var(--accent-fill-rest);
   color: var(--accent-foreground-cut-rest);
 }
@@ -553,6 +554,7 @@ input[type='file']:active {
   border-color: var(--accent-fill-active);
   color: var(--accent-foreground-cut-rest);
 }
+:host(.outline) .bk-btn-group .bk-btn-primary.bk-active:hover,
 :host(.solid) .bk-btn.bk-btn-primary.bk-active:hover {
   background-color: var(--accent-fill-hover);
 }
