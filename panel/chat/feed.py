@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import traceback
 
+from enum import Enum
 from functools import partial
 from inspect import isasyncgen, isawaitable, isgenerator
 from io import BytesIO
@@ -91,6 +92,14 @@ PLACEHOLDER_SVG = """
         <path d="M17 12a5 5 0 1 0 -5 5"></path>
     </svg>
 """  # noqa: E501
+
+
+class CallbackState(Enum):
+    IDLE = "idle"
+    RUNNING = "running"
+    GENERATING = "generating"
+    STOPPING = "stopping"
+    STOPPED = "stopped"
 
 
 class StopCallback(Exception):
@@ -199,8 +208,8 @@ class ChatFeed(ListPanel):
     _callback_future = param.ClassSelector(class_=asyncio.Future, allow_None=True, doc="""
         The current, cancellable async task being executed.""")
 
-    _callback_is_running = param.Boolean(default=False, doc="""
-        Whether the callback is currently running.""")
+    _callback_state = param.ObjectSelector(objects=list(CallbackState), doc="""
+        The current state of the callback.""")
 
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_feed.css"]
 
@@ -333,10 +342,12 @@ class ChatFeed(ListPanel):
         Replace the placeholder message with the response or update
         the message's value with the response.
         """
+        is_stopping = self._callback_state == CallbackState.STOPPING
+        is_stopped = self._callback_future is not None and self._callback_future.cancelled()
         if value is None:
             # don't add new message if the callback returns None
             return
-        elif self._callback_future is not None and self._callback_future.cancelled():
+        elif is_stopping or is_stopped:
             raise StopCallback("Callback was stopped.")
 
         user = self.callback_user
@@ -367,7 +378,7 @@ class ChatFeed(ListPanel):
         self._replace_placeholder(new_message)
         return new_message
 
-    def _extract_contents(self, message: ChatMessage) -> Any:
+    def _gather_callback_args(self, message: ChatMessage) -> Any:
         """
         Extracts the contents from the message's panel object.
         """
@@ -380,7 +391,7 @@ class ChatFeed(ListPanel):
             contents = value.value
         else:
             contents = value
-        return contents
+        return contents, message.user, self
 
     async def _serialize_response(self, response: Any) -> ChatMessage | None:
         """
@@ -389,9 +400,11 @@ class ChatFeed(ListPanel):
         """
         response_message = None
         if isasyncgen(response):
+            self._callback_state = CallbackState.GENERATING
             async for token in response:
                 response_message = self._upsert_message(token, response_message)
         elif isgenerator(response):
+            self._callback_state = CallbackState.GENERATING
             for token in response:
                 response_message = self._upsert_message(token, response_message)
         elif isawaitable(response):
@@ -432,29 +445,29 @@ class ChatFeed(ListPanel):
         try:
             with param.parameterized.batch_call_watchers(self):
                 self.disabled = True
-                self._callback_is_running = True
+                self._callback_state = CallbackState.RUNNING
 
             message = self._chat_log[-1]
             if not isinstance(message, ChatMessage):
                 return
 
             num_entries = len(self._chat_log)
+            callback_args = self._gather_callback_args(message)
             loop = asyncio.get_event_loop()
-            contents = self._extract_contents(message)
-
             if asyncio.iscoroutinefunction(self.callback):
-                future = loop.create_task(self._wrap_async_callback(contents, message))
+                future = loop.create_task(self.callback(*callback_args))
             else:
-                future = loop.run_in_executor(None, partial(self.callback, contents, message.user, self))
+                future = loop.run_in_executor(None, partial(self.callback, *callback_args))
             self._callback_future = future
             await self._schedule_placeholder(future, num_entries)
 
-            await future
             if not future.cancelled():
+                await future
                 response = future.result()
                 await self._serialize_response(response)
         except StopCallback:
-            pass  # callback was stopped by user
+            # callback was stopped by user
+            self._callback_state = CallbackState.STOPPED
         except Exception as e:
             send_kwargs = dict(user="Exception", respond=False)
             if self.callback_exception == "summary":
@@ -469,13 +482,7 @@ class ChatFeed(ListPanel):
             with param.parameterized.batch_call_watchers(self):
                 self._replace_placeholder(None)
                 self.disabled = disabled
-                self._callback_is_running = False
-
-    async def _wrap_async_callback(self, contents, message: ChatMessage) -> None:
-        """
-        Primarily used to wrap async generators or else create_task crashes.
-        """
-        return self.callback(contents, message.user, self)
+                self._callback_state = CallbackState.IDLE
 
     # Public API
 
@@ -593,13 +600,18 @@ class ChatFeed(ListPanel):
 
         Returns
         -------
-        Whether the task was successfully stopped; if no task is stoppable,
-        returns False.
+        Whether the task was successfully stopped or done.
         """
         if self._callback_future is None:
             return False
-        cancel_result = self._callback_future.cancel()
-        return cancel_result
+        elif self._callback_state == CallbackState.GENERATING:
+            # cannot cancel generator directly as it's already "finished"
+            # by the time cancel is called; instead, set the state to STOPPING
+            # and let upsert_message raise StopCallback
+            self._callback_state = CallbackState.STOPPING
+            return True
+        else:
+            return self._callback_future.cancel()
 
     def undo(self, count: int = 1) -> List[Any]:
         """

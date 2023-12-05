@@ -22,7 +22,7 @@ from ..viewable import Viewable
 from ..widgets.base import Widget
 from ..widgets.button import Button
 from ..widgets.input import FileInput, TextInput
-from .feed import ChatFeed
+from .feed import CallbackState, ChatFeed
 from .message import _FileInputMessage
 
 
@@ -567,9 +567,10 @@ class ChatInterface(ChatFeed):
             }
         return super()._serialize_for_transformers(role_names, default_role, custom_serializer)
 
-    @param.depends("_callback_is_running", watch=True)
+    @param.depends("_callback_state", watch=True)
     async def _update_input_disabled(self):
-        if not self.show_stop or not self._callback_is_running:
+        busy_states = (CallbackState.RUNNING, CallbackState.GENERATING)
+        if not self.show_stop or self._callback_state not in busy_states:
             with param.parameterized.batch_call_watchers(self):
                 self._buttons["send"].visible = True
                 self._buttons["stop"].visible = False

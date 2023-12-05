@@ -667,26 +667,46 @@ class TestChatFeedCallback:
             chat_feed.send("Message", respond=True)
         wait_until(lambda: len(chat_feed.objects) == 1)
 
-    def test_callback_stop_async(self, chat_feed):
+    def test_callback_stop_async_generator(self, chat_feed):
         async def callback(msg, user, instance):
             yield "A"
             assert chat_feed.stop()
-            await asyncio.sleep(2)
-            yield "B"  # should not reach this point
+            await asyncio.sleep(0.5)
+            yield "B"
 
         chat_feed.callback = callback
         chat_feed.send("Message", respond=True)
+        # use sleep here instead of wait for because
+        # the callback is timed and I want to confirm stop works
+        time.sleep(1)
         assert chat_feed.objects[-1].object == "A"
 
-    def test_callback_stop_not_async(self, chat_feed):
+    def test_callback_stop_async_function(self, chat_feed):
+        async def callback(msg, user, instance):
+            message = instance.stream("A")
+            assert chat_feed.stop()
+            await asyncio.sleep(0.5)
+            instance.stream("B", message=message)
+
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        # use sleep here instead of wait for because
+        # the callback is timed and I want to confirm stop works
+        time.sleep(1)
+        assert chat_feed.objects[-1].object == "A"
+
+    def test_callback_stop_sync_function(self, chat_feed):
         def callback(msg, user, instance):
             message = instance.stream("A")
             assert chat_feed.stop()
-            time.sleep(2)
+            time.sleep(0.5)
             instance.stream("B", message=message)  # should not reach this point
 
         chat_feed.callback = callback
         chat_feed.send("Message", respond=True)
+        # use sleep here instead of wait for because
+        # the callback is timed and I want to confirm stop works
+        time.sleep(1)
         assert chat_feed.objects[-1].object == "A"
 
 
