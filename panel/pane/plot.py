@@ -3,6 +3,7 @@ Pane class which render plots from different libraries
 """
 from __future__ import annotations
 
+import re
 import sys
 
 from contextlib import contextmanager
@@ -188,6 +189,16 @@ class Bokeh(PaneBase):
 
         return model
 
+_width_regex = re.compile(rb'width="[\d\.]+pt"')
+_height_regex = re.compile(rb'height="[\d\.]+pt"')
+
+def _make_matplotlib_svg_responsive(input_str):
+    output_str = _width_regex.sub(b'width="100%"', input_str)
+    output_str = _height_regex.sub(b'height="100%"', output_str)
+    return output_str
+
+def _make_matplotlib_svg_not_preserve_aspect_ratio(input_str):
+    return input_str.replace(b'height="100%"', b'height="100%" preserveAspectRatio="none"')
 
 class Matplotlib(Image, IPyWidget):
     """
@@ -210,7 +221,7 @@ class Matplotlib(Image, IPyWidget):
     dpi = param.Integer(default=144, bounds=(1, None), doc="""
         Scales the dpi of the matplotlib figure.""")
 
-    encode = param.Boolean(default=True, doc="""
+    encode = param.Boolean(default=False, doc="""
         Whether to encode SVG out as base64.""")
 
     format = param.Selector(default='png', objects=['png', 'svg'], doc="""
@@ -292,6 +303,7 @@ class Matplotlib(Image, IPyWidget):
     def _transform_object(self, obj: Any) -> Dict[str, Any]:
         return self._img_type._transform_object(self, obj)
 
+
     def _imgshape(self, data):
         try:
             return self._img_type._imgshape(data)
@@ -356,8 +368,14 @@ class Matplotlib(Image, IPyWidget):
             dpi=self.dpi,
             bbox_inches=bbox_inches
         )
-        return b.getvalue()
+        value = b.getvalue()
 
+        if self.format=="svg":
+            value = _make_matplotlib_svg_responsive(value)
+            if not self.fixed_aspect:
+                value = _make_matplotlib_svg_not_preserve_aspect_ratio(value)
+
+        return value
 
 class RGGPlot(PNG):
     """
