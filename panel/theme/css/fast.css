@@ -472,7 +472,20 @@ input[type='file']:active {
     (var(--base-height-multiplier) + var(--density)) * var(--design-unit) * 1px
   );
 }
-
+.bk-btn-default:focus,
+.bk-btn-default:active,
+.bk-btn-primary:focus,
+.bk-btn-primary:active,
+.bk-btn-success:focus,
+.bk-btn-success:active,
+.bk-btn-warning:focus,
+.bk-btn-warning:active,
+.bk-btn-danger:focus,
+.bk-btn-danger:active,
+.bk-btn-light:focus,
+.bk-btn-light:active {
+  outline: none;
+}
 .bk-btn a {
   text-decoration: none;
   color: inherit;
