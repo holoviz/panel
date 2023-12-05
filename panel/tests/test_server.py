@@ -927,3 +927,26 @@ def test_server_no_warning_empty_layout(port, caplog):
     finally:
         bk_logger.setLevel(old_level)
         bk_logger.propagate = old_propagate
+
+
+def test_server_threads_save(threads, port, tmp_path):
+    # https://github.com/holoviz/panel/issues/5957
+
+    button = Button()
+    fsave = tmp_path / 'button.html'
+
+    def cb(event):
+        button.save(fsave)
+
+    def simulate_click():
+        button._comm_event(state.curdoc, ButtonClick(model=None))
+
+    button.on_click(cb)
+
+    def app():
+        state.curdoc.add_next_tick_callback(simulate_click)
+        return button
+
+    serve_and_request(app)
+
+    wait_until(lambda: fsave.exists())
