@@ -9,9 +9,7 @@ import asyncio
 import traceback
 
 from functools import partial
-from inspect import (
-    isasyncgen, isasyncgenfunction, isawaitable, isgenerator,
-)
+from inspect import isasyncgen, isawaitable, isgenerator
 from io import BytesIO
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Literal,
@@ -432,7 +430,7 @@ class ChatFeed(ListPanel):
 
         disabled = self.disabled
         try:
-            with param.batch_watch(self):
+            with param.parameterized.batch_call_watchers(self):
                 self.disabled = True
                 self._callback_is_running = True
 
@@ -444,11 +442,7 @@ class ChatFeed(ListPanel):
             loop = asyncio.get_event_loop()
             contents = self._extract_contents(message)
 
-            is_async = (
-                asyncio.iscoroutinefunction(self.callback) or
-                isasyncgenfunction(self.callback)
-            )  # noqa: E501
-            if is_async:
+            if asyncio.iscoroutinefunction(self.callback):
                 future = loop.create_task(self._wrap_async_callback(contents, message))
             else:
                 future = loop.run_in_executor(None, partial(self.callback, contents, message.user, self))
@@ -472,7 +466,7 @@ class ChatFeed(ListPanel):
             else:
                 raise e
         finally:
-            with param.batch_watch(self):
+            with param.parameterized.batch_call_watchers(self):
                 self._replace_placeholder(None)
                 self.disabled = disabled
                 self._callback_is_running = False
