@@ -13,7 +13,7 @@ You generally have two ways to install JupyterLab/Jupyter Notebook:
 1. directly in your working environment that contains all the dependencies you need to run your project
 2. in another environment, maybe a central environment or an environment dedicated to Jupyter, in which case when you run a notebook you should pick the kernel of your project environment
 
-When in the second setup, you need to ensure that `pyviz_comms` is explicitly installed next to JupyterLab/Jupyter Notebook (with `conda install pyviz_comms` or `pip install pyviz-comms`) for bi-directional communication to be fully working.
+When in the second setup, you need to ensure that `pyviz_comms` is explicitly installed in the same environment as JupyterLab/Jupyter Notebook (with `conda install pyviz_comms` or `pip install pyviz-comms`) for bi-directional communication to be fully working.
 
 ## Loading the extension
 
