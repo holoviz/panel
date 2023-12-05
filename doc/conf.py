@@ -147,7 +147,7 @@ def get_requirements():
     return requirements
 
 nbsite_pyodide_conf = {
-    'PYODIDE_URL': 'https://cdn.jsdelivr.net/pyodide/v0.23.1/full/pyodide.js',
+    'PYODIDE_URL': f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/full/pyodide.js',
     'requirements': [bokeh_req, panel_req, 'pyodide-http'],
     'requires': get_requirements()
 }
