@@ -570,10 +570,10 @@ class ChatInterface(ChatFeed):
     @param.depends("_callback_is_running", watch=True)
     async def _update_input_disabled(self):
         if not self.show_stop or not self._callback_is_running:
-            with param.batch_watch(self):
+            with param.parameterized.batch_call_watchers(self):
                 self._buttons["send"].visible = True
                 self._buttons["stop"].visible = False
         else:
-            with param.batch_watch(self):
+            with param.parameterized.batch_call_watchers(self):
                 self._buttons["send"].visible = False
                 self._buttons["stop"].visible = True
