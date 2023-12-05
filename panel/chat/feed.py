@@ -204,9 +204,6 @@ class ChatFeed(ListPanel):
     _callback_is_running = param.Boolean(default=False, doc="""
         Whether the callback is currently running.""")
 
-    _callback_is_async = param.Boolean(default=False, doc="""
-        Whether the callback is an async function.""")
-
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_feed.css"]
 
     def __init__(self, *objects, **params):
@@ -281,14 +278,6 @@ class ChatFeed(ListPanel):
             reaction_icons={},
             show_copy_icon=False,
         )
-
-    @param.depends("callback", watch=True, on_init=True)
-    def _update_callback_is_async(self):
-        self._callback_is_async = (
-            asyncio.iscoroutinefunction(self.callback) or
-            isasyncgenfunction(self.callback)
-        )  # noqa: E501
-
 
     def _replace_placeholder(self, message: ChatMessage | None = None) -> None:
         """
@@ -454,7 +443,12 @@ class ChatFeed(ListPanel):
             num_entries = len(self._chat_log)
             loop = asyncio.get_event_loop()
             contents = self._extract_contents(message)
-            if self._callback_is_async:
+
+            is_async = (
+                asyncio.iscoroutinefunction(self.callback) or
+                isasyncgenfunction(self.callback)
+            )  # noqa: E501
+            if is_async:
                 future = loop.create_task(self._wrap_async_callback(contents, message))
             else:
                 future = loop.run_in_executor(None, partial(self.callback, contents, message.user, self))
@@ -484,6 +478,9 @@ class ChatFeed(ListPanel):
                 self._callback_is_running = False
 
     async def _wrap_async_callback(self, contents, message: ChatMessage) -> None:
+        """
+        Primarily used to wrap async generators or else create_task crashes.
+        """
         return self.callback(contents, message.user, self)
 
     # Public API
