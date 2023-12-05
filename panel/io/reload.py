@@ -15,7 +15,7 @@ _modules = set()
 _callbacks = {}
 
 # List of paths to ignore
-DEFAULT_FOLDER_BLACKLIST = [
+DEFAULT_FOLDER_DENYLIST = [
     "**/.*",
     "**/anaconda",
     "**/anaconda2",
@@ -37,10 +37,10 @@ IGNORED_MODULES = [
 ]
 
 
-def in_blacklist(filepath):
+def in_denylist(filepath):
     return any(
-        file_is_in_folder_glob(filepath, blacklisted_folder)
-        for blacklisted_folder in DEFAULT_FOLDER_BLACKLIST
+        file_is_in_folder_glob(filepath, denylisted_folder)
+        for denylisted_folder in DEFAULT_FOLDER_DENYLIST
     )
 
 def file_is_in_folder_glob(filepath, folderpath_glob):
@@ -108,7 +108,7 @@ def record_modules():
 
             filepath = fullpath(filepath)
 
-            if filepath is None or in_blacklist(filepath):
+            if filepath is None or in_denylist(filepath):
                 continue
 
             if not os.path.isfile(filepath): # e.g. built-in
