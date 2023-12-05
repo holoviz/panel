@@ -527,28 +527,47 @@ input[type='file']:active {
   color: var(--foreground-on-accent-active);
 }
 
+:host(.solid)
+  .bk-btn.bk-btn-primary
+  :host(.solid)
+  .bk-btn.bk-btn-primary.bk-active {
+  border-color: var(--accent-fill-active);
+}
+:host(.solid) .bk-btn.bk-btn-primary:hover {
+  border-color: var(--accent-fill-hover);
+}
 :host(.solid) .bk-btn.bk-btn-primary {
-  background-color: var(--accent-fill-rest);
+  border-color: var(--accent-fill-rest);
 }
 
-:host(.solid) .bk-btn.bk-btn-primary.bk-active {
+:host(.solid) .bk-btn.bk-btn-primary,
+:host(.solid) .bk-btn.bk-btn-primary[disabled],
+:host(.solid) .bk-btn.bk-btn-primary[disabled]:hover {
+  color: var(--accent-foreground-cut-rest);
+  background: var(--accent-fill-rest);
+}
+:host(.solid) .bk-btn.bk-btn-primary:hover {
+  color: white;
+  color: var(--accent-foreground-cut-rest);
+  background-color: var(--accent-fill-hover);
+}
+:host(.solid) .bk-btn.bk-btn-primary.bk-active,
+:host(.solid) .bk-btn.bk-btn-primary:active,
+:host(.solid) .bk-btn.bk-btn-primary.bk-active[disabled],
+:host(.solid) .bk-btn.bk-btn-primary.bk-active[disabled]:hover {
+  color: var(--accent-foreground-cut-rest);
   background-color: var(--accent-fill-active);
-  box-shadow: inset 0px 3px 5px rgb(0 0 0 / 25%);
 }
-
-:host(.outline) .bk-btn-primary {
-  background-color: transparent;
-  color: var(--neutral-foreground-rest);
+:host(.solid) .bk-btn.bk-btn-primary.bk-active:hover {
+  background-color: var(--accent-fill-hover);
 }
-
-:host(.outline) .bk-btn-primary.bk-active,
-:host(.outline) .bk-btn-primary:hover {
-  color: var(--neutral-foreground-rest);
-}
-
-:host(.outline) .bk-btn-group .bk-btn-primary.bk-active {
-  background-color: var(--accent-fill-rest);
-  color: var(--foreground-on-accent-active);
+:host(.solid) .bk-btn.bk-btn-primary[disabled],
+:host(.solid) .bk-btn.bk-btn-primary[disabled]:hover,
+:host(.solid) .bk-btn.bk-btn-primary[disabled]:focus,
+:host(.solid) .bk-btn.bk-btn-primary[disabled].bk-active {
+  pointer-events: none !important;
+  cursor: not-allowed;
+  opacity: var(--disabled-opacity);
 }
 
 :host(.outline) .bk-btn-success.bk-active,
