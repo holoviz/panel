@@ -564,7 +564,20 @@ input[type='file']:active {
   cursor: not-allowed;
   opacity: var(--disabled-opacity);
 }
-
+:host(.outline) .bk-btn.bk-btn-primary {
+  border-color: var(--accent-fill-rest);
+  color: var(--neutral-foreground-rest);
+}
+:host(.outline) .bk-btn.bk-btn-primary.bk-active,
+:host(.outline) .bk-btn.bk-btn-primary:active {
+  border-color: var(--accent-fill-active);
+  color: var(--neutral-foreground-active);
+}
+:host(.outline) .bk-btn.bk-btn-primary.bk-active:hover,
+:host(.outline) .bk-btn.bk-btn-primary:hover {
+  border-color: var(--accent-fill-hover);
+  color: var(--neutral-foreground-hover);
+}
 :host(.outline) .bk-btn-success.bk-active,
 :host(.outline) .bk-btn-success:hover {
   color: var(--neutral-foreground-rest);
