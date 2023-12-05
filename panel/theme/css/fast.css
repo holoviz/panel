@@ -486,6 +486,12 @@ input[type='file']:active {
 .bk-btn-light:active {
   outline: none;
 }
+.bk-btn:active,
+::file-selector-button:active,
+.bk-active.bk-btn,
+.bk-active::file-selector-button {
+  box-shadow: none;
+}
 .bk-btn a {
   text-decoration: none;
   color: inherit;
@@ -527,36 +533,25 @@ input[type='file']:active {
   color: var(--foreground-on-accent-active);
 }
 
-:host(.solid)
-  .bk-btn.bk-btn-primary
-  :host(.solid)
-  .bk-btn.bk-btn-primary.bk-active {
-  border-color: var(--accent-fill-active);
-}
-:host(.solid) .bk-btn.bk-btn-primary:hover {
-  border-color: var(--accent-fill-hover);
-}
-:host(.solid) .bk-btn.bk-btn-primary {
-  border-color: var(--accent-fill-rest);
-}
-
 :host(.solid) .bk-btn.bk-btn-primary,
 :host(.solid) .bk-btn.bk-btn-primary[disabled],
 :host(.solid) .bk-btn.bk-btn-primary[disabled]:hover {
-  color: var(--accent-foreground-cut-rest);
   background: var(--accent-fill-rest);
+  border-color: var(--accent-fill-rest);
+  color: var(--accent-foreground-cut-rest);
 }
 :host(.solid) .bk-btn.bk-btn-primary:hover {
-  color: white;
-  color: var(--accent-foreground-cut-rest);
   background-color: var(--accent-fill-hover);
+  border-color: var(--accent-fill-hover);
+  color: var(--accent-foreground-cut-hover);
 }
 :host(.solid) .bk-btn.bk-btn-primary.bk-active,
 :host(.solid) .bk-btn.bk-btn-primary:active,
 :host(.solid) .bk-btn.bk-btn-primary.bk-active[disabled],
 :host(.solid) .bk-btn.bk-btn-primary.bk-active[disabled]:hover {
-  color: var(--accent-foreground-cut-rest);
   background-color: var(--accent-fill-active);
+  border-color: var(--accent-fill-active);
+  color: var(--accent-foreground-cut-rest);
 }
 :host(.solid) .bk-btn.bk-btn-primary.bk-active:hover {
   background-color: var(--accent-fill-hover);
