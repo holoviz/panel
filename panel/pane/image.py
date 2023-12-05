@@ -167,7 +167,8 @@ class ImageBase(FileBase):
         alt = f'alt={self.alt_text!r}' if self.alt_text else ''
         width = f' width: {width};' if width else ''
         height = f' height: {height};' if height else ''
-        html = f'<img src="{src}" {alt} style="max-width: 100%; max-height: 100%; object-fit: contain;{width}{height}"></img>'
+        object_fit = "contain" if self.fixed_aspect else "fill"
+        html = f'<img src="{src}" {alt} style="max-width: 100%; max-height: 100%; object-fit: {object_fit};{width}{height}"></img>'
         if self.link_url:
             html = f'<a href="{self.link_url}" target="_blank">{html}</a>'
         return escape(html)
@@ -440,13 +441,8 @@ class SVG(ImageBase):
         if self.encode:
             ws = f' width: {w};' if w else ''
             hs = f' height: {h};' if h else ''
-            data = f'<img src="{self._b64(data)}" style="max-width: 100%; max-height: 100%; object-fit: contain;{ws}{hs}"></img>'
-        elif self.width or self.height or self.sizing_mode not in (None, 'fixed'):
-            self.param.warning(
-                'SVG sizing cannot be scaled if the SVG has been embedded '
-                'but is not encoded. Either enable encoding or manipulate '
-                'the SVG itself.'
-            )
+            object_fit = "contain" if self.fixed_aspect else "fill"
+            data = f'<img src="{self._b64(data)}" style="max-width: 100%; max-height: 100%; object-fit: {object_fit};{ws}{hs}"></img>'
         if isinstance(data, bytes):
             data = data.decode('utf-8')
         return dict(width=width, height=height, text=escape(data))
