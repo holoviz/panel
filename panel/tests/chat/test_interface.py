@@ -21,7 +21,7 @@ class TestChatInterface:
         return ChatInterface()
 
     def test_init(self, chat_interface):
-        assert len(chat_interface._button_data) == 4
+        assert len(chat_interface._button_data) == 5
         assert len(chat_interface._widgets) == 1
         assert isinstance(chat_interface._input_layout, Row)
         assert isinstance(chat_interface._widgets["TextInput"], TextInput)
