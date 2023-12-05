@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import traceback
 
+from functools import partial
 from inspect import (
     isasyncgen, isasyncgenfunction, isawaitable, isgenerator,
 )
@@ -193,8 +194,11 @@ class ChatFeed(ListPanel):
         The placeholder wrapped in a ChatMessage object;
         primarily to prevent recursion error in _update_placeholder.""")
 
-    _stoppable_task = param.ClassSelector(class_=asyncio.Task, allow_None=True, doc="""
+    _callback_future = param.ClassSelector(class_=asyncio.Future, allow_None=True, doc="""
         The current, cancellable async task being executed.""")
+
+    _callback_is_async = param.Boolean(default=False, doc="""
+        Whether the callback is an async function.""")
 
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_feed.css"]
 
@@ -270,6 +274,14 @@ class ChatFeed(ListPanel):
             reaction_icons={},
             show_copy_icon=False,
         )
+
+    @param.depends("callback", watch=True, on_init=True)
+    def _update_callback_is_async(self):
+        self._callback_is_async = (
+            asyncio.iscoroutinefunction(self.callback) or
+            isasyncgenfunction(self.callback)
+        )  # noqa: E501
+
 
     def _replace_placeholder(self, message: ChatMessage | None = None) -> None:
         """
@@ -392,12 +404,6 @@ class ChatFeed(ListPanel):
             response_message = self._upsert_message(response, response_message)
         return response_message
 
-    async def _handle_callback(self, message: ChatMessage) -> ChatMessage | None:
-        contents = self._extract_contents(message)
-        response = self.callback(contents, message.user, self)
-        response_message = await self._serialize_response(response)
-        return response_message
-
     async def _schedule_placeholder(
         self,
         task: asyncio.Task,
@@ -410,19 +416,10 @@ class ChatFeed(ListPanel):
         if self.placeholder_threshold == 0:
             return
 
-        callable_is_async = (
-            asyncio.iscoroutinefunction(self.callback) or
-            isasyncgenfunction(self.callback)
-        )  # noqa: E501
-        if callable_is_async:
-            self._stoppable_task = task
-        else:
-            self._stoppable_task = None
-
         start = asyncio.get_event_loop().time()
         while not task.done() and num_entries == len(self._chat_log):
             duration = asyncio.get_event_loop().time() - start
-            if duration > self.placeholder_threshold or not callable_is_async:
+            if duration > self.placeholder_threshold:
                 self.append(self._placeholder)
                 return
             await asyncio.sleep(0.28)
@@ -443,10 +440,19 @@ class ChatFeed(ListPanel):
                 return
 
             num_entries = len(self._chat_log)
-            task = asyncio.create_task(self._handle_callback(message))
-            await self._schedule_placeholder(task, num_entries)
-            await task
-            task.result()
+            loop = asyncio.get_event_loop()
+            contents = self._extract_contents(message)
+            if self._callback_is_async:
+                future = loop.create_task(self._wrap_async_callback(contents, message))
+            else:
+                future = loop.run_in_executor(None, partial(self.callback, contents, message.user, self))
+            self._callback_future = future
+            await self._schedule_placeholder(future, num_entries)
+
+            await future
+            if not future.cancelled():
+                response = future.result()
+                await self._serialize_response(response)
         except Exception as e:
             send_kwargs = dict(user="Exception", respond=False)
             if self.callback_exception == "summary":
@@ -458,9 +464,12 @@ class ChatFeed(ListPanel):
             else:
                 raise e
         finally:
-            self._stoppable_task = None
+            self._callback_future = None
             self._replace_placeholder(None)
             self.disabled = disabled
+
+    async def _wrap_async_callback(self, contents, message: ChatMessage) -> None:
+        return self.callback(contents, message.user, self)
 
     # Public API
 
@@ -538,6 +547,9 @@ class ChatFeed(ListPanel):
         -------
         The message that was updated.
         """
+        if message is not None and (self._callback_future is None or self._callback_future.cancelled()):
+            return
+
         if isinstance(value, ChatMessage) and (user is not None or avatar is not None):
             raise ValueError(
                 "Cannot set user or avatar when explicitly streaming "
@@ -578,9 +590,12 @@ class ChatFeed(ListPanel):
         Whether the task was successfully stopped; if no task is stoppable,
         returns False.
         """
-        if self._stoppable_task is None:
+        print(self._callback_future, "CANCELLING")
+        if self._callback_future is None:
             return False
-        return self._stoppable_task.cancel()
+        cancel_result = self._callback_future.cancel()
+        print(self._callback_future.cancelled(), "CANCELLED")
+        return cancel_result
 
     def undo(self, count: int = 1) -> List[Any]:
         """

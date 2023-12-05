@@ -714,13 +714,13 @@ class TestChatFeedCallback:
     def test_callback_stop_not_async(self, chat_feed):
         def callback(msg, user, instance):
             message = instance.stream("A")
-            assert not chat_feed.stop()  # has no effect
+            assert chat_feed.stop()
             time.sleep(2)
-            instance.stream("B", message=message)
+            instance.stream("B", message=message)  # should not reach this point
 
         chat_feed.callback = callback
         chat_feed.send("Message", respond=True)
-        assert chat_feed.objects[-1].object == "AB"
+        assert chat_feed.objects[-1].object == "A"
 
 
 @pytest.mark.xdist_group("chat")

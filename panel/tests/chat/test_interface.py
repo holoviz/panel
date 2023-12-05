@@ -89,7 +89,7 @@ class TestChatInterface:
         chat_interface._click_send(None)
         assert len(chat_interface.objects) == 1
 
-    def test_show_stop(self, chat_interface: ChatInterface):
+    def test_not_show_stop(self, chat_interface: ChatInterface):
         async def callback(msg, user, instance):
             yield "A"
             await asyncio.sleep(2)
@@ -134,7 +134,7 @@ class TestChatInterface:
 
         chat_interface.callback = callback
         chat_interface.send("Message", respond=True)
-        assert chat_interface.objects[-1].object == "B"
+        assert chat_interface.objects[-1].object == "A"
 
     @pytest.mark.parametrize("widget", [TextInput(), TextAreaInput()])
     def test_auto_send_types(self, chat_interface: ChatInterface, widget):
