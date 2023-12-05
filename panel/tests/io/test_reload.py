@@ -4,7 +4,7 @@ import pytest
 
 from panel.io.location import Location
 from panel.io.reload import (
-    _check_file, _modules, _reload_on_update, _watched_files, in_blacklist,
+    _check_file, _modules, _reload_on_update, _watched_files, in_denylist,
     record_modules, watch,
 )
 from panel.io.state import state
@@ -21,13 +21,13 @@ def test_check_file():
     _check_file(modify_times, __file__)
     assert modify_times[__file__] == os.stat(__file__).st_mtime
 
-def test_file_in_blacklist():
+def test_file_in_denylist():
     filepath = '/home/panel/lib/python/site-packages/panel/__init__.py'
-    assert in_blacklist(filepath)
+    assert in_denylist(filepath)
     filepath = '/home/panel/.config/panel.py'
-    assert in_blacklist(filepath)
+    assert in_denylist(filepath)
     filepath = '/home/panel/development/panel/__init__.py'
-    assert not in_blacklist(filepath)
+    assert not in_denylist(filepath)
 
 def test_watch():
     filepath = os.path.abspath(__file__)
