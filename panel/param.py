@@ -161,7 +161,7 @@ class Param(PaneBase):
         Bokeh model.""")
 
     parameters = param.List(default=[], allow_None=True, doc="""
-        If set this serves as a whitelist of parameters to display on
+        If set this serves as a allowlist of parameters to display on
         the supplied Parameterized object.""")
 
     show_labels = param.Boolean(default=True, doc="""
