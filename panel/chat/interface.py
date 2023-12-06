@@ -204,7 +204,7 @@ class ChatInterface(ChatFeed):
                 default_callback = default_properties["_default_callback"]
                 callback = (
                     self._wrap_callbacks(callback=callback, post_callback=post_callback)(default_callback)
-                    if callback is not None else default_callback
+                    if callback is not None or post_callback is not None else default_callback
                 )
             elif callback is not None and post_callback is not None:
                 callback = self._wrap_callbacks(post_callback=post_callback)(callback)

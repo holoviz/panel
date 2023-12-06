@@ -215,6 +215,19 @@ class TestChatInterface:
         assert chat_interface.objects[0].object == "1"
         assert chat_interface.objects[1].object == "2"
 
+    def test_button_properties_default_callback_and_post_callback(self, chat_interface):
+        def post_callback(instance, event):
+            instance.send("This should show", respond=False)
+
+        chat_interface.widgets = TextAreaInput()
+        chat_interface.button_properties = {
+            "reset": {"post_callback": post_callback},
+        }
+        check_button = chat_interface._input_layout[-1]
+        chat_interface.send("This shouldn't show up!", respond=False)
+        check_button.param.trigger("clicks")
+        assert chat_interface.objects[0].object == "This should show"
+
     def test_button_properties_new_button_missing_callback(self, chat_interface):
         chat_interface.widgets = TextAreaInput()
         with pytest.raises(ValueError, match="A 'callback' key is required for"):
