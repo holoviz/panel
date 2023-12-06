@@ -771,6 +771,8 @@ def modify_document(self, doc: 'Document'):
 
     logger.info(LOG_SESSION_LAUNCHING, id(doc))
 
+    doc.on_event('document_ready', partial(state._schedule_on_load, doc))
+
     if config.autoreload:
         path = self._runner.path
         argv = self._runner._argv
