@@ -1,5 +1,7 @@
 
 
+import time
+
 from io import BytesIO
 
 import pytest
@@ -214,6 +216,34 @@ class TestChatInterface:
         check_button.param.trigger("clicks")
         assert chat_interface.objects[0].object == "1"
         assert chat_interface.objects[1].object == "2"
+
+    def test_button_properties_default_callback_and_post_callback(self, chat_interface):
+        def post_callback(instance, event):
+            instance.send("This should show", respond=False)
+
+        chat_interface.button_properties = {
+            "clear": {"post_callback": post_callback},
+        }
+        clear_button = chat_interface._input_layout[-1]
+        chat_interface.send("This shouldn't show up!", respond=False)
+        clear_button.param.trigger("clicks")
+        time.sleep(0.5)
+        assert chat_interface.objects[0].object == "This should show"
+
+    def test_button_properties_send_with_callback_no_duplicate(self, chat_interface):
+        def post_callback(instance, event):
+            instance.send("This should show", respond=False)
+
+        chat_interface.widgets = TextAreaInput()
+        chat_interface.button_properties = {
+            "send": {"post_callback": post_callback},
+        }
+        chat_interface.active_widget.value = "This is it!"
+        send_button = chat_interface._input_layout[1]
+        send_button.param.trigger("clicks")
+        assert chat_interface.objects[0].object == "This is it!"
+        assert chat_interface.objects[1].object == "This should show"
+        assert len(chat_interface.objects) == 2
 
     def test_button_properties_new_button_missing_callback(self, chat_interface):
         chat_interface.widgets = TextAreaInput()
