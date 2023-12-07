@@ -629,6 +629,8 @@ def test_nested_select_dynamic_levels(document, comm):
     assert select._widgets[2].options == []
     assert select._widgets[3].options == []
 
+    assert select.value == {"A": "Easy", "B": "Easy_A", "C": None, "D": None}
+
     # now update to Medium
     select.value = {"A": "Medium", "B": "Medium_C"}
     assert select._widgets[0].visible
@@ -641,6 +643,8 @@ def test_nested_select_dynamic_levels(document, comm):
     assert select._widgets[2].options == ["Medium_C_1", "Medium_C_2"]
     assert select._widgets[3].options == ["Medium_C_1_1"]
 
+    assert select.value == {"A": "Medium", "B": "Medium_C", "C": "Medium_C_1", "D": "Medium_C_1_1"}
+
     # now update to Hard
     select.value = {"A": "Hard"}
     assert select._widgets[0].visible
@@ -652,6 +656,8 @@ def test_nested_select_dynamic_levels(document, comm):
     assert select._widgets[1].options == []
     assert select._widgets[2].options == []
     assert select._widgets[3].options == []
+
+    assert select.value == {"A": "Hard", "B": None, "C": None, "D": None}
 
 
 def test_nested_select_callable_must_have_levels(document, comm):
