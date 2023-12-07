@@ -73,11 +73,10 @@ bound_plot = pn.bind(create_plot, variable=variable_widget, window=window_widget
 
 Once you have bound the widgets to the function's arguments you can lay out the resulting `bound_plot` component along with the `widget` components using a Panel layout such as `Column`:
 
-
 ```{pyodide}
 first_app = pn.Column(variable_widget, window_widget, sigma_widget, bound_plot)
 
-first_app
+first_app.servable()
 ```
 
 As long as you have a live Python process running, dragging these widgets will trigger a call to the `create_plot` callback function, evaluating it for whatever combination of parameter values you select and displaying the results.

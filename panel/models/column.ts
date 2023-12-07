@@ -22,14 +22,14 @@ export class ColumnView extends BkColumnView {
 
   scroll_to_position(): void {
     requestAnimationFrame(() => {
-      this.el.scrollTop = this.model.scroll_position;
+      this.el.scrollTo({top: this.model.scroll_position});
     });
   }
 
   scroll_to_latest(): void {
     // Waits for the child to be rendered before scrolling
     requestAnimationFrame(() => {
-      this.el.scrollTop = this.el.scrollHeight;
+      this.el.scrollTo({top: this.el.scrollHeight});
     });
   }
 
@@ -43,7 +43,7 @@ export class ColumnView extends BkColumnView {
   }
 
   record_scroll_position(): void {
-    this.model.scroll_position = this.el.scrollTop;
+    this.model.scroll_position = Math.round(this.el.scrollTop);
   }
 
   toggle_scroll_button(): void {
@@ -53,7 +53,7 @@ export class ColumnView extends BkColumnView {
       this.scroll_down_button_el.classList.toggle(
         "visible", threshold !== 0 && exceeds_threshold
       )
-    };
+    }
   }
 
   render(): void {

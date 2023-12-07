@@ -74,6 +74,7 @@ from ..config import config
 from ..util import edit_readonly, fullpath
 from ..util.warnings import warn
 from .document import init_doc, unlocked, with_lock  # noqa
+from .liveness import LivenessHandler
 from .loading import LOADING_INDICATOR_CSS_CLASS
 from .logging import (
     LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING,
@@ -85,6 +86,7 @@ from .resources import (
     BASE_TEMPLATE, CDN_DIST, COMPONENT_PATH, ERROR_TEMPLATE, LOCAL_DIST,
     Resources, _env, bundle_resources, patch_model_css, resolve_custom_path,
 )
+from .session import generate_session
 from .state import set_curdoc, state
 
 logger = logging.getLogger(__name__)
@@ -207,7 +209,7 @@ def _initialize_session_info(session_context: 'BokehSessionContext'):
     }
     state.param.trigger('session_info')
 
-state.on_session_created(_initialize_session_info)
+state._on_session_created_internal.append(_initialize_session_info)
 
 #---------------------------------------------------------------------
 # Bokeh patches
@@ -401,7 +403,7 @@ class Application(BkApplication):
         with set_curdoc(session_context._document):
             if self._admin is not None:
                 config._admin = self._admin
-            for cb in state._on_session_created:
+            for cb in state._on_session_created_internal+state._on_session_created:
                 cb(session_context)
         await super().on_session_created(session_context)
 
@@ -480,8 +482,103 @@ class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
                     session.block_expiration()
         return session
 
+    def _generate_token_payload(self):
+        app = self.application
+        if app.include_headers is None:
+            excluded_headers = (app.exclude_headers or [])
+            allowed_headers = [header for header in self.request.headers
+                               if header not in excluded_headers]
+        else:
+            allowed_headers = app.include_headers
+        headers = {k: v for k, v in self.request.headers.items()
+                   if k in allowed_headers}
+
+        if app.include_cookies is None:
+            excluded_cookies = (app.exclude_cookies or [])
+            allowed_cookies = [cookie for cookie in self.request.cookies
+                               if cookie not in excluded_cookies]
+        else:
+            allowed_cookies = app.include_cookies
+        cookies = {k: v.value for k, v in self.request.cookies.items()
+                   if k in allowed_cookies}
+
+        if cookies and 'Cookie' in headers and 'Cookie' not in (app.include_headers or []):
+            # Do not include Cookie header since cookies can be restored from cookies dict
+            del headers['Cookie']
+
+        arguments = {} if self.request.arguments is None else self.request.arguments
+        payload = {'headers': headers, 'cookies': cookies, 'arguments': arguments}
+        payload.update(self.application_context.application.process_request(self.request))
+        return payload
+
+    def _authorize(self, session=False):
+        """
+        """
+        auth_cb = config.authorize_callback
+        # If inside a session ensure the authorize callback is not global
+        if not auth_cb or (session and auth_cb is config._param__private.values['authorize_callback']):
+            return True, None
+        authorized = False
+        auth_params = inspect.signature(auth_cb).parameters
+        if len(auth_params) == 1:
+            auth_args = (state.user_info,)
+        elif len(auth_params) == 2:
+            auth_args = (state.user_info, self.request.path,)
+        else:
+            raise RuntimeError(
+                'Authorization callback must accept either 1) a single argument '
+                'which is the user name or 2) two arguments which includes the '
+                'user name and the url path the user is trying to access.'
+            )
+        auth_error = f'{state.user} is not authorized to access this application.'
+        try:
+            authorized = auth_cb(*auth_args)
+            if isinstance(authorized, str):
+                self.redirect(authorized)
+                return None, None
+            elif not authorized:
+                auth_error = (
+                    f'Access denied! User {state.user!r} is not authorized '
+                    f'for the given app {self.request.path!r}.'
+                )
+            if authorized:
+                auth_error = None
+        except Exception:
+            auth_error = f'Authorization callback errored. Could not validate user {state.user}.'
+        return authorized, auth_error
+
+    def _render_auth_error(self, auth_error):
+        if config.auth_template:
+            with open(config.auth_template) as f:
+                template = _env.from_string(f.read())
+        else:
+            template = ERROR_TEMPLATE
+        return template.render(
+            npm_cdn=config.npm_cdn,
+            title='Panel: Authorization Error',
+            error_type='Authorization Error',
+            error='User is not authorized.',
+            error_msg=auth_error
+        )
+
     @authenticated
     async def get(self, *args, **kwargs):
+        # Run global authorization callback
+        payload = self._generate_token_payload()
+        if config.authorize_callback:
+            temp_session = generate_session(
+                self.application, self.request, payload, initialize=False
+            )
+            with set_curdoc(temp_session.document):
+                authorized, auth_error = self._authorize()
+            if authorized is None:
+                return
+            elif not authorized:
+                self._render_auth_error(auth_error)
+                page = self.set_header("Content-Type", 'text/html')
+                self.write(page)
+                return
+
         app = self.application
         with self._session_prefix():
             key_func = state._session_key_funcs.get(self.request.path, lambda r: r.path)
@@ -493,6 +590,7 @@ class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
                     signed=self.application.sign_sessions
                 )
                 payload = get_token_payload(session.token)
+                payload.update(payload)
                 del payload['session_expiry']
                 token = generate_jwt_token(
                     session_id,
@@ -506,55 +604,19 @@ class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
             logger.info(LOG_SESSION_CREATED, id(session.document))
             with set_curdoc(session.document):
                 resources = Resources.from_bokeh(self.application.resources())
-                auth_cb = config.authorize_callback
-                authorized = False
-                if auth_cb:
-                    auth_cb = config.authorize_callback
-                    auth_params = inspect.signature(auth_cb).parameters
-                    if len(auth_params) == 1:
-                        auth_args = (state.user_info,)
-                    elif len(auth_params) == 2:
-                        auth_args = (state.user_info, self.request.path,)
-                    else:
-                        raise RuntimeError(
-                            'Authorization callback must accept either 1) a single argument '
-                            'which is the user name or 2) two arguments which includes the '
-                            'user name and the url path the user is trying to access.'
-                        )
-                    auth_error = f'{state.user} is not authorized to access this application.'
-                    try:
-                        authorized = auth_cb(*auth_args)
-                        if not authorized:
-                            auth_error = (
-                                f'Authorization callback errored. Could not validate user name "{state.user}" '
-                                f'for the given app "{self.request.path}".'
-                            )
-                        if authorized:
-                            auth_error = None
-                    except Exception:
-                        auth_error = f'Authorization callback errored. Could not validate user {state.user}.'
-                else:
-                    authorized = True
-
+                # Session authorization callback
+                authorized, auth_error = self._authorize(session=True)
                 if authorized:
                     page = server_html_page_for_session(
                         session, resources=resources, title=session.document.title,
                         token=token, template=session.document.template,
                         template_variables=session.document.template_variables,
                     )
+                elif authorized is None:
+                    return
                 else:
-                    if config.auth_template:
-                        with open(config.auth_template) as f:
-                            template = _env.from_string(f.read())
-                    else:
-                        template = ERROR_TEMPLATE
-                    page = template.render(
-                        npm_cdn=config.npm_cdn,
-                        title='Panel: Authorization Error',
-                        error_type='Authorization Error',
-                        error='User is not authorized.',
-                        error_msg=auth_error
-                    )
+                    page = self._render_auth_error(auth_error)
+
         self.set_header("Content-Type", 'text/html')
         self.write(page)
 
@@ -985,8 +1047,16 @@ def get_server(
     oauth_error_template: Optional[str] = None,
     cookie_secret: Optional[str] = None,
     oauth_encryption_key: Optional[str] = None,
+    oauth_jwt_user: Optional[str] = None,
+    oauth_refresh_tokens: Optional[bool] = None,
+    oauth_guest_endpoints: Optional[bool] = None,
+    oauth_optional: Optional[bool] = None,
+    login_endpoint: Optional[str] = None,
+    logout_endpoint: Optional[str] = None,
+    login_template: Optional[str] = None,
     logout_template: Optional[str] = None,
     session_history: Optional[int] = None,
+    liveness: bool | str = False,
     **kwargs
 ) -> Server:
     """
@@ -1038,15 +1108,31 @@ def get_server(
       The client secret for the OAuth provider
     oauth_redirect_uri: Optional[str] = None,
       Overrides the default OAuth redirect URI
+    oauth_jwt_user: Optional[str] = None,
+      Key that identifies the user in the JWT id_token.
     oauth_extra_params: dict (optional, default={})
       Additional information for the OAuth provider
     oauth_error_template: str (optional, default=None)
       Jinja2 template used when displaying authentication errors.
     cookie_secret: str (optional, default=None)
       A random secret string to sign cookies (required for OAuth)
-    oauth_encryption_key: str (optional, default=False)
+    oauth_encryption_key: str (optional, default=None)
       A random encryption key used for encrypting OAuth user
       information and access tokens.
+    oauth_guest_endpoints: list (optional, default=None)
+      List of endpoints that can be accessed as a guest without authenticating.
+    oauth_optional: bool (optional, default=None)
+      Whether the user will be forced to go through login flow or if
+      they can access all applications as a guest.
+    oauth_refresh_tokens: bool (optional, default=None)
+      Whether to automatically refresh OAuth access tokens when they expire.
+    login_endpoint: str (optional, default=None)
+      Overrides the default login endpoint `/login`
+    logout_endpoint: str (optional, default=None)
+      Overrides the default logout endpoint `/logout`
+    logout_template: str (optional, default=None)
+      Jinja2 template served when viewing the login endpoint when
+      authentication is enabled.
     logout_template: str (optional, default=None)
       Jinja2 template served when viewing the logout endpoint when
       authentication is enabled.
@@ -1055,6 +1141,10 @@ def get_server(
       and non-None value will launch a REST endpoint at
       /rest/session_info, which returns information about the session
       history.
+    liveness: bool | str (optional, default=False)
+      Whether to add a liveness endpoint. If a string is provided
+      then this will be used as the endpoint, otherwise the endpoint
+      will be hosted at /liveness.
     kwargs: dict
       Additional keyword arguments to pass to Server instance.
 
@@ -1071,6 +1161,8 @@ def get_server(
     if isinstance(panel, dict):
         apps = {}
         for slug, app in panel.items():
+            if slug.endswith('/') and not slug == '/':
+                raise ValueError(f"Invalid URL: trailing slash '/' used for {slug!r} not supported.")
             if isinstance(title, dict):
                 try:
                     title_ = title[slug]
@@ -1095,7 +1187,7 @@ def get_server(
                     continue
             if isinstance(app, pathlib.Path):
                 app = str(app) # enables serving apps from Paths
-            if (isinstance(app, str) and (app.endswith(".py") or app.endswith(".ipynb") or app.endswith('.md'))
+            if (isinstance(app, str) and app.endswith(('.py', '.ipynb', '.md'))
                 and os.path.isfile(app)):
                 apps[slug] = app = build_single_handler_application(app)
                 app._admin = admin
@@ -1107,7 +1199,7 @@ def get_server(
     else:
         if isinstance(panel, pathlib.Path):
             panel = str(panel) # enables serving apps from Paths
-        if (isinstance(panel, str) and (panel.endswith(".py") or panel.endswith(".ipynb") or panel.endswith('.md'))
+        if (isinstance(panel, str) and panel.endswith(('.py', '.ipynb', '.md'))
             and os.path.isfile(panel)):
             apps = {'/': build_single_handler_application(panel)}
         else:
@@ -1133,6 +1225,10 @@ def get_server(
         extra_patterns.extend(pattern)
         state.publish('session_info', state, ['session_info'])
 
+    if liveness:
+        liveness_endpoint = 'liveness' if isinstance(liveness, bool) else liveness
+        extra_patterns += [(r"/%s" % liveness_endpoint, LivenessHandler, dict(applications=apps))]
+
     opts = dict(kwargs)
     if loop:
         asyncio.set_event_loop(loop.asyncio_loop)
@@ -1154,20 +1250,21 @@ def get_server(
     # Configure OAuth
     from ..config import config
     server_config = {}
-    if basic_auth:
-        from ..auth import BasicProvider
-        server_config['basic_auth'] = basic_auth
-        basic_login_template = kwargs.pop('basic_login_template', None)
-        opts['auth_provider'] = BasicProvider(
-            basic_login_template,
-            logout_template=logout_template
-        )
-    elif oauth_provider:
-        from ..auth import OAuthProvider
-        config.oauth_provider = oauth_provider # type: ignore
-        opts['auth_provider'] = OAuthProvider(
-            error_template=oauth_error_template,
-            logout_template=logout_template
+    login_template = kwargs.pop('basic_login_template', login_template)
+    if basic_auth or oauth_provider:
+        from ..auth import BasicAuthProvider, OAuthProvider
+        if basic_auth:
+            server_config['basic_auth'] = basic_auth
+            provider = BasicAuthProvider
+        else:
+            config.oauth_provider = oauth_provider
+            provider = OAuthProvider
+        opts['auth_provider'] = provider(
+            login_endpoint=login_endpoint,
+            logout_endpoint=logout_endpoint,
+            login_template=login_template,
+            logout_template=logout_template,
+            error_template=oauth_error_template
         )
     if oauth_key:
         config.oauth_key = oauth_key # type: ignore
@@ -1179,20 +1276,29 @@ def get_server(
         config.cookie_secret = cookie_secret # type: ignore
     if oauth_redirect_uri:
         config.oauth_redirect_uri = oauth_redirect_uri # type: ignore
+    if oauth_refresh_tokens is not None:
+        config.oauth_refresh_tokens = oauth_refresh_tokens
+    if oauth_optional is not None:
+        config.oauth_optional = oauth_optional
+    if oauth_guest_endpoints is not None:
+        config.oauth_guest_endpoints = oauth_guest_endpoints
+    if oauth_jwt_user is not None:
+        config.oauth_jwt_user = oauth_jwt_user
     opts['cookie_secret'] = config.cookie_secret
 
     server = Server(apps, port=port, **opts)
     if verbose:
         address = server.address or 'localhost'
         url = f"http://{address}:{server.port}{server.prefix}"
-        print(f"Launching server at {url}")
+        print(f"Launching server at {url}")  # noqa: T201
 
     state._servers[server_id] = (server, panel, [])
     state._server_config[server._tornado] = server_config
 
     if show:
+        login_endpoint = login_endpoint or '/login'
         def show_callback():
-            server.show('/login' if config.oauth_provider else '/')
+            server.show(login_endpoint if config.oauth_provider or basic_auth else '/')
         server.io_loop.add_callback(show_callback)
 
     def sig_exit(*args, **kwargs):

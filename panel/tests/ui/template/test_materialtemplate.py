@@ -1,47 +1,36 @@
-import time
-
 import pytest
 
-try:
-    from playwright.sync_api import expect
-    pytestmark = pytest.mark.ui
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
+pytest.importorskip("playwright")
 
-from panel.io.server import serve
+from playwright.sync_api import expect
+
 from panel.pane import Markdown
 from panel.template import MaterialTemplate
+from panel.tests.util import serve_component
+
+pytestmark = pytest.mark.ui
 
 
-def test_material_template_no_console_errors(page, port):
+def test_material_template_no_console_errors(page):
     tmpl = MaterialTemplate()
     md = Markdown('Initial')
 
     tmpl.main.append(md)
 
-    serve(tmpl, port=port, threaded=True, show=False)
+    msgs, _ = serve_component(page, tmpl)
 
-    time.sleep(0.2)
-
-    msgs = []
-    page.on("console", lambda msg: msgs.append(msg))
-
-    page.goto(f"http://localhost:{port}")
+    expect(page.locator(".markdown").locator("div")).to_have_text('Initial\n')
 
     assert [msg for msg in msgs if msg.type == 'error'] == []
 
 
-def test_material_template_updates(page, port):
+def test_material_template_updates(page):
     tmpl = MaterialTemplate()
     md = Markdown('Initial')
 
     tmpl.main.append(md)
 
-    serve(tmpl, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, tmpl)
 
     expect(page.locator(".markdown").locator("div")).to_have_text('Initial\n')
     md.object = 'Updated'

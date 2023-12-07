@@ -51,7 +51,7 @@ export class SingleSelectView extends InputWidgetView {
   render_selection(): void {
     const selected = this.model.value
 
-    for (const el of this.el.querySelectorAll('option'))
+    for (const el of this.input_el.querySelectorAll('option'))
       if (el.value === selected)
         el.selected = true
 

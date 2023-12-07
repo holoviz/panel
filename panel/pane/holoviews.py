@@ -17,7 +17,7 @@ import param
 from bokeh.models import Range1d, Spacer as _BkSpacer
 from bokeh.themes.theme import Theme
 from packaging.version import Version
-from param.depends import register_depends_transform
+from param.parameterized import register_reference_transform
 from param.reactive import bind
 
 from ..io import state, unlocked
@@ -309,8 +309,9 @@ class HoloViews(PaneBase):
             key = tuple(w.value for w in widgets)
             if plot.dynamic:
                 widget_dims = [w.name for w in widgets]
+                dim_labels = [kdim.pprint_label for kdim in plot.dimensions]
                 key = [key[widget_dims.index(kdim)] if kdim in widget_dims else None
-                       for kdim in plot.dimensions]
+                       for kdim in dim_labels]
                 key = wrap_tuple_streams(tuple(key), plot.dimensions, plot.streams)
 
         if plot.backend == 'bokeh':
@@ -648,7 +649,8 @@ class HoloViews(PaneBase):
                     options = list(vals)
                     widget_type = widget_type or Select
                 default = vals[0] if dim.default is None else dim.default
-                widget_kwargs = dict(dict(name=dim.label, options=options, value=default), **widget_kwargs)
+                widget_name = dim.pprint_label
+                widget_kwargs = dict(dict(name=widget_name, options=options, value=default), **widget_kwargs)
                 widget = widget_type(**widget_kwargs)
             elif dim.range != (None, None):
                 start, end = dim.range
@@ -678,9 +680,12 @@ class HoloViews(PaneBase):
 
 class Interactive(PaneBase):
 
-    priority: ClassVar[float | bool | None] = None
+    object = param.Parameter(default=None, allow_refs=False, doc="""
+        The object being wrapped, which will be converted to a
+        Bokeh model.""")
 
-    _ignored_refs: ClassVar[Tuple[str]] = ['object']
+    priority: ClassVar[float | bool | None] = None
+    _ignored_refs: ClassVar[Tuple[str, ...]] = ('object',)
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
@@ -916,4 +921,4 @@ def _hvplot_interactive_transform(obj):
         return obj
     return bind(lambda *_: obj.eval(), *obj._params)
 
-register_depends_transform(_hvplot_interactive_transform)
+register_reference_transform(_hvplot_interactive_transform)

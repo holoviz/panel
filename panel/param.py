@@ -24,10 +24,11 @@ from typing import (
 
 import param
 
-from param.depends import eval_function_with_deps
 from param.parameterized import (
-    classlist, discard_events, get_method_owner, iscoroutinefunction,
+    classlist, discard_events, eval_function_with_deps, get_method_owner,
+    iscoroutinefunction,
 )
+from param.reactive import rx
 
 from .config import config
 from .io import state
@@ -46,9 +47,9 @@ from .viewable import Layoutable, Viewable
 from .widgets import (
     ArrayInput, Button, Checkbox, ColorPicker, DataFrame, DatePicker,
     DateRangeSlider, DatetimeInput, DatetimeRangeSlider, DiscreteSlider,
-    FileSelector, FloatInput, FloatSlider, IntInput, IntSlider, LiteralInput,
-    MultiSelect, RangeSlider, Select, StaticText, Tabulator, TextInput, Toggle,
-    Widget,
+    FileInput, FileSelector, FloatInput, FloatSlider, IntInput, IntSlider,
+    LiteralInput, MultiSelect, RangeSlider, Select, StaticText, Tabulator,
+    TextInput, Toggle, Widget,
 )
 from .widgets.button import _ButtonBase
 
@@ -155,8 +156,12 @@ class Param(PaneBase):
     name = param.String(default='', doc="""
         Title of the pane.""")
 
+    object = param.Parameter(default=None, allow_refs=False, doc="""
+        The object being wrapped, which will be converted to a
+        Bokeh model.""")
+
     parameters = param.List(default=[], allow_None=True, doc="""
-        If set this serves as a whitelist of parameters to display on
+        If set this serves as a allowlist of parameters to display on
         the supplied Parameterized object.""")
 
     show_labels = param.Boolean(default=True, doc="""
@@ -182,6 +187,7 @@ class Param(PaneBase):
         param.Action:            Button,
         param.Array:             ArrayInput,
         param.Boolean:           Checkbox,
+        param.Bytes:             FileInput,
         param.CalendarDate:      DatePicker,
         param.Color:             ColorPicker,
         param.Date:              DatetimeInput,
@@ -207,9 +213,9 @@ class Param(PaneBase):
     if hasattr(param, 'Event'):
         mapping[param.Event] = Button
 
-    _ignored_refs: ClassVar[Tuple[str]] = ('object',)
+    _ignored_refs: ClassVar[Tuple[str,...]] = ('object',)
 
-    _linkable_properties: ClassVar[Tuple[str]] = ()
+    _linkable_properties: ClassVar[Tuple[str,...]] = ()
 
     _rerender_params: ClassVar[List[str]] = []
 
@@ -268,7 +274,7 @@ class Param(PaneBase):
             if v == self.param[p].default: continue
             elif v is None: continue
             elif isinstance(v, str) and v == '': continue
-            elif p == 'object' or (p == 'name' and (v.startswith(obj_cls) or v.startswith(cls))): continue
+            elif p == 'object' or (p == 'name' and v.startswith((obj_cls, cls))): continue
             elif p == 'parameters' and v == parameters: continue
             try:
                 params.append('%s=%s' % (p, abbreviated_repr(v)))
@@ -936,7 +942,10 @@ class ParamMethod(ReplacementPane):
         if not self._evaled:
             deferred = self.defer_load and not state.loaded
             if deferred:
-                state.onload(partial(self._replace_pane, force=True))
+                state.onload(
+                    partial(self._replace_pane, force=True),
+                    threaded=bool(state._thread_pool)
+                )
             self._replace_pane(force=not deferred)
         return super()._get_model(doc, root, parent, comm)
 
@@ -1019,12 +1028,16 @@ class ParamFunction(ParamMethod):
 
 class ReactiveExpr(PaneBase):
     """
-    ReactiveExpr generates a UI for param.reactive objects
-    by rendering the widgets and outputs.
+    ReactiveExpr generates a UI for param.rx objects by rendering the
+    widgets and outputs.
     """
 
     center = param.Boolean(default=False, doc="""
         Whether to center the output.""")
+
+    object = param.Parameter(default=None, allow_refs=False, doc="""
+        The object being wrapped, which will be converted to a
+        Bokeh model.""")
 
     show_widgets = param.Boolean(default=True, doc="""
         Whether to display the widget inputs.""")
@@ -1033,7 +1046,7 @@ class ReactiveExpr(PaneBase):
         objects=[WidgetBox, Row, Column], constant=True, default=WidgetBox, doc="""
         The layout object to display the widgets in.""")
 
-    widget_location = param.Selector(default='left', objects=[
+    widget_location = param.Selector(default='left_top', objects=[
         'left', 'right', 'top', 'bottom', 'top_left',
         'top_right', 'bottom_left', 'bottom_right',
         'left_top', 'right_top', 'right_bottom'], doc="""
@@ -1041,9 +1054,6 @@ class ReactiveExpr(PaneBase):
         of the reactive expression.""")
 
     priority: ClassVar[float | bool | None] = 1
-
-    # Parameter values which should not be treated like references
-    _ignored_refs: ClassVar[List[str]] = ['object']
 
     _layouts = {
         'left': (Row, ('start', 'center'), True),
@@ -1074,8 +1084,8 @@ class ReactiveExpr(PaneBase):
             self.layout[:] = [self._generate_layout()]
 
     @classmethod
-    def applies(self, object):
-        return isinstance(object, param.reactive)
+    def applies(cls, object):
+        return isinstance(object, param.rx)
 
     @classmethod
     def _find_widgets(cls, op):
@@ -1114,7 +1124,7 @@ class ReactiveExpr(PaneBase):
                 nested_op = {"args": op_arg, "kwargs": {}}
             elif isinstance(op_arg, dict):
                 nested_op = {"args": (), "kwargs": op_arg}
-            elif isinstance(op_arg, param.reactive):
+            elif isinstance(op_arg, param.rx):
                 nested_op = {"args": op_arg._params, "kwargs": {}}
             else:
                 continue
@@ -1292,10 +1302,10 @@ def _plot_handler(reactive):
     return plot
 
 
-param.reactive.register_display_handler(is_dataframe, handler=DataFramePane, max_rows=100)
-param.reactive.register_display_handler(is_series, handler=DataFramePane, max_rows=100)
-param.reactive.register_display_handler(is_mpl_axes, handler=lambda ax: ax.get_figure())
-param.reactive.register_method_handler('plot', _plot_handler)
+rx.register_display_handler(is_dataframe, handler=DataFramePane, max_rows=100)
+rx.register_display_handler(is_series, handler=DataFramePane, max_rows=100)
+rx.register_display_handler(is_mpl_axes, handler=lambda ax: ax.get_figure())
+rx.register_method_handler('plot', _plot_handler)
 
 
 __all__= (

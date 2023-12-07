@@ -1,7 +1,7 @@
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {div} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
-import {Attrs} from "@bokehjs/core/types"
+import type {Attrs} from "@bokehjs/core/types"
 
 import {serializeEvent} from "./event-to-object"
 import {HTMLBox, HTMLBoxView} from "./layout"
@@ -46,7 +46,10 @@ export class EChartsView extends HTMLBoxView {
     this.connect(this.model.properties.data.change, () => this._plot())
     const {width, height, renderer, theme, event_config, js_events} = this.model.properties
     this.on_change([width, height], () => this._resize())
-    this.on_change([theme, renderer], () => this.render())
+    this.on_change([theme, renderer], () => {
+        this.render()
+        this._chart.resize()
+    })
     this.on_change([event_config, js_events], () => this._subscribe())
   }
 

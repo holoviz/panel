@@ -13,6 +13,7 @@ from ..layout import (
 from ..pane.base import PaneBase, panel as _panel
 from ..pane.image import Image
 from ..pane.markup import Markdown
+from ..util.warnings import deprecated
 from ..viewable import Layoutable, Viewable
 from .base import CompositeWidget
 from .button import Button, Toggle
@@ -71,6 +72,7 @@ class ChatRow(CompositeWidget):
         styles: Dict[str, str] = None,
         **params,
     ):
+        deprecated("1.4", "pn.widgets.ChatRow", "pn.widgets.ChatMessage")
         bubble_styles = {
             "overflow-x": "auto",
             "overflow-y": "auto",
@@ -261,6 +263,7 @@ class ChatBox(CompositeWidget):
     _composite_type: ClassVar[Type[ListPanel]] = Column
 
     def __init__(self, **params):
+        deprecated("1.4", "pn.widgets.ChatBox", "pn.chat.ChatInterface")
         # set up parameters
         if params.get("width") and params.get("height") and "sizing_mode" not in params:
             params["sizing_mode"] = None

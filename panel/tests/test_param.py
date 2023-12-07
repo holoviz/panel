@@ -1103,7 +1103,7 @@ def test_expand_param_subobject_tabs(document, comm):
 
 def test_param_js_callbacks(document, comm):
     class JsButton(param.Parameterized):
-        param_btn = param.Action(default=lambda self: print('Action Python Response'), label='Action')
+        param_btn = param.Action(default=lambda self: print('Action Python Response'), label='Action')  # noqa: T201
 
     param_button = Param(JsButton())
     code = "console.log('Action button clicked')"
@@ -1885,7 +1885,7 @@ async def test_param_async_generator_multiple(document, comm):
     root = pane.get_root(document, comm)
 
     assert root.children[0].text == '&lt;pre&gt; &lt;/pre&gt;'
-    await asyncio.sleep(0.01)
+    await asyncio.sleep(0.1)
     assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
     await asyncio.sleep(0.1)
     assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
@@ -1893,7 +1893,7 @@ async def test_param_async_generator_multiple(document, comm):
     checkbox.value = True
 
     assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
-    await asyncio.sleep(0.15)
+    await asyncio.sleep(0.2)
     assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
 
 

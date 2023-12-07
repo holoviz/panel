@@ -63,6 +63,16 @@ git clone https://github.com/holoviz/panel.git
 
 The instructions for cloning above created a ``panel`` directory at your file system location. This ``panel`` directory is referred to as the *source checkout* for the remainder of this document. For the remainder of this document we will assume your current working directory is the *source checkout* directory.
 
+### Fetch tags from upstream
+
+Make sure to fetch tags from upstream repository before installing
+
+```bash
+git remote add upstream https://github.com/holoviz/panel.git
+git fetch --tags upstream
+git push --tags
+```
+
 ### Basic Install with pip
 
 We recommend this install to first time contributors that
@@ -111,7 +121,7 @@ Once pyctdev is available and you are in the cloned panel repository you can set
 doit env_create -c pyviz/label/dev -c conda-forge --name=panel_dev --python=3.9
 ```
 
-Specify the desired Python version, currently Panel officially supports Python 3.7, 3.8, 3.9 and 3.10. Once the environment has been created you can activate it with:
+Specify the desired Python version, currently Panel officially supports Python 3.8 or later. Once the environment has been created you can activate it with:
 
 ```bash
 conda activate panel_dev
@@ -186,7 +196,11 @@ Panel bundles external resources required for custom models and templates into t
 
 #### Next Steps
 
-You will likely want to check out the [Testing Guide](testing.md).
+You will likely want to check out the
+
+- [Extensions Guide](extensions.md)
+- [Testing Guide](testing.md).
+- [WASM Guide](wasm.md)
 
 ## Useful Links
 
@@ -202,6 +216,8 @@ You will likely want to check out the [Testing Guide](testing.md).
 :hidden:
 :maxdepth: 2
 
+extensions
 testing
+wasm
 Developing custom models <Developing_Custom_Models>
 ```

@@ -171,10 +171,6 @@ img.app-logo {
   border: none;
 }
 
-.sidenav fast-menu {
-  width: 100%;
-}
-
 .sidenav fast-menu a {
   padding: 8px 8px 8px 32px;
   text-decoration: none;
@@ -192,6 +188,7 @@ img.app-logo {
 .sidenav fast-menu {
   background-color: var(--background-color);
   box-shadow: none;
+  width: 100%;
 }
 
 .sidenav .closebtn {

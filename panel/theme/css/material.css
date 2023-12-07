@@ -224,10 +224,6 @@ button.mdc-button.mdc-card-button {
   color: var(--design-secondary-text-color, var(--panel-on-secondary-color));
 }
 
-.bk-input-group {
-  margin-top: 0.5rem;
-}
-
 .bk-input:not([type='file']) {
   border-radius: 4px;
   height: 1.4375em;
@@ -253,6 +249,13 @@ textarea.bk-input:not([type='file']) {
 .bk-input:focus {
   border: 1px solid var(--mdc-theme-primary);
   box-shadow: unset;
+}
+
+.bk-input-group:has(> select),
+.bk-input-group:has(> .bk-input-container),
+.bk-input-group:has(> .bk-spin-wrapper),
+.bk-input-group:has(> textarea) {
+  padding-top: 0.5em;
 }
 
 .bk-input-group > label:has(+ select),
@@ -371,7 +374,8 @@ select[multiple].bk-input option:checked {
 
 /* Button widgets */
 
-.bk-btn-group > button {
+.bk-btn-group > button,
+.bk-input-group > button {
   background-position: center;
   font-weight: 500;
   font-size: medium;

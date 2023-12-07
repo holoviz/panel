@@ -164,12 +164,27 @@ def function_with_args(a, b):
     OFFSET[(a, b)] = offset + 1
     return result
 
+async def async_function_with_args(a, b):
+    global OFFSET
+    offset = OFFSET.get((a, b), 0)
+    result = a + b + offset
+    OFFSET[(a, b)] = offset + 1
+    return result
+
 def test_cache_with_args():
     global OFFSET
     OFFSET.clear()
     fn = cache(function_with_args)
     assert fn(0, 0) == 0
     assert fn(0, 0) == 0
+
+@pytest.mark.asyncio
+async def test_async_cache_with_args():
+    global OFFSET
+    OFFSET.clear()
+    fn = cache(async_function_with_args)
+    assert (await fn(0, 0)) == 0
+    assert (await fn(0, 0)) == 0
 
 def test_cache_with_kwargs():
     global OFFSET
@@ -185,6 +200,13 @@ def test_cache_clear():
     assert fn(0, 0) == 0
     fn.clear()
     assert fn(0, 0) == 1
+
+def test_cache_clear_before_cached():
+    # https://github.com/holoviz/panel/issues/5968
+    global OFFSET
+    OFFSET.clear()
+    fn = cache(function_with_args)
+    fn.clear()
 
 def test_per_session_cache(document):
     global OFFSET

@@ -98,13 +98,16 @@ class FloatPanel(ListLike, ReactiveHTML):
           onbeforeclose: function() {
            data.status = 'closed'
            return true
-          }
+          },
         }
         if (data.contained) {
           config.container = view.container
         }
         config = {...config, ...data.config}
         state.panel = jsPanel.create(config);
+        if (data.status !== 'normalized') {
+           view.run_script('status')
+        }
         """,
         "name": "state.panel.setHeaderTitle(data.name)",
         "status": """

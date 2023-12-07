@@ -179,6 +179,7 @@ img.app-logo {
 }
 
 .mdc-drawer__content {
+  display: flex;
   overflow-x: hidden;
 }
 
@@ -216,6 +217,11 @@ img.app-logo {
   color: #000;
   text-decoration: none;
   cursor: pointer;
+}
+
+.mdc-top-app-bar__row {
+  height: unset;
+  min-height: 64px;
 }
 
 .tabulator-popup-container {

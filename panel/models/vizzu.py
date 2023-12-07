@@ -23,7 +23,7 @@ class VizzuEvent(ModelEvent):
 
 class VizzuChart(LayoutDOM):
     """
-    A Bokeh model that wraps around an Vizzu chart and renders it
+    A Bokeh model that wraps around a Vizzu chart and renders it
     inside a Bokeh.
     """
 
@@ -48,8 +48,6 @@ class VizzuChart(LayoutDOM):
     source = Instance(DataSource, help="""
     Local data source to use when rendering glyphs on the plot.
     """)
-
-    config = Dict(String, Any)
 
     duration = Int(500)
 

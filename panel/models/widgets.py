@@ -8,7 +8,11 @@ from bokeh.core.properties import (
 )
 from bokeh.models.ui import Tooltip
 from bokeh.models.ui.icons import Icon
-from bokeh.models.widgets import InputWidget, Select, Widget
+from bokeh.models.widgets import (
+    Button as bkButton, CheckboxButtonGroup as bkCheckboxButtonGroup,
+    InputWidget, RadioButtonGroup as bkRadioButtonGroup, Select,
+    TextAreaInput as BkTextAreaInput, Widget,
+)
 
 from .layout import HTMLBox
 
@@ -195,3 +199,57 @@ class TooltipIcon(Widget):
         default=Tooltip(content="Help text", position="right"),
         help="""The tooltip held by the icon"""
     )
+
+
+class TextAreaInput(BkTextAreaInput):
+
+    auto_grow = Bool(
+        default=False,
+        help="""
+        Whether the text area should automatically grow vertically to
+        accommodate the current text."""
+    )
+
+    max_rows = Nullable(Int(), help="""
+        Maximum number of rows the input area can grow to if auto_grow
+        is enabled."""
+    )
+
+
+class Button(bkButton):
+
+    tooltip = Nullable(Instance(Tooltip), help="""
+    A tooltip with plain text or rich HTML contents, providing general help or
+    description of a widget's or component's function.
+    """)
+
+    tooltip_delay = Int(500, help="""
+    Delay (in milliseconds) to display the tooltip after the cursor has
+    hovered over the Button, default is 500ms.
+    """)
+
+
+class CheckboxButtonGroup(bkCheckboxButtonGroup):
+
+    tooltip = Nullable(Instance(Tooltip), help="""
+    A tooltip with plain text or rich HTML contents, providing general help or
+    description of a widget's or component's function.
+    """)
+
+    tooltip_delay = Int(500, help="""
+    Delay (in milliseconds) to display the tooltip after the cursor has
+    hovered over the Button, default is 500ms.
+    """)
+
+
+class RadioButtonGroup(bkRadioButtonGroup):
+
+    tooltip = Nullable(Instance(Tooltip), help="""
+    A tooltip with plain text or rich HTML contents, providing general help or
+    description of a widget's or component's function.
+    """)
+
+    tooltip_delay = Int(500, help="""
+    Delay (in milliseconds) to display the tooltip after the cursor has
+    hovered over the Button, default is 500ms.
+    """)

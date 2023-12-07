@@ -6,7 +6,8 @@ import {ColorMapper} from "@bokehjs/models/mappers/color_mapper"
 import {Enum} from "@bokehjs/core/kinds"
 
 import {HTMLBox, HTMLBoxView, set_size} from "../layout"
-import {vtkns, setup_vtkns, VolumeType, majorAxis, applyStyle, CSSProperties, Annotation} from "./util"
+import type {VolumeType, CSSProperties, Annotation} from "./util"
+import {vtkns, setup_vtkns, majorAxis, applyStyle} from "./util"
 import {VTKColorBar} from "./vtkcolorbar"
 import {VTKAxes} from "./vtkaxes"
 
@@ -38,20 +39,23 @@ export abstract class AbstractVTKView extends HTMLBoxView {
   protected _vtk_renwin: any
   protected _widgetManager: any
   protected _annotations_container: HTMLDivElement
+  protected _rendered: boolean
 
   initialize(): void {
     super.initialize()
     this._camera_callbacks = []
     this._renderable = true
     this._setting_camera = false
+    this._rendered = false
   }
 
   _add_colorbars(): void {
     //construct colorbars
-    const old_info_div = this.el.querySelector(".vtk_info")
+    const old_info_div = this.shadow_el.querySelector(".vtk_info")
     if (old_info_div)
-      this.el.removeChild(old_info_div)
-    if (this.model.color_mappers.length < 1) return
+      this.shadow_el.removeChild(old_info_div)
+    if (this.model.color_mappers.length < 1)
+      return
 
     const info_div = document.createElement("div")
     const expand_width = "350px"
@@ -74,7 +78,7 @@ export abstract class AbstractVTKView extends HTMLBoxView {
     dots.innerText = "..."
 
     info_div.addEventListener('click', () => {
-      if(info_div.style.width === collapsed_width){
+      if (info_div.style.width === collapsed_width) {
         info_div.removeChild(dots)
         applyStyle(info_div, {height: "auto", width: expand_width})
         colorbars.forEach((cb) => info_div.appendChild(cb.canvas))
@@ -190,28 +194,28 @@ export abstract class AbstractVTKView extends HTMLBoxView {
 
   render(): void {
     super.render()
-    if (!this._vtk_renwin || !this._vtk_container){
-      this._orientationWidget = null
-      this._axes = null
-      this._vtk_container = div()
-      this.init_vtk_renwin()
-      this._init_annotations_container()
-      set_size(this._vtk_container, this.model)
-      this.shadow_el.appendChild(this._vtk_container)
-      // update camera model state only at the end of the interaction
-      // with the scene (avoid bouncing events and large amount of events)
-      this._vtk_renwin.getInteractor().onEndAnimation(() => this._get_camera_state())
-      this._remove_default_key_binding()
-      this._bind_key_events()
-      this.plot()
-      this._add_colorbars()
-      this._add_annotations()
-      this.model.renderer_el = this._vtk_renwin
-    } else {
+    this._rendered = false
+    if (this._vtk_renwin && this._vtk_container) {
       // warning if _vtk_renwin contain controllers or other elements
       // we must attach them to the new el
       this.shadow_el.appendChild(this._vtk_container)
+      this.shadow_el.appendChild(this._annotations_container)
+      return
     }
+    this._orientationWidget = null
+    this._axes = null
+    this._vtk_container = div()
+    this.init_vtk_renwin()
+    this._init_annotations_container()
+    set_size(this._vtk_container, this.model)
+    this.shadow_el.appendChild(this._vtk_container)
+    // update camera model state only at the end of the interaction
+    // with the scene (avoid bouncing events and large amount of events)
+    this._vtk_renwin.getInteractor().onEndAnimation(() => this._get_camera_state())
+    this._remove_default_key_binding()
+    this._bind_key_events()
+    this.plot()
+    this.model.renderer_el = this._vtk_renwin
     this.shadow_el.appendChild(this._annotations_container)
   }
 
@@ -220,6 +224,11 @@ export abstract class AbstractVTKView extends HTMLBoxView {
     if (this._renderable)
       this._vtk_renwin.resize() // resize call render method
     this._vtk_render()
+    if (!this._rendered) {
+      this._add_colorbars()
+      this._add_annotations()
+      this._rendered = true
+    }
   }
 
   invalidate_render(): void {

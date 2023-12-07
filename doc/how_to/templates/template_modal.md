@@ -64,7 +64,7 @@ Now we can activate this app on the command line. When we click the button in th
 panel serve app.py --show --autoreload
 ```
 
-<img src="../../_static/template_arrange_modal.png" alt="example panel app with an active modal">
+<img src="../../_static/images/template_arrange_modal.png" alt="example panel app with an active modal">
 
 ## Related Resources
 

@@ -4,8 +4,10 @@ import numpy as np
 import pytest
 
 from panel.pane import panel
+from panel.tests.util import mpl_available
 from panel.widgets import (
-    CrossSelector, MultiChoice, MultiSelect, Select, ToggleGroup,
+    ColorMap, CrossSelector, DiscreteSlider, MultiChoice, MultiSelect,
+    NestedSelect, Select, ToggleGroup,
 )
 
 
@@ -215,6 +217,398 @@ def test_select_change_options_on_watch(document, comm):
     select.value = 1
     assert model.value == str(list(select.options.values())[0])
     assert model.options == [(str(v),k) for k,v in select.options.items()]
+
+
+def test_nested_select_defaults(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    select = NestedSelect(options=options)
+    assert select.value == {2: 1000, 0: 'Andrew', 1: 'temp'}
+    assert select.options == options
+    assert select.levels == []
+    assert select._max_depth == 3
+
+
+def test_nested_select_init_value(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    value = {2: 1000, 0: 'Andrew', 1: 'temp'}
+    select = NestedSelect(options=options, value=value)
+    assert select.value == value
+    assert select.options == options
+    assert select.levels == []
+
+
+def test_nested_select_init_empty(document, comm):
+    #with pytest.raises(Exception):
+    select = NestedSelect()
+    assert select.value is None
+    assert select.options is None
+    assert select.levels == []
+
+
+def test_nested_select_init_levels(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    levels = ["Name", "Var", "Level"]
+    select = NestedSelect(options=options, levels=levels)
+    assert select.value == {'Level': 1000, 'Name': 'Andrew', 'Var': 'temp'}
+    assert select.options == options
+    assert select.levels == levels
+
+
+def test_nested_select_update_options(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    levels = ["Name", "Var", "Level"]
+    value = {'Level': 1000, 'Name': 'Andrew', 'Var': 'temp'}
+    select = NestedSelect(options=options, levels=levels, value=value)
+    options = {
+        "August": {
+            "temp": [500, 300],
+        }
+    }
+    select.options = options
+    assert select.options == options
+    assert select.value == {'Level': 500, 'Name': 'August', 'Var': 'temp'}
+    assert select.levels == levels
+
+
+def test_nested_select_update_value(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    levels = ["Name", "Var", "Level"]
+    value = {'Name': 'Ben', 'Var': 'temp', 'Level': 300}
+    select = NestedSelect(options=options, levels=levels, value=value)
+    value = {'Name': 'Ben', 'Var': 'windspeed', 'Level': 700}
+    select.value = value
+    assert select.options == options
+    assert select.value == value
+    assert select.levels == levels
+
+
+def test_nested_select_update_value_invalid(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    levels = ["Name", "Var", "Level"]
+    value = {'Name': 'Ben', 'Var': 'temp', 'Level': 300}
+    select = NestedSelect(options=options, levels=levels, value=value)
+    value = {'Name': 'Ben', 'Var': 'windspeed', 'Level': 123456}
+    with pytest.raises(ValueError, match="Failed to set value"):
+        select.value = value
+
+
+def test_nested_select_update_levels(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    value = {'Name': 'Ben', 'Var': 'temp', 'Level': 300}
+    select = NestedSelect(options=options, levels=["Name", "Var", "Level"], value=value)
+    levels = ["user", "wx_var", "lev"]
+    select.levels = levels
+    assert select.options == options
+    assert select.value == {'user': 'Ben', 'wx_var': 'temp', 'lev': 300}
+    assert select.levels == levels
+
+
+def test_nested_select_update_levels_invalid(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    value = {'Name': 'Ben', 'Var': 'temp', 'Level': 300}
+    select = NestedSelect(options=options, levels=["Name", "Var", "Level"], value=value)
+    levels = ["user", "wx_var", "lev", "abc"]
+    with pytest.raises(ValueError, match="must be of length 3"):
+        select.levels = levels
+
+def test_nested_select_update_all(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    value = {'Name': 'Ben', 'Var': 'temp', 'Level': 300}
+    select = NestedSelect(options=options, levels=["Name", "Var", "Level"], value=value)
+    new_levels = ["N", "V", "L"]
+    new_options = {
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [1000],
+        }
+    }
+    new_value = {'N': 'Ben', 'V': 'windspeed', 'L': 1000}
+    select.param.update(
+        options=new_options,
+        levels=new_levels,
+        value=new_value
+    )
+    assert select.options == new_options
+    assert select.value == new_value
+    assert select.levels == new_levels
+
+
+def test_nested_select_disabled(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+    }
+    select = NestedSelect(options=options, levels=["Name", "Var", "Level"])
+    select.disabled = True
+    assert select._widgets[0].disabled
+
+    select.disabled = False
+    assert not select._widgets[0].disabled
+
+
+def test_nested_select_partial_options_init(document, comm):
+    options = {
+        "Ben": {},
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+    }
+    levels = ["Name", "Var", "Level"]
+    select = NestedSelect(
+        options=options,
+        levels=levels,
+    )
+    assert select._widgets[0].value == 'Ben'
+    assert select._widgets[1].value is None
+    assert select._widgets[2].value is None
+    assert select._widgets[0].visible
+    assert not select._widgets[1].visible
+    assert not select._widgets[2].visible
+    assert select.value == {'Name': 'Ben', 'Var': None, 'Level': None}
+
+
+def test_nested_select_partial_options_set(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+    }
+    select = NestedSelect(options=options)
+    select.options = {"Ben": {}}
+    assert select._widgets[0].value == 'Ben'
+    assert select._widgets[0].visible
+    assert select.value == {0: 'Ben'}
+
+
+def test_nested_select_partial_value_init(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    levels = ["Name", "Var", "Level"]
+    select = NestedSelect(
+        options=options,
+        levels=levels,
+        value={'Name': 'Ben'}
+    )
+    assert select._widgets[0].value == 'Ben'
+    assert select._widgets[1].value == "temp"
+    assert select._widgets[2].value == 500
+    assert select._widgets[0].visible
+    assert select._widgets[1].visible
+    assert select._widgets[2].visible
+    assert select.value == {'Name': 'Ben', 'Var': 'temp', 'Level': 500}
+
+
+def test_nested_select_partial_value_set(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    levels = ["Name", "Var", "Level"]
+    select = NestedSelect(
+        options=options,
+        levels=levels,
+    )
+    select.value = {'Name': 'Ben'}
+    assert select.value == {'Name': 'Ben', 'Var': 'temp', 'Level': 500}
+
+
+def test_nested_select_custom_widgets(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    select = NestedSelect(
+        options=options,
+        levels=[
+            {"name": "Name", "type": Select, "width": 250},
+            {"name": "Variable", "type": Select},
+            {"name": "lvl", "type": DiscreteSlider},
+        ],
+    )
+    widget_0 = select._widgets[0]
+    widget_1 = select._widgets[1]
+    widget_2 = select._widgets[2]
+    assert isinstance(widget_0, Select)
+    assert isinstance(widget_1, Select)
+    assert isinstance(widget_2, DiscreteSlider)
+    assert widget_0.width == 250
+    assert widget_0.name == "Name"
+    assert widget_1.name == "Variable"
+    assert widget_2.name == "lvl"
+    assert widget_0.options == ["Andrew", "Ben"]
+    assert widget_1.options == ["temp", "vorticity"]
+    assert widget_2.options == [1000, 925, 700, 500, 300]
+
+
+def test_nested_select_callable_top_level(document, comm):
+    def list_options(level, value):
+        if level == "time_step":
+            options = {"Daily": list_options, "Monthly": list_options}
+        elif level == "level_type":
+            options = {f"{value['time_step']}_upper": list_options, f"{value['time_step']}_lower": list_options}
+        else:
+            options = [f"{value['level_type']}.json", f"{value['level_type']}.csv"]
+
+        return options
+
+    select = NestedSelect(
+        options=list_options,
+        levels=["time_step", "level_type", "file"],
+    )
+    assert select._widgets[0].options == ["Daily", "Monthly"]
+    assert select._widgets[1].options == ["Daily_upper", "Daily_lower"]
+    assert select._widgets[2].options == ["Daily_upper.json", "Daily_upper.csv"]
+    assert select.value == {"time_step": "Daily", "level_type": "Daily_upper", "file": "Daily_upper.json"}
+    assert select._max_depth == 3
+
+    select.value = {"time_step": "Monthly"}
+    assert select._widgets[0].options == ["Daily", "Monthly"]
+    assert select._widgets[1].options == ["Monthly_upper", "Monthly_lower"]
+    assert select._widgets[2].options == ["Monthly_upper.json", "Monthly_upper.csv"]
+    assert select.value == {"time_step": "Monthly", "level_type": "Monthly_upper", "file": "Monthly_upper.json"}
+    assert select._max_depth == 3
+
+
+def test_nested_select_callable_mid_level(document, comm):
+    def list_options(level, value):
+        if level == "level_type":
+            options = {f"{value['time_step']}_upper": list_options, f"{value['time_step']}_lower": list_options}
+        else:
+            options = [f"{value['level_type']}.json", f"{value['level_type']}.csv"]
+
+        return options
+
+    select = NestedSelect(
+        options={"Daily": list_options, "Monthly": list_options},
+        levels=["time_step", "level_type", "file"],
+    )
+    assert select._widgets[0].options == ["Daily", "Monthly"]
+    assert select._widgets[1].options == ["Daily_upper", "Daily_lower"]
+    assert select._widgets[2].options == ["Daily_upper.json", "Daily_upper.csv"]
+    assert select.value == {"time_step": "Daily", "level_type": "Daily_upper", "file": "Daily_upper.json"}
+    assert select._max_depth == 3
+
+    select.value = {"time_step": "Monthly"}
+    assert select._widgets[0].options == ["Daily", "Monthly"]
+    assert select._widgets[1].options == ["Monthly_upper", "Monthly_lower"]
+    assert select._widgets[2].options == ["Monthly_upper.json", "Monthly_upper.csv"]
+    assert select.value == {"time_step": "Monthly", "level_type": "Monthly_upper", "file": "Monthly_upper.json"}
+    assert select._max_depth == 3
+
+
+def test_nested_select_callable_must_have_levels(document, comm):
+    def list_options(level, value):
+        pass
+
+    with pytest.raises(ValueError, match="levels must be specified"):
+        NestedSelect(
+            options={"Daily": list_options, "Monthly": list_options},
+        )
 
 
 @pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
@@ -510,3 +904,62 @@ def test_cross_select_move_unselected_to_selected_not_definition_order():
 
     assert cross_select.value == ['A', 1, 'B', 3]
     assert cross_select._lists[True].options == ['A', '1', 'B', '3']
+
+def test_colormap_set_value_name(document, comm):
+    color_map = ColorMap(options={'A': ['#ff0', '#0ff'], 'B': ['#00f', '#f00']}, value=['#00f', '#f00'])
+
+    model = color_map.get_root(document, comm=comm)
+
+    assert model.value == 'B'
+    assert color_map.value_name == 'B'
+
+    color_map.value = ['#ff0', '#0ff']
+
+    assert model.value == 'A'
+    assert color_map.value_name == 'A'
+
+def test_colormap_set_value(document, comm):
+    color_map = ColorMap(options={'A': ['#ff0', '#0ff'], 'B': ['#00f', '#f00']}, value_name='B')
+
+    model = color_map.get_root(document, comm=comm)
+
+    assert model.value == 'B'
+    assert color_map.value == ['#00f', '#f00']
+
+    color_map.value_name = 'A'
+
+    assert model.value == 'A'
+    assert color_map.value == ['#ff0', '#0ff']
+
+@mpl_available
+def test_colormap_mpl_cmap(document, comm):
+    from matplotlib.cm import Set1, tab10
+    color_map = ColorMap(options={'tab10': tab10, 'Set1': Set1}, value_name='Set1')
+
+    model = color_map.get_root(document, comm=comm)
+
+    assert model.items == [
+        ('tab10', [
+            'rgba(31, 119, 180, 1)',
+            'rgba(255, 127, 14, 1)',
+            'rgba(44, 160, 44, 1)',
+            'rgba(214, 39, 40, 1)',
+            'rgba(148, 103, 189, 1)',
+            'rgba(140, 86, 75, 1)',
+            'rgba(227, 119, 194, 1)',
+            'rgba(127, 127, 127, 1)',
+            'rgba(188, 189, 34, 1)',
+            'rgba(23, 190, 207, 1)'
+        ]),
+        ('Set1', [
+            'rgba(228, 26, 28, 1)',
+            'rgba(55, 126, 184, 1)',
+            'rgba(77, 175, 74, 1)',
+            'rgba(152, 78, 163, 1)',
+            'rgba(255, 127, 0, 1)',
+            'rgba(255, 255, 51, 1)',
+            'rgba(166, 86, 40, 1)',
+            'rgba(247, 129, 191, 1)',
+            'rgba(153, 153, 153, 1)'
+        ])
+    ]

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import json
 import os
-import shutil
 import sys
 
 from setuptools import find_packages, setup
@@ -101,9 +100,9 @@ except Exception:
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=3.1.1,<3.3.0',
-    'param >=2.0.0rc1',
-    'pyviz_comms >=0.7.4',
+    'bokeh >=3.2.0,<3.4.0',
+    'param >=2.0.0,<3.0',
+    'pyviz_comms >=2.0.0',
     'xyzservices >=2021.09.1', # Bokeh dependency, but pyodide 23.0.0 does not always pick it up
     'markdown',
     'markdown-it-py',
@@ -124,14 +123,14 @@ _recommended = [
     'plotly'
 ]
 
-_tests = [
+_tests_core = [
     # Test dependencies
     'flake8',
     'parameterized',
     'pytest',
     'nbval',
-    'flaky',
-    'pytest-asyncio',
+    'pytest-rerunfailures',
+    'pytest-asyncio <0.22',
     'pytest-xdist',
     'pytest-cov',
     'pre-commit',
@@ -142,15 +141,20 @@ _tests = [
     'folium',
     'diskcache',
     'holoviews >=1.16.0',
-    'ipympl',
-    'ipython >=7.0',
-    'ipyvuetify',
-    'ipywidgets_bokeh',
     'numpy',
     'pandas >=1.3',
-    'reacton',
+    'ipython >=7.0',
     'scipy',
+]
+
+_tests = _tests_core + [
+    'ipympl',
+    'ipyvuetify',
+    'ipywidgets_bokeh',
+    'reacton',
     'twine',
+    # Temporary pins
+    'numba <0.58'
 ]
 
 _ui = [
@@ -205,10 +209,12 @@ _conda_only = [
 
 extras_require = {
     'examples': _examples,
+    'tests_core': _tests_core,
     'tests': _tests,
     'recommended': _recommended,
     'doc': _recommended + [
-        'nbsite ==0.8.2',
+        'nbsite >=0.8.2',
+        'myst-nb >=0.17,<1',
         'lxml',
         'pandas <2.1.0' # Avoid deprecation warnings
     ],
@@ -224,13 +230,14 @@ extras_require['all_pip'] = sorted(set(extras_require['all']) - set(_conda_only)
 # non-python dependencies). Note that setup_requires isn't used
 # because it doesn't work well with pip.
 extras_require['build'] = [
-    'param >=1.9.2',
+    'param >=2.0.0',
     'setuptools >=42',
     'requests',
     'packaging',
-    'bokeh >=3.1.1,<3.3.0',
-    'pyviz_comms >=0.7.4',
+    'bokeh >=3.3.0,<3.4.0',
+    'pyviz_comms >=2.0.0',
     'bleach',
+    'markdown',
     'tqdm >=4.48.0',
     'cryptography <39', # Avoid pyOpenSSL issue
     'urllib3 <2.0',  # See: https://github.com/holoviz/panel/pull/4979
@@ -271,10 +278,10 @@ setup_args = dict(
         "License :: OSI Approved :: BSD License",
         "Development Status :: 5 - Production/Stable",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Operating System :: OS Independent",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
@@ -291,7 +298,7 @@ setup_args = dict(
         "Topic :: Office/Business",
         "Topic :: Office/Business :: Financial",
         "Topic :: Software Development :: Libraries"],
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     entry_points={
         'console_scripts': [
             'panel = panel.command:main'

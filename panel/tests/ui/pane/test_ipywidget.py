@@ -1,16 +1,16 @@
-import time
-
 import pytest
+
+pytest.importorskip("ipywidgets")
+pytest.importorskip("playwright")
+
 import traitlets
 
 from bokeh.core.has_props import _default_resolver
 from bokeh.model import Model
 
-pytestmark = pytest.mark.ui
-
-from panel.io.server import serve
 from panel.layout import Row
 from panel.pane.ipywidget import Reacton
+from panel.tests.util import serve_component, wait_until
 
 try:
     import reacton
@@ -24,6 +24,9 @@ except Exception:
     anywidget = None
 requires_anywidget = pytest.mark.skipif(anywidget is None, reason="requires anywidget")
 
+pytestmark = pytest.mark.ui
+
+
 @pytest.fixture(scope="module", autouse=True)
 def cleanup_ipywidgets():
     old_models = dict(Model.model_class_reverse_map)
@@ -31,7 +34,7 @@ def cleanup_ipywidgets():
     _default_resolver._known_models = old_models
 
 @requires_reacton
-def test_reacton(page, port):
+def test_reacton(page):
     import reacton
     import reacton.ipywidgets
 
@@ -65,31 +68,21 @@ def test_reacton(page, port):
         Reacton(ButtonClick(), width=200, height=50)
     )
 
-    serve(reacton_app, port=port, threaded=True, show=False)
+    serve_component(page, reacton_app)
 
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
-
-    time.sleep(0.5)
-
-    assert runs
+    wait_until(lambda: bool(runs), page)
 
     page.locator('button.jupyter-button').click()
 
-    time.sleep(0.5)
-
-    assert click
+    wait_until(lambda: bool(click), page)
 
     reacton_app[:] = []
 
-    time.sleep(0.5)
-
-    assert cleanups
+    wait_until(lambda: bool(cleanups), page)
 
 
 @requires_anywidget()
-def test_anywidget(page, port):
+def test_anywidget(page):
 
     class CounterWidget(anywidget.AnyWidget):
         # Widget front-end JavaScript code
@@ -113,22 +106,12 @@ def test_anywidget(page, port):
 
     counter = CounterWidget()
 
-    serve(counter, port=port, threaded=True, show=False)
-
-    time.sleep(0.5)
-
-    page.goto(f"http://localhost:{port}")
-
-    time.sleep(0.2)
+    serve_component(page, counter)
 
     page.locator('.lm-Widget button').click()
 
-    time.sleep(0.2)
-
-    assert counter.count == 1
+    wait_until(lambda: counter.count == 1, page)
 
     page.locator('.lm-Widget button').click()
 
-    time.sleep(0.2)
-
-    assert counter.count == 2
+    wait_until(lambda: counter.count == 2, page)

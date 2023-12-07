@@ -10,7 +10,7 @@ import json
 from base64 import b64decode
 from datetime import date, datetime
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional, Tuple, Type,
 )
 
 import numpy as np
@@ -21,13 +21,14 @@ from bokeh.models.widgets import (
     Checkbox as _BkCheckbox, ColorPicker as _BkColorPicker,
     DatePicker as _BkDatePicker, Div as _BkDiv, FileInput as _BkFileInput,
     NumericInput as _BkNumericInput, PasswordInput as _BkPasswordInput,
-    Spinner as _BkSpinner, Switch as _BkSwitch,
-    TextAreaInput as _BkTextAreaInput, TextInput as _BkTextInput,
+    Spinner as _BkSpinner, Switch as _BkSwitch, TextInput as _BkTextInput,
 )
 
 from ..config import config
 from ..layout import Column, Panel
-from ..models import DatetimePicker as _bkDatetimePicker
+from ..models import (
+    DatetimePicker as _bkDatetimePicker, TextAreaInput as _bkTextAreaInput,
+)
 from ..util import param_reprs
 from .base import CompositeWidget, Widget
 
@@ -126,7 +127,21 @@ class TextAreaInput(TextInput):
     ... )
     """
 
-    _widget_type: ClassVar[Type[Model]] = _BkTextAreaInput
+    auto_grow = param.Boolean(default=False, doc="""
+        Whether the text area should automatically grow vertically to
+        accommodate the current text.""")
+
+    cols = param.Integer(default=20, doc="""
+        Number of columns in the text input field.""")
+
+    max_rows = param.Integer(default=None, doc="""
+        When combined with auto_grow this determines the maximum number
+        of rows the input area can grow.""")
+
+    rows = param.Integer(default=2, doc="""
+        Number of rows in the text input field.""")
+
+    _widget_type: ClassVar[Type[Model]] = _bkTextAreaInput
 
 
 class FileInput(Widget):
@@ -580,6 +595,8 @@ class _SpinnerBase(_NumericInputBase):
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
+    _rename: ClassVar[Mapping[str, str | None]] = {'value_throttled': None}
+
     _widget_type: ClassVar[Type[Model]] = _BkSpinner
 
     __abstract = True
@@ -596,6 +613,10 @@ class _SpinnerBase(_NumericInputBase):
     def __repr__(self, depth=0):
         return '{cls}({params})'.format(cls=type(self).__name__,
                                         params=', '.join(param_reprs(self, ['value_throttled'])))
+
+    @property
+    def _linked_properties(self) -> Tuple[str]:
+        return super()._linked_properties + ('value_throttled',)
 
     def _update_model(
         self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
@@ -643,6 +664,8 @@ class IntInput(_SpinnerBase, _IntInputBase):
     value_throttled = param.Integer(default=None, constant=True, doc="""
         The current value. Updates only on `<enter>` or when the widget looses focus.""")
 
+    _rename: ClassVar[Mapping[str, str | None]] = {'start': 'low', 'end': 'high'}
+
 
 class FloatInput(_SpinnerBase, _FloatInputBase):
     """
@@ -668,6 +691,8 @@ class FloatInput(_SpinnerBase, _FloatInputBase):
 
     value_throttled = param.Number(default=None, constant=True, doc="""
         The current value. Updates only on `<enter>` or when the widget looses focus.""")
+
+    _rename: ClassVar[Mapping[str, str | None]] = {'start': 'low', 'end': 'high'}
 
     def _process_param_change(self, msg):
         if msg.get('value', False) is None:

@@ -43,8 +43,9 @@ from .io.notebook import (
     render_mimebundle, render_model, show_server,
 )
 from .io.save import save
-from .io.state import curdoc_locked, state
+from .io.state import curdoc_locked, set_curdoc, state
 from .util import escape, param_reprs
+from .util.parameters import get_params_to_inherit
 from .util.warnings import deprecated
 
 if TYPE_CHECKING:
@@ -79,7 +80,7 @@ class Layoutable(param.Parameterized):
     background = param.Parameter(default=None, doc="""
         Background color of the component.""")
 
-    css_classes = param.List(default=[], doc="""
+    css_classes = param.List(default=[], nested_refs=True, doc="""
         CSS classes to apply to the layout.""")
 
     design = param.ObjectSelector(default=None, objects=[], doc="""
@@ -106,15 +107,15 @@ class Layoutable(param.Parameterized):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    styles = param.Dict(default={}, doc="""
+    styles = param.Dict(default={}, nested_refs=True, doc="""
         Dictionary of CSS rules to apply to DOM node wrapping the
         component.""")
 
-    stylesheets = param.List(default=[], doc="""
+    stylesheets = param.List(default=[], nested_refs=True, doc="""
         List of stylesheets defined as URLs pointing to .css files
         or raw CSS defined as a string.""")
 
-    tags = param.List(default=[], doc="""
+    tags = param.List(default=[], nested_refs=True, doc="""
         List of arbitrary tags to add to the component.
         Can be useful for templating or for storing metadata on
         the model.""")
@@ -321,11 +322,12 @@ class ServableMixin:
         from .io.location import Location
         if isinstance(location, Location):
             loc = location
+            state._locations[doc] = loc
         elif doc in state._locations:
             loc = state._locations[doc]
         else:
-            loc = Location()
-        state._locations[doc] = loc
+            with set_curdoc(doc):
+                loc = state.location
         if root is None:
             loc_model = loc.get_root(doc)
         else:
@@ -391,8 +393,10 @@ class ServableMixin:
             else:
                 self.server_doc(title=title, location=location) # type: ignore
         elif state._is_pyodide and 'pyodide_kernel' not in sys.modules:
-            from .io.pyodide import _IN_WORKER, _get_pyscript_target, write
-            if _IN_WORKER:
+            from .io.pyodide import (
+                _IN_PYSCRIPT_WORKER, _IN_WORKER, _get_pyscript_target, write,
+            )
+            if _IN_WORKER and not _IN_PYSCRIPT_WORKER:
                 return self
             try:
                 target = target or _get_pyscript_target()
@@ -671,7 +675,6 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         state._views[ref] = (root_view, root, doc, comm)
         return root
 
-
 class Viewable(Renderable, Layoutable, ServableMixin):
     """
     Viewable is the baseclass all visual components in the panel
@@ -725,7 +728,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         # Warning
         prev = f'{type(self).name}(..., background={self.background!r})'
         new = f"{type(self).name}(..., styles={{'background': {self.background!r}}})"
-        deprecated("1.3", prev, new)
+        deprecated("1.4", prev, new)
 
         self.styles = dict(self.styles, background=self.background)
 
@@ -850,19 +853,15 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         -------
         Cloned Viewable object
         """
-        inherited = {
-            p: v for p, v in self.param.values().items()
-            if not self.param[p].readonly and v is not self.param[p].default
-            and not (v is None and not self.param[p].allow_None)
-        }
+        inherited = get_params_to_inherit(self)
         return type(self)(**dict(inherited, **params))
 
     def pprint(self) -> None:
         """
         Prints a compositional repr of the class.
         """
-        deprecated('1.3', f'{type(self).__name__}.pprint', 'print')
-        print(self)
+        deprecated('1.4', f'{type(self).__name__}.pprint', 'print')
+        print(self)  # noqa: T201
 
     def select(
         self, selector: Optional[type | Callable[['Viewable'], bool]] = None
@@ -899,7 +898,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         port: int (optional, default=0)
           Allows specifying a specific port
         """
-        deprecated('1.3', f'{type(self).__name__}.app', 'panel.io.notebook.show_server')
+        deprecated('1.4', f'{type(self).__name__}.app', 'panel.io.notebook.show_server')
         return show_server(self, notebook_url, port)
 
     def embed(

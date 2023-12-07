@@ -45,6 +45,10 @@ pip install panel
 
 ::::
 
+:::{important}
+Is Panel installed together with JupyterLab/Jupyter Notebook in your working environment? If not, you need to make sure that `pyviz_comms` is explicitly installed in the same environment as JupyterLab/Jupyter Notebook (`conda install pyviz_comms` or `pip install pyviz-comms`) for bi-directional communication to be fully working.
+:::
+
 :::{seealso}
 If you intend to work with Panel in a non-Jupyter notebook environment such as VSCode have a quick at the [relevant how-to section](../how_to/notebook/other_nb.md).
 :::

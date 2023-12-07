@@ -45,6 +45,9 @@ https://blog.holoviz.org/panel_0.12.0.html#JupyterLab-previews
 To learn more about Panel check out
 https://panel.holoviz.org/getting_started/index.html
 """
+from param import rx
+
+from . import chat  # noqa
 from . import layout  # noqa
 from . import links  # noqa
 from . import pane  # noqa
@@ -72,6 +75,7 @@ __all__ = (
     "__version__",
     "Accordion",
     "Card",
+    "chat",
     "Column",
     "FlexBox",
     "FloatPanel",
@@ -101,6 +105,7 @@ __all__ = (
     "panel",
     "param",
     "pipeline",
+    "rx",
     "serve",
     "state",
     "viewable",

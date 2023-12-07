@@ -3,6 +3,7 @@ import pytest
 
 import panel as pn
 
+from panel.chat import ChatMessage
 from panel.config import config
 from panel.interact import interactive
 from panel.io.loading import LOADING_INDICATOR_CSS_CLASS
@@ -18,7 +19,7 @@ from panel.util import param_watchers
 
 SKIP_PANES = (
     Bokeh, HoloViews, Interactive, IPyWidget, Param, ParamMethod, RGGPlot,
-    ReactiveExpr, Vega, interactive
+    ReactiveExpr, Vega, interactive, ChatMessage
 )
 
 all_panes = [w for w in param.concrete_descendents(PaneBase).values()
@@ -97,6 +98,13 @@ def test_pane_clone(pane):
         p = pane()
     except ImportError:
         pytest.skip("Dependent library could not be imported.")
+    clone = p.clone()
+
+    assert ([(k, v) for k, v in sorted(p.param.values().items()) if k not in ('name', '_pane')] ==
+            [(k, v) for k, v in sorted(clone.param.values().items()) if k not in ('name', '_pane')])
+
+def test_pane_with_non_defaults_clone():
+    p = Markdown("Hello World", sizing_mode="stretch_width")
     clone = p.clone()
 
     assert ([(k, v) for k, v in sorted(p.param.values().items()) if k not in ('name', '_pane')] ==

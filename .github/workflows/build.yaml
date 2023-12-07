@@ -40,7 +40,7 @@ jobs:
           python-version: 3.9
       - uses: actions/setup-node@v2
         with:
-          node-version: '16'
+          node-version: '18'
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow -f
       - name: Set output
@@ -49,33 +49,47 @@ jobs:
       - name: conda setup
         run: |
           conda config --set always_yes True
-          conda install "pip<21.2.1"
-          conda install -c pyviz "pyctdev>=0.5"
-          doit ecosystem_setup
-          # See: https://github.com/holoviz/panel/pull/4979
-          conda install -c conda-forge "urllib3<2.0.0" "conda-build==3.24"
+          conda config --append channels pyviz/label/dev
+          conda config --append channels bokeh/label/dev
+          conda install -y conda-build anaconda-client build
+      - name: conda build
+        run: |
+          bash ./scripts/build_conda.sh
       - name: build pyodide wheels for CDN
         run: |
           python ./scripts/build_pyodide_wheels.py
-      - name: conda build
-        run: doit package_build $CHANS_DEV $PKG_TEST_PYTHON --test-group=unit_deploy
       - name: npm setup
         run: |
           echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_API_TOKEN }}" > $HOME/.npmrc
           npm whoami
           npm -v
+      - name: npm build
+        run: |
+          SETUPTOOLS_ENABLE_FEATURES="legacy-editable" python -m pip install -ve .
+          cd ./panel
+          npm publish --dry-run
+          cd ..
       - name: conda dev deploy
         if: (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
-          doit package_upload --token=${{ secrets.CONDA_UPLOAD_TOKEN }} --label=dev
-          python setup.py develop
+          VERSION="$(echo "$(ls dist/*.whl)" | cut -d- -f2)"
+          FILE="$CONDA_PREFIX/conda-bld/noarch/panel-$VERSION-py_0.tar.bz2"
+          anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev $FILE
+      - name: npm dev deploy
+        if: (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+        run: |
           cd ./panel
           npm publish --tag dev
+          cd ..
       - name: conda main deploy
         if: (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
-          doit package_upload --token=${{ secrets.CONDA_UPLOAD_TOKEN }} --label=dev --label=main
-          python setup.py develop
+          VERSION="$(echo "$(ls dist/*.whl)" | cut -d- -f2)"
+          FILE="$CONDA_PREFIX/conda-bld/noarch/panel-$VERSION-py_0.tar.bz2"
+          anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev --label=main $FILE
+      - name: npm main deploy
+        if: (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+        run: |
           cd ./panel
           npm publish --tag latest
           cd ..
@@ -114,7 +128,7 @@ jobs:
           miniconda-version: "latest"
       - uses: actions/setup-node@v2
         with:
-          node-version: '15'
+          node-version: '18'
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow -f
       - name: conda setup

@@ -3,15 +3,15 @@ Miscellaneous widgets which do not fit into the other main categories.
 """
 from __future__ import annotations
 
-import os
-
 from base64 import b64encode
+from pathlib import Path
 from typing import (
     TYPE_CHECKING, ClassVar, List, Mapping, Type,
 )
 
 import param
 
+from param.parameterized import eval_function_with_deps, iscoroutinefunction
 from pyviz_comms import JupyterComm
 
 from ..io.notebook import push
@@ -96,7 +96,7 @@ class FileDownload(IconMixin):
     button_style = param.ObjectSelector(default='solid', objects=BUTTON_STYLES, doc="""
         A button style to switch between 'solid', 'outline'.""")
 
-    callback = param.Callable(default=None, doc="""
+    callback = param.Callable(default=None, allow_refs=False, doc="""
         A callable that returns the file path or file-like object.""")
 
     data = param.String(default=None, doc="""
@@ -106,7 +106,7 @@ class FileDownload(IconMixin):
         Whether to embed the file on initialization.""")
 
     file = param.Parameter(default=None, doc="""
-        The file, file-like object or file contents to transfer.  If
+        The file, Path, file-like object or file contents to transfer.  If
         the file is not pointing to a file on disk a filename must
         also be provided.""")
 
@@ -160,6 +160,8 @@ class FileDownload(IconMixin):
         if self.embed:
             self._transfer()
         self._update_label()
+        if "filename" not in params:
+            self._update_filename()
 
     def _process_param_change(self, params):
         if 'button_style' in params or 'css_classes' in params:
@@ -172,10 +174,18 @@ class FileDownload(IconMixin):
     def _update_default(self):
         self._default_label = False
 
+    @property
+    def _is_file_path(self)->bool:
+        return isinstance(self.file, (str, Path))
+
+    @property
+    def _file_path(self)->Path:
+        return Path(self.file)
+
     @param.depends('file', watch=True)
     def _update_filename(self):
-        if isinstance(self.file, str):
-            self.filename = os.path.basename(self.file)
+        if self._is_file_path:
+            self.filename = self._file_path.name
 
     @param.depends('auto', 'file', 'filename', watch=True)
     def _update_label(self):
@@ -185,7 +195,7 @@ class FileDownload(IconMixin):
                 label = 'No file set'
             else:
                 try:
-                    filename = self.filename or os.path.basename(self.file)
+                    filename = self.filename or self._file_path.name
                 except TypeError:
                     raise ValueError('Must provide filename if file-like '
                                      'object is provided.')
@@ -198,27 +208,16 @@ class FileDownload(IconMixin):
         if self.embed:
             self._transfer()
 
-    @param.depends('_clicks', watch=True)
-    def _transfer(self):
-        if self.file is None and self.callback is None:
-            if self.embed:
-                raise ValueError('Must provide a file or a callback '
-                                 'if it is to be embedded.')
-            return
-
-        from ..param import ParamFunction
-        if self.callback is None:
-            fileobj = self.file
-        else:
-            fileobj = ParamFunction.eval(self.callback)
+    def _sync_data(self, fileobj):
         filename = self.filename
-        if isinstance(fileobj, str):
-            if not os.path.isfile(fileobj):
+        if isinstance(fileobj, (str, Path)):
+            fileobj = Path(fileobj)
+            if not fileobj.exists():
                 raise FileNotFoundError('File "%s" not found.' % fileobj)
             with open(fileobj, 'rb') as f:
                 b64 = b64encode(f.read()).decode("utf-8")
             if filename is None:
-                filename = os.path.basename(fileobj)
+                filename = fileobj.name
         elif hasattr(fileobj, 'read'):
             bdata = fileobj.read()
             if not isinstance(bdata, bytes):
@@ -244,10 +243,31 @@ class FileDownload(IconMixin):
 
         data = "data:{mime};base64,{b64}".format(mime=mime, b64=b64)
         self._synced = True
-
         self.param.update(data=data, filename=filename)
         self._update_label()
         self._transfers += 1
+
+    async def _async_sync_data(self):
+        fileobj = await eval_function_with_deps(self.callback)
+        self._sync_data(fileobj)
+
+    @param.depends('_clicks', watch=True)
+    def _transfer(self):
+        if self.file is None and self.callback is None:
+            if self.embed:
+                raise ValueError('Must provide a file or a callback '
+                                 'if it is to be embedded.')
+            return
+
+        if self.callback is None:
+            fileobj = self.file
+        else:
+            if iscoroutinefunction(self.callback):
+                state.execute(self._async_sync_data)
+                return
+            else:
+                fileobj = eval_function_with_deps(self.callback)
+        self._sync_data(fileobj)
 
 
 

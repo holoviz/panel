@@ -13,7 +13,9 @@ from typing import (
 import param
 
 from bokeh.models import Row as BkRow
+from param.parameterized import iscoroutinefunction, resolve_ref
 
+from ..io.document import freeze_doc
 from ..io.model import hold
 from ..io.resources import CDN_DIST
 from ..io.state import state
@@ -90,7 +92,8 @@ class Panel(Reactive):
             del msg['styles']['overflow-x']
 
         obj_key = self._property_mapping['objects']
-        if obj_key in msg:
+        update_children = obj_key in msg
+        if update_children:
             old = events['objects'].old
             children, old_children = self._get_objects(model, old, doc, root, comm)
             msg[obj_key] = children
@@ -112,7 +115,7 @@ class Panel(Reactive):
             update = Panel._batch_update
             Panel._batch_update = True
             try:
-                with doc.models.freeze():
+                with freeze_doc(doc, model, msg, force=update_children):
                     super()._update_model(events, msg, root, model, doc, comm)
                     if update:
                         return
@@ -277,7 +280,7 @@ class Panel(Reactive):
             return {'sizing_mode': props.get('sizing_mode')}
 
         properties = {'sizing_mode': sizing_mode}
-        if ((sizing_mode.endswith('_width') or sizing_mode.endswith('_both')) and
+        if (sizing_mode.endswith(("_width", "_both")) and
             widths and 'min_width' not in properties):
             width_op = max if self._direction == 'vertical' else sum
             min_width = width_op(widths)
@@ -285,7 +288,7 @@ class Panel(Reactive):
             if 'max_width' in properties:
                 op_widths.append(properties['max_width'])
             properties['min_width'] = min(op_widths)
-        if ((sizing_mode.endswith('_height') or sizing_mode.endswith('_both')) and
+        if (sizing_mode.endswith(("_height", "_both")) and
             heights and 'min_height' not in properties):
             height_op = max if self._direction == 'horizontal' else sum
             min_height = height_op(heights)
@@ -444,11 +447,17 @@ class ListLike(param.Parameterized):
         new_objects.append(panel(obj))
         self.objects = new_objects
 
-    def clear(self) -> None:
+    def clear(self) -> List[Viewable]:
         """
         Clears the objects on this layout.
+
+        Returns
+        -------
+        objects (list[Viewable]): List of cleared objects.
         """
+        objects = self.objects
         self.objects = []
+        return objects
 
     def extend(self, objects: Iterable[Any]) -> None:
         """
@@ -462,6 +471,20 @@ class ListLike(param.Parameterized):
         new_objects = list(self)
         new_objects.extend(list(map(panel, objects)))
         self.objects = new_objects
+
+    def index(self, object) -> int:
+        """
+        Returns the integer index of the supplied object in the list of objects.
+
+        Arguments
+        ---------
+        obj (object): Panel component to look up the index for.
+
+        Returns
+        -------
+        index (int): Integer index of the object in the layout.
+        """
+        return self.objects.index(object)
 
     def insert(self, index: int, obj: Any) -> None:
         """
@@ -781,8 +804,9 @@ class ListPanel(ListLike, Panel):
                                  "not both." % type(self).__name__)
             params['objects'] = [panel(pane) for pane in objects]
         elif 'objects' in params:
-            if not hasattr(params['objects'], '_dinfo'):
-                params['objects'] = [panel(pane) for pane in params['objects']]
+            objects = params['objects']
+            if not resolve_ref(objects) or iscoroutinefunction(objects):
+                params['objects'] = [panel(pane) for pane in objects]
         super(Panel, self).__init__(**params)
 
     @property

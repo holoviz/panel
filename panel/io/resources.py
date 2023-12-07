@@ -4,6 +4,7 @@ resources via the panel.config object.
 """
 from __future__ import annotations
 
+import functools
 import importlib
 import json
 import logging
@@ -61,8 +62,11 @@ with open(Path(__file__).parent.parent / 'package.json') as f:
 def get_env():
     ''' Get the correct Jinja2 Environment, also for frozen scripts.
     '''
-    local_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '_templates'))
-    return Environment(loader=FileSystemLoader(local_path))
+    internal_path = pathlib.Path(__file__).parent / '..' / '_templates'
+    template_path = pathlib.Path(__file__).parent / '..' / 'template'
+    return Environment(loader=FileSystemLoader([
+        str(internal_path.resolve()), str(template_path.resolve())
+    ]))
 
 def conffilter(value):
     return json.dumps(OrderedDict(value)).replace('"', '\'')
@@ -73,6 +77,10 @@ _env.lstrip_blocks = True
 _env.filters['json'] = lambda obj: Markup(json.dumps(obj))
 _env.filters['conffilter'] = conffilter
 _env.filters['sorted'] = sorted
+
+@functools.cache
+def parse_template(*args, **kwargs):
+    return _env.from_string(*args, **kwargs)
 
 # Handle serving of the panel extension before session is loaded
 RESOURCE_MODE = 'server'
@@ -87,7 +95,8 @@ LOGOUT_TEMPLATE = _env.get_template('logout.html')
 BASIC_LOGIN_TEMPLATE = _env.get_template('basic_login.html')
 DEFAULT_TITLE = "Panel Application"
 JS_RESOURCES = _env.get_template('js_resources.html')
-CDN_URL = f"https://cdn.holoviz.org/panel/{JS_VERSION}/"
+CDN_ROOT = "https://cdn.holoviz.org/panel/"
+CDN_URL = f"{CDN_ROOT}{JS_VERSION}/"
 CDN_DIST = f"{CDN_URL}dist/"
 DOC_DIST = "https://panel.holoviz.org/_static/"
 LOCAL_DIST = "static/extensions/panel/"
@@ -216,7 +225,10 @@ def resolve_custom_path(
         abs_path = path
     else:
         abs_path = module_path / path
-    if not abs_path.is_file():
+    try:
+        if not abs_path.is_file():
+            return None
+    except OSError:
         return None
     abs_path = abs_path.resolve()
     if not relative:
@@ -372,8 +384,9 @@ def bundle_resources(roots, resources, notebook=False, reloading=False, enable_m
     extensions = _bundle_extensions(None, js_resources)
     if reloading:
         extensions = [
-            ext for ext in extensions if not ext.cdn_url.startswith('https://unpkg.com/@holoviz/panel@')
+            ext for ext in extensions if not (ext.cdn_url is not None and ext.cdn_url.startswith('https://unpkg.com/@holoviz/panel@'))
         ]
+
     extra_js = []
     if mode == "inline":
         js_raw.extend([ Resources._inline(bundle.artifact_path) for bundle in extensions ])
@@ -382,6 +395,8 @@ def bundle_resources(roots, resources, notebook=False, reloading=False, enable_m
             server_url = bundle.server_url
             if resources.root_url and not resources.absolute:
                 server_url = server_url.replace(resources.root_url, '', 1)
+                if state.rel_path:
+                    server_url = f'{state.rel_path}/{server_url}'
             js_files.append(server_url)
     elif mode == "cdn":
         for bundle in extensions:
@@ -590,7 +605,7 @@ class Resources(BkResources):
                 resource = resource.replace(cdn_base, CDN_DIST)
             if self.mode == 'server':
                 resource = resource.replace(CDN_DIST, LOCAL_DIST)
-            if (resource.startswith(state.base_url) or resource.startswith('static/')):
+            if resource.startswith((state.base_url, "static/")):
                 if resource.startswith(state.base_url):
                     resource = resource[len(state.base_url):]
                 if state.rel_path:

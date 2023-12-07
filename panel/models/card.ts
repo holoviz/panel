@@ -7,6 +7,8 @@ export class CardView extends ColumnView {
   button_el: HTMLButtonElement
   header_el: HTMLElement
 
+  readonly collapsed_style = new DOM.InlineStyleSheet()
+
   connect_signals(): void {
     super.connect_signals()
 
@@ -24,6 +26,11 @@ export class CardView extends ColumnView {
     })
   }
 
+  protected override *_stylesheets(): Iterable<DOM.StyleSheet> {
+    yield* super._stylesheets()
+    yield this.collapsed_style
+  }
+
   get header_background(): string | null {
     let header_background = this.model.header_background
     if (!this.model.collapsed && this.model.active_header_background)
@@ -33,6 +40,13 @@ export class CardView extends ColumnView {
 
   render(): void {
     this.empty()
+
+    if (this.model.collapsed)
+      this.collapsed_style.replace(":host", {
+	"height": "fit-content",
+	"flex": "none"
+      })
+
     this._update_stylesheets()
     this._update_css_classes()
     this._apply_styles()
@@ -70,9 +84,12 @@ export class CardView extends ColumnView {
       header.render()
       header.after_render()
     }
+
+    if (this.model.collapsed)
+      return
+
     for (const child_view of this.child_views.slice(1)) {
-      if (!this.model.collapsed)
-        this.shadow_el.appendChild(child_view.el)
+      this.shadow_el.appendChild(child_view.el)
       child_view.render()
       child_view.after_render()
     }
@@ -94,10 +111,19 @@ export class CardView extends ColumnView {
         this.shadow_el.removeChild(child_view.el)
 	child_view.model.visible = false
       } else {
+	child_view.render()
+	child_view.after_render()
         this.shadow_el.appendChild(child_view.el)
 	child_view.model.visible = true
       }
     }
+    if (this.model.collapsed) {
+      this.collapsed_style.replace(":host", {
+	"height": "fit-content",
+	'flex': "none"
+      })
+    } else
+      this.collapsed_style.clear()
     this.button_el.children[0].innerHTML = this.model.collapsed ? "\u25ba" : "\u25bc"
     this.invalidate_layout()
   }

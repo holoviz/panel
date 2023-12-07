@@ -44,7 +44,7 @@ class HTMLBasePane(ModelPane):
         if "style" in params:
             # In Bokeh 3 'style' was changed to 'styles'.
             params["styles"] = params.pop("style")
-            deprecated("1.3", "style",  "styles")
+            deprecated("1.4", "style",  "styles")
         super().__init__(object=object, **params)
 
 
@@ -335,18 +335,18 @@ class Markdown(HTMLBasePane):
         strings escaped with $$ delimiters.""")
 
     extensions = param.List(default=[
-        "extra", "smarty", "codehilite"], doc="""
+        "extra", "smarty", "codehilite"], nested_refs=True, doc="""
         Markdown extension to apply when transforming markup.
         Does not apply if renderer is set to 'markdown-it' or 'myst'.""")
 
-    plugins = param.List(default=[], doc="""
+    plugins = param.List(default=[], nested_refs=True, doc="""
         Additional markdown-it-py plugins to use.""")
 
     renderer = param.Selector(default='markdown-it', objects=[
         'markdown-it', 'myst', 'markdown'], doc="""
         Markdown renderer implementation.""")
 
-    renderer_options = param.Dict(default={}, doc="""
+    renderer_options = param.Dict(default={}, nested_refs=True, doc="""
         Options to pass to the markdown renderer.""")
 
     # Priority depends on the data type

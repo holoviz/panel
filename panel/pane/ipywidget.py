@@ -8,7 +8,7 @@ from typing import (
 
 import param
 
-from param.depends import register_depends_transform
+from param.parameterized import register_reference_transform
 from pyviz_comms import JupyterComm
 
 from ..config import config
@@ -37,11 +37,18 @@ class IPyWidget(PaneBase):
     >>> IPyWidget(some_ipywidget)
     """
 
+    object = param.Parameter(default=None, allow_refs=False, doc="""
+        The IPywidget being wrapped, which will be converted to a
+        Bokeh model.""")
+
     priority: ClassVar[float | bool | None] = 0.6
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
-        return (hasattr(obj, 'traits') and hasattr(obj, 'get_manager_state') and hasattr(obj, 'comm'))
+        try:
+            return (hasattr(obj, 'traits') and hasattr(obj, 'get_manager_state') and hasattr(obj, 'comm'))
+        except Exception:
+            return False
 
     def _resolve_ref(self, pname, value):
         if pname == 'object' and self.applies(value):
@@ -137,4 +144,4 @@ def _ipywidget_transform(obj):
     obj.observe(lambda event: ipy_inst.param.update(value=event['new']), 'value')
     return ipy_inst.param.value
 
-register_depends_transform(_ipywidget_transform)
+register_reference_transform(_ipywidget_transform)

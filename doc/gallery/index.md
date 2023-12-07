@@ -187,6 +187,23 @@ Try interactive brushing on an Altair plot linked with a table.
 
 ::::
 
+## HoloViz Topics
+
+Examples of Panel applications maintained by the [HoloViz](https://holoviz.org/) project.
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} Panel Chat Examples
+:img-top: https://assets.holoviz.org/panel/gallery/panel_chat_examples.png
+:link: https://holoviz-topics.github.io/panel-chat-examples/
+:link-type: url
+
+A large selection of chat applications showcasing Panels chat components.
+:::
+
+::::
+
 ## Community Gallery
 
 ::::{grid} 1 2 2 3

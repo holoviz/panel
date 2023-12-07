@@ -35,10 +35,10 @@ class Vizzu(ModelPane, SyncableData):
     >>> Vizzu(df)
     """
 
-    animation = param.Dict(default={}, doc="""
+    animation = param.Dict(default={}, nested_refs=True, doc="""
         Animation settings (see https://lib.vizzuhq.com/latest/reference/modules/Anim/).""")
 
-    config = param.Dict(default={}, doc="""
+    config = param.Dict(default={}, nested_refs=True, doc="""
         The config contains all of the parameters needed to render a
         particular static chart or a state of an animated chart
         (see https://lib.vizzuhq.com/latest/reference/interfaces/Config.Chart/).""")
@@ -46,7 +46,7 @@ class Vizzu(ModelPane, SyncableData):
     click = param.Parameter(doc="""
         Data associated with the latest click event.""")
 
-    column_types = param.Dict(default={}, doc="""
+    column_types = param.Dict(default={}, nested_refs=True, doc="""
         Optional column definitions. If not defined will be inferred
         from the data.""")
 
@@ -54,7 +54,7 @@ class Vizzu(ModelPane, SyncableData):
         The config contains all of the parameters needed to render a
         particular static chart or a state of an animated chart.""")
 
-    style = param.Dict(default={}, doc="""
+    style = param.Dict(default={}, nested_refs=True, doc="""
         Style configuration of the chart.""")
 
     tooltip = param.Boolean(default=False, doc="""
@@ -123,7 +123,7 @@ class Vizzu(ModelPane, SyncableData):
                         columns.append({'name': col, 'type': 'datetime'})
                     elif isinstance(value, str):
                         columns.append({'name': col, 'type': 'dimension'})
-                    elif isinstance(value, (float, np.float_, np.int_, int)):
+                    elif isinstance(value, (float, np.float64, np.int_, int)):
                         columns.append({'name': col, 'type': 'measure'})
                     else:
                         columns.append({'name': col, 'type': 'dimension'})

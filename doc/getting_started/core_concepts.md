@@ -237,7 +237,7 @@ x = pn.widgets.IntSlider(name='x', start=0, end=100)
 def square(x):
     return f'{x} squared is {x**2}'
 
-pn.Row(pn.bind(square, x))
+pn.Row(x, pn.bind(square, x))
 ```
 
 The `pn.bind` function lets us bind a widget or a *Parameter* **object** to a function that returns an item to be displayed. Once bound, the function can be added to a layout or rendered directly using `pn.panel` and `.servable()`. In this way you can express reactivity between widgets and output very easily. Even better, if you use a Panel-aware library like hvPlot, you often don't even need to write and bind a function explicitly, as hvPlot's [.interactive](https://hvplot.holoviz.org/user_guide/Interactive.html) DataFrames already create reactive pipelines by accepting widgets and parameters for most arguments and options.
@@ -310,7 +310,7 @@ pn.config.template = 'fast'
 The `pn.config` object provides a range of options that will allow you to configure your application. As a shortcut, you may instead provide options for the `config` object as keywords to the `pn.extension` call. In other words `pn.extension(template='fast')` is equivalent to `pn.config.template = 'fast'`, providing a clean way to set multiple config options at once.
 :::
 
-Once you have configured a template you can control where to render your components using the `area` argument of the `.servable()` method. Most templates have multiple areas including 'main', 'sidebar', 'header' and 'modal'. As an example you might want to render your widgets into the sidebar and your plots into the main area:
+Once you have configured a template you can control where to render your components using the `target` argument of the `.servable()` method. Most templates have multiple target areas including 'main', 'sidebar', 'header' and 'modal'. As an example you might want to render your widgets into the sidebar and your plots into the main area:
 
 ```python
 import numpy as np

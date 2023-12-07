@@ -1,0 +1,99 @@
+@keyframes icon-rotation {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(359deg);
+  }
+}
+
+:host {
+  max-height: none;
+}
+
+.chat-message {
+  display: flex;
+  flex-direction: row;
+}
+
+.avatar {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  margin-top: calc(1em + 5px);
+  min-width: 50px;
+  width: 50px;
+  min-height: 50px;
+  height: 50px;
+
+  font-size: 25px;
+  text-align: center;
+
+  border-radius: 25px;
+  background-color: var(--panel-surface-color, #f1f1f1);
+  box-shadow:
+    color-mix(in srgb, var(--panel-shadow-color) 30%, transparent) 0px 1px 2px
+      0px,
+    color-mix(in srgb, var(--panel-shadow-color) 15%, transparent) 0px 1px 3px
+      1px;
+}
+
+.right {
+  display: flex;
+  flex-direction: column;
+  margin-left: 5px;
+  max-width: calc(100% - 80px);
+}
+
+.name {
+  font-size: 1em;
+  margin-bottom: 0px;
+  margin-top: 5px;
+}
+
+.center {
+  margin-right: 10px; /* Space for reaction icons */
+  padding: 0px;
+}
+
+.message {
+  width: fit-content;
+  border-radius: 5px;
+  font-size: 1.25em;
+  min-width: 50px;
+  min-height: 50px;
+  margin-block: 0px;
+  margin-left: 10px; /* Space for avatar */
+  margin-right: 5px; /* Space for reaction */
+  background-color: var(--panel-surface-color, #f1f1f1);
+  box-shadow:
+    color-mix(in srgb, var(--panel-shadow-color) 30%, transparent) 0px 1px 2px
+      0px,
+    color-mix(in srgb, var(--panel-shadow-color) 15%, transparent) 0px 1px 3px
+      1px;
+}
+
+.footer {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.timestamp {
+  color: #a9a9a9;
+  display: flex;
+  margin-top: 0px;
+}
+
+.markdown {
+  padding-block: 0px;
+  padding-inline: 15px;
+  width: calc(100% - 15px);
+}
+
+.avatar.rotating-placeholder {
+  animation: icon-rotation 1.28s infinite cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}

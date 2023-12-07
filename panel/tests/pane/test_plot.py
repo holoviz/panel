@@ -62,6 +62,22 @@ def test_matplotlib_pane(document, comm):
 
 @mpl_available
 def test_matplotlib_pane_svg_render(document, comm):
-    pane = pn.pane.Matplotlib(mpl_figure(), format='svg')
+    pane = pn.pane.Matplotlib(mpl_figure(), format='svg', encode=True)
     model = pane.get_root(document, comm=comm)
     assert model.text.startswith('&lt;img src=&quot;data:image/svg+xml;base64,')
+
+@mpl_available
+def test_matplotlib_pane_svg_render_responsive(document, comm):
+    pane = pn.pane.Matplotlib(mpl_figure(), format='svg', encode=False)
+    model = pane.get_root(document, comm=comm)
+    # We should only replace width and height once
+    assert model.text.count('width=&quot;100%&quot;')==1
+    assert model.text.count('height=&quot;100%&quot;')==1
+
+@mpl_available
+def test_matplotlib_pane_svg_render_not_fixed_aspect(document, comm):
+    pane = pn.pane.Matplotlib(mpl_figure(), format='svg', encode=False, fixed_aspect=False)
+    model = pane.get_root(document, comm=comm)
+    assert model.text.count('width=&quot;100%&quot;')==1
+    assert model.text.count('height=&quot;100%&quot;')==1
+    assert model.text.count('preserveAspectRatio=&quot;none&quot;')==1

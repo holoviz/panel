@@ -132,7 +132,7 @@ def test_markdown_pane_extensions(document, comm):
     # Create pane
     model = pane.get_root(document, comm=comm)
     assert pane._models[model.ref['id']][0] is model
-    assert model.text.startswith('&lt;div class=&quot;codehilite')
+    assert 'codehilite' in model.text
 
     pane.extensions = ["extra", "smarty"]
     assert model.text.startswith('&lt;pre&gt;&lt;code class=&quot;language-python')

@@ -67,7 +67,7 @@ class Indicator(Widget):
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 
-    _linked_properties: ClassVar[Tuple[str]] = ()
+    _linked_properties: ClassVar[Tuple[str,...]] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
 
@@ -1088,7 +1088,7 @@ class Trend(SyncableData, Indicator):
     def __init__(self, **params):
         if "title" in params:
             params["name"] = params.pop("title")
-            deprecated("1.3", "title",  "name")
+            deprecated("1.4", "title",  "name")
         super().__init__(**params)
 
     def _get_data(self):
@@ -1203,11 +1203,11 @@ class Tqdm(Indicator):
         The layout for the text and progress indicator.""",)
 
     lock = param.ClassSelector(class_=object, default=None,
-                               doc="""The `mutithreading.Lock` or `multiprocessing.Lock` object to be used by Tqdm.""",)
+                               doc="""The `multithreading.Lock` or `multiprocessing.Lock` object to be used by Tqdm.""",)
 
     max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 
-    progress = param.ClassSelector(class_=Progress, precedence=-1, doc="""
+    progress = param.ClassSelector(class_=Progress, allow_refs=False, precedence=-1, doc="""
         The Progress indicator used to display the progress.""",)
 
     text = param.String(default='', doc="""
