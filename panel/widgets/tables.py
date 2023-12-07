@@ -1562,6 +1562,11 @@ class Tabulator(BaseTable):
         for ref, (model, _) in self._models.items():
             self._apply_update([], {'max_page': max_page}, model, ref)
 
+    @param.depends("value", watch=True)
+    def _clear_selection_remote_pagination(self):
+        if self.pagination == 'remote':
+            self.selection = []
+
     def _update_selected(self, *events: param.parameterized.Event, indices=None):
         kwargs = {}
         if self.pagination == 'remote' and self.value is not None:
