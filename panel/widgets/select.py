@@ -385,7 +385,7 @@ class NestedSelect(CompositeWidget):
                 name = level.get("name", i)
             else:
                 name = level
-            values[name] = select.value
+            values[name] = select.value if select.options else None
 
         return values
 
@@ -416,7 +416,7 @@ class NestedSelect(CompositeWidget):
                 max_depth = max(max_depth, self._find_max_depth(value, depth + 1))
             # dict means it's a level, so it's not the last level
             # list means it's a leaf, so it's the last level
-            if isinstance(value, list) and len(value) == 0:
+            if isinstance(value, list) and len(value) == 0 and max_depth > 0:
                 max_depth -= 1
         return max_depth
 
