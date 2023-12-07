@@ -176,7 +176,7 @@ _examples = [
     'jupyter_bokeh >=3.0.7',
     'django <4',
     'channels',
-    'pyvista',
+    'pyvista <0.43',  # Breaks an example
     'ipywidgets',
     'ipywidgets_bokeh',
     'ipyvolume',
