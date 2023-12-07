@@ -617,8 +617,6 @@ def test_nested_select_dynamic_levels(document, comm):
         },
         levels=["A", "B", "C", "D"],
     )
-    select
-    select.value = {"A": "Easy", "B": "Easy_A"}
     assert select._widgets[0].visible
     assert select._widgets[1].visible
     assert not select._widgets[2].visible
