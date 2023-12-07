@@ -2148,3 +2148,15 @@ def test_bokeh_formatter_index_with_no_textalign():
     table = Tabulator(df, formatters={"A": index_format})
     serve_and_request(table)
     wait_until(lambda: bool(table._models))
+
+
+def test_bokeh_formatter_column_with_no_textalign(document, comm):
+    df = pd.DataFrame({"A": [1, 2, 3]})
+    table = Tabulator(
+        df,
+        formatters=dict(A=HTMLTemplateFormatter(template='<b><%= value %>"></b>')),
+        text_align=dict(A='center'),
+    )
+
+    model = table.get_root(document, comm)
+    assert model.configuration['columns'][1]['hozAlign'] == 'center'
