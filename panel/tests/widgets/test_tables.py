@@ -2149,13 +2149,13 @@ def test_bokeh_formatter_index_with_no_textalign():
     serve_and_request(table)
     wait_until(lambda: bool(table._models))
 
-
-def test_bokeh_formatter_column_with_no_textalign(document, comm):
+@pytest.mark.parametrize('text_align', [{"A": "center"}, "center"], ids=["dict", "str"])
+def test_bokeh_formatter_column_with_no_textalign_but_text_align_set(document, comm, text_align):
     df = pd.DataFrame({"A": [1, 2, 3]})
     table = Tabulator(
         df,
         formatters=dict(A=HTMLTemplateFormatter(template='<b><%= value %>"></b>')),
-        text_align=dict(A='center'),
+        text_align=text_align,
     )
 
     model = table.get_root(document, comm)
