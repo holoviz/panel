@@ -139,6 +139,8 @@ def _eval_panel(
             """)
         )
 
+    doc.on_event('document_ready', partial(state._schedule_on_load, doc))
+
     # Set up instrumentation for logging sessions
     logger.info(LOG_SESSION_LAUNCHING, id(doc))
     def _log_session_destroyed(session_context):
