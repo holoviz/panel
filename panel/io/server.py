@@ -139,6 +139,8 @@ def _eval_panel(
             """)
         )
 
+    doc.on_event('document_ready', partial(state._schedule_on_load, doc))
+
     # Set up instrumentation for logging sessions
     logger.info(LOG_SESSION_LAUNCHING, id(doc))
     def _log_session_destroyed(session_context):
@@ -770,6 +772,8 @@ def modify_document(self, doc: 'Document'):
     from ..config import config
 
     logger.info(LOG_SESSION_LAUNCHING, id(doc))
+
+    doc.on_event('document_ready', partial(state._schedule_on_load, doc))
 
     if config.autoreload:
         path = self._runner.path
