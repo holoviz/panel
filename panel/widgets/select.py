@@ -562,7 +562,7 @@ class NestedSelect(CompositeWidget):
                             options = options[select.value]
                         else:
                             options = options[list(options.keys())[0]]
-                    visible = True
+                    visible = bool(options)
 
                 if i < start_i:
                     # If the select widget is before the one
