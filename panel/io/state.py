@@ -376,8 +376,7 @@ class _state(param.Parameterized):
 
     def _on_load(self, doc: Optional[Document] = None) -> None:
         doc = doc or self.curdoc
-        callbacks = self._onload.pop(doc, [])
-        if not callbacks:
+        if doc not in self._onload:
             self._loaded[doc] = True
             return
 
@@ -385,13 +384,16 @@ class _state(param.Parameterized):
         from .profile import profile_ctx
         with set_curdoc(doc):
             if (doc and doc in self._launching) or not config.profiler:
-                for cb, threaded in callbacks:
-                    self.execute(cb, schedule='thread' if threaded else False)
+                while doc in self._onload:
+                    for cb, threaded in self._onload.pop(doc):
+                        self.execute(cb, schedule='thread' if threaded else False)
+                self._loaded[doc] = True
                 return
 
             with profile_ctx(config.profiler) as sessions:
-                for cb, threaded in callbacks:
-                    self.execute(cb, schedule='thread' if threaded else False)
+                while doc in self._onload:
+                    for cb, threaded in self._onload.pop(doc):
+                        self.execute(cb, schedule='thread' if threaded else False)
             path = doc.session_context.request.path
             self._profiles[(path+':on_load', config.profiler)] += sessions
             self.param.trigger('_profiles')
@@ -680,7 +682,7 @@ class _state(param.Parameterized):
         threaded: bool
           Whether the onload callback can be threaded
         """
-        if self.curdoc is None or self._is_pyodide:
+        if self.curdoc is None or self._is_pyodide or self.loaded:
             if self._thread_pool:
                 future = self._thread_pool.submit(partial(self.execute, callback, schedule=False))
                 future.add_done_callback(self._handle_future_exception)
@@ -689,10 +691,6 @@ class _state(param.Parameterized):
             return
         elif self.curdoc not in self._onload:
             self._onload[self.curdoc] = []
-            try:
-                self.curdoc.on_event('document_ready', partial(self._schedule_on_load, self.curdoc))
-            except AttributeError:
-                pass # Document already cleaned up
         self._onload[self.curdoc].append((callback, threaded))
 
     def on_session_created(self, callback: Callable[[BokehSessionContext], None]) -> None:

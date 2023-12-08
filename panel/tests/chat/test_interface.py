@@ -1,8 +1,3 @@
-
-
-import asyncio
-import time
-
 from io import BytesIO
 
 import pytest
@@ -98,7 +93,6 @@ class TestChatInterface:
             assert stop_button.name == "Stop"
             assert send_button.visible
             assert not stop_button.visible
-            await asyncio.sleep(2)
             yield "B"  # should not stream this
 
         chat_interface.callback = callback
@@ -273,7 +267,6 @@ class TestChatInterface:
         clear_button = chat_interface._input_layout[-1]
         chat_interface.send("This shouldn't show up!", respond=False)
         clear_button.param.trigger("clicks")
-        time.sleep(0.5)
         assert chat_interface.objects[0].object == "This should show"
 
     def test_button_properties_send_with_callback_no_duplicate(self, chat_interface):
