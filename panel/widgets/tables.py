@@ -224,7 +224,9 @@ class BaseTable(ReactiveData, Widget):
                 else:
                     default_text_align = True
 
-            if isinstance(self.text_align, str):
+            if not hasattr(formatter, 'text_align'):
+                pass
+            elif isinstance(self.text_align, str):
                 formatter.text_align = self.text_align
                 if not default_text_align:
                     msg = f"The 'text_align' in Tabulator.formatters[{col!r}] is overridden by Tabulator.text_align"
@@ -234,7 +236,7 @@ class BaseTable(ReactiveData, Widget):
                 if not default_text_align:
                     msg = f"The 'text_align' in Tabulator.formatters[{col!r}] is overridden by Tabulator.text_align[{col!r}]"
                     warn(msg, RuntimeWarning)
-            elif col in self.indexes and hasattr(formatter, "text_align"):
+            elif col in self.indexes:
                 formatter.text_align = 'left'
 
             if isinstance(self.widths, int):
