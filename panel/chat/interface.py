@@ -203,8 +203,12 @@ class ChatInterface(ChatFeed):
             if default_properties:
                 default_callback = default_properties["_default_callback"]
                 callback = (
-                    self._wrap_callbacks(callback=callback, post_callback=post_callback)(default_callback)
-                    if callback is not None else default_callback
+                    self._wrap_callbacks(
+                        callback=callback,
+                        post_callback=post_callback,
+                        name=name,
+                    )(default_callback)
+                    if callback is not None or post_callback is not None else default_callback
                 )
             elif callback is not None and post_callback is not None:
                 callback = self._wrap_callbacks(post_callback=post_callback)(callback)
@@ -259,7 +263,8 @@ class ChatInterface(ChatFeed):
                 type(widget) is TextInput
             )
             if auto_send and widget in new_widgets:
-                widget.param.watch(self._click_send, "value")
+                callback = partial(self._button_data["send"].callback, self)
+                widget.param.watch(callback, "value")
             widget.param.update(
                 sizing_mode="stretch_width",
                 css_classes=["chat-interface-input-widget"]
@@ -309,13 +314,18 @@ class ChatInterface(ChatFeed):
     def _wrap_callbacks(
             self,
             callback: Callable | None = None,
-            post_callback: Callable | None = None
+            post_callback: Callable | None = None,
+            name: str = ""
         ):
         """
         Wrap the callback and post callback around the default callback.
         """
         def decorate(default_callback: Callable):
             def wrapper(self, event: param.parameterized.Event):
+                if name == "send" and not self.active_widget.value:
+                    # don't trigger if no message to prevent duplication
+                    return
+
                 if callback is not None:
                     try:
                         self.disabled = True
