@@ -16,6 +16,9 @@
   --switch-size: 12px;
   --container-background: var(--panel-surface-color);
   color: var(--neutral-foreground-rest);
+
+  --panel-primary-color: var(--accent-foreground-rest);
+  --panel-on-primary-color: var(--foreground-on-accent-rest);
 }
 
 /* Track */
@@ -486,6 +489,12 @@ input[type='file']:active {
 .bk-btn-light:active {
   outline: none;
 }
+.bk-btn:active {
+  transform: none;
+}
+
+:host(.solid) .bk-btn-group .bk-btn.bk-btn-default.bk-active,
+:host(.solid) .bk-btn-group .bk-btn.bk-btn-primary.bk-active,
 .bk-btn:active,
 ::file-selector-button:active,
 .bk-active.bk-btn,
@@ -510,27 +519,39 @@ input[type='file']:active {
 
 :host(.solid) .bk-btn.bk-btn-default:hover {
   background-color: var(--neutral-fill-hover);
+  color: var(--neutral-foreground-hover);
+}
+
+:host(.solid) .bk-btn.bk-btn-default:active,
+:host(.solid) .bk-btn.bk-btn-default.bk-active {
+  background-color: var(--neutral-fill-active);
+  color: var(--neutral-foreground-active);
 }
 
 :host(.outline) .bk-btn.bk-btn-default {
   background-color: transparent;
-  border: 1px solid var(--neutral-fill-strong-rest);
+  border: 1px solid var(--neutral-stroke-rest);
   color: var(--neutral-fill-strong-rest);
 }
 
 :host(.outline) .bk-btn.bk-btn-default:hover {
-  background-color: var(--neutral-fill-hover);
-  color: var(--neutral-foreground-rest);
+  border-color: var(--neutral-stroke-hover);
+  color: var(--neutral-fill-strong-hover);
+}
+
+:host(.outline) .bk-btn.bk-btn-default:active {
+  border-color: var(--neutral-stroke-active);
+  color: var(--neutral-fill-strong-active);
 }
 
 :host(.outline) .bk-btn.bk-btn-default.bk-active {
-  color: var(--foreground-on-accent-rest);
+  color: var(--neutral-foreground-rest);
   box-shadow: none;
 }
 
 :host(.outline) .bk-btn-group .bk-btn-default.bk-active {
   background-color: var(--neutral-fill-active);
-  color: var(--foreground-on-accent-active);
+  color: var(--neutral-foreground-rest);
 }
 
 :host(.outline) .bk-btn-group .bk-btn-primary.bk-active,
@@ -539,12 +560,12 @@ input[type='file']:active {
 :host(.solid) .bk-btn.bk-btn-primary[disabled]:hover {
   background-color: var(--accent-fill-rest);
   border-color: var(--accent-fill-rest);
-  color: var(--accent-foreground-cut-rest);
+  color: var(--foreground-on-accent-rest);
 }
 :host(.solid) .bk-btn.bk-btn-primary:hover {
   background-color: var(--accent-fill-hover);
   border-color: var(--accent-fill-hover);
-  color: var(--accent-foreground-cut-hover);
+  color: var(--foreground-on-accent-hover);
 }
 :host(.solid) .bk-btn.bk-btn-primary.bk-active,
 :host(.solid) .bk-btn.bk-btn-primary:active,
@@ -552,11 +573,12 @@ input[type='file']:active {
 :host(.solid) .bk-btn.bk-btn-primary.bk-active[disabled]:hover {
   background-color: var(--accent-fill-active);
   border-color: var(--accent-fill-active);
-  color: var(--accent-foreground-cut-rest);
+  color: var(--foreground-on-accent-active);
 }
 :host(.outline) .bk-btn-group .bk-btn-primary.bk-active:hover,
 :host(.solid) .bk-btn.bk-btn-primary.bk-active:hover {
   background-color: var(--accent-fill-hover);
+  color: var(--foreground-on-accent-hover);
 }
 :host(.solid) .bk-btn.bk-btn-primary[disabled],
 :host(.solid) .bk-btn.bk-btn-primary[disabled]:hover,
@@ -566,20 +588,21 @@ input[type='file']:active {
   cursor: not-allowed;
   opacity: var(--disabled-opacity);
 }
-:host(.outline) .bk-btn.bk-btn-primary {
-  border-color: var(--accent-fill-rest);
-  color: var(--neutral-foreground-rest);
+:host(.outline) .bk-btn.bk-btn-primary.bk-active:hover,
+:host(.outline) .bk-btn.bk-btn-primary:hover {
+  border-color: var(--accent-fill-hover);
+  color: var(--neutral-foreground-hover);
 }
 :host(.outline) .bk-btn.bk-btn-primary.bk-active,
 :host(.outline) .bk-btn.bk-btn-primary:active {
   border-color: var(--accent-fill-active);
   color: var(--neutral-foreground-active);
 }
-:host(.outline) .bk-btn.bk-btn-primary.bk-active:hover,
-:host(.outline) .bk-btn.bk-btn-primary:hover {
-  border-color: var(--accent-fill-hover);
-  color: var(--neutral-foreground-hover);
+:host(.outline) .bk-btn.bk-btn-primary {
+  border-color: var(--accent-fill-rest);
+  color: var(--neutral-foreground-rest);
 }
+
 :host(.outline) .bk-btn-success.bk-active,
 :host(.outline) .bk-btn-success:hover {
   color: var(--neutral-foreground-rest);
