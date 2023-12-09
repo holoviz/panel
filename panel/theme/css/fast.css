@@ -20,6 +20,13 @@
   --panel-primary-color: var(--accent-foreground-rest);
   --panel-on-primary-color: var(--foreground-on-accent-rest);
 }
+/* Anchor */
+a {
+  color: var(--accent-fill-rest);
+}
+a:hover {
+  color: var(--accent-fill-hover);
+}
 
 /* Track */
 
@@ -653,6 +660,10 @@ input[type='file']:active {
 
 select:not([type='file']).bk-input {
   margin: 0;
+}
+select:not([multiple]).bk-input,
+select:not([size]).bk-input {
+  background-image: url('data:image/svg+xml;utf8,<svg version="1.1" viewBox="0 0 25 20" xmlns="http://www.w3.org/2000/svg"><path d="M 0,0 25,0 12.5,20 Z" fill="darkgrey"/></svg>');
 }
 
 /* Checkbox/Radio */
