@@ -189,6 +189,9 @@ class ChatFeed(ListPanel):
         Whether to scroll to the latest object on init. If not
         enabled the view will be on the first object.""")
 
+    show_streaming_dot = param.Boolean(default=True, doc="""
+        Whether to show the streaming dot when streaming.""")
+
     _placeholder = param.ClassSelector(class_=ChatMessage, allow_refs=False, doc="""
         The placeholder wrapped in a ChatMessage object;
         primarily to prevent recursion error in _update_placeholder.""")
@@ -294,6 +297,7 @@ class ChatFeed(ListPanel):
         value: dict,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
+        **params
     ) -> ChatMessage | None:
         """
         Builds a ChatMessage from the value.
@@ -307,7 +311,8 @@ class ChatFeed(ListPanel):
                 f"If 'value' is a dict, it must contain an 'object' key, "
                 f"e.g. {{'object': 'Hello World'}}; got {value!r}"
             )
-        message_params = dict(value, renderers=self.renderers, **self.message_params)
+        message_params = self.message_params.copy()
+        message_params.update(value, renderers=self.renderers, **params)
         if user:
             message_params["user"] = user
         if avatar:
@@ -318,7 +323,7 @@ class ChatFeed(ListPanel):
         return message
 
     def _upsert_message(
-        self, value: Any, message: ChatMessage | None = None
+        self, value: Any, message: ChatMessage | None = None, show_streaming_dot: bool | None = None
     ) -> ChatMessage | None:
         """
         Replace the placeholder message with the response or update
@@ -342,7 +347,10 @@ class ChatFeed(ListPanel):
                 user = value.user
                 avatar = value.avatar
                 value = value.object
-            message.update(value, user=user, avatar=avatar)
+                show_streaming_dot = value.streaming
+            message.update(
+                value, user=user, avatar=avatar, show_streaming_dot=show_streaming_dot
+            )
             return message
         elif isinstance(value, ChatMessage):
             # ChatMessage is not created yet, but a ChatMessage is passed; use it
@@ -352,7 +360,9 @@ class ChatFeed(ListPanel):
         # ChatMessage is not created yet, create a ChatMessage from string/dict
         if not isinstance(value, dict):
             value = {"object": value}
-        new_message = self._build_message(value, user=user, avatar=avatar)
+        new_message = self._build_message(
+            value, user=user, avatar=avatar, show_streaming_dot=show_streaming_dot
+        )
         self._replace_placeholder(new_message)
         return new_message
 
@@ -377,16 +387,21 @@ class ChatFeed(ListPanel):
         updating the message's value.
         """
         response_message = None
+        show_streaming_dot = False
         if isasyncgen(response):
+            show_streaming_dot = self.show_streaming_dot
             async for token in response:
-                response_message = self._upsert_message(token, response_message)
+                response_message = self._upsert_message(token, response_message, show_streaming_dot)
+            response_message.show_streaming_dot = False
         elif isgenerator(response):
+            show_streaming_dot = self.show_streaming_dot
             for token in response:
-                response_message = self._upsert_message(token, response_message)
+                response_message = self._upsert_message(token, response_message, show_streaming_dot)
+            response_message.show_streaming_dot = False
         elif isawaitable(response):
-            response_message = self._upsert_message(await response, response_message)
+            response_message = self._upsert_message(await response, response_message, show_streaming_dot)
         else:
-            response_message = self._upsert_message(response, response_message)
+            response_message = self._upsert_message(response, response_message, show_streaming_dot)
         return response_message
 
     async def _handle_callback(self, message: ChatMessage) -> ChatMessage | None:

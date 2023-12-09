@@ -186,10 +186,8 @@ class ChatMessage(PaneBase):
     show_copy_icon = param.Boolean(default=True, doc="""
         Whether to display the copy icon.""")
 
-    streaming_state = param.ObjectSelector(objects=["active", "waiting", None], doc="""
-        The state of the streaming animation. If set to "active", the dot
-        will be solid. If set to "waiting", the dot will be shown, but
-        the dot will fade in and out. If set to None, the dot will not be shown.""")
+    show_streaming_dot = param.Boolean(default=False, doc="""
+        Whether to show the streaming dot.""")
 
     renderers = param.HookList(doc="""
         A callable or list of callables that accept the object and return a
@@ -202,7 +200,7 @@ class ChatMessage(PaneBase):
     user = param.Parameter(default="User", doc="""
         Name of the user who sent the message.""")
 
-    _object_panel = param.Parameter(doc="The rendered object panel.")
+    _object_panel = param.Parameter(doc="The rendered object panel.", allow_refs=False)
 
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_message.css"]
 
@@ -244,8 +242,10 @@ class ChatMessage(PaneBase):
             visible=self.param.show_avatar,
             sizing_mode=None,
         )
+
+        self._render_object_method = ParamMethod(self._render_object, **render_kwargs)
         center_row = Row(
-            ParamMethod(self._render_object, **render_kwargs),
+            self._render_object_method,
             self.reaction_icons,
             css_classes=["center"],
             stylesheets=self._stylesheets,
@@ -428,7 +428,7 @@ class ChatMessage(PaneBase):
         Set the sizing mode and height of the object.
         """
         if hasattr(obj, "objects"):
-            obj._stylesheets = self._stylesheets
+            obj.stylesheets = [*obj.stylesheets, *self._stylesheets]
             for subobj in obj.objects:
                 self._set_default_attrs(subobj)
             return None
@@ -440,7 +440,6 @@ class ChatMessage(PaneBase):
                     css_classes=[*obj.css_classes, "message"],
                     stylesheets=[*obj.stylesheets, *self._stylesheets],
                 )
-                self._toggle_streaming_css(obj)
             obj.sizing_mode = None
         else:
             if obj.sizing_mode is None and not obj.width:
@@ -490,7 +489,6 @@ class ChatMessage(PaneBase):
         else:
             object_panel = _panel(value)
 
-        self._set_default_attrs(object_panel)
         return object_panel
 
     @param.depends("avatar", "show_avatar")
@@ -529,8 +527,11 @@ class ChatMessage(PaneBase):
         Renders object as a panel object.
         """
         # used in ChatFeed to extract its contents
-        self._object_panel = object_panel = self._create_panel(self.object)
-        return object_panel
+        object_panel = self._create_panel(self.object)
+        self._set_default_attrs(object_panel)
+        self._toggle_streaming_css(object_panel)
+        self._object_panel = object_panel
+        return self._object_panel
 
     @param.depends("avatar_lookup", "user", watch=True)
     def _update_avatar(self):
@@ -591,29 +592,22 @@ class ChatMessage(PaneBase):
                 i -= 1
         return object_panel, obj, attr
 
-    @param.depends("streaming_state", watch=True)
-    def _toggle_streaming_css(self, object_panel=None):
-        if object_panel is None:
-            object_panel = self._traverse_objects_for_streaming(self.object)[0]
+    @param.depends("show_streaming_dot", watch=True)
+    def _toggle_streaming_css(self, object_pane=None):
+        if object_pane is None:
+            object_pane = self._render_object_method._pane
 
-        if self.streaming_state == "active":
-            if "waiting" in object_panel.css_classes:
-                object_panel.css_classes.remove("waiting")
-            if "active" not in object_panel.css_classes:
-                object_panel.css_classes = [*object_panel.css_classes, "active"]
-        elif self.streaming_state == "waiting":
-            css_classes = []
-            if "active" not in object_panel.css_classes:
-                css_classes.append("active")
-            if "waiting" not in object_panel.css_classes:
-                css_classes.append("waiting")
-            object_panel.css_classes = [*object_panel.css_classes, *css_classes]
-        elif self.streaming_state is None:
-            object_panel.css_classes = [
-                css_class
-                for css_class in object_panel.css_classes
-                if css_class not in ("active", "waiting")
-            ]
+        if hasattr(object_pane, "objects"):
+            object_pane = self._traverse_objects_for_streaming(object_pane)[0]
+        css_classes = object_pane.css_classes.copy()
+
+        if self.show_streaming_dot:
+            if "streaming" not in css_classes:
+                css_classes.append("streaming")
+        else:
+            if "streaming" in css_classes:
+                css_classes.remove("streaming")
+        object_pane.css_classes = css_classes
 
     def stream(self, token: str):
         """
@@ -636,6 +630,7 @@ class ChatMessage(PaneBase):
         value: dict | ChatMessage | Any,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
+        **params
     ):
         """
         Updates the message with a new value, user and avatar.
@@ -648,8 +643,10 @@ class ChatMessage(PaneBase):
             The user to send as; overrides the message message's user if provided.
         avatar : str | bytes | BytesIO | None
             The avatar to use; overrides the message message's avatar if provided.
+        params : dict
+            Additional parameters to update.
         """
-        updates = {}
+        updates = params.copy()
         if isinstance(value, dict):
             updates.update(value)
             if user:

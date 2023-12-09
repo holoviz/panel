@@ -110,11 +110,8 @@
   }
 }
 
-:host(.active) p::after {
+:host(.streaming) p::after {
   content: ' ●';
-  display: inline;
-}
-
-:host(.waiting) p::after {
+  display: inline-block;
   animation: fadeOut 1s infinite cubic-bezier(0.68, -0.55, 0.27, 1.55);
 }
