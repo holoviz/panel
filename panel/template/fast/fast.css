@@ -214,6 +214,10 @@ img.app-logo {
   margin-block-end: 0;
 }
 
+div.pn-wrapper {
+  height: 100%;
+}
+
 .pn-modal-close {
   position: absolute;
   right: 10%;
