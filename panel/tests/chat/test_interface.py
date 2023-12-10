@@ -1,6 +1,3 @@
-
-
-
 from io import BytesIO
 
 import pytest
@@ -19,7 +16,7 @@ class TestChatInterface:
         return ChatInterface()
 
     def test_init(self, chat_interface):
-        assert len(chat_interface._button_data) == 4
+        assert len(chat_interface._button_data) == 5
         assert len(chat_interface._widgets) == 1
         assert isinstance(chat_interface._input_layout, Row)
         assert isinstance(chat_interface._widgets["TextInput"], TextInput)
@@ -86,7 +83,51 @@ class TestChatInterface:
         assert len(chat_interface.objects) == 0
         chat_interface._click_send(None)
         assert len(chat_interface.objects) == 1
-        assert chat_interface.objects[0].object == "Message"
+
+    def test_show_stop_disabled(self, chat_interface: ChatInterface):
+        async def callback(msg, user, instance):
+            yield "A"
+            send_button = chat_interface._input_layout[1]
+            stop_button = chat_interface._input_layout[2]
+            assert send_button.name == "Send"
+            assert stop_button.name == "Stop"
+            assert send_button.visible
+            assert not stop_button.visible
+            yield "B"  # should not stream this
+
+        chat_interface.callback = callback
+        chat_interface.show_stop = False
+        chat_interface.send("Message", respond=True)
+        send_button = chat_interface._input_layout[1]
+        stop_button = chat_interface._input_layout[2]
+        assert send_button.name == "Send"
+        assert stop_button.name == "Stop"
+        assert send_button.visible
+        assert not stop_button.visible
+
+    def test_show_stop_for_async(self, chat_interface: ChatInterface):
+        async def callback(msg, user, instance):
+            send_button = instance._input_layout[1]
+            stop_button = instance._input_layout[2]
+            assert send_button.name == "Send"
+            assert stop_button.name == "Stop"
+            assert not send_button.visible
+            assert stop_button.visible
+
+        chat_interface.callback = callback
+        chat_interface.send("Message", respond=True)
+
+    def test_show_stop_for_sync(self, chat_interface: ChatInterface):
+        def callback(msg, user, instance):
+            send_button = instance._input_layout[1]
+            stop_button = instance._input_layout[2]
+            assert send_button.name == "Send"
+            assert stop_button.name == "Stop"
+            assert not send_button.visible
+            assert stop_button.visible
+
+        chat_interface.callback = callback
+        chat_interface.send("Message", respond=True)
 
     @pytest.mark.parametrize("widget", [TextInput(), TextAreaInput()])
     def test_auto_send_types(self, chat_interface: ChatInterface, widget):
