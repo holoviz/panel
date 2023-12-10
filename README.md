@@ -9,6 +9,12 @@
 
 Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library that lets you **easily build powerful tools, dashboards and complex applications entirely in Python**. It has a batteries-included philosophy, putting the PyData ecosystem, powerful data tables and much more at your fingertips. High-level reactive APIs and lower-level callback based APIs ensure you can quickly build exploratory applications, but you aren't limited if you build complex, multi-page apps with rich interactivity. Panel is a member of the [HoloViz](https://holoviz.org/) ecosystem, your gateway into a connected ecosystem of data exploration tools.
 
+---
+
+Enjoying Panel? Show your support with a [Github star](https://github.com/holoviz/panel) — it’s a simple click that means the world to us and helps others discover it too! ⭐️
+
+---
+
 <table>
 <tbody>
 <tr>
