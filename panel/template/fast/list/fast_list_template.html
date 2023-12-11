@@ -53,6 +53,9 @@
   #sidebar {
     min-width: var(--sidebar-width);
     max-width: var(--sidebar-width);
+	{% if not main_layout %}
+	background-color: var(--panel-surface-color);
+	{% endif %}
   }
 </style>
 
