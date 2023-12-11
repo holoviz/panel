@@ -75,6 +75,7 @@ jobs:
   npm_build:
     name: Build NPM Package
     runs-on: 'ubuntu-latest'
+    needs: [conda_build, pip_build]
     defaults:
       run:
         shell: bash -l {0}
@@ -132,6 +133,7 @@ jobs:
   cdn:
     name: Build CDN
     runs-on: 'ubuntu-latest'
+    needs: [conda_build, pip_build]
     defaults:
       run:
         shell: bash -l {0}
