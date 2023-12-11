@@ -185,13 +185,14 @@ def with_lock(func: Callable) -> Callable:
     wrapper.lock = True # type: ignore
     return wrapper
 
-def dispatch_tornado(conn, events):
+def dispatch_tornado(conn, events=None, msg=None):
     from tornado.websocket import WebSocketHandler
     socket = conn._socket
     ws_conn = getattr(socket, 'ws_connection', False)
     if not ws_conn or ws_conn.is_closing(): # type: ignore
         return []
-    msg = conn.protocol.create('PATCH-DOC', events)
+    if msg is None:
+        msg = conn.protocol.create('PATCH-DOC', events)
     futures = [
         WebSocketHandler.write_message(socket, msg.header_json),
         WebSocketHandler.write_message(socket, msg.metadata_json),
@@ -206,9 +207,10 @@ def dispatch_tornado(conn, events):
         ])
     return futures
 
-def dispatch_django(conn, events):
+def dispatch_django(conn, events=None, msg=None):
     socket = conn._socket
-    msg = conn.protocol.create('PATCH-DOC', events)
+    if msg is None:
+        msg = conn.protocol.create('PATCH-DOC', events)
     futures = [
         socket.send(text_data=msg.header_json),
         socket.send(text_data=msg.metadata_json),
@@ -222,6 +224,21 @@ def dispatch_django(conn, events):
             socket.send(binary_data=payload)
         ])
     return futures
+
+async def _dispatch_msgs(msgs):
+    from tornado.websocket import WebSocketClosedError, WebSocketHandler
+    for conn, msg in msgs.items():
+        if isinstance(conn._socket, WebSocketHandler):
+            futures = dispatch_tornado(conn, msg=msg)
+        else:
+            futures = dispatch_django(conn, msg=msg)
+        for future in futures:
+            try:
+                await future
+            except WebSocketClosedError:
+                logger.warning("Failed sending message as connection was closed")
+            except Exception as e:
+                logger.warning(f"Failed sending message due to following error: {e}")
 
 @contextmanager
 def unlocked() -> Iterator:
@@ -297,8 +314,17 @@ def unlocked() -> Iterator:
         try:
             curdoc.unhold()
         except RuntimeError:
-            if remaining_events:
-                curdoc.add_next_tick_callback(partial(_dispatch_events, curdoc, remaining_events))
+            if not remaining_events:
+                return
+            # Create messages for remaining events
+            msgs = {}
+            for conn in connections:
+                if not remaining_events:
+                    continue
+                # Create a protocol message for any events that cannot be immediately dispatched
+                msgs[conn] =  conn.protocol.create('PATCH-DOC', remaining_events)
+            curdoc.add_next_tick_callback(partial(_dispatch_msgs, msgs))
+
 
 @contextmanager
 def immediate_dispatch(doc: Document | None = None):
