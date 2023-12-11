@@ -10,6 +10,7 @@ import shutil
 import signal
 import socket
 import tempfile
+import threading
 import time
 import unittest
 
@@ -331,6 +332,16 @@ def module_cleanup():
         name: model for name, model in _default_resolver._known_models.items()
         if not any(model.__module__.startswith(tr) for tr in to_reset)
     }
+
+@pytest.fixture(autouse=True)
+def asyncio_cleanup():
+    """
+    Kill worker thread used by watchfiles.
+    """
+    yield
+    for thread in threading.enumerate():
+        if thread.name == 'AnyIO worker thread':
+            thread.stop()
 
 @pytest.fixture(autouse=True)
 def server_cleanup():

@@ -52,5 +52,5 @@ async def test_reload_on_update(server_document, stop_event):
         await asyncio.sleep(0.51)
         temp.write(b'Bar')
         temp.flush()
-        await wait_until_async(lambda: location.reload)
+        await async_wait_until(lambda: location.reload)
     del task
