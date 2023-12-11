@@ -62,12 +62,15 @@ except Exception:
         _IN_PYSCRIPT_WORKER = False
     _IN_WORKER = True
 
+# Ensure we don't try to load MPL WASM backend in worker
+if _IN_WORKER:
+    os.environ['MPLBACKEND'] = 'agg'
+
 try:
     import pyodide_http
     pyodide_http.patch_all()
 except Exception:
     pyodide_http = None
-    pass
 
 try:
     # Patch fsspec with synchronous http support
@@ -282,7 +285,7 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
         pydoc.unhold()
         pydoc.callbacks.trigger_event(DocumentReady())
     except Exception as e:
-        print(f'Error raised while processing Document events: {e}')
+        print(f'Error raised while processing Document events: {e}')  # noqa: T201
 
 def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None, setter: str | None = None):
     """

@@ -29,6 +29,10 @@ exclude = [
     "node_modules",
     "apps",
 ]
+line-length = 165
+fix = true
+
+[tool.ruff.lint]
 ignore = [
     "E402",
     "E712",
@@ -37,15 +41,19 @@ ignore = [
     "W605",
     "E701", # Multiple statements on one line
 ]
-line-length = 165
 select = [
     "E",
     "F",
     "W",
+    "PIE",
+    "T20",
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "panel/tests/ui/jupyter_server_test_config.py" = ["F821"]
+"panel/compiler.py" = ["T201"]
+"panel/io/convert.py" = ["T201"]
+"panel/pane/vtk/synchronizable_*.py" = ["T201"]
 
 [tool.codespell]
 ignore-words-list = "nd,doubleclick"

@@ -595,7 +595,6 @@ def test_tabulator_groups(document, comm):
 
 
 def test_tabulator_numeric_groups(document, comm):
-    print(document)
     df = pd.DataFrame(np.random.rand(10, 3))
     table = Tabulator(df, groups={'Number': [0, 1]})
 
@@ -2149,3 +2148,15 @@ def test_bokeh_formatter_index_with_no_textalign():
     table = Tabulator(df, formatters={"A": index_format})
     serve_and_request(table)
     wait_until(lambda: bool(table._models))
+
+@pytest.mark.parametrize('text_align', [{"A": "center"}, "center"], ids=["dict", "str"])
+def test_bokeh_formatter_column_with_no_textalign_but_text_align_set(document, comm, text_align):
+    df = pd.DataFrame({"A": [1, 2, 3]})
+    table = Tabulator(
+        df,
+        formatters=dict(A=HTMLTemplateFormatter(template='<b><%= value %>"></b>')),
+        text_align=text_align,
+    )
+
+    model = table.get_root(document, comm)
+    assert model.configuration['columns'][1]['hozAlign'] == 'center'

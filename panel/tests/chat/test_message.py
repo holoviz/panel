@@ -3,6 +3,7 @@ import os
 import pathlib
 
 from io import BytesIO
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import pytest
@@ -144,7 +145,21 @@ class TestChatMessage:
         columns = message._composite.objects
         timestamp_pane = columns[1][2]
         assert isinstance(timestamp_pane, HTML)
+        dt_str = datetime.datetime.now().strftime("%H:%M")
+        assert timestamp_pane.object == dt_str
+
+        message = ChatMessage(timestamp_tz="UTC")
+        columns = message._composite.objects
+        timestamp_pane = columns[1][2]
+        assert isinstance(timestamp_pane, HTML)
         dt_str = datetime.datetime.utcnow().strftime("%H:%M")
+        assert timestamp_pane.object == dt_str
+
+        message = ChatMessage(timestamp_tz="US/Pacific")
+        columns = message._composite.objects
+        timestamp_pane = columns[1][2]
+        assert isinstance(timestamp_pane, HTML)
+        dt_str = datetime.datetime.now(tz=ZoneInfo("US/Pacific")).strftime("%H:%M")
         assert timestamp_pane.object == dt_str
 
         special_dt = datetime.datetime(2023, 6, 24, 15)

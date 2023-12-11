@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 import os
 import platform
@@ -84,7 +85,6 @@ def check_layoutable_properties(layoutable, model):
 
     layoutable.css_classes = ['custom_class']
     if isinstance(layoutable, Alert):
-        print(model.css_classes)
         assert model.css_classes == ['markdown', 'custom_class', 'alert', 'alert-primary']
     elif isinstance(layoutable, Markdown):
         assert model.css_classes == ['markdown', 'custom_class']
@@ -193,6 +193,77 @@ def wait_until(fn, page=None, timeout=5000, interval=100):
             time.sleep(interval / 1000)
 
 
+async def async_wait_until(fn, page=None, timeout=5000, interval=100):
+    """
+    Exercise a test function in a loop until it evaluates to True
+    or times out.
+
+    The function can either be a simple lambda that returns True or False:
+    >>> await async_wait_until(lambda: x.values() == ['x'])
+
+    Or a defined function with an assert:
+    >>> async def _()
+    >>>    assert x.values() == ['x']
+    >>> await async_wait_until(_)
+
+    In a Playwright context test, you should pass the page fixture:
+    >>> await async_wait_until(lambda: x.values() == ['x'], page)
+
+    Parameters
+    ----------
+    fn : callable
+        Callback
+    page : playwright.async_api.Page, optional
+        Playwright page
+    timeout : int, optional
+        Total timeout in milliseconds, by default 5000
+    interval : int, optional
+        Waiting interval, by default 100
+
+    Adapted from pytest-qt.
+    """
+    # Hide this function traceback from the pytest output if the test fails
+    __tracebackhide__ = True
+
+    start = time.time()
+
+    def timed_out():
+        elapsed = time.time() - start
+        elapsed_ms = elapsed * 1000
+        return elapsed_ms > timeout
+
+    timeout_msg = f"wait_until timed out in {timeout} milliseconds"
+
+    while True:
+        try:
+            result = fn()
+            if asyncio.iscoroutine(result):
+                result = await result
+        except AssertionError as e:
+            if timed_out():
+                raise TimeoutError(timeout_msg) from e
+        else:
+            if result not in (None, True, False):
+                raise ValueError(
+                    "`wait_until` callback must return None, True, or "
+                    f"False, returned {result!r}"
+                )
+            # None is returned when the function has an assert
+            if result is None:
+                return
+            # When the function returns True or False
+            if result:
+                return
+            if timed_out():
+                raise TimeoutError(timeout_msg)
+        if page:
+            # Playwright recommends against using time.sleep
+            # https://playwright.dev/python/docs/intro#timesleep-leads-to-outdated-state
+            await page.wait_for_timeout(interval)
+        else:
+            await asyncio.sleep(interval / 1000)
+
+
 def get_ctrl_modifier():
     """
     Get the CTRL modifier on the current platform.
@@ -257,11 +328,11 @@ def run_panel_serve(args, cwd=None):
     except Exception as e:
         p.terminate()
         p.wait()
-        print("An error occurred: %s", e)
+        print("An error occurred: %s", e)  # noqa: T201
         try:
             out = p.stdout.read().decode()
-            print("\n---- subprocess stdout follows ----\n")
-            print(out)
+            print("\n---- subprocess stdout follows ----\n")  # noqa: T201
+            print(out)  # noqa: T201
         except Exception:
             pass
         raise

@@ -139,6 +139,8 @@ def _eval_panel(
             """)
         )
 
+    doc.on_event('document_ready', partial(state._schedule_on_load, doc))
+
     # Set up instrumentation for logging sessions
     logger.info(LOG_SESSION_LAUNCHING, id(doc))
     def _log_session_destroyed(session_context):
@@ -574,8 +576,8 @@ class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
             if authorized is None:
                 return
             elif not authorized:
-                self._render_auth_error(auth_error)
-                page = self.set_header("Content-Type", 'text/html')
+                page = self._render_auth_error(auth_error)
+                self.set_header("Content-Type", 'text/html')
                 self.write(page)
                 return
 
@@ -770,6 +772,8 @@ def modify_document(self, doc: 'Document'):
     from ..config import config
 
     logger.info(LOG_SESSION_LAUNCHING, id(doc))
+
+    doc.on_event('document_ready', partial(state._schedule_on_load, doc))
 
     if config.autoreload:
         path = self._runner.path
@@ -1187,7 +1191,7 @@ def get_server(
                     continue
             if isinstance(app, pathlib.Path):
                 app = str(app) # enables serving apps from Paths
-            if (isinstance(app, str) and (app.endswith(".py") or app.endswith(".ipynb") or app.endswith('.md'))
+            if (isinstance(app, str) and app.endswith(('.py', '.ipynb', '.md'))
                 and os.path.isfile(app)):
                 apps[slug] = app = build_single_handler_application(app)
                 app._admin = admin
@@ -1199,7 +1203,7 @@ def get_server(
     else:
         if isinstance(panel, pathlib.Path):
             panel = str(panel) # enables serving apps from Paths
-        if (isinstance(panel, str) and (panel.endswith(".py") or panel.endswith(".ipynb") or panel.endswith('.md'))
+        if (isinstance(panel, str) and panel.endswith(('.py', '.ipynb', '.md'))
             and os.path.isfile(panel)):
             apps = {'/': build_single_handler_application(panel)}
         else:
@@ -1290,7 +1294,7 @@ def get_server(
     if verbose:
         address = server.address or 'localhost'
         url = f"http://{address}:{server.port}{server.prefix}"
-        print(f"Launching server at {url}")
+        print(f"Launching server at {url}")  # noqa: T201
 
     state._servers[server_id] = (server, panel, [])
     state._server_config[server._tornado] = server_config

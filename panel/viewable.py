@@ -490,7 +490,7 @@ class MimeRenderMixin:
             handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
 
     def _on_stdout(self, ref: str, stdout: Any) -> None:
-        if ref not in state._handles or config.console_output is [None, 'disable']:
+        if ref not in state._handles or config.console_output in [None, 'disable']:
             return
         handle, accumulator = state._handles[ref]
         formatted = ["%s</br>" % o for o in stdout]
@@ -861,7 +861,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         Prints a compositional repr of the class.
         """
         deprecated('1.4', f'{type(self).__name__}.pprint', 'print')
-        print(self)
+        print(self)  # noqa: T201
 
     def select(
         self, selector: Optional[type | Callable[['Viewable'], bool]] = None

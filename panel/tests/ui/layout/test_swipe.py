@@ -37,7 +37,6 @@ def test_swipe_fixed_width(page):
     slider = page.locator('.swipe-container .slider')
     slider_bbox = slider.bounding_box()
     assert slider_bbox['x'] == (bbox['width']/2. + 3)
-    print(slider_bbox['x'] + (bbox['width']/4.))
     slider.drag_to(slider, target_position={'x': (bbox['width']/4.), 'y': 0}, force=True)
 
     assert page.locator('.swipe-container .outer').nth(0).evaluate("""(element) =>
@@ -86,7 +85,6 @@ def test_swipe_stretch_width(page):
     slider = page.locator('.swipe-container .slider')
     slider_bbox = slider.bounding_box()
     assert slider_bbox['x'] == (bbox['width']/2. + 3)
-    print(slider_bbox['x'] + (bbox['width']/4.))
     slider.drag_to(slider, target_position={'x': (bbox['width']/4.), 'y': 0}, force=True)
 
     assert page.locator('.swipe-container .outer').nth(0).evaluate("""(element) =>
