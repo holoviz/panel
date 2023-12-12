@@ -19,7 +19,7 @@ from ..io.document import freeze_doc
 from ..io.model import hold
 from ..io.resources import CDN_DIST
 from ..io.state import state
-from ..models import Column as PnColumn, Logs as PnLogs
+from ..models import Column as PnColumn, Log as PnLog
 from ..reactive import Reactive
 from ..util import param_name, param_reprs, param_watchers
 
@@ -953,13 +953,13 @@ class Column(ListPanel):
         )
 
 
-class Logs(Column):
+class Log(Column):
 
     min_visible = param.Integer(default=10, doc="""
         Minimum number of visible log entries shown initially.
         If 0, all log entries will be visible.""")
 
-    _bokeh_model: ClassVar[Type[Model]] = PnLogs
+    _bokeh_model: ClassVar[Type[Model]] = PnLog
 
     _direction = 'vertical'
 

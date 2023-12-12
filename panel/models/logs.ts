@@ -3,7 +3,7 @@ import { Column, ColumnView } from "./column";
 import * as p from "@bokehjs/core/properties";
 
 export class LogsView extends ColumnView {
-    model: Logs;
+    model: Log;
 
     connect_signals(): void {
         super.connect_signals();
@@ -33,19 +33,19 @@ export class LogsView extends ColumnView {
     }
 }
 
-export namespace Logs {
+export namespace Log {
     export type Attrs = p.AttrsOf<Props>;
     export type Props = Column.Props & {
         min_visible: p.Property<number>;
     };
 }
 
-export interface Logs extends Logs.Attrs { }
+export interface Log extends Log.Attrs { }
 
-export class Logs extends Column {
-    properties: Logs.Props;
+export class Log extends Column {
+    properties: Log.Props;
 
-    constructor(attrs?: Partial<Logs.Attrs>) {
+    constructor(attrs?: Partial<Log.Attrs>) {
         super(attrs);
     }
 
@@ -54,7 +54,7 @@ export class Logs extends Column {
     static {
         this.prototype.default_view = LogsView;
 
-        this.define<Logs.Props>(({ Int }) => ({
+        this.define<Log.Props>(({ Int }) => ({
             min_visible: [Int, 0],
         }));
     }

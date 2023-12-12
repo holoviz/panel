@@ -73,7 +73,7 @@ class Card(Column):
     tag = String("tag", help="CSS class to use for the Card as a whole.")
 
 
-class Logs(Column):
+class Log(Column):
     min_visible = Int(
         default=10,
         help=(
