@@ -17,9 +17,7 @@ class ToggleIcon(Widget):
 
     _widget_type = _PnToggleIcon
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'label', 'button_style': None}
-
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {'button_style': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'name', 'button_style': None}
 
     _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/button.css']
 
