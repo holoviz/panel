@@ -134,6 +134,9 @@ class ImageBase(FileBase):
         alt text to add to the image tag. The alt text is shown when a
         user cannot load or display the image.""")
 
+    caption = param.String(default=None, doc="""
+        Optional caption for the image.""")
+
     fixed_aspect = param.Boolean(default=True, doc="""
         Whether the aspect ratio of the image should be forced to be
         equal.""")
@@ -143,11 +146,11 @@ class ImageBase(FileBase):
         website.""")
 
     _rerender_params: ClassVar[List[str]] = [
-        'alt_text', 'link_url', 'embed', 'object', 'styles', 'width', 'height'
+        'alt_text', 'caption', 'link_url', 'embed', 'object', 'styles', 'width', 'height'
     ]
 
     _rename: ClassVar[Mapping[str, str | None ]] = {
-        'alt_text': None, 'fixed_aspect': None, 'link_url': None
+        'alt_text': None, 'fixed_aspect': None, 'link_url': None, 'caption': None,
     }
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
@@ -171,6 +174,8 @@ class ImageBase(FileBase):
         html = f'<img src="{src}" {alt} style="max-width: 100%; max-height: 100%; object-fit: {object_fit};{width}{height}"></img>'
         if self.link_url:
             html = f'<a href="{self.link_url}" target="_blank">{html}</a>'
+        if self.caption:
+            html = f'<figure>{html}<figcaption>{self.caption}</figcaption></figure>'
         return escape(html)
 
     def _img_dims(self, width, height):

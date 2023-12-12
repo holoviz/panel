@@ -1,8 +1,6 @@
 import asyncio
 import time
 
-from unittest.mock import MagicMock
-
 import pytest
 
 from panel.chat.feed import ChatFeed
@@ -10,7 +8,7 @@ from panel.chat.message import ChatMessage
 from panel.layout import Column, Row
 from panel.pane.image import Image
 from panel.pane.markup import HTML
-from panel.tests.util import wait_until
+from panel.tests.util import async_wait_until, wait_until
 from panel.widgets.indicators import LinearGauge
 from panel.widgets.input import TextAreaInput, TextInput
 
@@ -343,7 +341,8 @@ class TestChatFeed:
     def test_no_recursion_error(self, chat_feed):
         chat_feed.send("Some time ago, there was a recursion error like this")
 
-    def test_chained_response(self, chat_feed):
+    @pytest.mark.asyncio
+    async def test_chained_response(self, chat_feed):
         async def callback(contents, user, instance):
             if user == "User":
                 yield {
@@ -363,7 +362,7 @@ class TestChatFeed:
 
         chat_feed.callback = callback
         chat_feed.send("Testing!", user="User")
-        wait_until(lambda: len(chat_feed.objects) == 3)
+        await async_wait_until(lambda: len(chat_feed.objects) == 3)
         assert chat_feed.objects[1].user == "arm"
         assert chat_feed.objects[1].avatar == "🦾"
         assert chat_feed.objects[1].object == "Hey, leg! Did you hear the user?"
@@ -529,100 +528,69 @@ class TestChatFeedCallback:
 
     def test_placeholder_disabled(self, chat_feed):
         def echo(contents, user, instance):
-            time.sleep(0.25)
-            yield "hey testing"
+            time.sleep(1.25)
+            assert instance._placeholder not in instance._chat_log
+            return "hey testing"
 
         chat_feed.placeholder_threshold = 0
         chat_feed.callback = echo
-        chat_feed.append = MagicMock(
-            side_effect=lambda message: chat_feed._chat_log.append(message)
-        )
         chat_feed.send("Message", respond=True)
-        # only append sent message
-        assert chat_feed.append.call_count == 2
+        assert chat_feed._placeholder not in chat_feed._chat_log
 
     def test_placeholder_enabled(self, chat_feed):
         def echo(contents, user, instance):
-            time.sleep(0.25)
-            yield "hey testing"
+            time.sleep(1.25)
+            assert instance._placeholder in instance._chat_log
+            return chat_feed.stream("hey testing")
 
         chat_feed.callback = echo
-        chat_feed.append = MagicMock(
-            side_effect=lambda message: chat_feed._chat_log.append(message)
-        )
         chat_feed.send("Message", respond=True)
+        assert chat_feed._placeholder not in chat_feed._chat_log
         # append sent message and placeholder
-        assert chat_feed.append.call_args_list[1].args[0] == chat_feed._placeholder
 
     def test_placeholder_threshold_under(self, chat_feed):
         async def echo(contents, user, instance):
             await asyncio.sleep(0.25)
+            assert instance._placeholder not in instance._chat_log
             return "hey testing"
 
         chat_feed.placeholder_threshold = 5
         chat_feed.callback = echo
-        chat_feed.append = MagicMock(
-            side_effect=lambda message: chat_feed._chat_log.append(message)
-        )
         chat_feed.send("Message", respond=True)
-        assert chat_feed.append.call_args_list[1].args[0] != chat_feed._placeholder
+        assert chat_feed._placeholder not in chat_feed._chat_log
 
     def test_placeholder_threshold_under_generator(self, chat_feed):
         async def echo(contents, user, instance):
+            assert instance._placeholder not in instance._chat_log
             await asyncio.sleep(0.25)
+            assert instance._placeholder not in instance._chat_log
             yield "hey testing"
 
         chat_feed.placeholder_threshold = 5
         chat_feed.callback = echo
-        chat_feed.append = MagicMock(
-            side_effect=lambda message: chat_feed._chat_log.append(message)
-        )
         chat_feed.send("Message", respond=True)
-        assert chat_feed.append.call_args_list[1].args[0] != chat_feed._placeholder
 
     def test_placeholder_threshold_exceed(self, chat_feed):
         async def echo(contents, user, instance):
             await asyncio.sleep(0.5)
-            yield "hello testing"
+            assert instance._placeholder in instance._chat_log
+            return "hello testing"
 
         chat_feed.placeholder_threshold = 0.1
         chat_feed.callback = echo
-        chat_feed.append = MagicMock(
-            side_effect=lambda message: chat_feed._chat_log.append(message)
-        )
         chat_feed.send("Message", respond=True)
-        assert chat_feed.append.call_args_list[1].args[0] == chat_feed._placeholder
+        assert chat_feed._placeholder not in chat_feed._chat_log
 
     def test_placeholder_threshold_exceed_generator(self, chat_feed):
         async def echo(contents, user, instance):
             await asyncio.sleep(0.5)
+            assert instance._placeholder in instance._chat_log
             yield "hello testing"
 
         chat_feed.placeholder_threshold = 0.1
         chat_feed.callback = echo
-        chat_feed.append = MagicMock(
-            side_effect=lambda message: chat_feed._chat_log.append(message)
-        )
         chat_feed.send("Message", respond=True)
-        assert chat_feed.append.call_args_list[1].args[0] == chat_feed._placeholder
-
-    def test_placeholder_threshold_sync(self, chat_feed):
-        """
-        Placeholder should always be appended if the
-        callback is synchronous.
-        """
-
-        def echo(contents, user, instance):
-            time.sleep(0.25)
-            yield "hey testing"
-
-        chat_feed.placeholder_threshold = 5
-        chat_feed.callback = echo
-        chat_feed.append = MagicMock(
-            side_effect=lambda message: chat_feed._chat_log.append(message)
-        )
-        chat_feed.send("Message", respond=True)
-        assert chat_feed.append.call_args_list[1].args[0] == chat_feed._placeholder
+        assert chat_feed._placeholder not in chat_feed._chat_log
 
     def test_renderers_pane(self, chat_feed):
         chat_feed.renderers = [HTML]
@@ -698,6 +666,48 @@ class TestChatFeedCallback:
         with pytest.raises(ZeroDivisionError, match="division by zero"):
             chat_feed.send("Message", respond=True)
         wait_until(lambda: len(chat_feed.objects) == 1)
+
+    def test_callback_stop_async_generator(self, chat_feed):
+        async def callback(msg, user, instance):
+            yield "A"
+            assert chat_feed.stop()
+            await asyncio.sleep(0.5)
+            yield "B"
+
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        # use sleep here instead of wait for because
+        # the callback is timed and I want to confirm stop works
+        time.sleep(1)
+        assert chat_feed.objects[-1].object == "A"
+
+    def test_callback_stop_async_function(self, chat_feed):
+        async def callback(msg, user, instance):
+            message = instance.stream("A")
+            assert chat_feed.stop()
+            await asyncio.sleep(0.5)
+            instance.stream("B", message=message)
+
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        # use sleep here instead of wait for because
+        # the callback is timed and I want to confirm stop works
+        time.sleep(1)
+        assert chat_feed.objects[-1].object == "A"
+
+    def test_callback_stop_sync_function(self, chat_feed):
+        def callback(msg, user, instance):
+            message = instance.stream("A")
+            assert chat_feed.stop()
+            time.sleep(0.5)
+            instance.stream("B", message=message)  # should not reach this point
+
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        # use sleep here instead of wait for because
+        # the callback is timed and I want to confirm stop works
+        time.sleep(1)
+        assert chat_feed.objects[-1].object == "A"
 
 
 @pytest.mark.xdist_group("chat")

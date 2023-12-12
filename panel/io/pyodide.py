@@ -62,6 +62,10 @@ except Exception:
         _IN_PYSCRIPT_WORKER = False
     _IN_WORKER = True
 
+# Ensure we don't try to load MPL WASM backend in worker
+if _IN_WORKER:
+    os.environ['MPLBACKEND'] = 'agg'
+
 try:
     import pyodide_http
     pyodide_http.patch_all()

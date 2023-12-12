@@ -82,6 +82,10 @@ Panel makes it simple to:
 - Create data apps that **can run entirely in the browser**
 - Create **polished, performant, secure and production-ready web applications**
 
+---
+
+Enjoying Panel? Show your support with a [Github star](https://github.com/holoviz/panel) — it’s a simple click that means the world to us and helps others discover it too! ⭐️
+
 ## Usage
 
 ::::{grid} 1 2 2 4
