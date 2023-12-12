@@ -5,6 +5,7 @@ import * as p from "@bokehjs/core/properties";
 export class ColumnView extends BkColumnView {
   model: Column;
   scroll_down_button_el: HTMLElement;
+  loaded_entries: number;
 
   connect_signals(): void {
     super.connect_signals();
@@ -56,13 +57,47 @@ export class ColumnView extends BkColumnView {
     }
   }
 
+  load_more_entries(): void {
+    if (this.el.scrollTop < 100 && this.loaded_entries < this.model.children.length) {
+      const entriesToAdd = Math.min(20, this.model.children.length - this.loaded_entries);
+
+      this.loaded_entries += entriesToAdd;
+      const initialHeight = this.el.scrollHeight;
+      this.update_visible_children();
+
+      requestAnimationFrame(() => {
+        const newHeight = this.el.scrollHeight;
+        const heightDifference = newHeight - initialHeight;
+        this.model.scroll_position = Math.round(heightDifference);
+      });
+    }
+  }
+
+  update_visible_children(): void {
+    const totalChildren = this.model.children.length;
+
+    // Hide all children initially
+    this.model.children.forEach((child) => {
+      child.visible = false;
+    });
+
+    // Make the last 'numberOfVisibleChildren' children visible
+    this.model.children.slice(totalChildren - this.loaded_entries).forEach((child) => {
+      child.visible = true;
+    });
+  }
+
   render(): void {
     super.render()
+    this.loaded_entries = 30;
     this.scroll_down_button_el = DOM.createElement('div', { class: 'scroll-button' });
     this.shadow_el.appendChild(this.scroll_down_button_el);
+    this.update_visible_children();
+    console.log(this.model.children.length);
     this.el.addEventListener("scroll", () => {
       this.record_scroll_position();
       this.toggle_scroll_button();
+      this.load_more_entries();
     });
     this.scroll_down_button_el.addEventListener("click", () => {
       this.scroll_to_latest();
