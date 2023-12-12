@@ -30,7 +30,7 @@ https://panel.holoviz.org/getting_started/index.html
 """
 from .accordion import Accordion  # noqa
 from .base import (  # noqa
-    Column, ListLike, ListPanel, Panel, Row, WidgetBox,
+    Column, ListLike, ListPanel, Logs, Panel, Row, WidgetBox,
 )
 from .card import Card  # noqa
 from .flex import FlexBox  # noqa
@@ -56,6 +56,7 @@ __all__ = (
     "HSpacer",
     "ListLike",
     "ListPanel",
+    "Logs",
     "Panel",
     "Row",
     "Spacer",

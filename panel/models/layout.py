@@ -25,7 +25,6 @@ class Column(BkColumn):
         0 will scroll to the top."""
     )
 
-
     auto_scroll_limit = Int(
         default=0,
         help="""
@@ -72,3 +71,13 @@ class Card(Column):
     hide_header = Bool(False, help="Whether to hide the Card header")
 
     tag = String("tag", help="CSS class to use for the Card as a whole.")
+
+
+class Logs(Column):
+    min_visible = Int(
+        default=10,
+        help=(
+            "Minimum number of visible log entries shown initially."
+            "If 0, all log entries will be visible."
+        )
+    )
