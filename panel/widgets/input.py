@@ -19,9 +19,10 @@ import param
 from bokeh.models.formatters import TickFormatter
 from bokeh.models.widgets import (
     Checkbox as _BkCheckbox, ColorPicker as _BkColorPicker,
-    DatePicker as _BkDatePicker, Div as _BkDiv, FileInput as _BkFileInput,
-    NumericInput as _BkNumericInput, PasswordInput as _BkPasswordInput,
-    Spinner as _BkSpinner, Switch as _BkSwitch, TextInput as _BkTextInput,
+    DatePicker as _BkDatePicker, DateRangePicker as _BkDateRangePicker,
+    Div as _BkDiv, FileInput as _BkFileInput, NumericInput as _BkNumericInput,
+    PasswordInput as _BkPasswordInput, Spinner as _BkSpinner,
+    Switch as _BkSwitch, TextInput as _BkTextInput,
 )
 
 from ..config import config
@@ -286,7 +287,7 @@ class StaticText(Widget):
 
 class DatePicker(Widget):
     """
-    The `DatePicker` allows selecting selecting a `date` value using a text box
+    The `DatePicker` allows selecting a `date` value using a text box
     and a date-picking utility.
 
     Reference: https://panel.holoviz.org/reference/widgets/DatePicker.html
@@ -337,6 +338,88 @@ class DatePicker(Widget):
             if isinstance(value, str):
                 msg[p] = datetime.date(datetime.strptime(value, '%Y-%m-%d'))
         return msg
+
+
+class DateRangePicker(Widget):
+    """
+    The `DateRangePicker` allows selecting a `date` range using a text box
+    and a date-picking utility.
+
+    Reference: https://panel.holoviz.org/reference/widgets/DateRangePicker.html
+
+    :Example:
+
+    >>> DateRangePicker(
+    ...     value=(date(2025,1,1), date(2025,1,5)),
+    ...     start=date(2025,1,1), end=date(2025,12,31),
+    ...     name='Date range'
+    ... )
+    """
+
+    value = param.DateRange(default=None, doc="""
+        The current value""")
+
+    start = param.CalendarDate(default=None, doc="""
+        Inclusive lower bound of the allowed date selection""")
+
+    end = param.CalendarDate(default=None, doc="""
+        Inclusive upper bound of the allowed date selection""")
+
+    disabled_dates = param.List(default=None, item_type=(date, str))
+
+    enabled_dates = param.List(default=None, item_type=(date, str))
+
+    width = param.Integer(default=300, allow_None=True, doc="""
+      Width of this component. If sizing_mode is set to stretch
+      or scale mode this will merely be used as a suggestion.""")
+
+    description = param.String(default=None, doc="""
+        An HTML string describing the function of this component.""")
+
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {}
+
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'start': 'min_date', 'end': 'max_date'
+    }
+
+    _widget_type: ClassVar[Type[Model]] = _BkDateRangePicker
+
+    def __init__(self, **params):
+        super().__init__(**params)
+        self._update_value_bounds()
+
+    @param.depends('start', 'end', watch=True)
+    def _update_value_bounds(self):
+        self.param.value.bounds = (self.start, self.end)
+        self.param.value._validate(self.value)
+
+    def _process_property_change(self, msg):
+        msg = super()._process_property_change(msg)
+        for p in ('start', 'end', 'value'):
+            if p not in msg:
+                continue
+            value = msg[p]
+            if isinstance(value, tuple):
+                msg[p] = tuple(self._convert_string_to_date(v) for v in value)
+        return msg
+
+    def _process_param_change(self, msg):
+        msg = super()._process_param_change(msg)
+        if 'value' in msg:
+            msg['value'] = tuple(self._convert_date_to_string(v) for v in msg['value'])
+        if 'min_date' in msg:
+            msg['min_date'] = self._convert_date_to_string(msg['min_date'])
+        if 'max_date' in msg:
+            msg['max_date'] = self._convert_date_to_string(msg['max_date'])
+        return msg
+
+    @staticmethod
+    def _convert_string_to_date(v):
+        return datetime.strptime(v, '%Y-%m-%d').date()
+
+    @staticmethod
+    def _convert_date_to_string(v):
+        return v.strftime('%Y-%m-%d')
 
 
 class _DatetimePickerBase(Widget):

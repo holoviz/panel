@@ -6,8 +6,9 @@ import pytest
 
 from bokeh.models.widgets.tables import (
     AvgAggregator, CellEditor, CheckboxEditor, DataCube, DateEditor,
-    DateFormatter, IntEditor, MinAggregator, NumberEditor, NumberFormatter,
-    SelectEditor, StringEditor, StringFormatter, SumAggregator,
+    DateFormatter, HTMLTemplateFormatter, IntEditor, MinAggregator,
+    NumberEditor, NumberFormatter, SelectEditor, StringEditor, StringFormatter,
+    SumAggregator,
 )
 from packaging.version import Version
 from pandas._testing import (
@@ -594,7 +595,6 @@ def test_tabulator_groups(document, comm):
 
 
 def test_tabulator_numeric_groups(document, comm):
-    print(document)
     df = pd.DataFrame(np.random.rand(10, 3))
     table = Tabulator(df, groups={'Number': [0, 1]})
 
@@ -2136,3 +2136,27 @@ def test_bokeh_formatter_with_text_align_conflict(align):
         columns = model._get_column_definitions("x", data)
     output = columns[0].formatter.text_align
     assert output == "right"
+
+def test_bokeh_formatter_index_with_no_textalign():
+    df = pd.DataFrame({"A": [1, 2, 3], "B": [1, 2, 3]})
+    df = df.set_index("A")
+
+    index_format = HTMLTemplateFormatter(
+        template='<a href="https://www.google.com/search?code=<%= value %>"><%= value %></a>'
+    )
+
+    table = Tabulator(df, formatters={"A": index_format})
+    serve_and_request(table)
+    wait_until(lambda: bool(table._models))
+
+@pytest.mark.parametrize('text_align', [{"A": "center"}, "center"], ids=["dict", "str"])
+def test_bokeh_formatter_column_with_no_textalign_but_text_align_set(document, comm, text_align):
+    df = pd.DataFrame({"A": [1, 2, 3]})
+    table = Tabulator(
+        df,
+        formatters=dict(A=HTMLTemplateFormatter(template='<b><%= value %>"></b>')),
+        text_align=text_align,
+    )
+
+    model = table.get_root(document, comm)
+    assert model.configuration['columns'][1]['hozAlign'] == 'center'

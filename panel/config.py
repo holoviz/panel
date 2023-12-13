@@ -393,7 +393,11 @@ class _config(_base_config):
         if not init or (attr.startswith('_') and attr.endswith('_')) or attr == '_validating':
             return super().__setattr__(attr, value)
         value = getattr(self, f'_{attr}_hook', lambda x: x)(value)
-        if attr in _config._globals or self.param._TRIGGER:
+        if (
+            attr in _config._globals
+            or (attr.startswith("_") and attr[1:] in _config._globals)
+            or self.param._TRIGGER
+        ):
             super().__setattr__(attr if attr in self.param else f'_{attr}', value)
         elif state.curdoc is not None:
             if attr in _config._parameter_set:

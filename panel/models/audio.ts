@@ -1,6 +1,6 @@
 import * as p from "@bokehjs/core/properties"
 
-import {HTMLBox, HTMLBoxView} from "./layout"
+import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 
 export class AudioView extends HTMLBoxView {
   model: Audio
@@ -45,6 +45,7 @@ export class AudioView extends HTMLBoxView {
     this.audioEl.onplay = () => this.model.paused = false
     this.audioEl.ontimeupdate = () => this.update_time(this)
     this.audioEl.onvolumechange = () => this.update_volume(this)
+    set_size(this.audioEl, this.model, false)
     this.shadow_el.appendChild(this.audioEl)
     if (!this.model.paused)
       this.audioEl.play()

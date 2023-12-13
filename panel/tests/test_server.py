@@ -480,6 +480,56 @@ def test_serve_can_serve_bokeh_app_from_file():
     assert "/bk-app" in server._tornado.applications
 
 
+def test_server_on_load_after_init(threads, port):
+    loaded = []
+
+    def cb():
+        loaded.append(state.loaded)
+
+    def cb2():
+        state.execute(cb, schedule=True)
+
+    def app():
+        state.onload(cb)
+        state.onload(cb2)
+        # Simulate rendering
+        def loaded():
+            state.curdoc
+            state._schedule_on_load(state.curdoc, None)
+        state.execute(loaded, schedule=True)
+        return 'App'
+
+    serve_and_request(app)
+
+    # Checks whether onload callback was executed twice once before and once after load
+    wait_until(lambda: loaded == [False, True])
+
+
+def test_server_on_load_during_load(threads, port):
+    loaded = []
+
+    def cb():
+        loaded.append(state.loaded)
+
+    def cb2():
+        state.onload(cb)
+
+    def app():
+        state.onload(cb)
+        state.onload(cb2)
+        # Simulate rendering
+        def loaded():
+            state.curdoc
+            state._schedule_on_load(state.curdoc, None)
+        state.execute(loaded, schedule=True)
+        return 'App'
+
+    serve_and_request(app)
+
+    # Checks whether onload callback was executed twice once before and once during load
+    wait_until(lambda: loaded == [False, False])
+
+
 def test_server_thread_pool_on_load(threads, port):
     counts = []
 
@@ -927,3 +977,26 @@ def test_server_no_warning_empty_layout(port, caplog):
     finally:
         bk_logger.setLevel(old_level)
         bk_logger.propagate = old_propagate
+
+
+def test_server_threads_save(threads, port, tmp_path):
+    # https://github.com/holoviz/panel/issues/5957
+
+    button = Button()
+    fsave = tmp_path / 'button.html'
+
+    def cb(event):
+        button.save(fsave)
+
+    def simulate_click():
+        button._comm_event(state.curdoc, ButtonClick(model=None))
+
+    button.on_click(cb)
+
+    def app():
+        state.curdoc.add_next_tick_callback(simulate_click)
+        return button
+
+    serve_and_request(app)
+
+    wait_until(lambda: fsave.exists())

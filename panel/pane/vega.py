@@ -62,10 +62,10 @@ def _get_type(spec, version):
         else:
             return getattr(spec, 'type', 'interval')
 
-def _get_dimensions(spec):
+def _get_dimensions(spec, props):
     dimensions = {}
-    responsive_height = spec.get('height') == 'container'
-    responsive_width = spec.get('width') == 'container'
+    responsive_height = spec.get('height') == 'container' and props.get('height') is None
+    responsive_width = spec.get('width') == 'container' and props.get('width') is None
     if responsive_height and responsive_width:
         dimensions['sizing_mode'] = 'stretch_both'
     elif responsive_width:
@@ -264,7 +264,7 @@ class Vega(ModelPane):
         data = props['data']
         if data is not None:
             sources = self._get_sources(data, sources)
-        dimensions = _get_dimensions(data) if data else {}
+        dimensions = _get_dimensions(data, props) if data else {}
         props['data'] = data
         props['data_sources'] = sources
         props['events'] = list(self._selections)

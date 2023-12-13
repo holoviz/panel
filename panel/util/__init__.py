@@ -201,7 +201,7 @@ def parse_query(query: str) -> dict[str, Any]:
             parsed_query[k] = int(v)
         elif is_number(v):
             parsed_query[k] = float(v)
-        elif v.startswith('[') or v.startswith('{'):
+        elif v.startswith(('[', '{')):
             try:
                 parsed_query[k] = json.loads(v)
             except Exception:
@@ -459,6 +459,8 @@ def styler_update(styler, new_df):
                 applies = np.array([
                     new_df[col].dtype.kind in 'uif' for col in new_df.columns
                 ])
+                if len(op[2]) == len(applies):
+                    applies = np.logical_and(applies, op[2])
                 op = (op[0], op[1], applies)
             ops.append(op)
         todo = tuple(ops)
