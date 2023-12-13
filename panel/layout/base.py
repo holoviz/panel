@@ -955,9 +955,20 @@ class Column(ListPanel):
 
 class Log(Column):
 
-    min_visible = param.Integer(default=10, doc="""
+    min_entries = param.Integer(default=20, doc="""
         Minimum number of visible log entries shown initially.
-        If 0, all log entries will be visible.""")
+        If 0, all log entries are visible.""")
+
+    entries_per_load = param.Integer(default=20, doc="""
+        Number of log entries to load each time the user scrolls
+        past the scroll_load_threshold.""")
+
+    scroll_load_threshold = param.Integer(default=40, doc="""
+        Number of pixels from the top of the log to trigger
+        loading more log entries.""")
+
+    view_latest = param.Boolean(default=True, doc="""
+        Whether to scroll to the latest log entry on init.""")
 
     _bokeh_model: ClassVar[Type[Model]] = PnLog
 
