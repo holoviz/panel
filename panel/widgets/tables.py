@@ -1338,8 +1338,8 @@ class Tabulator(BaseTable):
         if self.pagination != 'remote' or self.value is None:
             return super()._get_data()
         import pandas as pd
-        df = self._filter_dataframe(self.value)
-        df = self._sort_df(df)
+        df = self._sort_df(self.value)
+        df = self._filter_dataframe(df)
         nrows = self.page_size
         start = (self.page-1)*nrows
 
