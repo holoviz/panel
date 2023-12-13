@@ -496,3 +496,37 @@ class PDF(FileBase):
         page = f'#page={self.start_page}' if getattr(self, 'start_page', None) else ''
         html = f'<embed src="{obj}{page}" width={w!r} height={h!r} type="application/pdf">'
         return dict(text=escape(html))
+
+class WEBP(ImageBase):
+    """
+    The `WEBP` pane embeds a .webp image file in a panel if
+    provided a local path, or will link to a remote image if provided
+    a URL.
+
+    Reference: https://developers.google.com/speed/webp/docs/riff_container
+
+    :Example:
+
+    >>> WEBP(
+    ...     'https://www.gstatic.com/webp/gallery/4.sm.webp',
+    ...     alt_text='A nice tree',
+    ...     link_url='https://en.wikipedia.org/wiki/WebP',
+    ...     width=500,
+    ...     caption='A nice tree'
+    ... )
+    """
+
+    filetype: ClassVar[str] = 'webp'
+
+    _extensions: ClassVar[Tuple[str, ...]] = ('webp',)
+
+    @classmethod
+    def _imgshape(cls, data):
+        import struct
+        b = BytesIO(data)
+        b.read(12)  # Skip RIFF header
+        if b.read(4) != b'VP8 ':  # Check if VP8 chunk is present
+            raise ValueError("Invalid WebP file")
+        b.read(3)  # Skip VP8 header
+        w, h = struct.unpack("<HH", b.read(4))  # Width and height are little-endian
+        return int(w), int(h)
