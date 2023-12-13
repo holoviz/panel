@@ -955,9 +955,8 @@ class Column(ListPanel):
 
 class Log(Column):
 
-    min_entries = param.Integer(default=20, doc="""
-        Minimum number of visible log entries shown initially.
-        If 0, all log entries are visible.""")
+    loaded_entries = param.Integer(default=20, doc="""
+        Minimum number of visible log entries shown initially.""")
 
     entries_per_load = param.Integer(default=20, doc="""
         Number of log entries to load each time the user scrolls

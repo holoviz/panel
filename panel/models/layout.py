@@ -75,11 +75,10 @@ class Card(Column):
 
 class Log(Column):
 
-    min_entries = Int(
+    loaded_entries = Int(
         default=20,
         help=(
             "Minimum number of visible log entries shown initially."
-            "If 0, all log entries will be visible."
         )
     )
 
