@@ -49,28 +49,24 @@ jobs:
           conda config --append channels pyviz/label/dev
           conda config --append channels bokeh/label/dev
           conda install -y conda-build anaconda-client build
-          echo "CONDA_PREFIX=$CONDA_PREFIX" >> $GITHUB_ENV
       - name: conda build
         run: |
           bash ./scripts/build_conda.sh
+          echo "CONDA_FILE="$CONDA_PREFIX/conda-bld/noarch/panel-$VERSION-py_0.tar.bz2"" >> $GITHUB_ENV
       - uses: actions/upload-artifact@v3
         if: always()
         with:
           name: conda_build
-          path: ${{ env.CONDA_PREFIX }}/conda-bld/noarch
+          path: ${{ env.CONDA_FILE }}
           if-no-files-found: error
       - name: conda dev deploy
         if: (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
-          VERSION="$(echo "$(ls dist/*.whl)" | cut -d- -f2)"
-          FILE="$CONDA_PREFIX/conda-bld/noarch/panel-$VERSION-py_0.tar.bz2"
-          anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev $FILE
+          anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev $CONDA_FILE
       - name: conda main deploy
         if: (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
-          VERSION="$(echo "$(ls dist/*.whl)" | cut -d- -f2)"
-          FILE="$CONDA_PREFIX/conda-bld/noarch/panel-$VERSION-py_0.tar.bz2"
-          anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev --label=main $FILE
+          anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev --label=main $CONDA_FILE
 
   npm_build:
     name: Build NPM Package
