@@ -18,7 +18,8 @@ export class ToggleIconView extends ControlView {
   override async lazy_initialize(): Promise<void> {
     await super.lazy_initialize();
 
-    const icon_model = new TablerIcon({ icon_name: this.model.icon_name });
+    const size = this.calculateSize();
+    const icon_model = new TablerIcon({ icon_name: this.model.icon_name, size: size});
     this.icon_view = await build_view(icon_model, { parent: this });
 
     this.icon_view.el.addEventListener('click', () => this.change_input());
@@ -49,6 +50,13 @@ export class ToggleIconView extends ControlView {
 
   private getIconName(): string {
     return this.model.active_icon_name !== '' ? this.model.active_icon_name : `${this.model.icon_name}-filled`;
+  }
+
+  private calculateSize(): string {
+    const maxWidth = this.model.width ?? 15;
+    const maxHeight = this.model.height ?? 15;
+    const size = Math.max(maxWidth, maxHeight);
+    return `${size}px`;
   }
 }
 
