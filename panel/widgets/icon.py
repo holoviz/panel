@@ -23,5 +23,3 @@ class ToggleIcon(Widget):
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'name', 'button_style': None}
 
     _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/icon.css']
-
-    __abstract = True
