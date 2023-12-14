@@ -4,6 +4,7 @@ import type { IterViews } from '@bokehjs/core/build_views';
 import * as p from "@bokehjs/core/properties";
 import { build_view } from '@bokehjs/core/build_views';
 
+
 export class ToggleIconView extends ControlView {
   model: ToggleIcon;
   icon_view: TablerIconView;
@@ -18,11 +19,11 @@ export class ToggleIconView extends ControlView {
   override async lazy_initialize(): Promise<void> {
     await super.lazy_initialize();
 
-    const size = this.calculateSize();
-    const icon_model = new TablerIcon({ icon_name: this.model.icon_name, size: size});
+    const size = this.calculate_size();
+    const icon_model = new TablerIcon({ icon_name: this.model.icon_name, size: size });
     this.icon_view = await build_view(icon_model, { parent: this });
 
-    this.icon_view.el.addEventListener('click', () => this.change_input());
+    this.icon_view.el.addEventListener('click', () => this.toggle_value());
     this.icon_view.el.style.cursor = 'pointer';
   }
 
@@ -31,28 +32,37 @@ export class ToggleIconView extends ControlView {
     yield this.icon_view;
   }
 
-  change_input(): void {
+  toggle_value(): void {
     this.model.value = !this.model.value;
-    const icon_name = this.model.value ? this.getIconName() : this.model.icon_name;
-    this.icon_view.model.icon_name = icon_name;
+    this.update_icon()
   }
 
   connect_signals(): void {
     super.connect_signals();
+    const { icon_name, active_icon_name, value } = this.model.properties;
+    this.on_change(icon_name, () => this.update_icon());
+    this.on_change(active_icon_name, () => this.update_icon());
+    this.on_change(value, () => this.update_icon());
   }
 
   render(): void {
     super.render();
 
     this.icon_view.render();
+    this.update_icon()
     this.shadow_el.appendChild(this.icon_view.el);
   }
 
-  private getIconName(): string {
+  update_icon(): void {
+    const icon_name = this.model.value ? this.get_active_icon_name() : this.model.icon_name;
+    this.icon_view.model.icon_name = icon_name;
+  }
+
+  get_active_icon_name(): string {
     return this.model.active_icon_name !== '' ? this.model.active_icon_name : `${this.model.icon_name}-filled`;
   }
 
-  private calculateSize(): string {
+  calculate_size(): string {
     const maxWidth = this.model.width ?? 15;
     const maxHeight = this.model.height ?? 15;
     const size = Math.max(maxWidth, maxHeight);
