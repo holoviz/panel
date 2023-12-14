@@ -12,6 +12,9 @@ class ToggleIcon(Widget):
     icon_name = param.String(default='heart', doc="""
         The name of the icon to display.""")
 
+    active_icon_name = param.String(default='', doc="""
+        The name of the icon to display when toggled.""")
+
     value = param.Boolean(default=False, doc="""
         Whether the icon is toggled on or off.""")
 
@@ -19,6 +22,6 @@ class ToggleIcon(Widget):
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'name', 'button_style': None}
 
-    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/button.css']
+    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/icon.css']
 
     __abstract = True

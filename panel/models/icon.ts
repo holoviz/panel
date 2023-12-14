@@ -22,6 +22,7 @@ export class ToggleIconView extends ControlView {
     this.icon_view = await build_view(icon_model, { parent: this });
 
     this.icon_view.el.addEventListener('click', () => this.change_input());
+    this.icon_view.el.style.cursor = 'pointer';
   }
 
   override *children(): IterViews {
@@ -31,7 +32,7 @@ export class ToggleIconView extends ControlView {
 
   change_input(): void {
     this.model.value = !this.model.value;
-    const icon_name = this.model.value ? `${this.model.icon_name}-filled` : this.model.icon_name;
+    const icon_name = this.model.value ? this.getIconName() : this.model.icon_name;
     this.icon_view.model.icon_name = icon_name;
   }
 
@@ -45,12 +46,17 @@ export class ToggleIconView extends ControlView {
     this.icon_view.render();
     this.shadow_el.appendChild(this.icon_view.el);
   }
+
+  private getIconName(): string {
+    return this.model.active_icon_name !== '' ? this.model.active_icon_name : `${this.model.icon_name}-filled`;
+  }
 }
 
 export namespace ToggleIcon {
   export type Attrs = p.AttrsOf<Props>;
   export type Props = Control.Props & {
     icon_name: p.Property<string>;
+    active_icon_name: p.Property<string>;
     value: p.Property<boolean>;
   };
 }
@@ -71,6 +77,7 @@ export class ToggleIcon extends Control {
 
     this.define<ToggleIcon.Props>(({ String, Boolean }) => ({
       icon_name: [String, "heart"],
+      active_icon_name: [String, ""],
       value: [Boolean, false],
     }));
   }
