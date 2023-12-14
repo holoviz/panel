@@ -674,10 +674,11 @@ class Resources(BkResources):
         # Inline local dist resources
         css_files = self._collect_external_resources("__css__")
         self.extra_resources(css_files, '__css__')
-        raw += [
-            (DIST_DIR / css.replace(CDN_DIST, '')).read_text(encoding='utf-8')
-            for css in css_files if is_cdn_url(css)
-        ]
+        if self.mode.lower() != 'cdn':
+            raw += [
+                (DIST_DIR / css.replace(CDN_DIST, '')).read_text(encoding='utf-8')
+                for css in css_files if is_cdn_url(css)
+            ]
 
         # Add local CSS files
         for cssf in config.css_files:
