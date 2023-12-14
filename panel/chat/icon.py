@@ -51,6 +51,8 @@ class ChatReactionIcons(CompositeWidget):
 
     value = param.List(doc="The active reactions.")
 
+    css_classes = param.List(default=["reaction-icons"], doc="The CSS classes of the widget.")
+
     _rendered_icons = param.Dict(
         default={},
         doc="""
@@ -64,7 +66,6 @@ class ChatReactionIcons(CompositeWidget):
     def __init__(self, **params):
         super().__init__(**params)
         self._render_icons()
-        self._composite._stylesheets = self._stylesheets
 
     @param.depends("options", watch=True)
     def _render_icons(self):
