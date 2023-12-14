@@ -87,11 +87,17 @@ class ChatReactionIcons(CompositeWidget):
         for option, icon in self._rendered_icons.items():
             icon.value = option in self.value
 
+    @param.depends("active_icons", watch=True)
+    def _update_active_icons(self):
+        for option, icon in self._rendered_icons.items():
+            icon.active_icon_name = self.active_icons.get(option, "")
+
     def _update_value(self, event):
         icon_name = event.obj.name
-        if event.new:
+        value = event.new
+        if value and icon_name not in self.value:
             self.value.append(icon_name)
-        elif event.new in self.value:
+        elif not value and icon_name in self.value:
             self.value.remove(icon_name)
 
 
