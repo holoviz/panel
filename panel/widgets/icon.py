@@ -9,11 +9,13 @@ from .base import Widget
 
 class ToggleIcon(Widget):
 
-    icon_name = param.String(default='heart', doc="""
-        The name of the icon to display.""")
+    icon = param.String(default='heart', doc="""
+        The name of the icon to display from
+        [tabler-icons.io](https://tabler-icons.io)/""")
 
-    active_icon_name = param.String(default='', doc="""
-        The name of the icon to display when toggled.""")
+    active_icon = param.String(default='', doc="""
+        The name of the icon to display when toggled from
+        tabler-icons.io](https://tabler-icons.io)/""")
 
     value = param.Boolean(default=False, doc="""
         Whether the icon is toggled on or off.""")
@@ -26,5 +28,5 @@ class ToggleIcon(Widget):
 
     def __init__(self, **params):
         super().__init__(**params)
-        if not self.icon_name:
-            raise ValueError('The icon_name parameter must not be empty.')
+        if not self.icon:
+            raise ValueError('The icon parameter must not be empty.')

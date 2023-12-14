@@ -20,11 +20,10 @@ export class ToggleIconView extends ControlView {
     await super.lazy_initialize();
 
     const size = this.calculate_size();
-    const icon_model = new TablerIcon({ icon_name: this.model.icon_name, size: size });
+    const icon_model = new TablerIcon({ icon_name: this.model.icon, size: size });
     this.icon_view = await build_view(icon_model, { parent: this });
 
     this.icon_view.el.addEventListener('click', () => this.toggle_value());
-    this.icon_view.el.style.cursor = 'pointer';
   }
 
   override *children(): IterViews {
@@ -33,16 +32,20 @@ export class ToggleIconView extends ControlView {
   }
 
   toggle_value(): void {
+    if (this.model.disabled) {
+      return;
+    }
     this.model.value = !this.model.value;
     this.update_icon()
   }
 
   connect_signals(): void {
     super.connect_signals();
-    const { icon_name, active_icon_name, value } = this.model.properties;
-    this.on_change(icon_name, () => this.update_icon());
-    this.on_change(active_icon_name, () => this.update_icon());
+    const { icon, active_icon, value, disabled } = this.model.properties;
+    this.on_change(icon, () => this.update_icon());
+    this.on_change(active_icon, () => this.update_icon());
     this.on_change(value, () => this.update_icon());
+    this.on_change(disabled, () => this.update_cursor());
   }
 
   render(): void {
@@ -50,16 +53,21 @@ export class ToggleIconView extends ControlView {
 
     this.icon_view.render();
     this.update_icon()
+    this.update_cursor()
     this.shadow_el.appendChild(this.icon_view.el);
   }
 
-  update_icon(): void {
-    const icon_name = this.model.value ? this.get_active_icon_name() : this.model.icon_name;
-    this.icon_view.model.icon_name = icon_name;
+  update_cursor(): void {
+    this.icon_view.el.style.cursor = this.model.disabled ? 'not-allowed' : 'pointer';
   }
 
-  get_active_icon_name(): string {
-    return this.model.active_icon_name !== '' ? this.model.active_icon_name : `${this.model.icon_name}-filled`;
+  update_icon(): void {
+    const icon = this.model.value ? this.get_active_icon() : this.model.icon;
+    this.icon_view.model.icon_name = icon;
+  }
+
+  get_active_icon(): string {
+    return this.model.active_icon !== '' ? this.model.active_icon : `${this.model.icon}-filled`;
   }
 
   calculate_size(): string {
@@ -73,8 +81,8 @@ export class ToggleIconView extends ControlView {
 export namespace ToggleIcon {
   export type Attrs = p.AttrsOf<Props>;
   export type Props = Control.Props & {
-    icon_name: p.Property<string>;
-    active_icon_name: p.Property<string>;
+    icon: p.Property<string>;
+    active_icon: p.Property<string>;
     value: p.Property<boolean>;
   };
 }
@@ -94,8 +102,8 @@ export class ToggleIcon extends Control {
     this.prototype.default_view = ToggleIconView;
 
     this.define<ToggleIcon.Props>(({ String, Boolean }) => ({
-      icon_name: [String, "heart"],
-      active_icon_name: [String, ""],
+      icon: [String, "heart"],
+      active_icon: [String, ""],
       value: [Boolean, false],
     }));
   }

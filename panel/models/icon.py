@@ -8,10 +8,10 @@ __all__ = (
 
 class ToggleIcon(Widget):
 
-    icon_name = String(default="heart", help="""
+    icon = String(default="heart", help="""
         The name of the icon to display.""")
 
-    active_icon_name = String(default="", help="""
+    active_icon = String(default="", help="""
         The name of the icon to display when toggled.""")
 
     value = Bool(default=False, help="""

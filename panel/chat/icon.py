@@ -56,7 +56,7 @@ class ChatReactionIcons(CompositeWidget):
     _rendered_icons = param.Dict(
         default={},
         doc="""
-        The rendered icons mapping reaction to icon_name.""",
+        The rendered icons mapping reaction to icon.""",
     )
 
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_reaction_icons.css"]
@@ -70,11 +70,11 @@ class ChatReactionIcons(CompositeWidget):
     @param.depends("options", watch=True)
     def _render_icons(self):
         self._rendered_icons = {}
-        for option, icon_name in self.options.items():
-            active_icon_name = self.active_icons.get(option, "")
+        for option, icon in self.options.items():
+            active_icon = self.active_icons.get(option, "")
             icon = ToggleIcon(
-                icon_name=icon_name,
-                active_icon_name=active_icon_name,
+                icon=icon,
+                active_icon=active_icon,
                 value=option in self.value,
                 name=option,
                 margin=0,
@@ -91,15 +91,15 @@ class ChatReactionIcons(CompositeWidget):
     @param.depends("active_icons", watch=True)
     def _update_active_icons(self):
         for option, icon in self._rendered_icons.items():
-            icon.active_icon_name = self.active_icons.get(option, "")
+            icon.active_icon = self.active_icons.get(option, "")
 
     def _update_value(self, event):
-        icon_name = event.obj.name
+        icon = event.obj.name
         value = event.new
-        if value and icon_name not in self.value:
-            self.value.append(icon_name)
-        elif not value and icon_name in self.value:
-            self.value.remove(icon_name)
+        if value and icon not in self.value:
+            self.value.append(icon)
+        elif not value and icon in self.value:
+            self.value.remove(icon)
 
 
 class ChatCopyIcon(ReactiveHTML):
