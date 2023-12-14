@@ -51,7 +51,7 @@ jobs:
           conda install -y conda-build anaconda-client build
       - name: conda build
         run: |
-          bash ./scripts/build_conda.sh
+          source ./scripts/build_conda.sh
           echo "CONDA_FILE="$CONDA_PREFIX/conda-bld/noarch/panel-$VERSION-py_0.tar.bz2"" >> $GITHUB_ENV
       - uses: actions/upload-artifact@v3
         if: always()
