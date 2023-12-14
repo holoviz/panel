@@ -42,9 +42,7 @@ export class ToggleIconView extends ControlView {
   connect_signals(): void {
     super.connect_signals();
     const { icon, active_icon, value, disabled } = this.model.properties;
-    this.on_change(icon, () => this.update_icon());
-    this.on_change(active_icon, () => this.update_icon());
-    this.on_change(value, () => this.update_icon());
+    this.on_change([active_icon, icon, value], () => this.update_icon());
     this.on_change(disabled, () => this.update_cursor());
   }
 
@@ -102,8 +100,8 @@ export class ToggleIcon extends Control {
     this.prototype.default_view = ToggleIconView;
 
     this.define<ToggleIcon.Props>(({ String, Boolean }) => ({
-      icon: [String, "heart"],
       active_icon: [String, ""],
+      icon: [String, "heart"],
       value: [Boolean, false],
     }));
   }

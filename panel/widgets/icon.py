@@ -11,13 +11,13 @@ from .base import Widget
 
 class ToggleIcon(Widget):
 
-    icon = param.String(default='heart', doc="""
-        The name of the icon to display from
-        [tabler-icons.io](https://tabler-icons.io)/""")
-
     active_icon = param.String(default='', doc="""
         The name of the icon to display when toggled from
         tabler-icons.io](https://tabler-icons.io)/""")
+
+    icon = param.String(default='heart', doc="""
+        The name of the icon to display from
+        [tabler-icons.io](https://tabler-icons.io)/""")
 
     value = param.Boolean(default=False, doc="""
         Whether the icon is toggled on or off.""")
