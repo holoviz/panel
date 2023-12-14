@@ -4,7 +4,7 @@ import param
 
 from ..io.resources import CDN_DIST
 from ..models import ToggleIcon as _PnToggleIcon
-from .widget import Widget
+from .base import Widget
 
 
 class ToggleIcon(Widget):
@@ -23,3 +23,8 @@ class ToggleIcon(Widget):
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'name', 'button_style': None}
 
     _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/icon.css']
+
+    def __init__(self, **params):
+        super().__init__(**params)
+        if not self.icon_name:
+            raise ValueError('The icon_name parameter must not be empty.')

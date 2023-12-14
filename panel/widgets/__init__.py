@@ -38,6 +38,7 @@ from .chatbox import ChatBox  # noqa
 from .codeeditor import Ace, CodeEditor  # noqa
 from .debugger import Debugger  # noqa
 from .file_selector import FileSelector  # noqa
+from .icon import ToggleIcon  # noqa
 from .indicators import (  # noqa
     BooleanStatus, Dial, Gauge, LinearGauge, LoadingSpinner, Number, Progress,
     TooltipIcon, Tqdm, Trend,
@@ -138,6 +139,7 @@ __all__ = (
     "TextToSpeech",
     "Toggle",
     "ToggleGroup",
+    "ToggleIcon",
     "TooltipIcon",
     "Tqdm",
     "Trend",
