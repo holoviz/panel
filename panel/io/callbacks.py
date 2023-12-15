@@ -29,7 +29,7 @@ class PeriodicCallback(param.Parameterized):
     the running parameter to True or False respectively.
     """
 
-    callback = param.Callable(doc="""
+    callback = param.Callable(allow_refs=False, doc="""
         The callback to execute periodically.""")
 
     counter = param.Integer(default=0, doc="""
