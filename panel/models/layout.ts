@@ -104,12 +104,6 @@ export function set_size(el: HTMLElement, model: HTMLBox, adjustMargin: boolean 
   } else {
     wm = hm = margin * 2
   }
-  const style = getComputedStyle(el);
-  const bl = style.getPropertyValue('border-left-width')
-  const br = style.getPropertyValue('border-right-width')
-  const bt = style.getPropertyValue('border-top-width')
-  const bb = style.getPropertyValue('border-bottom-width')
-  console.log(bl, br, bt, bb)
   if (width_policy == "fixed" && model.width)
     el.style.width = model.width + "px";
   else if (width_policy == "max")
