@@ -13,7 +13,7 @@ export class PanelMarkupView extends WidgetView {
   connect_signals(): void {
     super.connect_signals()
     const {width, height, min_height, max_height, margin, sizing_mode} = this.model.properties;
-    this.on_change([width, height, min_height, max_height, margin], () => {
+    this.on_change([width, height, min_height, max_height, margin, sizing_mode], () => {
       set_size(this.el, this.model)
       set_size(this.container, this.model, false)
     });
@@ -138,7 +138,7 @@ export abstract class HTMLBoxView extends LayoutDOMView {
   connect_signals(): void {
     super.connect_signals()
     const {width, height, min_height, max_height, margin, sizing_mode} = this.model.properties;
-    this.on_change([width, height, min_height, max_height, margin], () => {
+    this.on_change([width, height, min_height, max_height, margin, sizing_mode], () => {
       set_size(this.el, this.model)
     });
   }
