@@ -282,6 +282,23 @@ def test_server_session_info():
     assert state.session_info['live'] == 0
 
 
+def test_server_periodic_async_callback(threads, port):
+    counts = []
+
+    async def cb(count=[0]):
+        counts.append(count[0])
+        count[0] += 1
+
+    def app():
+        button = Button(name='Click')
+        state.add_periodic_callback(cb, 100)
+        return button
+
+    serve_and_request(app)
+
+    wait_until(lambda: len(counts) >= 5 and counts == list(range(len(counts))))
+
+
 def test_server_schedule_repeat():
     state.cache['count'] = 0
     def periodic_cb():
