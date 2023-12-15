@@ -44,6 +44,7 @@ DISPATCH_EVENTS = (
 )
 
 WRITE_TASKS = []
+WRITE_LOCK = asyncio.Lock()
 
 @dataclasses.dataclass
 class Request:
@@ -129,13 +130,14 @@ async def _run_write_futures(futures):
     Ensure that all write_message calls are awaited and handled.
     """
     from tornado.websocket import WebSocketClosedError
-    for future in futures:
-        try:
-            await future
-        except WebSocketClosedError:
-            logger.warning("Failed sending message as connection was closed")
-        except Exception as e:
-            logger.warning(f"Failed sending message due to following error: {e}")
+    async with WRITE_LOCK:
+        for future in futures:
+            try:
+                await future
+            except WebSocketClosedError:
+                logger.warning("Failed sending message as connection was closed")
+            except Exception as e:
+                logger.warning(f"Failed sending message due to following error: {e}")
 
 def _dispatch_write_task(doc, func, *args, **kwargs):
     """
