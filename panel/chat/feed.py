@@ -211,6 +211,9 @@ class ChatFeed(ListPanel):
     _callback_state = param.ObjectSelector(objects=list(CallbackState), doc="""
         The current state of the callback.""")
 
+    _was_disabled = param.Boolean(default=False, doc="""
+        The previous disabled state of the feed.""")
+
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_feed.css"]
 
     def __init__(self, *objects, **params):
@@ -441,7 +444,7 @@ class ChatFeed(ListPanel):
         if self.callback is None:
             return
 
-        disabled = self.disabled
+        self._was_disabled = self.disabled
         try:
             with param.parameterized.batch_call_watchers(self):
                 self.disabled = True
@@ -485,8 +488,8 @@ class ChatFeed(ListPanel):
         finally:
             with param.parameterized.batch_call_watchers(self):
                 self._replace_placeholder(None)
-                self.disabled = disabled
                 self._callback_state = CallbackState.IDLE
+                self.disabled = self._was_disabled
 
     # Public API
 
@@ -607,15 +610,20 @@ class ChatFeed(ListPanel):
         Whether the task was successfully stopped or done.
         """
         if self._callback_future is None:
-            return False
+            cancelled = False
         elif self._callback_state == CallbackState.GENERATING:
             # cannot cancel generator directly as it's already "finished"
             # by the time cancel is called; instead, set the state to STOPPING
             # and let upsert_message raise StopCallback
             self._callback_state = CallbackState.STOPPING
-            return True
+            cancelled = True
         else:
-            return self._callback_future.cancel()
+            cancelled = self._callback_future.cancel()
+
+        if cancelled:
+            self.disabled = self._was_disabled
+            self._replace_placeholder(None)
+        return cancelled
 
     def undo(self, count: int = 1) -> List[Any]:
         """
