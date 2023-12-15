@@ -471,7 +471,11 @@ class ChatFeed(ListPanel):
         except Exception as e:
             send_kwargs = dict(user="Exception", respond=False)
             if self.callback_exception == "summary":
-                self.send(str(e), **send_kwargs)
+                self.send(
+                    f"Encountered `{e!r}`. "
+                    f"Set `callback_exception='verbose'` to see the full traceback.",
+                    **send_kwargs
+                )
             elif self.callback_exception == "verbose":
                 self.send(f"```python\n{traceback.format_exc()}\n```", **send_kwargs)
             elif self.callback_exception == "ignore":

@@ -633,7 +633,7 @@ class TestChatFeedCallback:
         chat_feed.callback = callback
         chat_feed.callback_exception = "summary"
         chat_feed.send("Message", respond=True)
-        assert chat_feed.objects[-1].object == "division by zero"
+        assert "division by zero" in chat_feed.objects[-1].object
         assert chat_feed.objects[-1].user == "Exception"
 
     def test_callback_exception_traceback(self, chat_feed):
