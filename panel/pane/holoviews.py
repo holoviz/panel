@@ -388,6 +388,15 @@ class HoloViews(PaneBase):
         finally:
             self._syncing_props = False
 
+    def _process_param_change(self, params):
+        if self._plots:
+            # Handles a design applying custom parameters on the plot
+            # which have to be mapped to properties by the underlying
+            # plot pane, e.g. Bokeh, Matplotlib or Plotly
+            _, pane = next(iter(self._plots.values()))
+            return pane._process_param_change(params)
+        return super()._process_param_change(params)
+
     #----------------------------------------------------------------
     # Model API
     #----------------------------------------------------------------
