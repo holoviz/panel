@@ -18,7 +18,7 @@ from .layout import HTMLBox
 
 TABULATOR_VERSION = "5.5.0"
 
-JS_SRC = f"{config.npm_cdn}/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.js"
+JS_SRC = f"{config.npm_cdn}/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js"
 MOMENT_SRC = f"{config.npm_cdn}/luxon/build/global/luxon.min.js"
 
 THEME_PATH = f"tabulator-tables@{TABULATOR_VERSION}/dist/css/"
