@@ -13,7 +13,7 @@ import param
 
 from ..util import edit_readonly, function_name
 from .logging import LOG_PERIODIC_END, LOG_PERIODIC_START
-from .state import curdoc_locked, state
+from .state import curdoc_locked, set_curdoc, state
 
 log = logging.getLogger('panel.callbacks')
 _periodic_logger = logging.getLogger(f'{__name__}.PeriodicCallback')
@@ -29,7 +29,7 @@ class PeriodicCallback(param.Parameterized):
     the running parameter to True or False respectively.
     """
 
-    callback = param.Callable(doc="""
+    callback = param.Callable(allow_refs=False, doc="""
         The callback to execute periodically.""")
 
     counter = param.Integer(default=0, doc="""
@@ -79,7 +79,6 @@ class PeriodicCallback(param.Parameterized):
             self.start()
 
     def _exec_callback(self, post=False):
-        from .state import set_curdoc
         try:
             with set_curdoc(self._doc):
                 if self.running:
@@ -129,7 +128,11 @@ class PeriodicCallback(param.Parameterized):
         try:
             cb = self._exec_callback()
             if inspect.isawaitable(cb):
-                await cb
+                if self._doc:
+                    with set_curdoc(self._doc):
+                        await cb
+                else:
+                    await cb
         except Exception:
             log.exception('Periodic callback failed.')
             raise

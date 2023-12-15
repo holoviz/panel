@@ -164,9 +164,9 @@ class ChatMessage(PaneBase):
     reactions = param.List(doc="""
         Reactions to associate with the message.""")
 
-    reaction_icons = param.ClassSelector(class_=(ChatReactionIcons, dict), doc="""
+    reaction_icons = param.ClassSelector(class_=ChatReactionIcons, doc="""
         A mapping of reactions to their reaction icons; if not provided
-        defaults to `{"favorite": "heart"}`.""",)
+        defaults to `{"favorite": "heart"}`.""", allow_refs=False)
 
     timestamp = param.Date(doc="""
         Timestamp of the message. Defaults to the creation time.""")
@@ -227,11 +227,10 @@ class ChatMessage(PaneBase):
             elif state.browser_info.timezone:
                 tz = ZoneInfo(state.browser_info.timezone)
             params["timestamp"] = datetime.datetime.now(tz=tz)
-        if params.get("reaction_icons") is None:
-            params["reaction_icons"] = {"favorite": "heart"}
-        if isinstance(params["reaction_icons"], dict):
+        reaction_icons = params.get("reaction_icons", {"favorite": "heart"})
+        if isinstance(reaction_icons, dict):
             params["reaction_icons"] = ChatReactionIcons(
-                options=params["reaction_icons"], width=15, height=15
+                options=reaction_icons, width=15, height=15
             )
         super().__init__(object=object, **params)
         self.reaction_icons.link(self, value="reactions", bidirectional=True)
