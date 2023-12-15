@@ -682,20 +682,9 @@ class ReplacementPane(PaneBase):
                 old_object.object = object
         else:
             # Replace pane entirely
-            pane = panel(object, **{k: v for k, v in kwargs.items()
-                                    if k in pane_type.param})
-            if pane is object:
-                # If all watchers on the object are internal watchers
-                # we can make a clone of the object and update this
-                # clone going forward, otherwise we have replace the
-                # model entirely which is more expensive.
-                if not (custom_watchers or links):
-                    pane = object.clone()
-                    internal = True
-                else:
-                    internal = False
-            else:
-                internal = object is not old_object
+            pane_params = {k: v for k, v in kwargs.items() if k in pane_type.param}
+            pane = panel(object, **pane_params)
+            internal = pane is not object
         return pane, internal
 
     def _update_inner(self, new_object: Any) -> None:
