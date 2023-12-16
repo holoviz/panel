@@ -16,6 +16,7 @@ from panel.tests.util import (
 )
 
 pytestmark = pytest.mark.ui
+auth_check = pytest.mark.skipif('PANEL_TEST_AUTH' not in os.environ, reason='PANEL_TEST_AUTH environment variable is required to run this test')
 
 
 @unix_only
@@ -42,7 +43,7 @@ def test_basic_auth(py_file, page, prefix):
 
 
 @unix_only
-@pytest.mark.skipif('OKTA_OAUTH_KEY' not in os.environ, reason='Okta credentials not available')
+@auth_check
 def test_okta_oauth(py_file, page):
     app = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
     write_file(app, py_file.file)
@@ -73,7 +74,7 @@ def test_okta_oauth(py_file, page):
 
 
 @unix_only
-@pytest.mark.skipif('AZURE_OAUTH_KEY' not in os.environ, reason='Azure credentials not available')
+@auth_check
 def test_azure_oauth(py_file, page):
     app = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
     write_file(app, py_file.file)
@@ -107,7 +108,7 @@ def test_azure_oauth(py_file, page):
 
 
 @unix_only
-@pytest.mark.skipif('AUTH0_OAUTH_KEY' not in os.environ, reason='Auth0 credentials not available')
+@auth_check
 def test_auth0_oauth(py_file, page):
     app = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
     write_file(app, py_file.file)
