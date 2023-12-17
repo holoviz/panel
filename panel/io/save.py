@@ -26,7 +26,7 @@ from ..config import config
 from .embed import embed_state
 from .model import add_to_doc
 from .resources import (
-    BASE_TEMPLATE, DEFAULT_TITLE, Bundle, Resources, bundle_resources,
+    BASE_TEMPLATE, CDN_DIST, DEFAULT_TITLE, Resources, bundle_resources,
     set_resource_mode,
 )
 from .state import state
@@ -153,13 +153,14 @@ def file_html(
     else:
         models_seq = models
 
+    template_variables['dist_url'] = CDN_DIST
+
     with OutputDocumentFor(models_seq, apply_theme=theme, always_new=_always_new):
         (docs_json, render_items) = standalone_docs_json_and_render_items(
             models_seq, suppress_callback_warning=True
         )
         title = _title_from_models(models_seq, title)
         bundle = bundle_resources(models_seq, resources)
-        bundle = Bundle.from_bokeh(bundle)
         return html_page_for_render_items(
             bundle, docs_json, render_items, title=title, template=template,
             template_variables=template_variables

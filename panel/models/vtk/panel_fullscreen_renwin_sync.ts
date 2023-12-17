@@ -1,4 +1,5 @@
-import {vtkns, applyStyle, CSSProperties} from "./util"
+import type {CSSProperties} from "./util"
+import {vtkns, applyStyle} from "./util"
 
 //------------------------//
 //Custom Extended Classes

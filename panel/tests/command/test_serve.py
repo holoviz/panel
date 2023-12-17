@@ -1,102 +1,15 @@
-import contextlib
 import os
-import re
-import subprocess
-import sys
 import tempfile
-import time
-
-from queue import Empty, Queue
-from threading import Thread
 
 import pytest
 import requests
 
-not_windows = pytest.mark.skipif(sys.platform == 'win32', reason="Does not work on Windows")
-
-APP_PATTERN = re.compile(r'Bokeh app running at: http://localhost:(\d+)/')
-
-
-@contextlib.contextmanager
-def run_panel_serve(args, cwd=None):
-    cmd = [sys.executable, "-m", "panel", "serve"] + args
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False, cwd=cwd)
-    time.sleep(1)
-    try:
-        yield p
-    except Exception as e:
-        p.terminate()
-        p.wait()
-        print("An error occurred: %s", e)
-        try:
-            out = p.stdout.read().decode()
-            print("\n---- subprocess stdout follows ----\n")
-            print(out)
-        except Exception:
-            pass
-        raise
-    else:
-        p.terminate()
-        p.wait()
-
-class NBSR:
-    def __init__(self, stream) -> None:
-        '''
-        NonBlockingStreamReader
-
-        stream: the stream to read from.
-                Usually a process' stdout or stderr.
-        '''
-
-        self._s = stream
-        self._q = Queue()
-
-        def _populateQueue(stream, queue):
-            '''
-            Collect lines from 'stream' and put them in 'queue'.
-            '''
-
-            while True:
-                line = stream.readline()
-                if line:
-                    queue.put(line)
-                else:
-                    break
-
-        self._t = Thread(target = _populateQueue,
-                args = (self._s, self._q))
-        self._t.daemon = True
-        self._t.start() #start collecting lines from the stream
-
-    def readline(self, timeout = None):
-        try:
-            return self._q.get(block = timeout is not None,
-                    timeout = timeout)
-        except Empty:
-            return None
+from panel.tests.util import (
+    run_panel_serve, unix_only, wait_for_port, write_file,
+)
 
 
-def wait_for_port(stdout):
-    nbsr = NBSR(stdout)
-    m = None
-    for i in range(20):
-        o = nbsr.readline(0.5)
-        if not o:
-            continue
-        m = APP_PATTERN.search(o.decode())
-        if m is not None:
-            break
-    if m is None:
-        pytest.fail("no matching log line in process output")
-    return int(m.group(1))
-
-def write_file(content, file_obj):
-    file_obj.write(content)
-    file_obj.flush()
-    os.fsync(file_obj)
-    file_obj.seek(0)
-
-@not_windows
+@unix_only
 def test_autoreload_app(py_file):
     app = "import panel as pn; pn.Row('# Example').servable(title='A')"
     app2 = "import panel as pn; pn.Row('# Example 2').servable(title='B')"
@@ -116,7 +29,31 @@ def test_autoreload_app(py_file):
         assert r2.status_code == 200
         assert "<title>B</title>" in r2.content.decode('utf-8')
 
-@not_windows
+@unix_only
+def test_serve_admin(py_file):
+    app = "import panel as pn; pn.Row('# Example').servable(title='A')"
+    write_file(app, py_file.file)
+
+    with run_panel_serve(["--port", "0", '--admin', py_file.name]) as p:
+        port = wait_for_port(p.stdout)
+        r = requests.get(f"http://localhost:{port}/admin")
+        assert r.status_code == 200
+        assert "Admin" in r.content.decode('utf-8')
+
+@unix_only
+def test_serve_admin_custom_endpoint(py_file):
+    app = "import panel as pn; pn.Row('# Example').servable(title='A')"
+    write_file(app, py_file.file)
+
+    with run_panel_serve(["--port", "0", '--admin', '--admin-endpoint', 'foo', py_file.name]) as p:
+        port = wait_for_port(p.stdout)
+        r = requests.get(f"http://localhost:{port}/foo")
+        assert r.status_code == 200
+        assert "Admin" in r.content.decode('utf-8')
+        r2 = requests.get(f"http://localhost:{port}/admin")
+        assert r2.status_code == 404
+
+@unix_only
 @pytest.mark.parametrize('relative', [True, False])
 def test_custom_html_index(relative, html_file):
     index = '<html><body>Foo</body></html>'
@@ -140,3 +77,29 @@ def test_custom_html_index(relative, html_file):
         r = requests.get(f"http://localhost:{port}/")
         assert r.status_code == 200
         assert r.content.decode('utf-8') == index
+
+md_app = """
+# My app
+
+```python
+import panel as pn
+pn.extension(template='fast')
+```
+
+A description
+
+```python
+pn.Row('# Example').servable()
+```
+"""
+
+@unix_only
+def test_serve_markdown():
+    md = tempfile.NamedTemporaryFile(mode='w', suffix='.md')
+    write_file(md_app, md.file)
+
+    with run_panel_serve(["--port", "0", md.name]) as p:
+        port = wait_for_port(p.stdout)
+        r = requests.get(f"http://localhost:{port}/")
+        assert r.status_code == 200
+        assert '<title>My app</title>' in r.content.decode('utf-8')

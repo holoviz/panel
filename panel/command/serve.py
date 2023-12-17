@@ -25,7 +25,7 @@ from bokeh.server.contexts import ApplicationContext
 from tornado.ioloop import PeriodicCallback
 from tornado.web import StaticFileHandler
 
-from ..auth import OAuthProvider
+from ..auth import BasicAuthProvider, OAuthProvider
 from ..config import config
 from ..io.document import _cleanup_doc
 from ..io.liveness import LivenessHandler
@@ -92,6 +92,11 @@ class Serve(_BkServe):
             help=("Static directories to serve specified as key=value "
                   "pairs mapping from URL route to static file directory.")
         )),
+        ('--basic-auth', dict(
+            action = 'store',
+            type   = str,
+            help   = "Password or filepath to use with Basic Authentication."
+        )),
         ('--oauth-provider', dict(
             action = 'store',
             type   = str,
@@ -138,10 +143,46 @@ class Serve(_BkServe):
             help    = "Expiry off the OAuth cookie in number of days.",
             default = 1
         )),
+        ('--oauth-refresh-tokens', dict(
+            action  = 'store_true',
+            help    = "Whether to automatically OAuth access tokens when they expire.",
+        )),
+        ('--oauth-guest-endpoints', dict(
+            action  = 'store',
+            nargs   = '*',
+            help    = "List of endpoints that can be accessed as a guest without authenticating.",
+        )),
+        ('--oauth-optional', dict(
+            action  = 'store_true',
+            help    = (
+                "Whether the user will be forced to go through login flow "
+                "or if they can access all applications as a guest."
+            )
+        )),
+        ('--login-endpoint', dict(
+            action  = 'store',
+            type    = str,
+            help    = "Endpoint to serve the authentication login page on."
+        )),
+        ('--logout-endpoint', dict(
+            action  = 'store',
+            type    = str,
+            help    = "Endpoint to serve the authentication logout page on."
+        )),
         ('--auth-template', dict(
             action  = 'store',
             type    = str,
             help    = "Template to serve when user is unauthenticated."
+        )),
+        ('--logout-template', dict(
+            action  = 'store',
+            type    = str,
+            help    = "Template to serve logout page."
+        )),
+        ('--basic-login-template', dict(
+            action  = 'store',
+            type    = str,
+            help    = "Template to serve for Basic Authentication login page."
         )),
         ('--rest-provider', dict(
             action = 'store',
@@ -171,6 +212,12 @@ class Serve(_BkServe):
         ('--admin', dict(
             action  = 'store_true',
             help    = "Whether to add an admin panel."
+        )),
+        ('--admin-endpoint', dict(
+            action = 'store',
+            type    = str,
+            help    = "Name to use for the admin endpoint.",
+            default = None
         )),
         ('--admin-log-level', dict(
             action  = 'store',
@@ -209,10 +256,18 @@ class Serve(_BkServe):
             help    = "The endpoint for the liveness API.",
             default = "liveness"
         )),
+        ('--reuse-sessions', dict(
+            action  = 'store_true',
+            help    = "Whether to reuse sessions when serving the initial request.",
+        )),
+        ('--global-loading-spinner', dict(
+            action  = 'store_true',
+            help    = "Whether to add a global loading spinner to the application(s).",
+        )),
     )
 
     # Supported file extensions
-    _extensions = ['.py']
+    _extensions = ['.py', '.ipynb', '.md']
 
     def customize_applications(self, args, applications):
         if args.index and not args.index.endswith('.html'):
@@ -223,6 +278,20 @@ class Serve(_BkServe):
             if f'/{index}' in applications:
                 applications['/'] = applications[f'/{index}']
         return super().customize_applications(args, applications)
+
+    def warm_applications(self, applications, reuse_sessions):
+        from ..io.session import generate_session
+        for path, app in applications.items():
+            session = generate_session(app)
+            with set_curdoc(session.document):
+                if config.session_key_func:
+                    reuse_sessions = False
+                else:
+                    state._session_key_funcs[path] = lambda r: r.path
+                    state._sessions[path] = session
+                    session.block_expiration()
+                state._on_load(None)
+            _cleanup_doc(session.document, destroy=not reuse_sessions)
 
     def customize_kwargs(self, args, server_kwargs):
         '''Allows subclasses to customize ``server_kwargs``.
@@ -277,6 +346,8 @@ class Serve(_BkServe):
             raise ValueError("rest-provider %r not recognized." % args.rest_provider)
 
         config.autoreload = args.autoreload
+        config.global_loading_spinner = args.global_loading_spinner
+        config.reuse_sessions = args.reuse_sessions
 
         if config.autoreload:
             for f in files:
@@ -299,17 +370,11 @@ class Serve(_BkServe):
             applications = build_single_handler_applications(files, argvs)
             if args.autoreload:
                 with record_modules():
-                    for app in applications.values():
-                        doc = app.create_document()
-                        with set_curdoc(doc):
-                            state._on_load(None)
-                        _cleanup_doc(doc)
+                    self.warm_applications(
+                        applications, args.reuse_sessions
+                    )
             else:
-                for app in applications.values():
-                    doc = app.create_document()
-                    with set_curdoc(doc):
-                        state._on_load(None)
-                    _cleanup_doc(doc)
+                self.warm_applications(applications, args.reuse_sessions)
 
         if args.liveness:
             argvs = {f: args.args for f in files}
@@ -320,17 +385,24 @@ class Serve(_BkServe):
         if args.admin:
             from ..io.admin import admin_panel
             from ..io.server import per_app_patterns
+
+            # If `--admin-endpoint` is not set, then we default to the `/admin` path.
+            admin_path = "/admin"
+            if args.admin_endpoint:
+                admin_path = args.admin_endpoint
+                admin_path = admin_path if admin_path.startswith('/') else f'/{admin_path}'
+
             config._admin = True
             app = Application(FunctionHandler(admin_panel))
             unused_timeout = args.check_unused_sessions or 15000
             state._admin_context = app_ctx = AdminApplicationContext(
-                app, unused_timeout=unused_timeout, url='/admin'
+                app, unused_timeout=unused_timeout, url=admin_path
             )
             if all(not isinstance(handler, DocumentLifecycleHandler) for handler in app._handlers):
                 app.add(DocumentLifecycleHandler())
             app_patterns = []
             for p in per_app_patterns:
-                route = '/admin' + p[0]
+                route = admin_path + p[0]
                 context = {"application_context": app_ctx}
                 app_patterns.append((route, p[1], context))
 
@@ -377,12 +449,72 @@ class Serve(_BkServe):
 
         if args.auth_template:
             authpath = pathlib.Path(args.auth_template)
-            if not authpath.isfile():
+            if not authpath.is_file():
                 raise ValueError(
-                    "The supplied auth-template {args.auth_template} does not "
+                    f"The supplied auth-template {args.auth_template} does not "
                     "exist, ensure you supply and existing Jinja2 template."
                 )
             config.auth_template = str(authpath.absolute())
+
+        if args.logout_template:
+            logout_template = str(pathlib.Path(args.logout_template).absolute())
+        else:
+            logout_template = None
+
+        if args.basic_auth and config.basic_auth:
+            raise ValueError(
+                "Turn on Basic authentication using environment variable "
+                "or via explicit argument, not both"
+            )
+
+        if args.basic_login_template:
+            login_template = args.basic_login_template
+            authpath = pathlib.Path(login_template)
+            if not authpath.is_file():
+                raise ValueError(
+                    f"The supplied auth-template {login_template} does not "
+                    "exist, ensure you supply and existing Jinja2 template."
+                )
+        else:
+            login_template = None
+
+        login_endpoint = args.login_endpoint or '/login'
+        login_endpoint = login_endpoint if login_endpoint.startswith('/') else f'/{login_endpoint}'
+        logout_endpoint = args.logout_endpoint or '/logout'
+        logout_endpoint = logout_endpoint if logout_endpoint.startswith('/') else f'/{logout_endpoint}'
+
+        if args.oauth_error_template:
+            error_template = str(pathlib.Path(args.oauth_error_template).absolute())
+        elif config.auth_template:
+            error_template = config.auth_template
+        else:
+            error_template = None
+
+        if args.oauth_guest_endpoints:
+            config.oauth_guest_endpoints = args.oauth_guest_endpoints
+        if args.oauth_optional:
+            config.oauth_optional = args.oauth_optional
+
+        if args.basic_auth:
+            config.basic_auth = args.basic_auth
+        if config.basic_auth:
+            kwargs['auth_provider'] = BasicAuthProvider(
+                login_endpoint=login_endpoint,
+                logout_endpoint=logout_endpoint,
+                login_template=login_template,
+                logout_template=logout_template,
+                guest_endpoints=config.oauth_guest_endpoints,
+            )
+
+        if args.cookie_secret and config.cookie_secret:
+            raise ValueError(
+                "Supply cookie secret either using environment "
+                "variable or via explicit argument, not both."
+            )
+        elif args.cookie_secret:
+            config.cookie_secret = args.cookie_secret
+
+        # Check only one auth is used.
         if args.oauth_provider and config.oauth_provider:
                 raise ValueError(
                     "Supply OAuth provider either using environment variable "
@@ -391,6 +523,7 @@ class Serve(_BkServe):
         if args.oauth_provider:
             config.oauth_provider = args.oauth_provider
         if config.oauth_provider:
+            config.oauth_refresh_tokens = args.oauth_refresh_tokens
             config.oauth_expiry = args.oauth_expiry_days
             if config.oauth_key and args.oauth_key:
                 raise ValueError(
@@ -404,6 +537,14 @@ class Serve(_BkServe):
                     "When enabling an OAuth provider you must supply "
                     "a valid oauth_key either using the --oauth-key "
                     "CLI argument or PANEL_OAUTH_KEY environment "
+                    "variable."
+                )
+
+            if not config.cookie_secret:
+                raise ValueError(
+                    "When enabling an OAuth provider you must supply "
+                    "a valid cookie_secret either using the --cookie-secret "
+                    "CLI argument or the PANEL_COOKIE_SECRET environment "
                     "variable."
                 )
 
@@ -446,7 +587,7 @@ class Serve(_BkServe):
                     )
                 config.oauth_encryption_key = encryption_key
             elif not config.oauth_encryption_key:
-                print("WARNING: OAuth has not been configured with an "
+                print("WARNING: OAuth has not been configured with an " # noqa: T201
                       "encryption key and will potentially leak "
                       "credentials in cookies and a JWT token embedded "
                       "in the served website. Use at your own risk or "
@@ -467,27 +608,14 @@ class Serve(_BkServe):
                     )
                 state.encryption = Fernet(config.oauth_encryption_key)
 
-            if args.cookie_secret and config.cookie_secret:
-                raise ValueError(
-                    "Supply cookie secret either using environment "
-                    "variable or via explicit argument, not both."
-                )
-            elif args.cookie_secret:
-                config.cookie_secret = args.cookie_secret
-            elif not config.cookie_secret:
-                raise ValueError(
-                    "When enabling an OAuth provider you must supply "
-                    "a valid cookie_secret either using the --cookie-secret "
-                    "CLI argument or the PANEL_COOKIE_SECRET environment "
-                    "variable."
-                )
-            if args.oauth_error_template:
-                error_template = str(pathlib.Path(args.oauth_error_template).absolute())
-            elif config.auth_template:
-                error_template = config.auth_template
-            else:
-                error_template = None
-            kwargs['auth_provider'] = OAuthProvider(error_template=error_template)
+            kwargs['auth_provider'] = OAuthProvider(
+                login_endpoint=login_endpoint,
+                logout_endpoint=logout_endpoint,
+                login_template=login_template,
+                logout_template=logout_template,
+                error_template=error_template,
+                guest_endpoints=config.oauth_guest_endpoints,
+            )
 
             if args.oauth_redirect_uri and config.oauth_redirect_uri:
                 raise ValueError(

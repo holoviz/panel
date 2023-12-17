@@ -32,27 +32,29 @@ How to use Panel widgets in 4 simple steps
 For more detail see the Getting Started Guide
 https://panel.holoviz.org/getting_started/index.html
 """
-from .ace import Ace  # noqa
 from .base import CompositeWidget, Widget  # noqa
 from .button import Button, MenuButton, Toggle  # noqa
+from .chatbox import ChatBox  # noqa
+from .codeeditor import Ace, CodeEditor  # noqa
 from .debugger import Debugger  # noqa
 from .file_selector import FileSelector  # noqa
+from .icon import ToggleIcon  # noqa
 from .indicators import (  # noqa
     BooleanStatus, Dial, Gauge, LinearGauge, LoadingSpinner, Number, Progress,
-    Tqdm, Trend,
+    TooltipIcon, Tqdm, Trend,
 )
 from .input import (  # noqa
-    ArrayInput, Checkbox, ColorPicker, DatePicker, DatetimeInput,
-    DatetimePicker, DatetimeRangeInput, DatetimeRangePicker, FileInput,
-    FloatInput, IntInput, LiteralInput, NumberInput, PasswordInput, Spinner,
-    StaticText, Switch, TextAreaInput, TextInput,
+    ArrayInput, Checkbox, ColorPicker, DatePicker, DateRangePicker,
+    DatetimeInput, DatetimePicker, DatetimeRangeInput, DatetimeRangePicker,
+    FileInput, FloatInput, IntInput, LiteralInput, NumberInput, PasswordInput,
+    Spinner, StaticText, Switch, TextAreaInput, TextInput,
 )
 from .misc import FileDownload, JSONEditor, VideoStream  # noqa
 from .player import DiscretePlayer, Player  # noqa
 from .select import (  # noqa
-    AutocompleteInput, CheckBoxGroup, CheckButtonGroup, CrossSelector,
-    MultiChoice, MultiSelect, RadioBoxGroup, RadioButtonGroup, Select,
-    ToggleGroup,
+    AutocompleteInput, CheckBoxGroup, CheckButtonGroup, ColorMap,
+    CrossSelector, MultiChoice, MultiSelect, NestedSelect, RadioBoxGroup,
+    RadioButtonGroup, Select, ToggleGroup,
 )
 from .slider import (  # noqa
     DateRangeSlider, DateSlider, DatetimeRangeSlider, DiscreteSlider,
@@ -72,14 +74,17 @@ __all__ = (
     "AutocompleteInput",
     "BooleanStatus",
     "Button",
+    "ChatBox",
     "Checkbox",
     "CheckBoxGroup",
     "CheckButtonGroup",
+    "CodeEditor",
     "ColorPicker",
     "CompositeWidget",
     "CrossSelector",
     "DataFrame",
     "DatePicker",
+    "DateRangePicker",
     "DateRangeSlider",
     "DatetimeRangeSlider",
     "DateSlider",
@@ -112,6 +117,7 @@ __all__ = (
     "MenuButton",
     "MultiChoice",
     "MultiSelect",
+    "NestedSelect",
     "Number",
     "NumberInput",
     "PasswordInput",
@@ -124,6 +130,7 @@ __all__ = (
     "SpeechToText",
     "Spinner",
     "StaticText",
+    "Switch",
     "Tabulator",
     "Terminal",
     "TextAreaInput",
@@ -132,6 +139,8 @@ __all__ = (
     "TextToSpeech",
     "Toggle",
     "ToggleGroup",
+    "ToggleIcon",
+    "TooltipIcon",
     "Tqdm",
     "Trend",
     "Utterance",

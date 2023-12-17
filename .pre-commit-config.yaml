@@ -3,34 +3,46 @@
 
 default_stages: [commit]
 repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
     hooks:
-    -   id: check-builtin-literals
-    -   id: check-case-conflict
-    -   id: check-docstring-first
-    -   id: check-executables-have-shebangs
-    -   id: check-toml
-    -   id: check-json
-    -   id: detect-private-key
-    -   id: end-of-file-fixer
+      - id: check-builtin-literals
+      - id: check-case-conflict
+      - id: check-docstring-first
+      - id: check-executables-have-shebangs
+      - id: check-toml
+      - id: check-json
+      - id: detect-private-key
+      - id: end-of-file-fixer
         exclude: \.min\.js$
-    -   id: trailing-whitespace
--   repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: 'v0.0.219'
+      - id: trailing-whitespace
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.6
     hooks:
-    -   id: ruff  # See 'setup.cfg' for args
-        args: [panel]
+      - id: ruff
         files: panel/
--   repo: https://github.com/pycqa/isort
+  - repo: https://github.com/pycqa/isort
     rev: 5.12.0
     hooks:
       - id: isort
         name: isort (python)
--   repo: https://github.com/hoxbro/clean_notebook
-    rev: v0.1.6
+  - repo: https://github.com/hoxbro/clean_notebook
+    rev: v0.1.13
     hooks:
       - id: clean-notebook
+        args: [-i, tags]
+        exclude: '^lite/files'
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.6
+    hooks:
+      - id: codespell
+        additional_dependencies:
+          - tomli
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.0.3
+    hooks:
+      - id: prettier
+        types_or: [css]
 ci:
   autofix_prs: false
   autoupdate_schedule: quarterly

@@ -3,6 +3,7 @@ Pane class which render plots from different libraries
 """
 from __future__ import annotations
 
+import re
 import sys
 
 from contextlib import contextmanager
@@ -23,7 +24,9 @@ from ..io.notebook import push
 from ..util import escape
 from ..viewable import Layoutable
 from .base import PaneBase
-from .image import PNG
+from .image import (
+    PDF, PNG, SVG, Image,
+)
 from .ipywidget import IPyWidget
 from .markup import HTML
 
@@ -40,7 +43,7 @@ def _wrap_callback(cb, wrapped, doc, comm, callbacks):
     Wraps a bokeh callback ensuring that any events triggered by it
     appropriately dispatch events in the notebook. Also temporarily
     replaces the wrapped callback with the real one while the callback
-    is exectuted to ensure the callback can be removed as usual.
+    is executed to ensure the callback can be removed as usual.
     """
     hold = doc.callbacks.hold_value
     doc.hold('combine')
@@ -90,7 +93,7 @@ class Bokeh(PaneBase):
 
     def _param_change(self, *events: param.parameterized.Event) -> None:
         self._track_overrides(*(e for e in events if e.name in Layoutable.param))
-        super()._param_change(*(e for e in events if e.name in self._overrides))
+        super()._param_change(*(e for e in events if e.name in self._overrides+['css_classes']))
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
@@ -186,8 +189,18 @@ class Bokeh(PaneBase):
 
         return model
 
+_width_regex = re.compile(rb'width="[\d\.]+pt"')
+_height_regex = re.compile(rb'height="[\d\.]+pt"')
 
-class Matplotlib(PNG, IPyWidget):
+def _make_matplotlib_svg_responsive(input_str):
+    output_str = _width_regex.sub(b'width="100%"', input_str)
+    output_str = _height_regex.sub(b'height="100%"', output_str)
+    return output_str
+
+def _make_matplotlib_svg_not_preserve_aspect_ratio(input_str):
+    return input_str.replace(b'height="100%"', b'height="100%" preserveAspectRatio="none"')
+
+class Matplotlib(Image, IPyWidget):
     """
     The `Matplotlib` pane allows displaying any displayable Matplotlib figure
     inside a Panel app.
@@ -208,11 +221,21 @@ class Matplotlib(PNG, IPyWidget):
     dpi = param.Integer(default=144, bounds=(1, None), doc="""
         Scales the dpi of the matplotlib figure.""")
 
+    encode = param.Boolean(default=False, doc="""
+        Whether to encode SVG out as base64.""")
+
+    format = param.Selector(default='png', objects=['png', 'svg'], doc="""
+        The format to render the plot as if the plot is not interactive.""")
+
     high_dpi = param.Boolean(default=True, doc="""
         Whether to optimize output for high-dpi displays.""")
 
     interactive = param.Boolean(default=False, constant=True, doc="""
         Whether to render interactive matplotlib plot with ipympl.""")
+
+    object = param.Parameter(default=None, allow_refs=True, doc="""
+        The Matplotlib Figure being wrapped, which will be rendered as a
+        Bokeh model.""")
 
     tight = param.Boolean(default=False, doc="""
         Automatically adjust the figure size to fit the
@@ -220,7 +243,7 @@ class Matplotlib(PNG, IPyWidget):
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'object': 'text', 'interactive': None, 'dpi': None,  'tight': None,
-        'high_dpi': None
+        'high_dpi': None, 'format': None, 'encode': None
     }
 
     _rerender_params = PNG._rerender_params + [
@@ -241,8 +264,6 @@ class Matplotlib(PNG, IPyWidget):
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
         self._managers = {}
-        self._explicit_width = params.get('width') is not None
-        self._explicit_height = params.get('height') is not None
 
     def _get_widget(self, fig):
         import matplotlib.backends
@@ -266,51 +287,46 @@ class Matplotlib(PNG, IPyWidget):
         canvas.mpl_connect('close_event', closer)
         return manager
 
-    @param.depends('width', watch=True)
-    def _set_explicict_width(self):
-        self._explicit_width = self.width is not None
+    @property
+    def _img_type(self):
+        if self.format == 'png':
+            return PNG
+        elif self.format == 'svg':
+            return SVG
+        else:
+            return PDF
 
-    @param.depends('height', watch=True)
-    def _set_explicict_height(self):
-        self._explicit_height = self.height is not None
+    @property
+    def filetype(self):
+        return self._img_type.filetype
 
-    def _update_dimensions(self):
-        w, h = self.object.get_size_inches()
-        dpi = self.dpi / 2. if self.high_dpi else self.dpi
-        with param.discard_events(self):
-            if not self._explicit_width:
-                if self._explicit_height:
-                    self.width = int(self.height * (w/h))
-                else:
-                    self.width = int(dpi * w)
-                self._explicit_width = False
-            if not self._explicit_height:
-                if self._explicit_width:
-                    self.height = int(self.width * (w/h))
-                else:
-                    self.height = self.height or int(dpi * h)
-                self._explicit_height = False
+    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+        return self._img_type._transform_object(self, obj)
+
+
+    def _imgshape(self, data):
+        try:
+            return self._img_type._imgshape(data)
+        except TypeError:
+            return self._img_type._imgshape(self, data)
+
+    def _format_html(
+        self, src: str, width: str | None = None, height: str | None = None
+    ):
+        return self._img_type._format_html(self, src, width, height)
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        self._update_dimensions()
         if not self.interactive:
-            model = PNG._get_model(self, doc, root, parent, comm)
-            return model
+            return self._img_type._get_model(self, doc, root, parent, comm)
         self.object.set_dpi(self.dpi)
         manager = self._get_widget(self.object)
-        props = self._init_params()
-        kwargs = {
-            k: v for k, v in props.items()
-            if k not in self._rerender_params+['loading']
-        }
-        kwargs['width'] = self.width
-        kwargs['height'] = self.height
-        kwargs['sizing_mode'] = self.sizing_mode
+        properties = self._get_properties(doc)
+        del properties['text']
         model = self._get_ipywidget(
-            manager.canvas, doc, root, comm, **kwargs
+            manager.canvas, doc, root, comm, **properties
         )
         root = root or model
         self._models[root.ref['id']] = (model, parent)
@@ -319,7 +335,6 @@ class Matplotlib(PNG, IPyWidget):
 
     def _update(self, ref: str, model: Model) -> None:
         if not self.interactive:
-            self._update_dimensions()
             model.update(**self._get_properties(model.document))
             return
         manager = self._managers[ref]
@@ -345,9 +360,22 @@ class Matplotlib(PNG, IPyWidget):
         else:
             bbox_inches = None
 
-        obj.canvas.print_figure(b, bbox_inches=bbox_inches)
-        return b.getvalue()
+        obj.canvas.print_figure(
+            b,
+            format=self.format,
+            facecolor=obj.get_facecolor(),
+            edgecolor=obj.get_edgecolor(),
+            dpi=self.dpi,
+            bbox_inches=bbox_inches
+        )
+        value = b.getvalue()
 
+        if self.format=="svg":
+            value = _make_matplotlib_svg_responsive(value)
+            if not self.fixed_aspect:
+                value = _make_matplotlib_svg_not_preserve_aspect_ratio(value)
+
+        return value
 
 class RGGPlot(PNG):
     """

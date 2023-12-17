@@ -1,15 +1,16 @@
-import time
-
 import pytest
+
+pytest.importorskip("playwright")
+
+from playwright.sync_api import expect
+
+from panel.io.state import state
+from panel.pane import Markdown
+from panel.tests.util import serve_component
 
 pytestmark = pytest.mark.ui
 
-from panel.io.server import serve
-from panel.io.state import state
-from panel.pane import Markdown
-
-
-def test_on_load(page, port):
+def test_on_load(page):
     def app():
         md = Markdown('Initial')
 
@@ -19,12 +20,6 @@ def test_on_load(page, port):
         state.onload(cb)
         return md
 
-    serve(app, port=port, threaded=True, show=False)
+    serve_component(page, app)
 
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
-
-    time.sleep(0.2)
-
-    assert page.locator('.markdown').locator("div").text_content() == 'Loaded'
+    expect(page.locator('.markdown').locator("div")).to_have_text('Loaded\n')

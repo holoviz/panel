@@ -4,8 +4,8 @@ Defines custom VTKPlot bokeh model to render VTK objects.
 from bokeh.core.enums import enumeration
 from bokeh.core.has_props import abstract
 from bokeh.core.properties import (
-    Any, Bool, Dict, Enum, Float, Instance, Int, List, Nullable, Override,
-    Positive, String,
+    Any, Bool, Bytes, Dict, Enum, Float, Instance, Int, List, Nullable,
+    Override, Positive, String,
 )
 from bokeh.models import ColorMapper, Model
 
@@ -87,7 +87,7 @@ class VTKSynchronizedPlot(AbstractVTKPlot):
     Bokeh model for plotting a VTK render window
     """
 
-    arrays = Dict(String, Any)
+    arrays = Dict(String, Bytes)
 
     arrays_processed = List(String)
 

@@ -107,6 +107,13 @@ def test_accordion_cleanup_panels(document, comm, accordion):
     assert model.ref['id'] not in card2._models
 
 
+def test_accordion_setitem__panels_udated(document, comm, accordion):
+    accordion.get_root(document, comm=comm)
+    accordion[:] = [('Card1', '1'), ('Card2', '2'), ('Card3', '3')]
+
+    assert len(accordion._panels) == 3
+
+
 def test_accordion_active(document, comm, accordion):
     model = accordion.get_root(document, comm=comm)
 

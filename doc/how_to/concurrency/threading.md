@@ -12,9 +12,9 @@ import panel as pn
 pn.extension(nthreads=2)
 
 def button_click(event):
-    print('Button clicked for the {event.new}th time.')
+    print(f'Button clicked for the {event.new}th time.')
     time.sleep(2) # Simulate long running operation
-    print('Finished processing {event.new}th click.')
+    print(f'Finished processing {event.new}th click.')
 
 button = pn.widgets.Button(name='Click me!')
 
@@ -40,4 +40,8 @@ In a threaded context on the other hand the two clicks will be processed concurr
 ... 2 second wait
 > Finished processing 1th click.
 > Finished processing 2th click.
+```
+
+```{note}
+Note that the global ThreadPool is used to dispatch events triggered by changes in parameters, events (such as click events), [`defer_load`](../callbacks/defer_load.md) callbacks and optionally [`onload` callbacks](../callbacks/load.md).
 ```

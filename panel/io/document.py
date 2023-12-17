@@ -11,21 +11,40 @@ import threading
 from contextlib import contextmanager
 from functools import partial, wraps
 from typing import (
-    Callable, Iterator, List, Optional,
+    TYPE_CHECKING, Any, Callable, Dict, Iterator, List, Optional,
 )
 
 from bokeh.application.application import SessionContext
 from bokeh.document.document import Document
-from bokeh.document.events import DocumentChangedEvent, ModelChangedEvent
+from bokeh.document.events import (
+    ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
+    DocumentChangedEvent, ModelChangedEvent,
+)
+from bokeh.model.util import visit_immediate_value_references
+from bokeh.models import CustomJS
 
-from .model import monkeypatch_events
+from ..config import config
+from ..util import param_watchers
+from .loading import LOADING_INDICATOR_CSS_CLASS
+from .model import hold, monkeypatch_events  # noqa: F401 API import
 from .state import curdoc_locked, state
+
+if TYPE_CHECKING:
+    from bokeh.core.has_props import HasProps
 
 logger = logging.getLogger(__name__)
 
 #---------------------------------------------------------------------
 # Private API
 #---------------------------------------------------------------------
+
+DISPATCH_EVENTS = (
+    ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
+    ModelChangedEvent
+)
+
+WRITE_TASKS = []
+WRITE_LOCK = asyncio.Lock()
 
 @dataclasses.dataclass
 class Request:
@@ -51,6 +70,9 @@ class MockSessionContext(SessionContext):
     def request(self):
         return Request(headers={}, cookies={}, arguments={})
 
+def _cleanup_task(task):
+    if task in WRITE_TASKS:
+        WRITE_TASKS.remove(task)
 
 def _dispatch_events(doc: Document, events: List[DocumentChangedEvent]) -> None:
     """
@@ -60,7 +82,7 @@ def _dispatch_events(doc: Document, events: List[DocumentChangedEvent]) -> None:
     for event in events:
         doc.callbacks.trigger_on_change(event)
 
-def _cleanup_doc(doc):
+def _cleanup_doc(doc, destroy=True):
     for callback in doc.session_destroyed_callbacks:
         try:
             callback(None)
@@ -79,15 +101,20 @@ def _cleanup_doc(doc):
                 pane._hooks = []
                 for p in pane.select():
                     p._hooks = []
-                    p._param_watchers = {}
+                    param_watchers(p, {})
                     p._documents = {}
-                    p._callbacks = {}
-            pane._param_watchers = {}
+                    p._internal_callbacks = {}
+            param_watchers(pane, {})
             pane._documents = {}
-            pane._callbacks = {}
+            pane._internal_callbacks = {}
         else:
             views[ref] = (pane, root, doc, comm)
     state._views = views
+
+    # When reusing sessions we must clean up the Panel state but we
+    # must **not** destroy the template or the document
+    if not destroy:
+        return
 
     # Clean up templates
     if doc in state._templates:
@@ -95,25 +122,81 @@ def _cleanup_doc(doc):
         tmpl._documents = {}
         del state._templates[doc]
 
-    # Destroy doc
+    # Destroy document
     doc.destroy(None)
+
+async def _run_write_futures(futures):
+    """
+    Ensure that all write_message calls are awaited and handled.
+    """
+    from tornado.websocket import WebSocketClosedError
+    async with WRITE_LOCK:
+        for future in futures:
+            try:
+                await future
+            except WebSocketClosedError:
+                logger.warning("Failed sending message as connection was closed")
+            except Exception as e:
+                logger.warning(f"Failed sending message due to following error: {e}")
+
+def _dispatch_write_task(doc, func, *args, **kwargs):
+    """
+    Schedules tasks that write messages to the socket.
+    """
+    try:
+        task = asyncio.ensure_future(func(*args, **kwargs))
+        WRITE_TASKS.append(task)
+        task.add_done_callback(_cleanup_task)
+    except RuntimeError:
+        doc.add_next_tick_callback(partial(func, *args, **kwargs))
+
+async def _dispatch_msgs(doc, msgs):
+    """
+    Writes messages to a socket, ensuring that the write_lock is not
+    set, otherwise re-schedules the write task on the event loop.
+    """
+    from tornado.websocket import WebSocketHandler
+    remaining = {}
+    for conn, msg in msgs.items():
+        socket = conn._socket
+        if hasattr(socket, 'write_lock') and socket.write_lock._block._value == 0:
+            remaining[conn] = msg
+            continue
+        if isinstance(conn._socket, WebSocketHandler):
+            futures = dispatch_tornado(conn, msg=msg)
+        else:
+            futures = dispatch_django(conn, msg=msg)
+        await _run_write_futures(futures)
+    _dispatch_write_task(doc, _dispatch_msgs, doc, remaining)
 
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
 
-def init_doc(doc: Optional[Document]) -> Document:
+def create_doc_if_none_exists(doc: Optional[Document]) -> Document:
     curdoc = doc or curdoc_locked()
     if curdoc is None:
         curdoc = Document()
     elif not isinstance(curdoc, Document):
         curdoc = curdoc._doc
+    return curdoc
+
+def init_doc(doc: Optional[Document]) -> Document:
+    curdoc = create_doc_if_none_exists(doc)
     if not curdoc.session_context:
         return curdoc
 
     thread = threading.current_thread()
     if thread:
         state._thread_id_[curdoc] = thread.ident
+
+    if config.global_loading_spinner:
+        curdoc.js_on_event(
+            'document_ready', CustomJS(code=f"""
+            const body = document.getElementsByTagName('body')[0]
+            body.classList.remove({LOADING_INDICATOR_CSS_CLASS!r}, {config.loading_spinner!r})
+            """)
+        )
 
     session_id = curdoc.session_context.id
     sessions = state.session_info['sessions']
@@ -152,13 +235,14 @@ def with_lock(func: Callable) -> Callable:
     wrapper.lock = True # type: ignore
     return wrapper
 
-def dispatch_tornado(conn, events):
+def dispatch_tornado(conn, events=None, msg=None):
     from tornado.websocket import WebSocketHandler
     socket = conn._socket
     ws_conn = getattr(socket, 'ws_connection', False)
     if not ws_conn or ws_conn.is_closing(): # type: ignore
         return []
-    msg = conn.protocol.create('PATCH-DOC', events)
+    if msg is None:
+        msg = conn.protocol.create('PATCH-DOC', events)
     futures = [
         WebSocketHandler.write_message(socket, msg.header_json),
         WebSocketHandler.write_message(socket, msg.metadata_json),
@@ -173,9 +257,10 @@ def dispatch_tornado(conn, events):
         ])
     return futures
 
-def dispatch_django(conn, events):
+def dispatch_django(conn, events=None, msg=None):
     socket = conn._socket
-    msg = conn.protocol.create('PATCH-DOC', events)
+    if msg is None:
+        msg = conn.protocol.create('PATCH-DOC', events)
     futures = [
         socket.send(text_data=msg.header_json),
         socket.send(text_data=msg.metadata_json),
@@ -208,7 +293,7 @@ def unlocked() -> Iterator:
         monkeypatch_events(curdoc.callbacks._held_events)
         return
 
-    from tornado.websocket import WebSocketClosedError, WebSocketHandler
+    from tornado.websocket import WebSocketHandler
     connections = session._subscribed_connections
 
     curdoc.hold()
@@ -226,7 +311,7 @@ def unlocked() -> Iterator:
         monkeypatch_events(events)
         remaining_events, dispatch_events = [], []
         for event in events:
-            if isinstance(event, ModelChangedEvent) and not locked:
+            if isinstance(event, DISPATCH_EVENTS) and not locked:
                 dispatch_events.append(event)
             else:
                 remaining_events.append(event)
@@ -240,29 +325,74 @@ def unlocked() -> Iterator:
             else:
                 futures += dispatch_django(conn, dispatch_events)
 
-        # Ensure that all write_message calls are awaited and handled
-        async def handle_write_errors():
-            for future in futures:
-                try:
-                    await future
-                except WebSocketClosedError:
-                    logger.warning("Failed sending message as connection was closed")
-                except Exception as e:
-                    logger.warning(f"Failed sending message due to following error: {e}")
-
         if futures:
             if state._unblocked(curdoc):
-                try:
-                    asyncio.ensure_future(handle_write_errors())
-                except RuntimeError:
-                    curdoc.add_next_tick_callback(handle_write_errors)
+                _dispatch_write_task(curdoc, _run_write_futures, futures)
             else:
-                curdoc.add_next_tick_callback(handle_write_errors)
+                curdoc.add_next_tick_callback(partial(_run_write_futures, futures))
 
         curdoc.callbacks._held_events = remaining_events
     finally:
         try:
             curdoc.unhold()
         except RuntimeError:
-            if remaining_events:
-                curdoc.add_next_tick_callback(partial(_dispatch_events, curdoc, remaining_events))
+            if not remaining_events:
+                return
+            # Create messages for remaining events
+            msgs = {}
+            for conn in connections:
+                if not remaining_events:
+                    continue
+                # Create a protocol message for any events that cannot be immediately dispatched
+                msgs[conn] = conn.protocol.create('PATCH-DOC', remaining_events)
+            _dispatch_write_task(curdoc, _dispatch_msgs, curdoc, msgs)
+
+@contextmanager
+def immediate_dispatch(doc: Document | None = None):
+    """
+    Context manager to trigger immediate dispatch of events triggered
+    inside the execution context even when Document events are
+    currently on hold.
+
+    Arguments
+    ---------
+    doc: Document
+        The document to dispatch events on (if `None` then `state.curdoc` is used).
+    """
+    doc = doc or state.curdoc
+
+    # Skip if not in a server context
+    if not doc or not doc._session_context:
+        yield
+        return
+
+    old_events = doc.callbacks._held_events
+    held = doc.callbacks._hold
+    doc.callbacks._held_events = []
+    doc.callbacks.unhold()
+    with unlocked():
+        yield
+    doc.callbacks._hold = held
+    doc.callbacks._held_events = old_events
+
+@contextmanager
+def freeze_doc(doc: Document, model: HasProps, properties: Dict[str, Any], force: bool = False):
+    """
+    Freezes the document model references if any of the properties
+    are themselves a model.
+    """
+    if force:
+        dirty_count = 1
+    else:
+        dirty_count = 0
+        def mark_dirty(_: HasProps):
+            nonlocal dirty_count
+            dirty_count += 1
+        for key, value in properties.items():
+            visit_immediate_value_references(getattr(model, key, None), mark_dirty)
+            visit_immediate_value_references(value, mark_dirty)
+    if dirty_count:
+        doc.models._push_freeze()
+    yield
+    if dirty_count:
+        doc.models._pop_freeze()

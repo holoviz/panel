@@ -10,6 +10,7 @@ import signal
 import socket
 import tempfile
 import time
+import unittest
 
 from contextlib import contextmanager
 from subprocess import PIPE, Popen
@@ -23,10 +24,12 @@ from pyviz_comms import Comm
 
 from panel import config, serve
 from panel.config import panel_extension
-from panel.io import state
+from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
 
-CUSTOM_MARKS = ('ui', 'jupyter')
+CUSTOM_MARKS = ('ui', 'jupyter', 'subprocess')
+
+config.apply_signatures = False
 
 JUPYTER_PORT = 8887
 JUPYTER_TIMEOUT = 15 # s
@@ -39,11 +42,12 @@ def port_open(port):
     sock.close()
     return is_open
 
+
 def get_default_port():
-    # to get a different starting port per worker for pytest-xdist
+    worker_count = int(os.environ.get("PYTEST_XDIST_WORKER_COUNT", "1"))
     worker_id = os.environ.get("PYTEST_XDIST_WORKER", "0")
-    n = int(re.sub(r"\D", "", worker_id))
-    return 6000 + n * 30
+    worker_idx = int(re.sub(r"\D", "", worker_id))
+    return 9001 + (worker_idx * worker_count * 10)
 
 def start_jupyter():
     global JUPYTER_PORT, JUPYTER_PROCESS
@@ -87,6 +91,11 @@ optional_markers = {
         "marker-descr": "Jupyter test marker",
         "skip-reason": "Test only runs with the --jupyter option."
     },
+    "subprocess": {
+        "help": "Runs tests that fork the process",
+        "marker-descr": "Subprocess test marker",
+        "skip-reason": "Test only runs with the --subprocess option."
+    },
     "docs": {
         "help": "Runs docs specific tests",
         "marker-descr": "Docs test marker",
@@ -110,29 +119,21 @@ def pytest_configure(config):
 
 
 def pytest_collection_modifyitems(config, items):
-    markers, skipped, selected = [], [], []
-    for marker, info in optional_markers.items():
-        if not config.getoption("--{}".format(marker)):
-            skip_test = pytest.mark.skip(
-                reason=info['skip-reason'].format(marker)
-            )
-            for item in items:
-                if marker in item.keywords:
-                    item.add_marker(skip_test)
+    skipped, selected = [], []
+    markers = [m for m in optional_markers if config.getoption(f"--{m}")]
+    empty = not markers
+    for item in items:
+        if empty and any(m in item.keywords for m in optional_markers):
+            skipped.append(item)
+        elif empty:
+            selected.append(item)
+        elif not empty and any(m in item.keywords for m in markers):
+            selected.append(item)
         else:
-            markers.append(marker)
-            for item in items:
-                if marker in item.keywords:
-                    selected.append(item)
-                else:
-                    skipped.append(item)
-    skip_test = pytest.mark.skip(
-        reason=f"test not one of {', '.join(markers)}"
-    )
-    for item in skipped:
-        if item in selected:
-            continue
-        item.add_marker(skip_test)
+            skipped.append(item)
+
+    config.hook.pytest_deselected(items=skipped)
+    items[:] = selected
 
 
 @pytest.fixture
@@ -149,14 +150,25 @@ def document():
 
 
 @pytest.fixture
+def server_document():
+    doc = Document()
+    session_context = unittest.mock.Mock()
+    doc._session_context = lambda: session_context
+    with set_curdoc(doc):
+        yield doc
+
+@pytest.fixture
 def comm():
     return Comm()
 
 
 @pytest.fixture
 def port():
-    PORT[0] += 1
-    return PORT[0]
+    worker_id = os.environ.get("PYTEST_XDIST_WORKER", "0")
+    worker_count = int(os.environ.get("PYTEST_XDIST_WORKER_COUNT", "1"))
+    new_port = PORT[0] + int(re.sub(r"\D", "", worker_id))
+    PORT[0] += worker_count
+    return new_port
 
 
 @pytest.fixture
@@ -298,7 +310,6 @@ def set_env_var(env_var, value):
     else:
         os.environ[env_var] = old_value
 
-
 @pytest.fixture(autouse=True)
 def module_cleanup():
     """
@@ -351,6 +362,17 @@ def threads():
         config.nthreads = None
 
 @pytest.fixture
+def reuse_sessions():
+    config.reuse_sessions = True
+    try:
+        yield
+    finally:
+        config.reuse_sessions = False
+        config.session_key_func = None
+        state._sessions.clear()
+        state._session_key_funcs.clear()
+
+@pytest.fixture
 def nothreads():
     yield
 
@@ -359,3 +381,17 @@ def change_test_dir(request):
     os.chdir(request.fspath.dirname)
     yield
     os.chdir(request.config.invocation_dir)
+
+@pytest.fixture
+def exception_handler_accumulator():
+    exceptions = []
+
+    def eh(exception):
+        exceptions.append(exception)
+
+    old_eh = config.exception_handler
+    config.exception_handler = eh
+    try:
+        yield exceptions
+    finally:
+        config.exception_handler = old_eh

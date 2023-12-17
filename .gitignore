@@ -111,12 +111,17 @@ ENV/
 doc/**/*.rst
 doc/**/*.ipynb
 doc/**/*.json
+!doc/_static/json/*.json
+jupyter_execute
 # this dir contains the whole website and should not be checked in on main
 builtdocs/
 .doit.db
 
 lite/
 .jupyterlite.doit.db
+
+# jetbrains settings
+.idea/
 
 # vscode settings
 .vscode/
@@ -137,3 +142,16 @@ doc/reference/*
 /panel/dist/*
 !/panel/dist/css
 !/panel/dist/css/*.css
+.venv2/
+.npm/*
+.local/*
+.jupyter-server-log.txt
+.bash_history
+.bash_logout
+.bashrc
+.profile
+.config/code-server/*
+.conda/*
+.jupyter/*
+app_panel.py
+app_streamlit.py

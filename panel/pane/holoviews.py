@@ -9,7 +9,7 @@ import sys
 from collections import OrderedDict, defaultdict
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional, Type,
+    TYPE_CHECKING, Any, ClassVar, Mapping, Optional, Tuple, Type,
 )
 
 import param
@@ -17,10 +17,12 @@ import param
 from bokeh.models import Range1d, Spacer as _BkSpacer
 from bokeh.themes.theme import Theme
 from packaging.version import Version
+from param.parameterized import register_reference_transform
+from param.reactive import bind
 
 from ..io import state, unlocked
 from ..layout import (
-    Column, HSpacer, Row, VSpacer, WidgetBox,
+    Column, HSpacer, Row, WidgetBox,
 )
 from ..viewable import Layoutable, Viewable
 from ..widgets import Player
@@ -91,6 +93,21 @@ class HoloViews(PaneBase):
 
     priority: ClassVar[float | bool | None] = 0.8
 
+    _alignments = {
+        'left': (Row, ('start', 'center'), True),
+        'right': (Row, ('end', 'center'), False),
+        'top': (Column, ('center', 'start'), True),
+        'bottom': (Column, ('center', 'end'), False),
+        'top_left': (Column, 'start', True),
+        'top_right': (Column, ('end', 'start'), True),
+        'bottom_left': (Column, ('start', 'end'), False),
+        'bottom_right': (Column, 'end', False),
+        'left_top': (Row, 'start', True),
+        'left_bottom': (Row, ('start', 'end'), True),
+        'right_top': (Row, ('end', 'start'), False),
+        'right_bottom': (Row, 'end', False)
+    }
+
     _panes: ClassVar[Mapping[str, Type[PaneBase]]] = {
         'bokeh': Bokeh, 'matplotlib': Matplotlib, 'plotly': Plotly
     }
@@ -104,9 +121,15 @@ class HoloViews(PaneBase):
 
     _rerender_params = ['object', 'backend']
 
+    _skip_layoutable = (
+        'background', 'css_classes', 'margin', 'name', 'sizing_mode',
+        'width', 'height', 'max_width', 'max_height'
+    )
+
     def __init__(self, object=None, **params):
         self._initialized = False
-        self._responsive_content = False
+        self._height_responsive = None
+        self._width_responsive = None
         self._restore_plot = None
         super().__init__(object, **params)
         self.widget_box = self.widget_layout()
@@ -118,60 +141,69 @@ class HoloViews(PaneBase):
             if p in Layoutable.param and v != self.param[p].default
         ]
         watcher = self.param.watch(self._update_widgets, self._rerender_params)
-        self._callbacks.append(watcher)
-        self._initialized = True
+        self._internal_callbacks.append(watcher)
         self._update_responsive()
         self._update_widgets()
+        self._initialized = True
 
     def _param_change(self, *events: param.parameterized.Event) -> None:
+        if self._object_changing:
+            return
         self._track_overrides(*(e for e in events if e.name in Layoutable.param))
-        super()._param_change(*(e for e in events if e.name in self._overrides))
+        super()._param_change(*(e for e in events if e.name in self._overrides+['css_classes']))
+
+    @param.depends('backend', watch=True, on_init=True)
+    def _load_backend(self):
+        from holoviews import Store, extension
+        if self.backend and self.backend not in Store.renderers:
+            ext = extension._backends[self.backend]
+            __import__(f'holoviews.plotting.{ext}')
+
+    @property
+    def _layout_sizing_mode(self):
+        if self._width_responsive and self._height_responsive:
+            smode = 'stretch_both'
+        elif self._width_responsive:
+            smode = 'stretch_width'
+        elif self._height_responsive:
+            smode = 'stretch_height'
+        else:
+            smode = None
+        return smode
 
     @param.depends('center', 'widget_location', watch=True)
     def _update_layout(self):
         loc = self.widget_location
+        center = self.center and not self._width_responsive
+        layout, align, widget_first = self._alignments[loc]
+        self.widget_box.align = align
+        self._widget_container = self.widget_box
+        smode = self._layout_sizing_mode
+        layout_smode = 'stretch_width' if not smode and center else smode
         if not len(self.widget_box):
-            widgets = []
-        elif loc in ('left', 'right'):
-            widgets = Column(VSpacer(), self.widget_box, VSpacer())
-        elif loc in ('top', 'bottom'):
-            widgets = Row(HSpacer(), self.widget_box, HSpacer())
-        elif loc in ('top_left', 'bottom_left'):
-            widgets = Row(self.widget_box, HSpacer())
-        elif loc in ('top_right', 'bottom_right'):
-            widgets = Row(HSpacer(), self.widget_box)
-        elif loc in ('left_top', 'right_top'):
-            widgets = Column(self.widget_box, VSpacer())
-        elif loc in ('left_bottom', 'right_bottom'):
-            widgets = Column(VSpacer(), self.widget_box)
-
-        center = self.center and not self._responsive_content
-
-        self._widget_container = widgets
-        if not widgets:
             if center:
                 components = [HSpacer(), self, HSpacer()]
             else:
                 components = [self]
-        elif center:
-            if loc.startswith('left'):
-                components = [widgets, HSpacer(), self, HSpacer()]
-            elif loc.startswith('right'):
-                components = [HSpacer(), self, HSpacer(), widgets]
-            elif loc.startswith('top'):
-                components = [HSpacer(), Column(widgets, Row(HSpacer(), self, HSpacer())), HSpacer()]
-            elif loc.startswith('bottom'):
-                components = [HSpacer(), Column(Row(HSpacer(), self, HSpacer()), widgets), HSpacer()]
+            self.layout[:] = components
+            self.layout.sizing_mode = layout_smode
+            return
+
+        items = (self.widget_box, self) if widget_first else (self, self.widget_box)
+        kwargs = {'sizing_mode': smode}
+        if not center:
+            if self.default_layout is layout:
+                components = list(items)
+            else:
+                components = [layout(*items, **kwargs)]
+        elif layout is Column:
+            components = [HSpacer(), layout(*items, **kwargs), HSpacer()]
+        elif loc.startswith('left'):
+            components = [self.widget_box, HSpacer(), self, HSpacer()]
         else:
-            if loc.startswith('left'):
-                components = [widgets, self]
-            elif loc.startswith('right'):
-                components = [self, widgets]
-            elif loc.startswith('top'):
-                components = [Column(widgets, self)]
-            elif loc.startswith('bottom'):
-                components = [Column(self, widgets)]
+            components = [HSpacer(), self, HSpacer(), self.widget_box]
         self.layout[:] = components
+        self.layout.sizing_mode = layout_smode
 
     #----------------------------------------------------------------
     # Callback API
@@ -192,16 +224,19 @@ class HoloViews(PaneBase):
         obj = self.object
         if isinstance(obj, Plot):
             if 'responsive' in obj.param:
-                responsive = obj.responsive
+                wresponsive = obj.responsive and not obj.width
+                hresponsive = obj.responsive and not obj.height
             elif 'sizing_mode' in obj.param:
                 mode = obj.sizing_mode
                 if mode:
-                    responsive = '_width' in mode or '_both' in mode
+                    wresponsive = '_width' in mode or '_both' in mode
+                    hresponsive = '_height' in mode or '_both' in mode
                 else:
-                    responsive = False
+                    wresponsive = hresponsive = False
             else:
-                responsive = False
-            self._responsive_content = responsive
+                wresponsive = hresponsive = False
+            self._width_responsive = wresponsive
+            self._height_responsive = hresponsive
             return
 
         obj = obj.last if isinstance(obj, HoloMap) else obj
@@ -212,22 +247,29 @@ class HoloViews(PaneBase):
         opts = obj.opts.get('plot', backend=backend).kwargs
         plot_cls = renderer.plotting_class(obj)
         if backend == 'matplotlib':
-            self._responsive_content = False
+            self._width_responsive = self._height_responsive = False
         elif backend == 'plotly':
             responsive = opts.get('responsive', None)
             width = opts.get('width', None)
-            self._responsive_content = responsive and not width
+            height = opts.get('height', None)
+            self._width_responsive = responsive and not width
+            self._height_responsive = responsive and not height
         elif 'sizing_mode' in plot_cls.param:
             mode = opts.get('sizing_mode')
             if mode:
-                self._responsive_content = '_width' in mode or '_both' in mode
+                self._width_responsive = '_width' in mode or '_both' in mode
+                self._height_responsive = '_height' in mode or '_both' in mode
             else:
-                self._responsive_content = False
+                self._width_responsive = False
+                self._height_responsive = False
         else:
             responsive = opts.get('responsive', None)
             width = opts.get('width', None)
             frame_width = opts.get('frame_width', None)
-            self._responsive_content = responsive and not width and not frame_width
+            height = opts.get('height', None)
+            frame_height = opts.get('frame_height', None)
+            self._width_responsive = responsive and not width and not frame_width
+            self._height_responsive = responsive and not height and not frame_height
 
     @param.depends('widget_type', 'widgets', watch=True)
     def _update_widgets(self, *events):
@@ -239,15 +281,15 @@ class HoloViews(PaneBase):
         self._values = values
 
         # Clean up anything models listening to the previous widgets
-        for cb in list(self._callbacks):
+        for cb in list(self._internal_callbacks):
             if cb.inst in self.widget_box.objects:
                 cb.inst.param.unwatch(cb)
-                self._callbacks.remove(cb)
+                self._internal_callbacks.remove(cb)
 
         # Add new widget callbacks
         for widget in widgets:
             watcher = widget.param.watch(self._widget_callback, 'value')
-            self._callbacks.append(watcher)
+            self._internal_callbacks.append(watcher)
 
         self.widget_box[:] = widgets
         if ((widgets and self.widget_box not in self._widget_container) or
@@ -267,8 +309,9 @@ class HoloViews(PaneBase):
             key = tuple(w.value for w in widgets)
             if plot.dynamic:
                 widget_dims = [w.name for w in widgets]
+                dim_labels = [kdim.pprint_label for kdim in plot.dimensions]
                 key = [key[widget_dims.index(kdim)] if kdim in widget_dims else None
-                       for kdim in plot.dimensions]
+                       for kdim in dim_labels]
                 key = wrap_tuple_streams(tuple(key), plot.dimensions, plot.streams)
 
         if plot.backend == 'bokeh':
@@ -333,13 +376,26 @@ class HoloViews(PaneBase):
         self._syncing_props = True
         try:
             self.param.update({k: v for k, v in params.items() if k not in self._overrides})
+            if backend != 'bokeh':
+                return
+            plot_props = plot.state.properties()
             props = {
                 o: getattr(self, o) for o in self._overrides
+                if o in plot_props
             }
             if props:
                 plot.state.update(**props)
         finally:
             self._syncing_props = False
+
+    def _process_param_change(self, params):
+        if self._plots:
+            # Handles a design applying custom parameters on the plot
+            # which have to be mapped to properties by the underlying
+            # plot pane, e.g. Bokeh, Matplotlib or Plotly
+            _, pane = next(iter(self._plots.values()))
+            return pane._process_param_change(params)
+        return super()._process_param_change(params)
 
     #----------------------------------------------------------------
     # Model API
@@ -368,23 +424,41 @@ class HoloViews(PaneBase):
 
         plot.pane = self
         backend = plot.renderer.backend
-        if hasattr(plot.renderer, 'get_plot_state'):
-            state = plot.renderer.get_plot_state(plot)
-        else:
-            # Compatibility with holoviews<1.13.0
-            state = plot.state
+        state = plot.renderer.get_plot_state(plot)
 
         # Ensure rerender if content is responsive but layout is centered
+        # or update layout if plot is height responsive but layout wrapper
+        # is not
         self._sync_sizing_mode(plot)
         responsive = self.sizing_mode not in ('fixed', None) and not self.width
-        if self.center and responsive and not self._responsive_content:
-            self._responsive_content = True
+        force_width = (self.center and responsive and not self._width_responsive)
+        if force_width:
+            self._update_responsive()
+            self._width_responsive = True
             self._update_layout()
             self._restore_plot = plot
-            raise RerenderError()
+            raise RerenderError(layout=self.layout)
+        elif self._height_responsive is None:
+            self._update_responsive()
+            loc = self.widget_location
+            center = self.center and not self._width_responsive
+            layout, _, _ = self._alignments[loc]
+            smode = self._layout_sizing_mode
+            layout_smode = 'stretch_width' if not smode and center else smode
+            self.layout.sizing_mode = layout_smode
+            if len(self.widget_box):
+                if not center:
+                    if self.default_layout is not layout:
+                        self.layout[0].sizing_mode = smode
+                elif layout is Column and len(self.layout) == 3:
+                    self.layout[1].sizing_mode = smode
 
         kwargs = {p: v for p, v in self.param.values().items()
                   if p in Layoutable.param and p != 'name'}
+        if self.sizing_mode and (self.sizing_mode.endswith('width') or self.sizing_mode.endswith('both')):
+            del kwargs['width']
+        if self.sizing_mode and (self.sizing_mode.endswith('height') or self.sizing_mode.endswith('both')):
+            del kwargs['height']
         child_pane = self._get_pane(backend, state, **kwargs)
         self._update_plot(plot, child_pane)
         model = child_pane._get_model(doc, root, parent, comm)
@@ -466,7 +540,7 @@ class HoloViews(PaneBase):
             return False
         from holoviews.core.dimension import Dimensioned
         from holoviews.plotting.plot import Plot
-        return isinstance(obj, Dimensioned) or isinstance(obj, Plot)
+        return isinstance(obj, (Dimensioned, Plot))
 
     def jslink(self, target, code=None, args=None, bidirectional=False, **links):
         if links and code:
@@ -584,7 +658,8 @@ class HoloViews(PaneBase):
                     options = list(vals)
                     widget_type = widget_type or Select
                 default = vals[0] if dim.default is None else dim.default
-                widget_kwargs = dict(dict(name=dim.label, options=options, value=default), **widget_kwargs)
+                widget_name = dim.pprint_label
+                widget_kwargs = dict(dict(name=widget_name, options=options, value=default), **widget_kwargs)
                 widget = widget_type(**widget_kwargs)
             elif dim.range != (None, None):
                 start, end = dim.range
@@ -614,7 +689,12 @@ class HoloViews(PaneBase):
 
 class Interactive(PaneBase):
 
+    object = param.Parameter(default=None, allow_refs=False, doc="""
+        The object being wrapped, which will be converted to a
+        Bokeh model.""")
+
     priority: ClassVar[float | bool | None] = None
+    _ignored_refs: ClassVar[Tuple[str, ...]] = ('object',)
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
@@ -841,3 +921,13 @@ def link_axes(root_view, root_model):
 
 Viewable._preprocessing_hooks.append(link_axes)
 Viewable._preprocessing_hooks.append(find_links)
+
+def _hvplot_interactive_transform(obj):
+    if 'hvplot.interactive' not in sys.modules:
+        return obj
+    from hvplot.interactive import Interactive
+    if not isinstance(obj, Interactive):
+        return obj
+    return bind(lambda *_: obj.eval(), *obj._params)
+
+register_reference_transform(_hvplot_interactive_transform)

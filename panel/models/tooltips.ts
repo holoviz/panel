@@ -149,7 +149,7 @@ export function substituteIn(template: any, json: any) {
 
 export function makeTooltip(tooltips: any, layers: any[]) {
   /*
-   * If explictly no tooltip passed by user, return null
+   * If explicitly no tooltip passed by user, return null
    * If a JSON object passed, return a tooltip based on that object
    *   We expect the user has passed a string template that will take pickedInfo keywords
    * If a boolean passed, return the default tooltip

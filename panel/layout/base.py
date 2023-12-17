@@ -12,12 +12,16 @@ from typing import (
 
 import param
 
-from bokeh.models import Column as BkColumn, Row as BkRow
+from bokeh.models import Row as BkRow
+from param.parameterized import iscoroutinefunction, resolve_ref
 
+from ..io.document import freeze_doc
 from ..io.model import hold
+from ..io.resources import CDN_DIST
 from ..io.state import state
+from ..models import Column as PnColumn
 from ..reactive import Reactive
-from ..util import param_name, param_reprs
+from ..util import param_name, param_reprs, param_watchers
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -40,6 +44,9 @@ class Panel(Reactive):
 
     # Bokeh model used to render this Panel
     _bokeh_model: ClassVar[Type[Model]]
+
+    # Direction the layout flows in
+    _direction: ClassVar[str | None] = None
 
     # Parameters which require the preprocessors to be re-run
     _preprocess_params: ClassVar[List[str]] = []
@@ -72,11 +79,6 @@ class Panel(Reactive):
     # Callback API
     #----------------------------------------------------------------
 
-    def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        if ('styles' in params or 'sizing_mode' in params) and self.sizing_mode in ('stretch_width', 'stretch_both'):
-            params['styles'] = dict(params.get('styles', {}), **{'overflow-x': 'auto'})
-        return super()._process_param_change(params)
-
     def _update_model(
         self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
         root: Model, model: Model, doc: Document, comm: Optional[Comm]
@@ -90,22 +92,37 @@ class Panel(Reactive):
             del msg['styles']['overflow-x']
 
         obj_key = self._property_mapping['objects']
-        if obj_key in msg:
+        update_children = obj_key in msg
+        if update_children:
             old = events['objects'].old
-            msg[obj_key] = children = self._get_objects(model, old, doc, root, comm)
-            msg['sizing_mode'] = self._compute_sizing_mode(children, msg.get('sizing_mode', model.sizing_mode))
+            children, old_children = self._get_objects(model, old, doc, root, comm)
+            msg[obj_key] = children
+
+            msg.update(self._compute_sizing_mode(
+                children,
+                dict(
+                    sizing_mode=msg.get('sizing_mode', model.sizing_mode),
+                    styles=msg.get('styles', model.styles),
+                    width=msg.get('width', model.width),
+                    min_width=msg.get('min_width', model.min_width),
+                    margin=msg.get('margin', model.margin)
+                )
+            ))
+        else:
+            old_children = None
 
         with hold(doc):
             update = Panel._batch_update
             Panel._batch_update = True
             try:
-                super()._update_model(events, msg, root, model, doc, comm)
-                if update:
-                    return
-                from ..io import state
-                ref = root.ref['id']
-                if ref in state._views and preprocess:
-                    state._views[ref][0]._preprocess(root)
+                with freeze_doc(doc, model, msg, force=update_children):
+                    super()._update_model(events, msg, root, model, doc, comm)
+                    if update:
+                        return
+                    from ..io import state
+                    ref = root.ref['id']
+                    if ref in state._views and preprocess:
+                        state._views[ref][0]._preprocess(root, self, old_children)
             finally:
                 Panel._batch_update = update
 
@@ -122,7 +139,7 @@ class Panel(Reactive):
         models and cleaning up any dropped objects.
         """
         from ..pane.base import RerenderError, panel
-        new_models = []
+        new_models, old_models = [], []
         for i, pane in enumerate(self.objects):
             pane = panel(pane)
             self.objects[i] = pane
@@ -132,16 +149,21 @@ class Panel(Reactive):
                 obj._cleanup(root)
 
         current_objects = list(self.objects)
+        ref = root.ref['id']
         for i, pane in enumerate(self.objects):
-            if pane in old_objects:
+            if pane in old_objects and ref in pane._models:
                 child, _ = pane._models[root.ref['id']]
+                old_models.append(child)
             else:
                 try:
                     child = pane._get_model(doc, root, model, comm)
-                except RerenderError:
+                except RerenderError as e:
+                    if e.layout is not None and e.layout is not self:
+                        raise e
+                    e.layout = None
                     return self._get_objects(model, current_objects[:i], doc, root, comm)
             new_models.append(child)
-        return new_models
+        return new_models, old_models
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
@@ -152,40 +174,129 @@ class Panel(Reactive):
         model = self._bokeh_model()
         root = root or model
         self._models[root.ref['id']] = (model, parent)
-        objects = self._get_objects(model, [], doc, root, comm)
-        properties = self._get_properties(doc)
-        properties[self._property_mapping['objects']] = objects
-        properties['sizing_mode'] = self._compute_sizing_mode(objects, properties.get('sizing_mode'))
-        model.update(**properties)
+        objects, _ = self._get_objects(model, [], doc, root, comm)
+        props = self._get_properties(doc)
+        props[self._property_mapping['objects']] = objects
+        props.update(self._compute_sizing_mode(objects, props))
+        model.update(**props)
         self._link_props(model, self._linked_properties, doc, root, comm)
         return model
 
-    def _compute_sizing_mode(self, children, sizing_mode):
-        from ..config import config
-        if sizing_mode is not None and (not config.layout_compatibility or sizing_mode == 'fixed'):
-            return sizing_mode
-        expand_width, expand_height = False, False
+    def _compute_sizing_mode(self, children, props):
+        """
+        Handles inference of correct layout sizing mode by inspecting
+        the children and adapting to their layout properties. This
+        aims to provide a layer of backward compatibility for the
+        layout behavior before v1.0 and provide general usability
+        improvements.
+
+        The code iterates over the children and extracts their sizing_mode,
+        width and height. Based on these values we infer a few overrides
+        for the container sizing_mode, width and height:
+
+        - If a child is responsive in width then the container should
+          also be responsive in width (unless it has a fixed size).
+        - If a container is vertical (e.g. a Column) and a child is
+          responsive in height then the container should also be
+          responsive.
+        - If a container is horizontal (e.g. a Row) and all children
+          are responsive in height then the container should also be
+          responsive. This behavior is asymmetrical with height
+          because there isn't always vertical space to expand into
+          and it is better for the component to match the height of
+          the other children.
+        - Always compute the fixed sizes of the children (if available)
+          and provide this as min_width and min_height settings to
+          ensure sufficient space is available.
+        """
+        margin = props.get('margin', self.margin)
+        sizing_mode = props.get('sizing_mode', self.sizing_mode)
+        if sizing_mode == 'fixed':
+            return {}
+
+        # Iterate over children and determine responsiveness along
+        # each axis, scaling and the widths of each component.
+        heights, widths = [], []
+        all_expand_height, expand_width, expand_height, scale = True, False, False, False
         for child in children:
-            if child.sizing_mode in ('stretch_width', 'stretch_both', 'scale_width', 'scale_both'):
-                expand_width = True
-            if child.sizing_mode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both'):
-                expand_height = True
-        new_mode = None
+            smode = child.sizing_mode
+            if smode and 'scale' in smode:
+                scale = True
+
+            width_expanded = smode in ('stretch_width', 'stretch_both', 'scale_width', 'scale_both')
+            height_expanded = smode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both')
+            expand_width |= width_expanded
+            expand_height |= height_expanded
+            if width_expanded:
+                width = child.min_width
+            else:
+                width = child.width
+                if not child.width:
+                    width = child.min_width
+            if width:
+                if isinstance(margin, tuple):
+                    if len(margin) == 2:
+                        width += margin[1]*2
+                    else:
+                        width += margin[1] + margin[3]
+                else:
+                    width += margin*2
+                widths.append(width)
+
+            if height_expanded:
+                height = child.min_height
+            else:
+                height = child.height
+                if height:
+                    all_expand_height = False
+                else:
+                    height = child.min_height
+            if height:
+                if isinstance(margin, tuple):
+                    if len(margin) == 2:
+                        height += margin[0]*2
+                    else:
+                        height += margin[0] + margin[2]
+                else:
+                    height += margin*2
+                heights.append(height)
+
+        # Infer new sizing mode based on children
+        mode = 'scale' if scale else 'stretch'
+        if self._direction == 'horizontal':
+            allow_height_scale = all_expand_height
+        else:
+            allow_height_scale = True
         if expand_width and expand_height and not self.width and not self.height:
-            new_mode = 'stretch_both'
+            if allow_height_scale or 'both' in (sizing_mode or ''):
+                sizing_mode = f'{mode}_both'
+            else:
+                sizing_mode = f'{mode}_width'
         elif expand_width and not self.width:
-            new_mode = 'stretch_width'
-        elif expand_height and not self.height:
-            new_mode = 'stretch_height'
-        if new_mode and config.layout_compatibility and new_mode != sizing_mode:
-            self.param.warning(
-                f'Layout compatibility mode determined that {type(self).__name__} '
-                f'sizing_mode was incorrectly set to {sizing_mode!r} but '
-                f'the contents require {new_mode!r} to avoid collapsing. '
-                'Update the sizing_mode to hide this warning and prevent '
-                'layout issues in future versions of Panel.'
-            )
-        return new_mode or sizing_mode
+            sizing_mode = f'{mode}_width'
+        elif expand_height and not self.height and allow_height_scale:
+            sizing_mode = f'{mode}_height'
+        if sizing_mode is None:
+            return {'sizing_mode': props.get('sizing_mode')}
+
+        properties = {'sizing_mode': sizing_mode}
+        if (sizing_mode.endswith(("_width", "_both")) and
+            widths and 'min_width' not in properties):
+            width_op = max if self._direction == 'vertical' else sum
+            min_width = width_op(widths)
+            op_widths = [min_width]
+            if 'max_width' in properties:
+                op_widths.append(properties['max_width'])
+            properties['min_width'] = min(op_widths)
+        if (sizing_mode.endswith(("_height", "_both")) and
+            heights and 'min_height' not in properties):
+            height_op = max if self._direction == 'horizontal' else sum
+            min_height = height_op(heights)
+            op_heights = [min_height]
+            if 'max_height' in properties:
+                op_heights.append(properties['max_height'])
+            properties['min_height'] = min(op_heights)
+        return properties
 
     #----------------------------------------------------------------
     # Public API
@@ -336,11 +447,17 @@ class ListLike(param.Parameterized):
         new_objects.append(panel(obj))
         self.objects = new_objects
 
-    def clear(self) -> None:
+    def clear(self) -> List[Viewable]:
         """
         Clears the objects on this layout.
+
+        Returns
+        -------
+        objects (list[Viewable]): List of cleared objects.
         """
+        objects = self.objects
         self.objects = []
+        return objects
 
     def extend(self, objects: Iterable[Any]) -> None:
         """
@@ -354,6 +471,20 @@ class ListLike(param.Parameterized):
         new_objects = list(self)
         new_objects.extend(list(map(panel, objects)))
         self.objects = new_objects
+
+    def index(self, object) -> int:
+        """
+        Returns the integer index of the supplied object in the list of objects.
+
+        Arguments
+        ---------
+        obj (object): Panel component to look up the index for.
+
+        Returns
+        -------
+        index (int): Integer index of the object in the layout.
+        """
+        return self.objects.index(object)
 
     def insert(self, index: int, obj: Any) -> None:
         """
@@ -423,7 +554,7 @@ class NamedListLike(param.Parameterized):
         self.param.watch(self._update_names, 'objects')
         # ALERT: Ensure that name update happens first, should be
         #        replaced by watch precedence support in param
-        self._param_watchers['objects']['value'].reverse()
+        param_watchers(self)['objects']['value'].reverse()
 
     def _to_object_and_name(self, item):
         from ..pane import panel
@@ -654,11 +785,6 @@ class ListPanel(ListLike, Panel):
     An abstract baseclass for Panel objects with list-like children.
     """
 
-    margin = param.Parameter(default=0, doc="""
-        Allows to create additional space around the component. May
-        be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
-
     scroll = param.Boolean(default=False, doc="""
         Whether to add scrollbars if the content overflows the size
         of the container.""")
@@ -678,7 +804,9 @@ class ListPanel(ListLike, Panel):
                                  "not both." % type(self).__name__)
             params['objects'] = [panel(pane) for pane in objects]
         elif 'objects' in params:
-            params['objects'] = [panel(pane) for pane in params['objects']]
+            objects = params['objects']
+            if not resolve_ref(objects) or iscoroutinefunction(objects):
+                params['objects'] = [panel(pane) for pane in objects]
         super(Panel, self).__init__(**params)
 
     @property
@@ -689,11 +817,14 @@ class ListPanel(ListLike, Panel):
         )
 
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        scroll = params.pop('scroll', None)
-        css_classes = self.css_classes or []
-        if scroll:
-            params['css_classes'] = css_classes + ['scrollable']
-        elif scroll == False:
+        if 'scroll' in params:
+            scroll = params['scroll']
+            css_classes = params.get('css_classes', self.css_classes)
+            if scroll:
+                if self._direction is not None:
+                    css_classes += [f'scrollable-{self._direction}']
+                else:
+                    css_classes += ['scrollable']
             params['css_classes'] = css_classes
         return super()._process_param_change(params)
 
@@ -710,11 +841,6 @@ class NamedListPanel(NamedListLike, Panel):
     active = param.Integer(default=0, bounds=(0, None), doc="""
         Index of the currently displayed objects.""")
 
-    margin = param.Parameter(default=0, doc="""
-        Allows to create additional space around the component. May
-        be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
-
     scroll = param.Boolean(default=False, doc="""
         Whether to add scrollbars if the content overflows the size
         of the container.""")
@@ -727,10 +853,13 @@ class NamedListPanel(NamedListLike, Panel):
 
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
         if 'scroll' in params:
-            scroll = params.pop('scroll')
-            css_classes = list(self.css_classes or [])
+            scroll = params['scroll']
+            css_classes = params.get('css_classes', self.css_classes)
             if scroll:
-                css_classes += ['scrollable']
+                if self._direction is not None:
+                    css_classes += [f'scrollable-{self._direction}']
+                else:
+                    css_classes += ['scrollable']
             params['css_classes'] = css_classes
         return super()._process_param_change(params)
 
@@ -760,6 +889,10 @@ class Row(ListPanel):
 
     _bokeh_model: ClassVar[Type[Model]] = BkRow
 
+    _direction = 'horizontal'
+
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/listpanel.css']
+
 
 class Column(ListPanel):
     """
@@ -777,7 +910,47 @@ class Column(ListPanel):
     >>> pn.Column(some_widget, some_pane, some_python_object)
     """
 
-    _bokeh_model: ClassVar[Type[Model]] = BkColumn
+    scroll_position = param.Integer(default=None, doc="""
+        Current scroll position of the Column. Setting this value
+        will update the scroll position of the Column. Setting to
+        0 will scroll to the top.""")
+
+    auto_scroll_limit = param.Integer(bounds=(0, None), doc="""
+        Max pixel distance from the latest object in the Column to
+        activate automatic scrolling upon update. Setting to 0
+        disables auto-scrolling.""")
+
+    scroll_button_threshold = param.Integer(bounds=(0, None), doc="""
+        Min pixel distance from the latest object in the Column to
+        display the scroll button. Setting to 0
+        disables the scroll button.""")
+
+    view_latest = param.Boolean(default=False, doc="""
+        Whether to scroll to the latest object on init. If not
+        enabled the view will be on the first object.""")
+
+    _bokeh_model: ClassVar[Type[Model]] = PnColumn
+
+    _direction = 'vertical'
+
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/listpanel.css']
+
+    @param.depends(
+        "scroll_position",
+        "auto_scroll_limit",
+        "scroll_button_threshold",
+        "view_latest",
+        watch=True,
+        on_init=True
+    )
+    def _set_scrollable(self):
+        self.scroll = (
+            self.scroll or
+            bool(self.scroll_position) or
+            bool(self.auto_scroll_limit) or
+            bool(self.scroll_button_threshold) or
+            self.view_latest
+        )
 
 
 class WidgetBox(ListPanel):
@@ -809,11 +982,6 @@ class WidgetBox(ListPanel):
         Whether to lay out the widgets in a Row layout as opposed
         to a Column layout.""")
 
-    margin = param.Parameter(default=5, doc="""
-        Allows to create additional space around the component. May
-        be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
-
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'disabled': None, 'horizontal': None
     }
@@ -822,11 +990,17 @@ class WidgetBox(ListPanel):
         'disabled': None, 'objects': 'children', 'horizontal': None
     }
 
-    _stylesheets = ['css/widgetbox.css']
+    _stylesheets: ClassVar[list[str]] = [
+        f'{CDN_DIST}css/widgetbox.css', f'{CDN_DIST}css/listpanel.css'
+    ]
 
     @property
     def _bokeh_model(self) -> Type[Model]: # type: ignore
-        return BkRow if self.horizontal else BkColumn
+        return BkRow if self.horizontal else PnColumn
+
+    @property
+    def _direction(self):
+        return 'vertical' if self.horizontal else 'vertical'
 
     @param.depends('disabled', 'objects', watch=True)
     def _disable_widgets(self) -> None:

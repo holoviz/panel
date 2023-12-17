@@ -8,6 +8,16 @@ import * as p from "@bokehjs/core/properties"
 export class PanelMarkupView extends WidgetView {
   container: HTMLDivElement
   model: Markup
+  _initialized_stylesheets: any
+
+  connect_signals(): void {
+    super.connect_signals()
+    const {width, height, min_height, max_height, margin, sizing_mode} = this.model.properties;
+    this.on_change([width, height, min_height, max_height, margin, sizing_mode], () => {
+      set_size(this.el, this.model)
+      set_size(this.container, this.model, false)
+    });
+  }
 
   override async lazy_initialize() {
     await super.lazy_initialize()
@@ -19,11 +29,24 @@ export class PanelMarkupView extends WidgetView {
       })
   }
 
-  override connect_signals(): void {
-    super.connect_signals()
-    this.connect(this.model.change, () => {
-      this.render()
-    })
+  watch_stylesheets(): void {
+    this._initialized_stylesheets = {}
+    for (const sts of this._applied_stylesheets) {
+      const style_el = (sts as any).el
+      if (style_el instanceof HTMLLinkElement) {
+	this._initialized_stylesheets[style_el.href] = false
+	style_el.addEventListener("load", () => {
+	  this._initialized_stylesheets[style_el.href] = true
+	  if (
+	    Object.values(this._initialized_stylesheets).every(Boolean)
+	  )
+	    this.style_redraw()
+	})
+      }
+    }
+  }
+
+  style_redraw(): void {
   }
 
   has_math_disabled() {
@@ -34,7 +57,7 @@ export class PanelMarkupView extends WidgetView {
     super.render()
     set_size(this.el, this.model)
     this.container = div()
-    set_size(this.container, this.model)
+    set_size(this.container, this.model, false)
     this.shadow_el.appendChild(this.container)
 
     if (this.provider.status == "failed" || this.provider.status == "loaded")
@@ -42,7 +65,7 @@ export class PanelMarkupView extends WidgetView {
   }
 }
 
-export function set_size(el: HTMLElement, model: HTMLBox): void {
+export function set_size(el: HTMLElement, model: HTMLBox, adjustMargin: boolean = true): void {
   let width_policy = model.width != null ? "fixed" : "fit"
   let height_policy = model.height != null ? "fixed" : "fit"
   const {sizing_mode, margin} = model
@@ -75,7 +98,9 @@ export function set_size(el: HTMLElement, model: HTMLBox): void {
     }
   }
   let wm: number, hm: number
-  if (isArray(margin)) {
+  if (!adjustMargin) {
+    hm = wm = 0
+  } else if (isArray(margin)) {
     if (margin.length === 4) {
       hm = margin[0] + margin[2]
       wm = margin[1] + margin[3]
@@ -108,36 +133,14 @@ export function set_size(el: HTMLElement, model: HTMLBox): void {
 
 export abstract class HTMLBoxView extends LayoutDOMView {
   override model: HTMLBox
-
-  _prev_css_classes: string[]
+  _initialized_stylesheets: any
 
   connect_signals(): void {
     super.connect_signals()
-
-    // Note due to on_change hack properties must be defined in this order.
-    const {css_classes, stylesheets} = this.model.properties
-    this._prev_css_classes = this.model.css_classes
-    this.on_change([stylesheets], () => this.invalidate_render())
-    this.on_change([css_classes], () => {
-      // Note: This ensures that changes in the loading parameter in Panel
-      // do NOT trigger a full re-render
-      const css = []
-      let skip = false
-      for (const cls of this.model.css_classes) {
-        if (cls === 'pn-loading')
-          skip = true
-        else if (skip)
-          skip = false
-        else
-          css.push(cls)
-      }
-      const prev = this._prev_css_classes
-      if (JSON.stringify(css) === JSON.stringify(prev))
-	this.class_list.clear().add(...this.css_classes())
-      else
-        this.invalidate_render()
-      this._prev_css_classes = css
-    })
+    const {width, height, min_height, max_height, margin, sizing_mode} = this.model.properties;
+    this.on_change([width, height, min_height, max_height, margin, sizing_mode], () => {
+      set_size(this.el, this.model)
+    });
   }
 
   render(): void {
@@ -145,15 +148,24 @@ export abstract class HTMLBoxView extends LayoutDOMView {
     set_size(this.el, this.model)
   }
 
-  on_change(properties: any, fn: () => void): void {
-    // HACKALERT: LayoutDOMView triggers re-renders whenever css_classes change
-    // which is very expensive so we do not connect this signal and handle it
-    // ourself
-    const p = this.model.properties
-    if (properties.length === 2 && properties[0] === p.css_classes && properties[1] === p.stylesheets) {
-      return
+  watch_stylesheets(): void {
+    this._initialized_stylesheets = {}
+    for (const sts of this._applied_stylesheets) {
+      const style_el = (sts as any).el
+      if (style_el instanceof HTMLLinkElement) {
+	this._initialized_stylesheets[style_el.href] = false
+	style_el.addEventListener("load", () => {
+	  this._initialized_stylesheets[style_el.href] = true
+	  if (
+	    Object.values(this._initialized_stylesheets).every(Boolean)
+	  )
+	    this.style_redraw()
+	})
+      }
     }
-    super.on_change(properties, fn)
+  }
+
+  style_redraw(): void {
   }
 
   get child_models(): LayoutDOM[] {

@@ -4,8 +4,9 @@ import datetime as dt
 import sys
 
 from enum import Enum
+from functools import partial
 from typing import (
-    TYPE_CHECKING, ClassVar, List, Mapping, Optional, Type,
+    TYPE_CHECKING, Callable, ClassVar, List, Mapping, Optional, Type,
 )
 
 import numpy as np
@@ -14,8 +15,10 @@ import param
 from bokeh.models import ColumnDataSource, ImportedStyleSheet
 from pyviz_comms import JupyterComm
 
+from ..io.resources import CDN_DIST
+from ..io.state import state
 from ..reactive import ReactiveData
-from ..util import lazy_load
+from ..util import datetime_types, lazy_load
 from ..viewable import Viewable
 from .base import ModelPane
 
@@ -23,6 +26,8 @@ if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
+
+    from ..model.perspective import PerspectiveClickEvent
 
 DEFAULT_THEME = "material"
 
@@ -48,9 +53,9 @@ class Plugin(Enum):
     SUNBURST_D3 = "d3_sunburst"  # d3fc
     HEATMAP_D3 = "d3_heatmap"  # d3fc
     CANDLESTICK = "d3_candlestick"  # d3fc
-    CANDLESTICK_D3 = "d3_candlestick"  # d3fc
+    CANDLESTICK_D3 = "d3_candlestick"  # noqa: PIE796, d3fc
     OHLC = "d3_ohlc"  # d3fc
-    OHLC_D3 = "d3_ohlc"  # d3fc
+    OHLC_D3 = "d3_ohlc"  # noqa: PIE796, d3fc
 
     @staticmethod
     def options():
@@ -262,20 +267,23 @@ class Perspective(ModelPane, ReactiveData):
     >>> Perspective(df, plugin='hypergrid', theme='material-dark')
     """
 
-    aggregates = param.Dict(None, doc="""
+    aggregates = param.Dict(default=None, nested_refs=True, doc="""
       How to aggregate. For example {"x": "distinct count"}""")
 
-    columns = param.List(default=None, doc="""
+    columns = param.List(default=None, nested_refs=True, doc="""
         A list of source columns to show as columns. For example ["x", "y"]""")
 
-    expressions = param.List(default=None, doc="""
+    editable = param.Boolean(default=True, allow_None=True, doc="""
+      Whether items are editable.""")
+
+    expressions = param.List(default=None, nested_refs=True, doc="""
       A list of expressions computing new columns from existing columns.
       For example [""x"+"index""]""")
 
-    split_by = param.List(None, doc="""
+    split_by = param.List(default=None, nested_refs=True, doc="""
       A list of source columns to pivot by. For example ["x", "y"]""")
 
-    filters = param.List(default=None, doc="""
+    filters = param.List(default=None, nested_refs=True, doc="""
       How to filter. For example [["x", "<", 3],["y", "contains", "abc"]]""")
 
     min_width = param.Integer(default=420, bounds=(0, None), doc="""
@@ -296,7 +304,7 @@ class Perspective(ModelPane, ReactiveData):
     plugin = param.ObjectSelector(default=Plugin.GRID.value, objects=Plugin.options(), doc="""
       The name of a plugin to display the data. For example hypergrid or d3_xy_scatter.""")
 
-    plugin_config = param.Dict(default={}, doc="""
+    plugin_config = param.Dict(default={}, nested_refs=True, doc="""
       Configuration for the PerspectiveViewerPlugin.""")
 
     toggle_config = param.Boolean(default=True, doc="""
@@ -317,7 +325,9 @@ class Perspective(ModelPane, ReactiveData):
 
     _updates: ClassVar[bool] = True
 
-    _stylesheets = ['css/perspective-datatable.css']
+    _stylesheets: ClassVar[List[str]] = [
+        f'{CDN_DIST}css/perspective-datatable.css'
+    ]
 
     @classmethod
     def applies(cls, object):
@@ -328,6 +338,13 @@ class Perspective(ModelPane, ReactiveData):
             if isinstance(object, pd.DataFrame):
                 return 0
         return False
+
+    def __init__(self, object=None, **params):
+        click_handler = params.pop('on_click', None)
+        self._on_click_callbacks = []
+        super().__init__(object, **params)
+        if click_handler:
+            self.on_click(click_handler)
 
     def _get_data(self):
         if self.object is None:
@@ -370,8 +387,8 @@ class Perspective(ModelPane, ReactiveData):
         for col, array in source.data.items():
             if not isinstance(array, np.ndarray):
                 array = np.asarray(array)
-            kind = array.dtype.kind.lower()
-            if kind == 'm':
+            kind = array.dtype.kind
+            if kind == 'M':
                 schema[col] = 'datetime'
             elif kind in 'ui':
                 schema[col] = 'integer'
@@ -379,14 +396,14 @@ class Perspective(ModelPane, ReactiveData):
                 schema[col] = 'boolean'
             elif kind == 'f':
                 schema[col] = 'float'
-            elif kind == 'su':
+            elif kind in 'sU':
                 schema[col] = 'string'
             else:
                 if len(array):
                     value = array[0]
                     if isinstance(value, dt.date):
                         schema[col] = 'date'
-                    elif isinstance(value, dt.datetime):
+                    elif isinstance(value, datetime_types):
                         schema[col] = 'datetime'
                     elif isinstance(value, str):
                         schema[col] = 'string'
@@ -454,7 +471,28 @@ class Perspective(ModelPane, ReactiveData):
         self._bokeh_model = lazy_load(
             'panel.models.perspective', 'Perspective', isinstance(comm, JupyterComm), root
         )
-        return super()._get_model(doc, root, parent, comm)
+        model = super()._get_model(doc, root, parent, comm)
+        self._register_events('perspective-click', model=model, doc=doc, comm=comm)
+        return model
 
     def _update(self, ref: str, model: Model) -> None:
         model.update(**self._get_properties(model.document, source=model.source))
+
+    def _process_event(self, event):
+        if event.event_name == 'perspective-click':
+            for cb in self._on_click_callbacks:
+                state.execute(partial(cb, event), schedule=False)
+
+    def on_click(self, callback: Callable[[PerspectiveClickEvent], None]):
+        """
+        Register a callback to be executed when any row is clicked.
+        The callback is given a PerspectiveClickEvent declaring the
+        config, column names, and row values of the row that was
+        clicked.
+
+        Arguments
+        ---------
+        callback: (callable)
+            The callback to run on edit events.
+        """
+        self._on_click_callbacks.append(callback)

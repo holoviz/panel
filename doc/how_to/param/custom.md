@@ -18,6 +18,8 @@ As an example, we can map a string and a number Selector to a `RadioButtonGroup`
 import panel as pn
 import param
 
+pn.extension()
+
 class CustomExample(param.Parameterized):
     """An example Parameterized class"""
 
@@ -83,4 +85,5 @@ pn.Param(CustomExample.param, sort=sort_func, name="Sort by Label Length Example
 ---
 
 ## Related Resources
-- See the [Background > APIs](../../background/apis/index.md) for context on this and other Panel APIs
+
+- See the [Explanation > APIs](../../explanation/api/index.md) for context on this and other Panel APIs

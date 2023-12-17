@@ -1,4 +1,8 @@
-# Add Load Tests with Locust and Playwright
+# Test operating capacity
+
+This guide addresses how to test performance by simulating multiple users accessing an app concurrently.
+
+---
 
 *Load testing* means testing the performance of the entire Panel application and the server(s) running it.
 
@@ -10,7 +14,7 @@ This kind of testing is really useful if you want to
 Before you get started ensure you have installed the required dependencies:
 
 ```bash
-pip install panel pytest locust pytest-playwright pytest-asyncio loadwright==0.1.0
+pip install panel pytest locust pytest-playwright pytest-asyncio loadwright
 ```
 
 and ensure `playwright` sets up the browsers it will use to display the applications:
@@ -27,8 +31,10 @@ Lets create a simple data app for testing. The app sleeps 0.5 seconds (default) 
 
 Create the file `app.py` and add the code below:
 
-```python
-# app.py
+:::{card} app.py
+
+```{code-block} python
+
 import time
 
 import panel as pn
@@ -37,10 +43,10 @@ import param
 class App(pn.viewable.Viewer):
     run = param.Event(doc="Runs for click_delay seconds when clicked")
     runs = param.Integer(doc="The number of runs")
-    status = param.String("No runs yet")
+    status = param.String(default="No runs yet")
 
-    load_delay = param.Number(0.5)
-    run_delay = param.Number(0.5)
+    load_delay = param.Number(default=0.5)
+    run_delay = param.Number(default=0.5)
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -70,13 +76,13 @@ class App(pn.viewable.Viewer):
         self.runs+=1
         self.status=f"Finished run {self.runs} in {duration}sec"
 
-    @pn.depends("run", watch=True)
+    @param.depends("run", watch=True)
     def _run_with_status_update(self):
         self._start_run()
         self._result_pane[:] = [self._run()]
         self._stop_run()
 
-    @pn.depends("status", watch=True)
+    @param.depends("status", watch=True)
     def _update_status_pane(self):
         self._status_pane.object = self.status
 
@@ -93,6 +99,8 @@ if pn.state.served:
     App().servable()
 ```
 
+:::
+
 Serve the app via `panel serve app.py` and open [http://localhost:5006/app](http://localhost:5006/app) in your browser.
 
 ## Create a conftest.py
@@ -104,8 +112,10 @@ The `conftest.py` file should be placed alongside your tests and will be loaded 
 
 Create the file `conftest.py` and add the code below.
 
-```python
-# conftest.py
+:::{card} conftest.py
+
+```{code-block} python
+
 """Shared configuration and fixtures for testing Panel"""
 import panel as pn
 import pytest
@@ -128,16 +138,20 @@ def server_cleanup():
         pn.state.reset()
 ```
 
+:::
+
 For more inspiration see the [Panel `conftest.py` file](https://github.com/holoviz/panel/blob/main/panel/tests/conftest.py)
 
 ## Test the initial load with Locust
 
-[Locust](https://locust.io/) can help you test the behaviour of users that load (i.e. requests) your Panel app. Locust provides many useful performance related statistics and charts.
+[Locust](https://locust.io/) can help you test the behaviour of users that load (i.e. request) your Panel app. Locust provides many useful performance related statistics and charts.
 
 Create the file `locustfile.py` and add the code below.
 
-```python
-#locustfile.py
+:::{card} locustfile.py
+
+```{code-block} python
+
 from locust import HttpUser, task
 
 class RequestOnlyUser(HttpUser):
@@ -145,6 +159,8 @@ class RequestOnlyUser(HttpUser):
     def goto(self):
         self.client.get("/app")
 ```
+
+:::
 
 Start the Panel server:
 
@@ -162,7 +178,7 @@ Open [http://localhost:8089](http://localhost:8089). Keep the default settings a
 
 ![panel-locust.gif](https://assets.holoviz.org/panel/gifs/locust.gif)
 
-The median response time is ~530ms when one user requests the page every second. If you try to increase to 10 simultanous users you will see a median response time of ~5300ms. If this is a likely scenario, you will have to look into how to improve the performance of your app.
+The median response time is ~530ms when one user requests the page every second. If you try to increase to 10 simultaneous users you will see a median response time of ~5300ms. If this is a likely scenario, you will have to look into how to improve the performance of your app.
 
 ## Test advanced interactions with Loadwright
 
@@ -175,8 +191,10 @@ Lets replicate a user that:
 
 Create the file `test_loadwright.py` and add the code below:
 
-```python
-# test_loadwright.py
+:::{card} test_loadwright.py
+
+```{code-block} python
+
 import param
 import pytest
 
@@ -227,6 +245,8 @@ if pn.state.served:
     ).servable()
 ```
 
+:::
+
 Run the tests with pytest
 
 ```bash
@@ -244,3 +264,5 @@ $ panel serve test_loadwright.py
 ![Loadwright Demo](https://assets.holoviz.org/panel/gifs/loadwright.gif).
 
 You will find an *archive* of *test results* in the `tests_results/archive` folder.
+
+## Related Resources

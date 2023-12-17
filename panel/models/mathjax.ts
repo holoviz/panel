@@ -5,6 +5,11 @@ import {PanelMarkupView} from "./layout"
 export class MathJaxView extends PanelMarkupView {
   model: MathJax
 
+  connect_signals(): void {
+    super.connect_signals();
+    this.connect(this.model.properties.text.change, () => this.render());
+  }
+
   override render(): void {
     super.render()
     this.container.innerHTML = this.has_math_disabled() ? this.model.text : this.process_tex(this.model.text)

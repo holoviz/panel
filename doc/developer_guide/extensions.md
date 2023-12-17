@@ -1,6 +1,7 @@
 # Extensions
 
 ## Plugin support
+
 Panel supports a number of entrypoint groups which can be used by external packages to extend its functionality.
 
  - panel.auth
@@ -27,5 +28,6 @@ def provider(files: list, endpoint: str) -> List[Tuple[str,RequestHandlerClass,d
 
 It should accept a list of files to serve and the endpoint it will serve on, it should return a list of tuples where the list of tuples returned include a pattern to match, a request handler class and a dictionary of keyword arguments to pass to the handler class on initialization.
 
-### Extention plugins
+### Extension plugins
+
 The `panel.extension` entrypoint group can be used to apply runtime extensions. These entrypoints are resolved when `panel.extension()` is called. If the entrypoint resolves to a module, it will be imported and if it resolves to a callable it will be called with no arguments. If you need to access the current configuration within the extension code, the Panel global config object will already be initialized at the time these entrypoints are resolved and available via `panel.config`.

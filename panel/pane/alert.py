@@ -11,6 +11,7 @@ from typing import (
 
 import param
 
+from ..io.resources import CDN_DIST
 from .markup import Markdown
 
 ALERT_TYPES = [
@@ -31,13 +32,15 @@ class Alert(Markdown):
     >>> Alert('Some important message', alert_type='warning')
     """
 
-    alert_type = param.ObjectSelector("primary", objects=ALERT_TYPES)
+    alert_type = param.ObjectSelector(default="primary", objects=ALERT_TYPES)
 
     priority: ClassVar[float | bool | None] = 0
 
     _rename: ClassVar[Mapping[str, str | None]] = {'alert_type': None}
 
-    _stylesheets: ClassVar[List[str]] = ['css/alerts.css']
+    _stylesheets: ClassVar[List[str]] = [
+        f'{CDN_DIST}css/alerts.css'
+    ]
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
@@ -45,8 +48,6 @@ class Alert(Markdown):
         return 0 if priority else False
 
     def __init__(self, object=None, **params):
-        if "margin" not in params:
-            params["margin"] = (0, 0, 25, 0)
         if "sizing_mode" not in params and "width" not in params:
             params["sizing_mode"] = "stretch_width"
         super().__init__(object, **params)

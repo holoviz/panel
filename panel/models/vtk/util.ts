@@ -63,7 +63,6 @@ export function setup_vtkns(): void {
   vtkns["SphereMapper"] = vtk.Rendering.Core.vtkSphereMapper
   vtkns["SynchronizableRenderWindow"] =
     vtk.Rendering.Misc.vtkSynchronizableRenderWindow
-  vtkns["ThirdParty"] = vtk.ThirdParty
   vtkns["Texture"] = vtk.Rendering.Core.vtkTexture
   vtkns["Volume"] = vtk.Rendering.Core.vtkVolume
   vtkns["VolumeController"] = vtk.Interaction.UI.vtkVolumeController
@@ -223,6 +222,6 @@ export function majorAxis(
 
 export function cartesian_product(...arrays: any) {
   return arrays.reduce((acc: any, curr: any) =>
-    acc.flatMap((c: any) => curr.map((n: any) => [].concat(c, n)))
+    [...acc].flatMap((c: any) => curr.map((n: any) => [].concat(c, n)))
   )
 }

@@ -3,7 +3,7 @@
 This guide addresses how to build custom Panel components from scratch.
 
 ```{admonition} Prerequisites
-1. As a how-to guide, the intent is to provide recipes for specific problems without a lot of discussion. However, this is an advanced topic so if you get stuck, please read the associated [Background > Building Custom Components](../../background/components/components_custom) for further explanation.
+1. As a how-to guide, the intent is to provide recipes for specific problems without a lot of discussion. However, this is an advanced topic so if you get stuck, please read the associated [Explanation > Building Custom Components](../../explanation/components/components_custom) for further explanation.
 ```
 
 ---
@@ -15,9 +15,12 @@ The `ReactiveHTML` class provides bi-directional syncing of arbitrary HTML attri
 Let's declare a `Slideshow` component which subscribes to `click` events on an `<img>` element and advances the image `index` on each click:
 
 ```{pyodide}
-
+import panel as pn
 import param
+
 from panel.reactive import ReactiveHTML
+
+pn.extension()
 
 class Slideshow(ReactiveHTML):
 
@@ -176,4 +179,4 @@ It also makes extensive use of the available objects in the namespace:
 
 
 ## Related Resources
-- Read the associated [Background > Building Custom Components](../../background/components/components_custom) for further explanation, including how to load external dependencies for your custom components.
+- Read the associated [Explanation > Building Custom Components](../../explanation/components/components_custom) for further explanation, including how to load external dependencies for your custom components.

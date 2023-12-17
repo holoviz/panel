@@ -128,10 +128,10 @@ A ``GridSpec`` behaves like a 2D array. The indexing is zero-based and specifies
 First, declare a ``GridSpec`` and add red and blue blocks. The red block goes in the first row and spans 3 columns. The blue block spans from the second to fourth row, but only occupies the first column:
 
 ```{pyodide}
-gridspec = pn.GridSpec(sizing_mode='stretch_both', max_height=400)
+gridspec = pn.GridSpec(sizing_mode='stretch_both', min_height=600)
 
-gridspec[0, :3] = pn.Spacer(background='#FF0000')
-gridspec[1:3, 0] = pn.Spacer(background='#0000FF')
+gridspec[0, :3] = pn.Spacer(styles={'background': '#FF0000'})
+gridspec[1:3, 0] = pn.Spacer(styles={'background': '#0000FF'})
 
 gridspec
 ```
@@ -166,14 +166,15 @@ gridspec
 ```
 
 Here is the complete code for this subsection in case you want to easily copy it:
+
 ``` {pyodide}
 import panel as pn
 pn.extension() # for notebook
 
 gridspec = pn.GridSpec(sizing_mode='stretch_both', max_height=400)
 
-gridspec[0, :3] = pn.Spacer(background='#FF0000')
-gridspec[1:3, 0] = pn.Spacer(background='#0000FF')
+gridspec[0, :3] = pn.Spacer(styles={'background': '#FF0000'})
+gridspec[1:3, 0] = pn.Spacer(styles={'background': '#0000FF'})
 
 gridspec[1:3, 1:3] = p1
 
@@ -192,5 +193,6 @@ gridspec
 ---
 
 ## Related Resources
-- Learn more about Panes in [Background > Components](../../background/components/components_overview.html#panes).
-- For more detail about `GridSpec` Panels, see the [Reference Gallery > GridSpec](../reference/layouts/GridSpec.ipynb).
+
+- Learn more about Panes in [Explanation > Components](../../explanation/components/components_overview.md#panes).
+- For more detail about `GridSpec` Panels, see the [Component Gallery > GridSpec](../reference/layouts/GridSpec.md).

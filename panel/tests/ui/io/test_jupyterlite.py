@@ -5,12 +5,12 @@ from subprocess import PIPE, Popen
 
 import pytest
 
-try:
-    from playwright.sync_api import expect
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
+pytest.importorskip("playwright")
 
-pytestmark = pytest.mark.ui
+from playwright.sync_api import expect
+
+pytestmark = [pytest.mark.jupyter, pytest.mark.ui]
+
 
 @pytest.fixture()
 def launch_jupyterlite():
@@ -38,20 +38,23 @@ def launch_jupyterlite():
         process.wait()
 
 
-# ImportError: 'process_document_events' from 'bokeh.protocol.messages.patch_doc'"""
-@pytest.mark.xfail(reason="Jupyterlite: does not work with Bokeh 3.")
-@pytest.mark.flaky(max_runs=3)
-@pytest.mark.skip(reason="Requires a dev release to be available")
+
 def test_jupyterlite_execution(launch_jupyterlite, page):
     page.goto("http://localhost:8123/index.html")
 
     page.locator('text="Getting_Started.ipynb"').first.dblclick()
+
+    # Select the kernel
+    if page.locator('.jp-Dialog').count() == 1:
+        page.locator('.jp-select-wrapper > select').select_option('Python (Pyodide)')
+        page.locator('.jp-Dialog-footer > button').nth(1).click()
+
     for _ in range(6):
-        page.locator('[data-command="runmenu:run"]').click()
+        page.locator('button[data-command="notebook:run-cell-and-select-next"]').click()
         page.wait_for_timeout(500)
 
     page.locator('.noUi-handle').click(timeout=120 * 1000)
 
     page.keyboard.press('ArrowRight')
 
-    expect(page.locator('.markdown').locator('div').first).to_have_text('0.1')
+    expect(page.locator('.bk-panel-models-markup-HTML').locator('div').locator('pre')).to_have_text('0.1')

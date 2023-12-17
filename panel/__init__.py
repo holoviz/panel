@@ -45,6 +45,9 @@ https://blog.holoviz.org/panel_0.12.0.html#JupyterLab-previews
 To learn more about Panel check out
 https://panel.holoviz.org/getting_started/index.html
 """
+from param import rx
+
+from . import chat  # noqa
 from . import layout  # noqa
 from . import links  # noqa
 from . import pane  # noqa
@@ -60,11 +63,11 @@ from .io import (  # noqa
     _jupyter_server_extension_paths, cache, ipywidget, serve, state,
 )
 from .layout import (  # noqa
-    Accordion, Card, Column, FlexBox, GridBox, GridSpec, Row, Spacer, Tabs,
-    WidgetBox,
+    Accordion, Card, Column, FlexBox, FloatPanel, GridBox, GridSpec, GridStack,
+    HSpacer, Row, Spacer, Swipe, Tabs, VSpacer, WidgetBox,
 )
 from .pane import panel  # noqa
-from .param import Param  # noqa
+from .param import Param, ReactiveExpr  # noqa
 from .template import Template  # noqa
 from .widgets import indicators, widget  # noqa
 
@@ -72,15 +75,21 @@ __all__ = (
     "__version__",
     "Accordion",
     "Card",
+    "chat",
     "Column",
     "FlexBox",
+    "FloatPanel",
     "GridBox",
     "GridSpec",
+    "GridStack",
+    "HSpacer",
     "Param",
+    "ReactiveExpr",
     "Row",
     "Spacer",
     "Tabs",
     "Template",
+    "VSpacer",
     "WidgetBox",
     "bind",
     "cache",
@@ -96,7 +105,7 @@ __all__ = (
     "panel",
     "param",
     "pipeline",
-    "reactive",
+    "rx",
     "serve",
     "state",
     "viewable",

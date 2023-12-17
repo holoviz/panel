@@ -72,19 +72,19 @@ self.onmessage = async (event) => {
     _link_docs_worker(state.curdoc, sendPatch, setter='js')
     `)
   } else if (msg.type === 'patch') {
+    self.pyodide.globals.set('patch', msg.patch)
     self.pyodide.runPythonAsync(`
-    import json
-
-    state.curdoc.apply_json_patch(json.loads('${msg.patch}'), setter='js')
+    state.curdoc.apply_json_patch(patch.to_py(), setter='js')
     `)
     self.postMessage({type: 'idle'})
   } else if (msg.type === 'location') {
+    self.pyodide.globals.set('location', msg.location)
     self.pyodide.runPythonAsync(`
     import json
     from panel.io.state import state
     from panel.util import edit_readonly
     if state.location:
-        loc_data = json.loads("""${msg.location}""")
+        loc_data = json.loads(location)
         with edit_readonly(state.location):
             state.location.param.update({
                 k: v for k, v in loc_data.items() if k in state.location.param

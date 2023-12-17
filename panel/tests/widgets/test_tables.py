@@ -1,15 +1,14 @@
 import datetime as dt
-import time
 
 import numpy as np
 import pandas as pd
 import pytest
-import requests
 
 from bokeh.models.widgets.tables import (
     AvgAggregator, CellEditor, CheckboxEditor, DataCube, DateEditor,
-    DateFormatter, IntEditor, MinAggregator, NumberEditor, NumberFormatter,
-    SelectEditor, StringEditor, StringFormatter, SumAggregator,
+    DateFormatter, HTMLTemplateFormatter, IntEditor, MinAggregator,
+    NumberEditor, NumberFormatter, SelectEditor, StringEditor, StringFormatter,
+    SumAggregator,
 )
 from packaging.version import Version
 from pandas._testing import (
@@ -17,9 +16,10 @@ from pandas._testing import (
 )
 
 from panel.depends import bind
-from panel.io.server import serve
 from panel.io.state import set_curdoc
 from panel.models.tabulator import CellClickEvent, TableEditEvent
+from panel.tests.util import serve_and_request, wait_until
+from panel.util import BOKEH_JS_NAT
 from panel.widgets import Button, TextInput
 from panel.widgets.tables import DataFrame, Tabulator
 
@@ -560,6 +560,19 @@ def test_tabulator_config_editor_dict(document, comm):
     assert model.configuration['columns'][2] == {'field': 'B', 'sorter': 'number', 'editor': 'list', 'editorParams': {'valuesLookup': True}}
 
 
+def test_tabulator_sortable_bool(dataframe, document, comm):
+    table = Tabulator(dataframe, sortable=False)
+    model = table.get_root(document, comm)
+    assert not any(col['headerSort'] for col in model.configuration['columns'])
+
+
+def test_tabulator_sortable_dict(dataframe, document, comm):
+    table = Tabulator(dataframe, sortable={'int': False})
+    model = table.get_root(document, comm)
+    assert all(not col['headerSort'] if col['field'] == 'int' else col['headerSort']
+               for col in model.configuration['columns'])
+
+
 def test_tabulator_groups(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df, groups={'Number': ['A', 'B'], 'Other': ['C', 'D']})
@@ -582,7 +595,6 @@ def test_tabulator_groups(document, comm):
 
 
 def test_tabulator_numeric_groups(document, comm):
-    print(document)
     df = pd.DataFrame(np.random.rand(10, 3))
     table = Tabulator(df, groups={'Number': [0, 1]})
 
@@ -853,7 +865,7 @@ def test_tabulator_stream_df_rollover(document, comm):
 
     model = table.get_root(document, comm)
 
-    stream_value = pd.Series({'A': 5, 'B': 1, 'C': 'foo6', 'D': dt.datetime(2009, 1, 8)}).to_frame().T
+    stream_value = pd.DataFrame({'A': [5], 'B': [1], 'C': ['foo6'], 'D': [np.datetime64(dt.datetime(2009, 1, 8))]})
 
     table.stream(stream_value, rollover=5)
 
@@ -960,6 +972,86 @@ def test_tabulator_patch_with_dataframe(document, comm):
         np.testing.assert_array_equal(values, expected_array)
         if col != 'index':
             np.testing.assert_array_equal(table.value[col].values, expected[col])
+
+def test_tabulator_patch_with_dataframe_custom_index(document, comm):
+    df = pd.DataFrame(dict(A=[1, 4, 2]), index=['foo1', 'foo2', 'foo3'])
+    df_patch = pd.DataFrame(dict(A=[10]), index=['foo2'])
+
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    table.patch(df_patch)
+
+    expected = {
+        'index': np.array(['foo1', 'foo2', 'foo3']),
+        'A': np.array([1, 10, 2]),
+    }
+    for col, values in model.source.data.items():
+        expected_array = expected[col]
+        np.testing.assert_array_equal(values, expected_array)
+        if col != 'index':
+            np.testing.assert_array_equal(table.value[col].values, expected[col])
+
+def test_tabulator_patch_with_dataframe_custom_index_name(document, comm):
+    df = pd.DataFrame(dict(A=[1, 4, 2]), index=['foo1', 'foo2', 'foo3'])
+    df.index.name = 'foo'
+    df_patch = pd.DataFrame(dict(A=[10]), index=['foo2'])
+    df.index.name = 'foo'
+
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    table.patch(df_patch)
+
+    expected = {
+        'foo': np.array(['foo1', 'foo2', 'foo3']),
+        'A': np.array([1, 10, 2]),
+    }
+    for col, values in model.source.data.items():
+        expected_array = expected[col]
+        np.testing.assert_array_equal(values, expected_array)
+        if col != 'foo':
+            np.testing.assert_array_equal(table.value[col].values, expected[col])
+
+def test_tabulator_patch_with_complete_dataframe_custom_index(document, comm):
+    df = makeMixedDataFrame()[['A', 'B', 'C']]
+    df.index = [0, 1, 2, 3, 10]
+
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    table.patch(df)
+
+    expected = {
+        'index': np.array([0, 1, 2, 3, 10]),
+        'A': np.array([0, 1, 2, 3, 4]),
+        'B': np.array([0, 1, 0, 1, 0]),
+        'C': np.array(['foo1', 'foo2', 'foo3', 'foo4', 'foo5']),
+    }
+    for col, values in model.source.data.items():
+        expected_array = expected[col]
+        np.testing.assert_array_equal(values, expected_array)
+        if col != 'index':
+            np.testing.assert_array_equal(table.value[col].values, expected[col])
+
+def test_tabulator_patch_with_dataframe_custom_index_multiple_error(document, comm):
+    df = pd.DataFrame(dict(A=[1, 4, 2]), index=['foo1', 'foo1', 'foo3'])
+    # Copy to assert at the end that the original dataframe hasn't been touched
+    original = df.copy()
+    df_patch = pd.DataFrame(dict(A=[20, 10]), index=['foo1', 'foo1'])
+
+    table = Tabulator(df)
+
+    with pytest.raises(
+        ValueError,
+        match=r"Patching a table with duplicate index values is not supported\. Found this duplicate index: 'foo1'"
+    ):
+        table.patch(df_patch)
+
+    pd.testing.assert_frame_equal(table.value, original)
 
 def test_tabulator_patch_with_dataframe_not_as_index(document, comm):
     df = makeMixedDataFrame().sort_values('A', ascending=False)
@@ -1193,6 +1285,51 @@ def test_tabulator_patch_ranges(document, comm):
         if col != 'index':
             np.testing.assert_array_equal(table.value[col].values, expected[col])
 
+def test_tabulator_patch_with_timestamp(document, comm):
+    # https://github.com/holoviz/panel/issues/5555
+    df = pd.DataFrame(dict(A=pd.to_datetime(['1980-01-01', '1980-01-02'])))
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    table.patch({'A': [(0, pd.Timestamp('2021-01-01'))]})
+
+    expected = {
+        'index': np.array([0, 1]),
+        'A': np.array(['2021-01-01T00:00:00.000000000',
+                       '1980-01-02T00:00:00.000000000'],
+                      dtype='datetime64[ns]')
+    }
+    for col, values in model.source.data.items():
+        if col == 'A':
+            expected_array = expected[col].astype(np.int64) / 10e5
+        else:
+            expected_array = expected[col]
+        np.testing.assert_array_equal(values, expected_array)
+        if col != 'index':
+            np.testing.assert_array_equal(table.value[col].values, expected[col])
+
+def test_tabulator_patch_with_NaT(document, comm):
+    df = pd.DataFrame(dict(A=pd.to_datetime(['1980-01-01', np.nan])))
+    assert df.loc[1, 'A'] is pd.NaT
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    table.patch({'A': [(0, pd.NaT)]})
+
+    # We're also checking that the NaT value that was in the original table
+    # at .loc[1, 'A'] is converted in the model as BOKEH_JS_NAT.
+    expected = {
+        'index': np.array([0, 1]),
+        'A': np.array([BOKEH_JS_NAT, BOKEH_JS_NAT])
+    }
+    for col, values in model.source.data.items():
+        expected_array = expected[col]
+        np.testing.assert_array_equal(values, expected_array)
+        # Not checking that the data in table.value is the same as expected
+        # In table.value we have NaT values, in expected the BOKEH_JS_NAT constant.
+
 
 def test_tabulator_stream_series_paginated_not_follow(document, comm):
     df = makeMixedDataFrame()
@@ -1323,7 +1460,7 @@ def test_tabulator_constant_scalar_filter_client_side(document, comm):
         'C': np.array(['foo3']),
         'D': np.array(['2009-01-05T00:00:00.000000000'],
                       dtype='datetime64[ns]')
-    }, index=np.array([2]))
+    }, index=[2])
     pd.testing.assert_frame_equal(table._processed, expected)
 
 def test_tabulator_constant_scalar_filter_on_index_client_side(document, comm):
@@ -1338,7 +1475,7 @@ def test_tabulator_constant_scalar_filter_on_index_client_side(document, comm):
         'C': np.array(['foo3']),
         'D': np.array(['2009-01-05T00:00:00.000000000'],
                       dtype='datetime64[ns]')
-    }, index=np.array([2]))
+    }, index=[2])
     pd.testing.assert_frame_equal(table._processed, expected)
 
 def test_tabulator_constant_scalar_filter_on_multi_index_client_side(document, comm):
@@ -1372,7 +1509,22 @@ def test_tabulator_constant_list_filter_client_side(document, comm):
         'D': np.array(['2009-01-05T00:00:00.000000000',
                        '2009-01-07T00:00:00.000000000'],
                       dtype='datetime64[ns]')
-    }, index=np.array([2, 4]))
+    }, index=[2, 4])
+    pd.testing.assert_frame_equal(table._processed, expected)
+
+def test_tabulator_constant_single_element_list_filter_client_side(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df)
+
+    table.filters = [{'field': 'C', 'type': 'in', 'value': ['foo3']}]
+
+    expected = pd.DataFrame({
+        'A': np.array([2.]),
+        'B': np.array([0.]),
+        'C': np.array(['foo3']),
+        'D': np.array(['2009-01-05T00:00:00.000000000'],
+                      dtype='datetime64[ns]')
+    }, index=[2])
     pd.testing.assert_frame_equal(table._processed, expected)
 
 def test_tabulator_keywords_filter_client_side(document, comm):
@@ -1388,7 +1540,7 @@ def test_tabulator_keywords_filter_client_side(document, comm):
         'D': np.array(['2009-01-05T00:00:00.000000000',
                        '2009-01-07T00:00:00.000000000'],
                       dtype='datetime64[ns]')
-    }, index=np.array([2, 4]))
+    }, index=[2, 4])
     pd.testing.assert_frame_equal(table._processed, expected)
 
 def test_tabulator_keywords_match_all_filter_client_side(document, comm):
@@ -1586,7 +1738,7 @@ def test_tabulator_widget_scalar_filter(document, comm):
 def test_tabulator_constant_list_filter(document, comm, col):
     df = makeMixedDataFrame()
     # The mixed dataframe has duplicate number values in the B columns,
-    # simplify the test by setting the targetted valued before filtering.
+    # simplify the test by setting the targeted valued before filtering.
     df.at[2, 'B'] = 10.0
     df.at[4, 'B'] = 20.0
     table = Tabulator(df)
@@ -1784,17 +1936,13 @@ def test_tabulator_patch_event():
             table._process_event(event)
             assert values[-1] == (col, row, df[col].iloc[row])
 
-def test_server_edit_event(port):
+def test_server_edit_event():
     df = makeMixedDataFrame()
     table = Tabulator(df)
 
-    serve(table, port=port, threaded=True, show=False)
+    serve_and_request(table)
 
-    time.sleep(0.5)
-
-    requests.get(f'http://localhost:{port}')
-
-    assert table._models
+    wait_until(lambda: bool(table._models))
     ref, (model, _) = list(table._models.items())[0]
     doc = list(table._documents.keys())[0]
 
@@ -1807,8 +1955,7 @@ def test_server_edit_event(port):
     table._server_change(doc, ref, None, 'data', model.source.data, new_data)
     table._server_event(doc, TableEditEvent(model, 'B', 1))
 
-    time.sleep(0.1)
-    assert len(events) == 1
+    wait_until(lambda: len(events) == 1)
     assert events[0].value == 3.14
     assert events[0].old == 1
 
@@ -1826,7 +1973,7 @@ def test_tabulator_cell_click_event():
             table._process_event(event)
             assert values[-1] == (col, row, data[col].iloc[row])
 
-def test_server_cell_click_async_event(port):
+def test_server_cell_click_async_event():
     df = makeMixedDataFrame()
     table = Tabulator(df)
 
@@ -1840,26 +1987,20 @@ def test_server_cell_click_async_event(port):
 
     table.on_click(cb)
 
-    serve(table, port=port, threaded=True, show=False)
+    serve_and_request(table)
 
-    # Wait for server to start
-    time.sleep(1)
-
-    requests.get(f"http://localhost:{port}/")
+    wait_until(lambda: bool(table._models))
+    doc = list(table._models.values())[0][0].document
 
     data = df.reset_index()
-    doc = list(table._models.values())[0][0].document
     with set_curdoc(doc):
         for col in data.columns:
             for row in range(len(data)):
                 event = CellClickEvent(model=None, column=col, row=row)
                 table._process_event(event)
 
-    # Wait for callbacks to be scheduled
-    time.sleep(2)
-
     # Ensure multiple callbacks started concurrently
-    assert max(counts) > 1
+    wait_until(lambda: len(counts) >= 1 and max(counts) > 1)
 
 def test_tabulator_pagination_remote_cell_click_event():
     df = makeMixedDataFrame()
@@ -1957,10 +2098,65 @@ def test_tabulator_formatter_update(dataframe, document, comm):
     model_formatter = model.columns[2].formatter
     assert model_formatter.format == formatter.format
 
-def test_tabulator_pandas_import():
+def test_tabulator_sortable_update(dataframe, document, comm):
+    table = Tabulator(dataframe, sortable={'int': False})
+    model = table.get_root(document, comm)
+    assert not model.configuration['columns'][1]['headerSort']
+
+    table.sortable = {'int': True, 'float': False}
+    assert model.configuration['columns'][1]['headerSort']
+    assert not model.configuration['columns'][2]['headerSort']
+
+def test_tabulator_hidden_columns_fix():
     # Checks for: https://github.com/holoviz/panel/issues/4102
-    _tabulator = Tabulator(
-        pd.DataFrame(),
-        show_index=False,
+    #             https://github.com/holoviz/panel/issues/5209
+    table = Tabulator(pd.DataFrame(), show_index=False)
+    table.hidden_columns = ["a", "b", "c"]
+    assert table.hidden_columns == ["a", "b", "c"]
+
+@pytest.mark.parametrize('align', [{"x": "right"}, "right"], ids=["dict", "str"])
+def test_bokeh_formatter_with_text_align(align):
+    # https://github.com/holoviz/panel/issues/5807
+    data = pd.DataFrame({"x": [1.1, 2.0, 3.47]})
+    formatters = {"x": NumberFormatter(format="0.0")}
+    assert formatters["x"].text_align == "left"  # default
+    model = Tabulator(data, formatters=formatters, text_align=align)
+    columns = model._get_column_definitions("x", data)
+    output = columns[0].formatter.text_align
+    assert output == "right"
+
+@pytest.mark.parametrize('align', [{"x": "right"}, "right"], ids=["dict", "str"])
+def test_bokeh_formatter_with_text_align_conflict(align):
+    # https://github.com/holoviz/panel/issues/5807
+    data = pd.DataFrame({"x": [1.1, 2.0, 3.47]})
+    formatters = {"x": NumberFormatter(format="0.0", text_align="center")}
+    model = Tabulator(data, formatters=formatters, text_align=align)
+    msg = r"The 'text_align' in Tabulator\.formatters\['x'\] is overridden by Tabulator\.text_align"
+    with pytest.warns(RuntimeWarning, match=msg):
+        columns = model._get_column_definitions("x", data)
+    output = columns[0].formatter.text_align
+    assert output == "right"
+
+def test_bokeh_formatter_index_with_no_textalign():
+    df = pd.DataFrame({"A": [1, 2, 3], "B": [1, 2, 3]})
+    df = df.set_index("A")
+
+    index_format = HTMLTemplateFormatter(
+        template='<a href="https://www.google.com/search?code=<%= value %>"><%= value %></a>'
     )
-    _tabulator.hidden_columns = ["a", "b", "c"]
+
+    table = Tabulator(df, formatters={"A": index_format})
+    serve_and_request(table)
+    wait_until(lambda: bool(table._models))
+
+@pytest.mark.parametrize('text_align', [{"A": "center"}, "center"], ids=["dict", "str"])
+def test_bokeh_formatter_column_with_no_textalign_but_text_align_set(document, comm, text_align):
+    df = pd.DataFrame({"A": [1, 2, 3]})
+    table = Tabulator(
+        df,
+        formatters=dict(A=HTMLTemplateFormatter(template='<b><%= value %>"></b>')),
+        text_align=text_align,
+    )
+
+    model = table.get_root(document, comm)
+    assert model.configuration['columns'][1]['hozAlign'] == 'center'

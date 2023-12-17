@@ -40,6 +40,8 @@ def test_viewable_ipywidget():
 def test_viewable_signature(viewable):
     from inspect import Parameter, signature
     parameters = signature(viewable).parameters
+    if getattr(getattr(viewable, '_param__private', object), 'signature', None):
+        pytest.skip('Signature already set by Param')
     assert 'params' in parameters
     try:
         assert parameters['params'] == Parameter('params', Parameter.VAR_KEYWORD, annotation='Any')
@@ -98,3 +100,18 @@ def test_non_viewer_class():
             return 42
 
     panel(Example())
+
+@pytest.mark.parametrize('viewable', all_viewables)
+def test_clone(viewable):
+    v = Viewable()
+    clone = v.clone()
+
+    assert ([(k, v) for k, v in sorted(v.param.values().items()) if k not in ('name')] ==
+            [(k, v) for k, v in sorted(clone.param.values().items()) if k not in ('name')])
+
+def test_clone_with_non_defaults():
+    v= Viewable(loading=True)
+    clone = v.clone()
+
+    assert ([(k, v) for k, v in sorted(v.param.values().items()) if k not in ('name')] ==
+            [(k, v) for k, v in sorted(clone.param.values().items()) if k not in ('name')])

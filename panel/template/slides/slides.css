@@ -1,0 +1,61 @@
+#main {
+  padding: 0;
+  position: relative;
+}
+
+.pn-busy-standalone {
+  position: absolute;
+  right: 0px;
+  top: 5px;
+  z-index: 1;
+}
+
+.sidebar-button-standalone {
+  position: absolute;
+  left: 5px;
+  top: 10px;
+  z-index: 10;
+}
+
+.sidebar-button-standalone .pn-bar {
+  background-color: var(--background-color);
+  filter: invert(100%);
+}
+
+.reveal .slides.slide-margin {
+  max-height: calc(100vh - 70px);
+  margin-top: 20px;
+}
+
+.reveal .slides section {
+  align-items: center;
+  display: flex !important;
+  height: 100%;
+  justify-content: center;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.footer .title-wrapper {
+  bottom: 5px;
+  transform: translate(-50%, 0);
+  left: 50%;
+  position: absolute;
+  text-align: center;
+}
+
+.footer .title {
+  color: var(--background-color);
+  filter: invert(100%);
+  font-size: 1.2em;
+}
+
+.footer .logo-wrapper {
+  position: absolute;
+  left: 10px;
+  bottom: 5px;
+}
+
+.footer .logo-wrapper .app-logo {
+  height: 35px;
+}

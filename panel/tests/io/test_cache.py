@@ -15,6 +15,7 @@ except Exception:
 diskcache_available = pytest.mark.skipif(diskcache is None, reason="requires diskcache")
 
 from panel.io.cache import _find_hash_func, cache
+from panel.io.state import set_curdoc
 
 ################
 # Test hashing #
@@ -163,12 +164,27 @@ def function_with_args(a, b):
     OFFSET[(a, b)] = offset + 1
     return result
 
+async def async_function_with_args(a, b):
+    global OFFSET
+    offset = OFFSET.get((a, b), 0)
+    result = a + b + offset
+    OFFSET[(a, b)] = offset + 1
+    return result
+
 def test_cache_with_args():
     global OFFSET
     OFFSET.clear()
     fn = cache(function_with_args)
     assert fn(0, 0) == 0
     assert fn(0, 0) == 0
+
+@pytest.mark.asyncio
+async def test_async_cache_with_args():
+    global OFFSET
+    OFFSET.clear()
+    fn = cache(async_function_with_args)
+    assert (await fn(0, 0)) == 0
+    assert (await fn(0, 0)) == 0
 
 def test_cache_with_kwargs():
     global OFFSET
@@ -184,6 +200,24 @@ def test_cache_clear():
     assert fn(0, 0) == 0
     fn.clear()
     assert fn(0, 0) == 1
+
+def test_cache_clear_before_cached():
+    # https://github.com/holoviz/panel/issues/5968
+    global OFFSET
+    OFFSET.clear()
+    fn = cache(function_with_args)
+    fn.clear()
+
+def test_per_session_cache(document):
+    global OFFSET
+    OFFSET.clear()
+    fn = cache(function_with_args, per_session=True)
+    with set_curdoc(document):
+        assert fn(a=0, b=0) == 0
+    assert fn(a=0, b=0) == 1
+    with set_curdoc(document):
+        assert fn(a=0, b=0) == 0
+    assert fn(a=0, b=0) == 1
 
 @pytest.mark.xdist_group("cache")
 @diskcache_available
@@ -201,12 +235,12 @@ def test_disk_cache():
 
 @pytest.mark.xdist_group("cache")
 @pytest.mark.parametrize('to_disk', (True, False))
-def test_cache_lifo(to_disk):
+def test_cache_fifo(to_disk):
     if to_disk and diskcache is None:
         pytest.skip('requires diskcache')
     global OFFSET
     OFFSET.clear()
-    fn = cache(function_with_args, max_items=2, policy='lifo', to_disk=to_disk)
+    fn = cache(function_with_args, max_items=2, policy='fifo', to_disk=to_disk)
     assert fn(0, 0) == 0
     assert fn(0, 1) == 1
     assert fn(0, 0) == 0

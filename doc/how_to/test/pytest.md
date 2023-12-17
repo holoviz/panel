@@ -1,13 +1,12 @@
-# Add Unit and Performance tests with Pytest
+# Test functionality and performance
 
-Testing is key to developing robust and performant applications. You can test Panel data apps using
-Python and the test tools you know and love.
+This guide addresses how to use unit and performance testing on a Panel app with Pytest.
 
-[![pytest](https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Pytest_logo.svg/600px-Pytest_logo.svg.png)](https://docs.pytest.org/en/latest/)
+---
 
-[Pytest](https://docs.pytest.org/en/latest/) is the most used Python testing framework. We will use it below to write *unit* and *performance* tests.
+Testing is key to developing robust and performant applications. You can test Panel data apps using familiar Python testing tools.
 
-Before we get started, you should
+[Pytest](https://docs.pytest.org/en/latest/) is the most common Python testing framework. We will use it below to write unit and performance tests. Before we get started, you should
 
 ```bash
 pip install panel pytest pytest-benchmark
@@ -21,8 +20,10 @@ Let's create a simple data app for testing. The app sleeps 0.5 seconds (default)
 
 Create the file `app.py` and add the code below (don't worry about the contents of the app for now):
 
-```python
-# app.py
+:::{card} app.py
+
+```{code-block} python
+
 import time
 
 import panel as pn
@@ -31,10 +32,10 @@ import param
 class App(pn.viewable.Viewer):
     run = param.Event(doc="Runs for click_delay seconds when clicked")
     runs = param.Integer(doc="The number of runs")
-    status = param.String("No runs yet")
+    status = param.String(default="No runs yet")
 
-    load_delay = param.Number(0.5)
-    run_delay = param.Number(0.5)
+    load_delay = param.Number(default=0.5)
+    run_delay = param.Number(default=0.5)
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -65,13 +66,13 @@ class App(pn.viewable.Viewer):
         self.runs += 1
         self.status = f"Finished run {self.runs} in {duration}sec"
 
-    @pn.depends("run", watch=True)
+    @param.depends("run", watch=True)
     def _run_with_status_update(self):
         self._start_run()
         self._result_pane[:] = [self._run()]
         self._stop_run()
 
-    @pn.depends("status", watch=True)
+    @param.depends("status", watch=True)
     def _update_status_pane(self):
         self._status_pane.object = self.status
 
@@ -90,6 +91,8 @@ if pn.state.served:
     App().servable()
 ```
 
+:::
+
 Now serve the app via `panel serve app.py` and open [http://localhost:5006/app](http://localhost:5006/app) in your browser to see what it does.
 
 ## Create the unit tests
@@ -101,8 +104,10 @@ Let's test:
 
 Create the file `test_app.py` and add the code below.
 
-```python
-# test_app.py
+:::{card} test_app.py
+
+```{code-block} python
+
 import pytest
 
 from app import App
@@ -136,6 +141,8 @@ def test_run_twice(app):
     assert app.status.startswith("Finished run 2 in")
 ```
 
+:::
+
 Let's run `pytest test_app.py`:
 
 ```bash
@@ -159,7 +166,9 @@ Let's test that:
 
 Create the file `test_app_performance.py`:
 
-```python
+:::{card} test_app_performance.py
+
+```{code-block} python
 # test_app_performance.py
 import pytest
 from app import App
@@ -179,6 +188,8 @@ def test_run_performance(app: App, benchmark):
     assert benchmark.stats['min'] >= 0.3
     assert benchmark.stats['max'] < 0.4
 ```
+
+:::
 
 Run `pytest test_app_performance.py`.
 
@@ -203,3 +214,5 @@ Legend:
 ```
 
 Notice how we used the `benchmark` *fixture* of [pytest-benchmark](https://pytest-benchmark.readthedocs.io/en/latest/) to test the performance of the `run` event.
+
+## Related Resources

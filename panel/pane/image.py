@@ -10,7 +10,7 @@ import base64
 from io import BytesIO
 from pathlib import PurePath
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping,
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Tuple,
 )
 
 import param
@@ -29,6 +29,8 @@ class FileBase(HTMLBasePane):
 
     filetype: ClassVar[str]
 
+    _extensions: ClassVar[None | Tuple[str, ...]] = None
+
     _rename: ClassVar[Mapping[str, str | None]] = {'embed': None}
 
     _rerender_params: ClassVar[List[str]] = [
@@ -45,25 +47,26 @@ class FileBase(HTMLBasePane):
     def _type_error(self, object):
         if isinstance(object, str):
             raise ValueError(
-                "%s pane cannot parse string that is not a filename "
-                "or URL." % type(self).__name__
+                f"{type(self).__name__} pane cannot parse string that "
+                f"is not a filename or URL ({object!r})."
             )
         super()._type_error(object)
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
         filetype = cls.filetype.split('+')[0]
+        exts = cls._extensions or (filetype,)
         if hasattr(obj, f'_repr_{filetype}_'):
-            return True
+            return 0.15
         if isinstance(obj, PurePath):
             obj = str(obj.absolute())
         if isinstance(obj, str):
-            if isfile(obj) and obj.lower().endswith(f'.{filetype}'):
+            if isurl(obj, exts):
                 return True
-            if isurl(obj, [filetype]):
+            elif any(obj.lower().endswith(f'.{ext}') for ext in exts):
                 return True
             elif isurl(obj, None):
-                return 0
+                return 0.0
         elif isinstance(obj, bytes):
             try:
                 cls._imgshape(obj)
@@ -131,16 +134,23 @@ class ImageBase(FileBase):
         alt text to add to the image tag. The alt text is shown when a
         user cannot load or display the image.""")
 
+    caption = param.String(default=None, doc="""
+        Optional caption for the image.""")
+
+    fixed_aspect = param.Boolean(default=True, doc="""
+        Whether the aspect ratio of the image should be forced to be
+        equal.""")
+
     link_url = param.String(default=None, doc="""
         A link URL to make the image clickable and link to some other
         website.""")
 
     _rerender_params: ClassVar[List[str]] = [
-        'alt_text', 'link_url', 'embed', 'object', 'styles', 'width', 'height'
+        'alt_text', 'caption', 'link_url', 'embed', 'object', 'styles', 'width', 'height'
     ]
 
     _rename: ClassVar[Mapping[str, str | None ]] = {
-        'alt_text': None, 'link_url': None
+        'alt_text': None, 'fixed_aspect': None, 'link_url': None, 'caption': None,
     }
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
@@ -149,34 +159,50 @@ class ImageBase(FileBase):
 
     __abstract = True
 
-    def _imgshape(self, data):
+    @classmethod
+    def _imgshape(cls, data):
         """Calculate and return image width,height"""
         raise NotImplementedError
 
     def _format_html(
         self, src: str, width: str | None = None, height: str | None = None
     ):
-        width = self.width or width
-        height = self.height or height
-        alt_text = self.alt_text or ''
-        if self.sizing_mode in ('stretch_width', 'stretch_both'):
-            width = 'width="100%"'
-        else:
-            width = f'width="{width}"' if width else ""
-        if self.sizing_mode == 'stretch_height':
-            width = 'height="100%"'
-        else:
-            height = f'height="{height}"' if height else ""
-        html = f'<img src="{src}" {width} {height} alt="{alt_text}"></img>'
+        alt = f'alt={self.alt_text!r}' if self.alt_text else ''
+        width = f' width: {width};' if width else ''
+        height = f' height: {height};' if height else ''
+        object_fit = "contain" if self.fixed_aspect else "fill"
+        html = f'<img src="{src}" {alt} style="max-width: 100%; max-height: 100%; object-fit: {object_fit};{width}{height}"></img>'
         if self.link_url:
             html = f'<a href="{self.link_url}" target="_blank">{html}</a>'
+        if self.caption:
+            html = f'<figure>{html}<figcaption>{self.caption}</figcaption></figure>'
         return escape(html)
 
+    def _img_dims(self, width, height):
+        smode = self.sizing_mode
+        if smode in ['fixed', None]:
+            w, h = (
+                (f'{width}px' if width else 'auto'),
+                (f'{height}px' if height else 'auto')
+            )
+        elif smode == 'stretch_both' and not self.fixed_aspect:
+            w, h = '100%', '100%'
+        elif smode == 'stretch_width' and not self.fixed_aspect:
+            w, h = '100%', (f'{height}px' if height else 'auto')
+        elif smode == 'stretch_height' and not self.fixed_aspect:
+            w, h = (f'{width}px' if width else 'auto'), '100%'
+        elif smode in ('scale_height', 'stretch_height'):
+            w, h = 'auto', '100%'
+        else:
+            w, h = '100%', 'auto'
+        return w, h
+
     def _transform_object(self, obj: Any) -> Dict[str, Any]:
-        if self.embed or not isurl(obj):
+        if self.embed or (isfile(obj) or not isinstance(obj, (str, PurePath))):
             data = self._data(obj)
         else:
-            return dict(object=self._format_html(obj))
+            w, h = self._img_dims(self.width, self.height)
+            return dict(object=self._format_html(obj, w, h))
 
         if data is None:
             return dict(object='<img></img>')
@@ -194,20 +220,8 @@ class ImageBase(FileBase):
             height = self.height
 
         src = self._b64(data)
-        smode = self.sizing_mode
-        if smode in ['fixed', None]:
-            w, h = '%spx' % width, '%spx' % height
-        elif smode == 'stretch_both':
-            w, h = '100%', '100%'
-        elif smode == 'stretch_width':
-            w, h = '%spx' % width, '100%'
-        elif smode == 'stretch_height':
-            w, h = '100%', '%spx' % height
-        elif smode == 'scale_height':
-            w, h = 'auto', '100%'
-        else:
-            w, h = '100%', 'auto'
 
+        w, h = self._img_dims(width, height)
         html = self._format_html(src, w, h)
         return dict(width=width, height=height, object=html)
 
@@ -229,18 +243,27 @@ class Image(ImageBase):
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
+        precedences = []
         for img_cls in param.concrete_descendents(ImageBase).values():
             if img_cls is Image:
                 continue
             applies = img_cls.applies(obj)
-            if applies:
+            if isinstance(applies, bool) and applies:
                 return applies
+            elif isinstance(applies, (float, int)):
+                precedences.append(applies)
+        if precedences:
+            return sorted(precedences)[-1]
         return False
 
     def _transform_object(self, obj: Any) -> Dict[str, Any]:
+        params = {
+            k: v for k, v in self.param.values().items()
+            if k not in ('name', 'object')
+        }
         for img_cls in param.concrete_descendents(ImageBase).values():
             if img_cls is not Image and img_cls.applies(obj):
-                return img_cls(obj)._transform_object(obj)
+                return img_cls(obj, **params)._transform_object(obj)
         return {'object': '<img></img>'}
 
 
@@ -324,8 +347,9 @@ class ICO(ImageBase):
 
 class JPG(ImageBase):
     """
-    The `JPG` pane embeds a .jpg or .jpeg image file in a panel if provided a
-    local path, or will link to a remote image if provided a URL.
+    The `JPG` pane embeds a .jpg or .jpeg image file in a panel if
+    provided a local path, or will link to a remote image if provided
+    a URL.
 
     Reference: https://panel.holoviz.org/reference/panes/JPG.html
 
@@ -339,7 +363,9 @@ class JPG(ImageBase):
     ... )
     """
 
-    filetype: ClassVar[str] = 'jpg'
+    filetype: ClassVar[str] = 'jpeg'
+
+    _extensions: ClassVar[Tuple[str, ...]] = ('jpeg', 'jpg')
 
     @classmethod
     def _imgshape(cls, data):
@@ -377,7 +403,7 @@ class SVG(ImageBase):
     ... )
     """
 
-    encode = param.Boolean(default=False, doc="""
+    encode = param.Boolean(default=True, doc="""
         Whether to enable base64 encoding of the SVG, base64 encoded
         SVGs do not support links.""")
 
@@ -407,16 +433,21 @@ class SVG(ImageBase):
         return (self.width, self.height)
 
     def _transform_object(self, obj: Any) -> Dict[str, Any]:
-        if self.embed or not isurl(obj):
+        width, height = self.width, self.height
+        w, h = self._img_dims(width, height)
+        if self.embed or (isfile(obj) or (isinstance(obj, str) and obj.lstrip().startswith('<svg'))
+                          or not isinstance(obj, (str, PurePath))):
             data = self._data(obj)
         else:
-            return dict(object=self._format_html(obj))
+            return dict(object=self._format_html(obj, w, h))
+
         if data is None:
             return dict(object='<img></img>')
-        data = self._data(obj)
-        width, height = self._imgshape(data)
         if self.encode:
-            data = f"<img src='{self._b64(data)}' width={width} height={height}></img>"
+            ws = f' width: {w};' if w else ''
+            hs = f' height: {h};' if h else ''
+            object_fit = "contain" if self.fixed_aspect else "fill"
+            data = f'<img src="{self._b64(data)}" style="max-width: 100%; max-height: 100%; object-fit: {object_fit};{ws}{hs}"></img>'
         if isinstance(data, bytes):
             data = data.decode('utf-8')
         return dict(width=width, height=height, text=escape(data))
@@ -437,7 +468,7 @@ class PDF(FileBase):
     ... )
     """
 
-    start_page = param.Integer(1, doc="""
+    start_page = param.Integer(default=1, doc="""
         Start page of the pdf, by default the first page.""")
 
     filetype: ClassVar[str] = 'pdf'
@@ -451,13 +482,17 @@ class PDF(FileBase):
     def _transform_object(self, obj: Any) -> Dict[str, Any]:
         if obj is None:
             return dict(object='<embed></embed>')
-        elif self.embed:
+        elif self.embed or not isurl(obj):
             # This is handled by the Typescript Bokeh model to be able to render large PDF files (>2MB).
             data = self._data(obj)
             if not isinstance(data, bytes):
                 data = data.encode('utf-8')
             b64 = base64.b64encode(data).decode("utf-8")
-            return dict(text=b64)
+            if self.embed:
+                return dict(text=b64)
+            obj = f'data:application/pdf;base64,{b64}'
+
         w, h = self.width or '100%', self.height or '100%'
-        html = f'<embed src="{obj}#page={self.start_page}" width={w!r} height={h!r} type="application/pdf">'
+        page = f'#page={self.start_page}' if getattr(self, 'start_page', None) else ''
+        html = f'<embed src="{obj}{page}" width={w!r} height={h!r} type="application/pdf">'
         return dict(text=escape(html))

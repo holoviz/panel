@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 import json
 import os
-import shutil
 import sys
-
-import pyct.build
 
 from setuptools import find_packages, setup
 from setuptools.command.develop import develop
@@ -103,110 +100,129 @@ except Exception:
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=3.1.0rc1',
-    'param >=1.12.0',
-    'pyviz_comms >=0.7.4',
+    'bokeh >=3.2.0,<3.4.0',
+    'param >=2.0.0,<3.0',
+    'pyviz_comms >=2.0.0',
+    'xyzservices >=2021.09.1', # Bokeh dependency, but pyodide 23.0.0 does not always pick it up
     'markdown',
+    'markdown-it-py',
+    'linkify-it-py',
+    'mdit-py-plugins',
     'requests',
     'tqdm >=4.48.0',
-    'pyct >=0.4.4',
     'bleach',
-    'setuptools >=42',
     'typing_extensions',
     'pandas >=1.2',
 ]
 
 _recommended = [
     'jupyterlab',
-    'holoviews >1.14.1',
+    'holoviews >=1.16.0',
     'matplotlib',
     'pillow',
     'plotly'
 ]
 
-_tests = [
+_tests_core = [
     # Test dependencies
     'flake8',
     'parameterized',
     'pytest',
     'nbval',
-    'flaky',
+    'pytest-rerunfailures',
+    'pytest-asyncio <0.22',
     'pytest-xdist',
     'pytest-cov',
     'pre-commit',
     'psutil',
     # Libraries tested in unit tests
+    'altair',
+    'anywidget',
     'folium',
-    'ipympl',
-    'scipy',
-    'twine',
+    'diskcache',
+    'holoviews >=1.16.0',
+    'numpy',
     'pandas >=1.3',
     'ipython >=7.0',
-    'holoviews',
-    'diskcache',
-    'markdown-it-py',
+    'scipy',
+]
+
+_tests = _tests_core + [
+    'ipympl',
     'ipyvuetify',
+    'ipywidgets_bokeh',
     'reacton',
-    # Added lxml temporarily as installing pyecharts or idom on Python 3.11
-    # via pip tries to build it and fails. To be removed.
-    'lxml',
-    'numpy <1.24', # Avoid VTK test fail
+    'twine',
+    # Temporary pins
+    'numba <0.58'
 ]
 
 _ui = [
+    'jupyter-server',
     'playwright',
     'pytest-playwright'
 ]
 
+_examples = [
+    'holoviews >=1.16.0',
+    'hvplot',
+    'plotly >=4.0',
+    'altair',
+    'streamz',
+    'vega_datasets',
+    'vtk',
+    'scikit-learn',
+    'datashader',
+    'jupyter_bokeh >=3.0.7',
+    'django <4',
+    'channels',
+    'pyvista',
+    'ipywidgets',
+    'ipywidgets_bokeh',
+    'ipyvolume',
+    'ipyleaflet',
+    'ipympl',
+    'folium',
+    'xarray',
+    'pyinstrument >=4.0',
+    'aiohttp',
+    'croniter',
+    'graphviz',
+    'networkx >=2.5',
+    'pygraphviz',
+    'seaborn',
+    'pydeck',
+    'graphviz',
+    'python-graphviz',
+    'xgboost',
+    'ipyvuetify',
+    'reacton',
+    'scikit-image',
+    'fastparquet'
+]
+
+# Anything only installable via conda
+_conda_only = [
+    'pygraphviz',
+    'python-graphviz',
+]
+
 extras_require = {
-    'examples': [
-        'hvplot',
-        'plotly >=4.0',
-        'altair',
-        'streamz',
-        'vega_datasets',
-        'vtk ==9.0.1',
-        'scikit-learn',
-        'datashader',
-        'jupyter_bokeh >=3.0.2',
-        'django <4',
-        'channels',
-        'pyvista<0.33',
-        'ipywidgets',
-        'ipywidgets_bokeh',
-        'ipyvolume',
-        'ipyleaflet',
-        'ipympl',
-        'folium',
-        'xarray',
-        'pyinstrument >=4.0',
-        'aiohttp',
-        'croniter',
-        'graphviz',
-        'networkx >=2.5',
-        'pygraphviz',
-        'seaborn',
-        'pydeck',
-        'graphviz',
-        'lxml',
-        'python-graphviz',
-        'xgboost',
-        'ipyvuetify',
-        'reacton',
-        'scikit-image',
-    ],
+    'examples': _examples,
+    'tests_core': _tests_core,
     'tests': _tests,
     'recommended': _recommended,
     'doc': _recommended + [
-        'nbsite >=0.8.0rc7',
-        'pydata-sphinx-theme ==0.9.0',
-        'sphinx-copybutton',
-        'sphinx-design',
+        'nbsite >=0.8.2',
+        'myst-nb >=0.17,<1',
+        'lxml',
+        'pandas <2.1.0' # Avoid deprecation warnings
     ],
     'ui': _ui
 }
 
 extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
+extras_require['all_pip'] = sorted(set(extras_require['all']) - set(_conda_only))
 
 # Superset of what's in pyproject.toml (includes non-python
 # dependencies).  Also, pyproject.toml isn't supported by all tools
@@ -214,22 +230,23 @@ extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
 # non-python dependencies). Note that setup_requires isn't used
 # because it doesn't work well with pip.
 extras_require['build'] = [
-    'param >=1.9.2',
-    'pyct >=0.4.4',
+    'param >=2.0.0',
     'setuptools >=42',
     'requests',
     'packaging',
-    'bokeh >=3.1.0rc1',
-    'pyviz_comms >=0.7.4',
+    'bokeh >=3.3.0,<3.4.0',
+    'pyviz_comms >=2.0.0',
     'bleach',
+    'markdown',
     'tqdm >=4.48.0',
-    'cryptography <39' # Avoid pyOpenSSL issue
+    'cryptography <39', # Avoid pyOpenSSL issue
+    'urllib3 <2.0',  # See: https://github.com/holoviz/panel/pull/4979
 ]
 
 setup_args = dict(
     name='panel',
     version=get_setup_version("panel"),
-    description='A high level app and dashboarding solution for Python.',
+    description='The powerful data exploration & web app framework for Python.',
     long_description=open('README.md', encoding="utf8").read() if os.path.isfile('README.md') else 'Consult README.md',
     long_description_content_type="text/markdown",
     author="HoloViz",
@@ -261,10 +278,10 @@ setup_args = dict(
         "License :: OSI Approved :: BSD License",
         "Development Status :: 5 - Production/Stable",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Operating System :: OS Independent",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
@@ -281,7 +298,7 @@ setup_args = dict(
         "Topic :: Office/Business",
         "Topic :: Office/Business :: Financial",
         "Topic :: Software Development :: Libraries"],
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     entry_points={
         'console_scripts': [
             'panel = panel.command:main'
@@ -299,12 +316,6 @@ def clean_js_version(version):
     return version
 
 if __name__ == "__main__":
-    example_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                'panel', 'examples')
-
-    if 'develop' not in sys.argv and 'egg_info' not in sys.argv:
-        pyct.build.examples(example_path, __file__, force=True)
-
     version = setup_args['version']
     if 'post' not in version:
         with open('./panel/package.json') as f:
@@ -320,6 +331,3 @@ if __name__ == "__main__":
                              f"panel version ({version}). Cannot build release.")
 
     setup(**setup_args)
-
-    if os.path.isdir(example_path):
-        shutil.rmtree(example_path)

@@ -20,7 +20,7 @@ from .config import config, panel_extension
 from .io.resources import RESOURCE_URLS
 from .reactive import ReactiveHTML
 from .template.base import BasicTemplate
-from .theme import Design, Theme
+from .theme import Design
 
 BASE_DIR = pathlib.Path(__file__).parent
 BUNDLE_DIR = pathlib.Path(__file__).parent / 'dist' / 'bundled'
@@ -188,7 +188,9 @@ def bundle_templates(verbose=False, external=True):
             template_css = [template_css] if template_css else []
         for css in template_css:
             tmpl_name = name.lower()
-            for cls in template.__mro__[1:-5]:
+            for cls in template.__mro__[1:]:
+                if not issubclass(cls, BasicTemplate):
+                    continue
                 tmpl_css = cls._css if isinstance(cls._css, list) else [cls._css]
                 if css in tmpl_css:
                     tmpl_name = cls.__name__.lower()
@@ -202,7 +204,9 @@ def bundle_templates(verbose=False, external=True):
             template_js = [template_js] if template_js else []
         for js in template_js:
             tmpl_name = name.lower()
-            for cls in template.__mro__[1:-5]:
+            for cls in template.__mro__[1:]:
+                if not issubclass(cls, BasicTemplate):
+                    continue
                 tmpl_js = cls._js if isinstance(cls._js, list) else [cls._js]
                 if js in tmpl_js:
                     tmpl_name = cls.__name__.lower()
@@ -211,19 +215,6 @@ def bundle_templates(verbose=False, external=True):
 
 
 def bundle_themes(verbose=False, external=True):
-    # Bundle Theme classes
-    for name, theme in param.concrete_descendents(Theme).items():
-        if verbose:
-            print(f'Bundling {name} theme resources')
-        if theme.base_css:
-            theme_bundle_dir = BUNDLE_DIR / theme.param.base_css.owner.__name__.lower()
-            theme_bundle_dir.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(theme.base_css, theme_bundle_dir / os.path.basename(theme.base_css))
-        if theme.css:
-            tmplt_bundle_dir = BUNDLE_DIR / theme.param.css.owner.__name__.lower()
-            tmplt_bundle_dir.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(theme.css, tmplt_bundle_dir / os.path.basename(theme.css))
-
     # Bundle design stylesheets
     for name, design in param.concrete_descendents(Design).items():
         if verbose:
@@ -233,23 +224,11 @@ def bundle_themes(verbose=False, external=True):
         if design._resources.get('bundle', True) and external:
             write_component_resources(name, design)
 
-        for scls, modifiers in design._modifiers.items():
-            cls_modifiers = design._modifiers.get(scls, {})
-            if 'stylesheets' not in cls_modifiers:
-                continue
+    theme_bundle_dir = BUNDLE_DIR / 'theme'
+    theme_bundle_dir.mkdir(parents=True, exist_ok=True)
+    for design_css in glob.glob(str(BASE_DIR / 'theme' / 'css' / '*.css')):
+        shutil.copyfile(design_css, theme_bundle_dir / os.path.basename(design_css))
 
-            # Find the Design class the options were first defined on
-            def_cls = [
-                super_cls for super_cls in design.__mro__[::-1]
-                if getattr(super_cls, '_modifiers', {}).get(scls) is cls_modifiers
-            ][0]
-            def_path = pathlib.Path(inspect.getmodule(def_cls).__file__).parent
-            for sts in cls_modifiers['stylesheets']:
-                if not isinstance(sts, str) or not sts.endswith('.css') or sts.startswith('http') or sts.startswith('/'):
-                    continue
-                bundled_path = BUNDLE_DIR / def_cls.__name__.lower() / sts
-                bundled_path.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(def_path / sts, bundled_path)
 
 def bundle_models(verbose=False, external=True):
     for imp in panel_extension._imports.values():

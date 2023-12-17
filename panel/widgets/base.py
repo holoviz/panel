@@ -9,25 +9,28 @@ import math
 
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
-    Tuple, Type,
+    Tuple, Type, TypeVar,
 )
 
 import param  # type: ignore
 
-from bokeh.models import ImportedStyleSheet
+from bokeh.models import ImportedStyleSheet, Tooltip
+from bokeh.models.dom import HTML
+from param.parameterized import register_reference_transform
 
+from .._param import Margin
 from ..layout.base import Row
 from ..reactive import Reactive
 from ..viewable import Layoutable, Viewable
 
 if TYPE_CHECKING:
-
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
-    from typing_extensions import Self
 
     from ..layout.base import ListPanel
+
+    T = TypeVar('T')
 
 
 class Widget(Reactive):
@@ -45,7 +48,7 @@ class Widget(Reactive):
 
     width = param.Integer(default=None, bounds=(0, None))
 
-    margin = param.Parameter(default=(5, 10), doc="""
+    margin = Margin(default=(5, 10), doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
@@ -72,7 +75,7 @@ class Widget(Reactive):
         super().__init__(**params)
 
     @classmethod
-    def from_param(cls, parameter: param.Parameter, **params) -> Self:
+    def from_param(cls: Type[T], parameter: param.Parameter, **params) -> T:
         """
         Construct a widget from a Parameter and link the two
         bi-directionally.
@@ -95,6 +98,17 @@ class Widget(Reactive):
         )
         return layout[0]
 
+    @property
+    def _linked_properties(self) -> Tuple[str]:
+        props = list(super()._linked_properties)
+        if 'description' in props:
+            props.remove('description')
+        return tuple(props)
+
+    @property
+    def rx(self):
+        return self.param.value.rx
+
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
         params = super()._process_param_change(params)
         if self._widget_type is not None and 'stylesheets' in params:
@@ -102,6 +116,20 @@ class Widget(Reactive):
             params['stylesheets'] = [
                 ImportedStyleSheet(url=ss) for ss in css
             ] + params['stylesheets']
+        if "description" in params:
+            description = params["description"]
+            renderer_options = params.pop("renderer_options", {})
+            if isinstance(description, str):
+                from ..pane.markup import Markdown
+                parser = Markdown._get_parser('markdown-it', (), **renderer_options)
+                html = parser.render(description)
+                params['description'] = Tooltip(
+                    content=HTML(html), position='right',
+                    stylesheets=[':host { white-space: initial; max-width: 300px; }'],
+                    syncable=False
+                )
+            elif isinstance(description, Tooltip):
+                description.syncable = False
         return params
 
     def _get_model(
@@ -166,9 +194,13 @@ class CompositeWidget(Widget):
                   if getattr(self, p) is not None}
         if layout.get('width', self.width) is None and 'sizing_mode' not in layout:
             layout['sizing_mode'] = 'stretch_width'
+        if layout.get('sizing_mode') not in (None, 'fixed') and layout.get('width'):
+            min_width = layout.pop('width')
+            if not layout.get('min_width'):
+                layout['min_width'] = min_width
         self._composite = self._composite_type(**layout)
         self._models = self._composite._models
-        self._callbacks.append(
+        self._internal_callbacks.append(
             self.param.watch(self._update_layout_params, layout_params)
         )
 
@@ -217,3 +249,9 @@ class CompositeWidget(Widget):
     @property
     def _synced_params(self) -> List[str]:
         return []
+
+
+def _widget_transform(obj):
+    return obj.param.value if isinstance(obj, Widget) else obj
+
+register_reference_transform(_widget_transform)

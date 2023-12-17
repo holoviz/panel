@@ -3,16 +3,17 @@ import pytest
 
 from bokeh.models import Column as BkColumn, Div, Row as BkRow
 
+from panel.chat import ChatInterface
 from panel.layout import (
     Accordion, Card, Column, Row, Spacer, Tabs, WidgetBox,
 )
 from panel.layout.base import ListPanel, NamedListPanel
-from panel.pane import Bokeh
+from panel.pane import Bokeh, Markdown
 from panel.param import Param
 from panel.tests.util import check_layoutable_properties
-from panel.widgets import Debugger
+from panel.widgets import Debugger, MultiSelect
 
-excluded = (NamedListPanel, Debugger)
+excluded = (NamedListPanel, Debugger, ChatInterface)
 all_panels = [w for w in param.concrete_descendents(ListPanel).values()
                if not w.__name__.startswith('_') and not issubclass(w, excluded)]
 
@@ -481,7 +482,7 @@ def test_layout_with_param_setitem(document, comm):
     test.select = 1
     assert model.children[1].text == '&lt;pre&gt;1&lt;/pre&gt;'
 
-@pytest.mark.parametrize('panel', [Card, Column, Row, Tabs, Accordion])
+@pytest.mark.parametrize('panel', [Card, Column, Tabs, Accordion])
 @pytest.mark.parametrize('sizing_mode', ['stretch_width', 'stretch_height', 'stretch_both'])
 def test_expand_sizing_mode_to_match_child(panel, sizing_mode, document, comm):
     div1 = Div()
@@ -492,7 +493,16 @@ def test_expand_sizing_mode_to_match_child(panel, sizing_mode, document, comm):
 
     assert model.sizing_mode == sizing_mode
 
-@pytest.mark.parametrize('panel', [Card, Column, Row, Tabs, Accordion])
+def test_expand_row_sizing_mode_stretch_both(document, comm):
+    div1 = Div(sizing_mode='stretch_both')
+    div2 = Div(sizing_mode='stretch_both')
+    layout = Row(div1, div2)
+
+    model = layout.get_root(document, comm)
+
+    assert model.sizing_mode == 'stretch_both'
+
+@pytest.mark.parametrize('panel', [Accordion, Card, Column, Row, Tabs])
 def test_expand_both_axes(panel, document, comm):
     div1 = Div(sizing_mode='stretch_width')
     div2 = Div(sizing_mode='stretch_height')
@@ -502,11 +512,38 @@ def test_expand_both_axes(panel, document, comm):
 
     assert model.sizing_mode == 'stretch_both'
 
-@pytest.mark.parametrize('panel', [Card, Column, Row, Tabs, Accordion])
+def test_expand_row_both_axes(document, comm):
+    div1 = Div(sizing_mode='stretch_both')
+    div2 = Div(sizing_mode='stretch_both')
+    layout = Row(div1, div2)
+
+    model = layout.get_root(document, comm)
+
+    assert model.sizing_mode == 'stretch_both'
+
+@pytest.mark.parametrize('panel', [Card, Column, Tabs, Accordion])
 def test_expand_only_non_fixed_axis_width(panel, document, comm):
     div1 = Div(sizing_mode='stretch_width')
     div2 = Div(sizing_mode='stretch_height')
     layout = panel(div1, div2, width=500)
+
+    model = layout.get_root(document, comm)
+
+    assert model.sizing_mode == 'stretch_height'
+
+def test_not_expand_row_only_non_fixed_axis_width(document, comm):
+    div1 = Div(sizing_mode='stretch_width')
+    div2 = Div(sizing_mode='stretch_height')
+    layout = Row(div1, div2, width=500)
+
+    model = layout.get_root(document, comm)
+
+    assert model.sizing_mode == 'stretch_height'
+
+def test_expand_row_all_only_non_fixed_axis_width(document, comm):
+    div1 = Div(sizing_mode='stretch_height')
+    div2 = Div(sizing_mode='stretch_height')
+    layout = Row(div1, div2, width=500)
 
     model = layout.get_root(document, comm)
 
@@ -531,3 +568,33 @@ def test_no_expand_fixed(panel, document, comm):
     model = layout.get_root(document, comm)
 
     assert model.sizing_mode == 'fixed'
+
+
+@pytest.mark.parametrize('scroll_param', ["auto_scroll_limit", "scroll", "scroll_button_threshold", "view_latest"])
+def test_column_scroll_params_sets_scroll(scroll_param, document, comm):
+    if scroll_param not in ["auto_scroll_limit", "scroll_button_threshold"]:
+        params = {scroll_param: True}
+    else:
+        params = {scroll_param: 1}
+    col = Column(**params)
+    assert getattr(col, scroll_param)
+    assert col.scroll
+
+def test_pass_objects_ref(document, comm):
+    multi_select = MultiSelect(options=['foo', 'bar', 'baz'], value=['bar', 'baz'])
+    col = Column(objects=multi_select)
+    col.get_root(document, comm=comm)
+
+    assert len(col.objects) == 2
+    md1, md2 = col.objects
+    assert isinstance(md1, Markdown)
+    assert md1.object == 'bar'
+    assert isinstance(md2, Markdown)
+    assert md2.object == 'baz'
+
+    multi_select.value = ['foo']
+
+    assert len(col.objects) == 1
+    md3 = col.objects[0]
+    assert isinstance(md3, Markdown)
+    assert md3.object == 'foo'

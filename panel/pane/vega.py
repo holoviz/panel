@@ -52,6 +52,8 @@ def _get_type(spec, version):
     if version >= 5:
         if isinstance(spec, dict):
             return spec.get('select', {}).get('type', 'interval')
+        elif isinstance(spec.select, dict):
+            return spec.select.get('type', 'interval')
         else:
             return getattr(spec.select, 'type', 'interval')
     else:
@@ -60,10 +62,10 @@ def _get_type(spec, version):
         else:
             return getattr(spec, 'type', 'interval')
 
-def _get_dimensions(spec):
+def _get_dimensions(spec, props):
     dimensions = {}
-    responsive_height = spec.get('height') == 'container'
-    responsive_width = spec.get('width') == 'container'
+    responsive_height = spec.get('height') == 'container' and props.get('height') is None
+    responsive_width = spec.get('width') == 'container' and props.get('width') is None
     if responsive_height and responsive_width:
         dimensions['sizing_mode'] = 'stretch_both'
     elif responsive_width:
@@ -84,7 +86,9 @@ def _get_schema_version(obj, default_version: int = 5) -> int:
     return int(match.groups()[0])
 
 def _get_selections(obj, version=None):
-    if version is None:
+    if obj is None:
+        return {}
+    elif version is None:
         version = _get_schema_version(obj)
     key = 'params' if version >= 5 else 'selection'
     selections = {}
@@ -146,11 +150,6 @@ class Vega(ModelPane):
         Declares the debounce time in milliseconds either for all
         events or if a dictionary is provided for individual events.""")
 
-    margin = param.Parameter(default=(5, 5, 30, 5), doc="""
-        Allows to create additional space around the component. May
-        be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
-
     selection = param.ClassSelector(class_=param.Parameterized, doc="""
         The Selection object reflects any selections available on the
         supplied vega plot into Python.""")
@@ -192,10 +191,11 @@ class Vega(ModelPane):
 
     def _update_selections(self, *args):
         params = {
-            e: param.Dict() if stype == 'interval' else param.List()
+            e: param.Dict(allow_refs=False) if stype == 'interval' else param.List(allow_refs=False)
             for e, stype in self._selections.items()
         }
         if self.selection and (set(self.selection.param) - {'name'}) == set(params):
+            self.selection.param.update({p: None for p in params})
             return
         self.selection = type('Selection', (param.Parameterized,), params)()
 
@@ -264,7 +264,7 @@ class Vega(ModelPane):
         data = props['data']
         if data is not None:
             sources = self._get_sources(data, sources)
-        dimensions = _get_dimensions(data)
+        dimensions = _get_dimensions(data, props) if data else {}
         props['data'] = data
         props['data_sources'] = sources
         props['events'] = list(self._selections)

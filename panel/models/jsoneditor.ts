@@ -1,8 +1,9 @@
 import * as p from "@bokehjs/core/properties"
-import {StyleSheetLike, ImportedStyleSheet} from "@bokehjs/core/dom"
+import type {StyleSheetLike} from "@bokehjs/core/dom"
+import {ImportedStyleSheet} from "@bokehjs/core/dom"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {HTMLBox, HTMLBoxView} from "./layout"
-import {Attrs} from "@bokehjs/core/types"
+import type {Attrs} from "@bokehjs/core/types"
 
 
 export class JSONEditEvent extends ModelEvent {

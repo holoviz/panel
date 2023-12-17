@@ -7,6 +7,7 @@ import param
 from bokeh.themes import Theme as _BkTheme
 
 from ..config import config
+from ..io.resources import CDN_DIST
 from ..layout import Accordion, Card
 from ..viewable import Viewable
 from ..widgets import Tabulator
@@ -132,7 +133,7 @@ class MaterialDarkTheme(MaterialThemeMixin, DarkTheme):
     bokeh_theme = param.ClassSelector(
         class_=(_BkTheme, str), default=_BkTheme(json=MATERIAL_DARK_THEME))
 
-    _modifiers = {
+    modifiers = {
         Dial: {
             'label_color': 'white'
         },
@@ -147,7 +148,7 @@ class MaterialDarkTheme(MaterialThemeMixin, DarkTheme):
 
 class Material(Design):
 
-    _modifiers = {
+    modifiers = {
         Accordion: {
             'active_header_background': 'var(--mdc-theme-surface)'
         },
@@ -162,7 +163,7 @@ class Material(Design):
             'theme': 'materialize'
         },
         Viewable: {
-            'stylesheets': [Inherit, 'css/material.css']
+            'stylesheets': [Inherit, f'{CDN_DIST}bundled/theme/material.css']
         }
     }
 

@@ -77,7 +77,7 @@ def callback(new):
 pn.Row(slider, pn.bind(callback, slider))
 ```
 
-In addition to rendering Panel components it also renders regular Pytho
+In addition to rendering Panel components it also renders regular Python
 types:
 
 ```{pyodide}

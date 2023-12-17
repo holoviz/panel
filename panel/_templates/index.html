@@ -20,13 +20,13 @@
 
   <!-- Favicon
   -------------------------------------------------- -->
-  <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.holoviz.org/panel/latest/images/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="https://cdn.holoviz.org/panel/latest/images/favicon.ico">
-  <link rel="manifest" href="https://cdn.holoviz.org/panel/latest/images/site.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ PANEL_CDN }}images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ PANEL_CDN }}images/favicon.ico">
+  <link rel="manifest" href="{{ PANEL_CDN }}images/site.webmanifest">
   <meta name="msapplication-TileColor" content="#da532c">
   <meta name="theme-color" content="#ffffff">
-  <script type="module" src="https://cdn.holoviz.org/panel/latest/dist/bundled/js/@microsoft/fast-colors@5.3.1/dist/index.js"></script>
-  <script type="module" src="https://cdn.holoviz.org/panel/latest/dist/bundled/js/@microsoft/fast-components@1.21.8/dist/fast-components.js"></script>
+  <script type="module" src="{{ PANEL_CDN }}bundled/@microsoft/fast-components@2.30.6/dist/fast-components.js"></script>
+  <script type="module" src="{{ PANEL_CDN }}bundled/fast/js/fast_design.js"></script>
   <script type="text/javascript">
     function setParamsFromSearch(text){
         const params = new URLSearchParams(location.search);
@@ -48,19 +48,21 @@
 
       setParamsFromSearch(text)
     }
-    function toggleLightDarkTheme(){
-        el=document.getElementById("body-design-provider")
+    function toggleLightDarkTheme(update) {
         const switchEl = document.getElementById("theme-switch")
         const params = new URLSearchParams(location.search);
-
-        if (switchEl.checked){
-            el.setAttribute("background-color", "#ffffff")
+	if (switchEl.checked) {
+	    window.bodyDesign.setLuminance(1)
+	    window.bodyDesign.setBackgroundColor("#ffffff")
             params.set('theme', "default");
         } else {
-            el.setAttribute("background-color", "#000000")
+	    window.bodyDesign.setLuminance(0.1)
+	    window.bodyDesign.setBackgroundColor("#000000")
             params.set('theme', "dark");
         }
-        window.history.replaceState({}, '', `${location.pathname}?${params}`);
+	if (update) {
+            window.history.replaceState({}, '', `${location.pathname}?${params}`);
+	}
     }
     function setSwitchFromParams(){
         const params = new URLSearchParams(window.location.search)
@@ -68,12 +70,14 @@
             const theme = params.get('theme')
             const switchEl = document.getElementById("theme-switch")
             if (theme==='dark'){
-                switchEl.checked=false
+                switchEl.checked = false
             } else {
-                switchEl.checked=true
+                switchEl.checked = true
             }
-            toggleLightDarkTheme()
-        }
+            toggleLightDarkTheme(true)
+        } else {
+            toggleLightDarkTheme(false)
+	}
     }
     function setSearchFromParams(){
         const params = new URLSearchParams(window.location.search)
@@ -87,6 +91,10 @@
   </script>
 
   <style>
+    :root {
+      --background-color: #ffffff;
+      --header-background: #000000;
+    }
     html {
 	height:100%;
     }
@@ -106,26 +114,31 @@
 	font-size: 16px;
 	line-height: normal;
 	font-family: aktiv-grotesk, "Segoe UI", Arial, Helvetica, sans-serif;
-	overflow-y: scroll;
+	overflow-y: auto;
     }
     .gallery-item:hover {
-	box-shadow: 0 1px 5px var(--neutral-focus);
+	box-shadow: 0 1px 5px var(--neutral-fill-strong-focus);
     }
     .gallery-item {
 	cursor: pointer;
+	text-align: center;
     }
     .header {
-	background-image: linear-gradient(to top, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0) ),url('https://cdn.holoviz.org/panel/latest/dist/images/index_background.png');
+        background-image: linear-gradient(to top, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0) ),url('{{ PANEL_CDN }}images/index_background.png');
 	background-size: cover;
-	background-repeat: no-repeat;
+	background-repeat: space;
 	background-position: center;
     }
-    .header-grid {
-	/* Grid styles */
-	padding: 4rem 2rem;
-	display: grid;
-	align-items: center;
-	grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+    .header-content {
+	display: flex;
+	flex-direction: column;
+	padding: 2rem;
+    }
+    #header-design-provider {
+      background-color: var(--header-background);
+    }
+    #body-design-provider {
+	color: var(--neutral-foreground-rest);
     }
     #title {
 	background: transparent;
@@ -134,7 +147,7 @@
 	color: white;
 	font-size: 2em;
 	font-weight: bold;
-	margin-left: 2em;
+	margin: 1em 0 0 1em;
     }
     #search-input {
 	margin-top: 1em;
@@ -146,8 +159,8 @@
 	height: 25px;
 	width: 25px;
 	margin-top: 5px;
+	fill: #ffffff;
     }
-
     /* The grid layout is inspired by
        https://css-tricks.com/look-ma-no-media-queries-responsive-layouts-using-css-grid/
        https://codepen.io/andybelldesign/pen/vMMYKJ */
@@ -158,7 +171,6 @@
    */
     .cards-grid {
 	--cards-grid-min-size: 16rem;
-
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(var(--cards-grid-min-size), 1fr));
 	grid-gap: 2rem;
@@ -190,9 +202,15 @@
 	fill: var(--neutral-foreground-rest);
     }
     .card-image {
-	height: 100px;
+	height: 175px;
 	width: 100%;
 	margin-top: 25px;
+    }
+    object {
+        height: 175px;
+	max-width: calc(100% - 50px);
+	margin-top: 25px;
+        border-radius: calc(var(--control-corner-radius) * 1px);
     }
     .card-content {
 	padding: 10px 10px 10px;
@@ -220,24 +238,26 @@
   </style>
 </head>
 <body>
-  <fast-design-system-provider id="body-design-provider" use-defaults background-color="#ffffff">
-    <fast-design-system-provider id="header-design-provider" use-defaults background-color="#000000">
+  <fast-design-system-provider id="body-design-provider" use-defaults>
+    <fast-design-system-provider id="header-design-provider" use-defaults>
       <section class="header">
         <fast-switch id="theme-switch" style="float: right; padding-top: 1em; padding-right: 2em;" onChange="toggleLightDarkTheme()" checked>
           <span slot="checked-message">
-            <svg class="theme-toggle-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
+            <svg class="theme-toggle-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
           </span>
           <span slot="unchecked-message">
-            <svg class="theme-toggle-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M10 2c-1.82 0-3.53.5-5 1.35C7.99 5.08 10 8.3 10 12s-2.01 6.92-5 8.65C6.47 21.5 8.18 22 10 22c5.52 0 10-4.48 10-10S15.52 2 10 2z"/></svg>
+            <svg class="theme-toggle-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M10 2c-1.82 0-3.53.5-5 1.35C7.99 5.08 10 8.3 10 12s-2.01 6.92-5 8.65C6.47 21.5 8.18 22 10 22c5.52 0 10-4.48 10-10S15.52 2 10 2z"/></svg>
           </span>
         </fast-switch>
         <fast-tooltip anchor="theme-switch">Click to toggle the Theme</fast-tooltip>
-        <div class="header-grid">
-          <h1>
-            <fast-anchor id="title" href="https://panel.holoviz.org" appearance="neutral" target="_self"><img id="panel-logo" src="https://panel.holoviz.org/_static/logo_horizontal.png"/></fast-anchor>
+        <div class="header-content">
+          <div>
+            <fast-anchor id="title" href="https://panel.holoviz.org" appearance="neutral" target="_self">
+              <img id="panel-logo" src="https://panel.holoviz.org/_static/logo_horizontal.png"/>
+            </fast-anchor>
             <fast-tooltip anchor="title">Click to visit the Panel web site</fast-tooltip>
-          </h1>
-          <span id="subtitle">Applications running on the server</span>
+          </div>
+          <span id="subtitle">Running Applications</span>
         </div>
       </section>
     </fast-design-system-provider>
@@ -250,15 +270,16 @@
         <li class="card">
           <a class="card-link" href=".{{ item }}" id="{{ item }}">
             <fast-card class="gallery-item">
-              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
-                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
-                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
-              </svg>
+	      <object data="thumbnails{{ item }}.png" type="image/png">
+                <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                  <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                  <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+                </svg>
+              </object>
               <div class="card-content">
                 <h2 class="card-header">{{ item[1:].replace("_", " ").title() }}</h2>
               </div>
             </fast-card>
-            <fast-tooltip anchor="{{ item }}">Click to start the application</fast-tooltip>
           </a>
         </li>
         {% end %}
@@ -270,8 +291,14 @@
     </section>
   </fast-design-system-provider>
   <script type="text/javascript">
-    setSwitchFromParams()
-    setSearchFromParams()
+    document.addEventListener('DOMContentLoaded', (event) => {
+      const header_design = new window.fastDesignProvider("#header-design-provider");
+      header_design.setBackgroundColor('#ffffff')
+      const body_design = window.bodyDesign = new window.fastDesignProvider("#body-design-provider");
+      body_design.setAccentColor("#0072B5")
+      setSwitchFromParams()
+      setSearchFromParams()
+    })
   </script>
 </body>
 </html>

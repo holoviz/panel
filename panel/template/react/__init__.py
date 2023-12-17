@@ -31,14 +31,11 @@ class ReactTemplate(BasicTemplate):
     row_height = param.Integer(default=150)
 
     dimensions = param.Dict(default={'minW': 0, 'maxW': float('inf'), 'minH': 0, 'maxH': float('inf')},
-                            doc="""A dictonary of minimum/maximum width/height in grid units.""")
+                            doc="""A dictionary of minimum/maximum width/height in grid units.""")
 
     prevent_collision = param.Boolean(default=False, doc="Prevent collisions between items.")
 
     save_layout = param.Boolean(default=False, doc="Save layout to local storage.")
-
-    sidebar_width = param.Integer(350, doc="""
-        The width of the sidebar in pixels. Default is 350.""")
 
     _css = pathlib.Path(__file__).parent / 'react.css'
 

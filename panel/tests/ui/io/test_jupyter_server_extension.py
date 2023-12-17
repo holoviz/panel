@@ -1,15 +1,15 @@
-import sys
-
 import pytest
+
+pytest.importorskip("playwright")
+
+from playwright.sync_api import expect
 
 from panel.tests.util import wait_until
 
-pytestmark = pytest.mark.jupyter
+pytestmark = [pytest.mark.jupyter, pytest.mark.ui]
 
-not_windows = pytest.mark.skipif(sys.platform=='win32', reason="Does not work on Windows")
 
-@not_windows
-@pytest.mark.flaky(max_runs=3)
+
 def test_jupyter_server(page, jupyter_preview):
     page.goto(f"{jupyter_preview}/app.py", timeout=30000)
 
@@ -23,16 +23,14 @@ def test_jupyter_server(page, jupyter_preview):
 
     wait_until(lambda: page.text_content('pre') == '2', page)
 
-@not_windows
-@pytest.mark.flaky(max_runs=3)
+
 def test_jupyter_server_custom_resources(page, jupyter_preview):
     page.goto(f"{jupyter_preview}/app.py", timeout=30000)
 
     assert page.locator('.bk-Row').evaluate("""(element) =>
         window.getComputedStyle(element).getPropertyValue('background-color')""") == 'rgb(128, 0, 128)'
 
-@not_windows
-@pytest.mark.flaky(max_runs=3)
+
 def test_jupyter_server_kernel_error(page, jupyter_preview):
     page.goto(f"{jupyter_preview}/app.py?kernel=blah", timeout=30000)
 
@@ -45,3 +43,9 @@ def test_jupyter_server_kernel_error(page, jupyter_preview):
     page.click('button')
 
     wait_until(lambda: page.text_content('pre') == '1', page)
+
+
+def test_jupyter_server_session_arg_theme(page, jupyter_preview):
+    page.goto(f"{jupyter_preview}/app.py?theme=dark", timeout=30000)
+
+    expect(page.locator('body')).to_have_css('color', 'rgb(0, 0, 0)')

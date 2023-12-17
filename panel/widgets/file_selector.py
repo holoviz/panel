@@ -81,11 +81,6 @@ class FileSelector(CompositeWidget):
     only_files = param.Boolean(default=False, doc="""
         Whether to only allow selecting files.""")
 
-    margin = param.Parameter(default=(5, 10, 20, 10), doc="""
-        Allows to create additional space around the component. May
-        be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
-
     show_hidden = param.Boolean(default=False, doc="""
         Whether to show hidden files and directories (starting with
         a period).""")
@@ -159,7 +154,7 @@ class FileSelector(CompositeWidget):
         self._forward.on_click(self._go_forward)
         self._directory.param.watch(self._dir_change, 'value')
         self._selector._lists[False].param.watch(self._select, 'value')
-        self._selector._lists[False].param.watch(self._filter_blacklist, 'options')
+        self._selector._lists[False].param.watch(self._filter_denylist, 'options')
         self._periodic = PeriodicCallback(callback=self._refresh, period=self.refresh_period or 0)
         self.param.watch(self._update_periodic, 'refresh_period')
         if self.refresh_period:
@@ -234,21 +229,21 @@ class FileSelector(CompositeWidget):
         self._selector.options = options
         self._selector.value = selected
 
-    def _filter_blacklist(self, event: param.parameterized.Event):
+    def _filter_denylist(self, event: param.parameterized.Event):
         """
         Ensure that if unselecting a currently selected path and it
         is not in the current working directory then it is removed
-        from the blacklist.
+        from the denylist.
         """
         dirs, files = _scan_path(self._cwd, self.file_pattern)
         paths = [('📁' if p in dirs else '')+os.path.relpath(p, self._cwd) for p in dirs+files]
-        blacklist = self._selector._lists[False]
+        denylist = self._selector._lists[False]
         options = OrderedDict(self._selector._items)
         self._selector.options.clear()
         self._selector.options.update([
             (k, v) for k, v in options.items() if k in paths or v in self.value
         ])
-        blacklist.options = [o for o in blacklist.options if o in paths]
+        denylist.options = [o for o in denylist.options if o in paths]
 
     def _select(self, event: param.parameterized.Event):
         if len(event.new) != 1:

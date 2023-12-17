@@ -40,9 +40,6 @@
     {% for css in template_resources['css'].values() %}
     <link rel="stylesheet" href="{{ css }}">
     {% endfor %}
-    {% for src in template_resources['extra_css'] %}
-    <link rel="stylesheet"  href="{{ src }}">
-    {% endfor %}
     {% for raw_css in template_resources['raw_css'] %}
     <style type="text/css">
     {{ raw_css }}
@@ -50,11 +47,22 @@
     {% endfor %}
 
     <style>
+      :root {
+	  --header-background: {{ header_background or "var(--design-primary-color, var(--panel-primary-color))" }};
+	  --header-color: {{ header_color or "var(--design-primary-text-color, var(--panel-on-primary-color))" }};
+	  --sidebar-width: {{ sidebar_width }}px;
+      }
+      #header {
+          --mdc-theme-background: var(--header-background);
+          --mdc-theme-on-background: var(--header-color);
+	  background-color: var(--header-background);
+	  color: var(--header-color);
+      }
       .mdc-drawer {
-	  width: {{ sidebar_width }}px !important;
+	  width: var(--sidebar-width) !important;
       }
       .mdc-drawer.mdc-drawer--open:not(.mdc-drawer--closing)+.mdc-drawer-app-content {
-	  margin-left: {{ sidebar_width }}px !important;
+	  margin-left: var(--sidebar-width) !important;
       }
     </style>
 
@@ -70,7 +78,7 @@
 <!-- goes in body -->
 {% block contents %}
 <div class="mdc-typography" id="container">
-  <header class="mdc-top-app-bar app-bar mdc-top-app-bar--fixed" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }} !important;{% endif %}" id="header">
+  <header class="mdc-top-app-bar app-bar mdc-top-app-bar--fixed" id="header">
     <div class="mdc-top-app-bar__row">
       <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
 	{% if nav %}
@@ -80,7 +88,7 @@
           <span class="mdc-top-app-bar__title app-header">
             {% if app_logo %}<a href="{{ site_url }}"><img src="{{ app_logo }}" class="app-logo"></a>{% endif %}
             {% if site_title %}<a class="title" href="{{ site_url }}" >&nbsp;{{ site_title }}</a>{% endif %}
-            {% if site_title and app_title%}<span class="title">-</span>{% endif %}
+            {% if site_title and app_title%}<span class="title">&nbsp;-</span>{% endif %}
             {% if app_title %}<a class="title" href="" >&nbsp;{{ app_title }}</a>{% endif %}
           </span>
           <div id="header-items">
@@ -103,7 +111,7 @@
   </header>
 
   {% if nav %}
-  <aside class="mdc-drawer mdc-top-app-bar--fixed-adjust mdc-drawer--dismissible mdc-drawer--open" id="sidebar">
+  <aside class="mdc-drawer mdc-top-app-bar--fixed-adjust mdc-drawer--dismissible {{ '' if collapsed_sidebar else 'mdc-drawer--open' }}" id="sidebar">
     <div class="mdc-drawer__content">
       <div class="mdc-list">
 	{% for doc in docs %}
@@ -160,8 +168,6 @@
     topAppBar.listen('MDCTopAppBar:nav', function() {
       drawer.open = !drawer.open;
     });
-
-    drawer.open = true;
     {% endif %}
 
     var modal_el = document.getElementById("pn-Modal");
@@ -179,6 +185,9 @@
   {{ embed(roots.location) }}
   {% if notifications %}
   {{ embed(roots.notifications) }}
+  {% endif %}
+  {% if browser_info %}
+  {{ embed(roots.browser_info) }}
   {% endif %}
 </div>
 {% endblock %}

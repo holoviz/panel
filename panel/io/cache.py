@@ -20,6 +20,8 @@ from contextlib import contextmanager
 
 import param
 
+from param.parameterized import iscoroutinefunction
+
 from .state import state
 
 #---------------------------------------------------------------------
@@ -91,6 +93,9 @@ def _container_hash(obj):
         h.update(_generate_hash(item))
     return h.digest()
 
+def _slice_hash(x):
+    return _container_hash([x.start, x.step, x.stop])
+
 def _partial_hash(obj):
     h = hashlib.new("md5")
     h.update(_generate_hash(obj.args))
@@ -100,6 +105,9 @@ def _partial_hash(obj):
 
 def _pandas_hash(obj):
     import pandas as pd
+
+    if not isinstance(obj, (pd.Series, pd.DataFrame)):
+        obj = pd.Series(obj)
 
     if len(obj) >= _PANDAS_ROWS_LARGE:
         obj = obj.sample(n=_PANDAS_SAMPLE_SIZE, random_state=0)
@@ -133,6 +141,7 @@ _hash_funcs = {
     float        : lambda obj: _int_to_bytes(hash(obj)),
     bool         : lambda obj: b'1' if obj is True else b'0',
     type(None)   : lambda obj: b'0',
+    slice: _slice_hash,
     (bytes, bytearray) : lambda obj: obj,
     (list, tuple, dict): _container_hash,
     pathlib.Path       : lambda obj: str(obj).encode(),
@@ -144,13 +153,17 @@ _hash_funcs = {
     'numpy.ndarray'              : _numpy_hash,
     'pandas.core.series.Series'  : _pandas_hash,
     'pandas.core.frame.DataFrame': _pandas_hash,
+    'pandas.core.indexes.base.Index': _pandas_hash,
+    'pandas.core.indexes.numeric.Int64Index': _pandas_hash,
+    'pandas.core.indexes.range.RangeIndex': _slice_hash,
     'builtins.mappingproxy'      : lambda obj: _container_hash(dict(obj)),
     'builtins.dict_items'        : lambda obj: _container_hash(dict(obj)),
     'builtins.getset_descriptor' : lambda obj: obj.__qualname__.encode(),
     "numpy.ufunc"                : lambda obj: obj.__name__.encode(),
     # Functions
     inspect.isbuiltin          : lambda obj: obj.__name__.encode(),
-    inspect.ismodule           : lambda obj: obj.__name__
+    inspect.ismodule           : lambda obj: obj.__name__,
+    lambda x: hasattr(x, "tobytes") and x.shape == (): lambda x: x.tobytes(),  # Single numpy dtype like: np.int32
 }
 
 for name in _FFI_TYPE_NAMES:
@@ -228,7 +241,7 @@ def _cleanup_cache(cache, policy, max_items, time):
     their TTL (time-to-live) has expired.
     """
     while len(cache) >= max_items:
-        if policy.lower() == 'lifo':
+        if policy.lower() == 'fifo':
             key = list(cache.keys())[0]
         elif policy.lower() == 'lru':
             key = sorted(((k, time-t) for k, (_, _, _, t) in cache.items()),
@@ -291,11 +304,12 @@ def compute_hash(func, hash_funcs, args, kwargs):
 
 def cache(
     func=None, hash_funcs=None, max_items=None, policy='LRU',
-    ttl=None, to_disk=False, cache_path='./cache'
+    ttl=None, to_disk=False, cache_path='./cache', per_session=False
 ):
     """
-    Decorator to memoize functions with options to configure the
-    caching behavior
+    Memoizes functions for a user session. Can be used as function annotation or just directly.
+
+    For global caching across user sessions use `pn.state.as_cached`.
 
     Arguments
     ---------
@@ -317,7 +331,13 @@ def cache(
         Whether to cache to disk using diskcache.
     cache_dir: str
         Directory to cache to on disk.
+    per_session: bool
+        Whether to cache data only for the current session.
     """
+    if policy.lower() not in ('fifo', 'lru', 'lfu'):
+        raise ValueError(
+            f"Cache policy must be one of 'FIFO', 'LRU' or 'LFU', not {policy}."
+        )
 
     hash_funcs = hash_funcs or {}
     if func is None:
@@ -333,8 +353,7 @@ def cache(
 
     lock = threading.RLock()
 
-    @functools.wraps(func)
-    def wrapped_func(*args, **kwargs):
+    def hash_func(*args, **kwargs):
         global func_hash
         # Handle param.depends method by adding parameters to arguments
         func_name = func.__name__
@@ -360,6 +379,8 @@ def cache(
             func_hash = (fname, type(args[0]).__name__, func.__name__)
         else:
             func_hash = (fname, func.__name__)
+        if per_session:
+            func_hash += (id(state.curdoc),)
         func_hash = hashlib.sha256(_generate_hash(func_hash)).hexdigest()
 
         func_cache = state._memoize_cache.get(func_hash)
@@ -376,21 +397,45 @@ def cache(
             _cleanup_ttl(func_cache, ttl, time)
 
         if hash_value in func_cache:
-            with lock:
-                ret, ts, count, _ = func_cache[hash_value]
-                func_cache[hash_value] = (ret, ts, count+1, time)
-                return ret
+            return func_cache, hash_value, time
 
         if max_items is not None:
             _cleanup_cache(func_cache, policy, max_items, time)
 
-        ret = func(*args, **kwargs)
-        with lock:
-            func_cache[hash_value] = (ret, time, 0, time)
-        return ret
+        return func_cache, hash_value, time
 
-    def clear():
+    if iscoroutinefunction(func):
+        @functools.wraps(func)
+        async def wrapped_func(*args, **kwargs):
+            func_cache, hash_value, time = hash_func(*args, **kwargs)
+            if hash_value in func_cache:
+                with lock:
+                    ret, ts, count, _ = func_cache[hash_value]
+                    func_cache[hash_value] = (ret, ts, count+1, time)
+            else:
+                ret = await func(*args, **kwargs)
+                with lock:
+                    func_cache[hash_value] = (ret, time, 0, time)
+            return ret
+    else:
+        @functools.wraps(func)
+        def wrapped_func(*args, **kwargs):
+            func_cache, hash_value, time = hash_func(*args, **kwargs)
+            if hash_value in func_cache:
+                with lock:
+                    ret, ts, count, _ = func_cache[hash_value]
+                    func_cache[hash_value] = (ret, ts, count+1, time)
+            else:
+                ret = func(*args, **kwargs)
+                with lock:
+                    func_cache[hash_value] = (ret, time, 0, time)
+            return ret
+
+    def clear(session_context=None):
         global func_hash
+        # clear called before anything is cached.
+        if 'func_hash' not in globals():
+            return
         if func_hash is None:
             return
         if to_disk:
@@ -401,6 +446,9 @@ def cache(
             cache = state._memoize_cache.get(func_hash, {})
         cache.clear()
     wrapped_func.clear = clear
+
+    if per_session and state.curdoc and state.curdoc.session_context:
+        state.curdoc.on_session_destroyed(clear)
 
     try:
         wrapped_func.__dict__.update(func.__dict__)

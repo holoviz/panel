@@ -9,8 +9,8 @@ export class JSONView extends PanelMarkupView {
 
   connect_signals(): void {
     super.connect_signals()
-    const {depth, hover_preview, theme} = this.model.properties
-    this.on_change([depth, hover_preview, theme], () => this.render())
+    const {depth, hover_preview, text, theme} = this.model.properties
+    this.on_change([depth, hover_preview, text, theme], () => this.render())
   }
 
   render(): void {

@@ -15,9 +15,9 @@ export namespace VTKAxes {
 
   export type Props = Model.Props & {
     origin: p.Property<number[]>
-    xticker: p.Property<VTKTicker>
-    yticker: p.Property<VTKTicker>
-    zticker: p.Property<VTKTicker>
+    xticker: p.Property<VTKTicker | null>
+    yticker: p.Property<VTKTicker | null>
+    zticker: p.Property<VTKTicker | null>
     digits: p.Property<number>
     show_grid: p.Property<boolean>
     grid_opacity: p.Property<number>
@@ -39,10 +39,10 @@ export class VTKAxes extends Model {
 
   static {
     this.define<VTKAxes.Props>(({Any, Array, Boolean, Number}) => ({
-      origin: [Array(Number)],
-      xticker: [Any],
-      yticker: [Any],
-      zticker: [Any],
+      origin: [Array(Number), [0, 0, 0] ],
+      xticker: [Any, null],
+      yticker: [Any, null],
+      zticker: [Any, null],
       digits: [Number, 1],
       show_grid: [Boolean, true],
       grid_opacity: [Number, 0.1],
@@ -73,19 +73,19 @@ export class VTKAxes extends Model {
   }
 
   get xlabels(): string[] {
-    return this.xticker.labels
+    return this.xticker?.labels
       ? this.xticker.labels
       : this.xticks.map((elem) => elem.toFixed(this.digits))
   }
 
   get ylabels(): string[] {
-    return this.yticker.labels
+    return this.yticker?.labels
       ? this.yticker.labels
       : this.yticks.map((elem) => elem.toFixed(this.digits))
   }
 
   get zlabels(): string[] {
-    return this.zticker.labels
+    return this.zticker?.labels
       ? this.zticker.labels
       : this.zticks.map((elem) => elem.toFixed(this.digits))
   }

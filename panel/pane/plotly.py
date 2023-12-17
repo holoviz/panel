@@ -14,6 +14,7 @@ import param
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
+from ..io.resources import CDN_DIST
 from ..util import isdatetime, lazy_load
 from ..viewable import Layoutable
 from .base import ModelPane
@@ -48,7 +49,7 @@ class Plotly(ModelPane):
 
     clickannotation_data = param.Dict(doc="Clickannotation callback data")
 
-    config = param.Dict(doc="Config data")
+    config = param.Dict(nested_refs=True, doc="Config data")
 
     hover_data = param.Dict(doc="Hover callback data")
 
@@ -56,13 +57,13 @@ class Plotly(ModelPane):
        Attach callbacks to the Plotly figure to update output when it
        is modified in place.""")
 
-    relayout_data = param.Dict(doc="Relayout callback data")
+    relayout_data = param.Dict(nested_refs=True, doc="Relayout callback data")
 
-    restyle_data = param.List(doc="Restyle callback data")
+    restyle_data = param.List(nested_refs=True, doc="Restyle callback data")
 
-    selected_data = param.Dict(doc="Selected callback data")
+    selected_data = param.Dict(nested_refs=True, doc="Selected callback data")
 
-    viewport = param.Dict(doc="Current viewport state")
+    viewport = param.Dict(nested_refs=True, doc="Current viewport state")
 
     viewport_update_policy = param.Selector(default="mouseup", doc="""
         Policy by which the viewport parameter is updated during user interactions.
@@ -83,7 +84,9 @@ class Plotly(ModelPane):
 
     priority: ClassVar[float | bool | None] = 0.8
 
-    _stylesheets: ClassVar[List[str]] = ['css/plotly.css']
+    _stylesheets: ClassVar[List[str]] = [
+        f'{CDN_DIST}css/plotly.css'
+    ]
 
     _updates: ClassVar[bool] = True
 
@@ -182,6 +185,10 @@ class Plotly(ModelPane):
         if self._figure is None or self.relayout_data is None:
             return
         relayout_data = self._clean_relayout_data(self.relayout_data)
+        # The _compound_array_props are sometimes not correctly reset
+        # which means that they are desynchronized with _props causing
+        # incorrect lookups and potential errors when updating a property
+        self._figure.layout._compound_array_props.clear()
         self._figure.plotly_relayout(relayout_data)
 
     @staticmethod
@@ -232,6 +239,11 @@ class Plotly(ModelPane):
                 update_sources = True
                 cds.data[key] = [new]
 
+        for key in list(cds.data):
+            if key not in trace_arrays:
+                del cds.data[key]
+                update_sources = True
+
         return update_sources
 
     @staticmethod
@@ -277,16 +289,32 @@ class Plotly(ModelPane):
             params['sizing_mode'] = 'stretch_both'
             if 'styles' not in params:
                 params['styles'] = {}
-            params['styles']['display'] = 'contents'
         return params
+
+    def _process_param_change(self, params):
+        props = super()._process_param_change(params)
+        if 'layout' in props or 'stylesheets' in props:
+            if 'layout' in props:
+                layout = props['layout']
+            elif self._models:
+                # Improve lookup of current layout
+                layout = list(self._models.values())[0][0].layout
+            else:
+                return props
+            btn_color = layout.get('template', {}).get('layout', {}).get('font', {}).get('color', 'black')
+            props['stylesheets'] = props.get('stylesheets', []) + [
+                f':host {{ --plotly-icon-color: gray; --plotly-active-icon-color: {btn_color}; }}'
+            ]
+        return props
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        self._bokeh_model  = lazy_load(
-            'panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm), root
-        )
+        if not hasattr(self, '_bokeh_model'):
+            self._bokeh_model = lazy_load(
+                'panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm), root
+            )
         return super()._get_model(doc, root, parent, comm)
 
     def _update(self, ref: str, model: Model) -> None:

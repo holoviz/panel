@@ -11,22 +11,16 @@ on:
   schedule:
     - cron: '0 19 * * SUN'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   pre_commit:
-    name: Run pre-commit hooks
+    name: Run pre-commit
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: "1"
-      - name: set PY
-        run: echo "PY=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
-      - uses: actions/cache@v3
-        with:
-          path: ~/.cache/pre-commit
-          key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
-      - name: pre-commit
-        uses: pre-commit/action@v3.0.0
+      - uses: holoviz-dev/holoviz_tasks/pre-commit@v0.1a19
   unit_test_suite:
     name: Unit tests on ${{ matrix.os }} with Python ${{ matrix.python-version }}
     needs: [pre_commit]
@@ -36,7 +30,7 @@ jobs:
       matrix:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
         # Run on the full set on schedule, workflow_dispatch and push&tags events, otherwise on a subset.
-        python-version: ${{ ( github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || ( github.event_name == 'push' && github.ref_type == 'tag' ) ) && fromJSON('["3.8", "3.9", "3.10", "3.11"]') || fromJSON('["3.8", "3.9", "3.11"]') }}
+        python-version: ${{ ( github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || ( github.event_name == 'push' && github.ref_type == 'tag' ) ) && fromJSON('["3.9", "3.10", "3.11"]') || fromJSON('["3.9", "3.11"]') }}
     timeout-minutes: 90
     defaults:
       run:
@@ -52,35 +46,33 @@ jobs:
       # the `pyviz` channel, except that we don't want to configure
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
+      OMP_NUM_THREADS: 1
     steps:
-      - uses: pyviz-dev/holoviz_tasks/install@v0.1a12
+      - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
-          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
-          # Remove when Python 3.11 is well supported on latest conda/conda-forge.
-          conda-update: ${{ matrix.python-version == '3.11' && 'false' || 'true' }}
+          channels: pyviz/label/dev,numba,bokeh,conda-forge,nodefaults
+          conda-update: true
           nodejs: true
-          # Remove when all examples tools can be installed on 3.10
-          envs: ${{ !contains(matrix.python-version, '3.1') && '-o examples -o recommended -o tests -o build' || '-o recommended -o tests -o build' }}
+          envs: -o examples -o recommended -o tests -o build
           cache: true
           opengl: true
-          conda-mamba: mamba
         id: install
       - name: doit develop_install
-        if: steps.install.outputs.cache-hit != 'true'
         run: |
           conda activate test-environment
           pip install pyecharts
+          panel build panel
+      - name: override-vtk-osmesa
+        if: contains(matrix.os, 'ubuntu')
+        run: |
+          conda activate test-environment
+          conda install -c conda-forge vtk=9.2.6=osmesa* vtk-base=9.2.6=osmesa* vtk-io-ffmpeg=9.2.6=osmesa* --no-deps
       - name: bokeh_sampledata
         run: |
           conda activate test-environment
           bokeh sampledata
-      - name: Install bokeh 3.0 compatibility packages
-        run: |
-          conda activate test-environment
-          conda uninstall jupyter_bokeh --force -y --offline || echo "packages already removed"
-          pip install "git+https://github.com/bokeh/jupyter_bokeh.git"
       - name: doit env_capture
         run: |
           conda activate test-environment
@@ -89,9 +81,12 @@ jobs:
         run: |
           conda activate test-environment
           doit test_unit
+      - name: doit test_unit-subprocess
+        if: contains(matrix.os, 'ubuntu')
+        run: |
+          conda activate test-environment
+          doit test_subprocess
       - name: test examples
-        # Remove when all examples tools can be installed on 3.10
-        if: (!(contains(matrix.python-version, '3.1')))
         run: |
           conda activate test-environment
           doit test_examples
@@ -119,32 +114,44 @@ jobs:
       PANEL_LOG_LEVEL: info
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
+      OAUTH_COOKIE_SECRET: ${{ secrets.OAUTH_COOKIE_SECRET }}
+      OAUTH_ENCRYPTION_KEY: ${{ secrets.OAUTH_ENCRYPTION_KEY }}
+      AUTH0_PORT: "5701"
+      AUTH0_OAUTH_KEY: ${{ secrets.AUTH0_OAUTH_KEY }}
+      AUTH0_OAUTH_SECRET: ${{ secrets.AUTH0_OAUTH_SECRET }}
+      AUTH0_OAUTH_EXTRA_PARAMS: ${{ secrets.AUTH0_OAUTH_EXTRA_PARAMS }}
+      AUTH0_OAUTH_USER: ${{ secrets.AUTH0_OAUTH_USER }}
+      AUTH0_OAUTH_PASSWORD: ${{ secrets.AUTH0_OAUTH_PASSWORD }}
+      AZURE_PORT: "5702"
+      AZURE_OAUTH_KEY: ${{ secrets.AZURE_OAUTH_KEY }}
+      AZURE_OAUTH_SECRET: ${{ secrets.AZURE_OAUTH_SECRET }}
+      AZURE_OAUTH_USER: ${{ secrets.AZURE_OAUTH_USER }}
+      AZURE_OAUTH_PASSWORD: ${{ secrets.AZURE_OAUTH_PASSWORD }}
+      OKTA_PORT: "5703"
+      OKTA_OAUTH_KEY: ${{ secrets.OKTA_OAUTH_KEY }}
+      OKTA_OAUTH_SECRET: ${{ secrets.OKTA_OAUTH_SECRET }}
+      OKTA_OAUTH_EXTRA_PARAMS: ${{ secrets.OKTA_OAUTH_EXTRA_PARAMS }}
+      OKTA_OAUTH_USER: ${{ secrets.OKTA_OAUTH_USER }}
+      OKTA_OAUTH_PASSWORD: ${{ secrets.OKTA_OAUTH_PASSWORD }}
       # Without this env var `doit env_create ...` uses by default
       # the `pyviz` channel, except that we don't want to configure
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: pyviz-dev/holoviz_tasks/install@v0.1a12
+      - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
         with:
           name: ui_test_suite
           python-version: 3.9
-          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
+          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
           envs: "-o recommended -o tests -o build"
           cache: true
           nodejs: true
           playwright: true
-          conda-mamba: mamba
         id: install
-      # - name: doit develop_install
-      #   if: steps.install.outputs.cache-hit != 'true'
-      #   run: |
-      #     conda activate test-environment
-      #     pip install ipywidgets_bokeh
-      - name: Install bokeh 3.0 compatibility packages
+      - name: doit develop_install
         run: |
           conda activate test-environment
-          conda uninstall jupyter_bokeh --force -y --offline || echo "packages already removed"
-          pip install "git+https://github.com/bokeh/jupyter_bokeh.git"
+          pip install --pre ipywidgets_bokeh
       - name: build pyodide wheels
         run: |
           conda activate test-environment
@@ -157,12 +164,12 @@ jobs:
       - name: build jupyterlite
         run: |
           conda activate test-environment
-          pip install jupyterlite
+          pip install jupyterlite-core jupyterlite-pyodide-kernel
           python ./scripts/build_pyodide_wheels.py lite/pypi
-          python ./scripts/generate_panelite_content.py
+          python ./scripts/panelite/generate_panelite_content.py
           jupyter lite build --lite-dir lite --output-dir lite/dist
       - name: Wait for JupyterLab
-        uses: ifaxity/wait-on-action@v1
+        uses: ifaxity/wait-on-action@v1.1.0
         with:
           resource: http-get://localhost:8887/lab
           timeout: 180000
@@ -170,13 +177,73 @@ jobs:
         run: |
           conda activate test-environment
           doit env_capture
+      - name: Check if auth should run
+        if: '!github.event.pull_request.head.repo.fork'
+        run: |
+          echo "PANEL_TEST_AUTH=1" >> $GITHUB_ENV
       - name: doit test_ui
         run: |
           conda activate test-environment
           doit test_ui
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: ui_screenshots
+          path: ./ui_screenshots
+          if-no-files-found: ignore
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
           files: ./coverage.xml
           flags: ui-tests
           fail_ci_if_error: false # optional (default = false)
+  core_test_suite:
+    name: Core tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
+    needs: [pre_commit]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['ubuntu-latest']
+        python-version: ['3.12']
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash -el {0}
+    env:
+      DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} core tests"
+      PYTHON_VERSION: ${{ matrix.python-version }}
+      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
+    steps:
+      # Add back when this works on Python 3.12
+      # - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
+      #   with:
+      #     name: core_test_suite
+      #     python-version: ${{ matrix.python-version }}
+      #     # channel-priority: strict
+      #     channels: pyviz/label/dev,conda-forge,nodefaults
+      #     envs: "-o tests_core -o tests_ci"
+      #     cache: true
+      #     conda-update: true
+      #     id: install
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: "100"
+      - name: Fetch unshallow
+        run: git fetch --prune --tags --unshallow -f
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+      - run: |
+          python -m pip install -ve '.[tests_core, recommended]'
+      - name: bokeh sampledata
+        run: |
+          # conda activate test-environment
+          bokeh sampledata
+      - name: doit test_unit
+        run: |
+          # conda activate test-environment
+          pytest panel

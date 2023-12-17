@@ -5,6 +5,7 @@ import {HTMLBox, HTMLBoxView} from "./layout"
 export class VideoView extends HTMLBoxView {
   model: Video
   protected videoEl: HTMLVideoElement
+  protected containerEl: HTMLElement
   protected dialogEl: HTMLElement
   private _blocked: boolean
   private _time: any
@@ -31,15 +32,24 @@ export class VideoView extends HTMLBoxView {
   render(): void {
     super.render()
     this.videoEl = document.createElement('video')
+    this.containerEl = document.createElement('div')
+    this.containerEl.className="pn-video-container"
+    this.containerEl.style.height = '100%'
+    this.containerEl.style.width = '100%'
+    this.videoEl.style.objectFit = 'fill'
+    this.videoEl.style.width = '100%';
+    this.videoEl.style.height = '100%';
     if (!this.model.sizing_mode || this.model.sizing_mode === 'fixed') {
       if (this.model.height)
         this.videoEl.height = this.model.height;
       if (this.model.width)
         this.videoEl.width = this.model.width;
     }
-    this.videoEl.style.objectFit = 'fill'
-    this.videoEl.style.minWidth = '100%';
-    this.videoEl.style.minHeight = '100%';
+    if (this.model.max_height)
+        this.videoEl.style.maxHeight = `${this.model.max_height}px`;
+      if (this.model.max_width)
+        this.videoEl.style.maxWidth = `${this.model.max_width}px`;
+
     this.videoEl.controls = true
     this.videoEl.src = this.model.value
     this.videoEl.currentTime = this.model.time
@@ -54,7 +64,8 @@ export class VideoView extends HTMLBoxView {
     this.videoEl.onplay = () => this.model.paused = false
     this.videoEl.ontimeupdate = () => this.update_time(this)
     this.videoEl.onvolumechange = () => this.update_volume(this)
-    this.shadow_el.appendChild(this.videoEl)
+    this.containerEl.appendChild(this.videoEl)
+    this.shadow_el.appendChild(this.containerEl)
     if (!this.model.paused)
       this.videoEl.play()
   }

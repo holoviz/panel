@@ -4,7 +4,7 @@ import {View} from "@bokehjs/core/view"
 import {Model} from "@bokehjs/model"
 import {Message} from "@bokehjs/protocol/message"
 import {Receiver} from "@bokehjs/protocol/receiver"
-import {Patch} from "@bokehjs/document"
+import type {Patch} from "@bokehjs/document"
 
 export const comm_settings: any = {
   debounce: true
@@ -57,7 +57,11 @@ export class CommManager extends Model {
 	  if (view !== this)
 	    view.msg_handler(msg)
 	}
-	this.msg_handler(msg)
+	try {
+	  this.msg_handler(msg)
+	} catch(e) {
+	  console.error(e)
+	}
       })
       this._client_comm = this.ns.comm_manager.get_client_comm(this.plot_id, this.client_comm_id, (msg: any) => this.on_ack(msg));
       if (this.ns.shared_views == null)
@@ -92,13 +96,38 @@ export class CommManager extends Model {
     }
   }
 
+  protected _extract_buffers(value: any, buffers: ArrayBuffer[]): any {
+    let extracted: any;
+    if (value instanceof Array) {
+      extracted = []
+      for (const val of value)
+	extracted.push(this._extract_buffers(val, buffers))
+    } else if (value instanceof Object) {
+      extracted = {}
+      for (const key in value) {
+	if (key === 'buffer' && value[key] instanceof ArrayBuffer) {
+	  const id = Object.keys(buffers).length
+	  extracted = {id}
+	  buffers.push(value[key])
+	  break
+	}
+	extracted[key] = this._extract_buffers(value[key], buffers)
+      }
+    } else {
+      extracted = value
+    }
+    return extracted
+  }
+
   process_events() {
     if ((this.document == null) || (this._client_comm == null))
       return
     const patch = this.document.create_json_patch(this._event_buffer)
     this._event_buffer = [];
-    const message = Message.create('PATCH-DOC', {}, patch)
-    this._client_comm.send(message)
+    const message = {...Message.create('PATCH-DOC', {}, patch)}
+    const buffers: ArrayBuffer[] = []
+    message.content = this._extract_buffers(message.content, buffers)
+    this._client_comm.send(message, {}, buffers)
     for (const view of this.ns.shared_views.get(this.plot_id)) {
       if (view !== this && view.document != null)
         view.document.apply_json_patch(patch, [], this.id)
@@ -146,10 +175,12 @@ export class CommManager extends Model {
       if (plot == null)
         return
 
-      if ((buffers != undefined) && (buffers.length > 0))
+      if (content.length)
+        this._receiver.consume(content)
+      else if ((buffers != undefined) && (buffers.length > 0))
         this._receiver.consume(buffers[0].buffer)
       else
-        this._receiver.consume(content)
+	return
 
       const comm_msg = this._receiver.message
       if ((comm_msg != null) && (Object.keys(comm_msg.content as Patch).length > 0) && this.document != null){

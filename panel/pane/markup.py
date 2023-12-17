@@ -4,6 +4,7 @@ Markdown, and also regular strings.
 """
 from __future__ import annotations
 
+import functools
 import json
 import textwrap
 
@@ -13,8 +14,9 @@ from typing import (
 
 import param  # type: ignore
 
+from ..io.resources import CDN_DIST
 from ..models import HTML as _BkHTML, JSON as _BkJSON
-from ..util import escape
+from ..util import HTML_SANITIZER, escape
 from ..util.warnings import deprecated
 from .base import ModelPane
 
@@ -42,7 +44,7 @@ class HTMLBasePane(ModelPane):
         if "style" in params:
             # In Bokeh 3 'style' was changed to 'styles'.
             params["styles"] = params.pop("style")
-            deprecated("1.1", "style",  "styles")
+            deprecated("1.4", "style",  "styles")
         super().__init__(object=object, **params)
 
 
@@ -59,7 +61,7 @@ class HTML(HTMLBasePane):
 
     >>> HTML(
     ...     "<h1>This is a HTML pane</h1>",
-    ...     style={'background-color': '#F6F6F6'}
+    ...     styles={'background-color': '#F6F6F6'}
     ... )
     """
 
@@ -67,15 +69,29 @@ class HTML(HTMLBasePane):
         Whether to disable support for MathJax math rendering for
         strings escaped with $$ delimiters.""")
 
+    sanitize_html = param.Boolean(default=False, doc="""
+        Whether to sanitize HTML sent to the frontend.""")
+
+    sanitize_hook = param.Callable(default=HTML_SANITIZER.clean, doc="""
+        Sanitization callback to apply if `sanitize_html=True`.""")
+
     # Priority is dependent on the data type
     priority: ClassVar[float | bool | None] = None
+
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'sanitize_html': None, 'sanitize_hook': None
+    }
+
+    _rerender_params: ClassVar[List[str]] = [
+        'object', 'sanitize_html', 'sanitize_hook'
+    ]
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
         module, name = getattr(obj, '__module__', ''), type(obj).__name__
         if ((any(m in module for m in ('pandas', 'dask')) and
             name in ('DataFrame', 'Series')) or hasattr(obj, '_repr_html_')):
-            return 0.2
+            return 0 if isinstance(obj, param.Parameterized) else 0.2
         elif isinstance(obj, str):
             return None
         else:
@@ -85,6 +101,8 @@ class HTML(HTMLBasePane):
         text = '' if obj is None else obj
         if hasattr(text, '_repr_html_'):
             text = text._repr_html_()
+        if self.sanitize_html:
+            text = self.sanitize_hook(text)
         return dict(object=escape(text))
 
 
@@ -182,7 +200,9 @@ class DataFrame(HTML):
         rp: None for rp in _rerender_params[1:-1]
     }
 
-    _stylesheets = ['css/dataframe.css']
+    _stylesheets: ClassVar[List[str]] = [
+        f'{CDN_DIST}css/dataframe.css'
+    ]
 
     def __init__(self, object=None, **params):
         self._stream = None
@@ -192,8 +212,9 @@ class DataFrame(HTML):
     def applies(cls, obj: Any) -> float | bool | None:
         module = getattr(obj, '__module__', '')
         name = type(obj).__name__
-        if (any(m in module for m in ('pandas', 'dask', 'streamz')) and
-            name in ('DataFrame', 'Series', 'Random', 'DataFrames', 'Seriess', 'Styler')):
+        if (any(m in module for m in ('pandas', 'dask', 'streamz', 'geopandas', 'spatialpandas')) and
+            name in ('DataFrame', 'Series', 'Random', 'DataFrames',
+                     'Seriess', 'Styler', 'GeoDataFrame', 'GeoSeries')):
             return 0.3
         else:
             return False
@@ -269,7 +290,7 @@ class Str(HTMLBasePane):
 
     >>> Str(
     ...    'This raw string will not be formatted, except for the applied style.',
-    ...    style={'font-size': '12pt'}
+    ...    styles={'font-size': '12pt'}
     ... )
     """
 
@@ -315,25 +336,39 @@ class Markdown(HTMLBasePane):
         strings escaped with $$ delimiters.""")
 
     extensions = param.List(default=[
-        "extra", "smarty", "codehilite"], doc="""
-        Markdown extension to apply when transforming markup.""")
+        "extra", "smarty", "codehilite"], nested_refs=True, doc="""
+        Markdown extension to apply when transforming markup.
+        Does not apply if renderer is set to 'markdown-it' or 'myst'.""")
+
+    plugins = param.List(default=[], nested_refs=True, doc="""
+        Additional markdown-it-py plugins to use.""")
+
+    renderer = param.Selector(default='markdown-it', objects=[
+        'markdown-it', 'myst', 'markdown'], doc="""
+        Markdown renderer implementation.""")
+
+    renderer_options = param.Dict(default={}, nested_refs=True, doc="""
+        Options to pass to the markdown renderer.""")
 
     # Priority depends on the data type
     priority: ClassVar[float | bool | None] = None
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'dedent': None, 'disable_math': None, 'extensions': None
+        'dedent': None, 'disable_math': None, 'extensions': None,
+        'plugins': None, 'renderer': None, 'renderer_options': None
     }
 
     _rerender_params: ClassVar[List[str]] = [
-        'object', 'dedent', 'extensions', 'css_classes'
+        'object', 'dedent', 'extensions', 'css_classes', 'plugins',
     ]
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
         'object': None
     }
 
-    _stylesheets = ['css/markdown.css']
+    _stylesheets: ClassVar[List[str]] = [
+        f'{CDN_DIST}css/markdown.css'
+    ]
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
@@ -344,6 +379,58 @@ class Markdown(HTMLBasePane):
         else:
             return False
 
+    @classmethod
+    @functools.lru_cache(maxsize=None)
+    def _get_parser(cls, renderer, plugins, **renderer_options):
+        if renderer == 'markdown':
+            return None
+        from markdown_it import MarkdownIt
+        from markdown_it.renderer import RendererHTML
+        from mdit_py_plugins.anchors import anchors_plugin
+        from mdit_py_plugins.deflist import deflist_plugin
+        from mdit_py_plugins.footnote import footnote_plugin
+        from mdit_py_plugins.tasklists import tasklists_plugin
+
+        def hilite(token, langname, attrs):
+            try:
+                from markdown.extensions.codehilite import CodeHilite
+                return CodeHilite(src=token, lang=langname).hilite()
+            except Exception:
+                return token
+
+        if renderer == 'markdown-it':
+            if "breaks" not in renderer_options:
+                renderer_options["breaks"] = True
+
+            parser = MarkdownIt(
+                'gfm-like',
+                renderer_cls=RendererHTML,
+                options_update=renderer_options
+            )
+        elif renderer == 'myst':
+            from myst_parser.parsers.mdit import (
+                MdParserConfig, create_md_parser,
+            )
+            config = MdParserConfig(heading_anchors=1, enable_extensions=[
+                'colon_fence', 'linkify', 'smartquotes', 'tasklist',
+                'attrs_block'
+            ], enable_checkboxes=True, **renderer_options)
+            parser = create_md_parser(config, RendererHTML)
+        parser = (
+            parser
+            .enable('strikethrough').enable('table')
+            .use(anchors_plugin, permalink=True).use(deflist_plugin).use(footnote_plugin).use(tasklists_plugin)
+        )
+        for plugin in plugins:
+            parser = parser.use(plugin)
+        try:
+            from mdit_py_emoji import emoji_plugin
+            parser = parser.use(emoji_plugin)
+        except Exception:
+            pass
+        parser.options['highlight'] = hilite
+        return parser
+
     def _transform_object(self, obj: Any) -> Dict[str, Any]:
         import markdown
         if obj is None:
@@ -352,9 +439,18 @@ class Markdown(HTMLBasePane):
             obj = obj._repr_markdown_()
         if self.dedent:
             obj = textwrap.dedent(obj)
-        html = markdown.markdown(
-            obj, extensions=self.extensions, output_format='html5'
-        )
+
+        if self.renderer == 'markdown':
+            html = markdown.markdown(
+                obj,
+                extensions=self.extensions,
+                output_format='html5',
+                **self.renderer_options
+            )
+        else:
+            html = self._get_parser(
+                self.renderer, tuple(self.plugins), **self.renderer_options
+            ).render(obj)
         return dict(object=escape(html))
 
     def _process_param_change(self, params):
@@ -385,11 +481,6 @@ class JSON(HTMLBasePane):
     hover_preview = param.Boolean(default=False, doc="""
         Whether to display a hover preview for collapsed nodes.""")
 
-    margin = param.Parameter(default=(5, 20, 5, 5), doc="""
-        Allows to create additional space around the component. May
-        be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
-
     theme = param.ObjectSelector(default="dark", objects=["light", "dark"], doc="""
         Whether the JSON tree view is expanded by default.""")
 
@@ -407,7 +498,9 @@ class JSON(HTMLBasePane):
         'object', 'depth', 'encoder', 'hover_preview', 'theme'
     ]
 
-    _stylesheets = ['css/json.css']
+    _stylesheets: ClassVar[List[str]] = [
+        f'{CDN_DIST}css/json.css'
+    ]
 
     @classmethod
     def applies(cls, obj: Any, **params) -> float | bool | None:

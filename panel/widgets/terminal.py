@@ -44,21 +44,21 @@ class TerminalSubprocess(param.Parameterized):
     running = param.Boolean(default=False, constant=True, doc="""
         Whether or not the subprocess is running.""")
 
-    _child_pid = param.Integer(0, doc="Child process id")
+    _child_pid = param.Integer(default=0, doc="Child process id")
 
-    _fd = param.Integer(0, doc="Child file descriptor.")
+    _fd = param.Integer(default=0, doc="Child file descriptor.")
 
-    _max_read_bytes = param.Integer(1024 * 20)
+    _max_read_bytes = param.Integer(default=1024 * 20)
 
     _periodic_callback = param.ClassSelector(class_=PeriodicCallback, doc="""
         Watches the subprocess for output""")
 
-    _period = param.Integer(50, doc="Period length of _periodic_callback")
+    _period = param.Integer(default=50, doc="Period length of _periodic_callback")
 
-    _terminal = param.Parameter(constant=True, doc="""
+    _terminal = param.Parameter(constant=True, allow_refs=False, doc="""
         The Terminal to which the subprocess is connected.""")
 
-    _timeout_sec = param.Integer(0)
+    _timeout_sec = param.Integer(default=0)
 
     _watcher = param.Parameter(doc="Watches the subprocess for user input")
 
@@ -110,9 +110,9 @@ class TerminalSubprocess(param.Parameterized):
             # that it finished.
             try:
                 result = subprocess.run(args, **kwargs)
-                print(str(result))
+                print(str(result))  # noqa: T201
             except FileNotFoundError as e:
-                print(str(e) + "\nCompletedProcess('FileNotFoundError')")
+                print(str(e) + "\nCompletedProcess('FileNotFoundError')")  # noqa: T201
         else:
             # this is the PARENT process fork.
             self._child_pid = child_pid
