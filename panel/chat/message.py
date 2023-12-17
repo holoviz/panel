@@ -214,8 +214,6 @@ class ChatMessage(PaneBase):
     _updates: ClassVar[bool] = True
 
     def __init__(self, object=None, **params):
-        from ..param import ParamMethod  # circular imports
-
         self._exit_stack = ExitStack()
         self.chat_copy_icon = ChatCopyIcon(
             visible=False, width=15, height=15, css_classes=["copy-icon"]
@@ -233,18 +231,18 @@ class ChatMessage(PaneBase):
                 options=reaction_icons, width=15, height=15
             )
         super().__init__(object=object, **params)
-        self.reaction_icons.link(self, value="reactions", bidirectional=True)
         self.reaction_icons.link(
-            self, visible="show_reaction_icons", bidirectional=True
+            self, value="reactions", visible="show_reaction_icons",
+            bidirectional=True
         )
         self.param.trigger("reactions", "show_reaction_icons")
         if not self.avatar:
             self.param.trigger("avatar_lookup")
+        self._build_layout()
 
-        self._composite = Row()
-        render_kwargs = {"inplace": True, "stylesheets": self._stylesheets}
-        left_col = Column(
-            ParamMethod(self._render_avatar, **render_kwargs),
+    def _build_layout(self):
+        self._left_col = left_col = Column(
+            self._render_avatar(),
             max_width=60,
             height=100,
             css_classes=["left"],
@@ -252,29 +250,36 @@ class ChatMessage(PaneBase):
             visible=self.param.show_avatar,
             sizing_mode=None,
         )
-        center_row = Row(
-            ParamMethod(self._render_object, **render_kwargs),
+        self.param.watch(self._update_avatar, "avatar")
+
+        self._object_panel = self._create_panel(self.object)
+        self._center_row = Row(
+            self._object_panel,
             self.reaction_icons,
             css_classes=["center"],
             stylesheets=self._stylesheets,
             sizing_mode=None
         )
-        right_col = Column(
+        self.param.watch(self._update_object, "object")
+
+        self._user_html = HTML(
+            self.param.user, height=20, css_classes=["name"],
+            visible=self.param.show_user, stylesheets=self._stylesheets,
+        )
+        self._timestamp_html = HTML(
+            self.param.timestamp.rx().strftime(self.param.timestamp_format),
+            css_classes=["timestamp"],
+            visible=self.param.show_timestamp
+        )
+        self._right_col = right_col = Column(
             Row(
-                HTML(
-                    self.param.user, height=20, css_classes=["name"],
-                    visible=self.param.show_user, stylesheets=self._stylesheets,
-                ),
+                self._user_html,
                 self.chat_copy_icon,
                 stylesheets=self._stylesheets,
                 sizing_mode="stretch_width",
             ),
-            center_row,
-            HTML(
-                self.param.timestamp.rx().strftime(self.param.timestamp_format),
-                css_classes=["timestamp"],
-                visible=self.param.show_timestamp
-            ),
+            self._center_row,
+            self._timestamp_html,
             css_classes=["right"],
             stylesheets=self._stylesheets,
             sizing_mode=None
@@ -284,8 +289,7 @@ class ChatMessage(PaneBase):
             if p in Viewable.param and p != 'name'
         }
         viewable_params['stylesheets'] = self._stylesheets + self.param.stylesheets.rx()
-        self._composite.param.update(**viewable_params)
-        self._composite[:] = [left_col, right_col]
+        self._composite = Row(left_col, right_col, **viewable_params)
 
     def _get_obj_label(self, obj):
         """
@@ -497,7 +501,6 @@ class ChatMessage(PaneBase):
         self._set_default_attrs(object_panel)
         return object_panel
 
-    @param.depends("avatar", "show_avatar")
     def _render_avatar(self) -> HTML | Image:
         """
         Render the avatar pane as some HTML text or Image pane.
@@ -506,35 +509,44 @@ class ChatMessage(PaneBase):
         if not avatar and self.user:
             avatar = self.user[0]
 
+        avatar_params = {'css_classes': ["avatar"]}
         if isinstance(avatar, ImageBase):
             avatar_pane = avatar
-            avatar_pane.param.update(width=35, height=35)
+            avatar_params['css_classes'] = (
+                avatar_params.get('css_classes', []) +
+                avatar_pane.css_classes
+            )
+            avatar_params.update(width=35, height=35)
+            avatar_pane.param.update(avatar_params)
         elif not isinstance(avatar, (BytesIO, bytes)) and len(avatar) == 1:
             # single character
-            avatar_pane = HTML(avatar)
+            avatar_pane = HTML(avatar, **avatar_params)
         else:
             try:
-                avatar_pane = Image(avatar, width=35, height=35)
+                avatar_pane = Image(
+                    avatar, width=35, height=35, **avatar_params
+                )
             except ValueError:
                 # likely an emoji
-                avatar_pane = HTML(avatar)
-        avatar_pane.css_classes = ["avatar", *avatar_pane.css_classes]
-        avatar_pane.visible = self.show_avatar
+                avatar_pane = HTML(avatar, **avatar_params)
         return avatar_pane
+
+    def _update_avatar(self, event):
+        new_avatar = self._render_avatar()
+        old_type = type(self._left_col[0])
+        new_type = type(new_avatar)
+        if isinstance(event.old, (HTML, ImageBase)) or new_type is not old_type:
+            self._left_col[:] = [new_avatar]
+        else:
+            self._left_col[0].param.update(new_avatar.param.values())
 
     def _update(self, ref, old_models):
         """
         Internals will be updated inplace.
         """
 
-    @param.depends("object")
-    def _render_object(self) -> Viewable:
-        """
-        Renders object as a panel object.
-        """
-        # used in ChatFeed to extract its contents
-        self._object_panel = object_panel = self._create_panel(self.object)
-        return object_panel
+    def _update_object(self):
+        self._center_row[0] = self._object_panel = self._create_panel(self.object)
 
     @param.depends("avatar_lookup", "user", watch=True)
     def _update_avatar(self):
