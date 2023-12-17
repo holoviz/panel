@@ -1,13 +1,22 @@
 # Use Asynchronous Callbacks
 
-This guide addresses how to leverage asynchronous callbacks to run I/O bound tasks in parallel.
+This guide addresses how to leverage asynchronous callbacks to run I/O bound tasks in parallel. This technique is also beneficial for CPU bound tasks that release the GIL.
+
+You can use `async` function with event handlers like `on_click` as well as the reactive apis `.watch`, `.depends` and `.bind`.
+
+You can also schedule asynchronous periodic callbacks with `pn.state.add_periodic_callback` as well as run `async` functions directly with `pn.state.execute`.
 
 ```{admonition} Prerequisites
-1. Python has natively supported asynchronous functions since version 3.5, for a quick overview of some of the concepts involved see [the Python documentation](https://docs.python.org/3/library/asyncio-task.html).
+For a quick overview of the most important `asyncio` concepts see [the Python documentation](https://docs.python.org/3/library/asyncio-task.html).
 ```
+
+```{admonition} Bokeh Models
+It is important to note that asynchronous callbacks operate without locking the underlying Bokeh Document, which means Bokeh models cannot be safely modified by default. Usually this is not an issue because modifying Panel components appropriately schedules updates to underlying Bokeh models, however in cases where we want to modify a Bokeh model directly, e.g. when embedding and updating a Bokeh plot in a Panel application we explicitly have to decorate the asynchronous callback with `pn.io.with_lock` (see example below).
+```
+
 ---
 
-## `.param.watch`
+## `on_click`
 
 One of the major benefits of leveraging async functions is that it is simple to write callbacks which will perform some longer running IO tasks in the background. Below we simulate this by creating a `Button` which will update some text when it starts and finishes running a long-running background task (here simulated using `asyncio.sleep`. If you are running this in the notebook you will note that you can start multiple tasks and it will update the text immediately but continue in the background:
 
@@ -30,9 +39,7 @@ button.on_click(run_async)
 pn.Row(button, text)
 ```
 
-Note that `on_click` is simple one way of registering an asynchronous callback, but the more flexible `.param.watch` is also supported. Scheduling asynchronous periodic callbacks can be done with `pn.state.add_periodic_callback`.
-
-It is important to note that asynchronous callbacks operate without locking the underlying Bokeh Document, which means Bokeh models cannot be safely modified by default. Usually this is not an issue because modifying Panel components appropriately schedules updates to underlying Bokeh models, however in cases where we want to modify a Bokeh model directly, e.g. when embedding and updating a Bokeh plot in a Panel application we explicitly have to decorate the asynchronous callback with `pn.io.with_lock`.
+## `.watch` and `pn.io.with_lock`
 
 ```{pyodide}
 import numpy as np
@@ -59,7 +66,7 @@ button.param.watch(stream, 'clicks')
 pn.Row(button, pane)
 ```
 
-## `pn.bind`
+## `.bind`
 
 ```{pyodide}
 widget = pn.widgets.IntSlider(start=0, end=10)

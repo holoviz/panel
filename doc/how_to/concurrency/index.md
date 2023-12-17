@@ -54,10 +54,17 @@ Discover how to manually set up a Thread to process an event queue.
 :::
 
 :::{grid-item-card} {octicon}`arrow-switch;2.5em;sd-mr-1 sd-animate-grow50` Use Asynchronous Processing
-:link: async
+:link: ../callbacks/async
 :link-type: doc
 
-Discover how to make use of asynchronous callbacks to handle I/O bound operations concurrently.
+Discover how to make use of asynchronous callbacks to handle I/O and cpu bound operations concurrently.
+:::
+
+:::{grid-item-card} {octicon}`paper-airplane;2.5em;sd-mr-1 sd-animate-grow50` Sync to Async
+:link: sync_to_async
+:link-type: doc
+
+Discover how to run your sync callbacks asynchronously to handle I/O and cpu bound operations concurrently.
 :::
 
 ::::

@@ -32,7 +32,7 @@ Let's start by defining some *fibonacci* tasks in a shared `tasks.py` file:
 ## Local Dask Cluster
 
 For development, testing and simple use cases a `LocalCluster` is more than fine and will allow you to leverage all the CPUs on your machine. When you want to scale out to an entire cluster will you can switch to a non-local cluster. To avoid any issues when combining Panel and Dask we recommend starting the `LocalCluster`
-seperately from the Dask `Client` and your Panel app.
+separately from the Dask `Client` and your Panel app.
 
 You can do this by creating the file `cluster.py` that looks like this:
 
@@ -53,7 +53,7 @@ So far there is not a lot to see here:
 
 ## Dask Dashboard Components
 
-It can be very usefull to include some of the live [Dask endpoints](https://distributed.dask.org/en/stable/http_services.html) in your app. Its easy to do by embedding the specific urls in an *iframe*.
+It can be very useful to include some of the live [Dask endpoints](https://distributed.dask.org/en/stable/http_services.html) in your app. Its easy to do by embedding the specific urls in an *iframe*.
 
 In the `dashboard.py` file we define the `DaskViewer` component that can be used to explore the *individual dask plots*.
 
@@ -82,7 +82,7 @@ async def get_client():
     return pn.state.cache["dask-client"]
 ```
 
-- We can submit Fibonacci tasks asynchronusly via
+- We can submit Fibonacci tasks asynchronously via
 
 ```python
 client = await get_client()
