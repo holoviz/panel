@@ -23,11 +23,13 @@ import param
 from ..io.resources import CDN_DIST
 from ..io.state import state
 from ..layout import Column, Row
-from ..pane.base import PaneBase, panel as _panel
+from ..pane.base import PaneBase, ReplacementPane, panel as _panel
 from ..pane.image import (
     PDF, FileBase, Image, ImageBase,
 )
-from ..pane.markup import HTML, DataFrame, HTMLBasePane
+from ..pane.markup import (
+    HTML, DataFrame, HTMLBasePane, Markdown,
+)
 from ..pane.media import Audio, Video
 from ..param import ParamFunction
 from ..viewable import Viewable
@@ -230,6 +232,7 @@ class ChatMessage(PaneBase):
             params["reaction_icons"] = ChatReactionIcons(
                 options=reaction_icons, width=15, height=15
             )
+        self._internal = True
         super().__init__(object=object, **params)
         self.reaction_icons.link(
             self, value="reactions", visible="show_reaction_icons",
@@ -435,41 +438,46 @@ class ChatMessage(PaneBase):
                 contents = contents.decode("utf-8")
         return contents, renderer
 
-    def _set_default_attrs(self, obj):
+    def _set_params(self, obj, **params):
         """
         Set the sizing mode and height of the object.
         """
         if hasattr(obj, "objects"):
-            obj._stylesheets = self._stylesheets
+            params['css_classes'] = (
+                [css for css in obj.stylesheets if css not in self._stylesheets] +
+                self._stylesheets
+            )
             for subobj in obj.objects:
                 self._set_default_attrs(subobj)
-            return None
+            obj.param.update(params)
+            return
 
         is_markup = isinstance(obj, HTMLBasePane) and not isinstance(obj, FileBase)
         if is_markup:
             if len(str(obj.object)) > 0:  # only show a background if there is content
-                obj.css_classes = [*obj.css_classes, "message"]
-            obj.sizing_mode = None
+                params['css_classes'] = [*(css for css in obj.css_classes if css != "message"), "message"]
+            params['sizing_mode'] = None
         else:
             if obj.sizing_mode is None and not obj.width:
-                obj.sizing_mode = "stretch_width"
+                params['sizing_mode'] = "stretch_width"
 
             if obj.height is None and not isinstance(obj, ParamFunction):
-                obj.height = 500
-        return obj
+                params['height'] = 500
+        obj.param.update(params)
 
     @staticmethod
     def _is_widget_renderer(renderer):
         return isinstance(renderer, type) and issubclass(renderer, Widget)
 
-    def _create_panel(self, value):
+    def _create_panel(self, value, old=None):
         """
         Create a panel object from the value.
         """
         if isinstance(value, Viewable):
+            self._internal = False
             return value
 
-        renderer = _panel
+        renderer = None
         if isinstance(value, _FileInputMessage):
             contents = value.contents
             mime_type = value.mime_type
@@ -484,7 +492,8 @@ class ChatMessage(PaneBase):
                 pass
 
         renderers = self.renderers.copy() or []
-        renderers.append(renderer)
+        if renderer is not None:
+            renderers.append(renderer)
         for renderer in renderers:
             try:
                 if self._is_widget_renderer(renderer):
@@ -496,9 +505,17 @@ class ChatMessage(PaneBase):
             except Exception:
                 pass
         else:
+            if isinstance(old, Markdown) and isinstance(value, str):
+                self._set_params(old, object=value)
+                return old
             object_panel = _panel(value)
 
-        self._set_default_attrs(object_panel)
+        self._set_params(object_panel)
+        if type(old) is type(object_panel) and self._internal:
+            ReplacementPane._recursive_update(old, object_panel)
+            return object_panel
+
+        self._internal = True
         return object_panel
 
     def _render_avatar(self) -> HTML | Image:
@@ -548,7 +565,10 @@ class ChatMessage(PaneBase):
         """
 
     def _update_object_pane(self, event=None):
-        self._center_row[0] = self._object_panel = self._create_panel(self.object)
+        old = self._object_panel
+        self._object_panel = new = self._create_panel(self.object, old=old)
+        if old is not new:
+            self._center_row[0] = new
 
     @param.depends("avatar_lookup", "user", watch=True)
     def _update_avatar(self):

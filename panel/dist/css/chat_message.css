@@ -91,7 +91,6 @@
 .markdown {
   padding-block: 0px;
   padding-inline: 15px;
-  width: calc(100% - 15px);
 }
 
 .avatar.rotating-placeholder {
