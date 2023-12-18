@@ -1,12 +1,10 @@
-# Scaling Panel apps with Dask
+# Scaling with Dask
 
-This guide demonstrates how you can use [Dask](https://www.dask.org/) to **scale your apps to bigger datasets, bigger calculations and more users**.
+This guide demonstrates how you can *offload tasks* to [Dask](https://www.dask.org/) to **scale your apps to bigger datasets, bigger calculations and more users**.
 
 <img src="../../_static/logos/dask-logo.svg" style="max-height:30px;margin-right:10px"></img> <img src="../../_static/logo_horizontal_light_theme.png" style="max-height:30px"></img>
 
----
-
-Panel supports `async` and `await`. This means you can easily **offload large computations to your Dask cluster asynchronously and keep your app responsive while you `await` the results**. Please note that off loading the computations to the Dask cluster adds ~250msec of overhead and thus is not suitable for all kinds of use cases.
+Panel supports `async` and `await`. This means you can easily **offload large computations to your Dask cluster asynchronously and keep your app responsive while you `await` the results**. Please note that off loading the computations to the Dask cluster can add ~250msec of overhead and thus is not suitable for all kinds of use cases.
 
 ## Installation
 
@@ -18,7 +16,7 @@ pip install panel hvplot dask[distributed]
 
 ## Start the Cluster
 
-For development, testing and many use cases a `LocalCluster` is more than fine and will allow you to leverage all the CPUs on your machine. When you want to scale out to an entire cluster will you can switch to a non-local cluster. To avoid any issues when combining Panel and Dask we recommend starting the `LocalCluster`
+For development, testing and many use cases a [`LocalCluster`](https://docs.dask.org/en/stable/deploying-python.html#localcluster) is more than fine and will allow you to leverage all the CPUs on your machine. When you want to scale out to an entire cluster will you can switch to a non-local cluster. To avoid any issues when combining Panel and Dask we recommend starting the `LocalCluster`
 separately from the Dask `Client` and your Panel app.
 
 ```python
@@ -42,7 +40,7 @@ $ python cluster.py
 tcp://127.0.0.1:64719
 ```
 
-You can now open the [Dask Dashboard](https://docs.dask.org/en/stable/dashboard.html) at http://localhost:8787/status.
+You can now open the [Dask Dashboard](https://docs.dask.org/en/stable/dashboard.html) at [http://localhost:8787/status](http://localhost:8787/status).
 
 So far there is not a lot to see here:
 
@@ -56,7 +54,7 @@ The Dask `Client` will serialize any *tasks* and send them to the Dask `Cluster`
 
 In this section we will define a Panel app to *submit* and *monitor* Fibonacci tasks.
 
-Let's start by defining some *fibonacci* tasks in a `tasks.py` file:
+Let's start by defining the *fibonacci* tasks in a `tasks.py` file:
 
 ```python
 # tasks.py

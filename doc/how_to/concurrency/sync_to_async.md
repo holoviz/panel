@@ -4,7 +4,7 @@ Running your bound, synchronous functions asynchronously can be an easy way to m
 
 ## Asyncify
 
-This example will show how to make your app responsive by running a sync, cpu bound function asynchronously. We will be using [asyncer.asyncify](https://asyncer.tiangolo.com/tutorial/asyncify/) by Tiangolo. You can install the package via `pip install asyncer`.
+This example will show how to make your app responsive by running a sync, cpu bound function asynchronously. We will be using [asyncer](https://asyncer.tiangolo.com) by Tiangolo. You can install the package via `pip install asyncer`.
 
 ```python
 import numpy as np
@@ -31,10 +31,10 @@ pn.Column(widget.rx() + 1, create_result).servable()
     Your browser does not support the video tag.
 </video>
 
-Without `asyncify` the app would have been unresponsive for 5-10 seconds while loading.
+Without [`asyncify`](https://asyncer.tiangolo.com/tutorial/asyncify/) the app would have been unresponsive for 5-10 seconds while loading.
 
-`asyncify` works well for IO bound functions as well as for CPU bound functions that releases the GIL.
+[`asyncify`](https://asyncer.tiangolo.com/tutorial/asyncify/) works well for IO bound functions as well as for CPU bound functions that releases the GIL.
 
 ## Dask
 
-If you run many sync, cpu bound functions you may consider offloading your functions asynchronously to an external compute engine like [Dask](https://www.dask.org/). See our [Dask how-to Guide](../performance/dask.md).
+If you run many cpu bound functions you may consider offloading your functions asynchronously to an external compute engine like [Dask](https://www.dask.org/). See our [Dask how-to Guide](../performance/dask.md).

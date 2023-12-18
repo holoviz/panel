@@ -2,11 +2,11 @@
 
 This guide addresses how to leverage asynchronous callbacks to run I/O bound tasks in parallel. This technique is also beneficial for CPU bound tasks that release the GIL.
 
-You can use `async` function with event handlers like `on_click` as well as the reactive apis `.watch`, `.depends` and `.bind`.
+You can use `async` function with event handlers like `on_click` as well as the reactive apis `.bind`, `.depends` and `.watch`.
 
 You can also schedule asynchronous periodic callbacks with `pn.state.add_periodic_callback` as well as run `async` functions directly with `pn.state.execute`.
 
-```{admonition} Prerequisites
+```{admonition} Asyncio
 For a quick overview of the most important `asyncio` concepts see [the Python documentation](https://docs.python.org/3/library/asyncio-task.html).
 ```
 
@@ -39,33 +39,6 @@ button.on_click(run_async)
 pn.Row(button, text)
 ```
 
-## `.watch` and `pn.io.with_lock`
-
-```{pyodide}
-import numpy as np
-from bokeh.plotting import figure
-from bokeh.models import ColumnDataSource
-
-button = pn.widgets.Button(name='Click me!')
-
-p = figure(width=500, height=300)
-cds = ColumnDataSource(data={'x': [0], 'y': [0]})
-p.line(x='x', y='y', source=cds)
-pane = pn.pane.Bokeh(p)
-
-@pn.io.with_lock
-async def stream(event):
-    await asyncio.sleep(1)
-    x, y = cds.data['x'][-1], cds.data['y'][-1]
-    cds.stream({'x': list(range(x+1, x+6)), 'y': y+np.random.randn(5).cumsum()})
-    pane.param.trigger('object')
-
-# Equivalent to `.on_click` but shown
-button.param.watch(stream, 'clicks')
-
-pn.Row(button, pane)
-```
-
 ## `.bind`
 
 ```{pyodide}
@@ -87,7 +60,9 @@ pn.Column(widget, pn.bind(get_img, widget))
 
 In this example Panel will invoke the function and update the output when the function returns while leaving the process unblocked for the duration of the `aiohttp` request.
 
-The equivalent can be written using `.param.watch` as:
+## `.watch`
+
+The app from the section above can be written using `.param.watch` as:
 
 ```{pyodide}
 widget = pn.widgets.IntSlider(start=0, end=10)
@@ -113,6 +88,33 @@ pn.Column(widget, image)
 ```
 
 In this example Param will await the asynchronous function and the image will be updated when the request completes.
+
+## Bokeh models with `pn.io.with_lock`
+
+```{pyodide}
+import numpy as np
+from bokeh.plotting import figure
+from bokeh.models import ColumnDataSource
+
+button = pn.widgets.Button(name='Click me!')
+
+p = figure(width=500, height=300)
+cds = ColumnDataSource(data={'x': [0], 'y': [0]})
+p.line(x='x', y='y', source=cds)
+pane = pn.pane.Bokeh(p)
+
+@pn.io.with_lock
+async def stream(event):
+    await asyncio.sleep(1)
+    x, y = cds.data['x'][-1], cds.data['y'][-1]
+    cds.stream({'x': list(range(x+1, x+6)), 'y': y+np.random.randn(5).cumsum()})
+    pane.param.trigger('object')
+
+# Equivalent to `.on_click` but shown
+button.param.watch(stream, 'clicks')
+
+pn.Row(button, pane)
+```
 
 ## Related Resources
 
