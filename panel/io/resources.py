@@ -393,6 +393,8 @@ def bundle_resources(roots, resources, notebook=False, reloading=False, enable_m
     elif mode == "server":
         for bundle in extensions:
             server_url = bundle.server_url
+            if not isinstance(server_url, str):  # Bokeh 3.4.0.dev4 uses bokeh.embed.bundle.URL
+                server_url = server_url.url
             if resources.root_url and not resources.absolute:
                 server_url = server_url.replace(resources.root_url, '', 1)
                 if state.rel_path:
@@ -600,6 +602,8 @@ class Resources(BkResources):
         new_resources = []
         cdn_base = f'{config.npm_cdn}/@holoviz/panel@{JS_VERSION}/dist/'
         for resource in resources:
+            if not isinstance(resource, str):  # Bokeh 3.4.0.dev4 uses bokeh.embed.bundle.URL
+                resource = resource.url
             resource = resource.replace('https://unpkg.com', config.npm_cdn)
             if resource.startswith(cdn_base):
                 resource = resource.replace(cdn_base, CDN_DIST)
