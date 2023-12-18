@@ -208,8 +208,6 @@ class ChatMessage(PaneBase):
     user = param.Parameter(default="User", doc="""
         Name of the user who sent the message.""")
 
-    _object_panel = param.Parameter(allow_refs=False, doc="The rendered object panel.")
-
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_message.css"]
 
     # Declares whether Pane supports updates to the Bokeh model
@@ -256,6 +254,7 @@ class ChatMessage(PaneBase):
         self.param.watch(self._update_avatar_pane, "avatar")
 
         self._object_panel = self._create_panel(self.object)
+        self._update_chat_copy_icon()
         self._center_row = Row(
             self._object_panel,
             self.reaction_icons,
@@ -448,7 +447,7 @@ class ChatMessage(PaneBase):
                 self._stylesheets
             )
             for subobj in obj.objects:
-                self._set_default_attrs(subobj)
+                self._set_params(subobj)
             obj.param.update(params)
             return
 
@@ -569,6 +568,7 @@ class ChatMessage(PaneBase):
         self._object_panel = new = self._create_panel(self.object, old=old)
         if old is not new:
             self._center_row[0] = new
+        self._update_chat_copy_icon()
 
     @param.depends("avatar_lookup", "user", watch=True)
     def _update_avatar(self):
@@ -585,11 +585,12 @@ class ChatMessage(PaneBase):
         else:
             self.avatar = self._avatar_lookup(self.user)
 
-    @param.depends("_object_panel", watch=True)
     def _update_chat_copy_icon(self):
         object_panel = self._object_panel
         if isinstance(object_panel, HTMLBasePane):
             object_panel = object_panel.object
+        elif isinstance(object_panel, Widget):
+            object_panel = object_panel.value
         if isinstance(object_panel, str) and self.show_copy_icon:
             self.chat_copy_icon.value = object_panel
             self.chat_copy_icon.visible = True
