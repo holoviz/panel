@@ -69,6 +69,22 @@ Discover how to run your sync callbacks asynchronously to handle I/O and cpu bou
 
 ::::
 
+## Scaling via an external compute engine
+
+You can also scale your application by offloading your compute heavy tasks to an external compute engine like [Dask](https://www.dask.org/). Please note that this may add additional overhead of several 100ms to your tasks.
+
+::::{grid} 1 2 2 2
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`versions;2.5em;sd-mr-1 sd-animate-grow50` Dask
+:link: dask
+:link-type: doc
+
+Discover how-to configure and use Dask to scale your Panel application
+:::
+
+::::
+
 ```{toctree}
 :titlesonly:
 :hidden:
@@ -77,5 +93,8 @@ Discover how to run your sync callbacks asynchronously to handle I/O and cpu bou
 load_balancing
 processes
 threading
-async
+manual_threading
+../callbacks/async
+sync_to_async
+dask
 ```

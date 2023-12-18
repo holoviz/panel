@@ -4,7 +4,7 @@ Running your bound, synchronous functions asynchronously can be an easy way to m
 
 ## Asyncify
 
-This example will show how to make your app responsive by running a sync, cpu bound function asynchronously. We will be using [asyncer.asyncify](https://asyncer.tiangolo.com/tutorial/asyncify/) by Tiangolo.
+This example will show how to make your app responsive by running a sync, cpu bound function asynchronously. We will be using [asyncer.asyncify](https://asyncer.tiangolo.com/tutorial/asyncify/) by Tiangolo. You can install the package via `pip install asyncer`.
 
 ```python
 import numpy as np
@@ -27,7 +27,7 @@ pn.Column(widget.rx() + 1, create_result).servable()
 ```
 
 <video controls="" poster="../../_static/images/asyncify.png">
-    <source src="https://github.com/holoviz/panel/assets/42288570/d6c3ae5b-15a6-4427-9f9e-6a085e425f9" type="video/mp4" style="max-height: 400px; max-width: 100%;">
+    <source src="https://assets.holoviz.org/panel/how_to/concurrency/asyncify.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
     Your browser does not support the video tag.
 </video>
 
