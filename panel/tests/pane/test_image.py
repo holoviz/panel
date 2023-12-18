@@ -74,11 +74,12 @@ twopixel = dict(\
           b'WNYYP/h4uMAFL0EwlEn99gAAAAASUVORK5CYIA=='
           )
 
-def test_imgshape():
-    for t in [PNG, JPG, GIF, ICO, WebP, ]:
-        w,h = t._imgshape(b64decode(twopixel[t.name.lower()]))
-        assert w == 2
-        assert h == 1
+
+@pytest.mark.parametrize('t', [PNG, JPG, GIF, ICO, WebP], ids=lambda t: t.name.lower())
+def test_imgshape(t):
+    w, h = t._imgshape(b64decode(twopixel[t.name.lower()]))
+    assert w == 2
+    assert h == 1
 
 def test_load_from_byteio():
     """Testing a loading a image from a ByteIo"""
