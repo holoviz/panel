@@ -35,7 +35,7 @@ class PlayerBase(Widget):
     show_loop_controls = param.Boolean(default=True, doc="""
         Whether the loop controls radio buttons are shown""")
 
-    show_value = param.Boolean(default=True, doc="""
+    show_value = param.Boolean(default=False, doc="""
         Whether to show the widget value""")
 
     step = param.Integer(default=1, doc="""
@@ -43,9 +43,10 @@ class PlayerBase(Widget):
 
     height = param.Integer(default=80)
 
-    value_location = param.String(default="top_center", allow_None=True, doc="""
+    value_location = param.ObjectSelector(
+        objects=["top_left", "top_center", "top_right"], doc="""
         Location to display the value of the slider
-        ("top_left" "top_center", "top_right")""")
+        ("top_left", "top_center", "top_right")""")
 
     width = param.Integer(default=510, allow_None=True, doc="""
       Width of this component. If sizing_mode is set to stretch

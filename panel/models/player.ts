@@ -96,6 +96,8 @@ export class PlayerView extends WidgetView {
         this.groupEl.removeChild(this.loop_state)
       }
     })
+    this.connect(this.model.properties.show_value.change, () => this.update_title())
+
   }
 
   toggle_disable() {
@@ -312,6 +314,7 @@ export class PlayerView extends WidgetView {
     this.titleEl.style.display = hide_header ? "none" : ""
 
     if (!hide_header) {
+      this.titleEl.style.visibility = 'visible';
       const {title} = this.model
       if (title != null && title.length > 0) {
         if (this.contains_tex_string(title)) {
@@ -325,6 +328,9 @@ export class PlayerView extends WidgetView {
 
         this.titleEl.appendChild(span({class: 'pn-player-value'}, to_string(this.model.value)))
       }
+    }
+    else{
+      this.titleEl.style.visibility = 'hidden';
     }
   }
 
