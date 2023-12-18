@@ -16,10 +16,12 @@ This micro-release fixes a large number of issues, applies some performance opti
 - Replace `Player` widget unicode icons with SVG for more consistency ([#6030](https://github.com/holoviz/panel/pull/6030))
 - Elaborate on `ChatInterface` callback exception summary ([#6046](https://github.com/holoviz/panel/pull/6046))
 - Add `ToggleIcon` widget ([#6034](https://github.com/holoviz/panel/pull/6034))
-- Use minified `Tabulator.js` (#6060)
-- Support rendering `GeoDataFrame` and `GeoSeries` in `DataFrame` pane ([#6061])
-- Optimize rendering of `ChatMessage` (#6069)
-- Add bottom padding to `MaterialTemplate` (#6075)
+- Use minified `Tabulator.js` ([#6060]https://github.com/holoviz/panel/pull/6060))
+- Support rendering `GeoDataFrame` and `GeoSeries` in `DataFrame` pane ([#6061](https://github.com/holoviz/panel/pull/6061))
+- Optimize rendering of `ChatMessage` ([#6069](https://github.com/holoviz/panel/pull/6069))
+- Apply smaller  optimizations for `Viewable` and `ChatMessage` ([#6074](https://github.com/holoviz/panel/pull/6074))
+- Add bottom padding to `MaterialTemplate` ([#6075](https://github.com/holoviz/panel/pull/6075))
+- Update mapbox-gl version for `DeckGL` pane ([#6077](https://github.com/holoviz/panel/pull/6077))
 
 ## Bug fixes
 

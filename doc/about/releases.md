@@ -23,6 +23,7 @@ This micro-release fixes a large number of issues, applies some performance opti
 - Optimize rendering of `ChatMessage` ([#6069](https://github.com/holoviz/panel/pull/6069))
 - Apply smaller  optimizations for `Viewable` and `ChatMessage` ([#6074](https://github.com/holoviz/panel/pull/6074))
 - Add bottom padding to `MaterialTemplate` ([#6075](https://github.com/holoviz/panel/pull/6075))
+- Update mapbox-gl version for `DeckGL` pane ([#6077](https://github.com/holoviz/panel/pull/6077))
 
 ## Bug fixes
 
