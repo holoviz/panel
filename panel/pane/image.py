@@ -497,9 +497,9 @@ class PDF(FileBase):
         html = f'<embed src="{obj}{page}" width={w!r} height={h!r} type="application/pdf">'
         return dict(text=escape(html))
 
-class WEBP(ImageBase):
+class WebP(ImageBase):
     """
-    The `WEBP` pane embeds a .webp image file in a panel if
+    The `WebP` pane embeds a .webp image file in a panel if
     provided a local path, or will link to a remote image if provided
     a URL.
 
@@ -507,8 +507,8 @@ class WEBP(ImageBase):
 
     :Example:
 
-    >>> WEBP(
-    ...     'https://www.gstatic.com/webp/gallery/4.sm.webp',
+    >>> WebP(
+    ...     'https://assets.holoviz.org/panel/samples/webp_sample.webp',
     ...     alt_text='A nice tree',
     ...     link_url='https://en.wikipedia.org/wiki/WebP',
     ...     width=500,
