@@ -68,6 +68,7 @@ export class PlayerView extends WidgetView {
   model: Player
 
   protected buttonEl: HTMLDivElement
+  protected display_value: HTMLLabelElement
   protected groupEl: HTMLDivElement
   protected sliderEl: HTMLInputElement
   protected loop_state: HTMLFormElement
@@ -79,6 +80,8 @@ export class PlayerView extends WidgetView {
 
   connect_signals(): void {
     super.connect_signals()
+    this.connect(this.model.properties.name.change, () => this.set_display_value())
+    this.connect(this.model.properties.value_location.change, () => this.set_value_location())
     this.connect(this.model.properties.direction.change, () => this.set_direction())
     this.connect(this.model.properties.value.change, () => this.render())
     this.connect(this.model.properties.loop_policy.change, () => this.set_loop_state(this.model.loop_policy))
@@ -124,7 +127,12 @@ export class PlayerView extends WidgetView {
     this.groupEl = div()
     this.groupEl.style.display = "flex"
     this.groupEl.style.flexDirection = "column"
-    this.groupEl.style.alignItems = "center"
+
+    // Display Value
+    this.display_value = document.createElement('label');
+    this.display_value.innerHTML = String(this.model.value)
+    this.display_value.style.cssText = "padding: 0 5px 0 5px; user-select:none;"
+    this.set_value_location()
 
     // Slider
     this.sliderEl = document.createElement('input')
@@ -259,6 +267,7 @@ export class PlayerView extends WidgetView {
     this.loop_state.appendChild(reflect)
     this.loop_state.appendChild(reflect_label)
 
+    this.groupEl.appendChild(this.display_value)
     this.groupEl.appendChild(this.sliderEl)
     this.groupEl.appendChild(button_div)
     if (this.model.show_loop_controls)
@@ -270,6 +279,7 @@ export class PlayerView extends WidgetView {
 
   set_frame(frame: number, throttled: boolean = true): void {
     this.model.value = frame
+    this.set_display_value()
     if (throttled)
       this.model.value_throttled = frame
     if (this.sliderEl.value != String(frame))
@@ -284,6 +294,30 @@ export class PlayerView extends WidgetView {
         return button.value;
     }
     return "once"
+  }
+
+  set_display_value(): void {
+    console.log('set_display_value');
+    let name = String(this.model.name)
+    let val = String(this.model.value)
+    if (name != "")
+      this.display_value.innerHTML = "<b>${name}</b>:${val}"
+    else
+      this.display_value.innerHTML = val
+  }
+
+  set_value_location(): void {
+    switch (this.model.value_location){
+      case 'top_left':
+        this.display_value.style.textAlign = "left";
+        break;
+      case 'top_center':
+        this.display_value.style.textAlign = "center";
+        break;
+      case 'top_right':
+        this.display_value.style.textAlign = "right";
+        break;
+    }
   }
 
   set_loop_state(state: string): void {
@@ -409,6 +443,7 @@ export const LoopPolicy = Enum("once", "loop", "reflect")
 export namespace Player {
   export type Attrs = p.AttrsOf<Props>
   export type Props = Widget.Props & {
+    //name: p.Property<string>
     direction: p.Property<number>
     interval: p.Property<number>
     start: p.Property<number>
@@ -416,6 +451,7 @@ export namespace Player {
     step: p.Property<number>
     loop_policy: p.Property<typeof LoopPolicy["__type__"]>
     value: p.Property<any>
+    value_location: p.Property <string>
     value_throttled: p.Property<any>
     show_loop_controls: p.Property<boolean>
   }
@@ -437,7 +473,8 @@ export class Player extends Widget {
   static {
     this.prototype.default_view = PlayerView
 
-    this.define<Player.Props>(({ Boolean, Int }) => ({
+    this.define<Player.Props>(({ Boolean, Int, String }) => ({
+      //name: [String, ""],
       direction: [Int, 0],
       interval: [Int, 500],
       start: [Int, 0],
@@ -445,6 +482,7 @@ export class Player extends Widget {
       step: [Int, 1],
       loop_policy: [LoopPolicy, "once"],
       value: [Int, 0],
+      value_location: [String, "top_center"],
       value_throttled: [Int, 0],
       show_loop_controls: [Boolean, true],
     }))
