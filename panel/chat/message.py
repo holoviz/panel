@@ -206,7 +206,7 @@ class ChatMessage(PaneBase):
     user = param.Parameter(default="User", doc="""
         Name of the user who sent the message.""")
 
-    _object_panel = param.Parameter(doc="The rendered object panel.")
+    _object_panel = param.Parameter(allow_refs=False, doc="The rendered object panel.")
 
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_message.css"]
 
@@ -250,7 +250,7 @@ class ChatMessage(PaneBase):
             visible=self.param.show_avatar,
             sizing_mode=None,
         )
-        self.param.watch(self._update_avatar, "avatar")
+        self.param.watch(self._update_avatar_pane, "avatar")
 
         self._object_panel = self._create_panel(self.object)
         self._center_row = Row(
@@ -260,7 +260,7 @@ class ChatMessage(PaneBase):
             stylesheets=self._stylesheets,
             sizing_mode=None
         )
-        self.param.watch(self._update_object, "object")
+        self.param.watch(self._update_object_pane, "object")
 
         self._user_html = HTML(
             self.param.user, height=20, css_classes=["name"],
@@ -531,21 +531,23 @@ class ChatMessage(PaneBase):
                 avatar_pane = HTML(avatar, **avatar_params)
         return avatar_pane
 
-    def _update_avatar(self, event):
+    def _update_avatar_pane(self, event=None):
         new_avatar = self._render_avatar()
         old_type = type(self._left_col[0])
         new_type = type(new_avatar)
         if isinstance(event.old, (HTML, ImageBase)) or new_type is not old_type:
             self._left_col[:] = [new_avatar]
         else:
-            self._left_col[0].param.update(new_avatar.param.values())
+            params = new_avatar.param.values()
+            del params['name']
+            self._left_col[0].param.update(**params)
 
     def _update(self, ref, old_models):
         """
         Internals will be updated inplace.
         """
 
-    def _update_object(self):
+    def _update_object_pane(self, event=None):
         self._center_row[0] = self._object_panel = self._create_panel(self.object)
 
     @param.depends("avatar_lookup", "user", watch=True)

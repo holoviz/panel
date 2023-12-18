@@ -32,7 +32,7 @@ class TestChatMessage:
         columns = message._composite.objects
         assert len(columns) == 2
 
-        avatar_pane = columns[0][0].object()
+        avatar_pane = columns[0][0]
         assert isinstance(avatar_pane, HTML)
         assert avatar_pane.object == "🧑"
 
@@ -44,7 +44,7 @@ class TestChatMessage:
         center_row = columns[1][1]
         assert isinstance(center_row, Row)
 
-        object_pane = center_row[0].object()
+        object_pane = center_row[0]
         assert isinstance(object_pane, Markdown)
         assert object_pane.object == "ABC"
 
@@ -75,20 +75,20 @@ class TestChatMessage:
     def test_update_avatar(self):
         message = ChatMessage(avatar="A")
         columns = message._composite.objects
-        avatar_pane = columns[0][0].object()
+        avatar_pane = columns[0][0]
         assert isinstance(avatar_pane, HTML)
         assert avatar_pane.object == "A"
 
         message.avatar = "B"
-        avatar_pane = columns[0][0].object()
+        avatar_pane = columns[0][0]
         assert avatar_pane.object == "B"
 
         message.avatar = "❤️"
-        avatar_pane = columns[0][0].object()
+        avatar_pane = columns[0][0]
         assert avatar_pane.object == "❤️"
 
         message.avatar = "https://assets.holoviz.org/panel/samples/jpg_sample.jpg"
-        avatar_pane = columns[0][0].object()
+        avatar_pane = columns[0][0]
         assert isinstance(avatar_pane, Image)
         assert (
             avatar_pane.object
@@ -96,13 +96,13 @@ class TestChatMessage:
         )
 
         message.show_avatar = False
-        avatar_pane = columns[0][0].object()
-        assert not avatar_pane.visible
+        avatar_layout = columns[0]
+        assert not avatar_layout.visible
 
         message.avatar = SVG(
             "https://tabler-icons.io/static/tabler-icons/icons/user.svg"
         )
-        avatar_pane = columns[0][0].object()
+        avatar_pane = columns[0][0]
         assert isinstance(avatar_pane, SVG)
 
     def test_update_user(self):
@@ -123,19 +123,19 @@ class TestChatMessage:
     def test_update_object(self):
         message = ChatMessage(object="Test")
         columns = message._composite.objects
-        object_pane = columns[1][1][0].object()
+        object_pane = columns[1][1][0]
         assert isinstance(object_pane, Markdown)
         assert object_pane.object == "Test"
 
         message.object = TextInput(value="Also testing...")
-        object_pane = columns[1][1][0].object()
+        object_pane = columns[1][1][0]
         assert isinstance(object_pane, TextInput)
         assert object_pane.value == "Also testing..."
 
         message.object = _FileInputMessage(
             contents=b"I am a file", file_name="test.txt", mime_type="text/plain"
         )
-        object_pane = columns[1][1][0].object()
+        object_pane = columns[1][1][0]
         assert isinstance(object_pane, Markdown)
         assert object_pane.object == "I am a file"
 
