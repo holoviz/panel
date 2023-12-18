@@ -43,11 +43,12 @@ from .parameters import (  # noqa
 
 log = logging.getLogger('panel.util')
 
-bokeh_version = Version(bokeh.__version__)
+bokeh_version = Version(Version(bokeh.__version__).base_version)
 
 # Bokeh serializes NaT as this value
 # Discussion on why https://github.com/bokeh/bokeh/pull/10449/files#r479988469
-BOKEH_JS_NAT = -9223372036854776.0
+# Improved in Bokeh 3.4: https://github.com/bokeh/bokeh/pull/13606
+BOKEH_JS_NAT = -9223372036854776.0 if bokeh_version < Version("3.4") else np.nan
 
 PARAM_NAME_PATTERN = re.compile(r'^.*\d{5}$')
 
