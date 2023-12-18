@@ -142,7 +142,7 @@ jobs:
         with:
           name: ui_test_suite
           python-version: 3.9
-          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
+          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
           envs: "-o recommended -o tests -o build"
           cache: true
           nodejs: true
