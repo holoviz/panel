@@ -52,7 +52,7 @@ jobs:
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
-          channels: pyviz/label/dev,numba,bokeh,conda-forge,nodefaults
+          channels: pyviz/label/dev,numba,bokeh/label/dev,conda-forge,nodefaults
           conda-update: true
           nodejs: true
           envs: -o examples -o recommended -o tests -o build
