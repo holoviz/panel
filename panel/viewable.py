@@ -696,7 +696,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         super().__init__(**params)
         self._hooks = hooks
 
-        self._update_loading()
+        if self.loading:
+            self._update_loading()
         self._update_background()
         self._update_design()
         self._internal_callbacks.extend([
