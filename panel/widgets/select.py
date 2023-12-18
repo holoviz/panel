@@ -23,7 +23,7 @@ from bokeh.models.widgets import (
 )
 
 from ..io.resources import CDN_DIST
-from ..layout import Column
+from ..layout import Column, ListLike
 from ..models import (
     CheckboxButtonGroup as _BkCheckboxButtonGroup, CustomSelect,
     RadioButtonGroup as _BkRadioButtonGroup, SingleSelect as _BkSingleSelect,
@@ -356,6 +356,9 @@ class NestedSelect(CompositeWidget):
         is used as the type of widget, and any corresponding widget keyword arguments.
         Must be specified if options is callable.""")
 
+    layout = param.ClassSelector(default=Column, class_=ListLike, is_instance=False, doc="""
+        The layout of the widgets.""")
+
     disabled = param.Boolean(default=False, doc="""
         Whether the widget is disabled.""")
 
@@ -365,8 +368,6 @@ class NestedSelect(CompositeWidget):
 
     _levels = param.List(doc="""
         The internal rep of levels to prevent overwriting user provided levels.""")
-
-    _composite_type = Column
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -466,7 +467,10 @@ class NestedSelect(CompositeWidget):
                     f"{type(options).__name__}"
                 )
 
-        self._composite[:] = self._widgets
+        if isinstance(self._composite, self.layout):
+            self._composite[:] = self._widgets
+        else:
+            self._composite = self.layout(*self._widgets)
 
         if self.options is not None:
             self.value = self._gather_values_from_widgets()
