@@ -5,9 +5,10 @@ set -euxo pipefail
 git status
 
 export SETUPTOOLS_ENABLE_FEATURES="legacy-editable"
-python -m build .
+python -m build -w .
 
 git diff --exit-code
 
-export VERSION="$(echo "$(ls dist/*.whl)" | cut -d- -f2)"
+VERSION=$(find dist -name "*.whl" -exec basename {} \; | cut -d- -f2)
+export VERSION
 conda build conda.recipe/ --no-anaconda-upload --no-verify
