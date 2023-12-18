@@ -228,17 +228,15 @@ class ChatMessage(PaneBase):
         reaction_icons = params.get("reaction_icons", {"favorite": "heart"})
         if isinstance(reaction_icons, dict):
             params["reaction_icons"] = ChatReactionIcons(
-                options=reaction_icons, width=15, height=15
+                options=reaction_icons, width=15, height=15,
+                value=params.get('reactions', []),
             )
         self._internal = True
         super().__init__(object=object, **params)
-        self.reaction_icons.link(
-            self, value="reactions", visible="show_reaction_icons",
-            bidirectional=True
-        )
-        self.param.trigger("reactions", "show_reaction_icons")
+        self.reaction_icons.link(self, value="reactions", bidirectional=True)
+        self.reaction_icons.visible = self.param.show_reaction_icons
         if not self.avatar:
-            self.param.trigger("avatar_lookup")
+            self._update_avatar()
         self._build_layout()
 
     def _build_layout(self):
