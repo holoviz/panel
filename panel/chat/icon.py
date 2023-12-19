@@ -82,12 +82,14 @@ class ChatReactionIcons(CompositeWidget):
             icon.active_icon = self.active_icons.get(option, "")
 
     def _update_value(self, event):
-        icon = event.obj.name
-        value = event.new
-        if value and icon not in self.value:
-            self.value.append(icon)
-        elif not value and icon in self.value:
-            self.value.remove(icon)
+        reaction = event.obj.name
+        icon_value = event.new
+        reactions = self.value.copy()
+        if icon_value and reaction not in self.value:
+            reactions.append(reaction)
+        elif not icon_value and reaction in self.value:
+            reactions.remove(reaction)
+        self.value = reactions
 
 
 class ChatCopyIcon(ReactiveHTML):
