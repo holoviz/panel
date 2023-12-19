@@ -25,7 +25,7 @@ from .layout import HTMLBox
 class DeckGLPlot(HTMLBox):
     """A Bokeh model that wraps around a DeckGL plot and renders it inside a HTMLBox"""
 
-    __css_raw__ = ["https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.css"]
+    __css_raw__ = ["https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css"]
 
     @classproperty
     def __css__(cls):
@@ -38,7 +38,7 @@ class DeckGLPlot(HTMLBox):
         f"{config.npm_cdn}/@loaders.gl/csv@3.1.7/dist/dist.min.js",
         f"{config.npm_cdn}/@loaders.gl/json@3.1.7/dist/dist.min.js",
         f"{config.npm_cdn}/@loaders.gl/3d-tiles@3.1.7/dist/dist.min.js",
-        "https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.js",
+        "https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js",
     ]
 
     @classproperty
@@ -60,7 +60,7 @@ class DeckGLPlot(HTMLBox):
             ("loader-csv", f"{config.npm_cdn}/@loaders.gl/csv@3.1.7/dist/dist.min"),
             ("loader-json", f"{config.npm_cdn}/@loaders.gl/json@3.1.7/dist/dist.min"),
             ("loader-tiles", f"{config.npm_cdn}/@loaders.gl/3d-tiles@3.1.7/dist/dist.min"),
-            ("mapbox-gl", f"{config.npm_cdn}/mapbox-gl@2.6.1/dist/mapbox-gl.min"),
+            ("mapbox-gl", "https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl"),
         ]),
         'exports': {"deck-gl": "deck", "mapbox-gl": "mapboxgl", "h3": "h3"},
         'shim': {

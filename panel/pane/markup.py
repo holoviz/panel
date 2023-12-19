@@ -212,8 +212,9 @@ class DataFrame(HTML):
     def applies(cls, obj: Any) -> float | bool | None:
         module = getattr(obj, '__module__', '')
         name = type(obj).__name__
-        if (any(m in module for m in ('pandas', 'dask', 'streamz')) and
-            name in ('DataFrame', 'Series', 'Random', 'DataFrames', 'Seriess', 'Styler')):
+        if (any(m in module for m in ('pandas', 'dask', 'streamz', 'geopandas', 'spatialpandas')) and
+            name in ('DataFrame', 'Series', 'Random', 'DataFrames',
+                     'Seriess', 'Styler', 'GeoDataFrame', 'GeoSeries')):
             return 0.3
         else:
             return False
