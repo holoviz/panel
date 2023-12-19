@@ -167,6 +167,9 @@ async def _dispatch_msgs(doc, msgs):
         else:
             futures = dispatch_django(conn, msg=msg)
         await _run_write_futures(futures)
+    if not remaining:
+        return
+    await asyncio.sleep(0.01)
     _dispatch_write_task(doc, _dispatch_msgs, doc, remaining)
 
 #---------------------------------------------------------------------
