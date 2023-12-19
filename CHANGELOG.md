@@ -2,9 +2,9 @@
 
 ## Version 1.3.5
 
-Date: 2023-12-15
+Date: 2023-12-18
 
-This micro-release fixes a large number of issues and some regressions introduced in previous micro-releases. The main regressions that were addressed include rendering of ChatMessage reaction icons, the ability to obtain an OAuth `access_token` if it is not a valid JWT token, issues with async callbacks. We are very pleased to welcome new contributors @mitulb, @fazledyn-or, @benbarn313 and @vaniisgh and want to thank them for their contributions. We also want to thank @cdeil for continuing to contribute and the maintainer team including @MarcSkovMadsen, @Hoxbro, @maximlt, @ahuang11, @droumis and @philippjfr for their continued efforts.
+This micro-release fixes a large number of issues, applies some performance optimizations and resolves some regressions introduced in previous micro-releases. The main regressions that were addressed include rendering of `ChatMessage` reaction icons, the ability to obtain an OAuth `access_token` if it is not a valid JWT token, and issues with async callbacks. We are very pleased to welcome new contributors @mitulb, @fazledyn-or, @benbarn313 and @vaniisgh and want to thank them for their contributions. We also want to thank @cdeil for continuing to contribute and the maintainer team including @MarcSkovMadsen, @Hoxbro, @maximlt, @ahuang11, @droumis and @philippjfr for their continued efforts.
 
 ## Enhancements
 
@@ -16,6 +16,12 @@ This micro-release fixes a large number of issues and some regressions introduce
 - Replace `Player` widget unicode icons with SVG for more consistency ([#6030](https://github.com/holoviz/panel/pull/6030))
 - Elaborate on `ChatInterface` callback exception summary ([#6046](https://github.com/holoviz/panel/pull/6046))
 - Add `ToggleIcon` widget ([#6034](https://github.com/holoviz/panel/pull/6034))
+- Use minified `Tabulator.js` ([#6060]https://github.com/holoviz/panel/pull/6060))
+- Support rendering `GeoDataFrame` and `GeoSeries` in `DataFrame` pane ([#6061](https://github.com/holoviz/panel/pull/6061))
+- Optimize rendering of `ChatMessage` ([#6069](https://github.com/holoviz/panel/pull/6069))
+- Apply smaller  optimizations for `Viewable` and `ChatMessage` ([#6074](https://github.com/holoviz/panel/pull/6074))
+- Add bottom padding to `MaterialTemplate` ([#6075](https://github.com/holoviz/panel/pull/6075))
+- Update mapbox-gl version for `DeckGL` pane ([#6077](https://github.com/holoviz/panel/pull/6077))
 
 ## Bug fixes
 

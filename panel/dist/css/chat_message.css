@@ -103,7 +103,6 @@
   display: flex;
   flex-direction: column;
   align-items: start;
-  justify-content: end;
   width: fit-content;
   margin-block: 0px;
   margin-inline: 2px;

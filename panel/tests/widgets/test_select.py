@@ -459,7 +459,7 @@ def test_nested_select_partial_options_set(document, comm):
         },
     }
     select = NestedSelect(options=options)
-    select.options = {"Ben": {}}
+    select.options = {"Ben": []}
     assert select._widgets[0].value == 'Ben'
     assert select._widgets[0].visible
     assert select.value == {0: 'Ben'}
@@ -599,6 +599,63 @@ def test_nested_select_callable_mid_level(document, comm):
     assert select._widgets[2].options == ["Monthly_upper.json", "Monthly_upper.csv"]
     assert select.value == {"time_step": "Monthly", "level_type": "Monthly_upper", "file": "Monthly_upper.json"}
     assert select._max_depth == 3
+
+
+def test_nested_select_dynamic_levels(document, comm):
+    select = NestedSelect(
+        options={
+            "Easy": {"Easy_A": {}, "Easy_B": {}},
+            "Medium": {
+                "Medium_A": {},
+                "Medium_B": {"Medium_B_1": []},
+                "Medium_C": {
+                    "Medium_C_1": ["Medium_C_1_1"],
+                    "Medium_C_2": ["Medium_C_2_1", "Medium_C_2_2"],
+                },
+            },
+            "Hard": {}
+        },
+        levels=["A", "B", "C", "D"],
+    )
+    assert select._widgets[0].visible
+    assert select._widgets[1].visible
+    assert not select._widgets[2].visible
+    assert not select._widgets[3].visible
+
+    assert select._widgets[0].options == ["Easy", "Medium", "Hard"]
+    assert select._widgets[1].options == ["Easy_A", "Easy_B"]
+    assert select._widgets[2].options == []
+    assert select._widgets[3].options == []
+
+    assert select.value == {"A": "Easy", "B": "Easy_A", "C": None, "D": None}
+
+    # now update to Medium
+    select.value = {"A": "Medium", "B": "Medium_C"}
+    assert select._widgets[0].visible
+    assert select._widgets[1].visible
+    assert select._widgets[2].visible
+    assert select._widgets[3].visible
+
+    assert select._widgets[0].options == ["Easy", "Medium", "Hard"]
+    assert select._widgets[1].options == ["Medium_A", "Medium_B", "Medium_C"]
+    assert select._widgets[2].options == ["Medium_C_1", "Medium_C_2"]
+    assert select._widgets[3].options == ["Medium_C_1_1"]
+
+    assert select.value == {"A": "Medium", "B": "Medium_C", "C": "Medium_C_1", "D": "Medium_C_1_1"}
+
+    # now update to Hard
+    select.value = {"A": "Hard"}
+    assert select._widgets[0].visible
+    assert not select._widgets[1].visible
+    assert not select._widgets[2].visible
+    assert not select._widgets[3].visible
+
+    assert select._widgets[0].options == ["Easy", "Medium", "Hard"]
+    assert select._widgets[1].options == []
+    assert select._widgets[2].options == []
+    assert select._widgets[3].options == []
+
+    assert select.value == {"A": "Hard", "B": None, "C": None, "D": None}
 
 
 def test_nested_select_callable_must_have_levels(document, comm):

@@ -35,29 +35,17 @@ class ChatReactionIcons(CompositeWidget):
     >>> ChatReactionIcons(value=["like"], options={"like": "thumb-up", "dislike": "thumb-down"})
     """
 
-    active_icons = param.Dict(
-        default={},
-        doc="""
-        The mapping of reactions to their corresponding active icon names;
-        if not set, the active icon name will default to its "filled" version.""",
-    )
-
-    options = param.Dict(
-        default={"favorite": "heart"},
-        doc="""
-        A key-value pair of reaction values and their corresponding tabler icon names
-        found on https://tabler-icons.io.""",
-    )
-
-    value = param.List(doc="The active reactions.")
+    active_icons = param.Dict(default={}, doc="""
+        The mapping of reactions to their corresponding active icon names.
+        If not set, the active icon name will default to its "filled" version.""")
 
     css_classes = param.List(default=["reaction-icons"], doc="The CSS classes of the widget.")
 
-    _rendered_icons = param.Dict(
-        default={},
-        doc="""
-        The rendered icons mapping reaction to icon.""",
-    )
+    options = param.Dict(default={"favorite": "heart"}, doc="""
+        A key-value pair of reaction values and their corresponding tabler icon names
+        found on https://tabler-icons.io.""")
+
+    value = param.List(doc="The active reactions.")
 
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_reaction_icons.css"]
 
@@ -94,18 +82,21 @@ class ChatReactionIcons(CompositeWidget):
             icon.active_icon = self.active_icons.get(option, "")
 
     def _update_value(self, event):
-        icon = event.obj.name
-        value = event.new
-        if value and icon not in self.value:
-            self.value.append(icon)
-        elif not value and icon in self.value:
-            self.value.remove(icon)
+        reaction = event.obj.name
+        icon_value = event.new
+        reactions = self.value.copy()
+        if icon_value and reaction not in self.value:
+            reactions.append(reaction)
+        elif not icon_value and reaction in self.value:
+            reactions.remove(reaction)
+        self.value = reactions
 
 
 class ChatCopyIcon(ReactiveHTML):
-    value = param.String(default=None, doc="The text to copy to the clipboard.")
 
     fill = param.String(default="none", doc="The fill color of the icon.")
+
+    value = param.String(default=None, doc="The text to copy to the clipboard.")
 
     _template = """
         <div
