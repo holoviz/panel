@@ -43,7 +43,7 @@ class Player(Widget):
 
     value_throttled = Int(0, help="Current throttled value of the player app")
 
-    value_location = String("top_center", help="""Location to display
+    value_location = String("top_left", help="""Location to display
         the value of the slider ("top_left" "top_center", "top_right")""")
 
     step = Int(1, help="Number of steps to advance the player by.")

@@ -87,7 +87,7 @@ class Player(PlayerBase):
 
     :Example:
 
-    >>> Player(name='Player', start=0, end=100, value=32, loop_policy='loop', value_location = 'top_center')
+    >>> Player(name='Player', start=0, end=100, value=32, loop_policy='loop', value_location='top_center')
     """
 
     start = param.Integer(default=0, doc="Lower bound on the slider value")
@@ -142,7 +142,7 @@ class DiscretePlayer(PlayerBase, SelectBase):
     ...     name='Discrete Player',
     ...     options=[2, 4, 8, 16, 32, 64, 128], value=32,
     ...     loop_policy='loop',
-    ...     value_location = 'top_center'
+    ...     value_location='top_left'
     ... )
     """
 
