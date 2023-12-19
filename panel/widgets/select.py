@@ -349,15 +349,17 @@ class NestedSelect(CompositeWidget):
         level that updated and `value` is a dictionary of the current values, containing keys
         up to the level that was updated.""")
 
+    layout = param.Parameter(default=Column, doc="""
+        The layout type of the widgets. If a dictionary, a "type" key can be provided,
+        to specify the layout type of the widgets, and any additional keyword arguments
+        will be used to instantiate the layout.""")
+
     levels = param.List(doc="""
         Either a list of strings or a list of dictionaries. If a list of strings, the strings
         are used as the names of the levels. If a list of dictionaries, each dictionary may
         have a "name" key, which is used as the name of the level, a "type" key, which
         is used as the type of widget, and any corresponding widget keyword arguments.
         Must be specified if options is callable.""")
-
-    layout = param.ClassSelector(default=Column, class_=ListLike, is_instance=False, doc="""
-        The layout of the widgets.""")
 
     disabled = param.Boolean(default=False, doc="""
         Whether the widget is disabled.""")
@@ -427,7 +429,7 @@ class NestedSelect(CompositeWidget):
         options = options(level=level, value=value)
         return options
 
-    @param.depends("options", "levels", watch=True)
+    @param.depends("options", "layout", "levels", watch=True)
     def _update_widgets(self):
         """
         When options is changed, reflect changes on the select widgets.
@@ -467,11 +469,18 @@ class NestedSelect(CompositeWidget):
                     f"{type(options).__name__}"
                 )
 
-        if isinstance(self._composite, self.layout):
-            self._composite[:] = self._widgets
+        if isinstance(self.layout, dict):
+            layout_type = self.layout.pop("type", Column)
+            layout_kwargs = self.layout.copy()
+        elif issubclass(self.layout, ListLike):
+            layout_type = self.layout
+            layout_kwargs = {}
         else:
-            self._composite = self.layout(*self._widgets)
+            raise ValueError(
+                f"The layout must be a subclass of ListLike or dict, got {self.layout!r}."
+            )
 
+        self._composite = layout_type(*self._widgets, **layout_kwargs)
         if self.options is not None:
             self.value = self._gather_values_from_widgets()
 

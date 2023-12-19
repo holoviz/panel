@@ -3,6 +3,7 @@ from collections import OrderedDict
 import numpy as np
 import pytest
 
+from panel.layout import GridBox, Row
 from panel.pane import panel
 from panel.tests.util import mpl_available
 from panel.widgets import (
@@ -666,6 +667,65 @@ def test_nested_select_callable_must_have_levels(document, comm):
         NestedSelect(
             options={"Daily": list_options, "Monthly": list_options},
         )
+
+
+def test_nested_select_layout_listlike(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    select = NestedSelect(
+        options=options,
+        layout=Row,
+    )
+    assert isinstance(select._composite, Row)
+
+
+def test_nested_select_layout_dict(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    select = NestedSelect(
+        options=options,
+        layout={"type": GridBox, "ncols": 2},
+    )
+    assert isinstance(select._composite, GridBox)
+    assert select._composite.ncols == 2
+
+
+def test_nested_select_layout_dynamic_update(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    select = NestedSelect(
+        options=options,
+        layout={"type": GridBox, "ncols": 2},
+    )
+    assert isinstance(select._composite, GridBox)
+    assert select._composite.ncols == 2
+
+    select.layout = Row
+    assert isinstance(select._composite, Row)
 
 
 @pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
