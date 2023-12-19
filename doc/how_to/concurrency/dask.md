@@ -44,7 +44,7 @@ You can now open the [Dask Dashboard](https://docs.dask.org/en/stable/dashboard.
 
 So far there is not a lot to see here:
 
-![Empty Dask Dashboard](../../_static/images/dask-dashboard-empty.jpg)
+![Empty Dask Dashboard](../../_static/images/dask-dashboard-empty.png)
 
 The Dask `Client` will serialize any *tasks* and send them to the Dask `Cluster` for execution. This means that the `Client` and `Cluster` must able to import the same versions of all *tasks* and python package dependencies.
 
