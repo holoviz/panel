@@ -910,7 +910,7 @@ class Column(ListPanel):
     >>> pn.Column(some_widget, some_pane, some_python_object)
     """
 
-    scroll_position = param.Integer(default=None, doc="""
+    scroll_position = param.Integer(default=0, doc="""
         Current scroll position of the Column. Setting this value
         will update the scroll position of the Column. Setting to
         0 will scroll to the top.""")
