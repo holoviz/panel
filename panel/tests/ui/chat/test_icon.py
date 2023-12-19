@@ -22,3 +22,6 @@ def test_toggle_icon_click(page):
 
     page.locator(".ti-thumb-up-filled").click()
     wait_until(lambda: icons.value == [], page)
+
+    page.locator(".ti-thumb-up").click()
+    wait_until(lambda: icons.value == ["like"], page)
