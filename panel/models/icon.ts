@@ -62,6 +62,7 @@ export class ToggleIconView extends ControlView {
   update_icon(): void {
     const icon = this.model.value ? this.get_active_icon() : this.model.icon;
     this.icon_view.model.icon_name = icon;
+    this.icon_view.el.style.lineHeight = '0';
   }
 
   get_active_icon(): string {
