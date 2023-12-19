@@ -23,7 +23,7 @@ from bokeh.models.widgets import (
 )
 
 from ..io.resources import CDN_DIST
-from ..layout import Column, ListLike
+from ..layout.base import Column, ListPanel, NamedListPanel
 from ..models import (
     CheckboxButtonGroup as _BkCheckboxButtonGroup, CustomSelect,
     RadioButtonGroup as _BkRadioButtonGroup, SingleSelect as _BkSingleSelect,
@@ -472,7 +472,7 @@ class NestedSelect(CompositeWidget):
         if isinstance(self.layout, dict):
             layout_type = self.layout.pop("type", Column)
             layout_kwargs = self.layout.copy()
-        elif issubclass(self.layout, ListLike):
+        elif issubclass(self.layout, (ListPanel, NamedListPanel)):
             layout_type = self.layout
             layout_kwargs = {}
         else:
