@@ -163,7 +163,8 @@ class ChatFeed(ListPanel):
 
     message_params = param.Dict(default={}, doc="""
         Params to pass to each ChatMessage, like `reaction_icons`, `timestamp_format`,
-        `show_avatar`, `show_user`, and `show_timestamp`.""")
+        `show_avatar`, `show_user`, and `show_timestamp`. Params passed
+        that are not ChatFeed params will be forwarded into `message_params`.""")
 
     header = param.Parameter(doc="""
         The header of the chat feed; commonly used for the title.
