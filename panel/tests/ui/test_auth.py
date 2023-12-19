@@ -11,7 +11,7 @@ from panel.config import config
 from panel.io.state import state
 from panel.pane import Markdown
 from panel.tests.util import (
-    run_panel_serve, serve_component, unix_only, wait_for_port, wait_until,
+    linux_only, run_panel_serve, serve_component, wait_for_port, wait_until,
     write_file,
 )
 
@@ -19,7 +19,7 @@ pytestmark = pytest.mark.ui
 auth_check = pytest.mark.skipif('PANEL_TEST_AUTH' not in os.environ, reason='PANEL_TEST_AUTH environment variable is required to run this test')
 
 
-@unix_only
+@linux_only
 @pytest.mark.parametrize('prefix', ['', 'prefix'])
 def test_basic_auth(py_file, page, prefix):
     app = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
@@ -42,7 +42,7 @@ def test_basic_auth(py_file, page, prefix):
         expect(page.locator('.markdown')).to_have_text('test_user', timeout=10000)
 
 
-@unix_only
+@linux_only
 @auth_check
 def test_okta_oauth(py_file, page):
     app = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
@@ -73,7 +73,7 @@ def test_okta_oauth(py_file, page):
         expect(page.locator('.markdown')).to_have_text(okta_user, timeout=10000)
 
 
-@unix_only
+@linux_only
 @auth_check
 def test_azure_oauth(py_file, page):
     app = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
@@ -107,7 +107,7 @@ def test_azure_oauth(py_file, page):
         expect(page.locator('.markdown')).to_have_text(f'live.com#{azure_user}', timeout=10000)
 
 
-@unix_only
+@linux_only
 @auth_check
 def test_auth0_oauth(py_file, page):
     app = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
@@ -138,7 +138,7 @@ def test_auth0_oauth(py_file, page):
         expect(page.locator('.markdown')).to_have_text(auth0_user, timeout=10000)
 
 
-@unix_only
+@linux_only
 @pytest.mark.parametrize('logout_template', [None, (pathlib.Path(__file__).parent / 'logout.html').absolute()])
 def test_basic_auth_logout(py_file, page, logout_template):
     app = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
@@ -172,7 +172,7 @@ def test_basic_auth_logout(py_file, page, logout_template):
         assert 'id_token' not in cookies
 
 
-@unix_only
+@linux_only
 def test_authorize_callback_redirect(page):
 
     def authorize(user_info, uri):
@@ -209,7 +209,7 @@ def test_authorize_callback_redirect(page):
         expect(page.locator(".markdown").locator("div")).to_have_text('Page B\n')
 
 
-@unix_only
+@linux_only
 def test_global_authorize_callback(page):
     users, sessions = [], []
     def authorize(user_info, uri):

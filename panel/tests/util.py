@@ -57,7 +57,7 @@ jb_available = pytest.mark.skipif(jupyter_bokeh is None, reason="requires jupyte
 APP_PATTERN = re.compile(r'Bokeh app running at: http://localhost:(\d+)/')
 ON_POSIX = 'posix' in sys.builtin_module_names
 
-unix_only = pytest.mark.skipif(platform.system() != 'Linux', reason="Only supported on Linux")
+linux_only = pytest.mark.skipif(platform.system() != 'Linux', reason="Only supported on Linux")
 
 from panel.pane.alert import Alert
 from panel.pane.markup import Markdown
