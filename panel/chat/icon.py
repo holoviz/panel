@@ -88,6 +88,7 @@ class ChatReactionIcons(CompositeWidget):
             self.value.append(icon)
         elif not value and icon in self.value:
             self.value.remove(icon)
+        self.param.trigger("value")
 
 
 class ChatCopyIcon(ReactiveHTML):
