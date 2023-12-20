@@ -47,6 +47,10 @@
   max-width: calc(100% - 80px);
 }
 
+.header {
+  width: fit-content;
+}
+
 .name {
   font-size: 1em;
   margin-bottom: 0px;
