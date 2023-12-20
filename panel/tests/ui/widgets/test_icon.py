@@ -29,6 +29,28 @@ def test_toggle_icon_click(page):
     wait_until(lambda: len(events) == 1, page)
     assert icon.value
 
+def test_toggle_icon_width_height(page):
+    icon = ToggleIcon(width=100, height=100)
+    serve_component(page, icon)
+
+    # test defaults
+    assert icon.icon == "heart"
+    assert not icon.value
+    icon_element = page.locator('.ti-heart')
+
+    wait_until(lambda: icon_element.bounding_box()['width'] == 100)
+
+def test_toggle_icon_size(page):
+    icon = ToggleIcon(size='120px')
+    serve_component(page, icon)
+
+    # test defaults
+    assert icon.icon == "heart"
+    assert not icon.value
+    icon_element = page.locator('.ti-heart')
+
+    wait_until(lambda: icon_element.bounding_box()['width'] == 120)
+
 def test_toggle_icon_active_icon(page):
     icon = ToggleIcon(icon="thumb-down", active_icon="thumb-up")
     serve_component(page, icon)
