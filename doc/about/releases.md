@@ -2,6 +2,27 @@
 
 See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual summary of the major features added in each release.
 
+## Version 1.3.6
+
+Date: 2023-12-20
+
+This patch release addresses a major regression in server performance introduced in 1.3.5 along with some additional minor fixes. We want to welcome @nenb as a new contributor and want to thank the maintainers @ahuang11, @maximlt and @philippjfr for their contributions to this release.
+
+### Enhancements
+
+- Add explicit size option to ToggleIcon ([#6092](https://github.com/holoviz/panel/pull/6092))
+
+### Bug fixes
+
+- Fix execution of OAuth of callback to refresh `access_token` ([#6084](https://github.com/holoviz/panel/pull/6084))
+- Fix `ChatReactionIcons` alignment and trigger reactions correctly ([#6086](https://github.com/holoviz/panel/pull/6086))
+- Change `Column` `scroll_position` default value from `None` to `0` ([#6082](https://github.com/holoviz/panel/pull/6082))
+- Fix issue with accumulating callbacks on server ([#6091](https://github.com/holoviz/panel/pull/6091))
+- Ensure `ReactiveExpr` renders in pyodide ([#6097](https://github.com/holoviz/panel/pull/6097))
+- Ensure `TooltipIcon` description can be updated ([#6099](https://github.com/holoviz/panel/pull/6099))
+- Fix IPyWidgets rendering in `BootstrapTemplate` ([#6100](https://github.com/holoviz/panel/pull/6100))
+- Fix padding and alignment of `FileDownload` ([#6101](https://github.com/holoviz/panel/pull/6101))
+
 ## Version 1.3.5
 
 Date: 2023-12-18
