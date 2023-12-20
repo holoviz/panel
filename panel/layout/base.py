@@ -958,20 +958,70 @@ class Log(Column):
     loaded_entries = param.Integer(default=20, doc="""
         Minimum number of visible log entries shown initially.""")
 
+
     entries_per_load = param.Integer(default=20, doc="""
         Number of log entries to load each time the user scrolls
         past the scroll_load_threshold.""")
 
-    scroll_load_threshold = param.Integer(default=40, doc="""
+    scroll_load_threshold = param.Integer(default=5, doc="""
         Number of pixels from the top of the log to trigger
         loading more log entries.""")
 
     view_latest = param.Boolean(default=True, doc="""
         Whether to scroll to the latest log entry on init.""")
 
+    scroll = param.Boolean(default=True, doc="""
+        Whether to add scrollbars if the content overflows the size
+        of the container.""")
+
+    _num_entries = param.Integer(default=0, doc="""
+        Number of log entries.""")
+
     _bokeh_model: ClassVar[Type[Model]] = PnLog
 
     _direction = 'vertical'
+
+    @param.depends("objects", watch=True, on_init=True)
+    def _update_num_entries(self):
+        self._num_entries = len(self.objects)
+
+    @param.depends("loaded_entries", watch=True)
+    def _trigger_get_objects(self):
+        self.param.trigger("objects")
+
+    def _get_objects(
+        self, model: Model, old_objects: List[Viewable], doc: Document,
+        root: Model, comm: Optional[Comm] = None
+    ):
+        from ..pane.base import RerenderError, panel
+        new_models, old_models = [], []
+        for i, pane in enumerate(self.objects):
+            pane = panel(pane)
+            self.objects[i] = pane
+
+        for obj in old_objects:
+            if obj not in self.objects:
+                obj._cleanup(root)
+
+        current_objects = list(self.objects)[::-1]
+        ref = root.ref['id']
+        for i, pane in enumerate(current_objects):
+            if i >= self.loaded_entries:
+                break
+
+            if pane in old_objects and ref in pane._models:
+                child, _ = pane._models[root.ref['id']]
+                old_models.append(child)
+            else:
+                try:
+                    child = pane._get_model(doc, root, model, comm)
+                except RerenderError as e:
+                    if e.layout is not None and e.layout is not self:
+                        raise e
+                    e.layout = None
+                    return self._get_objects(model, current_objects[:i], doc, root, comm)
+            new_models.append(child)
+        return new_models[::-1], old_models
 
 
 class WidgetBox(ListPanel):

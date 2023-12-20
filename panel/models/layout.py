@@ -91,9 +91,14 @@ class Log(Column):
     )
 
     scroll_load_threshold = Int(
-        default=40,
+        default=5,
         help=(
             "Number of pixels from the bottom of the log to trigger"
             "loading more entries."
         )
+    )
+
+    _num_entries = Int(
+        default=0,
+        help="Number of entries in the log."
     )
