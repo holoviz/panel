@@ -33,6 +33,7 @@ from bokeh.io import curdoc as _curdoc
 from pyviz_comms import CommManager as _CommManager
 
 from ..util import decode_token, parse_timedelta
+from .browser import BrowserInfo
 from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 
 _state_logger = logging.getLogger('panel.state')
@@ -51,7 +52,6 @@ if TYPE_CHECKING:
     from ..template.base import BaseTemplate
     from ..viewable import Viewable
     from ..widgets.indicators import BooleanIndicator
-    from .browser import BrowserInfo
     from .callbacks import PeriodicCallback
     from .location import Location
     from .notifications import NotificationArea
@@ -946,7 +946,6 @@ class _state(param.Parameterized):
     @property
     def browser_info(self) -> BrowserInfo | None:
         from ..config import config
-        from .browser import BrowserInfo
         if config.browser_info and self.curdoc and self.curdoc.session_context and self.curdoc not in self._browsers:
             browser = self._browsers[self.curdoc] = BrowserInfo()
         elif self.curdoc is None:
