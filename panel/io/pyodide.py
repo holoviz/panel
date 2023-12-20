@@ -557,7 +557,9 @@ def pyrender(
     -------
     Returns an JS Map containing the content, mime_type, stdout and stderr.
     """
-    from ..pane import HoloViews, Interactive, panel as as_panel
+    from ..pane import (
+        HoloViews, Interactive, ReactiveExpr, panel as as_panel,
+    )
     from ..viewable import Viewable, Viewer
     kwargs = {}
     if stdout_callback:
@@ -566,7 +568,7 @@ def pyrender(
         kwargs['stderr'] = WriteCallbackStream(stderr_callback)
     out = exec_with_return(code, **kwargs)
     ret = {}
-    if isinstance(out, (Model, Viewable, Viewer)) or HoloViews.applies(out) or Interactive.applies(out):
+    if isinstance(out, (Model, Viewable, Viewer)) or HoloViews.applies(out) or Interactive.applies(out) or ReactiveExpr.applies(out):
         doc, model_json = _model_json(as_panel(out), target)
         state.cache[target] = doc
         ret['content'], ret['mime_type'] = model_json, 'application/bokeh'
