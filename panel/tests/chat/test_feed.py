@@ -583,11 +583,13 @@ class TestChatFeedCallback:
 
     def test_placeholder_threshold_exceed_generator(self, chat_feed):
         async def echo(contents, user, instance):
+            assert instance._placeholder not in instance._chat_log
             await asyncio.sleep(0.5)
             assert instance._placeholder in instance._chat_log
             yield "hello testing"
+            assert instance._placeholder not in instance._chat_log
 
-        chat_feed.placeholder_threshold = 0.1
+        chat_feed.placeholder_threshold = 0.2
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
         assert chat_feed._placeholder not in chat_feed._chat_log
