@@ -21,10 +21,32 @@ jobs:
     runs-on: 'ubuntu-latest'
     steps:
       - uses: holoviz-dev/holoviz_tasks/pre-commit@v0.1a19
+  changes:
+    name: Check for code changes
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@v3
+        if: github.event_name != 'pull_request'
+      - uses: dorny/paths-filter@v2.11.1
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'panel/**'
+              - 'examples/**'
+              - 'scripts/**'
+              - 'setup.py'
+              - 'pyproject.toml'
+              - '.github/workflows/test.yaml'
   unit_test_suite:
     name: Unit tests on ${{ matrix.os }} with Python ${{ matrix.python-version }}
-    needs: [pre_commit]
+    needs: [pre_commit, changes]
     runs-on: ${{ matrix.os }}
+    if: needs.changes.outputs.code == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -98,8 +120,9 @@ jobs:
           fail_ci_if_error: false # optional (default = false)
   ui_test_suite:
     name: UI tests on ${{ matrix.os }} with Python 3.9
-    needs: [pre_commit]
+    needs: [pre_commit, changes]
     runs-on: ${{ matrix.os }}
+    if: needs.changes.outputs.code == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -199,8 +222,9 @@ jobs:
           fail_ci_if_error: false # optional (default = false)
   core_test_suite:
     name: Core tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
-    needs: [pre_commit]
+    needs: [pre_commit, changes]
     runs-on: ${{ matrix.os }}
+    if: needs.changes.outputs.code == 'true'
     strategy:
       fail-fast: false
       matrix:
