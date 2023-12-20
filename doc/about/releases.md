@@ -18,6 +18,10 @@ This patch release addresses a major regression in server performance introduced
 - Fix `ChatReactionIcons` alignment and trigger reactions correctly ([#6086](https://github.com/holoviz/panel/pull/6086))
 - Change `Column` `scroll_position` default value from `None` to `0` ([#6082](https://github.com/holoviz/panel/pull/6082))
 - Fix issue with accumulating callbacks on server ([#6091](https://github.com/holoviz/panel/pull/6091))
+- Ensure `ReactiveExpr` renders in pyodide ([#6097](https://github.com/holoviz/panel/pull/6097))
+- Ensure `TooltipIcon` description can be updated ([#6099](https://github.com/holoviz/panel/pull/6099))
+- Fix IPyWidgets rendering in `BootstrapTemplate` ([#6100](https://github.com/holoviz/panel/pull/6100))
+- Fix padding and alignment of `FileDownload` ([#6101](https://github.com/holoviz/panel/pull/6101))
 
 ## Version 1.3.5
 
