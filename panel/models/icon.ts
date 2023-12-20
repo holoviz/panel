@@ -62,6 +62,7 @@ export class ToggleIconView extends ControlView {
   update_icon(): void {
     const icon = this.model.value ? this.get_active_icon() : this.model.icon;
     this.icon_view.model.icon_name = icon;
+    this.icon_view.el.style.lineHeight = '0';
   }
 
   get_active_icon(): string {
@@ -69,6 +70,8 @@ export class ToggleIconView extends ControlView {
   }
 
   calculate_size(): string {
+    if (this.model.size !== null)
+      return this.model.size
     const maxWidth = this.model.width ?? 15;
     const maxHeight = this.model.height ?? 15;
     const size = Math.max(maxWidth, maxHeight);
@@ -79,8 +82,9 @@ export class ToggleIconView extends ControlView {
 export namespace ToggleIcon {
   export type Attrs = p.AttrsOf<Props>;
   export type Props = Control.Props & {
-    icon: p.Property<string>;
     active_icon: p.Property<string>;
+    icon: p.Property<string>;
+    size: p.Property<string | null>;
     value: p.Property<boolean>;
   };
 }
@@ -99,9 +103,10 @@ export class ToggleIcon extends Control {
   static {
     this.prototype.default_view = ToggleIconView;
 
-    this.define<ToggleIcon.Props>(({ String, Boolean }) => ({
+    this.define<ToggleIcon.Props>(({ Boolean, Nullable, String }) => ({
       active_icon: [String, ""],
       icon: [String, "heart"],
+      size: [Nullable(String), null ],
       value: [Boolean, false],
     }));
   }

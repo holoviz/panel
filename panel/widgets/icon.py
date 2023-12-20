@@ -19,6 +19,9 @@ class ToggleIcon(Widget):
         The name of the icon to display from
         [tabler-icons.io](https://tabler-icons.io)/""")
 
+    size = param.String(default=None, doc="""
+        An explicit size specified as a CSS font-size, e.g. '1.5em' or '20px'.""")
+
     value = param.Boolean(default=False, doc="""
         Whether the icon is toggled on or off.""")
 
