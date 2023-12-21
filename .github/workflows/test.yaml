@@ -28,6 +28,7 @@ jobs:
       pull-requests: read
     outputs:
       code_change: ${{ steps.filter.outputs.code }}
+      doc_change: ${{ steps.filter.outputs.doc }}
     steps:
       - uses: actions/checkout@v3
         if: github.event_name != 'pull_request'
@@ -43,6 +44,8 @@ jobs:
               - 'setup.py'
               - 'pyproject.toml'
               - '.github/workflows/test.yaml'
+            doc:
+              - 'doc/how_to/**'
   unit_test_suite:
     name: Unit tests on ${{ matrix.os }} with Python ${{ matrix.python-version }}
     needs: [pre_commit, setup]
@@ -123,7 +126,7 @@ jobs:
     name: UI tests on ${{ matrix.os }} with Python 3.9
     needs: [pre_commit, setup]
     runs-on: ${{ matrix.os }}
-    if: needs.setup.outputs.code_change == 'true'
+    if: needs.setup.outputs.code_change == 'true' || needs.setup.outputs.doc_change == 'true'
     strategy:
       fail-fast: false
       matrix:
