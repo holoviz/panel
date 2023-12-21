@@ -183,6 +183,10 @@ For more detail check out the [HoloViz Community Guide](https://holoviz.org/comm
 
 Check out the [Contributing Guide](CONTRIBUTING.MD).
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=holoviz/panel&type=Date)](https://star-history.com/#holoviz/panel&Date)
+
 ## License
 
 Panel is completely free and open-source. It is licensed under the [BSD 3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
