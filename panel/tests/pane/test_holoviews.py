@@ -743,3 +743,31 @@ def test_holoviews_property_override(document, comm):
 
     assert model.styles["background"] == 'red'
     assert model.children[0].css_classes == ['test_class']
+
+widget = pn.widgets.IntInput(value=1)
+def _plot(value):
+    return hv.Curve(list(range(value)))
+dynamic_plot = pn.bind(_plot, widget)
+static_plot = _plot(1)
+
+@hv_available
+def test_holoviews_layout_objects(document, comm):
+    """The HoloViews.layout should dynamically adjust depending on whether the object
+    has widgets or not"""
+    pane = pn.pane.HoloViews(static_plot)
+    assert len(pane.layout)==0
+    pn.pane.HoloViews.object=dynamic_plot
+    assert len(pane.layout)==1
+    pn.pane.HoloViews.object=static_plot
+    assert len(pane.layout)==0
+
+@hv_available
+def test_holoviews_layout_objects_reversed(document, comm):
+    """The HoloViews.layout should dynamically adjust depending on whether the object
+    has widgets or not"""
+    pane = pn.pane.HoloViews(dynamic_plot)
+    assert len(pane.layout)==1
+    pn.pane.HoloViews.object=static_plot
+    assert len(pane.layout)==0
+    pn.pane.HoloViews.object=dynamic_plot
+    assert len(pane.layout)==1
