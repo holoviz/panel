@@ -525,8 +525,19 @@ class WebP(ImageBase):
         import struct
         b = BytesIO(data)
         b.read(12)  # Skip RIFF header
-        if b.read(4) != b'VP8 ':  # Check if VP8 chunk is present
+        chunk_header = b.read(4)
+        if chunk_header == b'VP8 ':  # Lossy WebP
+            b.read(3)  # Skip VP8 header
+            w, h = struct.unpack("<HH", b.read(4))  # Width and height are little-endian
+        elif chunk_header == b'VP8L':  # Lossless WebP
+            b.read(1)  # Skip VP8L header
+            bits = struct.unpack("<I", b.read(4))[0]  # Read width and height bits
+            w = (bits & 0x3FFF) + 1  # Width is stored in the 14 least significant bits
+            h = ((bits >> 14) & 0x3FFF) + 1  # Height is stored in the next 14 bits
+        elif chunk_header == b'VP8X':  # Extended WebP
+            b.read(4)  # Skip VP8X header
+            w = struct.unpack("<I", b.read(3))[0] + 1  # Width is stored in the next 3 bytes
+            h = struct.unpack("<I", b.read(3))[0] + 1  # Height is stored in the next 3 bytes
+        else:
             raise ValueError("Invalid WebP file")
-        b.read(3)  # Skip VP8 header
-        w, h = struct.unpack("<HH", b.read(4))  # Width and height are little-endian
         return int(w), int(h)
