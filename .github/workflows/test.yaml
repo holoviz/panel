@@ -43,8 +43,10 @@ jobs:
               - 'scripts/**'
               - 'setup.py'
               - 'pyproject.toml'
+              - 'tox.ini'
               - '.github/workflows/test.yaml'
             doc:
+              - 'doc/getting_started/**'
               - 'doc/how_to/**'
   unit_test_suite:
     name: Unit tests on ${{ matrix.os }} with Python ${{ matrix.python-version }}
