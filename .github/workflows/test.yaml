@@ -135,7 +135,7 @@ jobs:
           conda-update: true
           nodejs: true
           envs: -o examples -o recommended -o tests -o build
-          cache: ${{ github.event.inputs.cache }}
+          cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           opengl: true
         id: install
       - name: doit develop_install
@@ -224,7 +224,7 @@ jobs:
           python-version: 3.9
           channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
           envs: "-o recommended -o tests -o build"
-          cache: ${{ github.event.inputs.cache }}
+          cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           nodejs: true
           playwright: true
         id: install
@@ -304,7 +304,7 @@ jobs:
       #     # channel-priority: strict
       #     channels: pyviz/label/dev,conda-forge,nodefaults
       #     envs: "-o tests_core -o tests_ci"
-      #     cache: ${{ github.event.inputs.cache }}
+      #     cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
       #     conda-update: true
       #     id: install
       - uses: actions/checkout@v3
