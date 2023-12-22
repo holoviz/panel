@@ -40,7 +40,6 @@ jobs:
             code:
               - 'panel/**'
               - 'examples/**'
-              - 'scripts/**'
               - 'setup.py'
               - 'pyproject.toml'
               - 'tox.ini'
@@ -48,6 +47,7 @@ jobs:
             doc:
               - 'doc/getting_started/**'
               - 'doc/how_to/**'
+              - 'scripts/**'
   unit_test_suite:
     name: Unit tests on ${{ matrix.os }} with Python ${{ matrix.python-version }}
     needs: [pre_commit, setup]
