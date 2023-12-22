@@ -205,7 +205,7 @@ class ChatFeed(ListPanel):
         The placeholder wrapped in a ChatMessage object;
         primarily to prevent recursion error in _update_placeholder.""")
 
-    _callback_future = param.ClassSelector(class_=asyncio.Future, allow_None=True, doc="""
+    _callback_future = param.Parameter(allow_None=True, doc="""
         The current, cancellable async task being executed.""")
 
     _callback_state = param.ObjectSelector(objects=list(CallbackState), doc="""
