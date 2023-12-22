@@ -292,8 +292,8 @@ class ChatInterface(ChatFeed):
                     sizing_mode="stretch_width",
                     max_width=show_expr.rx.where(90, 45),
                     max_height=50,
-                    margin=(5, 5, 5, 0),
-                    align="start",
+                    margin=(0, 5, 0, 0),
+                    align="center",
                     visible=visible
                 )
                 if action != "stop":

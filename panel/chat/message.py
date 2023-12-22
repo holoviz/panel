@@ -277,6 +277,7 @@ class ChatMessage(PaneBase):
                 self.chat_copy_icon,
                 stylesheets=self._stylesheets,
                 sizing_mode="stretch_width",
+                css_classes=["header"]
             ),
             self._center_row,
             self._timestamp_html,
