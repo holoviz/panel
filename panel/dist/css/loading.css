@@ -5,7 +5,7 @@
 
 :host(.pn-loading) > *,
 .pn-loading > * {
-  filter: blur(1px);
+  filter: blur(1px) opacity(0.5);
 }
 
 :host(.pn-loading):before,
