@@ -205,9 +205,6 @@ class ChatFeed(ListPanel):
         The placeholder wrapped in a ChatMessage object;
         primarily to prevent recursion error in _update_placeholder.""")
 
-    _callback_future = param.ClassSelector(class_=asyncio.Future, allow_None=True, doc="""
-        The current, cancellable async task being executed.""")
-
     _callback_state = param.ObjectSelector(objects=list(CallbackState), doc="""
         The current state of the callback.""")
 
@@ -217,6 +214,8 @@ class ChatFeed(ListPanel):
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_feed.css"]
 
     def __init__(self, *objects, **params):
+        self._callback_future = None
+
         if params.get("renderers") and not isinstance(params["renderers"], list):
             params["renderers"] = [params["renderers"]]
         if params.get("width") is None and params.get("sizing_mode") is None:
