@@ -40,6 +40,13 @@
     background-color: var(--background-color);
     font-family: var(--body-font);
   }
+  #header {
+	{% if header_height.startswith('0') %}
+	display: none;
+	{% else %}
+	height: {{ header_height }};
+	{% endif %}
+  }
   #header a {
     color: currentColor;
   }
@@ -87,7 +94,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 <fast-design-system-provider id="body-design-provider" use-defaults>
   <div id="container">
     <fast-design-system-provider id="header-design-provider">
-      <nav id="header" {{ 'class="shadow"' if style.shadow else '' }} >
+	  <nav id="header" {% if hide_header %}style="display: none;"{% endif %} {{ 'class="shadow"' if style.shadow else '' }} >
 	{% if nav or sidebar_footer %}
 	<span onclick="{{ 'openNav()' if collapsed_sidebar else 'closeNav()' }}" id="sidebar-button">
 	  <div class="pn-bar"></div>
