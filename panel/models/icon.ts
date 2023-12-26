@@ -82,13 +82,11 @@ export class ToggleIconView extends ControlView {
       // and invalidate the old one.
       const icon_view = await this.build_icon_model(icon, is_svg_icon);
       icon_view.render();
-      const old_icon_view = this.icon_view;
+      this.icon_view.remove();
       this.icon_view = icon_view;
       this.was_svg_icon = is_svg_icon;
       this.update_cursor();
-
       this.shadow_el.appendChild(this.icon_view.el);
-      old_icon_view.remove();
     }
     else if (is_svg_icon) {
       (this.icon_view as SVGIconView).model.svg = icon;
