@@ -55,14 +55,28 @@
       #header {
           --mdc-theme-background: var(--header-background);
           --mdc-theme-on-background: var(--header-color);
-	  background-color: var(--header-background);
-	  color: var(--header-color);
+          background-color: var(--header-background);
+          color: var(--header-color);
+      }
+      #header-items {
+          height: 100%;
+      }
+      .mdc-top-app-bar__section--align-start {
+          height: {{ header_height }}; /* Adjust the height for the align-start section */
+
       }
       .mdc-drawer {
 	  width: var(--sidebar-width) !important;
       }
       .mdc-drawer.mdc-drawer--open:not(.mdc-drawer--closing)+.mdc-drawer-app-content {
 	  margin-left: var(--sidebar-width) !important;
+      }
+      .mdc-top-app-bar--fixed-adjust {
+        {% if header_height.startswith('0') %}
+          padding-top: 0px;
+        {% else %}
+          padding-top: calc({{ header_height }} + 10px); /* Adjust the padding so sidebar / main isn't underneath */
+        {% endif %}
       }
     </style>
 
@@ -78,7 +92,7 @@
 <!-- goes in body -->
 {% block contents %}
 <div class="mdc-typography" id="container">
-  <header class="mdc-top-app-bar app-bar mdc-top-app-bar--fixed" id="header">
+  <header class="mdc-top-app-bar app-bar mdc-top-app-bar--fixed" id="header" {% if header_height.startswith('0') %}style="display: none;"{% endif %}>
     <div class="mdc-top-app-bar__row">
       <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
 	{% if nav %}

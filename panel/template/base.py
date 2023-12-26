@@ -655,6 +655,9 @@ class BasicTemplate(BaseTemplate):
     header_color = param.String(doc="""
         Optional header text color override.""")
 
+    header_height = param.String(default="64px", doc="""
+        Optional header height override.""")
+
     location = param.Boolean(default=True, readonly=True)
 
     _actions = param.ClassSelector(default=TemplateActions(), class_=TemplateActions)
@@ -772,6 +775,7 @@ class BasicTemplate(BaseTemplate):
         self._render_variables['app_favicon'] = favicon
         self._render_variables['app_favicon_type'] = self._get_favicon_type(self.favicon)
         self._render_variables['header_background'] = self.header_background
+        self._render_variables['header_height'] = self.header_height
         self._render_variables['header_color'] = self.header_color
         self._render_variables['main_max_width'] = self.main_max_width
         self._render_variables['sidebar_width'] = self.sidebar_width
