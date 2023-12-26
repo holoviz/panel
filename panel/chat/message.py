@@ -222,7 +222,7 @@ class ChatMessage(PaneBase):
             tz = params.get("timestamp_tz")
             if tz is not None:
                 tz = ZoneInfo(tz)
-            elif state.browser_info.timezone:
+            elif state.browser_info and state.browser_info.timezone:
                 tz = ZoneInfo(state.browser_info.timezone)
             params["timestamp"] = datetime.datetime.now(tz=tz)
         reaction_icons = params.get("reaction_icons", {"favorite": "heart"})
