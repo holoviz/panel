@@ -32,7 +32,7 @@ class ToggleIcon(Widget):
     _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/icon.css']
 
     def __init__(self, **params):
-        self._init_with_svg = None
+        # self._init_with_svg = None
         super().__init__(**params)
 
     @param.depends("icon", "active_icon", watch=True, on_init=True)
@@ -40,18 +40,18 @@ class ToggleIcon(Widget):
         if not self.icon:
             raise ValueError('The icon parameter must not be empty.')
 
-        if self._init_with_svg is None:
-            self._init_with_svg = self.icon.strip().startswith("<svg")
+        # if self._init_with_svg is None:
+        #     self._init_with_svg = self.icon.strip().startswith("<svg")
 
-        icon_is_svg = self.icon.strip().startswith("<svg")
-        if icon_is_svg != self._init_with_svg:
-            raise ValueError('The icon parameter must not change between Tabler icons and SVGs.')
+        # icon_is_svg = self.icon.strip().startswith("<svg")
+        # if icon_is_svg != self._init_with_svg:
+        #     raise ValueError('The icon parameter must not change between Tabler icons and SVGs.')
 
-        if icon_is_svg and not self.active_icon:
-            raise ValueError('The active_icon parameter must not be empty when icon is an SVG.')
+        # if icon_is_svg and not self.active_icon:
+        #     raise ValueError('The active_icon parameter must not be empty when icon is an SVG.')
 
-        active_icon_is_svg = self.active_icon.strip().startswith("<svg")
-        if icon_is_svg and not active_icon_is_svg:
-            raise ValueError('The active_icon parameter must be an SVG when icon is an SVG.')
-        elif not icon_is_svg and active_icon_is_svg:
-            raise ValueError('The icon parameter must be an SVG when active_icon is an SVG.')
+        # active_icon_is_svg = self.active_icon.strip().startswith("<svg")
+        # if icon_is_svg and not active_icon_is_svg:
+        #     raise ValueError('The active_icon parameter must be an SVG when icon is an SVG.')
+        # elif not icon_is_svg and active_icon_is_svg:
+        #     raise ValueError('The icon parameter must be an SVG when active_icon is an SVG.')

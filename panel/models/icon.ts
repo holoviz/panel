@@ -8,6 +8,7 @@ import { build_view } from '@bokehjs/core/build_views';
 export class ToggleIconView extends ControlView {
   model: ToggleIcon;
   icon_view: TablerIconView | SVGIconView;
+  was_svg_icon: boolean
 
   public *controls() { }
 
@@ -19,16 +20,8 @@ export class ToggleIconView extends ControlView {
   override async lazy_initialize(): Promise<void> {
     await super.lazy_initialize();
 
-    const size = this.calculate_size();
-    if (this.isSVGIcon()) {
-      const icon_model = new SVGIcon({ svg: this.model.icon, size: size });
-      this.icon_view = await build_view(icon_model, { parent: this });
-    } else {
-      const icon_model = new TablerIcon({ icon_name: this.model.icon, size: size });
-      this.icon_view = await build_view(icon_model, { parent: this });
-    }
-
-    this.icon_view.el.addEventListener('click', () => this.toggle_value());
+    this.was_svg_icon = this.is_svg_icon(this.model.icon)
+    this.icon_view = await this.build_icon_model(this.model.icon, this.was_svg_icon);
   }
 
   override *children(): IterViews {
@@ -36,8 +29,8 @@ export class ToggleIconView extends ControlView {
     yield this.icon_view;
   }
 
-  isSVGIcon(): boolean {
-    return this.model.icon.trim().startsWith('<svg');
+  is_svg_icon(icon: string): boolean {
+    return icon.trim().startsWith('<svg');
   }
 
   toggle_value(): void {
@@ -57,7 +50,6 @@ export class ToggleIconView extends ControlView {
 
   render(): void {
     super.render();
-
     this.icon_view.render();
     this.update_icon()
     this.update_cursor()
@@ -68,9 +60,37 @@ export class ToggleIconView extends ControlView {
     this.icon_view.el.style.cursor = this.model.disabled ? 'not-allowed' : 'pointer';
   }
 
-  update_icon(): void {
+  async build_icon_model(icon: string, is_svg_icon: boolean): Promise<TablerIconView | SVGIconView > {
+    const size = this.calculate_size();
+    let icon_model;
+    if (is_svg_icon) {
+      icon_model = new SVGIcon({ svg: icon, size: size });
+    } else {
+      icon_model = new TablerIcon({ icon_name: icon, size: size });
+    }
+    const icon_view = await build_view(icon_model, { parent: this });
+    icon_view.el.addEventListener('click', () => this.toggle_value());
+    return icon_view;
+  }
+
+  async update_icon(): Promise<void> {
     const icon = this.model.value ? this.get_active_icon() : this.model.icon;
-    if (this.isSVGIcon()) {
+    const is_svg_icon = this.is_svg_icon(icon)
+
+    if (this.was_svg_icon !== is_svg_icon) {
+      // If the icon type has changed, we need to rebuild the icon view
+      // and invalidate the old one.
+      const icon_view = await this.build_icon_model(icon, is_svg_icon);
+      icon_view.render();
+      const old_icon_view = this.icon_view;
+      this.icon_view = icon_view;
+      this.was_svg_icon = is_svg_icon;
+      this.update_cursor();
+
+      this.shadow_el.appendChild(this.icon_view.el);
+      old_icon_view.remove();
+    }
+    else if (is_svg_icon) {
       (this.icon_view as SVGIconView).model.svg = icon;
     } else {
       (this.icon_view as TablerIconView).model.icon_name = icon;
