@@ -34,7 +34,11 @@ class ToggleIcon(Widget):
     def __init__(self, **params):
         super().__init__(**params)
 
-    @param.depends("icon", watch=True, on_init=True)
+    @param.depends("icon", "active_icon", watch=True, on_init=True)
     def _update_icon(self):
         if not self.icon:
             raise ValueError('The icon parameter must not be empty.')
+
+        icon_is_svg = self.icon.startswith('<svg')
+        if icon_is_svg and not self.active_icon:
+            raise ValueError('The active_icon parameter must not be empty if icon is an SVG.')
