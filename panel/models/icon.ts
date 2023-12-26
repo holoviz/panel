@@ -1,13 +1,13 @@
 import { TablerIcon, TablerIconView } from "@bokehjs/models/ui/icons/tabler_icon";
+import { SVGIcon, SVGIconView } from "@bokehjs/models/ui/icons/svg_icon";
 import { Control, ControlView } from '@bokehjs/models/widgets/control';
 import type { IterViews } from '@bokehjs/core/build_views';
 import * as p from "@bokehjs/core/properties";
 import { build_view } from '@bokehjs/core/build_views';
 
-
 export class ToggleIconView extends ControlView {
   model: ToggleIcon;
-  icon_view: TablerIconView;
+  icon_view: TablerIconView | SVGIconView;
 
   public *controls() { }
 
@@ -20,8 +20,13 @@ export class ToggleIconView extends ControlView {
     await super.lazy_initialize();
 
     const size = this.calculate_size();
-    const icon_model = new TablerIcon({ icon_name: this.model.icon, size: size });
-    this.icon_view = await build_view(icon_model, { parent: this });
+    if (this.isSVGIcon()) {
+      const icon_model = new SVGIcon({ svg: this.model.icon, size: size });
+      this.icon_view = await build_view(icon_model, { parent: this });
+    } else {
+      const icon_model = new TablerIcon({ icon_name: this.model.icon, size: size });
+      this.icon_view = await build_view(icon_model, { parent: this });
+    }
 
     this.icon_view.el.addEventListener('click', () => this.toggle_value());
   }
@@ -29,6 +34,10 @@ export class ToggleIconView extends ControlView {
   override *children(): IterViews {
     yield* super.children();
     yield this.icon_view;
+  }
+
+  isSVGIcon(): boolean {
+    return this.model.icon.trim().startsWith('<svg');
   }
 
   toggle_value(): void {
@@ -61,7 +70,11 @@ export class ToggleIconView extends ControlView {
 
   update_icon(): void {
     const icon = this.model.value ? this.get_active_icon() : this.model.icon;
-    this.icon_view.model.icon_name = icon;
+    if (this.isSVGIcon()) {
+      (this.icon_view as SVGIconView).model.svg = icon;
+    } else {
+      (this.icon_view as TablerIconView).model.icon_name = icon;
+    }
     this.icon_view.el.style.lineHeight = '0';
   }
 
@@ -106,7 +119,7 @@ export class ToggleIcon extends Control {
     this.define<ToggleIcon.Props>(({ Boolean, Nullable, String }) => ({
       active_icon: [String, ""],
       icon: [String, "heart"],
-      size: [Nullable(String), null ],
+      size: [Nullable(String), null],
       value: [Boolean, false],
     }));
   }
