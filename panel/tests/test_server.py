@@ -511,7 +511,6 @@ def test_server_on_load_after_init(threads, port):
         state.onload(cb2)
         # Simulate rendering
         def loaded():
-            state.curdoc
             state._schedule_on_load(state.curdoc, None)
         state.execute(loaded, schedule=True)
         return 'App'
@@ -536,7 +535,6 @@ def test_server_on_load_during_load(threads, port):
         state.onload(cb2)
         # Simulate rendering
         def loaded():
-            state.curdoc
             state._schedule_on_load(state.curdoc, None)
         state.execute(loaded, schedule=True)
         return 'App'

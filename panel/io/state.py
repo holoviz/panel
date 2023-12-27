@@ -967,10 +967,11 @@ class _state(param.Parameterized):
             pyodide_session = self._is_pyodide and 'pyodide_kernel' not in sys.modules
             if doc and (doc.session_context or pyodide_session):
                 return doc
-        finally:
-            curdoc = self._curdoc.get()
-            if curdoc:
-                return curdoc
+        except Exception:
+            pass
+        curdoc = self._curdoc.get()
+        if curdoc:
+            return curdoc
 
     @curdoc.setter
     def curdoc(self, doc: Document) -> None:
