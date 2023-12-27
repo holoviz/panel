@@ -144,7 +144,7 @@ class TextAreaInput(TextInput):
 
     resizable = param.ObjectSelector(objects=["both", "width", "height", False], doc="""
         Whether the layout is interactively resizable,
-        and if so in which dimensions.""")
+        and if so in which dimensions: `width`, `height`, or `both`.""")
 
     _widget_type: ClassVar[Type[Model]] = _bkTextAreaInput
 
