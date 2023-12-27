@@ -925,7 +925,7 @@ class Column(ListPanel):
         display the scroll button. Setting to 0
         disables the scroll button.""")
 
-    view_latest = param.Boolean(default=True, doc="""
+    view_latest = param.Boolean(default=False, doc="""
         Whether to scroll to the latest object on init. If not
         enabled the view will be on the first object.""")
 
@@ -958,7 +958,6 @@ class Log(Column):
     loaded_entries = param.Integer(default=20, doc="""
         Minimum number of visible log entries shown initially.""")
 
-
     entries_per_load = param.Integer(default=20, doc="""
         Number of log entries to load each time the user scrolls
         past the scroll_load_threshold.""")
@@ -970,6 +969,10 @@ class Log(Column):
     scroll = param.Boolean(default=True, doc="""
         Whether to add scrollbars if the content overflows the size
         of the container.""")
+
+    view_latest = param.Boolean(default=True, doc="""
+        Whether to scroll to the latest object on init. If not
+        enabled the view will be on the first object.""")
 
     _num_entries = param.Integer(default=0, doc="""
         Number of log entries.""")

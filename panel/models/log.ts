@@ -41,7 +41,6 @@ export class LogView extends ColumnView {
 
   render(): void {
     super.render()
-    this.scroll_to_latest();
     this.el.addEventListener("scroll", () => {
       this.trigger_load_entries();
     });
