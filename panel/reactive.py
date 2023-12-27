@@ -142,7 +142,7 @@ class Syncable(Renderable):
     #----------------------------------------------------------------
 
     @classproperty
-    @lru_cache(maxsize=None)
+    @lru_cache(maxsize=None)  # noqa: B019 (cls is not an instance)
     def _property_mapping(cls):
         rename = {}
         for scls in cls.__mro__[::-1]:
