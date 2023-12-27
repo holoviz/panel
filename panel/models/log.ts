@@ -29,25 +29,19 @@ export class LogView extends ColumnView {
 
     const thresholdMet = scrollTop < scroll_load_threshold
     const hasUnloadedEntries = this.model.loaded_entries < _num_entries
-    const notLoading = this.oldScrollHeight != scrollHeight
-    if ( thresholdMet && hasUnloadedEntries && notLoading) {
+    if (thresholdMet && hasUnloadedEntries && this.oldScrollHeight != scrollTop) {
       const entriesToAdd = Math.min(entries_per_load, this.unloaded_entries);
-
       this.model.loaded_entries += entriesToAdd;
-      const heightDifference = scrollHeight - this.oldScrollHeight;
-      this.model.scroll_position = Math.max(scrollTop + heightDifference, this.model.scroll_load_threshold);
+
+      const heightDifference = Math.max(scrollHeight - this.oldScrollHeight, scroll_load_threshold);
+      this.model.scroll_position = scrollTop + heightDifference;
       this.oldScrollHeight = scrollHeight;
-      console.log(this.model.scroll_position, this.model.loaded_entries);
-    }
-    else if (this.oldScrollHeight == scrollHeight) {
-      // If the scrollHeight hasn't changed, then we're at the top of the log
-      // which will continuously load entries. We need to wait
-      setTimeout(() => this.trigger_load_entries(), 500);
     }
   }
 
   render(): void {
     super.render()
+    this.scroll_to_latest();
     this.el.addEventListener("scroll", () => {
       this.trigger_load_entries();
     });

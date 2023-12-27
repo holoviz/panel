@@ -925,7 +925,7 @@ class Column(ListPanel):
         display the scroll button. Setting to 0
         disables the scroll button.""")
 
-    view_latest = param.Boolean(default=False, doc="""
+    view_latest = param.Boolean(default=True, doc="""
         Whether to scroll to the latest object on init. If not
         enabled the view will be on the first object.""")
 
@@ -967,9 +967,6 @@ class Log(Column):
         Number of pixels from the top of the log to trigger
         loading more log entries.""")
 
-    view_latest = param.Boolean(default=True, doc="""
-        Whether to scroll to the latest log entry on init.""")
-
     scroll = param.Boolean(default=True, doc="""
         Whether to add scrollbars if the content overflows the size
         of the container.""")
@@ -995,8 +992,11 @@ class Log(Column):
     ):
         from ..pane.base import RerenderError, panel
         new_models, old_models = [], []
-        for i, pane in enumerate(self.objects):
+        for i, pane in enumerate(self.objects[::-1]):
+            if i >= self.loaded_entries:
+                break
             pane = panel(pane)
+            i = self._num_entries - i - 1
             self.objects[i] = pane
 
         for obj in old_objects:
