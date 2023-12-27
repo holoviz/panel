@@ -41,7 +41,6 @@ ignore = [
     "W605",
     "E701", # Multiple statements on one line
     "B006", # Do not use mutable data structures for argument defaults
-    "B019", # lru_cache and cache are used deliberately
 ]
 select = [
     "B",
