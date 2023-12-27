@@ -81,4 +81,4 @@ pn.Row(url, button)
 ## Related Resources
 
 - See the [Explanation > APIs](../../explanation/api/index.md) for context on this and other Panel APIs
-- The [How to > Link Plot Parameters in Javascript](./links) guide addresses how to link Bokeh and HoloViews plot parameters in Javascript.
+- The [How to > Link Plot Parameters in Javascript](./link_plots.md) guide addresses how to link Bokeh and HoloViews plot parameters in Javascript.
