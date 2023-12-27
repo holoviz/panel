@@ -15,7 +15,7 @@ from panel.widgets import Tqdm
 def test_tqdm():
     tqdm = Tqdm(layout="row", sizing_mode="stretch_width")
 
-    for index in tqdm(range(3)):
+    for _ in tqdm(range(3)):
         pass
 
     assert tqdm.value == 3
@@ -44,7 +44,7 @@ def test_process_map():
 def test_tqdm_leave_false():
     tqdm = Tqdm(layout="row", sizing_mode="stretch_width")
 
-    for index in tqdm(range(3), leave=False):
+    for _ in tqdm(range(3), leave=False):
         pass
 
     assert tqdm.value == 0
@@ -55,7 +55,7 @@ def test_tqdm_leave_false():
 def test_tqdm_color():
     tqdm = Tqdm()
 
-    for index in tqdm(range(3), colour='red'):
+    for _ in tqdm(range(3), colour='red'):
         pass
 
     assert tqdm.text_pane.styles == {'color': 'red'}
@@ -65,7 +65,7 @@ def get_tqdm_app():
     tqdm = Tqdm(layout="row", sizing_mode="stretch_width")
 
     def run(*events):
-        for index in tqdm(range(10)):
+        for _ in tqdm(range(10)):
             time.sleep(0.2)
 
     button = pn.widgets.Button(name="Run Loop", button_type="primary")
@@ -98,7 +98,7 @@ def get_tqdm_app_simple():
     tqdm = Tqdm(layout="row", sizing_mode="stretch_width")
 
     def run(*events):
-        for index in tqdm(range(10)):
+        for _ in tqdm(range(10)):
             time.sleep(0.2)
 
     button = pn.widgets.Button(name="Run Loop", button_type="primary")

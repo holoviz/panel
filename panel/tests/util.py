@@ -379,7 +379,7 @@ def wait_for_port(stdout):
     nbsr = NBSR(stdout)
     m = None
     output = []
-    for i in range(20):
+    for _ in range(20):
         o = nbsr.readline(0.5)
         if not o:
             continue

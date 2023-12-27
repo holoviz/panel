@@ -152,7 +152,7 @@ def param_rest_provider(files, endpoint):
             try:
                 import nbconvert  # noqa
             except ImportError:
-                raise ImportError("Please install nbconvert to serve Jupyter Notebooks.")
+                raise ImportError("Please install nbconvert to serve Jupyter Notebooks.") from None
             from nbconvert import ScriptExporter
             exporter = ScriptExporter()
             source, _ = exporter.from_filename(filename)

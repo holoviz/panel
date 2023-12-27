@@ -198,7 +198,7 @@ class FileDownload(IconMixin):
                     filename = self.filename or self._file_path.name
                 except TypeError:
                     raise ValueError('Must provide filename if file-like '
-                                     'object is provided.')
+                                     'object is provided.') from None
                 label = '%s %s' % (label, filename)
             self.label = label
             self._default_label = True
@@ -231,9 +231,10 @@ class FileDownload(IconMixin):
                              type(fileobj).__name__)
 
         ext = filename.split('.')[-1]
-        for mtype, subtypes in self._mime_types.items():
-            stype = None
+        stype, mtype = None, None
+        for mime_type, subtypes in self._mime_types.items():
             if ext in subtypes:
+                mtype = mime_type
                 stype = subtypes[ext]
                 break
         if stype is None:

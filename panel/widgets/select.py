@@ -545,7 +545,7 @@ class NestedSelect(CompositeWidget):
 
         # little optimization to avoid looping through all the
         # widgets and updating their value
-        for start_i, select in enumerate(self._widgets):
+        for start_i, select in enumerate(self._widgets):  # noqa: B007
             if select is event.obj:
                 break
 
@@ -677,7 +677,7 @@ class ColorMap(SingleSelectBase):
         try:
             from bokeh.models import ColorMap
         except Exception:
-            raise ImportError('ColorMap widget requires bokeh version >= 3.3.0.')
+            raise ImportError('ColorMap widget requires bokeh version >= 3.3.0.') from None
         return ColorMap
 
     @param.depends('value_name', watch=True, on_init=True)

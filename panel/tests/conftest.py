@@ -114,7 +114,7 @@ def pytest_configure(config):
     for marker, info in optional_markers.items():
         config.addinivalue_line("markers",
                                 "{}: {}".format(marker, info['marker-descr']))
-    if getattr(config.option, 'jupyter') and not port_open(JUPYTER_PORT):
+    if config.option.jupyter and not port_open(JUPYTER_PORT):
         start_jupyter()
 
 
