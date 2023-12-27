@@ -12,7 +12,7 @@ class ToggleIcon(Widget):
         The name of the icon to display when toggled.""")
 
     icon = String(default="heart", help="""
-        The name of the icon to display.""")
+        The name of the icon or SVG to display.""")
 
     size = String(default="1em", help="""
         The size of the icon as a valid CSS font-size.""")
