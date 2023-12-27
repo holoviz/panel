@@ -160,8 +160,8 @@ def bokeh_repr(obj: Model, depth: int = 0, ignored: Optional[Iterable[str]] = No
     props_repr = ', '.join(props)
     if isinstance(obj, FlexBox):
         r += '{cls}(children=[\n'.format(cls=cls)
-        for obj in obj.children: # type: ignore
-            r += textwrap.indent(bokeh_repr(obj, depth=depth+1) + ',\n', '  ')
+        for child_obj in obj.children: # type: ignore
+            r += textwrap.indent(bokeh_repr(child_obj, depth=depth+1) + ',\n', '  ')
         r += '], %s)' % props_repr
     else:
         r += '{cls}({props})'.format(cls=cls, props=props_repr)

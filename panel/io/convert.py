@@ -248,7 +248,7 @@ def script_to_html(
         except Exception as e:
             raise ValueError(
                 f'Requirements parser raised following error: {e}'
-            )
+            ) from e
 
     # Environment
     if panel_version == 'local':

@@ -780,8 +780,8 @@ class DatetimeRangeSlider(DateRangeSlider):
     def _widget_type(self):
         try:
             from bokeh.models import DatetimeRangeSlider
-        except Exception:
-            raise ValueError("DatetimeRangeSlider requires bokeh >= 2.4.3")
+        except ImportError:
+            raise ValueError("DatetimeRangeSlider requires bokeh >= 2.4.3") from None
         return DatetimeRangeSlider
 
 

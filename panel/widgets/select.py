@@ -355,7 +355,7 @@ class ColorMap(SingleSelectBase):
         try:
             from bokeh.models import ColorMap
         except Exception:
-            raise ImportError('ColorMap widget requires bokeh version >= 3.3.0.')
+            raise ImportError('ColorMap widget requires bokeh version >= 3.3.0.') from None
         return ColorMap
 
     @param.depends('value_name', watch=True, on_init=True)

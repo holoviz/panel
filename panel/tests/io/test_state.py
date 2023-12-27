@@ -32,7 +32,7 @@ def test_as_cached_thread_locks():
 
     results = []
     with ThreadPoolExecutor(max_workers=4) as executor:
-        for i in range(4):
+        for _ in range(4):
             future = executor.submit(state.as_cached, 'test', test_fn)
             results.append(future)
     assert [r.result() for r in results] == [1, 1, 1, 1]

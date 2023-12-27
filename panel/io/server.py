@@ -704,11 +704,11 @@ class ComponentResourceHandler(StaticFileHandler):
         try:
             module = importlib.import_module(mod)
         except ModuleNotFoundError:
-            raise HTTPError(404, 'Module not found')
+            raise HTTPError(404, 'Module not found') from None
         try:
             component = getattr(module, cls)
         except AttributeError:
-            raise HTTPError(404, 'Component not found')
+            raise HTTPError(404, 'Component not found') from None
 
         # May only access resources listed in specific attributes
         if rtype not in self._resource_attrs:
@@ -717,7 +717,7 @@ class ComponentResourceHandler(StaticFileHandler):
         try:
             resources = getattr(component, rtype)
         except AttributeError:
-            raise HTTPError(404, 'Resource type not found')
+            raise HTTPError(404, 'Resource type not found') from None
 
         # Handle template resources
         if rtype == '_resources':
@@ -1174,7 +1174,7 @@ def get_server(
                     raise KeyError(
                         "Keys of the title dictionary and of the apps "
                         f"dictionary must match. No {slug} key found in the "
-                        "title dictionary.")
+                        "title dictionary.") from None
             else:
                 title_ = title
             slug = slug if slug.startswith('/') else '/'+slug

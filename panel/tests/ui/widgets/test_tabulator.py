@@ -1725,7 +1725,7 @@ def test_tabulator_pagination(page, df_mixed, pagination):
     counts = count_per_page(len(df_mixed), page_size)
     i = 0
     while True:
-        wait_until(lambda: widget.page == i + 1, page)
+        wait_until(lambda: widget.page == i + 1, page)  # noqa: B023
         rows = page.locator('.tabulator-row')
         expect(rows).to_have_count(counts[i])
         assert page.locator(f'[aria-label="Show Page {i+1}"]').count() == 1
@@ -1828,7 +1828,7 @@ def test_tabulator_filter_param(page, df_mixed):
         p.s = filt_val
         df_filtered = df_mixed.loc[df_mixed[filt_col] == filt_val, :]
 
-        wait_until(lambda: widget.current_view.equals(df_filtered), page)
+        wait_until(lambda: widget.current_view.equals(df_filtered), page)  # noqa: B023
 
         # Check the table has the right number of rows
         expect(page.locator('.tabulator-row')).to_have_count(len(df_filtered))
@@ -1857,7 +1857,7 @@ def test_tabulator_filter_bound_function(page, df_mixed):
         w_filter.value = filt_val
         df_filtered = filt_(df_mixed, filt_val)
 
-        wait_until(lambda: widget.current_view.equals(df_filtered), page)
+        wait_until(lambda: widget.current_view.equals(df_filtered), page)  # noqa: B023
 
         # Check the table has the right number of rows
         expect(page.locator('.tabulator-row')).to_have_count(len(df_filtered))

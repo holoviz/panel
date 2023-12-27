@@ -162,7 +162,7 @@ def test_server_async_local_state():
         curdoc = state.curdoc
         await asyncio.sleep(0.5)
         docs[curdoc] = []
-        for i in range(5):
+        for _ in range(5):
             await asyncio.sleep(0.1)
             docs[curdoc].append(state.curdoc)
 
@@ -186,7 +186,7 @@ def test_server_async_local_state_nested_tasks():
         if depth > 0:
             asyncio.ensure_future(task(depth-1))
         docs[curdoc] = []
-        for i in range(10):
+        for _ in range(10):
             await asyncio.sleep(0.1)
             docs[curdoc].append(state.curdoc)
 
@@ -511,7 +511,6 @@ def test_server_on_load_after_init(threads, port):
         state.onload(cb2)
         # Simulate rendering
         def loaded():
-            state.curdoc
             state._schedule_on_load(state.curdoc, None)
         state.execute(loaded, schedule=True)
         return 'App'
@@ -536,7 +535,6 @@ def test_server_on_load_during_load(threads, port):
         state.onload(cb2)
         # Simulate rendering
         def loaded():
-            state.curdoc
             state._schedule_on_load(state.curdoc, None)
         state.execute(loaded, schedule=True)
         return 'App'

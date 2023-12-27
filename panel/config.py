@@ -911,9 +911,9 @@ class panel_extension(_pyviz_extension):
             parameters = sig_params[:-1]
 
             processed_kws, keyword_groups = set(), []
-            for cls in reversed(cls.mro()):
+            for scls in reversed(cls.mro()):
                 keyword_group = []
-                for (k, v) in sorted(cls.__dict__.items()):
+                for (k, v) in sorted(scls.__dict__.items()):
                     if (isinstance(v, param.Parameter) and k not in processed_kws
                         and not v.readonly):
                         keyword_group.append(k)
