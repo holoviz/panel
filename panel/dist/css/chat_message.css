@@ -80,6 +80,9 @@
   max-width: calc(100% - 40px);
   padding: 5px;
   width: fit-content;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .footer {
