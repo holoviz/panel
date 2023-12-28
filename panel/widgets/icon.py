@@ -132,4 +132,7 @@ class ButtonIcon(_ClickableIcon, _ClickButton, TooltipMixin):
         return self.param.watch(callback, "clicks", onlychanged=False)
 
     def _process_event(self, event: param.parameterized.Event) -> None:
-        ...
+        """
+        Process a button click event; need this, otherwise we get:
+        AttributeError: 'ButtonIcon' object has no attribute '_process_event'.
+        """
