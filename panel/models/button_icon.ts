@@ -20,7 +20,7 @@ export class ButtonIconView extends ClickableIconView {
       this.update_icon();
     };
     updateState(true, true);
-    new Promise(resolve => setTimeout(resolve, this.model.active_duration))
+    new Promise(resolve => setTimeout(resolve, this.model.toggle_duration))
       .then(() => {
         updateState(false, false);
       });
@@ -55,7 +55,7 @@ export namespace ButtonIcon {
   export type Attrs = p.AttrsOf<Props>;
   export type Props = ClickableIcon.Props & {
     clicks: p.Property<number>;
-    active_duration: p.Property<number>;
+    toggle_duration: p.Property<number>;
   };
 }
 
@@ -75,7 +75,7 @@ export class ButtonIcon extends ClickableIcon {
 
     this.define<ButtonIcon.Props>(({ Int }) => ({
       clicks: [Int, 0],
-      active_duration: [Int, 75],
+      toggle_duration: [Int, 75],
     }));
   }
 }

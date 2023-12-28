@@ -57,7 +57,7 @@ class ButtonIcon(ClickableIcon):
     clicks = param.Integer(default=0, doc="""
         The number of times the button has been clicked.""")
 
-    active_duration = param.Integer(default=75, doc="""
+    toggle_duration = param.Integer(default=75, doc="""
         The number of milliseconds the active_icon should be shown for
         and how long the button should be disabled for.""")
 

@@ -30,6 +30,6 @@ class ButtonIcon(ClickableIcon):
     clicks = Int(default=0, help="""
         The number of times the button has been clicked.""")
 
-    active_duration = Int(default=75, help="""
+    toggle_duration = Int(default=75, help="""
         The number of milliseconds the active_icon should be shown for
         and how long the button should be disabled for.""")
