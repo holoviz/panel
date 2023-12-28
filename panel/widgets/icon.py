@@ -19,7 +19,7 @@ from .button import _ClickButton
 class _ClickableIcon(Widget):
     active_icon = param.String(default='', doc="""
         The name of the icon to display when toggled from
-        tabler-icons.io](https://tabler-icons.io)/ or an SVG.""")
+        [tabler-icons.io](https://tabler-icons.io)/ or an SVG.""")
 
     icon = param.String(default='heart', doc="""
         The name of the icon to display from
@@ -67,12 +67,12 @@ class ButtonIcon(_ClickableIcon, _ClickButton, TooltipMixin):
     clicks = param.Integer(default=0, doc="""
         The number of times the button has been clicked.""")
 
-    value = param.Boolean(default=False, doc="""
-        Toggles from False to True while the event is being processed.""")
-
     toggle_duration = param.Integer(default=75, doc="""
         The number of milliseconds the active_icon should be shown for
         and how long the button should be disabled for.""")
+
+    value = param.Boolean(default=False, doc="""
+        Toggles from False to True while the event is being processed.""")
 
     _widget_type = _PnButtonIcon
 
