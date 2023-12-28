@@ -45,7 +45,13 @@ class _ClickableIcon(Widget):
 
     _widget_type = _PnClickableIcon
 
-    _rename: ClassVar[Mapping[str, str | None]] = {"name": "name", "button_style": None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        **TooltipMixin._rename, "name": "name",
+    }
+
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        "description": None,
+    }
 
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/icon.css"]
 
@@ -65,6 +71,7 @@ class _ClickableIcon(Widget):
 
 
 class ToggleIcon(_ClickableIcon, TooltipMixin):
+
     _widget_type = _PnToggleIcon
 
 
@@ -91,13 +98,7 @@ class ButtonIcon(_ClickableIcon, _ClickButton, TooltipMixin):
     _widget_type = _PnButtonIcon
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        **TooltipMixin._rename,
-        "clicks": None,
-    }
-
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
-        "button_style": None,
-        "description": None,
+        **TooltipMixin._rename, "name": "name",
     }
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
@@ -105,7 +106,7 @@ class ButtonIcon(_ClickableIcon, _ClickButton, TooltipMixin):
     }
 
     def __init__(self, **params):
-        click_handler = params.pop("on_click", None)
+        click_handler = params.pop('on_click', None)
         super().__init__(**params)
         if click_handler:
             self.on_click(click_handler)
@@ -129,3 +130,6 @@ class ButtonIcon(_ClickableIcon, _ClickButton, TooltipMixin):
           A `Watcher` that executes the callback when the MenuButton is clicked.
         """
         return self.param.watch(callback, "clicks", onlychanged=False)
+
+    def _process_event(self, event: param.parameterized.Event) -> None:
+        ...

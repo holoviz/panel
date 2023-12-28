@@ -2,7 +2,7 @@ from bokeh.core.properties import (
     Bool, Instance, Int, Nullable, String,
 )
 from bokeh.models.ui.tooltips import Tooltip
-from bokeh.models.widgets import Widget
+from bokeh.models.widgets import AbstractButton, Widget
 
 __all__ = (
     "ToggleIcon",
@@ -46,7 +46,7 @@ class ToggleIcon(_ClickableIcon):
     """
 
 
-class ButtonIcon(_ClickableIcon):
+class ButtonIcon(_ClickableIcon, AbstractButton):
     """
     A ButtonIcon is a clickable icon that toggles between an active
     and inactive state and keeps track of the number of times it has

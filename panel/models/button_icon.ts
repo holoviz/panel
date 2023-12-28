@@ -8,12 +8,17 @@ export class ButtonIconView extends ClickableIconView {
 
   public *controls() { }
 
-  toggle(): void {
+  update_cursor(): void {
+    this.icon_view.el.style.cursor = this.model.disabled ? 'default' : 'pointer';
+  }
+
+  click(): void {
     if (this.model.disabled) {
       return;
     }
+    super.click();
+    this.model.clicks += 1;
     const updateState = (value: boolean, disabled: boolean) => {
-      this.increment_clicks();
       this.model.value = value;
       this.model.disabled = disabled;
     };
@@ -22,22 +27,6 @@ export class ButtonIconView extends ClickableIconView {
       .then(() => {
         updateState(false, false);
       });
-  }
-
-  update_cursor(): void {
-    this.icon_view.el.style.cursor = this.model.disabled ? 'default' : 'pointer';
-  }
-
-  render(): void {
-    super.render();
-    this._click_listener = this.increment_clicks.bind(this)
-    this.icon_view.el.addEventListener("click", this._click_listener)
-  }
-
-  increment_clicks(): void {
-    if (!this.model.disabled) {
-      this.model.clicks = this.model.clicks + 1
-    }
   }
 }
 

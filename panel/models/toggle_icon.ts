@@ -7,12 +7,12 @@ export class ToggleIconView extends ClickableIconView {
 
   public *controls() { }
 
-  toggle(): void {
+  click(): void {
     if (this.model.disabled) {
       return;
     }
+    super.click();
     this.model.value = !this.model.value;
-    this.update_icon()
   }
 }
 

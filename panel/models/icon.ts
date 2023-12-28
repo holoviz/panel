@@ -5,6 +5,8 @@ import { Control, ControlView } from '@bokehjs/models/widgets/control';
 import type { IterViews } from '@bokehjs/core/build_views';
 import * as p from "@bokehjs/core/properties";
 import { build_view } from '@bokehjs/core/build_views';
+import { ButtonClick } from "@bokehjs/core/bokeh_events"
+import type { EventCallback } from "@bokehjs/model"
 
 export class ClickableIconView extends ControlView {
   model: ClickableIcon;
@@ -42,8 +44,6 @@ export class ClickableIconView extends ControlView {
     return icon.trim().startsWith('<svg');
   }
 
-  toggle(): void { }
-
   connect_signals(): void {
     super.connect_signals();
     const { icon, active_icon, disabled, value, size } = this.model.properties;
@@ -59,18 +59,18 @@ export class ClickableIconView extends ControlView {
     this.update_cursor()
     this.shadow_el.appendChild(this.icon_view.el);
 
-    const toggle = (visible: boolean) => {
+    const toggle_tooltip = (visible: boolean) => {
       this.tooltip?.model.setv({
         visible,
       })
     }
     let timer: number
     this.el.addEventListener("mouseenter", () => {
-      timer = setTimeout(() => toggle(true), this.model.tooltip_delay)
+      timer = setTimeout(() => toggle_tooltip(true), this.model.tooltip_delay)
     })
     this.el.addEventListener("mouseleave", () => {
       clearTimeout(timer)
-      toggle(false)
+      toggle_tooltip(false)
     })
   }
 
@@ -91,7 +91,7 @@ export class ClickableIconView extends ControlView {
       icon_model = new TablerIcon({ icon_name: icon, size: size });
     }
     const icon_view = await build_view(icon_model, { parent: this });
-    icon_view.el.addEventListener('click', () => this.toggle());
+    icon_view.el.addEventListener('click', () => this.click());
     return icon_view;
   }
 
@@ -134,6 +134,10 @@ export class ClickableIconView extends ControlView {
     const size = Math.max(maxWidth, maxHeight);
     return `${size}px`;
   }
+
+  click(): void {
+    this.model.trigger_event(new ButtonClick())
+  }
 }
 
 export namespace ClickableIcon {
@@ -170,5 +174,9 @@ export class ClickableIcon extends Control {
       tooltip: [Nullable(Ref(Tooltip)), null],
       tooltip_delay: [Number, 500],
     }));
+  }
+
+  on_click(callback: EventCallback<ButtonClick>): void {
+    this.on_event(ButtonClick, callback)
   }
 }
