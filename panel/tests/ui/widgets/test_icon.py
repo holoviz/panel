@@ -4,7 +4,7 @@ pytest.importorskip("playwright")
 
 
 from panel.tests.util import serve_component, wait_until
-from panel.widgets import ToggleIcon
+from panel.widgets import ButtonIcon, ToggleIcon
 
 pytestmark = pytest.mark.ui
 
@@ -173,3 +173,75 @@ def test_toggle_icon_svg_to_tabler(page):
     wait_until(lambda: len(events) == 1, page)
     assert icon.value
     assert page.locator('.icon-tabler-ad-filled')
+
+
+def test_button_icon(page):
+    icon = ButtonIcon(
+        icon="clipboard", active_icon="check",
+        toggle_duration=2000, size='5em'
+    )
+    serve_component(page, icon)
+
+    # test defaults
+    assert icon.icon == "clipboard"
+    assert not icon.disabled
+    assert page.locator('.clipboard')
+
+    events = []
+    def cb(event):
+        events.append(event)
+    icon.param.watch(cb, "clicks")
+
+    # test icon click updates clicks
+    page.click('.bk-TablerIcon')
+    wait_until(lambda: len(events) == 1, page)
+    assert len(events) == 1
+    assert icon.clicks == 1
+    assert page.locator('.check')
+
+    # reverts back to original icon after toggle_duration
+    wait_until(lambda: not icon.disabled, page)
+    assert not icon.disabled
+    assert page.locator('.clipboard')
+
+
+def test_button_icon_disabled(page):
+    icon = ButtonIcon(
+        icon="clipboard", active_icon="check",
+        toggle_duration=2000, size='5em', disabled=True
+    )
+    serve_component(page, icon)
+
+    # test defaults
+    assert icon.icon == "clipboard"
+    assert icon.disabled
+    assert page.locator('.clipboard')
+
+    events = []
+    def cb(event):
+        events.append(event)
+    icon.param.watch(cb, "clicks")
+
+    # test icon click does NOT update clicks
+    page.click('.bk-TablerIcon')
+    assert len(events) == 0
+    assert icon.clicks == 0
+    assert page.locator('.clipboard')
+
+    # now enable the button
+    icon.disabled = False
+    wait_until(lambda: not icon.disabled, page)
+    assert not icon.disabled
+    assert page.locator('.clipboard')
+
+    # test icon click updates clicks
+    page.click('.bk-TablerIcon')
+    wait_until(lambda: len(events) == 1, page)
+    assert icon.clicks == 1
+    assert page.locator('.check')
+    assert icon.disabled
+
+    # reverts back to original icon after toggle_duration
+    wait_until(lambda: not icon.disabled, page)
+    assert page.locator('.clipboard')
+    assert len(events) == 1
