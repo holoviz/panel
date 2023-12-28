@@ -1,3 +1,4 @@
+import { Tooltip, TooltipView } from "@bokehjs/models/ui/tooltip"
 import { TablerIcon, TablerIconView } from "@bokehjs/models/ui/icons/tabler_icon";
 import { SVGIcon, SVGIconView } from "@bokehjs/models/ui/icons/svg_icon";
 import { Control, ControlView } from '@bokehjs/models/widgets/control';
@@ -10,9 +11,12 @@ export class ClickableIconView extends ControlView {
   icon_view: TablerIconView | SVGIconView;
   was_svg_icon: boolean
 
+  protected tooltip: TooltipView | null
+
   public *controls() { }
 
   override remove(): void {
+    this.tooltip?.remove()
     this.icon_view?.remove();
     super.remove();
   }
@@ -22,11 +26,16 @@ export class ClickableIconView extends ControlView {
 
     this.was_svg_icon = this.is_svg_icon(this.model.icon)
     this.icon_view = await this.build_icon_model(this.model.icon, this.was_svg_icon);
+    const { tooltip } = this.model
+    if (tooltip != null)
+      this.tooltip = await build_view(tooltip, { parent: this })
   }
 
   override *children(): IterViews {
     yield* super.children();
     yield this.icon_view;
+    if (this.tooltip != null)
+      yield this.tooltip
   }
 
   is_svg_icon(icon: string): boolean {
@@ -49,6 +58,20 @@ export class ClickableIconView extends ControlView {
     this.update_icon()
     this.update_cursor()
     this.shadow_el.appendChild(this.icon_view.el);
+
+    const toggle = (visible: boolean) => {
+      this.tooltip?.model.setv({
+        visible,
+      })
+    }
+    let timer: number
+    this.el.addEventListener("mouseenter", () => {
+      timer = setTimeout(() => toggle(true), this.model.tooltip_delay)
+    })
+    this.el.addEventListener("mouseleave", () => {
+      clearTimeout(timer)
+      toggle(false)
+    })
   }
 
   update_cursor(): void {
@@ -120,6 +143,8 @@ export namespace ClickableIcon {
     icon: p.Property<string>;
     size: p.Property<string | null>;
     value: p.Property<boolean>;
+    tooltip: p.Property<Tooltip | null>
+    tooltip_delay: p.Property<number>
   };
 }
 
@@ -137,11 +162,13 @@ export class ClickableIcon extends Control {
   static {
     this.prototype.default_view = ClickableIconView;
 
-    this.define<ClickableIcon.Props>(({ Nullable, String, Boolean }) => ({
+    this.define<ClickableIcon.Props>(({ Nullable, Ref, Number, String, Boolean }) => ({
       active_icon: [String, ""],
       icon: [String, "heart"],
       size: [Nullable(String), null],
       value: [Boolean, false],
+      tooltip: [Nullable(Ref(Tooltip)), null],
+      tooltip_delay: [Number, 500],
     }));
   }
 }

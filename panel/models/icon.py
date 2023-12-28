@@ -1,4 +1,7 @@
-from bokeh.core.properties import Bool, Int, String
+from bokeh.core.properties import (
+    Bool, Instance, Int, Nullable, String,
+)
+from bokeh.models.ui.tooltips import Tooltip
 from bokeh.models.widgets import Widget
 
 __all__ = (
@@ -7,7 +10,11 @@ __all__ = (
 )
 
 
-class ClickableIcon(Widget):
+class _ClickableIcon(Widget):
+    """
+    A ClickableIcon is a clickable icon that toggles between an active
+    and inactive state.
+    """
 
     active_icon = String(default="", help="""
         The name of the icon to display when toggled.""")
@@ -21,12 +28,30 @@ class ClickableIcon(Widget):
     value = Bool(default=False, help="""
         Whether the icon is toggled on or off.""")
 
+    tooltip = Nullable(Instance(Tooltip), help="""
+        A tooltip with plain text or rich HTML contents, providing general help or
+        description of a widget's or component's function.
+        """)
 
-class ToggleIcon(ClickableIcon):
-    """"""
+    tooltip_delay = Int(500, help="""
+        Delay (in milliseconds) to display the tooltip after the cursor has
+        hovered over the Button, default is 500ms.
+        """)
 
 
-class ButtonIcon(ClickableIcon):
+class ToggleIcon(_ClickableIcon):
+    """
+    A ToggleIcon is a clickable icon that toggles between an active
+    and inactive state.
+    """
+
+
+class ButtonIcon(_ClickableIcon):
+    """
+    A ButtonIcon is a clickable icon that toggles between an active
+    and inactive state and keeps track of the number of times it has
+    been clicked.
+    """
 
     clicks = Int(default=0, help="""
         The number of times the button has been clicked.""")
