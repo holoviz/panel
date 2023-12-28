@@ -41,7 +41,7 @@ export class ButtonIconView extends ClickableIconView {
   }
 
   increment_clicks(): void {
-    if (!this._value) {
+    if (!this.model.disabled) {
       this.model.clicks = this.model.clicks + 1
     }
   }
