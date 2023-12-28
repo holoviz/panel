@@ -5,8 +5,8 @@ import type { IterViews } from '@bokehjs/core/build_views';
 import * as p from "@bokehjs/core/properties";
 import { build_view } from '@bokehjs/core/build_views';
 
-export class ToggleIconView extends ControlView {
-  model: ToggleIcon;
+export class ClickableIconView extends ControlView {
+  model: ClickableIcon;
   icon_view: TablerIconView | SVGIconView;
   was_svg_icon: boolean
 
@@ -33,18 +33,12 @@ export class ToggleIconView extends ControlView {
     return icon.trim().startsWith('<svg');
   }
 
-  toggle_value(): void {
-    if (this.model.disabled) {
-      return;
-    }
-    this.model.value = !this.model.value;
-    this.update_icon()
-  }
+  toggle(): void { }
 
   connect_signals(): void {
     super.connect_signals();
-    const { icon, active_icon, value, disabled } = this.model.properties;
-    this.on_change([active_icon, icon, value], () => this.update_icon());
+    const { icon, active_icon, disabled } = this.model.properties;
+    this.on_change([active_icon, icon], () => this.update_icon());
     this.on_change(disabled, () => this.update_cursor());
   }
 
@@ -69,12 +63,16 @@ export class ToggleIconView extends ControlView {
       icon_model = new TablerIcon({ icon_name: icon, size: size });
     }
     const icon_view = await build_view(icon_model, { parent: this });
-    icon_view.el.addEventListener('click', () => this.toggle_value());
+    icon_view.el.addEventListener('click', () => this.toggle());
     return icon_view;
   }
 
+  get_icon(): string {
+    return this.model.icon;
+  }
+
   async update_icon(): Promise<void> {
-    const icon = this.model.value ? this.get_active_icon() : this.model.icon;
+    const icon = this.get_icon();
     const is_svg_icon = this.is_svg_icon(icon)
 
     if (this.was_svg_icon !== is_svg_icon) {
@@ -110,19 +108,73 @@ export class ToggleIconView extends ControlView {
   }
 }
 
-export namespace ToggleIcon {
+export namespace ClickableIcon {
   export type Attrs = p.AttrsOf<Props>;
   export type Props = Control.Props & {
     active_icon: p.Property<string>;
     icon: p.Property<string>;
     size: p.Property<string | null>;
+  };
+}
+
+export interface ClickableIcon extends ClickableIcon.Attrs { }
+
+export class ClickableIcon extends Control {
+  properties: ClickableIcon.Props;
+  declare __view_type__: ClickableIconView
+  static __module__ = "panel.models.icon";
+
+  constructor(attrs?: Partial<ClickableIcon.Attrs>) {
+    super(attrs);
+  }
+
+  static {
+    this.prototype.default_view = ClickableIconView;
+
+    this.define<ClickableIcon.Props>(({ Nullable, String }) => ({
+      active_icon: [String, ""],
+      icon: [String, "heart"],
+      size: [Nullable(String), null],
+    }));
+  }
+}
+
+// ToggleIcon
+
+export class ToggleIconView extends ClickableIconView {
+  model: ToggleIcon;
+
+  public *controls() { }
+
+  toggle(): void {
+    if (this.model.disabled) {
+      return;
+    }
+    this.model.value = !this.model.value;
+    this.update_icon()
+  }
+
+  get_icon(): string {
+    return this.model.value ? this.get_active_icon() : this.model.icon;
+  }
+
+  connect_signals(): void {
+    super.connect_signals();
+    const { value } = this.model.properties;
+    this.on_change(value, () => this.update_icon());
+  }
+}
+
+export namespace ToggleIcon {
+  export type Attrs = p.AttrsOf<Props>;
+  export type Props = ClickableIcon.Props & {
     value: p.Property<boolean>;
   };
 }
 
 export interface ToggleIcon extends ToggleIcon.Attrs { }
 
-export class ToggleIcon extends Control {
+export class ToggleIcon extends ClickableIcon {
   properties: ToggleIcon.Props;
   declare __view_type__: ToggleIconView
   static __module__ = "panel.models.icon";
@@ -134,11 +186,68 @@ export class ToggleIcon extends Control {
   static {
     this.prototype.default_view = ToggleIconView;
 
-    this.define<ToggleIcon.Props>(({ Boolean, Nullable, String }) => ({
-      active_icon: [String, ""],
-      icon: [String, "heart"],
-      size: [Nullable(String), null],
+    this.define<ToggleIcon.Props>(({ Boolean }) => ({
       value: [Boolean, false],
+    }));
+  }
+}
+
+// ButtonIcon
+
+export class ButtonIconView extends ClickableIconView {
+  model: ButtonIcon;
+  value: boolean;
+
+  public *controls() { }
+
+  toggle(): void {
+    if (this.model.disabled) {
+      return;
+    }
+
+    this.value = true;
+    setTimeout(() => {
+      this.update_icon();
+      this.value = false;
+    }, this.model.active_duration);
+    this.update_icon();
+    this.model.clicks += 1;
+  }
+
+  get_icon(): string {
+    return this.value ? this.get_active_icon() : this.model.icon;
+  }
+
+  connect_signals(): void {
+    super.connect_signals();
+  }
+}
+
+export namespace ButtonIcon {
+  export type Attrs = p.AttrsOf<Props>;
+  export type Props = ClickableIcon.Props & {
+    clicks: p.Property<number>;
+    active_duration: p.Property<number>;
+  };
+}
+
+export interface ButtonIcon extends ButtonIcon.Attrs { }
+
+export class ButtonIcon extends ClickableIcon {
+  properties: ButtonIcon.Props;
+  declare __view_type__: ButtonIconView
+  static __module__ = "panel.models.icon";
+
+  constructor(attrs?: Partial<ButtonIcon.Attrs>) {
+    super(attrs);
+  }
+
+  static {
+    this.prototype.default_view = ButtonIconView;
+
+    this.define<ButtonIcon.Props>(({ Int }) => ({
+      clicks: [Int, 0],
+      active_duration: [Int, 500],
     }));
   }
 }
