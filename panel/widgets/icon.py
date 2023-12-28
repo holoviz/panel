@@ -17,56 +17,44 @@ from .button import _ClickButton
 
 
 class _ClickableIcon(Widget):
-    active_icon = param.String(
-        default="",
-        doc="""
+    active_icon = param.String(default='', doc="""
         The name of the icon to display when toggled from
-        tabler-icons.io](https://tabler-icons.io)/ or an SVG.""",
-    )
+        tabler-icons.io](https://tabler-icons.io)/ or an SVG.""")
 
-    icon = param.String(
-        default="heart",
-        doc="""
+    icon = param.String(default='heart', doc="""
         The name of the icon to display from
-        [tabler-icons.io](https://tabler-icons.io)/ or an SVG.""",
-    )
+        [tabler-icons.io](https://tabler-icons.io)/ or an SVG.""")
 
-    size = param.String(
-        default=None,
-        doc="""
-        An explicit size specified as a CSS font-size, e.g. '1.5em' or '20px'.""",
-    )
+    size = param.String(default=None, doc="""
+        An explicit size specified as a CSS font-size, e.g. '1.5em' or '20px'.""")
 
-    value = param.Boolean(
-        default=False,
-        doc="""
-        Whether the icon is toggled on or off.""",
-    )
+    value = param.Boolean(default=False, doc="""
+        Whether the icon is toggled on or off.""")
 
     _widget_type = _PnClickableIcon
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        **TooltipMixin._rename, "name": "name",
+        **TooltipMixin._rename, 'name': 'name',
     }
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
-        "description": None,
+        'description': None,
     }
 
-    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/icon.css"]
+    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/icon.css']
 
     def __init__(self, **params):
         super().__init__(**params)
 
-    @param.depends("icon", "active_icon", watch=True, on_init=True)
+    @param.depends('icon', 'active_icon', watch=True, on_init=True)
     def _update_icon(self):
         if not self.icon:
-            raise ValueError("The icon parameter must not be empty.")
+            raise ValueError('The icon parameter must not be empty.')
 
-        icon_is_svg = self.icon.startswith("<svg")
+        icon_is_svg = self.icon.startswith('<svg')
         if icon_is_svg and not self.active_icon:
             raise ValueError(
-                "The active_icon parameter must not be empty if icon is an SVG."
+                'The active_icon parameter must not be empty if icon is an SVG.'
             )
 
 
@@ -76,33 +64,24 @@ class ToggleIcon(_ClickableIcon, TooltipMixin):
 
 
 class ButtonIcon(_ClickableIcon, _ClickButton, TooltipMixin):
-    clicks = param.Integer(
-        default=0,
-        doc="""
-        The number of times the button has been clicked.""",
-    )
+    clicks = param.Integer(default=0, doc="""
+        The number of times the button has been clicked.""")
 
-    value = param.Boolean(
-        default=False,
-        doc="""
-        Toggles from False to True while the event is being processed.""",
-    )
+    value = param.Boolean(default=False, doc="""
+        Toggles from False to True while the event is being processed.""")
 
-    toggle_duration = param.Integer(
-        default=75,
-        doc="""
+    toggle_duration = param.Integer(default=75, doc="""
         The number of milliseconds the active_icon should be shown for
-        and how long the button should be disabled for.""",
-    )
+        and how long the button should be disabled for.""")
 
     _widget_type = _PnButtonIcon
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        **TooltipMixin._rename, "name": "name",
+        **TooltipMixin._rename, 'name': 'name',
     }
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
-        "event:button_click": None,
+        'event:button_click': None,
     }
 
     def __init__(self, **params):
@@ -129,7 +108,7 @@ class ButtonIcon(_ClickableIcon, _ClickButton, TooltipMixin):
         watcher: param.Parameterized.Watcher
           A `Watcher` that executes the callback when the MenuButton is clicked.
         """
-        return self.param.watch(callback, "clicks", onlychanged=False)
+        return self.param.watch(callback, 'clicks', onlychanged=False)
 
     def _process_event(self, event: param.parameterized.Event) -> None:
         """

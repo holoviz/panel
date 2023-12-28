@@ -95,12 +95,8 @@ export class ClickableIconView extends ControlView {
     return icon_view;
   }
 
-  get_icon(): string {
-    return this.model.value ? this.get_active_icon() : this.model.icon;
-  }
-
   async update_icon(): Promise<void> {
-    const icon = this.get_icon();
+    const icon = this.model.value ? this.get_active_icon() : this.model.icon;
     const is_svg_icon = this.is_svg_icon(icon)
 
     if (this.was_svg_icon !== is_svg_icon) {
