@@ -196,7 +196,8 @@ export class ToggleIcon extends ClickableIcon {
 
 export class ButtonIconView extends ClickableIconView {
   model: ButtonIcon;
-  value: boolean;
+  _value: boolean;
+  _click_listener: any
 
   public *controls() { }
 
@@ -205,12 +206,11 @@ export class ButtonIconView extends ClickableIconView {
       return;
     }
     const updateState = (value: boolean, disabled: boolean) => {
-      this.value = value;
+      this._value = value;
       this.model.disabled = disabled;
       this.update_icon();
     };
     updateState(true, true);
-    this.model.clicks += 1;
 
     new Promise(resolve => setTimeout(resolve, this.model.active_duration))
       .then(() => {
@@ -223,7 +223,17 @@ export class ButtonIconView extends ClickableIconView {
   }
 
   get_icon(): string {
-    return this.value ? this.get_active_icon() : this.model.icon;
+    return this._value ? this.get_active_icon() : this.model.icon;
+  }
+
+  render(): void {
+    super.render();
+    this._click_listener = this.increment_clicks.bind(this)
+    this.icon_view.el.addEventListener("click", this._click_listener)
+  }
+
+  increment_clicks() : void {
+    this.model.clicks = this.model.clicks + 1
   }
 
   connect_signals(): void {
