@@ -54,7 +54,7 @@ export class ClickableIconView extends ControlView {
     this.icon_view.el.style.cursor = this.model.disabled ? 'not-allowed' : 'pointer';
   }
 
-  async build_icon_model(icon: string, is_svg_icon: boolean): Promise<TablerIconView | SVGIconView > {
+  async build_icon_model(icon: string, is_svg_icon: boolean): Promise<TablerIconView | SVGIconView> {
     const size = this.calculate_size();
     let icon_model;
     if (is_svg_icon) {
@@ -204,14 +204,22 @@ export class ButtonIconView extends ClickableIconView {
     if (this.model.disabled) {
       return;
     }
-
-    this.value = true;
-    setTimeout(() => {
+    const updateState = (value: boolean, disabled: boolean) => {
+      this.value = value;
+      this.model.disabled = disabled;
       this.update_icon();
-      this.value = false;
-    }, this.model.active_duration);
-    this.update_icon();
+    };
+    updateState(true, true);
     this.model.clicks += 1;
+
+    new Promise(resolve => setTimeout(resolve, this.model.active_duration))
+      .then(() => {
+        updateState(false, false);
+      });
+  }
+
+  update_cursor(): void {
+    this.icon_view.el.style.cursor = this.model.disabled ? 'default' : 'pointer';
   }
 
   get_icon(): string {
@@ -247,7 +255,7 @@ export class ButtonIcon extends ClickableIcon {
 
     this.define<ButtonIcon.Props>(({ Int }) => ({
       clicks: [Int, 0],
-      active_duration: [Int, 500],
+      active_duration: [Int, 75],
     }));
   }
 }

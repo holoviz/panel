@@ -5,11 +5,14 @@ from typing import ClassVar, List, Mapping
 import param
 
 from ..io.resources import CDN_DIST
-from ..models import ToggleIcon as _PnToggleIcon
+from ..models import (
+    ButtonIcon as _PnButtonIcon, ClickableIcon as _PnClickableIcon,
+    ToggleIcon as _PnToggleIcon,
+)
 from .base import Widget
 
 
-class ToggleIcon(Widget):
+class ClickableIcon(Widget):
 
     active_icon = param.String(default='', doc="""
         The name of the icon to display when toggled from
@@ -22,10 +25,7 @@ class ToggleIcon(Widget):
     size = param.String(default=None, doc="""
         An explicit size specified as a CSS font-size, e.g. '1.5em' or '20px'.""")
 
-    value = param.Boolean(default=False, doc="""
-        Whether the icon is toggled on or off.""")
-
-    _widget_type = _PnToggleIcon
+    _widget_type = _PnClickableIcon
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'name', 'button_style': None}
 
@@ -42,3 +42,22 @@ class ToggleIcon(Widget):
         icon_is_svg = self.icon.startswith('<svg')
         if icon_is_svg and not self.active_icon:
             raise ValueError('The active_icon parameter must not be empty if icon is an SVG.')
+
+
+class ToggleIcon(ClickableIcon):
+
+    value = param.Boolean(default=False, doc="""
+        Whether the icon is toggled on or off.""")
+
+    _widget_type = _PnToggleIcon
+
+
+class ButtonIcon(ClickableIcon):
+
+    clicks = param.Integer(default=0, doc="""
+        The number of times the button has been clicked.""")
+
+    active_duration = param.Integer(default=75, doc="""
+        The number of milliseconds the active_icon should be shown for.""")
+
+    _widget_type = _PnButtonIcon
