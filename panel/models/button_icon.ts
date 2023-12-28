@@ -4,7 +4,6 @@ import * as p from "@bokehjs/core/properties";
 
 export class ButtonIconView extends ClickableIconView {
   model: ButtonIcon;
-  _value: boolean;
   _click_listener: any
 
   public *controls() { }
@@ -15,9 +14,8 @@ export class ButtonIconView extends ClickableIconView {
     }
     const updateState = (value: boolean, disabled: boolean) => {
       this.increment_clicks();
-      this._value = value;
+      this.model.value = value;
       this.model.disabled = disabled;
-      this.update_icon();
     };
     updateState(true, true);
     new Promise(resolve => setTimeout(resolve, this.model.toggle_duration))
@@ -30,10 +28,6 @@ export class ButtonIconView extends ClickableIconView {
     this.icon_view.el.style.cursor = this.model.disabled ? 'default' : 'pointer';
   }
 
-  get_icon(): string {
-    return this._value ? this.get_active_icon() : this.model.icon;
-  }
-
   render(): void {
     super.render();
     this._click_listener = this.increment_clicks.bind(this)
@@ -44,10 +38,6 @@ export class ButtonIconView extends ClickableIconView {
     if (!this.model.disabled) {
       this.model.clicks = this.model.clicks + 1
     }
-  }
-
-  connect_signals(): void {
-    super.connect_signals();
   }
 }
 

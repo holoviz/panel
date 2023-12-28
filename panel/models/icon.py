@@ -18,11 +18,12 @@ class ClickableIcon(Widget):
     size = String(default="1em", help="""
         The size of the icon as a valid CSS font-size.""")
 
-
-class ToggleIcon(ClickableIcon):
-
     value = Bool(default=False, help="""
         Whether the icon is toggled on or off.""")
+
+
+class ToggleIcon(ClickableIcon):
+    """"""
 
 
 class ButtonIcon(ClickableIcon):

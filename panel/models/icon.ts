@@ -37,9 +37,10 @@ export class ClickableIconView extends ControlView {
 
   connect_signals(): void {
     super.connect_signals();
-    const { icon, active_icon, disabled } = this.model.properties;
-    this.on_change([active_icon, icon], () => this.update_icon());
+    const { icon, active_icon, disabled, value, size } = this.model.properties;
+    this.on_change([active_icon, icon, value], () => this.update_icon());
     this.on_change(disabled, () => this.update_cursor());
+    this.on_change(size, () => this.update_size());
   }
 
   render(): void {
@@ -52,6 +53,10 @@ export class ClickableIconView extends ControlView {
 
   update_cursor(): void {
     this.icon_view.el.style.cursor = this.model.disabled ? 'not-allowed' : 'pointer';
+  }
+
+  update_size(): void {
+    this.icon_view.model.size = this.calculate_size();
   }
 
   async build_icon_model(icon: string, is_svg_icon: boolean): Promise<TablerIconView | SVGIconView> {
@@ -68,7 +73,7 @@ export class ClickableIconView extends ControlView {
   }
 
   get_icon(): string {
-    return this.model.icon;
+    return this.model.value ? this.get_active_icon() : this.model.icon;
   }
 
   async update_icon(): Promise<void> {
@@ -114,6 +119,7 @@ export namespace ClickableIcon {
     active_icon: p.Property<string>;
     icon: p.Property<string>;
     size: p.Property<string | null>;
+    value: p.Property<boolean>;
   };
 }
 
@@ -131,10 +137,11 @@ export class ClickableIcon extends Control {
   static {
     this.prototype.default_view = ClickableIconView;
 
-    this.define<ClickableIcon.Props>(({ Nullable, String }) => ({
+    this.define<ClickableIcon.Props>(({ Nullable, String, Boolean }) => ({
       active_icon: [String, ""],
       icon: [String, "heart"],
       size: [Nullable(String), null],
+      value: [Boolean, false],
     }));
   }
 }

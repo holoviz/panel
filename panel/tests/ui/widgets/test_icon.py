@@ -111,6 +111,12 @@ def test_toggle_icon_update_params_dynamically(page):
     icon.active_icon = ACTIVE_SVG
     assert page.locator('.icon-tabler-ad-filled')
 
+    # update size
+    icon.size = "8em"
+    assert page.locator('.icon-tabler-ad-filled').bounding_box()['width'] == 104
+    icon.size = "2em"
+    assert page.locator('.icon-tabler-ad-filled').bounding_box()['width'] == 104 / 4
+
 
 def test_toggle_icon_svg(page):
     icon = ToggleIcon(icon=SVG, active_icon=ACTIVE_SVG)
@@ -131,6 +137,7 @@ def test_toggle_icon_svg(page):
     wait_until(lambda: len(events) == 1, page)
     assert icon.value
     assert page.locator('.icon-tabler-ad-filled')
+
 
 def test_toggle_icon_tabler_to_svg(page):
     tabler = "ad-off"

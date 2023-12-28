@@ -14,23 +14,11 @@ export class ToggleIconView extends ClickableIconView {
     this.model.value = !this.model.value;
     this.update_icon()
   }
-
-  get_icon(): string {
-    return this.model.value ? this.get_active_icon() : this.model.icon;
-  }
-
-  connect_signals(): void {
-    super.connect_signals();
-    const { value } = this.model.properties;
-    this.on_change(value, () => this.update_icon());
-  }
 }
 
 export namespace ToggleIcon {
   export type Attrs = p.AttrsOf<Props>;
-  export type Props = ClickableIcon.Props & {
-    value: p.Property<boolean>;
-  };
+  export type Props = ClickableIcon.Props & {};
 }
 
 export interface ToggleIcon extends ToggleIcon.Attrs { }
@@ -47,8 +35,6 @@ export class ToggleIcon extends ClickableIcon {
   static {
     this.prototype.default_view = ToggleIconView;
 
-    this.define<ToggleIcon.Props>(({ Boolean }) => ({
-      value: [Boolean, false],
-    }));
+    this.define<ToggleIcon.Props>(({ }) => ({}));
   }
 }

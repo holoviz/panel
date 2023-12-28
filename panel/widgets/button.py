@@ -89,15 +89,11 @@ class IconMixin(Widget):
         return super()._process_param_change(params)
 
 
-class _ClickButton(_ButtonBase, IconMixin):
+class _ClickButton(Widget):
 
     __abstract = True
 
     _event: ClassVar[str] = 'button_click'
-
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
-        'button_style': None,
-    }
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
@@ -156,7 +152,7 @@ class _ClickButton(_ButtonBase, IconMixin):
         return Callback(self, code=callbacks, args=args)
 
 
-class Button(_ClickButton, TooltipMixin):
+class Button(_ButtonBase, _ClickButton, IconMixin, TooltipMixin):
     """
     The `Button` widget allows triggering events when the button is
     clicked.
@@ -304,7 +300,7 @@ class Toggle(_ButtonBase, IconMixin):
                 lambda x: x.active, 'active', 'cb_obj.active')
 
 
-class MenuButton(_ClickButton):
+class MenuButton(_ButtonBase, _ClickButton, IconMixin):
     """
     The `MenuButton` widget allows specifying a list of menu items to
     select from triggering events when the button is clicked.

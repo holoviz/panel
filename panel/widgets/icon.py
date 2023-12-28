@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import ClassVar, List, Mapping
+from typing import (
+    Callable, ClassVar, List, Mapping,
+)
 
 import param
 
@@ -10,6 +12,7 @@ from ..models import (
     ToggleIcon as _PnToggleIcon,
 )
 from .base import Widget
+from .button import _ClickButton
 
 
 class ClickableIcon(Widget):
@@ -24,6 +27,9 @@ class ClickableIcon(Widget):
 
     size = param.String(default=None, doc="""
         An explicit size specified as a CSS font-size, e.g. '1.5em' or '20px'.""")
+
+    value = param.Boolean(default=False, doc="""
+        Whether the icon is toggled on or off.""")
 
     _widget_type = _PnClickableIcon
 
@@ -44,21 +50,47 @@ class ClickableIcon(Widget):
             raise ValueError('The active_icon parameter must not be empty if icon is an SVG.')
 
 
-class ToggleIcon(ClickableIcon):
-
-    value = param.Boolean(default=False, doc="""
-        Whether the icon is toggled on or off.""")
+class ToggleIcon(ClickableIcon, _ClickButton):
 
     _widget_type = _PnToggleIcon
 
 
-class ButtonIcon(ClickableIcon):
+class ButtonIcon(ClickableIcon, _ClickButton):
 
     clicks = param.Integer(default=0, doc="""
         The number of times the button has been clicked.""")
+
+    value = param.Boolean(default=False, doc="""
+        Toggles from False to True while the event is being processed.""")
 
     toggle_duration = param.Integer(default=75, doc="""
         The number of milliseconds the active_icon should be shown for
         and how long the button should be disabled for.""")
 
     _widget_type = _PnButtonIcon
+
+    def __init__(self, **params):
+        click_handler = params.pop('on_click', None)
+        super().__init__(**params)
+        if click_handler:
+            self.on_click(click_handler)
+
+    def on_click(
+        self, callback: Callable[[param.parameterized.Event], None]
+    ) -> param.parameterized.Watcher:
+        """
+        Register a callback to be executed when the button is clicked.
+
+        The callback is given an `Event` argument declaring the number of clicks
+
+        Arguments
+        ---------
+        callback: (Callable[[param.parameterized.Event], None])
+            The function to run on click events. Must accept a positional `Event` argument
+
+        Returns
+        -------
+        watcher: param.Parameterized.Watcher
+          A `Watcher` that executes the callback when the MenuButton is clicked.
+        """
+        return self.param.watch(callback, 'clicks', onlychanged=False)
