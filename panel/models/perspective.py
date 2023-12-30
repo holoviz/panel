@@ -14,7 +14,7 @@ PERSPECTIVE_THEMES = [
     'pro', 'pro-dark', 'gruvbox', 'gruvbox-dark',
 ]
 
-PERSPECTIVE_VERSION = '2.6.0'
+PERSPECTIVE_VERSION = '2.7.1'
 
 THEME_PATH = f"@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/css/"
 THEME_URL = f"{config.npm_cdn}/{THEME_PATH}"
