@@ -11,6 +11,7 @@ from typing import (
 
 import param
 
+from param.parameterized import eval_function_with_deps, iscoroutinefunction
 from pyviz_comms import JupyterComm
 
 from ..io.notebook import push
@@ -197,7 +198,7 @@ class FileDownload(IconMixin):
                     filename = self.filename or self._file_path.name
                 except TypeError:
                     raise ValueError('Must provide filename if file-like '
-                                     'object is provided.')
+                                     'object is provided.') from None
                 label = '%s %s' % (label, filename)
             self.label = label
             self._default_label = True
@@ -207,21 +208,8 @@ class FileDownload(IconMixin):
         if self.embed:
             self._transfer()
 
-    @param.depends('_clicks', watch=True)
-    def _transfer(self):
-        if self.file is None and self.callback is None:
-            if self.embed:
-                raise ValueError('Must provide a file or a callback '
-                                 'if it is to be embedded.')
-            return
-
-        from ..param import ParamFunction
-        if self.callback is None:
-            fileobj = self.file
-        else:
-            fileobj = ParamFunction.eval(self.callback)
+    def _sync_data(self, fileobj):
         filename = self.filename
-
         if isinstance(fileobj, (str, Path)):
             fileobj = Path(fileobj)
             if not fileobj.exists():
@@ -243,9 +231,10 @@ class FileDownload(IconMixin):
                              type(fileobj).__name__)
 
         ext = filename.split('.')[-1]
-        for mtype, subtypes in self._mime_types.items():
-            stype = None
+        stype, mtype = None, None
+        for mime_type, subtypes in self._mime_types.items():
             if ext in subtypes:
+                mtype = mime_type
                 stype = subtypes[ext]
                 break
         if stype is None:
@@ -258,6 +247,28 @@ class FileDownload(IconMixin):
         self.param.update(data=data, filename=filename)
         self._update_label()
         self._transfers += 1
+
+    async def _async_sync_data(self):
+        fileobj = await eval_function_with_deps(self.callback)
+        self._sync_data(fileobj)
+
+    @param.depends('_clicks', watch=True)
+    def _transfer(self):
+        if self.file is None and self.callback is None:
+            if self.embed:
+                raise ValueError('Must provide a file or a callback '
+                                 'if it is to be embedded.')
+            return
+
+        if self.callback is None:
+            fileobj = self.file
+        else:
+            if iscoroutinefunction(self.callback):
+                state.execute(self._async_sync_data)
+                return
+            else:
+                fileobj = eval_function_with_deps(self.callback)
+        self._sync_data(fileobj)
 
 
 

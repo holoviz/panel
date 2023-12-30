@@ -114,7 +114,7 @@ def pytest_configure(config):
     for marker, info in optional_markers.items():
         config.addinivalue_line("markers",
                                 "{}: {}".format(marker, info['marker-descr']))
-    if getattr(config.option, 'jupyter') and not port_open(JUPYTER_PORT):
+    if config.option.jupyter and not port_open(JUPYTER_PORT):
         start_jupyter()
 
 
@@ -381,3 +381,17 @@ def change_test_dir(request):
     os.chdir(request.fspath.dirname)
     yield
     os.chdir(request.config.invocation_dir)
+
+@pytest.fixture
+def exception_handler_accumulator():
+    exceptions = []
+
+    def eh(exception):
+        exceptions.append(exception)
+
+    old_eh = config.exception_handler
+    config.exception_handler = eh
+    try:
+        yield exceptions
+    finally:
+        config.exception_handler = old_eh

@@ -54,10 +54,33 @@ Discover how to manually set up a Thread to process an event queue.
 :::
 
 :::{grid-item-card} {octicon}`arrow-switch;2.5em;sd-mr-1 sd-animate-grow50` Use Asynchronous Processing
-:link: async
+:link: ../callbacks/async
 :link-type: doc
 
-Discover how to make use of asynchronous callbacks to handle I/O bound operations concurrently.
+Discover how to make use of asynchronous callbacks to handle I/O and cpu bound operations concurrently.
+:::
+
+:::{grid-item-card} {octicon}`paper-airplane;2.5em;sd-mr-1 sd-animate-grow50` Sync to Async
+:link: sync_to_async
+:link-type: doc
+
+Discover how to run your sync callbacks asynchronously to handle I/O and cpu bound operations concurrently.
+:::
+
+::::
+
+## Scaling via an external compute engine
+
+You can also scale your application by offloading your compute heavy tasks to an external compute engine like [Dask](https://www.dask.org/). Please note that this may add additional overhead of several 100ms to your tasks.
+
+::::{grid} 1 2 2 2
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`versions;2.5em;sd-mr-1 sd-animate-grow50` Dask
+:link: dask
+:link-type: doc
+
+Discover how-to configure and use Dask to scale your Panel application
 :::
 
 ::::
@@ -70,5 +93,8 @@ Discover how to make use of asynchronous callbacks to handle I/O bound operation
 load_balancing
 processes
 threading
-async
+manual_threading
+../callbacks/async
+sync_to_async
+dask
 ```

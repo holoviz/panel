@@ -17,8 +17,8 @@ import tornado
 
 from bokeh.server.auth_provider import AuthProvider
 from tornado.auth import OAuth2Mixin
-from tornado.httpclient import HTTPError, HTTPRequest
-from tornado.web import RequestHandler, decode_signed_value
+from tornado.httpclient import HTTPError as HTTPClientError, HTTPRequest
+from tornado.web import HTTPError, RequestHandler, decode_signed_value
 from tornado.websocket import WebSocketHandler
 
 from .config import config
@@ -94,11 +94,13 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         'User-Agent': 'Tornado OAuth'
     }
 
-    _access_token_header = None
+    _DEFAULT_SCOPES = ['openid', 'email', 'profile', 'offline_access']
 
     _EXTRA_TOKEN_PARAMS = {
         'grant_type':    'authorization_code'
     }
+
+    _access_token_header = None
 
     _state_cookie = None
 
@@ -111,7 +113,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         if 'scope' in config.oauth_extra_params:
             return config.oauth_extra_params['scope']
         elif 'PANEL_OAUTH_SCOPE' not in os.environ:
-            return ['openid', 'email', 'profile', 'offline_access']
+            return self._DEFAULT_SCOPES
         return [scope for scope in os.environ['PANEL_OAUTH_SCOPE'].split(',')]
 
     async def get_authenticated_user(self, redirect_uri, client_id, state,
@@ -216,32 +218,32 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         )
         try:
             response = await http.fetch(req)
-        except HTTPError as e:
+        except HTTPClientError as e:
             log.debug("%s access token request failed.", type(self).__name__)
-            self._on_error(e.response)
-            return None, None, None, None
+            self._raise_error(e.response, status=401)
 
-        body = decode_response_body(response)
-        if not body:
+        if not response.body or not (body:= decode_response_body(response)):
             log.debug("%s token endpoint did not return a valid access token.", type(self).__name__)
-            return
+            self._raise_error(response)
 
         if 'access_token' not in body:
             if refresh_token:
                 log.debug("%s token endpoint did not reissue an access token.", type(self).__name__)
                 return None, None, None
-            self._on_error(response, body)
-            return None, None, None, None
+            self._raise_error(response, body, status=401)
 
         access_token, refresh_token = body['access_token'], body.get('refresh_token')
         expires_in = body.get('expires_in')
         if expires_in:
             expires_in = int(expires_in)
-        if 'id_token' in body:
-            log.debug("%s successfully obtained tokens.", type(self).__name__)
-            id_token = body['id_token']
-            user = self._on_auth(id_token, access_token, refresh_token, expires_in)
-            return user, access_token, refresh_token, expires_in
+        if id_token:= body.get('id_token'):
+            try:
+                user = self._on_auth(id_token, access_token, refresh_token, expires_in)
+            except HTTPError:
+                pass
+            else:
+                log.debug("%s successfully obtained access_token and id_token.", type(self).__name__)
+                return user, access_token, refresh_token, expires_in
 
         user_headers = dict(self._API_BASE_HEADERS)
         if self._access_token_header:
@@ -252,22 +254,22 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         else:
             user_url = '{}{}'.format(self._OAUTH_USER_URL, body['access_token'])
 
+        log.debug("%s requesting OpenID userinfo.", type(self).__name__)
         try:
             user_response = await http.fetch(user_url, headers=user_headers)
             id_token = decode_response_body(user_response)
-        except HTTPError:
+        except HTTPClientError:
             id_token = None
 
         if not id_token:
-            log.debug("%s could not obtain id_token, falling back to decoding access_token.", type(self).__name__)
+            log.debug("%s could not obtain userinfo or id_token, falling back to decoding access_token.", type(self).__name__)
             try:
                 id_token = decode_token(body['access_token'])
             except Exception:
                 log.debug("%s could not decode access_token.", type(self).__name__)
-                self._on_error(response, body)
-                return None, None, None, None
+                self._raise_error(response, body, status=401)
 
-        log.debug("%s successfully obtained tokens.", type(self).__name__)
+        log.debug("%s successfully obtained access_token and userinfo.", type(self).__name__)
         user = self._on_auth(id_token, access_token, refresh_token, expires_in)
         return user, access_token, refresh_token, expires_in
 
@@ -357,22 +359,14 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
                 "%s failed to authenticate with following error: %s",
                 type(self).__name__, error
             )
-            self.set_header("Content-Type", 'text/html')
-            self.write(self._error_template.render(
-                npm_cdn=config.npm_cdn,
-                title='Panel: Authentication Error',
-                error_type='Authentication Error',
-                error=error,
-                error_msg=error_msg
-            ))
-            return
+            raise HTTPError(401, error_msg, reason=error)
 
         # Seek the authorization
         cookie_state = self.get_state_cookie()
         if code:
             if cookie_state != url_state:
                 log.warning("OAuth state mismatch: %s != %s", cookie_state, url_state)
-                raise HTTPError(400, "OAuth state mismatch")
+                raise HTTPError(401, "OAuth state mismatch. Please restart the authentication flow.", reason='state mismatch')
 
             state = _deserialize_state(url_state)
             # For security reason, the state value (cross-site token) will be
@@ -384,7 +378,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
             })
             user = await self.get_authenticated_user(**params)
             if user is None:
-                raise HTTPError(403)
+                raise HTTPError(403, "Permissions unknown.")
             log.debug("%s authorized user, redirecting to app.", type(self).__name__)
             self.redirect(state.get('next_url', '/'))
         else:
@@ -405,7 +399,8 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         else:
             log.error("%s token payload did not contain expected %r.",
                       type(self).__name__, user_key)
-            raise HTTPError(400, "OAuth token payload missing user information")
+            raise HTTPError(401, "OAuth token payload missing user information")
+        self.clear_cookie('is_guest')
         self.set_secure_cookie('user', user, expires_days=config.oauth_expiry)
         if state.encryption:
             access_token = state.encryption.encrypt(access_token.encode('utf-8'))
@@ -423,8 +418,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
             state._oauth_user_overrides.pop(user, None)
         return user
 
-    def _on_error(self, response, body=None):
-        self.clear_all_cookies()
+    def _raise_error(self, response, body=None, status=400):
         try:
             body = body or decode_response_body(response)
         except json.decoder.JSONDecodeError:
@@ -437,13 +431,34 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
             log.warning(f"{provider} OAuth provider failed to fully "
                         f"authenticate returning the following response:"
                         f"{body}.")
+        raise HTTPError(
+            status,
+            body.get('error_description', str(body)),
+            reason=body.get('error', 'Unknown error')
+        )
+
+    def write_error(self, status_code, **kwargs):
+        _, e, _ = kwargs['exc_info']
+        self.clear_all_cookies()
         self.set_header("Content-Type", 'text/html')
+        if isinstance(e, HTTPError):
+            error, error_msg = e.reason, e.log_message
+        else:
+            provider = self.__class__.__name__.replace('LoginHandler', '')
+            log.error(
+                f'{provider} OAuth provider encountered unexpected '
+                f'error: {e}'
+            )
+            error, error_msg = (
+                '500: Internal Server Error',
+                'Server encountered unexpected problem.'
+            )
         self.write(self._error_template.render(
             npm_cdn=config.npm_cdn,
             title='Panel: Authentication Error',
             error_type='Authentication Error',
-            error=body.get('error', 'Unknown Error'),
-            error_msg=body.get('error_description', body)
+            error=error,
+            error_msg=error_msg
         ))
 
 
@@ -757,10 +772,9 @@ class GoogleLoginHandler(OAuthLoginHandler):
     _API_BASE_HEADERS = {
         "Content-Type": "application/x-www-form-urlencoded; charset=utf-8"
     }
-
+    _DEFAULT_SCOPES = ['openid', 'email', 'profile']
     _OAUTH_AUTHORIZE_URL = "https://accounts.google.com/o/oauth2/v2/auth"
     _OAUTH_ACCESS_TOKEN_URL = "https://accounts.google.com/o/oauth2/token"
-
     _USER_KEY = 'email'
 
 
@@ -813,8 +827,10 @@ class BasicLoginHandler(RequestHandler):
 
     def set_current_user(self, user):
         if not user:
+            self.clear_cookie("is_guest")
             self.clear_cookie("user")
             return
+        self.clear_cookie("is_guest")
         self.set_secure_cookie("user", user, expires_days=config.oauth_expiry)
         id_token = base64url_encode(json.dumps({'user': user}))
         if state.encryption:
@@ -849,7 +865,8 @@ class BasicAuthProvider(AuthProvider):
 
     def __init__(
         self, login_endpoint=None, logout_endpoint=None,
-        login_template=None, logout_template=None, error_template=None
+        login_template=None, logout_template=None, error_template=None,
+        guest_endpoints=None
     ):
         if error_template is None:
             self._error_template = ERROR_TEMPLATE
@@ -868,16 +885,34 @@ class BasicAuthProvider(AuthProvider):
                 self._login_template = _env.from_string(f.read())
         self._login_endpoint = login_endpoint or '/login'
         self._logout_endpoint = logout_endpoint or '/logout'
+        self._guest_endpoints = guest_endpoints or []
 
         state.on_session_destroyed(self._remove_user)
         super().__init__()
 
     def _remove_user(self, session_context):
+        guest_cookie = session_context.request.cookies.get('is_guest')
         user_cookie = session_context.request.cookies.get('user')
-        user = decode_signed_value(config.cookie_secret, 'user', user_cookie).decode('utf-8')
+        if guest_cookie:
+            user = 'guest'
+        elif user_cookie:
+            user = decode_signed_value(
+                config.cookie_secret, 'user', user_cookie
+            )
+            if user:
+                user = user.decode('utf-8')
+        else:
+            user = None
+        if not user:
+            return
         state._active_users[user] -= 1
         if not state._active_users[user]:
             del state._active_users[user]
+
+    def _allow_guest(self, uri):
+        if config.oauth_optional and not (uri == self._login_endpoint or '?code=' in uri):
+            return True
+        return True if uri.replace('/ws', '') in self._guest_endpoints else False
 
     @property
     def get_user(self):
@@ -885,8 +920,14 @@ class BasicAuthProvider(AuthProvider):
             user = request_handler.get_secure_cookie("user", max_age_days=config.oauth_expiry)
             if user:
                 user = user.decode('utf-8')
-                if user and isinstance(request_handler, WebSocketHandler):
-                    state._active_users[user] += 1
+            elif self._allow_guest(request_handler.request.uri):
+                user = "guest"
+                request_handler.request.cookies["is_guest"] = "1"
+                if not isinstance(request_handler, WebSocketHandler):
+                    request_handler.set_cookie("is_guest", "1", expires_days=config.oauth_expiry)
+
+            if user and isinstance(request_handler, WebSocketHandler):
+                state._active_users[user] += 1
             return user
         return get_user
 
@@ -925,10 +966,7 @@ class OAuthProvider(BasicAuthProvider):
     @property
     def get_user_async(self):
         async def get_user(handler):
-            user = handler.get_secure_cookie('user', max_age_days=config.oauth_expiry)
-            user = user.decode('utf-8') if user else None
-            if user and isinstance(handler, WebSocketHandler):
-                state._active_users[user] += 1
+            user = super(OAuthProvider, self).get_user(handler)
             if not config.oauth_refresh_tokens or user is None:
                 return user
 
@@ -1001,8 +1039,20 @@ class OAuthProvider(BasicAuthProvider):
         return handler
 
     def _remove_user(self, session_context):
+        guest_cookie = session_context.request.cookies.get('is_guest')
         user_cookie = session_context.request.cookies.get('user')
-        user = decode_signed_value(config.cookie_secret, 'user', user_cookie).decode('utf-8')
+        if guest_cookie:
+            user = 'guest'
+        elif user_cookie:
+            user = decode_signed_value(
+                config.cookie_secret, 'user', user_cookie
+            )
+            if user:
+                user = user.decode('utf-8')
+        else:
+            user = None
+        if not user:
+            return
         state._active_users[user] -= 1
         if not state._active_users[user]:
             del state._active_users[user]
@@ -1018,7 +1068,7 @@ class OAuthProvider(BasicAuthProvider):
         expiry_date = dt.datetime.now() + dt.timedelta(seconds=expiry_seconds) # schedule_task is in local TZ
         refresh_cb = partial(self._scheduled_refresh, user, refresh_token, application, request)
         if expiry_seconds <= 0:
-            refresh_cb()
+            state.execute(refresh_cb)
             return
         task = f'{user}-refresh-access-tokens'
         try:

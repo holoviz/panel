@@ -1,14 +1,14 @@
 import pytest
 
-try:
-    from playwright.sync_api import expect
-    pytestmark = pytest.mark.ui
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
+pytest.importorskip("playwright")
+
+from playwright.sync_api import expect
 
 from panel.pane import Markdown
 from panel.template import BootstrapTemplate
 from panel.tests.util import serve_component
+
+pytestmark = pytest.mark.ui
 
 
 def test_bootstrap_template_no_console_errors(page):

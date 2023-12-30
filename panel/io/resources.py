@@ -4,6 +4,7 @@ resources via the panel.config object.
 """
 from __future__ import annotations
 
+import functools
 import importlib
 import json
 import logging
@@ -13,7 +14,6 @@ import pathlib
 import re
 import textwrap
 
-from base64 import b64encode
 from collections import OrderedDict
 from contextlib import contextmanager
 from functools import lru_cache
@@ -38,7 +38,6 @@ from markupsafe import Markup
 
 from ..config import config, panel_extension as extension
 from ..util import isurl, url_path
-from .loading import LOADING_INDICATOR_CSS_CLASS
 from .state import state
 
 if TYPE_CHECKING:
@@ -61,8 +60,11 @@ with open(Path(__file__).parent.parent / 'package.json') as f:
 def get_env():
     ''' Get the correct Jinja2 Environment, also for frozen scripts.
     '''
-    local_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '_templates'))
-    return Environment(loader=FileSystemLoader(local_path))
+    internal_path = pathlib.Path(__file__).parent / '..' / '_templates'
+    template_path = pathlib.Path(__file__).parent / '..' / 'template'
+    return Environment(loader=FileSystemLoader([
+        str(internal_path.resolve()), str(template_path.resolve())
+    ]))
 
 def conffilter(value):
     return json.dumps(OrderedDict(value)).replace('"', '\'')
@@ -73,6 +75,10 @@ _env.lstrip_blocks = True
 _env.filters['json'] = lambda obj: Markup(json.dumps(obj))
 _env.filters['conffilter'] = conffilter
 _env.filters['sorted'] = sorted
+
+@functools.cache
+def parse_template(*args, **kwargs):
+    return _env.from_string(*args, **kwargs)
 
 # Handle serving of the panel extension before session is loaded
 RESOURCE_MODE = 'server'
@@ -174,12 +180,9 @@ def process_raw_css(raw_css):
 
 @lru_cache(maxsize=None)
 def loading_css(loading_spinner, color, max_height):
-    with open(ASSETS_DIR / f'{loading_spinner}_spinner.svg', encoding='utf-8') as f:
-        svg = f.read().replace('\n', '').format(color=color)
-    b64 = b64encode(svg.encode('utf-8')).decode('utf-8')
     return textwrap.dedent(f"""
-    :host(.{LOADING_INDICATOR_CSS_CLASS}.pn-{loading_spinner}):before, .pn-loading.pn-{loading_spinner}:before {{
-      background-image: url("data:image/svg+xml;base64,{b64}");
+    :host(.pn-loading):before, .pn-loading:before {{
+      background-color: {color};
       background-size: auto calc(min(50%, {max_height}px));
     }}""")
 
@@ -597,7 +600,7 @@ class Resources(BkResources):
                 resource = resource.replace(cdn_base, CDN_DIST)
             if self.mode == 'server':
                 resource = resource.replace(CDN_DIST, LOCAL_DIST)
-            if (resource.startswith(state.base_url) or resource.startswith('static/')):
+            if resource.startswith((state.base_url, "static/")):
                 if resource.startswith(state.base_url):
                     resource = resource[len(state.base_url):]
                 if state.rel_path:
@@ -666,10 +669,11 @@ class Resources(BkResources):
         # Inline local dist resources
         css_files = self._collect_external_resources("__css__")
         self.extra_resources(css_files, '__css__')
-        raw += [
-            (DIST_DIR / css.replace(CDN_DIST, '')).read_text(encoding='utf-8')
-            for css in css_files if is_cdn_url(css)
-        ]
+        if self.mode.lower() != 'cdn':
+            raw += [
+                (DIST_DIR / css.replace(CDN_DIST, '')).read_text(encoding='utf-8')
+                for css in css_files if is_cdn_url(css)
+            ]
 
         # Add local CSS files
         for cssf in config.css_files:

@@ -2,10 +2,14 @@ from __future__ import annotations
 
 import datetime as dt
 
+from contextlib import contextmanager
+
 import numpy as np
 import pandas as pd
 import param
 import pytest
+
+pytest.importorskip("playwright")
 
 from bokeh.models.widgets.tables import (
     BooleanFormatter, CheckboxEditor, DateEditor, DateFormatter,
@@ -13,21 +17,16 @@ from bokeh.models.widgets.tables import (
     ScientificFormatter, SelectEditor, StringEditor, StringFormatter,
     TextEditor,
 )
+from playwright.sync_api import expect
 
-from panel.layout.base import Column
-
-try:
-    from playwright.sync_api import expect
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
-
-pytestmark = pytest.mark.ui
-
-from panel import state
 from panel.depends import bind
+from panel.io.state import state
+from panel.layout.base import Column
 from panel.models.tabulator import _TABULATOR_THEMES_MAPPING
 from panel.tests.util import get_ctrl_modifier, serve_component, wait_until
 from panel.widgets import Select, Tabulator
+
+pytestmark = pytest.mark.ui
 
 
 @pytest.fixture
@@ -173,7 +172,6 @@ def test_tabulator_default(page, df_mixed, df_mixed_as_string):
         assert cols.nth(i).get_attribute('aria-sort') == 'none'
 
 
-@pytest.mark.flaky(max_runs=3)
 def test_tabulator_value_changed(page, df_mixed):
     widget = Tabulator(df_mixed)
 
@@ -682,6 +680,46 @@ def test_tabulator_editors_tabulator_list_default(page):
     # There should be a select element with the list of unique values
     # found in the column.
     expect(page.locator('.tabulator-edit-list')).to_have_text('AB')
+
+
+def test_tabulator_editors_tabulator_multiselect(page, exception_handler_accumulator):
+    # https://github.com/holoviz/panel/issues/5556
+    df = pd.DataFrame({"tags": ['', '', '']}, index=['foo1', 'foo2', 'foo3'],
+    )
+    tabulator_editors = {
+        'tags': {
+            'type': 'list',
+            'values': ['red', 'green', 'blue', 'orange'],
+            'multiselect': True,
+        }
+    }
+    widget = Tabulator(value=df, editors=tabulator_editors)
+    clicks = []
+    widget.on_click(clicks.append)
+
+    serve_component(page, widget)
+
+    cell = page.locator('.tabulator-cell:visible').nth(3)
+    cell.click()
+    val = ['red', 'blue']
+    for v in val:
+        item = page.locator(f'.tabulator-edit-list-item:has-text("{v}")')
+        item.click()
+    # Validating the filters doesn't have a very nice behavior, you need to lose
+    # focus on the multiselect by clicking somewhere else.
+    # Delay required before clicking for the focus to be lost and the filters accounted for.
+    page.wait_for_timeout(200)
+    page.locator('text="foo1"').click()
+
+    cell.click()
+    val = ['red', 'blue']
+    for v in val:
+        item = page.locator(f'.tabulator-edit-list-item:has-text("{v}")')
+        item.click()
+    page.wait_for_timeout(200)
+    page.locator('text="foo1"').click()
+
+    assert not exception_handler_accumulator
 
 
 @pytest.mark.parametrize('layout', Tabulator.param['layout'].objects)
@@ -1383,7 +1421,6 @@ def test_tabulator_selection_selectable_rows(page, df_mixed):
     assert widget.selected_dataframe.equals(expected_selected)
 
 
-@pytest.mark.flaky(max_runs=3)
 def test_tabulator_row_content(page, df_mixed):
     widget = Tabulator(df_mixed, row_content=lambda i: f"{i['str']}-row-content")
 
@@ -1688,7 +1725,7 @@ def test_tabulator_pagination(page, df_mixed, pagination):
     counts = count_per_page(len(df_mixed), page_size)
     i = 0
     while True:
-        wait_until(lambda: widget.page == i + 1, page)
+        wait_until(lambda: widget.page == i + 1, page)  # noqa: B023
         rows = page.locator('.tabulator-row')
         expect(rows).to_have_count(counts[i])
         assert page.locator(f'[aria-label="Show Page {i+1}"]').count() == 1
@@ -1791,7 +1828,7 @@ def test_tabulator_filter_param(page, df_mixed):
         p.s = filt_val
         df_filtered = df_mixed.loc[df_mixed[filt_col] == filt_val, :]
 
-        wait_until(lambda: widget.current_view.equals(df_filtered), page)
+        wait_until(lambda: widget.current_view.equals(df_filtered), page)  # noqa: B023
 
         # Check the table has the right number of rows
         expect(page.locator('.tabulator-row')).to_have_count(len(df_filtered))
@@ -1820,7 +1857,7 @@ def test_tabulator_filter_bound_function(page, df_mixed):
         w_filter.value = filt_val
         df_filtered = filt_(df_mixed, filt_val)
 
-        wait_until(lambda: widget.current_view.equals(df_filtered), page)
+        wait_until(lambda: widget.current_view.equals(df_filtered), page)  # noqa: B023
 
         # Check the table has the right number of rows
         expect(page.locator('.tabulator-row')).to_have_count(len(df_filtered))
@@ -1935,6 +1972,39 @@ def test_tabulator_header_filters_set_from_client(page, df_mixed):
     expected_filter2 = {'field': col, 'type': cmp, 'value': val}
     expect(page.locator('.tabulator-row')).to_have_count(len(expected_filter_df))
     wait_until(lambda: widget.filters == [expected_filter1, expected_filter2], page)
+    wait_until(lambda: widget.current_view.equals(expected_filter_df), page)
+
+
+def test_tabulator_header_filters_multiselect(page, df_mixed):
+    header_filters = {
+        'str': {
+            'type': 'list',
+            'func': 'in',
+            'valuesLookup': True,
+            'autocomplete': False,
+            'multiselect': True
+        },
+    }
+    widget = Tabulator(df_mixed, header_filters=header_filters, widths=dict(str=200))
+
+    serve_component(page, widget)
+
+    str_header = page.locator('input[type="search"]')
+    str_header.click()
+    cmp, col = 'in', 'str'
+    val = ['A', 'D']
+    for v in val:
+        item = page.locator(f'.tabulator-edit-list-item:has-text("{v}")')
+        item.click()
+    # Validating the filters doesn't have a very nice behavior, you need to lose
+    # focus on the multiselect by clicking somewhere else.
+    # Delay required before clicking for the focus to be lost and the filters accounted for.
+    page.wait_for_timeout(200)
+    page.locator('text="idx0"').click()
+    expected_filter_df = df_mixed.query(f'{col} {cmp} {val}')
+    expected_filter = {'field': col, 'type': cmp, 'value': val}
+    expect(page.locator('.tabulator-row')).to_have_count(len(expected_filter_df))
+    wait_until(lambda: widget.filters == [expected_filter], page)
     wait_until(lambda: widget.current_view.equals(expected_filter_df), page)
 
 
@@ -2118,7 +2188,6 @@ def test_tabulator_styling_init(page, df_mixed):
     expect(max_cell).to_have_css('background-color', _color_mapping['yellow'])
     expect(page.locator('text="false"')).to_have_css('color', _color_mapping['red'])
 
-
 def test_tabulator_patching_and_styling(page, df_mixed):
     df_styled = df_mixed.style.apply(highlight_max, subset=['int'])
     widget = Tabulator(df_styled)
@@ -2236,7 +2305,6 @@ def test_tabulator_sorters_on_init_multiple(page):
     # This fails
     assert int(first_index_rendered) == expected_first_index
 
-
 def test_tabulator_sorters_set_after_init(page, df_mixed):
     widget = Tabulator(df_mixed)
 
@@ -2290,7 +2358,6 @@ def test_tabulator_sorters_pagination_no_page_reset(page, df_mixed):
     assert widget.page == 2
 
 
-@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize('pagination', ['remote', 'local'])
 def test_tabulator_sorters_pagination(page, df_mixed, pagination):
     widget = Tabulator(df_mixed, pagination=pagination, page_size=2)
@@ -2488,7 +2555,6 @@ def test_tabulator_edit_event_and_header_filters(page):
     assert widget.current_view.equals(df.query('col1 == "a"'))
 
 
-@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize('show_index', [True, False])
 @pytest.mark.parametrize('index_name', ['index', 'foo'])
 def test_tabulator_edit_event_and_header_filters_same_column(page, show_index, index_name):
@@ -3177,8 +3243,10 @@ def test_tabulator_sorter_default_number(page):
             table_values = [int(v) for v in tabulator_column_values(page, 'x')]
         except Exception:
             return False
-        assert table_values == list(df2['x'].sort_values(ascending=False))
-
+        if table_values:
+            assert table_values == list(df2['x'].sort_values(ascending=False))
+        else:
+            return False
     wait_until(x_values, page)
 
 
@@ -3211,3 +3279,358 @@ def test_tabulator_update_hidden_columns(page):
         (title.bounding_box()['x'] == cell.bounding_box()['x']) and
         (title.bounding_box()['width'] == cell.bounding_box()['width'])
     ), page)
+
+
+class Test_RemotePagination:
+
+    @pytest.fixture(autouse=True)
+    def setup_widget(self, page):
+        self.widget = Tabulator(
+            value=pd.DataFrame(np.arange(20) + 100),
+            disabled=True,
+            pagination="remote",
+            page_size=10,
+            selectable=self.selectable,
+            header_filters=True,
+        )
+        serve_component(page, self.widget)
+
+    def check_selected(self, page, expected, ui_count=None):
+        if ui_count is None:
+            ui_count = len(expected)
+
+        expect(page.locator('.tabulator-selected')).to_have_count(ui_count)
+        wait_until(lambda: self.widget.selection == expected, page)
+
+    @contextmanager
+    def hold_down_ctrl(self, page):
+        key = get_ctrl_modifier()
+        page.keyboard.down(key)
+        yield
+        page.keyboard.up(key)
+
+    @contextmanager
+    def hold_down_shift(self, page):
+        key = "Shift"
+        page.keyboard.down(key)
+        yield
+        page.keyboard.up(key)
+
+    def get_rows(self, page):
+        return page.locator('.tabulator-row[role="row"]')
+
+    def goto_page(self, page, page_number):
+        page.locator(f'button.tabulator-page[data-page="{page_number}"]').click()
+        page.wait_for_timeout(100)
+
+    def click_sorting(self, page):
+        page.locator('div.tabulator-col-title').get_by_text("index").click()
+        page.wait_for_timeout(100)
+
+    def set_filtering(self, page, number):
+        number_input = page.locator('input[type="number"]').first
+        number_input.fill(str(number))
+        number_input.press("Enter")
+
+
+class Test_RemotePagination_Selection(Test_RemotePagination):
+    selectable = True
+
+    def test_one_item_first_page(self, page):
+        rows = self.get_rows(page)
+
+        rows.nth(0).click()
+        self.check_selected(page, [0])
+
+        with self.hold_down_ctrl(page):
+            rows.nth(0).click()
+        self.check_selected(page, [])
+
+    def test_one_item_first_page_and_then_another(self, page):
+        rows = self.get_rows(page)
+
+        rows.nth(0).click()
+        self.check_selected(page, [0])
+
+        rows.nth(1).click()
+        self.check_selected(page, [1])
+
+    def test_two_items_first_page(self, page):
+        rows = self.get_rows(page)
+
+        rows.nth(0).click()
+        self.check_selected(page, [0])
+
+        with self.hold_down_ctrl(page):
+            rows.nth(1).click()
+        self.check_selected(page, [0, 1])
+
+    def test_one_item_first_page_goto_second_page(self, page):
+        rows = self.get_rows(page)
+
+        rows.nth(0).click()
+        self.check_selected(page, [0], 1)
+
+        self.goto_page(page, 2)
+        self.check_selected(page, [0], 0)
+
+        self.goto_page(page, 1)
+        self.check_selected(page, [0], 1)
+
+    def test_one_item_both_pages_python(self, page):
+        self.widget.selection = [0, 10]
+        self.check_selected(page, [0, 10], 1)
+
+        self.goto_page(page, 2)
+        self.check_selected(page, [0, 10], 1)
+
+    def test_one_item_both_pages(self, page):
+        rows = self.get_rows(page)
+        rows.nth(0).click()
+        self.check_selected(page, [0], 1)
+
+        self.goto_page(page, 2)
+        rows = self.get_rows(page)
+        with self.hold_down_ctrl(page):
+            rows.nth(0).click()
+        self.check_selected(page, [0, 10], 1)
+
+    def test_one_item_and_then_second_page(self, page):
+        rows = self.get_rows(page)
+        rows.nth(0).click()
+        self.check_selected(page, [0], 1)
+
+        self.goto_page(page, 2)
+        rows = self.get_rows(page)
+        rows.nth(0).click()
+        self.check_selected(page, [10], 1)
+
+    @pytest.mark.parametrize("selection", (0, 10), ids=["page1", "page2"])
+    def test_sorting(self, page, selection):
+        self.widget.selection = [selection]
+        self.check_selected(page, [selection], int(selection == 0))
+
+        # First sort ascending
+        self.click_sorting(page)
+        self.check_selected(page, [selection], int(selection == 0))
+
+        # Then sort descending
+        self.click_sorting(page)
+        self.check_selected(page, [selection], int(selection == 10))
+
+        # Then back to ascending
+        self.click_sorting(page)
+        self.check_selected(page, [selection], int(selection == 0))
+
+    @pytest.mark.parametrize("selection", (0, 10), ids=["page1", "page2"])
+    def test_filtering(self, page, selection):
+        self.widget.selection = [selection]
+        self.check_selected(page, [selection], int(selection == 0))
+
+        self.set_filtering(page, selection)
+        self.check_selected(page, [selection], 1)
+
+        self.set_filtering(page, 1)
+        self.check_selected(page, [selection], 0)
+
+    def test_shift_select_page_1(self, page):
+        rows = self.get_rows(page)
+        with self.hold_down_shift(page):
+            rows.nth(0).click()
+            rows.nth(2).click()
+        self.check_selected(page, [0, 1, 2])
+
+        self.goto_page(page, 2)
+        self.check_selected(page, [0, 1, 2], 0)
+
+        self.goto_page(page, 1)
+        self.check_selected(page, [0, 1, 2])
+
+    def test_shift_select_page_2(self, page):
+        self.check_selected(page, [])
+
+        self.goto_page(page, 2)
+        rows = self.get_rows(page)
+        with self.hold_down_shift(page):
+            rows.nth(0).click()
+            rows.nth(2).click()
+        self.check_selected(page, [10, 11, 12])
+
+        self.goto_page(page, 1)
+        self.check_selected(page, [10, 11, 12], 0)
+
+    def test_shift_select_both_pages(self, page):
+        rows = self.get_rows(page)
+        with self.hold_down_shift(page):
+            rows.nth(0).click()
+            rows.nth(2).click()
+        self.check_selected(page, [0, 1, 2])
+
+        self.goto_page(page, 2)
+        rows = self.get_rows(page)
+        with self.hold_down_shift(page):
+            rows.nth(0).click()
+            rows.nth(2).click()
+        self.check_selected(page, [0, 1, 2, 10, 11, 12], 3)
+
+        self.goto_page(page, 1)
+        self.check_selected(page, [0, 1, 2, 10, 11, 12], 3)
+
+
+class Test_RemotePagination_NumberSelection(Test_RemotePagination):
+    selectable = 2
+
+    def test_selectable_integer_page_1(self, page):
+        rows = self.get_rows(page)
+        with self.hold_down_ctrl(page):
+            rows.nth(0).click()
+            rows.nth(1).click()
+        self.check_selected(page, [0, 1])
+
+        with self.hold_down_ctrl(page):
+            rows.nth(2).click()
+        self.check_selected(page, [1, 2])
+
+        self.goto_page(page, 2)
+        self.check_selected(page, [1, 2], 0)
+
+        self.goto_page(page, 1)
+        self.check_selected(page, [1, 2])
+
+    def test_selectable_integer_page_2(self, page):
+        self.goto_page(page, 2)
+        rows = self.get_rows(page)
+        with self.hold_down_ctrl(page):
+            rows.nth(0).click()
+            rows.nth(1).click()
+        self.check_selected(page, [10, 11])
+
+        with self.hold_down_ctrl(page):
+            rows.nth(2).click()
+        self.check_selected(page, [11, 12])
+
+        self.goto_page(page, 1)
+        self.check_selected(page, [11, 12], 0)
+
+    def test_selectable_integer_both_pages(self, page):
+        rows = self.get_rows(page)
+        with self.hold_down_ctrl(page):
+            rows.nth(0).click()
+            rows.nth(1).click()
+        self.check_selected(page, [0, 1])
+
+        self.goto_page(page, 2)
+        rows = self.get_rows(page)
+        with self.hold_down_ctrl(page):
+            rows.nth(0).click()
+        self.check_selected(page, [1, 10], 1)
+
+        self.goto_page(page, 1)
+        self.check_selected(page, [1, 10], 1)
+
+
+class Test_RemotePagination_CheckboxSelection(Test_RemotePagination):
+    selectable="checkbox"
+
+    def get_checkboxes(self, page):
+        return page.locator('input[type="checkbox"]')
+
+    def test_full_firstpage(self, page):
+        checkboxes = self.get_checkboxes(page)
+
+        # Select all items on page
+        checkboxes.nth(0).click()
+        self.check_selected(page, list(range(10)))
+
+        # Deselect last one
+        checkboxes.last.click()
+        self.check_selected(page, list(range(9)))
+
+    def test_one_item_first_page(self, page):
+        checkboxes = self.get_checkboxes(page)
+
+        checkboxes.nth(1).click()
+        self.check_selected(page, [0])
+
+        checkboxes.nth(1).click()
+        self.check_selected(page, [])
+
+    def test_one_item_first_page_goto_second_page(self, page):
+        checkboxes = self.get_checkboxes(page)
+
+        checkboxes.nth(1).click()
+        self.check_selected(page, [0], 1)
+
+        self.goto_page(page, 2)
+        self.check_selected(page, [0], 0)
+
+        self.goto_page(page, 1)
+        self.check_selected(page, [0], 1)
+
+    def test_one_item_both_pages_python(self, page):
+        self.widget.selection = [0, 10]
+        self.check_selected(page, [0, 10], 1)
+
+        self.goto_page(page, 2)
+        self.check_selected(page, [0, 10], 1)
+
+    @pytest.mark.parametrize("selection", (0, 10), ids=["page1", "page2"])
+    def test_sorting(self, page, selection):
+        self.widget.selection = [selection]
+        self.check_selected(page, [selection], int(selection == 0))
+
+        # First sort ascending
+        self.click_sorting(page)
+        self.check_selected(page, [selection], int(selection == 0))
+
+        # Then sort descending
+        self.click_sorting(page)
+        self.check_selected(page, [selection], int(selection == 10))
+
+        # Then back to ascending
+        self.click_sorting(page)
+        self.check_selected(page, [selection], int(selection == 0))
+
+    def test_sorting_all(self, page):
+        checkboxes = self.get_checkboxes(page)
+
+        # Select all items on page
+        checkboxes.nth(0).click()
+
+        # First sort ascending
+        self.click_sorting(page)
+        self.check_selected(page, list(range(10)), 10)
+
+        # Then sort descending
+        self.click_sorting(page)
+        self.check_selected(page, list(range(10)), 0)
+
+        # Then back to ascending
+        self.click_sorting(page)
+        self.check_selected(page, list(range(10)), 10)
+
+    @pytest.mark.parametrize("selection", (0, 10), ids=["page1", "page2"])
+    def test_filtering(self, page, selection):
+        self.widget.selection = [selection]
+        self.check_selected(page, [selection], int(selection == 0))
+
+        self.set_filtering(page, selection)
+        self.check_selected(page, [selection], 1)
+
+        self.set_filtering(page, 1)
+        self.check_selected(page, [selection], 0)
+
+    def test_filtering_all(self, page):
+        checkboxes = self.get_checkboxes(page)
+
+        # Select all items on page
+        checkboxes.nth(0).click()
+
+        for n in range(10):
+            self.set_filtering(page, n)
+            self.check_selected(page, list(range(10)), 1)
+
+        for n in range(10, 20):
+            self.set_filtering(page, n)
+            self.check_selected(page, list(range(10)), 0)
+            expect(page.locator('.tabulator')).to_have_count(1)

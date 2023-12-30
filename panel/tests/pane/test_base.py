@@ -103,6 +103,13 @@ def test_pane_clone(pane):
     assert ([(k, v) for k, v in sorted(p.param.values().items()) if k not in ('name', '_pane')] ==
             [(k, v) for k, v in sorted(clone.param.values().items()) if k not in ('name', '_pane')])
 
+def test_pane_with_non_defaults_clone():
+    p = Markdown("Hello World", sizing_mode="stretch_width")
+    clone = p.clone()
+
+    assert ([(k, v) for k, v in sorted(p.param.values().items()) if k not in ('name', '_pane')] ==
+            [(k, v) for k, v in sorted(clone.param.values().items()) if k not in ('name', '_pane')])
+
 
 @pytest.mark.parametrize('pane', all_panes)
 def test_pane_signature(pane):

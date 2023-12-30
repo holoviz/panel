@@ -147,6 +147,18 @@ class Serve(_BkServe):
             action  = 'store_true',
             help    = "Whether to automatically OAuth access tokens when they expire.",
         )),
+        ('--oauth-guest-endpoints', dict(
+            action  = 'store',
+            nargs   = '*',
+            help    = "List of endpoints that can be accessed as a guest without authenticating.",
+        )),
+        ('--oauth-optional', dict(
+            action  = 'store_true',
+            help    = (
+                "Whether the user will be forced to go through login flow "
+                "or if they can access all applications as a guest."
+            )
+        )),
         ('--login-endpoint', dict(
             action  = 'store',
             type    = str,
@@ -478,6 +490,11 @@ class Serve(_BkServe):
         else:
             error_template = None
 
+        if args.oauth_guest_endpoints:
+            config.oauth_guest_endpoints = args.oauth_guest_endpoints
+        if args.oauth_optional:
+            config.oauth_optional = args.oauth_optional
+
         if args.basic_auth:
             config.basic_auth = args.basic_auth
         if config.basic_auth:
@@ -485,7 +502,8 @@ class Serve(_BkServe):
                 login_endpoint=login_endpoint,
                 logout_endpoint=logout_endpoint,
                 login_template=login_template,
-                logout_template=logout_template
+                logout_template=logout_template,
+                guest_endpoints=config.oauth_guest_endpoints,
             )
 
         if args.cookie_secret and config.cookie_secret:
@@ -561,7 +579,7 @@ class Serve(_BkServe):
                     raise ValueError("OAuth encryption key was not a valid base64 "
                                      "string. Generate an encryption key with "
                                      "`panel oauth-secret` and ensure you did not "
-                                     "truncate the returned string.")
+                                     "truncate the returned string.") from None
                 if len(key) != 32:
                     raise ValueError(
                         "OAuth encryption key must be 32 url-safe "
@@ -569,7 +587,7 @@ class Serve(_BkServe):
                     )
                 config.oauth_encryption_key = encryption_key
             elif not config.oauth_encryption_key:
-                print("WARNING: OAuth has not been configured with an "
+                print("WARNING: OAuth has not been configured with an " # noqa: T201
                       "encryption key and will potentially leak "
                       "credentials in cookies and a JWT token embedded "
                       "in the served website. Use at your own risk or "
@@ -587,7 +605,7 @@ class Serve(_BkServe):
                         "Using OAuth2 provider with Panel requires the "
                         "cryptography library. Install it with `pip install "
                         "cryptography` or `conda install cryptography`."
-                    )
+                    ) from None
                 state.encryption = Fernet(config.oauth_encryption_key)
 
             kwargs['auth_provider'] = OAuthProvider(
@@ -596,6 +614,7 @@ class Serve(_BkServe):
                 login_template=login_template,
                 logout_template=logout_template,
                 error_template=error_template,
+                guest_endpoints=config.oauth_guest_endpoints,
             )
 
             if args.oauth_redirect_uri and config.oauth_redirect_uri:

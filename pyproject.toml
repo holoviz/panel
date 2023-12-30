@@ -29,6 +29,10 @@ exclude = [
     "node_modules",
     "apps",
 ]
+line-length = 165
+fix = true
+
+[tool.ruff.lint]
 ignore = [
     "E402",
     "E712",
@@ -36,18 +40,37 @@ ignore = [
     "E741",
     "W605",
     "E701", # Multiple statements on one line
+    "B006", # Do not use mutable data structures for argument defaults
 ]
-line-length = 165
 select = [
+    "B",
     "E",
     "F",
     "W",
+    "PIE",
+    "T20",
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "panel/tests/ui/jupyter_server_test_config.py" = ["F821"]
+"panel/compiler.py" = ["T201"]
+"panel/io/convert.py" = ["T201"]
+"panel/pane/vtk/synchronizable_*.py" = ["T201"]
 
 [tool.codespell]
 ignore-words-list = "nd,doubleclick"
 skip = "doc/generate_modules.py,examples/reference/templates/FastGridTemplate.ipynb,panel/eslint.js,panel/package-lock.json,panel/package.json"
 write-changes = true
+
+[tool.pytest.ini_options]
+addopts = "-v --pyargs --doctest-ignore-import-errors --color=yes"
+norecursedirs = "doc .git dist build _build .ipynb_checkpoints panel/examples"
+xfail_strict = true
+filterwarnings = [
+    # 2023-11: ChatBox and ChatRow are deprecated
+    "ignore:'pn.widgets.ChatBox' is deprecated and will be removed in version 1.4",
+    "ignore:'pn.widgets.ChatRow' is deprecated and will be removed in version 1.4",
+    # 2023-11: `pkg_resources` is deprecated
+    "ignore:Deprecated call to `pkg_resources.+?'zope:DeprecationWarning",  # https://github.com/zopefoundation/meta/issues/194
+    "ignore: pkg_resources is deprecated as an API:DeprecationWarning:streamz.plugins", # https://github.com/python-streamz/streamz/issues/460
+]

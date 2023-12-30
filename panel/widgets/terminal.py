@@ -110,9 +110,9 @@ class TerminalSubprocess(param.Parameterized):
             # that it finished.
             try:
                 result = subprocess.run(args, **kwargs)
-                print(str(result))
+                print(str(result))  # noqa: T201
             except FileNotFoundError as e:
-                print(str(e) + "\nCompletedProcess('FileNotFoundError')")
+                print(str(e) + "\nCompletedProcess('FileNotFoundError')")  # noqa: T201
         else:
             # this is the PARENT process fork.
             self._child_pid = child_pid

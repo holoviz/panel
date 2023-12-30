@@ -311,9 +311,10 @@ class Plotly(ModelPane):
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        self._bokeh_model = lazy_load(
-            'panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm), root
-        )
+        if not hasattr(self, '_bokeh_model'):
+            self._bokeh_model = lazy_load(
+                'panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm), root
+            )
         return super()._get_model(doc, root, parent, comm)
 
     def _update(self, ref: str, model: Model) -> None:

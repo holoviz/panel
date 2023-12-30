@@ -18,7 +18,7 @@ from .layout import HTMLBox
 
 TABULATOR_VERSION = "5.5.0"
 
-JS_SRC = f"{config.npm_cdn}/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.js"
+JS_SRC = f"{config.npm_cdn}/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js"
 MOMENT_SRC = f"{config.npm_cdn}/luxon/build/global/luxon.min.js"
 
 THEME_PATH = f"tabulator-tables@{TABULATOR_VERSION}/dist/css/"
@@ -51,6 +51,35 @@ class TableEditEvent(ModelEvent):
             f'{type(self).__name__}(column={self.column}, row={self.row}, '
             f'value={self.value}, old={self.old})'
         )
+
+class SelectionEvent(ModelEvent):
+
+    event_name = 'selection-change'
+
+    def __init__(self, model, indices, selected, flush):
+        """ Selection Event
+
+        Parameters
+        ----------
+        model : ModelEvent
+            An event send when a selection is changed on the frontend.
+        indices : list[int]
+            A list of changed indices selected/deselected rows.
+        selected : bool
+            If true the rows were selected, if false they were deselected.
+        flush : bool
+            Whether the current selection should be emptied before adding the new indices.
+        """
+        self.indices = indices
+        self.selected = selected
+        self.flush = flush
+        super().__init__(model=model)
+
+    def __repr__(self):
+        return (
+            f'{type(self).__name__}(indices={self.indices}, selected={self.selected}, flush={self.flush})'
+        )
+
 
 class CellClickEvent(ModelEvent):
 

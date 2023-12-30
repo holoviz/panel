@@ -1,14 +1,14 @@
 import pytest
 
-try:
-    from playwright.sync_api import expect
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
+pytest.importorskip("playwright")
+
+from playwright.sync_api import expect
 
 from panel import Column, Spacer
 from panel.tests.util import serve_component, wait_until
 
 pytestmark = pytest.mark.ui
+
 
 def test_column_scroll(page):
     col = Column(
@@ -170,7 +170,6 @@ def test_column_view_latest(page):
     expect(column).not_to_have_js_property('scrollTop', '0')
 
 
-@pytest.mark.flaky(max_runs=3)
 def test_column_scroll_position_init(page):
     col = Column(
         Spacer(styles=dict(background='red'), width=200, height=200),

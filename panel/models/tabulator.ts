@@ -43,6 +43,20 @@ export class CellClickEvent extends ModelEvent {
   }
 }
 
+export class SelectionEvent extends ModelEvent {
+  constructor(readonly indices: number[], readonly selected: boolean, readonly flush: boolean = false) {
+    super()
+  }
+
+  protected get event_values(): Attrs {
+    return {model: this.origin, indices: this.indices, selected: this.selected, flush: this.flush}
+  }
+
+  static {
+    this.prototype.event_name = "selection-change"
+  }
+}
+
 declare const Tabulator: any;
 
 function find_group(key: any, value: string, records: any[]): any {
@@ -212,12 +226,12 @@ const dateEditor = function(cell: any, onRendered: any, success: any, cancel: an
   input.addEventListener("blur", onChange);
 
   //submit new value on enter
-  input.addEventListener("keydown", function(e){
-    if(e.keyCode == 13)
-      onChange()
+  input.addEventListener("keydown", (e) => {
+    if (e.key == "Enter")
+      setTimeout(onChange, 100)
 
-    if(e.keyCode == 27)
-      cancel()
+    if (e.key == "Escape")
+      setTimeout(cancel, 100)
   });
 
   return input;
@@ -266,12 +280,12 @@ const datetimeEditor = function(cell: any, onRendered: any, success: any, cancel
   input.addEventListener("blur", onChange);
 
   //submit new value on enter
-  input.addEventListener("keydown", function(e){
-    if(e.keyCode == 13)
-      onChange()
+  input.addEventListener("keydown", (e) => {
+    if (e.key == "Enter")
+      setTimeout(onChange, 100)
 
-    if(e.keyCode == 27)
-      cancel()
+    if (e.key == "Escape")
+      setTimeout(cancel, 100)
   });
 
   return input;
@@ -352,7 +366,12 @@ export class DataTabulatorView extends HTMLBoxView {
     this.connect(p.frozen_rows.change, () => this.setFrozen())
     this.connect(p.sorters.change, () => this.setSorters())
     this.connect(p.theme_classes.change, () => this.setCSSClasses(this.tabulator.element))
-    this.connect(this.model.source.properties.data.change, () => this.setData())
+    this.connect(this.model.source.properties.data.change, () => {
+      this._selection_updating = true
+      this.setData()
+      this._selection_updating = false
+      this.postUpdate()
+    })
     this.connect(this.model.source.streaming, () => this.addData())
     this.connect(this.model.source.patching, () => {
       const inds = this.model.source.selected.indices
@@ -475,7 +494,7 @@ export class DataTabulatorView extends HTMLBoxView {
     }, 50, false))
 
     // Sync state with model
-    this.tabulator.on("rowSelectionChanged", (data: any, rows: any) => this.rowSelectionChanged(data, rows))
+    this.tabulator.on("rowSelectionChanged", (data: any, rows: any, selected: any, deselected: any) => this.rowSelectionChanged(data, rows, selected, deselected))
     this.tabulator.on("rowClick", (e: any, row: any) => this.rowClicked(e, row))
     this.tabulator.on("cellEdited", (cell: any) => this.cellEdited(cell))
     this.tabulator.on("dataFiltering", (filters: any) => {
@@ -1051,6 +1070,28 @@ export class DataTabulatorView extends HTMLBoxView {
     let indices: number[] = []
     const selected = this.model.source.selected
     const index: number = row._row.data._index
+
+    if (this.model.pagination === 'remote') {
+      const includes = this.model.source.selected.indices.indexOf(index) == -1
+      const flush = !(e.ctrlKey || e.metaKey || e.shiftKey)
+      if (e.shiftKey && selected.indices.length) {
+        const start = selected.indices[selected.indices.length-1]
+        if (index>start) {
+          for (let i = start; i<=index; i++)
+            indices.push(i)
+        } else {
+          for (let i = start; i>=index; i--)
+            indices.push(i)
+        }
+      } else {
+        indices.push(index)
+      }
+      this._selection_updating = true
+      this.model.trigger_event(new SelectionEvent(indices, includes, flush))
+      this._selection_updating = false
+      return
+    }
+
     if (e.ctrlKey || e.metaKey) {
       indices = [...this.model.source.selected.indices]
     } else if (e.shiftKey && selected.indices.length) {
@@ -1091,7 +1132,7 @@ export class DataTabulatorView extends HTMLBoxView {
     return filtered
   }
 
-  rowSelectionChanged(data: any, _: any): void {
+  rowSelectionChanged(data: any, _row: any, selected: any, deselected: any): void {
     if (
         this._selection_updating ||
         this._initializing ||
@@ -1100,10 +1141,23 @@ export class DataTabulatorView extends HTMLBoxView {
         this.model.configuration.dataTree
     )
       return
-    const indices: number[] = data.map((row: any) => row._index)
-    const filtered = this._filter_selected(indices)
-    this._selection_updating = indices.length === filtered.length
-    this.model.source.selected.indices = filtered
+    if (this.model.pagination === 'remote') {
+      let selected_indices = selected.map((x: any) => x._row.data._index)
+      let deselected_indices = deselected.map((x: any) => x._row.data._index)
+      if (selected_indices.length > 0) {
+        this._selection_updating = true
+        this.model.trigger_event(new SelectionEvent(selected_indices, true, false))
+      }
+      if (deselected_indices.length > 0) {
+        this._selection_updating = true
+        this.model.trigger_event(new SelectionEvent(deselected_indices, false, false))
+      }
+    } else {
+      const indices: number[] = data.map((row: any) => row._index)
+      const filtered = this._filter_selected(indices)
+      this._selection_updating = indices.length === filtered.length
+      this.model.source.selected.indices = filtered
+    }
     this._selection_updating = false
   }
 

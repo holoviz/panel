@@ -161,7 +161,7 @@ class Param(PaneBase):
         Bokeh model.""")
 
     parameters = param.List(default=[], allow_None=True, doc="""
-        If set this serves as a whitelist of parameters to display on
+        If set this serves as a allowlist of parameters to display on
         the supplied Parameterized object.""")
 
     show_labels = param.Boolean(default=True, doc="""
@@ -274,7 +274,7 @@ class Param(PaneBase):
             if v == self.param[p].default: continue
             elif v is None: continue
             elif isinstance(v, str) and v == '': continue
-            elif p == 'object' or (p == 'name' and (v.startswith(obj_cls) or v.startswith(cls))): continue
+            elif p == 'object' or (p == 'name' and v.startswith((obj_cls, cls))): continue
             elif p == 'parameters' and v == parameters: continue
             try:
                 params.append('%s=%s' % (p, abbreviated_repr(v)))
@@ -372,11 +372,11 @@ class Param(PaneBase):
                     pane = Param(parameterized, name=parameterized.name,
                                  **kwargs)
                     if isinstance(self._expand_layout, Tabs):
-                        title = self.object.param[pname].label
+                        title = self.object.param[parameter].label
                         pane = (title, pane)
                     self._expand_layout.append(pane)
 
-            def update_pane(change, parameter=pname):
+            def update_pane(change, parameter=pname, toggle=toggle):
                 "Adds or removes subpanel from layout"
                 layout = self._expand_layout
                 existing = [p for p in layout.objects if isinstance(p, Param)
@@ -924,10 +924,10 @@ class ParamMethod(ReplacementPane):
                         deps.append(p)
             self._replace_pane()
 
-        for _, params in full_groupby(params, lambda x: (x.inst or x.cls, x.what)):
-            p = params[0]
+        for _, sub_params in full_groupby(params, lambda x: (x.inst or x.cls, x.what)):
+            p = sub_params[0]
             pobj = (p.inst or p.cls)
-            ps = [_p.name for _p in params]
+            ps = [_p.name for _p in sub_params]
             if isinstance(pobj, Reactive) and self.loading_indicator:
                 props = {p: 'loading' for p in ps if p in pobj._linkable_params}
                 if props:
@@ -942,7 +942,10 @@ class ParamMethod(ReplacementPane):
         if not self._evaled:
             deferred = self.defer_load and not state.loaded
             if deferred:
-                state.onload(partial(self._replace_pane, force=True))
+                state.onload(
+                    partial(self._replace_pane, force=True),
+                    threaded=bool(state._thread_pool)
+                )
             self._replace_pane(force=not deferred)
         return super()._get_model(doc, root, parent, comm)
 
@@ -1081,7 +1084,7 @@ class ReactiveExpr(PaneBase):
             self.layout[:] = [self._generate_layout()]
 
     @classmethod
-    def applies(self, object):
+    def applies(cls, object):
         return isinstance(object, param.rx)
 
     @classmethod

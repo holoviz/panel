@@ -6,8 +6,8 @@ from __future__ import annotations
 import ast
 import base64
 import datetime as dt
-import inspect
 import json
+import logging
 import numbers
 import os
 import pathlib
@@ -17,12 +17,11 @@ import urllib.parse as urlparse
 
 from collections import OrderedDict, defaultdict
 from collections.abc import MutableMapping, MutableSequence
-from contextlib import contextmanager
 from datetime import datetime
 from functools import partial
 from html import escape  # noqa
 from importlib import import_module
-from typing import Any, AnyStr, Iterator
+from typing import Any, AnyStr
 
 import bleach
 import bokeh
@@ -37,6 +36,12 @@ from .checks import (  # noqa
     datetime_types, is_dataframe, is_holoviews, is_number, is_parameterized,
     is_series, isdatetime, isfile, isIn, isurl,
 )
+from .parameters import (  # noqa
+    edit_readonly, extract_dependencies, get_method_owner, param_watchers,
+    recursive_parameterized,
+)
+
+log = logging.getLogger('panel.util')
 
 bokeh_version = Version(bokeh.__version__)
 
@@ -82,17 +87,6 @@ def param_name(name: str) -> str:
     return name[:name.index(match[0])] if match else name
 
 
-def recursive_parameterized(parameterized: param.Parameterized, objects=None) -> list[param.Parameterized]:
-    """
-    Recursively searches a Parameterized object for other Parmeterized
-    objects.
-    """
-    objects = [] if objects is None else objects
-    objects.append(parameterized)
-    for p in parameterized.param.values().values():
-        if isinstance(p, param.Parameterized) and not any(p is o for o in objects):
-            recursive_parameterized(p, objects)
-    return objects
 
 
 def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
@@ -171,42 +165,6 @@ def full_groupby(l, key=lambda x: x):
     return d.items()
 
 
-def get_method_owner(meth):
-    """
-    Returns the instance owning the supplied instancemethod or
-    the class owning the supplied classmethod.
-    """
-    if inspect.ismethod(meth):
-        return meth.__self__
-
-
-def extract_dependencies(function):
-    """
-    Extract references from a method or function that declares the references.
-    """
-    subparameters = list(function._dinfo['dependencies'])+list(function._dinfo['kw'].values())
-    params = []
-    for p in subparameters:
-        if isinstance(p, str):
-            owner = get_method_owner(function)
-            *subps, p = p.split('.')
-            for subp in subps:
-                owner = getattr(owner, subp, None)
-                if owner is None:
-                    raise ValueError('Cannot depend on undefined sub-parameter {p!r}.')
-            if p in owner.param:
-                pobj = owner.param[p]
-                if pobj not in params:
-                    params.append(pobj)
-            else:
-                for sp in extract_dependencies(getattr(owner, p)):
-                    if sp not in params:
-                        params.append(sp)
-        elif p not in params:
-            params.append(p)
-    return params
-
-
 def value_as_datetime(value):
     """
     Retrieve the value tuple as a tuple of datetime objects.
@@ -243,11 +201,17 @@ def parse_query(query: str) -> dict[str, Any]:
             parsed_query[k] = int(v)
         elif is_number(v):
             parsed_query[k] = float(v)
-        elif v.startswith('[') or v.startswith('{'):
+        elif v.startswith(('[', '{')):
             try:
                 parsed_query[k] = json.loads(v)
             except Exception:
-                parsed_query[k] = ast.literal_eval(v)
+                try:
+                    parsed_query[k] = ast.literal_eval(v)
+                except Exception:
+                    log.warning(
+                        f'Could not parse value {v!r} of query parameter {k}. '
+                        'Parameter will be ignored.'
+                    )
         elif v.lower() in ("true", "false"):
             parsed_query[k] = v.lower() == "true"
         else:
@@ -302,31 +266,6 @@ def url_path(url: str) -> str:
     """
     subpaths = url.split('//')[1:]
     return '/'.join('/'.join(subpaths).split('/')[1:])
-
-
-# This functionality should be contributed to param
-# See https://github.com/holoviz/param/issues/379
-@contextmanager
-def edit_readonly(parameterized: param.Parameterized) -> Iterator:
-    """
-    Temporarily set parameters on Parameterized object to readonly=False
-    to allow editing them.
-    """
-    params = parameterized.param.objects("existing").values()
-    readonlys = [p.readonly for p in params]
-    constants = [p.constant for p in params]
-    for p in params:
-        p.readonly = False
-        p.constant = False
-    try:
-        yield
-    except Exception:
-        raise
-    finally:
-        for (p, readonly) in zip(params, readonlys):
-            p.readonly = readonly
-        for (p, constant) in zip(params, constants):
-            p.constant = constant
 
 
 def lazy_load(module, model, notebook=False, root=None, ext=None):
@@ -462,20 +401,6 @@ def relative_to(path, other_path):
     except Exception:
         return False
 
-_unset = object()
-
-def param_watchers(parameterized, value=_unset):
-    if Version(param.__version__) <= Version('2.0.0a2'):
-        if value is not _unset:
-            parameterized._param_watchers = value
-        else:
-            return parameterized._param_watchers
-    else:
-        if value is not _unset:
-            parameterized.param.watchers = value
-        else:
-            return parameterized.param.watchers
-
 
 def flatten(line):
     """
@@ -501,3 +426,43 @@ def flatten(line):
             yield from flatten(element)
         else:
             yield element
+
+
+def styler_update(styler, new_df):
+    """
+    Updates the todo items on a pandas Styler object to apply to a new
+    DataFrame.
+
+    Arguments
+    ---------
+    styler: pandas.io.formats.style.Styler
+      Styler objects
+    new_df: pd.DataFrame
+      New DataFrame to update the styler to do items
+
+    Returns
+    -------
+    todos: list
+    """
+    todos = []
+    for todo in styler._todo:
+        if not isinstance(todo, tuple):
+            todos.append(todo)
+            continue
+        ops = []
+        for op in todo:
+            if not isinstance(op, tuple):
+                ops.append(op)
+                continue
+            op_fn = str(op[0])
+            if ('_background_gradient' in op_fn or '_bar' in op_fn) and op[1] in (0, 1):
+                applies = np.array([
+                    new_df[col].dtype.kind in 'uif' for col in new_df.columns
+                ])
+                if len(op[2]) == len(applies):
+                    applies = np.logical_and(applies, op[2])
+                op = (op[0], op[1], applies)
+            ops.append(op)
+        todo = tuple(ops)
+        todos.append(todo)
+    return todos

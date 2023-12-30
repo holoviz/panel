@@ -37,7 +37,7 @@ The callback above would direct users visiting the root (`/`) to the appropriate
 
 If a user is not authorized, i.e. the callback returns `False`, they will be presented with an authorization error template which can be configured using the `--auth-template` commandline option or by setting `config.auth_template`.
 
-<img src="../../_static/authorization.png" width="600" style="margin-left: auto; margin-right: auto; display: block;"></img>
+<img src="../../_static/images/authorization.png" width="600" style="margin-left: auto; margin-right: auto; display: block;"></img>
 
 The auth template must be a valid Jinja2 template and accepts a number of arguments:
 

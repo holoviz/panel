@@ -11,6 +11,7 @@ and become viewable including:
 from __future__ import annotations
 
 import asyncio
+import functools
 import logging
 import os
 import sys
@@ -18,9 +19,9 @@ import threading
 import traceback
 import uuid
 
-from functools import partial
 from typing import (
     IO, TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
+    Type,
 )
 
 import param  # type: ignore
@@ -45,6 +46,7 @@ from .io.notebook import (
 from .io.save import save
 from .io.state import curdoc_locked, set_curdoc, state
 from .util import escape, param_reprs
+from .util.parameters import get_params_to_inherit
 from .util.warnings import deprecated
 
 if TYPE_CHECKING:
@@ -54,6 +56,7 @@ if TYPE_CHECKING:
 
     from .io.location import Location
     from .io.server import StoppableThread
+    from .theme import Design
 
 
 class Layoutable(param.Parameterized):
@@ -392,8 +395,10 @@ class ServableMixin:
             else:
                 self.server_doc(title=title, location=location) # type: ignore
         elif state._is_pyodide and 'pyodide_kernel' not in sys.modules:
-            from .io.pyodide import _IN_WORKER, _get_pyscript_target, write
-            if _IN_WORKER:
+            from .io.pyodide import (
+                _IN_PYSCRIPT_WORKER, _IN_WORKER, _get_pyscript_target, write,
+            )
+            if _IN_WORKER and not _IN_PYSCRIPT_WORKER:
                 return self
             try:
                 target = target or _get_pyscript_target()
@@ -487,7 +492,7 @@ class MimeRenderMixin:
             handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
 
     def _on_stdout(self, ref: str, stdout: Any) -> None:
-        if ref not in state._handles or config.console_output is [None, 'disable']:
+        if ref not in state._handles or config.console_output in [None, 'disable']:
             return
         handle, accumulator = state._handles[ref]
         formatted = ["%s</br>" % o for o in stdout]
@@ -504,9 +509,9 @@ class MimeRenderMixin:
         ref = model.ref['id']
         manager = CommManager(comm_id=comm.id, plot_id=ref)
         client_comm = state._comm_manager.get_client_comm(
-            on_msg=partial(self._on_msg, ref, manager),
-            on_error=partial(self._on_error, ref),
-            on_stdout=partial(self._on_stdout, ref)
+            on_msg=functools.partial(self._on_msg, ref, manager),
+            on_error=functools.partial(self._on_error, ref),
+            on_stdout=functools.partial(self._on_stdout, ref)
         )
         self._comms[ref] = (comm, client_comm)
         manager.client_comm_id = client_comm.id
@@ -672,7 +677,6 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         state._views[ref] = (root_view, root, doc, comm)
         return root
 
-
 class Viewable(Renderable, Layoutable, ServableMixin):
     """
     Viewable is the baseclass all visual components in the panel
@@ -694,7 +698,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         super().__init__(**params)
         self._hooks = hooks
 
-        self._update_loading()
+        if self.loading:
+            self._update_loading()
         self._update_background()
         self._update_design()
         self._internal_callbacks.extend([
@@ -703,15 +708,19 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             self.param.watch(self._update_loading, 'loading')
         ])
 
+    @staticmethod
+    @functools.cache
+    def _instantiate_design(design: Type[Design], theme: str) -> Design:
+        return design(theme=theme)
+
     def _update_design(self, *_):
         from .theme import Design
         from .theme.native import Native
         if isinstance(self.design, Design):
             self._design = self.design
-        elif self.design:
-            self._design = self.design(theme=config.theme)
         else:
-            self._design = Native(theme=config.theme)
+            design = self.design or Native
+            self._design = self._instantiate_design(design, config.theme)
 
     def _update_loading(self, *_) -> None:
         if self.loading:
@@ -851,11 +860,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         -------
         Cloned Viewable object
         """
-        inherited = {
-            p: v for p, v in self.param.values().items()
-            if not self.param[p].readonly and v is not self.param[p].default
-            and not (v is None and not self.param[p].allow_None)
-        }
+        inherited = get_params_to_inherit(self)
         return type(self)(**dict(inherited, **params))
 
     def pprint(self) -> None:
@@ -863,7 +868,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         Prints a compositional repr of the class.
         """
         deprecated('1.4', f'{type(self).__name__}.pprint', 'print')
-        print(self)
+        print(self)  # noqa: T201
 
     def select(
         self, selector: Optional[type | Callable[['Viewable'], bool]] = None

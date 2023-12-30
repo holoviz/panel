@@ -1,9 +1,12 @@
-
+from io import BytesIO
 
 import pytest
+import requests
 
 from panel.chat.interface import ChatInterface
 from panel.layout import Row, Tabs
+from panel.pane import Image
+from panel.tests.util import wait_until
 from panel.widgets.button import Button
 from panel.widgets.input import FileInput, TextAreaInput, TextInput
 
@@ -14,7 +17,7 @@ class TestChatInterface:
         return ChatInterface()
 
     def test_init(self, chat_interface):
-        assert len(chat_interface._button_data) == 4
+        assert len(chat_interface._button_data) == 5
         assert len(chat_interface._widgets) == 1
         assert isinstance(chat_interface._input_layout, Row)
         assert isinstance(chat_interface._widgets["TextInput"], TextInput)
@@ -27,6 +30,16 @@ class TestChatInterface:
             widget = inputs[index + 1]
             assert isinstance(widget, Button)
             assert widget.name == button_data.name.title()
+
+    def test_init_avatar_image(self, chat_interface):
+        chat_interface.avatar = Image("https://panel.holoviz.org/_static/logo_horizontal.png")
+        assert chat_interface.avatar.object == "https://panel.holoviz.org/_static/logo_horizontal.png"
+
+    @pytest.mark.parametrize("type_", [bytes, BytesIO])
+    def test_init_avatar_bytes(self, type_, chat_interface):
+        with requests.get("https://panel.holoviz.org/_static/logo_horizontal.png") as resp:
+            chat_interface.avatar = type_(resp.content)
+        assert isinstance(chat_interface.avatar, type_)
 
     def test_init_custom_widgets(self):
         widgets = [TextInput(name="Text"), FileInput()]
@@ -66,6 +79,89 @@ class TestChatInterface:
 
     def test_click_send(self, chat_interface: ChatInterface):
         chat_interface.widgets = [TextAreaInput()]
+        chat_interface.active_widget.value = "Message"
+        # since it's TextAreaInput and NOT TextInput, need to manually send
+        assert len(chat_interface.objects) == 0
+        chat_interface._click_send(None)
+        assert len(chat_interface.objects) == 1
+
+    def test_show_stop_disabled(self, chat_interface: ChatInterface):
+        async def callback(msg, user, instance):
+            yield "A"
+            send_button = chat_interface._input_layout[1]
+            stop_button = chat_interface._input_layout[2]
+            assert send_button.name == "Send"
+            assert stop_button.name == "Stop"
+            assert send_button.visible
+            assert not send_button.disabled
+            assert not stop_button.visible
+            yield "B"  # should not stream this
+
+        chat_interface.callback = callback
+        chat_interface.show_stop = False
+        chat_interface.send("Message", respond=True)
+        send_button = chat_interface._input_layout[1]
+        stop_button = chat_interface._input_layout[2]
+        assert send_button.name == "Send"
+        assert stop_button.name == "Stop"
+        assert send_button.visible
+        assert not send_button.disabled
+        assert not stop_button.visible
+
+    def test_show_stop_for_async(self, chat_interface: ChatInterface):
+        async def callback(msg, user, instance):
+            send_button = instance._input_layout[1]
+            stop_button = instance._input_layout[2]
+            assert send_button.name == "Send"
+            assert stop_button.name == "Stop"
+            assert not send_button.visible
+            assert stop_button.visible
+
+        chat_interface.callback = callback
+        chat_interface.send("Message", respond=True)
+        send_button = chat_interface._input_layout[1]
+        assert not send_button.disabled
+
+    def test_show_stop_for_sync(self, chat_interface: ChatInterface):
+        def callback(msg, user, instance):
+            send_button = instance._input_layout[1]
+            stop_button = instance._input_layout[2]
+            assert send_button.name == "Send"
+            assert stop_button.name == "Stop"
+            assert not send_button.visible
+            assert stop_button.visible
+
+        chat_interface.callback = callback
+        chat_interface.send("Message", respond=True)
+        send_button = chat_interface._input_layout[1]
+        assert not send_button.disabled
+
+    def test_click_stop(self, chat_interface: ChatInterface):
+        async def callback(msg, user, instance):
+            send_button = instance._input_layout[1]
+            stop_button = instance._input_layout[2]
+            assert send_button.name == "Send"
+            assert stop_button.name == "Stop"
+            assert not send_button.visible
+            assert stop_button.visible
+            wait_until(lambda: len(instance.objects) == 2)
+            assert instance._placeholder in instance.objects
+            instance._click_stop(None)
+            assert send_button.visible
+            assert not send_button.disabled
+            assert not stop_button.visible
+            assert instance._placeholder not in instance.objects
+
+        chat_interface.callback = callback
+        chat_interface.placeholder_threshold = 0.001
+        chat_interface.send("Message", respond=True)
+        send_button = chat_interface._input_layout[1]
+        assert not send_button.disabled
+
+    @pytest.mark.parametrize("widget", [TextInput(), TextAreaInput()])
+    def test_auto_send_types(self, chat_interface: ChatInterface, widget):
+        chat_interface.auto_send_types = [TextAreaInput]
+        chat_interface.widgets = [widget]
         chat_interface.active_widget.value = "Message"
         assert len(chat_interface.objects) == 1
         assert chat_interface.objects[0].object == "Message"
@@ -158,6 +254,115 @@ class TestChatInterface:
         chat_interface.show_send = False
         assert not chat_interface.show_send
         assert not send_button.visible
+
+    @pytest.mark.parametrize("key", ["callback", "post_callback"])
+    def test_button_properties_new_button(self, chat_interface, key):
+        def callback(instance, event):
+            instance.send("Checking if this works", respond=False)
+
+        chat_interface.widgets = TextAreaInput()
+        chat_interface.button_properties = {
+            "check": {"icon": "check", key: callback},
+        }
+        chat_interface.active_widget.value = "This comes second"
+        check_button = chat_interface._input_layout[-1]
+        assert check_button.icon == "check"
+        check_button.param.trigger("clicks")
+        assert chat_interface.objects[0].object == "Checking if this works"
+
+    def test_button_properties_new_callback_and_post_callback(self, chat_interface):
+        def pre_callback(instance, event):
+            instance.send("1", respond=False)
+
+        def post_callback(instance, event):
+            instance.send("2", respond=False)
+
+        chat_interface.widgets = TextAreaInput()
+        chat_interface.button_properties = {
+            "check": {"callback": pre_callback, "post_callback": post_callback},
+        }
+        check_button = chat_interface._input_layout[-1]
+        check_button.param.trigger("clicks")
+        assert chat_interface.objects[0].object == "1"
+        assert chat_interface.objects[1].object == "2"
+
+    def test_button_properties_default_callback_and_post_callback(self, chat_interface):
+        def post_callback(instance, event):
+            instance.send("This should show", respond=False)
+
+        chat_interface.button_properties = {
+            "clear": {"post_callback": post_callback},
+        }
+        clear_button = chat_interface._input_layout[-1]
+        chat_interface.send("This shouldn't show up!", respond=False)
+        clear_button.param.trigger("clicks")
+        assert chat_interface.objects[0].object == "This should show"
+
+    def test_button_properties_send_with_callback_no_duplicate(self, chat_interface):
+        def post_callback(instance, event):
+            instance.send("This should show", respond=False)
+
+        chat_interface.widgets = TextAreaInput()
+        chat_interface.button_properties = {
+            "send": {"post_callback": post_callback},
+        }
+        chat_interface.active_widget.value = "This is it!"
+        send_button = chat_interface._input_layout[1]
+        send_button.param.trigger("clicks")
+        assert chat_interface.objects[0].object == "This is it!"
+        assert chat_interface.objects[1].object == "This should show"
+        assert len(chat_interface.objects) == 2
+
+    def test_button_properties_new_button_missing_callback(self, chat_interface):
+        chat_interface.widgets = TextAreaInput()
+        with pytest.raises(ValueError, match="A 'callback' key is required for"):
+            chat_interface.button_properties = {
+                "check": {"icon": "check"},
+            }
+
+    def test_button_properties_update_default(self, chat_interface):
+        def callback(instance, event):
+            instance.send("This comes first", respond=False)
+
+        chat_interface.widgets = TextAreaInput()
+        chat_interface.button_properties = {
+            "send": {"icon": "check", "callback": callback},
+        }
+        chat_interface.active_widget.value = "This comes second"
+        send_button = chat_interface._input_layout[1]
+        assert send_button.icon == "check"
+        send_button.param.trigger("clicks")
+        assert chat_interface.objects[0].object == "This comes first"
+        assert chat_interface.objects[1].object == "This comes second"
+
+    def test_button_properties_update_default_icon(self, chat_interface):
+        chat_interface.widgets = TextAreaInput()
+        chat_interface.button_properties = {
+            "send": {"icon": "check"},
+        }
+        chat_interface.active_widget.value = "Test test"
+        send_button = chat_interface._input_layout[1]
+        assert send_button.icon == "check"
+        send_button.param.trigger("clicks")
+        assert chat_interface.objects[0].object == "Test test"
+
+    def test_button_properties_update_callback_and_post_callback(self, chat_interface):
+        def pre_callback(instance, event):
+            instance.send("1", respond=False)
+
+        def post_callback(instance, event):
+            instance.send("3", respond=False)
+
+        chat_interface.widgets = TextAreaInput()
+        chat_interface.active_widget.value = "2"
+        chat_interface.button_properties = {
+            "send": {"callback": pre_callback, "post_callback": post_callback},
+        }
+        send_button = chat_interface._input_layout[1]
+        send_button.param.trigger("clicks")
+        assert chat_interface.objects[0].object == "1"
+        assert chat_interface.objects[1].object == "2"
+        assert chat_interface.objects[2].object == "3"
 
 class TestChatInterfaceWidgetsSizingMode:
     def test_none(self):

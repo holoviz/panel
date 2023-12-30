@@ -15,6 +15,7 @@ import param
 from bokeh.models import Row as BkRow
 from param.parameterized import iscoroutinefunction, resolve_ref
 
+from ..io.document import freeze_doc
 from ..io.model import hold
 from ..io.resources import CDN_DIST
 from ..io.state import state
@@ -91,7 +92,8 @@ class Panel(Reactive):
             del msg['styles']['overflow-x']
 
         obj_key = self._property_mapping['objects']
-        if obj_key in msg:
+        update_children = obj_key in msg
+        if update_children:
             old = events['objects'].old
             children, old_children = self._get_objects(model, old, doc, root, comm)
             msg[obj_key] = children
@@ -113,7 +115,7 @@ class Panel(Reactive):
             update = Panel._batch_update
             Panel._batch_update = True
             try:
-                with doc.models.freeze():
+                with freeze_doc(doc, model, msg, force=update_children):
                     super()._update_model(events, msg, root, model, doc, comm)
                     if update:
                         return
@@ -278,7 +280,7 @@ class Panel(Reactive):
             return {'sizing_mode': props.get('sizing_mode')}
 
         properties = {'sizing_mode': sizing_mode}
-        if ((sizing_mode.endswith('_width') or sizing_mode.endswith('_both')) and
+        if (sizing_mode.endswith(("_width", "_both")) and
             widths and 'min_width' not in properties):
             width_op = max if self._direction == 'vertical' else sum
             min_width = width_op(widths)
@@ -286,7 +288,7 @@ class Panel(Reactive):
             if 'max_width' in properties:
                 op_widths.append(properties['max_width'])
             properties['min_width'] = min(op_widths)
-        if ((sizing_mode.endswith('_height') or sizing_mode.endswith('_both')) and
+        if (sizing_mode.endswith(("_height", "_both")) and
             heights and 'min_height' not in properties):
             height_op = max if self._direction == 'horizontal' else sum
             min_height = height_op(heights)
@@ -908,7 +910,7 @@ class Column(ListPanel):
     >>> pn.Column(some_widget, some_pane, some_python_object)
     """
 
-    scroll_position = param.Integer(default=None, doc="""
+    scroll_position = param.Integer(default=0, doc="""
         Current scroll position of the Column. Setting this value
         will update the scroll position of the Column. Setting to
         0 will scroll to the top.""")

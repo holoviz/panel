@@ -22,6 +22,7 @@ from panel.layout import Row
 from panel.models import HTML as BkHTML
 from panel.models.tabulator import TableEditEvent
 from panel.pane import Markdown
+from panel.param import ParamFunction
 from panel.reactive import ReactiveHTML
 from panel.template import BootstrapTemplate
 from panel.tests.util import serve_and_request, serve_and_wait, wait_until
@@ -161,7 +162,7 @@ def test_server_async_local_state():
         curdoc = state.curdoc
         await asyncio.sleep(0.5)
         docs[curdoc] = []
-        for i in range(5):
+        for _ in range(5):
             await asyncio.sleep(0.1)
             docs[curdoc].append(state.curdoc)
 
@@ -185,7 +186,7 @@ def test_server_async_local_state_nested_tasks():
         if depth > 0:
             asyncio.ensure_future(task(depth-1))
         docs[curdoc] = []
-        for i in range(10):
+        for _ in range(10):
             await asyncio.sleep(0.1)
             docs[curdoc].append(state.curdoc)
 
@@ -281,6 +282,23 @@ def test_server_session_info():
     assert state.session_info['live'] == 0
 
 
+def test_server_periodic_async_callback(threads, port):
+    counts = []
+
+    async def cb(count=[0]):
+        counts.append(count[0])
+        count[0] += 1
+
+    def app():
+        button = Button(name='Click')
+        state.add_periodic_callback(cb, 100)
+        return button
+
+    serve_and_request(app)
+
+    wait_until(lambda: len(counts) >= 5 and counts == list(range(len(counts))))
+
+
 def test_server_schedule_repeat():
     state.cache['count'] = 0
     def periodic_cb():
@@ -293,6 +311,24 @@ def test_server_schedule_repeat():
     serve_and_request(app)
 
     wait_until(lambda: state.cache['count'] > 0)
+
+def test_server_schedule_threaded(threads):
+    counts = []
+    def periodic_cb(count=[0]):
+        count[0] += 1
+        counts.append(count[0])
+        time.sleep(0.5)
+        count[0] += -1
+
+    def app():
+        state.schedule_task('periodic1', periodic_cb, period='0.5s', threaded=True)
+        state.schedule_task('periodic2', periodic_cb, period='0.5s', threaded=True)
+        return '# state.schedule test'
+
+    serve_and_request(app)
+
+    # Checks whether scheduled callback was executed concurrently
+    wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
 def test_server_schedule_at():
@@ -459,6 +495,128 @@ def test_serve_can_serve_bokeh_app_from_file():
     path = pathlib.Path(__file__).parent / "io"/"bk_app.py"
     server = get_server({"bk-app": path})
     assert "/bk-app" in server._tornado.applications
+
+
+def test_server_on_load_after_init(threads, port):
+    loaded = []
+
+    def cb():
+        loaded.append(state.loaded)
+
+    def cb2():
+        state.execute(cb, schedule=True)
+
+    def app():
+        state.onload(cb)
+        state.onload(cb2)
+        # Simulate rendering
+        def loaded():
+            state._schedule_on_load(state.curdoc, None)
+        state.execute(loaded, schedule=True)
+        return 'App'
+
+    serve_and_request(app)
+
+    # Checks whether onload callback was executed twice once before and once after load
+    wait_until(lambda: loaded == [False, True])
+
+
+def test_server_on_load_during_load(threads, port):
+    loaded = []
+
+    def cb():
+        loaded.append(state.loaded)
+
+    def cb2():
+        state.onload(cb)
+
+    def app():
+        state.onload(cb)
+        state.onload(cb2)
+        # Simulate rendering
+        def loaded():
+            state._schedule_on_load(state.curdoc, None)
+        state.execute(loaded, schedule=True)
+        return 'App'
+
+    serve_and_request(app)
+
+    # Checks whether onload callback was executed twice once before and once during load
+    wait_until(lambda: loaded == [False, False])
+
+
+def test_server_thread_pool_on_load(threads, port):
+    counts = []
+
+    def cb(count=[0]):
+        count[0] += 1
+        counts.append(count[0])
+        time.sleep(0.5)
+        count[0] -= 1
+
+    def app():
+        state.onload(cb, threaded=True)
+        state.onload(cb, threaded=True)
+
+        # Simulate rendering
+        def loaded():
+            state._schedule_on_load(state.curdoc, None)
+        state.execute(loaded, schedule=True)
+
+        return 'App'
+
+    serve_and_request(app)
+
+    # Checks whether onload callback was executed concurrently
+    wait_until(lambda: len(counts) > 0 and max(counts) > 1)
+
+
+def test_server_thread_pool_execute(threads, port):
+    counts = []
+
+    def cb(count=[0]):
+        count[0] += 1
+        counts.append(count[0])
+        time.sleep(0.5)
+        count[0] -= 1
+
+    def app():
+        state.execute(cb, schedule='thread')
+        state.execute(cb, schedule='thread')
+        return 'App'
+
+    serve_and_request(app)
+
+    # Checks whether execute was executed concurrently
+    wait_until(lambda: len(counts) > 0 and max(counts) > 1)
+
+
+def test_server_thread_pool_defer_load(threads, port):
+    counts = []
+
+    def cb(count=[0]):
+        count[0] += 1
+        counts.append(count[0])
+        time.sleep(0.5)
+        value = counts[-1]
+        count[0] -= 1
+        return value
+
+    def app():
+        # Simulate rendering
+        def loaded():
+            state._schedule_on_load(state.curdoc, None)
+        state.execute(loaded, schedule=True)
+
+        return Row(
+            ParamFunction(cb, defer_load=True),
+            ParamFunction(cb, defer_load=True),
+        )
+
+    serve_and_request(app)
+
+    # Checks whether defer_load callback was executed concurrently
+    wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
 def test_server_thread_pool_change_event(threads, port):
@@ -834,3 +992,26 @@ def test_server_no_warning_empty_layout(port, caplog):
     finally:
         bk_logger.setLevel(old_level)
         bk_logger.propagate = old_propagate
+
+
+def test_server_threads_save(threads, port, tmp_path):
+    # https://github.com/holoviz/panel/issues/5957
+
+    button = Button()
+    fsave = tmp_path / 'button.html'
+
+    def cb(event):
+        button.save(fsave)
+
+    def simulate_click():
+        button._comm_event(state.curdoc, ButtonClick(model=None))
+
+    button.on_click(cb)
+
+    def app():
+        state.curdoc.add_next_tick_callback(simulate_click)
+        return button
+
+    serve_and_request(app)
+
+    wait_until(lambda: fsave.exists())

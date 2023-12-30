@@ -1,5 +1,7 @@
 import pytest
 
+pytest.importorskip("playwright")
+
 try:
     import altair as alt
 except Exception:
@@ -7,13 +9,10 @@ except Exception:
 
 altair_available = pytest.mark.skipif(alt is None, reason='Requires altair')
 
+from playwright.sync_api import expect
+
 from panel.pane import Vega
 from panel.tests.util import serve_component, wait_until
-
-try:
-    from playwright.sync_api import expect
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
 
 pytestmark = pytest.mark.ui
 

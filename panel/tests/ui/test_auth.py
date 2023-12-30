@@ -3,20 +3,23 @@ import pathlib
 
 import pytest
 
-try:
-    from playwright.sync_api import expect
-    pytestmark = pytest.mark.ui
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
+pytest.importorskip("playwright")
+
+from playwright.sync_api import expect
 
 from panel.config import config
+from panel.io.state import state
 from panel.pane import Markdown
 from panel.tests.util import (
-    run_panel_serve, serve_component, unix_only, wait_for_port, write_file,
+    linux_only, run_panel_serve, serve_component, wait_for_port, wait_until,
+    write_file,
 )
 
+pytestmark = pytest.mark.ui
+auth_check = pytest.mark.skipif('PANEL_TEST_AUTH' not in os.environ, reason='PANEL_TEST_AUTH environment variable is required to run this test')
 
-@unix_only
+
+@linux_only
 @pytest.mark.parametrize('prefix', ['', 'prefix'])
 def test_basic_auth(py_file, page, prefix):
     app = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
@@ -39,8 +42,8 @@ def test_basic_auth(py_file, page, prefix):
         expect(page.locator('.markdown')).to_have_text('test_user', timeout=10000)
 
 
-@unix_only
-@pytest.mark.skipif('OKTA_OAUTH_KEY' not in os.environ, reason='Okta credentials not available')
+@linux_only
+@auth_check
 def test_okta_oauth(py_file, page):
     app = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
     write_file(app, py_file.file)
@@ -70,8 +73,8 @@ def test_okta_oauth(py_file, page):
         expect(page.locator('.markdown')).to_have_text(okta_user, timeout=10000)
 
 
-@unix_only
-@pytest.mark.skipif('AZURE_OAUTH_KEY' not in os.environ, reason='Azure credentials not available')
+@linux_only
+@auth_check
 def test_azure_oauth(py_file, page):
     app = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
     write_file(app, py_file.file)
@@ -104,8 +107,8 @@ def test_azure_oauth(py_file, page):
         expect(page.locator('.markdown')).to_have_text(f'live.com#{azure_user}', timeout=10000)
 
 
-@unix_only
-@pytest.mark.skipif('AUTH0_OAUTH_KEY' not in os.environ, reason='Auth0 credentials not available')
+@linux_only
+@auth_check
 def test_auth0_oauth(py_file, page):
     app = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
     write_file(app, py_file.file)
@@ -135,7 +138,7 @@ def test_auth0_oauth(py_file, page):
         expect(page.locator('.markdown')).to_have_text(auth0_user, timeout=10000)
 
 
-@unix_only
+@linux_only
 @pytest.mark.parametrize('logout_template', [None, (pathlib.Path(__file__).parent / 'logout.html').absolute()])
 def test_basic_auth_logout(py_file, page, logout_template):
     app = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
@@ -169,7 +172,7 @@ def test_basic_auth_logout(py_file, page, logout_template):
         assert 'id_token' not in cookies
 
 
-@unix_only
+@linux_only
 def test_authorize_callback_redirect(page):
 
     def authorize(user_info, uri):
@@ -204,3 +207,26 @@ def test_authorize_callback_redirect(page):
         page.get_by_role("button").click(force=True)
 
         expect(page.locator(".markdown").locator("div")).to_have_text('Page B\n')
+
+
+@linux_only
+def test_global_authorize_callback(page):
+    users, sessions = [], []
+    def authorize(user_info, uri):
+        users.append(user_info['user'])
+        return False
+
+    def app():
+        sessions.append(state.user)
+        return Markdown('Page A')
+
+    with config.set(authorize_callback=authorize):
+        _, port = serve_component(page, app, basic_auth='my_password', cookie_secret='my_secret', wait=False)
+
+        page.locator('input[name="username"]').fill("A")
+        page.locator('input[name="password"]').fill("my_password")
+        page.get_by_role("button").click(force=True)
+
+        wait_until(lambda: len(users) == 1, page)
+        assert users[0] == 'A'
+        assert len(sessions) == 0

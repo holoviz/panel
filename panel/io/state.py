@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import asyncio
 import datetime as dt
-import functools
 import inspect
 import logging
 import shutil
@@ -19,7 +18,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import partial, wraps
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Coroutine, Dict,
+    TYPE_CHECKING, Any, Awaitable, Callable, ClassVar, Coroutine, Dict,
     Iterator as TIterator, List, Literal, Optional, Tuple, Type, TypeVar,
     Union,
 )
@@ -216,7 +215,7 @@ class _state(param.Parameterized):
 
     def __repr__(self) -> str:
         server_info = []
-        for server, panel, docs in self._servers.values():
+        for server, panel, _docs in self._servers.values():
             server_info.append(
                 "{}:{:d} - {!r}".format(server.address or "localhost", server.port, panel)
             )
@@ -377,26 +376,30 @@ class _state(param.Parameterized):
 
     def _on_load(self, doc: Optional[Document] = None) -> None:
         doc = doc or self.curdoc
-        self._loaded[doc] = True
-        callbacks = self._onload.pop(doc, [])
-        if not callbacks:
+        if doc not in self._onload:
+            self._loaded[doc] = True
             return
 
         from ..config import config
         from .profile import profile_ctx
         with set_curdoc(doc):
             if (doc and doc in self._launching) or not config.profiler:
-                for cb in callbacks:
-                    self.execute(cb, schedule=False)
+                while doc in self._onload:
+                    for cb, threaded in self._onload.pop(doc):
+                        self.execute(cb, schedule='thread' if threaded else False)
+                self._loaded[doc] = True
                 return
+
             with profile_ctx(config.profiler) as sessions:
-                for cb in callbacks:
-                    self.execute(cb, schedule=False)
+                while doc in self._onload:
+                    for cb, threaded in self._onload.pop(doc):
+                        self.execute(cb, schedule='thread' if threaded else False)
             path = doc.session_context.request.path
             self._profiles[(path+':on_load', config.profiler)] += sessions
             self.param.trigger('_profiles')
+        self._loaded[doc] = True
 
-    async def _scheduled_cb(self, name: str) -> None:
+    async def _scheduled_cb(self, name: str, threaded: bool = False) -> None:
         if name not in self._scheduled:
             return
         diter, cb = self._scheduled[name]
@@ -410,9 +413,7 @@ class _state(param.Parameterized):
             call_time_seconds = (at - now)
             self._ioloop.call_later(delay=call_time_seconds, callback=partial(self._scheduled_cb, name))
         try:
-            res = cb()
-            if inspect.isawaitable(res):
-                await res
+            self.execute(cb, schedule='thread' if threaded else 'auto')
         except Exception as e:
             self._handle_exception(e)
 
@@ -573,10 +574,17 @@ class _state(param.Parameterized):
                     pass
         self._memoize_cache.clear()
 
+    def _execute_on_thread(self, doc, callback):
+        with set_curdoc(doc):
+            if param.parameterized.iscoroutinefunction(callback):
+                param.parameterized.async_executor(callback)
+            else:
+                self.execute(callback, schedule=False)
+
     def execute(
         self,
         callback: Callable([], None),
-        schedule: bool | Literal['auto'] = 'auto'
+        schedule: bool | Literal['auto', 'thread'] = 'auto'
     ) -> None:
         """
         Executes both synchronous and asynchronous callbacks
@@ -589,15 +597,20 @@ class _state(param.Parameterized):
         ---------
         callback: Callable[[], None]
           Callback to execute
-        schedule: boolean | Literal['auto']
-          Whether to schedule synchronous callback on the event loop
-          or execute it immediately.
+        schedule: boolean | Literal['auto', 'thread']
+          Whether to schedule the callback on the event loop, on a thread
+          or execute them immediately.
         """
-        cb = callback
-        while isinstance(cb, functools.partial):
-            cb = cb.func
         doc = self.curdoc
-        if param.parameterized.iscoroutinefunction(cb):
+        if schedule == 'thread':
+            if not state._thread_pool:
+                raise RuntimeError(
+                    'Cannot execute callback on thread. Ensure you have '
+                    'enabled threading setting `config.nthreads`.'
+                )
+            future = state._thread_pool.submit(partial(self._execute_on_thread, doc, callback))
+            future.add_done_callback(self._handle_future_exception)
+        elif param.parameterized.iscoroutinefunction(callback):
             param.parameterized.async_executor(callback)
         elif doc and doc.session_context and (schedule == True or (schedule == 'auto' and not self._unblocked(doc))):
             doc.add_next_tick_callback(self._handle_exception_wrapper(callback))
@@ -658,7 +671,7 @@ class _state(param.Parameterized):
             msg = LOG_USER_MSG.format(msg=msg)
         getattr(_state_logger, level.lower())(msg, *args)
 
-    def onload(self, callback: Callable[[], None] | Coroutine[Any, Any, None]):
+    def onload(self, callback: Callable[[], None | Awaitable[None]] | Coroutine[Any, Any, None], threaded: bool = False):
         """
         Callback that is triggered when a session has been served.
 
@@ -666,8 +679,10 @@ class _state(param.Parameterized):
         ---------
         callback: Callable[[], None] | Coroutine[Any, Any, None]
            Callback that is executed when the application is loaded
+        threaded: bool
+          Whether the onload callback can be threaded
         """
-        if self.curdoc is None or self._is_pyodide:
+        if self.curdoc is None or self._is_pyodide or self.loaded:
             if self._thread_pool:
                 future = self._thread_pool.submit(partial(self.execute, callback, schedule=False))
                 future.add_done_callback(self._handle_future_exception)
@@ -676,11 +691,7 @@ class _state(param.Parameterized):
             return
         elif self.curdoc not in self._onload:
             self._onload[self.curdoc] = []
-            try:
-                self.curdoc.on_event('document_ready', partial(self._schedule_on_load, self.curdoc))
-            except AttributeError:
-                pass # Document already cleaned up
-        self._onload[self.curdoc].append(callback)
+        self._onload[self.curdoc].append((callback, threaded))
 
     def on_session_created(self, callback: Callable[[BokehSessionContext], None]) -> None:
         """
@@ -762,7 +773,8 @@ class _state(param.Parameterized):
 
     def schedule_task(
         self, name: str, callback: Callable[[], None], at: Tat =None,
-        period: str | dt.timedelta = None, cron: Optional[str] = None
+        period: str | dt.timedelta = None, cron: Optional[str] = None,
+        threaded : bool = False
     ) -> None:
         """
         Schedules a task at a specific time or on a schedule.
@@ -810,6 +822,9 @@ class _state(param.Parameterized):
 
         cron: str
           A cron expression (requires croniter to parse)
+        threaded: bool
+          Whether the callback should be run on a thread (requires
+          config.nthreads to be set).
         """
         if name in self._scheduled:
             if callback is not self._scheduled[name][1]:
@@ -862,7 +877,7 @@ class _state(param.Parameterized):
             return
         self._scheduled[name] = (diter, callback)
         self._ioloop.call_later(
-            delay=call_time_seconds, callback=partial(self._scheduled_cb, name)
+            delay=call_time_seconds, callback=partial(self._scheduled_cb, name, threaded)
         )
 
     def sync_busy(self, indicator: BooleanIndicator) -> None:
@@ -909,7 +924,10 @@ class _state(param.Parameterized):
         access_token = self._decode_cookie('access_token')
         if not access_token:
             return
-        decoded_token = decode_token(access_token)
+        try:
+            decoded_token = decode_token(access_token)
+        except Exception:
+            return access_token
         if decoded_token['exp'] <= dt.datetime.now(dt.timezone.utc).timestamp():
             return None
         return access_token
@@ -949,10 +967,11 @@ class _state(param.Parameterized):
             pyodide_session = self._is_pyodide and 'pyodide_kernel' not in sys.modules
             if doc and (doc.session_context or pyodide_session):
                 return doc
-        finally:
-            curdoc = self._curdoc.get()
-            if curdoc:
-                return curdoc
+        except Exception:
+            pass
+        curdoc = self._curdoc.get()
+        if curdoc:
+            return curdoc
 
     @curdoc.setter
     def curdoc(self, doc: Document) -> None:
@@ -1083,6 +1102,10 @@ class _state(param.Parameterized):
         from tornado.web import decode_signed_value
 
         from ..config import config
+        is_guest = self.cookies.get('is_guest')
+        if is_guest:
+            return "guest"
+
         user = self.cookies.get('user')
         if user is None or config.cookie_secret is None:
             return None
@@ -1093,6 +1116,9 @@ class _state(param.Parameterized):
         """
         Returns the OAuth user information if enabled.
         """
+        is_guest = self.cookies.get('is_guest')
+        if is_guest:
+            return {"user": "guest", "username": "guest"}
         id_token = self._decode_cookie('id_token')
         if id_token is None:
             return None

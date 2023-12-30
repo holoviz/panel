@@ -4,12 +4,11 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-try:
-    from langchain.agents import AgentType, initialize_agent, load_tools
-    from langchain.chat_models.openai import ChatOpenAI
-    from langchain.llms.fake import FakeListLLM
-except ImportError:
-    pytest.skip("langchain not installed", allow_module_level=True)
+pytest.importorskip("langchain", reason="Cannot test PanelCallbackHandler without langchain")
+
+from langchain.agents import AgentType, initialize_agent, load_tools
+from langchain.chat_models.openai import ChatOpenAI
+from langchain.llms.fake import FakeListLLM
 
 from panel.chat import ChatFeed, ChatInterface
 from panel.chat.langchain import PanelCallbackHandler

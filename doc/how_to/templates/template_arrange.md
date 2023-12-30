@@ -51,7 +51,7 @@ Now, we can activate this app on the command line:
 panel serve app.py --show --autoreload
 ```
 
-<img src="../../_static/template_arrange.png" alt="example panel app">
+<img src="../../_static/images/template_arrange.png" alt="example panel app">
 
 ## Related Resources
 

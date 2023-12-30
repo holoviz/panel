@@ -86,6 +86,7 @@ from .resources import (
     BASE_TEMPLATE, CDN_DIST, COMPONENT_PATH, ERROR_TEMPLATE, LOCAL_DIST,
     Resources, _env, bundle_resources, patch_model_css, resolve_custom_path,
 )
+from .session import generate_session
 from .state import set_curdoc, state
 
 logger = logging.getLogger(__name__)
@@ -137,6 +138,8 @@ def _eval_panel(
             body.classList.remove({LOADING_INDICATOR_CSS_CLASS!r}, {config.loading_spinner!r})
             """)
         )
+
+    doc.on_event('document_ready', partial(state._schedule_on_load, doc))
 
     # Set up instrumentation for logging sessions
     logger.info(LOG_SESSION_LAUNCHING, id(doc))
@@ -481,7 +484,7 @@ class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
                     session.block_expiration()
         return session
 
-    def _token_payload(self):
+    def _generate_token_payload(self):
         app = self.application
         if app.include_headers is None:
             excluded_headers = (app.exclude_headers or [])
@@ -510,8 +513,74 @@ class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
         payload.update(self.application_context.application.process_request(self.request))
         return payload
 
+    def _authorize(self, session=False):
+        """
+        """
+        auth_cb = config.authorize_callback
+        # If inside a session ensure the authorize callback is not global
+        if not auth_cb or (session and auth_cb is config._param__private.values['authorize_callback']):
+            return True, None
+        authorized = False
+        auth_params = inspect.signature(auth_cb).parameters
+        if len(auth_params) == 1:
+            auth_args = (state.user_info,)
+        elif len(auth_params) == 2:
+            auth_args = (state.user_info, self.request.path,)
+        else:
+            raise RuntimeError(
+                'Authorization callback must accept either 1) a single argument '
+                'which is the user name or 2) two arguments which includes the '
+                'user name and the url path the user is trying to access.'
+            )
+        auth_error = f'{state.user} is not authorized to access this application.'
+        try:
+            authorized = auth_cb(*auth_args)
+            if isinstance(authorized, str):
+                self.redirect(authorized)
+                return None, None
+            elif not authorized:
+                auth_error = (
+                    f'Access denied! User {state.user!r} is not authorized '
+                    f'for the given app {self.request.path!r}.'
+                )
+            if authorized:
+                auth_error = None
+        except Exception:
+            auth_error = f'Authorization callback errored. Could not validate user {state.user}.'
+        return authorized, auth_error
+
+    def _render_auth_error(self, auth_error):
+        if config.auth_template:
+            with open(config.auth_template) as f:
+                template = _env.from_string(f.read())
+        else:
+            template = ERROR_TEMPLATE
+        return template.render(
+            npm_cdn=config.npm_cdn,
+            title='Panel: Authorization Error',
+            error_type='Authorization Error',
+            error='User is not authorized.',
+            error_msg=auth_error
+        )
+
     @authenticated
     async def get(self, *args, **kwargs):
+        # Run global authorization callback
+        payload = self._generate_token_payload()
+        if config.authorize_callback:
+            temp_session = generate_session(
+                self.application, self.request, payload, initialize=False
+            )
+            with set_curdoc(temp_session.document):
+                authorized, auth_error = self._authorize()
+            if authorized is None:
+                return
+            elif not authorized:
+                page = self._render_auth_error(auth_error)
+                self.set_header("Content-Type", 'text/html')
+                self.write(page)
+                return
+
         app = self.application
         with self._session_prefix():
             key_func = state._session_key_funcs.get(self.request.path, lambda r: r.path)
@@ -523,7 +592,7 @@ class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
                     signed=self.application.sign_sessions
                 )
                 payload = get_token_payload(session.token)
-                payload.update(self._token_payload())
+                payload.update(payload)
                 del payload['session_expiry']
                 token = generate_jwt_token(
                     session_id,
@@ -537,58 +606,19 @@ class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
             logger.info(LOG_SESSION_CREATED, id(session.document))
             with set_curdoc(session.document):
                 resources = Resources.from_bokeh(self.application.resources())
-                auth_cb = config.authorize_callback
-                authorized = False
-                if auth_cb:
-                    auth_cb = config.authorize_callback
-                    auth_params = inspect.signature(auth_cb).parameters
-                    if len(auth_params) == 1:
-                        auth_args = (state.user_info,)
-                    elif len(auth_params) == 2:
-                        auth_args = (state.user_info, self.request.path,)
-                    else:
-                        raise RuntimeError(
-                            'Authorization callback must accept either 1) a single argument '
-                            'which is the user name or 2) two arguments which includes the '
-                            'user name and the url path the user is trying to access.'
-                        )
-                    auth_error = f'{state.user} is not authorized to access this application.'
-                    try:
-                        authorized = auth_cb(*auth_args)
-                        if isinstance(authorized, str):
-                            self.redirect(authorized)
-                            return
-                        elif not authorized:
-                            auth_error = (
-                                f'Authorization callback errored. Could not validate user name "{state.user}" '
-                                f'for the given app "{self.request.path}".'
-                            )
-                        if authorized:
-                            auth_error = None
-                    except Exception:
-                        auth_error = f'Authorization callback errored. Could not validate user {state.user}.'
-                else:
-                    authorized = True
-
+                # Session authorization callback
+                authorized, auth_error = self._authorize(session=True)
                 if authorized:
                     page = server_html_page_for_session(
                         session, resources=resources, title=session.document.title,
                         token=token, template=session.document.template,
                         template_variables=session.document.template_variables,
                     )
+                elif authorized is None:
+                    return
                 else:
-                    if config.auth_template:
-                        with open(config.auth_template) as f:
-                            template = _env.from_string(f.read())
-                    else:
-                        template = ERROR_TEMPLATE
-                    page = template.render(
-                        npm_cdn=config.npm_cdn,
-                        title='Panel: Authorization Error',
-                        error_type='Authorization Error',
-                        error='User is not authorized.',
-                        error_msg=auth_error
-                    )
+                    page = self._render_auth_error(auth_error)
+
         self.set_header("Content-Type", 'text/html')
         self.write(page)
 
@@ -674,11 +704,11 @@ class ComponentResourceHandler(StaticFileHandler):
         try:
             module = importlib.import_module(mod)
         except ModuleNotFoundError:
-            raise HTTPError(404, 'Module not found')
+            raise HTTPError(404, 'Module not found') from None
         try:
             component = getattr(module, cls)
         except AttributeError:
-            raise HTTPError(404, 'Component not found')
+            raise HTTPError(404, 'Component not found') from None
 
         # May only access resources listed in specific attributes
         if rtype not in self._resource_attrs:
@@ -687,7 +717,7 @@ class ComponentResourceHandler(StaticFileHandler):
         try:
             resources = getattr(component, rtype)
         except AttributeError:
-            raise HTTPError(404, 'Resource type not found')
+            raise HTTPError(404, 'Resource type not found') from None
 
         # Handle template resources
         if rtype == '_resources':
@@ -742,6 +772,8 @@ def modify_document(self, doc: 'Document'):
     from ..config import config
 
     logger.info(LOG_SESSION_LAUNCHING, id(doc))
+
+    doc.on_event('document_ready', partial(state._schedule_on_load, doc))
 
     if config.autoreload:
         path = self._runner.path
@@ -1021,6 +1053,8 @@ def get_server(
     oauth_encryption_key: Optional[str] = None,
     oauth_jwt_user: Optional[str] = None,
     oauth_refresh_tokens: Optional[bool] = None,
+    oauth_guest_endpoints: Optional[bool] = None,
+    oauth_optional: Optional[bool] = None,
     login_endpoint: Optional[str] = None,
     logout_endpoint: Optional[str] = None,
     login_template: Optional[str] = None,
@@ -1089,6 +1123,11 @@ def get_server(
     oauth_encryption_key: str (optional, default=None)
       A random encryption key used for encrypting OAuth user
       information and access tokens.
+    oauth_guest_endpoints: list (optional, default=None)
+      List of endpoints that can be accessed as a guest without authenticating.
+    oauth_optional: bool (optional, default=None)
+      Whether the user will be forced to go through login flow or if
+      they can access all applications as a guest.
     oauth_refresh_tokens: bool (optional, default=None)
       Whether to automatically refresh OAuth access tokens when they expire.
     login_endpoint: str (optional, default=None)
@@ -1135,7 +1174,7 @@ def get_server(
                     raise KeyError(
                         "Keys of the title dictionary and of the apps "
                         f"dictionary must match. No {slug} key found in the "
-                        "title dictionary.")
+                        "title dictionary.") from None
             else:
                 title_ = title
             slug = slug if slug.startswith('/') else '/'+slug
@@ -1152,7 +1191,7 @@ def get_server(
                     continue
             if isinstance(app, pathlib.Path):
                 app = str(app) # enables serving apps from Paths
-            if (isinstance(app, str) and (app.endswith(".py") or app.endswith(".ipynb") or app.endswith('.md'))
+            if (isinstance(app, str) and app.endswith(('.py', '.ipynb', '.md'))
                 and os.path.isfile(app)):
                 apps[slug] = app = build_single_handler_application(app)
                 app._admin = admin
@@ -1164,7 +1203,7 @@ def get_server(
     else:
         if isinstance(panel, pathlib.Path):
             panel = str(panel) # enables serving apps from Paths
-        if (isinstance(panel, str) and (panel.endswith(".py") or panel.endswith(".ipynb") or panel.endswith('.md'))
+        if (isinstance(panel, str) and panel.endswith(('.py', '.ipynb', '.md'))
             and os.path.isfile(panel)):
             apps = {'/': build_single_handler_application(panel)}
         else:
@@ -1243,6 +1282,10 @@ def get_server(
         config.oauth_redirect_uri = oauth_redirect_uri # type: ignore
     if oauth_refresh_tokens is not None:
         config.oauth_refresh_tokens = oauth_refresh_tokens
+    if oauth_optional is not None:
+        config.oauth_optional = oauth_optional
+    if oauth_guest_endpoints is not None:
+        config.oauth_guest_endpoints = oauth_guest_endpoints
     if oauth_jwt_user is not None:
         config.oauth_jwt_user = oauth_jwt_user
     opts['cookie_secret'] = config.cookie_secret
@@ -1251,7 +1294,7 @@ def get_server(
     if verbose:
         address = server.address or 'localhost'
         url = f"http://{address}:{server.port}{server.prefix}"
-        print(f"Launching server at {url}")
+        print(f"Launching server at {url}")  # noqa: T201
 
     state._servers[server_id] = (server, panel, [])
     state._server_config[server._tornado] = server_config

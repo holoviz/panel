@@ -7,17 +7,22 @@ through a frontend input UI.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import BinaryIO, ClassVar, List
+from functools import partial
+from io import BytesIO
+from typing import (
+    Any, Callable, ClassVar, Dict, List,
+)
 
 import param
 
 from ..io.resources import CDN_DIST
 from ..layout import Row, Tabs
+from ..pane.image import ImageBase
 from ..viewable import Viewable
 from ..widgets.base import Widget
 from ..widgets.button import Button
 from ..widgets.input import FileInput, TextInput
-from .feed import ChatFeed
+from .feed import CallbackState, ChatFeed
 from .message import _FileInputMessage
 
 
@@ -46,6 +51,7 @@ class _ChatButtonData:
     icon: str
     objects: List
     buttons: List
+    callback: Callable
 
 
 class ChatInterface(ChatFeed):
@@ -69,7 +75,7 @@ class ChatInterface(ChatFeed):
         or clicks away from the widget. If not provided, defaults to
         `[TextInput]`.""")
 
-    avatar = param.ClassSelector(class_=(str, BinaryIO), doc="""
+    avatar = param.ClassSelector(class_=(str, BytesIO, bytes, ImageBase), doc="""
         The avatar to use for the user. Can be a single character text, an emoji,
         or anything supported by `pn.pane.Image`. If not set, uses the
         first character of the name.""")
@@ -80,6 +86,10 @@ class ChatInterface(ChatFeed):
 
     show_send = param.Boolean(default=True, doc="""
         Whether to show the send button.""")
+
+    show_stop = param.Boolean(default=True, doc="""
+        Whether to show the stop button temporarily replacing the send button during
+        callback; has no effect if `callback` is not async.""")
 
     show_rerun = param.Boolean(default=True, doc="""
         Whether to show the rerun button.""")
@@ -100,6 +110,21 @@ class ChatInterface(ChatFeed):
         Widgets to use for the input. If not provided, defaults to
         `[TextInput]`.""")
 
+    button_properties = param.Dict(default={}, doc="""
+        Allows addition of functionality or customization of buttons
+        by supplying a mapping from the button name to a dictionary
+        containing the `icon`, `callback`, and/or `post_callback` keys.
+        If the button names correspond to default buttons
+        (send, rerun, undo, clear), the default icon can be
+        updated and if a `callback` key value pair is provided,
+        the specified callback functionality runs before the existing one.
+        For button names that don't match existing ones,
+        new buttons are created and must include a `callback` or `post_callback` key.
+        The provided callbacks should have a signature that accepts
+        two positional arguments: instance (the ChatInterface instance)
+        and event (the button click event).
+        """)
+
     _widgets = param.Dict(default={}, allow_refs=False, doc="""
         The input widgets.""")
 
@@ -114,6 +139,9 @@ class ChatInterface(ChatFeed):
     _button_data = param.Dict(default={}, doc="""
         Metadata and data related to the buttons.""")
 
+    _buttons = param.Dict(default={}, doc="""
+        The rendered buttons.""")
+
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_interface.css"]
 
     def __init__(self, *objects, **params):
@@ -125,21 +153,6 @@ class ChatInterface(ChatFeed):
         active = params.pop("active", None)
         super().__init__(*objects, **params)
 
-        button_icons = {
-            "send": "send",
-            "rerun": "repeat-once",
-            "undo": "arrow-back",
-            "clear": "trash",
-        }
-        for action in list(button_icons):
-            if not getattr(self, f"show_{action}", True):
-                button_icons.pop(action)
-        self._button_data = {
-            name: _ChatButtonData(
-                index=index, name=name, icon=icon, objects=[], buttons=[]
-            )
-            for index, (name, icon) in enumerate(button_icons.items())
-        }
         self._input_container = Row(
             css_classes=["chat-interface-input-container"],
             stylesheets=self._stylesheets,
@@ -171,7 +184,7 @@ class ChatInterface(ChatFeed):
         if self.show_button_name is None:
             self.show_button_name = self.width is None or self.width >= 400
 
-    @param.depends("widgets", watch=True)
+    @param.depends("widgets", "button_properties", watch=True)
     def _init_widgets(self):
         """
         Initialize the input widgets.
@@ -180,6 +193,47 @@ class ChatInterface(ChatFeed):
         -------
         The input widgets.
         """
+        default_button_properties = {
+            "send": {"icon": "send", "_default_callback": self._click_send},
+            "stop": {"icon": "player-stop", "_default_callback": self._click_stop},
+            "rerun": {"icon": "repeat", "_default_callback": self._click_rerun},
+            "undo": {"icon": "arrow-back", "_default_callback": self._click_undo},
+            "clear": {"icon": "trash", "_default_callback": self._click_clear},
+        }
+        self._allow_revert = len(self.button_properties) == 0
+
+        button_properties = {**default_button_properties, **self.button_properties}
+        for index, (name, properties) in enumerate(button_properties.items()):
+            name = name.lower()
+            callback = properties.get("callback")
+            post_callback = properties.get("post_callback")
+            default_properties = default_button_properties.get(name) or {}
+            if default_properties:
+                default_callback = default_properties["_default_callback"]
+                callback = (
+                    self._wrap_callbacks(
+                        callback=callback,
+                        post_callback=post_callback,
+                        name=name,
+                    )(default_callback)
+                    if callback is not None or post_callback is not None else default_callback
+                )
+            elif callback is not None and post_callback is not None:
+                callback = self._wrap_callbacks(post_callback=post_callback)(callback)
+            elif callback is None and post_callback is not None:
+                callback = post_callback
+            elif callback is None and post_callback is None:
+                raise ValueError(f"A 'callback' key is required for the {name!r} button")
+            icon = properties.get("icon") or default_properties.get("icon")
+            self._button_data[name] = _ChatButtonData(
+                index=index,
+                name=name,
+                icon=icon,
+                objects=[],
+                buttons=[],
+                callback=callback,
+            )
+
         widgets = self.widgets
         if isinstance(self.widgets, Widget):
             widgets = [self.widgets]
@@ -210,17 +264,27 @@ class ChatInterface(ChatFeed):
             # for longer form messages, like TextArea / Ace, don't
             # submit when clicking away; only if they manually click
             # the send button
-            auto_send_types = tuple(self.auto_send_types) or (TextInput,)
-            if isinstance(widget, auto_send_types) and widget in new_widgets:
-                widget.param.watch(self._click_send, "value")
+            # note, explicitly not isinstance because
+            # TextAreaInput will trigger auto send!
+            auto_send = (
+                isinstance(widget, tuple(self.auto_send_types)) or
+                type(widget) is TextInput
+            )
+            if auto_send and widget in new_widgets:
+                callback = partial(self._button_data["send"].callback, self)
+                widget.param.watch(callback, "value")
             widget.param.update(
                 sizing_mode="stretch_width",
                 css_classes=["chat-interface-input-widget"]
             )
 
-            buttons = []
+            self._buttons = {}
             for button_data in self._button_data.values():
                 action = button_data.name
+                try:
+                    visible = self.param[f'show_{action}'] if action != "stop" else False
+                except KeyError:
+                    visible = True
                 show_expr = self.param.show_button_name.rx()
                 button = Button(
                     name=show_expr.rx.where(button_data.name.title(), ""),
@@ -228,18 +292,20 @@ class ChatInterface(ChatFeed):
                     sizing_mode="stretch_width",
                     max_width=show_expr.rx.where(90, 45),
                     max_height=50,
-                    margin=(5, 5, 5, 0),
-                    align="start",
-                    visible=self.param[f'show_{action}']
+                    margin=(0, 5, 0, 0),
+                    align="center",
+                    visible=visible
                 )
-                self._link_disabled_loading(button)
-                button.on_click(getattr(self, f"_click_{action}"))
-                buttons.append(button)
+                if action != "stop":
+                    self._link_disabled_loading(button)
+                callback = partial(button_data.callback, self)
+                button.on_click(callback)
+                self._buttons[action] = button
                 button_data.buttons.append(button)
 
             message_row = Row(
                 widget,
-                *buttons,
+                *list(self._buttons.values()),
                 sizing_mode="stretch_width",
                 css_classes=["chat-interface-input-row"],
                 stylesheets=self._stylesheets,
@@ -254,7 +320,44 @@ class ChatInterface(ChatFeed):
         self._input_container.objects = [input_layout]
         self._input_layout = input_layout
 
-    def _click_send(self, _: param.parameterized.Event | None = None) -> None:
+    def _wrap_callbacks(
+            self,
+            callback: Callable | None = None,
+            post_callback: Callable | None = None,
+            name: str = ""
+        ):
+        """
+        Wrap the callback and post callback around the default callback.
+        """
+        def decorate(default_callback: Callable):
+            def wrapper(self, event: param.parameterized.Event):
+                if name == "send" and not self.active_widget.value:
+                    # don't trigger if no message to prevent duplication
+                    return
+
+                if callback is not None:
+                    try:
+                        self.disabled = True
+                        callback(self, event)
+                    finally:
+                        self.disabled = False
+
+                default_callback(self, event)
+
+                if post_callback is not None:
+                    try:
+                        self.disabled = True
+                        post_callback(self, event)
+                    finally:
+                        self.disabled = False
+            return wrapper
+        return decorate
+
+    def _click_send(
+        self,
+        event: param.parameterized.Event | None = None,
+        instance: "ChatInterface" | None = None
+    ) -> None:
         """
         Send the input when the user presses Enter.
         """
@@ -285,6 +388,16 @@ class ChatInterface(ChatFeed):
             return  # no message entered
         self._reset_button_data()
         self.send(value=value, user=self.user, avatar=self.avatar, respond=True)
+
+    def _click_stop(
+        self,
+        event: param.parameterized.Event | None = None,
+        instance: "ChatInterface" | None = None
+    ) -> bool:
+        """
+        Cancel the callback when the user presses the Stop button.
+        """
+        return self.stop()
 
     def _get_last_user_entry_index(self) -> int:
         """
@@ -325,7 +438,11 @@ class ChatInterface(ChatFeed):
             button_data.objects.clear()
             self._toggle_revert(button_data, False)
 
-    def _click_rerun(self, _):
+    def _click_rerun(
+        self,
+        event: param.parameterized.Event | None = None,
+        instance: "ChatInterface" | None = None
+    ) -> None:
         """
         Upon clicking the rerun button, rerun the last user message,
         which can trigger the callback again.
@@ -336,7 +453,11 @@ class ChatInterface(ChatFeed):
             return
         self.send(value=messages[0], respond=True)
 
-    def _click_undo(self, _):
+    def _click_undo(
+        self,
+        event: param.parameterized.Event | None = None,
+        instance: "ChatInterface" | None = None
+    ) -> None:
         """
         Upon clicking the undo button, undo (remove) messages
         up to the last user message. If the button is clicked
@@ -348,12 +469,19 @@ class ChatInterface(ChatFeed):
             self._reset_button_data()
             count = self._get_last_user_entry_index()
             undo_data.objects = self.undo(count)
-            self._toggle_revert(undo_data, True)
+            if self._allow_revert:
+                self._toggle_revert(undo_data, True)
+            else:
+                undo_data.objects = []
         else:
             self.extend(undo_objects)
             self._reset_button_data()
 
-    def _click_clear(self, _):
+    def _click_clear(
+        self,
+        event: param.parameterized.Event | None = None,
+        instance: "ChatInterface" | None = None
+    ) -> None:
         """
         Upon clicking the clear button, clear the chat log.
         If the button is clicked again without performing any
@@ -364,7 +492,10 @@ class ChatInterface(ChatFeed):
         if not clear_objects:
             self._reset_button_data()
             clear_data.objects = self.clear()
-            self._toggle_revert(clear_data, True)
+            if self._allow_revert:
+                self._toggle_revert(clear_data, True)
+            else:
+                clear_data.objects = []
         else:
             self[:] = clear_objects.copy()
             self._reset_button_data()
@@ -409,3 +540,51 @@ class ChatInterface(ChatFeed):
         """
         if isinstance(self._input_layout, Tabs):
             self._input_layout.active = index
+
+    def _serialize_for_transformers(
+        self,
+        role_names: Dict[str, str | List[str]] | None = None,
+        default_role: str | None = "assistant",
+        custom_serializer: Callable = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Exports the chat log for use with transformers.
+
+        Arguments
+        ---------
+        role_names : dict(str, str | list(str)) | None
+            A dictionary mapping the role to the ChatMessage's user name.
+            Defaults to `{"user": [self.user], "assistant": [self.callback_user]}`
+            if not set. The keys and values are case insensitive as the strings
+            will all be lowercased. The values can be a string or a list of strings,
+            e.g. `{"user": "user", "assistant": ["executor", "langchain"]}`.
+        default_role : str
+            The default role to use if the user name is not found in role_names.
+            If this is set to None, raises a ValueError if the user name is not found.
+        custom_serializer : callable
+            A custom function to format the ChatMessage's object. The function must
+            accept one positional argument and return a string. If not provided,
+            uses the serialize method on ChatMessage.
+
+        Returns
+        -------
+        A list of dictionaries with a role and content keys.
+        """
+        if role_names is None:
+            role_names = {
+                "user": [self.user],
+                "assistant": [self.callback_user],
+            }
+        return super()._serialize_for_transformers(role_names, default_role, custom_serializer)
+
+    @param.depends("_callback_state", watch=True)
+    async def _update_input_disabled(self):
+        busy_states = (CallbackState.RUNNING, CallbackState.GENERATING)
+        if not self.show_stop or self._callback_state not in busy_states:
+            with param.parameterized.batch_call_watchers(self):
+                self._buttons["send"].visible = True
+                self._buttons["stop"].visible = False
+        else:
+            with param.parameterized.batch_call_watchers(self):
+                self._buttons["send"].visible = False
+                self._buttons["stop"].visible = True

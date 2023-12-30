@@ -16,6 +16,7 @@ import param
 
 from bokeh.models import FlexBox as BkFlexBox, GridBox as BkGridBox
 
+from ..io.document import freeze_doc
 from ..io.model import hold
 from ..io.resources import CDN_DIST
 from .base import (
@@ -201,7 +202,8 @@ class GridBox(ListPanel):
 
         msg = dict(msg)
         preprocess = any(self._rename.get(k, k) in self._preprocess_params for k in msg)
-        if self._rename['objects'] in msg or 'ncols' in msg or 'nrows' in msg:
+        update_children = self._rename['objects'] in msg
+        if update_children or 'ncols' in msg or 'nrows' in msg:
             if 'objects' in events:
                 old = events['objects'].old
             else:
@@ -217,7 +219,7 @@ class GridBox(ListPanel):
             update = Panel._batch_update
             Panel._batch_update = True
             try:
-                with doc.models.freeze():
+                with freeze_doc(doc, model, msg, force=update_children):
                     super(Panel, self)._update_model(events, msg, root, model, doc, comm)
                     if update:
                         return
@@ -229,6 +231,31 @@ class GridBox(ListPanel):
 
 
 class GridSpec(Panel):
+    """
+    The `GridSpec` is an *array like* layout that allows arranging multiple Panel
+    objects in a grid using a simple API to assign objects to individual grid cells or
+    to a grid span.
+
+    Other layout containers function like lists, but a GridSpec has an API similar
+    to a 2D array, making it possible to use 2D assignment to populate, index, and slice
+    the grid.
+
+    See `GridStack` for a similar layout that allows the user to resize and drag the
+    cells.
+
+    Reference: https://panel.holoviz.org/reference/layouts/GridSpec.html
+
+    :Example:
+
+    >>> import panel as pn
+    >>> gspec = pn.GridSpec(width=800, height=600)
+    >>> gspec[:,   0  ] = pn.Spacer(styles=dict(background='red'))
+    >>> gspec[0,   1:3] = pn.Spacer(styles=dict(background='green'))
+    >>> gspec[1,   2:4] = pn.Spacer(styles=dict(background='orange'))
+    >>> gspec[2,   1:4] = pn.Spacer(styles=dict(background='blue'))
+    >>> gspec[0:1, 3:4] = pn.Spacer(styles=dict(background='purple'))
+    >>> gspec
+    """
 
     objects = param.Dict(default={}, doc="""
         The dictionary of child objects that make up the grid.""")
@@ -378,7 +405,7 @@ class GridSpec(Panel):
     @property
     def _object_grid(self):
         grid = np.full((self.nrows, self.ncols), None, dtype=object)
-        for i, ((y0, x0, y1, x1), obj) in enumerate(self.objects.items()):
+        for (y0, x0, y1, x1), obj in self.objects.items():
             l = 0 if x0 is None else x0
             r = self.ncols if x1 is None else x1
             t = 0 if y0 is None else y0

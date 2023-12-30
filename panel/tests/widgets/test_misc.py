@@ -1,3 +1,5 @@
+import asyncio
+
 from io import StringIO
 from pathlib import Path
 
@@ -101,6 +103,22 @@ def test_file_download_callback():
     assert file_download.data is not None
     assert file_download.filename == "cba.py"
     assert file_download.label == "Download cba.py"
+
+
+@pytest.mark.asyncio
+async def test_file_download_async_callback():
+    async def cb():
+        return StringIO("data")
+
+    file_download = FileDownload(callback=cb, filename="abc.py")
+
+    assert file_download.data is None
+
+    file_download._clicks += 1
+
+    await asyncio.sleep(0.1)
+
+    assert file_download.data == "data:application/octet-stream;base64,ZGF0YQ=="
 
 
 def test_file_download_transfers():

@@ -1,14 +1,13 @@
 import pytest
 
-try:
-    from playwright.sync_api import expect
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
+pytest.importorskip("playwright")
 
-pytestmark = pytest.mark.ui
+from playwright.sync_api import expect
 
 from panel.pane import Markdown
 from panel.tests.util import serve_component, wait_until
+
+pytestmark = pytest.mark.ui
 
 
 def test_update_markdown_pane(page):
@@ -22,6 +21,31 @@ def test_update_markdown_pane(page):
 
     expect(page.locator(".markdown").locator("div")).to_have_text('Updated\n')
 
+def test_update_markdown_height(page):
+    md = Markdown('Initial', height=50)
+
+    serve_component(page, md)
+
+    md_el = page.locator(".markdown")
+    expect(md_el.locator("div")).to_have_text('Initial\n')
+    wait_until(lambda: md_el.bounding_box()['height'] == 50, page)
+
+    md.height = 300
+
+    wait_until(lambda: md_el.bounding_box()['height'] == 300, page)
+
+def test_update_markdown_width(page):
+    md = Markdown('Initial', width=50)
+
+    serve_component(page, md)
+
+    md_el = page.locator(".markdown")
+    expect(md_el.locator("div")).to_have_text('Initial\n')
+    wait_until(lambda: md_el.bounding_box()['width'] == 50, page)
+
+    md.width = 300
+
+    wait_until(lambda: md_el.bounding_box()['width'] == 300, page)
 
 def test_update_markdown_pane_resizes(page):
     md = Markdown('Initial')
