@@ -334,6 +334,21 @@ class DatePicker(Widget):
 
     _widget_type: ClassVar[Type[Model]] = _BkDatePicker
 
+    def __init__(self, **params):
+        if 'options' in params:
+            options = list(params.pop('options'))
+            params['enabled_dates'] = options
+        if 'value' in params and hasattr(params['value'], "astype"):
+            value = (
+                params['value']
+                .astype('datetime64[ms]')
+                .astype(datetime)
+            )
+            if hasattr(value, "date"):
+                value = value.date()
+            params["value"] = value
+        super().__init__(**params)
+
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
         for p in ('start', 'end', 'value'):
