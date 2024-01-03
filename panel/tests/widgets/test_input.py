@@ -130,6 +130,16 @@ def test_datetime_picker(document, comm):
         datetime_picker._process_events({'value': '2018-09-10 00:00:01'})
 
 
+def test_datetime_picker_options(document, comm):
+    options = [datetime(2018, 9, 1), datetime(2018, 9, 2), datetime(2018, 9, 3)]
+    datetime_picker = DatetimePicker(
+        name='DatetimePicker', value=datetime(2018, 9, 2, 1, 5),
+        options=options
+    )
+    assert datetime_picker.value == datetime(2018, 9, 2, 1, 5)
+    assert datetime_picker.enabled_dates == options
+
+
 def test_datetime_range_picker(document, comm):
     datetime_range_picker = DatetimeRangePicker(
         name='DatetimeRangePicker', value=(datetime(2018, 9, 2, 1, 5), datetime(2018, 9, 2, 1, 6)),

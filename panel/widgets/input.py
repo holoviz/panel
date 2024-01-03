@@ -470,14 +470,17 @@ class _DatetimePickerBase(Widget):
     __abstract = True
 
     def __init__(self, **params):
-        if "options" in params:
-            options = list(params.pop("options"))
-            params["enabled_dates"] = options
+        if 'options' in params:
+            options = list(params.pop('options'))
+            params['enabled_dates'] = options
         super().__init__(**params)
         self._update_value_bounds()
 
     @staticmethod
     def _convert_to_datetime(v):
+        if v is None:
+            return
+
         if isinstance(v, Iterable) and not isinstance(v, str):
             container_type = type(v)
             return container_type(
