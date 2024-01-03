@@ -10,7 +10,8 @@ import json
 from base64 import b64decode
 from datetime import date, datetime
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional, Tuple, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, Iterable, Mapping, Optional, Tuple,
+    Type,
 )
 
 import numpy as np
@@ -477,12 +478,21 @@ class _DatetimePickerBase(Widget):
 
     @staticmethod
     def _convert_to_datetime(v):
+        if isinstance(v, Iterable) and not isinstance(v, str):
+            container_type = type(v)
+            return container_type(
+                _DatetimePickerBase._convert_to_datetime(vv)
+                for vv in v
+            )
+
         if isinstance(v, datetime):
             return v
         elif isinstance(v, date):
             return datetime(v.year, v.month, v.day)
         elif hasattr(v, "astype"):
             return v.astype('datetime64[ms]').astype(datetime)
+        else:
+            raise ValueError(f"Could not convert {v} to datetime")
 
     @param.depends('start', 'end', watch=True)
     def _update_value_bounds(self):
@@ -572,8 +582,6 @@ class DatetimeRangePicker(_DatetimePickerBase):
                 datetime.strptime(value, r'%Y-%m-%d %H:%M:%S')
                 for value in value.split(' to ')
             ]
-
-
             value = tuple(value)
 
         return value
