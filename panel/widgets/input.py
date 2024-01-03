@@ -469,6 +469,9 @@ class _DatetimePickerBase(Widget):
     __abstract = True
 
     def __init__(self, **params):
+        if "options" in params:
+            options = list(params.pop("options"))
+            params["enabled_dates"] = options
         super().__init__(**params)
         self._update_value_bounds()
 
@@ -478,6 +481,8 @@ class _DatetimePickerBase(Widget):
             return v
         elif isinstance(v, date):
             return datetime(v.year, v.month, v.day)
+        elif hasattr(v, "astype"):
+            return v.astype('datetime64[ms]').astype(datetime)
 
     @param.depends('start', 'end', watch=True)
     def _update_value_bounds(self):
@@ -485,7 +490,9 @@ class _DatetimePickerBase(Widget):
             self._convert_to_datetime(self.start),
             self._convert_to_datetime(self.end)
         )
-        self.param.value._validate(self.value)
+        self.param.value._validate(
+            self._convert_to_datetime(self.value)
+        )
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
@@ -496,7 +503,7 @@ class _DatetimePickerBase(Widget):
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         if 'value' in msg:
-            msg['value'] = self._deserialize_value(msg['value'])
+            msg['value'] = self._deserialize_value(self._convert_to_datetime(msg['value']))
         if 'min_date' in msg:
             msg['min_date'] = self._convert_to_datetime(msg['min_date'])
         if 'max_date' in msg:

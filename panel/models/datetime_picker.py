@@ -10,7 +10,7 @@ class DatetimePicker(InputWidget):
 
     '''
 
-    value = Nullable(String, help="""
+    value = Nullable(Either(String, Date, Datetime), help="""
     The initial or picked date.
     """)
 
