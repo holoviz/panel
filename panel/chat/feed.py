@@ -279,6 +279,10 @@ class ChatFeed(ListPanel):
         self._card._cleanup(root)
         super()._cleanup(root)
 
+    @param.depends("card_params", watch=True)
+    def _update_card_params(self):
+        self._card.param.update(**self.card_params)
+
     @param.depends("placeholder_text", watch=True, on_init=True)
     def _update_placeholder(self):
         loading_avatar = SVG(

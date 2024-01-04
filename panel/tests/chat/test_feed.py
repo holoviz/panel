@@ -41,14 +41,12 @@ class TestChatFeed:
         chat_feed.header = ""
         assert chat_feed._card.hide_header
 
-    def test_card_params(self):
-        chat_feed = ChatFeed(
-            card_params={
-                "header_background": "red",
-                "header": "Test",
-                "hide_header": False
-            },
-        )
+    def test_card_params(self, chat_feed):
+        chat_feed.card_params = {
+            "header_background": "red",
+            "header": "Test",
+            "hide_header": False
+        }
         assert chat_feed._card.header_background == "red"
         assert chat_feed._card.header == "Test"
         assert not chat_feed._card.hide_header
