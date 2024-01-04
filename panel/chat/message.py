@@ -197,8 +197,8 @@ class ChatMessage(PaneBase):
     show_copy_icon = param.Boolean(default=True, doc="""
         Whether to display the copy icon.""")
 
-    show_streaming_dot = param.Boolean(default=False, doc="""
-        Whether to display the streaming dot.""")
+    show_activity_dot = param.Boolean(default=False, doc="""
+        Whether to show the activity dot.""")
 
     renderers = param.HookList(doc="""
         A callable or list of callables that accept the object and return a
@@ -243,8 +243,8 @@ class ChatMessage(PaneBase):
         self._build_layout()
 
     def _build_layout(self):
-        self._streaming_indicator = HTML(
-            "●", css_classes=["streaming-indicator"], visible=self.param.show_streaming_dot
+        self._activity_dot = HTML(
+            "●", css_classes=["activity-dot"], visible=self.param.show_activity_dot
         )
         self._left_col = left_col = Column(
             self._render_avatar(),
@@ -281,7 +281,7 @@ class ChatMessage(PaneBase):
             Row(
                 self._user_html,
                 self.chat_copy_icon,
-                self._streaming_indicator,
+                self._activity_dot,
                 stylesheets=self._stylesheets,
                 sizing_mode="stretch_width",
                 css_classes=["header"]

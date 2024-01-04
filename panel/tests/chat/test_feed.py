@@ -501,12 +501,14 @@ class TestChatFeedCallback:
             for char in contents:
                 message += char
                 yield message
+                assert instance.objects[-1].show_activity_dot
 
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
         await asyncio.sleep(0.5)
         assert len(chat_feed.objects) == 2
         assert chat_feed.objects[1].object == "Message"
+        assert not chat_feed.objects[-1].show_activity_dot
 
     @pytest.mark.asyncio
     async def test_async_generator(self, chat_feed):
@@ -519,12 +521,14 @@ class TestChatFeedCallback:
             async for char in async_gen(contents):
                 message += char
                 yield message
+                assert instance.objects[-1].show_activity_dot
 
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
         await asyncio.sleep(0.5)
         assert len(chat_feed.objects) == 2
         assert chat_feed.objects[1].object == "Message"
+        assert not chat_feed.objects[-1].show_activity_dot
 
     def test_placeholder_disabled(self, chat_feed):
         def echo(contents, user, instance):
