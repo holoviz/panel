@@ -243,6 +243,9 @@ class ChatMessage(PaneBase):
         self._build_layout()
 
     def _build_layout(self):
+        self._streaming_indicator = HTML(
+            "●", css_classes=["streaming-indicator"], visible=self.param.show_streaming_dot
+        )
         self._left_col = left_col = Column(
             self._render_avatar(),
             max_width=60,
@@ -274,13 +277,11 @@ class ChatMessage(PaneBase):
             css_classes=["timestamp"],
             visible=self.param.show_timestamp
         )
-        self._streaming_indicator = HTML(
-            "●", css_classes=["streaming-indicator"], visible=self.param.show_streaming_dot
-        )
         self._right_col = right_col = Column(
             Row(
                 self._user_html,
                 self.chat_copy_icon,
+                self._streaming_indicator,
                 stylesheets=self._stylesheets,
                 sizing_mode="stretch_width",
                 css_classes=["header"]
@@ -288,7 +289,6 @@ class ChatMessage(PaneBase):
             self._center_row,
             Row(
                 self._timestamp_html,
-                self._streaming_indicator,
                 stylesheets=self._stylesheets,
                 css_classes=["footer"]
             ),
