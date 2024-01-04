@@ -197,6 +197,9 @@ class ChatFeed(ListPanel):
         display the scroll button. Setting to 0
         disables the scroll button.""")
 
+    show_streaming_dot = param.Boolean(default=True, doc="""
+        Whether to show a streaming dot on the ChatMessage when streaming.""")
+
     view_latest = param.Boolean(default=True, doc="""
         Whether to scroll to the latest object on init. If not
         enabled the view will be on the first object.""")
@@ -215,6 +218,7 @@ class ChatFeed(ListPanel):
 
     def __init__(self, *objects, **params):
         self._callback_future = None
+        self._callback_message = None
 
         if params.get("renderers") and not isinstance(params["renderers"], list):
             params["renderers"] = [params["renderers"]]
@@ -334,6 +338,7 @@ class ChatFeed(ListPanel):
             message_params["avatar"] = avatar
         if self.width:
             message_params["width"] = int(self.width - 80)
+
         message = ChatMessage(**message_params)
         return message
 
@@ -405,14 +410,18 @@ class ChatFeed(ListPanel):
             self._callback_state = CallbackState.GENERATING
             async for token in response:
                 response_message = self._upsert_message(token, response_message)
+                response_message.show_streaming_dot = self.show_streaming_dot
         elif isgenerator(response):
             self._callback_state = CallbackState.GENERATING
             for token in response:
                 response_message = self._upsert_message(token, response_message)
+                response_message.show_streaming_dot = self.show_streaming_dot
         elif isawaitable(response):
             response_message = self._upsert_message(await response, response_message)
         else:
             response_message = self._upsert_message(response, response_message)
+
+        self._callback_message = response_message
         return response_message
 
     async def _schedule_placeholder(
@@ -467,6 +476,7 @@ class ChatFeed(ListPanel):
                 await future
                 response = future.result()
                 await self._serialize_response(response)
+                self._callback_message.show_streaming_dot = False
         except StopCallback:
             # callback was stopped by user
             self._callback_state = CallbackState.STOPPED
@@ -488,6 +498,7 @@ class ChatFeed(ListPanel):
             with param.parameterized.batch_call_watchers(self):
                 self._replace_placeholder(None)
                 self._callback_state = CallbackState.IDLE
+                self._callback_message = None
                 self.disabled = self._was_disabled
 
     # Public API

@@ -197,6 +197,9 @@ class ChatMessage(PaneBase):
     show_copy_icon = param.Boolean(default=True, doc="""
         Whether to display the copy icon.""")
 
+    show_streaming_dot = param.Boolean(default=False, doc="""
+        Whether to display the streaming dot.""")
+
     renderers = param.HookList(doc="""
         A callable or list of callables that accept the object and return a
         Panel object to render the object. If a list is provided, will
@@ -271,6 +274,9 @@ class ChatMessage(PaneBase):
             css_classes=["timestamp"],
             visible=self.param.show_timestamp
         )
+        self._streaming_indicator = HTML(
+            "●", css_classes=["streaming-indicator"], visible=self.param.show_streaming_dot
+        )
         self._right_col = right_col = Column(
             Row(
                 self._user_html,
@@ -280,7 +286,12 @@ class ChatMessage(PaneBase):
                 css_classes=["header"]
             ),
             self._center_row,
-            self._timestamp_html,
+            Row(
+                self._timestamp_html,
+                self._streaming_indicator,
+                stylesheets=self._stylesheets,
+                css_classes=["footer"]
+            ),
             css_classes=["right"],
             stylesheets=self._stylesheets,
             sizing_mode=None
