@@ -139,6 +139,8 @@ def _eval_panel(
             """)
         )
 
+    doc.on_event('document_ready', partial(state._schedule_on_load, doc))
+
     # Set up instrumentation for logging sessions
     logger.info(LOG_SESSION_LAUNCHING, id(doc))
     def _log_session_destroyed(session_context):
@@ -574,8 +576,8 @@ class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
             if authorized is None:
                 return
             elif not authorized:
-                self._render_auth_error(auth_error)
-                page = self.set_header("Content-Type", 'text/html')
+                page = self._render_auth_error(auth_error)
+                self.set_header("Content-Type", 'text/html')
                 self.write(page)
                 return
 
@@ -702,11 +704,11 @@ class ComponentResourceHandler(StaticFileHandler):
         try:
             module = importlib.import_module(mod)
         except ModuleNotFoundError:
-            raise HTTPError(404, 'Module not found')
+            raise HTTPError(404, 'Module not found') from None
         try:
             component = getattr(module, cls)
         except AttributeError:
-            raise HTTPError(404, 'Component not found')
+            raise HTTPError(404, 'Component not found') from None
 
         # May only access resources listed in specific attributes
         if rtype not in self._resource_attrs:
@@ -715,7 +717,7 @@ class ComponentResourceHandler(StaticFileHandler):
         try:
             resources = getattr(component, rtype)
         except AttributeError:
-            raise HTTPError(404, 'Resource type not found')
+            raise HTTPError(404, 'Resource type not found') from None
 
         # Handle template resources
         if rtype == '_resources':
@@ -770,6 +772,8 @@ def modify_document(self, doc: 'Document'):
     from ..config import config
 
     logger.info(LOG_SESSION_LAUNCHING, id(doc))
+
+    doc.on_event('document_ready', partial(state._schedule_on_load, doc))
 
     if config.autoreload:
         path = self._runner.path
@@ -1170,7 +1174,7 @@ def get_server(
                     raise KeyError(
                         "Keys of the title dictionary and of the apps "
                         f"dictionary must match. No {slug} key found in the "
-                        "title dictionary.")
+                        "title dictionary.") from None
             else:
                 title_ = title
             slug = slug if slug.startswith('/') else '/'+slug

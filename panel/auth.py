@@ -1068,7 +1068,7 @@ class OAuthProvider(BasicAuthProvider):
         expiry_date = dt.datetime.now() + dt.timedelta(seconds=expiry_seconds) # schedule_task is in local TZ
         refresh_cb = partial(self._scheduled_refresh, user, refresh_token, application, request)
         if expiry_seconds <= 0:
-            refresh_cb()
+            state.execute(refresh_cb)
             return
         task = f'{user}-refresh-access-tokens'
         try:

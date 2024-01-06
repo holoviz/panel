@@ -105,14 +105,14 @@ def test_console_output_replace_error(document, comm, get_display_handle):
         handle = get_display_handle(model)
 
         try:
-            1/0
+            1/0  # noqa: B018
         except Exception as e:
             pane._on_error(model.ref['id'], e)
         assert 'text/html' in handle
         assert 'ZeroDivisionError' in handle['text/html']
 
         try:
-            1 + '2'
+            1 + '2'  # noqa: B018
         except Exception as e:
             pane._on_error(model.ref['id'], e)
         assert 'text/html' in handle
@@ -129,14 +129,14 @@ def test_console_output_accumulate_error(document, comm, get_display_handle):
     handle = get_display_handle(model)
 
     try:
-        1/0
+        1/0  # noqa: B018
     except Exception as e:
         pane._on_error(model.ref['id'], e)
     assert 'text/html' in handle
     assert 'ZeroDivisionError' in handle['text/html']
 
     try:
-        1 + '2'
+        1 + '2' # noqa: B018
     except Exception as e:
         pane._on_error(model.ref['id'], e)
     assert 'text/html' in handle
@@ -154,7 +154,7 @@ def test_console_output_disable_error(document, comm, get_display_handle):
         handle = get_display_handle(model)
 
         try:
-            1/0
+            1/0  # noqa: B018
         except Exception as e:
             pane._on_error(model.ref['id'], e)
         assert handle == {}

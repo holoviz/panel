@@ -183,7 +183,7 @@ class GridStack(ReactiveHTML, GridSpec):
         else:
             height = 0
 
-        for i, ((y0, x0, y1, x1), obj) in enumerate(self.objects.items()):
+        for (y0, x0, y1, x1), obj in self.objects.items():
             x0 = 0 if x0 is None else x0
             x1 = (self.ncols) if x1 is None else x1
             y0 = 0 if y0 is None else y0

@@ -314,7 +314,7 @@ button.accordion-header {
 
 .bk-description > .bk-icon {
   background-color: var(--bs-body-color);
-  opacity: 0.7;
+  opacity: 0.4;
 }
 
 /* Input widget */

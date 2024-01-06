@@ -38,15 +38,16 @@ from .chatbox import ChatBox  # noqa
 from .codeeditor import Ace, CodeEditor  # noqa
 from .debugger import Debugger  # noqa
 from .file_selector import FileSelector  # noqa
+from .icon import ToggleIcon  # noqa
 from .indicators import (  # noqa
     BooleanStatus, Dial, Gauge, LinearGauge, LoadingSpinner, Number, Progress,
     TooltipIcon, Tqdm, Trend,
 )
 from .input import (  # noqa
-    ArrayInput, Checkbox, ColorPicker, DatePicker, DatetimeInput,
-    DatetimePicker, DatetimeRangeInput, DatetimeRangePicker, FileInput,
-    FloatInput, IntInput, LiteralInput, NumberInput, PasswordInput, Spinner,
-    StaticText, Switch, TextAreaInput, TextInput,
+    ArrayInput, Checkbox, ColorPicker, DatePicker, DateRangePicker,
+    DatetimeInput, DatetimePicker, DatetimeRangeInput, DatetimeRangePicker,
+    FileInput, FloatInput, IntInput, LiteralInput, NumberInput, PasswordInput,
+    Spinner, StaticText, Switch, TextAreaInput, TextInput,
 )
 from .misc import FileDownload, JSONEditor, VideoStream  # noqa
 from .player import DiscretePlayer, Player  # noqa
@@ -83,6 +84,7 @@ __all__ = (
     "CrossSelector",
     "DataFrame",
     "DatePicker",
+    "DateRangePicker",
     "DateRangeSlider",
     "DatetimeRangeSlider",
     "DateSlider",
@@ -137,6 +139,7 @@ __all__ = (
     "TextToSpeech",
     "Toggle",
     "ToggleGroup",
+    "ToggleIcon",
     "TooltipIcon",
     "Tqdm",
     "Trend",

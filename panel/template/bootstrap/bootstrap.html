@@ -32,10 +32,16 @@
     {%- if manifest %}
     <link rel="manifest" href="{{ manifest_url }}">
     {% endif -%}
+    <!-- Template JS -->
+    {% for src in template_resources['js'].values() %}
+    <script src="{{ src }}"></script>
+    {% endfor %}
+    {% for src in template_resources['js_modules'].values() %}
+    <script src="{{ src }}" type="module"></script>
+    {% endfor %}
 {% endblock %}
 
 {% block postamble %}
-
     <!-- Template CSS -->
     {% for css in template_resources['css'].values() %}
     <link rel="stylesheet" href="{{ css }}">
@@ -64,13 +70,6 @@
       }
     </style>
 
-    <!-- Template JS -->
-    {% for src in template_resources['js'].values() %}
-    <script src="{{ src }}"></script>
-    {% endfor %}
-    {% for src in template_resources['js_modules'].values() %}
-    <script src="{{ src }}" type="module"></script>
-    {% endfor %}
 {% endblock %}
 
 <!-- goes in body -->

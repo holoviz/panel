@@ -16,6 +16,16 @@
   --switch-size: 12px;
   --container-background: var(--panel-surface-color);
   color: var(--neutral-foreground-rest);
+
+  --panel-primary-color: var(--accent-foreground-rest);
+  --panel-on-primary-color: var(--foreground-on-accent-rest);
+}
+/* Anchor */
+a {
+  color: var(--accent-fill-rest);
+}
+a:hover {
+  color: var(--accent-fill-hover);
 }
 
 /* Track */
@@ -311,7 +321,7 @@ table.panel-df {
 
 .bk-description > .bk-icon {
   background-color: var(--neutral-foreground-rest);
-  opacity: 0.7;
+  opacity: 0.4;
 }
 
 /* Input widgets */
@@ -472,7 +482,32 @@ input[type='file']:active {
     (var(--base-height-multiplier) + var(--density)) * var(--design-unit) * 1px
   );
 }
+.bk-btn-default:focus,
+.bk-btn-default:active,
+.bk-btn-primary:focus,
+.bk-btn-primary:active,
+.bk-btn-success:focus,
+.bk-btn-success:active,
+.bk-btn-warning:focus,
+.bk-btn-warning:active,
+.bk-btn-danger:focus,
+.bk-btn-danger:active,
+.bk-btn-light:focus,
+.bk-btn-light:active {
+  outline: none;
+}
+.bk-btn:active {
+  transform: none;
+}
 
+:host(.solid) .bk-btn-group .bk-btn.bk-btn-default.bk-active,
+:host(.solid) .bk-btn-group .bk-btn.bk-btn-primary.bk-active,
+.bk-btn:active,
+::file-selector-button:active,
+.bk-active.bk-btn,
+.bk-active::file-selector-button {
+  box-shadow: none;
+}
 .bk-btn a {
   text-decoration: none;
   color: inherit;
@@ -491,51 +526,88 @@ input[type='file']:active {
 
 :host(.solid) .bk-btn.bk-btn-default:hover {
   background-color: var(--neutral-fill-hover);
+  color: var(--neutral-foreground-hover);
+}
+
+:host(.solid) .bk-btn.bk-btn-default:active,
+:host(.solid) .bk-btn.bk-btn-default.bk-active {
+  background-color: var(--neutral-fill-active);
+  color: var(--neutral-foreground-active);
 }
 
 :host(.outline) .bk-btn.bk-btn-default {
   background-color: transparent;
-  border: 1px solid var(--neutral-fill-strong-rest);
+  border: 1px solid var(--neutral-stroke-rest);
   color: var(--neutral-fill-strong-rest);
 }
 
 :host(.outline) .bk-btn.bk-btn-default:hover {
-  background-color: var(--neutral-fill-hover);
-  color: var(--neutral-foreground-rest);
+  border-color: var(--neutral-stroke-hover);
+  color: var(--neutral-fill-strong-hover);
+}
+
+:host(.outline) .bk-btn.bk-btn-default:active {
+  border-color: var(--neutral-stroke-active);
+  color: var(--neutral-fill-strong-active);
 }
 
 :host(.outline) .bk-btn.bk-btn-default.bk-active {
-  color: var(--foreground-on-accent-rest);
-  box-shadow: inset 0px 3px 5px rgb(0 0 0 / 25%);
+  color: var(--neutral-foreground-rest);
+  box-shadow: none;
 }
 
 :host(.outline) .bk-btn-group .bk-btn-default.bk-active {
   background-color: var(--neutral-fill-active);
-  color: var(--foreground-on-accent-active);
+  color: var(--neutral-foreground-rest);
 }
 
-:host(.solid) .bk-btn.bk-btn-primary {
+:host(.outline) .bk-btn-group .bk-btn-primary.bk-active,
+:host(.solid) .bk-btn.bk-btn-primary,
+:host(.solid) .bk-btn.bk-btn-primary[disabled],
+:host(.solid) .bk-btn.bk-btn-primary[disabled]:hover {
   background-color: var(--accent-fill-rest);
+  border-color: var(--accent-fill-rest);
+  color: var(--foreground-on-accent-rest);
 }
-
-:host(.solid) .bk-btn.bk-btn-primary.bk-active {
+:host(.solid) .bk-btn.bk-btn-primary:hover {
+  background-color: var(--accent-fill-hover);
+  border-color: var(--accent-fill-hover);
+  color: var(--foreground-on-accent-hover);
+}
+:host(.solid) .bk-btn.bk-btn-primary.bk-active,
+:host(.solid) .bk-btn.bk-btn-primary:active,
+:host(.solid) .bk-btn.bk-btn-primary.bk-active[disabled],
+:host(.solid) .bk-btn.bk-btn-primary.bk-active[disabled]:hover {
   background-color: var(--accent-fill-active);
-  box-shadow: inset 0px 3px 5px rgb(0 0 0 / 25%);
-}
-
-:host(.outline) .bk-btn-primary {
-  background-color: transparent;
-  color: var(--neutral-foreground-rest);
-}
-
-:host(.outline) .bk-btn-primary.bk-active,
-:host(.outline) .bk-btn-primary:hover {
-  color: var(--neutral-foreground-rest);
-}
-
-:host(.outline) .bk-btn-group .bk-btn-primary.bk-active {
-  background-color: var(--accent-fill-rest);
+  border-color: var(--accent-fill-active);
   color: var(--foreground-on-accent-active);
+}
+:host(.outline) .bk-btn-group .bk-btn-primary.bk-active:hover,
+:host(.solid) .bk-btn.bk-btn-primary.bk-active:hover {
+  background-color: var(--accent-fill-hover);
+  color: var(--foreground-on-accent-hover);
+}
+:host(.solid) .bk-btn.bk-btn-primary[disabled],
+:host(.solid) .bk-btn.bk-btn-primary[disabled]:hover,
+:host(.solid) .bk-btn.bk-btn-primary[disabled]:focus,
+:host(.solid) .bk-btn.bk-btn-primary[disabled].bk-active {
+  pointer-events: none !important;
+  cursor: not-allowed;
+  opacity: var(--disabled-opacity);
+}
+:host(.outline) .bk-btn.bk-btn-primary.bk-active:hover,
+:host(.outline) .bk-btn.bk-btn-primary:hover {
+  border-color: var(--accent-fill-hover);
+  color: var(--neutral-foreground-hover);
+}
+:host(.outline) .bk-btn.bk-btn-primary.bk-active,
+:host(.outline) .bk-btn.bk-btn-primary:active {
+  border-color: var(--accent-fill-active);
+  color: var(--neutral-foreground-active);
+}
+:host(.outline) .bk-btn.bk-btn-primary {
+  border-color: var(--accent-fill-rest);
+  color: var(--neutral-foreground-rest);
 }
 
 :host(.outline) .bk-btn-success.bk-active,
@@ -588,6 +660,10 @@ input[type='file']:active {
 
 select:not([type='file']).bk-input {
   margin: 0;
+}
+select:not([multiple]).bk-input,
+select:not([size]).bk-input {
+  background-image: url('data:image/svg+xml;utf8,<svg version="1.1" viewBox="0 0 25 20" xmlns="http://www.w3.org/2000/svg"><path d="M 0,0 25,0 12.5,20 Z" fill="darkgrey"/></svg>');
 }
 
 /* Checkbox/Radio */

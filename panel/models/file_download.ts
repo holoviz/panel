@@ -90,8 +90,7 @@ export class FileDownloadView extends InputWidgetView {
     // 3. auto=True: The widget is a button, i.e right click to "Save as..." won't work
     this.anchor_el = document.createElement('a')
     this.button_el = button({
-      disabled: this.model.disabled,
-      type: "bk_btn, bk_btn_type",
+      disabled: this.model.disabled
     })
     if (this.icon_view != null) {
       const separator = this.model.label != "" ? nbsp() : text("")

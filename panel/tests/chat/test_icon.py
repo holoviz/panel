@@ -1,62 +1,57 @@
 from panel.chat.icon import ChatReactionIcons
-from panel.pane.image import SVG
 
 
 class TestChatReactionIcons:
-    def test_init(self):
-        icons = ChatReactionIcons()
+    def test_init_default(self):
+        icons = ChatReactionIcons(width=50, height=50)
         assert icons.options == {"favorite": "heart"}
-
-        svg = icons._svgs[0]
-        assert isinstance(svg, SVG)
-        assert svg.alt_text == "favorite"
-        assert not svg.encode
-        assert svg.margin == 0
-        svg_text = svg.object
-        assert 'alt="favorite"' in svg_text
-        assert "icon-tabler-heart" in svg_text
-
-        assert icons._reactions == ["favorite"]
+        assert "favorite" in icons._rendered_icons
+        assert icons._rendered_icons["favorite"].icon == "heart"
+        assert icons._rendered_icons["favorite"].active_icon == ""
+        assert len(icons._composite) == 1
 
     def test_options(self):
-        icons = ChatReactionIcons(options={"favorite": "heart", "like": "thumb-up"})
-        assert icons.options == {"favorite": "heart", "like": "thumb-up"}
-        assert len(icons._svgs) == 2
+        icons = ChatReactionIcons(options={"like": "thumb-up", "dislike": "thumb-down"})
+        assert icons.options == {"like": "thumb-up", "dislike": "thumb-down"}
+        assert "like" in icons._rendered_icons
+        assert icons._rendered_icons["like"].icon == "thumb-up"
+        assert icons._rendered_icons["like"].active_icon == ""
+        assert "dislike" in icons._rendered_icons
+        assert icons._rendered_icons["dislike"].icon == "thumb-down"
+        assert icons._rendered_icons["dislike"].active_icon == ""
+        assert len(icons._composite) == 2
 
-        svg = icons._svgs[0]
-        assert svg.alt_text == "favorite"
-
-        svg = icons._svgs[1]
-        assert svg.alt_text == "like"
+        icons.options = {"favorite": "heart"}
+        assert icons.options == {"favorite": "heart"}
+        assert "favorite" in icons._rendered_icons
+        assert icons._rendered_icons["favorite"].icon == "heart"
+        assert icons._rendered_icons["favorite"].active_icon == ""
+        assert len(icons._composite) == 1
 
     def test_value(self):
-        icons = ChatReactionIcons(value=["favorite"])
-        assert icons.value == ["favorite"]
+        icons = ChatReactionIcons(
+            options={"like": "thumb-up", "dislike": "thumb-down"}, value=["like"]
+        )
+        assert icons.value == ["like"]
+        assert icons._rendered_icons["like"].value is True
+        assert icons._rendered_icons["dislike"].value is False
 
-        svg = icons._svgs[0]
-        svg_text = svg.object
-        assert "icon-tabler-heart-fill" in svg_text
+        icons.value = ["dislike"]
+        assert icons.value == ["dislike"]
+        assert icons._rendered_icons["like"].value is False
+        assert icons._rendered_icons["dislike"].value is True
 
     def test_active_icons(self):
         icons = ChatReactionIcons(
-            options={"dislike": "thumb-up"},
-            active_icons={"dislike": "thumb-down"},
-            value=["dislike"],
+            options={"like": "thumb-up"},
+            active_icons={"like": "thumb-down"},
+            value=["like"],
         )
-        assert icons.options == {"dislike": "thumb-up"}
+        assert icons.active_icons == {"like": "thumb-down"}
+        assert icons._rendered_icons["like"].active_icon == "thumb-down"
+        assert len(icons._composite) == 1
 
-        svg = icons._svgs[0]
-        svg_text = svg.object
-        assert "icon-tabler-thumb-down" in svg_text
-
-        icons.value = []
-        svg = icons._svgs[0]
-        svg_text = svg.object
-        assert "icon-tabler-thumb-up" in svg_text
-
-    def test_width_height(self):
-        icons = ChatReactionIcons(width=50, height=50)
-        svg = icons._svgs[0]
-        svg_text = svg.object
-        assert 'width="50px"' in svg_text
-        assert 'height="50px"' in svg_text
+        icons.active_icons = {"like": "heart"}
+        assert icons.active_icons == {"like": "heart"}
+        assert icons._rendered_icons["like"].active_icon == "heart"
+        assert len(icons._composite) == 1

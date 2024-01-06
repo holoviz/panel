@@ -14,7 +14,6 @@ import pathlib
 import re
 import textwrap
 
-from base64 import b64encode
 from collections import OrderedDict
 from contextlib import contextmanager
 from functools import lru_cache
@@ -39,7 +38,6 @@ from markupsafe import Markup
 
 from ..config import config, panel_extension as extension
 from ..util import isurl, url_path
-from .loading import LOADING_INDICATOR_CSS_CLASS
 from .state import state
 
 if TYPE_CHECKING:
@@ -182,12 +180,9 @@ def process_raw_css(raw_css):
 
 @lru_cache(maxsize=None)
 def loading_css(loading_spinner, color, max_height):
-    with open(ASSETS_DIR / f'{loading_spinner}_spinner.svg', encoding='utf-8') as f:
-        svg = f.read().replace('\n', '').format(color=color)
-    b64 = b64encode(svg.encode('utf-8')).decode('utf-8')
     return textwrap.dedent(f"""
-    :host(.{LOADING_INDICATOR_CSS_CLASS}.pn-{loading_spinner}):before, .pn-loading.pn-{loading_spinner}:before {{
-      background-image: url("data:image/svg+xml;base64,{b64}");
+    :host(.pn-loading):before, .pn-loading:before {{
+      background-color: {color};
       background-size: auto calc(min(50%, {max_height}px));
     }}""")
 
@@ -674,10 +669,11 @@ class Resources(BkResources):
         # Inline local dist resources
         css_files = self._collect_external_resources("__css__")
         self.extra_resources(css_files, '__css__')
-        raw += [
-            (DIST_DIR / css.replace(CDN_DIST, '')).read_text(encoding='utf-8')
-            for css in css_files if is_cdn_url(css)
-        ]
+        if self.mode.lower() != 'cdn':
+            raw += [
+                (DIST_DIR / css.replace(CDN_DIST, '')).read_text(encoding='utf-8')
+                for css in css_files if is_cdn_url(css)
+            ]
 
         # Add local CSS files
         for cssf in config.css_files:

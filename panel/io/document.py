@@ -43,6 +43,9 @@ DISPATCH_EVENTS = (
     ModelChangedEvent
 )
 
+WRITE_TASKS = []
+WRITE_LOCK = asyncio.Lock()
+
 @dataclasses.dataclass
 class Request:
     headers : dict
@@ -67,6 +70,9 @@ class MockSessionContext(SessionContext):
     def request(self):
         return Request(headers={}, cookies={}, arguments={})
 
+def _cleanup_task(task):
+    if task in WRITE_TASKS:
+        WRITE_TASKS.remove(task)
 
 def _dispatch_events(doc: Document, events: List[DocumentChangedEvent]) -> None:
     """
@@ -118,6 +124,53 @@ def _cleanup_doc(doc, destroy=True):
 
     # Destroy document
     doc.destroy(None)
+
+async def _run_write_futures(futures):
+    """
+    Ensure that all write_message calls are awaited and handled.
+    """
+    from tornado.websocket import WebSocketClosedError
+    async with WRITE_LOCK:
+        for future in futures:
+            try:
+                await future
+            except WebSocketClosedError:
+                logger.warning("Failed sending message as connection was closed")
+            except Exception as e:
+                logger.warning(f"Failed sending message due to following error: {e}")
+
+def _dispatch_write_task(doc, func, *args, **kwargs):
+    """
+    Schedules tasks that write messages to the socket.
+    """
+    try:
+        task = asyncio.ensure_future(func(*args, **kwargs))
+        WRITE_TASKS.append(task)
+        task.add_done_callback(_cleanup_task)
+    except RuntimeError:
+        doc.add_next_tick_callback(partial(func, *args, **kwargs))
+
+async def _dispatch_msgs(doc, msgs):
+    """
+    Writes messages to a socket, ensuring that the write_lock is not
+    set, otherwise re-schedules the write task on the event loop.
+    """
+    from tornado.websocket import WebSocketHandler
+    remaining = {}
+    for conn, msg in msgs.items():
+        socket = conn._socket
+        if hasattr(socket, 'write_lock') and socket.write_lock._block._value == 0:
+            remaining[conn] = msg
+            continue
+        if isinstance(conn._socket, WebSocketHandler):
+            futures = dispatch_tornado(conn, msg=msg)
+        else:
+            futures = dispatch_django(conn, msg=msg)
+        await _run_write_futures(futures)
+    if not remaining:
+        return
+    await asyncio.sleep(0.01)
+    _dispatch_write_task(doc, _dispatch_msgs, doc, remaining)
 
 #---------------------------------------------------------------------
 # Public API
@@ -185,13 +238,14 @@ def with_lock(func: Callable) -> Callable:
     wrapper.lock = True # type: ignore
     return wrapper
 
-def dispatch_tornado(conn, events):
+def dispatch_tornado(conn, events=None, msg=None):
     from tornado.websocket import WebSocketHandler
     socket = conn._socket
     ws_conn = getattr(socket, 'ws_connection', False)
     if not ws_conn or ws_conn.is_closing(): # type: ignore
         return []
-    msg = conn.protocol.create('PATCH-DOC', events)
+    if msg is None:
+        msg = conn.protocol.create('PATCH-DOC', events)
     futures = [
         WebSocketHandler.write_message(socket, msg.header_json),
         WebSocketHandler.write_message(socket, msg.metadata_json),
@@ -206,9 +260,10 @@ def dispatch_tornado(conn, events):
         ])
     return futures
 
-def dispatch_django(conn, events):
+def dispatch_django(conn, events=None, msg=None):
     socket = conn._socket
-    msg = conn.protocol.create('PATCH-DOC', events)
+    if msg is None:
+        msg = conn.protocol.create('PATCH-DOC', events)
     futures = [
         socket.send(text_data=msg.header_json),
         socket.send(text_data=msg.metadata_json),
@@ -241,7 +296,7 @@ def unlocked() -> Iterator:
         monkeypatch_events(curdoc.callbacks._held_events)
         return
 
-    from tornado.websocket import WebSocketClosedError, WebSocketHandler
+    from tornado.websocket import WebSocketHandler
     connections = session._subscribed_connections
 
     curdoc.hold()
@@ -273,32 +328,27 @@ def unlocked() -> Iterator:
             else:
                 futures += dispatch_django(conn, dispatch_events)
 
-        # Ensure that all write_message calls are awaited and handled
-        async def handle_write_errors():
-            for future in futures:
-                try:
-                    await future
-                except WebSocketClosedError:
-                    logger.warning("Failed sending message as connection was closed")
-                except Exception as e:
-                    logger.warning(f"Failed sending message due to following error: {e}")
-
         if futures:
             if state._unblocked(curdoc):
-                try:
-                    asyncio.ensure_future(handle_write_errors())
-                except RuntimeError:
-                    curdoc.add_next_tick_callback(handle_write_errors)
+                _dispatch_write_task(curdoc, _run_write_futures, futures)
             else:
-                curdoc.add_next_tick_callback(handle_write_errors)
+                curdoc.add_next_tick_callback(partial(_run_write_futures, futures))
 
         curdoc.callbacks._held_events = remaining_events
     finally:
         try:
             curdoc.unhold()
         except RuntimeError:
-            if remaining_events:
-                curdoc.add_next_tick_callback(partial(_dispatch_events, curdoc, remaining_events))
+            if not remaining_events:
+                return
+            # Create messages for remaining events
+            msgs = {}
+            for conn in connections:
+                if not remaining_events:
+                    continue
+                # Create a protocol message for any events that cannot be immediately dispatched
+                msgs[conn] = conn.protocol.create('PATCH-DOC', remaining_events)
+            _dispatch_write_task(curdoc, _dispatch_msgs, curdoc, msgs)
 
 @contextmanager
 def immediate_dispatch(doc: Document | None = None):

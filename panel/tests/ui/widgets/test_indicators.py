@@ -5,7 +5,7 @@ pytest.importorskip("playwright")
 from bokeh.models import Tooltip
 from playwright.sync_api import expect
 
-from panel.tests.util import serve_component
+from panel.tests.util import serve_component, wait_until
 from panel.widgets import TooltipIcon
 
 pytestmark = pytest.mark.ui
@@ -49,3 +49,34 @@ def test_plaintext_tooltip(page, value):
     page.click("body")
     tooltip = page.locator(".bk-tooltip-content")
     expect(tooltip).to_have_count(0)
+
+
+def test_tooltip_text_updates(page):
+    tooltip_icon = TooltipIcon(value="Test")
+
+    serve_component(page, tooltip_icon)
+
+    icon = page.locator(".bk-icon")
+    expect(icon).to_have_count(1)
+    tooltip = page.locator(".bk-tooltip-content")
+    expect(tooltip).to_have_count(0)
+
+    # Hovering over the icon should show the tooltip
+    page.hover(".bk-icon")
+    tooltip = page.locator(".bk-tooltip-content")
+    expect(tooltip).to_have_count(1)
+    expect(tooltip).to_have_text("Test")
+
+    tooltip_icon.value = "Updated"
+
+    def hover():
+        page.hover(".bk-icon")
+        visible = page.locator(".bk-tooltip-content").count() == 1
+        page.hover("body")
+        return visible
+    wait_until(hover, page)
+
+    page.hover(".bk-icon")
+    tooltip = page.locator(".bk-tooltip-content")
+    expect(tooltip).to_have_count(1)
+    expect(tooltip).to_have_text("Updated")

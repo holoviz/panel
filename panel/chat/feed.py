@@ -8,9 +8,9 @@ from __future__ import annotations
 import asyncio
 import traceback
 
-from inspect import (
-    isasyncgen, isasyncgenfunction, isawaitable, isgenerator,
-)
+from enum import Enum
+from functools import partial
+from inspect import isasyncgen, isawaitable, isgenerator
 from io import BytesIO
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Literal,
@@ -92,6 +92,18 @@ PLACEHOLDER_SVG = """
         <path d="M17 12a5 5 0 1 0 -5 5"></path>
     </svg>
 """  # noqa: E501
+
+
+class CallbackState(Enum):
+    IDLE = "idle"
+    RUNNING = "running"
+    GENERATING = "generating"
+    STOPPING = "stopping"
+    STOPPED = "stopped"
+
+
+class StopCallback(Exception):
+    pass
 
 
 class ChatFeed(ListPanel):
@@ -193,9 +205,17 @@ class ChatFeed(ListPanel):
         The placeholder wrapped in a ChatMessage object;
         primarily to prevent recursion error in _update_placeholder.""")
 
+    _callback_state = param.ObjectSelector(objects=list(CallbackState), doc="""
+        The current state of the callback.""")
+
+    _was_disabled = param.Boolean(default=False, doc="""
+        The previous disabled state of the feed.""")
+
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_feed.css"]
 
     def __init__(self, *objects, **params):
+        self._callback_future = None
+
         if params.get("renderers") and not isinstance(params["renderers"], list):
             params["renderers"] = [params["renderers"]]
         if params.get("width") is None and params.get("sizing_mode") is None:
@@ -324,9 +344,13 @@ class ChatFeed(ListPanel):
         Replace the placeholder message with the response or update
         the message's value with the response.
         """
+        is_stopping = self._callback_state == CallbackState.STOPPING
+        is_stopped = self._callback_future is not None and self._callback_future.cancelled()
         if value is None:
             # don't add new message if the callback returns None
             return
+        elif is_stopping or is_stopped:
+            raise StopCallback("Callback was stopped.")
 
         user = self.callback_user
         avatar = None
@@ -356,7 +380,7 @@ class ChatFeed(ListPanel):
         self._replace_placeholder(new_message)
         return new_message
 
-    def _extract_contents(self, message: ChatMessage) -> Any:
+    def _gather_callback_args(self, message: ChatMessage) -> Any:
         """
         Extracts the contents from the message's panel object.
         """
@@ -369,7 +393,7 @@ class ChatFeed(ListPanel):
             contents = value.value
         else:
             contents = value
-        return contents
+        return contents, message.user, self
 
     async def _serialize_response(self, response: Any) -> ChatMessage | None:
         """
@@ -378,21 +402,17 @@ class ChatFeed(ListPanel):
         """
         response_message = None
         if isasyncgen(response):
+            self._callback_state = CallbackState.GENERATING
             async for token in response:
                 response_message = self._upsert_message(token, response_message)
         elif isgenerator(response):
+            self._callback_state = CallbackState.GENERATING
             for token in response:
                 response_message = self._upsert_message(token, response_message)
         elif isawaitable(response):
             response_message = self._upsert_message(await response, response_message)
         else:
             response_message = self._upsert_message(response, response_message)
-        return response_message
-
-    async def _handle_callback(self, message: ChatMessage) -> ChatMessage | None:
-        contents = self._extract_contents(message)
-        response = self.callback(contents, message.user, self)
-        response_message = await self._serialize_response(response)
         return response_message
 
     async def _schedule_placeholder(
@@ -407,13 +427,10 @@ class ChatFeed(ListPanel):
         if self.placeholder_threshold == 0:
             return
 
-        callable_is_async = asyncio.iscoroutinefunction(
-            self.callback
-        ) or isasyncgenfunction(self.callback)
         start = asyncio.get_event_loop().time()
         while not task.done() and num_entries == len(self._chat_log):
             duration = asyncio.get_event_loop().time() - start
-            if duration > self.placeholder_threshold or not callable_is_async:
+            if duration > self.placeholder_threshold:
                 self.append(self._placeholder)
                 return
             await asyncio.sleep(0.28)
@@ -426,22 +443,41 @@ class ChatFeed(ListPanel):
         if self.callback is None:
             return
 
-        disabled = self.disabled
+        self._was_disabled = self.disabled
         try:
-            self.disabled = True
+            with param.parameterized.batch_call_watchers(self):
+                self.disabled = True
+                self._callback_state = CallbackState.RUNNING
+
             message = self._chat_log[-1]
             if not isinstance(message, ChatMessage):
                 return
 
             num_entries = len(self._chat_log)
-            task = asyncio.create_task(self._handle_callback(message))
-            await self._schedule_placeholder(task, num_entries)
-            await task
-            task.result()
+            callback_args = self._gather_callback_args(message)
+            loop = asyncio.get_event_loop()
+            if asyncio.iscoroutinefunction(self.callback):
+                future = loop.create_task(self.callback(*callback_args))
+            else:
+                future = loop.run_in_executor(None, partial(self.callback, *callback_args))
+            self._callback_future = future
+            await self._schedule_placeholder(future, num_entries)
+
+            if not future.cancelled():
+                await future
+                response = future.result()
+                await self._serialize_response(response)
+        except StopCallback:
+            # callback was stopped by user
+            self._callback_state = CallbackState.STOPPED
         except Exception as e:
             send_kwargs = dict(user="Exception", respond=False)
             if self.callback_exception == "summary":
-                self.send(str(e), **send_kwargs)
+                self.send(
+                    f"Encountered `{e!r}`. "
+                    f"Set `callback_exception='verbose'` to see the full traceback.",
+                    **send_kwargs
+                )
             elif self.callback_exception == "verbose":
                 self.send(f"```python\n{traceback.format_exc()}\n```", **send_kwargs)
             elif self.callback_exception == "ignore":
@@ -449,8 +485,10 @@ class ChatFeed(ListPanel):
             else:
                 raise e
         finally:
-            self._replace_placeholder(None)
-            self.disabled = disabled
+            with param.parameterized.batch_call_watchers(self):
+                self._replace_placeholder(None)
+                self._callback_state = CallbackState.IDLE
+                self.disabled = self._was_disabled
 
     # Public API
 
@@ -528,6 +566,9 @@ class ChatFeed(ListPanel):
         -------
         The message that was updated.
         """
+        if self._callback_future is not None and self._callback_future.cancelled():
+            raise StopCallback("Callback was stopped.")
+
         if isinstance(value, ChatMessage) and (user is not None or avatar is not None):
             raise ValueError(
                 "Cannot set user or avatar when explicitly streaming "
@@ -558,6 +599,30 @@ class ChatFeed(ListPanel):
         Executes the callback with the latest message in the chat log.
         """
         self._callback_trigger.param.trigger("clicks")
+
+    def stop(self) -> bool:
+        """
+        Cancels the current callback task if possible.
+
+        Returns
+        -------
+        Whether the task was successfully stopped or done.
+        """
+        if self._callback_future is None:
+            cancelled = False
+        elif self._callback_state == CallbackState.GENERATING:
+            # cannot cancel generator directly as it's already "finished"
+            # by the time cancel is called; instead, set the state to STOPPING
+            # and let upsert_message raise StopCallback
+            self._callback_state = CallbackState.STOPPING
+            cancelled = True
+        else:
+            cancelled = self._callback_future.cancel()
+
+        if cancelled:
+            self.disabled = self._was_disabled
+            self._replace_placeholder(None)
+        return cancelled
 
     def undo(self, count: int = 1) -> List[Any]:
         """

@@ -62,6 +62,10 @@ except Exception:
         _IN_PYSCRIPT_WORKER = False
     _IN_WORKER = True
 
+# Ensure we don't try to load MPL WASM backend in worker
+if _IN_WORKER:
+    os.environ['MPLBACKEND'] = 'agg'
+
 try:
     import pyodide_http
     pyodide_http.patch_all()
@@ -554,7 +558,9 @@ def pyrender(
     Returns an JS Map containing the content, mime_type, stdout and stderr.
     """
     from ..pane import HoloViews, Interactive, panel as as_panel
+    from ..param import ReactiveExpr
     from ..viewable import Viewable, Viewer
+    PANES = (HoloViews, Interactive, ReactiveExpr)
     kwargs = {}
     if stdout_callback:
         kwargs['stdout'] = WriteCallbackStream(stdout_callback)
@@ -562,7 +568,7 @@ def pyrender(
         kwargs['stderr'] = WriteCallbackStream(stderr_callback)
     out = exec_with_return(code, **kwargs)
     ret = {}
-    if isinstance(out, (Model, Viewable, Viewer)) or HoloViews.applies(out) or Interactive.applies(out):
+    if isinstance(out, (Model, Viewable, Viewer)) or any(pane.applies(out) for pane in PANES):
         doc, model_json = _model_json(as_panel(out), target)
         state.cache[target] = doc
         ret['content'], ret['mime_type'] = model_json, 'application/bokeh'
