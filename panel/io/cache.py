@@ -350,7 +350,8 @@ def cache(
             max_items=max_items,
             ttl=ttl,
             to_disk=to_disk,
-            cache_path=cache_path
+            cache_path=cache_path,
+            per_session=per_session,
         )
     func_hash = None # noqa
 
@@ -434,7 +435,7 @@ def cache(
                     func_cache[hash_value] = (ret, time, 0, time)
             return ret
 
-    def clear(session_context=None):
+    def clear(session_context):
         global func_hash
         # clear called before anything is cached.
         if 'func_hash' not in globals():
