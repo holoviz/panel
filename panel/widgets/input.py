@@ -335,6 +335,9 @@ class DatePicker(Widget):
     _widget_type: ClassVar[Type[Model]] = _BkDatePicker
 
     def __init__(self, **params):
+        # Since options is the standard for other widgets,
+        # it makes sense to also support options here, converting
+        # it to enabled_dates
         if 'options' in params:
             options = list(params.pop('options'))
             params['enabled_dates'] = options
@@ -489,6 +492,9 @@ class _DatetimePickerBase(Widget):
     __abstract = True
 
     def __init__(self, **params):
+        # Since options is the standard for other widgets,
+        # it makes sense to also support options here, converting
+        # it to enabled_dates
         if 'options' in params:
             options = list(params.pop('options'))
             params['enabled_dates'] = options
@@ -509,7 +515,7 @@ class _DatetimePickerBase(Widget):
                 for vv in v
             )
 
-        if hasattr(v, "astype") or self.as_numpy_datetime64:
+        if hasattr(v, "astype"):
             return v.astype('datetime64[ms]').astype(datetime)
         elif isinstance(v, datetime):
             return v
