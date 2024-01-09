@@ -240,10 +240,8 @@ class ChatFeed(ListPanel):
             stylesheets=self._stylesheets,
             **linked_params
         )
-        self.link(self._chat_log, objects='objects', bidirectional=True)
-        # we have a card for the title
-        self._card = Card(
-            self._chat_log, VSpacer(),
+        card_params = linked_params.copy()
+        card_params.update(
             margin=self.param.margin,
             align=self.param.align,
             header=self.header,
@@ -257,7 +255,14 @@ class ChatFeed(ListPanel):
             title_css_classes=["chat-feed-title"],
             styles={"padding": "0px"},
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
-            **linked_params
+        )
+        card_params.update(self.card_params)
+        self.link(self._chat_log, objects='objects', bidirectional=True)
+        # we have a card for the title
+        self._card = Card(
+            self._chat_log,
+            VSpacer(),
+            **card_params
         )
 
         # handle async callbacks using this trick
@@ -273,6 +278,10 @@ class ChatFeed(ListPanel):
     def _cleanup(self, root: Model | None = None) -> None:
         self._card._cleanup(root)
         super()._cleanup(root)
+
+    @param.depends("card_params", watch=True)
+    def _update_card_params(self):
+        self._card.param.update(**self.card_params)
 
     @param.depends("placeholder_text", watch=True, on_init=True)
     def _update_placeholder(self):
