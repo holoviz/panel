@@ -285,6 +285,10 @@ class ChatFeed(ListPanel):
 
     @param.depends("placeholder_text", watch=True, on_init=True)
     def _update_placeholder(self):
+        if self._placeholder is not None:
+            self._placeholder.param.update(object=self.placeholder_text)
+            return
+
         loading_avatar = SVG(
             PLACEHOLDER_SVG, sizing_mode=None, css_classes=["rotating-placeholder"]
         )
@@ -437,7 +441,7 @@ class ChatFeed(ListPanel):
             return
 
         start = asyncio.get_event_loop().time()
-        while not task.done() and num_entries == len(self._chat_log):
+        while not self._callback_state == CallbackState.IDLE and num_entries == len(self._chat_log):
             duration = asyncio.get_event_loop().time() - start
             if duration > self.placeholder_threshold:
                 self.append(self._placeholder)
