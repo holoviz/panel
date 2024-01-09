@@ -469,6 +469,6 @@ def styler_update(styler, new_df):
 
 
 def try_datetime64_to_datetime(value):
-    if hasattr(value, "astype"):
+    if isinstance(value, np.datetime64):
         value = value.astype('datetime64[ms]').astype(datetime)
     return value
