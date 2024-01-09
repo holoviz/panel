@@ -219,8 +219,13 @@ export class PerspectiveView extends HTMLBoxView {
 
   get data(): any {
     const data: any = {}
-    for (const column of this.model.source.columns())
-      data[column] = this.model.source.get_array(column)
+    for (const column of this.model.source.columns()) {
+      let array = this.model.source.get_array(column)
+      if (this.model.schema[column] == 'datetime' && array.includes(-9223372036854776)) {
+	array = array.map((v) => v === -9223372036854776 ? null : v)
+      }
+      data[column] = array
+    }
     return data
   }
 
