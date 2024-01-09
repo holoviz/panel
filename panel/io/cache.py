@@ -319,6 +319,9 @@ def cache(
         A dictionary mapping from a type to a function which returns
         a hash for an object of that type. If provided this will
         override the default hashing function provided by Panel.
+    max_items: int or None
+        The maximum items to keep in the cache. Default is None, which does
+        not limit number of items stored in the cache.
     policy: str
         A caching policy when max_items is set, must be one of:
           - FIFO: First in - First out
