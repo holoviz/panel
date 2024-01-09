@@ -287,11 +287,7 @@ class ChatMessage(PaneBase):
                 css_classes=["header"]
             ),
             self._center_row,
-            Row(
-                self._timestamp_html,
-                stylesheets=self._stylesheets,
-                css_classes=["footer"]
-            ),
+            self._timestamp_html,
             css_classes=["right"],
             stylesheets=self._stylesheets,
             sizing_mode=None
