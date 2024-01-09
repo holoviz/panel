@@ -41,6 +41,16 @@ class TestChatFeed:
         chat_feed.header = ""
         assert chat_feed._card.hide_header
 
+    def test_card_params(self, chat_feed):
+        chat_feed.card_params = {
+            "header_background": "red",
+            "header": "Test",
+            "hide_header": False
+        }
+        assert chat_feed._card.header_background == "red"
+        assert chat_feed._card.header == "Test"
+        assert not chat_feed._card.hide_header
+
     def test_send(self, chat_feed):
         message = chat_feed.send("Message")
         wait_until(lambda: len(chat_feed.objects) == 1)
