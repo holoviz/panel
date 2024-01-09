@@ -472,12 +472,16 @@ class _DatetimePickerBase(Widget):
     description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
 
+    as_numpy_datetime64 = param.Boolean(default=None, doc="""
+        Whether to return values as numpy.datetime64. If left unset,
+        will be True if value is a numpy.datetime64, else False.""")
+
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'value': None, 'start': None, 'end': None, 'mode': None
     }
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'start': 'min_date', 'end': 'max_date'
+        'start': 'min_date', 'end': 'max_date', 'as_numpy_datetime64': None,
     }
 
     _widget_type: ClassVar[Type[Model]] = _bkDatetimePicker
@@ -488,11 +492,13 @@ class _DatetimePickerBase(Widget):
         if 'options' in params:
             options = list(params.pop('options'))
             params['enabled_dates'] = options
+        if params.get('as_numpy_datetime64', None) is None:
+            params['as_numpy_datetime64'] = isinstance(
+                params.get("value"), np.datetime64)
         super().__init__(**params)
         self._update_value_bounds()
 
-    @staticmethod
-    def _convert_to_datetime(v):
+    def _convert_to_datetime(self, v):
         if v is None:
             return
 
@@ -503,12 +509,12 @@ class _DatetimePickerBase(Widget):
                 for vv in v
             )
 
-        if isinstance(v, datetime):
+        if hasattr(v, "astype") or self.as_numpy_datetime64:
+            return v.astype('datetime64[ms]').astype(datetime)
+        elif isinstance(v, datetime):
             return v
         elif isinstance(v, date):
             return datetime(v.year, v.month, v.day)
-        elif hasattr(v, "astype"):
-            return v.astype('datetime64[ms]').astype(datetime)
         else:
             raise ValueError(f"Could not convert {v} to datetime")
 
@@ -562,14 +568,15 @@ class DatetimePicker(_DatetimePickerBase):
 
     def _serialize_value(self, value):
         if isinstance(value, str) and value:
-            value = datetime.strptime(value, r'%Y-%m-%d %H:%M:%S')
-
+            if self.as_numpy_datetime64:
+                value = np.datetime64(value)
+            else:
+                value = datetime.strptime(value, r'%Y-%m-%d %H:%M:%S')
         return value
 
     def _deserialize_value(self, value):
         if isinstance(value, (datetime, date)):
             value = value.strftime(r'%Y-%m-%d %H:%M:%S')
-
         return value
 
 
@@ -597,7 +604,9 @@ class DatetimeRangePicker(_DatetimePickerBase):
     def _serialize_value(self, value):
         if isinstance(value, str) and value:
             value = [
-                datetime.strptime(value, r'%Y-%m-%d %H:%M:%S')
+                np.datetime64(value)
+                if self.as_numpy_datetime64
+                else datetime.strptime(value, r'%Y-%m-%d %H:%M:%S')
                 for value in value.split(' to ')
             ]
             value = tuple(value)
