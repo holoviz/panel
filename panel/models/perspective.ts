@@ -226,7 +226,6 @@ export class PerspectiveView extends HTMLBoxView {
       }
       data[column] = array
     }
-    console.log(data)
     return data
   }
 
