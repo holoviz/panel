@@ -493,9 +493,7 @@ class _DatetimePickerBase(Widget):
         # it to enabled_dates
         if 'options' in params:
             options = list(params.pop('options'))
-            params['enabled_dates'] = [
-                self._convert_to_datetime(option).date() for option in options
-            ]
+            params['enabled_dates'] = options
         if params.get('as_numpy_datetime64', None) is None:
             params['as_numpy_datetime64'] = isinstance(
                 params.get("value"), np.datetime64)
