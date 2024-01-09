@@ -115,3 +115,23 @@
   margin-block: 0px;
   margin-inline: 2px;
 }
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.activity-dot {
+  display: inline-block;
+  animation: fadeOut 2s infinite cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  color: #32cd32;
+  font-size: 1.25em;
+  margin-block: 0px;
+}
