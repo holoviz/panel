@@ -1433,6 +1433,8 @@ class ReactiveHTMLMetaclass(ReactiveMetaBase):
 
 class ReactiveCustomBase(Reactive):
 
+    _extension_name: ClassVar[Optional[str]] = None
+
     __css__: ClassVar[Optional[List[str]]] = None
     __javascript__: ClassVar[Optional[List[str]]] = None
     __javascript_modules__: ClassVar[Optional[List[str]]] = None
@@ -1603,8 +1605,6 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
     _child_config: ClassVar[Mapping[str, str]] = {}
 
     _dom_events: ClassVar[Mapping[str, List[str]]] = {}
-
-    _extension_name: ClassVar[Optional[str]] = None
 
     _template: ClassVar[str] = ""
 

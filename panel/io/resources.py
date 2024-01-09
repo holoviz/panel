@@ -578,8 +578,8 @@ class Resources(BkResources):
         """
         Adds resources for ReactiveHTML components.
         """
-        from ..reactive import ReactiveHTML
-        for model in param.concrete_descendents(ReactiveHTML).values():
+        from ..reactive import ReactiveCustomBase
+        for model in param.concrete_descendents(ReactiveCustomBase).values():
             if not (getattr(model, resource_type, None) and model._loaded()):
                 continue
             for resource in getattr(model, resource_type, []):
@@ -725,7 +725,7 @@ class Resources(BkResources):
     @property
     def js_modules(self):
         from ..config import config
-        from ..reactive import ReactiveHTML
+        from ..reactive import ReactiveCustomBase
 
         modules = list(config.js_modules.values())
         self.extra_resources(modules, '__javascript_modules__')
@@ -738,7 +738,7 @@ class Resources(BkResources):
                 if res not in modules
             ]
 
-        for model in param.concrete_descendents(ReactiveHTML).values():
+        for model in param.concrete_descendents(ReactiveCustomBase).values():
             if not (getattr(model, '__javascript_modules__', None) and model._loaded()):
                 continue
             for js_module in model.__javascript_modules__:

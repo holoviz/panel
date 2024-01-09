@@ -247,8 +247,10 @@ class ReactiveHTML(HTMLBox):
 
 class ReactiveESM(HTMLBox):
 
-    children = bp.Dict(bp.String, bp.Either(bp.List(bp.Either(bp.Instance(LayoutDOM), bp.String)), bp.String))
+    children = bp.List(bp.String)
 
     data = bp.Instance(DataModel)
 
     esm = bp.String()
+
+    importmap = bp.Dict(bp.String, bp.Dict(bp.String, bp.String))

@@ -1,64 +1,39 @@
-import {h, render, Component} from 'preact';
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useErrorBoundary,
-  useLayoutEffect,
-  useState,
-  useReducer
-} from 'preact/hooks';
 import { transform } from 'sucrase';
 
-import {div} from "@bokehjs/core/dom"
+import {div, remove} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
-import {Model} from "@bokehjs/model"
 import {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
 import {HTMLBox, HTMLBoxView} from "./layout"
+import {loadScript} from "./util"
 
-function useState_getter(target: Model, name: string) {
-  if (!Reflect.has(target, name))
-    return undefined
-  const [value, setValue] = useState(target.attributes[name]);
-  (target as any).properties[name].change.connect(() => {
-    setValue(target.attributes[name])
-  });
-  useEffect(() => {
-    const state: { [key: string]: any } = {}
-    state[name] = value
-    target.setv(state)
-  }, [value]);
-  return [value, setValue]
+function loadESMSOptions(options: any) {
+  const script = document.createElement("script")
+  script.type = "esms-options"
+  script.innerHTML = JSON.stringify(options)
+  document.head.appendChild(script)
+}
+
+let importShimLoaded : any = null;
+
+async function ensureImportShimLoaded() {
+  if(importShimLoaded == null) {
+    importShimLoaded = loadScript("module", "https://ga.jspm.io/npm:es-module-shims@1.7.0/dist/es-module-shims.js")
+  }
+  return await importShimLoaded;
 }
 
 export class ReactiveESMView extends HTMLBoxView {
   model: ReactiveESM
   container: HTMLDivElement
   modelState: typeof Proxy
-  ns: any = {
-    React: {
-      Component,
-      useCallback,
-      useContext,
-      useEffect,
-      useErrorBoundary,
-      useLayoutEffect,
-      useState,
-      useReducer,
-      createElement: h,
-      render
-    },
-  }
+  rendered: string | null = null
   _changing: boolean = false
   _watchers: any = {}
+  _child_callbacks: {[key: string]: () => void} = {}
+  _parent_nodes: any = {}
 
   initialize(): void {
-    super.initialize()
-
-    this.modelState = new Proxy(this.model.data, {
-      get: useState_getter
-    })
-
+    super.initialize();
     this.model.data.watch = (callback: any, prop: string) => {
       const watcher = this.model.data.properties[prop].change.connect(() => {
         callback(prop, null, this.model.data[prop])
@@ -69,21 +44,42 @@ export class ReactiveESMView extends HTMLBoxView {
     }
   }
 
+  async lazy_initialize(): Promise<void> {
+    // @ts-ignore
+    const esmsInitOptions = {
+      shimMode: true,
+    }
+    loadESMSOptions(esmsInitOptions)
+    await ensureImportShimLoaded()
+    super.lazy_initialize()
+  }
+
   connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.esm.change, () => {
       this.invalidate_render()
     })
+    const child_props = this.model.children.map((child: string) => this.model.data.properties[child])
+    this.on_change(child_props, () => {
+      this.update_children()
+    })
+  }
+
+
+  disconnect_signals(): void {
+    super.disconnect_signals()
+    this._child_callbacks = {}
+    this._watchers = {}
   }
 
   get child_models(): LayoutDOM[] {
-    const models = []
-    for (const parent in this.model.children) {
-      for (const model of this.model.children[parent])
-        if (typeof model !== 'string')
-          models.push(model)
+    const children = []
+    for (const child of this.model.children) {
+      const model = this.model.data[child]
+      if (model != null)
+	children.push(model)
     }
-    return models
+    return children
   }
 
   render(): void {
@@ -93,40 +89,195 @@ export class ReactiveESMView extends HTMLBoxView {
     this._apply_styles()
     this._apply_visible()
 
+    this._child_callbacks = {}
+    this._watchers = {}
+
     this.container = div({style: "display: contents;"})
     this.shadow_el.append(this.container)
-    this._render_esm()
+    this.rendered = transform(this.model.esm, {transforms: ["jsx", "typescript"], filePath: "render.tsx"}).code;
+    if (this.rendered.includes('React')) {
+      this._render_esm_react()
+    } else {
+      this._render_esm()
+    }
   }
 
   private _render_esm(): void {
-    if (!this.model.esm)
-	return
+    if (this.model.importmap) {
+      const importMap = {
+        "imports": this.model.importmap["imports"],
+        "scopes": this.model.importmap["scopes"]
+      };
+      // @ts-ignore
+      importShim.addImportMap(importMap);
+    }
 
-    const defs = []
-    for (const exp in this.ns)
-      defs.push(`const ${exp} = view.ns['${exp}'];`)
-    const def_string = defs.join('\n    ')
+    const code = `
+const root = Bokeh.index['${this.root.model.id}']
+const views = [...root.owner.query((view) => view.model.id == '${this.model.id}')]
+const view = views[0]
 
-    let compiledCode = transform(this.model.esm, {transforms: ["jsx", "typescript"], filePath: "test.tsx"}).code;
+const children = {}
+for (const child of view.model.children) {
+  children[child] = view._child_views.get(view.model.data[child])
+}
 
-    let dyn = document.createElement("script")
-    dyn.type = "module"
-    dyn.innerHTML = `
-    const root = Bokeh.index['${this.root.model.id}']
-    const views = [...root.owner.query((view) => view.model.id == '${this.model.id}')]
-    const view = views[0]
-    console.log(views)
-    ${def_string}
-    ${compiledCode}
+${this.rendered}
 
-    const rendered = render({model: view.model, data: view.model.data, el: view.container, state: view.modelState});
+render({view: view, model: view.model, data: view.model.data, el: view.container, children});
+view.render_children();
+`
 
-    if (rendered) {
-      view._changing = true;
-      React.render(rendered, view.container);
-      view._changing = false;
-    }`;
-    this.container.appendChild(dyn)
+    const url = URL.createObjectURL(
+      new Blob([code], { type: "text/javascript" }),
+    );
+    // @ts-ignore
+    importShim(url);
+  }
+
+  render_children() {
+    for (const child of this.model.children) {
+      const view = this._child_views.get(this.model.data[child])
+      if (view && this.container.contains(view.el)) {
+	const parent = view.el.parentNode
+	if (parent) {
+	  this._parent_nodes[child] = [parent, Array.from(parent.children).indexOf(view.el)]
+	  view.render()
+	  view.after_render()
+	}
+      }
+    }
+  }
+
+  async update_children(): Promise<void> {
+    const created_children = new Set(await this.build_child_views())
+
+    if (created_children.size != 0) {
+      for (const child_view of this.child_views) {
+	remove(child_view.el)
+      }
+
+      for (const child in this._child_callbacks) {
+	this._child_callbacks[child]()
+      }
+    }
+
+    for (const child in this._parent_nodes) {
+      const [parent, index] = this._parent_nodes[child]
+      const view = this._child_views.get(this.model.data[child])
+      if (view) {
+	const next_child = parent.children[index]
+	if (next_child) {
+	  parent.insertBefore(view.el, next_child)
+	} else {
+	  parent.append(view.el)
+	}
+	view.render()
+	view.after_render()
+      }
+    }
+    this._update_children()
+    this.invalidate_layout()
+  }
+
+  on_child_render(child: string, callback: () => void): void {
+    this._child_callbacks[child] = callback
+  }
+
+  remove_on_child_render(child: string): void {
+    delete this._child_callbacks[child]
+  }
+
+  private _render_esm_react(): void {
+    if (this.model.importmap) {
+      const importMap = {
+        "imports": {
+          "react": "https://esm.sh/react@18.2.0",
+          "react-dom/": "https://esm.sh/react-dom@18.2.0/",
+          ...this.model.importmap['imports']
+        },
+        "scopes": this.model.importmap["scopes"]
+      };
+      // @ts-ignore
+      importShim.addImportMap(importMap);
+    }
+
+    const code = `
+import { createRoot } from 'react-dom/client';
+import * as React from "react";
+
+const root = Bokeh.index['${this.root.model.id}']
+const views = [...root.owner.query((view) => view.model.id == '${this.model.id}')]
+const view = views[0]
+
+function useState_getter(target, name) {
+  if (!Reflect.has(target, name))
+    return undefined
+  const [value, setValue] = React.useState(target.attributes[name]);
+  (target).properties[name].change.connect(() => {
+    setValue(target.attributes[name])
+  });
+  React.useEffect(() => {
+    const state = {}
+    state[name] = value
+    target.setv(state)
+  }, [value]);
+  return [value, setValue]
+}
+
+const modelState = new Proxy(view.model.data, {
+  get: useState_getter
+})
+
+const children = {}
+for (const child of view.model.children) {
+  class Child extends React.Component {
+    child_name = child
+    parent = view
+    view = view._child_views.get(view.model.data[child])
+    node = view._child_views.get(view.model.data[child]).el
+
+    componentDidMount() {
+      this.parent.on_child_render(this.child_name, () => this.rerender())
+      this.view.render()
+      this.view.after_render()
+    }
+
+    componentDidUnmount() {
+      this.parent.remove_on_child_render(this.child_name)
+    }
+
+    rerender() {
+      this.view = this.parent._child_views.get(view.model.data[child])
+      this.node = this.view.el
+      this.forceUpdate()
+      this.view.render()
+      this.view.after_render()
+    }
+
+    render() {
+      return React.createElement('div', {className: "child-wrapper", ref: (ref) => ref && ref.appendChild(this.node)})
+    }
+  }
+  children[child] = React.createElement(Child)
+}
+
+${this.rendered}
+
+const rendered = render({view: view, model: view.model, data: view.model.data, el: view.container, state: modelState, children: children});
+
+if (rendered) {
+  view._changing = true;
+  const root = createRoot(view.container);
+  root.render(rendered);
+  view._changing = false;
+}`;
+
+    const url = URL.createObjectURL(
+      new Blob([code], { type: "text/javascript" }),
+    );
+    // @ts-ignore
+    importShim(url);
   }
 }
 
@@ -137,6 +288,7 @@ export namespace ReactiveESM {
     children: p.Property<any>
     data: p.Property<any>
     esm: p.Property<string>
+    importmap: p.Property<any>
   }
 }
 
@@ -153,10 +305,11 @@ export class ReactiveESM extends HTMLBox {
 
   static {
     this.prototype.default_view = ReactiveESMView
-    this.define<ReactiveESM.Props>(({Any, String}) => ({
-      children:  [ Any,       {} ],
-      data:      [ Any,          ],
-      esm:       [ String,    "" ],
+    this.define<ReactiveESM.Props>(({Any, Array, String}) => ({
+      children:  [ Array(String),       [] ],
+      data:      [ Any,                    ],
+      importmap: [ Any,                 {} ],
+      esm:       [ String,              "" ],
     }))
   }
 }

@@ -5,7 +5,8 @@ import pathlib
 import textwrap
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, Tuple, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Literal, Mapping, Optional,
+    Tuple, Type,
 )
 
 import jinja2
@@ -42,6 +43,7 @@ class ReactiveESMMetaclass(ReactiveMetaBase):
 class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     _esm: ClassVar[str | os.PathLike] = ""
+    _import_map: ClassVar[Dict[str, Dict[Literal['imports', 'scopes'], str]]] = {}
 
     __abstract = True
 
@@ -79,21 +81,40 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             if (
                 (k in ignored and k != 'name') or
                 ((self.param[k].precedence or 0) < 0) or
-                (isinstance(v, Viewable) and not isinstance(self.param[k], param.ClassSelector))
+                (isinstance(v, Viewable) and isinstance(self.param[k], param.ClassSelector))
             ):
                 continue
             data_params[k] = v
         params.update({
             'data': self._data_model(**self._process_param_change(data_params)),
             'esm': self._render_esm(),
+            'importmap': getattr(self, '_importmap', {})
         })
         return params
+
+    def _get_children(self, data_model, doc, root, parent, comm):
+        children = {}
+        ref = root.ref['id']
+        for k, v in self.param.values().items():
+            p = self.param[k]
+            if not (isinstance(p, param.ClassSelector) and issubclass(p.class_, Viewable)):
+                continue
+            if v is None:
+                children[k] = None
+            elif ref in v._models:
+                children[k] = v._models[ref]
+            else:
+                children[k] = v._get_model(doc, root, parent, comm)
+        return children
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
         model = _BkReactiveESM(**self._get_properties(doc))
+        children = self._get_children(model.data, doc, root, model, comm)
+        model.data.update(**children)
+        model.children = list(children)
         if isinstance(self._esm, pathlib.PurePath) and not self._watching_esm:
             state.execute(self._watch_esm)
             self._watching_esm = True
@@ -107,13 +128,21 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     ) -> None:
         model_msg, data_msg  = {}, {}
         for prop, v in list(msg.items()):
-            if prop in list(Reactive.param)+['esm']:
+            if prop in list(Reactive.param)+['esm', 'importmap']:
                 model_msg[prop] = v
             elif ((prop in self.param) and (
                     ((self.param[prop].precedence or 0) < 0) or
                     (isinstance(v, Viewable) and not isinstance(self.param[prop], param.ClassSelector))
             )):
                 continue
-            data_msg[prop] = v
+            else:
+                data_msg[prop] = v
+        for name, event in events.items():
+            if name not in model.children or event.old in (None, event.new):
+                continue
+            event.old._cleanup(root)
+        children = self._get_children(model.data, doc, root, model, comm)
+        data_msg.update(children)
+        model_msg['children'] = list(children)
         self._set_on_model(model_msg, root, model)
         self._set_on_model(data_msg, root, model.data)

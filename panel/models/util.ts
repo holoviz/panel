@@ -51,3 +51,19 @@ export function deepCopy(obj: any): any {
 export function isPlainObject (obj: any) {
     return Object.prototype.toString.call(obj) === '[object Object]';
 }
+
+export async function loadScript(type: string, src: string) {
+  const script = document.createElement("script")
+  script.type = type
+  script.src = src
+  script.defer = true
+  document.head.appendChild(script)
+  return new Promise<void>((resolve, reject) => {
+    script.onload = () => {
+      resolve()
+    }
+    script.onerror = () => {
+      reject()
+    }
+  })
+}
