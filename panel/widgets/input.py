@@ -31,7 +31,7 @@ from ..layout import Column, Panel
 from ..models import (
     DatetimePicker as _bkDatetimePicker, TextAreaInput as _bkTextAreaInput,
 )
-from ..util import param_reprs
+from ..util import param_reprs, try_datetime64_to_datetime
 from .base import CompositeWidget, Widget
 
 if TYPE_CHECKING:
@@ -341,12 +341,8 @@ class DatePicker(Widget):
         if 'options' in params:
             options = list(params.pop('options'))
             params['enabled_dates'] = options
-        if 'value' in params and hasattr(params['value'], "astype"):
-            value = (
-                params['value']
-                .astype('datetime64[ms]')
-                .astype(datetime)
-            )
+        if 'value' in params:
+            value = try_datetime64_to_datetime(params['value'])
             if hasattr(value, "date"):
                 value = value.date()
             params["value"] = value
@@ -497,7 +493,9 @@ class _DatetimePickerBase(Widget):
         # it to enabled_dates
         if 'options' in params:
             options = list(params.pop('options'))
-            params['enabled_dates'] = options
+            params['enabled_dates'] = [
+                self._convert_to_datetime(option).date() for option in options
+            ]
         if params.get('as_numpy_datetime64', None) is None:
             params['as_numpy_datetime64'] = isinstance(
                 params.get("value"), np.datetime64)
@@ -511,16 +509,17 @@ class _DatetimePickerBase(Widget):
         if isinstance(v, Iterable) and not isinstance(v, str):
             container_type = type(v)
             return container_type(
-                _DatetimePickerBase._convert_to_datetime(vv)
+                self._convert_to_datetime(vv)
                 for vv in v
             )
 
-        if hasattr(v, "astype"):
-            return v.astype('datetime64[ms]').astype(datetime)
-        elif isinstance(v, datetime):
+        v = try_datetime64_to_datetime(v)
+        if isinstance(v, datetime):
             return v
         elif isinstance(v, date):
             return datetime(v.year, v.month, v.day)
+        elif isinstance(v, str):
+            return datetime.strptime(v, r'%Y-%m-%d %H:%M:%S')
         else:
             raise ValueError(f"Could not convert {v} to datetime")
 
