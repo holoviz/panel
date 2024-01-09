@@ -12,7 +12,7 @@ from .ipywidget import IPyWidget  # noqa
 from .layout import Card, Column  # noqa
 from .location import Location  # noqa
 from .markup import HTML, JSON, PDF  # noqa
-from .reactive_html import ReactiveHTML  # noqa
+from .reactive_html import ReactiveESM, ReactiveHTML  # noqa
 from .state import State  # noqa
 from .trend import TrendIndicator  # noqa
 from .widgets import (  # noqa

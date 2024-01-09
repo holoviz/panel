@@ -6,10 +6,11 @@ import bokeh
 import bokeh.core.properties as bp
 import param as pm
 
-from bokeh.model import DataModel
+from bokeh.model import DataModel, Model
 from bokeh.models import ColumnDataSource
 
 from ..reactive import Syncable
+from ..viewable import Viewable
 from .document import unlocked
 from .notebook import push
 from .state import state
@@ -69,17 +70,20 @@ def list_param_to_ppt(p, kwargs):
         return bp.List(bp.Instance(DataModel)), [(ParameterizedList, lambda ps: [create_linked_datamodel(p) for p in ps])]
     return bp.List(bp.Any, **kwargs)
 
+def class_selector_to_model(p, kwargs):
+    if isinstance(p.class_, type) and issubclass(p.class_, Viewable):
+        return bp.Nullable(bp.Instance(Model), **kwargs)
+    elif isinstance(p.class_, type) and issubclass(p.class_, pm.Parameterized):
+        return (bp.Instance(DataModel, **kwargs), [(Parameterized, create_linked_datamodel)])
+    else:
+        return bp.Any(**kwargs)
 
 PARAM_MAPPING = {
     pm.Array: lambda p, kwargs: bp.Array(bp.Any, **kwargs),
     pm.Boolean: lambda p, kwargs: bp.Bool(**kwargs),
     pm.CalendarDate: lambda p, kwargs: bp.Date(**kwargs),
     pm.CalendarDateRange: lambda p, kwargs: bp.Tuple(bp.Date, bp.Date, **kwargs),
-    pm.ClassSelector: lambda p, kwargs: (
-        (bp.Instance(DataModel, **kwargs), [(Parameterized, create_linked_datamodel)])
-        if isinstance(p.class_, type) and issubclass(p.class_, pm.Parameterized) else
-        bp.Any(**kwargs)
-    ),
+    pm.ClassSelector: class_selector_to_model,
     pm.Color: color_param_to_ppt,
     pm.DataFrame: lambda p, kwargs: (
         bp.ColumnData(bp.Any, bp.Seq(bp.Any), **kwargs),

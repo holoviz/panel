@@ -21,6 +21,7 @@ from typing import (
     Tuple, Type, Union,
 )
 
+import jinja2
 import numpy as np
 import param
 
@@ -1314,17 +1315,19 @@ class ReactiveData(SyncableData):
         super(ReactiveData, self)._process_events(events)
 
 
+class ReactiveMetaBase(ParameterizedMetaclass):
 
-class ReactiveHTMLMetaclass(ParameterizedMetaclass):
+    _loaded_extensions: ClassVar[Set[str]] = set()
+
+    _name_counter: ClassVar[Counter] = Counter()
+
+
+class ReactiveHTMLMetaclass(ReactiveMetaBase):
     """
     Parses the ReactiveHTML._template of the class and initializes
     variables, callbacks and the data model to sync the parameters and
     HTML attributes.
     """
-
-    _loaded_extensions: ClassVar[Set[str]] = set()
-
-    _name_counter: ClassVar[Counter] = Counter()
 
     _script_regex: ClassVar[str] = r"script\([\"|'](.*)[\"|']\)"
 
@@ -1422,13 +1425,64 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
         # Create model with unique name
         ReactiveHTMLMetaclass._name_counter[name] += 1
         model_name = f'{name}{ReactiveHTMLMetaclass._name_counter[name]}'
+
         mcs._data_model = construct_data_model(
             mcs, name=model_name, ignore=ignored, types=types
         )
 
 
+class ReactiveCustomBase(Reactive):
 
-class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
+    _extension_name: ClassVar[Optional[str]] = None
+
+    __css__: ClassVar[Optional[List[str]]] = None
+    __javascript__: ClassVar[Optional[List[str]]] = None
+    __javascript_modules__: ClassVar[Optional[List[str]]] = None
+
+    @classmethod
+    def _loaded(cls) -> bool:
+        """
+        Whether the component has been loaded.
+        """
+        return (
+            cls._extension_name is None or
+            (cls._extension_name in ReactiveMetaBase._loaded_extensions and
+             (state._extensions is None or (cls._extension_name in state._extensions)))
+        )
+
+    def _process_param_change(self, params):
+        props = super()._process_param_change(params)
+        if 'stylesheets' in params:
+            css = getattr(self, '__css__', []) or []
+            if state.rel_path:
+                css = [
+                    ss if ss.startswith('http') else f'{state.rel_path}/{ss}'
+                    for ss in css
+                ]
+            props['stylesheets'] = [
+                ImportedStyleSheet(url=ss) for ss in css
+            ] + props['stylesheets']
+        return props
+
+    def _set_on_model(self, msg: Mapping[str, Any], root: Model, model: Model) -> None:
+        if not msg:
+            return
+        old = self._changing.get(root.ref['id'], [])
+        self._changing[root.ref['id']] = [
+            attr for attr, value in msg.items()
+            if not model.lookup(attr).property.matches(getattr(model, attr), value)
+        ]
+        try:
+            model.update(**msg)
+        finally:
+            if old:
+                self._changing[root.ref['id']] = old
+            else:
+                del self._changing[root.ref['id']]
+
+
+
+class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
     """
     ReactiveHTML provides bi-directional syncing of arbitrary HTML
     attributes and DOM properties with parameters on the subclass.
@@ -1552,8 +1606,6 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
     _dom_events: ClassVar[Mapping[str, List[str]]] = {}
 
-    _extension_name: ClassVar[Optional[str]] = None
-
     _template: ClassVar[str] = ""
 
     _scripts: ClassVar[Mapping[str, str | List[str]]] = {}
@@ -1561,10 +1613,6 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     _script_assignment: ClassVar[str] = (
         r'data\.([^[^\d\W]\w*)[ ]*[\+,\-,\*,\\,%,\*\*,<<,>>,>>>,&,\^,|,\&\&,\|\|,\?\?]*='
     )
-
-    __css__: ClassVar[Optional[List[str]]] = None
-    __javascript__: ClassVar[Optional[List[str]]] = None
-    __javascript_modules__: ClassVar[Optional[List[str]]] = None
 
     __abstract = True
 
@@ -1596,17 +1644,6 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         self._panes = {}
         self._event_callbacks = defaultdict(lambda: defaultdict(list))
 
-    @classmethod
-    def _loaded(cls) -> bool:
-        """
-        Whether the component has been loaded.
-        """
-        return (
-            cls._extension_name is None or
-            (cls._extension_name in ReactiveHTMLMetaclass._loaded_extensions and
-             (state._extensions is None or (cls._extension_name in state._extensions)))
-        )
-
     def _cleanup(self, root: Model | None = None) -> None:
         for _child, panes in self._panes.items():
             for pane in panes:
@@ -1628,20 +1665,6 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         children: Dict[str, List[Model]]
     ) -> Dict[str, List[Model]]:
         return children
-
-    def _process_param_change(self, params):
-        props = super()._process_param_change(params)
-        if 'stylesheets' in params:
-            css = getattr(self, '__css__', []) or []
-            if state.rel_path:
-                css = [
-                    ss if ss.startswith('http') else f'{state.rel_path}/{ss}'
-                    for ss in css
-                ]
-            props['stylesheets'] = [
-                ImportedStyleSheet(url=ss) for ss in css
-            ] + props['stylesheets']
-        return props
 
     def _init_params(self) -> Dict[str, Any]:
         ignored = list(Reactive.param)
@@ -1757,8 +1780,6 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         return self._process_children(doc, root, model, comm, new_models)
 
     def _get_template(self) -> Tuple[str, List[str], Mapping[str, List[Tuple[str, List[str], str]]]]:
-        import jinja2
-
         # Replace loop variables with indexed child parameter e.g.:
         #   {% for obj in objects %}
         #     ${obj}
@@ -1882,18 +1903,21 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 f'\n\npn.extension(\'{self._extension_name}\')\n'
             )
         if self._extension_name:
-            ReactiveHTMLMetaclass._loaded_extensions.add(self._extension_name)
+            ReactiveMetaBase._loaded_extensions.add(self._extension_name)
 
         if not root:
             root = model
 
         ref = root.ref['id']
         data_model: DataModel = model.data # type: ignore
+        for p, v in data_model.properties_with_values().items():
+            if isinstance(v, DataModel):
+                v.tags.append(f"__ref:{ref}")
         self._patch_datamodel_ref(data_model.properties_with_values(), ref)
         model.update(children=self._get_children(doc, root, model, comm))
         self._register_events('dom_event', model=model, doc=doc, comm=comm)
         self._link_props(data_model, self._linked_properties, doc, root, comm)
-        self._models[ref] = (model, parent)
+        self._models[root.ref['id']] = (model, parent)
         return model
 
     def _process_event(self, event: 'Event') -> None:
@@ -1920,23 +1944,9 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             cb(event)
 
     def _set_on_model(self, msg: Mapping[str, Any], root: Model, model: Model) -> None:
-        if not msg:
-            return
-        ref = root.ref['id']
-        old = self._changing.get(ref, [])
-        self._changing[ref] = [
-            attr for attr, value in msg.items()
-            if not model.lookup(attr).property.matches(getattr(model, attr), value)
-        ]
-        try:
-            model.update(**msg)
-        finally:
-            if old:
-                self._changing[ref] = old
-            else:
-                del self._changing[ref]
+        super()._set_on_model(msg, root, model)
         if isinstance(model, DataModel):
-            self._patch_datamodel_ref(model.properties_with_values(), ref)
+            self._patch_datamodel_ref(model.properties_with_values(), root.ref['id'])
 
     def _update_model(
         self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],

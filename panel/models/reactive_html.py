@@ -243,3 +243,14 @@ class ReactiveHTML(HTMLBox):
         if 'attrs' not in props and 'html' in props:
             props['attrs'] = find_attrs(props['html'])
         super().__init__(**props)
+
+
+class ReactiveESM(HTMLBox):
+
+    children = bp.List(bp.String)
+
+    data = bp.Instance(DataModel)
+
+    esm = bp.String()
+
+    importmap = bp.Dict(bp.String, bp.Dict(bp.String, bp.String))
