@@ -163,7 +163,8 @@ class ChatFeed(ListPanel):
 
     message_params = param.Dict(default={}, doc="""
         Params to pass to each ChatMessage, like `reaction_icons`, `timestamp_format`,
-        `show_avatar`, `show_user`, and `show_timestamp`.""")
+        `show_avatar`, `show_user`, and `show_timestamp`. Params passed
+        that are not ChatFeed params will be forwarded into `message_params`.""")
 
     header = param.Parameter(doc="""
         The header of the chat feed; commonly used for the title.
@@ -197,6 +198,10 @@ class ChatFeed(ListPanel):
         display the scroll button. Setting to 0
         disables the scroll button.""")
 
+    show_activity_dot = param.Boolean(default=True, doc="""
+        Whether to show an activity dot on the ChatMessage while
+        streaming the callback response.""")
+
     view_latest = param.Boolean(default=True, doc="""
         Whether to scroll to the latest object on init. If not
         enabled the view will be on the first object.""")
@@ -204,9 +209,6 @@ class ChatFeed(ListPanel):
     _placeholder = param.ClassSelector(class_=ChatMessage, allow_refs=False, doc="""
         The placeholder wrapped in a ChatMessage object;
         primarily to prevent recursion error in _update_placeholder.""")
-
-    _callback_future = param.ClassSelector(class_=asyncio.Future, allow_None=True, doc="""
-        The current, cancellable async task being executed.""")
 
     _callback_state = param.ObjectSelector(objects=list(CallbackState), doc="""
         The current state of the callback.""")
@@ -217,10 +219,20 @@ class ChatFeed(ListPanel):
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_feed.css"]
 
     def __init__(self, *objects, **params):
+        self._callback_future = None
+
         if params.get("renderers") and not isinstance(params["renderers"], list):
             params["renderers"] = [params["renderers"]]
         if params.get("width") is None and params.get("sizing_mode") is None:
             params["sizing_mode"] = "stretch_width"
+
+        # forward message params to ChatMessage for convenience
+        message_params = params.get("message_params", {})
+        for param_key in list(params.keys()):
+            if param_key not in ChatFeed.param and param_key in ChatMessage.param:
+                message_params[param_key] = params.pop(param_key)
+        params["message_params"] = message_params
+
         super().__init__(*objects, **params)
 
         # instantiate the card's column) is not None)
@@ -241,10 +253,8 @@ class ChatFeed(ListPanel):
             stylesheets=self._stylesheets,
             **linked_params
         )
-        self.link(self._chat_log, objects='objects', bidirectional=True)
-        # we have a card for the title
-        self._card = Card(
-            self._chat_log, VSpacer(),
+        card_params = linked_params.copy()
+        card_params.update(
             margin=self.param.margin,
             align=self.param.align,
             header=self.header,
@@ -258,7 +268,14 @@ class ChatFeed(ListPanel):
             title_css_classes=["chat-feed-title"],
             styles={"padding": "0px"},
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
-            **linked_params
+        )
+        card_params.update(self.card_params)
+        self.link(self._chat_log, objects='objects', bidirectional=True)
+        # we have a card for the title
+        self._card = Card(
+            self._chat_log,
+            VSpacer(),
+            **card_params
         )
 
         # handle async callbacks using this trick
@@ -269,14 +286,25 @@ class ChatFeed(ListPanel):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        return self._card._get_model(doc, root, parent, comm)
+        model = self._card._get_model(doc, root, parent, comm)
+        ref = (root or model).ref['id']
+        self._models[ref] = (model, parent)
+        return model
 
     def _cleanup(self, root: Model | None = None) -> None:
         self._card._cleanup(root)
         super()._cleanup(root)
 
+    @param.depends("card_params", watch=True)
+    def _update_card_params(self):
+        self._card.param.update(**self.card_params)
+
     @param.depends("placeholder_text", watch=True, on_init=True)
     def _update_placeholder(self):
+        if self._placeholder is not None:
+            self._placeholder.param.update(object=self.placeholder_text)
+            return
+
         loading_avatar = SVG(
             PLACEHOLDER_SVG, sizing_mode=None, css_classes=["rotating-placeholder"]
         )
@@ -335,6 +363,7 @@ class ChatFeed(ListPanel):
             message_params["avatar"] = avatar
         if self.width:
             message_params["width"] = int(self.width - 80)
+
         message = ChatMessage(**message_params)
         return message
 
@@ -402,18 +431,24 @@ class ChatFeed(ListPanel):
         updating the message's value.
         """
         response_message = None
-        if isasyncgen(response):
-            self._callback_state = CallbackState.GENERATING
-            async for token in response:
-                response_message = self._upsert_message(token, response_message)
-        elif isgenerator(response):
-            self._callback_state = CallbackState.GENERATING
-            for token in response:
-                response_message = self._upsert_message(token, response_message)
-        elif isawaitable(response):
-            response_message = self._upsert_message(await response, response_message)
-        else:
-            response_message = self._upsert_message(response, response_message)
+        try:
+            if isasyncgen(response):
+                self._callback_state = CallbackState.GENERATING
+                async for token in response:
+                    response_message = self._upsert_message(token, response_message)
+                    response_message.show_activity_dot = self.show_activity_dot
+            elif isgenerator(response):
+                self._callback_state = CallbackState.GENERATING
+                for token in response:
+                    response_message = self._upsert_message(token, response_message)
+                    response_message.show_activity_dot = self.show_activity_dot
+            elif isawaitable(response):
+                response_message = self._upsert_message(await response, response_message)
+            else:
+                response_message = self._upsert_message(response, response_message)
+        finally:
+            if response_message:
+                response_message.show_activity_dot = False
         return response_message
 
     async def _schedule_placeholder(
@@ -429,7 +464,7 @@ class ChatFeed(ListPanel):
             return
 
         start = asyncio.get_event_loop().time()
-        while not task.done() and num_entries == len(self._chat_log):
+        while not self._callback_state == CallbackState.IDLE and num_entries == len(self._chat_log):
             duration = asyncio.get_event_loop().time() - start
             if duration > self.placeholder_threshold:
                 self.append(self._placeholder)

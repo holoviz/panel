@@ -47,6 +47,10 @@
   max-width: calc(100% - 80px);
 }
 
+.header {
+  width: fit-content;
+}
+
 .name {
   font-size: 1em;
   margin-bottom: 0px;
@@ -76,6 +80,9 @@
   max-width: calc(100% - 40px);
   padding: 5px;
   width: fit-content;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .footer {
@@ -88,7 +95,7 @@
 .timestamp {
   color: #a9a9a9;
   display: flex;
-  margin-top: 0px;
+  margin-top: 3px;
 }
 
 .markdown {
@@ -107,4 +114,24 @@
   width: fit-content;
   margin-block: 0px;
   margin-inline: 2px;
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.activity-dot {
+  display: inline-block;
+  animation: fadeOut 2s infinite cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  color: #32cd32;
+  font-size: 1.25em;
+  margin-block: 0px;
 }

@@ -1814,10 +1814,10 @@ class Tabulator(BaseTable):
                 col_dict['formatter'] = formatter.pop('type')
                 col_dict['formatterParams'] = formatter
             title_formatter = self.title_formatters.get(field)
-            if title_formatter:
+            if isinstance(title_formatter, str):
                 col_dict['titleFormatter'] = title_formatter
             elif isinstance(title_formatter, dict):
-                formatter = dict(title_formatter)
+                title_formatter = dict(title_formatter)
                 col_dict['titleFormatter'] = title_formatter.pop('type')
                 col_dict['titleFormatterParams'] = title_formatter
             col_name = self._renamed_cols[field]

@@ -192,14 +192,14 @@ def _generate_hash_inner(obj):
             raise ValueError(
                 f'User hash function {hash_func!r} failed for input '
                 f'{obj!r} with following error: {type(e).__name__}("{e}").'
-            )
+            ) from e
         return output
     if hasattr(obj, '__reduce__'):
         h = hashlib.new("md5")
         try:
             reduce_data = obj.__reduce__()
         except BaseException:
-            raise ValueError(f'Could not hash object of type {type(obj).__name__}')
+            raise ValueError(f'Could not hash object of type {type(obj).__name__}') from None
         for item in reduce_data:
             h.update(_generate_hash(item))
         return h.digest()
@@ -319,6 +319,9 @@ def cache(
         A dictionary mapping from a type to a function which returns
         a hash for an object of that type. If provided this will
         override the default hashing function provided by Panel.
+    max_items: int or None
+        The maximum items to keep in the cache. Default is None, which does
+        not limit number of items stored in the cache.
     policy: str
         A caching policy when max_items is set, must be one of:
           - FIFO: First in - First out

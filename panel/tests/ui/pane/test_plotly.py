@@ -46,12 +46,29 @@ def plotly_3d_plot():
     return plot_3d, title
 
 
+@pytest.fixture
+def plotly_img_plot():
+    fig_dict = dict(
+        data={
+            "z": np.random.randint(0, 255, size=(6, 30, 3)).astype(np.uint8),
+            "type": "image",
+        },
+        layout={
+            "width": 300,
+            "height": 60,
+            "margin": {"l": 0, "r": 0, "b": 0, "t": 0},
+        },
+    )
+    return Plotly(fig_dict, width=300, height=60)
+
+
 def test_plotly_no_console_errors(page, plotly_2d_plot):
     msgs, _ = serve_component(page, plotly_2d_plot)
 
     page.wait_for_timeout(1000)
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
+
 
 
 def test_plotly_2d_plot(page, plotly_2d_plot):
@@ -185,3 +202,20 @@ def test_plotly_select_data(page, plotly_2d_plot):
     assert 'range' in selected
     assert 'x' in selected['range']
     assert 'y' in selected['range']
+
+
+
+def test_plotly_img_plot(page, plotly_img_plot):
+    msgs, _ = serve_component(page, plotly_img_plot)
+
+    # main pane
+    plotly_plot = page.locator('.js-plotly-plot .plot-container.plotly')
+    expect(plotly_plot).to_have_count(1)
+
+    assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
+
+    # Select and hover on first point
+    point = plotly_plot.locator('image')
+    point.hover(force=True)
+
+    wait_until(lambda: plotly_img_plot.hover_data == {'points': [{'curveNumber': 0, 'x': 15, 'y': 3, 'colormodel': 'rgb'}]}, page)

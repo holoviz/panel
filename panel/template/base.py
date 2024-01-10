@@ -30,7 +30,7 @@ from ..io.notebook import render_template
 from ..io.notifications import NotificationArea
 from ..io.resources import (
     BUNDLE_DIR, CDN_DIST, ResourceComponent, _env, component_resource_path,
-    get_dist_path, loading_css, parse_template, resolve_custom_path,
+    get_dist_path, loading_css, parse_template, resolve_custom_path, use_cdn,
 )
 from ..io.save import save
 from ..io.state import curdoc_locked, state
@@ -340,8 +340,10 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
 
         clsname = cls.__name__
         name = clsname.lower()
+        cdn = use_cdn() if cdn == 'auto' else cdn
         dist_path = get_dist_path(cdn=cdn)
 
+        resource_types['css']['loading'] = f'{dist_path}css/loading.css'
         raw_css.extend(list(self.config.raw_css) + [loading_css(
             config.loading_spinner, config.loading_color, config.loading_max_height
         )])

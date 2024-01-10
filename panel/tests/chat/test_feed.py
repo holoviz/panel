@@ -41,6 +41,16 @@ class TestChatFeed:
         chat_feed.header = ""
         assert chat_feed._card.hide_header
 
+    def test_card_params(self, chat_feed):
+        chat_feed.card_params = {
+            "header_background": "red",
+            "header": "Test",
+            "hide_header": False
+        }
+        assert chat_feed._card.header_background == "red"
+        assert chat_feed._card.header == "Test"
+        assert not chat_feed._card.hide_header
+
     def test_send(self, chat_feed):
         message = chat_feed.send("Message")
         wait_until(lambda: len(chat_feed.objects) == 1)
@@ -352,7 +362,9 @@ class TestChatFeed:
                 }
                 instance.respond()
             elif user == "arm":
-                user_entry = instance.objects[-2]
+                for user_entry in instance.objects:
+                    if user_entry.user == "User":
+                        break
                 user_contents = user_entry.object
                 yield {
                     "user": "leg",
@@ -378,6 +390,15 @@ class TestChatFeed:
         chat_feed.send("Testing!", user="User")
         wait_until(lambda: len(chat_feed.objects) == 1)
         assert chat_feed.objects[0].object == "Mutated"
+
+    def test_forward_message_params(self, chat_feed):
+        chat_feed = ChatFeed(reaction_icons={"like": "thumb-up"}, reactions=["like"])
+        chat_feed.send("Hey!")
+        chat_message = chat_feed.objects[0]
+        assert chat_feed.message_params == {"reaction_icons": {"like": "thumb-up"}, "reactions": ["like"]}
+        assert chat_message.object == "Hey!"
+        assert chat_message.reactions == ["like"]
+        assert chat_message.reaction_icons.options == {"like": "thumb-up"}
 
 
 @pytest.mark.xdist_group("chat")
@@ -440,8 +461,7 @@ class TestChatFeedCallback:
 
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
-        await asyncio.sleep(0.5)
-        assert len(chat_feed.objects) == 2
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "Message"
 
     @pytest.mark.parametrize("callback_user", [None, "Bob"])
@@ -490,23 +510,25 @@ class TestChatFeedCallback:
 
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
-        await asyncio.sleep(0.5)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert len(chat_feed.objects) == 2
         assert chat_feed.objects[1].object == "Message"
 
     @pytest.mark.asyncio
-    async def test_generator(self, chat_feed):
+    def test_generator(self, chat_feed):
         async def echo(contents, user, instance):
             message = ""
             for char in contents:
                 message += char
                 yield message
+                assert instance.objects[-1].show_activity_dot
 
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
-        await asyncio.sleep(0.5)
+        wait_until(lambda: len(chat_feed.objects) == 2)
         assert len(chat_feed.objects) == 2
         assert chat_feed.objects[1].object == "Message"
+        assert not chat_feed.objects[-1].show_activity_dot
 
     @pytest.mark.asyncio
     async def test_async_generator(self, chat_feed):
@@ -519,12 +541,13 @@ class TestChatFeedCallback:
             async for char in async_gen(contents):
                 message += char
                 yield message
+                assert instance.objects[-1].show_activity_dot
 
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
-        await asyncio.sleep(0.5)
-        assert len(chat_feed.objects) == 2
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "Message"
+        assert not chat_feed.objects[-1].show_activity_dot
 
     def test_placeholder_disabled(self, chat_feed):
         def echo(contents, user, instance):
@@ -583,11 +606,13 @@ class TestChatFeedCallback:
 
     def test_placeholder_threshold_exceed_generator(self, chat_feed):
         async def echo(contents, user, instance):
+            assert instance._placeholder not in instance._chat_log
             await asyncio.sleep(0.5)
             assert instance._placeholder in instance._chat_log
             yield "hello testing"
+            assert instance._placeholder not in instance._chat_log
 
-        chat_feed.placeholder_threshold = 0.1
+        chat_feed.placeholder_threshold = 0.2
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
         assert chat_feed._placeholder not in chat_feed._chat_log

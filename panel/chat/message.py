@@ -197,6 +197,9 @@ class ChatMessage(PaneBase):
     show_copy_icon = param.Boolean(default=True, doc="""
         Whether to display the copy icon.""")
 
+    show_activity_dot = param.Boolean(default=False, doc="""
+        Whether to show the activity dot.""")
+
     renderers = param.HookList(doc="""
         A callable or list of callables that accept the object and return a
         Panel object to render the object. If a list is provided, will
@@ -222,7 +225,7 @@ class ChatMessage(PaneBase):
             tz = params.get("timestamp_tz")
             if tz is not None:
                 tz = ZoneInfo(tz)
-            elif state.browser_info.timezone:
+            elif state.browser_info and state.browser_info.timezone:
                 tz = ZoneInfo(state.browser_info.timezone)
             params["timestamp"] = datetime.datetime.now(tz=tz)
         reaction_icons = params.get("reaction_icons", {"favorite": "heart"})
@@ -240,6 +243,9 @@ class ChatMessage(PaneBase):
         self._build_layout()
 
     def _build_layout(self):
+        self._activity_dot = HTML(
+            "●", css_classes=["activity-dot"], visible=self.param.show_activity_dot
+        )
         self._left_col = left_col = Column(
             self._render_avatar(),
             max_width=60,
@@ -275,8 +281,10 @@ class ChatMessage(PaneBase):
             Row(
                 self._user_html,
                 self.chat_copy_icon,
+                self._activity_dot,
                 stylesheets=self._stylesheets,
                 sizing_mode="stretch_width",
+                css_classes=["header"]
             ),
             self._center_row,
             self._timestamp_html,

@@ -566,6 +566,12 @@
   background-color: var(--accent-fill-hover);
   cursor: pointer;
 }
+.tabulator-row.tabulator-selected a {
+  color: var(--foreground-on-accent-rest);
+}
+.tabulator-row.tabulator-selectable:hover a {
+  color: var(--foreground-on-accent-rest);
+}
 .tabulator-row.tabulator-row-moving {
   border: 1px solid #000;
   background: #fff;

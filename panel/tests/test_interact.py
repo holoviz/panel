@@ -261,8 +261,4 @@ def test_interact_throttled():
 
     for slider, kwargs in slider_dict.items():
         widget = getattr(widgets, slider)(**kwargs)
-        try:
-            interactive(func, x=widget, throttled=throttled)
-            assert True
-        except Exception as e:
-            assert False, e
+        interactive(func, x=widget, throttled=throttled)
