@@ -163,7 +163,8 @@ class ChatFeed(ListPanel):
 
     message_params = param.Dict(default={}, doc="""
         Params to pass to each ChatMessage, like `reaction_icons`, `timestamp_format`,
-        `show_avatar`, `show_user`, and `show_timestamp`.""")
+        `show_avatar`, `show_user`, and `show_timestamp`. Params passed
+        that are not ChatFeed params will be forwarded into `message_params`.""")
 
     header = param.Parameter(doc="""
         The header of the chat feed; commonly used for the title.
@@ -224,6 +225,14 @@ class ChatFeed(ListPanel):
             params["renderers"] = [params["renderers"]]
         if params.get("width") is None and params.get("sizing_mode") is None:
             params["sizing_mode"] = "stretch_width"
+
+        # forward message params to ChatMessage for convenience
+        message_params = params.get("message_params", {})
+        for param_key in list(params.keys()):
+            if param_key not in ChatFeed.param and param_key in ChatMessage.param:
+                message_params[param_key] = params.pop(param_key)
+        params["message_params"] = message_params
+
         super().__init__(*objects, **params)
 
         # instantiate the card's column) is not None)

@@ -391,6 +391,15 @@ class TestChatFeed:
         wait_until(lambda: len(chat_feed.objects) == 1)
         assert chat_feed.objects[0].object == "Mutated"
 
+    def test_forward_message_params(self, chat_feed):
+        chat_feed = ChatFeed(reaction_icons={"like": "thumb-up"}, reactions=["like"])
+        chat_feed.send("Hey!")
+        chat_message = chat_feed.objects[0]
+        assert chat_feed.message_params == {"reaction_icons": {"like": "thumb-up"}, "reactions": ["like"]}
+        assert chat_message.object == "Hey!"
+        assert chat_message.reactions == ["like"]
+        assert chat_message.reaction_icons.options == {"like": "thumb-up"}
+
 
 @pytest.mark.xdist_group("chat")
 class TestChatFeedCallback:
