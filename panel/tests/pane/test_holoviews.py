@@ -743,3 +743,37 @@ def test_holoviews_property_override(document, comm):
 
     assert model.styles["background"] == 'red'
     assert model.children[0].css_classes == ['test_class']
+
+
+@hv_available
+def test_holoviews_date_picker_widget(document, comm):
+    ds = {
+        "time": [np.datetime64("2000-01-01"), np.datetime64("2000-01-02")],
+        "x": [0, 1],
+        "y": [0, 1],
+    }
+    viz = hv.Dataset(ds, ["x", "time"], ["y"])
+    layout = pn.panel(viz.to(
+        hv.Scatter, ["x"], ["y"]), widgets={"time": pn.widgets.DatePicker}
+    )
+    widget_box = layout[0][1]
+    assert isinstance(layout, pn.Row)
+    assert isinstance(widget_box, pn.WidgetBox)
+    assert isinstance(widget_box[0], pn.widgets.DatePicker)
+
+
+@hv_available
+def test_holoviews_datetime_picker_widget(document, comm):
+    ds = {
+        "time": [np.datetime64("2000-01-01"), np.datetime64("2000-01-02")],
+        "x": [0, 1],
+        "y": [0, 1],
+    }
+    viz = hv.Dataset(ds, ["x", "time"], ["y"])
+    layout = pn.panel(viz.to(
+        hv.Scatter, ["x"], ["y"]), widgets={"time": pn.widgets.DatetimePicker}
+    )
+    widget_box = layout[0][1]
+    assert isinstance(layout, pn.Row)
+    assert isinstance(widget_box, pn.WidgetBox)
+    assert isinstance(widget_box[0], pn.widgets.DatetimePicker)

@@ -479,3 +479,9 @@ def styler_update(styler, new_df):
         todo = tuple(ops)
         todos.append(todo)
     return todos
+
+
+def try_datetime64_to_datetime(value):
+    if isinstance(value, np.datetime64):
+        value = value.astype('datetime64[ms]').astype(datetime)
+    return value
