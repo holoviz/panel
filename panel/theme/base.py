@@ -246,6 +246,8 @@ class Design(param.Parameterized, ResourceComponent):
         # this may end up causing issues.
         from ..io.resources import CDN_DIST, patch_stylesheet
 
+        if mref not in viewable._models:
+            return
         model, _ = viewable._models[mref]
         params = {
             k: v for k, v in modifiers.items() if k != 'children' and

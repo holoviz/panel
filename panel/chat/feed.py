@@ -277,7 +277,10 @@ class ChatFeed(ListPanel):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        return self._card._get_model(doc, root, parent, comm)
+        model = self._card._get_model(doc, root, parent, comm)
+        ref = (root or model).ref['id']
+        self._models[ref] = (model, parent)
+        return model
 
     def _cleanup(self, root: Model | None = None) -> None:
         self._card._cleanup(root)
