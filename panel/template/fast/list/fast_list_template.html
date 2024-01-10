@@ -41,11 +41,11 @@
     font-family: var(--body-font);
   }
   #header {
-	{% if header_height.startswith('0') %}
-	display: none;
-	{% else %}
-	height: {{ header_height }};
-	{% endif %}
+    {% if header_height.startswith('0') %}
+    display: none;
+    {% else %}
+    height: {{ header_height }};
+    {% endif %}
   }
   #header a {
     color: currentColor;
