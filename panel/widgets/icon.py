@@ -13,7 +13,7 @@ from ..models import (
 )
 from ._mixin import TooltipMixin
 from .base import Widget
-from .button import _ClickButton
+from .button import ButtonClick, _ClickButton
 
 
 class _ClickableIcon(Widget):
@@ -64,6 +64,7 @@ class ToggleIcon(_ClickableIcon, TooltipMixin):
 
 
 class ButtonIcon(_ClickableIcon, _ClickButton, TooltipMixin):
+
     clicks = param.Integer(default=0, doc="""
         The number of times the button has been clicked.""")
 
@@ -77,7 +78,7 @@ class ButtonIcon(_ClickableIcon, _ClickButton, TooltipMixin):
     _widget_type = _PnButtonIcon
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        **TooltipMixin._rename, 'name': 'name',
+        **TooltipMixin._rename, 'name': 'name', 'clicks': None,
     }
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
@@ -96,7 +97,7 @@ class ButtonIcon(_ClickableIcon, _ClickButton, TooltipMixin):
         """
         Register a callback to be executed when the button is clicked.
 
-        The callback is given an `Event` argument declaring the number of clicks
+        The callback is given an `Event` argument declaring the number of clicks.
 
         Arguments
         ---------
@@ -110,8 +111,9 @@ class ButtonIcon(_ClickableIcon, _ClickButton, TooltipMixin):
         """
         return self.param.watch(callback, 'clicks', onlychanged=False)
 
-    def _process_event(self, event: param.parameterized.Event) -> None:
+    def _process_event(self, event: ButtonClick) -> None:
         """
-        Process a button click event; need this, otherwise we get:
-        AttributeError: 'ButtonIcon' object has no attribute '_process_event'.
+        Process a button click event.
         """
+        self.param.trigger('value')
+        self.clicks += 1

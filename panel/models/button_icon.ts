@@ -17,7 +17,6 @@ export class ButtonIconView extends ClickableIconView {
       return;
     }
     super.click();
-    this.model.clicks += 1;
     const updateState = (value: boolean, disabled: boolean) => {
       this.model.value = value;
       this.model.disabled = disabled;
@@ -33,7 +32,6 @@ export class ButtonIconView extends ClickableIconView {
 export namespace ButtonIcon {
   export type Attrs = p.AttrsOf<Props>;
   export type Props = ClickableIcon.Props & {
-    clicks: p.Property<number>;
     toggle_duration: p.Property<number>;
   };
 }
@@ -53,7 +51,6 @@ export class ButtonIcon extends ClickableIcon {
     this.prototype.default_view = ButtonIconView;
 
     this.define<ButtonIcon.Props>(({ Int }) => ({
-      clicks: [Int, 0],
       toggle_duration: [Int, 75],
     }));
   }
