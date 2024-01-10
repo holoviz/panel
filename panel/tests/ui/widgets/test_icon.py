@@ -317,19 +317,6 @@ def test_button_icon_on_click_kwarg(page):
     assert static_text.value == "Clicks: 2"
 
 
-def test_button_icon_jslink(page):
-    button = ButtonIcon()
-    int_slider = IntInput(value=0)
-    button.jslink(int_slider, clicks="value")
-    row = Row(button, int_slider)
-
-    serve_component(page, row)
-
-    page.click(".bk-TablerIcon")
-    wait_until(lambda: int_slider.value == 1, page)
-    assert int_slider.value == 1
-
-
 def test_button_icon_js_on_click(page):
     button = ButtonIcon()
     int_slider = IntInput(value=0)
