@@ -12,8 +12,7 @@ export class CardView extends ColumnView {
   connect_signals(): void {
     super.connect_signals()
 
-    const {active_header_background, children, collapsed, header_background, header_color, hide_header} = this.model.properties
-    this.on_change(children, () => this.render())
+    const {active_header_background, collapsed, header_background, header_color, hide_header} = this.model.properties
     this.on_change(collapsed, () => this._collapse())
     this.on_change([header_color, hide_header], () => this.render())
 
