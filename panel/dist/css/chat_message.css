@@ -71,18 +71,19 @@
     color-mix(in srgb, var(--panel-shadow-color) 15%, transparent) 0px 1px 3px
       1px;
   font-size: 1.25em;
-  min-width: 50px;
   min-height: 50px;
   margin-block: 0px;
   margin-left: 10px; /* Space for avatar */
   margin-right: 5px; /* Space for reaction */
   background-color: var(--panel-surface-color, #f1f1f1);
+  min-width: 0;
   max-width: calc(100% - 40px);
   padding: 5px;
   width: fit-content;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow-wrap: anywhere;
 }
 
 .footer {
