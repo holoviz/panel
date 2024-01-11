@@ -677,7 +677,8 @@ class ReplacementPane(PaneBase):
                     cls._recursive_update(old, new)
             elif isinstance(object, Reactive):
                 cls._recursive_update(old_object, object)
-            else:
+            elif old_object.object is not object:
+                # See https://github.com/holoviz/param/pull/901
                 old_object.object = object
         else:
             # Replace pane entirely
