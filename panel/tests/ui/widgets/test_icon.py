@@ -269,10 +269,10 @@ def test_button_icon_disabled(page):
 
     # test icon click updates clicks
     page.click(".bk-TablerIcon")
+    wait_until(lambda: icon.disabled, page)
     wait_until(lambda: len(events) == 1, page)
     assert icon.clicks == 1
     assert page.locator(".check")
-    assert icon.disabled
 
     # reverts back to original icon after toggle_duration
     wait_until(lambda: not icon.disabled, page, timeout=2100)
