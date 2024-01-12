@@ -65,4 +65,5 @@ binder
 gcp
 heroku
 huggingface
+ploomber
 ```
