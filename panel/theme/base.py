@@ -18,6 +18,7 @@ from ..io.resources import (
     ResourceComponent, component_resource_path, get_dist_path,
     resolve_custom_path,
 )
+from ..io.state import state
 from ..util import relative_to
 
 if TYPE_CHECKING:
@@ -157,7 +158,7 @@ class Design(param.Parameterized, ResourceComponent):
 
     @classmethod
     @functools.lru_cache
-    def _resolve_modifiers(cls, vtype, theme):
+    def _resolve_modifiers(cls, vtype, theme, is_server=False):
         """
         Iterate over the class hierarchy in reverse order and accumulate
         all modifiers that apply to the objects class and its super classes.
@@ -185,8 +186,9 @@ class Design(param.Parameterized, ResourceComponent):
         from ..io.resources import (
             CDN_DIST, component_resource_path, resolve_custom_path,
         )
-        theme_type  = type(theme) if isinstance(theme, Theme) else theme
-        modifiers, child_modifiers = cls._resolve_modifiers(type(viewable), theme_type)
+        theme_type = type(theme) if isinstance(theme, Theme) else theme
+        is_server = bool(state.curdoc.session_context) if not state._is_pyodide and state.curdoc else False
+        modifiers, child_modifiers = cls._resolve_modifiers(type(viewable), theme_type, is_server=is_server)
         modifiers = dict(modifiers)
         if 'stylesheets' in modifiers:
             if isolated:
