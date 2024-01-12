@@ -42,19 +42,18 @@ Once you run that command Panel will launch a server that will serve your app, o
 <img src="https://assets.holoviz.org/panel/gifs/vscode_autoreload.gif" style="margin-left: auto; margin-right: auto; display: block;"></img>
 
 > Checkout [How-to > Prepare to develop](../how_to/prepare_to_develop.md) for more guidance on each of the development environment options.
-
 ## Control flow
 
-Now let's get into how Panel actually works. Panel is built on a library called [Param](https://param.holoviz.org/) that controls how information flows through your application. When a _Parameter_ changes, e.g. the value of a slider updates or when you update the value manually in code, events are triggered that your app can respond to. Panel provides a number of high-level and lower-level approaches for setting up interactivity in response to updates in _Parameters_. Understanding some of the basic concepts behind Param is essential to getting the hang of Panel.
+Now let's get into how Panel actually works. Panel is built on a library called [Param](https://param.holoviz.org/) that controls how information flows through your application. When a *Parameter* changes, e.g. the value of a slider updates or when you update the value manually in code, events are triggered that your app can respond to. Panel provides a number of high-level and lower-level approaches for setting up interactivity in response to updates in *Parameters*. Understanding some of the basic concepts behind Param is essential to getting the hang of Panel.
 
 Let's start simple and answer the question "what is Param?"
 
 - Param is a framework that lets Python classes have attributes with defaults, type/value validation and callbacks when a value changes.
 - Param is similar to other frameworks like [Python dataclasses](https://docs.python.org/3/library/dataclasses.html), [pydantic](https://pydantic-docs.helpmanual.io/), and [traitlets](https://traitlets.readthedocs.io/en/stable/)
 
-One of the most important concepts to understand in both Param and Panel is the ability to use _Parameters_ as references to drive interactivity. This is often called reactivity and the most well known instance of this approach are spreadsheet applications like Excel. When you reference a particular cell in the formula of another cell, changing the original cell will automatically trigger an update in all cells that reference. The same concept applies to _Parameter_ objects.
+One of the most important concepts to understand in both Param and Panel is the ability to use *Parameters* as references to drive interactivity. This is often called reactivity and the most well known instance of this approach are spreadsheet applications like Excel. When you reference a particular cell in the formula of another cell, changing the original cell will automatically trigger an update in all cells that reference. The same concept applies to *Parameter* objects.
 
-One of the main things to understand about Param in the context of its use in Panel is the distinction between the _Parameter_ **value** and the _Parameter_ **object**. The **value** represents the current value of a _Parameter_ at a particular point in time, while the **object** holds metadata about the _Parameter_ but also acts as a **reference** to the _Parameter's_ value across time. In many cases you can pass a _Parameter_ **object** and Panel will automatically resolve the current value **and** reactively update when that _Parameter_ changes. Let's take a widget as an example:
+One of the main things to understand about Param in the context of its use in Panel is the distinction between the *Parameter* **value** and the *Parameter* **object**. The **value** represents the current value of a *Parameter* at a particular point in time, while the **object** holds metadata about the *Parameter* but also acts as a **reference** to the *Parameter's* value across time. In many cases you can pass a *Parameter* **object** and Panel will automatically resolve the current value **and** reactively update when that *Parameter* changes. Let's take a widget as an example:
 
 ```python
 text = pn.widgets.TextInput()
@@ -92,7 +91,6 @@ To inspect the type of an object simply `print` it:
 Row
     [0] DataFrame(DataFrame)
 ```
-
 :::
 
 Sometimes an object has multiple possible representations to pick from. In these cases you can explicitly construct the desired `Pane` type, e.g. here are a few representations of a `DataFrame`:
@@ -100,7 +98,6 @@ Sometimes an object has multiple possible representations to pick from. In these
 ::::{tab-set}
 
 :::{tab-item} DataFrame Pane
-
 ```python
 pn.pane.DataFrame(df)
 ```
@@ -140,7 +137,6 @@ pn.pane.DataFrame(df)
 :::
 
 :::{tab-item} HTML Pane
-
 ```python
 pn.pane.HTML(df)
 ```
@@ -158,7 +154,6 @@ pn.pane.HTML(df)
     .dataframe thead th {
         text-align: right;
     }
-
 </style>
 <table border="1" class="dataframe">
   <thead>
@@ -195,8 +190,8 @@ pn.pane.HTML(df)
 
 :::
 
-:::{tab-item} Str Pane
 
+:::{tab-item} Str Pane
 ```python
 pn.pane.Str(df)
 ```
@@ -208,7 +203,6 @@ pn.pane.Str(df)
 2  3  30
 3  4  40
 </pre>
-
 :::
 
 ::::
@@ -246,15 +240,15 @@ def square(x):
 pn.Row(x, pn.bind(square, x))
 ```
 
-The `pn.bind` function lets us bind a widget or a _Parameter_ **object** to a function that returns an item to be displayed. Once bound, the function can be added to a layout or rendered directly using `pn.panel` and `.servable()`. In this way you can express reactivity between widgets and output very easily. Even better, if you use a Panel-aware library like hvPlot, you often don't even need to write and bind a function explicitly, as hvPlot's [.interactive](https://hvplot.holoviz.org/user_guide/Interactive.html) DataFrames already create reactive pipelines by accepting widgets and parameters for most arguments and options.
+The `pn.bind` function lets us bind a widget or a *Parameter* **object** to a function that returns an item to be displayed. Once bound, the function can be added to a layout or rendered directly using `pn.panel` and `.servable()`. In this way you can express reactivity between widgets and output very easily. Even better, if you use a Panel-aware library like hvPlot, you often don't even need to write and bind a function explicitly, as hvPlot's [.interactive](https://hvplot.holoviz.org/user_guide/Interactive.html) DataFrames already create reactive pipelines by accepting widgets and parameters for most arguments and options.
 
 :::{admonition} Reminder
 :class: info
 
-Remember how we talked about the difference between a _Parameter_ **value** and a _Parameter_ **object**. In the previous example the widget itself is effectively an alias for the _Parameter_ object, i.e. the binding operation is exactly equivalent to `pn.bind(square, x.param.value)`. This is true for all widgets: the widget object is treated as an alias for the widget's `value` _Parameter_ object. So you can generally either pass in the widget (as a convenient shorthand) or the underlying _Parameter_ object.
+Remember how we talked about the difference between a *Parameter* **value** and a *Parameter* **object**. In the previous example the widget itself is effectively an alias for the *Parameter* object, i.e. the binding operation is exactly equivalent to `pn.bind(square, x.param.value)`. This is true for all widgets: the widget object is treated as an alias for the widget's `value` *Parameter* object. So you can generally either pass in the widget (as a convenient shorthand) or the underlying *Parameter* object.
 :::
 
-The binding approach above works, but it is quite heavy handed. Whenever the slider value changes, Panel will re-create a whole new Pane and re-render the output. If we want more fine-grained control we can instead explicitly instantiate a `Markdown` pane and pass it bound functions and _Parameters_ by reference:
+The binding approach above works, but it is quite heavy handed. Whenever the slider value changes, Panel will re-create a whole new Pane and re-render the output. If we want more fine-grained control we can instead explicitly instantiate a `Markdown` pane and pass it bound functions and *Parameters* by reference:
 
 ```{pyodide}
 import panel as pn
@@ -275,7 +269,7 @@ pn.Column(
 )
 ```
 
-To achieve the same thing using more classic callbacks we have to dig a bit further into Param functionality to learn about watching _Parameters_. To `watch` a Parameter means to declare a callback that fires when the _Parameter's_ value changes. As an example let's rewrite the example above using a watcher:
+To achieve the same thing using more classic callbacks we have to dig a bit further into Param functionality to learn about watching *Parameters*. To `watch` a Parameter means to declare a callback that fires when the *Parameter's* value changes. As an example let's rewrite the example above using a watcher:
 
 ```{pyodide}
 import panel as pn
@@ -300,7 +294,7 @@ background.param.watch(update_styles, 'value')
 pn.Row(x, background, square)
 ```
 
-The first thing you will note is how much more verbose this is, which should make you appreciate the power of expressing reactivity using _Parameter_ binding instead. But if you do need this power, it's there for you!
+The first thing you will note is how much more verbose this is, which should make you appreciate the power of expressing reactivity using *Parameter* binding instead. But if you do need this power, it's there for you!
 
 ## Templates
 
