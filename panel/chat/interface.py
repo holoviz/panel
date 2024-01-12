@@ -23,7 +23,7 @@ from ..widgets.base import Widget
 from ..widgets.button import Button
 from ..widgets.input import FileInput, TextInput
 from .feed import CallbackState, ChatFeed
-from .message import _FileInputMessage
+from .message import ChatMessage, _FileInputMessage
 
 
 @dataclass
@@ -543,6 +543,7 @@ class ChatInterface(ChatFeed):
 
     def _serialize_for_transformers(
         self,
+        messages: List[ChatMessage],
         role_names: Dict[str, str | List[str]] | None = None,
         default_role: str | None = "assistant",
         custom_serializer: Callable = None
@@ -552,6 +553,8 @@ class ChatInterface(ChatFeed):
 
         Arguments
         ---------
+        messages : list(ChatMessage)
+            A list of ChatMessage objects to serialize.
         role_names : dict(str, str | list(str)) | None
             A dictionary mapping the role to the ChatMessage's user name.
             Defaults to `{"user": [self.user], "assistant": [self.callback_user]}`
@@ -563,8 +566,8 @@ class ChatInterface(ChatFeed):
             If this is set to None, raises a ValueError if the user name is not found.
         custom_serializer : callable
             A custom function to format the ChatMessage's object. The function must
-            accept one positional argument and return a string. If not provided,
-            uses the serialize method on ChatMessage.
+            accept one positional argument, the ChatMessage object, and return a string.
+            If not provided, uses the serialize method on ChatMessage.
 
         Returns
         -------
@@ -575,7 +578,7 @@ class ChatInterface(ChatFeed):
                 "user": [self.user],
                 "assistant": [self.callback_user],
             }
-        return super()._serialize_for_transformers(role_names, default_role, custom_serializer)
+        return super()._serialize_for_transformers(messages, role_names, default_role, custom_serializer)
 
     @param.depends("_callback_state", watch=True)
     async def _update_input_disabled(self):
