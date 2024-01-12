@@ -798,7 +798,7 @@ class panel_extension(_pyviz_extension):
                 backend = hv.Store.current_backend
             else:
                 backend = 'bokeh'
-            if hasattr(hv.Store, 'set_current_backend'):
+            if not loaded or (loaded and backend != hv.Store.current_backend) and hasattr(hv.Store, 'set_current_backend'):
                 hv.Store.set_current_backend(backend)
             else:
                 hv.Store.current_backend = backend
