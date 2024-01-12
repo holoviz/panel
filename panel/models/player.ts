@@ -81,7 +81,7 @@ export class PlayerView extends WidgetView {
 
   connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.name.change, () => this.update_title())
+    this.connect(this.model.properties.title.change, () => this.update_title())
     this.connect(this.model.properties.value_location.change, () => this.set_value_location())
     this.connect(this.model.properties.direction.change, () => this.set_direction())
     this.connect(this.model.properties.value.change, () => this.render())
