@@ -93,7 +93,7 @@ Row
 ```
 :::
 
-Sometimes an object has multiple possible representations to pick from. In these cases you can explicitly construct construct the desired `Pane` type, e.g. here are a few representations of a `DataFrame`:
+Sometimes an object has multiple possible representations to pick from. In these cases you can explicitly construct the desired `Pane` type, e.g. here are a few representations of a `DataFrame`:
 
 ::::{tab-set}
 
