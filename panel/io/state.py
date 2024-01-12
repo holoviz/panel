@@ -757,6 +757,7 @@ class _state(param.Parameterized):
         """
         self.kill_all_servers()
         self._indicators.clear()
+        self._location = None
         self._locations.clear()
         self._templates.clear()
         self._views.clear()

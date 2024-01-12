@@ -232,7 +232,7 @@ async def async_wait_until(fn, page=None, timeout=5000, interval=100):
         elapsed_ms = elapsed * 1000
         return elapsed_ms > timeout
 
-    timeout_msg = f"wait_until timed out in {timeout} milliseconds"
+    timeout_msg = f"async_wait_until timed out in {timeout} milliseconds"
 
     while True:
         try:
@@ -245,7 +245,7 @@ async def async_wait_until(fn, page=None, timeout=5000, interval=100):
         else:
             if result not in (None, True, False):
                 raise ValueError(
-                    "`wait_until` callback must return None, True, or "
+                    "`async_wait_until` callback must return None, True, or "
                     f"False, returned {result!r}"
                 )
             # None is returned when the function has an assert

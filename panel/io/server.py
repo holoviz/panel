@@ -81,7 +81,6 @@ from .logging import (
 )
 from .markdown import build_single_handler_application
 from .profile import profile_ctx
-from .reload import autoreload_watcher
 from .resources import (
     BASE_TEMPLATE, CDN_DIST, COMPONENT_PATH, ERROR_TEMPLATE, LOCAL_DIST,
     Resources, _env, bundle_resources, patch_model_css, resolve_custom_path,
@@ -378,6 +377,7 @@ class Server(BokehServer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._autoreload_stop_event = None
         if state._admin_context:
             state._admin_context._loop = self._loop
 
@@ -385,8 +385,18 @@ class Server(BokehServer):
         super().start()
         if state._admin_context:
             self._loop.add_callback(state._admin_context.run_load_hook)
+        if config.autoreload:
+            from .reload import setup_autoreload_watcher
+            self._autoreload_stop_event = stop_event = asyncio.Event()
+            self._loop.add_callback(setup_autoreload_watcher, stop_event=stop_event)
 
     def stop(self, wait: bool = True) -> None:
+        if self._autoreload_stop_event:
+            self._autoreload_stop_event.set()
+            # For the stop event to be processed we have to restart
+            # the IOLoop briefly, ensuring an orderly cleanup
+            sleep = asyncio.sleep(0.1)
+            self._loop.asyncio_loop.run_until_complete(sleep)
         super().stop(wait=wait)
         if state._admin_context:
             state._admin_context.run_unload_hook()
@@ -801,10 +811,6 @@ def modify_document(self, doc: 'Document'):
     except RuntimeError:
         old_doc = None
     bk_set_curdoc(doc)
-
-    if config.autoreload:
-        set_curdoc(doc)
-        state.onload(autoreload_watcher)
 
     sessions = []
 

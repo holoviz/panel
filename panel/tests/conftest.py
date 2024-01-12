@@ -1,6 +1,7 @@
 """
 A module containing testing utilities and fixtures.
 """
+import asyncio
 import atexit
 import os
 import pathlib
@@ -24,6 +25,7 @@ from pyviz_comms import Comm
 
 from panel import config, serve
 from panel.config import panel_extension
+from panel.io.reload import _modules, _watched_files
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
 
@@ -148,7 +150,6 @@ PORT = [get_default_port()]
 def document():
     return Document()
 
-
 @pytest.fixture
 def server_document():
     doc = Document()
@@ -156,11 +157,19 @@ def server_document():
     doc._session_context = lambda: session_context
     with set_curdoc(doc):
         yield doc
+    doc._session_context = None
 
 @pytest.fixture
 def comm():
     return Comm()
 
+@pytest.fixture
+def stop_event():
+    event = asyncio.Event()
+    try:
+        yield event
+    finally:
+        event.set()
 
 @pytest.fixture
 def port():
@@ -332,6 +341,8 @@ def server_cleanup():
         yield
     finally:
         state.reset()
+        _watched_files.clear()
+        _modules.clear()
 
 @pytest.fixture(autouse=True)
 def cache_cleanup():

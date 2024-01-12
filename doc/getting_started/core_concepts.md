@@ -41,6 +41,10 @@ Once you run that command Panel will launch a server that will serve your app, o
 
 <img src="https://assets.holoviz.org/panel/gifs/vscode_autoreload.gif" style="margin-left: auto; margin-right: auto; display: block;"></img>
 
+```{note}
+We recommend installing `watchfiles`, which will provide a significantly better user experience when using `--autoreload`.
+```
+
 > Checkout [How-to > Prepare to develop](../how_to/prepare_to_develop.md) for more guidance on each of the development environment options.
 ## Control flow
 
