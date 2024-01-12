@@ -42,6 +42,13 @@ For guides on running and configuring a Panel server see the [server how-to guid
 ![Hugging Face Logo](../../_static/logos/huggingface.png)
 :::
 
+:::{grid-item-card} Ploomber Cloud
+:link: ploomber
+:link-type: doc
+
+![Ploomber Logo](../../_static/logos/ploomber.png)
+:::
+
 ::::
 
 ## Other Cloud Providers
