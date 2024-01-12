@@ -577,6 +577,7 @@ class ChatFeed(ListPanel):
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
         message: ChatMessage | None = None,
+        replace: bool = False,
     ) -> ChatMessage | None:
         """
         Streams a token and updates the provided message, if provided.
@@ -597,6 +598,8 @@ class ChatFeed(ListPanel):
             The avatar to use; overrides the message's avatar if provided.
         message : ChatMessage | None
             The message to update.
+        replace : bool
+            Whether to replace the existing text when streaming a string or dict.
 
         Returns
         -------
@@ -612,7 +615,7 @@ class ChatFeed(ListPanel):
             )
         elif message:
             if isinstance(value, (str, dict)):
-                message.stream(value)
+                message.stream(value, replace=replace)
                 if user:
                     message.user = user
                 if avatar:

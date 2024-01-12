@@ -220,6 +220,17 @@ class TestChatFeed:
         assert chat_feed.objects[0].user == "Person"
         assert chat_feed.objects[0].avatar == "P"
 
+    def test_stream_replace(self, chat_feed):
+        message = chat_feed.stream("Hello")
+        wait_until(lambda: len(chat_feed.objects) == 1)
+        assert chat_feed.objects[0].object == "Hello"
+
+        message = chat_feed.stream(" World", message=message)
+        wait_until(lambda: chat_feed.objects[-1].object == "Hello World")
+
+        chat_feed.stream("Goodbye", message=message, replace=True)
+        wait_until(lambda: chat_feed.objects[-1].object == "Goodbye")
+
     @pytest.mark.parametrize(
         "obj",
         [
