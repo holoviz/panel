@@ -20,9 +20,9 @@ class PanelDriver(Driver):
     ) -> None:
         super().__init__(app, debug=debug, size=size)
         self._terminal = app.__panel__._terminal
-        self._terminal.param.watch(self._resize, ['nrows', 'ncols'])
         self._input_initialized = False
         self._input_watcher = None
+        self._size_watcher = None
 
     def _resize(self, *events):
         if not self._input_initialized:
@@ -76,13 +76,18 @@ class PanelDriver(Driver):
             self.process_event(parsed_event)
 
     def disable_input(self):
+        if self._input_watcher is None:
+            return
         self._terminal.param.unwatch(self._input_watcher)
+        self._input_watcher = None
 
     def start_application_mode(self):
+        self._size_watcher = self._terminal.param.watch(self._resize, ['nrows', 'ncols'])
         self._parser = XTermParser(lambda: False, self._debug)
         self._input_watcher = self._terminal.param.watch(self._process_input, 'value')
 
     def stop_application_mode(self):
+        self._terminal.param.unwatch(self._size_watcher)
         self._disable_bracketed_paste()
         self.disable_input()
         self.write("\x1b[?1049l" + "\x1b[?25h")
