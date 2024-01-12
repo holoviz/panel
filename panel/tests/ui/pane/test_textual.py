@@ -9,8 +9,7 @@ try:
 
     from textual.app import App
     from textual.widgets import Button
-except Exception as e:
-    raise e
+except Exception:
     textual = None
 textual_available = pytest.mark.skipif(textual is None, reason="requires textual")
 
