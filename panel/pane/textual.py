@@ -32,6 +32,8 @@ class Textual(PaneBase):
 
     priority: ClassVar[float | bool | None] = 1.0
 
+    _updates: ClassVar[bool] = True
+
     @classmethod
     def applies(cls, object):
         if 'textual' in sys.modules:
@@ -45,6 +47,7 @@ class Textual(PaneBase):
         self._internal_callbacks.append(
             self.param.watch(self._link_terminal_params, list(Viewable.param))
         )
+        self._running_app = None
 
     def _link_terminal_params(self, *events):
         self._terminal.param.update({event.name: event.new for event in events})
@@ -60,21 +63,34 @@ class Textual(PaneBase):
         self.object._capture_stderr = sys.stderr
 
     async def _run_app(self):
-        await self.object.run_async()
+        if self._running_app is not None and self._running_app is not self.object:
+            await self._running_app._shutdown()
+            self._terminal._clear()
+        self._running_app = self.object
+        await self.object.run_async(size=(self._terminal.ncols, self._terminal.nrows))
 
     def _on_session_destroyed(self, session_context):
         if not self._models:
             state.execute(self.object._shutdown)
+
+    def _init_app(self, comm):
+        if self.object is None or self.object.is_running:
+            return
+        state.execute(self._run_app)
 
     def _get_model(
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = self._terminal._get_model(doc, root, parent, comm)
-        if self.object is not None and not self.object.is_running:
-            state.execute(self._run_app)
-            if comm is None:
-                doc.on_session_destroyed(self._on_session_destroyed)
-        ref = (model or root).ref['id']
+        self._init_app(comm)
+        if comm is None:
+            doc.on_session_destroyed(self._on_session_destroyed)
+        ref = (root or model).ref['id']
         self._models[ref] = (model, parent)
         return model
+
+    def _update_object(
+        self, ref: str, doc: Document, root: Model, parent: Model, comm: Comm | None
+    ) -> None:
+        self._init_app(comm)
