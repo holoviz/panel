@@ -2,7 +2,10 @@
 
 Ploomber Cloud offers a [free deployment](https://platform.ploomber.io) option for Panel apps. Once you create an account and log in, follow these steps for deploying using the web application:
 
-1. Click on the "NEW" button.
+1. Click on the "NEW" button. You'll find the below page:
+
+<img src="../../_static/images/ploomber_deployment.png" style="width:67%"></img>
+
 2. In the "Framework" section, click on Panel.
 3. In the "Source code" section, click on "Upload your files".
 4. Upload your `.zip` file with the `app.py` and `requirements.txt` file.
