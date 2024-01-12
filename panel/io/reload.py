@@ -124,7 +124,8 @@ async def setup_autoreload_watcher(stop_event=None):
             '--autoreload functionality now depends on the watchfiles '
             'library. In future versions autoreload will not work without '
             'watchfiles being installed. Since it provides a much better '
-            'user experience consider installing it today.', FutureWarning
+            'user experience consider installing it today.', FutureWarning,
+            stacklevel=0
         )
     _reload_logger.debug('Setting up global autoreload watcher.')
     await async_file_watcher(stop_event=stop_event)
@@ -178,7 +179,7 @@ def _reload(changes):
         elif state._loaded.get(doc):
             loc.reload = True
             continue
-        def reload_session(event):
+        def reload_session(event, loc=loc):
             loc.reload = True
         doc.on_event('document_ready', reload_session)
 
