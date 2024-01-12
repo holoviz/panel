@@ -824,6 +824,16 @@ class TestChatFeedSerializeForTransformers:
         with pytest.raises(ValueError, match="must return a string"):
             chat_feed.serialize(custom_serializer=custom_serializer)
 
+    def test_serialize_filter_by(self, chat_feed):
+        def filter_by_reactions(messages):
+            return [obj for obj in messages if "favorite" in obj.reactions]
+
+        chat_feed.send(ChatMessage("no"))
+        chat_feed.send(ChatMessage("yes", reactions=["favorite"]))
+        filtered = chat_feed.serialize(filter_by=filter_by_reactions)
+        assert len(filtered) == 1
+        assert filtered[0]["content"] == "yes"
+
 
 @pytest.mark.xdist_group("chat")
 class TestChatFeedSerializeBase:

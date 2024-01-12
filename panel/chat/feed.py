@@ -694,6 +694,7 @@ class ChatFeed(ListPanel):
 
     def _serialize_for_transformers(
         self,
+        messages: List[ChatMessage],
         role_names: Dict[str, str | List[str]] | None = None,
         default_role: str | None = "assistant",
         custom_serializer: Callable = None
@@ -716,8 +717,8 @@ class ChatFeed(ListPanel):
             for name in names:
                 names_role[name.lower()] = role
 
-        messages = []
-        for message in self._chat_log.objects:
+        serialized_messages = []
+        for message in messages:
 
             lowercase_name = message.user.lower()
             if lowercase_name not in names_role and not default_role:
@@ -738,11 +739,12 @@ class ChatFeed(ListPanel):
             else:
                 content = str(message)
 
-            messages.append({"role": role, "content": content})
-        return messages
+            serialized_messages.append({"role": role, "content": content})
+        return serialized_messages
 
     def serialize(
         self,
+        filter_by: Callable | None = None,
         format: Literal["transformers"] = "transformers",
         custom_serializer: Callable | None = None,
         **serialize_kwargs
@@ -755,10 +757,13 @@ class ChatFeed(ListPanel):
         format : str
             The format to export the chat log as; currently only
             supports "transformers".
+        filter_by : callable
+            A function to filter the chat log by.
+            The function must accept and return a list of ChatMessage objects.
         custom_serializer : callable
             A custom function to format the ChatMessage's object. The function must
-            accept one positional argument. If not provided,
-            uses the serialize method on ChatMessage.
+            accept one positional argument, the ChatMessage object, and return a string.
+            If not provided, uses the serialize method on ChatMessage.
         **serialize_kwargs
             Additional keyword arguments to use for the specified format.
 
@@ -777,9 +782,13 @@ class ChatFeed(ListPanel):
         -------
         The chat log serialized in the specified format.
         """
+        messages = self._chat_log.objects.copy()
+        if filter_by is not None:
+            messages = filter_by(messages)
+
         if format == "transformers":
             return self._serialize_for_transformers(
-                custom_serializer=custom_serializer, **serialize_kwargs
+                messages, custom_serializer=custom_serializer, **serialize_kwargs
             )
         raise NotImplementedError(f"Format {format!r} is not supported.")
 
