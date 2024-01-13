@@ -32,7 +32,7 @@
 
 :host(.pn-loading) .pn-loading-msg,
 .pn-loading .pn-loading-msg {
-  color: black;
+  color: var(--panel-on-background-color, black);
   font-size: 2em;
   position: absolute;
   top: 72%;
