@@ -611,7 +611,7 @@ class ChatMessage(PaneBase):
         self._composite._cleanup(root)
         return super()._cleanup(root)
 
-    def stream(self, token: str):
+    def stream(self, token: str, replace: bool = False):
         """
         Updates the message with the new token traversing the object to
         allow updating nested objects. When traversing a nested Panel
@@ -623,6 +623,8 @@ class ChatMessage(PaneBase):
         ---------
         token: str
           The token to stream to the text pane.
+        replace: bool (default=False)
+            Whether to replace the existing text.
         """
         i = -1
         parent_panel = None
@@ -646,7 +648,8 @@ class ChatMessage(PaneBase):
                 obj = parent_panel
                 parent_panel = None
                 i -= 1
-        setattr(object_panel, attr, obj + token)
+        contents = token if replace else obj + token
+        setattr(object_panel, attr, contents)
 
     def update(
         self,
