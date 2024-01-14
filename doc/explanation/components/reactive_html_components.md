@@ -68,7 +68,7 @@ You can also declare the following optional attributes:
 - `_child_config` (dict): This is a mapping that controls how children are rendered.
 - `_ignored_refs` (tuple[str]): This is tuple of parameter names. Use this to render Panel components as Panel components and not their value or object.
 - `_dom_events` (dict): This is a mapping of node IDs to DOM events to add event listeners to.
-- `_extension_name` (str): This is the name used to import external CSS and JS dependencies via `pn.extension(_extension_name)`.
+- `_extension_name` (str): This is the name used to import external CSS and JS dependencies via `pn.extension(_extension_name)` even if the component is not initially rendered.
 - `_scripts` (dict): This is a mapping of JavaScript scripts that are automatically executed during the component's life cycle and on parameter changes.
 - `_stylesheets` (list[str]): The _stylesheets attribute is a list of CSS instructions that define the visual appearance and styling of the component.
 

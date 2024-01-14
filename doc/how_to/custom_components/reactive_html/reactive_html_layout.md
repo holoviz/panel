@@ -151,7 +151,7 @@ print(type(layout.object1), type(layout.object2))
 
 ## Layout a list of objects
 
-If you want to want to layout a list of objects you can use a *for loop*.
+If you want to want to layout a dynamic `List` of objects you can use a *for loop*.
 
 ```{pyodide}
 import panel as pn
@@ -179,6 +179,8 @@ LayoutOfList(objects=[
         styles={"border": "2px solid lightgray"},
 ).servable()
 ```
+
+The component will trigger a rerendering if you update the `List` value.
 
 Please note that you must
 
