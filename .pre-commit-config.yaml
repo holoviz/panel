@@ -31,7 +31,7 @@ repos:
     hooks:
       - id: clean-notebook
         args: [-i, tags]
-        exclude: '^lite/files'
+        exclude: '^lite/files/.*/'
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.6
     hooks:
