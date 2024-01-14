@@ -235,7 +235,7 @@ class ChatFeed(ListPanel):
 
         super().__init__(*objects, **params)
 
-        # instantiate the card's column) is not None)
+        # instantiate the card's column
         linked_params = dict(
             design=self.param.design,
             sizing_mode=self.param.sizing_mode,
@@ -290,6 +290,12 @@ class ChatFeed(ListPanel):
         ref = (root or model).ref['id']
         self._models[ref] = (model, parent)
         return model
+
+    def _update_model(
+        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        root: Model, model: Model, doc: Document, comm: Comm | None
+    ) -> None:
+        return
 
     def _cleanup(self, root: Model | None = None) -> None:
         self._card._cleanup(root)
