@@ -209,6 +209,11 @@ class _state(param.Parameterized):
     _sessions = {}
     _session_key_funcs = {}
 
+    # Layout editor
+    _cell_outputs = defaultdict(list)
+    _cell_layouts = defaultdict(dict)
+    _session_outputs: ClassVar[WeakKeyDictionary[Document, Dict[str, Any]]] = WeakKeyDictionary()
+
     # Override user info
     _oauth_user_overrides = {}
     _active_users = Counter()
