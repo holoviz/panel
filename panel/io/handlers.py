@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import ast
+import json
 import logging
 import os
+import pathlib
 import re
 import sys
 
@@ -211,6 +213,7 @@ class NotebookHandler(CodeHandler):
             filename (str) : a path to a Jupyter notebook (".ipynb") file
 
         '''
+        self._load_layout(filename)
         super().__init__(source=self._parse(filename), filename=filename)
         self._stale = False
 
@@ -274,8 +277,22 @@ class NotebookHandler(CodeHandler):
                 md = ''.join(cell['source'])
                 code.append(f'_pn__state._cell_outputs[{cell_id!r}].append("""{md}""")')
         code = '\n'.join(code)
+
+        for cell_id, layout in self._layout.get('cells', {}).items():
+            state._cell_layouts[self][cell_id] = layout
+
         self._nb = nb
         return code
+
+    def _load_layout(self, filename):
+        nb_path = pathlib.Path(filename)
+        layout_path = nb_path.parent / f'.{nb_path.name}.layout'
+        if layout_path.is_file():
+            with open(layout_path) as f:
+                self._layout = json.load(f)
+        else:
+            self._layout = {}
+        return self._layout
 
     def modify_document(self, doc: Document) -> None:
         ''' Run Bokeh application code to update a ``Document``
@@ -286,6 +303,7 @@ class NotebookHandler(CodeHandler):
         '''
         path = self._runner._path
         if self._stale:
+            self._load_layout(path)
             source = self._parse(path)
             nodes = ast.parse(source, os.fspath(path))
             self._runner._code = compile(nodes, filename=path, mode='exec', dont_inherit=True)
@@ -352,6 +370,11 @@ class NotebookHandler(CodeHandler):
                         continue
                     obj_id = cells[cell_id]
                     ordered[obj_id] = layouts[obj_id]
+                for cell_id in self._layout.get('order', []):
+                    if cell_id not in cells:
+                        continue
+                    obj_id = cells[cell_id]
+                    ordered[obj_id] = layouts[obj_id]
                 for obj_id, spec in layouts.items():
                     if obj_id not in ordered:
                         ordered[obj_id] = spec
@@ -369,25 +392,31 @@ class NotebookHandler(CodeHandler):
         notebook and then overwrites notebook metadata with updated
         layout information.
         """
-        import nbformat
         nb = self._nb
         doc = event.obj._documents[-1]
         outputs = state._session_outputs[doc]
-        cell_ids = {}
+        cell_data, cell_ids = {}, {}
         for cell in nb['cells']:
             if cell['id'] in outputs:
                 out = outputs[cell['id']]
                 cell_ids[id(out)] = cell['id']
                 spec = dict(event.new[id(out)])
                 del spec['id']
-                cell['metadata']['panel-layout'] = spec
-        nb['metadata']['panel-cell-order'] = [cell_ids[obj_id] for obj_id in event.new]
-        nbformat.write(nb, self._runner.path)
+                cell_data[cell['id']] = spec
+        order = [cell_ids[obj_id] for obj_id in event.new]
+        nb_layout = {
+            'cells': cell_data,
+            'order': order
+        }
+        nb_path = pathlib.Path(self._runner.path)
+        path = nb_path.parent / f'.{nb_path.name}.layout'
+        with open(path, 'w') as f:
+            json.dump(nb_layout, f)
         self._stale = True
 
 
 def build_single_handler_application(path, argv=None):
-    if not os.path.isfile(path) or not (path.endswith(".md") or path.endswith(".ipynb")):
+    if not os.path.isfile(path) or not path.endswith((".md", ".ipynb")):
         return _build_application(path, argv)
 
     from .server import Application

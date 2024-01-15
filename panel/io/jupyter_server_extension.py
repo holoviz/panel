@@ -145,7 +145,37 @@ def generate_executor(path: str, token: str, root_url: str) -> str:
         execute_template.render(path=path, token=token, root_url=root_url)
     )
 
-class PanelJupyterHandler(JupyterHandler):
+class PanelBaseHandler(JupyterHandler):
+
+    def initialize(self, **kwargs):
+        super().initialize(**kwargs)
+        self.notebook_path = kwargs.pop('notebook_path', [])
+
+    def nb_path(self, path=None):
+        root_dir = get_server_root_dir(self.application.settings)
+        rel_path = pathlib.Path(self.notebook_path or path)
+        if rel_path.is_absolute():
+            notebook_path = str(rel_path)
+        else:
+            notebook_path = str((root_dir / rel_path).absolute())
+        return pathlib.Path(notebook_path)
+
+
+class PanelLayoutHandler(PanelBaseHandler):
+
+    @tornado.web.authenticated
+    async def get(self, path=None):
+        nb_path = self.nb_path(path)
+        layout_path = nb_path.parent / f'.{nb_path.name}.layout'
+        if not layout_path.is_file():
+            return {}
+        with open(layout_path, encoding='utf-8') as f:
+            layout = json.load(f)
+        self.set_header('Content-Type', 'text/json')
+        self.finish(layout)
+
+
+class PanelJupyterHandler(PanelBaseHandler):
     """
     The PanelJupyterHandler expects to be given a path to a notebook,
     .py file or Lumen .yaml file. Based on the kernelspec in the
@@ -159,7 +189,6 @@ class PanelJupyterHandler(JupyterHandler):
 
     def initialize(self, **kwargs):
         super().initialize(**kwargs)
-        self.notebook_path = kwargs.pop('notebook_path', [])
         self.kernel_started = False
 
     async def _get_info(self, msg_id, timeout=KERNEL_TIMEOUT):
@@ -193,13 +222,7 @@ class PanelJupyterHandler(JupyterHandler):
 
     @tornado.web.authenticated
     async def get(self, path=None):
-        root_dir = get_server_root_dir(self.application.settings)
-        rel_path = pathlib.Path(self.notebook_path or path)
-        if rel_path.is_absolute():
-            notebook_path = str(rel_path)
-        else:
-            notebook_path = str((root_dir / rel_path).absolute())
-
+        notebook_path = self.nb_path(path)
         if (
             self.notebook_path and path
         ):  # when we are in single notebook mode but have a path
@@ -218,7 +241,7 @@ class PanelJupyterHandler(JupyterHandler):
         # Provision a kernel with the desired kernelspec
         if self.request.arguments.get('kernel'):
             requested_kernel = self.request.arguments.pop('kernel')[0].decode('utf-8')
-        elif notebook_path.endswith('.ipynb'):
+        elif notebook_path.suffix == '.ipynb':
             with open(notebook_path) as f:
                 nb = json.load(f)
             requested_kernel = nb.get('metadata', {}).get('kernelspec', {}).get('name')
@@ -446,6 +469,8 @@ def _load_jupyter_server_extension(notebook_app):
              PanelWSProxy),
             (urljoin(base_url, r"panel-preview/render/(.*)"),
              PanelJupyterHandler, {}),
+            (urljoin(base_url, r"panel-preview/layout/(.*)"),
+             PanelLayoutHandler, {}),
             (urljoin(base_url, r"panel_dist/(.*)"),
              StaticFileHandler, dict(path=DIST_DIR)),
             (urljoin(base_url, f'panel-preview/{COMPONENT_PATH}(.*)'),
