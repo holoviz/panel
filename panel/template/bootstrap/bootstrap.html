@@ -1,23 +1,44 @@
 {% extends "base/base.html" %}
 
-{% block custom_css %}
-<style>
-:root {
-  --header-background: {{ header_background or "var(--design-primary-color, var(--panel-primary-color))" }};
-  --header-color: {{ header_color or "var(--design-primary-text-color, var(--panel-on-primary-color))" }};
-  --sidebar-width: {{ sidebar_width }}px;
-}
-#header {
-  --bs-body-bg: var(--header-background);
-  --bs-body-color: var(--header-color);
-  background-color: var(--header-background);
-  color: var(--header-color);
-}
-#sidebar {
-  max-width: var(--sidebar-width) !important;
-  width: var(--sidebar-width);
-}
-</style>
+{% block preamble %}
+    {{ super() }}
+    <!-- Template JS -->
+    {% for src in template_resources['js'].values() %}
+    <script src="{{ src }}"></script>
+    {% endfor %}
+    {% for src in template_resources['js_modules'].values() %}
+    <script src="{{ src }}" type="module"></script>
+    {% endfor %}
+{% endblock %}
+
+{% block postamble %}
+    <!-- Template CSS -->
+    {% for css in template_resources['css'].values() %}
+    <link rel="stylesheet" href="{{ css }}">
+    {% endfor %}
+    {% for raw_css in template_resources['raw_css'] %}
+    <style type="text/css">
+    {{ raw_css }}
+    </style>
+    {% endfor %}
+
+    <style>
+      :root {
+	--header-background: {{ header_background or "var(--design-primary-color, var(--panel-primary-color))" }};
+	--header-color: {{ header_color or "var(--design-primary-text-color, var(--panel-on-primary-color))" }};
+	--sidebar-width: {{ sidebar_width }}px;
+      }
+      #header {
+	--bs-body-bg: var(--header-background);
+	--bs-body-color: var(--header-color);
+	background-color: var(--header-background);
+	color: var(--header-color);
+      }
+      #sidebar {
+	max-width: var(--sidebar-width) !important;
+	width: var(--sidebar-width);
+      }
+    </style>
 {% endblock %}
 
 <!-- goes in body -->
