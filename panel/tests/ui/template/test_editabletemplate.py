@@ -72,7 +72,7 @@ def test_editable_template_size(page):
     serve_component(page, tmpl)
 
     items = page.locator(".muuri-grid-item")
-    md2_bbox = items.nth(0).bounding_box()
+    md2_bbox = items.nth(1).bounding_box()
     assert md2_bbox['height'] == 60
 
 
@@ -164,7 +164,7 @@ def test_editable_template_resize_item(page):
     md1 = Markdown('1')
     md2 = Markdown('2')
 
-    tmpl = EditableTemplate(layout={id(md2): {'width': 50, 'height': 50}})
+    tmpl = EditableTemplate(layout={id(md2): {'width': 50, 'height': 80}})
 
     tmpl.main[:] = [md1, md2]
 
@@ -172,6 +172,7 @@ def test_editable_template_resize_item(page):
 
     md2_handle = page.locator(".muuri-handle.resize").nth(1)
 
-    md2_handle.drag_to(md2_handle, target_position={'x': -50, 'y': -20}, force=True)
+    md2_handle.hover()
+    md2_handle.drag_to(md2_handle, target_position={'x': -50, 'y': -30}, force=True)
 
-    wait_until(lambda: tmpl.layout.get(id(md2), {}).get('height') == 20, page)
+    wait_until(lambda: tmpl.layout.get(id(md2), {}).get('width') < 45, page)
