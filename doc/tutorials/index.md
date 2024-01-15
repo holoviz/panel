@@ -53,7 +53,7 @@ In this section we will take you through the process of structuring a more compl
 :link: styling
 :link-type: doc
 
-In this section we will take you through the process of structuring a more complex application, discussing different approaches for managing reactivity and how to create a composable architecture for your applications.
+In this section we will review different approaches for styling components, from applying `Design` components, through applying `stylesheets` and `css_classes`.
 :::
 
 ::::
