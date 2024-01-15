@@ -183,7 +183,7 @@ def loading_css(loading_spinner, color, max_height):
     return textwrap.dedent(f"""
     :host(.pn-loading):before, .pn-loading:before {{
       background-color: {color};
-      background-size: auto calc(min(50%, {max_height}px));
+      mask-size: auto calc(min(50%, {max_height}px));
     }}""")
 
 def resolve_custom_path(
