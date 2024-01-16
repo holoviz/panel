@@ -22,7 +22,7 @@ The main objects that Panel provides, and that we are going to call *components*
 - *Templates*: templates are components that render multiple Panel objects in an HTML document. The basic template, which you get when you serve an app without setting any template, is basically a blank canvas. Instead when you use one of the built-in templates you can easily improve the design and branding of your app, which will get for free a header, a sidebar, etc.
 - *Notifications*: notifications are components that display so called "toasts", designed to mimic the push notifications that have been popularized by mobile and desktop operating systems.
 
-All the Panel components can be visualized on the [Component Gallery](https://panel.holoviz.org/reference/index.html).
+All the Panel components can be visualized on the [Component Gallery](../reference/index.md).
 
 :::{exercise}
 
@@ -419,7 +419,7 @@ When developing an app, someone (possibly you!) will require at some point to ma
 
 These four areas behave very similarly to layouts that have list-like semantics. This means we can easily append new components into these areas. Unlike other layout components however, the contents of the areas is fixed once rendered. If you need a dynamic layout you should therefore insert a regular layout (e.g. a `Column` or `Row`) and modify it in place once added to one of the content areas.
 
-<img src="https://panel.holoviz.org/_static/images/template_areas.png" style="margin-left: auto; margin-right: auto; display: block;"></img>
+<img src="../_static/images/template_areas.png" style="margin-left: auto; margin-right: auto; display: block;"></img>
 
 :::{warning}
 The templates provided by Panel should not be rendered in a notebook, as their CSS styling usually doesn't play well with the CSS styling of the notebook itself.

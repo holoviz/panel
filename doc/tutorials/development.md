@@ -28,7 +28,7 @@ import panel as pn
 pn.extension()
 ```
 
-The extension ensures that all required Javascript and CSS resources are added to your notebook environment. If you are going to be using any custom extensions, such as [Vega](https://panel.holoviz.org/reference/panes/Vega.html) or [Tabulator](https://panel.holoviz.org/reference/widgets/Tabulator.html) you must ensure that you initialize these as well.
+The extension ensures that all required Javascript and CSS resources are added to your notebook environment. If you are going to be using any custom extensions, such as [Vega](../reference/panes/Vega.md) or [Tabulator](../reference/widgets/Tabulator.md) you must ensure that you initialize these as well.
 
 ```{pyodide}
 pn.extension('vega', 'tabulator')
