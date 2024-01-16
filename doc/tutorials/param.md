@@ -1,4 +1,4 @@
-# Param
+# Reactive Parameters
 
 :::{note} Tutorial 1. **Param**
 :icon: false
