@@ -1,7 +1,7 @@
 # Designs and Theming
 
 :::{versionadded} 1.0.0
-Designs and theming allow controlling the look and feel of individual components or your entire application.
+Designs and theming allow controlling the look and feel of individual components or your entire application. Before version 1.0 the concept of a design and a template were combined but since it is now possible to apply a `Design` separately from a template.
 :::
 
 ## `Design` class
@@ -10,7 +10,6 @@ The `Design` class has the ability to apply styling and theming to components vi
 
 1. Loading external JS and CSS `resources`.
 2. Applying `modifiers` that directly override (or combine with) component parameter settings (including CSS stylesheets).
-3.
 
 Additionally a `Design` class always has an associated `Theme` which determines the color palette of the design. This also has the ability to:
 
@@ -40,7 +39,7 @@ First of all, the `Bootstrap` design defines CSS and JS `resources` which load t
 
 #### Modifiers
 
-Next we get to the `modifiers` which is where the meat of the styling definition lives:
+Next we get to the `modifiers` which is where the meat of the styling definition lives. Modifiers are applied per class and override the default parameter settings of a component. We can apply modifiers to a base class such as `Viewable`, which will affect all components or we can override a specific class, e.g. `Tabulator`:
 
 ```python
     modifiers = {
@@ -61,9 +60,9 @@ Here we define specific parameters to override or combine with, e.g. we set the 
 
 The `bootstrap.css` file includes styling overrides for many different components and will be loaded by all `Viewable` components.
 
-#### CSS stylesheet
+#### CSS stylesheets
 
-All these design stylesheets open with CSS variable definitions which map the global color definitions to specific variables used by a particular design system:
+All design stylesheets open with CSS variable definitions which map the global color definitions to specific variables used by a particular design system:
 
 ```css
 :host, :root {
@@ -72,7 +71,11 @@ All these design stylesheets open with CSS variable definitions which map the gl
 }
 ```
 
-Subsequently these CSS variables may then be used to override specific components:
+The `:host` and `:root` selectors ensure that these variable definition apply inside the shadow DOM, i.e. that they apply to the shadow `host`, and globally to the document `root` (i.e. usually the `<html>` element).
+
+Note also how we map the `--bs-primary-color` color to two other variables, first the `--jp-ui-font-color0`, which allows us to automatically inherit styles in Jupyter based environments and secondly the `--panel-on-primary-color` which is the primary definition of Panel color themes and also the entrypoint for users to override the color definitions.
+
+Once declared these CSS variables are then used to set the style of specific components:
 
 ```css
 .bk-menu {
@@ -81,7 +84,7 @@ Subsequently these CSS variables may then be used to override specific component
 }
 ```
 
-In this way global style definitions can flow down all the way to individual components.
+In this way global style definitions and variables can flow down all the way to individual components.
 
 #### Themes
 
