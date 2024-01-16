@@ -58,14 +58,22 @@ Deepen your understanding about how Panel communicates between Python and Javasc
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`repo-template;2.5em;sd-mr-1 sd-animate-grow50` Templates
-:link: templates/templates_overview
+:::{grid-item-card} {octicon}`paintbrush;2.5em;sd-mr-1 sd-animate-grow50` Designs & Themes
+:link: styling/design
 :link-type: doc
 
-Deepen your understanding about Template styling in Panel.
+Understand how the Panel `Design` and `Theme` components work internally.
+:::
+
+:::{grid-item-card} {octicon}`repo-template;2.5em;sd-mr-1 sd-animate-grow50` Templates
+:link: styling/templates_overview
+:link-type: doc
+
+Discover Panel templates and how to use them.
 :::
 
 ::::
+
 ## Dependencies
 
 ::::{grid} 1 2 2 3
