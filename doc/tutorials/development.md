@@ -114,7 +114,7 @@ Note the `;` at the end of `template.servable();`. This is a special IPython com
 
 This is what you should be able to see after a little while. Now tick `Render on Save` in the *Preview*, change the heart for a ⭐ in the notebook and save it, shortly after the preview will display an updated app.
 
-![alt text](assets/preview.png)
+![alt text](../_static/images/jlabpreview.png)
 
 ## Visual Studio Code
 
@@ -151,7 +151,7 @@ panel serve app.py --show --autoreload
 
 The `--show` flag will open a browser tab with the live app and the `--autoreload` flag ensures that the app reloads whenever you make a change to the Python source. `--autoreload` is key to your developer experience, you will see the app being updated live when you save your app file! In the image below the windows have been re-arranged the way web developers like, on one side the code and on the other side a live view of the app, just like the *Preview* functionality in Jupyterlab.
 
-![alt text](assets/vscode1.png)
+![VSCode Preview](../_static/images/vscode_preview.png)
 
 ### Debugging
 
@@ -184,4 +184,4 @@ To configure the integrated debugger for Panel, you will need to add a debugging
 
 With this configuration in place, launching the debugger will serve the file you are working on with Panel, open a new browser tab pointing at the served app. Interact then with your app to hit one of the breakpoints you set up in VS Code.
 
-![alt text](assets/vscode2.png)
+![VSCode Debugging](../static/images/vscode_debug.png)
