@@ -1,6 +1,6 @@
 # Reactive Parameters
 
-:::{note} Tutorial 1. **Param**
+:::{note} Tutorial 1. **Reactive Parameters**
 :icon: false
 
 Panel and other projects in the HoloViz ecosystem all build on Param. Param provides a framework to add validation, documentation and interactivity to a project. It is similar to more modern projects such as Pydantic but focuses primarily on providing APIs that make it easy to express complex dependencies, reactivity and UI interactions.
