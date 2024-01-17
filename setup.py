@@ -199,7 +199,8 @@ _examples = [
     'ipyvuetify',
     'reacton',
     'scikit-image',
-    'fastparquet'
+    'fastparquet',
+    'textual'
 ]
 
 # Anything only installable via conda
