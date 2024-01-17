@@ -116,7 +116,7 @@ That line shows the URL where your app is being served, in your local machine.
 
 Open your browser at [http://localhost:5006/app2](http://localhost:5006/app2).
 
-The application and notebook will look like.
+The application will look like.
 
 ![Panel serve single .ipynb file](../_static/images/panel-serve-ipynb-app.png).
 
@@ -325,4 +325,5 @@ You can
 
 ## Additional Resources
 
+- [Write apps in Markdown](https://panel.holoviz.org/how_to/editor/markdown.html) (Basic, how-to guide)
 - [Configuring a Panel server](https://panel.holoviz.org/how_to/server/index.html) (Advanced, how-to guide)
