@@ -1,66 +1,89 @@
 import { Column, ColumnView } from "./column";
 import * as p from "@bokehjs/core/properties";
+import {build_views} from "@bokehjs/core/build_views"
+import {UIElementView} from "@bokehjs/models/ui/ui_element"
 
 export class LogView extends ColumnView {
   model: Log;
-  oldScrollHeight: number;
+  _intersection_observer: IntersectionObserver
+  _last_visible: UIElementView | null
+  _sync: boolean
 
-  connect_signals(): void {
-    super.connect_signals();
-
-    const { children, scroll_load_threshold } = this.model.properties;
-
-    this.on_change(children, () => this.handle_new_entries());
-    this.on_change(scroll_load_threshold, () => this.trigger_load_entries());
+  override initialize(): void {
+    super.initialize()
+    this._sync = true
+    this._intersection_observer = new IntersectionObserver((entries) => {
+      const visible = [...this.model.visible_objects]
+      const nodes = this.node_map
+      for (const entry of entries) {
+	const id = nodes.get(entry.target).id
+	if (entry.isIntersecting) {
+	  if (!visible.includes(id)) {
+	    visible.push(id)
+	  }
+	} else if (visible.includes(id))  {
+	  visible.splice(visible.indexOf(id), 1)
+	}
+      }
+      if (this._sync) {
+	this.model.visible_objects = visible
+      }
+      if (visible.length) {
+	const refs = this.child_models.map((model) => model.id)
+	const indices = visible.map((ref) => refs.indexOf(ref))
+	this._last_visible = this.child_views[Math.min(...indices)]
+      } else {
+	this._last_visible = null
+      }
+    }, {
+      root: this.el,
+      threshold: .01
+    })
   }
 
-  get unloaded_entries(): number {
-    return this.model._num_entries - this.model.loaded_entries;
+  get node_map(): any {
+    const nodes = new Map()
+    for (const view of this.child_views) {
+      nodes.set(view.el, view.model)
+    }
+    return nodes
   }
 
-  handle_new_entries(): void {
-    this.model.loaded_entries = Math.min(this.model.children.length, this.model.loaded_entries);
-    this.trigger_load_entries();
-  }
-
-  trigger_load_entries(): void {
-    const { scrollTop, scrollHeight } = this.el;
-    const { scroll_load_threshold, entries_per_load, _num_entries } = this.model;
-
-    const thresholdMet = scrollTop < scroll_load_threshold
-    const hasUnloadedEntries = this.model.loaded_entries < _num_entries
-    if (thresholdMet && hasUnloadedEntries && this.oldScrollHeight != scrollTop) {
-      const entriesToAdd = Math.min(entries_per_load, this.unloaded_entries);
-      this.model.loaded_entries += entriesToAdd;
-
-      const heightDifference = Math.max(scrollHeight - this.oldScrollHeight, scroll_load_threshold);
-      this.model.scroll_position = scrollTop + heightDifference;
-      this.oldScrollHeight = scrollHeight;
+  async update_children(): Promise<void> {
+    this._sync = false
+    await super.update_children()
+    this._sync = true
+    if (this._last_visible != null) {
+      this._last_visible.el.scrollIntoView(true)
     }
   }
 
-  render(): void {
-    super.render()
-    this.el.addEventListener("scroll", () => {
-      this.trigger_load_entries();
-    });
-  }
+  async build_child_views(): Promise<UIElementView[]> {
+    const {created, removed} = await build_views(this._child_views, this.child_models, {parent: this})
 
-  after_render(): void {
-    super.after_render()
-    requestAnimationFrame(() => {
-      this.oldScrollHeight = this.el.scrollHeight;
-    })
+    const visible = this.model.visible_objects
+    for (const view of removed) {
+      if (visible.includes(view.model.id)) {
+	visible.splice(visible.indexOf(view.model.id), 1)
+      }
+      this._resize_observer.unobserve(view.el)
+      this._intersection_observer.unobserve(view.el)
+    }
+    this.model.visible_objects = [...visible]
+
+    for (const view of created) {
+      this._resize_observer.observe(view.el, {box: "border-box"})
+      this._intersection_observer.observe(view.el)
+    }
+
+    return created
   }
 }
 
 export namespace Log {
   export type Attrs = p.AttrsOf<Props>;
   export type Props = Column.Props & {
-    loaded_entries: p.Property<number>;
-    entries_per_load: p.Property<number>;
-    scroll_load_threshold: p.Property<number>;
-    _num_entries: p.Property<number>;
+    visible_objects: p.Property<string[]>;
   };
 }
 
@@ -78,11 +101,8 @@ export class Log extends Column {
   static {
     this.prototype.default_view = LogView;
 
-    this.define<Log.Props>(({ Int }) => ({
-      loaded_entries: [Int, 20],
-      entries_per_load: [Int, 20],
-      scroll_load_threshold: [Int, 5],
-      _num_entries: [Int, 0],
+    this.define<Log.Props>(({ Array, String }) => ({
+      visible_objects: [Array(String), []]
     }));
   }
 }

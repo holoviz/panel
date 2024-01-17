@@ -958,13 +958,9 @@ class Log(Column):
     loaded_entries = param.Integer(default=20, doc="""
         Minimum number of visible log entries shown initially.""")
 
-    entries_per_load = param.Integer(default=20, doc="""
+    load_buffer = param.Integer(default=10, doc="""
         Number of log entries to load each time the user scrolls
         past the scroll_load_threshold.""")
-
-    scroll_load_threshold = param.Integer(default=5, doc="""
-        Number of pixels from the top of the log to trigger
-        loading more log entries.""")
 
     scroll = param.Boolean(default=True, doc="""
         Whether to add scrollbars if the content overflows the size
@@ -974,20 +970,55 @@ class Log(Column):
         Whether to scroll to the latest object on init. If not
         enabled the view will be on the first object.""")
 
-    _num_entries = param.Integer(default=0, doc="""
-        Number of log entries.""")
+    visible_objects = param.List(doc="""
+        Indices of visible objects.""")
 
     _bokeh_model: ClassVar[Type[Model]] = PnLog
 
     _direction = 'vertical'
 
-    @param.depends("objects", watch=True, on_init=True)
-    def _update_num_entries(self):
-        self._num_entries = len(self.objects)
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'objects': 'children', 'load_buffer': None, 'loaded_entries': None
+    }
 
-    @param.depends("loaded_entries", watch=True)
+    def __init__(self, *objects, **params):
+        super().__init__(*objects, **params)
+        self._prev_synced = None
+
+    @param.depends("visible_objects", watch=True)
     def _trigger_get_objects(self):
         self.param.trigger("objects")
+
+    @property
+    def _synced_indices(self):
+        n = len(self.objects)
+        if self.visible_objects:
+            return list(range(
+                max(min(self.visible_objects)-self.load_buffer, 0),
+                min(max(self.visible_objects)+self.load_buffer, n)
+            ))
+        elif self.view_latest:
+            return list(range(max(n-self.loaded_entries-self.load_buffer, 0), n))
+        else:
+            return list(range(min(self.loaded_entries+self.load_buffer, n)))
+
+    def _process_property_change(self, msg):
+        if 'visible_objects' in msg:
+            visible = msg['visible_objects']
+            for model, _ in self._models.values():
+                refs = [c.ref['id'] for c in model.children]
+                if visible and visible[0] in refs:
+                    indexes = [refs.index(v) for v in visible if v in refs]
+                    break
+            else:
+                indexes = []
+            offset = min(self._synced_indices)
+            msg['visible_objects'] = [offset+i for i in sorted(indexes)]
+        return super()._process_property_change(msg)
+
+    def _process_param_change(self, msg):
+        msg.pop('visible_objects', None)
+        return super()._process_param_change(msg)
 
     def _get_objects(
         self, model: Model, old_objects: List[Viewable], doc: Document,
@@ -995,23 +1026,22 @@ class Log(Column):
     ):
         from ..pane.base import RerenderError, panel
         new_models, old_models = [], []
-        for i, pane in enumerate(self.objects[::-1]):
-            if i >= self.loaded_entries:
-                break
+        synced = self._synced_indices
+        for i, pane in enumerate(self.objects):
+            if i not in synced:
+                continue
             pane = panel(pane)
-            i = self._num_entries - i - 1
             self.objects[i] = pane
 
         for obj in old_objects:
             if obj not in self.objects:
                 obj._cleanup(root)
 
-        current_objects = list(self.objects)[::-1]
+        current_objects = list(self.objects)
         ref = root.ref['id']
         for i, pane in enumerate(current_objects):
-            if i >= self.loaded_entries:
-                break
-
+            if i not in synced:
+                continue
             if pane in old_objects and ref in pane._models:
                 child, _ = pane._models[root.ref['id']]
                 old_models.append(child)
@@ -1024,7 +1054,7 @@ class Log(Column):
                     e.layout = None
                     return self._get_objects(model, current_objects[:i], doc, root, comm)
             new_models.append(child)
-        return new_models[::-1], old_models
+        return new_models, old_models
 
 
 class WidgetBox(ListPanel):

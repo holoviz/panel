@@ -75,30 +75,4 @@ class Card(Column):
 
 class Log(Column):
 
-    loaded_entries = Int(
-        default=20,
-        help=(
-            "Minimum number of visible log entries shown initially."
-        )
-    )
-
-    entries_per_load = Int(
-        default=20,
-        help=(
-            "Number of log entries to load each time the user scrolls"
-            "past the scroll_load_threshold."
-        )
-    )
-
-    scroll_load_threshold = Int(
-        default=5,
-        help=(
-            "Number of pixels from the bottom of the log to trigger"
-            "loading more entries."
-        )
-    )
-
-    _num_entries = Int(
-        default=0,
-        help="Number of entries in the log."
-    )
+    visible_objects = List(String())
