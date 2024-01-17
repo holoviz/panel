@@ -2,7 +2,7 @@
 
 Welcome to Panel!
 
-The getting started guide will get you set up with Panel and provide a basic overview of the features and strengths of Panel.
+The getting started guide will get you set up with Panel and provide you with a basic introduction to the features and strengths of Panel.
 
 ---
 
