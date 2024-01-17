@@ -1004,14 +1004,14 @@ class Log(Column):
 
     def _process_property_change(self, msg):
         if 'visible_objects' in msg:
-            visible = msg['visible_objects']
+            visible = msg.pop('visible_objects')
             for model, _ in self._models.values():
                 refs = [c.ref['id'] for c in model.children]
                 if visible and visible[0] in refs:
                     indexes = [refs.index(v) for v in visible if v in refs]
                     break
             else:
-                indexes = []
+                return super()._process_property_change(msg)
             offset = min(self._synced_indices)
             msg['visible_objects'] = [offset+i for i in sorted(indexes)]
         return super()._process_property_change(msg)
