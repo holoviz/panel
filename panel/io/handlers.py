@@ -331,7 +331,7 @@ class NotebookHandler(CodeHandler):
                 with set_env_vars(MPLBACKEND='agg'):
                     self._runner.run(module, self._make_post_doc_check(doc))
 
-                if doc.roots:
+                if doc.roots or doc in state._templates:
                     state._cell_outputs.clear()
                     return
 
