@@ -958,7 +958,7 @@ class Log(Column):
     loaded_entries = param.Integer(default=20, doc="""
         Minimum number of visible log entries shown initially.""")
 
-    load_buffer = param.Integer(default=10, doc="""
+    load_buffer = param.Integer(default=20, doc="""
         Number of log entries to load each time the user scrolls
         past the scroll_load_threshold.""")
 
@@ -983,11 +983,15 @@ class Log(Column):
 
     def __init__(self, *objects, **params):
         super().__init__(*objects, **params)
-        self._prev_synced = None
+        self._last_synced = None
 
     @param.depends("visible_objects", watch=True)
     def _trigger_get_objects(self):
-        self.param.trigger("objects")
+        vs, ve = min(self.visible_objects), max(self.visible_objects)
+        ss, se = min(self._last_synced), max(self._last_synced)
+        half_buffer = self.load_buffer//2
+        if (vs-ss) < half_buffer or (se-ve) < half_buffer:
+            self.param.trigger("objects")
 
     @property
     def _synced_indices(self):
@@ -1026,7 +1030,7 @@ class Log(Column):
     ):
         from ..pane.base import RerenderError, panel
         new_models, old_models = [], []
-        synced = self._synced_indices
+        self._last_synced = synced = self._synced_indices
         for i, pane in enumerate(self.objects):
             if i not in synced:
                 continue
