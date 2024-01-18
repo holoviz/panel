@@ -3,14 +3,14 @@
 In this section you will learn how to develop efficiently in a notebook:
 
 - Preview your app in Jupyter lab with the *Panel Jupyter Preview*.
-- Inspect your component using `print` and `?`.
+- Inspect your component using `SHIFT+Tab` and `print`.
 - Inspect your components parameters using `.param`.
 
 ## Preview your app
 
 A simple notebook file containing a Panel app could look like
 
-![Panel Notebook App](../_static/images/develop_notebook_simple_example.png).
+![Panel Notebook App](../_static/images/develop_notebook_simple_example.png)
 
 Start jupyterlab by running `jupyter lab` in the terminal.
 
@@ -33,9 +33,9 @@ You will see the app launching in a separate window on the right.
 
 ![Panel Jupyter Preview](../_static/images/develop_notebook_simple_example_open_preview.png)
 
-You will notice that "Hello Again" is not displayed in the app preview. That is because `pn.panel("Hello Again")` has not been added to the app by marking it `.servable()`.
+You will notice that "Hello Again" is not displayed in the app preview. That is because `pn.panel("Hello Again")` has not been added to the app. You can do that by marking it `.servable()`.
 
-Change cell 3 to `pn.panel("Hello Again).servable()`.
+Change the cell to `pn.panel("Hello Again).servable()`.
 
 Click the *refresh* button in the *Panel Jupyter Preview*. Its located left of the *Render on Save* check box.
 
@@ -47,7 +47,7 @@ To enable a more efficient workflow you can check the *Render on Save* checkbox.
 
 Check the *Render on Save* checkbox.
 
-Change cell 3 to `pn.panel("Hello Again and Again.).servable()`.
+Change the cell to `pn.panel("Hello Again and Again.).servable()`.
 
 The app will automatically reload and look like
 
@@ -60,35 +60,43 @@ Watch the video below to see how the techniques above can be used to develop a m
     Your browser does not support the video tag.
 </video>
 
-## Inspect your Panel components using `print`
+## Inspect a Component using `SHIFT+Tab`
 
-Try printing a `pn.panel` and a `pn.Column` in a notebook.
-
-It should look like
-
-![Inspect a Panel component](../_static/images/notebook_inspect_components.png).
-
-## Inspect the docstring using `?`
-
-Try using `?` on the `pn.widgets.IntSlider`.
+Write `pn.widgets.IntSlider` in a cell and press `SHIFT+Tab`.
 
 It should look like
 
-![Inspect a Panel component](../_static/images/notebook_inspect_question_mark.png)
+![Inspect a Panel component using SHIFT+Tab](../_static/images/notebook_inspect_shift_tab.png)
 
-Somewhere it says
+Scroll down until you find the *Reference* link
 
-```bash
-Reference: https://panel.holoviz.org/reference/widgets/IntSlider.html
-```
+![Inspect a Panel component using SHIFT+Tab](../_static/images/notebook_inspect_shift_tab_link.png)
 
-Try opening the link [https://panel.holoviz.org/reference/widgets/IntSlider.html](https://panel.holoviz.org/reference/widgets/IntSlider.html) to find more information about the `IntSlider`.
+You can copy paste and use the *Example* and *Reference* link. This can really speed up your workflow.
+
+Try opening the *Reference* link [https://panel.holoviz.org/reference/widgets/IntSlider.html](https://panel.holoviz.org/reference/widgets/IntSlider.html) to find more information about the `IntSlider`.
 
 It should look like
 
 [![IntSlider Reference Documentation](../_static/images/notebook_intslider_reference_doc.png)](https://panel.holoviz.org/reference/widgets/IntSlider.html)
 
-## Inspect the Parameters using `.param`
+## Inspect a Component using `print`
+
+Try printing a `pn.panel` and a `pn.Column` in a notebook.
+
+It should look like
+
+![Inspect a Panel component](../_static/images/notebook_inspect_print.png)
+
+Printing *layout* components like `Column` can be especially valuable as you can see which components they contain and how to access them.
+
+Try accessing the `IntSlider` with index 1 by running `component[1]`.
+
+It should look like
+
+![Inspect a Panel component](../_static/images/notebook_inspect_print_1.png)
+
+## Inspect a Components Parameters using `.param`
 
 Try inspecting the *parameters* of a `pn.widgets.IntSlider` by running `pn.widgets.IntSlider.param` or `pn.widgets.IntSlider(align="end").param` in a notebook.
 
@@ -100,14 +108,14 @@ Please note
 
 - In the left `app.ipynb` notebook you see the *default* parameter values of the `IntSlider` class. I.e. the *default* value of `align` is `'start'`.
 - In the right `app2.ipynb` notebook you see *actual* parameter values of the `IntSlider` instance. I.e. the *actual* value of `align` is `'end'`.
-- The table gives you additional information like the `Type` and `Range` of the Parameter.
+- The tables gives you additional information like the `Type` and `Range` of the Parameter.
 
 ## Recap
 
 You can
 
 - Preview your app in Jupyter lab with the *Panel Jupyter Preview*.
-- Inspect your component using `print` and `?`.
+- Inspect your component using `SHIFT+Tab` and `print`.
 - Inspect your components parameters using `.param`.
 
 ## Additional Resources
