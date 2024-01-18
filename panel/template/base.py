@@ -301,7 +301,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         client_comm = state._comm_manager.get_client_comm(
             on_msg=partial(self._on_msg, ref, manager),
             on_error=partial(self._on_error, ref),
-            on_stdout=partial(self._on_stdout, ref)
+            on_stdout=partial(self._on_stdout, ref),
+            on_open=lambda _: comm.init()
         )
         manager.client_comm_id = client_comm.id
         doc.add_root(manager)

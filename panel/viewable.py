@@ -511,7 +511,8 @@ class MimeRenderMixin:
         client_comm = state._comm_manager.get_client_comm(
             on_msg=functools.partial(self._on_msg, ref, manager),
             on_error=functools.partial(self._on_error, ref),
-            on_stdout=functools.partial(self._on_stdout, ref)
+            on_stdout=functools.partial(self._on_stdout, ref),
+            on_open=lambda _: comm.init()
         )
         self._comms[ref] = (comm, client_comm)
         manager.client_comm_id = client_comm.id
