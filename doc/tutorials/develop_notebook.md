@@ -53,7 +53,7 @@ The app will automatically reload and look like
 
 ![Panel Jupyter Preview](../_static/images/develop_notebook_simple_example_add_hello_again_and_again.png)
 
-Watch the video below to see how the techniques above can be used to develop a more complicated app.
+Watch the video below to see how the techniques above can be used to develop a more advanced app.
 
 <video controls="" poster="../_static/images/jupyter_panel_preview_in_action.png">
     <source src="https://private-user-images.githubusercontent.com/42288570/297636556-d3db43c2-b09b-40b8-89a1-009d297e9833.mp4?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MDU1NTgyNDUsIm5iZiI6MTcwNTU1Nzk0NSwicGF0aCI6Ii80MjI4ODU3MC8yOTc2MzY1NTYtZDNkYjQzYzItYjA5Yi00MGI4LTg5YTEtMDA5ZDI5N2U5ODMzLm1wND9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDAxMTglMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwMTE4VDA2MDU0NVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTQ3MDM5OGMwOWNiZmVkMDMwNzFhOTllODIzMTYxMjIzOWY1NzQ1MGE2MWU1N2RlZjNlNmQ4MTQzMTU1NWRiN2YmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.gqh0mpR_qJQTQkUrWJBkjzwZbxufiW5RWTeKDKnXoZk" type="video/mp4" style="max-height: 400px; max-width: 100%;">
