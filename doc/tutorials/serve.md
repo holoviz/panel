@@ -1,6 +1,11 @@
 # Serving Panel Apps
 
-In this section you will learn how to serve Panel apps
+In this section you will learn how to serve Panel apps:
+
+- serve your app with a command like `panel serve app.py` or `panel serve app2.ipynb`.
+- serve with *auto reload* by adding the flag `--autoreload`.
+- serve a multipage app with a command like `panel serve app.py app2.ipynb`
+- list the configuration options of `panel serve` by adding the flag `--help`.
 
 ## Serve an app from a `.py` file
 
@@ -145,7 +150,7 @@ It will look something like
 
 ## Configuring `panel serve`
 
-The command **`panel serve` is highly configurable** via *command line flags*.
+The command **`panel serve` is highly configurable**.
 
 Try running `panel serve --help` in a terminal.
 
@@ -318,12 +323,20 @@ options:
 
 You can
 
-- serve your app with a command like `panel serve app.py`.
+- serve your app with a command like `panel serve app.py` or `panel serve app2.ipynb`.
 - serve with *auto reload* by adding the flag `--autoreload`.
 - serve a multipage app with a command like `panel serve app.py app2.ipynb`
-- list the configuration options of `panel serve` by running `panel serve --help`.
+- list the configuration options of `panel serve` by adding the flag `--help`.
 
 ## Additional Resources
 
-- [Write apps in Markdown](https://panel.holoviz.org/how_to/editor/markdown.html) (Basic, how-to guide)
-- [Configuring a Panel server](https://panel.holoviz.org/how_to/server/index.html) (Advanced, how-to guide)
+### How-to
+
+- [Defer all Tasks with `defer_load`](../how_to/callbacks/defer_load.md#defer-all-tasks)
+- [Defer long running tasks with `pn.state.onload`](../how_to/callbacks/load.md)
+- [Launch a server dynamically with `pn.serve` or `pn.show`](../how_to/server/programmatic.md)
+- [Run Tasks at Session Start or End with `pn.state.on_session` and `pn.state.on_session_destroyed`](../how_to/callbacks/session.md)
+- [Schedule Global Tasks with `pn.state.schedule_task`](../how_to/callbacks/schedule.md)
+- [Serve multiple applications with `pn.serve`](../how_to/server/multiple.md)
+- [Serve static files with `--static-dirs`](../how_to/server/static_files.md)
+- [Write and serve apps in Markdown](../how_to/editor/markdown.md)
