@@ -5,6 +5,7 @@ In this section you will learn how to serve Panel apps:
 - serve your app with a command like `panel serve app.py` or `panel serve app2.ipynb`.
 - serve with *auto reload* by adding the flag `--autoreload`.
 - serve a multipage app with a command like `panel serve app.py app2.ipynb`
+- stop your server with `CTRL+C`.
 - list the configuration options of `panel serve` by adding the flag `--help`.
 
 ## Serve an app from a `.py` file
@@ -68,6 +69,10 @@ Open your browser at [http://localhost:5006/app](http://localhost:5006/app).
 The application will look like.
 
 ![Panel serve single .py file](../_static/images/panel-serve-py-app.png).
+
+### Stop the server
+
+Now stop the server by pressing `CTRL+C` in the terminal.
 
 ## Serve an app from a notebook file
 
@@ -326,6 +331,7 @@ You can
 - serve your app with a command like `panel serve app.py` or `panel serve app2.ipynb`.
 - serve with *auto reload* by adding the flag `--autoreload`.
 - serve a multipage app with a command like `panel serve app.py app2.ipynb`
+- stop your server with `CTRL+C`.
 - list the configuration options of `panel serve` by adding the flag `--help`.
 
 ## Additional Resources

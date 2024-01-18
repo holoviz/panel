@@ -1,0 +1,232 @@
+# Develop in an Editor
+
+In this section you will learn the basics of developing efficiently in an editor:
+
+- serve your app with *autoreload* using `panel serve app.py --autoreload`
+- display the app in a *simple* browser tab inside your editor if possible
+- Inspect Panel objects via *hover* and *print*
+- Inspect a components parameters via `.param` and `.param._repr_html_()`
+- Debug with Pdb by inserting a `breakpoint()`
+
+:::note
+Some of the features demonstrated in this guide might require special configuration of your editor. For configuration we refer you to resources listed in the [Resources](#resources) section below or on the web.
+:::
+
+## Serve your app with autoreload
+
+A simple Panel app could look like the below.
+
+```python
+import panel as pn
+import numpy as np
+
+from matplotlib.figure import Figure
+
+ACCENT = "goldenrod"
+LOGO = "https://upload.wikimedia.org/wikipedia/commons/0/01/Created_with_Matplotlib-logo.svg"
+
+pn.extension(sizing_mode="stretch_width")
+
+data = np.random.normal(1, 1, size=100)
+fig = Figure(figsize=(8,4))
+ax = fig.subplots()
+ax.hist(data, bins=20, color=ACCENT)
+
+component = pn.pane.Matplotlib(fig, format='svg', sizing_mode='scale_both')
+
+pn.template.FastListTemplate(
+    title="My App", sidebar=[LOGO], main=[component], accent=ACCENT
+).servable()
+```
+
+Copy the code above into the file `app.py`.
+
+Serve the app with `panel serve app.py --autoreload`.
+
+Open [http://localhost:5006](http://localhost:5006) in a browser.
+
+Now change the
+
+- `ACCENT` value to `teal` and save the `app.py` file.
+- `bins` to 15 and save
+- `title` to "My Matplotlib App" and save
+
+It should look something like the below
+
+<video controls="" poster="../_static/images/develop_editor_serve_app.png">
+    <source src="https://private-user-images.githubusercontent.com/42288570/297809262-b5054c1e-4495-4611-badf-3ea3149438c6.mp4?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MDU1OTQ5NDksIm5iZiI6MTcwNTU5NDY0OSwicGF0aCI6Ii80MjI4ODU3MC8yOTc4MDkyNjItYjUwNTRjMWUtNDQ5NS00NjExLWJhZGYtM2VhMzE0OTQzOGM2Lm1wND9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDAxMTglMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwMTE4VDE2MTcyOVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWM2MWMyMTM3MGM0YzRmNTc2NzdiZGVmNTU3NjVmMWExMDkxZWVmZjRlOTgzNDEyM2I5Y2JkNGUwYTkxNzJjMWImWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.VYg9wpFOFqqNCo3MRby1DdtwwkngVgu1hcuB9jfrmiA" type="video/mp4" style="max-height: 400px; max-width: 100%;">
+    Your browser does not support the video tag.
+</video>
+
+:::note
+In the video above you will notice that the app is displayed inside the editor. This can be really efficient to use instead an external browser like Chrome or Firefox.
+
+Your editor would typically call this a *simple*, *basic* or *embedded* browser.
+:::
+
+## Inspect Panel objects via hover
+
+Replace the contents of your `app.py` file with
+
+```python
+import panel as pn
+import numpy as np
+
+from matplotlib.figure import Figure
+
+ACCENT = "teal"
+LOGO = "https://upload.wikimedia.org/wikipedia/commons/0/01/Created_with_Matplotlib-logo.svg"
+
+pn.extension(sizing_mode="stretch_width")
+
+data = np.random.normal(1, 1, size=100)
+fig = Figure(figsize=(8,4))
+ax = fig.subplots()
+ax.hist(data, bins=15, color=ACCENT)
+
+component = pn.pane.Matplotlib(fig, format='svg', sizing_mode='scale_both')
+
+pn.template.FastListTemplate(
+    title="My Matplotlib App", sidebar=[LOGO], main=[component], accent=ACCENT
+).servable()
+```
+
+Hover over the word `FastListTemplate`.
+
+It would look something like
+
+![Tooltip of FastListTemplate](../_static/images/develop_editor_hover.png)
+
+:::info
+The tooltip of Panel components normally provide an *example* code snippet and a *Reference* link. The *Reference* link makes it very easy to navigate to the reference guides on the Panel web site for more information.
+:::
+
+Hover again and click the *Reference* link [https://panel.holoviz.org/reference/templates/FastListTemplate.html](https://panel.holoviz.org/reference/templates/FastListTemplate.html).
+
+This should open the `FastListTemplate` reference guide
+
+[![FastListTemplate reference guide](../_static/images/develop_editor_reference_guide.png)](https://panel.holoviz.org/reference/templates/FastListTemplate.html)
+
+## Inspect components via `print`
+
+Replace the content of your `app.py` file with
+
+```python
+import panel as pn
+
+pn.extension(design="material")
+
+component = pn.panel("Hello World")
+print(component)
+layout = pn.Column(
+    component, pn.widgets.IntSlider(value=2, start=0, end=10, name="Value")
+)
+print(layout)
+layout.servable()
+```
+
+Serve the app with `panel serve app.py --autoreload`.
+
+Open [http://localhost:5006] in your browser
+
+This will look something like
+
+```bash
+$ panel serve app.py --autoreload
+Markdown(str, design=<class 'panel.theme.materi...)
+Column(design=<class 'panel.theme.materi...)
+    [0] Markdown(str, design=<class 'panel.theme.materi...)
+    [1] IntSlider(design=<class 'panel.theme.materi..., end=10, name='Value', value=2)
+2024-01-18 18:00:18,553 Starting Bokeh server version 3.3.3 (running on Tornado 6.4)
+2024-01-18 18:00:18,555 User authentication hooks NOT provided (default user enabled)
+2024-01-18 18:00:18,558 Bokeh app running at: http://localhost:5006
+2024-01-18 18:00:18,558 Starting Bokeh server with process id: 52252
+```
+
+Printing *layout* components like `Column` can be especially valuable as you can see which components they contain and how to *access* them.
+
+Try replacing `layout.servable()` with `layout[1].servable()`.
+
+This will look like
+
+![Layout[1]](../_static/images/develop_editor_layout1.png)
+
+## Inspect component Parameters via `.param`
+
+You can inspect the *parameters* of Panels components via the `.param` namespace and its `._repr_html_` method.
+
+Replace the content of your `app.py` file with
+
+```python
+import panel as pn
+
+pn.extension(design="material")
+
+component = pn.panel("Hello World")
+
+pn.Row(
+    component.param, pn.pane.HTML(component.param._repr_html_())
+).servable()
+```
+
+Serve the app with `panel serve app.py --autoreload`.
+
+Open [http://localhost:5006](http://localhost:5006) in a browser.
+
+It should look like
+
+![.param and .param._repr_html_()](../_static/images/develop_editor_param.png)
+
+## Debug your App with Pdb
+
+A simple way to debug your apps that works in any editor is to insert a `breakpoint()`.
+
+Replace the content of your `app.py` file with
+
+```python
+import panel as pn
+
+pn.extension(design="material")
+
+def handle_click(event):
+    breakpoint()
+
+pn.widgets.Button(name="Click Me", on_click=handle_click, button_type="primary").servable()
+```
+
+Serve the app with `panel serve app.py --autoreload`.
+
+Open [http://localhost:5006](http://localhost:5006) in a browser.
+
+Click the `Click Me` Button.
+
+Write `event` in the terminal
+
+It should look like
+
+![Breakpoint](../_static/images/develop_editor_breakpoint.png)
+
+:::info
+For *integrated debugging* in your editor, we refer you to resources listed in the [Resources](#resources) section below or on the web.
+:::
+
+## Recap
+
+You have learned to
+
+- serve your app with *autoreload* using `panel serve app.py --autoreload`
+- display the app in a *simple* browser tab inside your editor if possible
+- Inspect Panel objects via *hover* and *print*
+- Inspect a components parameters via `.param` and `.param._repr_html_()`
+- Debug with Pdb by inserting a `breakpoint()`
+
+## Resources
+
+### Tutorial
+
+- [Python Debugging with Pdb](https://realpython.com/python-debugging-pdb/)
+
+### How-to
+
+- [Configure VS Code](../how_to/editor/vscode_configure.md)
+- [Write apps in Markdown](../how_to/editor/markdown.md)
