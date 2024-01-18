@@ -75,7 +75,7 @@ The simplest Panel notebook file could look like:
 
 ![Panel Notebook App](../_static/images/panel-serve-ipynb-notebook.png).
 
-Start jupyterlab with `jupyter lab`.
+Start jupyterlab by running `jupyter lab` in the terminal.
 
 Create an identical notebook named `app2.ipynb`.
 
