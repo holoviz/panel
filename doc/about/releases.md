@@ -36,7 +36,8 @@ This patch release focuses on a number of fixes and minor enhancements for the c
 - Fix pyodide loading message styling issues ([#6194](https://github.com/holoviz/panel/pull/6194))
 - More complete patch for the `TextEditor` to support being rendered in the Shadow DOM ([#6222](https://github.com/holoviz/panel/pull/6222))
 - Add guard to `Tabulator` ensuring that it does not error when it is not rendered ([#6223](https://github.com/holoviz/panel/pull/6223))
-- Fix race conditions when instantiating Comm in Jupyter causing notifications to break ([#6229](https://github.com/holoviz/panel/pull/6229))
+- Fix race conditions when instantiating Comm in Jupyter causing notifications to break ([#6229](https://github.com/holoviz/panel/pull/6229), [#6234](https://github.com/holoviz/panel/pull/6234))
+- Handle duplicate attempts at refreshing auth tokens ([#6233](https://github.com/holoviz/panel/pull/6233))
 
 ### Compatibility & Security
 
