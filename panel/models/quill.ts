@@ -1,7 +1,7 @@
 import * as p from "@bokehjs/core/properties"
 import { div } from "@bokehjs/core/dom"
 
-import {HTMLBox, HTMLBoxView} from "./layout"
+import { HTMLBox, HTMLBoxView } from "./layout"
 
 export class QuillInputView extends HTMLBoxView {
   override model: QuillInput
@@ -17,7 +17,7 @@ export class QuillInputView extends HTMLBoxView {
     this.connect(this.model.properties.disabled.change, () => this.quill.enable(!this.model.disabled))
     this.connect(this.model.properties.visible.change, () => {
       if (this.model.visible)
-	this.container.style.visibility = 'visible';
+        this.container.style.visibility = 'visible';
     })
     this.connect(this.model.properties.text.change, () => {
       if (this._editing)
@@ -29,7 +29,7 @@ export class QuillInputView extends HTMLBoxView {
       this.quill.enable(!this.model.disabled)
       this._editing = false
     })
-    const {mode, toolbar, placeholder} = this.model.properties
+    const { mode, toolbar, placeholder } = this.model.properties
     this.on_change([placeholder], () => {
       this.quill.root.setAttribute('data-placeholder', this.model.placeholder)
     })
@@ -51,7 +51,7 @@ export class QuillInputView extends HTMLBoxView {
 
   render(): void {
     super.render()
-    this.container = div({style: "visibility: hidden;"})
+    this.container = div({ style: "visibility: hidden;" })
     this.shadow_el.appendChild(this.container)
     const theme = (this.model.mode === 'bubble') ? 'bubble' : 'snow'
     this.watch_stylesheets()
@@ -70,23 +70,23 @@ export class QuillInputView extends HTMLBoxView {
     const hasShadowRootSelection = !!((document.createElement('div').attachShadow({ mode: 'open' }) as any).getSelection);
     // Each browser engine has a different implementation for retrieving the Range
     const getNativeRange = (rootNode: any) => {
-        try {
-            if (hasShadowRootSelection) {
-                // In Chromium, the shadow root has a getSelection function which returns the range
-                return rootNode.getSelection().getRangeAt(0);
-            } else {
-                const selection = window.getSelection();
-                if ((selection as any).getComposedRanges) {
-                    // Webkit range retrieval is done with getComposedRanges (see: https://bugs.webkit.org/show_bug.cgi?id=163921)
-                    return (selection as any).getComposedRanges(rootNode)[0];
-                } else {
-                    // Gecko implements the range API properly in Native Shadow: https://developer.mozilla.org/en-US/docs/Web/API/Selection/getRangeAt
-                    return (selection as any).getRangeAt(0);
-                }
-            }
-        } catch {
-            return null;
+      try {
+        if (hasShadowRootSelection) {
+          // In Chromium, the shadow root has a getSelection function which returns the range
+          return rootNode.getSelection().getRangeAt(0);
+        } else {
+          const selection = window.getSelection();
+          if ((selection as any).getComposedRanges) {
+            // Webkit range retrieval is done with getComposedRanges (see: https://bugs.webkit.org/show_bug.cgi?id=163921)
+            return (selection as any).getComposedRanges(rootNode)[0];
+          } else {
+            // Gecko implements the range API properly in Native Shadow: https://developer.mozilla.org/en-US/docs/Web/API/Selection/getRangeAt
+            return (selection as any).getRangeAt(0);
+          }
         }
+      } catch {
+        return null;
+      }
     }
 
     /**
@@ -94,8 +94,8 @@ export class QuillInputView extends HTMLBoxView {
      * Replace document.activeElement with shadowRoot.activeElement
      **/
     this.quill.selection.hasFocus = () => {
-        const rootNode = (this.quill.root.getRootNode() as ShadowRoot);
-        return rootNode.activeElement === this.quill.root;
+      const rootNode = (this.quill.root.getRootNode() as ShadowRoot);
+      return rootNode.activeElement === this.quill.root;
     }
 
     /**
@@ -103,9 +103,9 @@ export class QuillInputView extends HTMLBoxView {
      * Replace document.getSelection with shadow dom equivalent (different for each browser)
      **/
     this.quill.selection.getNativeRange = () => {
-        const rootNode = (this.quill.root.getRootNode() as ShadowRoot);
-        const nativeRange = getNativeRange(rootNode);
-        return !!nativeRange ? this.quill.selection.normalizeNative(nativeRange) : null;
+      const rootNode = (this.quill.root.getRootNode() as ShadowRoot);
+      const nativeRange = getNativeRange(rootNode);
+      return !!nativeRange ? this.quill.selection.normalizeNative(nativeRange) : null;
     };
 
     /**
@@ -113,33 +113,33 @@ export class QuillInputView extends HTMLBoxView {
      * in Webkit with Native Shadow. Selection.addRange works fine in Chromium and Gecko.
      **/
     this.quill.selection.setNativeRange = (startNode: any, startOffset: any) => {
-        var endNode = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : startNode;
-        var endOffset = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : startOffset;
-        var force = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
-        if (startNode != null && (this.quill.selection.root.parentNode == null || startNode.parentNode == null || endNode.parentNode == null)) {
-            return;
+      var endNode = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : startNode;
+      var endOffset = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : startOffset;
+      var force = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
+      if (startNode != null && (this.quill.selection.root.parentNode == null || startNode.parentNode == null || endNode.parentNode == null)) {
+        return;
+      }
+      var selection = document.getSelection();
+      if (selection == null) return;
+      if (startNode != null) {
+        if (!this.quill.selection.hasFocus()) this.quill.selection.root.focus();
+        var native = (this.quill.selection.getNativeRange() || {}).native;
+        if (native == null || force || startNode !== native.startContainer || startOffset !== native.startOffset || endNode !== native.endContainer || endOffset !== native.endOffset) {
+          if (startNode.tagName == "BR") {
+            startOffset = [].indexOf.call(startNode.parentNode.childNodes, startNode);
+            startNode = startNode.parentNode;
+          }
+          if (endNode.tagName == "BR") {
+            endOffset = [].indexOf.call(endNode.parentNode.childNodes, endNode);
+            endNode = endNode.parentNode;
+          }
+          selection.setBaseAndExtent(startNode, startOffset, endNode, endOffset);
         }
-        var selection = document.getSelection();
-        if (selection == null) return;
-        if (startNode != null) {
-            if (!this.quill.selection.hasFocus()) this.quill.selection.root.focus();
-            var native = (this.quill.selection.getNativeRange() || {}).native;
-            if (native == null || force || startNode !== native.startContainer || startOffset !== native.startOffset || endNode !== native.endContainer || endOffset !== native.endOffset) {
-                if (startNode.tagName == "BR") {
-                    startOffset = [].indexOf.call(startNode.parentNode.childNodes, startNode);
-                    startNode = startNode.parentNode;
-                }
-                if (endNode.tagName == "BR") {
-                    endOffset = [].indexOf.call(endNode.parentNode.childNodes, endNode);
-                    endNode = endNode.parentNode;
-                }
-                selection.setBaseAndExtent(startNode, startOffset, endNode, endOffset);
-            }
-        } else {
-            selection.removeAllRanges();
-            this.quill.selection.root.blur();
-            document.body.focus();
-        }
+      } else {
+        selection.removeAllRanges();
+        this.quill.selection.root.blur();
+        document.body.focus();
+      }
     }
 
     this._editor = (this.shadow_el.querySelector('.ql-editor') as HTMLDivElement)
@@ -191,7 +191,7 @@ export namespace QuillInput {
   }
 }
 
-export interface QuillInput extends QuillInput.Attrs {}
+export interface QuillInput extends QuillInput.Attrs { }
 
 export class QuillInput extends HTMLBox {
   properties: QuillInput.Props
