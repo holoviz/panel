@@ -2,6 +2,59 @@
 
 See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual summary of the major features added in each release.
 
+## Version 1.3.7
+
+Date: 2024-01-19
+
+This patch release focuses on a number of fixes and minor enhancements for the chat components and various other smaller improvements and fixes including docs improvements. In particular we want to highlight the new Ploomber deployment guide contributed by @neelash23. Next we want to welcome @jz314, @fayssalelmofatiche and @neelasha23 as new contributors and welcome back @SultanOrazbayev as a returning contributor. Lastly we want to thank the core contributor team, including @MarcSkovMadsen, @ahuang11, @maximlt, @Hoxbro and @philippjfr for their continued efforts maintaining Panel.
+
+### Enhancements
+
+- Add `filter_by` to `ChatMessage.serialize` ([#6090](https://github.com/holoviz/panel/pull/6090))
+- Support using an SVG for `ToggleIcon` ([#6127](https://github.com/holoviz/panel/pull/6127))
+- Add resizable param to `TextAreaInput` ([#6126](https://github.com/holoviz/panel/pull/6126))
+- Improve date and datetime picker functionality ([#6152](https://github.com/holoviz/panel/pull/6152))
+- Add activity indicator to `ChatMessage` ([#6153](https://github.com/holoviz/panel/pull/6153))
+- Lazily import bleach HTML sanitizer ([#6179](https://github.com/holoviz/panel/pull/6179))
+
+### Bug fixes
+
+- Fix alignment issues in chat components ([#6104](https://github.com/holoviz/panel/pull/6104), [#6135](https://github.com/holoviz/panel/pull/6135))
+- Fix generator placeholder and optimize updates in Chat components ([#6105](https://github.com/holoviz/panel/pull/6105))
+- Fix issue with callback future handling on Chat components ([#6120](https://github.com/holoviz/panel/pull/6120))
+- Fix bug in Chat interfaces related to `pn.state.browser_info` ([#6122](https://github.com/holoviz/panel/pull/6122))
+- Allow instantiating empty `Matplotlib` pane ([#6128](https://github.com/holoviz/panel/pull/6128))
+- Ensure icon displays inline with text on `FileDownload` ([#6133](https://github.com/holoviz/panel/pull/6133))
+- Fix styling of links in `Tabulator` fast theme ([#6146](https://github.com/holoviz/panel/pull/6146))
+- Fix passing of `card_params` on `ChatFeed` ([#6154](https://github.com/holoviz/panel/pull/6154))
+- Handle `Tabulator.title_formatter` if is type `dict` ([#6166](https://github.com/holoviz/panel/pull/6166))
+- Fix `per_session` caching ([#6169](https://github.com/holoviz/panel/pull/6169))
+- Correctly reshape nd-arrays in `Plotly` pane ([#6174](https://github.com/holoviz/panel/pull/6174))
+- Handle NaT values on `Perspective` pane ([#6176](https://github.com/holoviz/panel/pull/6176))
+- Do not rerender output if `ReplacementPane` object identity is unchanged ([#6183](https://github.com/holoviz/panel/pull/6183))
+- Tabulator: fix valuesLookup set up for older list-like editors ([#6192](https://github.com/holoviz/panel/pull/6192))
+- Fix pyodide loading message styling issues ([#6194](https://github.com/holoviz/panel/pull/6194))
+- More complete patch for the `TextEditor` to support being rendered in the Shadow DOM ([#6222](https://github.com/holoviz/panel/pull/6222))
+- Add guard to `Tabulator` ensuring that it does not error when it is not rendered ([#6223](https://github.com/holoviz/panel/pull/6223))
+- Fix race conditions when instantiating Comm in Jupyter causing notifications to break ([#6229](https://github.com/holoviz/panel/pull/6229))
+
+### Compatibility & Security
+
+- Upgrade Plotly.js to 2.25.3 to address CVE-2023-46308 ([#6230](https://github.com/holoviz/panel/pull/6230))
+
+### Documentation
+
+- Add `Design` and `Theme` explanation documentation ([#4741](https://github.com/holoviz/panel/pull/4741))
+- Fix pyodide execution in documentation
+- Fix wrong and broken link ([#5988](https://github.com/holoviz/panel/pull/5988), [#6132](https://github.com/holoviz/panel/pull/6132))
+- Use GoatCounter for website analytics ([#6117](https://github.com/holoviz/panel/pull/6117))
+- Add Dask How to guide ([#4234](https://github.com/holoviz/panel/pull/4234))
+- Fix `Material` template notebook .show() call ([#6137](https://github.com/holoviz/panel/pull/6137))
+- Add missing item in docstring ([#6167](https://github.com/holoviz/panel/pull/6167))
+- Ploomber Cloud deployment documentation ([#6182](https://github.com/holoviz/panel/pull/6182))
+- Correct duplicate wording ([#6188](https://github.com/holoviz/panel/pull/6188))
+- Update JupyterLite Altair example to latest API ([#6226](https://github.com/holoviz/panel/pull/6226))
+
 ## Version 1.3.6
 
 Date: 2023-12-20
