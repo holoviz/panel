@@ -1,7 +1,9 @@
 import { Column, ColumnView } from "./column";
 import * as p from "@bokehjs/core/properties";
-import {build_views} from "@bokehjs/core/build_views"
-import {UIElementView} from "@bokehjs/models/ui/ui_element"
+import { build_views } from "@bokehjs/core/build_views"
+import { UIElementView } from "@bokehjs/models/ui/ui_element"
+import { ButtonClick } from "@bokehjs/core/bokeh_events"
+import type { EventCallback } from "@bokehjs/model"
 
 export class LogView extends ColumnView {
   model: Log;
@@ -16,24 +18,25 @@ export class LogView extends ColumnView {
       const visible = [...this.model.visible_objects]
       const nodes = this.node_map
       for (const entry of entries) {
-	const id = nodes.get(entry.target).id
-	if (entry.isIntersecting) {
-	  if (!visible.includes(id)) {
-	    visible.push(id)
-	  }
-	} else if (visible.includes(id))  {
-	  visible.splice(visible.indexOf(id), 1)
-	}
+        const id = nodes.get(entry.target).id
+        if (entry.isIntersecting) {
+          if (!visible.includes(id)) {
+            visible.push(id)
+          }
+        } else if (visible.includes(id)) {
+          visible.splice(visible.indexOf(id), 1)
+        }
       }
       if (this._sync) {
-	this.model.visible_objects = visible
+        this.model.visible_objects = visible
+        console.log(visible)
       }
       if (visible.length) {
-	const refs = this.child_models.map((model) => model.id)
-	const indices = visible.map((ref) => refs.indexOf(ref))
-	this._last_visible = this.child_views[Math.min(...indices)]
+        const refs = this.child_models.map((model) => model.id)
+        const indices = visible.map((ref) => refs.indexOf(ref))
+        this._last_visible = this.child_views[Math.min(...indices)]
       } else {
-	this._last_visible = null
+        this._last_visible = null
       }
     }, {
       root: this.el,
@@ -59,12 +62,12 @@ export class LogView extends ColumnView {
   }
 
   async build_child_views(): Promise<UIElementView[]> {
-    const {created, removed} = await build_views(this._child_views, this.child_models, {parent: this})
+    const { created, removed } = await build_views(this._child_views, this.child_models, { parent: this })
 
     const visible = this.model.visible_objects
     for (const view of removed) {
       if (visible.includes(view.model.id)) {
-	visible.splice(visible.indexOf(view.model.id), 1)
+        visible.splice(visible.indexOf(view.model.id), 1)
       }
       this._resize_observer.unobserve(view.el)
       this._intersection_observer.unobserve(view.el)
@@ -72,11 +75,16 @@ export class LogView extends ColumnView {
     this.model.visible_objects = [...visible]
 
     for (const view of created) {
-      this._resize_observer.observe(view.el, {box: "border-box"})
+      this._resize_observer.observe(view.el, { box: "border-box" })
       this._intersection_observer.observe(view.el)
     }
 
     return created
+  }
+
+  override scroll_to_latest(): void {
+    this.model.trigger_event(new ButtonClick())
+    console.log("hello")
   }
 }
 
@@ -102,7 +110,11 @@ export class Log extends Column {
     this.prototype.default_view = LogView;
 
     this.define<Log.Props>(({ Array, String }) => ({
-      visible_objects: [Array(String), []]
+      visible_objects: [Array(String), []],
     }));
+  }
+
+  on_click(callback: EventCallback<ButtonClick>): void {
+    this.on_event(ButtonClick, callback)
   }
 }

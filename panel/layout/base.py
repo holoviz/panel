@@ -25,6 +25,7 @@ from ..util import param_name, param_reprs, param_watchers
 
 if TYPE_CHECKING:
     from bokeh.document import Document
+    from bokeh.events import ButtonClick
     from bokeh.model import Model
     from pyviz_comms import Comm
 
@@ -971,7 +972,7 @@ class Log(Column):
         enabled the view will be on the first object.""")
 
     visible_objects = param.List(doc="""
-        Indices of visible objects.""")
+        Indices of visible objects.""", readonly=True)
 
     _bokeh_model: ClassVar[Type[Model]] = PnLog
 
@@ -1060,6 +1061,11 @@ class Log(Column):
             new_models.append(child)
         return new_models, old_models
 
+    def _process_event(self, event: ButtonClick) -> None:
+        """
+        Process a button click event.
+        """
+        raise
 
 class WidgetBox(ListPanel):
     """
