@@ -71,8 +71,3 @@ class Card(Column):
     hide_header = Bool(False, help="Whether to hide the Card header")
 
     tag = String("tag", help="CSS class to use for the Card as a whole.")
-
-
-class Log(Column):
-
-    visible_objects = List(String())

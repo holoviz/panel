@@ -30,13 +30,14 @@ https://panel.holoviz.org/getting_started/index.html
 """
 from .accordion import Accordion  # noqa
 from .base import (  # noqa
-    Column, ListLike, ListPanel, Log, Panel, Row, WidgetBox,
+    Column, ListLike, ListPanel, Panel, Row, WidgetBox,
 )
 from .card import Card  # noqa
 from .flex import FlexBox  # noqa
 from .float import FloatPanel  # noqa
 from .grid import GridBox, GridSpec  # noqa
 from .gridstack import GridStack  # noqa
+from .log import Log
 from .spacer import (  # noqa
     Divider, HSpacer, Spacer, VSpacer,
 )

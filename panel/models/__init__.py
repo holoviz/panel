@@ -9,8 +9,9 @@ from .browser import BrowserInfo  # noqa
 from .datetime_picker import DatetimePicker  # noqa
 from .icon import ButtonIcon, ToggleIcon, _ClickableIcon  # noqa
 from .ipywidget import IPyWidget  # noqa
-from .layout import Card, Column, Log  # noqa
+from .layout import Card, Column  # noqa
 from .location import Location  # noqa
+from .log import Log  # noqa
 from .markup import HTML, JSON, PDF  # noqa
 from .reactive_html import ReactiveHTML  # noqa
 from .state import State  # noqa

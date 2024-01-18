@@ -2,8 +2,16 @@ import { Column, ColumnView } from "./column";
 import * as p from "@bokehjs/core/properties";
 import { build_views } from "@bokehjs/core/build_views"
 import { UIElementView } from "@bokehjs/models/ui/ui_element"
-import { ButtonClick } from "@bokehjs/core/bokeh_events"
+import { ModelEvent } from "@bokehjs/core/bokeh_events"
 import type { EventCallback } from "@bokehjs/model"
+
+
+export class ScrollButtonClick extends ModelEvent {
+  static {
+    this.prototype.event_name = "scroll_button_click"
+  }
+}
+
 
 export class LogView extends ColumnView {
   model: Log;
@@ -17,6 +25,7 @@ export class LogView extends ColumnView {
     this._intersection_observer = new IntersectionObserver((entries) => {
       const visible = [...this.model.visible_objects]
       const nodes = this.node_map
+
       for (const entry of entries) {
         const id = nodes.get(entry.target).id
         if (entry.isIntersecting) {
@@ -27,10 +36,11 @@ export class LogView extends ColumnView {
           visible.splice(visible.indexOf(id), 1)
         }
       }
+
       if (this._sync) {
         this.model.visible_objects = visible
-        console.log(visible)
       }
+
       if (visible.length) {
         const refs = this.child_models.map((model) => model.id)
         const indices = visible.map((ref) => refs.indexOf(ref))
@@ -82,9 +92,9 @@ export class LogView extends ColumnView {
     return created
   }
 
-  override scroll_to_latest(): void {
-    this.model.trigger_event(new ButtonClick())
-    console.log("hello")
+  scroll_to_latest(): void {
+    this.model.trigger_event(new ScrollButtonClick())
+    this.child_views[this.child_views.length - 1].el.scrollIntoView(true)
   }
 }
 
@@ -104,7 +114,7 @@ export class Log extends Column {
     super(attrs);
   }
 
-  static __module__ = "panel.models.layout";
+  static __module__ = "panel.models.log";
 
   static {
     this.prototype.default_view = LogView;
@@ -114,7 +124,7 @@ export class Log extends Column {
     }));
   }
 
-  on_click(callback: EventCallback<ButtonClick>): void {
-    this.on_event(ButtonClick, callback)
+  on_click(callback: EventCallback<ScrollButtonClick>): void {
+    this.on_event(ScrollButtonClick, callback)
   }
 }
