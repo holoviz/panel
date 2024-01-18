@@ -98,7 +98,7 @@ It should look like
 
 ## Inspect a Components Parameters using `.param`
 
-Try inspecting the *parameters* of a `pn.widgets.IntSlider` by running `pn.widgets.IntSlider.param` or `pn.widgets.IntSlider(align="end").param` in a notebook.
+Try inspecting the *parameters* of a `pn.widgets.IntSlider` *class* and *instance* by running `pn.widgets.IntSlider.param` or `pn.widgets.IntSlider(align="end").param` in a notebook.
 
 It should look like
 
