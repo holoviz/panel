@@ -48,8 +48,8 @@ Open [http://localhost:5006](http://localhost:5006) in a browser.
 Now change the
 
 - `ACCENT` value to `teal` and save the `app.py` file.
-- `bins` to 15 and save
-- `title` to "My Matplotlib App" and save
+- `bins` value to `15` and save
+- `title` value to `"My Matplotlib App"` and save
 
 It should look something like the below
 
@@ -59,7 +59,7 @@ It should look something like the below
 </video>
 
 :::note
-In the video above you will notice that the app is displayed inside the editor. This can be really efficient to use instead an external browser like Chrome or Firefox.
+In the video above you will notice that the app is displayed inside the editor. If your editor supports this we recommend trying it out.
 
 Your editor would typically call this a *simple*, *basic* or *embedded* browser.
 :::
@@ -127,7 +127,7 @@ layout.servable()
 
 Serve the app with `panel serve app.py --autoreload`.
 
-Open [http://localhost:5006] in your browser
+Open [http://localhost:5006](http://localhost:5006) in your browser
 
 This will look something like
 
