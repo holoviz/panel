@@ -244,7 +244,7 @@ def render_mimebundle(
     # WARNING: Patches the client comm created by some external library
     #          e.g. HoloViews, with an on_open handler that will initialize
     #          the server comm.
-    if manager.client_comm_id in _JupyterCommManager._comms:
+    if manager and manager.client_comm_id in _JupyterCommManager._comms:
         client_comm = _JupyterCommManager._comms[manager.client_comm_id]
         if not client_comm._on_open:
             client_comm._on_open = lambda _: comm.init()
