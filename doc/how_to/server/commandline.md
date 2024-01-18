@@ -1,4 +1,4 @@
-# Launching a server on the commandline
+# Launch a server on the commandline
 
 Once the app is ready for deployment it can be served using the Bokeh server.  For a detailed breakdown of the design and functionality of Bokeh server, see the [Bokeh documentation](https://bokeh.pydata.org/en/latest/docs/user_guide/server.html). The most important thing to know is that Panel (and Bokeh) provide a CLI command to serve a Python script, app directory, or Jupyter notebook containing a Bokeh or Panel app. To launch a server using the CLI, simply run:
 
@@ -20,7 +20,7 @@ We recommend installing `watchfiles`, which will provide a significantly better 
 
 The ``panel serve`` command has the following options:
 
-``` console
+```bash
 positional arguments:
   DIRECTORY-OR-SCRIPT   The app directories or scripts to serve (serve empty document if not specified)
 

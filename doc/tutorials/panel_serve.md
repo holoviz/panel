@@ -341,6 +341,7 @@ You can
 - [Defer all Tasks with `defer_load`](../how_to/callbacks/defer_load.md#defer-all-tasks)
 - [Defer long running tasks with `pn.state.onload`](../how_to/callbacks/load.md)
 - [Launch a server dynamically with `pn.serve` or `pn.show`](../how_to/server/programmatic.md)
+- [Launch a server on the commandline](../how_to/server/commandline.md)
 - [Run Tasks at Session Start or End with `pn.state.on_session` and `pn.state.on_session_destroyed`](../how_to/callbacks/session.md)
 - [Schedule Global Tasks with `pn.state.schedule_task`](../how_to/callbacks/schedule.md)
 - [Serve multiple applications with `pn.serve`](../how_to/server/multiple.md)
