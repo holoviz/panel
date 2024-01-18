@@ -94,7 +94,7 @@ export class LogView extends ColumnView {
 
   scroll_to_latest(): void {
     this.model.trigger_event(new ScrollButtonClick())
-    this.child_views[this.child_views.length - 1].el.scrollIntoView(true)
+    super.scroll_to_latest()
   }
 }
 
