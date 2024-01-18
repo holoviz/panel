@@ -20,12 +20,10 @@ if TYPE_CHECKING:
 
 class Log(Column):
 
-    loaded_entries = param.Integer(default=20, doc="""
-        Minimum number of visible log entries shown initially.""")
-
-    load_buffer = param.Integer(default=20, bounds=(0, None), doc="""
-        Number of log entries to load each time the user scrolls
-        past the scroll_load_threshold.""")
+    load_buffer = param.Integer(default=25, bounds=(0, None), doc="""
+        The number of entries loaded on each side of the visible entries.
+        When scrolled halfway into the buffer, the log will automatically
+        load additional entries while unloading entries on the opposite side.""")
 
     scroll = param.Boolean(default=True, doc="""
         Whether to add scrollbars if the content overflows the size
@@ -35,25 +33,27 @@ class Log(Column):
         Whether to scroll to the latest object on init. If not
         enabled the view will be on the first object.""")
 
-    visible_objects = param.List(doc="""
-        Indices of visible objects.""")
+    visible_indices = param.List(constant=True, doc="""
+        Read-only list of indices representing the currently visible log entries.
+        This list is automatically updated based on scrolling.""")
 
     _bokeh_model: ClassVar[Type[Model]] = PnLog
 
     _direction = 'vertical'
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'objects': 'children', 'load_buffer': None, 'loaded_entries': None
+        'objects': 'children', 'visible_indices': 'visible_objects',
+        'load_buffer': None,
     }
 
     def __init__(self, *objects, **params):
         super().__init__(*objects, **params)
         self._last_synced = None
 
-    @param.depends("visible_objects", watch=True)
+    @param.depends("visible_indices", watch=True)
     def _trigger_get_objects(self):
         # visible start, end / synced start, end
-        vs, ve = min(self.visible_objects), max(self.visible_objects)
+        vs, ve = min(self.visible_indices), max(self.visible_indices)
         ss, se = min(self._last_synced), max(self._last_synced)
         half_buffer = self.load_buffer // 2
         if (vs - ss) < half_buffer or (se - ve) < half_buffer:
@@ -62,15 +62,15 @@ class Log(Column):
     @property
     def _synced_indices(self):
         n = len(self.objects)
-        if self.visible_objects:
+        if self.visible_indices:
             return list(range(
-                max(min(self.visible_objects)-self.load_buffer, 0),
-                min(max(self.visible_objects)+self.load_buffer, n)
+                max(min(self.visible_indices) - self.load_buffer, 0),
+                min(max(self.visible_indices) + self.load_buffer, n + 1)
             ))
         elif self.view_latest:
-            return list(range(max(n-self.loaded_entries-self.load_buffer, 0), n))
+            return list(range(max(n - self.load_buffer, 0), n + 1))
         else:
-            return list(range(min(self.loaded_entries+self.load_buffer, n)))
+            return list(range(min(self.load_buffer, n + 1)))
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
@@ -91,11 +91,11 @@ class Log(Column):
             else:
                 return super()._process_property_change(msg)
             offset = min(self._synced_indices)
-            msg['visible_objects'] = [offset+i for i in sorted(indexes)]
+            msg['visible_indices'] = [offset+i for i in sorted(indexes)]
         return super()._process_property_change(msg)
 
     def _process_param_change(self, msg):
-        msg.pop('visible_objects', None)
+        msg.pop('visible_indices', None)
         return super()._process_param_change(msg)
 
     def _get_objects(
@@ -135,17 +135,21 @@ class Log(Column):
         return new_models, old_models
 
     def _process_event(self, event: ScrollButtonClick) -> None:
+        """
+        Process a scroll button click event.
+        """
         n = len(self.objects)
         # need to get it all the way to the bottom rather
         # than the center of the buffer zone
         load_buffer = self.load_buffer
-        loaded_entries = self.loaded_entries
         with param.discard_events(self):
-            self.load_buffer = self.loaded_entries = 0
-        self.visible_objects = list(range(max(n - 2, 0), n))
+            self.load_buffer = 0
+
+        with param.edit_constant(self):
+            self.visible_indices = list(range(max(n - min(load_buffer, 3), 0), n + 1))
+
         with param.discard_events(self):
             # reset the buffers and loaded entries
             self.load_buffer = load_buffer
-            self.loaded_entries = loaded_entries
 
         self._trigger_get_objects()
