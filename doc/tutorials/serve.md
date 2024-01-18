@@ -154,7 +154,7 @@ The command **`panel serve` is highly configurable**.
 
 Try running `panel serve --help` in a terminal.
 
-It should look like the below. Its not important to understand the details right now.
+It should look like the below.
 
 ```python
 $ panel serve --help
