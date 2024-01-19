@@ -34,6 +34,7 @@ They should be refactored into the below
 - [ ] Show progress dynamically with generators
 - [ ] Improve performance: caching
 - [ ] Deploy an app: Hugging Face Spaces
+- [ ] Avoid Common Mistakes: Defining "global" widgets in utility modules that ends up being shared between users.
 
 ## Intermediate: Less important, basic stuff to learn
 
