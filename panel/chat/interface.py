@@ -164,7 +164,6 @@ class ChatInterface(ChatFeed):
         self._card.param.update(
             objects=self._card.objects + [self._input_container],
             css_classes=["chat-interface"],
-            stylesheets=self._stylesheets,
         )
 
     def _link_disabled_loading(self, obj: Viewable):
