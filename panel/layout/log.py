@@ -108,8 +108,9 @@ class Log(Column):
         from ..pane.base import RerenderError, panel
         new_models, old_models = [], []
         self._last_synced = synced = self._synced_indices
-        for i in synced:
-            self.objects[i] = panel(self.objects[i])
+
+        for i, pane in enumerate(self.objects):
+            self.objects[i] = panel(pane)
 
         for obj in old_objects:
             if obj not in self.objects:
