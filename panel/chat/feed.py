@@ -254,6 +254,12 @@ class ChatFeed(ListPanel):
             **linked_params
         )
         card_params = linked_params.copy()
+        card_params.pop('stylesheets', None)
+        card_stylesheets = (
+            self._stylesheets +
+            self.param.stylesheets.rx() +
+            self.param.card_params.rx().get('stylesheets', [])
+        )
         card_params.update(
             margin=self.param.margin,
             align=self.param.align,
@@ -267,7 +273,7 @@ class ChatFeed(ListPanel):
             min_height=self.param.min_height,
             title_css_classes=["chat-feed-title"],
             styles={"padding": "0px"},
-            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
+            stylesheets=card_stylesheets
         )
         card_params.update(self.card_params)
         self.link(self._chat_log, objects='objects', bidirectional=True)
