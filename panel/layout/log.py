@@ -21,16 +21,16 @@ if TYPE_CHECKING:
 class Log(Column):
 
     load_buffer = param.Integer(default=50, bounds=(0, None), doc="""
-        The number of entries loaded on each side of the visible entries.
+        The number of objects loaded on each side of the visible objects.
         When scrolled halfway into the buffer, the log will automatically
-        load additional entries while unloading entries on the opposite side.""")
+        load additional objects while unloading objects on the opposite side.""")
 
     scroll = param.Boolean(default=True, doc="""
         Whether to add scrollbars if the content overflows the size
         of the container.""")
 
     visible_indices = param.List(constant=True, doc="""
-        Read-only list of indices representing the currently visible log entries.
+        Read-only list of indices representing the currently visible log objects.
         This list is automatically updated based on scrolling.""")
 
     _bokeh_model: ClassVar[Type[Model]] = PnLog
@@ -154,5 +154,5 @@ class Log(Column):
             )
 
         with param.discard_events(self):
-            # reset the buffers and loaded entries
+            # reset the buffers and loaded objects
             self.load_buffer = load_buffer
