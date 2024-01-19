@@ -1,10 +1,14 @@
 # Develop in a Notebook
 
-In this section you will learn how to develop efficiently in a notebook:
+In this guide you will learn how to develop efficiently in a notebook:
 
 - Preview your app in Jupyter lab with the *Panel Jupyter Preview*.
 - Inspect your component using `SHIFT+Tab` and `print`.
 - Inspect your components parameters using `.param`.
+
+:::note
+In this guide we will assume you are working in [Jupyter lab](https://jupyter.org/). Panel works in many other notebook environments. But non-jupyterlab notebook environments might need special configuration before supporting Panel appropriately. Check out the [Resources](#resources) section below for more specific information for non-jupyterlab environments.
+:::
 
 ## Preview your app
 
@@ -72,7 +76,9 @@ Scroll down until you find the *Reference* link
 
 ![Inspect a Panel component using SHIFT+Tab](../_static/images/notebook_inspect_shift_tab_link.png)
 
-You can copy paste and use the *Example* and *Reference* link. This can really speed up your workflow.
+:::info
+You can copy paste and use the *Example* and/ or click the *Reference* link. This can really speed up your workflow.
+:::
 
 Try opening the *Reference* link [https://panel.holoviz.org/reference/widgets/IntSlider.html](https://panel.holoviz.org/reference/widgets/IntSlider.html) to find more information about the `IntSlider`.
 
@@ -118,7 +124,7 @@ You can
 - Inspect your component using `SHIFT+Tab` and `print`.
 - Inspect your components parameters using `.param`.
 
-## Additional Resources
+## Resources
 
 ### How-to
 

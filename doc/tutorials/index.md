@@ -13,6 +13,34 @@ We will now assume you have successfully been able to [install Panel](../getting
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
+:::{grid-item-card} {octicon}`browser;2.5em;sd-mr-1` Serve Panel Apps
+:link: panel_serve
+:link-type: doc
+
+Learn how to serve your Panel apps using the `panel serve` command.
+:::
+
+:::{grid-item-card} {octicon}`code;2.5em;sd-mr-1` Develop in an Editor
+:link: develop_editor
+:link-type: doc
+
+Learn how to develop Panel components, tools and apps efficiently in an editor.
+:::
+
+:::{grid-item-card} {octicon}`note;2.5em;sd-mr-1` Develop in a Notebook
+:link: develop_editor
+:link-type: doc
+
+Learn how to develop Panel components, tools and apps efficiently in a notebook.
+:::
+
+:::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` Display objects easily with `pn.panel`
+:link: display_pn_panel
+:link-type: doc
+
+Learn how to display objects easily and flexibly with `pn.panel`.
+:::
+
 :::{grid-item-card} {octicon}`plug;2.5em;sd-mr-1` Param
 :link: param
 :link-type: doc
@@ -69,6 +97,10 @@ In this section we will review different approaches for styling components, from
 :hidden:
 :maxdepth: 2
 
+panel_serve
+develop_editor
+develop_notebook
+display_pn_panel
 param
 components
 interactivity

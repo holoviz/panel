@@ -9,7 +9,7 @@ In this section you will learn the basics of developing efficiently in an editor
 - Debug with Pdb by inserting a `breakpoint()`
 
 :::note
-Some of the features demonstrated in this guide might require special configuration of your editor. For configuration we refer you to resources listed in the [Resources](#resources) section below or on the web.
+Some of the features demonstrated in this guide might require special configuration of your editor. For configuration we refer you to resources listed in the [Resources](#resources) section below and general resources on the web.
 :::
 
 ## Serve your app with autoreload
@@ -207,7 +207,7 @@ It should look like
 ![Breakpoint](../_static/images/develop_editor_breakpoint.png)
 
 :::info
-For *integrated debugging* in your editor, we refer you to resources listed in the [Resources](#resources) section below or on the web.
+For *integrated debugging* in your editor, we refer you to resources listed in the [Resources](#resources) section below and general resources on the web.
 :::
 
 ## Recap
