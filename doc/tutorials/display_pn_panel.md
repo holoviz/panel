@@ -10,7 +10,7 @@ In this guide you will learn to display Python objects very easily and flexibly 
 - Use a specific Pane type if performance is key
 
 :::note
-When we ask you to *run the code* in the sections below, you may either execute the code in a cell in a notebook or in a file `app.py` served with `panel serve app.py --autoreload`.
+When we ask you to *run the code* in the sections below, you may either execute the code in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
 ## Install the Dependencies
@@ -127,13 +127,15 @@ component.servable()
 
 Please notice `pn.panel` chose a [`Matplotlib` pane](https://panel.holoviz.org/reference/panes/Matplotlib.html) to display the Matplotlib figure.
 
-```info
+:::info
 In the code example above we provide arguments to `pn.panel`. These will be applied to the *pane* selected by `pn.panel` to display the object. In this example the [`Matplotlib` pane](https://panel.holoviz.org/reference/panes/Matplotlib.html) is selected.
 
 The arguments `dpi` and `tight` would not make sense if a string was provided as argument to `pn.panel`. In that case the exception `TypeError: Markdown.__init__() got an unexpected keyword argument 'dpi'` would be raised.
-```
+:::
 
 ## Display a hvPlot plot
+
+Run the code below.
 
 ```{pyodide}
 import hvplot.pandas
@@ -154,6 +156,8 @@ component.servable()
 Please notice that `pn.panel` chose a [`HoloViews` pane](https://panel.holoviz.org/reference/panes/HoloViews.html) to display the hvPlot figure.
 
 ## Display a Plotly plot
+
+Run the code below.
 
 ```{pyodide}
 import pandas as pd
@@ -190,7 +194,9 @@ If we forget to add `"plotly"` to `pn.extension` then the Plotly figure will not
 
 ## Display (almost) any Python object
 
-`pn.panel` can display most Python objects. Lets try a few others
+`pn.panel` can display most Python objects.
+
+Run the code below
 
 ```{pyodide}
 import panel as pn
@@ -229,10 +235,10 @@ component.servable()
 ```
 
 :::info
-When Python objects are given as an argument to a Panel [Layout](https://panel.holoviz.org/reference/index.html#layouts) like `pn.Column`, then `pn.Column` will automatically apply `pn.panel` to the objects for you.
+When Python objects are given as an argument to a Panel [Layout](https://panel.holoviz.org/reference/index.html#layouts) like [`pn.Column`](https://panel.holoviz.org/reference/layouts/Column.html), then `pn.Column` will automatically apply `pn.panel` to the objects for you.
 :::
 
-Please notice that the image of the dice is very high. To finetune the way the objects are displayed we can use `pn.panel`.
+Please notice that the image of the dice is very high. To finetune the way it is displayed we can use `pn.panel`.
 
 Run the code below
 
