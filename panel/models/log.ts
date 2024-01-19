@@ -66,9 +66,7 @@ export class LogView extends ColumnView {
     this._sync = false
     await super.update_children()
     this._sync = true
-    if (this._last_visible != null) {
-      this._last_visible.el.scrollIntoView(true)
-    }
+    this._last_visible?.el.scrollIntoView(true)
   }
 
   async build_child_views(): Promise<UIElementView[]> {

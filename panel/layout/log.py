@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 class Log(Column):
 
-    load_buffer = param.Integer(default=25, bounds=(0, None), doc="""
+    load_buffer = param.Integer(default=50, bounds=(0, None), doc="""
         The number of entries loaded on each side of the visible entries.
         When scrolled halfway into the buffer, the log will automatically
         load additional entries while unloading entries on the opposite side.""")
@@ -28,10 +28,6 @@ class Log(Column):
     scroll = param.Boolean(default=True, doc="""
         Whether to add scrollbars if the content overflows the size
         of the container.""")
-
-    view_latest = param.Boolean(default=True, doc="""
-        Whether to scroll to the latest object on init. If not
-        enabled the view will be on the first object.""")
 
     visible_indices = param.List(constant=True, doc="""
         Read-only list of indices representing the currently visible log entries.
@@ -47,6 +43,13 @@ class Log(Column):
     }
 
     def __init__(self, *objects, **params):
+        for height_param in ["height", "min_height", "max_height"]:
+            if height_param in params:
+                break
+        else:
+            # sets a default height to prevent infinite load
+            params["height"] = 300
+
         super().__init__(*objects, **params)
         self._last_synced = None
 
@@ -65,12 +68,12 @@ class Log(Column):
         if self.visible_indices:
             return list(range(
                 max(min(self.visible_indices) - self.load_buffer, 0),
-                min(max(self.visible_indices) + self.load_buffer, n + 1)
+                min(max(self.visible_indices) + self.load_buffer, n)
             ))
         elif self.view_latest:
-            return list(range(max(n - self.load_buffer, 0), n + 1))
+            return list(range(max(n - self.load_buffer * 2, 0), n))
         else:
-            return list(range(min(self.load_buffer, n + 1)))
+            return list(range(min(self.load_buffer, n)))
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
@@ -105,11 +108,8 @@ class Log(Column):
         from ..pane.base import RerenderError, panel
         new_models, old_models = [], []
         self._last_synced = synced = self._synced_indices
-        for i, pane in enumerate(self.objects):
-            if i not in synced:
-                continue
-            pane = panel(pane)
-            self.objects[i] = pane
+        for i in synced:
+            self.objects[i] = panel(self.objects[i])
 
         for obj in old_objects:
             if obj not in self.objects:
@@ -117,9 +117,8 @@ class Log(Column):
 
         current_objects = list(self.objects)
         ref = root.ref['id']
-        for i, pane in enumerate(current_objects):
-            if i not in synced:
-                continue
+        for i in synced:
+            pane = current_objects[i]
             if pane in old_objects and ref in pane._models:
                 child, _ = pane._models[root.ref['id']]
                 old_models.append(child)
@@ -138,18 +137,22 @@ class Log(Column):
         """
         Process a scroll button click event.
         """
-        n = len(self.objects)
+        if not self.visible_indices:
+            return
+
         # need to get it all the way to the bottom rather
         # than the center of the buffer zone
         load_buffer = self.load_buffer
         with param.discard_events(self):
-            self.load_buffer = 0
+            self.load_buffer = 1
 
+        n = len(self.objects)
         with param.edit_constant(self):
-            self.visible_indices = list(range(max(n - min(load_buffer, 3), 0), n + 1))
+            # + 1 to keep the scroll bar visible
+            self.visible_indices = list(
+                range(max(n - len(self.visible_indices) + 1, 0), n)
+            )
 
         with param.discard_events(self):
             # reset the buffers and loaded entries
             self.load_buffer = load_buffer
-
-        self._trigger_get_objects()
