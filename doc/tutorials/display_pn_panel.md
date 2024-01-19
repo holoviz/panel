@@ -5,11 +5,17 @@ In this section you will learn to display Python objects very easily with `pn.pa
 - Display a string with `pn.panel(some_string)`
 - Display plot figures like Matplotlib, hvPlot and Plotly with `pn.panel(fig)`
 - Display most Python objects with `pn.panel(some_python_object)`
-- Configure how the object is displayed by giving arguments to `pn.panel`
+- Configure how an object is displayed by giving arguments to `pn.panel`
 - Display most Python objects in layouts like `pn.Column` with and without the use of `pn.panel`
 
 :::note
 When we ask you to *run the code* in the sections below, you may either execute the code in a cell in a notebook or in a file `app.py` served with `panel serve app.py --autoreload`.
+:::
+
+:::info
+Panel provides `pn.panel` as a convenient helper function that will convert objects into a [*Pane*](https://panel.holoviz.org/reference/index.html#panes).
+
+The utility function `pn.panel` resolves the appropriate representation for an object by checking all [*Pane*](https://panel.holoviz.org/reference/index.html#panes) object types available and then ranking them by priority. When passing a string (for instance) there are many representations, but the PNG pane takes precedence if the string is a valid URL or local file path ending in ".png".
 :::
 
 ## Install Dependencies
@@ -257,7 +263,7 @@ In this guide you have learned to
 - Display a string with `pn.panel(some_string)`
 - Display plot figures like Matplotlib, hvPlot and Plotly with `pn.panel(fig)`
 - Display most Python objects with `pn.panel(some_python_object)`
-- Configure how the object is displayed by giving arguments to `pn.panel`
+- Configure how an object is displayed by giving arguments to `pn.panel`
 - Display most Python objects in layouts like `pn.Column` with and without the use of `pn.panel`
 
 ## Resources
@@ -268,4 +274,4 @@ In this guide you have learned to
 
 ### Other
 
-- [Component Gallery](https://panel.holoviz.org/reference/index.html)
+- [Pane Gallery](https://panel.holoviz.org/reference/index.html#panes)
