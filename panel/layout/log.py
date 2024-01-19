@@ -53,7 +53,7 @@ class Log(Column):
         super().__init__(*objects, **params)
         self._last_synced = None
 
-    @param.depends("visible_indices", watch=True)
+    @param.depends("visible_indices", "load_buffer", watch=True)
     def _trigger_get_objects(self):
         # visible start, end / synced start, end
         vs, ve = min(self.visible_indices), max(self.visible_indices)

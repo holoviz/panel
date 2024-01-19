@@ -57,7 +57,6 @@ def test_log_view_latest(page):
     # Assert scroll is not at 0 (view_latest)
     assert log_el.evaluate('(el) => el.scrollTop') > 0
 
-    # playwright get the last <pre> element
     last_pre_element = page.query_selector_all('pre')[-1]
     assert last_pre_element.inner_text() == "999"
 
@@ -81,3 +80,15 @@ def test_log_view_scroll_button(page):
     wait_until(
         lambda: int(page.query_selector_all('pre')[-1].inner_text()) > 50
     )
+
+
+def test_log_dynamic_objects(page):
+    log = Log(height=250, load_buffer=10)
+    serve_component(page, log)
+
+    log.objects = list(range(1000))
+
+    wait_until(
+        lambda: len(page.query_selector_all('pre')) > 10
+    )
+    assert int(page.query_selector_all('pre')[0].inner_text()) == 0
