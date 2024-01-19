@@ -591,3 +591,10 @@ class ChatInterface(ChatFeed):
             with param.parameterized.batch_call_watchers(self):
                 self._buttons["send"].visible = False
                 self._buttons["stop"].visible = True
+
+    async def _cleanup_response(self):
+        """
+        Events to always execute after the callback is done.
+        """
+        await super()._cleanup_response()
+        await self._update_input_disabled()
