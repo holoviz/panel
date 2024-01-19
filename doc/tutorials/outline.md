@@ -1,14 +1,26 @@
 # Tutorial Outline
 
+## As Is
+
+To be refactored into the below
+
+- components
+- development
+- interactivity
+- layouts
+- param
+- structure
+- styling
+
 ## Beginner: Most important, basic stuff to learn
 
 - [ ] Getting installed (just a link to getting started)
   - [ ] Use a cloud development environment: Binder or Github spaces
   - [ ] Use panels documentation in your browser: Panelite
-- [x] Serve your first apps: panel serve, --autoreload --show, --help, multiple files,
-- [x] Develop App in an editor (pn.extension, .servable(), panel serve, autoreload, show, multi page app, inspecting objects, getting help, link to: pn.serve)
-- [x] Develop App in a notebook (pn.extension, .servable(), panel preview, panel serve, autoreload, multipage app, inspecting objects, getting help, links to how-to guides for more advanced topics like inspecting browser console and hard refreshing the browser, maybe link to colab Panel notebook).
-- [x] Display Content Easily: pn.panel - Panels print function
+- [ ] Serve your first apps: panel serve, --autoreload --show, --help, multiple files,
+- [ ] Develop App in an editor (pn.extension, .servable(), panel serve, autoreload, show, multi page app, inspecting objects, getting help, link to: pn.serve)
+- [ ] Develop App in a notebook (pn.extension, .servable(), panel preview, panel serve, autoreload, multipage app, inspecting objects, getting help, links to how-to guides for more advanced topics like inspecting browser console and hard refreshing the browser, maybe link to colab Panel notebook).
+- [ ] Display Content Easily: pn.panel - Panels print function
 - [ ] Display Content Efficiently:  panes - Panels output components
 - [ ] Organize Components Easily: Columns, Rows, sizing_mode. links to Layouts in Components Gallery
 - [ ] Organize Components Flexibly: FlexBox
