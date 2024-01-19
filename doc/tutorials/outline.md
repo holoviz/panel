@@ -1,6 +1,6 @@
 # Tutorial Outline
 
-## Beginner: Doable in 3 hour event, Most important, basic stuff to learn
+## Beginner: Most important, basic stuff to learn
 
 - [ ] Getting installed (just a link to getting started)
   - [ ] Use a cloud development environment: Binder or Github spaces
@@ -21,13 +21,14 @@
 - [ ] Indicate busy-ness with indicators
 - [ ] Show progress dynamically with generators
 - [ ] Improve performance: caching
-- [ ] [Structuring Applications](https://holoviz-dev.github.io/panel/tutorials/structure.html) (I think this is a great tutorial !!!): Class based approach
-- [ ] Life Cycle Hooks: pn.state.onload etc. [Better header should be found]
 - [ ] Deploy an app: Hugging Face Spaces
 
-## Intermediate: Rest of basic stuff to learn
+## Intermediate: Less important, basic stuff to learn
 
-## Advanced: Things our users might find advanced or not so often used stuff
+- [ ] [Structuring Applications](https://holoviz-dev.github.io/panel/tutorials/structure.html) (I think this is a great tutorial !!!): Class based approach
+- [ ] Life Cycle Hooks: pn.state.onload etc. [Better header should be found]
+
+## Advanced: Things our users might find scary to learn and that is not needed at first
 
 - [ ] Scheduling tasks: on_load, globally
 - [ ] Improve performance by using async and threads
