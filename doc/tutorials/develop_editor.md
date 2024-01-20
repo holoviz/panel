@@ -47,7 +47,7 @@ import numpy as np
 from matplotlib.figure import Figure
 
 ACCENT = "goldenrod"
-LOGO = "https://upload.wikimedia.org/wikipedia/commons/0/01/Created_with_Matplotlib-logo.svg"
+LOGO = "https://assets.holoviz.org/panel/tutorials/matplotlib-logo.png"
 
 pn.extension(sizing_mode="stretch_width")
 
@@ -123,7 +123,7 @@ import numpy as np
 from matplotlib.figure import Figure
 
 ACCENT = "teal"
-LOGO = "https://assets.holoviz.org/panel/tutorials/matplotlib-logo.svg"
+LOGO = "https://s3.eu-west-1.amazonaws.com/assets.holoviz.org/panel/tutorials/matplotlib-logo.png"
 
 pn.extension(sizing_mode="stretch_width")
 
