@@ -27,13 +27,14 @@ They should be refactored into the below
 - [ ] Accept User Input: widgets. Panels input components
 - [ ] Add interactivity easily and efficiently: `pn.bind`
 - [ ] Add interactivity flexibly: `.rx`
+- [ ] Add side effects: `.watch` (or `watch=True` ?)
 - [ ] Style components with designs
 - [ ] Style components with styles
 - [ ] Organize and Style apps with templates
 - [ ] Indicate busy-ness with indicators
 - [ ] Show progress dynamically with generators
 - [ ] Improve performance: caching
-- [ ] Deploy an app: Hugging Face Spaces
+- [ ] Deploy an app: Hugging Face Spaces, link to other deployment options including WASM
 
 ## Intermediate: Less important, basic stuff to learn
 
@@ -41,17 +42,21 @@ They should be refactored into the below
 - [ ] Organize Components flexibly with FlexBox
 - [ ] Schedule Tasks: pn.state.onload, pn.state.schedule_task, pn.state.add_periodic_callback, pn.state.on_session_created, pn.state.on_session_destroyed, async generators, pn.state.execute
 - [ ] [Structuring Applications](https://holoviz-dev.github.io/panel/tutorials/structure.html) (I think this is a great tutorial !!!): Class based approach
+- [ ] Build custom components easily: Viewable
+- [ ] Sync location
 - [ ] Avoid Common Mistakes: Defining "global" widgets in utility modules that ends up being shared between users.
 - [ ] Customizing Panel. For example for your brand.
 - [ ] Use panels documentation in your browser: Panelite
+- [ ] [Enable Throtttling](../how_to/performance/throttling.html)
+- [ ] Share your work: Embed and Save
+- [ ] Build maintainable apps: Class based approach, `@pn.depends`
 
 ## Advanced: Things our users might find scary to learn and that is not needed at first
 
 - [ ] Scheduling tasks: on_load, globally
 - [ ] Improve performance by using async and threads
-- [ ] Build reusable components easily: Viewable
-- [ ] Build reusable components with power: ReactiveESM
-- [ ] Build maintainable apps: Class based approach
+- [ ] Build custom components with power: ReactiveESM
+
 - [ ] Build testable Apps: pytest
 - [ ] Organize your projects: How to organize the code into sections or modules for efficient maintenance and reuse (data, models, plots, components, app).
 
