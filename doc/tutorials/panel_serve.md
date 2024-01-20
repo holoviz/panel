@@ -20,7 +20,9 @@ pn.extension()
 pn.panel("Hello World").servable()
 ```
 
-Copy that to a file `app.py`.
+Copy the code above into a file named `app.py`.
+
+Save the file.
 
 :::note
 The lines in the app.py file refer to
@@ -31,7 +33,11 @@ The lines in the app.py file refer to
 - `.servable()`: Displays the component in a *server app*.
 :::
 
-Run the live server with `panel serve app.py --autoreload`.
+Run the live server with
+
+```python
+panel serve app.py --autoreload
+```
 
 It will look like
 
@@ -80,9 +86,17 @@ The simplest Panel notebook file could look like:
 
 ![Panel Notebook App](../_static/images/panel-serve-ipynb-notebook.png).
 
-Start jupyterlab by running `jupyter lab` in the terminal.
+Copy the 2 code cells below into a clean notebook named `app2.ipynb`.
 
-Create an identical notebook named `app2.ipynb`.
+```python
+import panel as pn
+
+pn.extension()
+```
+
+```python
+pn.panel("Hello Notebook World").servable()
+```
 
 :::note
 The lines in the `app2.ipynb` file refer to
@@ -93,7 +107,15 @@ The lines in the `app2.ipynb` file refer to
 - `.servable()`: Displays the component in a *server app*.
 :::
 
-Run the live server with `panel serve app2.ipynb --autoreload`.
+Run the cells if you have not already done it.
+
+Save the notebook if you have not already done it.
+
+Run the Panel server with
+
+```bash
+panel serve app2.ipynb --autoreload
+```
 
 It will look like
 
@@ -132,6 +154,8 @@ The application will look like.
 
 ## Serve a multi page app
 
+In this section we continue using the `app.py` and `app.ipynb` created in the previous section.
+
 You can serve an app with multiple pages just by providing the file paths to `panel serve`.
 
 Try running `panel serve app.py app2.ipynb --autoreload`
@@ -147,7 +171,7 @@ $ panel serve app.py app2.ipynb --autoreload
 
 ### Check the multipage app
 
-Try opening [http://localhost:5006](http://localhost:5006), [http://localhost:5006/app](http://localhost:5006/app) and [http://localhost:5006/app2](http://localhost:5006/app2).
+Open [http://localhost:5006](http://localhost:5006), [http://localhost:5006/app](http://localhost:5006/app) and [http://localhost:5006/app2](http://localhost:5006/app2).
 
 It will look something like
 
