@@ -20,11 +20,10 @@ You will learn to develop and deploy amazing tools and apps that can be containe
 
 - [ ] Getting installed (just a link to getting started)
   - [ ] Using a pre-installed environment for this tutorial: Purpose is to lower Barrier of entry. Make it possible to do at large conference with poor internet. Use Binder, Github spaces, Anaconda Notebooks ???
-
-- [ ] Serve your first apps: panel serve, --autoreload --show, --help, multiple files: [Working Document](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/panel_serve.md)
-- [ ] Develop App in an editor (pn.extension, .servable(), panel serve, autoreload, show, multi page app, inspecting objects, getting help, link to: pn.serve) [Working Document](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/develop_editor.md)
-- [ ] Develop App in a notebook (pn.extension, .servable(), panel preview, panel serve, autoreload, multipage app, inspecting objects, getting help, links to how-to guides for more advanced topics like inspecting browser console and hard refreshing the browser, maybe link to colab Panel notebook). [Working Document](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/develop_notebook.md)
-- [ ] Display Content Easily: pn.panel - Panels print function [Working Document](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/display_pn_panel.md)
+- [ ] [Serve Apps](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/panel_serve.md)
+- [ ] [Develop in an Editor](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/intermediate/develop_editor.md)
+- [ ] [Develop in a notebook](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/develop_notebook.md)
+- [ ] [Display with `pn.panel`](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/display_pn_panel.md)
 - [ ] Display Content Efficiently:  panes - Panels output components
 - [ ] Organize Components Easily: Columns and Rows, sizing_mode. links to Layouts in Components Gallery
 - [ ] Work with Parameters and Events: Param
@@ -46,6 +45,8 @@ For intermediate users who are ready to navigate and explore more advanced featu
 
 You will learn to build and deploy apps with multiple-pages, more complex layouts, reusable components, efficient task scheduling, higher performance, support for more users etc.
 
+- [ ] [Serve Panel Apps](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/intermediate/panel_serve.md)
+- [ ] [Develop in an Editor](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/intermediate/develop_editor.md)
 - [ ] Organize Components Part II: margin, align
 - [ ] Organize Components flexibly with FlexBox
 - [ ] Schedule Tasks: pn.state.onload, pn.state.schedule_task, pn.state.add_periodic_callback, pn.state.on_session_created, pn.state.on_session_destroyed, async generators, pn.state.execute
