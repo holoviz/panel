@@ -1,6 +1,6 @@
-# Serve Panel Apps
+# Serve Apps
 
-In this tutorial you will learn more advanced techniques about serving Panel apps:
+In this tutorial you will learn more advanced techniques for serving Panel apps:
 
 - serve a multipage app with a command like `panel serve app.py app2.ipynb`
 - list the configuration options of `panel serve` by adding the flag `--help`.

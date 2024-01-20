@@ -1,4 +1,4 @@
-# Serve Panel Apps
+# Serve Apps
 
 In this section you will learn the basics of serving Panel apps:
 

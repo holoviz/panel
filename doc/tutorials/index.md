@@ -17,7 +17,7 @@ You will learn to develop and deploy amazing tools and apps that can be containe
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`browser;2.5em;sd-mr-1` Serve Panel Apps
+:::{grid-item-card} {octicon}`browser;2.5em;sd-mr-1` Serve Apps
 :link: beginner/panel_serve
 :link-type: doc
 
