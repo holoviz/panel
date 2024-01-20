@@ -130,7 +130,7 @@ component.servable()
 
 Please notice `pn.panel` chose a [`Matplotlib` pane](../reference/panes/Matplotlib.md) to display the Matplotlib figure.
 
-:::{admonition} Info
+:::{admonition} Note
 In the code example above we provide arguments to `pn.panel`. These will be applied to the *pane* selected by `pn.panel` to display the object. In this example the [`Matplotlib` pane](../reference/panes/Matplotlib.md) is selected.
 
 The arguments `dpi` and `tight` would not make sense if a string was provided as argument to `pn.panel`. In that case the exception `TypeError: Markdown.__init__() got an unexpected keyword argument 'dpi'` would be raised.
@@ -190,7 +190,7 @@ component.servable()
 
 Please notice that `pn.panel` chose a [`Plotly` pane](../reference/panes/Plotly.md) to display the Plotly figure.
 
-:::{admonition} Info
+:::{admonition} Note
 We must add `"plotly"` as an argument to `pn.extension` in the example to load the Plotly Javascript dependencies in the browser.
 
 If we forget to add `"plotly"` to `pn.extension` then the Plotly figure will not display in
@@ -241,7 +241,7 @@ print(component)
 component.servable()
 ```
 
-:::{admonition} Info
+:::{admonition} Note
 When Python objects are given as an argument to a Panel [Layout](../reference/index.md#layouts) like [`pn.Column`](../reference/layouts/Column.md), then `pn.Column` will automatically apply `pn.panel` to the objects for you.
 :::
 
@@ -266,7 +266,7 @@ component.servable()
 
 ## Use a specific Pane if performance is key
 
-:::{admonition} Info
+:::{admonition} Note
 `pn.panel` is an easy to use and flexible **helper function** that will convert an object into a [*Pane*](../reference/index.md#panes).
 
 More specifically `pn.panel` resolves the appropriate *representation* for an object by checking all [*Pane*](../reference/index.md#panes) object types available and then ranking them by priority. When passing a string (for instance) there are many representations, but the PNG pane takes precedence if the string is a valid URL or local file path ending in ".png".

@@ -65,7 +65,7 @@ It should look like
 
 ![Panel Notebook App](../_static/images/develop_notebook_simple_example.png)
 
-:::{admonition} Info
+:::{admonition} Note
 The code in the notebook refer to
 
 - `panel`: The Panel python package. Its a convention to import it as `pn`.
@@ -74,7 +74,7 @@ The code in the notebook refer to
 - `.servable()`: Displays the component in a *server app*.
 :::
 
-:::{admonition} Info
+:::{admonition} Note
 The little, blue Panel icon above the notebook will launch a *preview* of your app. We call this icon the *Jupyter Panel Preview* icon.
 :::
 
@@ -104,7 +104,7 @@ The *preview* will reload and look like
 
 ![Reloaded Preview](../_static/images/develop_notebook_simple_example_add_hello_again.png)
 
-:::{admonition} Info
+:::{admonition} Note
 To enable a more efficient workflow you can check the *Render on Save* checkbox. This will *auto reload* your app when the notebook is saved.
 :::
 
@@ -131,7 +131,7 @@ Watch the video below to learn how the techniques above can be used to develop a
 
 ## Serve your app with autoreload
 
-:::{admonition} Info
+:::{admonition} Note
 A currently faster alternative to the *Jupyter Panel Preview* is serving the notebook externally with autoreload using a command like `panel serve app.ipynb --autoreload`.
 :::
 

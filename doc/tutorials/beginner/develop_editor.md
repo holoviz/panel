@@ -6,7 +6,6 @@ In this section you will learn the basics of developing efficiently in an editor
 - display the app in a *simple* browser tab inside your editor if possible
 - Inspect Panel objects via *hover* and `print`
 - Inspect a components parameters via `.param` and `.param._repr_html_()`
-- Debug with [Pdb](https://docs.python.org/3/library/pdb.html) by inserting a `breakpoint()`
 
 :::{admonition} Note
 Some of the features demonstrated in this guide might require special configuration of your editor. For configuration we refer you to the [Resources](#resources) section below and general resources on the web.
@@ -87,7 +86,7 @@ Open [http://localhost:5006/app](http://localhost:5006/app) in a browser.
 
 It should look like
 
-![Panel served app](../_static/images/develop_editor_panel_serve_before.png)
+![Panel served app](../../_static/images/develop_editor_panel_serve_before.png)
 
 Now change the
 
@@ -97,7 +96,7 @@ Now change the
 
 It should look like
 
-<video controls="" poster="../_static/images/develop_editor_panel_serve_after.png">
+<video controls="" poster="../../_static/images/develop_editor_panel_serve_after.png">
     <source src="https://assets.holoviz.org/panel/tutorials/develop_editor_serve_app.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
     Your browser does not support the video tag.
 </video>
@@ -145,13 +144,13 @@ Hover over the word `FastListTemplate`.
 
 It would look something like
 
-![Tooltip of FastListTemplate](../_static/images/develop_editor_hover.png)
+![Tooltip of FastListTemplate](../../_static/images/develop_editor_hover.png)
 
-:::{admonition} Info
+:::{admonition} Note
 The tooltip of Panel components normally provide an *example* code snippet and a *Reference* link. The *Reference* link makes it very easy to navigate to the reference guides on the Panel web site for more information.
 :::
 
-:::{admonition} Info
+:::{admonition} Note
 If your editor does not show any tooltips, then please refer to your editors documentation to figure out how to enable it.
 :::
 
@@ -159,7 +158,7 @@ Hover again and click the *Reference* link <a href="https://panel.holoviz.org/re
 
 This should open the `FastListTemplate` reference guide
 
-[![FastListTemplate reference guide](../_static/images/develop_editor_reference_guide.png)](https://panel.holoviz.org/reference/templates/FastListTemplate.html)
+[![FastListTemplate reference guide](../../_static/images/develop_editor_reference_guide.png)](https://panel.holoviz.org/reference/templates/FastListTemplate.html)
 
 :::{admonition} Note
 It is a great idea to use the *Example* code snippets and *Reference* links to speed up your workflow.
@@ -221,13 +220,13 @@ Replace `layout.servable()` with `layout[0].servable()` and save the file.
 
 This will look like
 
-![Layout[0]](../_static/images/develop_editor_layout0.png)
+![Layout[0]](../../_static/images/develop_editor_layout0.png)
 
 Replace `layout[0].servable()` with `layout[1].servable()` and save the file.
 
 This will look like
 
-![Layout[1]](../_static/images/develop_editor_layout1.png)
+![Layout[1]](../../_static/images/develop_editor_layout1.png)
 
 ## Inspect component Parameters via `.param`
 
@@ -253,84 +252,7 @@ Open [http://localhost:5006](http://localhost:5006) in a browser.
 
 It should look like
 
-![.param and .param._repr_html_()](../_static/images/develop_editor_param.png)
-
-## Debug your App with Pdb
-
-A simple way to debug your apps that works in any editor is to insert a `breakpoint()`.
-
-Copy the code below into a file named `app.py`.
-
-```python
-import panel as pn
-
-pn.extension(design="material")
-
-def handle_click(event):
-    breakpoint()
-
-pn.widgets.Button(name="Click Me", on_click=handle_click, button_type="primary").servable()
-```
-
-Serve the app with `panel serve app.py --autoreload`.
-
-Open [http://localhost:5006/app](http://localhost:5006/app) in a browser.
-
-The app will look something like
-
-![App with `Click Me` button](../_static/images/develop_editor_click_me.png)
-
-Click the `Click Me` Button.
-
-You terminal will look something like
-
-```bash
-$ panel serve app.py --autoreload
-2024-01-20 08:12:09,512 Starting Bokeh server version 3.3.3 (running on Tornado 6.4)
-2024-01-20 08:12:09,514 User authentication hooks NOT provided (default user enabled)
-2024-01-20 08:12:09,516 Bokeh app running at: http://localhost:5006/app
-2024-01-20 08:12:09,516 Starting Bokeh server with process id: 9768
-2024-01-20 08:12:10,608 WebSocket connection opened
-2024-01-20 08:12:10,608 ServerConnection created
---Return--
-> /home/jovyan/app.py(6)handle_click()->None
--> breakpoint()
-(Pdb)
-```
-
-Write `event` in the terminal. Press `ENTER`.
-
-It should look like
-
-![Breakpoint](../_static/images/develop_editor_breakpoint.png)
-
-Write `help` and press `ENTER` for more info. It will look like
-
-```bash
-(Pdb) help
-
-Documented commands (type help <topic>):
-========================================
-EOF    c          d        h         list      q        rv       undisplay
-a      cl         debug    help      ll        quit     s        unt
-alias  clear      disable  ignore    longlist  r        source   until
-args   commands   display  interact  n         restart  step     up
-b      condition  down     j         next      return   tbreak   w
-break  cont       enable   jump      p         retval   u        whatis
-bt     continue   exit     l         pp        run      unalias  where
-
-Miscellaneous help topics:
-==========================
-exec  pdb
-```
-
-Write `c` and press `ENTER` to continue running the code and server.
-
-:::{admonition} Note
-For more about debugging with [Pdb](https://docs.python.org/3/library/pdb.html) and `breakpoint` please check out the [PDB Documentation](https://docs.python.org/3/library/pdb.html).
-
-For *integrated debugging* in your editor, please refer to the [Resources](#resources) section below and general resources on the web.
-:::
+![.param and .param._repr_html_()](../../_static/images/develop_editor_param.png)
 
 ## Recap
 
@@ -340,13 +262,12 @@ You have learned to
 - display the app in a *simple* browser tab inside your editor if possible
 - Inspect Panel objects via *hover* and `print`
 - Inspect a components parameters via `.param` and `.param._repr_html_()`
-- Debug with [Pdb](https://docs.python.org/3/library/pdb.html) by inserting a `breakpoint()`
 
 ## Resources
 
-### Tutorial
+### Tutorials
 
-- [Python Debugging with Pdb](https://realpython.com/python-debugging-pdb/)
+- [Develop in an Editor (Intermediate)](../intermediate/develop_editor.md)
 
 ### How-to
 

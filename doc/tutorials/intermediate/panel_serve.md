@@ -1,16 +1,19 @@
-# Serving Panel Apps
+# Serve Panel Apps
 
-In this section you will learn how to serve Panel apps:
+In this tutorial you will learn more advanced techniques about serving Panel apps:
 
-- serve your app with a command like `panel serve app.py` or `panel serve app2.ipynb`.
-- serve with *auto reload* by adding the flag `--autoreload`.
 - serve a multipage app with a command like `panel serve app.py app2.ipynb`
-- stop your server with `CTRL+C`.
 - list the configuration options of `panel serve` by adding the flag `--help`.
 
-## Serve an app from a `.py` file
+:::{admonition} Note
+This guide builds upon the [Serve Panel Apps (beginner)](../beginner/panel_serve.md) tutorial.
+:::
 
-The simplest Panel `.py` file could look like this:
+## Serve a multi-page app
+
+You can serve an app with multiple pages just by providing the file paths to `panel serve`.
+
+Copy the code below into a file named `app.py` and save the file
 
 ```python
 import panel as pn
@@ -19,72 +22,6 @@ pn.extension()
 
 pn.panel("Hello World").servable()
 ```
-
-Copy the code above into a file named `app.py`.
-
-Save the file.
-
-:::{admonition} Note
-The lines in the app.py file refer to
-
-- `panel`: The Panel python package. Its a convention to import it as `pn`.
-- `pn.extension()`: Loads javascript dependencies and configures Panel.
-- `pn.panel(...)`: Creates a *displayable* Panel component.
-- `.servable()`: Displays the component in a *server app*.
-:::
-
-Run the live server with
-
-```python
-panel serve app.py --autoreload
-```
-
-It will look like
-
-```bash
-$ panel serve app.py --autoreload
-2024-01-17 15:49:11,443 Starting Bokeh server version 3.3.2 (running on Tornado 6.3.3)
-2024-01-17 15:49:11,444 User authentication hooks NOT provided (default user enabled)
-2024-01-17 15:49:11,450 Bokeh app running at: http://localhost:5006/app
-2024-01-17 15:49:11,450 Starting Bokeh server with process id: 47256
-```
-
-:::{admonition} Note
-The command `panel serve app.py --autoreload` refers to:
-
-- `panel`: the panel executable.
-- `serve`: the command you want panel to run
-- `app.py`: the file `app.py` you want to serve
-- `--autoreload`: make the server restart after code changes. Use this for development only.
-:::
-
-In the output, there's a line with something like:
-
-```bash
-Bokeh app running at: http://localhost:5006/app
-```
-
-That line shows the URL where your app is being served, in your local machine.
-
-You will also notice that `Bokeh server` is mentioned. Its because the Panel server is an extension of the Bokeh server.
-
-### Check the `.py` app
-
-Open your browser at [http://localhost:5006/app](http://localhost:5006/app).
-
-The application will look like.
-
-![Panel serve single .py file](../_static/images/panel-serve-py-app.png).
-
-### Stop the server
-
-Now stop the server by pressing `CTRL+C` in the terminal.
-
-## Serve an app from a notebook file
-
-The simplest Panel notebook file could look like:
-
-![Panel Notebook App](../_static/images/panel-serve-ipynb-notebook.png).
 
 Copy the 2 code cells below into a clean notebook named `app2.ipynb`.
 
@@ -98,69 +35,13 @@ pn.extension()
 pn.panel("Hello Notebook World").servable()
 ```
 
-:::{admonition} Note
-The lines in the `app2.ipynb` file refer to
+Run the cells and save the notebook if you have not already done it.
 
-- `panel`: The Panel python package. Its a convention to import it as `pn`.
-- `pn.extension()`: **Loads the [`pyviz_comms`](https://github.com/holoviz/pyviz_comms) notebook extension**, loads javascript dependencies and configures Panel.
-- `pn.panel(...)`: Creates a *displayable* Panel component. **The component can be displayed directly in the notebook**.
-- `.servable()`: Displays the component in a *server app*.
-:::
+Run `panel serve app.py app2.ipynb --autoreload`.
 
-Run the cells if you have not already done it.
-
-Save the notebook if you have not already done it.
-
-Run the Panel server with
+It should look like
 
 ```bash
-panel serve app2.ipynb --autoreload
-```
-
-It will look like
-
-```bash
-$ panel serve app2.ipynb --autoreload
-2024-01-17 21:05:32,338 Starting Bokeh server version 3.3.3 (running on Tornado 6.4)
-2024-01-17 21:05:32,339 User authentication hooks NOT provided (default user enabled)
-2024-01-17 21:05:32,342 Bokeh app running at: http://localhost:5006/app2
-2024-01-17 21:05:32,342 Starting Bokeh server with process id: 42008
-```
-
-:::{admonition} Note
-The command `panel serve app2.ipynb --autoreload` refers to:
-
-- `panel`: the panel executable.
-- `serve`: the command you want panel to run
-- `app.py`: the file `app2.ipynb` you want to serve
-- `--autoreload`: make the server restart after code changes. Use this for development only.
-:::
-
-In the output, there's a line with something like:
-
-```bash
-Bokeh app running at: http://localhost:5006/app2
-```
-
-That line shows the URL where your app is being served, in your local machine.
-
-### Check the notebook app
-
-Open your browser at [http://localhost:5006/app2](http://localhost:5006/app2).
-
-The application will look like.
-
-![Panel serve single .ipynb file](../_static/images/panel-serve-ipynb-app.png).
-
-## Serve a multi page app
-
-In this section we continue using the `app.py` and `app.ipynb` created in the previous section.
-
-You can serve an app with multiple pages just by providing the file paths to `panel serve`.
-
-Try running `panel serve app.py app2.ipynb --autoreload`
-
-```python
 $ panel serve app.py app2.ipynb --autoreload
 2024-01-17 21:14:43,502 Starting Bokeh server version 3.3.3 (running on Tornado 6.4)
 2024-01-17 21:14:43,503 User authentication hooks NOT provided (default user enabled)
@@ -169,23 +50,25 @@ $ panel serve app.py app2.ipynb --autoreload
 2024-01-17 21:14:43,506 Starting Bokeh server with process id: 39832
 ```
 
-### Check the multipage app
-
 Open [http://localhost:5006](http://localhost:5006), [http://localhost:5006/app](http://localhost:5006/app) and [http://localhost:5006/app2](http://localhost:5006/app2).
 
 It will look something like
 
-![Panel serve multi page app](../_static/images/panel-serve-multipage-app.png).
+![Panel serve multi page app](../../_static/images/panel-serve-multipage-app.png)
 
-## Configuring `panel serve`
+:::{admonition} Note
+You may use one or more [*globs*](https://en.wikipedia.org/wiki/Glob_(programming)) like `*`, `*.py`, `*.ipynb` or `*.md` to serve a long or dynamic list of apps.
+:::
+
+## Configure `panel serve`
 
 The command **`panel serve` is highly configurable**.
 
-Try running `panel serve --help` in a terminal.
+Run `panel serve --help` in a terminal.
 
 It should look like the below.
 
-```python
+```bash
 $ panel serve --help
 usage: panel serve [-h] [--port PORT] [--address ADDRESS] [--unix-socket UNIX-SOCKET] [--log-level LOG-LEVEL] [--log-format LOG-FORMAT]
                    [--log-file LOG-FILE] [--use-config CONFIG] [--args ...] [--dev [FILES-TO-WATCH ...]] [--show]
@@ -352,22 +235,19 @@ options:
 
 You can
 
-- serve your app with a command like `panel serve app.py` or `panel serve app2.ipynb`.
-- serve with *auto reload* by adding the flag `--autoreload`.
 - serve a multipage app with a command like `panel serve app.py app2.ipynb`
-- stop your server with `CTRL+C`.
 - list the configuration options of `panel serve` by adding the flag `--help`.
 
 ## Additional Resources
 
+### Tutorials
+
+- [Develop in an Editor (beginner)](../beginner/develop_editor.md)
+
 ### How-to
 
-- [Defer all Tasks with `defer_load`](../how_to/callbacks/defer_load.md#defer-all-tasks)
-- [Defer long running tasks with `pn.state.onload`](../how_to/callbacks/load.md)
 - [Launch a server dynamically with `pn.serve` or `pn.show`](../how_to/server/programmatic.md)
 - [Launch a server on the commandline](../how_to/server/commandline.md)
-- [Run Tasks at Session Start or End with `pn.state.on_session` and `pn.state.on_session_destroyed`](../how_to/callbacks/session.md)
-- [Schedule Global Tasks with `pn.state.schedule_task`](../how_to/callbacks/schedule.md)
 - [Serve multiple applications with `pn.serve`](../how_to/server/multiple.md)
 - [Serve static files with `--static-dirs`](../how_to/server/static_files.md)
 - [Write and serve apps in Markdown](../how_to/editor/markdown.md)

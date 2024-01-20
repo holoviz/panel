@@ -1,6 +1,6 @@
 # Tutorials
 
-These guides provides you with **a structured and step-by-step guide on how to use Panel effectively**.
+These tutorials provides you with **a structured and step-by-step learning path** to go **from Zero to Hero**.
 
 Each guide gradually builds on the previous ones, but it's structured to separate topics, so that you can go directly to a specific topic of interest and start learning.
 
@@ -10,7 +10,7 @@ We will assume you have successfully been able to [install Panel](../getting_sta
 
 ## Beginner
 
-These guides are for you that is just starting to discover Panel's basics.
+These guides are for you that is just starting to discover Panel.
 
 You will learn to develop and deploy amazing tools and apps that can be contained within a single Python file or notebook.
 
@@ -18,27 +18,27 @@ You will learn to develop and deploy amazing tools and apps that can be containe
 :gutter: 1 1 1 2
 
 :::{grid-item-card} {octicon}`browser;2.5em;sd-mr-1` Serve Panel Apps
-:link: panel_serve
+:link: beginner/panel_serve
 :link-type: doc
 
-Learn how to serve your Panel apps using the `panel serve` command.
+Learn how to serve an app with autoreload using the `panel serve` command.
 :::
 
 :::{grid-item-card} {octicon}`code;2.5em;sd-mr-1` Develop in an Editor
-:link: develop_editor
+:link: beginner/develop_editor
 :link-type: doc
 
-Learn how to develop Panel components, tools and apps efficiently in an editor.
+Learn to develop efficiently with Panel in an editor efficiently
 :::
 
 :::{grid-item-card} {octicon}`note;2.5em;sd-mr-1` Develop in a Notebook
 :link: develop_editor
 :link-type: doc
 
-Learn how to develop Panel components, tools and apps efficiently in a notebook.
+Learn how to develop efficiently with Panel in a notebook.
 :::
 
-:::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` Display objects easily with `pn.panel`
+:::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` Display objects with `pn.panel`
 :link: display_pn_panel
 :link-type: doc
 
@@ -96,29 +96,13 @@ In this section we will review different approaches for styling components, from
 
 ::::
 
----
-
-## Intermediate
-
-For intermediate users who are ready to navigate and explore more advanced features to improve the user experience or support more complex use cases.
-
-You will learn to build and deploy amazing apps with multiple-pages, more complex layouts, reusable components, efficient task scheduling, higher performance, support for more users etc.
-
----
-
-## Advanced
-
-For advanced users who are ready to pioneer and push the boundaries of what can be achieved with Panel.
-
-You will learn how to extend Panel to support your domain or specialized use cases.
-
 ```{toctree}
 :titlesonly:
 :hidden:
 :maxdepth: 2
 
-panel_serve
-develop_editor
+beginner/panel_serve
+beginner/develop_editor
 develop_notebook
 display_pn_panel
 param
@@ -129,3 +113,47 @@ layouts
 structure
 styling
 ```
+
+---
+
+## Intermediate
+
+These guides are for you that is ready to navigate and explore more advanced features of Panel.
+
+You will learn to develop and deploy complex tools and multi-page apps that can support more demanding use cases.
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`browser;2.5em;sd-mr-1` Serve Panel Apps
+:link: intermediate/panel_serve
+:link-type: doc
+
+Learn to serve multi-page apps and how-to configure `panel serve`.
+:::
+
+:::{grid-item-card} {octicon}`code;2.5em;sd-mr-1` Develop in an Editor
+:link: intermediate/develop_editor
+:link-type: doc
+
+Learn more advanced features like debugging to develop efficiently with Panel in an editor
+:::
+
+::::
+
+```{toctree}
+:titlesonly:
+:hidden:
+:maxdepth: 2
+
+intermediate/panel_serve
+intermediate/develop_editor
+```
+
+---
+
+## Advanced
+
+For advanced users who are ready to pioneer and push the boundaries of what can be achieved with Panel.
+
+You will learn how to extend Panel to support your domain or specialized use cases.
