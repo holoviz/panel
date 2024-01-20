@@ -10,7 +10,7 @@ We will assume you have successfully been able to [install Panel](../getting_sta
 
 ## Beginner
 
-These guides are for you that is just starting to discover Panel.
+These tutorials are for you that is just starting to discover Panel.
 
 You will learn to develop and deploy amazing tools and apps that can be contained within a single Python file or notebook.
 
@@ -118,7 +118,7 @@ styling
 
 ## Intermediate
 
-These guides are for you that is ready to navigate and explore more advanced features of Panel.
+These tutorials are for you that is ready to navigate and explore more advanced features of Panel.
 
 You will learn to develop and deploy complex tools and multi-page apps that can support more demanding use cases.
 
@@ -154,6 +154,6 @@ intermediate/develop_editor
 
 ## Advanced
 
-For advanced users who are ready to pioneer and push the boundaries of what can be achieved with Panel.
+These tutorials are for you that that is ready to pioneer and push the boundaries of what can be achieved with Panel.
 
-You will learn how to extend Panel to support your domain or specialized use cases.
+You will learn how to customize and extend Panel to support your domain or specialized use cases.
