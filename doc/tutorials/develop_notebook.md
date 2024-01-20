@@ -21,7 +21,7 @@ Please make sure [Matplotlib](https://matplotlib.org/) and [Numpy](https://numpy
 :sync: conda
 
 ``` bash
-conda install -y -c conda-forge matplotlib numpy panel
+conda install -y -c conda-forge matplotlib numpy
 ```
 :::
 
@@ -29,7 +29,7 @@ conda install -y -c conda-forge matplotlib numpy panel
 :sync: pip
 
 ``` bash
-pip install matplotlib numpy panel
+pip install matplotlib numpy
 ```
 :::
 
