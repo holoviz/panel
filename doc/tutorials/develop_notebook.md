@@ -41,9 +41,9 @@ A simple notebook file containing a Panel app could look like.
 
 ![Panel Notebook Example App](../_static/images/develop_notebook_simple_example.png)
 
-Create a new notebook
+Start from an empty notebook named `app.ipynb`.
 
-Copy paste the code below into the notebook
+Copy paste the 3 code cells below into the notebook
 
 ```{python}
 import panel as pn
@@ -59,7 +59,7 @@ pn.panel("Hello World").servable()
 pn.panel("Hello Again")
 ```
 
-Run the cells
+Run the cells if you have not already done it.
 
 It should look like
 
@@ -135,7 +135,7 @@ Watch the video below to learn how the techniques above can be used to develop a
 A currently faster alternative to the *Jupyter Panel Preview* is serving the notebook externally with autoreload using a command like `panel serve app.ipynb --autoreload`.
 :::
 
-Start from a clean notebook named `app.ipynb`.
+Start from an empty notebook named `app.ipynb`.
 
 Copy paste the 2 cells below into the notebook.
 
@@ -164,7 +164,7 @@ pn.template.FastListTemplate(
 ).servable();
 ```
 
-Name the notebook `app.ipynb` and save it.
+Save the notebook.
 
 Serve the app by running the below in a terminal
 
@@ -184,7 +184,7 @@ $ panel serve app.ipynb --autoreload
 
 Open [http://localhost:5006/app](http://localhost:5006/app) in a browser.
 
-It would look like
+It would look something like
 
 ![Panel served notebook app](../_static/images/develop_notebook_panel_serve_before.png)
 
@@ -194,7 +194,7 @@ Now change the
 - `bins` value to `15` and save
 - `title` value to `"My Matplotlib App"` and save
 
-It should look something like the below
+It should look something like
 
 <video controls="" poster="../_static/images/develop_notebook_panel_serve_after.png">
     <source src="https://assets.holoviz.org/panel/tutorials/develop_notebook_panel_serve.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
@@ -209,7 +209,7 @@ Stop the Panel server by sending a termination signal. In most terminal environm
 
 ## Inspect a Component using `SHIFT+Tab`
 
-Start from a clean notebook named `app.ipynb`.
+Start from an empty notebook named `app.ipynb`.
 
 Copy-paste the code below into the first cell
 
@@ -227,7 +227,7 @@ It should look like
 
 ![Inspect a Panel component using SHIFT+Tab](../_static/images/notebook_inspect_shift_tab.png)
 
-Scroll down until you find the *Example* code snippet and *Reference* link
+Use the mouse to scroll down until you find the *Example* code snippet and *Reference* link.
 
 ![Inspect a Panel component using SHIFT+Tab](../_static/images/notebook_inspect_shift_tab_link.png)
 
@@ -238,12 +238,12 @@ It should look like
 [![IntSlider Reference Documentation](../_static/images/notebook_intslider_reference_doc.png)](https://panel.holoviz.org/reference/widgets/IntSlider.html)
 
 :::info
-It is a good idea to use the *Example* code and *Reference* links in the Panel docstrings to speed up your workflow.
+It is a great idea to use the *Example* code snippets and *Reference* links to speed up your workflow.
 :::
 
 ## Inspect a Component using `print`
 
-Start from a clean notebook named `app.ipynb`.
+Start from an empty notebook named `app.ipynb`.
 
 Copy-paste the code below into the notebook
 
@@ -264,7 +264,7 @@ component = pn.Column(
 print(component)
 ```
 
-Run the cells
+Run the cells if you have not already done it.
 
 It should look like
 
@@ -284,7 +284,7 @@ component[0]
 component[1]
 ```
 
-Run the new cells
+Run the new cells if you have not already done it.
 
 It should look like
 
@@ -292,7 +292,7 @@ It should look like
 
 ## Inspect a Components Parameters using `.param`
 
-Start from a clean notebook named `app.ipynb`.
+Start from an empty notebook named `app.ipynb`.
 
 Copy-paste the two code cells below into the notebook
 
@@ -306,14 +306,14 @@ pn.extension()
 pn.widgets.IntSlider.param
 ```
 
-Run the code cells
+Run the code cells if you have not already done it.
 
 It should look like
 
 ![Inspect a Panel component class with .param](../_static/images/notebook_inspect_param_class.png)
 
 :::note
-- The `.param` table shows you the *default* parameter values of the `IntSlider` class. I.e. the *default* value of `align` is `'start'`.
+- The `.param` table shows you the *default* parameter values of the `IntSlider` class. For example the *default* value of `align` is `'start'`.
 - The `.param` table shows you additional information like the `Type` and `Range` of the Parameter.
 :::
 
@@ -330,7 +330,7 @@ It should look like
 ![Inspect a Panel component instance with .param](../_static/images/notebook_inspect_param_instance.png)
 
 :::note
-- In the picture above you see the *actual* parameter values of the `IntSlider` instance. I.e. the *actual* value of `align` is `'end'`.
+- In the picture above you see the *actual* parameter values of the `IntSlider` instance. For example the *actual* value of `align` is `'end'`.
 :::
 
 ## Recap

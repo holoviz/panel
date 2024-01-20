@@ -4,9 +4,9 @@ In this section you will learn the basics of developing efficiently in an editor
 
 - serve your app with *autoreload* using `panel serve app.py --autoreload`
 - display the app in a *simple* browser tab inside your editor if possible
-- Inspect Panel objects via *hover* and *print*
+- Inspect Panel objects via *hover* and `print`
 - Inspect a components parameters via `.param` and `.param._repr_html_()`
-- Debug with Pdb by inserting a `breakpoint()`
+- Debug with [Pdb](https://docs.python.org/3/library/pdb.html) by inserting a `breakpoint()`
 
 :::note
 Some of the features demonstrated in this guide might require special configuration of your editor. For configuration we refer you to resources listed in the [Resources](#resources) section below and general resources on the web.
@@ -63,11 +63,27 @@ pn.template.FastListTemplate(
 ).servable()
 ```
 
-Copy the code above into the file `app.py`.
+Copy the code above into a file named `app.py`.
 
-Serve the app with `panel serve app.py --autoreload`.
+Save the file if you have not already done it.
 
-Open [http://localhost:5006](http://localhost:5006) in a browser.
+Serve the app by running the below command in a terminal.
+
+```bash
+panel serve app.py --autoreload
+```
+
+It should look like
+
+```bash
+$ panel serve app.py --autoreload
+2024-01-20 07:49:06,767 Starting Bokeh server version 3.3.3 (running on Tornado 6.4)
+2024-01-20 07:49:06,769 User authentication hooks NOT provided (default user enabled)
+2024-01-20 07:49:06,771 Bokeh app running at: http://localhost:5006/app
+2024-01-20 07:49:06,771 Starting Bokeh server with process id: 22100
+```
+
+Open [http://localhost:5006/app](http://localhost:5006/app) in a browser.
 
 It should look like
 
@@ -98,7 +114,7 @@ Stop the Panel server by sending a termination signal. In most terminal environm
 
 ## Inspect Panel objects via hover
 
-Replace the contents of your `app.py` file with
+Copy the code below into a file named `app.py`.
 
 ```python
 import panel as pn
@@ -123,6 +139,8 @@ pn.template.FastListTemplate(
 ).servable()
 ```
 
+Save the file if you have not already done it.
+
 Hover over the word `FastListTemplate`.
 
 It would look something like
@@ -133,6 +151,10 @@ It would look something like
 The tooltip of Panel components normally provide an *example* code snippet and a *Reference* link. The *Reference* link makes it very easy to navigate to the reference guides on the Panel web site for more information.
 :::
 
+:::info
+If your editor does not show any tooltips, then please refer to your editors documentation to figure out how to enable it.
+:::
+
 Hover again and click the *Reference* link [https://panel.holoviz.org/reference/templates/FastListTemplate.html](https://panel.holoviz.org/reference/templates/FastListTemplate.html).
 
 This should open the `FastListTemplate` reference guide
@@ -141,7 +163,7 @@ This should open the `FastListTemplate` reference guide
 
 ## Inspect components via `print`
 
-Replace the content of your `app.py` file with
+Copy the code below into a file named `app.py`.
 
 ```python
 import panel as pn
@@ -157,11 +179,17 @@ print(layout)
 layout.servable()
 ```
 
-Serve the app with `panel serve app.py --autoreload`.
+Save the file if you have not already done it.
 
-Open [http://localhost:5006](http://localhost:5006) in your browser
+Serve the app by running the below command in a terminal.
 
-This will look something like
+```bash
+panel serve app.py --autoreload
+```
+
+Open [http://localhost:5006/app](http://localhost:5006/app) in a browser.
+
+This will look something like the below in the terminal.
 
 ```bash
 $ panel serve app.py --autoreload
@@ -169,15 +197,29 @@ Markdown(str, design=<class 'panel.theme.materi...)
 Column(design=<class 'panel.theme.materi...)
     [0] Markdown(str, design=<class 'panel.theme.materi...)
     [1] IntSlider(design=<class 'panel.theme.materi..., end=10, name='Value', value=2)
-2024-01-18 18:00:18,553 Starting Bokeh server version 3.3.3 (running on Tornado 6.4)
-2024-01-18 18:00:18,555 User authentication hooks NOT provided (default user enabled)
-2024-01-18 18:00:18,558 Bokeh app running at: http://localhost:5006
-2024-01-18 18:00:18,558 Starting Bokeh server with process id: 52252
+2024-01-20 08:05:21,789 Starting Bokeh server version 3.3.3 (running on Tornado 6.4)
+2024-01-20 08:05:21,791 User authentication hooks NOT provided (default user enabled)
+2024-01-20 08:05:21,793 Bokeh app running at: http://localhost:5006/app
+2024-01-20 08:05:21,794 Starting Bokeh server with process id: 11092
+Markdown(str, design=<class 'panel.theme.materi...)
+Column(design=<class 'panel.theme.materi...)
+    [0] Markdown(str, design=<class 'panel.theme.materi...)
+    [1] IntSlider(design=<class 'panel.theme.materi..., end=10, name='Value', value=2)
+2024-01-20 08:05:25,768 WebSocket connection opened
+2024-01-20 08:05:25,768 ServerConnection created
 ```
 
-Printing *layout* components like `Column` can be especially valuable as you can see which components they contain and how to *access* them.
+:::note
+By printing *layout* components like `Column` you can understand how its composed. This enables you to *access* the subcomponents of the layout.
+:::
 
-Try replacing `layout.servable()` with `layout[1].servable()`.
+Replace `layout.servable()` with `layout[0].servable()` and save the file.
+
+This will look like
+
+![Layout[0]](../_static/images/develop_editor_layout0.png)
+
+Replace `layout[0].servable()` with `layout[1].servable()` and save the file.
 
 This will look like
 
@@ -213,7 +255,7 @@ It should look like
 
 A simple way to debug your apps that works in any editor is to insert a `breakpoint()`.
 
-Replace the content of your `app.py` file with
+Copy the code below into a file named `app.py`.
 
 ```python
 import panel as pn
@@ -228,18 +270,40 @@ pn.widgets.Button(name="Click Me", on_click=handle_click, button_type="primary")
 
 Serve the app with `panel serve app.py --autoreload`.
 
-Open [http://localhost:5006](http://localhost:5006) in a browser.
+Open [http://localhost:5006/app](http://localhost:5006/app) in a browser.
+
+The app will look something like
+
+![App with `Click Me` button](../_static/images/develop_editor_click_me.png)
 
 Click the `Click Me` Button.
 
-Write `event` in the terminal
+You terminal will look something like
+
+```bash
+$ panel serve app.py --autoreload
+2024-01-20 08:12:09,512 Starting Bokeh server version 3.3.3 (running on Tornado 6.4)
+2024-01-20 08:12:09,514 User authentication hooks NOT provided (default user enabled)
+2024-01-20 08:12:09,516 Bokeh app running at: http://localhost:5006/app
+2024-01-20 08:12:09,516 Starting Bokeh server with process id: 9768
+2024-01-20 08:12:10,608 WebSocket connection opened
+2024-01-20 08:12:10,608 ServerConnection created
+--Return--
+> /home/jovyan/app.py(6)handle_click()->None
+-> breakpoint()
+(Pdb)
+```
+
+Write `event` in the terminal. Press `ENTER`.
 
 It should look like
 
 ![Breakpoint](../_static/images/develop_editor_breakpoint.png)
 
-:::info
-For *integrated debugging* in your editor, we refer you to resources listed in the [Resources](#resources) section below and general resources on the web.
+:::note
+For more about debugging with [Pdb](https://docs.python.org/3/library/pdb.html) and `breakpoint` please check out the [PDB Documentation](https://docs.python.org/3/library/pdb.html).
+
+For *integrated debugging* in your editor, please refer to the [Resources](#resources) section below and general resources on the web.
 :::
 
 ## Recap
@@ -248,9 +312,9 @@ You have learned to
 
 - serve your app with *autoreload* using `panel serve app.py --autoreload`
 - display the app in a *simple* browser tab inside your editor if possible
-- Inspect Panel objects via *hover* and *print*
+- Inspect Panel objects via *hover* and `print`
 - Inspect a components parameters via `.param` and `.param._repr_html_()`
-- Debug with Pdb by inserting a `breakpoint()`
+- Debug with [Pdb](https://docs.python.org/3/library/pdb.html) by inserting a `breakpoint()`
 
 ## Resources
 
