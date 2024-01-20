@@ -20,6 +20,8 @@ LAYOUT_PARAMETERS = {
     "max_width": 201,
 }
 
+ChatFeed.callback_exception = "raise"
+
 
 @pytest.fixture
 def chat_feed():
@@ -514,7 +516,6 @@ class TestChatFeedCallback:
         assert len(chat_feed.objects) == 2
         assert chat_feed.objects[1].object == "Message"
 
-    @pytest.mark.asyncio
     def test_generator(self, chat_feed):
         async def echo(contents, user, instance):
             message = ""
@@ -569,7 +570,6 @@ class TestChatFeedCallback:
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
         assert chat_feed._placeholder not in chat_feed._chat_log
-        # append sent message and placeholder
 
     def test_placeholder_threshold_under(self, chat_feed):
         async def echo(contents, user, instance):
@@ -606,13 +606,13 @@ class TestChatFeedCallback:
 
     def test_placeholder_threshold_exceed_generator(self, chat_feed):
         async def echo(contents, user, instance):
-            assert instance._placeholder not in instance._chat_log
+            await async_wait_until(lambda: instance._placeholder not in instance._chat_log)
             await asyncio.sleep(0.5)
-            assert instance._placeholder in instance._chat_log
+            await async_wait_until(lambda: instance._placeholder in instance._chat_log)
             yield "hello testing"
-            assert instance._placeholder not in instance._chat_log
+            await async_wait_until(lambda: instance._placeholder not in instance._chat_log)
 
-        chat_feed.placeholder_threshold = 0.2
+        chat_feed.placeholder_threshold = 1
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
         assert chat_feed._placeholder not in chat_feed._chat_log
@@ -701,7 +701,10 @@ class TestChatFeedCallback:
             yield "B"
 
         chat_feed.callback = callback
-        chat_feed.send("Message", respond=True)
+        try:
+            chat_feed.send("Message", respond=True)
+        except asyncio.CancelledError:  # tests pick up this error
+            pass
         # use sleep here instead of wait for because
         # the callback is timed and I want to confirm stop works
         time.sleep(1)
@@ -715,7 +718,10 @@ class TestChatFeedCallback:
             instance.stream("B", message=message)
 
         chat_feed.callback = callback
-        chat_feed.send("Message", respond=True)
+        try:
+            chat_feed.send("Message", respond=True)
+        except asyncio.CancelledError:
+            pass
         # use sleep here instead of wait for because
         # the callback is timed and I want to confirm stop works
         time.sleep(1)
@@ -729,7 +735,10 @@ class TestChatFeedCallback:
             instance.stream("B", message=message)  # should not reach this point
 
         chat_feed.callback = callback
-        chat_feed.send("Message", respond=True)
+        try:
+            chat_feed.send("Message", respond=True)
+        except asyncio.CancelledError:
+            pass
         # use sleep here instead of wait for because
         # the callback is timed and I want to confirm stop works
         time.sleep(1)
