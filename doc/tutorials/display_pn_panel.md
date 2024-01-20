@@ -7,10 +7,10 @@ In this guide you will learn to display Python objects very easily and flexibly 
 - Display most Python objects with `pn.panel(some_python_object)`
 - Configure how an object is displayed by giving arguments to `pn.panel`
 - Display most Python objects in layouts like `pn.Column` with and without the use of `pn.panel`
-- Use a specific Pane type if performance is key
+- Use a specific Pane type instead of `pn.panel` if performance is key
 
 :::note
-When we ask you to *run the code* in the sections below, you may either execute the code in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
+When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
 ## Install the Dependencies
@@ -39,9 +39,9 @@ pip install hvplot matplotlib plotly
 
 ## Display a string
 
-Run the code below
+Run the code:
 
-```python
+```{pyodide}
 import panel as pn
 
 pn.extension()
@@ -57,7 +57,7 @@ We add `.servable()` to the component to add it to the app served by `panel serv
 `pn.panel` uses a *heuristic* algorithm to determine how to best display the `object` passed as argument. To make this very explicit we will `print` the component in all the examples below. You would of course not normally do that in a notebook or data app
 :::
 
-Please run the code
+Run the code:
 
 ```{pyodide}
 import panel as pn
@@ -70,13 +70,13 @@ print(component)
 component.servable()
 ```
 
-:::info
-When you see `Markdown(str)` is printed in the example above, it means `pn.panel` has picked a [`Markdown` *pane*](../reference/panes/Markdown.md) to display the `str` object.
+:::note
+You cell or terminal output should contain `Markdown(str)`. It means `pn.panel` has picked the [`Markdown` *pane*](../reference/panes/Markdown.md) to display the `str` object.
 :::
 
 Lets verify that *markdown strings* are actually displayed and rendered nicely
 
-Run the code below
+Run the code:
 
 ```{pyodide}
 import panel as pn
@@ -87,7 +87,7 @@ component = pn.panel("""
 # Markdown Sample
 
 This sample text is from [The Markdown Guide](https://www.markdownguide.org)!
-"""")
+""")
 print(component)
 
 component.servable()
@@ -101,6 +101,9 @@ Run the code below.
 import panel as pn
 import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib
+
+matplotlib.use('agg')
 
 pn.extension()
 
@@ -141,7 +144,11 @@ Run the code below.
 import hvplot.pandas
 import numpy as np
 import pandas as pd
+import panel as pn
+
+pn.extension()
 np.random.seed(1)
+
 
 idx = pd.date_range('1/1/2000', periods=1000)
 df = pd.DataFrame(np.random.randn(1000, 4), index=idx, columns=list('ABCD')).cumsum()
@@ -184,7 +191,7 @@ component.servable()
 Please notice that `pn.panel` chose a [`Plotly` pane](../reference/panes/Plotly.md) to display the Plotly figure.
 
 :::info
-We add `"plotly"` as an argument to `pn.extension` in the example to load the Plotly Javascript dependencies in the browser.
+We must add `"plotly"` as an argument to `pn.extension` in the example to load the Plotly Javascript dependencies in the browser.
 
 If we forget to add `"plotly"` to `pn.extension` then the Plotly figure will not display in
 
@@ -271,9 +278,11 @@ Run the code below
 
 ```python
 import panel as pn
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
+matplotlib.use('agg')
 pn.extension()
 
 def create_matplotlib_figure(figsize=(4,3)):
@@ -303,7 +312,7 @@ In this guide you have learned to display Python objects very easily and flexibl
 - Display most Python objects with `pn.panel(some_python_object)`
 - Configure how an object is displayed by giving arguments to `pn.panel`
 - Display most Python objects in layouts like `pn.Column` with and without the use of `pn.panel`
-- Use a specific Pane type if performance is key
+- Use a specific Pane type instead of `pn.panel` if performance is key
 
 ## Resources
 
