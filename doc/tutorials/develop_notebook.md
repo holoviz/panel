@@ -100,7 +100,6 @@ Watch the video below to see how the techniques above can be used to develop a m
     Your browser does not support the video tag.
 </video>
 
-
 ## Serve your app
 
 :::info
@@ -154,7 +153,7 @@ Open [http://localhost:5006/app](http://localhost:5006/app) in a browser.
 
 It would look like
 
-![Panel Notebook App](../_static/images/develop_notebook_panel_serve_before.png)
+![Panel served notebook app](../_static/images/develop_notebook_panel_serve_before.png)
 
 Now change the
 

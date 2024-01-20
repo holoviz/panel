@@ -45,23 +45,25 @@ Serve the app with `panel serve app.py --autoreload`.
 
 Open [http://localhost:5006](http://localhost:5006) in a browser.
 
+It should look like
+
+![Panel served app](../_static/images/develop_editor_panel_serve_before.png)
+
 Now change the
 
 - `ACCENT` value to `teal` and save the `app.py` file.
 - `bins` value to `15` and save
 - `title` value to `"My Matplotlib App"` and save
 
-It should look something like the below
+It should look like
 
-<video controls="" poster="../_static/images/develop_editor_serve_app.png">
-    <source src="https://private-user-images.githubusercontent.com/42288570/297809262-b5054c1e-4495-4611-badf-3ea3149438c6.mp4?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MDU1OTQ5NDksIm5iZiI6MTcwNTU5NDY0OSwicGF0aCI6Ii80MjI4ODU3MC8yOTc4MDkyNjItYjUwNTRjMWUtNDQ5NS00NjExLWJhZGYtM2VhMzE0OTQzOGM2Lm1wND9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDAxMTglMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwMTE4VDE2MTcyOVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWM2MWMyMTM3MGM0YzRmNTc2NzdiZGVmNTU3NjVmMWExMDkxZWVmZjRlOTgzNDEyM2I5Y2JkNGUwYTkxNzJjMWImWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.VYg9wpFOFqqNCo3MRby1DdtwwkngVgu1hcuB9jfrmiA" type="video/mp4" style="max-height: 400px; max-width: 100%;">
+<video controls="" poster="../_static/images/develop_editor_panel_serve_after.png">
+    <source src="https://assets.holoviz.org/panel/tutorials/develop_editor_serve_app.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
     Your browser does not support the video tag.
 </video>
 
 :::note
-In the video above you will notice that the app is displayed inside the editor. If your editor supports this we recommend trying it out.
-
-Your editor would typically call this a *simple*, *basic* or *embedded* browser.
+In the video above you will notice that the app is displayed inside the editor. This is built into VS Code as the *simple browser*. PyCharm supports the same feature via an extension.
 :::
 
 ## Inspect Panel objects via hover
