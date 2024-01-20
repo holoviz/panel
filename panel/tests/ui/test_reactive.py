@@ -15,13 +15,16 @@ class ReactiveComponent(ReactiveHTML):
 
     count = param.Integer(default=0)
 
+    event = param.Event()
+
     _template = """
     <div id="reactive" class="reactive" onclick="${script('click')}"></div>
     """
 
     _scripts = {
         'render': 'data.count += 1; reactive.innerText = `${data.count}`;',
-        'click': 'data.count += 1; reactive.innerText = `${data.count}`;'
+        'click': 'data.count += 1; reactive.innerText = `${data.count}`;',
+        'event': 'data.count += 1; reactive.innerText = `${data.count}`;',
     }
 
 class ReactiveLiteral(ReactiveHTML):
@@ -45,6 +48,28 @@ def test_reactive_html_click_js_event(page):
     expect(page.locator(".reactive")).to_have_text('2')
 
     wait_until(lambda: component.count == 2, page)
+
+def test_reactive_html_param_event(page):
+    component = ReactiveComponent()
+
+    serve_component(page, component)
+
+    expect(page.locator(".reactive")).to_have_text('1')
+
+    component.param.trigger('event')
+
+    expect(page.locator(".reactive")).to_have_text('2')
+
+    component.param.trigger('event')
+
+    expect(page.locator(".reactive")).to_have_text('3')
+
+    component.param.trigger('event')
+    component.param.trigger('event')
+
+    expect(page.locator(".reactive")).to_have_text('5')
+
+    wait_until(lambda: component.count == 5, page)
 
 def test_reactive_html_set_loading_no_rerender(page):
     component = ReactiveComponent()

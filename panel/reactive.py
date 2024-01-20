@@ -1652,23 +1652,27 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             p : getattr(self, p) for p in list(Layoutable.param)
             if getattr(self, p) is not None and p != 'name'
         }
-        data_params = {}
+        data_params, event_params = {}, []
         for k, v in self.param.values().items():
+            pobj = self.param[k]
             if (
                 (k in ignored and k != 'name') or
-                ((self.param[k].precedence or 0) < 0) or
-                (isinstance(v, Viewable) and not isinstance(self.param[k], param.ClassSelector))
+                ((pobj.precedence or 0) < 0) or
+                (isinstance(v, Viewable) and not isinstance(pobj, param.ClassSelector))
             ):
                 continue
             if isinstance(v, str):
                 v = HTML_SANITIZER.clean(v)
             data_params[k] = v
+            if isinstance(pobj, param.Event):
+                event_params.append(k)
         html, nodes, self._attrs = self._get_template()
         params.update({
             'attrs': self._attrs,
             'callbacks': self._node_callbacks,
             'data': self._data_model(**self._process_param_change(data_params)),
             'events': self._get_events(),
+            'event_params': event_params,
             'html': escape(textwrap.dedent(html)),
             'nodes': nodes,
             'looped': [node for node, _ in self._parser.looped],
@@ -1977,6 +1981,9 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             model_msg['children'] = children
         self._set_on_model(model_msg, root, model)
         self._set_on_model(data_msg, root, model.data)
+        reset = {p: False for p in data_msg if p in model.event_params}
+        if reset:
+            self._set_on_model(reset, root, model.data)
 
     def on_event(self, node: str, event: str, callback: Callable) -> None:
         """
