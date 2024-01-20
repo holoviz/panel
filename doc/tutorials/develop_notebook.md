@@ -128,7 +128,8 @@ You can
 
 ### How-to
 
-- [Develop in other notebook environments](https://panel.holoviz.org/how_to/notebook/notebook.html)
-- [Display Output in Notebooks](https://panel.holoviz.org/how_to/notebook/notebook.html)
+- [Develop in other notebook environments](../how_to/notebook/notebook.html)
+- [Display Output in Notebooks](../how_to/notebook/notebook.html)
+- [Preview Apps in Jupyterlab](../how_to/notebook/jupyterlabpreview.md)
 - [Serve an app from a notebook file](serve.md)
-- [Use VS Code Notebook and Interactive Environment](https://panel.holoviz.org/how_to/editor/vscode_configure.html#notebook-and-interactive-environment)
+- [Use VS Code Notebook and Interactive Environment](../how_to/editor/vscode_configure.html#notebook-and-interactive-environment)
