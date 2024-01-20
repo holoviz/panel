@@ -258,6 +258,9 @@ def patch_stylesheet(stylesheet, dist_url):
     except Exception:
         pass
 
+def _is_file_path(stylesheet: str)->bool:
+    return stylesheet.lower().endswith(".css")
+
 def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
     """
     Resolves a stylesheet definition, e.g. originating on a component
@@ -266,6 +269,7 @@ def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
 
     - Absolute URL defined with http(s) protocol
     - A path relative to the component
+    - A raw css string
 
     Arguments
     ---------
@@ -275,7 +279,7 @@ def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
         The stylesheet definition
     """
     stylesheet = str(stylesheet)
-    if not stylesheet.startswith('http') and attribute and (custom_path:= resolve_custom_path(cls, stylesheet)):
+    if not stylesheet.startswith('http') and attribute and _is_file_path(stylesheet) and (custom_path:= resolve_custom_path(cls, stylesheet)):
         if not state._is_pyodide and state.curdoc and state.curdoc.session_context:
             stylesheet = component_resource_path(cls, attribute, stylesheet)
         else:

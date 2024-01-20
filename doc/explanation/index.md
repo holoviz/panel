@@ -23,18 +23,18 @@ Learn the pros and cons of Panel's different APIs.
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1 sd-animate-grow50` Components overview
+:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1 sd-animate-grow50` Built in components
 :link: components/components_overview
 :link-type: doc
 
-Deepen your understanding about Panel's visible objects and layout types.
+Deepen your understanding about Panel's built in components.
 :::
 
-:::{grid-item-card} {octicon}`plus-circle;2.5em;sd-mr-1 sd-animate-grow50` Custom components
-:link: components/components_custom
+:::{grid-item-card} {octicon}`plus-circle;2.5em;sd-mr-1 sd-animate-grow50` ReactiveHTML components
+:link: components/reactive_html_components
 :link-type: doc
 
-Deepen your understanding about building custom Panel components.
+Deepen your understanding about custom `ReactiveHTML` components
 :::
 
 ::::
