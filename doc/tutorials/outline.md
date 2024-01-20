@@ -12,7 +12,11 @@ These guides already exists
 
 They should be refactored into the below
 
-## Beginner: Core. Most important, basic stuff to learn, Can be done at 3 hour training event?
+## Beginner
+
+These guides are for you that is just starting to discover Panel's basics.
+
+You will learn to develop and deploy basic apps that can be contained within a single python file or notebook.
 
 - [ ] Getting installed (just a link to getting started)
   - [ ] Using a pre-installed environment for this tutorial: Purpose is to lower Barrier of entry. Make it possible to do at large conference with poor internet. Use Binder, Github spaces, Anaconda Notebooks ???
@@ -36,7 +40,11 @@ They should be refactored into the below
 - [ ] Improve performance: caching
 - [ ] Deploy an app: Hugging Face Spaces, link to other deployment options including WASM
 
-## Intermediate: Less important, basic stuff to learn
+## Intermediate
+
+For intermediate users who are ready to navigate and explore more advanced features to improve the user experience or support more complex use cases.
+
+You will learn to build apps with multiple-pages, more complex layouts, reusable components, efficient task scheduling, high performance, support for many users etc.
 
 - [ ] Organize Components Part II: margin, align
 - [ ] Organize Components flexibly with FlexBox
@@ -50,15 +58,17 @@ They should be refactored into the below
 - [ ] [Enable Throtttling](../how_to/performance/throttling.html)
 - [ ] Share your work: Embed and Save
 - [ ] Build maintainable apps: Class based approach, `@pn.depends`
-
-## Advanced: Things our users might find scary to learn and that is not needed at first
-
-- [ ] Scheduling tasks: on_load, globally
+- [ ] Organizing your code: How to organize the code into sections or modules for efficient maintenance and reuse (data, models, plots, components, app).
 - [ ] Improve performance by using async and threads
-- [ ] Build custom components with power: ReactiveESM
+- [ ] Testing
 
-- [ ] Build testable Apps: pytest
-- [ ] Organize your projects: How to organize the code into sections or modules for efficient maintenance and reuse (data, models, plots, components, app).
+## Advanced
+
+For advanced users who are ready to pioneer and push the boundaries of what can be achieved with Panel.
+
+You will learn how to extend Panel with custom Javascript Models for specialized use cases.
+
+- [ ] Build custom components with power: ReactiveESM
 
 ## Reference Examples
 
