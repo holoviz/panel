@@ -41,9 +41,9 @@ You will learn to develop and deploy amazing tools and apps that can be containe
 
 ## Intermediate
 
-For intermediate users who are ready to navigate and explore more advanced features to improve the user experience or support more complex use cases.
+These guides are for you that is ready to navigate and explore more advanced features of Panel.
 
-You will learn to build and deploy apps with multiple-pages, more complex layouts, reusable components, efficient task scheduling, higher performance, support for more users etc.
+You will learn to develop and deploy complex tools and multi-page apps that can support more demanding use cases.
 
 - [ ] [Serve Panel Apps](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/intermediate/panel_serve.md)
 - [ ] [Develop in an Editor](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/intermediate/develop_editor.md)
