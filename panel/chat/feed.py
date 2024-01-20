@@ -478,7 +478,7 @@ class ChatFeed(ListPanel):
             if duration > self.placeholder_threshold:
                 self.append(self._placeholder)
                 return
-            await asyncio.sleep(0.28)
+            await asyncio.sleep(0.1)
 
     async def _handle_callback(self, message, loop):
         callback_args = self._gather_callback_args(message)
