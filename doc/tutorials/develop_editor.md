@@ -300,6 +300,28 @@ It should look like
 
 ![Breakpoint](../_static/images/develop_editor_breakpoint.png)
 
+Write `help` and press `ENTER` for more info. It will look like
+
+```bash
+(Pdb) help
+
+Documented commands (type help <topic>):
+========================================
+EOF    c          d        h         list      q        rv       undisplay
+a      cl         debug    help      ll        quit     s        unt
+alias  clear      disable  ignore    longlist  r        source   until
+args   commands   display  interact  n         restart  step     up
+b      condition  down     j         next      return   tbreak   w
+break  cont       enable   jump      p         retval   u        whatis
+bt     continue   exit     l         pp        run      unalias  where
+
+Miscellaneous help topics:
+==========================
+exec  pdb
+```
+
+Write `c` and press `ENTER` to continue running the code and server.
+
 :::note
 For more about debugging with [Pdb](https://docs.python.org/3/library/pdb.html) and `breakpoint` please check out the [PDB Documentation](https://docs.python.org/3/library/pdb.html).
 
