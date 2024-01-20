@@ -63,7 +63,11 @@ It should look like
 </video>
 
 :::note
-In the video above you will notice that the app is displayed inside the editor. This is built into VS Code as the *simple browser*. PyCharm supports the same feature via an extension.
+In the video above you will notice that the app is displayed inside the editor. This feature is supported in VS Code as the *simple browser*. PyCharm supports a similar feature via an extension.
+:::
+
+:::note
+You should only serve your apps with `--autoreload` while developing
 :::
 
 ## Inspect Panel objects via hover
@@ -77,7 +81,7 @@ import numpy as np
 from matplotlib.figure import Figure
 
 ACCENT = "teal"
-LOGO = "https://upload.wikimedia.org/wikipedia/commons/0/01/Created_with_Matplotlib-logo.svg"
+LOGO = "https://assets.holoviz.org/panel/tutorials/matplotlib-logo.svg"
 
 pn.extension(sizing_mode="stretch_width")
 
