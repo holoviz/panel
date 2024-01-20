@@ -237,7 +237,7 @@ It should look like
 
 [![IntSlider Reference Documentation](../_static/images/notebook_intslider_reference_doc.png)](https://panel.holoviz.org/reference/widgets/IntSlider.html)
 
-:::info
+:::note
 It is a great idea to use the *Example* code snippets and *Reference* links to speed up your workflow.
 :::
 

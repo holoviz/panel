@@ -9,7 +9,7 @@ In this section you will learn the basics of developing efficiently in an editor
 - Debug with [Pdb](https://docs.python.org/3/library/pdb.html) by inserting a `breakpoint()`
 
 :::note
-Some of the features demonstrated in this guide might require special configuration of your editor. For configuration we refer you to resources listed in the [Resources](#resources) section below and general resources on the web.
+Some of the features demonstrated in this guide might require special configuration of your editor. For configuration we refer you to the [Resources](#resources) section below and general resources on the web.
 :::
 
 ## Install the Dependencies
@@ -155,11 +155,15 @@ The tooltip of Panel components normally provide an *example* code snippet and a
 If your editor does not show any tooltips, then please refer to your editors documentation to figure out how to enable it.
 :::
 
-Hover again and click the *Reference* link [https://panel.holoviz.org/reference/templates/FastListTemplate.html](https://panel.holoviz.org/reference/templates/FastListTemplate.html).
+Hover again and click the *Reference* link <a href="https://panel.holoviz.org/reference/templates/FastListTemplate.html" target="_blank">https://panel.holoviz.org/reference/templates/FastListTemplate.html</a>.
 
 This should open the `FastListTemplate` reference guide
 
 [![FastListTemplate reference guide](../_static/images/develop_editor_reference_guide.png)](https://panel.holoviz.org/reference/templates/FastListTemplate.html)
+
+:::note
+It is a great idea to use the *Example* code snippets and *Reference* links to speed up your workflow.
+:::
 
 ## Inspect components via `print`
 
@@ -210,7 +214,7 @@ Column(design=<class 'panel.theme.materi...)
 ```
 
 :::note
-By printing *layout* components like `Column` you can understand how its composed. This enables you to *access* the subcomponents of the layout.
+By printing *layout* components like `Column` you can understand how they are composed. This enables you to *access* the subcomponents of the layout.
 :::
 
 Replace `layout.servable()` with `layout[0].servable()` and save the file.
