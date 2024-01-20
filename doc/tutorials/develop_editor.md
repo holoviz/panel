@@ -70,6 +70,8 @@ In the video above you will notice that the app is displayed inside the editor. 
 You should only serve your apps with `--autoreload` while developing
 :::
 
+Stop the Panel server by sending a termination signal. In most terminal environments, you can do this by pressing `CTRL+C` one or more times.
+
 ## Inspect Panel objects via hover
 
 Replace the contents of your `app.py` file with

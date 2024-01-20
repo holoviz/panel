@@ -173,6 +173,8 @@ It should look something like the below
 You should only serve your apps with `--autoreload` while developing
 :::
 
+Stop the Panel server by sending a termination signal. In most terminal environments, you can do this by pressing `CTRL+C` one or more times.
+
 ## Inspect a Component using `SHIFT+Tab`
 
 Create a new notebook
@@ -276,7 +278,7 @@ Run the code cells
 
 It should look like
 
-![Inspect a Panel class with .param](../_static/images/notebook_inspect_param.png)
+![Inspect a Panel component class with .param](../_static/images/notebook_inspect_param_class.png)
 
 :::note
 - The `.param` table shows you the *default* parameter values of the `IntSlider` class. I.e. the *default* value of `align` is `'start'`.
@@ -293,7 +295,7 @@ Run the code cell
 
 It should look like
 
-![Inspect a Panel instance with .param](../_static/images/notebook_inspect_param.png)
+![Inspect a Panel component instance with .param](../_static/images/notebook_inspect_param_instance.png)
 
 :::note
 - In the picture above you see the *actual* parameter values of the `IntSlider` instance. I.e. the *actual* value of `align` is `'end'`.
@@ -303,7 +305,8 @@ It should look like
 
 You can
 
-- Preview your app in Jupyter lab with the *Jupyter Panel Preview*.
+- Preview your notebook app in Jupyter lab with the *Jupyter Panel Preview*.
+- Serve your notebook app with autoreload using `panel serve app.ipynb --autoreload`.
 - Inspect your component using `SHIFT+Tab` and `print`.
 - Inspect your components class and instance parameters using `.param`.
 
