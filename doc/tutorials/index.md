@@ -1,6 +1,6 @@
 # Tutorials
 
-These tutorials provides you with **a structured and step-by-step learning path** to go **from Zero to Hero**.
+These tutorials provides you with **a structured and step-by-step learning path** to **go from Zero to Hero**.
 
 Each guide gradually builds on the previous ones, but it's structured to separate topics, so that you can go directly to a specific topic of interest and start learning.
 
@@ -52,13 +52,6 @@ Learn how to display objects easily and flexibly with `pn.panel`.
 Panel and other projects in the HoloViz ecosystem all build on Param. In this section you will learn the basic concepts behind Param that you need to know to become an effective user of Panel.
 :::
 
-:::{grid-item-card} {octicon}`container;2.5em;sd-mr-1` Components
-:link: components
-:link-type: doc
-
-Panel is a library that provides a lot of object types and while building an app, even a simple one, you will create and interact with many of them. In this section you will get a high-level overview of the different component types Panel offers and how to use them.
-:::
-
 :::{grid-item-card} {octicon}`pulse;2.5em;sd-mr-1` Interactivity
 :link: interactivity
 :link-type: doc
@@ -106,7 +99,6 @@ beginner/develop_editor
 beginner/develop_notebook
 beginner/display_pn_panel
 param
-components
 interactivity
 development
 layouts
