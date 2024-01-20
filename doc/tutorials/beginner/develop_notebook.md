@@ -1,6 +1,6 @@
 # Develop in a Notebook
 
-In this guide you will learn how to develop efficiently in a notebook:
+In this section you will learn the basics of developing Panel apps efficiently in a notebook:
 
 - Preview your notebook app in Jupyter lab with the *Jupyter Panel Preview*.
 - Serve your notebook app with autoreload using `panel serve app.ipynb --autoreload`.
@@ -39,7 +39,7 @@ pip install matplotlib numpy
 
 A simple notebook file containing a Panel app could look like.
 
-![Panel Notebook Example App](../_static/images/develop_notebook_simple_example.png)
+![Panel Notebook Example App](../../_static/images/develop_notebook_simple_example.png)
 
 Start from an empty notebook named `app.ipynb`.
 
@@ -63,7 +63,7 @@ Run the cells if you have not already done it.
 
 It should look like
 
-![Panel Notebook App](../_static/images/develop_notebook_simple_example.png)
+![Panel Notebook App](../../_static/images/develop_notebook_simple_example.png)
 
 :::{admonition} Note
 The code in the notebook refer to
@@ -82,7 +82,7 @@ Click the *Jupyter Panel Preview* icon.
 
 You will see the app launching in a separate window on the right.
 
-![Jupyter Panel Preview](../_static/images/develop_notebook_simple_example_open_preview.png)
+![Jupyter Panel Preview](../../_static/images/develop_notebook_simple_example_open_preview.png)
 
 :::{admonition} Note
 You will notice that "Hello Again" is not displayed in the app preview. That is because `pn.panel("Hello Again")` has not been added to the app. You can do that by marking it `.servable()`.
@@ -98,11 +98,11 @@ Save the notebook.
 
 Click the *Reload Preview* button in the *Jupyter Panel Preview*.
 
-![Reload Preview Button](../_static/images/develop_notebook_reload_preview.png)
+![Reload Preview Button](../../_static/images/develop_notebook_reload_preview.png)
 
 The *preview* will reload and look like
 
-![Reloaded Preview](../_static/images/develop_notebook_simple_example_add_hello_again.png)
+![Reloaded Preview](../../_static/images/develop_notebook_simple_example_add_hello_again.png)
 
 :::{admonition} Note
 To enable a more efficient workflow you can check the *Render on Save* checkbox. This will *auto reload* your app when the notebook is saved.
@@ -120,7 +120,7 @@ Save the notebook.
 
 The preview will automatically reload and look like
 
-![Automatically Reloaded Preview](../_static/images/develop_notebook_simple_example_add_hello_again_and_again.png)
+![Automatically Reloaded Preview](../../_static/images/develop_notebook_simple_example_add_hello_again_and_again.png)
 
 Watch the video below to learn how the techniques above can be used to develop a more advanced app.
 
@@ -186,7 +186,7 @@ Open [http://localhost:5006/app](http://localhost:5006/app) in a browser.
 
 It would look something like
 
-![Panel served notebook app](../_static/images/develop_notebook_panel_serve_before.png)
+![Panel served notebook app](../../_static/images/develop_notebook_panel_serve_before.png)
 
 Now change the
 
@@ -225,17 +225,17 @@ Write `pn.widgets.IntSlider` in a cell and press `SHIFT+Tab`.
 
 It should look like
 
-![Inspect a Panel component using SHIFT+Tab](../_static/images/notebook_inspect_shift_tab.png)
+![Inspect a Panel component using SHIFT+Tab](../../_static/images/notebook_inspect_shift_tab.png)
 
 Use the mouse to scroll down until you find the *Example* code snippet and *Reference* link.
 
-![Inspect a Panel component using SHIFT+Tab](../_static/images/notebook_inspect_shift_tab_link.png)
+![Inspect a Panel component using SHIFT+Tab](../../_static/images/notebook_inspect_shift_tab_link.png)
 
 Click the *Reference* link <a href="https://panel.holoviz.org/reference/widgets/IntSlider.html" target="_blank">https://panel.holoviz.org/reference/widgets/IntSlider.html</a>
 
 It should look like
 
-[![IntSlider Reference Documentation](../_static/images/notebook_intslider_reference_doc.png)](https://panel.holoviz.org/reference/widgets/IntSlider.html)
+[![IntSlider Reference Documentation](../../_static/images/notebook_intslider_reference_doc.png)](https://panel.holoviz.org/reference/widgets/IntSlider.html)
 
 :::{admonition} Note
 It is a great idea to use the *Example* code snippets and *Reference* links to speed up your workflow.
@@ -268,7 +268,7 @@ Run the cells if you have not already done it.
 
 It should look like
 
-![Inspect a Panel component](../_static/images/notebook_inspect_print.png)
+![Inspect a Panel component](../../_static/images/notebook_inspect_print.png)
 
 :::{admonition} Note
 By printing *layout* components like `Column` you can understand how its composed. This enables you to *access* the subcomponents of the layout.
@@ -288,7 +288,7 @@ Run the new cells if you have not already done it.
 
 It should look like
 
-![Inspect a Panel component](../_static/images/notebook_inspect_print_1.png)
+![Inspect a Panel component](../../_static/images/notebook_inspect_print_1.png)
 
 ## Inspect a Components Parameters using `.param`
 
@@ -310,7 +310,7 @@ Run the code cells if you have not already done it.
 
 It should look like
 
-![Inspect a Panel component class with .param](../_static/images/notebook_inspect_param_class.png)
+![Inspect a Panel component class with .param](../../_static/images/notebook_inspect_param_class.png)
 
 :::{admonition} Note
 - The `.param` table shows you the *default* parameter values of the `IntSlider` class. For example the *default* value of `align` is `'start'`.
@@ -327,7 +327,7 @@ Run the code cell
 
 It should look like
 
-![Inspect a Panel component instance with .param](../_static/images/notebook_inspect_param_instance.png)
+![Inspect a Panel component instance with .param](../../_static/images/notebook_inspect_param_instance.png)
 
 :::{admonition} Note
 - In the picture above you see the *actual* parameter values of the `IntSlider` instance. For example the *actual* value of `align` is `'end'`.

@@ -28,18 +28,18 @@ Learn how to serve an app with autoreload using the `panel serve` command.
 :link: beginner/develop_editor
 :link-type: doc
 
-Learn to develop efficiently with Panel in an editor efficiently
+Learn the basics of developing Panel apps in an editor
 :::
 
 :::{grid-item-card} {octicon}`note;2.5em;sd-mr-1` Develop in a Notebook
-:link: develop_editor
+:link: beginner/develop_notebook
 :link-type: doc
 
-Learn how to develop efficiently with Panel in a notebook.
+Learn the basics of developing Panel apps in a notebook
 :::
 
 :::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` Display objects with `pn.panel`
-:link: display_pn_panel
+:link: beginner/display_pn_panel
 :link-type: doc
 
 Learn how to display objects easily and flexibly with `pn.panel`.
@@ -103,8 +103,8 @@ In this section we will review different approaches for styling components, from
 
 beginner/panel_serve
 beginner/develop_editor
-develop_notebook
-display_pn_panel
+beginner/develop_notebook
+beginner/display_pn_panel
 param
 components
 interactivity

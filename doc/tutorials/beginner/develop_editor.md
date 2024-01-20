@@ -1,6 +1,6 @@
 # Develop in an Editor
 
-In this section you will learn the basics of developing efficiently in an editor:
+In this section you will learn the basics of developing Panel apps in an editor:
 
 - serve your app with *autoreload* using `panel serve app.py --autoreload`
 - display the app in a *simple* browser tab inside your editor if possible
