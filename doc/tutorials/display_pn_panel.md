@@ -71,7 +71,7 @@ component.servable()
 ```
 
 :::info
-When you see `Markdown(str)` is printed in the example above, it means `pn.panel` has picked a [`Markdown` *pane*](https://panel.holoviz.org/reference/panes/Markdown.html) to display the `str` object.
+When you see `Markdown(str)` is printed in the example above, it means `pn.panel` has picked a [`Markdown` *pane*](../reference/panes/Markdown.md) to display the `str` object.
 :::
 
 Lets verify that *markdown strings* are actually displayed and rendered nicely
@@ -125,10 +125,10 @@ print(component)
 component.servable()
 ```
 
-Please notice `pn.panel` chose a [`Matplotlib` pane](https://panel.holoviz.org/reference/panes/Matplotlib.html) to display the Matplotlib figure.
+Please notice `pn.panel` chose a [`Matplotlib` pane](../reference/panes/Matplotlib.md) to display the Matplotlib figure.
 
 :::info
-In the code example above we provide arguments to `pn.panel`. These will be applied to the *pane* selected by `pn.panel` to display the object. In this example the [`Matplotlib` pane](https://panel.holoviz.org/reference/panes/Matplotlib.html) is selected.
+In the code example above we provide arguments to `pn.panel`. These will be applied to the *pane* selected by `pn.panel` to display the object. In this example the [`Matplotlib` pane](../reference/panes/Matplotlib.md) is selected.
 
 The arguments `dpi` and `tight` would not make sense if a string was provided as argument to `pn.panel`. In that case the exception `TypeError: Markdown.__init__() got an unexpected keyword argument 'dpi'` would be raised.
 :::
@@ -153,7 +153,7 @@ print(component)
 component.servable()
 ```
 
-Please notice that `pn.panel` chose a [`HoloViews` pane](https://panel.holoviz.org/reference/panes/HoloViews.html) to display the hvPlot figure.
+Please notice that `pn.panel` chose a [`HoloViews` pane](../reference/panes/HoloViews.md) to display the hvPlot figure.
 
 ## Display a Plotly plot
 
@@ -181,7 +181,7 @@ print(component)
 component.servable()
 ```
 
-Please notice that `pn.panel` chose a [`Plotly` pane](https://panel.holoviz.org/reference/panes/Plotly.html) to display the Plotly figure.
+Please notice that `pn.panel` chose a [`Plotly` pane](../reference/panes/Plotly.md) to display the Plotly figure.
 
 :::info
 We add `"plotly"` as an argument to `pn.extension` in the example to load the Plotly Javascript dependencies in the browser.
@@ -213,7 +213,7 @@ print(component)
 component.servable()
 ```
 
-Please notice that `pn.panel` chose to display the objects using a [`JSON` pane](https://panel.holoviz.org/reference/panes/JSON.html), ['PNG' pane](https://panel.holoviz.org/reference/panes/PNG.html) and an [`Audio` pane](https://panel.holoviz.org/reference/panes/Audio.html)
+Please notice that `pn.panel` chose to display the objects using a [`JSON` pane](../reference/panes/JSON.md), ['PNG' pane](../reference/panes/PNG.md) and an [`Audio` pane](../reference/panes/Audio.md)
 
 ## Display (almost) any Python object in a layout
 
@@ -235,7 +235,7 @@ component.servable()
 ```
 
 :::info
-When Python objects are given as an argument to a Panel [Layout](https://panel.holoviz.org/reference/index.html#layouts) like [`pn.Column`](https://panel.holoviz.org/reference/layouts/Column.html), then `pn.Column` will automatically apply `pn.panel` to the objects for you.
+When Python objects are given as an argument to a Panel [Layout](../reference/index.md#layouts) like [`pn.Column`](../reference/layouts/Column.md), then `pn.Column` will automatically apply `pn.panel` to the objects for you.
 :::
 
 Please notice that the image of the dice is very high. To finetune the way it is displayed we can use `pn.panel`.
@@ -260,9 +260,9 @@ component.servable()
 ## Use a specific Pane if performance is key
 
 :::info
-`pn.panel` is an easy to use and flexible **helper function** that will convert an object into a [*Pane*](https://panel.holoviz.org/reference/index.html#panes).
+`pn.panel` is an easy to use and flexible **helper function** that will convert an object into a [*Pane*](../reference/index.md#panes).
 
-More specifically `pn.panel` resolves the appropriate *representation* for an object by checking all [*Pane*](https://panel.holoviz.org/reference/index.html#panes) object types available and then ranking them by priority. When passing a string (for instance) there are many representations, but the PNG pane takes precedence if the string is a valid URL or local file path ending in ".png".
+More specifically `pn.panel` resolves the appropriate *representation* for an object by checking all [*Pane*](../reference/index.md#panes) object types available and then ranking them by priority. When passing a string (for instance) there are many representations, but the PNG pane takes precedence if the string is a valid URL or local file path ending in ".png".
 
 Resolving the appropriate *representation* for an object takes time. So if performance is key you should specify the specific type of Pane to use directly. I.e. use `pn.pane.Matplotlib(fig)` instead of `pn.panel(fig)`.
 :::
@@ -309,8 +309,8 @@ In this guide you have learned to display Python objects very easily and flexibl
 
 ### How-to
 
-- [Access Pane Type](https://panel.holoviz.org/how_to/components/pane_type.html)
+- [Access Pane Type](../how_to/components/pane_type.md)
 
 ### Other
 
-- [Pane Gallery](https://panel.holoviz.org/reference/index.html#panes)
+- [Pane Gallery](../reference/index.md#panes)
