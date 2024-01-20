@@ -1,12 +1,18 @@
-# Tutorial
+# Tutorials
 
-The tutorial provides you with **a structured and step-by-step guide on how to use Panel effectively**.
+These guides provides you with **a structured and step-by-step guide on how to use Panel effectively**.
 
-Each section gradually builds on the previous ones, but it's structured to separate topics, so that you can go directly to a specific topic of interest and start learning.
+Each guide gradually builds on the previous ones, but it's structured to separate topics, so that you can go directly to a specific topic of interest and start learning.
 
 We will assume you have successfully been able to [install Panel](../getting_started/installation.md) as described in the [Getting Started Guide](../getting_started/index.md). If not please reach out for help on [Discord](https://discord.gg/rb6gPXbdAr).
 
 ---
+
+## Beginner
+
+These guides are for you that is just starting to discover Panel's basics.
+
+You will learn to develop and deploy amazing tools and apps that can be contained within a single Python file or notebook.
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -89,6 +95,22 @@ In this section we will review different approaches for styling components, from
 :::
 
 ::::
+
+---
+
+## Intermediate
+
+For intermediate users who are ready to navigate and explore more advanced features to improve the user experience or support more complex use cases.
+
+You will learn to build and deploy amazing apps with multiple-pages, more complex layouts, reusable components, efficient task scheduling, higher performance, support for more users etc.
+
+---
+
+## Advanced
+
+For advanced users who are ready to pioneer and push the boundaries of what can be achieved with Panel.
+
+You will learn how to extend Panel to support your domain or specialized use cases.
 
 ```{toctree}
 :titlesonly:
