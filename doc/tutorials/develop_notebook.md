@@ -27,11 +27,11 @@ pn.extension()
 ```
 
 ```python
-slider = pn.widgets.IntSlider(value=4, name="Value").servable()
+pn.panel("Hello World").servable()
 ```
 
 ```python
-pn.panel("Hello Again and Again")
+pn.panel("Hello Again")
 ```
 
 Run the cells
@@ -40,7 +40,7 @@ It should look like
 
 ![Panel Notebook App](../_static/images/develop_notebook_simple_example.png)
 
-:::note
+:::info
 The code in the notebook refer to
 
 - `panel`: The Panel python package. Its a convention to import it as `pn`.
@@ -49,7 +49,9 @@ The code in the notebook refer to
 - `.servable()`: Displays the component in a *server app*.
 :::
 
+:::info
 The little, blue Panel icon above the notebook will launch a *preview* of your app. We call this icon the *Jupyter Panel Preview* icon.
+:::
 
 Click the *Jupyter Panel Preview* icon.
 
@@ -57,9 +59,15 @@ You will see the app launching in a separate window on the right.
 
 ![Jupyter Panel Preview](../_static/images/develop_notebook_simple_example_open_preview.png)
 
+:::note
 You will notice that "Hello Again" is not displayed in the app preview. That is because `pn.panel("Hello Again")` has not been added to the app. You can do that by marking it `.servable()`.
+:::
 
-Change the cell to `pn.panel("Hello Again).servable()`.
+Replace `pn.panel("Hello Again")` with
+
+```python
+pn.panel("Hello Again").servable()
+```
 
 Click the *refresh* button in the *Jupyter Panel Preview*. Its located left of the *Render on Save* check box.
 
@@ -67,11 +75,19 @@ Your *preview* will update and look like
 
 ![Jupyter Panel Preview](../_static/images/develop_notebook_simple_example_add_hello_again.png)
 
+:::info
 To enable a more efficient workflow you can check the *Render on Save* checkbox. This will *auto reload* your app when the notebook is saved.
+:::
 
 Check the *Render on Save* checkbox.
 
-Change the cell to `pn.panel("Hello Again and Again.).servable()`.
+Change the last cell to
+
+```python
+pn.panel("Hello Again and Again").servable()
+```
+
+Save the notebook.
 
 The app will automatically reload and look like
 
@@ -81,6 +97,75 @@ Watch the video below to see how the techniques above can be used to develop a m
 
 <video controls="" poster="../_static/images/jupyter_panel_preview_in_action.png">
     <source src="https://assets.holoviz.org/panel/tutorials/jupyter_panel_preview_in_action.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
+    Your browser does not support the video tag.
+</video>
+
+
+## Serve your app
+
+:::info
+A currently faster alternative to the *Jupyter Panel Preview* is serving the notebook externally with autoreload using a command like `panel serve app.ipynb --autoreload`.
+:::
+
+Create a new notebook.
+
+Copy paste the 2 cells below into the notebook.
+
+```python
+import panel as pn
+import numpy as np
+
+from matplotlib.figure import Figure
+
+ACCENT = "goldenrod"
+LOGO = "https://assets.holoviz.org/panel/tutorials/matplotlib-logo.svg"
+
+pn.extension(sizing_mode="stretch_width")
+```
+
+```python
+data = np.random.normal(1, 1, size=100)
+fig = Figure(figsize=(8,4))
+ax = fig.subplots()
+ax.hist(data, bins=20, color=ACCENT)
+
+component = pn.pane.Matplotlib(fig, format='svg', sizing_mode='scale_both')
+
+pn.template.FastListTemplate(
+    title="My App", sidebar=[LOGO], main=[component], accent=ACCENT
+).servable()
+```
+
+Name the notebook `app.ipynb` and save it.
+
+Serve the app by running `panel serve app.ipynb --autoreload` in the terminal.
+
+It would look something like
+
+```bash
+$ panel serve app.ipynb --autoreload
+2024-01-20 05:48:38,688 Starting Bokeh server version 3.3.3 (running on Tornado 6.4)
+2024-01-20 05:48:38,688 User authentication hooks NOT provided (default user enabled)
+2024-01-20 05:48:38,688 Bokeh app running at: http://localhost:5006/app
+2024-01-20 05:48:38,688 Starting Bokeh server with process id: 13840
+```
+
+Open [http://localhost:5006/app](http://localhost:5006/app) in a browser.
+
+It would look like
+
+![Panel Notebook App](../_static/images/develop_notebook_panel_serve_before.png)
+
+Now change the
+
+- `ACCENT` value to `teal` and save the `app.ipynb` notebook.
+- `bins` value to `15` and save
+- `title` value to `"My Matplotlib App"` and save
+
+It should look something like the below
+
+<video controls="" poster="../_static/images/develop_notebook_panel_serve_after.png">
+    <source src="https://assets.holoviz.org/panel/tutorials/develop_notebook_panel_serve.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
     Your browser does not support the video tag.
 </video>
 
@@ -108,14 +193,14 @@ Scroll down until you find the *Example* and *Reference* link
 
 ![Inspect a Panel component using SHIFT+Tab](../_static/images/notebook_inspect_shift_tab_link.png)
 
-Click the *Reference* link [https://panel.holoviz.org/reference/widgets/IntSlider.html](https://panel.holoviz.org/reference/widgets/IntSlider.html).
+Click the *Reference* link <a href="https://panel.holoviz.org/reference/widgets/IntSlider.html" target="_blank">https://panel.holoviz.org/reference/widgets/IntSlider.html</a>
 
 It should look like
 
 [![IntSlider Reference Documentation](../_static/images/notebook_intslider_reference_doc.png)](https://panel.holoviz.org/reference/widgets/IntSlider.html)
 
 :::info
-You can speed up your workflow by using the *Example* code and *Reference* links in the Panel docstrings.
+It is a good idea to use the *Example* code and *Reference* links in the Panel docstrings to speed up your workflow.
 :::
 
 ## Inspect a Component using `print`
