@@ -12,6 +12,30 @@ In this section you will learn the basics of developing efficiently in an editor
 Some of the features demonstrated in this guide might require special configuration of your editor. For configuration we refer you to resources listed in the [Resources](#resources) section below and general resources on the web.
 :::
 
+## Install the Dependencies
+
+Please make sure [Matplotlib](https://matplotlib.org/) and [Numpy](https://numpy.org/) are installed.
+
+::::{tab-set}
+
+:::{tab-item} conda
+:sync: conda
+
+``` bash
+conda install -y -c conda-forge matplotlib numpy
+```
+:::
+
+:::{tab-item} pip
+:sync: pip
+
+``` bash
+pip install matplotlib numpy
+```
+:::
+
+::::
+
 ## Serve your app with autoreload
 
 A simple Panel app could look like the below.

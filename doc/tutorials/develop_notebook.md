@@ -8,14 +8,38 @@ In this guide you will learn how to develop efficiently in a notebook:
 - Inspect your components class and instance parameters using `.param`.
 
 :::note
-In this guide we will assume you are working in [Jupyter lab](https://jupyter.org/). Panel works in many other notebook environments. But non-jupyterlab notebook environments might need special configuration before supporting Panel appropriately. Check out the [Resources](#resources) section below for more specific guidance.
+In this guide we will assume you are working in [Jupyter lab](https://jupyter.org/). Panel works in many other notebook environments. But non-jupyterlab notebook environments might need special configuration before supporting Panel appropriately. Check out the [Resources](#resources) section below for specific guidance.
 :::
+
+## Install the Dependencies
+
+Please make sure [Matplotlib](https://matplotlib.org/) and [Numpy](https://numpy.org/) are installed.
+
+::::{tab-set}
+
+:::{tab-item} conda
+:sync: conda
+
+``` bash
+conda install -y -c conda-forge matplotlib numpy panel
+```
+:::
+
+:::{tab-item} pip
+:sync: pip
+
+``` bash
+pip install matplotlib numpy panel
+```
+:::
+
+::::
 
 ## Preview your app
 
 A simple notebook file containing a Panel app could look like.
 
-![Panel Notebook App](../_static/images/develop_notebook_simple_example.png)
+![Panel Notebook Example App](../_static/images/develop_notebook_simple_example.png)
 
 Create a new notebook
 
@@ -70,11 +94,15 @@ Replace `pn.panel("Hello Again")` with
 pn.panel("Hello Again").servable()
 ```
 
-Click the *refresh* button in the *Jupyter Panel Preview*. Its located left of the *Render on Save* check box.
+Save the notebook.
 
-Your *preview* will update and look like
+Click the *Reload Preview* button in the *Jupyter Panel Preview*.
 
-![Jupyter Panel Preview](../_static/images/develop_notebook_simple_example_add_hello_again.png)
+![Reload Preview Button](../_static/images/develop_notebook_reload_preview.png)
+
+The *preview* will reload and look like
+
+![Reloaded Preview](../_static/images/develop_notebook_simple_example_add_hello_again.png)
 
 :::info
 To enable a more efficient workflow you can check the *Render on Save* checkbox. This will *auto reload* your app when the notebook is saved.
@@ -90,11 +118,11 @@ pn.panel("Hello Again and Again").servable()
 
 Save the notebook.
 
-The app will automatically reload and look like
+The preview will automatically reload and look like
 
-![Jupyter Panel Preview](../_static/images/develop_notebook_simple_example_add_hello_again_and_again.png)
+![Automatically Reloaded Preview](../_static/images/develop_notebook_simple_example_add_hello_again_and_again.png)
 
-Watch the video below to see how the techniques above can be used to develop a more advanced app.
+Watch the video below to learn how the techniques above can be used to develop a more advanced app.
 
 <video controls="" poster="../_static/images/jupyter_panel_preview_in_action.png">
     <source src="https://assets.holoviz.org/panel/tutorials/jupyter_panel_preview_in_action.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
@@ -107,7 +135,7 @@ Watch the video below to see how the techniques above can be used to develop a m
 A currently faster alternative to the *Jupyter Panel Preview* is serving the notebook externally with autoreload using a command like `panel serve app.ipynb --autoreload`.
 :::
 
-Create a new notebook.
+Start from a clean notebook named `app.ipynb`.
 
 Copy paste the 2 cells below into the notebook.
 
@@ -133,12 +161,16 @@ component = pn.pane.Matplotlib(fig, format='svg', sizing_mode='scale_both')
 
 pn.template.FastListTemplate(
     title="My App", sidebar=[LOGO], main=[component], accent=ACCENT
-).servable()
+).servable();
 ```
 
 Name the notebook `app.ipynb` and save it.
 
-Serve the app by running `panel serve app.ipynb --autoreload` in the terminal.
+Serve the app by running the below in a terminal
+
+```bash
+panel serve app.ipynb --autoreload
+```
 
 It would look something like
 
@@ -177,7 +209,7 @@ Stop the Panel server by sending a termination signal. In most terminal environm
 
 ## Inspect a Component using `SHIFT+Tab`
 
-Create a new notebook
+Start from a clean notebook named `app.ipynb`.
 
 Copy-paste the code below into the first cell
 
@@ -195,7 +227,7 @@ It should look like
 
 ![Inspect a Panel component using SHIFT+Tab](../_static/images/notebook_inspect_shift_tab.png)
 
-Scroll down until you find the *Example* and *Reference* link
+Scroll down until you find the *Example* code snippet and *Reference* link
 
 ![Inspect a Panel component using SHIFT+Tab](../_static/images/notebook_inspect_shift_tab_link.png)
 
@@ -211,7 +243,7 @@ It is a good idea to use the *Example* code and *Reference* links in the Panel d
 
 ## Inspect a Component using `print`
 
-Create a new notebook
+Start from a clean notebook named `app.ipynb`.
 
 Copy-paste the code below into the notebook
 
@@ -260,7 +292,7 @@ It should look like
 
 ## Inspect a Components Parameters using `.param`
 
-Create a new notebook
+Start from a clean notebook named `app.ipynb`.
 
 Copy-paste the two code cells below into the notebook
 
