@@ -14,7 +14,7 @@ They should be refactored into the below
 
 ## Beginner
 
-These guides are for you that is just starting to discover Panel's basics.
+These guides are for you that is just starting to discover Panel.
 
 You will learn to develop and deploy amazing tools and apps that can be contained within a single Python file or notebook.
 
