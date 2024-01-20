@@ -12,10 +12,10 @@ These guides already exists
 
 They should be refactored into the below
 
-## Beginner: Most important, basic stuff to learn
+## Beginner: Core. Most important, basic stuff to learn, Can be done at 3 hour training event?
 
 - [ ] Getting installed (just a link to getting started)
-  - [ ] Using a pre-installed environment for this tutorial: Purpose is to lower Barrier of entry. Make it possible to do at large conference with poor internet. Use Binder, Github spaces, Anaconda Notebooks, Panelite ???
+  - [ ] Using a pre-installed environment for this tutorial: Purpose is to lower Barrier of entry. Make it possible to do at large conference with poor internet. Use Binder, Github spaces, Anaconda Notebooks ???
 
 - [ ] Serve your first apps: panel serve, --autoreload --show, --help, multiple files: [Working Document](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/panel_serve.md)
 - [ ] Develop App in an editor (pn.extension, .servable(), panel serve, autoreload, show, multi page app, inspecting objects, getting help, link to: pn.serve) [Working Document](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/develop_editor.md)
@@ -26,6 +26,7 @@ They should be refactored into the below
 - [ ] Work with Parameters and Events: Param
 - [ ] Accept User Input: widgets. Panels input components
 - [ ] Add interactivity easily and efficiently: `pn.bind`
+- [ ] Add interactivity flexibly: `.rx`
 - [ ] Style components with designs
 - [ ] Style components with styles
 - [ ] Organize and Style apps with templates
@@ -36,8 +37,8 @@ They should be refactored into the below
 
 ## Intermediate: Less important, basic stuff to learn
 
-- [ ] Add interactivity flexibly: `.rx`
-- [ ] Organize Components Flexibly: FlexBox
+- [ ] Organize Components Part II: margin, align
+- [ ] Organize Components flexibly with FlexBox
 - [ ] Schedule Tasks: pn.state.onload, pn.state.schedule_task, pn.state.add_periodic_callback, pn.state.on_session_created, pn.state.on_session_destroyed, async generators, pn.state.execute
 - [ ] [Structuring Applications](https://holoviz-dev.github.io/panel/tutorials/structure.html) (I think this is a great tutorial !!!): Class based approach
 - [ ] Avoid Common Mistakes: Defining "global" widgets in utility modules that ends up being shared between users.
