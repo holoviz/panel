@@ -64,7 +64,12 @@ def test_reactive_html_param_event(page):
 
     expect(page.locator(".reactive")).to_have_text('3')
 
-    wait_until(lambda: component.count == 3, page)
+    component.param.trigger('event')
+    component.param.trigger('event')
+
+    expect(page.locator(".reactive")).to_have_text('5')
+
+    wait_until(lambda: component.count == 5, page)
 
 def test_reactive_html_set_loading_no_rerender(page):
     component = ReactiveComponent()
