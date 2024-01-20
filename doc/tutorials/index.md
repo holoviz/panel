@@ -4,9 +4,7 @@ The tutorial provides you with **a structured and step-by-step guide on how to u
 
 Each section gradually builds on the previous ones, but it's structured to separate topics, so that you can go directly to a specific topic of interest and start learning.
 
-The tutorial builds upon the [Getting Started Guide](../getting_started/index.md). If you have not already gone through the [Getting Started Guide](../getting_started/index.md) please do so.
-
-We will now assume you have successfully been able to [install Panel](../getting_started/installation.md). If not please reach out for help on [Discord](https://discord.gg/rb6gPXbdAr).
+We will assume you have successfully been able to [install Panel](../getting_started/installation.md) as described in the [Getting Started Guide](../getting_started/index.md). If not please reach out for help on [Discord](https://discord.gg/rb6gPXbdAr).
 
 ---
 

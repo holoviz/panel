@@ -9,7 +9,7 @@ In this guide you will learn to display Python objects very easily and flexibly 
 - Display most Python objects in layouts like `pn.Column` with and without the use of `pn.panel`
 - Use a specific Pane type instead of `pn.panel` if performance is key
 
-:::note
+:::{admonition} Note
 When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
@@ -49,11 +49,11 @@ pn.extension()
 pn.panel("Hello World").servable()
 ```
 
-:::note
+:::{admonition} Note
 We add `.servable()` to the component to add it to the app served by `panel serve app.py --autoreload`. Adding `.servable()` is not needed to display the component in a notebook.
 :::
 
-:::note
+:::{admonition} Note
 `pn.panel` uses a *heuristic* algorithm to determine how to best display the `object` passed as argument. To make this very explicit we will `print` the component in all the examples below. You would of course not normally do that in a notebook or data app
 :::
 
@@ -70,7 +70,7 @@ print(component)
 component.servable()
 ```
 
-:::note
+:::{admonition} Note
 You cell or terminal output should contain `Markdown(str)`. It means `pn.panel` has picked the [`Markdown` *pane*](../reference/panes/Markdown.md) to display the `str` object.
 :::
 
@@ -130,7 +130,7 @@ component.servable()
 
 Please notice `pn.panel` chose a [`Matplotlib` pane](../reference/panes/Matplotlib.md) to display the Matplotlib figure.
 
-:::info
+:::{admonition} Info
 In the code example above we provide arguments to `pn.panel`. These will be applied to the *pane* selected by `pn.panel` to display the object. In this example the [`Matplotlib` pane](../reference/panes/Matplotlib.md) is selected.
 
 The arguments `dpi` and `tight` would not make sense if a string was provided as argument to `pn.panel`. In that case the exception `TypeError: Markdown.__init__() got an unexpected keyword argument 'dpi'` would be raised.
@@ -190,7 +190,7 @@ component.servable()
 
 Please notice that `pn.panel` chose a [`Plotly` pane](../reference/panes/Plotly.md) to display the Plotly figure.
 
-:::info
+:::{admonition} Info
 We must add `"plotly"` as an argument to `pn.extension` in the example to load the Plotly Javascript dependencies in the browser.
 
 If we forget to add `"plotly"` to `pn.extension` then the Plotly figure will not display in
@@ -241,7 +241,7 @@ print(component)
 component.servable()
 ```
 
-:::info
+:::{admonition} Info
 When Python objects are given as an argument to a Panel [Layout](../reference/index.md#layouts) like [`pn.Column`](../reference/layouts/Column.md), then `pn.Column` will automatically apply `pn.panel` to the objects for you.
 :::
 
@@ -266,7 +266,7 @@ component.servable()
 
 ## Use a specific Pane if performance is key
 
-:::info
+:::{admonition} Info
 `pn.panel` is an easy to use and flexible **helper function** that will convert an object into a [*Pane*](../reference/index.md#panes).
 
 More specifically `pn.panel` resolves the appropriate *representation* for an object by checking all [*Pane*](../reference/index.md#panes) object types available and then ranking them by priority. When passing a string (for instance) there are many representations, but the PNG pane takes precedence if the string is a valid URL or local file path ending in ".png".

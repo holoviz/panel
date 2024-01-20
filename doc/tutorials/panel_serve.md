@@ -24,7 +24,7 @@ Copy the code above into a file named `app.py`.
 
 Save the file.
 
-:::note
+:::{admonition} Note
 The lines in the app.py file refer to
 
 - `panel`: The Panel python package. Its a convention to import it as `pn`.
@@ -49,7 +49,7 @@ $ panel serve app.py --autoreload
 2024-01-17 15:49:11,450 Starting Bokeh server with process id: 47256
 ```
 
-:::note
+:::{admonition} Note
 The command `panel serve app.py --autoreload` refers to:
 
 - `panel`: the panel executable.
@@ -98,7 +98,7 @@ pn.extension()
 pn.panel("Hello Notebook World").servable()
 ```
 
-:::note
+:::{admonition} Note
 The lines in the `app2.ipynb` file refer to
 
 - `panel`: The Panel python package. Its a convention to import it as `pn`.
@@ -127,7 +127,7 @@ $ panel serve app2.ipynb --autoreload
 2024-01-17 21:05:32,342 Starting Bokeh server with process id: 42008
 ```
 
-:::note
+:::{admonition} Note
 The command `panel serve app2.ipynb --autoreload` refers to:
 
 - `panel`: the panel executable.

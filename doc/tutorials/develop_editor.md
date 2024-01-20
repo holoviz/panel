@@ -8,7 +8,7 @@ In this section you will learn the basics of developing efficiently in an editor
 - Inspect a components parameters via `.param` and `.param._repr_html_()`
 - Debug with [Pdb](https://docs.python.org/3/library/pdb.html) by inserting a `breakpoint()`
 
-:::note
+:::{admonition} Note
 Some of the features demonstrated in this guide might require special configuration of your editor. For configuration we refer you to the [Resources](#resources) section below and general resources on the web.
 :::
 
@@ -102,11 +102,11 @@ It should look like
     Your browser does not support the video tag.
 </video>
 
-:::note
+:::{admonition} Note
 In the video above you will notice that the app is displayed inside the editor. This feature is supported in VS Code as the *simple browser*. PyCharm supports a similar feature via an extension.
 :::
 
-:::note
+:::{admonition} Note
 You should only serve your apps with `--autoreload` while developing
 :::
 
@@ -147,11 +147,11 @@ It would look something like
 
 ![Tooltip of FastListTemplate](../_static/images/develop_editor_hover.png)
 
-:::info
+:::{admonition} Info
 The tooltip of Panel components normally provide an *example* code snippet and a *Reference* link. The *Reference* link makes it very easy to navigate to the reference guides on the Panel web site for more information.
 :::
 
-:::info
+:::{admonition} Info
 If your editor does not show any tooltips, then please refer to your editors documentation to figure out how to enable it.
 :::
 
@@ -161,7 +161,7 @@ This should open the `FastListTemplate` reference guide
 
 [![FastListTemplate reference guide](../_static/images/develop_editor_reference_guide.png)](https://panel.holoviz.org/reference/templates/FastListTemplate.html)
 
-:::note
+:::{admonition} Note
 It is a great idea to use the *Example* code snippets and *Reference* links to speed up your workflow.
 :::
 
@@ -213,7 +213,7 @@ Column(design=<class 'panel.theme.materi...)
 2024-01-20 08:05:25,768 ServerConnection created
 ```
 
-:::note
+:::{admonition} Note
 By printing *layout* components like `Column` you can understand how they are composed. This enables you to *access* the subcomponents of the layout.
 :::
 
@@ -326,7 +326,7 @@ exec  pdb
 
 Write `c` and press `ENTER` to continue running the code and server.
 
-:::note
+:::{admonition} Note
 For more about debugging with [Pdb](https://docs.python.org/3/library/pdb.html) and `breakpoint` please check out the [PDB Documentation](https://docs.python.org/3/library/pdb.html).
 
 For *integrated debugging* in your editor, please refer to the [Resources](#resources) section below and general resources on the web.
