@@ -1981,6 +1981,9 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             model_msg['children'] = children
         self._set_on_model(model_msg, root, model)
         self._set_on_model(data_msg, root, model.data)
+        reset = {p: False for p in data_msg if p in model.event_params}
+        if reset:
+            self._set_on_model(reset, root, model.data)
 
     def on_event(self, node: str, event: str, callback: Callable) -> None:
         """
