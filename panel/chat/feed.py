@@ -254,6 +254,11 @@ class ChatFeed(ListPanel):
             **linked_params
         )
         card_params = linked_params.copy()
+        card_stylesheets = (
+            self._stylesheets +
+            self.param.stylesheets.rx() +
+            self.param.card_params.rx().get('stylesheets', [])
+        )
         card_params.update(
             margin=self.param.margin,
             align=self.param.align,
@@ -267,9 +272,11 @@ class ChatFeed(ListPanel):
             min_height=self.param.min_height,
             title_css_classes=["chat-feed-title"],
             styles={"padding": "0px"},
-            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
+            stylesheets=card_stylesheets
         )
-        card_params.update(self.card_params)
+        card_overrides = self.card_params.copy()
+        card_overrides.pop('stylesheets', None)
+        card_params.update(card_overrides)
         self.link(self._chat_log, objects='objects', bidirectional=True)
         # we have a card for the title
         self._card = Card(
@@ -303,7 +310,9 @@ class ChatFeed(ListPanel):
 
     @param.depends("card_params", watch=True)
     def _update_card_params(self):
-        self._card.param.update(**self.card_params)
+        card_params = self.card_params.copy()
+        card_params.pop('stylesheets', None)
+        self._card.param.update(**card_params)
 
     @param.depends("placeholder_text", watch=True, on_init=True)
     def _update_placeholder(self):
