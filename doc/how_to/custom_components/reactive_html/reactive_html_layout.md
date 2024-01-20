@@ -195,7 +195,7 @@ Please note you can optionally
 
 ## Create a list like layout
 
-If you want to create a *list like* layout similar to `Columnn` and `Row`, you can
+If you want to create a *list like* layout similar to `Column` and `Row`, you can
 combine `NamedListLike` and `ReactiveHTML`.
 
 ```{pyodide}
