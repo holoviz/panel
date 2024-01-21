@@ -2,12 +2,10 @@
 
 These guides already exists
 
-- [components](components.md)
 - [development](development.md)
 - [interactivity](interactivity.md)
 - [layouts](layouts.md)
 - [param](param.md)
-- [structure](structure.md)
 - [styling](styling.md)
 
 They should be refactored into the below
@@ -47,6 +45,7 @@ CLASS BASED APPROACH. UNDERSTANDING OF PARAM AND SUPPLEMENTARY APIs
 
 - [ ] [Serve Panel Apps](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/intermediate/panel_serve.md)
 - [ ] [Develop in an Editor](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/intermediate/develop_editor.md)
+- [ ] [Structure with DataStore](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/intermediate/structure_data_store.md)
 - [ ] Work with Parameters and Events: Param
 - [ ] Organize Components flexibly with FlexBox
 - [ ] Schedule Tasks: pn.state.onload, pn.state.schedule_task, pn.state.add_periodic_callback, pn.state.on_session_created, pn.state.on_session_destroyed, async generators, pn.state.execute
