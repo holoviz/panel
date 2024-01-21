@@ -12,11 +12,13 @@ These guides already exists
 
 They should be refactored into the below
 
-## Beginner
+## Basic
 
 These guides are for you that is just starting to discover Panel.
 
-You will learn to develop and deploy amazing tools and apps that can be contained within a single Python file or notebook.
+You will learn to develop and deploy basic tools and apps that can be contained within a single Python file or notebook.
+
+WIDGET and `.bind` BASED APPROACH
 
 - [ ] Getting installed (just a link to getting started)
   - [ ] Using a pre-installed environment for this tutorial: Purpose is to lower Barrier of entry. Make it possible to do at large conference with poor internet. Use Binder, Github spaces, Anaconda Notebooks ???
@@ -25,37 +27,36 @@ You will learn to develop and deploy amazing tools and apps that can be containe
 - [ ] [Develop in a notebook](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/develop_notebook.md)
 - [ ] [Display with `pn.panel`](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/display_pn_panel.md)
 - [ ] Display Content Efficiently:  panes - Panels output components
-- [ ] Organize Components Easily: Columns and Rows, sizing_mode. links to Layouts in Components Gallery
-- [ ] Work with Parameters and Events: Param
+- [ ] Organize Components Easily: Columns and Rows, sizing_mode. margin, align, links to Layouts in Components Gallery
 - [ ] Accept User Input: widgets. Panels input components
-- [ ] Add interactivity easily and efficiently: `pn.bind`
-- [ ] Add interactivity flexibly: `.rx`
-- [ ] Add side effects: `.watch` (or `watch=True` ?)
+- [ ] Add interactivity easily and efficiently: `pn.bind`. Also with `watch=True`.
 - [ ] Style components with designs
 - [ ] Style components with styles
-- [ ] Organize and Style apps with templates
+- [ ] Organize and Style with templates
 - [ ] Indicate busy-ness with indicators
-- [ ] Show progress dynamically with generators
 - [ ] Improve performance: caching
-- [ ] Share your work: Deploy to Hugging Face Spaces, link to other deployment options including WASM
+- [ ] Share your work: Deploy to Hugging Face Spaces
 
 ## Intermediate
 
 These guides are for you that is ready to navigate and explore more advanced features of Panel.
 
-You will learn to develop and deploy complex tools and multi-page apps that can support more demanding use cases.
+You will learn to develop and deploy complex tools and multi-page apps to support advanced use cases.
+
+CLASS BASED APPROACH. UNDERSTANDING OF PARAM AND SUPPLEMENTARY APIs
 
 - [ ] [Serve Panel Apps](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/intermediate/panel_serve.md)
 - [ ] [Develop in an Editor](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/intermediate/develop_editor.md)
-- [ ] Organize Components Part II: margin, align
+- [ ] Work with Parameters and Events: Param
 - [ ] Organize Components flexibly with FlexBox
 - [ ] Schedule Tasks: pn.state.onload, pn.state.schedule_task, pn.state.add_periodic_callback, pn.state.on_session_created, pn.state.on_session_destroyed, async generators, pn.state.execute
 - [ ] [Structuring Applications](https://holoviz-dev.github.io/panel/tutorials/structure.html) (I think this is a great tutorial !!!): Class based approach
 - [ ] Build custom components easily: Viewable
 - [ ] Sync location
+- [ ] Add interactivity flexibly: `.rx`
+- [ ] Add side effects: `.watch` (or `watch=True` ?)
 - [ ] Avoid Common Mistakes: Defining "global" widgets in utility modules that ends up being shared between users.
-- [ ] Customizing Panel. For example for your brand.
-- [ ] Use panels documentation in your browser: Panelite
+- [ ] Show progress dynamically with generators
 - [ ] [Enable Throtttling](../how_to/performance/throttling.html)
 - [ ] Share your work: Embed, Save, link to other deployment options including WASM
 - [ ] Build maintainable apps: Class based approach, `@pn.depends`
@@ -65,7 +66,7 @@ You will learn to develop and deploy complex tools and multi-page apps that can 
 
 ## Advanced
 
-For advanced users who are ready to pioneer and push the boundaries of what can be achieved with Panel.
+These guides are for you that is ready to pioneer and push the boundaries of what can be achieved with Panel.
 
 You will learn how to extend Panel to support your domain or specialized use cases.
 
@@ -73,6 +74,7 @@ You will learn how to extend Panel to support your domain or specialized use cas
 - [ ] Develop and share custom Bokeh models
 - [ ] Add custom Authentication
 - [ ] Javascript
+- [ ] Customizing Panel. For example for your brand.
 
 ## Reference Examples
 
