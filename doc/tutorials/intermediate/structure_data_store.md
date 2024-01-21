@@ -20,6 +20,28 @@ pn.extension('tabulator', 'vega', throttled=True)
 
 ## Install the dependencies
 
+Please make sure [Altair](https://altair-viz.github.io/), [Pandas](https://pandas.pydata.org) and [PyArrow](https://arrow.apache.org/docs/python/index.html) are installed.
+
+::::{tab-set}
+
+:::{tab-item} conda
+:sync: conda
+
+``` bash
+conda install -y -c conda-forge altair pandas pyarrow
+```
+:::
+
+:::{tab-item} pip
+:sync: pip
+
+``` bash
+pip install altair pandas pyarrow
+```
+:::
+
+::::
+
 ## Build the app
 
 ### The Data Store
@@ -96,7 +118,7 @@ The `DataStore` class will be responsible for transforming `data` in various way
 
 1. The `DataStore` must receive `data` as an argument when instantiated. 
 2. When the `filters` value is updated, it triggers an update of the `count`, `total_capacity`, ... etc. values.
-``````
+:::
 
 ### The Views
 
@@ -261,6 +283,8 @@ Run `panel serve app.py --autoreload`
 
 The app will look something like
 
+![Wind Turbine App with DataStore](../../_static/images/structure_data_store_app.png)
+
 ## Reuse in a Notebook
 
 The beauty of this compositional approach to constructing application components is that they are now usable in multiple contexts.
@@ -298,3 +322,5 @@ In this tutorial you have learned:
 - The `DataStore` component receives `data` and `filters`. Based on the `data` and `filters` it *transforms* the data
 - One or more `View` components consumes the *transformed* data.
 - The components can be (re-)used for data exploration in notebooks and for building apps
+
+## Resources

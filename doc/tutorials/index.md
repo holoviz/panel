@@ -129,7 +129,7 @@ Learn to serve multi-page apps and how-to configure `panel serve`.
 :link-type: doc
 
 :::{grid-item-card} {octicon}`code;2.5em;sd-mr-1` Structure with DataStore
-:link: intermediate/structure_datastore
+:link: intermediate/structure_data_store
 :link-type: doc
 
 Learn how to structure larger applications with the `DataStore` pattern
@@ -147,7 +147,7 @@ Learn more advanced features like debugging to develop efficiently with Panel in
 
 intermediate/panel_serve
 intermediate/develop_editor
-intermediate/structure_datastore
+intermediate/structure_data_store
 ```
 
 ---
