@@ -21,7 +21,7 @@ You will learn to develop and deploy amazing tools and apps that can be containe
 :link: beginner/panel_serve
 :link-type: doc
 
-Learn how to serve apps with `panel serve` and *autoreload*.
+Learn how to serve basic apps from a Python script, Notebook or Markdown document
 :::
 
 :::{grid-item-card} {octicon}`code;2.5em;sd-mr-1` Develop in an Editor
