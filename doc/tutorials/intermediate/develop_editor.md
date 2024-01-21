@@ -39,7 +39,7 @@ The app will look something like
 
 Click the `Click Me` Button.
 
-You terminal will look something like
+Your terminal will look something like
 
 ```bash
 $ panel serve app.py --autoreload
@@ -105,4 +105,4 @@ You have learned to
 
 ### How-to
 
-- [Configure VS Code](../how_to/editor/vscode_configure.md)
+- [Configure VS Code](../../how_to/editor/vscode_configure.md)

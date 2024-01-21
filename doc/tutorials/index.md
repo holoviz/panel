@@ -21,28 +21,35 @@ You will learn to develop and deploy amazing tools and apps that can be containe
 :link: beginner/panel_serve
 :link-type: doc
 
-Learn how to serve an app with autoreload using the `panel serve` command.
+Learn how to serve apps with `panel serve` and *autoreload*.
 :::
 
 :::{grid-item-card} {octicon}`code;2.5em;sd-mr-1` Develop in an Editor
 :link: beginner/develop_editor
 :link-type: doc
 
-Learn the basics of developing Panel apps in an editor
+Learn the basics of developing Panel apps in an editor.
 :::
 
 :::{grid-item-card} {octicon}`note;2.5em;sd-mr-1` Develop in a Notebook
 :link: beginner/develop_notebook
 :link-type: doc
 
-Learn the basics of developing Panel apps in a notebook
+Learn the basics of developing Panel apps in a notebook.
 :::
 
 :::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` Display objects with `pn.panel`
 :link: beginner/display_pn_panel
 :link-type: doc
 
-Learn how to display objects easily and flexibly with `pn.panel`.
+Learn how to display objects easily  with `pn.panel`.
+:::
+
+:::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` Display objects with Panes
+:link: beginner/display_panes
+:link-type: doc
+
+Learn how to display objects efficiently with Panes.
 :::
 
 :::{grid-item-card} {octicon}`plug;2.5em;sd-mr-1` Param
@@ -98,6 +105,7 @@ beginner/panel_serve
 beginner/develop_editor
 beginner/develop_notebook
 beginner/display_pn_panel
+beginner/display_panes
 param
 interactivity
 development

@@ -45,7 +45,7 @@ Start from an empty notebook named `app.ipynb`.
 
 Copy paste the 3 code cells below into the notebook
 
-```{python}
+```python
 import panel as pn
 
 pn.extension()
@@ -59,7 +59,7 @@ pn.panel("Hello World").servable()
 pn.panel("Hello Again")
 ```
 
-Run the cells if you have not already done it.
+Run the cells and save it as `app.ipynb` if you have not already done it.
 
 It should look like
 
@@ -85,7 +85,7 @@ You will see the app launching in a separate window on the right.
 ![Jupyter Panel Preview](../../_static/images/develop_notebook_simple_example_open_preview.png)
 
 :::{admonition} Note
-You will notice that "Hello Again" is not displayed in the app preview. That is because `pn.panel("Hello Again")` has not been added to the app. You can do that by marking it `.servable()`.
+You will notice that "Hello Again" is not displayed in the app preview. That is because `pn.panel("Hello Again")` has not been marked `.servable()`.
 :::
 
 Replace `pn.panel("Hello Again")` with
@@ -124,7 +124,7 @@ The preview will automatically reload and look like
 
 Watch the video below to learn how the techniques above can be used to develop a more advanced app.
 
-<video controls="" poster="../_static/images/jupyter_panel_preview_in_action.png">
+<video controls="" poster="../../_static/images/jupyter_panel_preview_in_action.png">
     <source src="https://assets.holoviz.org/panel/tutorials/jupyter_panel_preview_in_action.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
     Your browser does not support the video tag.
 </video>
@@ -196,7 +196,7 @@ Now change the
 
 It should look something like
 
-<video controls="" poster="../_static/images/develop_notebook_panel_serve_after.png">
+<video controls="" poster="../../_static/images/develop_notebook_panel_serve_after.png">
     <source src="https://assets.holoviz.org/panel/tutorials/develop_notebook_panel_serve.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
     Your browser does not support the video tag.
 </video>
@@ -346,8 +346,8 @@ You can
 
 ### How-to
 
-- [Develop in other notebook environments](../how_to/notebook/notebook.html)
-- [Display Output in Notebooks](../how_to/notebook/notebook.html)
-- [Preview Apps in Jupyterlab](../how_to/notebook/jupyterlabpreview.md)
+- [Develop in other notebook environments](../../how_to/notebook/notebook.md)
+- [Display Output in Notebooks](../../how_to/notebook/notebook.md)
+- [Preview Apps in Jupyterlab](../../how_to/notebook/jupyterlabpreview.md)
 - [Serve an app from a notebook file](serve.md)
-- [Use VS Code Notebook and Interactive Environment](../how_to/editor/vscode_configure.html#notebook-and-interactive-environment)
+- [Use VS Code Notebook and Interactive Environment](../../how_to/editor/vscode_configure.md#notebook-and-interactive-environment)

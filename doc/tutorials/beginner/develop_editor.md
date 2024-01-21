@@ -111,7 +111,7 @@ You should only serve your apps with `--autoreload` while developing
 
 Stop the Panel server by sending a termination signal. In most terminal environments, you can do this by pressing `CTRL+C` one or more times.
 
-## Inspect Panel objects via hover
+## Inspect via hover
 
 Copy the code below into a file named `app.py`.
 
@@ -147,7 +147,7 @@ It would look something like
 ![Tooltip of FastListTemplate](../../_static/images/develop_editor_hover.png)
 
 :::{admonition} Note
-The tooltip of Panel components normally provide an *example* code snippet and a *Reference* link. The *Reference* link makes it very easy to navigate to the reference guides on the Panel web site for more information.
+The tooltip of Panel components normally provide an *Example* code snippet and a *Reference* link. The *Reference* link makes it very easy to navigate to the reference guides on the Panel web site for more information.
 :::
 
 :::{admonition} Note
@@ -164,7 +164,7 @@ This should open the `FastListTemplate` reference guide
 It is a great idea to use the *Example* code snippets and *Reference* links to speed up your workflow.
 :::
 
-## Inspect components via `print`
+## Inspect via `print`
 
 Copy the code below into a file named `app.py`.
 
@@ -228,7 +228,7 @@ This will look like
 
 ![Layout[1]](../../_static/images/develop_editor_layout1.png)
 
-## Inspect component Parameters via `.param`
+## Inspect Parameters via `.param`
 
 You can inspect the *parameters* of Panels components via the `.param` namespace and its `._repr_html_` method.
 
@@ -271,5 +271,5 @@ You have learned to
 
 ### How-to
 
-- [Configure VS Code](../how_to/editor/vscode_configure.md)
-- [Write apps in Markdown](../how_to/editor/markdown.md)
+- [Configure VS Code](../../how_to/editor/vscode_configure.md)
+- [Write apps in Markdown](../../how_to/editor/markdown.md)

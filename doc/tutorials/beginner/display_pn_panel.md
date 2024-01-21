@@ -1,13 +1,15 @@
-# Display objects easily with `pn.panel`
+# Display objects with `pn.panel`
 
-In this guide you will learn to display Python objects very easily and flexibly with `pn.panel`:
+In this guide you will learn to display Python objects easily with `pn.panel`:
 
 - Display a string with `pn.panel(some_string)`
-- Display plot figures like Matplotlib, hvPlot and Plotly with `pn.panel(fig)`
+- Display plot figures like [Matplotlib](https://matplotlib.org/), [hvPlot](https://hvplot.holoviz.org) and [Plotly](https://plotly.com/python/) with `pn.panel(fig)`
+- Display DataFrames with `pn.panel(df)`
 - Display most Python objects with `pn.panel(some_python_object)`
 - Configure how an object is displayed by giving arguments to `pn.panel`
-- Display most Python objects in layouts like `pn.Column` with and without the use of `pn.panel`
-- Use a specific Pane type instead of `pn.panel` if performance is key
+- Display most Python objects in *layouts* like `pn.Column` with and without the use of `pn.panel`
+- Use a specific *Pane* instead of `pn.panel` if performance is key
+- Add javascript dependencies via `pn.extension`. For example `pn.extension("plotly")`
 
 :::{admonition} Note
 When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
@@ -54,7 +56,7 @@ We add `.servable()` to the component to add it to the app served by `panel serv
 :::
 
 :::{admonition} Note
-`pn.panel` uses a *heuristic* algorithm to determine how to best display the `object` passed as argument. To make this very explicit we will `print` the component in all the examples below. You would of course not normally do that in a notebook or data app
+`pn.panel` uses a *heuristic* algorithm to determine how to best display the `object` passed as argument. To make this very explicit we will `print` the component in all the examples below.
 :::
 
 Run the code:
@@ -71,10 +73,10 @@ component.servable()
 ```
 
 :::{admonition} Note
-You cell or terminal output should contain `Markdown(str)`. It means `pn.panel` has picked the [`Markdown` *pane*](../../reference/panes/Markdown.md) to display the `str` object.
+Your cell or terminal output should contain `Markdown(str)`. It means `pn.panel` has picked the [`Markdown`](../../reference/panes/Markdown.md) pane to display the `str` object.
 :::
 
-Lets verify that *markdown strings* are actually displayed and rendered nicely
+Lets verify that *markdown strings* are actually displayed and rendered nicely.
 
 Run the code:
 
@@ -131,9 +133,9 @@ component.servable()
 Please notice `pn.panel` chose a [`Matplotlib`](../../reference/panes/Matplotlib.md) pane to display the Matplotlib figure.
 
 :::{admonition} Note
-In the code example above we provide arguments to `pn.panel`. These will be applied to the *pane* selected by `pn.panel` to display the object. In this example the [`Matplotlib`](../../reference/panes/Matplotlib.md) pane is selected.
+In the example above we provided arguments to `pn.panel`. These will be applied to the *pane* selected by `pn.panel` to display the object. In this example the [`Matplotlib`](../../reference/panes/Matplotlib.md) pane is selected.
 
-The arguments `dpi` and `tight` would not make sense if a string was provided as argument to `pn.panel`. In that case the exception `TypeError: Markdown.__init__() got an unexpected keyword argument 'dpi'` would be raised.
+The arguments `dpi` and `tight` would not make sense if a string was provided as argument to `pn.panel`. In that case `pn.panel` would pick a Markdown *pane* and the exception `TypeError: Markdown.__init__() got an unexpected keyword argument 'dpi'` would be raised.
 :::
 
 ## Display a hvPlot plot
@@ -160,7 +162,11 @@ print(component)
 component.servable()
 ```
 
-Please notice that `pn.panel` chose a [`HoloViews`](../../reference/panes/HoloViews.md) pane to display the hvPlot figure.
+Please notice that `pn.panel` chose a [`HoloViews`](../../reference/panes/HoloViews.md) pane to display the [hvPlot](https://hvplot.holoviz.org/user_guide/Customization.html) figure.
+
+:::{admonition} Note
+[hvPlot](https://hvplot.holoviz.org/user_guide/Customization.html) is the **easy to use** plotting sister of Panel. It works similarly to the the familiar [Pandas `.plot` api](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.plot.html). hvPlot is built on top of the data visualization library [HoloViews](https://holoviews.org/). hvPlot, HoloViews and Panel are all part of the [HoloViz](https://holoviz.org/) family.
+:::
 
 ## Display a Plotly plot
 
@@ -175,14 +181,14 @@ pn.extension("plotly")
 
 data = pd.DataFrame([
     ('Monday', 7), ('Tuesday', 4), ('Wednesday', 9), ('Thursday', 4),
-    ('Friday', 4), ('Saturday', 4), ('Sunay', 4)], columns=['Day', 'Orders']
+    ('Friday', 4), ('Saturday', 4), ('Sunday', 4)], columns=['Day', 'Orders']
 )
 
 fig = px.line(data, x="Day", y="Orders")
 fig.update_traces(mode="lines+markers", marker=dict(size=10), line=dict(width=4))
 fig.layout.autosize = True
 
-component = pn.pane.Plotly(fig)
+component = pn.panel(fig, height=400, sizing_mode="stretch_width")
 print(component)
 
 component.servable()
@@ -199,9 +205,32 @@ If we forget to add `"plotly"` to `pn.extension` then the Plotly figure will not
 - a served app. But only if the Plotly figure is displayed dynamically after the app has loaded.
 :::
 
-## Display (almost) any Python object
+## Display a DataFrame
 
-`pn.panel` can display most Python objects.
+Run the code:
+
+```{pyodide}
+import pandas as pd
+import panel as pn
+
+pn.extension()
+
+data = pd.DataFrame([
+    ('Monday', 7), ('Tuesday', 4), ('Wednesday', 9), ('Thursday', 4),
+    ('Friday', 4), ('Saturday', 4), ('Sunday', 4)], columns=['Day', 'Orders']
+)
+component = pn.panel(data)
+print(component)
+component.servable()
+```
+
+```{admonition} Note
+If you want to display larger dataframes, customize the way the dataframes are displayed or make them more interactive you can find specialized components in the [Component Gallery](https://panel.holoviz.org/reference/index.html) supporting these use cases. For example the [Tabulator](https://panel.holoviz.org/reference/widgets/Tabulator.html) widget and [Perspective](https://panel.holoviz.org/reference/panes/Perspective.html) pane.
+```
+
+## Display any Python object
+
+`pn.panel` can display (almost) any Python object.
 
 Run the code below
 
@@ -220,9 +249,7 @@ print(component)
 component.servable()
 ```
 
-Please notice that `pn.panel` chose to display the objects using the [`JSON`](../../reference/panes/JSON.md), [`PNG`](../../reference/panes/PNG.md) and [`Audio`](../../reference/panes/Audio.md) panes respectively.
-
-## Display (almost) any Python object in a layout
+## Display any Python object in a layout
 
 Run the code below
 
@@ -264,7 +291,7 @@ print(component)
 component.servable()
 ```
 
-## Use a specific Pane if performance is key
+## Consider Performance
 
 :::{admonition} Note
 `pn.panel` is an easy to use and flexible **helper function** that will convert an object into a [*Pane*](../../reference/index.md#panes).
@@ -276,7 +303,7 @@ Resolving the appropriate *representation* for an object takes time. So if perfo
 
 Run the code below
 
-```python
+```{pyodide}
 import panel as pn
 import matplotlib
 import matplotlib.pyplot as plt
@@ -305,21 +332,29 @@ pn.pane.Matplotlib(fig, dpi=144, tight=True).servable()
 
 ## Recap
 
-In this guide you have learned to display Python objects very easily and flexibly with `pn.panel`:
+In this guide you have learned to display Python objects easily with `pn.panel`:
 
 - Display a string with `pn.panel(some_string)`
 - Display plot figures like Matplotlib, hvPlot and Plotly with `pn.panel(fig)`
 - Display most Python objects with `pn.panel(some_python_object)`
+- Display DataFrames with `pn.panel(df)`
 - Configure how an object is displayed by giving arguments to `pn.panel`
-- Display most Python objects in layouts like `pn.Column` with and without the use of `pn.panel`
-- Use a specific Pane type instead of `pn.panel` if performance is key
+- Display most Python objects in *layouts* like `pn.Column` with and without the use of `pn.panel`
+- Use a specific *Pane* instead of `pn.panel` if performance is key
+- Add javascript dependencies via `pn.extension`. For example `pn.extension("plotly")`
 
 ## Resources
 
+### Tutorials
+
+- [Display objects with Panes](display_panes.md)
+
 ### How-to
 
-- [Access Pane Type](../how_to/components/pane_type.md)
+- [Access Pane Type](../../how_to/components/pane_type.md)
+- [Construct Panes](../../how_to/components/construct_panes.md)
+- [Style Components](../../how_to/styling/index.md)
 
-### Other
+### Component Gallery
 
-- [Pane Gallery](../../reference/index.md#panes)
+- [Panes](../../reference/index.md#panes)

@@ -1,8 +1,8 @@
 # Serve Apps
 
-In this tutorial you will learn more advanced techniques for serving Panel apps:
+In this tutorial you will learn more advanced techniques to serve Panel apps:
 
-- serve a multipage app with a command like `panel serve app.py app2.ipynb`
+- serve a multi page app by providing a list of files or [*globs*](https://en.wikipedia.org/wiki/Glob_(programming)).
 - list the configuration options of `panel serve` by adding the flag `--help`.
 
 :::{admonition} Note
@@ -57,7 +57,7 @@ It will look something like
 ![Panel serve multi page app](../../_static/images/panel-serve-multipage-app.png)
 
 :::{admonition} Note
-You may use one or more [*globs*](https://en.wikipedia.org/wiki/Glob_(programming)) like `*`, `*.py`, `*.ipynb` or `*.md` to serve a long or dynamic list of apps.
+You can also use one or more [*globs*](https://en.wikipedia.org/wiki/Glob_(programming)) to serve a long or dynamic list of apps. For example `apps/*`, `pages/*.py`, `examples/*.ipynb` or `docs/*.md`.
 :::
 
 ## Configure `panel serve`
@@ -235,14 +235,14 @@ options:
 
 You can
 
-- serve a multipage app with a command like `panel serve app.py app2.ipynb`
+- serve a multi page app by providing a list of files or [*globs*](https://en.wikipedia.org/wiki/Glob_(programming)).
 - list the configuration options of `panel serve` by adding the flag `--help`.
 
 ## Additional Resources
 
 ### Tutorials
 
-- [Develop in an Editor (beginner)](../beginner/develop_editor.md)
+- [Serve Apps (beginner)](../beginner/panel_serve)
 
 ### How-to
 
