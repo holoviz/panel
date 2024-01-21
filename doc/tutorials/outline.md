@@ -26,7 +26,7 @@ WIDGET and `.bind` BASED APPROACH
 - [ ] [Develop in an Editor](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/intermediate/develop_editor.md)
 - [ ] [Develop in a notebook](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/develop_notebook.md)
 - [ ] [Display with `pn.panel`](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/display_pn_panel.md)
-- [ ] Display Content Efficiently:  panes - Panels output components
+- [ ] [Display with Panes](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/display_panes.md)
 - [ ] Organize Components Easily: Columns and Rows, sizing_mode. margin, align, links to Layouts in Components Gallery
 - [ ] Accept User Input: widgets. Panels input components
 - [ ] Add interactivity easily and efficiently: `pn.bind`. Also with `watch=True`.
