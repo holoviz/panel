@@ -48,7 +48,7 @@ pip install hvplot matplotlib plotly
 
 ::::
 
-## Display a string
+## Display a String
 
 Run the code:
 

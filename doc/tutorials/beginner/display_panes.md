@@ -58,7 +58,7 @@ pip install hvplot matplotlib plotly
 
 ::::
 
-## Display Stringss
+## Display Strings
 
 The [`Str`](../../reference/panes/Str.ipynb) pane can display any text.
 
@@ -88,7 +88,7 @@ It should look like
 
 [![Str reference guide](../../_static/images/display_panes_str_reference.png)](../../reference/panes/Str.ipynb)
 
-## Display Markdown Strings
+## Display Markdown
 
 The [`Markdown`](../../reference/panes/Markdown.ipynb) pane can format and display [*markdown*](https://en.wikipedia.org/wiki/Markdown) strings. 
 
