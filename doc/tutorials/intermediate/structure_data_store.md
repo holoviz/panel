@@ -1,4 +1,4 @@
-# Structure Applications with a DataStore
+# Structure with a DataStore
 
 In this tutorial you will learn how to use the `DataStore` *design pattern*:
 
@@ -287,7 +287,9 @@ The app will look something like
 
 ## Reuse in a Notebook
 
+:::{admonition} Note
 The beauty of this compositional approach to constructing application components is that they are now usable in multiple contexts.
+:::
 
 Copy the two cells below into a notebook, remove the `#` from the imports and run the cells.
 
@@ -298,7 +300,9 @@ Copy the two cells below into a notebook, remove the `#` from the imports and ru
 import panel as pn
 
 pn.extension("tabulator", "vega", throttled=True)
+```
 
+```{pyodide}
 turbines = get_turbines()
 
 ds = DataStore(data=turbines, filters=['p_year', 'p_cap', 't_manu'])
