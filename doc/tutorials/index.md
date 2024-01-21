@@ -8,7 +8,7 @@ We will assume you have successfully been able to [install Panel](../getting_sta
 
 ---
 
-## Beginner
+## Basic
 
 These tutorials are for you that is just starting to discover Panel.
 
