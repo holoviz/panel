@@ -246,8 +246,8 @@ You can
 
 ### How-to
 
-- [Launch a server dynamically with `pn.serve` or `pn.show`](../how_to/server/programmatic.md)
-- [Launch a server on the commandline](../how_to/server/commandline.md)
-- [Serve multiple applications with `pn.serve`](../how_to/server/multiple.md)
-- [Serve static files with `--static-dirs`](../how_to/server/static_files.md)
-- [Write and serve apps in Markdown](../how_to/editor/markdown.md)
+- [Launch a server dynamically with `pn.serve` or `pn.show`](../../how_to/server/programmatic.md)
+- [Launch a server on the commandline](../../how_to/server/commandline.md)
+- [Serve multiple applications with `pn.serve`](../../how_to/server/multiple.md)
+- [Serve static files with `--static-dirs`](../../how_to/server/static_files.md)
+- [Write and serve apps in Markdown](../../how_to/editor/markdown.md)

@@ -42,14 +42,14 @@ Learn the basics of developing Panel apps in a notebook.
 :link: beginner/display_pn_panel
 :link-type: doc
 
-Learn how to display objects easily  with `pn.panel`.
+Learn how to display Python objects easily  with `pn.panel`.
 :::
 
 :::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` Display objects with Panes
 :link: beginner/display_panes
 :link-type: doc
 
-Learn how to display objects efficiently with Panes.
+Learn how to display Python objects efficiently with Panes.
 :::
 
 :::{grid-item-card} {octicon}`plug;2.5em;sd-mr-1` Param

@@ -15,6 +15,15 @@ In this guide you will learn to display Python objects easily with `pn.panel`:
 When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
+:::{admonition} Note
+The code cell below is experiment. See https://github.com/holoviz/panel/pull/6213/files#r1460849652
+:::
+
+```{pyodide}
+import panel as pn
+pn.extension("plotly")
+```
+
 ## Install the Dependencies
 
 Please make sure [hvPlot](https://hvplot.holoviz.org/index.html), [Matplotlib](https://matplotlib.org/) and [Plotly](https://plotly.com/python/) are installed.
@@ -135,7 +144,7 @@ Please notice `pn.panel` chose a [`Matplotlib`](../../reference/panes/Matplotlib
 :::{admonition} Note
 In the example above we provided arguments to `pn.panel`. These will be applied to the *pane* selected by `pn.panel` to display the object. In this example the [`Matplotlib`](../../reference/panes/Matplotlib.md) pane is selected.
 
-The arguments `dpi` and `tight` would not make sense if a string was provided as argument to `pn.panel`. In that case `pn.panel` would pick a Markdown *pane* and the exception `TypeError: Markdown.__init__() got an unexpected keyword argument 'dpi'` would be raised.
+The arguments `dpi` and `tight` would not make sense if a string was provided as argument to `pn.panel`. In that case `pn.panel` would pick a [Markdown](../../reference/panes/Markdown.md) *pane* and the exception `TypeError: Markdown.__init__() got an unexpected keyword argument 'dpi'` would be raised.
 :::
 
 ## Display a hvPlot plot
@@ -165,7 +174,7 @@ component.servable()
 Please notice that `pn.panel` chose a [`HoloViews`](../../reference/panes/HoloViews.md) pane to display the [hvPlot](https://hvplot.holoviz.org/user_guide/Customization.html) figure.
 
 :::{admonition} Note
-[hvPlot](https://hvplot.holoviz.org/user_guide/Customization.html) is the **easy to use** plotting sister of Panel. It works similarly to the the familiar [Pandas `.plot` api](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.plot.html). hvPlot is built on top of the data visualization library [HoloViews](https://holoviews.org/). hvPlot, HoloViews and Panel are all part of the [HoloViz](https://holoviz.org/) family.
+[hvPlot](https://hvplot.holoviz.org) is the **easy to use** plotting sister of Panel. It works similarly to the the familiar [Pandas `.plot` api](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.plot.html). hvPlot is built on top of the data visualization library [HoloViews](https://holoviews.org/). hvPlot, HoloViews and Panel are all part of the [HoloViz](https://holoviz.org/) family.
 :::
 
 ## Display a Plotly plot
@@ -225,7 +234,7 @@ component.servable()
 ```
 
 ```{admonition} Note
-If you want to display larger dataframes, customize the way the dataframes are displayed or make them more interactive you can find specialized components in the [Component Gallery](https://panel.holoviz.org/reference/index.html) supporting these use cases. For example the [Tabulator](https://panel.holoviz.org/reference/widgets/Tabulator.html) widget and [Perspective](https://panel.holoviz.org/reference/panes/Perspective.html) pane.
+If you want to display larger dataframes, customize the way the dataframes are displayed or make them more interactive you can find specialized components in the [Component Gallery](../../reference/index.md) supporting these use cases. For example the [Tabulator](https://panel.holoviz.org/reference/widgets/Tabulator.html) widget and [Perspective](https://panel.holoviz.org/reference/panes/Perspective.html) pane.
 ```
 
 ## Display any Python object
