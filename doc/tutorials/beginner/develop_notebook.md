@@ -351,3 +351,7 @@ You can
 - [Preview Apps in Jupyterlab](../../how_to/notebook/jupyterlabpreview.md)
 - [Serve an app from a notebook file](serve.md)
 - [Use VS Code Notebook and Interactive Environment](../../how_to/editor/vscode_configure.md#notebook-and-interactive-environment)
+
+## Explanation
+
+- [Develop Seamlessly](../../explanation/develop_seamlessly.md)

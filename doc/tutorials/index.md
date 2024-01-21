@@ -24,18 +24,18 @@ You will learn to develop and deploy amazing tools and apps that can be containe
 Learn how to serve basic apps from a Python script, Notebook or Markdown document
 :::
 
-:::{grid-item-card} {octicon}`code;2.5em;sd-mr-1` Develop in an Editor
-:link: beginner/develop_editor
-:link-type: doc
-
-Learn the basics of developing Panel apps in an editor.
-:::
-
 :::{grid-item-card} {octicon}`note;2.5em;sd-mr-1` Develop in a Notebook
 :link: beginner/develop_notebook
 :link-type: doc
 
 Learn the basics of developing Panel apps in a notebook.
+:::
+
+:::{grid-item-card} {octicon}`code;2.5em;sd-mr-1` Develop in an Editor
+:link: beginner/develop_editor
+:link-type: doc
+
+Learn the basics of developing Panel apps in an editor.
 :::
 
 :::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` Display objects with `pn.panel`
@@ -66,13 +66,6 @@ Panel and other projects in the HoloViz ecosystem all build on Param. In this se
 In this section you learn how to leverage Parameters and dependencies on parameters to add interactivity. In particular we will focus on implementing interactivity through reactivity, rather than the more imperative style of programming you might be used to from other UI frameworks.
 :::
 
-:::{grid-item-card} {octicon}`browser;2.5em;sd-mr-1` Effective Development
-:link: development
-:link-type: doc
-
-In this section we will introduce you to the most important concepts you need to know to become an effective Panel developer in notebooks and your favorite editor.
-:::
-
 :::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1` Layouts
 :link: layouts
 :link-type: doc
@@ -95,13 +88,12 @@ In this section we will review different approaches for styling components, from
 :maxdepth: 2
 
 beginner/panel_serve
-beginner/develop_editor
 beginner/develop_notebook
+beginner/develop_editor
 beginner/display_pn_panel
 beginner/display_panes
 param
 interactivity
-development
 layouts
 styling
 ```
@@ -121,21 +113,21 @@ You will learn to develop and deploy complex tools and multi-page apps that can 
 :link: intermediate/panel_serve
 :link-type: doc
 
-Learn to serve multi-page apps and how-to configure `panel serve`.
+Learn to serve multi-page apps and how-to customize the Panel server.
 :::
 
 :::{grid-item-card} {octicon}`code;2.5em;sd-mr-1` Develop in an Editor
 :link: intermediate/develop_editor
 :link-type: doc
 
+Learn how to debug applications in an Editor
+:::
+
 :::{grid-item-card} {octicon}`code;2.5em;sd-mr-1` Structure with DataStore
 :link: intermediate/structure_data_store
 :link-type: doc
 
 Learn how to structure larger applications with the `DataStore` pattern
-:::
-
-Learn more advanced features like debugging to develop efficiently with Panel in an editor
 :::
 
 ::::

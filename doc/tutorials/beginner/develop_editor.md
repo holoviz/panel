@@ -273,3 +273,7 @@ You have learned to
 
 - [Configure VS Code](../../how_to/editor/vscode_configure.md)
 - [Write apps in Markdown](../../how_to/editor/markdown.md)
+
+## Explanation
+
+- [Develop Seamlessly](../../explanation/develop_seamlessly.md)
