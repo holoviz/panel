@@ -80,13 +80,6 @@ In this section we will introduce you to the most important concepts you need to
 In this section we will discover how layouts and sizing works in Panel, taking you through the difference between inherent sizing, fixed sizing and responsive sizing and then cover responsive layouts.
 :::
 
-:::{grid-item-card} {octicon}`code;2.5em;sd-mr-1` Structuring Applications
-:link: structure
-:link-type: doc
-
-In this section we will take you through the process of structuring a more complex application, discussing different approaches for managing reactivity and how to create a composable architecture for your applications.
-:::
-
 :::{grid-item-card} {octicon}`paintbrush;2.5em;sd-mr-1` Styling
 :link: styling
 :link-type: doc
@@ -110,7 +103,6 @@ param
 interactivity
 development
 layouts
-structure
 styling
 ```
 
@@ -136,6 +128,13 @@ Learn to serve multi-page apps and how-to configure `panel serve`.
 :link: intermediate/develop_editor
 :link-type: doc
 
+:::{grid-item-card} {octicon}`code;2.5em;sd-mr-1` Structure with DataStore
+:link: intermediate/structure_datastore
+:link-type: doc
+
+Learn how to structure larger applications with the `DataStore` pattern
+:::
+
 Learn more advanced features like debugging to develop efficiently with Panel in an editor
 :::
 
@@ -148,6 +147,7 @@ Learn more advanced features like debugging to develop efficiently with Panel in
 
 intermediate/panel_serve
 intermediate/develop_editor
+intermediate/structure_datastore
 ```
 
 ---
