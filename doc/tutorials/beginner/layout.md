@@ -3,7 +3,7 @@
 In this guide you will learn to layout, i.e. arrange, Python objects including Panel components:
 
 - *Layouts* are available in the `pn` namespace.
-- *Arrange* Python objects including Panel components with [`pn.Column`](../../reference/layouts/Column.ipynb) and [`pn.Row`](../../reference/layouts/Row.ipynb). 
+- *Arrange* Python objects including Panel components with [`pn.Column`](../../reference/layouts/Column.ipynb) and [`pn.Row`](../../reference/layouts/Row.ipynb).
 - Layouts like [`Column`](../../reference/layouts/Column.ipynb) and [`Row`](../../reference/layouts/Row.ipynb) are *list-like*.
 - A *layout* will automatically use `pn.panel` to determine how to best display non-Panel objects.
 - Create complex arrangements by combining and nesting *layouts*.
@@ -264,7 +264,7 @@ pn.Column("# Orders", button, pn.Row(plot, pn.panel(data, width=400))).servable(
 In this guide you have learned:
 
 - *Layouts* are available in the `pn` namespace.
-- *Arrange* Python objects including Panel components with [`pn.Column`](../../reference/layouts/Column.ipynb) and [`pn.Row`](../../reference/layouts/Row.ipynb). 
+- *Arrange* Python objects including Panel components with [`pn.Column`](../../reference/layouts/Column.ipynb) and [`pn.Row`](../../reference/layouts/Row.ipynb).
 - [`pn.Column`](../../reference/layouts/Column.ipynb) and [`pn.Row`](../../reference/layouts/Row.ipynb) work like Python `list`s.
 - A *layout* will automatically use `pn.panel` to determine how to best display non-Panel objects.
 - Create complex arrangements by combining and nesting *layouts*.
@@ -290,4 +290,3 @@ In this guide you have learned:
 ### Component Gallery
 
 - [Layouts](../../reference/index.md#layouts)
-

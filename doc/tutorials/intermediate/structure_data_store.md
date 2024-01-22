@@ -116,7 +116,7 @@ class DataStore(Viewer):
 :::{admonition} Note
 The `DataStore` class is be responsible for transforming `data` in various ways.
 
-1. The `DataStore` must receive `data` as an argument when instantiated. 
+1. The `DataStore` must receive `data` as an argument when instantiated.
 2. When the `filters` value is updated, it triggers an update of the `count`, `total_capacity`, ... etc. values.
 :::
 
@@ -221,7 +221,7 @@ Here we declared a *base* `View` class that holds a reference to the `DataStore`
 
 ### The App
 
-Copy the code below into a new file and save the file as `app.py`. 
+Copy the code below into a new file and save the file as `app.py`.
 
 ```python
 import param
