@@ -2,10 +2,10 @@
 
 In this tutorial you will learn how to use the `DataStore` *design pattern*:
 
-- The `DataStore` design pattern has proven quite successful across a wide range of use cases
-- The `DataStore` component receives `data` and `filters`. Based on the `data` and `filters` it *transforms* the data
+- The `DataStore` design pattern has proven quite successful across a wide range of use cases.
+- The `DataStore` component receives `data` and `filters`. Based on the `data` and `filters` it *transforms* the data.
 - One or more `View` components consumes the *transformed* data.
-- The components can be (re-)used for data exploration in notebooks and for building apps
+- The components can be (re-)used for data exploration in notebooks and for building apps.
 
 :::{admonition} Note
 When building a larger application we generally recommend using a *class based construction* and following best practices for object-oriented programming, specifically composition.
@@ -113,8 +113,8 @@ class DataStore(Viewer):
         )
 ```
 
-:::{admonition}
-The `DataStore` class will be responsible for transforming `data` in various ways.
+:::{admonition} Note
+The `DataStore` class is be responsible for transforming `data` in various ways.
 
 1. The `DataStore` must receive `data` as an argument when instantiated. 
 2. When the `filters` value is updated, it triggers an update of the `count`, `total_capacity`, ... etc. values.
@@ -130,13 +130,6 @@ import param
 # from data_store import DataStore, CARD_STYLE
 from panel.viewable import Viewer
 import panel as pn
-
-CARD_STYLE = """
-:host {{
-  box-shadow: rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
-  padding: {padding};
-}} """
-
 
 class View(Viewer):
     data_store = param.ClassSelector(class_=DataStore)
@@ -223,7 +216,7 @@ class Indicators(View):
 ```
 
 :::{admonition} Note
-Here we declared a `View` class that holds a reference to the `DataStore` as a parameter. Now we can have any number of concrete `View` classes that consume data from the `DataStore` and render it in any number of ways:
+Here we declared a *base* `View` class that holds a reference to the `DataStore` as a parameter. Now we can have any number of concrete `View` classes that consume data from the `DataStore` and render it in any number of ways:
 :::
 
 ### The App
@@ -288,7 +281,7 @@ The app will look something like
 ## Reuse in a Notebook
 
 :::{admonition} Note
-The beauty of this compositional approach to constructing application components is that they are now usable in multiple contexts.
+The beauty of the *compositional approach* to constructing application components is that they are now usable in multiple contexts.
 :::
 
 Copy the two cells below into a notebook, remove the `#` from the imports and run the cells.
@@ -310,9 +303,9 @@ ds = DataStore(data=turbines, filters=['p_year', 'p_cap', 't_manu'])
 pn.Row(
     ds,
     pn.Tabs(
-        ('Table', Table(data_store=ds)),
-        ('Histogram', Histogram(data_store=ds)),
         ('Indicators', Indicators(data_store=ds)),
+        ('Histogram', Histogram(data_store=ds)),
+        ('Table', Table(data_store=ds)),
         sizing_mode='stretch_width',
     )
 ).servable()
@@ -322,9 +315,9 @@ pn.Row(
 
 In this tutorial you have learned:
 
-- The `DataStore` design pattern has proven quite successful across a wide range of use cases
-- The `DataStore` component receives `data` and `filters`. Based on the `data` and `filters` it *transforms* the data
+- The `DataStore` design pattern has proven quite successful across a wide range of use cases.
+- The `DataStore` component receives `data` and `filters`. Based on the `data` and `filters` it *transforms* the data.
 - One or more `View` components consumes the *transformed* data.
-- The components can be (re-)used for data exploration in notebooks and for building apps
+- The components can be (re-)used for data exploration in notebooks and for building apps.
 
 ## Resources

@@ -250,4 +250,7 @@ You can
 - [Launch a server on the commandline](../../how_to/server/commandline.md)
 - [Serve multiple applications with `pn.serve`](../../how_to/server/multiple.md)
 - [Serve static files with `--static-dirs`](../../how_to/server/static_files.md)
+- [Serve with Django](../../how_to/integrations/django.md)
+- [Serve with FastAPI](../../how_to/integrations/FastAPI.md)
+- [Serve with Flask](../../how_to/integrations/flask.md)
 - [Write and serve apps in Markdown](../../how_to/editor/markdown.md)
