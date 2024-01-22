@@ -8,7 +8,7 @@ In this tutorial you will learn to display objects with *Panes*:
 - Display plot figures like [Matplotlib](https://matplotlib.org/), [hvPlot](https://hvplot.holoviz.org) and [Plotly](https://plotly.com/python/) with the [`Matplotlib`]((../../reference/panes/Matplotlib.ipynb)), [`HoloViews`]((../../reference/panes/HoloViews.ipynb)) and [`Plotly`]((../../reference/panes/Plotly.ipynb)) *panes* respectively
 - Display *DataFrames* with the [`DataFrame`]((../../reference/panes/DataFrame.ipynb)) and [`Perspective`]((../../reference/panes/Perspective.ipynb)) *panes*.
 - Add javascript dependencies via `pn.extension`. For example `pn.extension("plotly")`
-- Use the [Panes Section](../../reference/index.md#panes) of the [Component Gallery](../../reference/index.md) to find *Panes* and their *reference guides*.
+- Discover all *Panes* and their *reference guides* in the [Panes Section](../../reference/index.md#panes) of the [Component Gallery](../../reference/index.md).
 
 In this tutorial you will **not learn** how to
 
@@ -274,9 +274,9 @@ In this guide you have learned to display Python objects with *Panes*:
 - *Panes* take an `object` argument as well as other arguments
 - Display strings with the [`Str`]((../../reference/panes/Str.ipynb)), [`Markdown`]((../../reference/panes/Markdown.ipynb)) and [`Alert`]((../../reference/panes/Alert.ipynb)) panes
 - Display plot figures like [Matplotlib](https://matplotlib.org/), [hvPlot](https://hvplot.holoviz.org) and [Plotly](https://plotly.com/python/) with the [`Matplotlib`]((../../reference/panes/Matplotlib.ipynb)), [`HoloViews`]((../../reference/panes/HoloViews.ipynb)) and [`Plotly`]((../../reference/panes/Plotly.ipynb)) *panes* respectively
-- Display *DataFrames* with the [`DataFrame`]((../../reference/panes/DataFrame.ipynb)) and [`Perspective`]((../../reference/panes/Perspective.ipynb)) *panes*.
+- Display *DataFrames* with the [`DataFrame`](../../reference/panes/DataFrame.ipynb) and [`Perspective`]((../../reference/panes/Perspective.ipynb)) *panes*.
 - Add javascript dependencies via `pn.extension`. For example `pn.extension("plotly")`
-- Use the [Panes Section](../../reference/index.md#panes) of the [Component Gallery](../../reference/index.md) to find *Panes* and their *reference guides*.
+- Discover all *Panes* and their *reference guides* in the [Panes Section](../../reference/index.md#panes) of the [Component Gallery](../../reference/index.md).
 
 ## Resources
 

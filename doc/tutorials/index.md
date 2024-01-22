@@ -52,6 +52,13 @@ Learn how to display Python objects easily and dynamically with `pn.panel`.
 Learn how to display Python objects efficiently and specifically with Panes.
 :::
 
+:::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` Layout Objects
+:link: beginner/layout
+:link-type: doc
+
+Learn how to layout Python objects including Panel components
+:::
+
 :::{grid-item-card} {octicon}`plug;2.5em;sd-mr-1` Param
 :link: param
 :link-type: doc
@@ -92,6 +99,7 @@ beginner/develop_notebook
 beginner/develop_editor
 beginner/display_pn_panel
 beginner/display_panes
+beginner/layout
 param
 interactivity
 layouts
