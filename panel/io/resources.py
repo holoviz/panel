@@ -100,7 +100,7 @@ DOC_DIST = "https://panel.holoviz.org/_static/"
 LOCAL_DIST = "static/extensions/panel/"
 COMPONENT_PATH = "components/"
 
-BK_PREFIX_RE = re.compile('\.bk\.')
+BK_PREFIX_RE = re.compile(r'\.bk\.')
 
 RESOURCE_URLS = {
     'font-awesome': {
