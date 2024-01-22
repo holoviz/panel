@@ -4,7 +4,7 @@ In this guide you will learn to layout, i.e. arrange, Python objects including P
 
 - *Layouts* are available in the `pn` namespace.
 - *Arrange* Python objects including Panel components with [`pn.Column`](../../reference/layouts/Column.ipynb) and [`pn.Row`](../../reference/layouts/Row.ipynb). 
-- [`pn.Column`](../../reference/layouts/Column.ipynb) and [`pn.Row`](../../reference/layouts/Row.ipynb) work like Python `list`s.
+- Layouts like [`Column`](../../reference/layouts/Column.ipynb) and [`Row`](../../reference/layouts/Row.ipynb) are *list-like*.
 - A *layout* will automatically use `pn.panel` to determine how to best display non-Panel objects.
 - Create complex arrangements by combining and nesting *layouts*.
 - Discover all *layouts* and their *reference guides* in the [Layouts Section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index.md).
@@ -106,8 +106,6 @@ plot = data.hvplot(x="Day", y="Orders", kind="bar", color="goldenrod", title="Or
 pn.Row(plot, data).servable()
 ```
 
-[Layouts Section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index.md)
-
 Click [this link to the Layouts section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index.md). Open the [`Row`](../../reference/layouts/Row.ipynb) reference guide and spend a few minutes to familiarize your self with its organisation and content.
 
 It should look like
@@ -148,7 +146,7 @@ pn.Column(component[0], component[2], component[1]).servable()
 ```
 
 :::{admonition} Note
-We used the *list-like* properties of the `Column` to re-arrange it. More specifically we used *list-indexing* like `component[2]`.
+We used the *list-like* properties of the `Column` to re-arrange it. More specifically we used *list-indexing* as in `component[2]`.
 :::
 
 ## Displays using `pn.panel`
@@ -229,6 +227,8 @@ pn.Column(
 :::{admonition} Note
 To create more complex arrangements of objects, you can combine and nest *layouts*
 :::
+
+Run the code below:
 
 ```{pyodide}
 import pandas as pd
