@@ -962,16 +962,16 @@ class _state(param.Parameterized):
         """
         Returns the Document that is currently being executed.
         """
+        curdoc = self._curdoc.get()
+        if curdoc:
+            return curdoc
         try:
             doc = curdoc_locked()
             pyodide_session = self._is_pyodide and 'pyodide_kernel' not in sys.modules
             if doc and (doc.session_context or pyodide_session):
                 return doc
         except Exception:
-            pass
-        curdoc = self._curdoc.get()
-        if curdoc:
-            return curdoc
+            return None
 
     @curdoc.setter
     def curdoc(self, doc: Document) -> None:
