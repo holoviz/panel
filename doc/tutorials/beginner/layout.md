@@ -82,6 +82,8 @@ It should look like
 
 ## Layout in a Row
 
+Run the code below:
+
 ```{pyodide}
 import pandas as pd
 import panel as pn
@@ -106,7 +108,9 @@ plot = data.hvplot(x="Day", y="Orders", kind="bar", color="goldenrod", title="Or
 pn.Row(plot, data).servable()
 ```
 
-Click [this link to the Layouts section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index.md). Open the [`Row`](../../reference/layouts/Row.ipynb) reference guide and spend a few minutes to familiarize your self with its organisation and content.
+Click [this link to the Layouts section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index.md).
+
+Open the [`Row`](../../reference/layouts/Row.ipynb) reference guide and spend a few minutes to familiarize your self with its organisation and content.
 
 It should look like
 
