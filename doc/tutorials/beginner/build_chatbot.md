@@ -3,7 +3,7 @@
 In this section you will learn to build a basic *chat bot*:
 
 - Its simple to develop a *chat bot* with the *high-level* [`ChatInterface`](../../reference/chat/ChatInterface.html).
-- Learn more about Panels Chat Features in the [Chat Section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index.md).
+- Learn more about Panels Chat Features in the [Chat Section](../../reference/index.md#Chat) of the [Component Gallery](../../reference/index.md).
 - Find reference chat implementations at [Panel-Chat-Examples](https://holoviz-topics.github.io/panel-chat-examples/).
 
 :::{admonition} Note
@@ -29,7 +29,7 @@ chat_bot.send("Ask me anything!", user="Assistant", respond=False)
 chat_bot.servable()
 ```
 
-Try entering the text `How many characters are there in this text?` in the *text input* and click *Send*.
+Try entering `How many characters are there in this text?` in the *text input* and click *Send*.
 
 :::{pyodide}
 You can learn how to use the many features of the `ChatInterface` via its [*reference guide*](../../reference/chat/ChatInterface.html)
@@ -41,7 +41,7 @@ You can learn how to use the many features of the `ChatInterface` via its [*refe
 [Panel-Chat-Examples](https://holoviz-topics.github.io/panel-chat-examples/) provides lots of reference chat examples with accessible source code.
 :::
 
-Click [this link](https://holoviz-topics.github.io/panel-chat-examples/) and spend a couple of minutes browsing through the examples of [Panel-Chat-Examples](https://holoviz-topics.github.io/panel-chat-examples/) to get inspired.
+Click <a href="https://holoviz-topics.github.io/panel-chat-examples/">this link</a> and spend a couple of minutes browsing through the examples of [Panel-Chat-Examples](https://holoviz-topics.github.io/panel-chat-examples/) to get inspired.
 
 [<img src="../../_static/images/panel-chat-examples.png" height="300"></img>](https://holoviz-topics.github.io/panel-chat-examples/)
 
