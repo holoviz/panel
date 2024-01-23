@@ -21,7 +21,7 @@ Once enabled the launch profiler will profile each application separately and pr
 
 ## User profiling
 
-In addition to profiling the launch step of an application it is often also important to get insight into the interactive performance of an application. For that reason Panel also provides the `pn.io.profile` decorator that can be added to any callback and will report the profiling results in the `/admin` panel. The `profile` helper takes to arguments, the name to record the profiling results under and the profiling `engine` to use.
+In addition to profiling the launch step of an application it is often also important to get insight into the interactive performance of an application. For that reason Panel also provides the `pn.io.profile` decorator that can be added to any callback and will report the profiling results in the [`/admin` panel](https://panel.holoviz.org/how_to/profiling/admin.html). The `profile` helper takes to arguments, the name to record the profiling results under and the profiling `engine` to use.
 
 ```python
 @pn.io.profile('clustering', engine='snakeviz')
