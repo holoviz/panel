@@ -1,6 +1,6 @@
 # Serve Apps
 
-In this section you will learn the basics of serving Panel apps:
+In this section you will learn to serve basic Panel apps:
 
 - serve your Python script, Notebook or Markdown file with the commands `panel serve app.py`, `panel serve app.ipynb` or `panel serve app.md` respectively.
 - serve with *auto reload* by adding the flag `--autoreload`.
