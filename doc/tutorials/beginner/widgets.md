@@ -28,16 +28,14 @@ A *Widget* is defined as a component that inherits from the `Widget` base class.
 :::
 
 :::{admonition} Note
-In some cases Panes can accept user input too. For example the [`ECharts`](../../reference/panes/ECharts.ipynb), [`Plotly`](../../reference/panes/Plotly.ipynb) and [`Vega` (Altair)](../../reference/panes/Vega.ipynb) panes can accept user inputs.
+In some cases Panes can accept user input too. For example the [`ECharts`](../../reference/panes/ECharts.ipynb), [`Plotly`](../../reference/panes/Plotly.ipynb) and [`Vega`](../../reference/panes/Vega.ipynb) (Altair) panes can accept user inputs.
 :::
 
 :::{admonition} Note
 When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
-## Resources
-
-### Accept Clicks
+## Accept Clicks
 
 Run the code below:
 
@@ -54,7 +52,7 @@ pn.widgets.Button(
 ).servable()
 ```
 
-As you can see the `Button` is quite flexible supporting `icon`, `button_type` and `description`.
+As you can see the `Button` is quite feature rich supporting `icon`, `button_type` and `description`.
 
 Try hovering over the button. You will see the `description` shown as a tooltip.
 
@@ -66,13 +64,13 @@ We add `.servable()` to the component to add it to the app served by `panel serv
 To learn in detail how a *widget* like `Button` works you should refer to its *reference guide*.
 :::
 
-Click [this link to the `Button` Reference Guide](../../reference/widgets/Button.ipynb) and spend a few minutes to familiarize your self with its organisation and content.
+Click [this link](../../reference/widgets/Button.ipynb) to the `Button` Reference Guide and spend a few minutes to familiarize your self with its organisation and content.
 
 It should look like
 
 [![Button reference guide](../../_static/images/widgets_button_reference.png)](../../reference/widgets/Button.ipynb)
 
-### Accept Text
+## Accept Text
 
 Run the code below:
 
@@ -92,21 +90,22 @@ pn.widgets.TextInput(
 
 Try hovering over the the circle with the question mark inside. You will see the `description` displayed as a tooltip.
 
-Try enabling the `TextInput` by changing `disabled=True` to `disabled=False`.
+If you are in a notebook or serving as an app try:
 
-Try entering the text `1234567890123456`. You cannot because the `max_length` is `15`. The final `6` cannot be entered.
+- enabling the `TextInput` by changing `disabled=True` to `disabled=False`.
+- entering the text `1234567890123456` in the. You cannot because the `max_length` is `15`. The final `6` cannot be entered.
 
 :::{admonition}
 Its key for your success with Panel, that you learn how to navigate the [Component Gallery](../../reference/index.md) and use the *reference guides*.
 :::
 
-Click [this link to the Widgets Section](../../reference/index.md#widgets) of the [Component Gallery](../../reference/index.md). Identify the [TextInput Reference Guide](../../reference/widgets/TextInput.ipynb) and open it. You don't have to spend time studying the details right now.
+Click [this link](../../reference/index.md#widgets) to the Widgets Section of the [Component Gallery](../../reference/index.md). Identify the [TextInput Reference Guide](../../reference/widgets/TextInput.ipynb) and open it. You don't have to spend time studying the details right now.
 
 It should look like
 
 [![Widgets Gallery and TextInput Reference Guide](../../_static/images/widgets_textinput_reference.png)](../../reference/index.md#widgets)
 
-## Accept an object from a list of objects
+## Accept an object from a list
 
 Run the code below:
 
@@ -116,7 +115,7 @@ import panel as pn
 pn.extension()
 
 pn.widgets.Select(
-    description="The selected value",
+    description="Select a Study",
     name="Study",
     options=["Biology", "Chemistry", "Physics"],
 ).servable()
@@ -134,13 +133,13 @@ import panel as pn
 pn.extension()
 
 pn.widgets.RadioButtonGroup(
-    description="The selected value",
+    description="Select a Study",
     name="Study",
     options=["Biology", "Chemistry", "Physics"],
 ).servable()
 ```
 
-:::note
+:::{Admonition} Note
 Most often widgets allow you to specificy the *initial* `value`.
 :::
 
@@ -154,14 +153,14 @@ pn.extension()
 pn.widgets.RadioButtonGroup(
     button_type="primary",
     button_style="outline",
-    description="The selected value",
+    description="Select a Study",
     name="Study",
     options=["Biology", "Chemistry", "Physics"],
     value="Physics",
 ).servable()
 ```
 
-You will notice how `Physics` is now displayed as the *initial* `value` and how the `Button` type and style was changed.
+You will notice how `Physics` is now displayed as the *initial* `value` and how the `Button`s type and style was changed.
 
 ## Recap
 

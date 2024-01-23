@@ -82,7 +82,7 @@ We add `.servable()` to the component to add it to the app served by `panel serv
 To learn in detail how a pane like `Str` works you should refer to its *reference guide*.
 :::
 
-Click [this link to the `Str` Reference Guide](../../reference/panes/Str.ipynb) and spend a few minutes to familiarize your self with its organisation and content.
+Click [this link](../../reference/panes/Str.ipynb) to the `Str` Reference Guide and spend a few minutes to familiarize your self with its organisation and content.
 
 It should look like
 

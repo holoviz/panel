@@ -167,7 +167,7 @@ You can
 
 ### Tutorials
 
-- [Serve Panel Apps (Intermediate)](../intermediate/)
+- [Serve Panel Apps (Intermediate)](../intermediate/serve.md)
 
 ### How-to
 

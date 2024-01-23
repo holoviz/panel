@@ -18,10 +18,17 @@ You will learn to develop and deploy amazing tools and apps that can be containe
 :gutter: 1 1 1 2
 
 :::{grid-item-card} {octicon}`browser;2.5em;sd-mr-1` Serve Apps
-:link: beginner/panel_serve
+:link: beginner/serve
 :link-type: doc
 
 Learn how to serve apps from a single Python script, Notebook or Markdown document.
+:::
+
+:::{grid-item-card} {octicon}`dependabot;2.5em;sd-mr-1` Build a Chat Bot
+:link: beginner/build_chatbot
+:link-type: doc
+
+Learn how to build a simple *chat bot*.
 :::
 
 :::{grid-item-card} {octicon}`note;2.5em;sd-mr-1` Develop in a Notebook
@@ -39,14 +46,14 @@ Learn the basic techniques for developing Panel apps efficiently in an editor.
 :::
 
 :::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` Display objects with `pn.panel`
-:link: beginner/
+:link: beginner/pn_panel
 :link-type: doc
 
 Learn how to display Python objects easily and dynamically with `pn.panel`.
 :::
 
 :::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` Display objects with Panes
-:link: beginner/
+:link: beginner/panes
 :link-type: doc
 
 Learn how to display Python objects efficiently and specifically with Panes.
@@ -57,6 +64,13 @@ Learn how to display Python objects efficiently and specifically with Panes.
 :link-type: doc
 
 Learn how to layout Python objects including Panel components
+:::
+
+:::{grid-item-card} {octicon}`accessibility;2.5em;sd-mr-1` Accept User Input
+:link: beginner/layouts
+:link-type: doc
+
+Learn how to accept user input with widgets.
 :::
 
 :::{grid-item-card} {octicon}`plug;2.5em;sd-mr-1` Param
@@ -94,11 +108,12 @@ In this section we will review different approaches for styling components, from
 :hidden:
 :maxdepth: 2
 
-beginner/panel_serve
+beginner/serve
+beginner/build_chatbot
 beginner/develop_notebook
 beginner/develop_editor
-beginner/
-beginner/
+beginner/pn_panel
+beginner/panes
 beginner/layouts
 param
 interactivity
@@ -118,7 +133,7 @@ You will learn to develop and deploy complex tools and multi-page apps that can 
 :gutter: 1 1 1 2
 
 :::{grid-item-card} {octicon}`browser;2.5em;sd-mr-1` Serve Panel Apps
-:link: intermediate/panel_serve
+:link: intermediate/serve
 :link-type: doc
 
 Learn to serve multi-page apps and how-to customize the Panel server.
@@ -145,7 +160,7 @@ Learn how to structure larger applications with the `DataStore` pattern
 :hidden:
 :maxdepth: 2
 
-intermediate/panel_serve
+intermediate/serve
 intermediate/develop_editor
 intermediate/structure_data_store
 ```

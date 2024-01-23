@@ -242,7 +242,7 @@ You can
 
 ### Tutorials
 
-- [Serve Apps (beginner)](../beginner/panel_serve)
+- [Serve Apps (beginner)](../beginner/serve.md)
 
 ### How-to
 
