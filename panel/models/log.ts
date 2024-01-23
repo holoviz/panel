@@ -23,7 +23,7 @@ export class LogView extends ColumnView {
     super.initialize()
     this._sync = true
     this._intersection_observer = new IntersectionObserver((entries) => {
-      const visible = [...this.model.visible_objects]
+      const visible = [...this.model.visible_children]
       const nodes = this.node_map
 
       for (const entry of entries) {
@@ -38,7 +38,7 @@ export class LogView extends ColumnView {
       }
 
       if (this._sync) {
-        this.model.visible_objects = visible
+        this.model.visible_children = visible
       }
 
       if (visible.length) {
@@ -72,7 +72,7 @@ export class LogView extends ColumnView {
   async build_child_views(): Promise<UIElementView[]> {
     const { created, removed } = await build_views(this._child_views, this.child_models, { parent: this })
 
-    const visible = this.model.visible_objects
+    const visible = this.model.visible_children
     for (const view of removed) {
       if (visible.includes(view.model.id)) {
         visible.splice(visible.indexOf(view.model.id), 1)
@@ -80,7 +80,7 @@ export class LogView extends ColumnView {
       this._resize_observer.unobserve(view.el)
       this._intersection_observer.unobserve(view.el)
     }
-    this.model.visible_objects = [...visible]
+    this.model.visible_children = [...visible]
 
     for (const view of created) {
       this._resize_observer.observe(view.el, { box: "border-box" })
@@ -99,7 +99,7 @@ export class LogView extends ColumnView {
 export namespace Log {
   export type Attrs = p.AttrsOf<Props>;
   export type Props = Column.Props & {
-    visible_objects: p.Property<string[]>;
+    visible_children: p.Property<string[]>;
   };
 }
 
@@ -118,7 +118,7 @@ export class Log extends Column {
     this.prototype.default_view = LogView;
 
     this.define<Log.Props>(({ Array, String }) => ({
-      visible_objects: [Array(String), []],
+      visible_children: [Array(String), []],
     }));
   }
 

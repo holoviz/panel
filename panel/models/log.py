@@ -15,4 +15,4 @@ class ScrollButtonClick(ModelEvent):
 
 class Log(Column):
 
-    visible_objects = List(String())
+    visible_children = List(String())

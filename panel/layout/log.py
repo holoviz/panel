@@ -8,6 +8,7 @@ import param
 
 from ..models import Log as PnLog
 from ..models.log import ScrollButtonClick
+from ..util import edit_readonly
 from .base import Column
 
 if TYPE_CHECKING:
@@ -29,8 +30,8 @@ class Log(Column):
         Whether to add scrollbars if the content overflows the size
         of the container.""")
 
-    visible_indices = param.List(constant=True, doc="""
-        Read-only list of indices representing the currently visible log objects.
+    visible_range = param.Range(readonly=True, doc="""
+        Read-only upper and lower bounds of the currently visible log objects.
         This list is automatically updated based on scrolling.""")
 
     _bokeh_model: ClassVar[Type[Model]] = PnLog
@@ -38,7 +39,7 @@ class Log(Column):
     _direction = 'vertical'
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'objects': 'children', 'visible_indices': 'visible_objects',
+        'objects': 'children', 'visible_range': 'visible_children',
         'load_buffer': None,
     }
 
@@ -53,10 +54,10 @@ class Log(Column):
         super().__init__(*objects, **params)
         self._last_synced = None
 
-    @param.depends("visible_indices", "load_buffer", watch=True)
+    @param.depends("visible_range", "load_buffer", watch=True)
     def _trigger_get_objects(self):
         # visible start, end / synced start, end
-        vs, ve = min(self.visible_indices), max(self.visible_indices)
+        vs, ve = self.visible_range
         ss, se = min(self._last_synced), max(self._last_synced)
         half_buffer = self.load_buffer // 2
         if (vs - ss) < half_buffer or (se - ve) < half_buffer:
@@ -65,10 +66,10 @@ class Log(Column):
     @property
     def _synced_indices(self):
         n = len(self.objects)
-        if self.visible_indices:
+        if self.visible_range:
             return list(range(
-                max(min(self.visible_indices) - self.load_buffer, 0),
-                min(max(self.visible_indices) + self.load_buffer, n)
+                max(self.visible_range[0] - self.load_buffer, 0),
+                min(self.visible_range[-1] + self.load_buffer, n)
             ))
         elif self.view_latest:
             return list(range(max(n - self.load_buffer * 2, 0), n))
@@ -84,21 +85,21 @@ class Log(Column):
         return model
 
     def _process_property_change(self, msg):
-        if 'visible_objects' in msg:
-            visible = msg.pop('visible_objects')
+        if 'visible_children' in msg:
+            visible = msg.pop('visible_children')
             for model, _ in self._models.values():
                 refs = [c.ref['id'] for c in model.children]
                 if visible and visible[0] in refs:
-                    indexes = [refs.index(v) for v in visible if v in refs]
+                    indexes = sorted(refs.index(v) for v in visible if v in refs)
                     break
             else:
                 return super()._process_property_change(msg)
             offset = min(self._synced_indices)
-            msg['visible_indices'] = [offset+i for i in sorted(indexes)]
+            msg['visible_range'] = offset + indexes[0], offset + indexes[-1]
         return super()._process_property_change(msg)
 
     def _process_param_change(self, msg):
-        msg.pop('visible_indices', None)
+        msg.pop('visible_range', None)
         return super()._process_param_change(msg)
 
     def _get_objects(
@@ -138,7 +139,7 @@ class Log(Column):
         """
         Process a scroll button click event.
         """
-        if not self.visible_indices:
+        if not self.visible_range:
             return
 
         # need to get it all the way to the bottom rather
@@ -148,11 +149,9 @@ class Log(Column):
             self.load_buffer = 1
 
         n = len(self.objects)
-        with param.edit_constant(self):
-            # + 1 to keep the scroll bar visible
-            self.visible_indices = list(
-                range(max(n - len(self.visible_indices) + 1, 0), n)
-            )
+        n_visible = self.visible_range[-1] - self.visible_range[0]
+        with edit_readonly(self):
+            self.visible_range = (max(n - n_visible, 0), n)
 
         with param.discard_events(self):
             # reset the buffers and loaded objects
