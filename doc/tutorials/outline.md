@@ -34,10 +34,11 @@ WIDGET and `.bind` BASED APPROACH
 - [ ] Indicate busy-ness with indicators
 - [ ] Improve performance: caching
 - [ ] Dynamic Layouts
-- [ ] Build a Todo App
-- [ ] Build a Wind Turbine Dashboard
-- [ ] Build a Stock Prices Streaming Application
-- [ ] Build a ChatBot
+- [ ] Build a ChatBot: Can be done after "Serve Apps"
+- [ ] Build a static, Financial Report: Save to .html, use .embed, Can be done after "Layout Objects"
+- [ ] Build a Todo App: Can be done after "pn.bind"
+- [ ] Build a Wind Turbine Dashboard: Puts everything together
+- [ ] Build a Stock Prices Streaming Application: Puts everything together
 - [ ] Share your work: Deploy to Hugging Face Spaces
 
 ## Intermediate
