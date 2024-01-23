@@ -835,7 +835,7 @@ class ListPanel(ListLike, Panel):
         )
 
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        if params.get('scroll') is not False:
+        if params.get('scroll'):
             scroll = params['scroll']
             css_classes = params.get('css_classes', self.css_classes)
             if scroll in _SCROLL_MAPPING:
@@ -880,7 +880,7 @@ class NamedListPanel(NamedListLike, Panel):
     __abstract = True
 
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        if params.get('scroll') is not False:
+        if params.get('scroll'):
             scroll = params['scroll']
             css_classes = params.get('css_classes', self.css_classes)
             if scroll in _SCROLL_MAPPING:
