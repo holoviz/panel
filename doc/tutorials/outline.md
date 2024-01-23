@@ -21,6 +21,7 @@ WIDGET and `.bind` BASED APPROACH
 - [ ] Getting installed (just a link to getting started)
   - [ ] Using a pre-installed environment for this tutorial: Purpose is to lower Barrier of entry. Make it possible to do at large conference with poor internet. Use Binder, Github spaces, Anaconda Notebooks ???
 - [ ] [Serve Apps](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/serve.md)
+- [ ] [Build a Chat Bot](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/build_chatbot.md)
 - [ ] [Develop in a notebook](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/develop_notebook.md)
 - [ ] [Develop in an editor](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/develop_editor.md)
 - [ ] [Display objects with `pn.panel`](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/pn_panel.md)
@@ -36,7 +37,6 @@ WIDGET and `.bind` BASED APPROACH
 - [ ] Indicate busy-ness with indicators
 - [ ] Improve performance: caching
 - [ ] Dynamic Layouts: generators
-- [ ] Build a ChatBot: Can be done after "Serve Apps"
 - [ ] Build a static, Financial Report: Save to .html, use .embed, Can be done after "Layout Objects"
 - [ ] Build a Todo App: Can be done after "pn.bind"
 - [ ] Build a Wind Turbine Dashboard: Puts everything together
