@@ -13,8 +13,8 @@ export class ScrollButtonClick extends ModelEvent {
 }
 
 
-export class LogView extends ColumnView {
-  model: Log;
+export class FeedView extends ColumnView {
+  model: Feed;
   _intersection_observer: IntersectionObserver
   _last_visible: UIElementView | null
   _sync: boolean
@@ -96,28 +96,28 @@ export class LogView extends ColumnView {
   }
 }
 
-export namespace Log {
+export namespace Feed {
   export type Attrs = p.AttrsOf<Props>;
   export type Props = Column.Props & {
     visible_children: p.Property<string[]>;
   };
 }
 
-export interface Log extends Log.Attrs { }
+export interface Feed extends Feed.Attrs { }
 
-export class Log extends Column {
-  properties: Log.Props;
+export class Feed extends Column {
+  properties: Feed.Props;
 
-  constructor(attrs?: Partial<Log.Attrs>) {
+  constructor(attrs?: Partial<Feed.Attrs>) {
     super(attrs);
   }
 
-  static __module__ = "panel.models.log";
+  static __module__ = "panel.models.Feed";
 
   static {
-    this.prototype.default_view = LogView;
+    this.prototype.default_view = FeedView;
 
-    this.define<Log.Props>(({ Array, String }) => ({
+    this.define<Feed.Props>(({ Array, String }) => ({
       visible_children: [Array(String), []],
     }));
   }

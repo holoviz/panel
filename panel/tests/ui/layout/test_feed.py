@@ -4,14 +4,14 @@ pytest.importorskip("playwright")
 
 from playwright.sync_api import expect
 
-from panel import Log
+from panel import Feed
 from panel.tests.util import serve_component, wait_until
 
 pytestmark = pytest.mark.ui
 
 
 def test_log_load_entries(page):
-    log = Log(*list(range(1000)), height=250)
+    log = Feed(*list(range(1000)), height=250)
     serve_component(page, log)
 
     log_el = page.locator(".bk-panel-models-log-Log")
@@ -44,7 +44,7 @@ def test_log_load_entries(page):
 
 
 def test_log_view_latest(page):
-    log = Log(*list(range(1000)), height=250, view_latest=True)
+    log = Feed(*list(range(1000)), height=250, view_latest=True)
     serve_component(page, log)
 
     log_el = page.locator(".bk-panel-models-log-Log")
@@ -62,7 +62,7 @@ def test_log_view_latest(page):
 
 
 def test_log_view_scroll_button(page):
-    log = Log(*list(range(1000)), height=250, scroll_button_threshold=50)
+    log = Feed(*list(range(1000)), height=250, scroll_button_threshold=50)
     serve_component(page, log)
 
     log_el = page.locator(".bk-panel-models-log-Log")
@@ -83,7 +83,7 @@ def test_log_view_scroll_button(page):
 
 
 def test_log_dynamic_objects(page):
-    log = Log(height=250, load_buffer=10)
+    log = Feed(height=250, load_buffer=10)
     serve_component(page, log)
 
     log.objects = list(range(1000))

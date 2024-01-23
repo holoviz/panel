@@ -13,6 +13,6 @@ class ScrollButtonClick(ModelEvent):
         super().__init__(model=model)
 
 
-class Log(Column):
+class Feed(Column):
 
     visible_children = List(String())

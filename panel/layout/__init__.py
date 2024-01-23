@@ -33,11 +33,11 @@ from .base import (  # noqa
     Column, ListLike, ListPanel, Panel, Row, WidgetBox,
 )
 from .card import Card  # noqa
+from .feed import Feed  # noqa
 from .flex import FlexBox  # noqa
 from .float import FloatPanel  # noqa
 from .grid import GridBox, GridSpec  # noqa
 from .gridstack import GridStack  # noqa
-from .log import Log
 from .spacer import (  # noqa
     Divider, HSpacer, Spacer, VSpacer,
 )
@@ -49,6 +49,7 @@ __all__ = (
     "Card",
     "Column",
     "Divider",
+    "Feed",
     "FloatPanel",
     "FlexBox",
     "GridBox",
@@ -57,7 +58,6 @@ __all__ = (
     "HSpacer",
     "ListLike",
     "ListPanel",
-    "Log",
     "Panel",
     "Row",
     "Spacer",

@@ -7,7 +7,7 @@ from typing import (
 import param
 
 from ..models import Log as PnLog
-from ..models.log import ScrollButtonClick
+from ..models.feed import ScrollButtonClick
 from ..util import edit_readonly
 from .base import Column
 
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from ..viewable import Viewable
 
 
-class Log(Column):
+class Feed(Column):
 
     load_buffer = param.Integer(default=50, bounds=(0, None), doc="""
         The number of objects loaded on each side of the visible objects.
