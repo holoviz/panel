@@ -14,12 +14,12 @@ def test_get_markdown_pane_type():
     assert PaneBase.get_pane_type("**Markdown**") is Markdown
 
 def test_get_dataframe_pane_type():
-    df = pd._testing.makeDataFrame()
+    df = pd.DataFrame({"A": [1, 2, 3]})
     assert PaneBase.get_pane_type(df) is DataFrame
 
 def test_get_series_pane_type():
-    df = pd._testing.makeDataFrame()
-    assert PaneBase.get_pane_type(df.iloc[:, 0]) is DataFrame
+    ser = pd.Series([1, 2, 3])
+    assert PaneBase.get_pane_type(ser) is DataFrame
 
 @streamz_available
 def test_get_streamz_dataframe_pane_type():
@@ -167,7 +167,7 @@ def test_html_pane_sanitize_html(document, comm):
     assert model.text.endswith('&lt;h1&gt;&lt;strong&gt;HTML&lt;/h1&gt;&lt;/strong&gt;')
 
 def test_dataframe_pane_pandas(document, comm):
-    pane = DataFrame(pd._testing.makeDataFrame())
+    pane = DataFrame(pd.DataFrame({"A": [1, 2, 3]}))
 
     # Create pane
     model = pane.get_root(document, comm=comm)
@@ -176,7 +176,7 @@ def test_dataframe_pane_pandas(document, comm):
     orig_text = model.text
 
     # Replace Pane.object
-    pane.object = pd._testing.makeMixedDataFrame()
+    pane.object = pd.DataFrame({"B": [1, 2, 3]})
     assert pane._models[model.ref['id']][0] is model
     assert model.text.startswith('&lt;table')
     assert model.text != orig_text
