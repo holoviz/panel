@@ -33,6 +33,11 @@ WIDGET and `.bind` BASED APPROACH
 - [ ] Organize and Style with templates
 - [ ] Indicate busy-ness with indicators
 - [ ] Improve performance: caching
+- [ ] Dynamic Layouts
+- [ ] Build a Todo App
+- [ ] Build a Wind Turbine Dashboard
+- [ ] Build a Stock Prices Streaming Application
+- [ ] Build a ChatBot
 - [ ] Share your work: Deploy to Hugging Face Spaces
 
 ## Intermediate
@@ -63,7 +68,7 @@ CLASS BASED APPROACH. UNDERSTANDING OF PARAM AND SUPPLEMENTARY APIs
 - [ ] Improve performance by using async and threads
 - [ ] Testing
 
-## Advanced
+## Extending 
 
 These guides are for you that is ready to pioneer and push the boundaries of what can be achieved with Panel.
 
@@ -74,16 +79,3 @@ You will learn how to extend Panel to support your domain or specialized use cas
 - [ ] Add custom Authentication
 - [ ] Javascript
 - [ ] Customizing Panel. For example for your brand.
-
-## Reference Examples
-
-These could be maintained blog posts. Maybe its the App Gallery. Maybe its the HoloViz Examples. To be determined.
-
-- [ ] Build a Todo App
-- [ ] Build a Dashboard
-  - [ ] With Matplotlib
-  - [ ] With hvPlot and HoloViews
-  - [ ] With Plotly
-  - [ ] Interactive Table
-- [ ] Build a Streaming Dashboard
-- [ ] Build a ChatInterface
