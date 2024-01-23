@@ -27,7 +27,6 @@ WIDGET and `.bind` BASED APPROACH
 - [ ] [Display objects with Panes](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/panes.md)
 - [ ] [Layout objects](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/layouts.md)
 - [ ] [Accept User Input](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/widgets.md)
-- [ ] Accept User Input: widgets. Panels input components
 - [ ] Add interactivity easily and efficiently: `pn.bind`. Also with `watch=True`.
 - [ ] Size components: sizing_mode, height/ width, max_height/ max_width
 - [ ] Align components: `align`, `margin`, Spacer/ HSpacer/ VSpacer
