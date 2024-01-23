@@ -10,62 +10,62 @@ from panel.tests.util import serve_component, wait_until
 pytestmark = pytest.mark.ui
 
 
-def test_log_load_entries(page):
-    log = Feed(*list(range(1000)), height=250)
-    serve_component(page, log)
+def test_feed_load_entries(page):
+    feed = Feed(*list(range(1000)), height=250)
+    serve_component(page, feed)
 
-    log_el = page.locator(".bk-panel-models-log-Log")
+    feed_el = page.locator(".bk-panel-models-feed-Feed")
 
-    bbox = log_el.bounding_box()
+    bbox = feed_el.bounding_box()
     assert bbox["height"] == 250
 
-    expect(log_el).to_have_class("bk-panel-models-log-Log scrollable-vertical")
+    expect(feed_el).to_have_class("bk-panel-models-feed-Feed scrollable-vertical")
 
-    children_count = log_el.evaluate(
+    children_count = feed_el.evaluate(
         '(element) => element.shadowRoot.querySelectorAll(".bk-panel-models-markup-HTML").length'
     )
     assert children_count == 50
 
     # Now scroll to somewhere down
-    log_el.evaluate('(el) => el.scrollTo({top: 100})')
-    children_count = log_el.evaluate(
+    feed_el.evaluate('(el) => el.scrollTo({top: 100})')
+    children_count = feed_el.evaluate(
         '(element) => element.shadowRoot.querySelectorAll(".bk-panel-models-markup-HTML").length'
     )
     assert children_count == 50
 
     # Now scroll to top
-    log_el.evaluate('(el) => el.scrollTo({top: 0})')
+    feed_el.evaluate('(el) => el.scrollTo({top: 0})')
     wait_until(
-        lambda: log_el.evaluate(
+        lambda: feed_el.evaluate(
             '(element) => element.shadowRoot.querySelectorAll(".bk-panel-models-markup-HTML").length'
         )
         == 50
     )
 
 
-def test_log_view_latest(page):
-    log = Feed(*list(range(1000)), height=250, view_latest=True)
-    serve_component(page, log)
+def test_feed_view_latest(page):
+    feed = Feed(*list(range(1000)), height=250, view_latest=True)
+    serve_component(page, feed)
 
-    log_el = page.locator(".bk-panel-models-log-Log")
+    feed_el = page.locator(".bk-panel-models-feed-Feed")
 
-    bbox = log_el.bounding_box()
+    bbox = feed_el.bounding_box()
     assert bbox["height"] == 250
 
-    expect(log_el).to_have_class("bk-panel-models-log-Log scrollable-vertical")
+    expect(feed_el).to_have_class("bk-panel-models-feed-Feed scrollable-vertical")
 
     # Assert scroll is not at 0 (view_latest)
-    assert log_el.evaluate('(el) => el.scrollTop') > 0
+    assert feed_el.evaluate('(el) => el.scrollTop') > 0
 
     last_pre_element = page.query_selector_all('pre')[-1]
     assert last_pre_element.inner_text() == "999"
 
 
-def test_log_view_scroll_button(page):
-    log = Feed(*list(range(1000)), height=250, scroll_button_threshold=50)
-    serve_component(page, log)
+def test_feed_view_scroll_button(page):
+    feed = Feed(*list(range(1000)), height=250, scroll_button_threshold=50)
+    serve_component(page, feed)
 
-    log_el = page.locator(".bk-panel-models-log-Log")
+    feed_el = page.locator(".bk-panel-models-feed-Feed")
 
     # assert scroll button is visible on render
     scroll_arrow = page.locator(".scroll-button")
@@ -76,17 +76,17 @@ def test_log_view_scroll_button(page):
     scroll_arrow.click()
 
     # Assert scroll is not at 0 (view_latest)
-    assert log_el.evaluate('(el) => el.scrollTop') > 0
+    assert feed_el.evaluate('(el) => el.scrollTop') > 0
     wait_until(
         lambda: int(page.query_selector_all('pre')[-1].inner_text()) > 50
     )
 
 
-def test_log_dynamic_objects(page):
-    log = Feed(height=250, load_buffer=10)
-    serve_component(page, log)
+def test_feed_dynamic_objects(page):
+    feed = Feed(height=250, load_buffer=10)
+    serve_component(page, feed)
 
-    log.objects = list(range(1000))
+    feed.objects = list(range(1000))
 
     wait_until(
         lambda: len(page.query_selector_all('pre')) > 10

@@ -112,7 +112,7 @@ export class Feed extends Column {
     super(attrs);
   }
 
-  static __module__ = "panel.models.Feed";
+  static __module__ = "panel.models.feed";
 
   static {
     this.prototype.default_view = FeedView;
