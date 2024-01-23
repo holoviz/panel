@@ -835,17 +835,16 @@ class ListPanel(ListLike, Panel):
         )
 
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        if 'scroll' in params:
+        if params.get('scroll') is not False:
             scroll = params['scroll']
             css_classes = params.get('css_classes', self.css_classes)
-            if scroll:
-                if scroll in _SCROLL_MAPPING:
-                    scroll_class = _SCROLL_MAPPING[scroll]
-                elif self._direction:
-                    scroll_class = f'scrollable-{self._direction}'
-                else:
-                    scroll_class = 'scrollable'
-            params['css_classes'] = css_classes + [scroll_class]
+            if scroll in _SCROLL_MAPPING:
+                scroll_class = _SCROLL_MAPPING[scroll]
+            elif self._direction:
+                scroll_class = f'scrollable-{self._direction}'
+            else:
+                scroll_class = 'scrollable'
+            params['css_classes'] = css_classes + scroll_class
         return super()._process_param_change(params)
 
     def _cleanup(self, root: Model | None = None) -> None:
@@ -881,17 +880,16 @@ class NamedListPanel(NamedListLike, Panel):
     __abstract = True
 
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        if 'scroll' in params:
+        if params.get('scroll') is not False:
             scroll = params['scroll']
             css_classes = params.get('css_classes', self.css_classes)
-            if scroll:
-                if scroll in _SCROLL_MAPPING:
-                    scroll_class = _SCROLL_MAPPING[scroll]
-                elif self._direction:
-                    scroll_class = f'scrollable-{self._direction}'
-                else:
-                    scroll_class = 'scrollable'
-            params['css_classes'] = css_classes + [scroll_class]
+            if scroll in _SCROLL_MAPPING:
+                scroll_class = _SCROLL_MAPPING[scroll]
+            elif self._direction:
+                scroll_class = f'scrollable-{self._direction}'
+            else:
+                scroll_class = 'scrollable'
+            params['css_classes'] = css_classes + scroll_class
         return super()._process_param_change(params)
 
     def _cleanup(self, root: Model | None = None) -> None:
