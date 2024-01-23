@@ -6,7 +6,7 @@ from typing import (
 
 import param
 
-from ..models import Log as PnLog
+from ..models import Feed as PnFeed
 from ..models.feed import ScrollButtonClick
 from ..util import edit_readonly
 from .base import Column
@@ -34,7 +34,7 @@ class Feed(Column):
         Read-only upper and lower bounds of the currently visible log objects.
         This list is automatically updated based on scrolling.""")
 
-    _bokeh_model: ClassVar[Type[Model]] = PnLog
+    _bokeh_model: ClassVar[Type[Model]] = PnFeed
 
     _direction = 'vertical'
 
