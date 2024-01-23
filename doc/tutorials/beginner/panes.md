@@ -86,7 +86,7 @@ Click [this link to the `Str` Reference Guide](../../reference/panes/Str.ipynb) 
 
 It should look like
 
-[![Str reference guide](../../_static/images/_str_reference.png)](../../reference/panes/Str.ipynb)
+[![Str reference guide](../../_static/images/panes_str_reference.png)](../../reference/panes/Str.ipynb)
 
 ## Display Markdown
 
@@ -114,7 +114,7 @@ Click [this link to the Panes Section](../../reference/index.md#panes) of the [C
 
 It should look like
 
-[![Panes Gallery and Markdown Reference Guide](../../_static/images/_markdown_reference.png)](../../reference/index.md#panes)
+[![Panes Gallery and Markdown Reference Guide](../../_static/images/panes_markdown_reference.png)](../../reference/index.md#panes)
 
 ### Display Alerts
 
