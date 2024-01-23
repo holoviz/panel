@@ -23,7 +23,7 @@ class Feed(Column):
 
     load_buffer = param.Integer(default=50, bounds=(0, None), doc="""
         The number of objects loaded on each side of the visible objects.
-        When scrolled halfway into the buffer, the log will automatically
+        When scrolled halfway into the buffer, the feed will automatically
         load additional objects while unloading objects on the opposite side.""")
 
     scroll = param.Boolean(default=True, doc="""
@@ -31,7 +31,7 @@ class Feed(Column):
         of the container.""")
 
     visible_range = param.Range(readonly=True, doc="""
-        Read-only upper and lower bounds of the currently visible log objects.
+        Read-only upper and lower bounds of the currently visible feed objects.
         This list is automatically updated based on scrolling.""")
 
     _bokeh_model: ClassVar[Type[Model]] = PnFeed
