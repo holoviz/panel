@@ -16,7 +16,7 @@ In this tutorial you will **not learn** how to
 - layout and styles *Panes*. These topics are covered by other tutorials.
 
 :::{admonition} Note
-A *Pane* is a component that can display an object. It takes an `object` as an argument. 
+A *Pane* is a component that can display an object. It takes an `object` as an argument.
 
 A *Pane* is defined as a component that inherits from the `PaneBase` class.
 :::
@@ -90,7 +90,7 @@ It should look like
 
 ## Display Markdown
 
-The [`Markdown`](../../reference/panes/Markdown.ipynb) pane can format and display [*markdown*](https://en.wikipedia.org/wiki/Markdown) strings. 
+The [`Markdown`](../../reference/panes/Markdown.ipynb) pane can format and display [*markdown*](https://en.wikipedia.org/wiki/Markdown) strings.
 
 Run the code:
 
