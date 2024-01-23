@@ -58,23 +58,23 @@ class Log(Column):
     def _trigger_get_objects(self):
         # visible start, end / synced start, end
         vs, ve = self.visible_range
-        ss, se = min(self._last_synced), max(self._last_synced)
+        ss, se = self._last_synced
         half_buffer = self.load_buffer // 2
         if (vs - ss) < half_buffer or (se - ve) < half_buffer:
             self.param.trigger("objects")
 
     @property
-    def _synced_indices(self):
+    def _synced_range(self):
         n = len(self.objects)
         if self.visible_range:
-            return list(range(
+            return (
                 max(self.visible_range[0] - self.load_buffer, 0),
                 min(self.visible_range[-1] + self.load_buffer, n)
-            ))
+            )
         elif self.view_latest:
-            return list(range(max(n - self.load_buffer * 2, 0), n))
+            return (max(n - self.load_buffer * 2, 0), n)
         else:
-            return list(range(min(self.load_buffer, n)))
+            return (0, min(self.load_buffer, n))
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
@@ -94,8 +94,8 @@ class Log(Column):
                     break
             else:
                 return super()._process_property_change(msg)
-            offset = min(self._synced_indices)
-            msg['visible_range'] = offset + indexes[0], offset + indexes[-1]
+            offset = self._synced_range[0]
+            msg['visible_range'] = (offset + indexes[0], offset + indexes[-1])
         return super()._process_property_change(msg)
 
     def _process_param_change(self, msg):
@@ -108,7 +108,7 @@ class Log(Column):
     ):
         from ..pane.base import RerenderError, panel
         new_models, old_models = [], []
-        self._last_synced = synced = self._synced_indices
+        self._last_synced = self._synced_range
 
         for i, pane in enumerate(self.objects):
             self.objects[i] = panel(pane)
@@ -119,7 +119,7 @@ class Log(Column):
 
         current_objects = list(self.objects)
         ref = root.ref['id']
-        for i in synced:
+        for i in range(*self._last_synced):
             pane = current_objects[i]
             if pane in old_objects and ref in pane._models:
                 child, _ = pane._models[root.ref['id']]
