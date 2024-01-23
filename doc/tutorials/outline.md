@@ -25,15 +25,17 @@ WIDGET and `.bind` BASED APPROACH
 - [ ] [Develop in a notebook](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/develop_notebook.md)
 - [ ] [Display with `pn.panel`](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/display_pn_panel.md)
 - [ ] [Display with Panes](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/display_panes.md)
-- [ ] [Layout objects](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/layout.md))
+- [ ] [Layout objects](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/layout.md)
 - [ ] Accept User Input: widgets. Panels input components
 - [ ] Add interactivity easily and efficiently: `pn.bind`. Also with `watch=True`.
+- [ ] Size components: sizing_mode, height/ width, max_height/ max_width
+- [ ] Align components: `align`, `margin`, Spacer/ HSpacer/ VSpacer
 - [ ] Style components with designs
 - [ ] Style components with styles
 - [ ] Organize and Style with templates
 - [ ] Indicate busy-ness with indicators
 - [ ] Improve performance: caching
-- [ ] Dynamic Layouts
+- [ ] Dynamic Layouts: generators
 - [ ] Build a ChatBot: Can be done after "Serve Apps"
 - [ ] Build a static, Financial Report: Save to .html, use .embed, Can be done after "Layout Objects"
 - [ ] Build a Todo App: Can be done after "pn.bind"
