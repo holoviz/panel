@@ -274,14 +274,15 @@ In this guide you have learned:
 
 ### Tutorials
 
-- [Display objects with `pn.panel`](display_pn_panel.md)
-- [Display objects with Panes](display_panes.md)
+- [Display objects with `pn.panel`](.md)
+- [Display objects with Panes](.md)
 
 ### How-to
 
 - [Align Components](../../how_to/layout/align.md)
 - [Control Size](../../how_to/layout/size.md)
 - [Customize Spacing](../../how_to/layout/spacing.md)
+- [Migrate from Streamlit | Layout Objects](../../how_to/streamlit_migration/layouts.html)
 
 ### Explanation
 

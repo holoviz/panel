@@ -39,21 +39,21 @@ Learn the basic techniques for developing Panel apps efficiently in an editor.
 :::
 
 :::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` Display objects with `pn.panel`
-:link: beginner/display_pn_panel
+:link: beginner/
 :link-type: doc
 
 Learn how to display Python objects easily and dynamically with `pn.panel`.
 :::
 
 :::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` Display objects with Panes
-:link: beginner/display_panes
+:link: beginner/
 :link-type: doc
 
 Learn how to display Python objects efficiently and specifically with Panes.
 :::
 
 :::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` Layout Objects
-:link: beginner/layout
+:link: beginner/layouts
 :link-type: doc
 
 Learn how to layout Python objects including Panel components
@@ -97,9 +97,9 @@ In this section we will review different approaches for styling components, from
 beginner/panel_serve
 beginner/develop_notebook
 beginner/develop_editor
-beginner/display_pn_panel
-beginner/display_panes
-beginner/layout
+beginner/
+beginner/
+beginner/layouts
 param
 interactivity
 layouts

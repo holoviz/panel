@@ -1,4 +1,4 @@
-# Display objects with Panes
+# Display Objects with Panes
 
 In this tutorial you will learn to display objects with *Panes*:
 
@@ -86,7 +86,7 @@ Click [this link to the `Str` Reference Guide](../../reference/panes/Str.ipynb) 
 
 It should look like
 
-[![Str reference guide](../../_static/images/display_panes_str_reference.png)](../../reference/panes/Str.ipynb)
+[![Str reference guide](../../_static/images/_str_reference.png)](../../reference/panes/Str.ipynb)
 
 ## Display Markdown
 
@@ -114,7 +114,7 @@ Click [this link to the Panes Section](../../reference/index.md#panes) of the [C
 
 It should look like
 
-[![Panes Gallery and Markdown Reference Guide](../../_static/images/display_panes_markdown_reference.png)](../../reference/index.md#panes)
+[![Panes Gallery and Markdown Reference Guide](../../_static/images/_markdown_reference.png)](../../reference/index.md#panes)
 
 ### Display Alerts
 
@@ -282,12 +282,13 @@ In this guide you have learned to display Python objects with *Panes*:
 
 ### Tutorials
 
-- [Display objects with `pn.panel`](display_pn_panel.md)
+- [Display objects with `pn.panel`](.md)
 
 ### How-to
 
 - [Construct Panes](../../how_to/components/construct_panes.md)
 - [Style Components](../../how_to/styling/index.md)
+- [Migrate from Streamlit | Display Content with Panes](../../how_to/streamlit_migration/panes.md)
 
 ### Explanation
 

@@ -356,7 +356,7 @@ In this guide you have learned to display Python objects easily with `pn.panel`:
 
 ### Tutorials
 
-- [Display objects with Panes](display_panes.md)
+- [Display objects with Panes](.md)
 
 ### How-to
 

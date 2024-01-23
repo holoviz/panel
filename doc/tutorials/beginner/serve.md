@@ -167,12 +167,13 @@ You can
 
 ### Tutorials
 
-- [Serve Panel Apps (Intermediate)](../intermediate/panel_serve.md)
+- [Serve Panel Apps (Intermediate)](../intermediate/)
 
 ### How-to
 
 - [Launch a server dynamically with `pn.serve` or `pn.show`](../../how_to/server/programmatic.md)
 - [Launch a server on the commandline](../../how_to/server/commandline.md)
+- [Migrate from Streamlit | Serve Apps](../../how_to/streamlit_migration/get_started.html)
 - [Serve multiple applications with `pn.serve`](../../how_to/server/multiple.md)
 - [Serve static files with `--static-dirs`](../../how_to/server/static_files.md)
 - [Serve with Django](../../how_to/integrations/django.md)
