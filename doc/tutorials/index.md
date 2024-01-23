@@ -66,8 +66,8 @@ Learn how to display Python objects efficiently and specifically with Panes.
 Learn how to layout Python objects including Panel components
 :::
 
-:::{grid-item-card} {octicon}`accessibility;2.5em;sd-mr-1` Accept User Input
-:link: beginner/layouts
+:::{grid-item-card} {octicon}`person;2.5em;sd-mr-1` Accept User Input
+:link: beginner/widgets
 :link-type: doc
 
 Learn how to accept user input with widgets.
@@ -115,6 +115,7 @@ beginner/develop_editor
 beginner/pn_panel
 beginner/panes
 beginner/layouts
+beginner/widgets
 param
 interactivity
 layouts

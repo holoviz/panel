@@ -282,7 +282,7 @@ In this guide you have learned:
 - [Align Components](../../how_to/layout/align.md)
 - [Control Size](../../how_to/layout/size.md)
 - [Customize Spacing](../../how_to/layout/spacing.md)
-- [Migrate from Streamlit | Layout Objects](../../how_to/streamlit_migration/layouts.html)
+- [Migrate from Streamlit | Layout Objects](../../how_to/streamlit_migration/layouts.md)
 
 ### Explanation
 

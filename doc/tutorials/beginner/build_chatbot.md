@@ -2,7 +2,7 @@
 
 In this section you will learn to build a basic *chat bot*:
 
-- Its simple to develop a *chat bot* with the *high-level* [`ChatInterface`](../../reference/chat/ChatInterface.html).
+- Its simple to develop a *chat bot* with the *high-level* [`ChatInterface`](../../reference/chat/ChatInterface.md).
 - Learn more about Panels Chat Features in the [Chat Section](../../reference/index.md#Chat) of the [Component Gallery](../../reference/index.md).
 - Find reference chat implementations at [Panel-Chat-Examples](https://holoviz-topics.github.io/panel-chat-examples/).
 
@@ -10,7 +10,7 @@ In this section you will learn to build a basic *chat bot*:
 When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
-## Build the ChatBot
+## Build
 
 Run the code below:
 
@@ -31,7 +31,9 @@ chat_bot.servable()
 
 Try entering `How many characters are there in this text?` in the *text input* and click *Send*.
 
-:::{pyodide}
+## Learn
+
+:::{admonition} Note
 You can learn how to use the many features of the `ChatInterface` via its [*reference guide*](../../reference/chat/ChatInterface.html)
 :::
 
@@ -41,7 +43,7 @@ You can learn how to use the many features of the `ChatInterface` via its [*refe
 [Panel-Chat-Examples](https://holoviz-topics.github.io/panel-chat-examples/) provides lots of reference chat examples with accessible source code.
 :::
 
-Click <a href="https://holoviz-topics.github.io/panel-chat-examples/">this link</a> and spend a couple of minutes browsing through the examples of [Panel-Chat-Examples](https://holoviz-topics.github.io/panel-chat-examples/) to get inspired.
+Click <a href="https://holoviz-topics.github.io/panel-chat-examples/">this link</a> and spend a couple of minutes browsing through the examples at [Panel-Chat-Examples](https://holoviz-topics.github.io/panel-chat-examples/).
 
 [<img src="../../_static/images/panel-chat-examples.png" height="300"></img>](https://holoviz-topics.github.io/panel-chat-examples/)
 
