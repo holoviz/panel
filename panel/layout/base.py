@@ -30,6 +30,15 @@ if TYPE_CHECKING:
 
     from ..viewable import Viewable
 
+_SCROLL_MAPPING = {
+    'both-auto': 'scrollable',
+    'x-auto': 'scrollable-horizontal',
+    'y-auto': 'scrollable-vertical',
+    'both': 'scroll',
+    'x': 'scroll-horizontal',
+    'y': 'scroll-vertical',
+}
+
 _row = namedtuple("row", ["children"]) # type: ignore
 _col = namedtuple("col", ["children"]) # type: ignore
 
@@ -785,9 +794,18 @@ class ListPanel(ListLike, Panel):
     An abstract baseclass for Panel objects with list-like children.
     """
 
-    scroll = param.Boolean(default=False, doc="""
-        Whether to add scrollbars if the content overflows the size
-        of the container.""")
+    scroll = param.ObjectSelector(
+        default=False,
+        objects=[False, True, "both-auto", "y-auto", "x-auto", "both", "x", "y"],
+        doc="""Whether to add scrollbars if the content overflows the size
+        of the container. If "both-auto", will only add scrollbars if
+        the content overflows in either directions. If "x-auto" or "y-auto",
+        will only add scrollbars if the content overflows in the
+        respective direction. If "both", will always add scrollbars.
+        If "x" or "y", will always add scrollbars in the respective
+        direction. If False, overflowing content will be clipped.
+        If True, will only add scrollbars in the direction of the container,
+        (e.g. Column: vertical, Row: horizontal).""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {'scroll': None}
 
@@ -821,10 +839,7 @@ class ListPanel(ListLike, Panel):
             scroll = params['scroll']
             css_classes = params.get('css_classes', self.css_classes)
             if scroll:
-                if self._direction is not None:
-                    css_classes += [f'scrollable-{self._direction}']
-                else:
-                    css_classes += ['scrollable']
+                css_classes += [_SCROLL_MAPPING.get(scroll, f'scrollable-{self._direction}')]
             params['css_classes'] = css_classes
         return super()._process_param_change(params)
 
@@ -841,9 +856,18 @@ class NamedListPanel(NamedListLike, Panel):
     active = param.Integer(default=0, bounds=(0, None), doc="""
         Index of the currently displayed objects.""")
 
-    scroll = param.Boolean(default=False, doc="""
-        Whether to add scrollbars if the content overflows the size
-        of the container.""")
+    scroll = param.ObjectSelector(
+        default=False,
+        objects=[False, True, "both-auto", "y-auto", "x-auto", "both", "x", "y"],
+        doc="""Whether to add scrollbars if the content overflows the size
+        of the container. If "both-auto", will only add scrollbars if
+        the content overflows in either directions. If "x-auto" or "y-auto",
+        will only add scrollbars if the content overflows in the
+        respective direction. If "both", will always add scrollbars.
+        If "x" or "y", will always add scrollbars in the respective
+        direction. If False, overflowing content will be clipped.
+        If True, will only add scrollbars in the direction of the container,
+        (e.g. Column: vertical, Row: horizontal).""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {'scroll': None}
 
@@ -856,10 +880,7 @@ class NamedListPanel(NamedListLike, Panel):
             scroll = params['scroll']
             css_classes = params.get('css_classes', self.css_classes)
             if scroll:
-                if self._direction is not None:
-                    css_classes += [f'scrollable-{self._direction}']
-                else:
-                    css_classes += ['scrollable']
+                css_classes += [_SCROLL_MAPPING.get(scroll, f'scrollable-{self._direction}')]
             params['css_classes'] = css_classes
         return super()._process_param_change(params)
 
