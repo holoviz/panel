@@ -131,13 +131,19 @@ def test_ndarray_hash():
     )
 
 def test_dataframe_hash():
-    df1, df2 = pd._testing.makeMixedDataFrame(), pd._testing.makeMixedDataFrame()
+    data = {
+        "A": [0.0, 1.0, 2.0, 3.0, 4.0],
+        "B": [0.0, 1.0, 0.0, 1.0, 0.0],
+        "C": ["foo1", "foo2", "foo3", "foo4", "foo5"],
+        "D": pd.bdate_range("1/1/2009", periods=5),
+    }
+    df1, df2 = pd.DataFrame(data), pd.DataFrame(data)
     assert hashes_equal(df1, df2)
     df2['A'] = df2['A'].values[::-1]
     assert not hashes_equal(df1, df2)
 
 def test_series_hash():
-    series1 = pd._testing.makeStringSeries()
+    series1 = pd.Series([0.0, 1.0, 2.0, 3.0, 4.0])
     series2 = series1.copy()
     assert hashes_equal(series1, series2)
     series2.iloc[0] = 3.14
