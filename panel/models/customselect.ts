@@ -1,4 +1,4 @@
-import { Select, SelectView } from "@bokehjs/models/widgets/selectbox"
+import { Select, SelectView } from "@bokehjs/models/widgets/select"
 import * as p from "@bokehjs/core/properties"
 
 

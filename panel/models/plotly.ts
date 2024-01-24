@@ -316,7 +316,7 @@ export class PlotlyPlotView extends HTMLBoxView {
   }
 
   _get_trace(index: number, update: boolean): any {
-    const trace = clone(this.model.data[index]);
+    const trace = clone(this.model.data[index]) as any;
     const cds = this.model.data_sources[index];
     for (const column of cds.columns()) {
       let array = cds.get_array(column)[0];
