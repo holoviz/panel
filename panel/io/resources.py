@@ -69,10 +69,16 @@ def get_env():
 def conffilter(value):
     return json.dumps(OrderedDict(value)).replace('"', '\'')
 
+def _json_dumps(obj):
+    if bokeh34 and isinstance(obj, list):
+        from bokeh.embed.bundle import URL
+        obj = [str(l) if isinstance(l, URL) else l for l in obj]
+    return Markup(json.dumps(obj))
+
 _env = get_env()
 _env.trim_blocks = True
 _env.lstrip_blocks = True
-_env.filters['json'] = lambda obj: Markup(json.dumps(obj))
+_env.filters['json'] = _json_dumps
 _env.filters['conffilter'] = conffilter
 _env.filters['sorted'] = sorted
 
