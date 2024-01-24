@@ -66,6 +66,13 @@ Learn how to display Python objects efficiently and specifically with Panes.
 Learn how to layout Python objects including Panel components
 :::
 
+:::{grid-item-card} {octicon}`file;2.5em;sd-mr-1` Build a Report
+:link: beginner/build_report
+:link-type: doc
+
+Learn how to build a *Wind Turbine Report*, export it to `.html` and distribute it via email.
+:::
+
 :::{grid-item-card} {octicon}`person;2.5em;sd-mr-1` Accept User Input
 :link: beginner/widgets
 :link-type: doc
@@ -77,7 +84,7 @@ Learn how to accept user input with widgets.
 :link: param
 :link-type: doc
 
-Panel and other projects in the HoloViz ecosystem all build on Param. In this section you will learn the basic concepts behind Param that you need to know to become an effective user of Panel.
+Panel and other projects in the HoloViz ecosystem all built on Param. In this section you will learn the basic concepts behind Param that you need to know to become an effective user of Panel.
 :::
 
 :::{grid-item-card} {octicon}`pulse;2.5em;sd-mr-1` Interactivity
@@ -116,6 +123,7 @@ beginner/pn_panel
 beginner/panes
 beginner/layouts
 beginner/widgets
+beginner/build_report
 param
 interactivity
 layouts
