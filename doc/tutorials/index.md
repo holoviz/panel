@@ -1,10 +1,10 @@
 # Tutorials
 
-These tutorials provides you with **a structured and step-by-step learning path** to **go from Zero to Hero**.
+In these tutorials I will provide you with **a structured and step-by-step learning path** to **go from Zero to Hero**.
 
-Each guide gradually builds on the previous ones, but it's structured to separate topics, so that you can go directly to a specific topic of interest and start learning.
+Each guide gradually builds on the previous ones, but I've structured it into separate topics, so that you can go directly to a specific topic of interest and start learning.
 
-We will assume you have successfully been able to [install Panel](../getting_started/installation.md) as described in the [Getting Started Guide](../getting_started/index.md). If not please reach out for help on [Discord](https://discord.gg/rb6gPXbdAr).
+I will assume you have successfully been able to [install Panel](../getting_started/installation.md) as described in the [Getting Started Guide](../getting_started/index.md). If not please reach out for help on [Discord](https://discord.gg/rb6gPXbdAr).
 
 ---
 
@@ -12,7 +12,7 @@ We will assume you have successfully been able to [install Panel](../getting_sta
 
 These tutorials are for you that is just starting to discover Panel.
 
-You will learn to develop and deploy amazing tools and apps that can be contained within a single Python file or notebook.
+Through practical activities I will help you build your skills and knowledge. This will enable us to build a chat bot, a static report, a todo app, a dashboard and a streaming application together. 
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -128,7 +128,7 @@ styling
 
 These tutorials are for you that is ready to navigate and explore more advanced features of Panel.
 
-You will learn to develop and deploy complex tools and multi-page apps that can support more demanding use cases.
+I will help you build your skills and knowledge such that together we can develop and deploy complex tools and larger multi-page apps efficiently to support demanding use cases.
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -172,4 +172,4 @@ intermediate/structure_data_store
 
 These tutorials are for you that that is ready to pioneer and push the boundaries of what can be achieved with Panel.
 
-You will learn how to customize and extend Panel to support your domain or specialized use cases.
+Together we will develop custom components, tools and applications that customize and extend Panel to support your domain and highly specialized use case.
