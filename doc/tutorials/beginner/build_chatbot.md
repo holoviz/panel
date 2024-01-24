@@ -54,7 +54,7 @@ chat_bot.servable()
 Try entering `Can you please stream your response to this question?` in the *text input* and click *Send*.
 
 :::{adminition} Note
-If your chat app will have many users I recommend you to use `async` to make it fast and responsive. Most *Large Language Models* like chatGPT support this *out of the box*.
+We have just built a high performing, scalable chat app. And we used `async` and `await` to do this. Well done!
 
 We won't be using `async` a lot in the basic tutorials. I just want you to know that Panels support for `async` can enable you to build high performing, scalable applications including chat bots.
 :::
@@ -64,13 +64,17 @@ We won't be using `async` a lot in the basic tutorials. I just want you to know 
 :::{admonition} Note
 
 :::{admonition} Note
-You can learn how to use the many features of the `ChatInterface` via its [*reference guide*](../../reference/chat/ChatInterface.html) which you can find in the [Chat Section](/reference/index.html#chat) of the [Component Gallery](../../reference/index.md).
+You can learn more about the `ChatInterface` via its [*reference guide*](../../reference/chat/ChatInterface.html). You find the *reference guide* in the [Chat Section](/reference/index.html#chat) of the [Component Gallery](../../reference/index.md).
 :::
+
+[![Chat Section of Component Gallery](../../_static/images/build_chatbot_chat_section.png)](/reference/index.html#chat)
 
 ## Find Inspiration
 
 :::{admonition} Note
-I recommend you to check out [Panel-Chat-Examples](https://holoviz-topics.github.io/panel-chat-examples/) one day. It provides lots of reference chat examples with accessible source code.
+[Panel-Chat-Examples](https://holoviz-topics.github.io/panel-chat-examples/) provides lots of reference chat examples with accessible source code.
+
+I can highly recommend you to check out this resource one day when you are not doing this tutorial.
 :::
 
 [<img src="../../_static/images/panel-chat-examples.png" height="300"></img>](https://holoviz-topics.github.io/panel-chat-examples/)
@@ -80,7 +84,7 @@ I recommend you to check out [Panel-Chat-Examples](https://holoviz-topics.github
 In this section we have
 
 - used the *easy to use*, *high-level* [`ChatInterface`](../../reference/chat/ChatInterface.ipynb) to build a basic chat bot.
-- used `async` to build a streaming and scalable chat bot.
+- used `async` to build a high performing, streaming chat bot.
 
 ## Resources
 
