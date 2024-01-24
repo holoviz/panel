@@ -164,5 +164,7 @@ In this section we have built a *Wind Turbine Report* with a nice user experienc
 
 ## Resources
 
-- [Chat Component Gallery](/reference/index.html#chat)
-- [Panel-Chat-Examples](https://holoviz-topics.github.io/panel-chat-examples/)
+### How-to
+
+- [Embed State](../../how_to/export/embedding.md)
+- [Save app to file](../../how_to/export/saving.md)
