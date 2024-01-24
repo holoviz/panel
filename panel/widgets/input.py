@@ -142,9 +142,11 @@ class TextAreaInput(TextInput):
     rows = param.Integer(default=2, doc="""
         Number of rows in the text input field.""")
 
-    resizable = param.ObjectSelector(objects=["both", "width", "height", False], doc="""
+    resizable = param.ObjectSelector(
+        objects=["both", "width", "height", False], doc="""
         Whether the layout is interactively resizable,
-        and if so in which dimensions: `width`, `height`, or `both`.""")
+        and if so in which dimensions: `width`, `height`, or `both`.
+        Can only be set during initialization.""")
 
     _widget_type: ClassVar[Type[Model]] = _bkTextAreaInput
 
