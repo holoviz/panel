@@ -22,7 +22,7 @@ A *Pane* is defined as a component that inherits from the `PaneBase` class.
 :::
 
 :::{admonition} Note
-When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
+When I ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
 :::{admonition} Note
