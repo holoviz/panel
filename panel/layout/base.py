@@ -794,7 +794,7 @@ class ListPanel(ListLike, Panel):
     An abstract baseclass for Panel objects with list-like children.
     """
 
-    scroll = param.ObjectSelector(
+    scroll = param.Selector(
         default=False,
         objects=[False, True, "both-auto", "y-auto", "x-auto", "both", "x", "y"],
         doc="""Whether to add scrollbars if the content overflows the size
@@ -835,8 +835,7 @@ class ListPanel(ListLike, Panel):
         )
 
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        if params.get('scroll'):
-            scroll = params['scroll']
+        if (scroll := params.get('scroll')):
             css_classes = params.get('css_classes', self.css_classes)
             if scroll in _SCROLL_MAPPING:
                 scroll_class = _SCROLL_MAPPING[scroll]
@@ -880,8 +879,7 @@ class NamedListPanel(NamedListLike, Panel):
     __abstract = True
 
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        if params.get('scroll'):
-            scroll = params['scroll']
+        if (scroll := params.get('scroll')):
             css_classes = params.get('css_classes', self.css_classes)
             if scroll in _SCROLL_MAPPING:
                 scroll_class = _SCROLL_MAPPING[scroll]
