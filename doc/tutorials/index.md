@@ -1,6 +1,6 @@
 # Tutorials
 
-In these tutorials I will provide you with **a structured and step-by-step learning path** to **go from Zero to Hero**.
+In these tutorials I will provide you with **a structured and step-by-step learning path** to go **from Zero to Hero**.
 
 Each guide gradually builds on the previous ones, but I've structured it into separate topics, so that you can go directly to a specific topic of interest and start learning.
 
@@ -12,23 +12,23 @@ I will assume you have successfully been able to [install Panel](../getting_star
 
 These tutorials are for you that is just starting to discover Panel.
 
-Through practical activities I will help you build your skills and knowledge. This will enable us to build a chat bot, a static report, a todo app, a dashboard and a streaming application together. 
+Through practical activities I will help you build your skills and knowledge. This will enable us to build a chat bot, a static report, a todo app, a dashboard and a streaming application. 
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`browser;2.5em;sd-mr-1` Serve Apps
+:::{grid-item-card} {octicon}`browser;2.5em;sd-mr-1` Build your first App
 :link: beginner/serve
 :link-type: doc
 
-Learn how to serve apps from a single Python script, Notebook or Markdown document.
+Learn how to build and serve a *Hello World* app from a Python script, Notebook or Markdown document.
 :::
 
 :::{grid-item-card} {octicon}`dependabot;2.5em;sd-mr-1` Build a Chat Bot
 :link: beginner/build_chatbot
 :link-type: doc
 
-Learn how to build a simple *chat bot*.
+Learn how to build a streaming *chat bot* that can scale to many users.
 :::
 
 :::{grid-item-card} {octicon}`note;2.5em;sd-mr-1` Develop in a Notebook

@@ -9,7 +9,7 @@ In this section we will build a *Wind Turbine Report*. We will
 When I ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
-## Run the report
+## Create the Report
 
 Run the code code below
 
@@ -148,9 +148,11 @@ report.servable()
 
 If you ran this in a notebook or Python file your report will be saved to the file `report.html`.
 
-Attach the `report.html` file to an email and send it to your self. When you receive the email, then open the `report.html` attachment.
+## Distribute the report
 
-Congrats. You are now able to create and distribute interactive reports based on DataFrames and any of your favorite plotting libraries. That is an amazing achievement.
+Attach the `report.html` file generated in the previous section to an email and send it to your self. When you receive the email, then open the `report.html` attachment.
+
+🥳 Congrats. You are now able to create and distribute interactive reports based on DataFrames and any of your favorite plotting libraries. That is an amazing achievement.
 
 ## Break it down
 
