@@ -40,7 +40,6 @@ def test_watch():
     _watched_files.clear()
 
 @pytest.mark.flaky(reruns=3)
-# @pytest.mark.asyncio
 async def test_reload_on_update(server_document, stop_event):
     location = Location()
     state._locations[server_document] = location
