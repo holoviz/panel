@@ -41,7 +41,7 @@ SINGLE FILE OR NOTEBOOK, WIDGET and `.bind` BASED APPROACH
 - [ ] Build a Todo App: Can be done after "pn.bind"
 - [ ] Build a Wind Turbine Dashboard: Puts everything together
 - [ ] Build a Stock Prices Streaming Application: Puts everything together
-- [ ] Share your work: Deploy to Hugging Face Spaces
+- [ ] Deploy an app: Hugging Face Spaces
 
 ## Intermediate
 
