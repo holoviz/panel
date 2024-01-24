@@ -1,9 +1,9 @@
 # Build a Report
 
-In this section we will build a *Wind Turbine Report*:
+In this section we will build a *Wind Turbine Report*. We will
 
-- We will layout and style the report nicely.
-- We will the export the report to static `.html`.
+- layout and style the report nicely.
+- export the report to static `.html` and distribute it via email.
 
 :::{admonition} Note
 When I ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
@@ -146,11 +146,11 @@ report.save("report.html")
 report.servable()
 ```
 
-If you run this in a notebook or Python file your report will be saved to the file `report.html`.
+If you ran this in a notebook or Python file your report will be saved to the file `report.html`.
 
-Try attaching the `report.html` file to an email and send it to your self. When you receive the email, then open the `report.html` attachment.
+Attach the `report.html` file to an email and send it to your self. When you receive the email, then open the `report.html` attachment.
 
-Congrats. You are now able to create and distribute interactive reports based on DataFrames and any of your favorite plotting libraries. I think you should start to feel like a *Hero*.
+Congrats. You are now able to create and distribute interactive reports based on DataFrames and any of your favorite plotting libraries. That is an amazing achievement.
 
 ## Break it down
 
