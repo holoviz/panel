@@ -37,7 +37,7 @@ from jinja2.loaders import FileSystemLoader
 from markupsafe import Markup
 
 from ..config import config, panel_extension as extension
-from ..util import isurl, url_path
+from ..util import bokeh34, isurl, url_path
 from .state import state
 
 if TYPE_CHECKING:
@@ -414,6 +414,13 @@ def bundle_resources(roots, resources, notebook=False, reloading=False, enable_m
         js_raw.append(ext)
 
     hashes = js_resources.hashes if js_resources else {}
+
+    if bokeh34:
+        from bokeh.embed.bundle import URL
+
+        js_files = list(map(URL, js_files))
+        css_files = list(map(URL, css_files))
+
     return Bundle(
         css_files=css_files,
         css_raw=css_raw,
