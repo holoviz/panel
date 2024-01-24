@@ -27,6 +27,7 @@ WIDGET and `.bind` BASED APPROACH
 - [ ] [Display objects with `pn.panel`](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/pn_panel.md)
 - [ ] [Display objects with Panes](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/panes.md)
 - [ ] [Layout objects](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/layouts.md)
+- [ ] [Build a Report](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/build_report.md)
 - [ ] [Accept User Input](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/widgets.md)
 - [ ] Add interactivity easily and efficiently: `pn.bind`. Also with `watch=True`.
 - [ ] Size components: sizing_mode, height/ width, max_height/ max_width
@@ -37,7 +38,6 @@ WIDGET and `.bind` BASED APPROACH
 - [ ] Indicate busy-ness with indicators
 - [ ] Improve performance: caching
 - [ ] Dynamic Layouts: generators
-- [ ] Build a static, Financial Report: Save to .html, use .embed, Can be done after "Layout Objects"
 - [ ] Build a Todo App: Can be done after "pn.bind"
 - [ ] Build a Wind Turbine Dashboard: Puts everything together
 - [ ] Build a Stock Prices Streaming Application: Puts everything together
