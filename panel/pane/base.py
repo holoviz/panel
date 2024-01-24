@@ -267,47 +267,46 @@ class PaneBase(Reactive):
                 ]
                 if indexes:
                     index = indexes[0]
+                    new_model = (new_model,) + parent.children[index][1:]
+                    parent.children[index] = new_model
                 else:
                     raise ValueError
-                new_model = (new_model,) + parent.children[index][1:]
             elif isinstance(parent, _BkReactiveHTML):
                 for node, children in parent.children.items():
                     if old_model in children:
                         index = children.index(old_model)
                         new_models = list(children)
                         new_models[index] = new_model
+                        parent.children[node] = new_models
                         break
             elif isinstance(parent, _BkTabs):
                 index = [tab.child for tab in parent.tabs].index(old_model)
+                old_tab = parent.tabs[index]
+                props = dict(old_tab.properties_with_values(), child=new_model)
+                parent.tabs[index] = _BkTabPanel(**props)
             else:
                 index = parent.children.index(old_model)
+                parent.children[index] = new_model
         except ValueError:
             self.param.warning(
                 f'{type(self).__name__} pane model {old_model!r} could not be '
                 f'replaced with new model {new_model!r}, ensure that the parent '
                 'is not modified at the same time the panel is being updated.'
             )
-        else:
-            if isinstance(parent, _BkReactiveHTML):
-                parent.children[node] = new_models
-            elif isinstance(parent, _BkTabs):
-                old_tab = parent.tabs[index]
-                props = dict(old_tab.properties_with_values(), child=new_model)
-                parent.tabs[index] = _BkTabPanel(**props)
-            else:
-                parent.children[index] = new_model
-            layout_parent = self.layout._models.get(ref, [None])[0]
-            if parent is layout_parent:
-                parent.update(**self.layout._compute_sizing_mode(
-                    parent.children,
-                    dict(
-                        sizing_mode=self.layout.sizing_mode,
-                        styles=self.layout.styles,
-                        width=self.layout.width,
-                        min_width=self.layout.min_width,
-                        margin=self.layout.margin
-                    )
-                ))
+            return
+
+        layout_parent = self.layout._models.get(ref, [None])[0]
+        if parent is layout_parent:
+            parent.update(**self.layout._compute_sizing_mode(
+                parent.children,
+                dict(
+                    sizing_mode=self.layout.sizing_mode,
+                    styles=self.layout.styles,
+                    width=self.layout.width,
+                    min_width=self.layout.min_width,
+                    margin=self.layout.margin
+                )
+            ))
 
         from ..io import state
         ref = root.ref['id']
@@ -678,24 +677,14 @@ class ReplacementPane(PaneBase):
                     cls._recursive_update(old, new)
             elif isinstance(object, Reactive):
                 cls._recursive_update(old_object, object)
-            else:
+            elif old_object.object is not object:
+                # See https://github.com/holoviz/param/pull/901
                 old_object.object = object
         else:
             # Replace pane entirely
-            pane = panel(object, **{k: v for k, v in kwargs.items()
-                                    if k in pane_type.param})
-            if pane is object:
-                # If all watchers on the object are internal watchers
-                # we can make a clone of the object and update this
-                # clone going forward, otherwise we have replace the
-                # model entirely which is more expensive.
-                if not (custom_watchers or links):
-                    pane = object.clone()
-                    internal = True
-                else:
-                    internal = False
-            else:
-                internal = object is not old_object
+            pane_params = {k: v for k, v in kwargs.items() if k in pane_type.param}
+            pane = panel(object, **pane_params)
+            internal = pane is not object
         return pane, internal
 
     def _update_inner(self, new_object: Any) -> None:

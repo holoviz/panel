@@ -209,13 +209,18 @@ class _state(param.Parameterized):
     _sessions = {}
     _session_key_funcs = {}
 
+    # Layout editor
+    _cell_outputs = defaultdict(list)
+    _cell_layouts = defaultdict(dict)
+    _session_outputs: ClassVar[WeakKeyDictionary[Document, Dict[str, Any]]] = WeakKeyDictionary()
+
     # Override user info
     _oauth_user_overrides = {}
     _active_users = Counter()
 
     def __repr__(self) -> str:
         server_info = []
-        for server, panel, docs in self._servers.values():
+        for server, panel, _docs in self._servers.values():
             server_info.append(
                 "{}:{:d} - {!r}".format(server.address or "localhost", server.port, panel)
             )
@@ -757,6 +762,7 @@ class _state(param.Parameterized):
         """
         self.kill_all_servers()
         self._indicators.clear()
+        self._location = None
         self._locations.clear()
         self._templates.clear()
         self._views.clear()
@@ -962,15 +968,16 @@ class _state(param.Parameterized):
         """
         Returns the Document that is currently being executed.
         """
+        curdoc = self._curdoc.get()
+        if curdoc:
+            return curdoc
         try:
             doc = curdoc_locked()
             pyodide_session = self._is_pyodide and 'pyodide_kernel' not in sys.modules
             if doc and (doc.session_context or pyodide_session):
                 return doc
-        finally:
-            curdoc = self._curdoc.get()
-            if curdoc:
-                return curdoc
+        except Exception:
+            return None
 
     @curdoc.setter
     def curdoc(self, doc: Document) -> None:

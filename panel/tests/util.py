@@ -57,7 +57,7 @@ jb_available = pytest.mark.skipif(jupyter_bokeh is None, reason="requires jupyte
 APP_PATTERN = re.compile(r'Bokeh app running at: http://localhost:(\d+)/')
 ON_POSIX = 'posix' in sys.builtin_module_names
 
-unix_only = pytest.mark.skipif(platform.system() != 'Linux', reason="Only supported on Linux")
+linux_only = pytest.mark.skipif(platform.system() != 'Linux', reason="Only supported on Linux")
 
 from panel.pane.alert import Alert
 from panel.pane.markup import Markdown
@@ -232,7 +232,7 @@ async def async_wait_until(fn, page=None, timeout=5000, interval=100):
         elapsed_ms = elapsed * 1000
         return elapsed_ms > timeout
 
-    timeout_msg = f"wait_until timed out in {timeout} milliseconds"
+    timeout_msg = f"async_wait_until timed out in {timeout} milliseconds"
 
     while True:
         try:
@@ -245,7 +245,7 @@ async def async_wait_until(fn, page=None, timeout=5000, interval=100):
         else:
             if result not in (None, True, False):
                 raise ValueError(
-                    "`wait_until` callback must return None, True, or "
+                    "`async_wait_until` callback must return None, True, or "
                     f"False, returned {result!r}"
                 )
             # None is returned when the function has an assert
@@ -379,7 +379,7 @@ def wait_for_port(stdout):
     nbsr = NBSR(stdout)
     m = None
     output = []
-    for i in range(20):
+    for _ in range(20):
         o = nbsr.readline(0.5)
         if not o:
             continue

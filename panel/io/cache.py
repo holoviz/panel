@@ -192,14 +192,14 @@ def _generate_hash_inner(obj):
             raise ValueError(
                 f'User hash function {hash_func!r} failed for input '
                 f'{obj!r} with following error: {type(e).__name__}("{e}").'
-            )
+            ) from e
         return output
     if hasattr(obj, '__reduce__'):
         h = hashlib.new("md5")
         try:
             reduce_data = obj.__reduce__()
         except BaseException:
-            raise ValueError(f'Could not hash object of type {type(obj).__name__}')
+            raise ValueError(f'Could not hash object of type {type(obj).__name__}') from None
         for item in reduce_data:
             h.update(_generate_hash(item))
         return h.digest()
@@ -319,6 +319,9 @@ def cache(
         A dictionary mapping from a type to a function which returns
         a hash for an object of that type. If provided this will
         override the default hashing function provided by Panel.
+    max_items: int or None
+        The maximum items to keep in the cache. Default is None, which does
+        not limit number of items stored in the cache.
     policy: str
         A caching policy when max_items is set, must be one of:
           - FIFO: First in - First out
@@ -347,7 +350,8 @@ def cache(
             max_items=max_items,
             ttl=ttl,
             to_disk=to_disk,
-            cache_path=cache_path
+            cache_path=cache_path,
+            per_session=per_session,
         )
     func_hash = None # noqa
 
@@ -431,7 +435,7 @@ def cache(
                     func_cache[hash_value] = (ret, time, 0, time)
             return ret
 
-    def clear(session_context=None):
+    def clear():
         global func_hash
         # clear called before anything is cached.
         if 'func_hash' not in globals():
@@ -445,10 +449,13 @@ def cache(
         else:
             cache = state._memoize_cache.get(func_hash, {})
         cache.clear()
+
     wrapped_func.clear = clear
 
     if per_session and state.curdoc and state.curdoc.session_context:
-        state.curdoc.on_session_destroyed(clear)
+        def server_clear(session_context):
+            clear()
+        state.curdoc.on_session_destroyed(server_clear)
 
     try:
         wrapped_func.__dict__.update(func.__dict__)

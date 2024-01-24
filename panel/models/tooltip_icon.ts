@@ -1,8 +1,7 @@
-import { Control, ControlView } from '@bokehjs/models/widgets/control'
-import { Tooltip, TooltipView } from '@bokehjs/models/ui/tooltip'
+import { Tooltip } from '@bokehjs/models/ui/tooltip'
+import { UIElement } from "@bokehjs/models/ui/ui_element"
+import { LayoutDOM, LayoutDOMView } from "@bokehjs/models/layouts/layout_dom"
 
-import type {IterViews} from '@bokehjs/core/build_views'
-import {build_view} from '@bokehjs/core/build_views'
 import type {StyleSheetLike} from '@bokehjs/core/dom'
 import {div, label} from '@bokehjs/core/dom'
 import * as p from '@bokehjs/core/properties'
@@ -10,30 +9,21 @@ import * as p from '@bokehjs/core/properties'
 import inputs_css, * as inputs from '@bokehjs/styles/widgets/inputs.css'
 import icons_css from '@bokehjs/styles/icons.css'
 
-export class TooltipIconView extends ControlView {
+export class TooltipIconView extends LayoutDOMView {
   declare model: TooltipIcon
-
-  protected description: TooltipView
 
   protected desc_el: HTMLElement
 
-  public *controls() {}
-
-  override *children(): IterViews {
-    yield* super.children()
-    yield this.description
+  get child_models(): UIElement[] {
+    if (this.model.description == null)
+      return []
+    return [this.model.description]
   }
 
-  override async lazy_initialize(): Promise<void> {
-    await super.lazy_initialize()
-
-    const { description } = this.model
-    this.description = await build_view(description, { parent: this })
-  }
-
-  override remove(): void {
-    this.description?.remove()
-    super.remove()
+  override connect_signals(): void {
+    super.connect_signals()
+    const {description} = this.model.properties
+    this.on_change(description, () => this.update_children())
   }
 
   override stylesheets(): StyleSheetLike[] {
@@ -46,37 +36,37 @@ export class TooltipIconView extends ControlView {
     const icon_el = div({ class: inputs.icon })
     this.desc_el = div({ class: inputs.description }, icon_el)
 
-    const { desc_el, description } = this
-    description.model.target = desc_el
+    this.model.description.target = this.desc_el
 
     let persistent = false
 
     const toggle = (visible: boolean) => {
-      description.model.setv({
+      this.model.description.setv({
         visible,
         closable: persistent,
       })
       icon_el.classList.toggle(inputs.opaque, visible && persistent)
     }
 
-    this.on_change(description.model.properties.visible, () => {
-      const { visible } = description.model
+    this.on_change(this.model.description.properties.visible, () => {
+      const { visible } = this.model.description
       if (!visible) {
         persistent = false
       }
       toggle(visible)
     })
-    desc_el.addEventListener('mouseenter', () => {
+    this.desc_el.addEventListener('mouseenter', () => {
       toggle(true)
     })
-    desc_el.addEventListener('mouseleave', () => {
+    this.desc_el.addEventListener('mouseleave', () => {
       if (!persistent) toggle(false)
     })
     document.addEventListener('mousedown', (event) => {
       const path = event.composedPath()
-      if (path.includes(description.el)) {
+      const tooltip_view = this._child_views.get(this.model.description)
+      if (tooltip_view !== undefined && path.includes(tooltip_view.el)) {
         return
-      } else if (path.includes(desc_el)) {
+      } else if (path.includes(this.desc_el)) {
         persistent = !persistent
         toggle(persistent)
       } else {
@@ -92,21 +82,19 @@ export class TooltipIconView extends ControlView {
     // Label to get highlight when icon is hovered
     this.shadow_el.appendChild(label(this.desc_el))
   }
-
-  change_input(): void {}
 }
 
 export namespace TooltipIcon {
   export type Attrs = p.AttrsOf<Props>
 
-  export type Props = Control.Props & {
+  export type Props = LayoutDOM.Props & {
     description: p.Property<Tooltip>
   }
 }
 
 export interface TooltipIcon extends TooltipIcon.Attrs {}
 
-export class TooltipIcon extends Control {
+export class TooltipIcon extends LayoutDOM {
   declare properties: TooltipIcon.Props
   declare __view_type__: TooltipIconView
   static __module__ = 'panel.models.widgets'

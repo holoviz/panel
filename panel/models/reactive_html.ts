@@ -169,9 +169,13 @@ export class ReactiveHTMLView extends HTMLBoxView {
         const property = data_model.properties[attr]
         if (property == null)
           continue
+	const is_event_param = this.model.event_params.includes(prop)
         this.connect(property.change, () => {
-          if (!this._changing)
+          if (!this._changing && !(is_event_param && !data_model[prop])) {
             this.run_script(prop)
+	    if (is_event_param)
+	      data_model.setv({[prop]: false})
+	  }
         })
       }
     }
@@ -503,6 +507,7 @@ export namespace ReactiveHTML {
     callbacks: p.Property<any>
     children: p.Property<any>
     data: p.Property<any>
+    event_params: p.Property<string[]>
     events: p.Property<any>
     html: p.Property<string>
     looped: p.Property<string[]>
@@ -529,6 +534,7 @@ export class ReactiveHTML extends HTMLBox {
       callbacks: [ Any,    {} ],
       children:  [ Any,    {} ],
       data:      [ Any,       ],
+      event_params: [ Array(String), [] ],
       events:    [ Any,    {} ],
       html:      [ String, "" ],
       looped:    [ Array(String), [] ],

@@ -40,7 +40,7 @@ def ds_as_cds(dataset):
 
 _containers = ['hconcat', 'vconcat', 'layer']
 
-SCHEMA_REGEX = re.compile('^v(\d+)\.\d+\.\d+.json')
+SCHEMA_REGEX = re.compile(r'^v(\d+)\.\d+\.\d+.json')
 
 def _isin(obj, attr):
     if isinstance(obj, dict):

@@ -25,4 +25,4 @@ class LivenessHandler(web.RequestHandler):
         except Exception as e:
             raise web.HTTPError(
                 500, f"Endpoint {endpoint!r} could not be served. Application raised error: {e}"
-            )
+            ) from e

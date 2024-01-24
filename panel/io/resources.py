@@ -14,7 +14,6 @@ import pathlib
 import re
 import textwrap
 
-from base64 import b64encode
 from collections import OrderedDict
 from contextlib import contextmanager
 from functools import lru_cache
@@ -39,7 +38,6 @@ from markupsafe import Markup
 
 from ..config import config, panel_extension as extension
 from ..util import isurl, url_path
-from .loading import LOADING_INDICATOR_CSS_CLASS
 from .state import state
 
 if TYPE_CHECKING:
@@ -102,7 +100,7 @@ DOC_DIST = "https://panel.holoviz.org/_static/"
 LOCAL_DIST = "static/extensions/panel/"
 COMPONENT_PATH = "components/"
 
-BK_PREFIX_RE = re.compile('\.bk\.')
+BK_PREFIX_RE = re.compile(r'\.bk\.')
 
 RESOURCE_URLS = {
     'font-awesome': {
@@ -182,13 +180,10 @@ def process_raw_css(raw_css):
 
 @lru_cache(maxsize=None)
 def loading_css(loading_spinner, color, max_height):
-    with open(ASSETS_DIR / f'{loading_spinner}_spinner.svg', encoding='utf-8') as f:
-        svg = f.read().replace('\n', '').format(color=color)
-    b64 = b64encode(svg.encode('utf-8')).decode('utf-8')
     return textwrap.dedent(f"""
-    :host(.{LOADING_INDICATOR_CSS_CLASS}.pn-{loading_spinner}):before, .pn-loading.pn-{loading_spinner}:before {{
-      background-image: url("data:image/svg+xml;base64,{b64}");
-      background-size: auto calc(min(50%, {max_height}px));
+    :host(.pn-loading):before, .pn-loading:before {{
+      background-color: {color};
+      mask-size: auto calc(min(50%, {max_height}px));
     }}""")
 
 def resolve_custom_path(
@@ -263,6 +258,9 @@ def patch_stylesheet(stylesheet, dist_url):
     except Exception:
         pass
 
+def _is_file_path(stylesheet: str)->bool:
+    return stylesheet.lower().endswith(".css")
+
 def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
     """
     Resolves a stylesheet definition, e.g. originating on a component
@@ -271,6 +269,7 @@ def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
 
     - Absolute URL defined with http(s) protocol
     - A path relative to the component
+    - A raw css string
 
     Arguments
     ---------
@@ -280,7 +279,7 @@ def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
         The stylesheet definition
     """
     stylesheet = str(stylesheet)
-    if not stylesheet.startswith('http') and attribute and (custom_path:= resolve_custom_path(cls, stylesheet)):
+    if not stylesheet.startswith('http') and attribute and _is_file_path(stylesheet) and (custom_path:= resolve_custom_path(cls, stylesheet)):
         if not state._is_pyodide and state.curdoc and state.curdoc.session_context:
             stylesheet = component_resource_path(cls, attribute, stylesheet)
         else:
@@ -678,10 +677,11 @@ class Resources(BkResources):
         # Inline local dist resources
         css_files = self._collect_external_resources("__css__")
         self.extra_resources(css_files, '__css__')
-        raw += [
-            (DIST_DIR / css.replace(CDN_DIST, '')).read_text(encoding='utf-8')
-            for css in css_files if is_cdn_url(css)
-        ]
+        if self.mode.lower() != 'cdn':
+            raw += [
+                (DIST_DIR / css.replace(CDN_DIST, '')).read_text(encoding='utf-8')
+                for css in css_files if is_cdn_url(css)
+            ]
 
         # Add local CSS files
         for cssf in config.css_files:

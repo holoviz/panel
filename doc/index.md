@@ -68,7 +68,7 @@ Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt
 
 ```{notebook} panel ../examples/homepage.ipynb
 :disable_interactivity_warning: True
-````
+```
 
 Panel makes it simple to:
 
@@ -192,6 +192,7 @@ alt: Quansight Logo
 :caption: FOR USERS
 
 getting_started/index
+tutorials/index
 how_to/index
 explanation/index
 reference/index

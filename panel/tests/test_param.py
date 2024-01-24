@@ -1315,20 +1315,20 @@ def test_param_function_pane_update(document, comm):
 
     pane = panel(view)
     inner_pane = pane._pane
-    assert inner_pane is not objs[0]
+    assert inner_pane is objs[0]
     assert inner_pane.object is objs[0].object
-    assert pane._internal
+    assert not pane._internal
 
     test.a = 1
 
-    assert pane._pane is inner_pane
-    assert pane._internal
+    assert pane._pane is not inner_pane
+    assert not pane._internal
 
     objs[0].param.watch(print, ['object'])
 
     test.a = 0
 
-    assert pane._pane is not inner_pane
+    assert pane._pane is inner_pane
     assert not pane._internal
 
 
