@@ -43,6 +43,7 @@ from .parameters import (  # noqa
 log = logging.getLogger('panel.util')
 
 bokeh_version = Version(Version(bokeh.__version__).base_version)
+bokeh33 = bokeh_version >= Version("3.3")
 bokeh34 = bokeh_version >= Version("3.4")
 # Bokeh serializes NaT as this value
 # Discussion on why https://github.com/bokeh/bokeh/pull/10449/files#r479988469
