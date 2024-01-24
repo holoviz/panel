@@ -843,7 +843,7 @@ class ListPanel(ListLike, Panel):
                 scroll_class = f'scrollable-{self._direction}'
             else:
                 scroll_class = 'scrollable'
-            params['css_classes'] = css_classes + scroll_class
+            params['css_classes'] = css_classes + [scroll_class]
         return super()._process_param_change(params)
 
     def _cleanup(self, root: Model | None = None) -> None:
@@ -887,7 +887,7 @@ class NamedListPanel(NamedListLike, Panel):
                 scroll_class = f'scrollable-{self._direction}'
             else:
                 scroll_class = 'scrollable'
-            params['css_classes'] = css_classes + scroll_class
+            params['css_classes'] = css_classes + [scroll_class]
         return super()._process_param_change(params)
 
     def _cleanup(self, root: Model | None = None) -> None:
