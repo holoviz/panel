@@ -1,6 +1,6 @@
 # Build a Chat Bot
 
-In this section we will build two basic *chat bots*. We will
+In this tutorial we will build two basic *chat bots*. We will
 
 - use the *easy to use*, *high-level* [`ChatInterface`](../../reference/chat/ChatInterface.ipynb) to build a basic chat bot.
 - use `async` to build a streaming and scalable chat bot.
@@ -18,10 +18,10 @@ import panel as pn
 
 pn.extension()
 
-def even_or_odd(contents, user, instance):
+def get_response(contents, user, instance):
     return f"Your text contains **{len(contents)}** characters."
 
-chat_bot = pn.chat.ChatInterface(callback=even_or_odd, max_height=500)
+chat_bot = pn.chat.ChatInterface(callback=get_response, max_height=500)
 chat_bot.send("Ask me anything!", user="Assistant", respond=False)
 chat_bot.servable()
 ```
@@ -39,14 +39,14 @@ from asyncio import sleep
 pn.extension()
 
 
-async def even_or_odd(contents, user, instance):
+async def get_response(contents, user, instance):
     response = f"Sure. You asked '{contents}'. Your text contains **{len(contents)}** characters."
     for index in range(len(response)):
         yield response[:index]
         await sleep(0.05)
 
 
-chat_bot = pn.chat.ChatInterface(callback=even_or_odd, max_height=500)
+chat_bot = pn.chat.ChatInterface(callback=get_response, max_height=500)
 chat_bot.send("Ask me anything!", user="Assistant", respond=False)
 chat_bot.servable()
 ```
@@ -72,9 +72,7 @@ You can learn more about the `ChatInterface` via its [*reference guide*](../../r
 ## Find Inspiration
 
 :::{admonition} Note
-[Panel-Chat-Examples](https://holoviz-topics.github.io/panel-chat-examples/) provides lots of reference chat examples with accessible source code.
-
-I can highly recommend you to check out this resource one day when you are not doing this tutorial.
+If you want to build more advanced chat bots, you should check out [Panel-Chat-Examples](https://holoviz-topics.github.io/panel-chat-examples/) for inspiration and starter templates.
 :::
 
 [<img src="../../_static/images/panel-chat-examples.png" height="300"></img>](https://holoviz-topics.github.io/panel-chat-examples/)
