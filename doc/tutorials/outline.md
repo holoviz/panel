@@ -12,11 +12,11 @@ They should be refactored into the below
 
 ## Basic
 
-These guides are for you that is just starting to discover Panel.
+These tutorials are for you that is just starting to discover Panel.
 
-You will learn to develop and deploy basic tools and apps that can be contained within a single Python file or notebook.
+Through practical activities I will help you build your skills and knowledge. This will enable us to build a chat bot, a static report, a todo app, a dashboard and a streaming application together.
 
-WIDGET and `.bind` BASED APPROACH
+SINGLE FILE OR NOTEBOOK, WIDGET and `.bind` BASED APPROACH
 
 - [ ] Getting installed (just a link to getting started)
   - [ ] Using a pre-installed environment for this tutorial: Purpose is to lower Barrier of entry. Make it possible to do at large conference with poor internet. Use Binder, Github spaces, Anaconda Notebooks ???
@@ -45,9 +45,9 @@ WIDGET and `.bind` BASED APPROACH
 
 ## Intermediate
 
-These guides are for you that is ready to navigate and explore more advanced features of Panel.
+These tutorials are for you that is ready to navigate and explore more advanced features of Panel.
 
-You will learn to develop and deploy complex tools and multi-page apps to support advanced use cases.
+I will help you build your skills and knowledge such that together we can develop and deploy complex tools and larger multi-page apps efficiently to support demanding use cases.
 
 CLASS BASED APPROACH. UNDERSTANDING OF PARAM AND SUPPLEMENTARY APIs
 
@@ -75,7 +75,7 @@ CLASS BASED APPROACH. UNDERSTANDING OF PARAM AND SUPPLEMENTARY APIs
 
 These guides are for you that is ready to pioneer and push the boundaries of what can be achieved with Panel.
 
-You will learn how to extend Panel to support your domain or specialized use cases.
+Together, we will extend Panel to support your domain and specialized use cases.
 
 - [ ] Develop and share custom components: ReactiveHTML/ ReactiveESM
 - [ ] Develop and share custom Bokeh models
