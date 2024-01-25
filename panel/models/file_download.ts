@@ -75,59 +75,59 @@ export class FileDownloadView extends InputWidgetView {
       this.icon_view = await build_view(icon, {parent: this})
     }
   }
+
   _render_input(): HTMLElement {
-        // Create an anchor HTML element that is styled as a bokeh button.
-        // When its 'href' and 'download' attributes are set, it's a downloadable link:
-        // * A click triggers a download
-        // * A right click allows to "Save as" the file
+    // Create an anchor HTML element that is styled as a bokeh button.
+    // When its 'href' and 'download' attributes are set, it's a downloadable link:
+    // * A click triggers a download
+    // * A right click allows to "Save as" the file
 
-        // There are three main cases:
-        // 1. embed=True: The widget is a download link
-        // 2. auto=False: The widget is first a button and becomes a download link after the first click
-        // 3. auto=True: The widget is a button, i.e right click to "Save as..." won't work
-        this.anchor_el = document.createElement('a')
-        this.button_el = button({
-            disabled: this.model.disabled
-        })
-        if (this.icon_view != null) {
-            const separator = this.model.label != "" ? nbsp() : text("")
-            prepend(this.button_el, this.icon_view.el, separator)
-            this.icon_view.render()
-        }
-        this._update_button_style()
-        this._update_label()
-
-        // Changing the disabled property calls render() so it needs to be handled here.
-        // This callback is inherited from ControlView in bokehjs.
-        if (this.model.disabled) {
-            this.anchor_el.setAttribute("disabled", "")
-            this._downloadable = false
-        } else {
-            this.anchor_el.removeAttribute("disabled")
-            // auto=False + toggle Disabled ==> Needs to reset the link as it was.
-            if (this._prev_download)
-            this.anchor_el.download = this._prev_download
-            if (this._prev_href)
-            this.anchor_el.href = this._prev_href
-            if (this.anchor_el.download && this.anchor_el.download)
-            this._downloadable = true
-        }
-
-        // If embedded the button is just a download link.
-        // Otherwise clicks will be handled by the code itself, allowing for more interactivity.
-        if (this.model.embed)
-        this._make_link_downloadable()
-        else {
-            // Add a "click" listener, note that it's not going to
-            // handle right clicks (they won't increment 'clicks')
-            this._click_listener = this._increment_clicks.bind(this)
-            this.anchor_el.addEventListener("click", this._click_listener)
-        }
-        this.button_el.appendChild(this.anchor_el)
-
-        this.input_el = input()  // HACK: So this.input_el.id = "input" can be set in Bokeh 3.4
-        return this.button_el
+    // There are three main cases:
+    // 1. embed=True: The widget is a download link
+    // 2. auto=False: The widget is first a button and becomes a download link after the first click
+    // 3. auto=True: The widget is a button, i.e right click to "Save as..." won't work
+    this.anchor_el = document.createElement('a')
+    this.button_el = button({
+      disabled: this.model.disabled
+    })
+    if (this.icon_view != null) {
+      const separator = this.model.label != "" ? nbsp() : text("")
+      prepend(this.button_el, this.icon_view.el, separator)
+      this.icon_view.render()
     }
+    this._update_button_style()
+    this._update_label()
+
+    // Changing the disabled property calls render() so it needs to be handled here.
+    // This callback is inherited from ControlView in bokehjs.
+    if (this.model.disabled) {
+      this.anchor_el.setAttribute("disabled", "")
+      this._downloadable = false
+    } else {
+      this.anchor_el.removeAttribute("disabled")
+      // auto=False + toggle Disabled ==> Needs to reset the link as it was.
+      if (this._prev_download)
+        this.anchor_el.download = this._prev_download
+      if (this._prev_href)
+        this.anchor_el.href = this._prev_href
+      if (this.anchor_el.download && this.anchor_el.download)
+        this._downloadable = true
+    }
+
+    // If embedded the button is just a download link.
+    // Otherwise clicks will be handled by the code itself, allowing for more interactivity.
+    if (this.model.embed)
+      this._make_link_downloadable()
+    else {
+      // Add a "click" listener, note that it's not going to
+      // handle right clicks (they won't increment 'clicks')
+      this._click_listener = this._increment_clicks.bind(this)
+      this.anchor_el.addEventListener("click", this._click_listener)
+    }
+    this.button_el.appendChild(this.anchor_el)
+    this.input_el = input() // HACK: So this.input_el.id = "input" can be set in Bokeh 3.4
+    return this.button_el
+  }
 
   render(): void {
     super.render()
