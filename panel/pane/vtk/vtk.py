@@ -76,7 +76,7 @@ class AbstractVTK(PaneBase):
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         if 'axes' in msg and msg['axes'] is not None:
-            VTKAxes = getattr(sys.modules['panel.models.vtk'], 'VTKAxes')
+            VTKAxes = sys.modules['panel.models.vtk'].VTKAxes
             axes = msg['axes']
             msg['axes'] = VTKAxes(**axes)
         return msg
@@ -86,7 +86,7 @@ class AbstractVTK(PaneBase):
         root: Model, model: Model, doc: Document, comm: Optional[Comm]
     ) -> None:
         if 'axes' in msg and msg['axes'] is not None:
-            VTKAxes = getattr(sys.modules['panel.models.vtk'], 'VTKAxes')
+            VTKAxes = sys.modules['panel.models.vtk'].VTKAxes
             axes = msg['axes']
             if isinstance(axes, dict):
                 msg['axes'] = VTKAxes(**axes)

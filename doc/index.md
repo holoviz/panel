@@ -68,7 +68,7 @@ Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt
 
 ```{notebook} panel ../examples/homepage.ipynb
 :disable_interactivity_warning: True
-````
+```
 
 Panel makes it simple to:
 
@@ -81,6 +81,10 @@ Panel makes it simple to:
 - Create **high performing**, **streaming** data applications
 - Create data apps that **can run entirely in the browser**
 - Create **polished, performant, secure and production-ready web applications**
+
+---
+
+Enjoying Panel? Show your support with a [Github star](https://github.com/holoviz/panel) — it’s a simple click that means the world to us and helps others discover it too! ⭐️
 
 ## Usage
 
@@ -188,6 +192,7 @@ alt: Quansight Logo
 :caption: FOR USERS
 
 getting_started/index
+tutorials/index
 how_to/index
 explanation/index
 reference/index

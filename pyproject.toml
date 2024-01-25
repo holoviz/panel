@@ -6,7 +6,6 @@ requires = [
     "bokeh >=3.3.0,<3.4.0",
     "pyviz_comms >=0.7.4",
     "requests",
-    "bleach",
     "packaging",
     "tqdm >=4.48.0",
     "markdown",
@@ -40,8 +39,10 @@ ignore = [
     "E741",
     "W605",
     "E701", # Multiple statements on one line
+    "B006", # Do not use mutable data structures for argument defaults
 ]
 select = [
+    "B",
     "E",
     "F",
     "W",
@@ -56,7 +57,7 @@ select = [
 "panel/pane/vtk/synchronizable_*.py" = ["T201"]
 
 [tool.codespell]
-ignore-words-list = "nd,doubleclick"
+ignore-words-list = "nd,doubleclick,ser"
 skip = "doc/generate_modules.py,examples/reference/templates/FastGridTemplate.ipynb,panel/eslint.js,panel/package-lock.json,panel/package.json"
 write-changes = true
 

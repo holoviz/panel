@@ -8,9 +8,10 @@ from panel.config import config, panel_extension as extension
 from panel.io.convert import BOKEH_VERSION
 from panel.io.resources import (
     CDN_DIST, DIST_DIR, PANEL_DIR, Resources, resolve_custom_path,
-    set_resource_mode,
+    resolve_stylesheet, set_resource_mode,
 )
 from panel.io.state import set_curdoc
+from panel.theme.native import Native
 from panel.widgets import Button
 
 bokeh_version = Version(BOKEH_VERSION)
@@ -82,7 +83,7 @@ def test_resources_model_server(document):
         with set_curdoc(document):
             extension('tabulator')
             assert resources.js_files[:2] == [
-                'static/extensions/panel/bundled/datatabulator/tabulator-tables@5.5.0/dist/js/tabulator.js',
+                'static/extensions/panel/bundled/datatabulator/tabulator-tables@5.5.0/dist/js/tabulator.min.js',
                 'static/extensions/panel/bundled/datatabulator/luxon/build/global/luxon.min.js',
             ]
             assert resources.css_files == [
@@ -95,7 +96,7 @@ def test_resources_model_cdn(document):
         with set_curdoc(document):
             extension('tabulator')
             assert resources.js_files[:2] == [
-                f'{CDN_DIST}bundled/datatabulator/tabulator-tables@5.5.0/dist/js/tabulator.js',
+                f'{CDN_DIST}bundled/datatabulator/tabulator-tables@5.5.0/dist/js/tabulator.min.js',
                 f'{CDN_DIST}bundled/datatabulator/luxon/build/global/luxon.min.js',
             ]
             assert resources.css_files == [
@@ -108,7 +109,7 @@ def test_resources_model_inline(document):
         with set_curdoc(document):
             extension('tabulator')
             assert resources.js_raw[-2:] == [
-                (DIST_DIR / 'bundled/datatabulator/tabulator-tables@5.5.0/dist/js/tabulator.js').read_text(encoding='utf-8'),
+                (DIST_DIR / 'bundled/datatabulator/tabulator-tables@5.5.0/dist/js/tabulator.min.js').read_text(encoding='utf-8'),
                 (DIST_DIR / 'bundled/datatabulator/luxon/build/global/luxon.min.js').read_text(encoding='utf-8')
             ]
             assert resources.css_raw == [
@@ -180,3 +181,27 @@ def test_resources_design_inline(document):
             assert resources.js_raw[-1:] == [
                 (DIST_DIR / 'bundled/bootstrap5/js/bootstrap.bundle.min.js').read_text(encoding='utf-8')
             ]
+
+def test_resolve_stylesheet_long_css():
+    cls = Native
+    stylesheet="""
+.styled-button {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    text-decoration: none;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.styled-button:hover {
+    background-color: #45a049;
+}
+"""
+    assert resolve_stylesheet(cls, stylesheet, "_stylesheets")==stylesheet

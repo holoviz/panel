@@ -155,16 +155,15 @@ def test_server_async_callbacks():
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_async_local_state():
+def test_server_async_local_state(bokeh_curdoc):
     docs = {}
 
     async def task():
-        curdoc = state.curdoc
         await asyncio.sleep(0.5)
-        docs[curdoc] = []
-        for i in range(5):
+        docs[state.curdoc] = []
+        for _ in range(5):
             await asyncio.sleep(0.1)
-            docs[curdoc].append(state.curdoc)
+            docs[state.curdoc].append(state.curdoc)
 
     def app():
         state.execute(task)
@@ -177,18 +176,17 @@ def test_server_async_local_state():
     wait_until(lambda: all([len(set(docs)) == 1 and docs[0] is doc for doc, docs in docs.items()]))
 
 
-def test_server_async_local_state_nested_tasks():
+def test_server_async_local_state_nested_tasks(bokeh_curdoc):
     docs = {}
 
     async def task(depth=1):
-        curdoc = state.curdoc
         await asyncio.sleep(0.5)
         if depth > 0:
             asyncio.ensure_future(task(depth-1))
-        docs[curdoc] = []
-        for i in range(10):
+        docs[state.curdoc] = []
+        for _ in range(10):
             await asyncio.sleep(0.1)
-            docs[curdoc].append(state.curdoc)
+            docs[state.curdoc].append(state.curdoc)
 
     def app():
         state.execute(task)
@@ -280,6 +278,23 @@ def test_server_session_info():
     html._server_destroy(session_context)
     state._destroy_session(session_context)
     assert state.session_info['live'] == 0
+
+
+def test_server_periodic_async_callback(threads, port):
+    counts = []
+
+    async def cb(count=[0]):
+        counts.append(count[0])
+        count[0] += 1
+
+    def app():
+        button = Button(name='Click')
+        state.add_periodic_callback(cb, 100)
+        return button
+
+    serve_and_request(app)
+
+    wait_until(lambda: len(counts) >= 5 and counts == list(range(len(counts))))
 
 
 def test_server_schedule_repeat():
@@ -478,6 +493,54 @@ def test_serve_can_serve_bokeh_app_from_file():
     path = pathlib.Path(__file__).parent / "io"/"bk_app.py"
     server = get_server({"bk-app": path})
     assert "/bk-app" in server._tornado.applications
+
+
+def test_server_on_load_after_init(threads, port):
+    loaded = []
+
+    def cb():
+        loaded.append(state.loaded)
+
+    def cb2():
+        state.execute(cb, schedule=True)
+
+    def app():
+        state.onload(cb)
+        state.onload(cb2)
+        # Simulate rendering
+        def loaded():
+            state._schedule_on_load(state.curdoc, None)
+        state.execute(loaded, schedule=True)
+        return 'App'
+
+    serve_and_request(app)
+
+    # Checks whether onload callback was executed twice once before and once after load
+    wait_until(lambda: loaded == [False, True])
+
+
+def test_server_on_load_during_load(threads, port):
+    loaded = []
+
+    def cb():
+        loaded.append(state.loaded)
+
+    def cb2():
+        state.onload(cb)
+
+    def app():
+        state.onload(cb)
+        state.onload(cb2)
+        # Simulate rendering
+        def loaded():
+            state._schedule_on_load(state.curdoc, None)
+        state.execute(loaded, schedule=True)
+        return 'App'
+
+    serve_and_request(app)
+
+    # Checks whether onload callback was executed twice once before and once during load
+    wait_until(lambda: loaded == [False, False])
 
 
 def test_server_thread_pool_on_load(threads, port):

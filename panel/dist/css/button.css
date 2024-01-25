@@ -138,8 +138,14 @@
 }
 
 .bk-btn a {
-  display: inline-block;
+  align-items: center;
+  display: inline;
   height: 100%;
-  width: 100%;
+  justify-content: center;
   padding: 6px;
+  width: 100%;
+}
+
+:host(.bk-panel-models-widgets-FileDownload) .bk-btn {
+  padding: 0px;
 }

@@ -24,8 +24,8 @@ from bokeh.util.serialization import make_id
 
 from .. import __version__, config
 from ..util import base_version, escape
+from .handlers import build_single_handler_application
 from .loading import LOADING_INDICATOR_CSS_CLASS
-from .markdown import build_single_handler_application
 from .mime_render import find_requirements
 from .resources import (
     BASE_TEMPLATE, CDN_DIST, CDN_ROOT, DIST_DIR, INDEX_TEMPLATE, Resources,
@@ -248,7 +248,7 @@ def script_to_html(
         except Exception as e:
             raise ValueError(
                 f'Requirements parser raised following error: {e}'
-            )
+            ) from e
 
     # Environment
     if panel_version == 'local':
@@ -329,12 +329,11 @@ def script_to_html(
 
     # Collect resources
     resources = Resources(mode='inline' if inline else 'cdn')
-    loading_base = (DIST_DIR / "css" / "loading.css").read_text(encoding='utf-8')
     spinner_css = loading_css(
         config.loading_spinner, config.loading_color, config.loading_max_height
     )
     css_resources.append(
-        f'<style type="text/css">\n{loading_base}\n{spinner_css}\n</style>'
+        f'<style type="text/css">\n{spinner_css}\n</style>'
     )
     with set_curdoc(document):
         bokeh_js, bokeh_css = bundle_resources(document.roots, resources)

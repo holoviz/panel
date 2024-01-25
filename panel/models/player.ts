@@ -1,8 +1,60 @@
-import {Enum} from "@bokehjs/core/kinds"
+import { Enum } from "@bokehjs/core/kinds"
 import * as p from "@bokehjs/core/properties"
-import {div} from "@bokehjs/core/dom"
-import {Widget, WidgetView} from "@bokehjs/models/widgets/widget"
+import { div } from "@bokehjs/core/dom"
+import { Widget, WidgetView } from "@bokehjs/models/widgets/widget"
 
+const SVG_STRINGS = {
+  slower: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-minus" width="24" \
+ height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"\
+  stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" \
+   fill="none"/><path d="M5 12l14 0" /></svg>',
+  first: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-track-prev-filled" \
+ width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
+  stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/>\
+   <path d="M20.341 4.247l-8 7a1 1 0 0 0 0 1.506l8 7c.647 .565 1.659 .106 1.659 -.753v-14c0 -.86 \
+    -1.012 -1.318 -1.659 -.753z" stroke-width="0" fill="currentColor" /><path d="M9.341 4.247l-8 7a1 \
+     1 0 0 0 0 1.506l8 7c.647 .565 1.659 .106 1.659 -.753v-14c0 -.86 -1.012 -1.318 -1.659 -.753z" \
+      stroke-width="0" fill="currentColor" /></svg>',
+  previous: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-skip-back-filled" \
+ width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
+  stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/> \
+   <path d="M19.496 4.136l-12 7a1 1 0 0 0 0 1.728l12 7a1 1 0 0 0 1.504 -.864v-14a1 1 0 0 0 -1.504 -.864z" \
+    stroke-width="0" fill="currentColor" /><path d="M4 4a1 1 0 0 1 .993 .883l.007 .117v14a1 1 0 0 1 -1.993 \
+     .117l-.007 -.117v-14a1 1 0 0 1 1 -1z" stroke-width="0" fill="currentColor" /></svg>',
+  reverse: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-play-filled"\
+ width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"\
+  stroke-linecap="round" stroke-linejoin="round" style="transform: scaleX(-1);"><path stroke="none"\
+   d="M0 0h24v24H0z" fill="none"/><path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13\
+    -8a1 1 0 0 0 -1.524 .852z" stroke-width="0" fill="currentColor" /></svg>',
+  pause: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-pause-filled" \
+ width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
+  stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" \
+   fill="none"/><path d="M9 4h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h2a2 2 0 0 0 2 -2v-12a2 2 0 \
+    0 0 -2 -2z" stroke-width="0" fill="currentColor" /><path d="M17 4h-2a2 2 0 0 0 -2 2v12a2 \
+     2 0 0 0 2 2h2a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2z" stroke-width="0" fill="currentColor" /></svg>',
+  play: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-play-filled" \
+ width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
+  stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" \
+   fill="none"/><path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 \
+    1 0 0 0 -1.524 .852z" stroke-width="0" fill="currentColor" /></svg>',
+  next: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-skip-forward-filled" \
+ width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
+  stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/> \
+  <path d="M3 5v14a1 1 0 0 0 1.504 .864l12 -7a1 1 0 0 0 0 -1.728l-12 -7a1 1 0 0 0 -1.504 .864z" \
+   stroke-width="0" fill="currentColor" /><path d="M20 4a1 1 0 0 1 .993 .883l.007 .117v14a1 1 0 0 \
+    1 -1.993 .117l-.007 -.117v-14a1 1 0 0 1 1 -1z" stroke-width="0" fill="currentColor" /></svg>',
+  last: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-player-track-next-filled" \
+ width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
+  stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" \
+   fill="none"/><path d="M2 5v14c0 .86 1.012 1.318 1.659 .753l8 -7a1 1 0 0 0 0 -1.506l-8 \
+   -7c-.647 -.565 -1.659 -.106 -1.659 .753z" stroke-width="0" fill="currentColor" /><path \
+    d="M13 5v14c0 .86 1.012 1.318 1.659 .753l8 -7a1 1 0 0 0 0 -1.506l-8 -7c-.647 -.565 -1.659 \
+     -.106 -1.659 .753z" stroke-width="0" fill="currentColor" /></svg>',
+  faster: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-plus" \
+ width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" \
+  stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" \
+   fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>',
+};
 
 function press(btn_list: HTMLButtonElement[]): void {
   btn_list.forEach((btn) => btn.style.borderStyle = 'inset')
@@ -41,13 +93,13 @@ export class PlayerView extends WidgetView {
 
   toggle_disable() {
     this.sliderEl.disabled = this.model.disabled
-    for (const el of this.buttonEl.children){
+    for (const el of this.buttonEl.children) {
       const anyEl = <any>el
       anyEl.disabled = this.model.disabled
     }
 
     for (const el of this.loop_state.children) {
-      if (el.tagName == "input"){
+      if (el.tagName == "input") {
         const anyEl = <any>el
         anyEl.disabled = this.model.disabled
       }
@@ -98,55 +150,55 @@ export class PlayerView extends WidgetView {
 
     const slower = document.createElement('button')
     slower.style.cssText = button_style_small
-    slower.appendChild(document.createTextNode('–'))
+    slower.innerHTML = SVG_STRINGS['slower'];
     slower.onclick = () => this.slower()
     button_div.appendChild(slower)
 
     const first = document.createElement('button')
     first.style.cssText = button_style
-    first.appendChild(document.createTextNode('\u275a\u25c0\u25c0'))
+    first.innerHTML = SVG_STRINGS['first'];
     first.onclick = () => this.first_frame()
     button_div.appendChild(first)
 
     const previous = document.createElement('button')
     previous.style.cssText = button_style
-    previous.appendChild(document.createTextNode('\u275a\u25c0'))
+    previous.innerHTML = SVG_STRINGS['previous'];
     previous.onclick = () => this.previous_frame()
     button_div.appendChild(previous)
 
     const reverse = document.createElement('button')
     reverse.style.cssText = button_style
-    reverse.appendChild(document.createTextNode('\u25c0'))
+    reverse.innerHTML = SVG_STRINGS['reverse'];
     reverse.onclick = () => this.reverse_animation()
     button_div.appendChild(reverse)
 
     const pause = document.createElement('button')
     pause.style.cssText = button_style
-    pause.appendChild(document.createTextNode('\u275a\u275a'))
+    pause.innerHTML = SVG_STRINGS['pause'];
     pause.onclick = () => this.pause_animation()
     button_div.appendChild(pause)
 
     const play = document.createElement('button')
     play.style.cssText = button_style
-    play.appendChild(document.createTextNode('\u25b6'))
+    play.innerHTML = SVG_STRINGS['play'];
     play.onclick = () => this.play_animation()
     button_div.appendChild(play)
 
     const next = document.createElement('button')
     next.style.cssText = button_style
-    next.appendChild(document.createTextNode('\u25b6\u275a'))
+    next.innerHTML = SVG_STRINGS['next'];
     next.onclick = () => this.next_frame()
     button_div.appendChild(next)
 
     const last = document.createElement('button')
     last.style.cssText = button_style
-    last.appendChild(document.createTextNode('\u25b6\u25b6\u275a'))
+    last.innerHTML = SVG_STRINGS['last'];
     last.onclick = () => this.last_frame()
     button_div.appendChild(last)
 
     const faster = document.createElement('button')
     faster.style.cssText = button_style_small
-    faster.appendChild(document.createTextNode('+'))
+    faster.innerHTML = SVG_STRINGS['faster'];
     faster.onclick = () => this.faster()
     button_div.appendChild(faster)
 
@@ -216,7 +268,7 @@ export class PlayerView extends WidgetView {
     this.shadow_el.appendChild(this.groupEl)
   }
 
-  set_frame(frame: number, throttled: boolean=true): void {
+  set_frame(frame: number, throttled: boolean = true): void {
     this.model.value = frame
     if (throttled)
       this.model.value_throttled = frame
@@ -231,7 +283,7 @@ export class PlayerView extends WidgetView {
       if (button.checked)
         return button.value;
     }
-	return "once"
+    return "once"
   }
 
   set_loop_state(state: string): void {
@@ -260,7 +312,7 @@ export class PlayerView extends WidgetView {
   }
 
   slower(): void {
-    this.model.interval = Math.round(this.model.interval/0.7);
+    this.model.interval = Math.round(this.model.interval / 0.7);
     if (this.model.direction > 0)
       this.play_animation()
     else if (this.model.direction < 0)
@@ -271,21 +323,21 @@ export class PlayerView extends WidgetView {
     this.model.interval = Math.round(this.model.interval * 0.7);
     if (this.model.direction > 0)
       this.play_animation()
-    else if(this.model.direction < 0)
+    else if (this.model.direction < 0)
       this.reverse_animation()
   }
 
   anim_step_forward(): void {
-    if(this.model.value < this.model.end){
+    if (this.model.value < this.model.end) {
       this.next_frame();
     } else {
       var loop_state = this.get_loop_state();
-      if(loop_state == "loop"){
+      if (loop_state == "loop") {
         this.first_frame();
-      }else if(loop_state == "reflect"){
+      } else if (loop_state == "reflect") {
         this.last_frame();
         this.reverse_animation();
-      }else{
+      } else {
         this.pause_animation();
         this.last_frame();
       }
@@ -293,16 +345,16 @@ export class PlayerView extends WidgetView {
   }
 
   anim_step_reverse(): void {
-    if(this.model.value > this.model.start){
+    if (this.model.value > this.model.start) {
       this.previous_frame();
     } else {
       var loop_state = this.get_loop_state();
-      if(loop_state == "loop"){
+      if (loop_state == "loop") {
         this.last_frame();
-      }else if(loop_state == "reflect"){
+      } else if (loop_state == "reflect") {
         this.first_frame();
         this.play_animation();
-      }else{
+      } else {
         this.pause_animation();
         this.first_frame();
       }
@@ -314,9 +366,9 @@ export class PlayerView extends WidgetView {
       return
     else if (this.model.direction === 0)
       this.pause_animation()
-    else if(this.model.direction === 1)
+    else if (this.model.direction === 1)
       this.play_animation()
-    else if(this.model.direction === -1)
+    else if (this.model.direction === -1)
       this.reverse_animation()
   }
 
@@ -370,7 +422,7 @@ export namespace Player {
 }
 
 
-export interface Player extends Player.Attrs {}
+export interface Player extends Player.Attrs { }
 
 export class Player extends Widget {
 
@@ -385,18 +437,18 @@ export class Player extends Widget {
   static {
     this.prototype.default_view = PlayerView
 
-    this.define<Player.Props>(({Boolean, Int}) => ({
-      direction:          [ Int,             0 ],
-      interval:           [ Int,           500 ],
-      start:              [ Int,             0 ],
-      end:                [ Int,            10 ],
-      step:               [ Int,             1 ],
-      loop_policy:        [ LoopPolicy, "once" ],
-      value:              [ Int,             0 ],
-      value_throttled:    [ Int,             0 ],
-      show_loop_controls: [ Boolean,      true ],
+    this.define<Player.Props>(({ Boolean, Int }) => ({
+      direction: [Int, 0],
+      interval: [Int, 500],
+      start: [Int, 0],
+      end: [Int, 10],
+      step: [Int, 1],
+      loop_policy: [LoopPolicy, "once"],
+      value: [Int, 0],
+      value_throttled: [Int, 0],
+      show_loop_controls: [Boolean, true],
     }))
 
-    this.override<Player.Props>({width: 400})
+    this.override<Player.Props>({ width: 400 })
   }
 }

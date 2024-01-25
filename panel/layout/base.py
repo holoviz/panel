@@ -210,6 +210,8 @@ class Panel(Reactive):
           ensure sufficient space is available.
         """
         margin = props.get('margin', self.margin)
+        if margin is None:
+            margin = 0
         sizing_mode = props.get('sizing_mode', self.sizing_mode)
         if sizing_mode == 'fixed':
             return {}
@@ -910,7 +912,7 @@ class Column(ListPanel):
     >>> pn.Column(some_widget, some_pane, some_python_object)
     """
 
-    scroll_position = param.Integer(default=None, doc="""
+    scroll_position = param.Integer(default=0, doc="""
         Current scroll position of the Column. Setting this value
         will update the scroll position of the Column. Setting to
         0 will scroll to the top.""")

@@ -49,7 +49,7 @@ The following extensions will help speed up your Panel workflow
 
 ## General Settings
 
-We recommend adding the below to your `settings.json` file.
+We recommend adding the below to your `settings.json` file on Windows
 
 ```bash
 "explorer.copyRelativePathSeparator": "/" # Relevant on Windows only
@@ -80,6 +80,53 @@ Ensure you install `jupyter_bokeh` with `pip install jupyter_bokeh` or `conda in
 You can see a notebook in action below.
 
 ![Panel in VS Code Notebook Environment](../../_static/images/vscode-notebook.png)
+
+## Simple Browser
+
+To keep your app right next to your code while you develop, it can be super productive to use the VS Code *simple browser*.
+
+![Panel in VS Code simple browser](../../_static/images/vs_code_simple-browser.png)
+
+You can open it via the *Command Palette*
+
+![Panel in VS Code simple browser](../../_static/images/vs_code_simple-browser_command_palette.png)
+
+To make it even simpler, you can add a task to `.vscode/tasks.json`
+
+```json
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Open Panel in Simple Browser",
+            "command": "${input:openSimpleBrowser}",
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "openSimpleBrowser",
+            "type": "command",
+            "command": "simpleBrowser.show",
+            "args": [
+                "http://localhost:5006"
+            ]
+        }
+    ]
+}
+```
+
+and keybinding to `keybindings.json`
+
+```json
+[
+  {
+    "key": "ctrl+shift+b",
+    "command": "workbench.action.tasks.runTask",
+    "args": "Open Panel in Simple Browser"
+  },
+]
+```
 
 ## Snippets
 

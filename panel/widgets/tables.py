@@ -224,7 +224,9 @@ class BaseTable(ReactiveData, Widget):
                 else:
                     default_text_align = True
 
-            if isinstance(self.text_align, str):
+            if not hasattr(formatter, 'text_align'):
+                pass
+            elif isinstance(self.text_align, str):
                 formatter.text_align = self.text_align
                 if not default_text_align:
                     msg = f"The 'text_align' in Tabulator.formatters[{col!r}] is overridden by Tabulator.text_align"
@@ -234,7 +236,7 @@ class BaseTable(ReactiveData, Widget):
                 if not default_text_align:
                     msg = f"The 'text_align' in Tabulator.formatters[{col!r}] is overridden by Tabulator.text_align[{col!r}]"
                     warn(msg, RuntimeWarning)
-            elif col in self.indexes and hasattr(formatter, "text_align"):
+            elif col in self.indexes:
                 formatter.text_align = 'left'
 
             if isinstance(self.widths, int):
@@ -1812,10 +1814,10 @@ class Tabulator(BaseTable):
                 col_dict['formatter'] = formatter.pop('type')
                 col_dict['formatterParams'] = formatter
             title_formatter = self.title_formatters.get(field)
-            if title_formatter:
+            if isinstance(title_formatter, str):
                 col_dict['titleFormatter'] = title_formatter
             elif isinstance(title_formatter, dict):
-                formatter = dict(title_formatter)
+                title_formatter = dict(title_formatter)
                 col_dict['titleFormatter'] = title_formatter.pop('type')
                 col_dict['titleFormatterParams'] = title_formatter
             col_name = self._renamed_cols[field]
@@ -1849,7 +1851,7 @@ class Tabulator(BaseTable):
                 col_dict['editor'] = 'list'
                 if col_dict.get('editorParams', {}).get('values', False) is True:
                     del col_dict['editorParams']['values']
-                    col_dict['editorParams']['valuesLookup']
+                    col_dict['editorParams']['valuesLookup'] = True
             if field in self.frozen_columns or i in self.frozen_columns:
                 col_dict['frozen'] = True
             if isinstance(self.widths, dict) and isinstance(self.widths.get(field), str):

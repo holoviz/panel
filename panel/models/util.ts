@@ -1,3 +1,6 @@
+import {concat} from "@bokehjs/core/util/array"
+
+
 export const get = (obj: any, path: string, defaultValue: any = undefined) => {
   const travel = (regexp: RegExp) =>
     String.prototype.split
@@ -50,4 +53,26 @@ export function deepCopy(obj: any): any {
 
 export function isPlainObject (obj: any) {
     return Object.prototype.toString.call(obj) === '[object Object]';
+}
+
+export function reshape(arr: any[], dim: number[]) {
+  let elemIndex = 0;
+
+  if (!dim || !arr) return [];
+
+  function _nest(dimIndex: number): any[] {
+    let result = [];
+
+    if (dimIndex === dim.length - 1) {
+      result = concat(arr.slice(elemIndex, elemIndex + dim[dimIndex]));
+      elemIndex += dim[dimIndex];
+    } else {
+      for (let i = 0; i < dim[dimIndex]; i++) {
+        result.push(_nest(dimIndex + 1));
+      }
+    }
+
+    return result;
+  }
+  return _nest(0);
 }

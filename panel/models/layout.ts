@@ -10,6 +10,15 @@ export class PanelMarkupView extends WidgetView {
   model: Markup
   _initialized_stylesheets: any
 
+  connect_signals(): void {
+    super.connect_signals()
+    const {width, height, min_height, max_height, margin, sizing_mode} = this.model.properties;
+    this.on_change([width, height, min_height, max_height, margin, sizing_mode], () => {
+      set_size(this.el, this.model)
+      set_size(this.container, this.model, false)
+    });
+  }
+
   override async lazy_initialize() {
     await super.lazy_initialize()
 
@@ -125,6 +134,14 @@ export function set_size(el: HTMLElement, model: HTMLBox, adjustMargin: boolean 
 export abstract class HTMLBoxView extends LayoutDOMView {
   override model: HTMLBox
   _initialized_stylesheets: any
+
+  connect_signals(): void {
+    super.connect_signals()
+    const {width, height, min_height, max_height, margin, sizing_mode} = this.model.properties;
+    this.on_change([width, height, min_height, max_height, margin, sizing_mode], () => {
+      set_size(this.el, this.model)
+    });
+  }
 
   render(): void {
     super.render()

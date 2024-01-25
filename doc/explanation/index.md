@@ -23,18 +23,18 @@ Learn the pros and cons of Panel's different APIs.
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1 sd-animate-grow50` Components overview
+:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1 sd-animate-grow50` Built in components
 :link: components/components_overview
 :link-type: doc
 
-Deepen your understanding about Panel's visible objects and layout types.
+Deepen your understanding about Panel's built in components.
 :::
 
-:::{grid-item-card} {octicon}`plus-circle;2.5em;sd-mr-1 sd-animate-grow50` Custom components
-:link: components/components_custom
+:::{grid-item-card} {octicon}`plus-circle;2.5em;sd-mr-1 sd-animate-grow50` ReactiveHTML components
+:link: components/reactive_html_components
 :link-type: doc
 
-Deepen your understanding about building custom Panel components.
+Deepen your understanding about custom `ReactiveHTML` components
 :::
 
 ::::
@@ -58,14 +58,22 @@ Deepen your understanding about how Panel communicates between Python and Javasc
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`repo-template;2.5em;sd-mr-1 sd-animate-grow50` Templates
-:link: templates/templates_overview
+:::{grid-item-card} {octicon}`paintbrush;2.5em;sd-mr-1 sd-animate-grow50` Designs & Themes
+:link: styling/design
 :link-type: doc
 
-Deepen your understanding about Template styling in Panel.
+Understand how the Panel `Design` and `Theme` components work internally.
+:::
+
+:::{grid-item-card} {octicon}`repo-template;2.5em;sd-mr-1 sd-animate-grow50` Templates
+:link: styling/templates_overview
+:link-type: doc
+
+Discover Panel templates and how to use them.
 :::
 
 ::::
+
 ## Dependencies
 
 ::::{grid} 1 2 2 3

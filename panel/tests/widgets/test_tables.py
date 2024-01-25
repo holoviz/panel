@@ -11,9 +11,6 @@ from bokeh.models.widgets.tables import (
     SumAggregator,
 )
 from packaging.version import Version
-from pandas._testing import (
-    makeCustomDataframe, makeMixedDataFrame, makeTimeDataFrame,
-)
 
 from panel.depends import bind
 from panel.io.state import set_curdoc
@@ -25,6 +22,16 @@ from panel.widgets.tables import DataFrame, Tabulator
 
 pd_old = pytest.mark.skipif(Version(pd.__version__) < Version('1.3'),
                             reason="Requires latest pandas")
+
+
+def makeMixedDataFrame():
+    data = {
+        "A": [0.0, 1.0, 2.0, 3.0, 4.0],
+        "B": [0.0, 1.0, 0.0, 1.0, 0.0],
+        "C": ["foo1", "foo2", "foo3", "foo4", "foo5"],
+        "D": pd.bdate_range("1/1/2009", periods=5),
+    }
+    return pd.DataFrame(data)
 
 
 def test_dataframe_widget(dataframe, document, comm):
@@ -74,12 +81,12 @@ def test_dataframe_widget_no_show_index(dataframe, document, comm):
 
 
 def test_dataframe_widget_datetimes(document, comm):
-
-    table = DataFrame(makeTimeDataFrame())
+    df = pd.DataFrame({'int': [1, 2, 3]}, index=pd.date_range('2000-01-01', periods=3))
+    table = DataFrame(df)
 
     model = table.get_root(document, comm)
 
-    dt_col, _, _, _, _ = model.columns
+    dt_col, _ = model.columns
 
     assert dt_col.title == 'index'
     assert isinstance(dt_col.formatter, DateFormatter)
@@ -1874,7 +1881,13 @@ def test_tabulator_dataframe_replace_data(document, comm):
 
     model = table.get_root(document, comm)
 
-    table.value = makeCustomDataframe(2, 2)
+    custom_df = pd.DataFrame({
+        'C_l0_g0': {'R_l0_g0': 'R0C0', 'R_l0_g1': 'R1C0'},
+        'C_l0_g1': {'R_l0_g0': 'R0C1', 'R_l0_g1': 'R1C1'}
+    })
+    custom_df.index.name = 'R0'
+    custom_df.columns.name = 'C0'
+    table.value = custom_df
 
     assert len(model.columns) == 3
     c1, c2, c3 = model.columns
@@ -2148,3 +2161,15 @@ def test_bokeh_formatter_index_with_no_textalign():
     table = Tabulator(df, formatters={"A": index_format})
     serve_and_request(table)
     wait_until(lambda: bool(table._models))
+
+@pytest.mark.parametrize('text_align', [{"A": "center"}, "center"], ids=["dict", "str"])
+def test_bokeh_formatter_column_with_no_textalign_but_text_align_set(document, comm, text_align):
+    df = pd.DataFrame({"A": [1, 2, 3]})
+    table = Tabulator(
+        df,
+        formatters=dict(A=HTMLTemplateFormatter(template='<b><%= value %>"></b>')),
+        text_align=text_align,
+    )
+
+    model = table.get_root(document, comm)
+    assert model.configuration['columns'][1]['hozAlign'] == 'center'

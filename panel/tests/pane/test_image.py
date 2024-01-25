@@ -311,3 +311,9 @@ def test_svg_stretch_both(embed, document, comm):
     model = svg.get_root(document, comm)
     assert 'width: 100%' in model.text
     assert 'height: 100%' in model.text
+
+def test_image_caption(document, comm):
+    png = PNG(PNG_FILE, caption='Some Caption')
+    model = png.get_root(document, comm)
+    assert 'Some Caption' in model.text
+    assert 'figcaption' in model.text

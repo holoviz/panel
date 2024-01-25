@@ -34,7 +34,7 @@ def is_sympy_expr(obj: Any) -> bool:
 
 
 class LaTeX(ModelPane):
-    """
+    r"""
     The `LaTeX` pane allows rendering LaTeX equations. It uses either
     `MathJax` or `KaTeX` depending on the defined renderer.
 

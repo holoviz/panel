@@ -446,7 +446,7 @@ class Gauge(ValueIndicator):
         if 'panel.models.echarts' not in sys.modules:
             from ..models.echarts import ECharts
         else:
-            ECharts = getattr(sys.modules['panel.models.echarts'], 'ECharts')
+            ECharts = sys.modules['panel.models.echarts'].ECharts
         return ECharts
 
     def __init__(self, **params):
@@ -1354,17 +1354,18 @@ class TooltipIcon(Widget):
     >>> pn.widgets.TooltipIcon(value="This is a simple tooltip by using a string")
     """
 
-    value = param.ClassSelector(default="Description", class_=(str, Tooltip), doc="""
-        The description in the tooltip.""")
 
     align = Align(default='center', doc="""
         Whether the object should be aligned with the start, end or
         center of its container. If set as a tuple it will declare
         (vertical, horizontal) alignment.""")
 
-    _widget_type = _BkTooltipIcon
+    value = param.ClassSelector(default="Description", class_=(str, Tooltip), doc="""
+        The description in the tooltip.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'value': 'description'}
+
+    _widget_type = _BkTooltipIcon
 
 
 __all__ = [
