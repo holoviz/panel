@@ -227,6 +227,7 @@ jobs:
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           nodejs: true
           playwright: true
+          playwright-version: 1.41.0
         id: install
       - name: doit develop_install
         run: |
