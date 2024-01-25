@@ -11,6 +11,7 @@ Together we will explore the wind turbine data and build
 - a static Wind Turbine Analysis report
 - a Wind Turbine Technician todo app
 - a Wind Turbine Dashboard
+- A Wind Turbine Image Recognition app
 - a Wind Turbine Sensors streaming application.
 
 Please put on your safety helmet before entering the world of wind turbines.
