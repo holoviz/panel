@@ -6,7 +6,6 @@ The reactive API approach is very flexible, but it ties your domain-specific cod
 
 For such usages, Panel supports objects declared with the separate [Param](http://param.pyviz.org) library, which provides a GUI-independent way of capturing and declaring the parameters of your objects (and dependencies between your code and those parameters), in a way that's independent of any particular application or dashboard technology. For instance, the app in [Getting Started > Build an app](../../../getting_started/build_app.md) can be captured in an object that declares the ranges and values of all parameters, as well as how to generate the plot, independently of the Panel library or any other way of interacting with the object. First, we'll copy the initial steps :
 
-
 ```{pyodide}
 import panel as pn
 import hvplot.pandas
@@ -24,17 +23,20 @@ data.tail()
 ```
 
 ```{pyodide}
-def view_hvplot(avg, highlight):
-    return avg.hvplot(height=300, width=400, legend=False) * highlight.hvplot.scatter(
-        color="orange", padding=0.1, legend=False
-    )
-
-def find_outliers(variable="Temperature", window=30, sigma=10, view_fn=view_hvplot):
+def transform_data(variable, window, sigma):
+    ''' Calculates the rolling average and the outliers '''
     avg = data[variable].rolling(window=window).mean()
     residual = data[variable] - avg
     std = residual.rolling(window=window).std()
     outliers = np.abs(residual) > std * sigma
-    return view_fn(avg, avg[outliers])
+    return avg, avg[outliers]
+
+def create_plot(variable="Temperature", window=30, sigma=10):
+    ''' Plots the rolling average and the outliers '''
+    avg, highlight = transform_data(variable, window, sigma)
+    return avg.hvplot(height=300, width=400, legend=False) * highlight.hvplot.scatter(
+        color="orange", padding=0.1, legend=False
+    )
 ```
 
 Now, let's implement the declarative API approach:
@@ -46,14 +48,13 @@ class RoomOccupancy(param.Parameterized):
     sigma     = param.Number(default=10, bounds=(0, 20))
 
     def view(self):
-        return find_outliers(self.variable, self.window, self.sigma, view_fn=view_hvplot)
+        return create_plot(self.variable, self.window, self.sigma)
 
 obj = RoomOccupancy()
 obj
 ```
 
 The `RoomOccupancy` class and the `obj` instance have no dependency on Panel, Jupyter, or any other GUI or web toolkit; they simply declare facts about a certain domain (such as that smoothing requires window and sigma parameters, and that window is an integer greater than 0 and sigma is a positive real number).  This information is then enough for Panel to create an editable and viewable representation for this object without having to specify anything that depends on the domain-specific details encapsulated in `obj`:
-
 
 ```{pyodide}
 pn.Column(obj.param, obj.view)
