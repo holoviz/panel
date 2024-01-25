@@ -14,7 +14,7 @@ Together we will explore the world of wind turbine data and build
 - A Wind Turbine Image Recognition app
 - a Wind Turbine Live Data Monitoring application.
 
-Through this comprehensive tutorial series, you will become an expert in Panel by HoloViz and gain the ability to harness the power of wind turbine data. Whether you're building informative reports, interactive dashboards, Chat Bots, Machine Learning tools or deploying real-time applications, you'll be well-equipped to make a meaningful impact in the world of renewable energy. 
+Through this comprehensive tutorial series, you will become an expert in Panel by HoloViz and gain the ability to harness the power of wind turbine data. Whether you're building informative reports, interactive dashboards, Chat Bots, Machine Learning tools or deploying real-time applications, you'll be well-equipped to make a meaningful impact in the world of wind turbine data exploration and data apps. 
 
 Please put on your safety helmet before entering the world of wind turbines.
 
@@ -118,8 +118,8 @@ Get your Dashboard in the hands of the your users. Let's deploy it to Hugging Fa
 
 Your journey from zero to hero in the world of wind turbine data analysis with Panel by HoloViz is now complete, with the wind at your back.
 
-Still missing
+STILL MISSING
 
 - Progress Indicators
 - Templates
-- 
+- Caching
