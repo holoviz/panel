@@ -10,7 +10,8 @@ Together we will explore the wind turbine data and build
 - a Wind Turbine Chat Bot
 - a static Wind Turbine Analysis report
 - a Wind Turbine Technician todo app
-- a Wind Turbine dashboard and a
+- a Wind Turbine Dashboard
+- a Wind Turbine Image Detection application
 - a Wind Turbine Sensors streaming application.
 
 Please put on your safety helmet before entering the world of wind turbines data.
