@@ -57,7 +57,6 @@ CLASS BASED APPROACH. UNDERSTANDING OF PARAM AND SUPPLEMENTARY APIs
 - [ ] Work with Parameters and Events: Param
 - [ ] Organize Components flexibly with FlexBox
 - [ ] Schedule Tasks: pn.state.onload, pn.state.schedule_task, pn.state.add_periodic_callback, pn.state.on_session_created, pn.state.on_session_destroyed, async generators, pn.state.execute
-- [ ] [Structuring Applications](https://holoviz-dev.github.io/panel/tutorials/structure.html) (I think this is a great tutorial !!!): Class based approach
 - [ ] Build custom components easily: Viewable
 - [ ] Sync location
 - [ ] Add interactivity flexibly: `.rx`

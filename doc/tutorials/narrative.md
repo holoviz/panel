@@ -1,8 +1,14 @@
 # Tutorials
 
+:::{admonition} Note
+To make our tutorials engaging and purposeful we will be exploring data and developing data apps in the domain of wind turbines. Your instructor will be very, very passionate about wind turbines. We hope you will have a laugh and play along.
+
+We believe the skills you will be getting are easily transferable to any domain including yours.
+:::
+
 Imagine standing amidst a vast field of towering wind turbines, harnessing the invisible force of wind to generate clean, renewable energy. In this series of tutorials, we'll embark on a journey to understand, analyze, and visualize the world of wind turbine data using Panel by HoloViz.
 
-Whether you're a newcomer or an experienced developer, our goal is to take you from a novice to a wind turbine data app hero.
+Whether you're a newcomer or an experienced developer, our goal is to take you from a novice to a (wind turbine) data app hero.
 
 Together we will explore the world of wind turbine data and build
 
@@ -14,112 +20,118 @@ Together we will explore the world of wind turbine data and build
 - A Wind Turbine Image Recognition app
 - a Wind Turbine Live Data Monitoring application.
 
-Through this comprehensive tutorial series, you will become an expert in Panel by HoloViz and gain the ability to harness the power of wind turbine data. Whether you're building informative reports, interactive dashboards, Chat Bots, Machine Learning tools or deploying real-time applications, you'll be well-equipped to make a meaningful impact in the world of wind turbine data exploration and data apps. 
+Please put on your safety helmet before entering the world of wind turbine data apps.
 
-Please put on your safety helmet before entering the world of wind turbines.
+Select your profile
+
+## Basic App Developer
+
+:::{admonition} 
+To keep things basic we will be building apps in a single file using *Widgets* and `pn.bind`. In the *Intermediate App Developer* tutorials we will explore more advanced techniques and build larger multi-file and multi-page apps.
+:::
 
 ## Prerequisites
 
 I will assume you have successfully been able to [install Panel](../getting_started/installation.md) as described in the [Getting Started Guide](../getting_started/index.md). If not please reach out for help on [Discord](https://discord.gg/rb6gPXbdAr).
 
-## Part 1: Get Started with Panel
+### Part 1: Get Started
 
-### Tutorial 1: Build an App
+#### Build an App
 
 Kickstart your journey by creating a "Hello Wind Turbine World" app from a Python script, Notebook, or Markdown document.
 
-### Tutorial 2: Build a Chat Bot
+#### Build a Chat Bot
 
 Develop a streaming Wind Turbine Chat Bot that can handle many wind turbine enthuasists bombarding it with their questions about wind turbines.
 
-## Part 2: Develop with Panel
+### Part 2: Develop Efficiently
 
-### Tutorial 3: Develop in a Notebook
+#### Develop in a Notebook
 
 Discover tips and tricks that will make you *swift as the wind* at exploring turbine data and building wind turbine data apps in a notebook.
 
-### Tutorial 4: Develop in an Editor
+#### Develop in an Editor
 
 Discover tips and tricks that will increase your *developer capacity* from kilo watts to mega watts when you develop in an editor!
 
-## Part 3: Display and Layout Objects
+### Part 3: Display Content
 
-### Tutorial 5: Display Objects with `pn.panel`
+#### Display Content with `pn.panel`
 
 Display your beloved wind turbines images, data and plots easily and dynamically with `pn.panel`.
 
-### Tutorial 6: Display Objects with Panes
+#### Display Content with Panes
 
 Control how your wind turbine data are displayed with Panes, ensuring your data apps can meet the unique demands of wind turbine data visualization.
 
-### Tutorial 7: Layout Objects
+### Part 4: Organize Components
+
+#### Use Templates
+
+Use pre-made templates to easily layout your apps with a header, sidebar and main area.
+
+#### Layout Content
 
 Layout your Panel apps as beautifully as you would layout your wind farm. Understand inherent sizing, fixed sizing and responsive layouts.
 
-### Tutorial 8: Build a Static Report
+#### Build a Static Report
 
 Apply your skills to construct a static Wind Turbine Report, exportable to HTML for efficient distribution to management.
 
-## Part 4: Adding Interactivity
+### Part 4: Handle User Input
 
-### Tutorial 9: Accept User Input
+#### Accept User Input
 
 Elevate your app's functionality by accepting user input via widgets. Add nice tooltips with explanations to your users or disable them for security reasons.
 
-### Tutorial 9: React to User Input
+#### React to User Input
 
 React to user input by leveraging `pn.bind`, enabling your users to foster a deeper understanding of wind turbine data through exploration.
 
-### Tutorial 10: Build a Todo App
+#### Build a Todo App
 
 Enable your wind turbine technitions to keep track of their tasks.
 
-## Part 5: Advanced Dashboard and Streaming Application
+### Part 5: Show Activity
 
-### Tutorial 11: Build a Dashboard
+### Indicators
 
-Create a comprehensive Wind Turbine Dashboard capable of providing deep insights into wind turbine data.
+Indicate activity
 
-### Tutorial 12: Build a Streaming Dashboard
+#### Update your layouts progressively
 
-Elevate your skills by constructing a streaming application for monitoring live wind turbine data.
+Unleash the power of generators in your Wind Turbine Apps!
 
-## Part 6: Advanced Styling and Deployment
+#### Build an Image Recognition App
 
-### Tutorial 13: Finetune your layouts
+Build an image recognition app to identify cracks in your wind turbine blades.
 
-Delve into advanced layout techniques, including responsive layouts. Perfect the art of designing visually appealing dashboards and streaming applications.
+### Part 7: Improve Performance
 
-### Tutorial 14: Style Your Apps
+#### Add Caching
+
+### Part 8: Advanced Layout and Styling
+
+#### Finetune your layouts
+
+#### Style Your Apps
 
 Explore various approaches to styling Panel components, from applying design components to customizing with stylesheets and CSS classes. Ensure your wind turbine data apps are both aesthetically pleasing and user-friendly.
 
-### Tutorial 15: Dynamic Layouts
+#### Build a Polished Dashboard
 
-Unleash the power of generators in your Wind Turbine Technician Todo App!
+We'll guide you through advanced styling, layout optimization, and data visualization techniques to build a refined Wind Turbine Dashboard
 
-### Tutorial 15: Polish your Todo App
+### Part 9: Deployment your app
 
-Let's take your Wind Turbine Technician Todo App to the next level, adding a professional touch to your application's design.
+#### Deploy your app
 
-### Tutorial 16: Polish your Dashboard
+Get your dashboard in the hands of your users. Lets deploy it to Hugging Face spaces
 
-We'll guide you through advanced styling, layout optimization, and data visualization techniques to refine your Wind Turbine Dashboard
+## Intermediate App Developer
 
-## Tutorial 17: Polish your Streaming Dashboard
-
-We'll put the finishing touches on your Streaming Wind Turbine Dashboard. By the end of this tutorial, your Streaming Dashboard will be ready to monitor live wind turbine data with precision and finesse.
-
-## Tutorial 18: Deploy your Dashboard
-
-Get your Dashboard in the hands of the your users. Let's deploy it to Hugging Face Spaces.
+TO COME
 
 ---
 
 Your journey from zero to hero in the world of wind turbine data analysis with Panel by HoloViz is now complete, with the wind at your back.
-
-STILL MISSING
-
-- Progress Indicators
-- Templates
-- Caching
