@@ -80,6 +80,13 @@ Learn how to build a *Wind Turbine Report*, export it to `.html` and distribute 
 Learn how to accept user input with widgets.
 :::
 
+:::{grid-item-card} {octicon}`person;2.5em;sd-mr-1` Build a Todo App
+:link: beginner/build_todo
+:link-type: doc
+
+We will build a todo app to keep track of our wind turbine technicians tasks.
+:::
+
 :::{grid-item-card} {octicon}`plug;2.5em;sd-mr-1` Param
 :link: param
 :link-type: doc
@@ -124,6 +131,7 @@ beginner/panes
 beginner/layouts
 beginner/widgets
 beginner/build_report
+beginner/build_todo
 param
 interactivity
 layouts
