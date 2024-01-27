@@ -1,5 +1,27 @@
 # Releases
 
+## Version 1.3.8
+
+Date: 2024-01-24
+
+This patch release fixes an important regression in the 1.3.6 release that resulted in global state to be incorrectly resolved in certain cases. Many thanks to our new contributor @fohrloop and our maintainers @ahuang11, @Hoxbro and @philippjfr for contributing to this release.
+
+## Bug fixes
+
+- Ensure `ReactiveHTML` correctly resets `Event` parameters ([#6247](https://github.com/holoviz/panel/pull/6247))
+- Fix `ChatFeed` / `ChatInterface` tests and async generator placeholders ([#6245](https://github.com/holoviz/panel/pull/6245))
+- Fix logic when looking up `pn.state.curdoc` ([#6254](https://github.com/holoviz/panel/pull/6254))
+- Handle margin=None in layout sizing mode computation ([#6267](https://github.com/holoviz/panel/pull/6267))
+
+## Compatibility
+
+- Updates for compatibility with pandas 2.2 ([#6259](https://github.com/holoviz/panel/pull/6259))
+
+## Documentation
+
+- Fix typos and add a cross-reference in docs (User Profiling) ([#6263](https://github.com/holoviz/panel/pull/6263))
+- Improve documentation on `TextAreaInput` ([#6264](https://github.com/holoviz/panel/pull/6264))
+
 ## Version 1.3.7
 
 Date: 2024-01-19

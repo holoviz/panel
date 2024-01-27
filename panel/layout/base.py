@@ -219,6 +219,8 @@ class Panel(Reactive):
           ensure sufficient space is available.
         """
         margin = props.get('margin', self.margin)
+        if margin is None:
+            margin = 0
         sizing_mode = props.get('sizing_mode', self.sizing_mode)
         if sizing_mode == 'fixed':
             return {}
