@@ -88,6 +88,10 @@ Elevate your app's functionality by accepting user input via widgets. Add nice t
 
 React to user input by leveraging `pn.bind`, enabling your users to foster a deeper understanding of wind turbine data through exploration.
 
+#### Handle State
+
+Build larger and more complex apps by defining state via `pn.rx`.
+
 #### Build a Todo App
 
 Enable your wind turbine technitions to keep track of their tasks.
