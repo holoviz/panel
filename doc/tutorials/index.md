@@ -87,6 +87,13 @@ Learn how to accept user input with widgets.
 We will build a todo app to keep track of our wind turbine technicians tasks.
 :::
 
+:::{grid-item-card} {octicon}`image;2.5em;sd-mr-1` Build an Image Classifier
+:link: beginner/build_image_classifier
+:link-type: doc
+
+We will build an image classifier to identify wind turbine images
+:::
+
 :::{grid-item-card} {octicon}`plug;2.5em;sd-mr-1` Param
 :link: param
 :link-type: doc
@@ -132,6 +139,7 @@ beginner/layouts
 beginner/widgets
 beginner/build_report
 beginner/build_todo
+beginner/build_image_classifier
 param
 interactivity
 layouts
