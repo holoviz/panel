@@ -18,7 +18,6 @@ Together we will explore the world of wind turbine data and build
 - a Wind Turbine Technician todo app
 - a Wind Turbine Dashboard
 - A Wind Turbine Image Recognition app
-- A Wind Turbine Outlier Detection app
 - a Wind Turbine Live Data Monitoring application.
 
 Please put on your safety helmet before entering the world of wind turbine data apps.
