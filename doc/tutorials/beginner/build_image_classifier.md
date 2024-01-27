@@ -33,7 +33,7 @@ import hvplot.pandas
 import requests
 from io import BytesIO
 
-IMAGE_DIM = 500
+IMAGE_DIM = 350
 
 pn.extension(design="material", sizing_mode="stretch_width")
 
