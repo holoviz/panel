@@ -16,7 +16,7 @@ These tutorials are for you that is just starting to discover Panel.
 
 Through practical activities I will help you build your skills and knowledge. This will enable us to build a chat bot, a static report, a todo app, a dashboard and a streaming application together.
 
-SINGLE FILE OR NOTEBOOK, WIDGET and `.bind` BASED APPROACH
+SINGLE FILE OR NOTEBOOK, WIDGET and `.bind` BASED APPROACH. We probably need to touch `pn.rx` to enable users to handle state properly. But only to get and set `.rx.value`.
 
 - [ ] Getting installed (just a link to getting started)
   - [ ] Using a pre-installed environment for this tutorial: Purpose is to lower Barrier of entry. Make it possible to do at large conference with poor internet. Use Binder, Github spaces, Anaconda Notebooks ???
@@ -30,6 +30,8 @@ SINGLE FILE OR NOTEBOOK, WIDGET and `.bind` BASED APPROACH
 - [ ] [Build a Report](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/build_report.md)
 - [ ] [Accept User Input](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/widgets.md)
 - [ ] Add interactivity easily and efficiently: `pn.bind`. Also with `watch=True`.
+- [ ] [Build a Todo App](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/build_todo_app.md)
+- [ ] [Build an Image Classifier](https://github.com/holoviz/panel/blob/docs_fixes_1.4_a1_review/doc/tutorials/beginner/build_image_classifier.md)
 - [ ] Size components: sizing_mode, height/ width, max_height/ max_width
 - [ ] Align components: `align`, `margin`, Spacer/ HSpacer/ VSpacer
 - [ ] Style components with designs
