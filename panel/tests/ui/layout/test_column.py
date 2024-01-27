@@ -28,7 +28,7 @@ def test_column_scroll(page):
     expect(col_el).to_have_class('bk-panel-models-layout-Column scrollable-vertical')
 
 
-@pytest.mark.parametrize('scroll', _SCROLL_MAPPING.values())
+@pytest.mark.parametrize('scroll', _SCROLL_MAPPING.keys())
 def test_column_scroll_string(page, scroll):
     col = Column(
         Spacer(styles=dict(background='red'), width=200, height=200),
