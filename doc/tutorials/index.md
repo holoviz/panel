@@ -1,10 +1,43 @@
 # Tutorials
 
-In these tutorials I will provide you with **a structured and step-by-step learning path** to go **from Zero to Hero**.
+:::{admonition} Note
+To make our tutorials engaging and purposeful we will be exploring data and developing data apps in the domain of wind turbines. Your instructor will be very, very passionate about wind turbines. We hope you will have a laugh and play along.
 
-Each guide gradually builds on the previous ones, but I've structured it into separate topics, so that you can go directly to a specific topic of interest and start learning.
+We believe the skills you will be getting are easily transferable to any domain including yours.
+:::
 
-I will assume you have successfully been able to [install Panel](../getting_started/installation.md) as described in the [Getting Started Guide](../getting_started/index.md). If not please reach out for help on [Discord](https://discord.gg/rb6gPXbdAr).
+Imagine standing amidst a vast field of towering wind turbines, harnessing the invisible force of wind to generate clean, renewable energy. In this series of tutorials, we'll embark on a journey to understand, analyze, and visualize the world of wind turbine data using Panel by HoloViz.
+
+Whether you're a newcomer or an experienced developer, our goal is to take you from a novice to a (wind turbine) data app hero.
+
+Together we will explore the world of wind turbine data and build
+
+- a Hello Wind Turbine World app
+- a Wind Turbine Chat Bot
+- a static Wind Turbine Analysis report
+- a Wind Turbine Technician todo app
+- a Wind Turbine Dashboard
+- A Wind Turbine Image Recognition app
+- a Wind Turbine Live Data Monitoring application.
+
+Please put on your safety helmet before entering the world of wind turbine data apps.
+
+Select your profile
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`browser;2.5em;sd-mr-1` Basic
+:link: beginner/serve
+:link-type: doc
+
+These tutorials are for you that is just starting to discover Panel.
+
+Through practical activities I will help you build your skills and knowledge. We will focus on 
+:::
+
+:::
+
 
 ---
 
