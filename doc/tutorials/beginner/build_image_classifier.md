@@ -15,9 +15,15 @@ When I ask you to *run the code* in the sections below, you may either execute t
 
 ## Create the App
 
-REMOVE DESIGN REFERENCE: https://github.com/pytholic/gradio-image-classificaiton/blob/main/resources/demo.png?raw=true
+TODO
+
+- Remove Design Reference
+- More clearly define `image` and `label` state.
+- Make interface more gradio compatible by minimizing surface area between inputs and outputs.
+- Consider using another plotting library than hvplot. `hbar` has many issues and do not support transitions. Use Vizzu, ECharts or Plotly?
 
 ```{pyodide}
+# Design Reference: https://github.com/pytholic/gradio-image-classificaiton/blob/main/resources/demo.png?raw=true
 import panel as pn
 from PIL import Image
 import random
@@ -103,9 +109,7 @@ def image_classification_interface(fn, examples):
     ## Views
 
     label_view = pn.Row(
-        pn.bind(get_label_view, fn=fn, image=image_view.param.object),
-        height=IMAGE_DIM,
-        width=IMAGE_DIM,
+        pn.panel(pn.bind(get_label_view, fn=fn, image=image_view.param.object), defer_load=True, loading_indicator=True, height=IMAGE_DIM, width=IMAGE_DIM)
     )
 
     ## Layouts
@@ -129,6 +133,7 @@ def image_classification_interface(fn, examples):
 
 def predict(image: Image):
     # Replace with your own image classification model
+    sleep(1.5)
     a = random.uniform(0, 100)
     b = random.uniform(0, 100 - a)
     c = 100 - a - b
