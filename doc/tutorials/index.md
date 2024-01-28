@@ -6,15 +6,15 @@ To make our tutorials engaging and purposeful we will be exploring data and deve
 We believe the skills you will be getting are easily transferable to any domain including yours.
 :::
 
-Imagine standing amidst a vast field of towering wind turbines, harnessing the invisible force of wind to generate clean, renewable energy. In this series of tutorials, we'll embark on a journey to understand, analyze, and visualize the world of wind turbine data using Panel by HoloViz.
+In this series of tutorials, we'll embark on a journey to explore the world of wind turbine data and build some really cool wind turbine data apps using Panel by HoloViz.
 
-Whether you're a newcomer or an experienced developer, our goal is to take you from a novice to a (wind turbine) data app hero.
-
-Together we will explore the world of wind turbine data and build some really cool wind turbine data apps.
+Whether you're a newcomer or an experienced developer, our goal is to take you from a novice to a data exploration and data app hero.
 
 Please put on your safety helmet before entering the world of wind turbine data apps.
 
-Select your profile
+## Select Tutorials
+
+Select a set of tutorials corresponding to your profile.
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -25,7 +25,7 @@ Select your profile
 
 These tutorials are for you that is just starting to discover Panel.
 
-Together we will explore the wind turbine data and build a chat bot, a static report, a todo app, an image classier app, a dashboard and a streaming application together.
+Together we will explore the wind turbine data and build a chat bot, a static report, a todo app, an image classifier app, a dashboard and a streaming application together.
 
 After these tutorials you will be able to build a wide range of polished, single page apps from a single file using a *function based approach*.
 :::

@@ -10,7 +10,7 @@ After these tutorials you will be able to build a wide range of polished, single
 
 I will assume you have successfully been able to [install Panel](../../getting_started/installation.md) as described in the [Getting Started Guide](../../getting_started/index.md). If not please reach out for help on [Discord](https://discord.gg/rb6gPXbdAr).
 
-### Part 1: Get Started
+### Get Started
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -26,19 +26,19 @@ Kickstart your journey by creating a "Hello Wind Turbine World" app from a Pytho
 :link: explore_data
 :link-type: doc
 
-We will explore the wind turbine and learn how Panel can power up your data exploration work flow.
+We will explore the wind turbine dataset and discover how Panel can power up your data exploration work flow.
 :::
 
 :::{grid-item-card} {octicon}`dependabot;2.5em;sd-mr-1` Build a Chat Bot
 :link: build_chatbot
 :link-type: doc
 
-Develop a streaming Wind Turbine Chat Bot that can handle many wind turbine enthuasists asking it questions about wind turbines.
+Develop a Streaming Wind Turbine Chat Bot that can handle many wind turbine enthuasists asking it questions about wind turbines.
 :::
 
 ::::
 
-### Part 2: Develop Seamlessly
+### Develop Seamlessly
 
 These tutorials will *level up your Panel developer experience*. You can take them later if you want.
 
@@ -68,7 +68,7 @@ Find inspiration in the community forums, ask for help, share your work, report 
 
 ::::
 
-### Part 3: Display Content
+### Display Content
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -87,9 +87,23 @@ Display your beloved wind turbines images, data and plots easily and dynamically
 Fine-tune how your wind turbine data are displayed with Panes, ensuring your data apps can meet the unique demands of wind turbine data visualization.
 :::
 
+:::{grid-item-card} {octicon}`device-desktop;2.5em;sd-mr-1` Display Content with Indicators
+:link: indicators_kpi
+:link-type: doc
+
+Show key performance indicators (KPIs) for your wind turbines with Panels Indicators.
+:::
+
+:::{grid-item-card} {octicon}`clock;2.5em;sd-mr-1` Build a Streaming Dashboard
+:link: build_live_dashboard
+:link-type: doc
+
+Build a live, updating dashboard to monitor your wind turbines.
+:::
+
 ::::
 
-### Part 4: Organize Content
+### Organize Content
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -131,7 +145,7 @@ Apply your skills to construct a static Wind Turbine Report, exportable to HTML 
 
 ::::
 
-### Part 5: Handle User Input
+### Handle User Input
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -166,13 +180,13 @@ Enable your wind turbine technitions to keep track of their tasks.
 
 ::::
 
-### Part 6: Show Activity
+### Show Activity
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
 :::{grid-item-card} {octicon}`hourglass;2.5em;sd-mr-1` Add Indicators
-:link: indicators
+:link: indicators_activity
 :link-type: doc
 
 Show activity with indicators just as rotating blades show the activity of wind turbines.
@@ -194,12 +208,12 @@ We will build an image classifier to identify wind turbine images
 
 ::::
 
-### Part 7: Improve Performance
+### Improve Performance
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`trophy;2.5em;sd-mr-1` Add Caching
+:::{grid-item-card} {octicon}`versions;2.5em;sd-mr-1` Add Caching
 :link: caching
 :link-type: doc
 
@@ -208,7 +222,7 @@ Caching allows your apps to store and reuse valuable computations, reducing the 
 
 ::::
 
-### Part 8: Style your App
+### Style your App
 
 
 ::::{grid} 1 2 2 3
@@ -237,12 +251,12 @@ We'll guide you through advanced styling, layout optimization, and data visualiz
 
 ::::
 
-### Part 9: Share your work
+### Share your work
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`globe;2.5em;sd-mr-1` Deploy Applications
+:::{grid-item-card} {octicon}`globe;2.5em;sd-mr-1` Deploy an App
 :link: deploy
 :link-type: doc
 
@@ -255,7 +269,7 @@ Get your application in the hands of your users. Lets deploy it to Hugging Face 
 
 Congrats. You can now call your self *a basic Panel app developer*.
 
-If you want to become an *intermediate Panel app developer*, checkout the [Intermediate Tutorials](../intermediate/index.md).
+When you are ready to learn how to build larger and more complex apps then check out the [Intermediate Tutorials](../intermediate/index.md).
 
 
 ```{toctree}
@@ -271,6 +285,8 @@ develop_editor
 join_community
 pn_panel
 panes
+indicators_kpi
+build_streaming_dashboard
 templates
 layouts
 size
@@ -280,7 +296,7 @@ widgets
 pn_bind
 state
 build_todo
-indicators
+indicators_activity
 generators
 build_image_classifier
 caching
