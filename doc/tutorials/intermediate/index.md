@@ -43,3 +43,21 @@ serve
 develop_editor
 structure_data_store
 ```
+
+## COMING UP
+
+- Work with Parameters and Events: Param
+- Organize Components flexibly with FlexBox
+- Schedule Tasks: pn.state.onload, pn.state.schedule_task, pn.state.add_periodic_callback, pn.state.on_session_created, pn.state.on_session_destroyed, async generators, pn.state.execute
+- Build custom components easily: Viewable
+- Sync location
+- Add interactivity flexibly: `.rx`
+- Add side effects: `.watch` (or `watch=True` ?)
+- Avoid Common Mistakes: Defining "global" widgets in utility modules that ends up being shared between users.
+- Show progress dynamically with generators
+- Enable Throtttling
+- Share your work: Embed, Save, link to other deployment options including WASM
+- Build maintainable apps: Class based approach, `@pn.depends`
+- Organizing your code: How to organize the code into sections or modules for efficient maintenance and reuse (data, models, plots, components, app).
+- Improve performance by using async and threads
+- Testing
