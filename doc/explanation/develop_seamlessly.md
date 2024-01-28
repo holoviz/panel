@@ -158,9 +158,9 @@ The `--show` flag will open a browser tab with the live app and the `--autoreloa
 
 ### Tutorials
 
-- [Develop in an Editor (Basic)](../tutorials/beginner/develop_editor.md)
+- [Develop in an Editor (Basic)](../tutorials/basic/develop_editor.md)
 - [Develop in an Editor (Intermediate)](../tutorials/intermediate/develop_editor.md)¨
-- [Develop in a Notebook (Basic)](../tutorials/beginner/develop_notebook.md)
+- [Develop in a Notebook (Basic)](../tutorials/basic/develop_notebook.md)
 
 ### How-to
 

@@ -1,4 +1,4 @@
-# Serve your first App
+# Build your first App
 
 In this tutorial we will develop and *serve* a *Hello World* Panel app. 
 

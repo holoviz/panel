@@ -5,7 +5,7 @@ In this section you will learn more advances techniques to develop efficiently i
 - Debug with [Pdb](https://docs.python.org/3/library/pdb.html) by inserting a `breakpoint()`
 
 :::{admonition} Note
-This guide builds upon the [Develop in an Editor (beginner)](../beginner/develop_editor.md) tutorial.
+This guide builds upon the [Develop in an Editor (beginner)](../basic/develop_editor.md) tutorial.
 :::
 
 :::{admonition} Note
@@ -101,7 +101,7 @@ You have learned to
 
 ### Tutorials
 
-- [Develop in an Editor (Beginner)](../beginner/develop_editor.md)
+- [Develop in an Editor (Beginner)](../basic/develop_editor.md)
 
 ### How-to
 

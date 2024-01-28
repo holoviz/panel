@@ -6,7 +6,7 @@ In this tutorial you will learn more advanced techniques to serve Panel apps:
 - list the configuration options of `panel serve` by adding the flag `--help`.
 
 :::{admonition} Note
-This guide builds upon the [Serve Panel Apps (beginner)](../beginner/) tutorial.
+This guide builds upon the [Serve Panel Apps (beginner)](../basic/) tutorial.
 :::
 
 ## Serve a multi-page app
@@ -242,7 +242,7 @@ You can
 
 ### Tutorials
 
-- [Serve Apps (beginner)](../beginner/serve.md)
+- [Serve Apps (beginner)](../basic/serve.md)
 
 ### How-to
 

@@ -63,7 +63,7 @@ How to show activity with indicators
 How to add interactivity with `pn.bind`.
 :::
 
-:::{grid-item-card} {octicon}`versions;2.5em;sd-mr-1 sd-animate-grow50` Improve Performance
+:::{grid-item-card} {octicon}`trophy;2.5em;sd-mr-1 sd-animate-grow50` Improve Performance
 :link: caching
 :link-type: doc
 
