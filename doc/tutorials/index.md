@@ -10,15 +10,7 @@ Imagine standing amidst a vast field of towering wind turbines, harnessing the i
 
 Whether you're a newcomer or an experienced developer, our goal is to take you from a novice to a (wind turbine) data app hero.
 
-Together we will explore the world of wind turbine data and build
-
-- a Hello Wind Turbine World app
-- a Wind Turbine Chat Bot
-- a static Wind Turbine Analysis report
-- a Wind Turbine Technician todo app
-- a Wind Turbine Dashboard
-- A Wind Turbine Image Recognition app
-- a Wind Turbine Live Data Monitoring application.
+Together we will explore the world of wind turbine data and build some really cool wind turbine data apps.
 
 Please put on your safety helmet before entering the world of wind turbine data apps.
 
