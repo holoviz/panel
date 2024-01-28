@@ -3,7 +3,7 @@
 The Panel How-to guides provide step by step recipes for solving essential problems and tasks that arise during your work. They assume that you've completed the Getting Started material and therefore already have some knowledge of how Panel works. There is no order to the guides, other than any potential prerequisites listed at the top of a page. Jump to the topic that is relevant to you now.
 
 
-## Develop Seamlessly
+## Develop Efficiently
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2

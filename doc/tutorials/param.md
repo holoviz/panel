@@ -1,5 +1,7 @@
 # Reactive Parameters
 
+NOTE: ChatGPT suggests this is *basic* level stuff: You can include this section within the "Basic" tutorials as it seems like it covers fundamental concepts that newcomers might need to know before diving into more complex topics. I don't agree, but I am in doubt.
+
 :::{note} Tutorial 1. **Reactive Parameters**
 :icon: false
 

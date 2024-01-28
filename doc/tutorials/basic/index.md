@@ -38,7 +38,7 @@ Develop a streaming Wind Turbine Chat Bot that can handle many wind turbine enth
 
 ::::
 
-### Part 2: Develop Efficiently
+### Part 2: Develop Seamlessly
 
 These tutorials will *level up your Panel developer experience*. You can take them later if you want.
 
@@ -203,7 +203,7 @@ We will build an image classifier to identify wind turbine images
 :link: caching
 :link-type: doc
 
-COMING UP
+Caching allows your apps to store and reuse valuable computations, reducing the energy required for calculations and making your apps run faster and smoother.
 :::
 
 ::::
@@ -218,31 +218,31 @@ COMING UP
 :link: design
 :link-type: doc
 
-COMING UP: `design`
+Just as wind turbines come in various designs, this section empowers you to choose a design that best suits your app's style and functionality.
 :::
 
 :::{grid-item-card} {octicon}`versions;2.5em;sd-mr-1` Use Styles
 :link: style
 :link-type: doc
 
-Style your Panel components with `styles` and `stylesheets` to ensure your wind turbine data apps are both aesthetically pleasing and user-friendly.
+Fine-tune the styling of your components with `styles` and `stylesheets`. This will ensure your wind turbine data apps are both aesthetically pleasing and user-friendly.
 :::
 
 :::{grid-item-card} {octicon}`image;2.5em;sd-mr-1` Build A Dashboard
 :link: build_dashboard
 :link-type: doc
 
-We'll guide you through advanced styling, layout optimization, and data visualization techniques to build a refined Wind Turbine Dashboard
+We'll guide you through advanced styling, layout optimization, and data visualization techniques to build a refined Wind Turbine Dashboard.
 :::
 
 ::::
 
-### Part 9: Share your App
+### Part 9: Share your work
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`globe;2.5em;sd-mr-1` Deploy an App
+:::{grid-item-card} {octicon}`globe;2.5em;sd-mr-1` Deploy Applications
 :link: deploy
 :link-type: doc
 
