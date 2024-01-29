@@ -1,6 +1,6 @@
 # Display objects with `pn.panel`
 
-In this guide you will learn to display Python objects easily with `pn.panel`:
+In this guide you will learn to display Python objects easily and dynamically with `pn.panel`:
 
 - Display a string with `pn.panel(some_string)`
 - Display plot figures like [Matplotlib](https://matplotlib.org/), [hvPlot](https://hvplot.holoviz.org) and [Plotly](https://plotly.com/python/) with `pn.panel(fig)`
@@ -13,10 +13,6 @@ In this guide you will learn to display Python objects easily with `pn.panel`:
 
 :::{admonition} Note
 When I ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
-:::
-
-:::{admonition} Note
-The code cell below is experiment. See https://github.com/holoviz/panel/pull/6213/files#r1460849652
 :::
 
 ```{pyodide}
@@ -307,7 +303,7 @@ component.servable()
 
 More specifically `pn.panel` resolves the appropriate *representation* for an object by checking all [*Pane*](../../reference/index.md#panes) object types available and then ranking them by priority. When passing a string (for instance) there are many representations, but the [`PNG`](../../reference/panes/PNG.md) pane takes precedence if the string is a valid URL or local file path ending in `.png`.
 
-Resolving the appropriate *representation* for an object takes time. So if performance is key you should specify the specific type of Pane to use directly. I.e. use `pn.pane.Matplotlib(fig)` instead of `pn.panel(fig)`.
+Resolving the appropriate *representation* for an object takes time. So if performance is key you should specify the specific type of *Pane* to use directly. I.e. use `pn.pane.Matplotlib(fig)` instead of `pn.panel(fig)`.
 :::
 
 Run the code below

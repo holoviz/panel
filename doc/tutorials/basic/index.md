@@ -95,7 +95,7 @@ Show key performance indicators (KPIs) for your wind turbines with Panels Indica
 :::
 
 :::{grid-item-card} {octicon}`clock;2.5em;sd-mr-1` Build a Streaming Dashboard
-:link: build_live_dashboard
+:link: build_streaming_dashboard
 :link-type: doc
 
 Build a live, updating dashboard to monitor your wind turbines.

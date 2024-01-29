@@ -25,10 +25,6 @@ A *Pane* is defined as a component that inherits from the `PaneBase` class.
 When I ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
-:::{admonition} Note
-The code cell below is experiment. See https://github.com/holoviz/panel/pull/6213/files#r1460849652
-:::
-
 ```{pyodide}
 import panel as pn
 pn.extension("plotly")
