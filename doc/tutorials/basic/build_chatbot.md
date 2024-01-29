@@ -57,7 +57,7 @@ def get_response(contents, user, instance):
         response = DONT_KNOW
     message = ""
     for char in response:
-        yield " ".join(response[:index+1])
+        instance.stream(char, user="Assistant")
         sleep(0.10)
 
 chat_bot = pn.chat.ChatInterface(callback=get_response, max_height=500)
