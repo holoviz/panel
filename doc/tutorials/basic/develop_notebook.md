@@ -313,7 +313,7 @@ It should look like
 ![Inspect a Panel component class with .param](../../_static/images/notebook_inspect_param_class.png)
 
 :::{admonition} Note
-- The `.param` table shows you the *default* parameter values of the `IntSlider` class. For example the *default* value of `align` is `'start'`.
+- The `.param` table shows you the **default** parameter values of the `IntSlider` **class**. For example the *default* value of `align` is `'start'`.
 - The `.param` table shows you additional information like the `Type` and `Range` of the Parameter.
 :::
 
@@ -330,7 +330,7 @@ It should look like
 ![Inspect a Panel component instance with .param](../../_static/images/notebook_inspect_param_instance.png)
 
 :::{admonition} Note
-- In the picture above you see the *actual* parameter values of the `IntSlider` instance. For example the *actual* value of `align` is `'end'`.
+- In the picture above you see the **actual** parameter values of the `IntSlider` **instance**. For example the *actual* value of `align` is `'end'`.
 :::
 
 ## Recap

@@ -164,7 +164,7 @@ Elevate your app's functionality by accepting user input via widgets. Add nice t
 React to user input by leveraging `pn.bind`, enabling your users to foster a deeper understanding of wind turbine data through exploration.
 :::
 
-:::{grid-item-card} {octicon}`arrow-switch;2.5em;sd-mr-1` Handle State
+:::{grid-item-card} {octicon}`list-ordered;2.5em;sd-mr-1` Handle State
 :link: state
 :link-type: doc
 
@@ -175,7 +175,7 @@ Be able to build larger and more complex apps by defining and maintaining state 
 :link: build_todo
 :link-type: doc
 
-Enable your wind turbine technitions to keep track of their tasks.
+Enable your wind turbine technicians to keep track of their tasks.
 :::
 
 ::::

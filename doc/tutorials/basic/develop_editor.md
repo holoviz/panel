@@ -8,7 +8,7 @@ In this section you will learn the basics of developing Panel apps in an editor:
 - Inspect a components parameters via `.param` and `.param._repr_html_()`
 
 :::{admonition} Note
-Some of the features demonstrated in this guide might require special configuration of your editor. For configuration we refer you to the [Resources](#resources) section below and general resources on the web.
+Some of the features demonstrated in this guide might require special configuration of your specific editor. For configuration we refer you to the [Resources](#resources) section below and general resources on the web.
 :::
 
 ## Install the Dependencies

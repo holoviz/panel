@@ -16,7 +16,7 @@ pn.extension("perspective)
 
 ## Compare Temperatures with Swipe
 
-Lets understand why we need wind turbines and renewable energy by comparing the global mean surface temperatures of the periods 1945-49 and 2015-2019.
+Lets understand why we need renewable energy and wind turbines by comparing the global mean surface temperatures of the periods 1945-49 and 2015-2019.
 
 Run the code below:
 
@@ -47,14 +47,14 @@ pn.extension("perspective")
 
 df = pd.read_csv("https://assets.holoviz.org/panel/tutorials/turbines.csv.gz")
 
-pn.pane.Perspective(df, sizing_mode="stretch_width", max_height=600).servable()
+pn.pane.Perspective(df, sizing_mode="stretch_width", height=600).servable()
 ```
 
 :::{admonition} Note
 The code refers to
 
 - `pn.extension("perspective")`: We instruct Panel to load the javascript dependencies of [Perspective](../../reference/panes/Perspective.ipynb) into the notebook or server app.
-- `pn.pane.Perspective(df, sizing_mode="stretch_width", max_height=600)`: Display the dataframe `df` with the [Perspective](../../reference/panes/Perspective.ipynb) *pane*. Stretch the width as much as possible and use a maximum height of 600 pixels. You will learn much more about this later.
+- `pn.pane.Perspective(df, sizing_mode="stretch_width", height=600)`: Display the dataframe `df` with the [Perspective](../../reference/panes/Perspective.ipynb) *pane*. Stretch the width as much as possible and use a `height` of 600 pixels. You will learn much more about this later.
 :::
 
 :::{admonition} Note
