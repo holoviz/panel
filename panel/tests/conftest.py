@@ -21,6 +21,7 @@ import pytest
 
 from bokeh.client import pull_session
 from bokeh.document import Document
+from bokeh.io.doc import curdoc, set_curdoc as set_bkdoc
 from pyviz_comms import Comm
 
 from panel import config, serve
@@ -158,6 +159,18 @@ def server_document():
     with set_curdoc(doc):
         yield doc
     doc._session_context = None
+
+@pytest.fixture
+def bokeh_curdoc():
+    old_doc = curdoc()
+    doc = Document()
+    session_context = unittest.mock.Mock()
+    doc._session_context = lambda: session_context
+    set_bkdoc(doc)
+    try:
+        yield doc
+    finally:
+        set_bkdoc(old_doc)
 
 @pytest.fixture
 def comm():

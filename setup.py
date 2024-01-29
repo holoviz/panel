@@ -145,7 +145,7 @@ _tests_core = [
     'pandas >=1.3',
     'ipython >=7.0',
     'scipy',
-    'textual'
+    'textual',
 ]
 
 _tests = _tests_core + [
