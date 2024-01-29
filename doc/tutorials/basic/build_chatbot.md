@@ -16,14 +16,11 @@ from time import sleep
 
 pn.extension()
 
-WIND_TURBINE = "A *wind turbine* is a device that converts the kinetic energy of wind into electrical energy."
-DONT_KNOW = "Sorry. I don't know."
-
 def get_response(contents, user, instance):
     if "turbine" in contents.lower():
-        response = WIND_TURBINE
+        response = "A wind turbine converts wind energy into electricity."
     else:
-        response = DONT_KNOW
+        response = "Sorry, I don't know."
     sleep(1)
     return response
 
