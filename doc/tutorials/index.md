@@ -1,7 +1,7 @@
 # Tutorials
 
 :::{admonition} Note
-To make our tutorials engaging and purposeful we will be exploring data and developing data apps in the domain of wind turbines. Your instructor will be very, very passionate about wind turbines. We hope you will have a laugh and play along.
+To make our tutorials engaging and meaningful we will be exploring data and developing data apps in the domain of wind turbines. Your instructor will be very, very passionate about wind turbines. We hope you will have a laugh and play along.
 
 We believe the skills you will be getting are easily transferable to any domain including yours.
 :::
@@ -25,7 +25,7 @@ Select a set of tutorials corresponding to your profile.
 
 These tutorials are for you that is just starting to discover Panel.
 
-Together we will explore the wind turbine data and build a chat bot, a static report, a todo app, an image classifier app, a dashboard and a streaming application together.
+Together we will explore the wind turbine dataset and build a chat bot, a static report, a todo app, an image classifier app, a dashboard and a streaming application together.
 
 After these tutorials you will be able to build a wide range of polished, single page apps from a single file using a *function based approach*.
 :::

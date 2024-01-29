@@ -98,6 +98,16 @@ Enjoying Panel? Show your support with a [Github star](https://github.com/holovi
 The getting started guide will get you set up with Panel and provide a basic overview of the features and strengths of Panel.
 :::
 
+::::{grid} 1 2 2 4
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`mortar-board;2.5em;sd-mr-1` Tutorials
+:link: tutorials/index
+:link-type: doc
+
+Through guided steps and activities the tutorials will help you acquire the skills and knowledge to use Panel.
+:::
+
 :::{grid-item-card} {octicon}`beaker;2.5em;sd-mr-1` How-to
 :link: how_to/index
 :link-type: doc
@@ -105,7 +115,7 @@ The getting started guide will get you set up with Panel and provide a basic ove
 How-to guides provide step by step recipes for solving essential problems and tasks that arise during your work.
 :::
 
-:::{grid-item-card} {octicon}`mortar-board;2.5em;sd-mr-1` Explanation
+:::{grid-item-card} {octicon}`telescope;2.5em;sd-mr-1` Explanation
 :link: explanation/index
 :link-type: doc
 

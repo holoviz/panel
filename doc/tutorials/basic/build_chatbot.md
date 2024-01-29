@@ -1,6 +1,6 @@
 # Build a Chat Bot
 
-In this tutorial we will build a streaming *chat bot*. We will first use the *high-level* [`ChatInterface`](../../reference/chat/ChatInterface.ipynb) to build a basic chat bot. Then will will add streaming and finally we will make it scale to many users.
+In this tutorial we will build a streaming *chat bot*. We will first use the *high-level* [`ChatInterface`](../../reference/chat/ChatInterface.ipynb) to build a basic chat bot. Then we will add streaming.
 
 :::{admonition} Note
 When I ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
@@ -71,49 +71,8 @@ Try entering `What is a wind turbine?` in the *text input* and click *Send*.
 The chat app is now *streaming* because we `yield` the partial `response` instead of `return`ing the full `response`.
 :::
 
-## Make it scale
-
-:::{admonition}
-If your chat bot is successful and many users start using it, you will find that they are *blocking* each other. While one user is getting her response, another user will be waiting on his response.
-
-You can avoid blocking in many ways. Here we will use an `async` `callback` function.
-:::
-
-Run the code
-
-```{pyodide}
-import panel as pn
-from asyncio import sleep
-
-pn.extension()
-
-WIND_TURBINE = "A *wind turbine* is a device that converts the kinetic energy of wind into electrical energy."
-DONT_KNOW = "Sorry. I don't know."
-
-async def get_response(contents, user, instance):
-    if "turbine" in contents.lower():
-        response = WIND_TURBINE
-    else:
-        response = DONT_KNOW
-    for index in range(len(response)+1):
-        yield response[:index]
-        await sleep(0.05)
-
-chat_bot = pn.chat.ChatInterface(callback=get_response, max_height=500)
-chat_bot.send("Ask me what a wind turbine is", user="Assistant", respond=False)
-chat_bot.servable()
-```
-
-Try entering `What is a wind turbine?` in the *text input* and click *Send*.
-
-:::{admonition}
-While `await sleep(0.05)` is executed the chatbot can respond to another user.
-:::
-
-:::{adminition} Note
-We have just built a streaming chat app that can scale to many users. And we used `yield` and `async` to do this. Well done!
-
-We won't be using `async` a lot in the basic tutorials because normally we don't need it to build basic apps.
+:::{admonition} Note
+To make the Streaming Chat Bot scale to many users you should use `async`. You will learn more about scaling applications and `async` in the [Intermediate Tutorials](../intermediate/index.md).
 :::
 
 ## Learn More
@@ -136,8 +95,7 @@ If you want to build more advanced chat bots, [Panel-Chat-Examples](https://holo
 
 In this section we have
 
-- used the *easy to use*, *high-level* [`ChatInterface`](../../reference/chat/ChatInterface.ipynb) to build a basic chat bot.
-- used `yield` and `async` to build a streaming chat bot that can scale to many users.
+- used the *easy to use*, *high-level* [`ChatInterface`](../../reference/chat/ChatInterface.ipynb) to build a chat bot.
 
 ## Resources
 

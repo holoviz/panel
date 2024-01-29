@@ -19,7 +19,7 @@ I will assume you have successfully been able to [install Panel](../../getting_s
 :link: serve
 :link-type: doc
 
-Kickstart your journey by creating a "Hello Wind Turbine World" app from a Python script, Notebook, or Markdown document.
+Kickstart your journey by creating a *Hello World* app from a Python script, Notebook, or Markdown document.
 :::
 
 :::{grid-item-card} {octicon}`beaker;2.5em;sd-mr-1` Explore the Data
