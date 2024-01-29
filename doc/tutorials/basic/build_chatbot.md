@@ -56,7 +56,7 @@ def get_response(contents, user, instance):
     else:
         response = DONT_KNOW
     message = ""
-    for index in range(len(response)):
+    for char in response:
         yield " ".join(response[:index+1])
         sleep(0.10)
 
