@@ -55,7 +55,7 @@ def get_response(contents, user, instance):
         response = WIND_TURBINE
     else:
         response = DONT_KNOW
-    
+    message = ""
     for index in range(len(response)):
         yield " ".join(response[:index+1])
         sleep(0.10)
