@@ -140,7 +140,7 @@ pn.widgets.RadioButtonGroup(
 ```
 
 :::{Admonition} Note
-Most often widgets allow you to specificy the *initial* `value`.
+Most often widgets allow you to specify the *initial* `value`.
 :::
 
 Run the code below:
