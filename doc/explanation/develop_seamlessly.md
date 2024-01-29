@@ -2,7 +2,6 @@
 
 Our objective is to empower teams to seamlessly utilize Panel regardless of the development environment, e.g. Jupyter Notebook, Jupyter Lab, Binder, Google Colab, Spyder, VS Code, and PyCharm.
 
-Therefore **we want to enable you and your team to develop seamlessly with Panel across a wide range of development environments**.
 
 ## Notebook
 
