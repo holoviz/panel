@@ -34,6 +34,13 @@ jobs:
     runs-on: 'ubuntu-latest'
     steps:
       - uses: holoviz-dev/holoviz_tasks/pre-commit@v0.1a19
+      - name: optimize_png
+        run: |
+          pre-commit run --all --hook-stage manual oxipng
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "Optimize PNG images (lossless)"
+          file_pattern: "*.png"
   setup:
     name: Setup workflow
     runs-on: ubuntu-latest
