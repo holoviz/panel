@@ -36,7 +36,7 @@ jobs:
       - uses: holoviz-dev/holoviz_tasks/pre-commit@v0.1a19
       - uses: pre-commit/action@v3.0.0
         with:
-          extra-args: --hook-stage manual oxipng
+          extra_args: --hook-stage manual oxipng
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: "Optimize PNG images (lossless)"
