@@ -63,7 +63,7 @@ Discover tips and tricks that will increase your *developer capacity* from kilo 
 :link: join_community
 :link-type: doc
 
-Find inspiration in the community forums, ask for help, share your work, report issues and add feature requests.
+Find inspiration in the community forums, ask for help, help others, share your work, report issues and add feature requests.
 :::
 
 ::::

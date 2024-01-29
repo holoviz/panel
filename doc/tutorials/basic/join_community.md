@@ -4,7 +4,7 @@ Find inspiration in the community forums, ask for help, help others, share your 
 
 ## Prerequisites
 
-I will assume you already have a Github account. If we not please follow the official [Creating an account on Github](https://docs.github.com/en/get-started/quickstart/creating-an-account-on-github) guide.
+I will assume you already have a Github account. If not please follow the official [Creating an account on Github](https://docs.github.com/en/get-started/quickstart/creating-an-account-on-github) guide.
 
 ## Detailed discussions on Discourse
 
@@ -18,7 +18,7 @@ Go to the [HoloViz Discourse](https://discourse.holoviz.org/) and sign up.
 
 Click [this link](https://discourse.holoviz.org/t/welcome-please-introduce-yourself/3310/) to *introduce your self* to the community.
 
-![HoloViz Discourse](../../_static/images/join_community_discourse.png)
+[![HoloViz Discourse](../../_static/images/join_community_discourse.png)](https://discourse.holoviz.org/)
 
 ## Quick chats on Discord
 
