@@ -47,18 +47,14 @@ from time import sleep
 
 pn.extension()
 
-WIND_TURBINE = "A *wind turbine* is a device that converts the kinetic energy of wind into electrical energy."
-DONT_KNOW = "Sorry. I don't know."
-
 def get_response(contents, user, instance):
     if "turbine" in contents.lower():
-        response = WIND_TURBINE
+        response = "A wind turbine converts wind energy into electricity."
     else:
-        response = DONT_KNOW
-    message = ""
-    for char in response:
-        instance.stream(char, user="Assistant")
-        sleep(0.10)
+        response = "Sorry, I don't know."
+    for index in range(len(response)):
+        yield response[0:index+1]
+        sleep(0.03)
 
 chat_bot = pn.chat.ChatInterface(callback=get_response, max_height=500)
 chat_bot.send("Ask me anything!", user="Assistant", respond=False)
@@ -72,7 +68,7 @@ The chat app is now *streaming* because we `yield` the partial `response` instea
 :::
 
 :::{admonition} Note
-To make the Streaming Chat Bot scale to many users you should use `async`. You will learn more about scaling applications and `async` in the [Intermediate Tutorials](../intermediate/index.md).
+To make the Streaming Chat Bot scale to many users you should be using `async`. You will learn more about scaling applications and `async` in the [Intermediate Tutorials](../intermediate/index.md).
 :::
 
 ## Learn More
