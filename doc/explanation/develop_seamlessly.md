@@ -9,7 +9,7 @@ We love notebooks.
 
 ### Notebook friendly
 
-Jupyter notebooks have been supported in Panel since day 1 and more generally since the inception of the [HoloViz](https://holoviz.org) project. Notebooks are environments that allow to iterate quickly, running some code and observing instantaneously its output. Notebooks also happen to be a valid deployment option:
+Jupyter notebooks have been supported in Panel since day 1. Notebooks are environments that allow one to iterate quickly, running some code and observing instantaneously its output. Notebooks also happen to be a valid deployment option:
 
 - you can actually develop apps that are meant to live only in a notebook, that you will share as a file with your colleagues and friends. Panel allows you to make your notebooks more user friendly, like [IPywidgets](https://ipywidgets.readthedocs.io/en/stable/) does.
 - you can serve a notebook with `panel serve file.ipynb`, Panel will parse your notebook to collect all of its code and run it as if it were a Python script.
