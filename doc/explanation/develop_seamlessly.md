@@ -1,6 +1,6 @@
 # Develop Seamlessly Across Environments
 
-We believe you and your team develop in a wide range of development environments. For example in a notebook for data exploration, model training, research or study. For example in an editor for other use cases. That means you and your team will be utilizing a combination of development environments like Jupyter Notebook, Jupyter Lab, Jupyter Hub, Binder, Google Colab, Spyder, VS Code, PyCharm etc..
+Our objective is to empower teams to seamlessly utilize Panel regardless of the development environment, e.g. Jupyter Notebook, Jupyter Lab, Binder, Google Colab, Spyder, VS Code, and PyCharm.
 
 Therefore **we want to enable you and your team to develop seamlessly with Panel across a wide range of development environments**.
 
