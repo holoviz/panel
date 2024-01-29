@@ -52,9 +52,9 @@ DONT_KNOW = "Sorry. I don't know."
 
 def get_response(contents, user, instance):
     if "turbine" in contents.lower():
-        response = WIND_TURBINE.split(" ")
+        response = WIND_TURBINE
     else:
-        response = DONT_KNOW.split(" ")
+        response = DONT_KNOW
     
     for index in range(len(response)):
         yield " ".join(response[:index+1])
