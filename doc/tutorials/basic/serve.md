@@ -1,6 +1,6 @@
 # Build your first App
 
-In this tutorial we will develop and *serve* a *Hello World* Panel app. 
+In this tutorial we will develop and *serve* a *Hello World* Panel app.
 
 :::{admonition} Note
 Panel can serve apps from Python Scripts, Notebooks and Markdown files. I've prepared a section for each of the 3 file types. Feel free to focus on your favorite.
