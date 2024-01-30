@@ -1,4 +1,4 @@
-# Templates
+# Use Templates
 
 In this tutorial we will use *pre-made templates* to easily layout an app with a *header*, *sidebar* and *main* area:
 
@@ -6,7 +6,7 @@ In this tutorial we will use *pre-made templates* to easily layout an app with a
 - Templates can be found in the [Templates Section](../../reference/index.md#templates) of the [Component Gallery](../../reference/index.md).
 - Templates are highly customizable
 
-## A Hello World Template Example
+## Create a Hello World Example
 
 Copy the code below to a file `app.py`.
 
@@ -52,7 +52,7 @@ Spend a couple of minutes checking out the [Templates Section](../../reference/i
 
 [![Templates Section](../../_static/images/templates_section.png)](../../reference/index.md#templates)
 
-## Don't display a Template in a Notebook
+## Use a Template in a Notebook
 
 :::{admonition} Note
 Currently *templates* do not display in a notebook.
@@ -82,7 +82,7 @@ It should look like
 
 ![Hello World FastListTemplate App](../../_static/images/templates_hello_world_notebook.png)
 
-## Templates are Highly Customizable
+## Customize a Template
 
 Copy the code below to a file `app.py`.
 
@@ -162,9 +162,9 @@ It should look like
 The code refers to
 
 - `pn.config.theme`: The name of the selected *theme*. Either `"default"` or `"dark"`.
-- `alt.themes.enable("dark")`: This is used to give the Altair plot a dark theme. Panel will not do that automatically for you. In the [References](#references) section below you can find a list of how-to guides for styling plots.
+- `alt.themes.enable("dark")`: We use this Altair code to give the plot a `"dark"` theme. Panel will not do that automatically for you. In the [References](#references) section below you can find a list of how-to guides for styling plots.
 - `accent`: A *primary* or *accent* color to apply to the template. Can be a [*named color*](https://www.w3schools.com/tags/ref_colornames.asp) or a [*hex color value*](https://www.w3schools.com/html/html_colors_hex.asp). You can use this to quickly *brand* your entire app.
-- `main_layout`. A layout to wrap each `main` object in. One of `"card"` (default) or `None`.
+- `main_layout`. A layout to wrap each object in the `main` list in. One of `"card"` (default) or `None`.
 
 The `accent` and `main_layout` arguments only apply to the *Fast* templates, i.e. the [FastListTemplate](../../reference/templates/FastListTemplate.ipynb) and the [FastGridTemplate](../../reference/templates/FastGridTemplate.ipynb).
 :::
@@ -195,3 +195,7 @@ In this tutorial we have used *pre-made templates* to easily layout an app with 
 ### Explanation
 
 - [Templates](../../explanation/styling/templates_overview.md)
+
+### Component Gallery
+
+- [Templates Section](../../reference/index.md#templates) of the [Component Gallery](../../reference/index.md)
