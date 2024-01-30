@@ -19,7 +19,8 @@ Enjoying Panel? Show your support with a [Github star](https://github.com/holovi
 <tbody>
 <tr>
 <td>Downloads</td>
-<td><a href="https://pepy.tech/badge/panel/" alt="Downloads"><img src="https://img.shields.io/pypi/dm/panel" /></a></td>
+<td><a href="https://pypistats.org/packages/panel" alt="PyPi Downloads"><img src="https://img.shields.io/pypi/dm/panel" /></a></td>
+<td><a href="https://anaconda.org/pyviz/panel" alt="Conda Downloads"><img src="https://pyviz.org/_static/cache/panel_conda_downloads_badge.svg" /></a></td>
 </tr>
 <tr>
 <td>Build Status</td>
