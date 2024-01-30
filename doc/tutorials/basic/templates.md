@@ -6,6 +6,30 @@ In this tutorial we will use *pre-made templates* to easily layout an app with a
 - Templates can be found in the [Templates Section](../../reference/index.md#templates) of the [Component Gallery](../../reference/index.md).
 - Templates are highly customizable
 
+## Install the Dependencies
+
+Please make sure [Vega-Altair](https://altair-viz.github.io/) is installed.
+
+::::{tab-set}
+
+:::{tab-item} conda
+:sync: conda
+
+``` bash
+conda install -y -c conda-forge altair
+```
+:::
+
+:::{tab-item} pip
+:sync: pip
+
+``` bash
+pip install altair
+```
+:::
+
+::::
+
 ## Create a Hello World Example
 
 Copy the code below to a file `app.py`.
