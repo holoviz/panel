@@ -95,7 +95,7 @@ with text_input.param.update(value='Temporary'):
 
 ### Validation
 
-The primary purpose of parameters is to perform validation, e.g. if I try to assign an invalid value to a parameter, we will get an error:
+The primary purpose of parameters is to perform validation, e.g. if we try to assign an invalid value to a parameter, we will get an error:
 
 ```{pyodide}
 import traceback as tb

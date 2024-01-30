@@ -5,7 +5,7 @@ In this section we will use the [Swipe](../../reference/layouts/Swipe.ipynb) *la
 This will barely scratch the surface of what Panel has to offer for exploratory data analysis (EDA) workflow. That is why we say that *Panel is **the powerful data exploration** and web app **framework***.
 
 :::{note}
-When I ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
+When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
 ```{pydodide}

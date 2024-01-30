@@ -6,7 +6,7 @@ In this section we will build a *Wind Turbine Report*. We will
 - export the report to static `.html` and distribute it via email.
 
 :::{note}
-When I ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
+When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
 ## Create the Report

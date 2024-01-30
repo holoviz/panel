@@ -8,7 +8,7 @@ In this section you will learn the basics of developing Panel apps efficiently i
 - Inspect your components class and instance parameters using `.param`.
 
 :::{note}
-In this guide we will assume you are working in [Jupyter lab](https://jupyter.org/). Panel works in many other notebook environments. But non-jupyterlab notebook environments might need special configuration before supporting Panel appropriately. Check out the [Resources](#resources) section below for specific guidance.
+In this guide we will assume you are working in [Jupyter lab](https://jupyter.org/). Panel works in many other notebook environments. But non-JupyterLab notebook environments might need special configuration before supporting Panel appropriately. Check out the [Resources](#resources) section below for specific guidance.
 :::
 
 ## Install the Dependencies

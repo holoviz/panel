@@ -3,7 +3,7 @@
 In this tutorial we will build a streaming *chat bot*. We will first use the *high-level* [`ChatInterface`](../../reference/chat/ChatInterface.ipynb) to build a basic chat bot. Then we will add streaming.
 
 :::{note}
-When I ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
+When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
 ## Build a Basic Chat Bot

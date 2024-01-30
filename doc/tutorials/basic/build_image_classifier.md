@@ -10,7 +10,7 @@ In this tutorial we will build an *Image Classifier* that can detect wind turbin
 We will be using a *random* classifier. But you can replace it with your own classifier if you want.
 
 :::{note}
-When I ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
+When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
 ## Create the App

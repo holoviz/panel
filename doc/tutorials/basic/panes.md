@@ -22,7 +22,7 @@ A *Pane* is defined as a component that inherits from the `PaneBase` class.
 :::
 
 :::{note}
-When I ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
+When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
 ```{pyodide}
@@ -75,10 +75,10 @@ We add `.servable()` to the component to add it to the app served by `panel serv
 :::
 
 :::{note}
-To learn in detail how a pane like `Str` works you should refer to its *reference guide*.
+To learn in detail how a pane like `Str` works refer to its *reference guide*.
 :::
 
-Click [this link](../../reference/panes/Str.ipynb) to the `Str` Reference Guide and spend a few minutes to familiarize your self with its organisation and content.
+Click [this link](../../reference/panes/Str.ipynb) to the `Str` reference guide and spend a few minutes to familiarize your self with its organization and content.
 
 It should look like
 
@@ -102,7 +102,7 @@ This sample text is from [The Markdown Guide](https://www.markdownguide.org)!
 """).servable()
 ```
 
-:::{admonition}
+:::{tip}
 Its key for your success with Panel, that you learn how to navigate the [Component Gallery](../../reference/index.md) and use the *reference guides*.
 :::
 
@@ -178,7 +178,6 @@ import panel as pn
 
 pn.extension()
 np.random.seed(1)
-
 
 idx = pd.date_range('1/1/2000', periods=1000)
 df = pd.DataFrame(np.random.randn(1000, 4), index=idx, columns=list('ABCD')).cumsum()

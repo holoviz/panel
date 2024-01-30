@@ -12,7 +12,7 @@ In this guide you will learn to display Python objects easily and dynamically wi
 - Add javascript dependencies via `pn.extension`. For example `pn.extension("plotly")`
 
 :::{note}
-When I ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
+When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
 ```{pyodide}
@@ -81,7 +81,7 @@ component.servable()
 Your cell or terminal output should contain `Markdown(str)`. It means `pn.panel` has picked the [`Markdown`](../../reference/panes/Markdown.md) pane to display the `str` object.
 :::
 
-Lets verify that *markdown strings* are actually displayed and rendered nicely.
+Let's verify that *markdown strings* are actually displayed and rendered nicely.
 
 Run the code:
 
@@ -115,18 +115,18 @@ matplotlib.use('agg')
 pn.extension()
 
 def create_matplotlib_figure(figsize=(4,3)):
-       t = np.arange(0.0, 2.0, 0.01)
-       s = 1 + np.sin(2 * np.pi * t)
+    t = np.arange(0.0, 2.0, 0.01)
+    s = 1 + np.sin(2 * np.pi * t)
 
-       fig, ax = plt.subplots(figsize=figsize)
-       ax.plot(t, s)
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.plot(t, s)
 
-       ax.set(xlabel='time (s)', ylabel='voltage (mV)',
-              title='Voltage')
-       ax.grid()
+    ax.set(xlabel='time (s)', ylabel='voltage (mV)',
+           title='Voltage')
+    ax.grid()
 
-       plt.close(fig) # CLOSE THE FIGURE!
-       return fig
+    plt.close(fig) # CLOSE THE FIGURE!
+    return fig
 
 fig = create_matplotlib_figure()
 component = pn.panel(fig, dpi=144, tight=True)
@@ -155,7 +155,6 @@ import panel as pn
 
 pn.extension()
 np.random.seed(1)
-
 
 idx = pd.date_range('1/1/2000', periods=1000)
 df = pd.DataFrame(np.random.randn(1000, 4), index=idx, columns=list('ABCD')).cumsum()
@@ -230,7 +229,7 @@ component.servable()
 ```
 
 ```{note}
-If you want to display larger dataframes, customize the way the dataframes are displayed or make them more interactive you can find specialized components in the [Component Gallery](../../reference/index.md) supporting these use cases. For example the [Tabulator](https://panel.holoviz.org/reference/widgets/Tabulator.html) widget and [Perspective](https://panel.holoviz.org/reference/panes/Perspective.html) pane.
+If you want to display larger dataframes, customize the way the dataframes are displayed or make them more interactive you can find specialized components in the [Component Gallery](../../reference/index.md) supporting these use cases. For example the [Tabulator](../../reference/widgets/Tabulator.md) widget and [Perspective](../../reference/panes/Perspective.md) pane.
 ```
 
 ## Display any Python object
@@ -277,7 +276,7 @@ component.servable()
 When Python objects are given as an argument to a Panel [Layout](../../reference/index.md#layouts) like [`pn.Column`](../../reference/layouts/Column.md), then `pn.Column` will automatically apply `pn.panel` to the objects for you.
 :::
 
-Please notice that the image of the dice is very high. To finetune the way it is displayed we can use `pn.panel`.
+Please notice that the image of the dice is very tall. To finetune the way it is displayed we can use `pn.panel`.
 
 Run the code below
 
@@ -303,7 +302,7 @@ component.servable()
 
 More specifically `pn.panel` resolves the appropriate *representation* for an object by checking all [*Pane*](../../reference/index.md#panes) object types available and then ranking them by priority. When passing a string (for instance) there are many representations, but the [`PNG`](../../reference/panes/PNG.md) pane takes precedence if the string is a valid URL or local file path ending in `.png`.
 
-Resolving the appropriate *representation* for an object takes time. So if performance is key you should specify the specific type of *Pane* to use directly. I.e. use `pn.pane.Matplotlib(fig)` instead of `pn.panel(fig)`.
+Resolving the appropriate *representation* for an object takes time. So if performance is key you should specify the specific type of *Pane* to use directly. i.e. use `pn.pane.Matplotlib(fig)` instead of `pn.panel(fig)`.
 :::
 
 Run the code below
@@ -318,18 +317,18 @@ matplotlib.use('agg')
 pn.extension()
 
 def create_matplotlib_figure(figsize=(4,3)):
-       t = np.arange(0.0, 2.0, 0.01)
-       s = 1 + np.sin(2 * np.pi * t)
+    t = np.arange(0.0, 2.0, 0.01)
+    s = 1 + np.sin(2 * np.pi * t)
 
-       fig, ax = plt.subplots(figsize=figsize)
-       ax.plot(t, s)
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.plot(t, s)
 
-       ax.set(xlabel='time (s)', ylabel='voltage (mV)',
-              title='Voltage')
-       ax.grid()
+    ax.set(xlabel='time (s)', ylabel='voltage (mV)',
+           title='Voltage')
+    ax.grid()
 
-       plt.close(fig) # CLOSE THE FIGURE!
-       return fig
+    plt.close(fig) # CLOSE THE FIGURE!
+    return fig
 
 fig = create_matplotlib_figure()
 pn.pane.Matplotlib(fig, dpi=144, tight=True).servable()

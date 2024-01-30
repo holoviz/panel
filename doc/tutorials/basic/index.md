@@ -1,4 +1,4 @@
-## Basic Tutorials
+# Basic Tutorials
 
 These tutorials are for you that is just starting to discover Panel.
 
@@ -10,7 +10,7 @@ After these tutorials you will be able to build a wide range of polished, single
 
 I will assume you have successfully been able to [install Panel](../../getting_started/installation.md) as described in the [Getting Started Guide](../../getting_started/index.md). If not please reach out for help on [Discord](https://discord.gg/rb6gPXbdAr).
 
-### Get Started
+## Get Started
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -38,7 +38,7 @@ Develop a Streaming Wind Turbine Chat Bot that can handle many wind turbine enth
 
 ::::
 
-### Develop Seamlessly
+## Develop Seamlessly
 
 These tutorials will *level up your Panel developer experience*. You can take them later if you want.
 
@@ -68,7 +68,7 @@ Find inspiration in the community forums, ask for help, help others, share your 
 
 ::::
 
-### Display Content
+## Display Content
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -103,7 +103,7 @@ Build a live, updating dashboard to monitor your wind turbines.
 
 ::::
 
-### Organize Content
+## Organize Content
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -145,7 +145,7 @@ Apply your skills to construct a static Wind Turbine Report, exportable to HTML 
 
 ::::
 
-### Handle User Input
+## Handle User Input
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -194,7 +194,7 @@ Enable your wind turbine technicians to keep track of their tasks.
 
 ::::
 
-### Show Activity
+## Show Activity
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -222,7 +222,7 @@ We will build an image classifier to identify wind turbine images
 
 ::::
 
-### Improve Performance
+## Improve Performance
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -236,8 +236,7 @@ Caching allows your apps to store and reuse valuable computations, reducing the 
 
 ::::
 
-### Style your App
-
+## Style your App
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -265,7 +264,7 @@ We'll guide you through advanced styling, layout optimization, and data visualiz
 
 ::::
 
-### Share your work
+## Share your work
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
