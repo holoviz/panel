@@ -39,7 +39,7 @@ def create_task(text):
     content = pn.pane.Markdown(text)
     remove = pn.widgets.Button(width=BUTTON_WIDTH, icon="trash", sizing_mode="fixed")
     task = pn.Row(state, content, remove, sizing_mode="stretch_width")
-    
+
     pn.bind(remove_task, task, remove, watch=True)
     # We have to bind the below after the above!
     pn.bind(update_state_changed_count, state, remove, watch=True)
@@ -52,7 +52,7 @@ def add_task(text, *args):
 
     new_task = create_task(text)
     tasks.append(new_task)
-    
+
     return tasks
 
 def get_state(*args):

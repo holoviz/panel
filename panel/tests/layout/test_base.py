@@ -598,3 +598,50 @@ def test_pass_objects_ref(document, comm):
     md3 = col.objects[0]
     assert isinstance(md3, Markdown)
     assert md3.object == 'foo'
+
+@pytest.mark.parametrize('dim', ["width", "height"])
+def test_compute_sizing_mode_stretch_margin_none(dim, document, comm):
+    md = Markdown(**{dim: 100})
+    col = Column(md, margin=None, sizing_mode=f'stretch_{dim}')
+
+    root = col.get_root(document, comm=comm)
+
+    new_props = col._compute_sizing_mode(root.children, {'margin': None})
+
+    assert new_props == {f'min_{dim}': 100, 'sizing_mode': f'stretch_{dim}'}
+
+@pytest.mark.parametrize('dim', ["width", "height"])
+def test_compute_sizing_mode_stretch_margin_int(dim, document, comm):
+    margin = 10
+    md = Markdown(**{dim: 100})
+    col = Column(md, margin=margin, sizing_mode=f'stretch_{dim}')
+
+    root = col.get_root(document, comm=comm)
+
+    new_props = col._compute_sizing_mode(root.children, {'margin': margin})
+
+    assert new_props == {f'min_{dim}': 120, 'sizing_mode': f'stretch_{dim}'}
+
+@pytest.mark.parametrize('dim', ["width", "height"])
+def test_compute_sizing_mode_stretch_margin_two_tuple(dim, document, comm):
+    margin = (0, 10) if dim == 'width' else (10, 0)
+    md = Markdown(**{dim: 100})
+    col = Column(md, margin=margin, sizing_mode=f'stretch_{dim}')
+
+    root = col.get_root(document, comm=comm)
+
+    new_props = col._compute_sizing_mode(root.children, {'margin': margin})
+
+    assert new_props == {f'min_{dim}': 120, 'sizing_mode': f'stretch_{dim}'}
+
+@pytest.mark.parametrize('dim', ["width", "height"])
+def test_compute_sizing_mode_stretch_margin_four_tuple(dim, document, comm):
+    margin = (0, 10, 0, 5) if dim == 'width' else (10, 0, 5, 0)
+    md = Markdown(**{dim: 100})
+    col = Column(md, margin=margin, sizing_mode=f'stretch_{dim}')
+
+    root = col.get_root(document, comm=comm)
+
+    new_props = col._compute_sizing_mode(root.children, {'margin': margin})
+
+    assert new_props == {f'min_{dim}': 115, 'sizing_mode': f'stretch_{dim}'}

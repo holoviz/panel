@@ -7,7 +7,13 @@ from panel.tests.util import serve_component, wait_until
 pytestmark = pytest.mark.ui
 
 def test_perspective_no_console_errors(page):
-    perspective = Perspective(pd._testing.makeMixedDataFrame())
+    data = {
+        "A": [0.0, 1.0, 2.0, 3.0, 4.0],
+        "B": [0.0, 1.0, 0.0, 1.0, 0.0],
+        "C": ["foo1", "foo2", "foo3", "foo4", "foo5"],
+        "D": pd.bdate_range("1/1/2009", periods=5),
+    }
+    perspective = Perspective(pd.DataFrame(data))
 
     msgs, _ = serve_component(page, perspective)
 
@@ -18,10 +24,17 @@ def test_perspective_no_console_errors(page):
 
 def test_perspective_click_event(page):
     events = []
-    perspective = Perspective(pd._testing.makeMixedDataFrame())
+    data = {
+        "A": [0.0, 1.0, 2.0, 3.0, 4.0],
+        "B": [0.0, 1.0, 0.0, 1.0, 0.0],
+        "C": ["foo1", "foo2", "foo3", "foo4", "foo5"],
+        "D": pd.bdate_range("1/1/2009", periods=5),
+    }
+    perspective = Perspective(pd.DataFrame(data))
     perspective.on_click(lambda e: events.append(e))
 
     serve_component(page, perspective)
+    page.wait_for_timeout(1000)
 
     page.locator('tr').nth(3).click()
 

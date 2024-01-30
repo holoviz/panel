@@ -1430,21 +1430,38 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
 
 class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     """
-    ReactiveHTML provides bi-directional syncing of arbitrary HTML
-    attributes and DOM properties with parameters on the subclass.
+    The ReactiveHTML class enables you to create custom Panel components using HTML, CSS and/ or
+    Javascript and without the complexities of Javascript build tools.
+
+    A `ReactiveHTML` subclass provides bi-directional syncing of its parameters with arbitrary HTML
+    elements, attributes and properties. The key part of the subclass is the `_template`
+    variable. This is the HTML template that gets rendered and declares how to link parameters on the
+    subclass to HTML.
+
+    >>>    import panel as pn
+    >>>    import param
+    >>>    class CustomComponent(pn.reactive.ReactiveHTML):
+    ...
+    ...        index = param.Integer(default=0)
+    ...
+    ...        _template = '<img id="slideshow" src="https://picsum.photos/800/300?image=${index}" onclick="${_img_click}"></img>'
+    ...
+    ...        def _img_click(self, event):
+    ...            self.index += 1
+    >>>    CustomComponent(width=500, height=200).servable()
 
     HTML templates
     ~~~~~~~~~~~~~~
 
     A ReactiveHTML component is declared by providing an HTML template
     on the `_template` attribute on the class. Parameters are synced by
-    inserting them as template variables of the form `${parameter}`,
+    inserting them as template variables of the form `${parameter_name}`,
     e.g.:
 
-        <div class="${div_class}">${children}</div>
+        <div class="${parameter_1}">${parameter_2}</div>
 
-    will interpolate the div_class parameter on the class. In addition
-    to providing attributes we can also provide children to an HTML
+    will interpolate the parameter1 parameter on the class.
+    In addition to providing attributes we can also provide children to an HTML
     tag. By default any parameter referenced as a child will be
     treated as a Panel components to be rendered into the containing
     HTML. This makes it possible to use ReactiveHTML to lay out other
@@ -1476,17 +1493,17 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     properties are synced when an event is fired. To make this possible
     the HTML element in question must be given a unique id, e.g.:
 
-        <input id="input"></input>
+        <input id="input_el"></input>
 
     Now we can use this name to declare set of `_dom_events` to
     subscribe to. The following will subscribe to change DOM events
     on the input element:
 
-       {'input': ['change']}
+       {'input_el': ['change']}
 
     Once subscribed the class may also define a method following the
     `_{node}_{event}` naming convention which will fire when the DOM
-    event triggers, e.g. we could define a `_input_change` method.
+    event triggers, e.g. we could define a `_input_el_change` method.
     Any such callback will be given a DOMEvent object as the first and
     only argument. The DOMEvent contains information about the event
     on the .data attribute and declares the type of event on the .type
@@ -1498,19 +1515,19 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     Instead of declaring explicit DOM events Python callbacks can also
     be declared inline, e.g.:
 
-        <input id="input" onchange="${_input_change}"></input>
+        <input id="input_el" onchange="${_input_change}"></input>
 
     will look for an `_input_change` method on the ReactiveHTML
     component and call it when the event is fired.
 
     Additionally we can invoke pure JS scripts defined on the class, e.g.:
 
-        <input id="input" onchange="${script('some_script')}"></input>
+        <input id="input_el" onchange="${script('some_script')}"></input>
 
     This will invoke the following script if it is defined on the class:
 
         _scripts = {
-            'some_script': 'console.log(model, data, input, view)'
+            'some_script': 'console.log(model, data, input_el, view)'
        }
 
     Scripts
@@ -1521,13 +1538,13 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     attribute changes. Let us say we have declared an input element
     with a synced value parameter:
 
-        <input id="input" value="${value}"></input>
+        <input id="input_el" value="${value}"></input>
 
     We can now declare a set of `_scripts`, which will fire whenever
     the value updates:
 
         _scripts = {
-            'value': 'console.log(model, data, input)'
+            'value': 'console.log(model, data, input_el)'
        }
 
     The Javascript is provided multiple objects in its namespace
@@ -1535,7 +1552,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
       * data :  The data model holds the current values of the synced
                 parameters, e.g. data.value will reflect the current
-                value of the input node.
+                value of the `input_el` node.
       * model:  The ReactiveHTML model which holds layout information
                 and information about the children and events.
       * state:  An empty state dictionary which scripts can use to
@@ -1545,7 +1562,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 `invalidate_layout` and `run_script` which allows
                 invoking other scripts.
       * <node>: All named DOM nodes in the HTML template, e.g. the
-                `input` node in the example above.
+                `input_el` node in the example above.
     """
 
     _child_config: ClassVar[Mapping[str, str]] = {}
@@ -1652,23 +1669,27 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             p : getattr(self, p) for p in list(Layoutable.param)
             if getattr(self, p) is not None and p != 'name'
         }
-        data_params = {}
+        data_params, event_params = {}, []
         for k, v in self.param.values().items():
+            pobj = self.param[k]
             if (
                 (k in ignored and k != 'name') or
-                ((self.param[k].precedence or 0) < 0) or
-                (isinstance(v, Viewable) and not isinstance(self.param[k], param.ClassSelector))
+                ((pobj.precedence or 0) < 0) or
+                (isinstance(v, Viewable) and not isinstance(pobj, param.ClassSelector))
             ):
                 continue
             if isinstance(v, str):
                 v = HTML_SANITIZER.clean(v)
             data_params[k] = v
+            if isinstance(pobj, param.Event):
+                event_params.append(k)
         html, nodes, self._attrs = self._get_template()
         params.update({
             'attrs': self._attrs,
             'callbacks': self._node_callbacks,
             'data': self._data_model(**self._process_param_change(data_params)),
             'events': self._get_events(),
+            'event_params': event_params,
             'html': escape(textwrap.dedent(html)),
             'nodes': nodes,
             'looped': [node for node, _ in self._parser.looped],
@@ -1977,6 +1998,9 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             model_msg['children'] = children
         self._set_on_model(model_msg, root, model)
         self._set_on_model(data_msg, root, model.data)
+        reset = {p: False for p in data_msg if p in model.event_params}
+        if reset:
+            self._set_on_model(reset, root, model.data)
 
     def on_event(self, node: str, event: str, callback: Callable) -> None:
         """

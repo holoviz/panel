@@ -10,7 +10,10 @@ import traceback
 
 from enum import Enum
 from functools import partial
-from inspect import isasyncgen, isawaitable, isgenerator
+from inspect import (
+    isasyncgen, isasyncgenfunction, isawaitable, iscoroutinefunction,
+    isgenerator,
+)
 from io import BytesIO
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Literal,
@@ -479,12 +482,24 @@ class ChatFeed(ListPanel):
             return
 
         start = asyncio.get_event_loop().time()
-        while not self._callback_state == CallbackState.IDLE and num_entries == len(self._chat_log):
+        while not task.done() and num_entries == len(self._chat_log):
             duration = asyncio.get_event_loop().time() - start
             if duration > self.placeholder_threshold:
                 self.append(self._placeholder)
                 return
-            await asyncio.sleep(0.28)
+            await asyncio.sleep(0.1)
+
+    async def _handle_callback(self, message, loop):
+        callback_args = self._gather_callback_args(message)
+        if iscoroutinefunction(self.callback):
+            response = await self.callback(*callback_args)
+        elif isasyncgenfunction(self.callback):
+            response = self.callback(*callback_args)
+        else:
+            response = await loop.run_in_executor(
+                None, partial(self.callback, *callback_args)
+            )
+        await self._serialize_response(response)
 
     async def _prepare_response(self, _) -> None:
         """
@@ -505,19 +520,12 @@ class ChatFeed(ListPanel):
                 return
 
             num_entries = len(self._chat_log)
-            callback_args = self._gather_callback_args(message)
             loop = asyncio.get_event_loop()
-            if asyncio.iscoroutinefunction(self.callback):
-                future = loop.create_task(self.callback(*callback_args))
-            else:
-                future = loop.run_in_executor(None, partial(self.callback, *callback_args))
+            future = loop.create_task(self._handle_callback(message, loop))
             self._callback_future = future
-            await self._schedule_placeholder(future, num_entries)
-
-            if not future.cancelled():
-                await future
-                response = future.result()
-                await self._serialize_response(response)
+            await asyncio.gather(
+                self._schedule_placeholder(future, num_entries), future,
+            )
         except StopCallback:
             # callback was stopped by user
             self._callback_state = CallbackState.STOPPED
@@ -536,10 +544,16 @@ class ChatFeed(ListPanel):
             else:
                 raise e
         finally:
-            with param.parameterized.batch_call_watchers(self):
-                self._replace_placeholder(None)
-                self._callback_state = CallbackState.IDLE
-                self.disabled = self._was_disabled
+            await self._cleanup_response()
+
+    async def _cleanup_response(self):
+        """
+        Events to always execute after the callback is done.
+        """
+        with param.parameterized.batch_call_watchers(self):
+            self._replace_placeholder(None)
+            self._callback_state = CallbackState.IDLE
+            self.disabled = self._was_disabled
 
     # Public API
 

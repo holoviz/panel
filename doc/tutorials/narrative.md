@@ -26,7 +26,7 @@ Select your profile
 
 ## Basic App Developer
 
-:::{admonition} 
+:::{admonition}
 To keep things basic we will be building apps in a single file using *Widgets* and `pn.bind`. In the *Intermediate App Developer* tutorials we will explore more advanced techniques and build larger multi-file and multi-page apps.
 :::
 
@@ -94,7 +94,7 @@ Build larger and more complex apps by defining state via `pn.rx`.
 
 #### Build a Todo App
 
-Enable your wind turbine technitions to keep track of their tasks.
+Enable your wind turbine technicians to keep track of their tasks.
 
 ### Part 5: Show Activity
 

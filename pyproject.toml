@@ -57,7 +57,7 @@ select = [
 "panel/pane/vtk/synchronizable_*.py" = ["T201"]
 
 [tool.codespell]
-ignore-words-list = "nd,doubleclick"
+ignore-words-list = "nd,doubleclick,ser"
 skip = "doc/generate_modules.py,examples/reference/templates/FastGridTemplate.ipynb,panel/eslint.js,panel/package-lock.json,panel/package.json"
 write-changes = true
 

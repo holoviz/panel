@@ -11,7 +11,7 @@ In this guide you will learn to accept user input with *widgets*:
 - Accept *click* input with the `Button` widget.
 - Accept *text* input with the `TextInput` widget.
 - Accept an object from a list of objects with the `Select` widget.
-- Panels widgets come in groups of *interchangable* widgets.
+- Panels widgets come in groups of *interchangeable* widgets.
   - Replace the `Select` widget with the `RadioButtonGroup` widget to change the user experience.
 - Discover all *Widgets* and their *reference guides* in the [Widgets Section](../../reference/index.md#widgets) of the [Component Gallery](../../reference/index.md).
 
@@ -140,7 +140,7 @@ pn.widgets.RadioButtonGroup(
 ```
 
 :::{Admonition} Note
-Most often widgets allow you to specificy the *initial* `value`.
+Most often widgets allow you to specify the *initial* `value`.
 :::
 
 Run the code below:
@@ -175,7 +175,7 @@ In this tutorial you have learned:
 - Accept *click* input with the `Button` widget.
 - Accept *text* input with the `TextInput` widget.
 - Accept an object from a list of objects with the `Select` widget.
-- Panels widgets come in groups of *interchangable* widgets.
+- Panels widgets come in groups of *interchangeable* widgets.
   - Replace the `Select` widget with the `RadioButtonGroup` widget to change the user experience.
 - Discover all *Widgets* and their *reference guides* in the [Widgets Section](../../reference/index.md#widgets) of the [Component Gallery](../../reference/index.md).
 

@@ -66,5 +66,6 @@ If you want to start contributing, check out the [Contributing Guide](https://gi
 - [Discord](https://discord.gg/rb6gPXbdAr)
 - [Discourse](https://discourse.holoviz.org/)
 - [Github](https://github.com/holoviz/panel)
+
 - [LinkedIn](https://www.linkedin.com/company/panel-org)
 - [X](https://x.com/Panel_org)
