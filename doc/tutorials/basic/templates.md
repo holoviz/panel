@@ -33,6 +33,17 @@ It should look like below
 ![Hello World FastListTemplate App](../../_static/images/templates_hello_world.png)
 
 :::{admonition} Note
+The code refers to
+
+- `pn.template.FastListTemplate`: The specific *template* to use.
+- `title`: An optional title to be displayed in the top *header*.
+- `sidebar`: An optional list of objects to display in the left *sidebar*.
+- `main`: A list of objects to display in the *main* area.
+
+See the [FastListTemplate](../../reference/templates/FastListTemplate.ipynb) *reference guide* for more configuration options.
+:::
+
+:::{admonition} Note
 Panel ships with a large collection of built in templates. There is even a *Slides* template.
 :::
 
@@ -41,12 +52,10 @@ Spend a couple of minutes checking out the [Templates Section](../../reference/i
 
 [![Templates Section](../../_static/images/templates_section.png)](../../reference/index.md#templates)
 
-
-
 ## Don't display a Template in a Notebook
 
 :::{admonition} Note
-Currently *templates* do not display well in a notebook.
+Currently *templates* do not display in a notebook.
 :::
 
 Copy the two code cells below into a notebook.
@@ -143,9 +152,22 @@ It should look like below
 
 ![Customized FastListTemplate App](../../_static/images/templates_customized_default.png)
 
-And in dark mode
+Try clicking the *theme toggle button* in the upper right corner.
+
+It should look like
 
 ![Customized FastListTemplate App](../../_static/images/templates_customized_dark.png)
+
+:::{admonition} Note
+The code refers to
+
+- `pn.config.theme`: The name of the selected *theme*. Either `"default"` or `"dark"`.
+- `alt.themes.enable("dark")`: This is used to give the Altair plot a dark theme. Panel will not do that automatically for you. In the [References](#references) section below you can find a list of how-to guides for styling plots.
+- `accent`: A *primary* or *accent* color to apply to the template. Can be a [*named color*](https://www.w3schools.com/tags/ref_colornames.asp) or a [*hex color value*](https://www.w3schools.com/html/html_colors_hex.asp). You can use this to quickly *brand* your entire app.
+- `main_layout`. A layout to wrap each `main` object in. One of `"card"` (default) or `None`.
+
+The `accent` and `main_layout` arguments only apply to the *Fast* templates, i.e. the [FastListTemplate](../../reference/templates/FastListTemplate.ipynb) and the [FastGridTemplate](../../reference/templates/FastGridTemplate.ipynb).
+:::
 
 ## Recap
 
@@ -163,6 +185,11 @@ In this tutorial we have used *pre-made templates* to easily layout an app with 
 - [Build a Custom Template](../../how_to/templates/template_custom.md)
 - [Customize Template Theme](../../how_to/templates/template_theme.md)
 - [Set a Template](../../how_to/templates/template_set.md)
+- [Style Altair Plots](../../how_to/styling/altair.md)
+- [Style Echarts Plots](../../how_to/styling/echarts.md)
+- [Style Matplotlib Plots](../../how_to/styling/matplotlib.md)
+- [Style Plotly Plots](../../how_to/styling/plotly.md)
+- [Style Vega/ Altair Plots](../../how_to/styling/vega.md)
 - [Toggle Modal](../../how_to/templates/template_modal.md)
 
 ### Explanation
