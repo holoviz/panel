@@ -18,6 +18,10 @@ Enjoying Panel? Show your support with a [Github star](https://github.com/holovi
 <table>
 <tbody>
 <tr>
+<td>Downloads</td>
+<td><a href="https://pepy.tech/badge/panel/" alt="Downloads"><img src="https://img.shields.io/pypi/dm/panel" /></a></td>
+</tr>
+<tr>
 <td>Build Status</td>
 <td><a href="https://github.com/holoviz/panel/actions/workflows/test.yaml?query=branch%3Amain"><img src="https://github.com/holoviz/panel/workflows/tests/badge.svg?query=branch%3Amain" alt="Linux/MacOS Build Status"></a></td>
 </tr>
