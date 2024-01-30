@@ -37,13 +37,34 @@ Then *introduce your self* in the `introduce-yourself` channel.
 :::{admonition} Note
 You can report bugs, ask for new features and contribute improvements at [github.com/holoviz/panel](https://github.com/holoviz/panel).
 
-Before reporting bugs or asking for new features please make sure they are not already in the *Issues* list.
+Before reporting bugs or asking for new features please make sure they are not already in the [*Issues tracker*](https://github.com/holoviz/panel/issues).
 :::
 
 [![Github Issues](../../_static/images/join_community_github.png)](https://github.com/holoviz/panel/issues).
 
+## Announcements and Showcases on Social Media
+
+Follow Panel on [X](https://x.com/Panel_org)
+
+[![Panel on X](../../_static/images/join_community_twitter.png)](https://x.com/Panel_org)
+
+Follow Panel on [LinkedIn](https://www.linkedin.com/company/panel-org)
+
+[![Panel on LinkedIn](../../_static/images/join_community_linkedin.png)](https://www.linkedin.com/company/panel-org)
+
+## Contribute
+
+Panel is an open source, community driven project. We are nothing without the community.
+
+If you want to start contributing, check out the [Contributing Guide](https://github.com/holoviz/panel/blob/main/CONTRIBUTING.MD). Thanks.
+
+[![Panel is an Open Source, Community driven project](../../_static/images/join_community_open_source.png)](https://github.com/holoviz/panel/blob/main/CONTRIBUTING.MD)
+
 ## Resources
 
+- [Contributing Guide](https://github.com/holoviz/panel/blob/main/CONTRIBUTING.MD)
 - [Discord](https://discord.gg/rb6gPXbdAr)
 - [Discourse](https://discourse.holoviz.org/)
 - [Github](https://github.com/holoviz/panel)
+- [LinkedIn](https://www.linkedin.com/company/panel-org)
+- [X](https://x.com/Panel_org)
