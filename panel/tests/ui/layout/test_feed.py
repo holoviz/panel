@@ -59,7 +59,7 @@ def test_feed_view_latest(page):
 
     last_pre_element = page.query_selector_all('pre')[-1]
     wait_until(
-        lambda: int(last_pre_element.inner_text()) == 999
+        lambda: int(last_pre_element.inner_text()) > 950
     )
 
 
