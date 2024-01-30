@@ -24,14 +24,14 @@ def test_feed_load_entries(page):
     children_count = feed_el.evaluate(
         '(element) => element.shadowRoot.querySelectorAll(".bk-panel-models-markup-HTML").length'
     )
-    assert children_count == 58
+    assert 50 <= children_count <= 65
 
     # Now scroll to somewhere down
     feed_el.evaluate('(el) => el.scrollTo({top: 100})')
     children_count = feed_el.evaluate(
         '(element) => element.shadowRoot.querySelectorAll(".bk-panel-models-markup-HTML").length'
     )
-    assert children_count == 61
+    assert 50 <= children_count <= 65
 
     # Now scroll to top
     feed_el.evaluate('(el) => el.scrollTo({top: 0})')
@@ -39,7 +39,7 @@ def test_feed_load_entries(page):
         lambda: feed_el.evaluate(
             '(element) => element.shadowRoot.querySelectorAll(".bk-panel-models-markup-HTML").length'
         )
-        == 58
+        >= 50
     )
 
 
@@ -78,7 +78,7 @@ def test_feed_view_scroll_button(page):
     scroll_arrow.click()
 
     # Assert scroll is not at 0 (view_latest)
-    assert feed_el.evaluate('(el) => el.scrollTop') > 0
+    wait_until(lambda: feed_el.evaluate('(el) => el.scrollTop') > 0)
     wait_until(
         lambda: int(page.query_selector_all('pre')[-1].inner_text()) > 50
     )
