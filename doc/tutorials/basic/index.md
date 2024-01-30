@@ -108,18 +108,18 @@ Build a live, updating dashboard to monitor your wind turbines.
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` Use Templates
-:link: templates
-:link-type: doc
-
-Use pre-made templates to easily layout your apps with a header, sidebar and main area
-:::
-
 :::{grid-item-card} {octicon}`table;2.5em;sd-mr-1` Layout Content
 :link: layouts
 :link-type: doc
 
 Layout your Panel apps as beautifully as you would layout your wind farm.
+:::
+
+:::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` Use Templates
+:link: templates
+:link-type: doc
+
+Use pre-made templates to easily layout your apps with a header, sidebar and main area
 :::
 
 :::{grid-item-card} {octicon}`screen-full;2.5em;sd-mr-1` Control the Size

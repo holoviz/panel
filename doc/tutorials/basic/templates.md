@@ -67,10 +67,9 @@ The code refers to
 See the [FastListTemplate](../../reference/templates/FastListTemplate.ipynb) *reference guide* for more configuration options.
 :::
 
-:::{note}
+:::{tip}
 Panel ships with a large collection of built in templates. There is even a *Slides* template.
 :::
-
 
 Spend a couple of minutes checking out the [Templates Section](../../reference/index.md#templates) of the [Component Gallery](../../reference/index.md). Then return here.
 

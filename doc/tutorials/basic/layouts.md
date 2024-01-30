@@ -15,7 +15,7 @@ In this tutorial you will **not learn** how to
 - Style *layouts*. This topic is covered by another tutorial.
 
 :::{note}
-When I ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
+When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
 ## Install the Dependencies
@@ -150,7 +150,7 @@ pn.Column(component[0], component[2], component[1]).servable()
 ```
 
 :::{note}
-We used the *list-like* properties of the `Column` to re-arrange it. More specifically we used *list-indexing* as in `component[2]`.
+We used the *list-like* properties of the `Column` to re-arrange it. More specifically we used *list-indexing* as in `component[2]`. It implements all the methods you would expect from a *list-like* object, including `.append` and `.remove`.
 :::
 
 ## Displays using `pn.panel`
@@ -274,8 +274,8 @@ In this guide you have learned:
 
 ### Tutorials
 
-- [Display objects with `pn.panel`](.md)
-- [Display objects with Panes](.md)
+- [Display objects with `pn.panel`](pn_panel.md)
+- [Display objects with Panes](panes.md)
 
 ### How-to
 

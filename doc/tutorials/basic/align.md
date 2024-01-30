@@ -2,7 +2,7 @@
 
 COMING UP: `align`
 
-ChatGPT suggests this is *intermediate* level stuff.
+ChatGPT suggests this is *intermediate* level.
 
 ## References
 
