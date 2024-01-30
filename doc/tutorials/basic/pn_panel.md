@@ -11,7 +11,7 @@ In this guide you will learn to display Python objects easily and dynamically wi
 - Use a specific *Pane* instead of `pn.panel` if performance is key
 - Add javascript dependencies via `pn.extension`. For example `pn.extension("plotly")`
 
-:::{admonition} Note
+:::{note}
 When I ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
@@ -56,11 +56,11 @@ pn.extension()
 pn.panel("Hello World").servable()
 ```
 
-:::{admonition} Note
+:::{note}
 We add `.servable()` to the component to add it to the app served by `panel serve app.py --autoreload`. Adding `.servable()` is not needed to display the component in a notebook.
 :::
 
-:::{admonition} Note
+:::{note}
 `pn.panel` uses a *heuristic* algorithm to determine how to best display the `object` passed as argument. To make this very explicit we will `print` the component in all the examples below.
 :::
 
@@ -77,7 +77,7 @@ print(component)
 component.servable()
 ```
 
-:::{admonition} Note
+:::{note}
 Your cell or terminal output should contain `Markdown(str)`. It means `pn.panel` has picked the [`Markdown`](../../reference/panes/Markdown.md) pane to display the `str` object.
 :::
 
@@ -137,7 +137,7 @@ component.servable()
 
 Please notice `pn.panel` chose a [`Matplotlib`](../../reference/panes/Matplotlib.md) pane to display the Matplotlib figure.
 
-:::{admonition} Note
+:::{note}
 In the example above we provided arguments to `pn.panel`. These will be applied to the *pane* selected by `pn.panel` to display the object. In this example the [`Matplotlib`](../../reference/panes/Matplotlib.md) pane is selected.
 
 The arguments `dpi` and `tight` would not make sense if a string was provided as argument to `pn.panel`. In that case `pn.panel` would pick a [Markdown](../../reference/panes/Markdown.md) *pane* and the exception `TypeError: Markdown.__init__() got an unexpected keyword argument 'dpi'` would be raised.
@@ -169,7 +169,7 @@ component.servable()
 
 Please notice that `pn.panel` chose a [`HoloViews`](../../reference/panes/HoloViews.md) pane to display the [hvPlot](https://hvplot.holoviz.org/user_guide/Customization.html) figure.
 
-:::{admonition} Note
+:::{note}
 [hvPlot](https://hvplot.holoviz.org) is the **easy to use** plotting sister of Panel. It works similarly to the the familiar [Pandas `.plot` api](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.plot.html). hvPlot is built on top of the data visualization library [HoloViews](https://holoviews.org/). hvPlot, HoloViews and Panel are all part of the [HoloViz](https://holoviz.org/) family.
 :::
 
@@ -201,7 +201,7 @@ component.servable()
 
 Please notice that `pn.panel` chose a [`Plotly`](../../reference/panes/Plotly.md) pane to display the Plotly figure.
 
-:::{admonition} Note
+:::{note}
 We must add `"plotly"` as an argument to `pn.extension` in the example to load the Plotly Javascript dependencies in the browser.
 
 If we forget to add `"plotly"` to `pn.extension` then the Plotly figure will not display in
@@ -229,7 +229,7 @@ print(component)
 component.servable()
 ```
 
-```{admonition} Note
+```{note}
 If you want to display larger dataframes, customize the way the dataframes are displayed or make them more interactive you can find specialized components in the [Component Gallery](../../reference/index.md) supporting these use cases. For example the [Tabulator](https://panel.holoviz.org/reference/widgets/Tabulator.html) widget and [Perspective](https://panel.holoviz.org/reference/panes/Perspective.html) pane.
 ```
 
@@ -273,7 +273,7 @@ print(component)
 component.servable()
 ```
 
-:::{admonition} Note
+:::{note}
 When Python objects are given as an argument to a Panel [Layout](../../reference/index.md#layouts) like [`pn.Column`](../../reference/layouts/Column.md), then `pn.Column` will automatically apply `pn.panel` to the objects for you.
 :::
 
@@ -298,7 +298,7 @@ component.servable()
 
 ## Consider Performance
 
-:::{admonition} Note
+:::{note}
 `pn.panel` is an easy to use and flexible **helper function** that will convert an object into a [*Pane*](../../reference/index.md#panes).
 
 More specifically `pn.panel` resolves the appropriate *representation* for an object by checking all [*Pane*](../../reference/index.md#panes) object types available and then ranking them by priority. When passing a string (for instance) there are many representations, but the [`PNG`](../../reference/panes/PNG.md) pane takes precedence if the string is a valid URL or local file path ending in `.png`.

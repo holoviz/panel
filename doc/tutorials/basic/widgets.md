@@ -21,17 +21,17 @@ In this tutorial you will **not learn** how to
 - React to user input. This is covered by the [React to User Input](bind.md) tutorial
 - Style or align *Widgets*. These topics are covered by other tutorials.
 
-:::{admonition} Note
-A *Widget* is a component that can accept user inputs. It normally provide the user input via the `value` parameter. In a few cases like the [`Tabulator`](../../reference/widgets/Tabulator.ipynb) widget via other parameters.
+:::{note}
+A *Widget* is a component that can accept user inputs via the `value` parameter. Certain, more complex, widgets, such as [`Tabulator`](../../reference/widgets/Tabulator.ipynb) may allow additional forms of input via other parameters.
 
 A *Widget* is defined as a component that inherits from the `Widget` base class.
 :::
 
-:::{admonition} Note
-In some cases Panes can accept user input too. For example the [`ECharts`](../../reference/panes/ECharts.ipynb), [`Plotly`](../../reference/panes/Plotly.ipynb) and [`Vega`](../../reference/panes/Vega.ipynb) (Altair) panes can accept user inputs.
+:::{note}
+In some cases Panes can accept user input too. For example the [`ECharts`](../../reference/panes/ECharts.ipynb), [`Plotly`](../../reference/panes/Plotly.ipynb) and [`Vega`](../../reference/panes/Vega.ipynb) (Altair) panes can accept user inputs. These are usually selections, instead of modifying the underlying `object`.
 :::
 
-:::{admonition} Note
+:::{note}
 When I ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
@@ -56,15 +56,15 @@ As you can see the `Button` is quite feature rich supporting `icon`, `button_typ
 
 Try hovering over the button. You will see the `description` shown as a tooltip.
 
-:::{admonition} Note
+:::{note}
 We add `.servable()` to the component to add it to the app served by `panel serve app.py --autoreload`. Adding `.servable()` is not needed to display the component in a notebook.
 :::
 
-:::{admonition} Note
+:::{note}
 To learn in detail how a *widget* like `Button` works you should refer to its *reference guide*.
 :::
 
-Click [this link](../../reference/widgets/Button.ipynb) to the `Button` Reference Guide and spend a few minutes to familiarize your self with its organisation and content.
+Click [this link](../../reference/widgets/Button.ipynb) to the `Button` Reference Guide and spend a few minutes to familiarize your self with its organization and content.
 
 It should look like
 
@@ -121,7 +121,7 @@ pn.widgets.Select(
 ).servable()
 ```
 
-:::{admonition} Note
+:::{note}
 Panels widgets comes in groups of *interchangeable* widgets. For example its very easy to replace the `Select` widget with the `RadioButtonGroup` widget.
 :::
 
@@ -140,7 +140,7 @@ pn.widgets.RadioButtonGroup(
 ```
 
 :::{Admonition} Note
-Most often widgets allow you to specify the *initial* `value`.
+Usually widgets allow you to specify the *initial* `value`.
 :::
 
 Run the code below:

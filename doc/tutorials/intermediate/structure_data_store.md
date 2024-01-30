@@ -7,7 +7,7 @@ In this tutorial you will learn how to use the `DataStore` *design pattern*:
 - One or more `View` components consumes the *transformed* data.
 - The components can be (re-)used for data exploration in notebooks and for building apps.
 
-:::{admonition} Note
+:::{note}
 When building a larger application we generally recommend using a *class based construction* and following best practices for object-oriented programming, specifically composition.
 :::
 
@@ -113,7 +113,7 @@ class DataStore(Viewer):
         )
 ```
 
-:::{admonition} Note
+:::{note}
 The `DataStore` class is be responsible for transforming `data` in various ways.
 
 1. The `DataStore` must receive `data` as an argument when instantiated.
@@ -215,7 +215,7 @@ class Indicators(View):
         )
 ```
 
-:::{admonition} Note
+:::{note}
 Here we declared a *base* `View` class that holds a reference to the `DataStore` as a parameter. Now we can have any number of concrete `View` classes that consume data from the `DataStore` and render it in any number of ways:
 :::
 
@@ -280,7 +280,7 @@ The app will look something like
 
 ## Reuse in a Notebook
 
-:::{admonition} Note
+:::{note}
 The beauty of the *compositional approach* to constructing application components is that they are now usable in multiple contexts.
 :::
 

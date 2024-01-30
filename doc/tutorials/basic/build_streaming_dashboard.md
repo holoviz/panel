@@ -2,7 +2,7 @@
 
 In this tutorial we build a simple streaming dashboard to monitor the wind speed and power output of one of your wind turbines.
 
-:::{admonition} Note
+:::{note}
 When I ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 

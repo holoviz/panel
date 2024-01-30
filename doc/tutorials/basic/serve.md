@@ -2,8 +2,8 @@
 
 In this tutorial we will develop and *serve* a *Hello World* Panel app.
 
-:::{admonition} Note
-Panel can serve apps from Python Scripts, Notebooks and Markdown files. I've prepared a section for each of the 3 file types. Feel free to focus on your favorite.
+:::{note}
+Panel can serve apps from Python Scripts, Notebooks and Markdown files. We have prepared sections for Python scripts and notebooks, focus on the one that best fits your current workflow.
 :::
 
 ## Serve a Python script
@@ -18,7 +18,7 @@ pn.extension()
 pn.panel("Hello World").servable()
 ```
 
-:::{admonition} Note
+:::{note}
 The code refers to
 
 - `panel`: The Panel python package. Its a convention to import it as `pn`.
@@ -27,17 +27,17 @@ The code refers to
 - `.servable()`: Displays the component in a *server app*.
 :::
 
-Copy code into a file named `app.py`.
+Copy the code into a file named `app.py`.
 
 Save the file.
 
-Run the Panel server with
+Run the Panel server in your terminal with
 
 ```bash
 panel serve app.py --autoreload
 ```
 
-It will look like
+When the server has started the terminal output should look like this
 
 ```bash
 $ panel serve app.py --autoreload
@@ -47,7 +47,7 @@ $ panel serve app.py --autoreload
 2024-01-17 15:49:11,450 Starting Bokeh server with process id: 47256
 ```
 
-:::{admonition} Note
+:::{note}
 The command `panel serve app.py --autoreload` refers to:
 
 - `panel`: the panel executable.
@@ -62,10 +62,9 @@ In the output, you will find the line
 Bokeh app running at: http://localhost:5006/app
 ```
 
-That line shows the URL where your app is being served, in your local machine.
+That line shows the URL where your app is being served, on your local machine.
 
-
-:::{admonition} Note
+:::{note}
 The `Bokeh server` is mentioned because Panel is built on top of [Bokeh](https://docs.bokeh.org).
 :::
 
@@ -97,7 +96,7 @@ It should look like
 
 ![Panel Notebook App](../../_static/images/panel-serve-ipynb-notebook.png).
 
-:::{admonition} Note
+:::{note}
 The code refers to
 
 - `panel`: The Panel python package. Its a convention to import it as `pn`.
@@ -106,13 +105,13 @@ The code refers to
 - `.servable()`: Displays the component in a *server app*.
 :::
 
-Run the Panel server with
+Run the Panel server in your terminal with
 
 ```bash
 panel serve app.ipynb --autoreload
 ```
 
-It will look like
+When the server has started the terminal output should look like this
 
 ```bash
 $ panel serve app.ipynb --autoreload
@@ -122,7 +121,7 @@ $ panel serve app.ipynb --autoreload
 2024-01-17 21:05:32,342 Starting Bokeh server with process id: 42008
 ```
 
-:::{admonition} Note
+:::{note}
 The command `panel serve app.ipynb --autoreload` refers to:
 
 - `panel`: the panel executable.
@@ -149,7 +148,7 @@ Now stop the server by pressing `CTRL+C` one or more times in the terminal.
 
 ## Serve a Markdown document
 
-:::{admonition} Note
+:::{note}
 The command `panel serve app.md` will serve a Markdown file as a live Panel app. You can use this feature if your use case is developing live, interactive documentation in Markdown files.
 
 Check out the [Write and serve apps in Markdown](../../how_to/editor/markdown.md) how-to guide for more information.

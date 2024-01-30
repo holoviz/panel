@@ -4,14 +4,14 @@ In this section we will use the [Swipe](../../reference/layouts/Swipe.ipynb) *la
 
 This will barely scratch the surface of what Panel has to offer for exploratory data analysis (EDA) workflow. That is why we say that *Panel is **the powerful data exploration** and web app **framework***.
 
-:::{admonition} Note
+:::{note}
 When I ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
 ```{pydodide}
 import panel as pn
 
-pn.extension("perspective)
+pn.extension("perspective")
 ```
 
 ## Compare Temperatures with Swipe
@@ -50,14 +50,14 @@ df = pd.read_csv("https://assets.holoviz.org/panel/tutorials/turbines.csv.gz")
 pn.pane.Perspective(df, sizing_mode="stretch_width", height=600).servable()
 ```
 
-:::{admonition} Note
+:::{note}
 The code refers to
 
 - `pn.extension("perspective")`: We instruct Panel to load the javascript dependencies of [Perspective](../../reference/panes/Perspective.ipynb) into the notebook or server app.
 - `pn.pane.Perspective(df, sizing_mode="stretch_width", height=600)`: Display the dataframe `df` with the [Perspective](../../reference/panes/Perspective.ipynb) *pane*. Stretch the width as much as possible and use a `height` of 600 pixels. You will learn much more about this later.
 :::
 
-:::{admonition} Note
+:::{note}
 You can use the pivoting capabilities of [Perspective](../../reference/panes/Perspective.ipynb) to explore the data. You can *drag* columns and *drop* them into the `Group By`, `Split By`, `Order By` and `Where` input areas. You can *CTRL drag* if a column must be used in multiple places.
 :::
 
@@ -66,17 +66,15 @@ Find the Manufacturers (`t_manu`) with the highest installed capacity (`p_cap`):
 - *Group By* `t_manu`
 - *Display* and *Order By* `p_cap`
 
-<details><summary>Solution: Capacity by Manufactorer Table</summary>
-
+:::{dropdown} Solution: Capacity by Manufactorer Table
 ![Perspective Table](../../_static/images/explore_data_perspective_table.png)
-</details>
+:::
 
 Change the visualization from a `Datagrid` to an `X Bar` chart.
 
-<details><summary>Solution: Capacity by Manufactorer Chart</summary>
-
+:::{dropdown} Solution: Capacity by Manufactorer Chart
 ![Perspective Chart](../../_static/images/explore_data_perspective_chart.png)
-</details>
+:::
 
 ## Recap
 

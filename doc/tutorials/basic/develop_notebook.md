@@ -7,7 +7,7 @@ In this section you will learn the basics of developing Panel apps efficiently i
 - Inspect your component using `SHIFT+Tab` and `print`.
 - Inspect your components class and instance parameters using `.param`.
 
-:::{admonition} Note
+:::{note}
 In this guide we will assume you are working in [Jupyter lab](https://jupyter.org/). Panel works in many other notebook environments. But non-jupyterlab notebook environments might need special configuration before supporting Panel appropriately. Check out the [Resources](#resources) section below for specific guidance.
 :::
 
@@ -65,7 +65,7 @@ It should look like
 
 ![Panel Notebook App](../../_static/images/develop_notebook_simple_example.png)
 
-:::{admonition} Note
+:::{note}
 The code in the notebook refer to
 
 - `panel`: The Panel python package. Its a convention to import it as `pn`.
@@ -74,7 +74,7 @@ The code in the notebook refer to
 - `.servable()`: Displays the component in a *server app*.
 :::
 
-:::{admonition} Note
+:::{note}
 The little, blue Panel icon above the notebook will launch a *preview* of your app. We call this icon the *Jupyter Panel Preview* icon.
 :::
 
@@ -84,7 +84,7 @@ You will see the app launching in a separate window on the right.
 
 ![Jupyter Panel Preview](../../_static/images/develop_notebook_simple_example_open_preview.png)
 
-:::{admonition} Note
+:::{note}
 You will notice that "Hello Again" is not displayed in the app preview. That is because `pn.panel("Hello Again")` has not been marked `.servable()`.
 :::
 
@@ -104,7 +104,7 @@ The *preview* will reload and look like
 
 ![Reloaded Preview](../../_static/images/develop_notebook_simple_example_add_hello_again.png)
 
-:::{admonition} Note
+:::{note}
 To enable a more efficient workflow you can check the *Render on Save* checkbox. This will *auto reload* your app when the notebook is saved.
 :::
 
@@ -131,7 +131,7 @@ Watch the video below to learn how the techniques above can be used to develop a
 
 ## Serve your app with autoreload
 
-:::{admonition} Note
+:::{note}
 A currently faster alternative to the *Jupyter Panel Preview* is serving the notebook externally with autoreload using a command like `panel serve app.ipynb --autoreload`.
 :::
 
@@ -201,7 +201,7 @@ It should look something like
     Your browser does not support the video tag.
 </video>
 
-:::{admonition} Note
+:::{note}
 You should only serve your apps with `--autoreload` while developing
 :::
 
@@ -237,7 +237,7 @@ It should look like
 
 [![IntSlider Reference Documentation](../../_static/images/notebook_intslider_reference_doc.png)](https://panel.holoviz.org/reference/widgets/IntSlider.html)
 
-:::{admonition} Note
+:::{note}
 It is a great idea to use the *Example* code snippets and *Reference* links to speed up your workflow.
 :::
 
@@ -270,7 +270,7 @@ It should look like
 
 ![Inspect a Panel component](../../_static/images/notebook_inspect_print.png)
 
-:::{admonition} Note
+:::{note}
 By printing *layout* components like `Column` you can understand how its composed. This enables you to *access* the subcomponents of the layout.
 :::
 
@@ -312,7 +312,7 @@ It should look like
 
 ![Inspect a Panel component class with .param](../../_static/images/notebook_inspect_param_class.png)
 
-:::{admonition} Note
+:::{note}
 - The `.param` table shows you the **default** parameter values of the `IntSlider` **class**. For example the *default* value of `align` is `'start'`.
 - The `.param` table shows you additional information like the `Type` and `Range` of the Parameter.
 :::
@@ -329,7 +329,7 @@ It should look like
 
 ![Inspect a Panel component instance with .param](../../_static/images/notebook_inspect_param_instance.png)
 
-:::{admonition} Note
+:::{note}
 - In the picture above you see the **actual** parameter values of the `IntSlider` **instance**. For example the *actual* value of `align` is `'end'`.
 :::
 

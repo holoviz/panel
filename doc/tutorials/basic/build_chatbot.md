@@ -2,7 +2,7 @@
 
 In this tutorial we will build a streaming *chat bot*. We will first use the *high-level* [`ChatInterface`](../../reference/chat/ChatInterface.ipynb) to build a basic chat bot. Then we will add streaming.
 
-:::{admonition} Note
+:::{note}
 When I ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
@@ -31,13 +31,13 @@ chat_bot.servable()
 
 Try entering `What is a wind turbine?` in the *text input* and click *Send*.
 
-:::{admonition}
-The `callback` function `get_response` will receive `"What is a wind turbine?"` in the `contents` argument. Since `contents` contains the word *turbine*, the chat bot will return `WIND_TURBINE` as the `response`.
+:::{hint}
+The `callback` function `get_response` will receive `"What is a wind turbine?"` in the `contents` argument. Since `contents` contains the word *turbine*, the chat bot will return `"A wind turbine converts wind energy into electricity."` as the `response`.
 :::
 
 ## Add Streaming
 
-We will now make the chat bot *stream* its response just like chatGPT does.
+We will now make the chat bot *stream* its response just like ChatGPT does.
 
 Run the code below:
 
@@ -63,17 +63,17 @@ chat_bot.servable()
 
 Try entering `What is a wind turbine?` in the *text input* and click *Send*.
 
-:::{admonition} Note
+:::{note}
 The chat app is now *streaming* because we `yield` the partial `response` instead of `return`ing the full `response`.
 :::
 
-:::{admonition} Note
+:::{note}
 To make the Streaming Chat Bot scale to many users you should be using `async`. You will learn more about scaling applications and `async` in the [Intermediate Tutorials](../intermediate/index.md).
 :::
 
 ## Learn More
 
-:::{admonition} Note
+:::{note}
 You can learn more about the `ChatInterface` via its [*reference guide*](../../reference/chat/ChatInterface.html). You find the *reference guide* in the [Chat Section](/reference/index.html#chat) of the [Component Gallery](../../reference/index.md).
 :::
 
@@ -81,11 +81,14 @@ You can learn more about the `ChatInterface` via its [*reference guide*](../../r
 
 ## Find Inspiration
 
-:::{admonition} Note
+:::{note}
 If you want to build more advanced chat bots, [Panel-Chat-Examples](https://holoviz-topics.github.io/panel-chat-examples/) for inspiration and starter templates.
 :::
 
-[<img src="../../_static/images/panel-chat-examples.png" height="300"></img>](https://holoviz-topics.github.io/panel-chat-examples/)
+:::{image} ../../_static/images/panel-chat-examples.png
+:height: 300px
+:target: https://holoviz-topics.github.io/panel-chat-examples/
+:::
 
 ## Recap
 

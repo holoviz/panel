@@ -4,11 +4,11 @@ In this section you will learn more advances techniques to develop efficiently i
 
 - Debug with [Pdb](https://docs.python.org/3/library/pdb.html) by inserting a `breakpoint()`
 
-:::{admonition} Note
+:::{note}
 This guide builds upon the [Develop in an Editor (beginner)](../basic/develop_editor.md) tutorial.
 :::
 
-:::{admonition} Note
+:::{note}
 Some of the features demonstrated in this guide might require special configuration of your editor. For configuration we refer you to the [Resources](#resources) section below and general resources on the web.
 :::
 
@@ -83,11 +83,11 @@ exec  pdb
 
 Write `c` and press `ENTER` to continue running the code and server.
 
-:::{admonition} Note
+:::{note}
 For more about debugging with [Pdb](https://docs.python.org/3/library/pdb.html) and `breakpoint` please check out the [PDB Documentation](https://docs.python.org/3/library/pdb.html).
 :::
 
-:::{admonition} Note
+:::{note}
 For *integrated debugging* in your editor, please refer to the [Resources](#resources) section below and general resources on the web.
 :::
 

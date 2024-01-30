@@ -8,7 +8,7 @@ I will assume you already have a Github account. If not please follow the offici
 
 ## Detailed discussions on Discourse
 
-:::{admonition} Note
+:::{note}
 [Discourse](https://discourse.holoviz.org/) is the place for detailed discussions around code. Here you can ask for help, find answers to other users questions and show case your work.
 
 When asking questions please include a [Minimal, Reproducible Example](https://stackoverflow.com/help/minimal-reproducible-example) if at all possible. It will make it much, much easier to help you.
@@ -22,7 +22,7 @@ Click [this link](https://discourse.holoviz.org/t/welcome-please-introduce-yours
 
 ## Quick chats on Discord
 
-:::{admonition} Note
+:::{note}
 [Discord](https://discord.gg/rb6gPXbdAr) is the place for quick and live discussions.
 :::
 
@@ -34,7 +34,7 @@ Then *introduce your self* in the `introduce-yourself` channel.
 
 ## Bugs, Features and Contributions on Github
 
-:::{admonition} Note
+:::{note}
 You can report bugs, ask for new features and contribute improvements at [github.com/holoviz/panel](https://github.com/holoviz/panel).
 
 Before reporting bugs or asking for new features please make sure they are not already in the [*Issues tracker*](https://github.com/holoviz/panel/issues).

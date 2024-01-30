@@ -5,7 +5,7 @@ In this tutorial you will learn more advanced techniques to serve Panel apps:
 - serve a multi page app by providing a list of files or [*globs*](https://en.wikipedia.org/wiki/Glob_(programming)).
 - list the configuration options of `panel serve` by adding the flag `--help`.
 
-:::{admonition} Note
+:::{note}
 This guide builds upon the [Serve Panel Apps (beginner)](../basic/) tutorial.
 :::
 
@@ -56,7 +56,7 @@ It will look something like
 
 ![Panel serve multi page app](../../_static/images/panel-serve-multipage-app.png)
 
-:::{admonition} Note
+:::{note}
 You can also use one or more [*globs*](https://en.wikipedia.org/wiki/Glob_(programming)) to serve a long or dynamic list of apps. For example `apps/*`, `pages/*.py`, `examples/*.ipynb` or `docs/*.md`.
 :::
 

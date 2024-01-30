@@ -56,7 +56,7 @@ It should look like below
 
 ![Hello World FastListTemplate App](../../_static/images/templates_hello_world.png)
 
-:::{admonition} Note
+:::{note}
 The code refers to
 
 - `pn.template.FastListTemplate`: The specific *template* to use.
@@ -67,7 +67,7 @@ The code refers to
 See the [FastListTemplate](../../reference/templates/FastListTemplate.ipynb) *reference guide* for more configuration options.
 :::
 
-:::{admonition} Note
+:::{note}
 Panel ships with a large collection of built in templates. There is even a *Slides* template.
 :::
 
@@ -78,7 +78,7 @@ Spend a couple of minutes checking out the [Templates Section](../../reference/i
 
 ## Use a Template in a Notebook
 
-:::{admonition} Note
+:::{note}
 Currently *templates* do not display in a notebook.
 :::
 
@@ -182,7 +182,7 @@ It should look like
 
 ![Customized FastListTemplate App](../../_static/images/templates_customized_dark.png)
 
-:::{admonition} Note
+:::{note}
 The code refers to
 
 - `pn.config.theme`: The name of the selected *theme*. Either `"default"` or `"dark"`.

@@ -14,7 +14,7 @@ In this tutorial you will **not learn** how to
 - Use specific *layouts* in detail. Details are covered by the *[reference guides](../../reference/index.md#layouts)*.
 - Style *layouts*. This topic is covered by another tutorial.
 
-:::{admonition} Note
+:::{note}
 When I ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
@@ -70,7 +70,7 @@ data = pd.DataFrame(
 pn.Column("# Orders", data, button).servable()
 ```
 
-:::{admonition} Note
+:::{note}
 To learn in detail how a layout like `Column` works you should refer to its *reference guide*.
 :::
 
@@ -118,7 +118,7 @@ It should look like
 
 ## Works like a list
 
-:::{admonition} Note
+:::{note}
 `Column`, `Row` and many other layouts are *list-like*.
 :::
 
@@ -149,7 +149,7 @@ component = pn.Column("# Orders", data, button)
 pn.Column(component[0], component[2], component[1]).servable()
 ```
 
-:::{admonition} Note
+:::{note}
 We used the *list-like* properties of the `Column` to re-arrange it. More specifically we used *list-indexing* as in `component[2]`.
 :::
 
@@ -183,7 +183,7 @@ print(component)
 component.servable()
 ```
 
-:::{admonition} Note
+:::{note}
 The `print` statement will output something like
 
 ```bash
@@ -228,7 +228,7 @@ pn.Column(
 
 ## Combine Layouts
 
-:::{admonition} Note
+:::{note}
 To create more complex arrangements of objects, you can combine and nest *layouts*
 :::
 

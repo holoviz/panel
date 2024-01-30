@@ -7,7 +7,7 @@ In this section we will build a *Todo App* so that our wind turbine technicians 
 - Keep track of how many completed tasks there are
 - Disable or hide Buttons it does not make sense to click
 
-:::{admonition} Note
+:::{note}
 When I ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
@@ -118,7 +118,7 @@ Try to
 - Add 3 Tasks
 - Check 1 of 3 tasks and see the `status_message` update accordingly.
 
-:::{admonition} Note
+:::{note}
 A todo app can be build in many other ways. The main purpose of this example is for you to acquire the basic skills needed to develop *stateful*, *dynamically updating* apps like this one.
 :::
 

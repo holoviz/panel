@@ -15,13 +15,13 @@ In this tutorial you will **not learn** how to
 - use *Panes* in detail. Details are covered by the *[reference guides](../../reference/index.md#panes)*.
 - layout and styles *Panes*. These topics are covered by other tutorials.
 
-:::{admonition} Note
+:::{note}
 A *Pane* is a component that can display an object. It takes an `object` as an argument.
 
 A *Pane* is defined as a component that inherits from the `PaneBase` class.
 :::
 
-:::{admonition} Note
+:::{note}
 When I ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
@@ -70,11 +70,11 @@ pn.pane.Str(
 ).servable()
 ```
 
-:::{admonition} Note
+:::{note}
 We add `.servable()` to the component to add it to the app served by `panel serve app.py --autoreload`. Adding `.servable()` is not needed to display the component in a notebook.
 :::
 
-:::{admonition} Note
+:::{note}
 To learn in detail how a pane like `Str` works you should refer to its *reference guide*.
 :::
 
@@ -162,7 +162,7 @@ fig = create_matplotlib_figure()
 pn.pane.Matplotlib(fig, dpi=144, tight=True).servable()
 ```
 
-:::{admonition} Note
+:::{note}
 In the example we provide the arguments `dpi` and `tight` to the `Matplotlib` pane. You can find explanations and more arguments in the [Matplotlib Reference Guide](../../reference/panes/Matplotlib.ipynb).
 :::
 
@@ -187,7 +187,7 @@ fig = df.hvplot()
 pn.pane.HoloViews(fig, sizing_mode="stretch_width").servable()
 ```
 
-:::{admonition} Note
+:::{note}
 [hvPlot](https://hvplot.holoviz.org) is the **easy to use** plotting sister of Panel. It works similarly to the the familiar [Pandas `.plot` api](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.plot.html). hvPlot is built on top of the data visualization library [HoloViews](https://holoviews.org/). hvPlot, HoloViews and Panel are all part of the [HoloViz](https://holoviz.org/) family.
 :::
 
@@ -214,7 +214,7 @@ fig.layout.autosize = True
 pn.pane.Plotly(fig, height=400).servable()
 ```
 
-:::{admonition} Note
+:::{note}
 We must add `"plotly"` as an argument to `pn.extension` in the example to load the Plotly Javascript dependencies in the browser.
 
 If we forget to add `"plotly"` to `pn.extension` then the Plotly figure will not display in
@@ -240,7 +240,7 @@ data = pd.DataFrame([
 pn.pane.DataFrame(data).servable()
 ```
 
-```{admonition} Note
+```{note}
 If you want to display larger dataframes, customize the way the dataframes are displayed or make them more interactive you can find specialized components in the [Component Gallery](../../reference/index.md) supporting these use cases. For example the [Tabulator](../../reference/widgets/Tabulator.ipynb) widget and [Perspective](../../reference/panes/Perspective.ipynb) pane.
 ```
 

@@ -101,11 +101,11 @@ It should look like
     Your browser does not support the video tag.
 </video>
 
-:::{admonition} Note
+:::{note}
 In the video above you will notice that the app is displayed inside the editor. This feature is supported in VS Code as the *simple browser*. PyCharm supports a similar feature via an extension.
 :::
 
-:::{admonition} Note
+:::{note}
 You should only serve your apps with `--autoreload` while developing
 :::
 
@@ -146,11 +146,11 @@ It would look something like
 
 ![Tooltip of FastListTemplate](../../_static/images/develop_editor_hover.png)
 
-:::{admonition} Note
+:::{note}
 The tooltip of Panel components normally provide an *Example* code snippet and a *Reference* link. The *Reference* link makes it very easy to navigate to the reference guides on the Panel web site for more information.
 :::
 
-:::{admonition} Note
+:::{note}
 If your editor does not show any tooltips, then please refer to your editors documentation to figure out how to enable it.
 :::
 
@@ -160,7 +160,7 @@ This should open the `FastListTemplate` reference guide
 
 [![FastListTemplate reference guide](../../_static/images/develop_editor_reference_guide.png)](https://panel.holoviz.org/reference/templates/FastListTemplate.html)
 
-:::{admonition} Note
+:::{note}
 It is a great idea to use the *Example* code snippets and *Reference* links to speed up your workflow.
 :::
 
@@ -212,7 +212,7 @@ Column(design=<class 'panel.theme.materi...)
 2024-01-20 08:05:25,768 ServerConnection created
 ```
 
-:::{admonition} Note
+:::{note}
 By printing *layout* components like `Column` you can understand how they are composed. This enables you to *access* the subcomponents of the layout.
 :::
 
