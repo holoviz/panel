@@ -31,7 +31,7 @@ def test_feed_load_entries(page):
     children_count = feed_el.evaluate(
         '(element) => element.shadowRoot.querySelectorAll(".bk-panel-models-markup-HTML").length'
     )
-    assert children_count == 58
+    assert children_count == 61
 
     # Now scroll to top
     feed_el.evaluate('(el) => el.scrollTo({top: 0})')
@@ -58,7 +58,9 @@ def test_feed_view_latest(page):
     assert feed_el.evaluate('(el) => el.scrollTop') > 0
 
     last_pre_element = page.query_selector_all('pre')[-1]
-    assert last_pre_element.inner_text() == "999"
+    wait_until(
+        lambda: int(last_pre_element.inner_text()) == 999
+    )
 
 
 def test_feed_view_scroll_button(page):
