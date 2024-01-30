@@ -65,7 +65,7 @@ Panel works really well with the visualization tools you already know and love l
 
 Panel provides bi-directional communication making it possible to react to clicks, selections, hover etc. events.
 
-[![Vega Selections](https://blog.holoviz.org/images/vega_selection.gif)](https://panel.holoviz.org/reference/panes/Vega.html)
+[![Vega Selections](https://assets.holoviz.org/panel/readme/vega_selections.gif)](https://panel.holoviz.org/reference/panes/Vega.html)
 
 You can develop in [Jupyter Notebooks](http://jupyter.org) as well as editors like [VS Code](https://code.visualstudio.com/), [PyCharm](https://www.jetbrains.com/pycharm/) or [Spyder](https://www.spyder-ide.org/).
 
@@ -164,6 +164,8 @@ panel serve name_of_notebook.ipynb --show
 ## Examples
 
 [![Panel Gallery](https://assets.holoviz.org/panel/readme/gallery.jpg)](https://panel.holoviz.org/gallery/index.html)
+
+[![Panel Chat Examples](https://assets.holoviz.org/panel/readme/panel-chat-examples.jpg)](https://holoviz-topics.github.io/panel-chat-examples/)
 
 [![Awesome Panel Gallery](https://assets.holoviz.org/panel/readme/awesome_panel.jpg)](https://www.awesome-panel.org/gallery?theme=default)
 
