@@ -119,6 +119,10 @@ def set_values(*parameterizeds, **param_values):
         for parameterized, old_values in old:
             parameterized.param.update(**old_values)
 
+class Skip(RuntimeError):
+    """
+    Exception that allows skipping an update for function-level updates.
+    """
 
 class Param(PaneBase):
     """
