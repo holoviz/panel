@@ -358,6 +358,10 @@ class TestChatInterface:
         assert chat_interface.objects[1].object == "2"
         assert chat_interface.objects[2].object == "3"
 
+    def test_manual_user(self):
+        chat_interface = ChatInterface(user="New User")
+        assert chat_interface.user == "New User"
+
 class TestChatInterfaceWidgetsSizingMode:
     def test_none(self):
         chat_interface = ChatInterface()
