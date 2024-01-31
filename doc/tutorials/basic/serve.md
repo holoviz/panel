@@ -1,9 +1,9 @@
-# Build your first App
+# Build Hello World App
 
-In this tutorial we will develop and *serve* a *Hello World* Panel app.
+In this tutorial, we will develop and *serve* a *Hello World* Panel app.
 
 :::{note}
-Panel can serve apps from Python Scripts, Notebooks and Markdown files. We have prepared sections for Python scripts and notebooks, focus on the one that best fits your current workflow.
+Panel can serve apps from Python Scripts, Notebooks, and Markdown files. We have prepared sections for Python scripts and notebooks, so let's focus on the one that best fits our current workflow.
 :::
 
 ## Serve a Python script
@@ -21,7 +21,7 @@ pn.panel("Hello World").servable()
 :::{note}
 The code refers to
 
-- `panel`: The Panel python package. Its a convention to import it as `pn`.
+- `panel`: The Panel python package. It's a convention to import it as `pn`.
 - `pn.extension()`: Loads javascript dependencies and configures Panel.
 - `pn.panel(...)`: Creates a *displayable* Panel component.
 - `.servable()`: Displays the component in a *server app*.
@@ -37,7 +37,7 @@ Run the Panel server in your terminal with
 panel serve app.py --autoreload
 ```
 
-When the server has started the terminal output should look like this
+When the server has started, the terminal output should look like this
 
 ```bash
 $ panel serve app.py --autoreload
@@ -51,7 +51,7 @@ $ panel serve app.py --autoreload
 The command `panel serve app.py --autoreload` refers to:
 
 - `panel`: the panel executable.
-- `serve`: the command you want panel to run
+- `serve`: the command you want Panel to run
 - `app.py`: the file `app.py` you want to serve
 - `--autoreload`: make the server restart after code changes. Use this for **development only**.
 :::
@@ -99,7 +99,7 @@ It should look like
 :::{note}
 The code refers to
 
-- `panel`: The Panel python package. Its a convention to import it as `pn`.
+- `panel`: The Panel python package. It's a convention to import it as `pn`.
 - `pn.extension()`: **Loads the [`pyviz_comms`](https://github.com/holoviz/pyviz_comms) notebook extension**, loads javascript dependencies and configures Panel.
 - `pn.panel(...)`: Creates a *displayable* Panel component. **The component can be displayed directly in the notebook**.
 - `.servable()`: Displays the component in a *server app*.
@@ -111,7 +111,7 @@ Run the Panel server in your terminal with
 panel serve app.ipynb --autoreload
 ```
 
-When the server has started the terminal output should look like this
+When the server has started, the terminal output should look like this
 
 ```bash
 $ panel serve app.ipynb --autoreload
@@ -125,7 +125,7 @@ $ panel serve app.ipynb --autoreload
 The command `panel serve app.ipynb --autoreload` refers to:
 
 - `panel`: the panel executable.
-- `serve`: the command you want panel to run
+- `serve`: the command you want Panel to run
 - `app.ipynb`: the file `app.ipynb` you want to serve
 - `--autoreload`: make the server restart after code changes. Use this for **development only**.
 :::
@@ -136,7 +136,7 @@ In the output, you will find the line
 Bokeh app running at: http://localhost:5006/app
 ```
 
-That line shows the URL where your app is being served, in your local machine.
+That line shows the URL where the app is being served, on the local machine.
 
 Open your browser at [http://localhost:5006/app](http://localhost:5006/app).
 
@@ -156,11 +156,11 @@ Check out the [Write and serve apps in Markdown](../../how_to/editor/markdown.md
 
 ## Recap
 
-Congratulations. You have just served your first Panel app. Along the way you have learned to
+Congratulations. We have just served our first Panel app. Along the way, we have learned to
 
-- serve your Python script, Notebook or Markdown file with the commands `panel serve app.py`, `panel serve app.ipynb` or `panel serve app.md` respectively.
+- serve a Python script, Notebook, or Markdown file with the commands `panel serve app.py`, `panel serve app.ipynb`, or `panel serve app.md`, respectively.
 - serve with *auto reload* by adding the flag `--autoreload`.
-- stop your server with `CTRL+C`.
+- stop the Panel server with `CTRL+C`.
 
 ## Resources
 

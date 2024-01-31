@@ -1,16 +1,16 @@
-# Build a Todo App
+# Build an Image Classifier
 
-In this tutorial we will build an *Image Classifier* that can detect wind turbines in images. We will support
+In this tutorial, we will collaboratively build an *Image Classifier* that can detect wind turbines in images. As a team, we will support the following functionalities:
 
 - Uploading an image file
 - Using an example image file
 - Viewing the image file
 - Viewing the predicted result
 
-We will be using a *random* classifier. But you can replace it with your own classifier if you want.
+We will be using a *random* classifier initially, but you can later replace it with your own custom classifier if you want.
 
 :::{note}
-When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
+When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
 ## Create the App
@@ -19,8 +19,8 @@ TODO
 
 - Remove Design Reference
 - More clearly define `image` and `label` state.
-- Make interface more gradio compatible by minimizing surface area between inputs and outputs.
-- Consider using another plotting library than hvplot. `hbar` has many issues and do not support transitions. Use Vizzu, ECharts or Plotly?
+- Make the interface more compatible with Gradio by minimizing the surface area between inputs and outputs.
+- Consider using another plotting library than hvplot. `hbar` has many issues and does not support transitions. Use Vizzu, ECharts, or Plotly?
 
 ```{pyodide}
 # Design Reference: https://github.com/pytholic/gradio-image-classificaiton/blob/main/resources/demo.png?raw=true
@@ -46,8 +46,6 @@ def get_pil_image(url):
 
 @pn.cache
 def get_plot(label):
-    # Its not possible to control xlabel and ylabel of hbar: https://github.com/holoviz/hvplot/issues/973
-    # And why is the x limit called ylim?
     data = pd.Series(label).sort_values()
     return data.hvplot.barh(title="Prediction", ylim=(0,100)).opts(default_tools=[])
 

@@ -1,9 +1,9 @@
 # Tutorials
 
 :::{note}
-To make our tutorials engaging and meaningful we will be exploring data and developing data apps in the domain of wind turbines. Your instructor will be very, very passionate about wind turbines. We hope you will have a laugh and play along.
+To make our tutorials engaging and meaningful, we will be exploring data and developing data apps in the domain of wind turbines. Our instructor is very, very passionate about wind turbines. We hope you will have a laugh and play along.
 
-We believe the skills you will be getting are easily transferable to any domain including yours.
+We believe the skills you will be getting are easily transferable to any domain, including yours.
 :::
 
 In this series of tutorials, we'll embark on a journey to explore the world of wind turbine data and build some really cool wind turbine data apps using Panel by HoloViz.
@@ -23,35 +23,34 @@ Select a set of tutorials corresponding to your profile.
 :link: basic/index
 :link-type: doc
 
-These tutorials are for you that is just starting to discover Panel.
+These tutorials are for those who are just starting to discover Panel.
 
-Together we will explore the wind turbine dataset and build a chat bot, a static report, a todo app, an image classifier app, a dashboard and a streaming application together.
+Together, we will explore the wind turbine dataset and build a chatbot, a static report, a todo app, an image classifier app, a dashboard, and a streaming application.
 
-After these tutorials you will be able to build a wide range of polished, single page apps from a single file using a *function based approach*.
+After completing these tutorials, you will be able to build a wide range of polished, single-page apps from a single file using a *function-based approach*.
 :::
 
 :::{grid-item-card} {octicon}`mortar-board;2.5em;sd-mr-1` Intermediate
 :link: intermediate/index
 :link-type: doc
 
-These tutorials are for you that is ready to navigate and explore more advanced features of Python and Panel.
+These tutorials are for those who are ready to navigate and explore more advanced features of Python and Panel.
 
-We will build more performant, scalable, polished, reusable and maintainable versions of the applications from the basic tutorial.
+We will build more performant, scalable, polished, reusable, and maintainable versions of the applications from the basic tutorial.
 
-After these tutorials you will be able to build a wide range of large and complex multi-page apps structured across multiple files using a *class based approach*.
+After completing these tutorials, you will be able to build a wide range of large and complex multi-page apps structured across multiple files using a *class-based approach*.
 :::
 
 :::{grid-item-card} {octicon}`star;2.5em;sd-mr-1` Expert
 :link: expert/index
 :link-type: doc
 
-These tutorials are for you that is ready to pioneer and push the boundaries of what can be achieved with Panel.
+These tutorials are for those who are ready to pioneer and push the boundaries of what can be achieved with Panel.
 
 Together, we will extend Panel to support your specialized domain and use case.
 :::
 
 ::::
-
 
 ```{toctree}
 :titlesonly:

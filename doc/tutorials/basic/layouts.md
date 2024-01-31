@@ -1,26 +1,26 @@
-# Layout Objects
+# Layout Content
 
-In this guide you will learn to layout, i.e. arrange, Python objects including Panel components:
+In this guide, we will learn how to layout, i.e., arrange, Python objects, including Panel components:
 
 - *Layouts* are available in the `pn` namespace.
-- *Arrange* Python objects including Panel components with [`pn.Column`](../../reference/layouts/Column.ipynb) and [`pn.Row`](../../reference/layouts/Row.ipynb).
-- Layouts like [`Column`](../../reference/layouts/Column.ipynb) and [`Row`](../../reference/layouts/Row.ipynb) are *list-like*.
+- Arrange Python objects, including Panel components, using [`pn.Column`](../../reference/layouts/Column.ipynb) and [`pn.Row`](../../reference/layouts/Row.ipynb).
+- Layouts like [`Column`](../../reference/layouts/Column.ipynb) and [`Row`](../../reference/layouts/Row.ipynb) behave like lists.
 - A *layout* will automatically use `pn.panel` to determine how to best display non-Panel objects.
 - Create complex arrangements by combining and nesting *layouts*.
-- Discover all *layouts* and their *reference guides* in the [Layouts Section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index.md).
+- Explore all available *layouts* and their *reference guides* in the [Layouts Section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index.md).
 
-In this tutorial you will **not learn** how to
+In this tutorial, we will **not learn** how to:
 
-- Use specific *layouts* in detail. Details are covered by the *[reference guides](../../reference/index.md#layouts)*.
-- Style *layouts*. This topic is covered by another tutorial.
+- Use specific *layouts* in detail. Details are covered in the *[reference guides](../../reference/index.md#layouts)*.
+- Style *layouts*. This topic is covered in another tutorial.
 
 :::{note}
-When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
+When we ask to *run the code* in the sections below, we may execute the code directly in the Panel documentation by using the green *run* button, in a notebook cell, or in a file named `app.py` served with `panel serve app.py --autoreload`.
 :::
 
 ## Install the Dependencies
 
-Please make sure [hvPlot](https://hvplot.holoviz.org) and [Pandas](https://pandas.pydata.org) are installed.
+Please ensure that [hvPlot](https://hvplot.holoviz.org) and [Pandas](https://pandas.pydata.org) are installed.
 
 ::::{tab-set}
 
@@ -30,6 +30,7 @@ Please make sure [hvPlot](https://hvplot.holoviz.org) and [Pandas](https://panda
 ``` bash
 conda install -y -c conda-forge hvplot pandas
 ```
+
 :::
 
 :::{tab-item} pip
@@ -38,13 +39,14 @@ conda install -y -c conda-forge hvplot pandas
 ``` bash
 pip install hvplot pandas
 ```
+
 :::
 
 ::::
 
 ## Layout in a Column
 
-Run the code below:
+Run the following code:
 
 ```{pyodide}
 import pandas as pd
@@ -71,10 +73,10 @@ pn.Column("# Orders", data, button).servable()
 ```
 
 :::{note}
-To learn in detail how a layout like `Column` works you should refer to its *reference guide*.
+To understand in detail how a layout like `Column` works, please refer to its *reference guide*.
 :::
 
-Click [this link](../../reference/layouts/Column.ipynb) to the `Column` Reference Guide and spend a few minutes to familiarize your self with its organisation and content.
+Click [this link](../../reference/layouts/Column.ipynb) to access the `Column` Reference Guide, and take a few minutes to familiarize yourself with its organization and content.
 
 It should look like
 
@@ -82,7 +84,7 @@ It should look like
 
 ## Layout in a Row
 
-Run the code below:
+Run the following code:
 
 ```{pyodide}
 import pandas as pd
@@ -108,9 +110,9 @@ plot = data.hvplot(x="Day", y="Orders", kind="bar", color="goldenrod", title="Or
 pn.Row(plot, data).servable()
 ```
 
-Click [this link](../../reference/index.md#layouts) to the Layouts section of the [Component Gallery](../../reference/index.md).
+Click [this link](../../reference/index.md#layouts) to access the Layouts section of the [Component Gallery](../../reference/index.md).
 
-Open the [`Row`](../../reference/layouts/Row.ipynb) reference guide and spend a few minutes to familiarize your self with its organisation and content.
+Open the [`Row`](../../reference/layouts/Row.ipynb) reference guide and take a few minutes to familiarize yourself with its organization and content.
 
 It should look like
 
@@ -119,10 +121,10 @@ It should look like
 ## Works like a list
 
 :::{note}
-`Column`, `Row` and many other layouts are *list-like*.
+`Column`, `Row`, and many other layouts are *list-like*.
 :::
 
-Run the code below
+Run the code below:
 
 ```{pyodide}
 import pandas as pd
@@ -150,7 +152,7 @@ pn.Column(component[0], component[2], component[1]).servable()
 ```
 
 :::{note}
-We used the *list-like* properties of the `Column` to re-arrange it. More specifically we used *list-indexing* as in `component[2]`. It implements all the methods you would expect from a *list-like* object, including `.append` and `.remove`.
+We are utilizing the *list-like* properties of the `Column` layout to rearrange its elements. More specifically, we are using *list-indexing* as in `component[2]`. The `Column` layout implements all the methods you would expect from a *list-like* object, including `.append` and `.remove`.
 :::
 
 ## Displays using `pn.panel`
@@ -184,7 +186,7 @@ component.servable()
 ```
 
 :::{note}
-The `print` statement will output something like
+The `print` statement will output something like:
 
 ```bash
 Column(design=<class 'panel.theme.bootst...)
@@ -193,12 +195,12 @@ Column(design=<class 'panel.theme.bootst...)
     [2] Button(button_type='primary', design=<class 'panel.theme.bootst..., icon='refresh', name='Refresh')
 ```
 
-Under the hood the `Column` has used `pn.panel` to convert the string to a [`Markdown`](../../reference/panes/Markdown.ipynb) pane and the DataFrame to a [`DataFrame`](../../reference/panes/DataFrame.ipynb) pane.
+Under the hood, the `Column` layout has used `pn.panel` to convert the string to a [`Markdown`](../../reference/panes/Markdown.ipynb) pane and the DataFrame to a [`DataFrame`](../../reference/panes/DataFrame.ipynb) pane.
 
 You can customize how the objects are displayed using `pn.panel` or specific *Panes*.
 ::::
 
-Run the code below.
+Run the code below:
 
 ```{pyodide}
 import pandas as pd
@@ -229,10 +231,10 @@ pn.Column(
 ## Combine Layouts
 
 :::{note}
-To create more complex arrangements of objects, you can combine and nest *layouts*
+To create more complex arrangements of objects, we can combine and nest *layouts*.
 :::
 
-Run the code below:
+Let's run the code below:
 
 ```{pyodide}
 import pandas as pd
@@ -261,14 +263,14 @@ pn.Column("# Orders", button, pn.Row(plot, pn.panel(data, width=400))).servable(
 
 ## Recap
 
-In this guide you have learned:
+In this guide, we have learned:
 
 - *Layouts* are available in the `pn` namespace.
-- *Arrange* Python objects including Panel components with [`pn.Column`](../../reference/layouts/Column.ipynb) and [`pn.Row`](../../reference/layouts/Row.ipynb).
-- [`pn.Column`](../../reference/layouts/Column.ipynb) and [`pn.Row`](../../reference/layouts/Row.ipynb) work like Python `list`s.
-- A *layout* will automatically use `pn.panel` to determine how to best display non-Panel objects.
+- Arrange Python objects, including Panel components, using [`pn.Column`](../../reference/layouts/Column.ipynb) and [`pn.Row`](../../reference/layouts/Row.ipynb).
+- Layouts like [`Column`](../../reference/layouts/Column.ipynb) and [`Row`](../../reference/layouts/Row.ipynb) behave like lists.
+- A *layout* will automatically use `pn.panel` to determine how to best display Python objects.
 - Create complex arrangements by combining and nesting *layouts*.
-- Discover all *layouts* and their *reference guides* in the [Layouts Section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index.md).
+- Explore all available *layouts* and their *reference guides* in the [Layouts Section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index.md).
 
 ## References
 

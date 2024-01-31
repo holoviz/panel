@@ -1,17 +1,17 @@
 # Build a Report
 
-In this section we will build a *Wind Turbine Report*. We will
+In this section, we will collaboratively create a *Wind Turbine Report*. Together, we will:
 
-- layout and style the report nicely.
-- export the report to static `.html` and distribute it via email.
+- Layout and style the report nicely.
+- Export the report to a static `.html` file and distribute it via email.
 
 :::{note}
-When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
+When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
 ## Create the Report
 
-Run the code code below
+Let's run the code below:
 
 ```{pyodide}
 import panel as pn
@@ -61,7 +61,7 @@ fig = (
     )
 )
 
-## Build components: display, layout and style the objects
+## Build components: display, layout, and style the objects
 
 BRAND_COLOR = "teal"
 BRAND_TEXT_ON_COLOR = "white"
@@ -146,13 +146,17 @@ report.save("report.html")
 report.servable()
 ```
 
-If you ran this in a notebook or Python file your report will be saved to the file `report.html`.
+:::{admonition} Note
+If the code was run in a notebook or Python file, the report will have been saved to the file `report.html`.
+:::
+
+Please verify that the file `report.html` has been created.
 
 ## Distribute the report
 
-Attach the `report.html` file generated in the previous section to an email and send it to your self. When you receive the email, then open the `report.html` attachment.
+Attach the `report.html` file generated in the previous section to an email and send it to yourself. When you receive the email, then open the `report.html` attachment.
 
-🥳 Congrats. You are now able to create and distribute interactive reports based on DataFrames and any of your favorite plotting libraries. That is an amazing achievement.
+🥳 Congrats! Together, we have successfully created and distributed an interactive report based on DataFrames and one of our favorite plotting libraries. This is an amazing achievement!
 
 ## Break it down
 

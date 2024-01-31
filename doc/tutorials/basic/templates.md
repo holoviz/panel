@@ -1,6 +1,6 @@
 # Use Templates
 
-In this tutorial we will use *pre-made templates* to easily layout an app with a *header*, *sidebar* and *main* area:
+In this tutorial, we will use *pre-made templates* to easily layout an app with a *header*, *sidebar*, and *main* area:
 
 - Templates are available in the `pn.template` namespace
 - Templates can be found in the [Templates Section](../../reference/index.md#templates) of the [Component Gallery](../../reference/index.md).
@@ -18,6 +18,7 @@ Please make sure [Vega-Altair](https://altair-viz.github.io/) is installed.
 ``` bash
 conda install -y -c conda-forge altair
 ```
+
 :::
 
 :::{tab-item} pip
@@ -26,11 +27,12 @@ conda install -y -c conda-forge altair
 ``` bash
 pip install altair
 ```
+
 :::
 
 ::::
 
-## Create a Hello World Example
+## Create a Hello World App
 
 Copy the code below to a file `app.py`.
 
@@ -68,7 +70,7 @@ See the [FastListTemplate](../../reference/templates/FastListTemplate.ipynb) *re
 :::
 
 :::{tip}
-Panel ships with a large collection of built in templates. There is even a *Slides* template.
+Panel ships with a large collection of built-in templates. There is even a *Slides* template.
 :::
 
 Spend a couple of minutes checking out the [Templates Section](../../reference/index.md#templates) of the [Component Gallery](../../reference/index.md). Then return here.
@@ -89,7 +91,7 @@ import panel as pn
 pn.extension()
 ```
 
-```
+```python
 pn.template.FastListTemplate(
     title="Hello World",
     sidebar=["# Hello Sidebar", "This is text for the *sidebar*"],
@@ -105,7 +107,7 @@ It should look like
 
 ![Hello World FastListTemplate App](../../_static/images/templates_hello_world_notebook.png)
 
-## Customize a Template
+## Customize the Template
 
 Copy the code below to a file `app.py`.
 
@@ -158,7 +160,7 @@ plot = pn.pane.Vega(fig, sizing_mode="stretch_both", max_height=800, margin=20)
 
 pn.template.FastListTemplate(
     title="Wind Turbine Manufacturers",
-    sidebar=[image, "**Note**: Only the 10 Manufacturers with largest installed capacity are shown in the plot."],
+    sidebar=[image, "**Note**: Only the 10 Manufacturers with the largest installed capacity are shown in the plot."],
     main=["# Installed Capacity", plot],
     accent=ACCENT,
     main_layout=None,
@@ -194,7 +196,7 @@ The `accent` and `main_layout` arguments only apply to the *Fast* templates, i.e
 
 ## Recap
 
-In this tutorial we have used *pre-made templates* to easily layout an app with a *header*, *sidebar* and *main* area:
+In this tutorial, we have used *pre-made templates* to easily layout an app with a *header*, *sidebar*, and *main* area:
 
 - Templates are available in the `pn.template` namespace
 - Templates can be found in the [Templates Section](../../reference/index.md#templates) of the [Component Gallery](../../reference/index.md).

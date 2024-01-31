@@ -1,14 +1,14 @@
 # Develop in a Notebook
 
-In this section you will learn the basics of developing Panel apps efficiently in a notebook:
+In this section, we will learn the basics of developing Panel apps efficiently in a notebook:
 
-- Preview your notebook app in Jupyter lab with the *Jupyter Panel Preview*.
-- Serve your notebook app with autoreload using `panel serve app.ipynb --autoreload`.
-- Inspect your component using `SHIFT+Tab` and `print`.
-- Inspect your components class and instance parameters using `.param`.
+- Preview a notebook app in Jupyter lab with the *Jupyter Panel Preview*.
+- Serve a notebook app with autoreload using `panel serve app.ipynb --autoreload`.
+- Inspect a component using `SHIFT+Tab` and `print`.
+- Inspect a component's class and instance parameters using `.param`.
 
 :::{note}
-In this guide we will assume you are working in [Jupyter lab](https://jupyter.org/). Panel works in many other notebook environments. But non-JupyterLab notebook environments might need special configuration before supporting Panel appropriately. Check out the [Resources](#resources) section below for specific guidance.
+When we are asked to *run the code* in the sections below, we may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.ipynb` that is served with `panel serve app.ipynb --autoreload`.
 :::
 
 ## Install the Dependencies
@@ -43,7 +43,7 @@ A simple notebook file containing a Panel app could look like.
 
 Start from an empty notebook named `app.ipynb`.
 
-Copy paste the 3 code cells below into the notebook
+Copy-paste the 3 code cells below into the notebook
 
 ```python
 import panel as pn
@@ -66,10 +66,10 @@ It should look like
 ![Panel Notebook App](../../_static/images/develop_notebook_simple_example.png)
 
 :::{note}
-The code in the notebook refer to
+The code in the notebook refers to
 
-- `panel`: The Panel python package. Its a convention to import it as `pn`.
-- `pn.extension()`: **Loads the [`pyviz_comms`](https://github.com/holoviz/pyviz_comms) notebook extension**, loads javascript dependencies and configures Panel.
+- `panel`: The Panel python package. It's a convention to import it as `pn`.
+- `pn.extension()`: **Loads the [`pyviz_comms`](https://github.com/holoviz/pyviz_comms) notebook extension**, loads javascript dependencies, and configures Panel.
 - `pn.panel(...)`: Creates a *displayable* Panel component. **The component can be displayed directly in the notebook**.
 - `.servable()`: Displays the component in a *server app*.
 :::
@@ -137,7 +137,7 @@ A currently faster alternative to the *Jupyter Panel Preview* is serving the not
 
 Start from an empty notebook named `app.ipynb`.
 
-Copy paste the 2 cells below into the notebook.
+Copy-paste the 2 cells below into the notebook.
 
 ```python
 import panel as pn
@@ -202,10 +202,10 @@ It should look something like
 </video>
 
 :::{note}
-You should only serve your apps with `--autoreload` while developing
+We should only serve our apps with `--autoreload` while developing.
 :::
 
-Stop the Panel server by sending a termination signal. In most terminal environments, you can do this by pressing `CTRL+C` one or more times.
+Stop the Panel server by sending a termination signal. In most terminal environments, we can do this by pressing `CTRL+C` one or more times.
 
 ## Inspect a Component using `SHIFT+Tab`
 
@@ -219,7 +219,7 @@ import panel as pn
 pn.extension()
 ```
 
-Run the cell
+Run the cell.
 
 Write `pn.widgets.IntSlider` in a cell and press `SHIFT+Tab`.
 
@@ -227,25 +227,25 @@ It should look like
 
 ![Inspect a Panel component using SHIFT+Tab](../../_static/images/notebook_inspect_shift_tab.png)
 
-Use the mouse to scroll down until you find the *Example* code snippet and *Reference* link.
+Use the mouse to scroll down until we find the *Example* code snippet and *Reference* link.
 
 ![Inspect a Panel component using SHIFT+Tab](../../_static/images/notebook_inspect_shift_tab_link.png)
 
-Click the *Reference* link <a href="https://panel.holoviz.org/reference/widgets/IntSlider.html" target="_blank">https://panel.holoviz.org/reference/widgets/IntSlider.html</a>
+Click the *Reference* link <a href="https://panel.holoviz.org/reference/widgets/IntSlider.html" target="_blank">https://panel.holoviz.org/reference/widgets/IntSlider.html</a>.
 
 It should look like
 
 [![IntSlider Reference Documentation](../../_static/images/notebook_intslider_reference_doc.png)](https://panel.holoviz.org/reference/widgets/IntSlider.html)
 
 :::{note}
-It is a great idea to use the *Example* code snippets and *Reference* links to speed up your workflow.
+It is a great idea to use the *Example* code snippets and *Reference* links to speed up our workflow.
 :::
 
 ## Inspect a Component using `print`
 
 Start from an empty notebook named `app.ipynb`.
 
-Copy-paste the code below into the notebook
+Copy-paste the code below into the notebook.
 
 ```python
 import panel as pn
@@ -264,14 +264,14 @@ component = pn.Column(
 print(component)
 ```
 
-Run the cells if you have not already done it.
+Run the cells if they have not already been run.
 
 It should look like
 
 ![Inspect a Panel component](../../_static/images/notebook_inspect_print.png)
 
 :::{note}
-By printing *layout* components like `Column` you can understand how its composed. This enables you to *access* the subcomponents of the layout.
+By printing *layout* components like `Column` we can understand how it's composed. This enables us to *access* the subcomponents of the layout.
 :::
 
 Add the two code cells below
@@ -284,17 +284,17 @@ component[0]
 component[1]
 ```
 
-Run the new cells if you have not already done it.
+Run the cells if they have not already been run.
 
 It should look like
 
 ![Inspect a Panel component](../../_static/images/notebook_inspect_print_1.png)
 
-## Inspect a Components Parameters using `.param`
+## Inspect a Component's Parameters using `.param`
 
 Start from an empty notebook named `app.ipynb`.
 
-Copy-paste the two code cells below into the notebook
+Copy-paste the two code cells below into the notebook.
 
 ```python
 import panel as pn
@@ -306,15 +306,15 @@ pn.extension()
 pn.widgets.IntSlider.param
 ```
 
-Run the code cells if you have not already done it.
+Run the cells if they have not already been run.
 
 It should look like
 
 ![Inspect a Panel component class with .param](../../_static/images/notebook_inspect_param_class.png)
 
 :::{note}
-- The `.param` table shows you the **default** parameter values of the `IntSlider` **class**. For example the *default* value of `align` is `'start'`.
-- The `.param` table shows you additional information like the `Type` and `Range` of the Parameter.
+- The `.param` table shows us the **default** parameter values of the `IntSlider` **class**. For example, the *default* value of `align` is `'start'`.
+- The `.param` table shows us additional information like the `Type` and `Range` of the Parameter.
 :::
 
 Add the new cell
@@ -323,24 +323,24 @@ Add the new cell
 pn.widgets.IntSlider(align="end").param
 ```
 
-Run the code cell
+Run the code cell.
 
 It should look like
 
 ![Inspect a Panel component instance with .param](../../_static/images/notebook_inspect_param_instance.png)
 
 :::{note}
-- In the picture above you see the **actual** parameter values of the `IntSlider` **instance**. For example the *actual* value of `align` is `'end'`.
+- In the picture above we see the **actual** parameter values of the `IntSlider` **instance**. For example, the *actual* value of `align` is `'end'`.
 :::
 
 ## Recap
 
-You can
+We can
 
-- Preview your notebook app in Jupyter lab with the *Jupyter Panel Preview*.
-- Serve your notebook app with autoreload using `panel serve app.ipynb --autoreload`.
-- Inspect your component using `SHIFT+Tab` and `print`.
-- Inspect your components class and instance parameters using `.param`.
+- Preview a notebook app in Jupyter lab with the *Jupyter Panel Preview*.
+- Serve anotebook app with autoreload using `panel serve app.ipynb --autoreload`.
+- Inspect a component using `SHIFT+Tab` and `print`.
+- Inspect a component's class and instance parameters using `.param`.
 
 ## Resources
 

@@ -1,11 +1,11 @@
 # Explore the Data
 
-In this section we will use the [Swipe](../../reference/layouts/Swipe.ipynb) *layout* to understand how the global mean surface temperature has risen from 1945 to 2015 and the [Perspective](../../reference/panes/Perspective.ipynb) *pane* to slice and dice the wind `turbines` dataset.
+In this section, we will use the [Swipe](../../reference/layouts/Swipe.ipynb) *layout* to understand how the global mean surface temperature has risen from 1945 to 2015, and the [Perspective](../../reference/panes/Perspective.ipynb) *pane* to slice and dice the wind `turbines` dataset.
 
-This will barely scratch the surface of what Panel has to offer for exploratory data analysis (EDA) workflow. That is why we say that *Panel is **the powerful data exploration** and web app **framework***.
+This will barely scratch the surface of what Panel has to offer for an exploratory data analysis (EDA) workflow. That is why we say that *Panel is **the powerful data exploration** and web app **framework***.
 
 :::{note}
-When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
+When we ask to *run the code* in the sections below, we may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
 ```{pydodide}
@@ -16,7 +16,7 @@ pn.extension("perspective")
 
 ## Compare Temperatures with Swipe
 
-Lets understand why we need renewable energy and wind turbines by comparing the global mean surface temperatures of the periods 1945-49 and 2015-2019.
+Let's understand why we need renewable energy and wind turbines by comparing the global mean surface temperatures of the periods 1945-49 and 2015-2019.
 
 Run the code below:
 
@@ -35,7 +35,7 @@ Try dragging the *slider* to compare the periods.
 
 ## Slice and dice with Perspective
 
-Throughout these tutorials we will be using the wind `turbines` dataset. Let us take a first look.
+Throughout these tutorials, we will be using the wind `turbines` dataset. Let us take a first look.
 
 Run the code below.
 
@@ -58,7 +58,7 @@ The code refers to
 :::
 
 :::{note}
-You can use the pivoting capabilities of [Perspective](../../reference/panes/Perspective.ipynb) to explore the data. You can *drag* columns and *drop* them into the `Group By`, `Split By`, `Order By` and `Where` input areas. You can *CTRL drag* if a column must be used in multiple places.
+We can use the pivoting capabilities of [Perspective](../../reference/panes/Perspective.ipynb) to explore the data. We can *drag* columns and *drop* them into the `Group By`, `Split By`, `Order By`, and `Where` input areas. We can *CTRL drag* if a column must be used in multiple places.
 :::
 
 Find the Manufacturers (`t_manu`) with the highest installed capacity (`p_cap`):
@@ -66,13 +66,13 @@ Find the Manufacturers (`t_manu`) with the highest installed capacity (`p_cap`):
 - *Group By* `t_manu`
 - *Display* and *Order By* `p_cap`
 
-:::{dropdown} Solution: Capacity by Manufactorer Table
+:::{dropdown} Solution: Capacity by Manufacturer Table
 ![Perspective Table](../../_static/images/explore_data_perspective_table.png)
 :::
 
 Change the visualization from a `Datagrid` to an `X Bar` chart.
 
-:::{dropdown} Solution: Capacity by Manufactorer Chart
+:::{dropdown} Solution: Capacity by Manufacturer Chart
 ![Perspective Chart](../../_static/images/explore_data_perspective_chart.png)
 :::
 
@@ -80,4 +80,4 @@ Change the visualization from a `Datagrid` to an `X Bar` chart.
 
 We have used the [Swipe](../../reference/layouts/Swipe.ipynb) *layout* to understand how the global mean surface temperature has risen from 1945 to 2015 and the [Perspective](../../reference/panes/Perspective.ipynb) *pane* to slice and dice the wind `turbines` dataset.
 
-We have barely scratched the surface of how Panel can improve your exploratory data analysis (EDA) workflow. That is why we say *Panel is **the powerful data exploration** and web app framework*.
+We have barely scratched the surface of how Panel can improve our exploratory data analysis (EDA) workflow. That is why we say *Panel is **the powerful data exploration** and web app framework*.

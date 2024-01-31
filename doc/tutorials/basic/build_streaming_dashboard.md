@@ -1,14 +1,40 @@
 # Build Streaming Dashboard
 
-In this tutorial we build a simple streaming dashboard to monitor the wind speed and power output of one of your wind turbines.
+In this tutorial we build a simple streaming dashboard to monitor the wind speed and power output of one of our wind turbines.
 
 :::{note}
-When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
+When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
+
+## Install the Dependencies
+
+Please make sure [SciPy](https://scipy.org/) is installed.
+
+::::{tab-set}
+
+:::{tab-item} conda
+:sync: conda
+
+``` bash
+conda install -y -c conda-forge scipy
+```
+
+:::
+
+:::{tab-item} pip
+:sync: pip
+
+``` bash
+pip install scipy
+```
+
+:::
+
+::::
 
 ## Build the App
 
-```
+```python
 import numpy as np
 import panel as pn
 from scipy.interpolate import interp1d

@@ -1,14 +1,14 @@
 # Build a Todo App
 
-In this section we will build a *Todo App* so that our wind turbine technicians can keep track of their tasks. The app will provide functionality to
+In this section, we will work on building a *Todo App* together so that our wind turbine technicians can keep track of their tasks. As a team, we will collaborate to create an app that provides the following functionality:
 
-- Add, remove and *remove all* tasks
-- Mark a task as solved
-- Keep track of how many completed tasks there are
-- Disable or hide Buttons it does not make sense to click
+- Adding, removing, and clearing all tasks
+- Marking a task as solved
+- Keeping track of the number of completed tasks
+- Disabling or hiding buttons when necessary
 
 :::{note}
-When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook or in a file `app.py` that is served with `panel serve app.py --autoreload`.
+When we ask everyone to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
 ## Create the App
@@ -64,7 +64,7 @@ def can_add(value_input):
     return not bool(value_input)
 
 def has_tasks(*args):
-    return len(tasks)>0
+    return len(tasks) > 0
 
 
 add_task("Inspect the blades")
@@ -111,7 +111,7 @@ pn.Column(
 ).servable()
 ```
 
-Try to
+Let's perform the following actions:
 
 - Remove one task
 - Remove all tasks
@@ -119,7 +119,7 @@ Try to
 - Check 1 of 3 tasks and see the `status_message` update accordingly.
 
 :::{note}
-A todo app can be build in many other ways. The main purpose of this example is for you to acquire the basic skills needed to develop *stateful*, *dynamically updating* apps like this one.
+A todo app can be built in many other ways. The main purpose of this example is for all of us to acquire the basic skills needed to develop *stateful*, *dynamically updating* apps like this one.
 :::
 
 ## Break it down
@@ -130,7 +130,7 @@ COMING UP
 
 ## Recap
 
-In this section we have built a *Todo App* with many features. We needed to combine many of the things we have learned so far.
+In this section, we have built a *Todo App* with many features. We needed to combine many of the things we have learned so far.
 
 ## Resources
 

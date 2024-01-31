@@ -1,14 +1,14 @@
 # Develop in an Editor
 
-In this section you will learn the basics of developing Panel apps in an editor:
+In this section, we will learn the basics of developing Panel apps in an editor:
 
-- serve your app with *autoreload* using `panel serve app.py --autoreload`
-- display the app in a *simple* browser tab inside your editor if possible
-- Inspect Panel objects via *hover* and `print`
-- Inspect a components parameters via `.param` and `.param._repr_html_()`
+- Serve an app with *autoreload* using `panel serve app.py --autoreload`.
+- Display the app in a *simple* browser tab inside the editor if possible.
+- Inspect Panel objects via *hover* and `print`.
+- Inspect a component's parameters via `.param` and `.param._repr_html_()`.
 
 :::{admonition} Note
-Some of the features demonstrated in this guide might require special configuration of your specific editor. For configuration we refer you to the [Resources](#resources) section below and general resources on the web.
+Some of the features demonstrated in this guide might require special configuration of your specific editor. For configuration, we refer to the [Resources](#resources) section below and general resources on the web.
 :::
 
 ## Install the Dependencies
@@ -20,7 +20,7 @@ Please make sure [Matplotlib](https://matplotlib.org/) and [Numpy](https://numpy
 :::{tab-item} conda
 :sync: conda
 
-``` bash
+```bash
 conda install -y -c conda-forge matplotlib numpy
 ```
 :::
@@ -28,16 +28,16 @@ conda install -y -c conda-forge matplotlib numpy
 :::{tab-item} pip
 :sync: pip
 
-``` bash
+```bash
 pip install matplotlib numpy
 ```
 :::
 
 ::::
 
-## Serve your app with autoreload
+## Serve an app with autoreload
 
-A simple Panel app could look like the below.
+A simple Panel app could look like the following.
 
 ```python
 import panel as pn
@@ -51,7 +51,7 @@ LOGO = "https://assets.holoviz.org/panel/tutorials/matplotlib-logo.png"
 pn.extension(sizing_mode="stretch_width")
 
 data = np.random.normal(1, 1, size=100)
-fig = Figure(figsize=(8,4))
+fig = Figure(figsize=(8, 4))
 ax = fig.subplots()
 ax.hist(data, bins=20, color=ACCENT)
 
@@ -66,7 +66,7 @@ Copy the code above into a file named `app.py`.
 
 Save the file if you have not already done it.
 
-Serve the app by running the below command in a terminal.
+Serve the app by running the following command in a terminal.
 
 ```bash
 panel serve app.py --autoreload
@@ -91,8 +91,8 @@ It should look like
 Now change the
 
 - `ACCENT` value to `teal` and save the `app.py` file.
-- `bins` value to `15` and save
-- `title` value to `"My Matplotlib App"` and save
+- `bins` value to `15` and save.
+- `title` value to `"My Matplotlib App"` and save.
 
 It should look like
 
@@ -102,11 +102,11 @@ It should look like
 </video>
 
 :::{note}
-In the video above you will notice that the app is displayed inside the editor. This feature is supported in VS Code as the *simple browser*. PyCharm supports a similar feature via an extension.
+In the video above, you will notice that the app is displayed inside the editor. This feature is supported in VS Code as the *simple browser*. PyCharm supports a similar feature via an extension.
 :::
 
 :::{note}
-You should only serve your apps with `--autoreload` while developing
+We should only serve our apps with `--autoreload` while developing.
 :::
 
 Stop the Panel server by sending a termination signal. In most terminal environments, you can do this by pressing `CTRL+C` one or more times.
@@ -127,7 +127,7 @@ LOGO = "https://s3.eu-west-1.amazonaws.com/assets.holoviz.org/panel/tutorials/ma
 pn.extension(sizing_mode="stretch_width")
 
 data = np.random.normal(1, 1, size=100)
-fig = Figure(figsize=(8,4))
+fig = Figure(figsize=(8, 4))
 ax = fig.subplots()
 ax.hist(data, bins=15, color=ACCENT)
 
@@ -147,11 +147,11 @@ It would look something like
 ![Tooltip of FastListTemplate](../../_static/images/develop_editor_hover.png)
 
 :::{note}
-The tooltip of Panel components normally provide an *Example* code snippet and a *Reference* link. The *Reference* link makes it very easy to navigate to the reference guides on the Panel web site for more information.
+The tooltip of Panel components normally provides an *Example* code snippet and a *Reference* link. The *Reference* link makes it very easy to navigate to the reference guides on the Panel website for more information.
 :::
 
 :::{note}
-If your editor does not show any tooltips, then please refer to your editors documentation to figure out how to enable it.
+If your editor does not show any tooltips, then please refer to your editor's documentation to figure out how to enable it.
 :::
 
 Hover again and click the *Reference* link <a href="https://panel.holoviz.org/reference/templates/FastListTemplate.html" target="_blank">https://panel.holoviz.org/reference/templates/FastListTemplate.html</a>.
@@ -161,7 +161,7 @@ This should open the `FastListTemplate` reference guide
 [![FastListTemplate reference guide](../../_static/images/develop_editor_reference_guide.png)](https://panel.holoviz.org/reference/templates/FastListTemplate.html)
 
 :::{note}
-It is a great idea to use the *Example* code snippets and *Reference* links to speed up your workflow.
+It is a great idea to use the *Example* code snippets and *Reference* links to speed up our workflow.
 :::
 
 ## Inspect via `print`
@@ -213,7 +213,7 @@ Column(design=<class 'panel.theme.materi...)
 ```
 
 :::{note}
-By printing *layout* components like `Column` you can understand how they are composed. This enables you to *access* the subcomponents of the layout.
+By printing *layout* components like `Column`, we can understand how they are composed. This enables us to *access* the subcomponents of the layout.
 :::
 
 Replace `layout.servable()` with `layout[0].servable()` and save the file.
@@ -230,9 +230,9 @@ This will look like
 
 ## Inspect Parameters via `.param`
 
-You can inspect the *parameters* of Panels components via the `.param` namespace and its `._repr_html_` method.
+We can inspect the *parameters* of Panel's components via the `.param` namespace and its `._repr_html_` method.
 
-Replace the content of your `app.py` file with
+Replace the content of the `app.py` file with
 
 ```python
 import panel as pn
@@ -256,12 +256,12 @@ It should look like
 
 ## Recap
 
-You have learned to
+We have learned to
 
-- serve your app with *autoreload* using `panel serve app.py --autoreload`
-- display the app in a *simple* browser tab inside your editor if possible
-- Inspect Panel objects via *hover* and `print`
-- Inspect a components parameters via `.param` and `.param._repr_html_()`
+- Serve an app with *autoreload* using `panel serve app.py --autoreload`.
+- Display the app in a *simple* browser tab inside our editor if possible.
+- Inspect Panel objects via *hover* and `print`.
+- Inspect a component's parameters via `.param` and `.param._repr_html_()`.
 
 ## Resources
 
