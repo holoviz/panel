@@ -628,7 +628,12 @@ class ChatInterface(ChatFeed):
         -------
         The message that was created.
         """
-        return super().send(value, user=user or self.user, avatar=avatar or self.avatar, respond=respond)
+        if not isinstance(value, ChatMessage):
+            if user is None:
+                user = self.user
+            if avatar is None:
+                avatar = self.avatar
+        return super().send(value, user=user, avatar=avatar, respond=respond)
 
     def stream(
         self,
