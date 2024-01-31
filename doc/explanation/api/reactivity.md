@@ -1,4 +1,4 @@
-# API Overview
+# Reactivity in Panel
 
 Panel's approach to expressing interactivity and managing state differs from many other frameworks and offers multiple APIs with different affordances. In this overview section we will try to convey the thinking that led to the different APIs in Panel, providing you with context on when to use which and why. In the process we will try to unpack a number of concepts that are central to most UI frameworks and how these concepts translate into Panel's unique approach.
 
@@ -16,13 +16,13 @@ The core concept a large part of the discussion will focus on is the difference 
 
 The alternative to the reactive approach is an event-driven approach, involving callbacks that are triggered by user interactions or other events. This approach usually relies on **imperative** rather than **declarative** programming, i.e. you define step-by-step what should happen when a particular action is triggered. This is usually significantly more cumbersome, especially as an application grows in size and complexity. Even in a relatively simple application where we gather user inputs from multiple widgets and then perform some update we quickly run into problems. Let us take a simple example of an application that has three widgets that gather user input. In a callback based approach we have to register a callback with each of the three widgets and then perform some action as a result:
 
-![Diagram of callback based UI code](../../_static/images/callback_diagram.svg)
+![Diagram of callback based UI code](../../_static/images/callbacks_diagram.png)
 
 The problem we immediately run into if some action we want to take requires more than one of the inputs is how we coordinate these changes. This is why many older callback based frameworks rely on what is called the Model-View-Controller (MVC) pattern, where the **view** that the user interacts with, gathers the inputs, which are fed to a **controller** that is able to coordinate the various events and manipulate the underlying model. This requires significant state handling, which in practice is only really feasible by implement a class based controller.
 
 In the reactive approach things are much simpler, the inputs are bound to a declarative function or component that immediately reflects the required changes in the rendered view:
 
-![Diagram of reactive UI code](../../_static/images/reactive_diagram.svg)
+![Diagram of reactive UI code](../../_static/images/reactive_diagram.png)
 
 ## Reactivity in Panel
 
