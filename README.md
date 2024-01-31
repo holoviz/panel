@@ -167,7 +167,7 @@ panel serve name_of_notebook.ipynb --show
 
 [![Panel Chat Examples](https://assets.holoviz.org/panel/readme/panel-chat-examples.jpg)](https://holoviz-topics.github.io/panel-chat-examples/)
 
-[![Awesome Panel Gallery](https://assets.holoviz.org/panel/readme/awesome_panel.jpg)](https://www.awesome-panel.org/gallery?theme=default)
+[![Awesome Panel Gallery](https://assets.holoviz.org/panel/readme/awesome_panel.jpg)](https://www.awesome-panel.org)
 
 ## Get started
 
