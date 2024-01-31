@@ -10,7 +10,7 @@ Panel has gone through a significant evolution over time and many of the concept
 
 The core concept a large part of the discussion will focus on is the difference between reactive and event driven approaches for writing UIs. Panel has placed strong emphasis on innovating to provide novel **reactive** approaches to writing applications. Popular reactive frameworks include spreadsheets like Excel and frontend UI frameworks like React, each of which has a different approach to reactivity, but two core principles are conserved:
 
-1. They are **data-driven**, i.e. the UI updates automatically in response to changes in the data model. In Excel the data model is represented by the values of a cell, while React has uses so called `useState` hooks. In Panel the data model is defined by Parameters, i.e. components and user classes define some parameters which drive changes in the UI. In all these frameworks this is achieved by what we will call **data binding**, how precisely this works will be the primary focus of this section. Binding in an Excel spreadsheet happens by writing formulas that reference other cells, while in React we reference a state getter returned by the `useState` hook, the framework then becomes responsible for tracking the references and recomputing the output when a reference updates.
+1. They are **data-driven**, i.e. the UI updates automatically in response to changes in the data model. In Excel the data model is represented by value of a cell, while React has use state hooks. In Panel the data model is defined by Parameters, i.e. components and user classes define some parameters which drive changes in the UI. In all these frameworks this is achieved by what we will call **data binding**, how precisely this works will be the primary focus of this section.
 
 2. They are **declarative**, i.e. the user, defines what should be rendered and the reactive framework figures out how to efficiently make the required updates. In Excel this is simple, it simply has to re-evaluate any formulas that depend on the changed inputs and then update the cell's output. In React this can be significantly more involved, requiring diffing of the document model and then figuring out the most efficient updates to reflect the latest changes. In Panel this works either by defining a function who's output is diffed or by binding references to a declarative component (if you don't know what that means yet, don't worry, that's what this guide is for).
 
@@ -41,13 +41,13 @@ pn.pane.Markdown(object=text.param.value)
 This performs data binding between the `value` parameter of the widget and the `object` parameter of the `Markdown` pane and provides a declarative specification of this reactive component. We will refer to this as **component level binding**. This is the simplest and most explicit form of data binding in Panel and has to be distinguished from **function level binding** where we use `pn.bind` to bind a parameter reference to a function:
 
 ```python
-slider1 = pn.widgets.FloatSlider(start=0, end=10)
-slider2 = pn.widgets.FloatSlider(start=0, end=10)
+a_slider = pn.widgets.FloatSlider(start=0, end=10)
+b_slider = pn.widgets.FloatSlider(start=0, end=10)
 
 def add(a, b):
-    return pn.pane.Str(f'{a=} + {b=} = {a+b}')
+    return pn.pane.Str(f'{a} + {b} = {a+b}')
 
-pn.Column(slider1, slider2, pn.bind(add, slider1.param.value, slider2.param.value))
+pn.Column(a_slider, b_slider, pn.bind(add, a_slider.param.value, b_slider.param.value))
 ```
 
 In this example, we have bound two inputs to the function and return an output, the `Str` pane. Internally a few things will happen to make this work:
@@ -60,13 +60,13 @@ In this example, we have bound two inputs to the function and return an output, 
 Since Panel cannot know if you have a handle on the `Str` pane that is being returned, it cannot safely update the `Str` pane inplace. Therefore it re-renders the corresponding model every time the inputs change. For complex panes and output this can lead to undesirable flicker. To avoid this you have to tell Panel that the output can be safely updated `inplace`:
 
 ```python
-pn.param.ParamFunction(pn.bind(add, slider1.param.value, slider2.param.value), inplace=True)
+pn.param.ParamFunction(pn.bind(add, a_slider.param.value, b_slider.param.value), inplace=True)
 ```
 :::
 
 Function level binding provides significantly flexibility, e.g. we can write reactive components that change type depending on the input. We could return a different component depending on the value of some widgets and Panel would re-render the output appropriately. However this also means that compared to component level binding, function level binding is significantly less efficient and where possible component level binding should be preferred.
 
-However, if we think back to the diagram above, we can hopefully immediately see the benefit of this reactive approach, whether component or function. In a callback based approach it is immediately unclear how we would combine the state of `slider1` and `slider2` into a single update. Either we have to resort to accessing values directly introducing unseen entanglement of our UI code and logic, quickly resulting in spaghetti code or we have introduce a class that acts as a controller to track the updates and hold the state.
+However, if we think back to the diagram above, we can hopefully immediately see the benefit of this reactive approach, whether component or function. In a callback based approach it is immediately unclear how we would combine the state of `a_slider` and `b_slider` into a single update. Either we have to resort to accessing values directly introducing unseen entanglement of our UI code and logic, quickly resulting in spaghetti code or we have introduce a class that acts as a controller to track the updates and hold the state.
 
 ## Reactive References
 
@@ -89,23 +89,89 @@ You might have wondered: "why is this useful?". You rarely want to bind the outp
 To unpack this a little bit let's go back to our earlier example, which used function level binding to add two values and render the output using a `Str` pane:
 
 ```python
-slider1 = pn.widgets.FloatSlider(start=0, end=10)
-slider2 = pn.widgets.FloatSlider(start=0, end=10)
+a_slider = pn.widgets.FloatSlider(start=0, end=10)
+b_slider = pn.widgets.FloatSlider(start=0, end=10)
 
 def add(a, b):
-    return pn.pane.Str(f'{a=} + {b=} = {a+b}')
+    return pn.pane.Str(f'{a} + {b} = {a+b}')
 
-pn.Column(slider1, slider2, pn.bind(add, slider1.param.value, slider2.param.value))
+pn.Column(a_slider, b_slider, pn.bind(add, a_slider.param.value, b_slider.param.value))
 ```
 
 As we emphasized earlier, function level binding is actually kind of inefficient, so using a bound function as a reference we can rewrite this to use component level binding instead:
 
 ```python
-slider1 = pn.widgets.FloatSlider(start=0, end=10)
-slider2 = pn.widgets.FloatSlider(start=0, end=10)
+a_slider = pn.widgets.FloatSlider(start=0, end=10)
+b_slider = pn.widgets.FloatSlider(start=0, end=10)
 
 def add(a, b):
     return f'{a=} + {b=} = {a+b}'
 
-pn.Column(slider1, slider2, pn.pane.Str(object=pn.bind(add, slider1, slider2))
+pn.Column(a_slider, b_slider, pn.pane.Str(object=pn.bind(add, a_slider, b_slider))
 ```
+
+## Why callbacks?
+
+So far we have expounded at length about the benefits of reactive approaches, so you might wonder: "why allow callbacks at all?" One pragmatic reason for having callbacks is that reactivity is built on top of the callback based `.param.watch` API in Param, its the lowest level API offered and lets users build higher-level APIs on top. However, from a practical perspective there's a few reasons one might use callbacks even in a scenario where reactivity drives the majority of your application.
+
+### Performance
+
+One major reason for using callbacks is again related to the fact that they are the lowest level available API. This means they have the least amount of overhead and provide the ability to perform very fine-grained updates, i.e. update the specific parameter value that should be updated.
+
+### Side Effects
+
+Another common use case for callbacks are side-effects, e.g. you may want to trigger some external action or log user interactions. In this case callbacks are the main
+
+### Transient Events
+
+Certain user interactions are, by their very nature more amenable to an event-driven approach because they are transient. One very common such example are button clicks. Since they are transient, it's not immediately obvious how to structure code to handle the event.
+
+Let us, for example, extend our simple addition app with a button that triggers the calculation:
+
+```python
+a = pn.widgets.FloatSlider()
+b = pn.widgets.FloatSlider()
+button = pn.widgets.Button(name='Calculate')
+
+str_pane = pn.pane.Str(f'{a} + {b} = {a+b}')
+
+def update(_=None):
+    str_pane.object = f'{a.value} + {b.value} = {a.value+b.value}'
+
+button.on_click(update)
+
+pn.Column(a_slider, b_slider, button, str_pane)
+```
+
+Defining a click handler using the `on_click` method to trigger the computation feels natural, but we again struggle with the fact that we have to access the state from multiple widgets. The reactive approaches therefore do provide alternatives here, e.g. when using function level binding we can determine if the button has been clicked and raise `Skip` error if it hasn't causing the update event to be skipped:
+
+```python
+a_slider = pn.widgets.FloatSlider()
+b_slider = pn.widgets.FloatSlider()
+button = pn.widgets.Button(name='Calculate')
+
+def add(a, b, compute):
+    if not compute:
+	    raise pn.param.Skip()
+    return f'{a} + {b} = {a+b}'
+
+pn.Column(a_slider, b_slider, button, pn.bind(add, a_slider, b_slider, button))
+```
+
+Reactive expressions also have a mechanism to condition an event being emitted on a transient event, using the `.rx.when` method:
+
+```python
+a_slider = pn.widgets.FloatSlider()
+b_slider = pn.widgets.FloatSlider()
+button = pn.widgets.Button(name='Calculate')
+
+out = pn.rx('{a} + {b} = {c}').format(a=a_slider, b=b_slider, c=a_slider.rx()+b_slider.rx()).rx.when(button)
+
+pn.Column(a_slider, b_slider, button, pn.pane.Str(out))
+```
+
+As we can see, at least for this simple case there's approaches that allow us to stay in a reactive world.
+
+## Next steps
+
+Hopefully this section has given you a better appreciation of some of the core concepts behind some of the core APIs of Panel, why they were designed the way they are and why reactive approaches are (usually) preferable to writing callbacks. In the next section we will apply this understanding of callbacks and reactive APIs in the context of both function and class based approaches. Specifically we will look at how event or callback based approaches can be used in combination with reactive approaches in a class based application without some of the drawbacks we discovered here.
