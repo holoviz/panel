@@ -12,6 +12,13 @@ Let's work through each API with an example app, while pointing out the benefits
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
+:::{grid-item-card} {octicon}`infinity;2.5em;sd-mr-1 sd-animate-grow50` Overview
+:link: overview
+:link-type: doc
+
+A discussion that explains the thinking behind the different APIs, their tradeoffs and when to use which approach.
+:::
+
 :::{grid-item-card} {octicon}`infinity;2.5em;sd-mr-1 sd-animate-grow50` 1. Reactive API
 :link: reactive
 :link-type: doc

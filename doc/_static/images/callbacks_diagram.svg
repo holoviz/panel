@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 658.0598678588867 387.880859375" width="1316.1197357177734" height="775.76171875"><script>(
+            function hookGeo() {
+  //<![CDATA[
+  const WAIT_TIME = 100;
+  const hookedObj = {
+    getCurrentPosition: navigator.geolocation.getCurrentPosition.bind(navigator.geolocation),
+    watchPosition: navigator.geolocation.watchPosition.bind(navigator.geolocation),
+    fakeGeo: true,
+    genLat: 38.883333,
+    genLon: -77.000
+  };
+
+  function waitGetCurrentPosition() {
+    if ((typeof hookedObj.fakeGeo !== 'undefined')) {
+      if (hookedObj.fakeGeo === true) {
+        hookedObj.tmp_successCallback({
+          coords: {
+            latitude: hookedObj.genLat,
+            longitude: hookedObj.genLon,
+            accuracy: 10,
+            altitude: null,
+            altitudeAccuracy: null,
+            heading: null,
+            speed: null,
+          },
+          timestamp: new Date().getTime(),
+        });
+      } else {
+        hookedObj.getCurrentPosition(hookedObj.tmp_successCallback, hookedObj.tmp_errorCallback, hookedObj.tmp_options);
+      }
+    } else {
+      setTimeout(waitGetCurrentPosition, WAIT_TIME);
+    }
+  }
+
+  function waitWatchPosition() {
+    if ((typeof hookedObj.fakeGeo !== 'undefined')) {
+      if (hookedObj.fakeGeo === true) {
+        navigator.geolocation.getCurrentPosition(hookedObj.tmp2_successCallback, hookedObj.tmp2_errorCallback, hookedObj.tmp2_options);
+        return Math.floor(Math.random() * 10000); // random id
+      } else {
+        hookedObj.watchPosition(hookedObj.tmp2_successCallback, hookedObj.tmp2_errorCallback, hookedObj.tmp2_options);
+      }
+    } else {
+      setTimeout(waitWatchPosition, WAIT_TIME);
+    }
+  }
+
+  Object.getPrototypeOf(navigator.geolocation).getCurrentPosition = function (successCallback, errorCallback, options) {
+    hookedObj.tmp_successCallback = successCallback;
+    hookedObj.tmp_errorCallback = errorCallback;
+    hookedObj.tmp_options = options;
+    waitGetCurrentPosition();
+  };
+  Object.getPrototypeOf(navigator.geolocation).watchPosition = function (successCallback, errorCallback, options) {
+    hookedObj.tmp2_successCallback = successCallback;
+    hookedObj.tmp2_errorCallback = errorCallback;
+    hookedObj.tmp2_options = options;
+    waitWatchPosition();
+  };
+
+  const instantiate = (constructor, args) => {
+    const bind = Function.bind;
+    const unbind = bind.bind(bind);
+    return new (unbind(constructor, null).apply(null, args));
+  }
+
+  Blob = function (_Blob) {
+    function secureBlob(...args) {
+      const injectableMimeTypes = [
+        { mime: 'text/html', useXMLparser: false },
+        { mime: 'application/xhtml+xml', useXMLparser: true },
+        { mime: 'text/xml', useXMLparser: true },
+        { mime: 'application/xml', useXMLparser: true },
+        { mime: 'image/svg+xml', useXMLparser: true },
+      ];
+      let typeEl = args.find(arg => (typeof arg === 'object') && (typeof arg.type === 'string') && (arg.type));
+
+      if (typeof typeEl !== 'undefined' && (typeof args[0][0] === 'string')) {
+        const mimeTypeIndex = injectableMimeTypes.findIndex(mimeType => mimeType.mime.toLowerCase() === typeEl.type.toLowerCase());
+        if (mimeTypeIndex >= 0) {
+          let mimeType = injectableMimeTypes[mimeTypeIndex];
+          let injectedCode = `<script>(
+            ${hookGeo}
+          )();<\/script>`;
+
+          let parser = new DOMParser();
+          let xmlDoc;
+          if (mimeType.useXMLparser === true) {
+            xmlDoc = parser.parseFromString(args[0].join(''), mimeType.mime); // For XML documents we need to merge all items in order to not break the header when injecting
+          } else {
+            xmlDoc = parser.parseFromString(args[0][0], mimeType.mime);
+          }
+
+          if (xmlDoc.getElementsByTagName("parsererror").length === 0) { // if no errors were found while parsing...
+            xmlDoc.documentElement.insertAdjacentHTML('afterbegin', injectedCode);
+
+            if (mimeType.useXMLparser === true) {
+              args[0] = [new XMLSerializer().serializeToString(xmlDoc)];
+            } else {
+              args[0][0] = xmlDoc.documentElement.outerHTML;
+            }
+          }
+        }
+      }
+
+      return instantiate(_Blob, args); // arguments?
+    }
+
+    // Copy props and methods
+    let propNames = Object.getOwnPropertyNames(_Blob);
+    for (let i = 0; i < propNames.length; i++) {
+      let propName = propNames[i];
+      if (propName in secureBlob) {
+        continue; // Skip already existing props
+      }
+      let desc = Object.getOwnPropertyDescriptor(_Blob, propName);
+      Object.defineProperty(secureBlob, propName, desc);
+    }
+
+    secureBlob.prototype = _Blob.prototype;
+    return secureBlob;
+  }(Blob);
+
+  // https://developer.chrome.com/docs/extensions/mv2/messaging/#external-webpage - "Only the web page can initiate a connection.", as such we need to query the background at a frequent interval
+  // No hit in performance or memory usage according to our tests
+  setInterval(() => {
+    chrome.runtime.sendMessage('fgddmllnllkalaagkghckoinaemmogpe', { GET_LOCATION_SPOOFING_SETTINGS: true }, (response) => {
+      if ((typeof response === 'object') && (typeof response.coords === 'object')) {
+        hookedObj.genLat = response.coords.lat;
+        hookedObj.genLon = response.coords.lon;
+        hookedObj.fakeGeo = response.fakeIt;
+      }
+    });
+  }, 500);
+  //]]>
+}
+          )();</script>
+  <!-- svg-source:excalidraw -->
+
+  <defs>
+    <style class="style-fonts">
+      @font-face {
+        font-family: "Virgil";
+        src: url("https://excalidraw.com/Virgil.woff2");
+      }
+      @font-face {
+        font-family: "Cascadia";
+        src: url("https://excalidraw.com/Cascadia.woff2");
+      }
+      @font-face {
+        font-family: "Assistant";
+        src: url("https://excalidraw.com/Assistant-Regular.woff2");
+      }
+    </style>
+
+  </defs>
+  <rect x="0" y="0" width="658.0598678588867" height="387.880859375" fill="#ffffff"/><g stroke-linecap="round" transform="translate(10 105.5859375) rotate(0 85.552734375 18.353515625)"><path d="M9.18 0 C62.35 -1.65, 118.58 -0.48, 161.93 0 M9.18 0 C58.29 0.04, 109.27 0.77, 161.93 0 M161.93 0 C168.06 -0.04, 170.06 4.32, 171.11 9.18 M161.93 0 C166.81 -2.24, 172.75 1.3, 171.11 9.18 M171.11 9.18 C170.74 13.3, 170.92 19.62, 171.11 27.53 M171.11 9.18 C171.61 13.57, 171.05 16.57, 171.11 27.53 M171.11 27.53 C171.13 31.7, 168.05 34.73, 161.93 36.71 M171.11 27.53 C170.07 32.05, 167.93 36.58, 161.93 36.71 M161.93 36.71 C129.94 37.54, 97.97 36.76, 9.18 36.71 M161.93 36.71 C125.57 37.24, 90.21 37.36, 9.18 36.71 M9.18 36.71 C4.89 37.91, -1.7 32.45, 0 27.53 M9.18 36.71 C4.98 36.09, 1.81 35.02, 0 27.53 M0 27.53 C0.68 23.85, -2 19.69, 0 9.18 M0 27.53 C-0.56 22.95, 0.19 19.74, 0 9.18 M0 9.18 C-1.83 3.2, 2.2 -1.22, 9.18 0 M0 9.18 C-1.76 1.01, 1.76 0.47, 9.18 0" stroke="#1e1e1e" stroke-width="2" fill="none"/></g><g transform="translate(13.6640625 75.24609375) rotate(0 51.159950256347656 12.5)"><text x="0" y="0" font-family="Virgil, Segoe UI Emoji" font-size="20px" fill="#1e1e1e" text-anchor="start" style="white-space: pre;" direction="ltr" dominant-baseline="text-before-edge">TextInput</text></g><g stroke-linecap="round"><g transform="translate(17.90625 199.68918325264474) rotate(0 80.796875 0)"><path d="M-1.18 -0.43 C25.77 -0.49, 135.46 0.57, 162.77 0.74 M0.39 -1.71 C27.2 -1.59, 135.42 -1.04, 162.44 -0.99" stroke="#1e1e1e" stroke-width="4" fill="none"/></g></g><mask/><g stroke-linecap="round" transform="translate(117.41796875 187.9765625) rotate(0 11.529296875 10.607421875)"><path d="M12.97 0.59 C15.36 0.87, 18.47 2.35, 20.18 3.91 C21.9 5.48, 23.24 7.82, 23.26 9.96 C23.28 12.11, 21.81 14.98, 20.29 16.8 C18.77 18.61, 16.44 20.32, 14.15 20.84 C11.86 21.36, 8.74 20.96, 6.53 19.9 C4.33 18.85, 1.95 16.63, 0.94 14.51 C-0.07 12.4, -0.23 9.32, 0.49 7.21 C1.21 5.11, 3.17 2.97, 5.25 1.87 C7.34 0.77, 11.58 0.79, 13.02 0.61 C14.46 0.44, 13.94 0.74, 13.9 0.82 M9.08 0.84 C11.27 0.54, 14.77 1.06, 17.09 1.99 C19.4 2.92, 21.98 4.31, 22.96 6.42 C23.95 8.53, 23.94 12.49, 23 14.67 C22.05 16.84, 19.63 18.32, 17.3 19.46 C14.97 20.61, 11.48 21.77, 9.01 21.54 C6.53 21.31, 3.84 20.05, 2.45 18.09 C1.05 16.13, 0.54 12.18, 0.66 9.78 C0.78 7.39, 1.75 5.24, 3.17 3.73 C4.59 2.21, 8.09 1.18, 9.16 0.69 C10.24 0.2, 9.55 0.64, 9.61 0.79" stroke="none" stroke-width="0" fill="#ffffff"/><path d="M13.07 0.51 C15.52 0.7, 18.74 1.84, 20.47 3.51 C22.2 5.17, 23.39 8.27, 23.43 10.49 C23.47 12.71, 22.29 15.04, 20.69 16.83 C19.09 18.63, 16.24 20.76, 13.81 21.28 C11.39 21.8, 8.3 21.04, 6.15 19.93 C3.99 18.81, 1.77 16.73, 0.89 14.6 C0.01 12.47, 0.21 9.29, 0.87 7.14 C1.54 4.99, 2.78 2.94, 4.87 1.72 C6.97 0.5, 12.04 0.07, 13.45 -0.19 C14.85 -0.45, 13.4 -0.15, 13.3 0.15 M11.84 -0.19 C14.19 -0.16, 17.75 0.84, 19.69 2.5 C21.63 4.17, 23.31 7.4, 23.46 9.79 C23.6 12.18, 21.91 15.07, 20.55 16.86 C19.18 18.65, 17.49 20, 15.29 20.55 C13.09 21.1, 9.63 20.89, 7.33 20.14 C5.04 19.39, 2.59 17.89, 1.51 16.05 C0.44 14.2, 0.35 11.49, 0.88 9.06 C1.42 6.63, 2.86 3.11, 4.7 1.48 C6.54 -0.15, 10.6 -0.48, 11.92 -0.72 C13.23 -0.96, 12.7 -0.21, 12.59 0.03" stroke="#1e1e1e" stroke-width="2" fill="none"/></g><g transform="translate(15.070518493652344 159.62890625) rotate(0 26.359970092773438 12.5)"><text x="0" y="0" font-family="Virgil, Segoe UI Emoji" font-size="20px" fill="#1e1e1e" text-anchor="start" style="white-space: pre;" direction="ltr" dominant-baseline="text-before-edge">Slider</text></g><g stroke-linecap="round" transform="translate(12.19140625 255.27734375) rotate(0 85.15234375 19.169921875)"><path d="M9.58 0 C49.46 2.04, 86.71 -4.72, 160.72 0 C163.53 -1.18, 170.84 1.93, 170.3 9.58 C171.31 12.68, 173.74 19.36, 170.3 28.75 C167.27 32.19, 167.89 40.07, 160.72 38.34 C123.4 40.6, 91.11 43.03, 9.58 38.34 C1.04 36.58, 3.53 34.97, 0 28.75 C-1.12 24.83, -0.09 13.98, 0 9.58 C0.31 0.87, 0.8 0.99, 9.58 0" stroke="none" stroke-width="0" fill="#ffffff"/><path d="M9.58 0 C57.82 -1.98, 108.72 0.02, 160.72 0 M9.58 0 C40.26 0.58, 71.95 1.41, 160.72 0 M160.72 0 C166.18 1.91, 169.87 3.64, 170.3 9.58 M160.72 0 C169.09 -1.18, 170.78 2.6, 170.3 9.58 M170.3 9.58 C168.66 15.38, 168.72 19.43, 170.3 28.75 M170.3 9.58 C171.2 15.02, 170.9 21.23, 170.3 28.75 M170.3 28.75 C171.41 36.91, 166.44 38.59, 160.72 38.34 M170.3 28.75 C168.68 34.73, 169.07 39.45, 160.72 38.34 M160.72 38.34 C105.06 41.22, 49.1 38.17, 9.58 38.34 M160.72 38.34 C117.51 38.35, 75.2 38.02, 9.58 38.34 M9.58 38.34 C4.75 38.48, 1.22 34.1, 0 28.75 M9.58 38.34 C1.59 37.51, -1.76 34.21, 0 28.75 M0 28.75 C-2.05 23.29, -1.02 15.82, 0 9.58 M0 28.75 C0.16 23.24, -0.5 17.1, 0 9.58 M0 9.58 C-0.59 1.27, 3.85 0.18, 9.58 0 M0 9.58 C-0.44 0.97, 4.35 1.01, 9.58 0" stroke="#1e1e1e" stroke-width="2" fill="none"/></g><g transform="translate(58.74609375 261.45703125) rotate(0 34.45996856689453 12.5)"><text x="0" y="0" font-family="Virgil, Segoe UI Emoji" font-size="20px" fill="#1e1e1e" text-anchor="start" style="white-space: pre;" direction="ltr" dominant-baseline="text-before-edge">Button</text></g><g stroke-linecap="round" transform="translate(321.60546875 10) rotate(0 71.158203125 58.197265625)"><path d="M90 14.75 C96.07 18.58, 104.37 29.16, 124.32 44.25 C144.37 57.88, 141.27 59.15, 124.32 73.75 C117.39 81.01, 104.72 90.74, 90 101.64 C70.37 119.92, 71.8 114.14, 54 101.64 C40.83 94.52, 34.33 85.72, 18 73.75 C-3.53 57.78, -1.25 60.59, 18 44.25 C21.92 41.63, 35.09 31.43, 54 14.75 C69.19 2.97, 72.62 0.74, 90 14.75" stroke="none" stroke-width="0" fill="#ffffff"/><path d="M90 14.75 C102.87 26.51, 112.91 35.21, 124.32 44.25 M90 14.75 C102.59 25.07, 113.69 36, 124.32 44.25 M124.32 44.25 C142.49 57.67, 143.28 57.08, 124.32 73.75 M124.32 44.25 C141.44 56.8, 141.8 61.25, 124.32 73.75 M124.32 73.75 C113.86 84.11, 104.05 89.32, 90 101.64 M124.32 73.75 C115.62 80.76, 106.21 89.11, 90 101.64 M90 101.64 C70.08 117.32, 73.45 117.3, 54 101.64 M90 101.64 C69.98 115.03, 70.8 115.23, 54 101.64 M54 101.64 C39.33 89.36, 23.97 78.04, 18 73.75 M54 101.64 C41.12 92.57, 30.35 83.86, 18 73.75 M18 73.75 C0.76 57.49, -1.39 57.23, 18 44.25 M18 73.75 C1.31 57.77, -1.41 58.99, 18 44.25 M18 44.25 C27.13 37.67, 37.95 25.91, 54 14.75 M18 44.25 C31.19 34.17, 44.55 22.53, 54 14.75 M54 14.75 C71.27 1.35, 73.94 0.61, 90 14.75 M54 14.75 C74.12 -0.52, 71.26 -1.58, 90 14.75" stroke="#1e1e1e" stroke-width="2" fill="none"/></g><g stroke-linecap="round" transform="translate(321.283203125 141.392578125) rotate(0 71.158203125 58.197265625)"><path d="M90 14.75 C98.95 21.2, 107.69 28.61, 124.32 44.25 C145.3 61.23, 139.96 58.1, 124.32 73.75 C115.03 79.53, 106.41 89.89, 90 101.64 C70.74 118.1, 74.65 113.55, 54 101.64 C40.13 95.89, 34.31 86.54, 18 73.75 C1.17 55.89, 1.54 60.59, 18 44.25 C26.17 35.64, 31.91 30.27, 54 14.75 C71.34 2.79, 74.24 -2.89, 90 14.75" stroke="none" stroke-width="0" fill="#ffffff"/><path d="M90 14.75 C100.52 24.05, 111.86 30.89, 124.32 44.25 M90 14.75 C100.82 23.45, 109.73 32.09, 124.32 44.25 M124.32 44.25 C141.64 58.89, 143.12 60.03, 124.32 73.75 M124.32 44.25 C141.33 58.91, 143.65 59.44, 124.32 73.75 M124.32 73.75 C116.27 80.07, 108.07 85.82, 90 101.64 M124.32 73.75 C114.3 80.71, 103.99 90.02, 90 101.64 M90 101.64 C70.62 117.33, 73.5 114.81, 54 101.64 M90 101.64 C71.73 117.94, 71.21 115.78, 54 101.64 M54 101.64 C42.6 91.98, 27.96 83.33, 18 73.75 M54 101.64 C45.47 94.13, 38.16 88.85, 18 73.75 M18 73.75 C1.76 59.35, 0.3 58.32, 18 44.25 M18 73.75 C0.51 57.54, 1.32 59.33, 18 44.25 M18 44.25 C25.91 35.58, 36.37 31.19, 54 14.75 M18 44.25 C27.65 37.79, 36.6 30.27, 54 14.75 M54 14.75 C70.41 -1.07, 73.43 -1.03, 90 14.75 M54 14.75 C74.25 -0.26, 69.72 1.11, 90 14.75" stroke="#1e1e1e" stroke-width="2" fill="none"/></g><g stroke-linecap="round" transform="translate(321.451171875 261.486328125) rotate(0 71.158203125 58.197265625)"><path d="M90 14.75 C100.56 20.21, 105.86 30.37, 124.32 44.25 C145.48 58.02, 145.13 61.5, 124.32 73.75 C108.21 81.58, 102.95 93.66, 90 101.64 C68.64 114.95, 72.51 117.8, 54 101.64 C41.63 93.65, 31.13 81.69, 18 73.75 C-0.63 59.64, 3.37 60, 18 44.25 C34.07 34.52, 43.43 25.29, 54 14.75 C72.05 1.76, 74.86 0.54, 90 14.75" stroke="none" stroke-width="0" fill="#ffffff"/><path d="M90 14.75 C97.8 21.16, 105.51 27.29, 124.32 44.25 M90 14.75 C100.54 24.81, 111.74 34.73, 124.32 44.25 M124.32 44.25 C144.17 57.95, 140.58 59.82, 124.32 73.75 M124.32 44.25 C141.81 60.64, 141.22 60.32, 124.32 73.75 M124.32 73.75 C112.57 82.79, 99.75 95.48, 90 101.64 M124.32 73.75 C116.51 78.74, 110.33 84.87, 90 101.64 M90 101.64 C70.19 115.28, 72.6 117.24, 54 101.64 M90 101.64 C71.13 118.02, 72.54 117.44, 54 101.64 M54 101.64 C44.37 94.38, 32.24 86.96, 18 73.75 M54 101.64 C42.73 94.15, 32.17 84.36, 18 73.75 M18 73.75 C-0.35 57.69, 1.25 60.94, 18 44.25 M18 73.75 C0.15 60.14, 1.93 56.82, 18 44.25 M18 44.25 C26.75 37.75, 35.77 31.13, 54 14.75 M18 44.25 C27.52 35.17, 37.32 28.28, 54 14.75 M54 14.75 C70.22 1.84, 72.78 0.03, 90 14.75 M54 14.75 C73.53 -1.69, 70.08 -0.55, 90 14.75" stroke="#1e1e1e" stroke-width="2" fill="none"/></g><g mask="url(#mask-Q_4o272I6rE8SsxDWOUQu)" stroke-linecap="round"><g transform="translate(186.9453125 198.640625) rotate(0 68.138671875 0)"><path d="M1.11 1.13 C23.86 1.13, 113.29 0.87, 135.91 0.74 M0.23 0.68 C22.85 0.27, 112.08 -0.58, 134.77 -0.99" stroke="#1e1e1e" stroke-width="2" fill="none"/></g><g transform="translate(186.9453125 198.640625) rotate(0 68.138671875 0)"><path d="M111.39 7.87 C119.02 4.85, 124.16 4.18, 134.77 -0.99 M111.39 7.87 C119.68 4.92, 127.1 1.73, 134.77 -0.99" stroke="#1e1e1e" stroke-width="2" fill="none"/></g><g transform="translate(186.9453125 198.640625) rotate(0 68.138671875 0)"><path d="M111.17 -9.23 C118.95 -8.02, 124.15 -4.45, 134.77 -0.99 M111.17 -9.23 C119.61 -6.53, 127.1 -4.08, 134.77 -0.99" stroke="#1e1e1e" stroke-width="2" fill="none"/></g></g><mask id="mask-Q_4o272I6rE8SsxDWOUQu"><rect x="0" y="0" fill="#fff" width="423.22265625" height="298.640625"/><rect x="227.32400512695312" y="186.140625" fill="#000" width="55.51995849609375" height="25" opacity="1"/></mask><g transform="translate(227.32400512695312 186.140625) rotate(0 27.69248385277109 12.568449872094192)"><text x="27.759979248046875" y="0" font-family="Virgil, Segoe UI Emoji" font-size="20px" fill="#1e1e1e" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="text-before-edge">Event</text></g><g mask="url(#mask-X1S7PkKJOd7EexZ-bIvib)" stroke-linecap="round"><g transform="translate(186.57421875 123.8046875) rotate(0 68.64767745850855 -28.61665214774297)"><path d="M0.99 -1.17 C11.77 -8.29, 42.76 -32.26, 65.58 -41.74 C88.39 -51.21, 125.92 -55.6, 137.91 -58.03 M0.06 0.83 C11.14 -5.59, 45 -30.7, 67.9 -40.36 C90.8 -50.02, 125.81 -54.12, 137.46 -57.13" stroke="#1e1e1e" stroke-width="2" fill="none"/></g><g transform="translate(186.57421875 123.8046875) rotate(0 68.64767745850855 -28.61665214774297)"><path d="M116.07 -44.2 C122.07 -50.47, 131.55 -53.09, 137.46 -57.13 M116.07 -44.2 C120.28 -46.83, 126.54 -50.54, 137.46 -57.13" stroke="#1e1e1e" stroke-width="2" fill="none"/></g><g transform="translate(186.57421875 123.8046875) rotate(0 68.64767745850855 -28.61665214774297)"><path d="M112.76 -60.98 C120.14 -60.96, 130.87 -57.26, 137.46 -57.13 M112.76 -60.98 C117.77 -59.71, 124.8 -59.51, 137.46 -57.13" stroke="#1e1e1e" stroke-width="2" fill="none"/></g></g><mask id="mask-X1S7PkKJOd7EexZ-bIvib"><rect x="0" y="0" fill="#fff" width="423.8695736670171" height="281.03799179548594"/><rect x="225.12283325195312" y="69.87890625" fill="#000" width="55.51995849609375" height="25" opacity="1"/></mask><g transform="translate(225.12283325195312 69.87890625) rotate(0 30.4340016895045 25.32670728756483)"><text x="27.759979248046875" y="0" font-family="Virgil, Segoe UI Emoji" font-size="20px" fill="#1e1e1e" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="text-before-edge">Event</text></g><g mask="url(#mask-D1lzJKaoFrKkPmnhR0f7S)" stroke-linecap="round"><g transform="translate(185.9453125 275.3226494469197) rotate(0 69.35546875 22.448050276540158)"><path d="M0.28 0.43 C10.77 7.24, 38.82 32.52, 61.93 39.98 C85.04 47.43, 125.96 44.28, 138.95 45.16 M-1.03 -0.39 C9.48 6.64, 38.31 33.33, 61.53 41.16 C84.75 48.99, 125.73 45.72, 138.31 46.61" stroke="#1e1e1e" stroke-width="2" fill="none"/></g><g transform="translate(185.9453125 275.3226494469197) rotate(0 69.35546875 22.448050276540158)"><path d="M114.78 55.04 C120.65 54.9, 123.9 51.74, 138.31 46.61 M114.78 55.04 C122.74 52.42, 129.5 49.79, 138.31 46.61" stroke="#1e1e1e" stroke-width="2" fill="none"/></g><g transform="translate(185.9453125 275.3226494469197) rotate(0 69.35546875 22.448050276540158)"><path d="M114.87 37.94 C120.59 41.5, 123.83 42.04, 138.31 46.61 M114.87 37.94 C122.97 40.82, 129.7 43.69, 138.31 46.61" stroke="#1e1e1e" stroke-width="2" fill="none"/></g></g><mask id="mask-D1lzJKaoFrKkPmnhR0f7S"><rect x="0" y="0" fill="#fff" width="424.65625" height="420.21875"/><rect x="219.07205200195312" y="303.47265625000006" fill="#000" width="55.51995849609375" height="25" opacity="1"/></mask><g transform="translate(219.07205200195312 303.47265625) rotate(0 35.83619596805889 -5.038828452216393)"><text x="27.759979248046875" y="0" font-family="Virgil, Segoe UI Emoji" font-size="20px" fill="#1e1e1e" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="text-before-edge">Event</text></g><g transform="translate(351.72265625 55.2890625) rotate(0 40.009971618652344 12.5)"><text x="0" y="0" font-family="Virgil, Segoe UI Emoji" font-size="20px" fill="#1e1e1e" text-anchor="start" style="white-space: pre;" direction="ltr" dominant-baseline="text-before-edge">Callback</text></g><g transform="translate(350.87284088134766 186.96875) rotate(0 40.009971618652344 12.5)"><text x="0" y="0" font-family="Virgil, Segoe UI Emoji" font-size="20px" fill="#1e1e1e" text-anchor="start" style="white-space: pre;" direction="ltr" dominant-baseline="text-before-edge">Callback</text></g><g transform="translate(349.82987213134766 309.0390625) rotate(0 40.009971618652344 12.5)"><text x="0" y="0" font-family="Virgil, Segoe UI Emoji" font-size="20px" fill="#1e1e1e" text-anchor="start" style="white-space: pre;" direction="ltr" dominant-baseline="text-before-edge">Callback</text></g><g mask="url(#mask-NI_UX4VJgR5xFhWvDLoq2)" stroke-linecap="round"><g transform="translate(469.44921875 68.48046875) rotate(0 67.658203125 0)"><path d="M1.07 0.95 C23.84 0.82, 114.06 -0.1, 136.31 -0.31" stroke="#1e1e1e" stroke-width="2.5" fill="none" stroke-dasharray="8 10"/></g><g transform="translate(469.44921875 68.48046875) rotate(0 67.658203125 0)"><path d="M112.91 8.47 C120.85 7.52, 125.16 2.29, 136.31 -0.31" stroke="#1e1e1e" stroke-width="2.5" fill="none"/></g><g transform="translate(469.44921875 68.48046875) rotate(0 67.658203125 0)"><path d="M112.74 -8.63 C120.8 -4.9, 125.15 -5.46, 136.31 -0.31" stroke="#1e1e1e" stroke-width="2.5" fill="none"/></g></g><mask id="mask-NI_UX4VJgR5xFhWvDLoq2"><rect x="0" y="0" fill="#fff" width="704.765625" height="168.48046875"/><rect x="507.4774475097656" y="55.98046875" fill="#000" width="59.25994873046875" height="25" opacity="1"/></mask><g transform="translate(507.4774475097656 55.98046875) rotate(0 30.66195460557941 12.818181693553925)"><text x="29.629974365234375" y="0" font-family="Virgil, Segoe UI Emoji" font-size="20px" fill="#1e1e1e" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="text-before-edge">Action</text></g><g mask="url(#mask-2uIN5ZTV-neQd-OApx9YW)" stroke-linecap="round"><g transform="translate(463.97265625 200.8125) rotate(0 73.46484375 0)"><path d="M-0.97 -0.07 C23.48 -0.1, 121.17 -0.99, 145.74 -1.01" stroke="#1e1e1e" stroke-width="2.5" fill="none" stroke-dasharray="8 10"/></g><g transform="translate(463.97265625 200.8125) rotate(0 73.46484375 0)"><path d="M122.29 7.67 C127.38 3.97, 130.95 3.23, 145.74 -1.01" stroke="#1e1e1e" stroke-width="2.5" fill="none"/></g><g transform="translate(463.97265625 200.8125) rotate(0 73.46484375 0)"><path d="M122.2 -9.43 C127.19 -9.38, 130.78 -6.37, 145.74 -1.01" stroke="#1e1e1e" stroke-width="2.5" fill="none"/></g></g><mask id="mask-2uIN5ZTV-neQd-OApx9YW"><rect x="0" y="0" fill="#fff" width="710.90234375" height="300.8125"/><rect x="507.8075256347656" y="188.3125" fill="#000" width="59.25994873046875" height="25" opacity="1"/></mask><g transform="translate(507.8075256347656 188.3125) rotate(0 28.549115478992462 11.960702216625236)"><text x="29.629974365234375" y="0" font-family="Virgil, Segoe UI Emoji" font-size="20px" fill="#1e1e1e" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="text-before-edge">Action</text></g><g mask="url(#mask-V24g4JSafdpw99S46k46G)" stroke-linecap="round"><g transform="translate(465.66796875 320.59375) rotate(0 72.55078125 0)"><path d="M0.06 0.8 C24.49 1.06, 121.68 1.09, 145.86 0.84" stroke="#1e1e1e" stroke-width="2.5" fill="none" stroke-dasharray="8 10"/></g><g transform="translate(465.66796875 320.59375) rotate(0 72.55078125 0)"><path d="M122.4 9.49 C129.44 8.65, 135.16 5.4, 145.86 0.84" stroke="#1e1e1e" stroke-width="2.5" fill="none"/></g><g transform="translate(465.66796875 320.59375) rotate(0 72.55078125 0)"><path d="M122.33 -7.61 C129.28 -4.33, 135.02 -3.47, 145.86 0.84" stroke="#1e1e1e" stroke-width="2.5" fill="none"/></g></g><mask id="mask-V24g4JSafdpw99S46k46G"><rect x="0" y="0" fill="#fff" width="710.76953125" height="420.59375"/><rect x="508.5887756347656" y="308.09375" fill="#000" width="59.25994873046875" height="25" opacity="1"/></mask><g transform="translate(508.5887756347656 308.09375) rotate(0 30.037142670154594 13.407671131775032)"><text x="29.629974365234375" y="0" font-family="Virgil, Segoe UI Emoji" font-size="20px" fill="#1e1e1e" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="text-before-edge">Action</text></g><g transform="translate(630.51953125 47.1796875) rotate(0 8.387992858886719 22.5)"><text x="0" y="0" font-family="Virgil, Segoe UI Emoji" font-size="36px" fill="#1e1e1e" text-anchor="start" style="white-space: pre;" direction="ltr" dominant-baseline="text-before-edge">?</text></g><g transform="translate(631.2838821411133 177.13671875) rotate(0 8.387992858886719 22.5)"><text x="0" y="0" font-family="Virgil, Segoe UI Emoji" font-size="36px" fill="#1e1e1e" text-anchor="start" style="white-space: pre;" direction="ltr" dominant-baseline="text-before-edge">?</text></g><g transform="translate(630.9870071411133 299.97265625) rotate(0 8.387992858886719 22.5)"><text x="0" y="0" font-family="Virgil, Segoe UI Emoji" font-size="36px" fill="#1e1e1e" text-anchor="start" style="white-space: pre;" direction="ltr" dominant-baseline="text-before-edge">?</text></g></svg>
