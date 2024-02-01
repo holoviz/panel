@@ -164,20 +164,6 @@ Elevate our app's functionality by accepting user input via widgets. Add nice to
 React to user input by leveraging `pn.bind`, enabling our users to foster a deeper understanding of wind turbine data through exploration.
 :::
 
-:::{grid-item-card} {octicon}`table;2.5em;sd-mr-1` Accept User Input from tables
-:link: table_events
-:link-type: doc
-
-Elevate our app's functionality by accepting user input from tables.
-:::
-
-:::{grid-item-card} {octicon}`graph;2.5em;sd-mr-1` Accept User Input from plots
-:link: plot_events
-:link-type: doc
-
-Elevate our app's functionality by accepting user input from plots.
-:::
-
 :::{grid-item-card} {octicon}`list-ordered;2.5em;sd-mr-1` Handle State
 :link: state
 :link-type: doc
@@ -307,8 +293,6 @@ align
 build_report
 widgets
 pn_bind
-table_events
-plot_events
 state
 build_todo
 indicators_activity

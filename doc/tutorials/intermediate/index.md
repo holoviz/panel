@@ -1,12 +1,14 @@
-## Intermediate Tutorials
+# Intermediate Tutorials
 
-These tutorials are for you that is ready to navigate and explore more advanced features of Python and Panel.
+These tutorials are for those that is ready to navigate and explore more advanced features of Python and Panel.
 
-We will build more performant, scalable, polished, reusable and maintainable versions of the applications from the basic tutorial.
+Together, we will build more performant, scalable, polished, reusable and maintainable versions of the applications from the basic tutorial.
 
-After these tutorials you will be able to build a wide range of large and complex multi-page apps structured across multiple files using a *class based approach*.
+After these tutorials you will be able to build a wide range of large and complex multi-page apps structured across multiple files using a *class based approach* and more advanced Python features like `async`.
 
 I will assume you have a *basic skill level* corresponding to the what you get from the [Basic Tutorials](../basic/index.md).
+
+## Get Started
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -18,12 +20,47 @@ I will assume you have a *basic skill level* corresponding to the what you get f
 Learn to serve multi-page apps and how-to customize the Panel server.
 :::
 
+::::
+
+## Develop Seamlessly
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
 :::{grid-item-card} {octicon}`code;2.5em;sd-mr-1` Develop in an Editor
 :link: develop_editor
 :link-type: doc
 
 Learn how to debug applications in an Editor
 :::
+
+::::
+
+## Handle User Input
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`table;2.5em;sd-mr-1` Accept User Input from tables
+:link: table_events
+:link-type: doc
+
+Elevate our app's functionality by accepting user input from tables.
+:::
+
+:::{grid-item-card} {octicon}`graph;2.5em;sd-mr-1` Accept User Input from plots
+:link: plot_events
+:link-type: doc
+
+Elevate our app's functionality by accepting user input from plots.
+:::
+
+::::
+
+## Structure Applications
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
 
 :::{grid-item-card} {octicon}`code;2.5em;sd-mr-1` Structure with DataStore
 :link: structure_data_store
@@ -41,6 +78,8 @@ Learn how to structure larger applications with the `DataStore` pattern
 
 serve
 develop_editor
+table_events
+plot_events
 structure_data_store
 ```
 
