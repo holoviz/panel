@@ -306,6 +306,7 @@ join_community
 pn_panel
 panes
 indicators_performance
+build_monitoring_dashboard
 templates
 layouts
 size
