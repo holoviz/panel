@@ -87,11 +87,11 @@ Display our beloved wind turbine images, data, and plots easily and dynamically 
 Fine-tune how the wind turbine data is displayed with Panes, ensuring our data apps can meet the unique demands of wind turbine data visualization.
 :::
 
-:::{grid-item-card} {octicon}`device-desktop;2.5em;sd-mr-1` Display Content with Indicators
+:::{grid-item-card} {octicon}`device-desktop;2.5em;sd-mr-1` Display Performance with Indicators
 :link: indicators_performance
 :link-type: doc
 
-Show key performance indicators (KPIs) for your wind turbines with Panel's Indicators.
+Show the performance of your wind turbines with Panel's Indicators.
 :::
 
 :::{grid-item-card} {octicon}`clock;2.5em;sd-mr-1` Build a Monitoring Dashboard
