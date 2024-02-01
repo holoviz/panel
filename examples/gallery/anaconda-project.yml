@@ -18,7 +18,7 @@ variables:
   MESA_GL_VERSION_OVERRIDE: 3.2
   PYVISTA_OFF_SCREEN: "true"
 
-dependencies:
+packages:
   - python >=3.10.13
   - panel >=1.4.0a1
   - holoviews >=1.18.2a6
