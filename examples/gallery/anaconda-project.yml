@@ -18,30 +18,31 @@ variables:
   MESA_GL_VERSION_OVERRIDE: 3.2
   PYVISTA_OFF_SCREEN: "true"
 
-packages:
-  - panel
-  - holoviews
-  - pandas
-  - scikit-learn
-  - scikit-image
-  - fastparquet
-  - hvplot
-  - datashader
-  - graphviz
-  - networkx
-  - ipywidgets
-  - pygraphviz
-  - plotly
-  - altair
-  - pydeck
-  - pyvista
-  - seaborn
-  - xgboost
+dependencies:
+  - python >=3.10.13
+  - panel >=1.4.0a1
+  - holoviews >=1.18.2a6
+  - pandas >=2.2.0
+  - scikit-learn >=1.4.0
+  - scikit-image >=0.22.0
+  - fastparquet >=2023.10.1
+  - hvplot >=0.9.2
+  - datashader >=0.16.1a1
+  - graphviz >=8.1.0
+  - networkx >=3.2.1
+  - ipywidgets >=8.1.1
+  - pygraphviz >=1.11
+  - plotly >=5.18.0
+  - altair >=5.2.0
+  - pydeck >=0.8.0
+  - pyvista >=0.43.2
+  - seaborn >=0.13.2
+  - xgboost >=2.0.3
   - vtk=9.2.6=osmesa_py310h7f736e2_103
-  - pyvista
-  - mesalib
-  - numpy<1.24
-  - numba::llvmlite
+  - pyvista >=0.43.2
+  - mesalib >=24.0.0
+  - numpy >=1.23.5,<1.24
+  - numba::llvmlite >=0.42.0
   - pip:
     - ipyvolume
     - folium
