@@ -27,6 +27,10 @@ pn.indicators.Number(
 ).servable()
 ```
 
+:::{note}
+We add `.servable()` to the `Number` *indicator* to add it to the app served by `panel serve app.py --autoreload`. Adding `.servable()` is not needed to display the *indicator* in a notebook.
+:::
+
 Try changing the `value` from `8.6` to `11.4`.
 
 Notice that the color changes to *red*.

@@ -93,9 +93,12 @@ import panel as pn
 pn.extension()
 
 component = pn.panel("""
-# Markdown Sample
+# Wind Turbine
 
-This sample text is from [The Markdown Guide](https://www.markdownguide.org)!
+A wind turbine is a device that converts the kinetic energy of wind into \
+[electrical energy](https://en.wikipedia.org/wiki/Electrical_energy).
+
+Read more [here](https://en.wikipedia.org/wiki/Wind_turbine).
 """)
 print(component)
 
@@ -187,11 +190,12 @@ pn.extension("plotly")
 
 data = pd.DataFrame([
     ('Monday', 7), ('Tuesday', 4), ('Wednesday', 9), ('Thursday', 4),
-    ('Friday', 4), ('Saturday', 4), ('Sunday', 4)], columns=['Day', 'Orders']
+    ('Friday', 4), ('Saturday', 5), ('Sunday', 4)], columns=['Day', 'Wind Speed (m/s)']
 )
 
-fig = px.line(data, x="Day", y="Orders")
+fig = px.line(data, x="Day", y="Wind Speed (m/s)")
 fig.update_traces(mode="lines+markers", marker=dict(size=10), line=dict(width=4))
+fig.update_yaxes(range=[0, max(data['Wind Speed (m/s)']) + 1])
 fig.layout.autosize = True
 
 component = pn.panel(fig, height=400, sizing_mode="stretch_width")
@@ -223,7 +227,7 @@ pn.extension()
 
 data = pd.DataFrame([
     ('Monday', 7), ('Tuesday', 4), ('Wednesday', 9), ('Thursday', 4),
-    ('Friday', 4), ('Saturday', 4), ('Sunday', 4)], columns=['Day', 'Orders']
+    ('Friday', 4), ('Saturday', 5), ('Sunday', 4)], columns=['Day', 'Wind Speed (m/s)']
 )
 component = pn.panel(data)
 print(component)
@@ -246,9 +250,9 @@ import panel as pn
 pn.extension()
 
 component = pn.Column(
-    pn.panel({"a": [1,2,3], "b": "some text"}),
-    pn.panel("https://assets.holoviz.org/panel/samples/png_sample.png", height=100),
-    pn.panel("https://assets.holoviz.org/panel/samples/beatboxing.mp3"),
+    pn.panel({"Wind Speeds": [0, 3, 6, 9, 12, 15, 18, 21], "Power Output": [0,39,260,780, 1300, 1300, 0, 0]}),
+    pn.panel("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=100),
+    pn.panel("https://assets.holoviz.org/panel/tutorials/wind_turbine.mp3"),
 )
 print(component)
 
@@ -265,9 +269,9 @@ import panel as pn
 pn.extension()
 
 component = pn.Column(
-    {"a": [1,2,3], "b": "some text"},
-    "https://assets.holoviz.org/panel/samples/png_sample.png",
-    "https://assets.holoviz.org/panel/samples/beatboxing.mp3",
+    pn.panel({"Wind Speeds": [0, 3, 6, 9, 12, 15, 18, 21], "Power Output": [0,39,260,780, 1300, 1300, 0, 0]}),
+    "https://assets.holoviz.org/panel/tutorials/wind_turbine.png",
+    "https://assets.holoviz.org/panel/tutorials/wind_turbine.mp3",
 )
 print(component)
 
@@ -288,9 +292,9 @@ import panel as pn
 pn.extension()
 
 component = pn.Column(
-    {"a": [1,2,3], "b": "some text"},
-    pn.panel("https://assets.holoviz.org/panel/samples/png_sample.png", height=100),
-    pn.panel("https://assets.holoviz.org/panel/samples/beatboxing.mp3", styles={"background": "orange", "padding": "10px"}),
+    pn.panel({"Wind Speeds": [0, 3, 6, 9, 12, 15, 18, 21], "Power Output": [0,39,260,780, 1300, 1300, 0, 0]}),
+    pn.panel("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=100),
+    pn.panel("https://assets.holoviz.org/panel/tutorials/wind_turbine.mp3", styles={"background": "orange", "padding": "10px"}),
 )
 print(component)
 
