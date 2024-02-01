@@ -94,11 +94,11 @@ Fine-tune how the wind turbine data is displayed with Panes, ensuring our data a
 Show key performance indicators (KPIs) for your wind turbines with Panel's Indicators.
 :::
 
-:::{grid-item-card} {octicon}`clock;2.5em;sd-mr-1` Build a Streaming Dashboard
-:link: build_streaming_dashboard
+:::{grid-item-card} {octicon}`clock;2.5em;sd-mr-1` Build a Monitoring Dashboard
+:link: build_monitoring_dashboard
 :link-type: doc
 
-Build a live, updating dashboard to monitor your wind turbines.
+Build a periodically refreshing dashboard to monitor your wind turbines.
 :::
 
 ::::
@@ -220,6 +220,27 @@ We will build an image classifier to identify wind turbine images.
 Caching allows our apps to store and reuse valuable computations, reducing the energy required for calculations and making our apps run faster and smoother.
 :::
 
+:::{grid-item-card} {octicon}`versions;2.5em;sd-mr-1` Defer the Load
+:link: defer_load
+:link-type: doc
+
+Deferring the load will improve the performance perceived by the user
+:::
+
+::::
+
+## Periodic Updates
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`clock;2.5em;sd-mr-1` Build a Streaming Dashboard
+:link: build_streaming_dashboard
+:link-type: doc
+
+Build a live, updating dashboard to monitor your wind turbines.
+:::
+
 ::::
 
 ## Style your App
@@ -241,8 +262,8 @@ Just as wind turbines come in various designs, this section empowers us to choos
 Fine-tune the styling of our components with `styles` and `stylesheets`. This will ensure our wind turbine data apps are both aesthetically pleasing and user-friendly.
 :::
 
-:::{grid-item-card} {octicon}`image;2.5em;sd-mr-1` Build A Dashboard
-:link: build_dashboard
+:::{grid-item-card} {octicon}`image;2.5em;sd-mr-1` Build a Polished Dashboard
+:link: build_polished_dashboard
 :link-type: doc
 
 We'll guide you through advanced styling, layout optimization, and data visualization techniques to build a refined Wind Turbine Dashboard.
@@ -285,7 +306,6 @@ join_community
 pn_panel
 panes
 indicators_performance
-build_streaming_dashboard
 templates
 layouts
 size
@@ -299,6 +319,8 @@ indicators_activity
 generators
 build_image_classifier
 caching
+defer_load
+build_streaming_dashboard
 design
 style
 build_dashboard
