@@ -52,7 +52,7 @@ Run the following code:
 import pandas as pd
 import panel as pn
 
-pn.extension(design="bootstrap")
+pn.extension()
 
 button = pn.widgets.Button(name="Refresh", icon="refresh", button_type="primary")
 
@@ -66,10 +66,10 @@ data = pd.DataFrame(
         ("Saturday", 4),
         ("Sunday", 4),
     ],
-    columns=["Day", "Orders"],
+    columns=["Day", "Wind Speed (m/s)"],
 )
 
-pn.Column("# Orders", data, button).servable()
+pn.Column("# Wind Speed", data, button).servable()
 ```
 
 :::{note}
@@ -91,7 +91,7 @@ import pandas as pd
 import panel as pn
 import hvplot.pandas
 
-pn.extension(design="bootstrap")
+pn.extension()
 
 data = pd.DataFrame(
     [
@@ -103,9 +103,9 @@ data = pd.DataFrame(
         ("Saturday", 4),
         ("Sunday", 4),
     ],
-    columns=["Day", "Orders"],
+    columns=["Day", "Wind Speed (m/s)"],
 )
-plot = data.hvplot(x="Day", y="Orders", kind="bar", color="goldenrod", title="Orders")
+plot = data.hvplot(x="Day", y="Wind Speed (m/s)", kind="bar", color="goldenrod", title="Wind Speed (m/s)")
 
 pn.Row(plot, data).servable()
 ```
@@ -130,7 +130,7 @@ Run the code below:
 import pandas as pd
 import panel as pn
 
-pn.extension(design="bootstrap")
+pn.extension()
 
 button = pn.widgets.Button(name="Refresh", icon="refresh", button_type="primary")
 
@@ -144,10 +144,10 @@ data = pd.DataFrame(
         ("Saturday", 4),
         ("Sunday", 4),
     ],
-    columns=["Day", "Orders"],
+    columns=["Day", "Wind Speed (m/s)"],
 )
 
-component = pn.Column("# Orders", data, button)
+component = pn.Column("# Wind Speed", data, button)
 pn.Column(component[0], component[2], component[1]).servable()
 ```
 
@@ -163,7 +163,7 @@ Run the code below:
 import pandas as pd
 import panel as pn
 
-pn.extension(design="bootstrap")
+pn.extension()
 
 button = pn.widgets.Button(name="Refresh", icon="refresh", button_type="primary")
 
@@ -177,10 +177,10 @@ data = pd.DataFrame(
         ("Saturday", 4),
         ("Sunday", 4),
     ],
-    columns=["Day", "Orders"],
+    columns=["Day", "Wind Speed (m/s)"],
 )
 
-component = pn.Column("# Orders", data, button)
+component = pn.Column("# Wind Speed", data, button)
 print(component)
 component.servable()
 ```
@@ -189,10 +189,10 @@ component.servable()
 The `print` statement will output something like:
 
 ```bash
-Column(design=<class 'panel.theme.bootst...)
-    [0] Markdown(str, design=<class 'panel.theme.bootst...)
-    [1] DataFrame(DataFrame, design=<class 'panel.theme.bootst...)
-    [2] Button(button_type='primary', design=<class 'panel.theme.bootst..., icon='refresh', name='Refresh')
+Column
+    [0] Markdown(str)
+    [1] DataFrame(DataFrame)
+    [2] Button(button_type='primary', icon='refresh', name='Refresh')
 ```
 
 Under the hood, the `Column` layout has used `pn.panel` to convert the string to a [`Markdown`](../../reference/panes/Markdown.ipynb) pane and the DataFrame to a [`DataFrame`](../../reference/panes/DataFrame.ipynb) pane.
@@ -206,7 +206,7 @@ Run the code below:
 import pandas as pd
 import panel as pn
 
-pn.extension(design="bootstrap")
+pn.extension()
 
 button = pn.widgets.Button(name="Refresh", icon="refresh", button_type="primary")
 
@@ -220,11 +220,11 @@ data = pd.DataFrame(
         ("Saturday", 4),
         ("Sunday", 4),
     ],
-    columns=["Day", "Orders"],
+    columns=["Day", "Wind Speed (m/s)"],
 )
 
 pn.Column(
-    pn.pane.Str("# Orders"), pn.panel(data, sizing_mode="stretch_width"), button
+    pn.pane.Str("# Wind Speed"), pn.panel(data, sizing_mode="stretch_width"), button
 ).servable()
 ```
 
@@ -241,7 +241,7 @@ import pandas as pd
 import panel as pn
 import hvplot.pandas
 
-pn.extension(design="bootstrap")
+pn.extension()
 
 button = pn.widgets.Button(name="Refresh", icon="refresh", button_type="primary")
 data = pd.DataFrame(
@@ -254,11 +254,21 @@ data = pd.DataFrame(
         ("Saturday", 4),
         ("Sunday", 4),
     ],
-    columns=["Day", "Orders"],
+    columns=["Day", "Wind Speed (m/s)"],
 )
-plot = data.hvplot(x="Day", y="Orders", kind="bar", color="goldenrod", title="Orders")
+plot = data.hvplot(
+    x="Day",
+    y="Wind Speed (m/s)",
+    kind="bar",
+    color="goldenrod",
+    title="Wind Speed (m/s)",
+)
 
-pn.Column("# Orders", button, pn.Row(plot, pn.panel(data, width=400))).servable()
+pn.Column(
+    "# Wind Speed",
+    button,
+    pn.Row(pn.panel(plot, sizing_mode="stretch_width"), pn.panel(data)),
+).servable()
 ```
 
 ## Recap
