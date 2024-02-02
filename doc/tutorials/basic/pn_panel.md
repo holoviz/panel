@@ -3,13 +3,13 @@
 In this guide, we will learn to display Python objects easily and dynamically with `pn.panel`:
 
 - Display a string with `pn.panel(some_string)`
-- Display plot figures like [Matplotlib](https://matplotlib.org/), [hvPlot](https://hvplot.holoviz.org), and [Plotly](https://plotly.com/python/) with `pn.panel(fig)`
+- Display plot figures like [Altair](https://altair-viz.github.io/), [hvPlot](https://hvplot.holoviz.org), [Matplotlib](https://matplotlib.org/) and [Plotly](https://plotly.com/python/) with `pn.panel(fig)`
 - Display DataFrames with `pn.panel(df)`
 - Display most Python objects with `pn.panel(some_python_object)`
 - Configure how an object is displayed by giving arguments to `pn.panel`
 - Display most Python objects in *layouts* like `pn.Column` with and without the use of `pn.panel`
 - Use a specific *Pane* instead of `pn.panel` if performance is key
-- Add JavaScript dependencies via `pn.extension`. For example, `pn.extension("plotly")`
+- Add JavaScript dependencies via `pn.extension`. For example `pn.extension("plotly")`
 
 :::{note}
 When we ask to *run the code* in the sections below, we may execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
@@ -22,7 +22,7 @@ pn.extension("plotly")
 
 ## Install the Dependencies
 
-Please make sure [hvPlot](https://hvplot.holoviz.org/index.html), [Matplotlib](https://matplotlib.org/), and [Plotly](https://plotly.com/python/) are installed.
+Please make sure [Altair](https://altair-viz.github.io/), [hvPlot](https://hvplot.holoviz.org/index.html), [Matplotlib](https://matplotlib.org/), and [Plotly](https://plotly.com/python/) are installed.
 
 ::::{tab-set}
 
@@ -30,7 +30,7 @@ Please make sure [hvPlot](https://hvplot.holoviz.org/index.html), [Matplotlib](h
 :sync: conda
 
 ```bash
-conda install -y -c conda-forge hvplot matplotlib plotly
+conda install -y -c conda-forge altair hvplot matplotlib plotly
 ```
 
 :::
@@ -39,7 +39,7 @@ conda install -y -c conda-forge hvplot matplotlib plotly
 :sync: pip
 
 ```bash
-pip install hvplot matplotlib plotly
+pip install altair hvplot matplotlib plotly
 ```
 
 :::
@@ -80,7 +80,7 @@ component.servable()
 ```
 
 :::{note}
-Your cell or terminal output should contain `Markdown(str)`. It means `pn.panel` has picked the [`Markdown`](../../reference/panes/Markdown.md) pane to display the `str` object.
+Your cell or terminal output should contain `Markdown(str)`. It means `pn.panel` has picked the [`Markdown`](../../reference/panes/Markdown.ipynb) pane to display the `str` object.
 :::
 
 Let's verify that *markdown strings* are actually displayed and rendered nicely.
@@ -105,48 +105,40 @@ print(component)
 component.servable()
 ```
 
-## Display a Matplotlib plot
+## Display an Altair plot
 
 Run the code below.
 
 ```{pyodide}
+import altair as alt
+import pandas as pd
 import panel as pn
-import matplotlib.pyplot as plt
-import numpy as np
-import matplotlib
 
-matplotlib.use('agg')
+pn.extension("vega")
 
-pn.extension()
+data = pd.DataFrame([
+    ('Monday', 7), ('Tuesday', 4), ('Wednesday', 9), ('Thursday', 4),
+    ('Friday', 4), ('Saturday', 5), ('Sunday', 4)], columns=['Day', 'Wind Speed (m/s)']
+)
 
-def create_matplotlib_figure(figsize=(4,3)):
-    t = np.arange(0.0, 2.0, 0.01)
-    s = 1 + np.sin(2 * np.pi * t)
+chart = (
+    alt.Chart(data)
+    .mark_line(point=True)
+    .encode(
+        x="Day",
+        y=alt.Y("Wind Speed (m/s)", scale=alt.Scale(domain=(0, 10))),
+        tooltip=["Day", "Wind Speed (m/s)"],
+    )
+    .properties(width="container", height="container", title="Wind Speed Over the Week")
+)
 
-    fig, ax = plt.subplots(figsize=figsize)
-    ax.plot(t, s)
-
-    ax.set(xlabel='time (s)', ylabel='voltage (mV)',
-           title='Voltage')
-    ax.grid()
-
-    plt.close(fig) # CLOSE THE FIGURE!
-    return fig
-
-fig = create_matplotlib_figure()
-component = pn.panel(fig, dpi=144, tight=True)
+component = pn.panel(chart, sizing_mode="stretch_width", height=400)
 print(component)
 
 component.servable()
 ```
 
-Please notice `pn.panel` chose a [`Matplotlib`](../../reference/panes/Matplotlib.md) pane to display the Matplotlib figure.
-
-:::{note}
-In the example above we provided arguments to `pn.panel`. These will be applied to the *pane* selected by `pn.panel` to display the object. In this example the [`Matplotlib`](../../reference/panes/Matplotlib.md) pane is selected.
-
-The arguments `dpi` and `tight` would not make sense if a string was provided as an argument to `pn.panel`. In that case, `pn.panel` would pick a [Markdown](../../reference/panes/Markdown.md) *pane* and the exception `TypeError: Markdown.__init__() got an unexpected keyword argument 'dpi'` would be raised.
-:::
+Please notice that `pn.panel` chose a [`Vega`](../../reference/panes/Vega.ipynb) pane to display the [Altair](https://altair-viz.github.io/) figure.
 
 ## Display a hvPlot plot
 
@@ -159,22 +151,75 @@ import pandas as pd
 import panel as pn
 
 pn.extension()
-np.random.seed(1)
 
-idx = pd.date_range('1/1/2000', periods=1000)
-df = pd.DataFrame(np.random.randn(1000, 4), index=idx, columns=list('ABCD')).cumsum()
-fig = df.hvplot()
+data = pd.DataFrame([
+    ('Monday', 7), ('Tuesday', 4), ('Wednesday', 9), ('Thursday', 4),
+    ('Friday', 4), ('Saturday', 5), ('Sunday', 4)], columns=['Day', 'Wind Speed (m/s)']
+)
 
-component = pn.panel(fig, sizing_mode="stretch_width")
+fig = data.hvplot(x="Day", y="Wind Speed (m/s)", line_width=10, ylim=(0,10))
+
+component = pn.panel(fig, sizing_mode="stretch_width", )
 print(component)
 
 component.servable()
 ```
 
-Please notice that `pn.panel` chose a [`HoloViews`](../../reference/panes/HoloViews.md) pane to display the [hvPlot](https://hvplot.holoviz.org/user_guide/Customization.html) figure.
+Please notice that `pn.panel` chose a [`HoloViews`](../../reference/panes/HoloViews.ipynb) pane to display the [hvPlot](https://hvplot.holoviz.org/user_guide/Customization.html) figure.
 
 :::{note}
 [hvPlot](https://hvplot.holoviz.org) is the **easy to use** plotting sister of Panel. It works similarly to the familiar [Pandas `.plot` API](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.plot.html). hvPlot is built on top of the data visualization library [HoloViews](https://holoviews.org/). hvPlot, HoloViews, and Panel are all part of the [HoloViz](https://holoviz.org/) family.
+:::
+
+## Display a Matplotlib plot
+
+Run the code below.
+
+```{pyodide}
+import matplotlib
+import matplotlib.pyplot as plt
+import pandas as pd
+import panel as pn
+
+matplotlib.use("agg")
+
+pn.extension()
+
+data = pd.DataFrame([
+    ('Monday', 7), ('Tuesday', 4), ('Wednesday', 9), ('Thursday', 4),
+    ('Friday', 4), ('Saturday', 5), ('Sunday', 4)], columns=['Day', 'Wind Speed (m/s)']
+)
+
+
+
+fig, ax = plt.subplots(figsize=(8,3))
+ax.plot(
+    data["Day"], data["Wind Speed (m/s)"], marker="o", markersize=10, linewidth=4
+)
+ax.set(
+    xlabel="Day",
+    ylabel="Wind Speed (m/s)",
+    title="Wind Speed Over the Week",
+    ylim=(0, 10),
+)
+ax.grid()
+
+plt.close(fig)  # CLOSE THE FIGURE!
+
+component = pn.panel(
+    fig, format="svg", dpi=144, tight=True, sizing_mode="stretch_width"
+)
+print(component)
+
+component.servable()
+```
+
+Please notice `pn.panel` chose a [`Matplotlib`](../../reference/panes/Matplotlib.ipynb) pane to display the Matplotlib figure.
+
+:::{note}
+In the example above we provided arguments to `pn.panel`. These will be applied to the *pane* selected by `pn.panel` to display the object. In this example the [`Matplotlib`](../../reference/panes/Matplotlib.ipynb) pane is selected.
+
+The arguments `dpi`, `format` and `tight` would not make sense if a string was provided as an argument to `pn.panel`. In that case, `pn.panel` would pick a [Markdown](../../reference/panes/Markdown.ipynb) *pane* and the exception `TypeError: Markdown.__init__() got an unexpected keyword argument 'dpi'` would be raised.
 :::
 
 ## Display a Plotly plot
@@ -204,7 +249,7 @@ print(component)
 component.servable()
 ```
 
-Please notice that `pn.panel` chose a [`Plotly`](../../reference/panes/Plotly.md) pane to display the Plotly figure.
+Please notice that `pn.panel` chose a [`Plotly`](../../reference/panes/Plotly.ipynb) pane to display the Plotly figure.
 
 :::{note}
 We must add `"plotly"` as an argument to `pn.extension` in the example to load the Plotly Javascript dependencies in the browser.
@@ -235,7 +280,7 @@ component.servable()
 ```
 
 ```{note}
-If we want to display larger dataframes, customize the way the dataframes are displayed, or make them more interactive, we can find specialized components in the [Component Gallery](../../reference/index.md) supporting these use cases. For example, the [Tabulator](../../reference/widgets/Tabulator.md) widget and [Perspective](../../reference/panes/Perspective.md) pane.
+If we want to display larger dataframes, customize the way the dataframes are displayed, or make them more interactive, we can find specialized components in the [Component Gallery](../../reference/index.md) supporting these use cases. For example, the [Tabulator](../../reference/widgets/Tabulator.ipynb) widget and [Perspective](../../reference/panes/Perspective.ipynb) pane.
 ```
 
 ## Display any Python object
@@ -279,7 +324,7 @@ component.servable()
 ```
 
 :::{note}
-When Python objects are given as an argument to a Panel [Layout](../../reference/index.md#layouts) like [`pn.Column`](../../reference/layouts/Column.md), then `pn.Column` will automatically apply `pn.panel` to the objects for you.
+When Python objects are given as an argument to a Panel [Layout](../../reference/index.md#layouts) like [`pn.Column`](../../reference/layouts/Column.ipynb), then `pn.Column` will automatically apply `pn.panel` to the objects for you.
 :::
 
 Please notice that the image of the dice is very tall. To fine-tune the way it is displayed, we can use `pn.panel`.
@@ -306,7 +351,7 @@ component.servable()
 :::{note}
 `pn.panel` is an easy to use and flexible **helper function** that will convert an object into a [*Pane*](../../reference/index.md#panes).
 
-More specifically, `pn.panel` resolves the appropriate *representation* for an object by checking all [*Pane*](../../reference/index.md#panes) object types available and then ranking them by priority. When passing a string (for instance), there are many representations, but the [`PNG`](../../reference/panes/PNG.md) pane takes precedence if the string is a valid URL or local file path ending in `.png`.
+More specifically, `pn.panel` resolves the appropriate *representation* for an object by checking all [*Pane*](../../reference/index.md#panes) object types available and then ranking them by priority. When passing a string (for instance), there are many representations, but the [`PNG`](../../reference/panes/PNG.ipynb) pane takes precedence if the string is a valid URL or local file path ending in `.png`.
 
 Resolving the appropriate *representation* for an object takes time. So if performance is key, we should specify the specific type of *Pane* to use directly. i.e. use `pn.pane.Matplotlib(fig)` instead of `pn.panel(fig)`.
 :::
@@ -345,9 +390,9 @@ pn.pane.Matplotlib(fig, dpi=144, tight=True).servable()
 In this guide, we have learned to display Python objects easily with `pn.panel`:
 
 - Display a string with `pn.panel(some_string)`
-- Display plot figures like Matplotlib, hvPlot, and Plotly with `pn.panel(fig)`
-- Display most Python objects with `pn.panel(some_python_object)`
+- Display plot figures like [Altair](https://altair-viz.github.io/), [hvPlot](https://hvplot.holoviz.org), [Matplotlib](https://matplotlib.org/) and [Plotly](https://plotly.com/python/) with `pn.panel(fig)`
 - Display DataFrames with `pn.panel(df)`
+- Display most Python objects with `pn.panel(some_python_object)`
 - Configure how an object is displayed by giving arguments to `pn.panel`
 - Display most Python objects in *layouts* like `pn.Column` with and without the use of `pn.panel`
 - Use a specific *Pane* instead of `pn.panel` if performance is key
@@ -357,7 +402,7 @@ In this guide, we have learned to display Python objects easily with `pn.panel`:
 
 ### Tutorials
 
-- [Display objects with Panes](.md)
+- [Display objects with Panes](panes.md)
 
 ### How-to
 
