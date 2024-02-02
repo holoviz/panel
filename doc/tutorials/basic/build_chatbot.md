@@ -88,9 +88,7 @@ We can find more inspiration and starter templates at [Panel-Chat-Examples](http
 
 ## Recap
 
-In this section, we have
-
-- used the *easy to use*, *high-level* [`ChatInterface`](../../reference/chat/ChatInterface.ipynb) to build a chat bot.
+In this section, we have used the *easy to use*, *high-level* [`ChatInterface`](../../reference/chat/ChatInterface.ipynb) to build a streaming chat bot.
 
 ## Resources
 
