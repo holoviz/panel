@@ -87,7 +87,7 @@ Display our beloved wind turbine images, data, and plots easily and dynamically 
 Fine-tune how the wind turbine data is displayed with Panes, ensuring our data apps can meet the unique demands of wind turbine data visualization.
 :::
 
-:::{grid-item-card} {octicon}`device-desktop;2.5em;sd-mr-1` Display Performance with Indicators
+:::{grid-item-card} {octicon}`pulse;2.5em;sd-mr-1` Display Performance with Indicators
 :link: indicators_performance
 :link-type: doc
 
@@ -220,7 +220,7 @@ We will build an image classifier to identify wind turbine images.
 Caching allows our apps to store and reuse valuable computations, reducing the energy required for calculations and making our apps run faster and smoother.
 :::
 
-:::{grid-item-card} {octicon}`versions;2.5em;sd-mr-1` Defer the Load
+:::{grid-item-card} {octicon}`kebab-horizontal;2.5em;sd-mr-1` Defer the Load
 :link: defer_load
 :link-type: doc
 
@@ -255,7 +255,7 @@ Build a live, updating dashboard to monitor your wind turbines.
 Just as wind turbines come in various designs, this section empowers us to choose a design that best suits our app's style and functionality.
 :::
 
-:::{grid-item-card} {octicon}`versions;2.5em;sd-mr-1` Use Styles
+:::{grid-item-card} {octicon}`paintbrush;2.5em;sd-mr-1` Use Styles
 :link: style
 :link-type: doc
 
