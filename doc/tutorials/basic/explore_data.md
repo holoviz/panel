@@ -159,7 +159,7 @@ def get_plot(year):
             y=alt.Y(f"{BY}:O", sort=[BY]),
             text=alt.Text(VALUE, format=",.0f"),
         )
-        .properties(title=str(year), height=500, width=800)
+        .properties(title=str(year), height=500, width="container")
     )
     return base.mark_bar() + base.mark_text(align="left", dx=2)
 
@@ -174,7 +174,7 @@ year = pn.widgets.Player(
     align="center",
 )
 plot = pn.pane.Vega(pn.bind(get_plot, year))
-pn.Column(plot, year, width=800).servable()
+pn.Column(plot, year, sizing_mode="stretch_width").servable()
 ```
 
 :::{admonition} Note
