@@ -73,17 +73,13 @@ To make the Streaming Chat Bot scale to many users you should be using `async`. 
 
 ## Learn More
 
-:::{note}
-You can learn more about the `ChatInterface` via its [*reference guide*](../../reference/chat/ChatInterface.html). You find the *reference guide* in the [Chat Section](/reference/index.html#chat) of the [Component Gallery](../../reference/index.md).
-:::
+We can learn more about the `ChatInterface` via its [*reference guide*](../../reference/chat/ChatInterface.html). We find the *reference guide* in the [Chat Section](/reference/index.html#chat) of the [Component Gallery](../../reference/index.md).
 
 [![Chat Section of Component Gallery](../../_static/images/build_chatbot_chat_section.png)](/reference/index.html#chat)
 
 ## Find Inspiration
 
-:::{note}
-If you want to build more advanced chat bots, [Panel-Chat-Examples](https://holoviz-topics.github.io/panel-chat-examples/) for inspiration and starter templates.
-:::
+We can find more inspiration and starter templates at [Panel-Chat-Examples](https://holoviz-topics.github.io/panel-chat-examples/).
 
 :::{image} ../../_static/images/panel-chat-examples.png
 :height: 300px
