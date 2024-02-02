@@ -1,3 +1,5 @@
+import asyncio
+
 from io import BytesIO
 
 import pytest
@@ -6,9 +8,11 @@ import requests
 from panel.chat.interface import ChatInterface
 from panel.layout import Row, Tabs
 from panel.pane import Image
-from panel.tests.util import wait_until
+from panel.tests.util import async_wait_until, wait_until
 from panel.widgets.button import Button
 from panel.widgets.input import FileInput, TextAreaInput, TextInput
+
+ChatInterface.callback_exception = "raise"
 
 
 class TestChatInterface:
@@ -88,12 +92,10 @@ class TestChatInterface:
     def test_show_stop_disabled(self, chat_interface: ChatInterface):
         async def callback(msg, user, instance):
             yield "A"
-            send_button = chat_interface._input_layout[1]
-            stop_button = chat_interface._input_layout[2]
-            assert send_button.name == "Send"
-            assert stop_button.name == "Stop"
-            assert send_button.visible
-            assert not send_button.disabled
+            send_button = instance._buttons["send"]
+            stop_button = instance._buttons["stop"]
+            wait_until(lambda: send_button.visible)
+            wait_until(lambda: send_button.disabled) #  should be disabled while callback is running
             assert not stop_button.visible
             yield "B"  # should not stream this
 
@@ -110,12 +112,10 @@ class TestChatInterface:
 
     def test_show_stop_for_async(self, chat_interface: ChatInterface):
         async def callback(msg, user, instance):
-            send_button = instance._input_layout[1]
-            stop_button = instance._input_layout[2]
-            assert send_button.name == "Send"
-            assert stop_button.name == "Stop"
-            assert not send_button.visible
-            assert stop_button.visible
+            send_button = instance._buttons["send"]
+            stop_button = instance._buttons["stop"]
+            await async_wait_until(lambda: stop_button.visible)
+            await async_wait_until(lambda: not send_button.visible)
 
         chat_interface.callback = callback
         chat_interface.send("Message", respond=True)
@@ -124,12 +124,10 @@ class TestChatInterface:
 
     def test_show_stop_for_sync(self, chat_interface: ChatInterface):
         def callback(msg, user, instance):
-            send_button = instance._input_layout[1]
-            stop_button = instance._input_layout[2]
-            assert send_button.name == "Send"
-            assert stop_button.name == "Stop"
-            assert not send_button.visible
-            assert stop_button.visible
+            send_button = instance._buttons["send"]
+            stop_button = instance._buttons["stop"]
+            wait_until(lambda: stop_button.visible)
+            wait_until(lambda: not send_button.visible)
 
         chat_interface.callback = callback
         chat_interface.send("Message", respond=True)
@@ -138,25 +136,21 @@ class TestChatInterface:
 
     def test_click_stop(self, chat_interface: ChatInterface):
         async def callback(msg, user, instance):
-            send_button = instance._input_layout[1]
-            stop_button = instance._input_layout[2]
-            assert send_button.name == "Send"
-            assert stop_button.name == "Stop"
-            assert not send_button.visible
-            assert stop_button.visible
-            wait_until(lambda: len(instance.objects) == 2)
-            assert instance._placeholder in instance.objects
+            send_button = instance._buttons["send"]
+            stop_button = instance._buttons["stop"]
+            await async_wait_until(lambda: stop_button.visible)
+            await async_wait_until(lambda: not send_button.visible)
             instance._click_stop(None)
-            assert send_button.visible
-            assert not send_button.disabled
-            assert not stop_button.visible
-            assert instance._placeholder not in instance.objects
 
         chat_interface.callback = callback
         chat_interface.placeholder_threshold = 0.001
-        chat_interface.send("Message", respond=True)
-        send_button = chat_interface._input_layout[1]
-        assert not send_button.disabled
+        try:
+            chat_interface.send("Message", respond=True)
+        except asyncio.exceptions.CancelledError:
+            pass
+        wait_until(lambda: not chat_interface._buttons["send"].disabled)
+        wait_until(lambda: chat_interface._buttons["send"].visible)
+        wait_until(lambda: not chat_interface._buttons["stop"].visible)
 
     @pytest.mark.parametrize("widget", [TextInput(), TextAreaInput()])
     def test_auto_send_types(self, chat_interface: ChatInterface, widget):
@@ -363,6 +357,12 @@ class TestChatInterface:
         assert chat_interface.objects[0].object == "1"
         assert chat_interface.objects[1].object == "2"
         assert chat_interface.objects[2].object == "3"
+
+    def test_manual_user(self):
+        chat_interface = ChatInterface(user="New User")
+        assert chat_interface.user == "New User"
+        chat_interface.send("Test")
+        assert chat_interface.objects[0].user == "New User"
 
 class TestChatInterfaceWidgetsSizingMode:
     def test_none(self):

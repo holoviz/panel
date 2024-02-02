@@ -155,16 +155,15 @@ def test_server_async_callbacks():
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_async_local_state():
+def test_server_async_local_state(bokeh_curdoc):
     docs = {}
 
     async def task():
-        curdoc = state.curdoc
         await asyncio.sleep(0.5)
-        docs[curdoc] = []
+        docs[state.curdoc] = []
         for _ in range(5):
             await asyncio.sleep(0.1)
-            docs[curdoc].append(state.curdoc)
+            docs[state.curdoc].append(state.curdoc)
 
     def app():
         state.execute(task)
@@ -177,18 +176,17 @@ def test_server_async_local_state():
     wait_until(lambda: all([len(set(docs)) == 1 and docs[0] is doc for doc, docs in docs.items()]))
 
 
-def test_server_async_local_state_nested_tasks():
+def test_server_async_local_state_nested_tasks(bokeh_curdoc):
     docs = {}
 
     async def task(depth=1):
-        curdoc = state.curdoc
         await asyncio.sleep(0.5)
         if depth > 0:
             asyncio.ensure_future(task(depth-1))
-        docs[curdoc] = []
+        docs[state.curdoc] = []
         for _ in range(10):
             await asyncio.sleep(0.1)
-            docs[curdoc].append(state.curdoc)
+            docs[state.curdoc].append(state.curdoc)
 
     def app():
         state.execute(task)

@@ -197,6 +197,9 @@ class ChatMessage(PaneBase):
     show_copy_icon = param.Boolean(default=True, doc="""
         Whether to display the copy icon.""")
 
+    show_activity_dot = param.Boolean(default=False, doc="""
+        Whether to show the activity dot.""")
+
     renderers = param.HookList(doc="""
         A callable or list of callables that accept the object and return a
         Panel object to render the object. If a list is provided, will
@@ -240,6 +243,9 @@ class ChatMessage(PaneBase):
         self._build_layout()
 
     def _build_layout(self):
+        self._activity_dot = HTML(
+            "●", css_classes=["activity-dot"], visible=self.param.show_activity_dot
+        )
         self._left_col = left_col = Column(
             self._render_avatar(),
             max_width=60,
@@ -275,6 +281,7 @@ class ChatMessage(PaneBase):
             Row(
                 self._user_html,
                 self.chat_copy_icon,
+                self._activity_dot,
                 stylesheets=self._stylesheets,
                 sizing_mode="stretch_width",
                 css_classes=["header"]
@@ -604,7 +611,7 @@ class ChatMessage(PaneBase):
         self._composite._cleanup(root)
         return super()._cleanup(root)
 
-    def stream(self, token: str):
+    def stream(self, token: str, replace: bool = False):
         """
         Updates the message with the new token traversing the object to
         allow updating nested objects. When traversing a nested Panel
@@ -616,6 +623,8 @@ class ChatMessage(PaneBase):
         ---------
         token: str
           The token to stream to the text pane.
+        replace: bool (default=False)
+            Whether to replace the existing text.
         """
         i = -1
         parent_panel = None
@@ -639,7 +648,8 @@ class ChatMessage(PaneBase):
                 obj = parent_panel
                 parent_panel = None
                 i -= 1
-        setattr(object_panel, attr, obj + token)
+        contents = token if replace else obj + token
+        setattr(object_panel, attr, contents)
 
     def update(
         self,

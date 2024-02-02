@@ -116,8 +116,7 @@ jupyter_execute
 # this dir contains the whole website and should not be checked in on main
 builtdocs/
 .doit.db
-
-lite/
+lite/files/*/
 .jupyterlite.doit.db
 
 # jetbrains settings

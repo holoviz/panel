@@ -57,7 +57,7 @@ pn.Row(slider, pn.bind(lambda v: v, slider)).servable();
 tabulator_app = """
 import panel as pn
 import pandas as pd
-tabulator = pn.widgets.Tabulator(pd._testing.makeMixedDataFrame())
+tabulator = pn.widgets.Tabulator(pd.DataFrame({'a': [1, 2, 3]}))
 
 def on_click(e):
     tabulator.theme = 'fast'

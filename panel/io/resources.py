@@ -100,7 +100,7 @@ DOC_DIST = "https://panel.holoviz.org/_static/"
 LOCAL_DIST = "static/extensions/panel/"
 COMPONENT_PATH = "components/"
 
-BK_PREFIX_RE = re.compile('\.bk\.')
+BK_PREFIX_RE = re.compile(r'\.bk\.')
 
 RESOURCE_URLS = {
     'font-awesome': {
@@ -183,7 +183,7 @@ def loading_css(loading_spinner, color, max_height):
     return textwrap.dedent(f"""
     :host(.pn-loading):before, .pn-loading:before {{
       background-color: {color};
-      background-size: auto calc(min(50%, {max_height}px));
+      mask-size: auto calc(min(50%, {max_height}px));
     }}""")
 
 def resolve_custom_path(
@@ -258,6 +258,9 @@ def patch_stylesheet(stylesheet, dist_url):
     except Exception:
         pass
 
+def _is_file_path(stylesheet: str)->bool:
+    return stylesheet.lower().endswith(".css")
+
 def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
     """
     Resolves a stylesheet definition, e.g. originating on a component
@@ -266,6 +269,7 @@ def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
 
     - Absolute URL defined with http(s) protocol
     - A path relative to the component
+    - A raw css string
 
     Arguments
     ---------
@@ -275,7 +279,7 @@ def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
         The stylesheet definition
     """
     stylesheet = str(stylesheet)
-    if not stylesheet.startswith('http') and attribute and (custom_path:= resolve_custom_path(cls, stylesheet)):
+    if not stylesheet.startswith('http') and attribute and _is_file_path(stylesheet) and (custom_path:= resolve_custom_path(cls, stylesheet)):
         if not state._is_pyodide and state.curdoc and state.curdoc.session_context:
             stylesheet = component_resource_path(cls, attribute, stylesheet)
         else:

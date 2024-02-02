@@ -367,6 +367,8 @@ export class DataTabulatorView extends HTMLBoxView {
     this.connect(p.sorters.change, () => this.setSorters())
     this.connect(p.theme_classes.change, () => this.setCSSClasses(this.tabulator.element))
     this.connect(this.model.source.properties.data.change, () => {
+      if (this.tabulator === undefined)
+        return
       this._selection_updating = true
       this.setData()
       this._selection_updating = false

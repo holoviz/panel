@@ -1089,9 +1089,15 @@ class OAuthProvider(BasicAuthProvider):
         self._schedule_refresh(expiry, user, refresh_token, application, request)
 
     async def _refresh_access_token(self, user, refresh_token, application, request):
-        log.debug("%s refreshing token", type(self).__name__)
         if user in state._oauth_user_overrides:
-            refresh_token = state._oauth_user_overrides[user]['refresh_token']
+            if not state._oauth_user_overrides[user]:
+                # Token is already being refreshed await it
+                while not state._oauth_user_overrides[user]:
+                    await asyncio.sleep(0.1)
+                return
+            else:
+                refresh_token = state._oauth_user_overrides[user]['refresh_token']
+        log.debug("%s refreshing token", type(self).__name__)
         state._oauth_user_overrides[user] = {}
         auth_handler = self.login_handler(application=application, request=request)
         _, access_token, refresh_token, expires_in = await auth_handler._fetch_access_token(

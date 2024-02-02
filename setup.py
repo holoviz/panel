@@ -145,6 +145,7 @@ _tests_core = [
     'pandas >=1.3',
     'ipython >=7.0',
     'scipy',
+    'textual',
 ]
 
 _tests = _tests_core + [
@@ -198,7 +199,8 @@ _examples = [
     'ipyvuetify',
     'reacton',
     'scikit-image',
-    'fastparquet'
+    'fastparquet',
+    'textual'
 ]
 
 # Anything only installable via conda

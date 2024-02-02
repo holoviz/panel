@@ -1,6 +1,6 @@
 # Defer Long Running Tasks to Improve the User Experience
 
-This guide addresses how to defer and orchestrate long running background tasks with `pn.state.on_load`. You can use this to improve the user experience of your app.
+This guide addresses how to defer and orchestrate long running background tasks with `pn.state.onload`. You can use this to improve the user experience of your app.
 
 ---
 
