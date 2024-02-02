@@ -321,10 +321,9 @@ class ChatFeed(ListPanel):
 
     @param.depends("load_buffer", "auto_scroll_limit", "scroll_button_threshold", watch=True)
     def _update_chat_log_params(self):
-        self._chat_log.param.load_buffer = self.load_buffer
-        self._chat_log.param.auto_scroll_limit = self.auto_scroll_limit
-        self._chat_log.param.scroll_button_threshold = self.scroll_button_threshold
-        self._chat_log.param.view_latest = self.view_latest
+        self._chat_log.load_buffer = self.load_buffer
+        self._chat_log.auto_scroll_limit = self.auto_scroll_limit
+        self._chat_log.scroll_button_threshold = self.scroll_button_threshold
 
     @param.depends("card_params", watch=True)
     def _update_card_params(self):
