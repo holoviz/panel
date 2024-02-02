@@ -61,7 +61,7 @@ pn.indicators.Trend(
 
 Try changing the `height` from `300` to `500`.
 
-Spend a couple of minutes checking out the *reference guide* of the [`Trend`](../../reference/indicators/Trend.ipynb) *indicator*. It's *awesome*.
+Click [here](../../reference/indicators/Trend.ipynb) and spend a couple of minutes checking out the *reference guide* of the [`Trend`](../../reference/indicators/Trend.ipynb) *indicator*. It's *awesome*.
 
 ## Discover Indicators
 

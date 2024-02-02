@@ -121,7 +121,7 @@ data = pd.DataFrame([
     ('Friday', 4), ('Saturday', 5), ('Sunday', 4)], columns=['Day', 'Wind Speed (m/s)']
 )
 
-chart = (
+fig = (
     alt.Chart(data)
     .mark_line(point=True)
     .encode(
@@ -132,7 +132,7 @@ chart = (
     .properties(width="container", height="container", title="Wind Speed Over the Week")
 )
 
-component = pn.panel(chart, sizing_mode="stretch_width", height=400)
+component = pn.panel(fig, sizing_mode="stretch_width", height=400)
 print(component)
 
 component.servable()
@@ -190,8 +190,6 @@ data = pd.DataFrame([
     ('Friday', 4), ('Saturday', 5), ('Sunday', 4)], columns=['Day', 'Wind Speed (m/s)']
 )
 
-
-
 fig, ax = plt.subplots(figsize=(8,3))
 ax.plot(
     data["Day"], data["Wind Speed (m/s)"], marker="o", markersize=10, linewidth=4
@@ -203,7 +201,6 @@ ax.set(
     ylim=(0, 10),
 )
 ax.grid()
-
 plt.close(fig)  # CLOSE THE FIGURE!
 
 component = pn.panel(

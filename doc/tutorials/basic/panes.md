@@ -4,9 +4,9 @@ In this tutorial, we will learn to display objects with *Panes*:
 
 - *Panes* are available in the `pn.pane` namespace.
 - *Panes* take an `object` argument as well as other arguments.
-- Display strings with the [`Str`](../../reference/panes/Str.ipynb)), [`Markdown`](../../reference/panes/Markdown.ipynb)), and [`Alert`](../../reference/panes/Alert.ipynb)) panes.
-- Display plot figures like [Matplotlib](https://matplotlib.org/), [hvPlot](https://hvplot.holoviz.org), and [Plotly](https://plotly.com/python/) with the [`Matplotlib`](../../reference/panes/Matplotlib.ipynb)), [`HoloViews`](../../reference/panes/HoloViews.ipynb)), and [`Plotly`](../../reference/panes/Plotly.ipynb)) *panes*, respectively.
-- Display *DataFrames* with the [`DataFrame`](../../reference/panes/DataFrame.ipynb)) and [`Perspective`](../../reference/panes/Perspective.ipynb)) *panes*.
+- Display strings with the [`Str`](../../reference/panes/Str.ipynb), [`Markdown`](../../reference/panes/Markdown.ipynb), and [`Alert`](../../reference/panes/Alert.ipynb) panes.
+- Display plot figures like [Altair](https://altair-viz.github.io/), [hvPlot](https://hvplot.holoviz.org), [Matplotlib](https://matplotlib.org/) and [Plotly](https://plotly.com/python/) with the ,  [`Vega`](../../reference/panes/Vega.ipynb), [`HoloViews`](../../reference/panes/HoloViews.ipynb), [`Matplotlib`](../../reference/panes/Matplotlib.ipynb) and [`Plotly`](../../reference/panes/Plotly.ipynb) *panes*, respectively.
+- Display *DataFrames* with the [`DataFrame`](../../reference/panes/DataFrame.ipynb) and [`Perspective`](../../reference/panes/Perspective.ipynb) *panes*.
 - Add JavaScript dependencies via `pn.extension`. For example, `pn.extension("plotly")`.
 - Discover all *Panes* and their *reference guides* in the [Panes Section](../../reference/index.md#panes) of the [Component Gallery](../../reference/index.md).
 
@@ -32,15 +32,15 @@ pn.extension("plotly")
 
 ## Install the Dependencies
 
-Please make sure [hvPlot](https://hvplot.holoviz.org), [Matplotlib](https://matplotlib.org), and [Plotly](https://plotly.com/python/) are installed.
+Please make sure [Altair](https://altair-viz.github.io/), [hvPlot](https://hvplot.holoviz.org/index.html), [Matplotlib](https://matplotlib.org/), and [Plotly](https://plotly.com/python/) are installed.
 
 ::::{tab-set}
 
 :::{tab-item} conda
 :sync: conda
 
-``` bash
-conda install -y -c conda-forge hvplot matplotlib plotly
+```bash
+conda install -y -c conda-forge altair hvplot matplotlib plotly
 ```
 
 :::
@@ -48,8 +48,8 @@ conda install -y -c conda-forge hvplot matplotlib plotly
 :::{tab-item} pip
 :sync: pip
 
-``` bash
-pip install hvplot matplotlib plotly
+```bash
+pip install altair hvplot matplotlib plotly
 ```
 
 :::
@@ -97,10 +97,13 @@ import panel as pn
 
 pn.extension()
 
-pn.pane.Markdown("""
-# Markdown Sample
+pn.pane.Markdown("""\
+# Wind Turbine
 
-This sample text is from [The Markdown Guide](https://www.markdownguide.org)!
+A wind turbine is a device that converts the kinetic energy of wind into \
+[electrical energy](https://en.wikipedia.org/wiki/Electrical_energy).
+
+Read more [here](https://en.wikipedia.org/wiki/Wind_turbine).
 """).servable()
 ```
 
@@ -108,7 +111,7 @@ This sample text is from [The Markdown Guide](https://www.markdownguide.org)!
 It's key for success with Panel to be able to navigate the [Component Gallery](../../reference/index.md) and use the *reference guides*.
 :::
 
-Click [this link to the Panes Section](../../reference/index.md#panes) of the [Component Gallery](../../reference/index.md). Identify the [Markdown Reference Guide](../../reference/panes/Markdown.ipynb) and open it. You don't have to spend time studying the details right now.
+Click [this link](../../reference/index.md#panes) to the [Panes Section](../../reference/index.md#panes) of the [Component Gallery](../../reference/index.md). Identify the [Markdown Reference Guide](../../reference/panes/Markdown.ipynb) and open it. You don't have to spend time studying the details right now.
 
 It should look like
 
@@ -132,41 +135,35 @@ This sample text is from [The Markdown Guide](https://www.markdownguide.org)!
 """, alert_type="info").servable()
 ```
 
-## Display a Matplotlib plot
+## Display an Altair plot
 
 Run the code below.
 
 ```{pyodide}
+import altair as alt
+import pandas as pd
 import panel as pn
-import matplotlib.pyplot as plt
-import numpy as np
-import matplotlib
 
-matplotlib.use('agg')
+pn.extension("vega")
 
-pn.extension()
+data = pd.DataFrame([
+    ('Monday', 7), ('Tuesday', 4), ('Wednesday', 9), ('Thursday', 4),
+    ('Friday', 4), ('Saturday', 5), ('Sunday', 4)], columns=['Day', 'Wind Speed (m/s)']
+)
 
-def create_matplotlib_figure(figsize=(4,3)):
-       t = np.arange(0.0, 2.0, 0.01)
-       s = 1 + np.sin(2 * np.pi * t)
+fig = (
+    alt.Chart(data)
+    .mark_line(point=True)
+    .encode(
+        x="Day",
+        y=alt.Y("Wind Speed (m/s)", scale=alt.Scale(domain=(0, 10))),
+        tooltip=["Day", "Wind Speed (m/s)"],
+    )
+    .properties(width="container", height="container", title="Wind Speed Over the Week")
+)
 
-       fig, ax = plt.subplots(figsize=figsize)
-       ax.plot(t, s)
-
-       ax.set(xlabel='time (s)', ylabel='voltage (mV)',
-              title='Voltage')
-       ax.grid()
-
-       plt.close(fig) # CLOSE THE FIGURE!
-       return fig
-
-fig = create_matplotlib_figure()
-pn.pane.Matplotlib(fig, dpi=144, tight=True).servable()
+pn.pane.Vega(fig, sizing_mode="stretch_width", height=400).servable()
 ```
-
-:::{note}
-In the example, we provide the arguments dpi and tight to the Matplotlib pane. We can find more details in the [Matplotlib Reference Guide](../../reference/panes/Matplotlib.ipynb).
-:::
 
 ## Display a hvPlot plot
 
@@ -179,17 +176,62 @@ import pandas as pd
 import panel as pn
 
 pn.extension()
-np.random.seed(1)
 
-idx = pd.date_range('1/1/2000', periods=1000)
-df = pd.DataFrame(np.random.randn(1000, 4), index=idx, columns=list('ABCD')).cumsum()
-fig = df.hvplot()
+data = pd.DataFrame([
+    ('Monday', 7), ('Tuesday', 4), ('Wednesday', 9), ('Thursday', 4),
+    ('Friday', 4), ('Saturday', 5), ('Sunday', 4)], columns=['Day', 'Wind Speed (m/s)']
+)
+
+fig = data.hvplot(x="Day", y="Wind Speed (m/s)", line_width=10, ylim=(0,10))
 
 pn.pane.HoloViews(fig, sizing_mode="stretch_width").servable()
 ```
 
 :::{note}
 [hvPlot](https://hvplot.holoviz.org) is the **easy to use** plotting sister of Panel. It works similarly to the familiar [Pandas `.plot` api](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.plot.html). hvPlot is built on top of the data visualization library [HoloViews](https://holoviews.org/). hvPlot, HoloViews, and Panel are all part of the [HoloViz](https://holoviz.org/) family.
+:::
+
+## Display a Matplotlib plot
+
+Run the code below.
+
+```{pyodide}
+import matplotlib
+import matplotlib.pyplot as plt
+import pandas as pd
+import panel as pn
+
+matplotlib.use("agg")
+
+pn.extension()
+
+data = pd.DataFrame([
+    ('Monday', 7), ('Tuesday', 4), ('Wednesday', 9), ('Thursday', 4),
+    ('Friday', 4), ('Saturday', 5), ('Sunday', 4)], columns=['Day', 'Wind Speed (m/s)']
+)
+
+fig, ax = plt.subplots(figsize=(8,3))
+ax.plot(
+    data["Day"], data["Wind Speed (m/s)"], marker="o", markersize=10, linewidth=4
+)
+ax.set(
+    xlabel="Day",
+    ylabel="Wind Speed (m/s)",
+    title="Wind Speed Over the Week",
+    ylim=(0, 10),
+)
+ax.grid()
+plt.close(fig)  # CLOSE THE FIGURE!
+
+pn.pane.Matplotlib(fig, dpi=144, tight=True).servable()
+```
+
+:::{note}
+In the example, we provide the arguments dpi and tight to the Matplotlib pane.
+
+The `Matplotlib` pane can display figures from any framework that produces Matplotlib `Figure` objects like Seaborn, Plotnine and Pandas `.plot`.
+
+We can find more details in the [Matplotlib Reference Guide](../../reference/panes/Matplotlib.ipynb).
 :::
 
 ## Display a Plotly plot
@@ -205,14 +247,15 @@ pn.extension("plotly")
 
 data = pd.DataFrame([
     ('Monday', 7), ('Tuesday', 4), ('Wednesday', 9), ('Thursday', 4),
-    ('Friday', 4), ('Saturday', 4), ('Sunday', 4)], columns=['Day', 'Orders']
+    ('Friday', 4), ('Saturday', 5), ('Sunday', 4)], columns=['Day', 'Wind Speed (m/s)']
 )
 
-fig = px.line(data, x="Day", y="Orders")
+fig = px.line(data, x="Day", y="Wind Speed (m/s)")
 fig.update_traces(mode="lines+markers", marker=dict(size=10), line=dict(width=4))
+fig.update_yaxes(range=[0, max(data['Wind Speed (m/s)']) + 1])
 fig.layout.autosize = True
 
-pn.pane.Plotly(fig, height=400).servable()
+pn.pane.Plotly(fig, height=400, sizing_mode="stretch_width").servable()
 ```
 
 :::{note}
@@ -257,9 +300,9 @@ import panel as pn
 pn.extension()
 
 pn.Column(
-    pn.pane.JSON({"a": [1,2,3], "b": "some text"}),
-    pn.pane.PNG("https://assets.holoviz.org/panel/samples/png_sample.png", height=100),
-    pn.pane.Audio("https://assets.holoviz.org/panel/samples/beatboxing.mp3"),
+    pn.pane.JSON({"Wind Speeds": [0, 3, 6, 9, 12, 15, 18, 21], "Power Output": [0,39,260,780, 1300, 1300, 0, 0]}),
+    pn.pane.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=100),
+    pn.pane.Audio("https://assets.holoviz.org/panel/tutorials/wind_turbine.mp3"),
 ).servable()
 ```
 
@@ -270,7 +313,7 @@ In this guide, we have learned to display Python objects with *Panes*:
 - *Panes* are available in the `pn.pane` namespace
 - *Panes* take an `object` argument as well as other arguments
 - Display strings with the [`Str`]((../../reference/panes/Str.ipynb)), [`Markdown`]((../../reference/panes/Markdown.ipynb)) and [`Alert`]((../../reference/panes/Alert.ipynb)) panes
-- Display plot figures like [Matplotlib](https://matplotlib.org/), [hvPlot](https://hvplot.holoviz.org) and [Plotly](https://plotly.com/python/) with the [`Matplotlib`]((../../reference/panes/Matplotlib.ipynb)), [`HoloViews`]((../../reference/panes/HoloViews.ipynb)) and [`Plotly`]((../../reference/panes/Plotly.ipynb)) *panes* respectively
+- Display plot figures like [Altair](https://altair-viz.github.io/), [hvPlot](https://hvplot.holoviz.org), [Matplotlib](https://matplotlib.org/) and [Plotly](https://plotly.com/python/) with the ,  [`Vega`](../../reference/panes/Vega.ipynb), [`HoloViews`](../../reference/panes/HoloViews.ipynb), [`Matplotlib`](../../reference/panes/Matplotlib.ipynb) and [`Plotly`](../../reference/panes/Plotly.ipynb) *panes*, respectively.
 - Display *DataFrames* with the [`DataFrame`](../../reference/panes/DataFrame.ipynb) and [`Perspective`]((../../reference/panes/Perspective.ipynb)) *panes*.
 - Add JavaScript dependencies via `pn.extension`. For example `pn.extension("plotly")`
 - Discover all *Panes* and their *reference guides* in the [Panes Section](../../reference/index.md#panes) of the [Component Gallery](../../reference/index.md).
