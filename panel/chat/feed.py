@@ -23,7 +23,7 @@ import param
 
 from .._param import Margin
 from ..io.resources import CDN_DIST
-from ..layout import Column, ListPanel
+from ..layout import Feed, ListPanel
 from ..layout.card import Card
 from ..layout.spacer import VSpacer
 from ..pane.image import SVG
@@ -196,6 +196,11 @@ class ChatFeed(ListPanel):
         exception. If None, will attempt to infer the renderer
         from the value.""")
 
+    load_buffer = param.Integer(default=50, bounds=(0, None), doc="""
+        The number of objects loaded on each side of the visible objects.
+        When scrolled halfway into the buffer, the feed will automatically
+        load additional objects while unloading objects on the opposite side.""")
+
     scroll_button_threshold = param.Integer(default=100, bounds=(0, None),doc="""
         Min pixel distance from the latest object in the Column to
         display the scroll button. Setting to 0
@@ -248,14 +253,17 @@ class ChatFeed(ListPanel):
             visible=self.param.visible
         )
         # we separate out chat log for the auto scroll feature
-        self._chat_log = Column(
+        self._chat_log = Feed(
             *objects,
+            load_buffer=self.load_buffer,
             auto_scroll_limit=self.auto_scroll_limit,
             scroll_button_threshold=self.scroll_button_threshold,
+            view_latest=self.view_latest,
             css_classes=["chat-feed-log"],
             stylesheets=self._stylesheets,
             **linked_params
         )
+        self._chat_log.height = None
         card_params = linked_params.copy()
         card_stylesheets = (
             self._stylesheets +
@@ -310,6 +318,13 @@ class ChatFeed(ListPanel):
     def _cleanup(self, root: Model | None = None) -> None:
         self._card._cleanup(root)
         super()._cleanup(root)
+
+    @param.depends("load_buffer", "auto_scroll_limit", "scroll_button_threshold", watch=True)
+    def _update_chat_log_params(self):
+        self._chat_log.param.load_buffer = self.load_buffer
+        self._chat_log.param.auto_scroll_limit = self.auto_scroll_limit
+        self._chat_log.param.scroll_button_threshold = self.scroll_button_threshold
+        self._chat_log.param.view_latest = self.view_latest
 
     @param.depends("card_params", watch=True)
     def _update_card_params(self):
