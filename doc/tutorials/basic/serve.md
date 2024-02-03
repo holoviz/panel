@@ -158,7 +158,7 @@ Now stop the server by pressing `CTRL+C` one or more times in the terminal.
 
 ::::
 
-::::{tab-item} Markdown
+::::{tab-item} Markdown File
 :sync: markdown
 
 The command `panel serve app.md` will serve a Markdown file as a live Panel app. You can use this feature if your use case is developing live, interactive documentation in Markdown files.
