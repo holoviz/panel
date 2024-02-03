@@ -173,7 +173,7 @@ Check out the [Write and serve apps in Markdown](../../how_to/editor/markdown.md
 
 Congratulations. We have just served our first Panel app. Along the way, we have learned to
 
-- serve a Python script or Notebook with the commands `panel serve app.py` or `panel serve app.ipynb` respectively.
+- serve a Python script, Notebook or Markdown file with the commands `panel serve app.py` or `panel serve app.ipynb` respectively.
 - serve with *auto reload* by adding the flag `--autoreload`.
 - stop the Panel server with `CTRL+C`.
 
