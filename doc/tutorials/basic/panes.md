@@ -284,9 +284,9 @@ data = pd.DataFrame([
 pn.pane.DataFrame(data).servable()
 ```
 
-```{note}
+:::{note}
 If we want to display larger dataframes, customize the way the dataframes are displayed, or make them more interactive, we can find specialized components in the [Component Gallery](../../reference/index.md) supporting these use cases. For example, the [Tabulator](../../reference/widgets/Tabulator.ipynb) widget and [Perspective](../../reference/panes/Perspective.ipynb) pane.
-```
+:::
 
 ## Display any Python object
 
