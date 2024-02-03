@@ -26,7 +26,7 @@ Select your profile
 
 ## Basic App Developer
 
-:::{admonition}
+:::{note}
 To keep things basic we will be building apps in a single file using *Widgets* and `pn.bind`. In the *Intermediate App Developer* tutorials we will explore more advanced techniques and build larger multi-file and multi-page apps.
 :::
 

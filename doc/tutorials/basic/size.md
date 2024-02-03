@@ -1,14 +1,14 @@
 # Control the Size
 
-In this tutorial we will discover how *sizing* works in Panel, explore the difference between *inherent sizing*, *fixed sizing* and *responsive sizing*. Finally we will touch upon the *fully responsive* layouts:
+In this tutorial, we will discover how *sizing* works in Panel, explore the difference between *inherent sizing*, *fixed sizing*, and *responsive sizing*. Finally, we will touch upon the *fully responsive* layouts and the [`FlexBox`](../../reference/layouts/FlexBox.ipynb):
 
 - `sizing_mode`: Allows toggling between fixed sizing and responsive sizing along vertical and/or horizontal dimensions.
-- `width`/`height`:  Allows setting a fixed width or height
-- `min_width`/`min_height`: Allows setting a minimum width or height, if responsive sizing is set along the corresponding dimension.
-- `max_width`/`max_height` : Allows setting a maximum width or height, if responsive sizing is set along the corresponding dimension.
+- `width`/`height`: Allows setting a fixed width or height.
+- `min_width`/`min_height`: Allows setting a minimum width or height if responsive sizing is set along the corresponding dimension.
+- `max_width`/`max_height`: Allows setting a maximum width or height if responsive sizing is set along the corresponding dimension.
 
 :::{note}
-In the sections below, you may execute the code directly in the Panel documentation by using the green *run* button, in a notebook cell, or in a file named `app.py` served with `panel serve app.py --autoreload`.
+In the sections below, we may execute the code directly in the Panel documentation by using the green *run* button, in a notebook cell, or in a file named `app.py` served with `panel serve app.py --autoreload`.
 :::
 
 ```{pyodide}
@@ -18,7 +18,7 @@ pn.extension('tabulator')
 
 ## Inherent and absolute sizing
 
-Many components you might want to display have an *inherent size*, e.g. take some text, based on the font-size and the content of the text it will take up a certain amount of space. When you render it it will fill the available space and wrap if necessary:
+Many components we might want to display have an *inherent size*, e.g., take some text, based on the font size and the content of the text, it will take up a certain amount of space. When we render it, it will fill the available space and wrap if necessary:
 
 ```{pyodide}
 import panel as pn
@@ -30,7 +30,7 @@ text = """A wind turbine is a renewable energy device that converts the kinetic 
 pn.panel(text).servable()
 ```
 
-By restricting the width, we can force it to rewrap and it will have a different inherent height.
+By restricting the width, we can force it to rewrap, and it will have a different inherent height.
 
 ```{pyodide}
 import panel as pn
@@ -56,7 +56,7 @@ pn.panel(text, width=300, height=100).servable()
 
 ## Sizing Mode
 
-The `sizing_mode` option can be used to toggle responsiveness in the width or height dimension or both. To see the effect of this we will create a fixed size `Column` that we place the component into:
+The `sizing_mode` option can be used to toggle responsiveness in the width or height dimension or both. To see the effect of this, we will create a fixed size `Column` that we place the component into:
 
 ::::{tab-set}
 
@@ -106,7 +106,7 @@ pn.Column(both_responsive, width=400, height=400, styles={'border': '1px solid b
 
 ### Exercises
 
-Let the fun begin!
+Let's dive in!
 
 #### Configure the Sizing Mode
 
@@ -154,7 +154,7 @@ Test your solution by changing the window size of your browser. Notice how the `
 </video>
 
 :::{note}
-**Hint**: To get get *content* to display correctly it sometimes requires a combination of arguments to 1) the underlying object to display and 2) The Panel component displaying it.
+**Hint**: To get the *content* to display correctly, it sometimes requires a combination of arguments to 1) the underlying object to display and 2) The Panel component displaying it.
 :::
 
 :::{dropdown} Solution
@@ -199,7 +199,7 @@ pn.Row(fig, md, height=500, sizing_mode="stretch_width").servable()
 #### Explore the Sizing Mode via Widgets
 
 :::{note}
-**Pro Tip**: When fine-tuning the `size_mode`, `height`, `width` and other parameters of your Panel component you can speed up the process by using widgets interactively instead of code. Panels `pn.Param` provides an easy way to create widgets to control your Panel component.
+**Pro Tip**: When fine-tuning the `size_mode`, `height`, `width` and other parameters of your Panel component, you can speed up the process by using widgets interactively instead of code. Panel's `pn.Param` provides an easy way to create widgets to control your Panel component.
 :::
 
 Continue from the solution in the previous section.
@@ -210,7 +210,7 @@ Add the `settings` component below to your `Row`
 settings = pn.Param(md, parameters=["sizing_mode", "min_width", "max_width"])
 ```
 
-Try changing the values of the `sizing_mode`, `min_height` and `max_height` widgets interactively. For each change in value, change the width of your browser window to see the effect(s).
+Try changing the values of the `sizing_mode`, `min_height`, and `max_height` widgets interactively. For each change in value, change the width of your browser window to see the effect(s).
 
 :::{dropdown} Solution
 
@@ -255,11 +255,11 @@ pn.Row(fig, md, settings, height=500,).servable()
 
 #### Change the Default Sizing Mode
 
-:::{admonition}
-The default `sizing_mode` of Panel is `"fixed"`. You can change the default `sizing_mode` via `pn.extension(sizing_mode=...)` or `pn.config.sizing_mode=...`.
+:::{note}
+The default `sizing_mode` of Panel is `"fixed"`. We can change the default `sizing_mode` via `pn.extension(sizing_mode=...)` or `pn.config.sizing_mode=...`.
 :::
 
-Redo the initial `sizing_mode` exercise, but this time with a default `sizing_mode`  of `"stretch_width"`.
+Let's redo the initial `sizing_mode` exercise, but this time with a default `sizing_mode` of `"stretch_width"`.
 
 :::{dropdown} Solution
 
@@ -309,7 +309,7 @@ So far when we have talked about responsive layouts we have primarily focused on
 
 Panel offers one such component out of the box, the [`FlexBox`](../../reference/layouts/FlexBox.ipynb) layout.
 
-Lets try the `FlexBox`:
+Let's try the `FlexBox`:
 
 ```{pyodide}
 import panel as pn
@@ -337,7 +337,7 @@ We will explore the `FlexBox` in more detail in the [*intermediate* tutorial on 
 
 ## Recap
 
-In this tutorial we have discovered how *sizing* works in Panel. We have explored the difference between *inherent sizing*, *fixed sizing* and *responsive sizing*. Finally we touched upon *fully responsive* layouts and the [`FlexBox`](../../reference/layouts/FlexBox.ipynb):
+In this tutorial, we have discovered how *sizing* works in Panel. We have explored the difference between *inherent sizing*, *fixed sizing*, and *responsive sizing*. Finally, we touched upon *fully responsive* layouts and the [`FlexBox`](../../reference/layouts/FlexBox.ipynb):
 
 - `sizing_mode`: Allows toggling between fixed sizing and responsive sizing along vertical and/or horizontal dimensions.
 - `width`/`height`:  Allows setting a fixed width or height

@@ -133,7 +133,7 @@ pn.FlexBox(dataframe_1, markdown, dataframe_2).servable()
 
 :::
 
-:::{admonition}
+:::{note}
 Getting the `FlexBox` `styles` right can be tricky. If you need help try posting a [minimum, reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) on [Discourse](https://discourse.holoviz.org/).
 :::
 

@@ -95,7 +95,7 @@ If you are in a notebook or serving as an app, try:
 - Enabling the `TextInput` by changing `disabled=True` to `disabled=False`.
 - Entering the text `1234567890123456`. You cannot because the `max_length` is `15`. The final `6` cannot be entered.
 
-:::{admonition}
+:::{note}
 Your success with Panel hinges on your ability to navigate the [Component Gallery](../../reference/index.md) and utilize the *reference guides* effectively.
 :::
 
