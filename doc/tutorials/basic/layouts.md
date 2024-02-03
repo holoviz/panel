@@ -4,8 +4,8 @@ In this guide, we will learn how to layout, i.e., arrange, Python objects, inclu
 
 - *Layouts* are available in the `pn` namespace.
 - Arrange Python objects, including Panel components, using [`pn.Column`](../../reference/layouts/Column.ipynb) and [`pn.Row`](../../reference/layouts/Row.ipynb).
-- Layouts like [`Column`](../../reference/layouts/Column.ipynb) and [`Row`](../../reference/layouts/Row.ipynb) behave like lists.
 - A *layout* will automatically use `pn.panel` to determine how to best display non-Panel objects.
+- Layouts like [`Column`](../../reference/layouts/Column.ipynb) and [`Row`](../../reference/layouts/Row.ipynb) behave like lists.
 - Create complex arrangements by combining and nesting *layouts*.
 - Explore all available *layouts* and their *reference guides* in the [Layouts Section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index.md).
 
@@ -73,14 +73,12 @@ pn.Column("# Wind Speed", data, button).servable()
 ```
 
 :::{note}
-To understand in detail how a layout like `Column` works, please refer to its *reference guide*.
+The `Column` will layout the three *arguments* `"# Wind Speed"`, `data` and `button` vertically.
+
+We add `.servable()` to display the `Column` component in a server app. Its not needed to display it in a notebook.
 :::
 
 Click [this link](../../reference/layouts/Column.ipynb) to access the `Column` Reference Guide, and take a few minutes to familiarize yourself with its organization and content.
-
-It should look like
-
-[![Column reference guide](../../_static/images/layout_column_reference.png)](../../reference/layouts/Column.ipynb)
 
 ## Layout in a Row
 
@@ -113,47 +111,6 @@ pn.Row(plot, data).servable()
 Click [this link](../../reference/index.md#layouts) to access the Layouts section of the [Component Gallery](../../reference/index.md).
 
 Open the [`Row`](../../reference/layouts/Row.ipynb) reference guide and take a few minutes to familiarize yourself with its organization and content.
-
-It should look like
-
-[![Layout Section and Row reference guide](../../_static/images/layout_section_row_guide.png)](../../reference/layouts/Row.ipynb)
-
-## Works like a list
-
-:::{note}
-`Column`, `Row`, and many other layouts are *list-like*.
-:::
-
-Run the code below:
-
-```{pyodide}
-import pandas as pd
-import panel as pn
-
-pn.extension()
-
-button = pn.widgets.Button(name="Refresh", icon="refresh", button_type="primary")
-
-data = pd.DataFrame(
-    [
-        ("Monday", 7),
-        ("Tuesday", 4),
-        ("Wednesday", 9),
-        ("Thursday", 4),
-        ("Friday", 4),
-        ("Saturday", 4),
-        ("Sunday", 4),
-    ],
-    columns=["Day", "Wind Speed (m/s)"],
-)
-
-component = pn.Column("# Wind Speed", data, button)
-pn.Column(component[0], component[2], component[1]).servable()
-```
-
-:::{note}
-We are utilizing the *list-like* properties of the `Column` layout to rearrange its elements. More specifically, we are using *list-indexing* as in `component[2]`. The `Column` layout implements all the methods you would expect from a *list-like* object, including `.append` and `.remove`.
-:::
 
 ## Displays using `pn.panel`
 
@@ -197,10 +154,10 @@ Column
 
 Under the hood, the `Column` layout has used `pn.panel` to convert the string to a [`Markdown`](../../reference/panes/Markdown.ipynb) pane and the DataFrame to a [`DataFrame`](../../reference/panes/DataFrame.ipynb) pane.
 
-You can customize how the objects are displayed using `pn.panel` or specific *Panes*.
+You can customize how the objects are displayed using `pn.panel` arguments, specific *Panes* or specific *Widgets*.
 ::::
 
-Run the code below:
+Run the code below to customize how the objects are displayed:
 
 ```{pyodide}
 import pandas as pd
@@ -227,6 +184,43 @@ pn.Column(
     pn.pane.Str("# Wind Speed"), pn.panel(data, sizing_mode="stretch_width"), button
 ).servable()
 ```
+
+## Works like a list
+
+:::{note}
+`Column`, `Row`, and many other layouts are *list-like*.
+:::
+
+Run the code below:
+
+```{pyodide}
+import pandas as pd
+import panel as pn
+
+pn.extension()
+
+button = pn.widgets.Button(name="Refresh", icon="refresh", button_type="primary")
+
+data = pd.DataFrame(
+    [
+        ("Monday", 7),
+        ("Tuesday", 4),
+        ("Wednesday", 9),
+        ("Thursday", 4),
+        ("Friday", 4),
+        ("Saturday", 4),
+        ("Sunday", 4),
+    ],
+    columns=["Day", "Wind Speed (m/s)"],
+)
+
+component = pn.Column("# Wind Speed", data, button)
+pn.Column(component[0], component[2], component[1]).servable()
+```
+
+:::{note}
+We are utilizing the *list-like* properties of the `Column` layout to rearrange its elements. More specifically, we are using *list-indexing* as in `component[2]`. The `Column` layout implements all the methods you would expect from a *list-like* object, including `.append` and `.remove`.
+:::
 
 ## Combine Layouts
 
@@ -271,14 +265,22 @@ pn.Column(
 ).servable()
 ```
 
+## Explore the Layouts
+
+Panel provides a large collection of layouts.
+
+Click [this link](../../reference/index.md#layouts) and spend a couple of minutes exploring the available layouts and their reference guides.
+
+[![Layouts Section](../../_static/images/layouts_section.png)](../../reference/index.md#layouts)
+
 ## Recap
 
 In this guide, we have learned:
 
 - *Layouts* are available in the `pn` namespace.
 - Arrange Python objects, including Panel components, using [`pn.Column`](../../reference/layouts/Column.ipynb) and [`pn.Row`](../../reference/layouts/Row.ipynb).
-- Layouts like [`Column`](../../reference/layouts/Column.ipynb) and [`Row`](../../reference/layouts/Row.ipynb) behave like lists.
 - A *layout* will automatically use `pn.panel` to determine how to best display Python objects.
+- Layouts like [`Column`](../../reference/layouts/Column.ipynb) and [`Row`](../../reference/layouts/Row.ipynb) behave like lists.
 - Create complex arrangements by combining and nesting *layouts*.
 - Explore all available *layouts* and their *reference guides* in the [Layouts Section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index.md).
 

@@ -1,6 +1,6 @@
 # Tutorials
 
-:::{admonition} Note
+:::{note}
 To make our tutorials engaging and purposeful we will be exploring data and developing data apps in the domain of wind turbines. Your instructor will be very, very passionate about wind turbines. We hope you will have a laugh and play along.
 
 We believe the skills you will be getting are easily transferable to any domain including yours.

@@ -36,6 +36,20 @@ Learn how to debug applications in an Editor
 
 ::::
 
+## Organize Content
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`screen-full;2.5em;sd-mr-1` Control the Size
+:link: size
+:link-type: doc
+
+We will discover how how to achieve truly responsive sizing with the FlexBox. We will use *media queries* to support different devices.
+:::
+
+::::
+
 ## Handle User Input
 
 ::::{grid} 1 2 2 3
@@ -78,6 +92,7 @@ Learn how to structure larger applications with the `DataStore` pattern
 
 serve
 develop_editor
+size
 table_events
 plot_events
 structure_data_store

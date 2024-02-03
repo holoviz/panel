@@ -126,7 +126,7 @@ Layout Panel apps as beautifully as efficiently as a wind farm is laid out.
 :link: size
 :link-type: doc
 
-COMING UP: Understand inherent sizing, fixed sizing, and responsive layouts.. sizing_mode, height/ width, max_height/ max_width.
+We will discover how sizing works in Panel, exploring the differences between inherent sizing, fixed sizing and responsive sizing. Finally we will cover responsive layouts.
 :::
 
 :::{grid-item-card} {octicon}`arrow-switch;2.5em;sd-mr-1` Align Content

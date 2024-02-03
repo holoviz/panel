@@ -177,7 +177,7 @@ plot = pn.pane.Vega(pn.bind(get_plot, year))
 pn.Column(plot, year, sizing_mode="stretch_width").servable()
 ```
 
-:::{admonition} Note
+:::{note}
 It is not important to understand this example in detail right now.
 
 What is import to note is that we use very little Panel code to create valuable data visualization that could not have been created with Altair alone.

@@ -187,7 +187,7 @@ Here we use the `meta_refresh` argument to instruct the browser to automatically
     meta_refresh="10",
 ```
 
-:::{admonition} Note
+:::{note}
 Using the `meta_refresh` argument can be a really robust way to build a *display-only* dashboard for a control room or similar.
 :::
 

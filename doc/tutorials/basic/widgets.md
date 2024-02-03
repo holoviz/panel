@@ -139,7 +139,7 @@ pn.widgets.RadioButtonGroup(
 ).servable()
 ```
 
-:::{Admonition} Note
+:::{note}
 Usually, widgets allow us to specify the *initial* `value`.
 :::
 

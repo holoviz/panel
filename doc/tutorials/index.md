@@ -87,13 +87,6 @@ Panel and other projects in the HoloViz ecosystem all built on Param. In this se
 In this section you learn how to leverage Parameters and dependencies on parameters to add interactivity. In particular we will focus on implementing interactivity through reactivity, rather than the more imperative style of programming you might be used to from other UI frameworks.
 :::
 
-:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1` Layouts
-:link: layouts
-:link-type: doc
-
-In this section we will discover how layouts and sizing works in Panel, taking you through the difference between inherent sizing, fixed sizing and responsive sizing and then cover responsive layouts.
-:::
-
 :::{grid-item-card} {octicon}`paintbrush;2.5em;sd-mr-1` Styling
 :link: styling
 :link-type: doc

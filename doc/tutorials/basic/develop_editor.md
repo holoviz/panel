@@ -7,7 +7,7 @@ In this section, we will learn the basics of developing Panel apps in an editor:
 - Inspect Panel objects via *hover* and `print`.
 - Inspect a component's parameters via `.param` and `.param._repr_html_()`.
 
-:::{admonition} Note
+:::{note}
 Some of the features demonstrated in this guide might require special configuration of your specific editor. For configuration, we refer to the [Resources](#resources) section below and general resources on the web.
 :::
 
@@ -23,6 +23,7 @@ Please make sure [Matplotlib](https://matplotlib.org/) and [Numpy](https://numpy
 ```bash
 conda install -y -c conda-forge matplotlib numpy
 ```
+
 :::
 
 :::{tab-item} pip
@@ -31,6 +32,7 @@ conda install -y -c conda-forge matplotlib numpy
 ```bash
 pip install matplotlib numpy
 ```
+
 :::
 
 ::::

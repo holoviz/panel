@@ -146,7 +146,7 @@ report.save("report.html")
 report.servable()
 ```
 
-:::{admonition} Note
+:::{note}
 If the code was run in a notebook or Python file, the report will have been saved to the file `report.html`.
 :::
 
