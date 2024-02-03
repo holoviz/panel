@@ -1,12 +1,19 @@
 # Build Hello World App
 
-In this tutorial, we will develop and *serve* a *Hello World* Panel app.
+In this tutorial, we will develop and *serve* a *Hello World* Panel:
 
-:::{note}
-Panel can serve apps from Python Scripts, Notebooks, and Markdown files. We have prepared sections for Python scripts and notebooks, so let's focus on the one that best fits our current workflow.
-:::
+- Serve with `panel serve app.py`, `panel serve app.ipynb`, or `panel serve app.md`.
+- serve with auto reload by adding the flag --autoreload.
+- stop your server with CTRL+C.
 
-## Serve a Python script
+## Serve the App
+
+You can develop Panel apps in Python Scripts, Notebooks or Markdown files. We can find a tutorial for each file format on the tabs below. Please pick a tab.
+
+:::::{tab-set}
+
+::::{tab-item} Python Script
+:sync: script
 
 The simplest Panel `.py` file could look like this:
 
@@ -76,7 +83,10 @@ The application will look like.
 
 Now stop the server by pressing `CTRL+C` one or more times in the terminal.
 
-## Serve a notebook
+::::
+
+::::{tab-item} Notebook
+:sync: notebook
 
 Copy the 2 code cells below into a clean notebook named `app.ipynb`.
 
@@ -146,19 +156,24 @@ The application will look like.
 
 Now stop the server by pressing `CTRL+C` one or more times in the terminal.
 
-## Serve a Markdown document
+::::
 
-:::{note}
+::::{tab-item} Markdown
+:sync: markdown
+
 The command `panel serve app.md` will serve a Markdown file as a live Panel app. You can use this feature if your use case is developing live, interactive documentation in Markdown files.
 
 Check out the [Write and serve apps in Markdown](../../how_to/editor/markdown.md) how-to guide for more information.
-:::
+
+::::
+
+:::::
 
 ## Recap
 
 Congratulations. We have just served our first Panel app. Along the way, we have learned to
 
-- serve a Python script, Notebook, or Markdown file with the commands `panel serve app.py`, `panel serve app.ipynb`, or `panel serve app.md`, respectively.
+- serve a Python script or Notebook with the commands `panel serve app.py` or `panel serve app.ipynb` respectively.
 - serve with *auto reload* by adding the flag `--autoreload`.
 - stop the Panel server with `CTRL+C`.
 
