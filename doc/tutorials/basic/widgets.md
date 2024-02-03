@@ -1,4 +1,4 @@
-# Accept User Input
+# Accept Inputs with Widgets
 
 In this guide, we will explore how to accept user input using *widgets*:
 
@@ -33,6 +33,17 @@ In some cases, Panes can accept user input too. For example, the [`ECharts`](../
 
 :::{note}
 When we ask you to *run the code* in the sections below, you may execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
+:::
+
+:::{note}
+
+THIS IS A TEST. WE NEED TO FIGURE OUT HOW TO LINK TO SECTIONS INSIDE OTHER DOCUMENTS
+
+[Widgets Section](../../reference/index.md#widgets)
+[Widgets Section](../../reference/index.html#widgets)
+[Widgets Section](/reference/index.html#widgets)
+[Widgets Section](https://panel.holoviz.org/reference/index.html#widgets)
+
 :::
 
 ## Accept Clicks

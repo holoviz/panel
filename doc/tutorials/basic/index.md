@@ -150,7 +150,7 @@ Construct a static Wind Turbine Report, exportable to HTML for efficient distrib
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`person;2.5em;sd-mr-1` Accept User Input
+:::{grid-item-card} {octicon}`person;2.5em;sd-mr-1` Accept Inputs with Widgets
 :link: widgets
 :link-type: doc
 

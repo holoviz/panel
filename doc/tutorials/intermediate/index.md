@@ -55,14 +55,14 @@ We will discover how how to achieve truly responsive sizing with the FlexBox. We
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`table;2.5em;sd-mr-1` Accept User Input from tables
+:::{grid-item-card} {octicon}`table;2.5em;sd-mr-1` Accept Inputs from tables
 :link: table_events
 :link-type: doc
 
 Elevate our app's functionality by accepting user input from tables.
 :::
 
-:::{grid-item-card} {octicon}`graph;2.5em;sd-mr-1` Accept User Input from plots
+:::{grid-item-card} {octicon}`graph;2.5em;sd-mr-1` Accept Inputs from plots
 :link: plot_events
 :link-type: doc
 
