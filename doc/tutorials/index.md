@@ -1,6 +1,9 @@
 # Tutorials
 
+These tutorials are for those who have decided they would like to learn Panel. For those that have not decided yet, we recommend doing the [Getting Started Guide](../getting_started/index.md) instead.
+
 :::{note}
+
 To make our tutorials engaging and meaningful, we will be exploring data and developing data apps in the domain of wind turbines. Our instructor is very, very passionate about wind turbines. We hope you will have a laugh and play along.
 
 We believe the skills you will be getting are easily transferable to any domain, including yours.
@@ -10,7 +13,7 @@ In this series of tutorials, we'll embark on a journey to explore the world of w
 
 Whether you're a newcomer or an experienced developer, our goal is to take you from a novice to a data exploration and data app hero.
 
-Please put on your safety helmet before entering the world of wind turbine data apps.
+Please put on your safety helmet before entering the world of (wind turbine) data apps.
 
 ## Select Tutorials
 
