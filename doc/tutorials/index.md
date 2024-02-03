@@ -90,11 +90,4 @@ Panel and other projects in the HoloViz ecosystem all built on Param. In this se
 In this section you learn how to leverage Parameters and dependencies on parameters to add interactivity. In particular we will focus on implementing interactivity through reactivity, rather than the more imperative style of programming you might be used to from other UI frameworks.
 :::
 
-:::{grid-item-card} {octicon}`paintbrush;2.5em;sd-mr-1` Styling
-:link: styling
-:link-type: doc
-
-In this section we will review different approaches for styling components, from applying `Design` components, through applying `stylesheets` and `css_classes`.
-:::
-
 ::::
