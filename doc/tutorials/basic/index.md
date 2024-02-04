@@ -132,10 +132,10 @@ We will discover how sizing works in Panel, exploring the differences between in
 :::
 
 :::{grid-item-card} {octicon}`arrow-switch;2.5em;sd-mr-1` Align Content
-:link: size
+:link: align
 :link-type: doc
 
-COMING UP: `align`.
+We will align our wind turbine images perfectly using `align`, `margin` and `Spacer`s.
 :::
 
 :::{grid-item-card} {octicon}`file;2.5em;sd-mr-1` Build a Report
@@ -326,6 +326,7 @@ defer_load
 build_streaming_dashboard
 design
 style
+align
 build_dashboard
 deploy
 ```
