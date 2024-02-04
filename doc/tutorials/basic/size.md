@@ -56,7 +56,9 @@ pn.panel(text, width=300, height=100).servable()
 
 ## Sizing Mode
 
-The `sizing_mode` option can be used to toggle responsiveness in the width or height dimension or both. To see the effect of this, we will create a fixed size `Column` that we place the component into:
+The `sizing_mode` option can be used to toggle responsiveness in the width or height dimension or both. To see the effect of this, we will create a fixed size `Column` that we place the component into.
+
+Run the code from each of the 3 tabs below:
 
 ::::{tab-set}
 

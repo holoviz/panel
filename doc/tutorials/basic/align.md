@@ -13,7 +13,7 @@ Let's run the code below to see how we can horizontally center-align the `Button
 ```{pyodide}
 import panel as pn
 
-pn.extension(design="fast")
+pn.extension()
 
 pn.Column(
     pn.pane.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=150, sizing_mode="scale_width"),
@@ -34,7 +34,7 @@ Run the code for each of the 3 *aligning techniques* below:
 ```{pyodide}
 import panel as pn
 
-pn.extension(design="fast")
+pn.extension()
 
 pn.Column(
     pn.pane.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=150, sizing_mode="scale_width"),
@@ -55,11 +55,15 @@ The `align` value can take a single value or a 2-tuple (horizontal, vertical).
 ```{pyodide}
 import panel as pn
 
-pn.extension(design="fast")
+pn.extension()
 
 pn.Column(
     pn.pane.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=150, sizing_mode="scale_width"),
-    pn.Row(pn.Spacer(sizing_mode="stretch_width"), pn.widgets.Button(name="Stop the Turbine", icon="hand-stop"), pn.Spacer(sizing_mode="stretch_width")),
+    pn.Row(
+        pn.Spacer(sizing_mode="stretch_width"),
+        pn.widgets.Button(name="Stop the Turbine", icon="hand-stop"),
+        pn.Spacer(sizing_mode="stretch_width")
+    ),
     sizing_mode="fixed", width=400, height=400, styles={"border": "1px solid black", "border-radius": "5px"}
 ).servable()
 ```
@@ -72,7 +76,7 @@ pn.Column(
 ```{pyodide}
 import panel as pn
 
-pn.extension(design="fast")
+pn.extension()
 
 margin = int((400-147)/2) # The Button is 147 pixels wide
 

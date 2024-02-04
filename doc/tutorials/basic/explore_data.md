@@ -1,10 +1,10 @@
 # Explore the Data
 
-In this section, we will use the
+In this tutorial, we will
 
-- [Swipe](../../reference/layouts/Swipe.ipynb) *layout* to understand how the global mean surface temperature has risen from 1945 to 2015
-- [Perspective](../../reference/panes/Perspective.ipynb) *pane* to slice and dice the wind `turbines` dataset.
-- [Vega](../../reference/panes/Vega.ipynb) (Altair) *pane*, the [`Player`](../../reference/widgets/Player.ipynb) *widget* and `pn.bind` to understand how manufacturer capacity has developed since the 80's via a *bar chart race*.
+- understand how the global mean surface temperature has risen from 1945 to 2015 using the [Swipe](../../reference/layouts/Swipe.ipynb) *layout*.
+- slice and dice the wind `turbines` dataset using the [Perspective](../../reference/panes/Perspective.ipynb) *pane*
+- understand how manufacturer capacity has developed since the 80's by constructing a *bar chart race*. We will use the [Vega](../../reference/panes/Vega.ipynb) (Altair) *pane*, the [`Player`](../../reference/widgets/Player.ipynb) *widget* and `pn.bind` to do this.
 
 This will barely scratch the surface of what Panel has to offer for an exploratory data analysis (EDA) workflow. That is why we say *Panel is **the powerful data exploration** and web app **framework***.
 
@@ -62,6 +62,10 @@ pn.Swipe(gis_1945, gis_2015).servable()
 ```
 
 Try dragging the *slider* to compare the periods.
+
+:::{note}
+The `Swipe` widget uniquely supports comparing any content that Panel can display. For example two Matplotlib `Figure`s.
+:::
 
 ## Slice and dice with Perspective
 

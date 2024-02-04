@@ -70,7 +70,7 @@ See the [FastListTemplate](../../reference/templates/FastListTemplate.ipynb) *re
 :::
 
 :::{tip}
-Panel ships with a large collection of built-in templates. There is even a *Slides* template.
+Panel ships with a large collection of built-in templates. There is even a [`Slides`](../../reference/templates/Slides.ipynb) template.
 :::
 
 Spend a couple of minutes checking out the [Templates Section](https://panel.holoviz.org/reference/index.html#templates) of the [Component Gallery](../../reference/index.md). Then return here.

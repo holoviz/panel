@@ -4,7 +4,7 @@ Find inspiration in the community forums, ask for help, help others, share your 
 
 ## Prerequisites
 
-We will assume you already have a Github account. If not, please follow the official [Creating an account on Github](https://docs.github.com/en/get-started/quickstart/creating-an-account-on-github) guide.
+We will assume you already have a [Github](https://github.com/) account. If not, please follow the official [Creating an account on Github](https://docs.github.com/en/get-started/quickstart/creating-an-account-on-github) guide.
 
 ## Detailed discussions on Discourse
 

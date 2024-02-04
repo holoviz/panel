@@ -31,7 +31,7 @@ outer_style = {
     'margin': "10px",
 }
 
-indicator = pn.indicators.Number(
+pn.indicators.Number(
     name="Wind Speed",
     value=8.6,
     format="{value} m/s",
@@ -74,7 +74,7 @@ div:nth-child(2) {
 }
 """
 
-indicator = pn.indicators.Number(
+pn.indicators.Number(
     name="Wind Speed",
     value=8.6,
     format="{value} m/s",
@@ -106,3 +106,8 @@ This will ensure our wind turbine data apps are both aesthetically pleasing and 
 ### How-to
 
 - [Apply CSS](../../how_to/styling/apply_css.md)
+- [Style Altair Plots](../../how_to/styling/altair.md)
+- [Style Echarts Plots](../../how_to/styling/echarts.md)
+- [Style Matplotlib Plots](../../how_to/styling/matplotlib.md)
+- [Style Plotly Plots](../../how_to/styling/plotly.md)
+- [Style Vega/ Altair Plots](../../how_to/styling/vega.md)

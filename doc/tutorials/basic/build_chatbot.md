@@ -31,7 +31,7 @@ chat_bot.servable()
 
 Try entering `What is a wind turbine?` in the *text input* and click *Send*.
 
-:::{hint}
+:::{note}
 The `callback` function `get_response` will receive `"What is a wind turbine?"` in the `contents` argument. Since `contents` contains the word *turbine*, the chat bot will return `"A wind turbine converts wind energy into electricity."` as the `response`.
 :::
 

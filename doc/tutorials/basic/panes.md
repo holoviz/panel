@@ -82,10 +82,6 @@ To learn in detail how a pane like `Str` works, refer to its *reference guide*.
 
 Click [this link](../../reference/panes/Str.ipynb) to the `Str` reference guide and spend a few minutes to familiarize yourself with its organization and content.
 
-It should look like
-
-[![Str reference guide](../../_static/images/panes_str_reference.png)](../../reference/panes/Str.ipynb)
-
 ## Display Markdown
 
 The [`Markdown`](../../reference/panes/Markdown.ipynb) pane can format and display [*markdown*](https://en.wikipedia.org/wiki/Markdown) strings.
@@ -221,7 +217,7 @@ ax.set(
     ylim=(0, 10),
 )
 ax.grid()
-plt.close(fig)  # CLOSE THE FIGURE!
+plt.close(fig)  # CLOSE THE FIGURE TO AVOID MEMORY LEAKS!
 
 pn.pane.Matplotlib(fig, dpi=144, tight=True).servable()
 ```
@@ -322,7 +318,7 @@ In this guide, we have learned to display Python objects with *Panes*:
 
 ### Tutorials
 
-- [Display objects with `pn.panel`](.md)
+- [Display objects with `pn.panel`](pn_panel.md)
 
 ### How-to
 

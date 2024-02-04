@@ -201,7 +201,7 @@ ax.set(
     ylim=(0, 10),
 )
 ax.grid()
-plt.close(fig)  # CLOSE THE FIGURE!
+plt.close(fig)  # CLOSE THE FIGURE TO AVOID MEMORY LEAKS!
 
 component = pn.panel(
     fig, format="svg", dpi=144, tight=True, sizing_mode="stretch_width"
@@ -356,29 +356,38 @@ Resolving the appropriate *representation* for an object takes time. So if perfo
 Run the code below
 
 ```{pyodide}
-import panel as pn
 import matplotlib
 import matplotlib.pyplot as plt
-import numpy as np
+import pandas as pd
+import panel as pn
 
-matplotlib.use('agg')
+matplotlib.use("agg")
+
 pn.extension()
 
-def create_matplotlib_figure(figsize=(4,3)):
-    t = np.arange(0.0, 2.0, 0.01)
-    s = 1 + np.sin(2 * np.pi * t)
+data = pd.DataFrame(
+    [
+        ("Monday", 7),
+        ("Tuesday", 4),
+        ("Wednesday", 9),
+        ("Thursday", 4),
+        ("Friday", 4),
+        ("Saturday", 5),
+        ("Sunday", 4),
+    ],
+    columns=["Day", "Wind Speed (m/s)"],
+)
 
-    fig, ax = plt.subplots(figsize=figsize)
-    ax.plot(t, s)
-
-    ax.set(xlabel='time (s)', ylabel='voltage (mV)',
-           title='Voltage')
-    ax.grid()
-
-    plt.close(fig) # CLOSE THE FIGURE!
-    return fig
-
-fig = create_matplotlib_figure()
+fig, ax = plt.subplots(figsize=(8, 3))
+ax.plot(data["Day"], data["Wind Speed (m/s)"], marker="o", markersize=10, linewidth=4)
+ax.set(
+    xlabel="Day",
+    ylabel="Wind Speed (m/s)",
+    title="Wind Speed Over the Week",
+    ylim=(0, 10),
+)
+ax.grid()
+plt.close(fig)  # CLOSE THE FIGURE TO AVOID MEMORY LEAKS!
 pn.pane.Matplotlib(fig, dpi=144, tight=True).servable()
 ```
 

@@ -183,7 +183,7 @@ In this tutorial, we have learned:
 
 ### Tutorials
 
-- [React to User Input](bind.md)
+- [React to User Input](pn_bind.md)
 
 ### How-To
 
