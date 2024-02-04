@@ -51,6 +51,9 @@ from .input import (  # noqa
 )
 from .misc import FileDownload, JSONEditor, VideoStream  # noqa
 from .player import DiscretePlayer, Player  # noqa
+from .remote_file_selector import (  # noqa
+    RemoteFileProvider, RemoteFileSelector, S3RemoteFileProvider,
+)
 from .select import (  # noqa
     AutocompleteInput, CheckBoxGroup, CheckButtonGroup, ColorMap,
     CrossSelector, MultiChoice, MultiSelect, NestedSelect, RadioBoxGroup,
@@ -127,6 +130,7 @@ __all__ = (
     "RadioBoxGroup",
     "RadioButtonGroup",
     "RangeSlider",
+    "RemoteFileSelector",
     "Select",
     "SpeechToText",
     "Spinner",
