@@ -14,7 +14,8 @@ from io import BytesIO
 from tempfile import NamedTemporaryFile
 from textwrap import indent
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Iterable, List, Union,
+    TYPE_CHECKING, Any, Callable, ClassVar, Dict, Iterable, List, Optional,
+    Union,
 )
 from zoneinfo import ZoneInfo
 
@@ -686,6 +687,11 @@ class ChatMessage(PaneBase):
         else:
             updates["object"] = value
         self.param.update(**updates)
+
+    def select(
+        self, selector: Optional[type | Callable[[Viewable], bool]] = None
+    ) -> List[Viewable]:
+        return super().select(selector) + self._composite.select(selector)
 
     def serialize(
         self,
