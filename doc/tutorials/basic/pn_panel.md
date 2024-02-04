@@ -321,7 +321,7 @@ component.servable()
 ```
 
 :::{note}
-When Python objects are given as an argument to a Panel [Layout](../../reference/index.md#layouts) like [`pn.Column`](../../reference/layouts/Column.ipynb), then `pn.Column` will automatically apply `pn.panel` to the objects for you.
+When Python objects are given as an argument to a Panel [Layout](https://panel.holoviz.org/reference/index.html#layouts) like [`pn.Column`](../../reference/layouts/Column.ipynb), then `pn.Column` will automatically apply `pn.panel` to the objects for you.
 :::
 
 Please notice that the image of the dice is very tall. To fine-tune the way it is displayed, we can use `pn.panel`.
@@ -346,9 +346,9 @@ component.servable()
 ## Consider Performance
 
 :::{note}
-`pn.panel` is an easy to use and flexible **helper function** that will convert an object into a [*Pane*](../../reference/index.md#panes).
+`pn.panel` is an easy to use and flexible **helper function** that will convert an object into a [*Pane*](https://panel.holoviz.org/reference/index.html#panes).
 
-More specifically, `pn.panel` resolves the appropriate *representation* for an object by checking all [*Pane*](../../reference/index.md#panes) object types available and then ranking them by priority. When passing a string (for instance), there are many representations, but the [`PNG`](../../reference/panes/PNG.ipynb) pane takes precedence if the string is a valid URL or local file path ending in `.png`.
+More specifically, `pn.panel` resolves the appropriate *representation* for an object by checking all [*Pane*](https://panel.holoviz.org/reference/index.html#panes) object types available and then ranking them by priority. When passing a string (for instance), there are many representations, but the [`PNG`](../../reference/panes/PNG.ipynb) pane takes precedence if the string is a valid URL or local file path ending in `.png`.
 
 Resolving the appropriate *representation* for an object takes time. So if performance is key, we should specify the specific type of *Pane* to use directly. i.e. use `pn.pane.Matplotlib(fig)` instead of `pn.panel(fig)`.
 :::
@@ -409,4 +409,4 @@ In this guide, we have learned to display Python objects easily with `pn.panel`:
 
 ### Component Gallery
 
-- [Panes](../../reference/index.md#panes)
+- [Panes](https://panel.holoviz.org/reference/index.html#panes)

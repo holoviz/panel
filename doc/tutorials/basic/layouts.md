@@ -7,12 +7,12 @@ In this guide, we will learn how to layout, i.e., arrange, Python objects, inclu
 - A *layout* will automatically use `pn.panel` to determine how to best display non-Panel objects.
 - Layouts like [`Column`](../../reference/layouts/Column.ipynb) and [`Row`](../../reference/layouts/Row.ipynb) behave like lists.
 - Create complex arrangements by combining and nesting *layouts*.
-- Explore all available *layouts* and their *reference guides* in the [Layouts Section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index.md).
+- Explore all available *layouts* and their *reference guides* in the [Layouts Section](https://panel.holoviz.org/reference/index.html#layouts) of the [Component Gallery](../../reference/index.md).
 
 In this tutorial, we will **not learn** how to:
 
-- Use specific *layouts* in detail. Details are covered in the *[reference guides](../../reference/index.md#layouts)*.
-- Style *layouts*. This topic is covered in another tutorial.
+- Use specific *layouts* in detail. Details are covered in the *[reference guides](https://panel.holoviz.org/reference/index.html#layouts)*.
+- Style *layouts*. This topic is covered in the [Use Styles](style.md) tutorial.
 
 :::{note}
 When we ask to *run the code* in the sections below, we may execute the code directly in the Panel documentation by using the green *run* button, in a notebook cell, or in a file named `app.py` served with `panel serve app.py --autoreload`.
@@ -108,7 +108,7 @@ plot = data.hvplot(x="Day", y="Wind Speed (m/s)", kind="bar", color="goldenrod",
 pn.Row(plot, data).servable()
 ```
 
-Click [this link](../../reference/index.md#layouts) to access the Layouts section of the [Component Gallery](../../reference/index.md).
+Click [this link](https://panel.holoviz.org/reference/index.html#layouts) to access the Layouts section of the [Component Gallery](../../reference/index.md).
 
 Open the [`Row`](../../reference/layouts/Row.ipynb) reference guide and take a few minutes to familiarize yourself with its organization and content.
 
@@ -184,6 +184,8 @@ pn.Column(
     pn.pane.Str("# Wind Speed"), pn.panel(data, sizing_mode="stretch_width"), button
 ).servable()
 ```
+
+Notice how the string and DataFrame objects are displayed differently.
 
 ## Works like a list
 
@@ -269,9 +271,9 @@ pn.Column(
 
 Panel provides a large collection of layouts.
 
-Click [this link](../../reference/index.md#layouts) and spend a couple of minutes exploring the available layouts and their reference guides.
+Click [this link](https://panel.holoviz.org/reference/index.html#layouts) and spend a couple of minutes exploring the available layouts and their reference guides.
 
-[![Layouts Section](../../_static/images/layouts_section.png)](../../reference/index.md#layouts)
+[![Layouts Section](../../_static/images/layouts_section.png)](https://panel.holoviz.org/reference/index.html#layouts)
 
 ## Recap
 
@@ -282,7 +284,7 @@ In this guide, we have learned:
 - A *layout* will automatically use `pn.panel` to determine how to best display Python objects.
 - Layouts like [`Column`](../../reference/layouts/Column.ipynb) and [`Row`](../../reference/layouts/Row.ipynb) behave like lists.
 - Create complex arrangements by combining and nesting *layouts*.
-- Explore all available *layouts* and their *reference guides* in the [Layouts Section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index.md).
+- Explore all available *layouts* and their *reference guides* in the [Layouts Section](https://panel.holoviz.org/reference/index.html#layouts) of the [Component Gallery](../../reference/index.md).
 
 ## References
 
@@ -304,4 +306,4 @@ In this guide, we have learned:
 
 ### Component Gallery
 
-- [Layouts](../../reference/index.md#layouts)
+- [Layouts](https://panel.holoviz.org/reference/index.html#layouts)

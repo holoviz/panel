@@ -1,6 +1,11 @@
 # Use Styles
 
-Finetune the style of our Panel components with [*css*](https://www.w3schools.com/css/) `styles` (container) or `stylesheets` (contents) to ensure our wind turbine data apps are both aesthetically pleasing and user-friendly.
+We can finetune the style of our Panel components with [*css*](https://www.w3schools.com/css/):
+
+- Use `styles` to style the *outer container*.
+- Use `stylesheets` to style the *inner contents of the container*.
+
+This will ensure our wind turbine data apps are both aesthetically pleasing and user-friendly.
 
 :::{note}
 When we ask to *run the code* in the sections below, we may execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
@@ -82,14 +87,19 @@ indicator = pn.indicators.Number(
 Try changing the `background-color` from `pink` to `lightgray`.
 
 :::{note}
-While `stylesheets` are relatively straightforward to use (just ask chatGPT for help), using `stylesheets` sometimes requires a deeper knowledge of CSS, shadow DOM, and Bokeh/Panel internals.
+While `stylesheets` are relatively straightforward to use (just ask chatGPT for help), using `stylesheets` sometimes requires a deeper investigation of *shadow DOM* and Bokeh/Panel implementation details.
 
 Learn more about `stylesheets` in the [Apply CSS](../../how_to/styling/apply_css.md) how-to guide.
 :::
 
 ## Recap
 
-We have finetuned the style of a Panel component with [*css*](https://www.w3schools.com/css/) `styles` (container) and `stylesheets` (contents).
+We can finetune the style of our Panel components with [*css*](https://www.w3schools.com/css/):
+
+- Use `styles` to style the *outer container*.
+- Use `stylesheets` to style the *inner contents of the container*.
+
+This will ensure our wind turbine data apps are both aesthetically pleasing and user-friendly.
 
 ## Resources
 

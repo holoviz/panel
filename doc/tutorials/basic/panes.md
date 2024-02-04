@@ -8,11 +8,11 @@ In this tutorial, we will learn to display objects with *Panes*:
 - Display plot figures like [Altair](https://altair-viz.github.io/), [hvPlot](https://hvplot.holoviz.org), [Matplotlib](https://matplotlib.org/) and [Plotly](https://plotly.com/python/) with the ,  [`Vega`](../../reference/panes/Vega.ipynb), [`HoloViews`](../../reference/panes/HoloViews.ipynb), [`Matplotlib`](../../reference/panes/Matplotlib.ipynb) and [`Plotly`](../../reference/panes/Plotly.ipynb) *panes*, respectively.
 - Display *DataFrames* with the [`DataFrame`](../../reference/panes/DataFrame.ipynb) and [`Perspective`](../../reference/panes/Perspective.ipynb) *panes*.
 - Add JavaScript dependencies via `pn.extension`. For example, `pn.extension("plotly")`.
-- Discover all *Panes* and their *reference guides* in the [Panes Section](../../reference/index.md#panes) of the [Component Gallery](../../reference/index.md).
+- Discover all *Panes* and their *reference guides* in the [Panes Section](https://panel.holoviz.org/reference/index.html#panes) of the [Component Gallery](../../reference/index.md).
 
 In this tutorial, we will **not learn** how to:
 
-- Use *Panes* in detail. Details are covered by the *[reference guides](../../reference/index.md#panes)*.
+- Use *Panes* in detail. Details are covered by the *[reference guides](https://panel.holoviz.org/reference/index.html#panes)*.
 - Layout and style *Panes*. These topics are covered by other tutorials.
 
 :::{note}
@@ -111,11 +111,11 @@ Read more [here](https://en.wikipedia.org/wiki/Wind_turbine).
 It's key for success with Panel to be able to navigate the [Component Gallery](../../reference/index.md) and use the *reference guides*.
 :::
 
-Click [this link](../../reference/index.md#panes) to the [Panes Section](../../reference/index.md#panes) of the [Component Gallery](../../reference/index.md). Identify the [Markdown Reference Guide](../../reference/panes/Markdown.ipynb) and open it. You don't have to spend time studying the details right now.
+Click [this link](https://panel.holoviz.org/reference/index.html#panes) to the [Panes Section](https://panel.holoviz.org/reference/index.html#panes) of the [Component Gallery](../../reference/index.md). Identify the [Markdown Reference Guide](../../reference/panes/Markdown.ipynb) and open it. You don't have to spend time studying the details right now.
 
 It should look like
 
-[![Panes Gallery and Markdown Reference Guide](../../_static/images/panes_markdown_reference.png)](../../reference/index.md#panes)
+[![Panes Gallery and Markdown Reference Guide](../../_static/images/panes_markdown_reference.png)](https://panel.holoviz.org/reference/index.html#panes)
 
 ### Display Alerts
 
@@ -316,7 +316,7 @@ In this guide, we have learned to display Python objects with *Panes*:
 - Display plot figures like [Altair](https://altair-viz.github.io/), [hvPlot](https://hvplot.holoviz.org), [Matplotlib](https://matplotlib.org/) and [Plotly](https://plotly.com/python/) with the ,  [`Vega`](../../reference/panes/Vega.ipynb), [`HoloViews`](../../reference/panes/HoloViews.ipynb), [`Matplotlib`](../../reference/panes/Matplotlib.ipynb) and [`Plotly`](../../reference/panes/Plotly.ipynb) *panes*, respectively.
 - Display *DataFrames* with the [`DataFrame`](../../reference/panes/DataFrame.ipynb) and [`Perspective`]((../../reference/panes/Perspective.ipynb)) *panes*.
 - Add JavaScript dependencies via `pn.extension`. For example `pn.extension("plotly")`
-- Discover all *Panes* and their *reference guides* in the [Panes Section](../../reference/index.md#panes) of the [Component Gallery](../../reference/index.md).
+- Discover all *Panes* and their *reference guides* in the [Panes Section](https://panel.holoviz.org/reference/index.html#panes) of the [Component Gallery](../../reference/index.md).
 
 ## Resources
 
@@ -336,4 +336,4 @@ In this guide, we have learned to display Python objects with *Panes*:
 
 ### Component Gallery
 
-- [Panes](../../reference/index.md#panes)
+- [Panes](https://panel.holoviz.org/reference/index.html#panes)

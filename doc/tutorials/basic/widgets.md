@@ -13,11 +13,11 @@ In this guide, we will explore how to accept user input using *widgets*:
 - We'll choose an object from a list of objects using the `Select` widget.
 - Panel widgets are grouped into sets of *interchangeable* widgets.
   - We can switch out the `Select` widget with the `RadioButtonGroup` widget to modify the user experience.
-- You can explore all available *widgets* and their *reference guides* in the [Widgets Section](../../reference/index.md#widgets) of the [Component Gallery](../../reference/index.md).
+- You can explore all available *widgets* and their *reference guides* in the [Widgets Section](https://panel.holoviz.org/reference/index.html#widgets) of the [Component Gallery](../../reference/index.md).
 
 In this tutorial, we will **not learn** how to:
 
-- Use specific *widgets* in great detail, as the details are covered in the *[reference guides](../../reference/index.md#widgets)*.
+- Use specific *widgets* in great detail, as the details are covered in the *[reference guides](https://panel.holoviz.org/reference/index.html#widgets)*.
 - React to user input, as this is addressed in the [React to User Input](bind.md) tutorial.
 - Style or align *widgets*, as these topics are covered in other tutorials.
 
@@ -33,17 +33,6 @@ In some cases, Panes can accept user input too. For example, the [`ECharts`](../
 
 :::{note}
 When we ask you to *run the code* in the sections below, you may execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
-:::
-
-:::{note}
-
-THIS IS A TEST. WE NEED TO FIGURE OUT HOW TO LINK TO SECTIONS INSIDE OTHER DOCUMENTS
-
-[Widgets Section](../../reference/index.md#widgets)
-[Widgets Section](../../reference/index.html#widgets)
-[Widgets Section](/reference/index.html#widgets)
-[Widgets Section](https://panel.holoviz.org/reference/index.html#widgets)
-
 :::
 
 ## Accept Clicks
@@ -110,11 +99,11 @@ If you are in a notebook or serving as an app, try:
 Your success with Panel hinges on your ability to navigate the [Component Gallery](../../reference/index.md) and utilize the *reference guides* effectively.
 :::
 
-Click [this link](../../reference/index.md#widgets) to access the Widgets Section of the [Component Gallery](../../reference/index.md). Locate the [TextInput Reference Guide](../../reference/widgets/TextInput.ipynb) and open it. You don't have to delve into the details right now.
+Click [this link](https://panel.holoviz.org/reference/index.html#widgets) to access the Widgets Section of the [Component Gallery](../../reference/index.md). Locate the [TextInput Reference Guide](../../reference/widgets/TextInput.ipynb) and open it. You don't have to delve into the details right now.
 
 It should look like
 
-[![Widgets Gallery and TextInput Reference Guide](../../_static/images/widgets_textinput_reference.png)](../../reference/index.md#widgets)
+[![Widgets Gallery and TextInput Reference Guide](../../_static/images/widgets_textinput_reference.png)](https://panel.holoviz.org/reference/index.html#widgets)
 
 ## Accept an object from a list
 
@@ -128,7 +117,7 @@ pn.extension()
 pn.widgets.Select(
     description="Select a Study",
     name="Study",
-    options=["Biology", "Chemistry", "Physics"],
+    options=["Wind Turbine", "Solar Panel", "Battery Storage"],
 ).servable()
 ```
 
@@ -146,7 +135,7 @@ pn.extension()
 pn.widgets.RadioButtonGroup(
     description="Select a Study",
     name="Study",
-    options=["Biology", "Chemistry", "Physics"],
+    options=["Wind Turbine", "Solar Panel", "Battery Storage"],
 ).servable()
 ```
 
@@ -166,7 +155,7 @@ pn.widgets.RadioButtonGroup(
     button_style="outline",
     description="Select a Study",
     name="Study",
-    options=["Biology", "Chemistry", "Physics"],
+    options=["Wind Turbine", "Solar Panel", "Battery Storage"],
     value="Physics",
 ).servable()
 ```
@@ -188,7 +177,7 @@ In this tutorial, we have learned:
 - We can accept an object from a list of objects with the `Select` widget.
 - Panel widgets come in groups of *interchangeable* widgets.
   - We can replace the `Select` widget with the `RadioButtonGroup` widget to change the user experience.
-- You can explore all *Widgets* and their *reference guides* in the [Widgets Section](../../reference/index.md#widgets) of the [Component Gallery](../../reference/index.md).
+- You can explore all *Widgets* and their *reference guides* in the [Widgets Section](https://panel.holoviz.org/reference/index.html#widgets) of the [Component Gallery](../../reference/index.md).
 
 ## Resources
 
@@ -206,4 +195,4 @@ In this tutorial, we have learned:
 
 ### Component Gallery
 
-- [Widgets](../../reference/index.md#widgets)
+- [Widgets](https://panel.holoviz.org/reference/index.html#widgets)

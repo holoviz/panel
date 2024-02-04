@@ -4,7 +4,7 @@ In this tutorial, we will be displaying the performance of our wind turbines usi
 
 - Display the current performance using the [`Number`](../../reference/indicators/Number.ipynb) *indicator*.
 - Display the trending performance using the [`Trend`](../../reference/indicators/Trend.ipynb) *indicator*
-- Discover all *indicators* and their *reference guides* in the [Indicators Section](../../reference/index.md#indicators) of the [Component Gallery](../../reference/index.md).
+- Discover all *indicators* and their *reference guides* in the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators) of the [Component Gallery](../../reference/index.md).
 
 :::{note}
 When we ask to *run the code* in the sections below, we may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
@@ -65,9 +65,9 @@ Click [here](../../reference/indicators/Trend.ipynb) and spend a couple of minut
 
 ## Discover Indicators
 
-Discover all *indicators* and their *reference guides* in the [Indicators Section](../../reference/index.md#indicators) of the [Component Gallery](../../reference/index.md).
+Discover all *indicators* and their *reference guides* in the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators) of the [Component Gallery](../../reference/index.md).
 
-[![Indicators Section](../../_static/images/indicators_section.png)](../../reference/index.md#indicators)
+[![Indicators Section](../../_static/images/indicators_section.png)](https://panel.holoviz.org/reference/index.html#indicators)
 
 ## Recap
 
@@ -75,4 +75,4 @@ In this tutorial, we have been displaying the performance of our wind turbines u
 
 - Display the current performance using the [`Number`](../../reference/indicators/Number.ipynb) *indicator*.
 - Display the trending performance using the [`Trend`](../../reference/indicators/Trend.ipynb) *indicator*
-- Discover all *indicators* and their *reference guides* in the [Indicators Section](../../reference/index.md#indicators) of the [Component Gallery](../../reference/index.md).
+- Discover all *indicators* and their *reference guides* in the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators) of the [Component Gallery](../../reference/index.md).

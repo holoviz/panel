@@ -3,7 +3,7 @@
 In this tutorial, we will use *pre-made templates* to easily layout an app with a *header*, *sidebar*, and *main* area:
 
 - Templates are available in the `pn.template` namespace
-- Templates can be found in the [Templates Section](../../reference/index.md#templates) of the [Component Gallery](../../reference/index.md).
+- Templates can be found in the [Templates Section](https://panel.holoviz.org/reference/index.html#templates) of the [Component Gallery](../../reference/index.md).
 - Templates are highly customizable
 
 ## Install the Dependencies
@@ -73,9 +73,9 @@ See the [FastListTemplate](../../reference/templates/FastListTemplate.ipynb) *re
 Panel ships with a large collection of built-in templates. There is even a *Slides* template.
 :::
 
-Spend a couple of minutes checking out the [Templates Section](../../reference/index.md#templates) of the [Component Gallery](../../reference/index.md). Then return here.
+Spend a couple of minutes checking out the [Templates Section](https://panel.holoviz.org/reference/index.html#templates) of the [Component Gallery](../../reference/index.md). Then return here.
 
-[![Templates Section](../../_static/images/templates_section.png)](../../reference/index.md#templates)
+[![Templates Section](../../_static/images/templates_section.png)](https://panel.holoviz.org/reference/index.html#templates)
 
 ## Use a Template in a Notebook
 
@@ -199,7 +199,7 @@ The `accent` and `main_layout` arguments only apply to the *Fast* templates, i.e
 In this tutorial, we have used *pre-made templates* to easily layout an app with a *header*, *sidebar*, and *main* area:
 
 - Templates are available in the `pn.template` namespace
-- Templates can be found in the [Templates Section](../../reference/index.md#templates) of the [Component Gallery](../../reference/index.md).
+- Templates can be found in the [Templates Section](https://panel.holoviz.org/reference/index.html#templates) of the [Component Gallery](../../reference/index.md).
 - Templates are highly customizable
 
 ## References
@@ -223,4 +223,4 @@ In this tutorial, we have used *pre-made templates* to easily layout an app with
 
 ### Component Gallery
 
-- [Templates Section](../../reference/index.md#templates) of the [Component Gallery](../../reference/index.md)
+- [Templates Section](https://panel.holoviz.org/reference/index.html#templates) of the [Component Gallery](../../reference/index.md)

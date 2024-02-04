@@ -350,7 +350,7 @@ We can
 - [Display Output in Notebooks](../../how_to/notebook/notebook.md)
 - [Preview Apps in Jupyterlab](../../how_to/notebook/jupyterlabpreview.md)
 - [Serve an app from a notebook file](serve.md)
-- [Use VS Code Notebook and Interactive Environment](../../how_to/editor/vscode_configure.md#notebook-and-interactive-environment)
+- [Use VS Code Notebook and Interactive Environment](https://panel.holoviz.org//how_to/editor/vscode_configure.html#notebook-and-interactive-environment)
 
 ## Explanation
 

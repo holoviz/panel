@@ -1,6 +1,6 @@
 # Control the Size
 
-In this tutorial, we will discover how *sizing* works in Panel, explore the difference between *inherent sizing*, *fixed sizing*, and *responsive sizing*. Finally, we will touch upon the *fully responsive* layouts and the [`FlexBox`](../../reference/layouts/FlexBox.ipynb):
+In this tutorial, we will discover how *sizing* works in Panel, explore the difference between *inherent sizing*, *fixed sizing*, and *responsive sizing*. Finally, we will touch upon the *fully responsive* layouts and [`FlexBox`](../../reference/layouts/FlexBox.ipynb):
 
 - `sizing_mode`: Allows toggling between fixed sizing and responsive sizing along vertical and/or horizontal dimensions.
 - `width`/`height`: Allows setting a fixed width or height.
@@ -110,7 +110,7 @@ Let's dive in!
 
 #### Configure the Sizing Mode
 
-Arrange the `Markdown` pane and Bokeh `figure` such that they fully fill the available space but also ensure that the text never shrinks below 200 pixels and never grows above 500 pixels in width.
+Rearrange the `Markdown` pane and Bokeh `figure` below such that they fully fill the available space but also ensure that the text never shrinks below 200 pixels and never grows above 500 pixels in width.
 
 ```{pyodide}
 import pandas as pd
@@ -146,7 +146,7 @@ md = pn.pane.Markdown(
 pn.Row(fig, md, height=500, sizing_mode="stretch_width").servable()
 ```
 
-Test your solution by changing the window size of your browser. Notice how the `figure` and `text` stretches.
+Test your solution by changing the window size of your browser. It should look like below.
 
 <video controls="" poster="https://assets.holoviz.org/panel/tutorials/exercise_configure_sizing_mode.png">
     <source src="https://assets.holoviz.org/panel/tutorials/exercise_configure_sizing_mode.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
@@ -196,7 +196,7 @@ pn.Row(fig, md, height=500, sizing_mode="stretch_width").servable()
 
 :::
 
-#### Explore the Sizing Mode via Widgets
+#### Finetune with Widgets
 
 :::{note}
 **Pro Tip**: When fine-tuning the `size_mode`, `height`, `width` and other parameters of your Panel component, you can speed up the process by using widgets interactively instead of code. Panel's `pn.Param` provides an easy way to create widgets to control your Panel component.
@@ -253,7 +253,7 @@ pn.Row(fig, md, settings, height=500,).servable()
 
 :::
 
-#### Change the Default Sizing Mode
+#### Change the Defaults
 
 :::{note}
 The default `sizing_mode` of Panel is `"fixed"`. We can change the default `sizing_mode` via `pn.extension(sizing_mode=...)` or `pn.config.sizing_mode=...`.
@@ -303,6 +303,32 @@ pn.Row(fig, md, height=500,).servable()
 
 :::
 
+### Change the Defaults Temporarily
+
+We can use `pn.config.set` as a *context manager* to temporarily change one or more default *configuration settings*.
+
+Run the code below:
+
+```{pyodide}
+import panel as pn
+
+pn.extension()
+
+with pn.config.set(sizing_mode="stretch_width"):
+    width_responsive = pn.Spacer(styles={"background": "green"}, height=100)
+
+with pn.config.set(sizing_mode="stretch_height"):
+    height_responsive = pn.Spacer(styles={"background": "red"}, width=100)
+
+pn.Column(
+    width_responsive,
+    height_responsive,
+    width=300,
+    height=300,
+    styles={"border": "1px solid black"},
+).servable()
+```
+
 ## Responsive Layouts with FlexBox
 
 So far when we have talked about responsive layouts we have primarily focused on simple `width`/`height` responsiveness of individual components, i.e. whether they will grow and shrink to fill the available space. For a truly responsive experience however we will need responsive layouts that will reflow the content depending on the size of the screen, browser window or the container they are placed inside of, much like how text wraps when there is insufficient width to accommodate it:
@@ -332,12 +358,12 @@ pn.FlexBox(*spacers).servable()
 Try adjusting the width of your browser window.
 
 :::{note}
-We will explore the `FlexBox` in more detail in the [*intermediate* tutorial on sizing](../intermediate/size.md).
+We will explore the `FlexBox` in more detail in the [Control the Size (intermediate)](../intermediate/size.md) tutorial.
 :::
 
 ## Recap
 
-In this tutorial, we have discovered how *sizing* works in Panel. We have explored the difference between *inherent sizing*, *fixed sizing*, and *responsive sizing*. Finally, we touched upon *fully responsive* layouts and the [`FlexBox`](../../reference/layouts/FlexBox.ipynb):
+In this tutorial, we have discovered how *sizing* works in Panel. We have explored the difference between *inherent sizing*, *fixed sizing*, and *responsive sizing*. Finally, we touched upon *fully responsive* layouts and [`FlexBox`](../../reference/layouts/FlexBox.ipynb):
 
 - `sizing_mode`: Allows toggling between fixed sizing and responsive sizing along vertical and/or horizontal dimensions.
 - `width`/`height`:  Allows setting a fixed width or height
