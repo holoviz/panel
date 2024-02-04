@@ -24,11 +24,11 @@ pn.Column(
 
 We will now align the `Button` *center* horizontally.
 
-## Aligning Techniques
+Run the code for each of the 3 *aligning techniques* below:
 
 :::::{tab-set}
 
-::::{tab-item} `align`
+::::{tab-item} Align
 :sync: align
 
 ```{pyodide}
@@ -49,13 +49,13 @@ The `align` value can take a single value or a 2-tuple (horizontal, vertical).
 
 ::::
 
-::::{tab-item} `Spacer`
+::::{tab-item} Spacer
 :sync: spacer
 
 ```{pyodide}
 import panel as pn
 
-pn.extension(design=" fast")
+pn.extension(design="fast")
 
 pn.Column(
     pn.pane.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=150, sizing_mode="scale_width"),
@@ -66,7 +66,7 @@ pn.Column(
 
 ::::
 
-::::{tab-item} `margin`
+::::{tab-item} Margin
 :sync: margin
 
 ```{pyodide}
@@ -93,7 +93,7 @@ The `margin` value can take a single value, a 2-tuple (top/bottom, left/right), 
 
 ## Exercise: Align Cards
 
-Let's align each of the two *cards* in the center of their respective *vertical halves*.
+Run the code below:
 
 ```{pyodide}
 import panel as pn
@@ -111,15 +111,17 @@ pn.Column(
 ).servable()
 ```
 
-There can be many code solutions, but the solution should look like this:
+Let's align each of the two *cards* in the center of their respective *vertical halves*.
+
+There can be many solutions, but the solution should look like this:
 
 ![Align Cards Solution](../../_static/images/align-cards-solution.png)
 
-:::{dropdown} Solutions
+:::::{dropdown} Solutions
 
 ::::{tab-set}
 
-:::{tab-item} `align` + `Spacer`
+:::{tab-item} Align + Spacer
 :sync: solution-align-spacer
 
 ```{pyodide}
@@ -141,7 +143,7 @@ pn.Column(
 
 :::
 
-:::{tab-item} `align` + `margin`
+:::{tab-item} Align + Margin
 :sync: solution-align-margin
 
 ```{pyodide}
@@ -163,6 +165,8 @@ pn.Column(
 :::
 
 ::::
+
+:::::
 
 ## Recap
 
