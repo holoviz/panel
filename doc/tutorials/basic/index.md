@@ -195,10 +195,10 @@ Show activity with indicators just as rotating blades show the activity of wind 
 :::
 
 :::{grid-item-card} {octicon}`versions;2.5em;sd-mr-1` Update Progressively
-:link: generators
+:link: progressive_layouts
 :link-type: doc
 
-Unleash the power of generators in our Wind Turbine Apps!
+Unleash the power of generators and reactive expressions in our Wind Turbine Apps!
 :::
 
 :::{grid-item-card} {octicon}`image;2.5em;sd-mr-1` Build an Image Classifier
@@ -319,7 +319,7 @@ pn_bind
 state
 build_todo
 indicators_activity
-generators
+progressive_layouts
 build_image_classifier
 caching
 defer_load

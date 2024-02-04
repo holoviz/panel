@@ -2,8 +2,8 @@
 
 In this tutorial, we will be running a slow *classifier* model and reporting progress and results as they arrive:
 
-- Use generator functions (`yield`) to progressively return content and update the app.
-- Use state (`pn.rx`) to drive progressive updates to the app
+- Use [*generator functions*](https://realpython.com/introduction-to-python-generators/) (`yield`) to progressively return content and update the app.
+- Use [*reactive expressions*](../../reference/panes/ReactiveExpr.ipynb) (`pn.rx`) to drive progressive updates to the app
 
 :::{note}
 When we ask to *run the code* in the sections below, we may execute the code directly in the Panel documentation by using the green *run* button, in a notebook cell, or in a file named `app.py` served with `panel serve app.py --autoreload`.
@@ -11,16 +11,20 @@ When we ask to *run the code* in the sections below, we may execute the code dir
 
 ## Replace Content Progressively
 
+### Replace using a Generator
+
 Run the code below:
 
 ```{pyodide}
-import panel as pn
-from time import sleep
 import random
+from time import sleep
+
+import panel as pn
 
 pn.extension()
 
 OPTIONS = ["Wind Turbine", "Solar Panel", "Battery Storage"]
+
 
 def classify(image):
     sleep(2)
@@ -36,6 +40,7 @@ progress_message = pn.Row(
     pn.panel("Running classifier ...", margin=0),
 )
 
+
 def get_prediction(running):
     if not running:
         yield "Click Submit"
@@ -44,29 +49,32 @@ def get_prediction(running):
     yield progress_message
     prediction = classify(None)
     yield f"It's a {prediction}"
+
 
 pn.Column(run, pn.bind(get_prediction, run)).servable()
 ```
 
-### Exercise: Disable the Button
+#### Exercise: Disable the Button
 
 Update the code to `disable` the `Button` while the classification is running.
 
-:::::{dropdown}
+:::::{dropdown} Solution(s)
 
 ::::{tab-set}
 
-:::{tab-item} `.disabled`
+:::{tab-item} .disabled
 :sync: disabled
 
 ```{pyodide}
-import panel as pn
-from time import sleep
 import random
+from time import sleep
+
+import panel as pn
 
 pn.extension()
 
 OPTIONS = ["Wind Turbine", "Solar Panel", "Battery Storage"]
+
 
 def classify(image):
     sleep(2)
@@ -82,35 +90,39 @@ progress_message = pn.Row(
     pn.panel("Running classifier ...", margin=0),
 )
 
+
 def get_prediction(running):
     if not running:
         yield "Click Submit"
         return
 
-    run.disabled=True
+    run.disabled = True
 
     yield progress_message
     prediction = classify(None)
     yield f"It's a {prediction}"
 
-    run.disabled=False
+    run.disabled = False
+
 
 pn.Column(run, pn.bind(get_prediction, run)).servable()
 ```
 
 :::
 
-:::{tab-item} `.update`
+:::{tab-item} .update
 :sync: disabled
 
 ```{pyodide}
-import panel as pn
-from time import sleep
 import random
+from time import sleep
+
+import panel as pn
 
 pn.extension()
 
 OPTIONS = ["Wind Turbine", "Solar Panel", "Battery Storage"]
+
 
 def classify(image):
     sleep(2)
@@ -125,6 +137,7 @@ progress_message = pn.Row(
     ),
     pn.panel("Running classifier ...", margin=0),
 )
+
 
 def get_prediction(running):
     if not running:
@@ -136,6 +149,7 @@ def get_prediction(running):
         prediction = classify(None)
         yield f"It's a {prediction}"
 
+
 pn.Column(run, pn.bind(get_prediction, run)).servable()
 ```
 
@@ -145,9 +159,9 @@ pn.Column(run, pn.bind(get_prediction, run)).servable()
 
 :::::
 
-### Use `.rx` state
+### Replace using Reactive Expressions
 
-An alternative to a generator function is using *state* (`pn.rx`).
+An alternative to a generator function is *reactive expressions* (`pn.rx`).
 
 Run the code below.
 
@@ -221,7 +235,11 @@ Changing component parameters on the fly is much easier to do and reason about w
 
 ## Append Content Progressively
 
+### Append using Generator
+
 To append content progressively we can append to a `layout` like `Column` and yield the `layout`.
+
+Run the code below
 
 ```{pyodide}
 import panel as pn
@@ -265,9 +283,9 @@ def get_prediction(running):
 pn.Column(run, pn.bind(get_prediction, run)).servable()
 ```
 
-### Exercise: Replace generator with `pn.rx`
+### Exercise: Replace the Generator with Reactive Expressions
 
-Reimplement the app using state (`pn.rx`). You are not allowed to use a generator function (`yield`).
+Reimplement the app using *reactive expressions* (`pn.rx`). You are not allowed to use a generator function (`yield`).
 
 :::{dropdown} Solution
 
@@ -343,8 +361,8 @@ pn.Column(run, click_submit, results_view, progress_message).servable()
 
 In this tutorial, we have been running a slow *classifier* model and reported progress and results as they arrived:
 
-- Use generator functions (`yield`) to progressively return content and update the app.
-- Use state (`pn.rx`) to drive progressive updates to the app.
+- Use [*generator functions*](https://realpython.com/introduction-to-python-generators/) (`yield`) to progressively return content and update the app.
+- Use [*reactive expressions*](../../reference/panes/ReactiveExpr.ipynb) (`pn.rx`) to drive progressive updates to the app
 
 ## Resources
 
