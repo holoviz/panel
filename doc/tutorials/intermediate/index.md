@@ -6,7 +6,9 @@ Together, we will build more performant, scalable, polished, reusable and mainta
 
 After these tutorials you will be able to build a wide range of large and complex multi-page apps structured across multiple files using a *class based approach* and more advanced Python features like `async`.
 
-I will assume you have a *basic skill level* corresponding to the what you get from the [Basic Tutorials](../basic/index.md).
+## Prerequisites
+
+We assume a *basic level of Panel skills* corresponding to the skills that can be acquired from the [Basic Tutorial](../basic/index.md).
 
 ## Get Started
 

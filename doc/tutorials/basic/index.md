@@ -1,10 +1,12 @@
 # Basic Tutorials
 
-These tutorials are for those who are just starting to discover Panel.
+These tutorials are for those who have decided they would like to start learning Panel systematically. For those that have not decided yet, we recommend doing the less comprehensive [Getting Started Guide](../getting_started/index.md) instead.
 
 Together, we will explore the wind turbine data and build a chat bot, a static report, a todo app, an image classifier app, a dashboard, and a streaming application.
 
 After completing these tutorials, we will be able to build a wide range of polished, single page apps from a single file using a *function-based approach*.
+
+Please put on your safety helmet before entering the world of (wind turbine) data apps.
 
 ## Prerequisites
 
