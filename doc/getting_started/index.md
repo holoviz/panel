@@ -4,8 +4,6 @@ Welcome to Panel!
 
 The getting started guides are for those who would like to **quickly try out Panel** and **explore the features and strengths of Panel**.
 
-As the next step after this Getting Started guide, we recommend learning the basics of Panel systematically via the *in depth* [*Basic Tutorial](../tutorials/basic/index.md).
-
 ---
 
 ::::{grid} 1 2 2 3
@@ -42,6 +40,8 @@ Introduces you to some of the core concepts behind Panel, how to develop Panel a
 :::
 
 ::::
+
+As the next step after this Getting Started guide, we recommend learning the basics of Panel systematically via the *in depth* [Basic Tutorials](../tutorials/basic/index.md).
 
 ## Additional Resources
 
