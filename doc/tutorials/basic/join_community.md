@@ -44,13 +44,19 @@ Before reporting bugs or asking for new features, please make sure they are not 
 
 ## Announcements and Showcases on Social Media
 
-Follow Panel on [X](https://x.com/Panel_org)
+Follow Panel on [X](https://x.com/Panel_org).
 
 [![Panel on X](../../_static/images/join_community_twitter.png)](https://x.com/Panel_org)
 
 Follow Panel on [LinkedIn](https://www.linkedin.com/company/panel-org)
 
 [![Panel on LinkedIn](../../_static/images/join_community_linkedin.png)](https://www.linkedin.com/company/panel-org)
+
+## Community Resources at Awesome Panel
+
+Bookmark [Awesome Panel](https://awesome-panel.org).
+
+[![Awesome Panel](../../_static/images/awesome-panel.png)](https://awesome-panel.org)
 
 ## Contribute
 
@@ -62,6 +68,7 @@ If you want to start contributing, check out the [Contributing Guide](https://gi
 
 ## Resources
 
+- [Awesome Panel](https://awesome-panel.org).
 - [Contributing Guide](https://github.com/holoviz/panel/blob/main/CONTRIBUTING.MD)
 - [Discord](https://discord.gg/rb6gPXbdAr)
 - [Discourse](https://discourse.holoviz.org/)
