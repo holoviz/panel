@@ -2,7 +2,9 @@
 
 Welcome to Panel!
 
-The getting started guide will get you set up with Panel and provide you with a basic introduction to the features and strengths of Panel.
+The getting started guides are for those who would like to **quickly try out Panel** and **explore the features and strengths of Panel**.
+
+As the next step after this Getting Started guide, we recommend learning the basics of Panel systematically via the *in depth* [*Basic Tutorial](../tutorials/basic/index.md).
 
 ---
 
@@ -33,7 +35,7 @@ Before we dig into some of the core concepts behind Panel this guide gives you a
 :link: core_concepts
 :link-type: doc
 
-Introduces you to some of the core concepts behind Panel, how to develop Panel applications effectively both in your IDE and in the notebook and some of the core features that make Panel such a powerful library.
+Introduces you to some of the core concepts behind Panel, how to develop Panel applications effectively both in your Editor and in the notebook and some of the core features that make Panel such a powerful library.
 
 +++
 [Learn more »](core_concepts)

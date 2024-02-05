@@ -12,7 +12,7 @@ Please put on your safety helmet before entering the world of (wind turbine) dat
 
 We assume you have successfully been able to [install Panel](../../getting_started/installation.md) as described in the [Getting Started Guide](../../getting_started/index.md). If not, please reach out for help on [Discord](https://discord.gg/rb6gPXbdAr).
 
-## Get Started
+## Start from Zero
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -215,23 +215,16 @@ We will build an image classifier to identify wind turbine images.
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`versions;2.5em;sd-mr-1` Add Caching
+:::{grid-item-card} {octicon}`archive;2.5em;sd-mr-1` Add Caching
 :link: caching
 :link-type: doc
 
 Caching allows our apps to store and reuse valuable computations, reducing the energy required for calculations and making our apps run faster and smoother.
 :::
 
-:::{grid-item-card} {octicon}`kebab-horizontal;2.5em;sd-mr-1` Defer the Load
-:link: defer_load
-:link-type: doc
-
-Deferring the load will improve the performance perceived by the user
-:::
-
 ::::
 
-## Periodic Updates
+## Update Periodically
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -273,7 +266,7 @@ We'll guide you through advanced styling, layout optimization, and data visualiz
 
 ::::
 
-## Share your work
+## Share as a Hero
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -289,7 +282,7 @@ Get your application in the hands of your users. Let's deploy it to Hugging Face
 
 ---
 
-Congrats. You can now call your self *a basic Panel app developer*.
+Congrats. You have now acquired the *basic* skills required to build a wide range of Panel apps. You are now a *Panel Hero*.
 
 When you are ready to learn how to build larger and more complex apps then check out the [Intermediate Tutorials](../intermediate/index.md).
 
@@ -321,7 +314,6 @@ indicators_activity
 progressive_layouts
 build_image_classifier
 caching
-defer_load
 build_streaming_dashboard
 design
 style
