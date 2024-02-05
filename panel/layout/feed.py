@@ -63,7 +63,15 @@ class Feed(Column):
         vs, ve = self.visible_range
         ss, se = self._last_synced
         half_buffer = self.load_buffer // 2
-        if (vs - ss) < half_buffer or (se - ve) < half_buffer:
+
+        top_trigger = (vs - ss) < half_buffer
+        bottom_trigger = (se - ve) < half_buffer
+        invalid_trigger = (
+            # to prevent being trapped and unable to scroll
+            ve - vs < self.load_buffer and
+            ve - vs < len(self.objects)
+        )
+        if top_trigger or bottom_trigger or invalid_trigger:
             self.param.trigger("objects")
 
     @property
@@ -98,7 +106,14 @@ class Feed(Column):
             else:
                 return super()._process_property_change(msg)
             offset = self._synced_range[0]
-            msg['visible_range'] = (offset + indexes[0], offset + indexes[-1])
+            n = len(self.objects)
+            visible_range = [
+                max(offset + indexes[0], 0),
+                min(offset + indexes[-1], n)
+            ]
+            if visible_range[0] >= visible_range[1]:
+                visible_range[0] = visible_range[1] - self.load_buffer
+            msg['visible_range'] = tuple(visible_range)
         return super()._process_property_change(msg)
 
     def _process_param_change(self, msg):

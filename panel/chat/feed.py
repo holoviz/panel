@@ -236,8 +236,8 @@ class ChatFeed(ListPanel):
 
         # forward message params to ChatMessage for convenience
         message_params = params.get("message_params", {})
-        for param_key in list(params.keys()):
-            if param_key not in ChatFeed.param and param_key in ChatMessage.param:
+        for param_key in params.copy():
+            if param_key not in self.param and param_key in ChatMessage.param:
                 message_params[param_key] = params.pop(param_key)
         params["message_params"] = message_params
 

@@ -54,6 +54,7 @@ from . import pane  # noqa
 from . import param  # noqa
 from . import pipeline  # noqa
 from . import reactive  # noqa
+from . import template  # noqa
 from . import viewable  # noqa
 from . import widgets  # noqa
 from .config import __version__, config, panel_extension as extension  # noqa
@@ -110,6 +111,7 @@ __all__ = (
     "rx",
     "serve",
     "state",
+    "template",
     "viewable",
     "widgets",
     "widget"

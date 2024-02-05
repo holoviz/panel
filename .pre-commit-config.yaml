@@ -43,6 +43,11 @@ repos:
     hooks:
       - id: prettier
         types_or: [css]
+  - repo: https://github.com/shssoichiro/oxipng
+    rev: v8.0.0
+    hooks:
+      - id: oxipng
+        stages: [manual]
 ci:
   autofix_prs: false
   autoupdate_schedule: quarterly
