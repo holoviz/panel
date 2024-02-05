@@ -62,7 +62,7 @@ export class HTMLView extends PanelMarkupView {
   }
 
   set_html(html: string | null): void {
-    if (html) {
+    if (html !== null) {
       this.container.innerHTML = html
       if (this.model.run_scripts)
 	runScripts(this.container)

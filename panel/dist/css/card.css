@@ -1,6 +1,7 @@
 :host(.card) {
-  outline: 1px solid rgba(0, 0, 0, 0.125);
   border-radius: 0.25rem;
+  flex: auto;
+  outline: 1px solid rgba(0, 0, 0, 0.125);
 }
 
 :host(.accordion) {

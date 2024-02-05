@@ -22,14 +22,14 @@ export class ColumnView extends BkColumnView {
 
   scroll_to_position(): void {
     requestAnimationFrame(() => {
-      this.el.scrollTo({top: this.model.scroll_position});
+      this.el.scrollTo({ top: this.model.scroll_position, behavior: "instant"});
     });
   }
 
   scroll_to_latest(): void {
     // Waits for the child to be rendered before scrolling
     requestAnimationFrame(() => {
-      this.el.scrollTo({top: this.el.scrollHeight});
+      this.model.scroll_position = Math.round(this.el.scrollHeight);
     });
   }
 
