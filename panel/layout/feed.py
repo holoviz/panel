@@ -26,9 +26,18 @@ class Feed(Column):
         When scrolled halfway into the buffer, the feed will automatically
         load additional objects while unloading objects on the opposite side.""")
 
-    scroll = param.Boolean(default=True, doc="""
-        Whether to add scrollbars if the content overflows the size
-        of the container.""")
+    scroll = param.Selector(
+        default="y",
+        objects=[False, True, "both-auto", "y-auto", "x-auto", "both", "x", "y"],
+        doc="""Whether to add scrollbars if the content overflows the size
+        of the container. If "both-auto", will only add scrollbars if
+        the content overflows in either directions. If "x-auto" or "y-auto",
+        will only add scrollbars if the content overflows in the
+        respective direction. If "both", will always add scrollbars.
+        If "x" or "y", will always add scrollbars in the respective
+        direction. If False, overflowing content will be clipped.
+        If True, will only add scrollbars in the direction of the container,
+        (e.g. Column: vertical, Row: horizontal).""")
 
     visible_range = param.Range(readonly=True, doc="""
         Read-only upper and lower bounds of the currently visible feed objects.
