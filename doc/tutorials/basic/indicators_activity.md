@@ -13,7 +13,7 @@ In the sections below, we may execute the code directly in the Panel documentati
 
 ## Overlay a Loading Indicator
 
-We can overlay a loading indicator on the output of a *bound function* by setting `loading=True` in `pn.panel`.
+We can overlay a loading indicator on a Panel component by setting `loading=True`.
 
 Run the code below:
 
@@ -43,7 +43,7 @@ pn.WidgetBox(
 
 ## Automatically overlay a Loading Indicator
 
-We can automatically overlay a loading indicator on *bound functions* by setting `loading_indicator=True`
+We can automatically overlay a loading indicator on *bound functions* by setting `loading_indicator=True` in `pn.panel`.
 
 Run the code below
 
@@ -295,7 +295,7 @@ pn.Row(
 ).servable()
 ```
 
-### Extercise: Loading Spinner
+### Exercise: Loading Spinner
 
 Run the code below
 
