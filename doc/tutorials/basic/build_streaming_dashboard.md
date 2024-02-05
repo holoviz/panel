@@ -1,14 +1,16 @@
 # Build Streaming Dashboard
 
-In this tutorial we build a simple streaming dashboard to monitor the wind speed and power output of one of our wind turbines.
+In this tutorial, we come together to create a simple streaming dashboard to monitor the wind speed and power output of one of our wind turbines:
+
+- We will use `pn.state.add_periodic_callback` to trigger a task to run on a schedule.
 
 :::{note}
-When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
+When we encourage everyone to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
 ## Install the Dependencies
 
-Please make sure [SciPy](https://scipy.org/) is installed.
+Please ensure that [SciPy](https://scipy.org/) is installed.
 
 ::::{tab-set}
 
@@ -42,19 +44,23 @@ from scipy.interpolate import interp1d
 pn.extension()
 
 WIND_SPEEDS = np.array([0, 3, 6, 9, 12, 15, 18, 21])  # Wind speed (m/s)
+WIND_SPEED_MEAN = 8
 WIND_SPEED_STD_DEV = 0.5
 POWER_OUTPUTS = np.array([0, 0.03, 0.20, 0.6, 1.0, 1.0, 0, 0])  # Power output (MW)
 
+# State
+
 wind_speed = pn.rx(8.0)
 
-def update_wind_speed():
-    # Replace with your own wind speed source
-    wind_speed.rx.value = round(
-        np.random.normal(wind_speed.rx.value, WIND_SPEED_STD_DEV), 1
-    )
-pn.state.add_periodic_callback(update_wind_speed, period=1000)
+## Extract Data
 
-## Transformations
+def get_wind_speed():
+    # Replace with your own wind speed source
+    return round(
+        np.random.normal(WIND_SPEED_MEAN, WIND_SPEED_STD_DEV), 1
+    )
+
+## Extract Transformations
 
 power_interpolation = interp1d(
     WIND_SPEEDS, POWER_OUTPUTS, kind="linear", fill_value="extrapolate"
@@ -73,11 +79,19 @@ wind_speed_view = pn.indicators.Number(
 )
 power_output_view = pn.indicators.Number(
     name="Power Output",
-    value=pn.bind(get_power_output, wind_speed),
+    value=wind_speed.rx.pipe(get_power_output),
     format="{value} MW",
     colors=[(10, "green"), (100, "red")],
 )
 
+# Update data periodically
+
+def update_wind_speed():
+    wind_speed.rx.value = get_wind_speed()
+
+pn.state.add_periodic_callback(update_wind_speed, period=1000)
+
+# Layout the app
 
 pn.Column(
     "# WTG Monitoring Dashboard",
@@ -85,6 +99,21 @@ pn.Column(
 ).servable()
 ```
 
-TODO
+Try changing the `period` from `1000` to `100`.
 
-Figure out if its possible to create a very simple version where the focus is on the display. Too many things used that the user has not learned yet. Also figure out how to best make this scale. The periodic callback should really run once for all users. How to do that in a single file?
+:::{note}
+The code refers to
+
+- `wind_speed = pn.rx(8.0)`: This is a *reactive expression* with an initial value of 8.0. The UI updates whenever the value `wind_speed.rx.value` is changed.
+- `pn.state.add_periodic_callback(update_wind_speed, period=1000)`: This updates the `wind_speed_rx.value` every 1000 milliseconds.
+:::
+
+## Resources
+
+### How-to
+
+- [Periodically Run Callbacks](../../how_to/callbacks/periodic.md)
+
+### App Gallery
+
+- [Streaming VideoStream](../../gallery/index.md)

@@ -196,3 +196,9 @@ In this tutorial we have used the
 - [Vega](../../reference/panes/Vega.ipynb) (Altair) *pane*, the [`Player`](../../reference/widgets/Player.ipynb) *widget* and `pn.bind` to understand how manufacturer capacity has developed since the 80's via a *bar chart race*.
 
 We have barely scratched the surface of how Panel can improve our exploratory data analysis (EDA) workflow. That is why we say *Panel is **the powerful data exploration** and web app **framework***.
+
+## Resources
+
+### App Gallery
+
+- [Windturbines Explorer](../../gallery/index.md)
