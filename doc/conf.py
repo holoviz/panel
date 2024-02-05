@@ -176,6 +176,10 @@ nbbuild_patterns_to_take_along = ["simple.html", "*.json", "json_*"]
 # Override the Sphinx default title that appends `documentation`
 html_title = f'{project} v{version}'
 
+# Ensure the global version string includes the SHA to ensure the service
+# worker is invalidated on builds between tags
+if is_dev:
+    version = panel.__version__
 
 # Patching GridItemCardDirective to be able to substitute the domain name
 # in the link option.
