@@ -209,12 +209,12 @@ A large selection of chat applications showcasing Panels chat components.
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} awesome-panel.org Gallery
-:img-top: https://assets.holoviz.org/panel/gallery/community/awesome_gallery.png
-:link: https://awesome-panel.org/gallery
+:::{grid-item-card} awesome-panel.org
+:img-top: https://assets.holoviz.org/panel/gallery/community/awesome-panel.png
+:link: https://awesome-panel.org
 :link-type: url
 
-A great selection of applications showcasing various features of Panel built and maintained by Marc Skov Madsen.
+A great selection of applications and other resources showcasing various features of Panel.
 :::
 
 :::{grid-item-card} cuxfilter
@@ -223,14 +223,6 @@ A great selection of applications showcasing various features of Panel built and
 :link-type: url
 
 cuxfilter ( ku-cross-filter ) is a RAPIDS framework to connect web visualizations to GPU accelerated crossfiltering which is built on top of Panel.
-:::
-
-:::{grid-item-card} awesome-panel.org Community Gallery
-:img-top: https://assets.holoviz.org/panel/gallery/community/awesome_community.png
-:link: https://awesome-panel.org/awesome_list
-:link-type: url
-
-A list of applications, videos and blog posts about Panel built by the community, curated by Marc Skov Madsen.
 :::
 
 :::{grid-item-card} AstronomicalAL

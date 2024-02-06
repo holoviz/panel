@@ -597,3 +597,78 @@ class ChatInterface(ChatFeed):
         """
         await super()._cleanup_response()
         await self._update_input_disabled()
+
+
+    def send(
+        self,
+        value: ChatMessage | dict | Any,
+        user: str | None = None,
+        avatar: str | bytes | BytesIO | None = None,
+        respond: bool = True,
+    ) -> ChatMessage | None:
+        """
+        Sends a value and creates a new message in the chat log.
+
+        If `respond` is `True`, additionally executes the callback, if provided.
+
+        Arguments
+        ---------
+        value : ChatMessage | dict | Any
+            The message contents to send.
+        user : str | None
+            The user to send as; overrides the message message's user if provided.
+            Will default to the user parameter.
+        avatar : str | bytes | BytesIO | None
+            The avatar to use; overrides the message message's avatar if provided.
+            Will default to the avatar parameter.
+        respond : bool
+            Whether to execute the callback.
+
+        Returns
+        -------
+        The message that was created.
+        """
+        if not isinstance(value, ChatMessage):
+            if user is None:
+                user = self.user
+            if avatar is None:
+                avatar = self.avatar
+        return super().send(value, user=user, avatar=avatar, respond=respond)
+
+    def stream(
+        self,
+        value: str,
+        user: str | None = None,
+        avatar: str | bytes | BytesIO | None = None,
+        message: ChatMessage | None = None,
+        replace: bool = False,
+    ) -> ChatMessage | None:
+        """
+        Streams a token and updates the provided message, if provided.
+        Otherwise creates a new message in the chat log, so be sure the
+        returned message is passed back into the method, e.g.
+        `message = chat.stream(token, message=message)`.
+
+        This method is primarily for outputs that are not generators--
+        notably LangChain. For most cases, use the send method instead.
+
+        Arguments
+        ---------
+        value : str | dict | ChatMessage
+            The new token value to stream.
+        user : str | None
+            The user to stream as; overrides the message's user if provided.
+            Will default to the user parameter.
+        avatar : str | bytes | BytesIO | None
+            The avatar to use; overrides the message's avatar if provided.
+            Will default to the avatar parameter.
+        message : ChatMessage | None
+            The message to update.
+        replace : bool
+            Whether to replace the existing text when streaming a string or dict.
+
+        Returns
+        -------
+        The message that was updated.
+        """
+        return super().stream(value, user=user or self.user, avatar=avatar or self.avatar, message=message, replace=replace)
