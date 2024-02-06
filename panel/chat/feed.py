@@ -484,21 +484,20 @@ class ChatFeed(ListPanel):
         start = asyncio.get_event_loop().time()
         while not task.done() and num_entries == len(self._chat_log):
             duration = asyncio.get_event_loop().time() - start
-            if duration > self.placeholder_threshold:
+            if duration > self.placeholder_threshold or self._callback_future is None:
                 self.append(self._placeholder)
                 return
             await asyncio.sleep(0.1)
 
-    async def _handle_callback(self, message, loop):
+    async def _handle_callback(self, message, loop: asyncio.BaseEventLoop):
         callback_args = self._gather_callback_args(message)
         if iscoroutinefunction(self.callback):
             response = await self.callback(*callback_args)
         elif isasyncgenfunction(self.callback):
             response = self.callback(*callback_args)
         else:
-            response = await loop.run_in_executor(
-                None, partial(self.callback, *callback_args)
-            )
+            self._callback_future = None
+            response = await asyncio.to_thread(partial(self.callback, *callback_args))
         await self._serialize_response(response)
 
     async def _prepare_response(self, _) -> None:

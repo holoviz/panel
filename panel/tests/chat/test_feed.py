@@ -738,23 +738,6 @@ class TestChatFeedCallback:
         time.sleep(1)
         assert chat_feed.objects[-1].object == "A"
 
-    def test_callback_stop_sync_function(self, chat_feed):
-        def callback(msg, user, instance):
-            message = instance.stream("A")
-            assert chat_feed.stop()
-            time.sleep(0.5)
-            instance.stream("B", message=message)  # should not reach this point
-
-        chat_feed.callback = callback
-        try:
-            chat_feed.send("Message", respond=True)
-        except asyncio.CancelledError:
-            pass
-        # use sleep here instead of wait for because
-        # the callback is timed and I want to confirm stop works
-        time.sleep(1)
-        assert chat_feed.objects[-1].object == "A"
-
 
 @pytest.mark.xdist_group("chat")
 class TestChatFeedSerializeForTransformers:

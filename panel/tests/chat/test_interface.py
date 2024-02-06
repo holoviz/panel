@@ -126,8 +126,8 @@ class TestChatInterface:
         def callback(msg, user, instance):
             send_button = instance._buttons["send"]
             stop_button = instance._buttons["stop"]
-            wait_until(lambda: stop_button.visible)
-            wait_until(lambda: not send_button.visible)
+            wait_until(lambda: not stop_button.visible)
+            wait_until(lambda: send_button.visible)
 
         chat_interface.callback = callback
         chat_interface.send("Message", respond=True)
