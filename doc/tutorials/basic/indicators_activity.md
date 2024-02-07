@@ -157,7 +157,7 @@ pn.Column(button, plot, pn.Row(plot2, plot3), sizing_mode="stretch_width").serva
 :::{hint}
 If the *bound functions* in the application are slow, it will take a while for the application to *load*.
 
-We can improve the user experience by using `defer_load=True`. This can be used locally in `pn.panel` or globally via `pn.extension(..., defer_load=True)`/ `pn.config.defer_load=True`.
+We can improve the user experience by using `defer_load=True`. This can be used locally in `pn.panel` or globally via `pn.extension(..., defer_load=True)` or `pn.config.defer_load=True`.
 :::
 
 Run the code below
@@ -337,7 +337,7 @@ Now fix the issues
 - Only show `LoadingSpinner` when the prediction is running.
 - Make the `LoadingSpinner` spin when the prediction is running
 
-:::::{dropdown} Solutions
+:::::{dropdown} Solutions: LoadingSpinner
 
 ::::{tab-set}
 
@@ -434,4 +434,4 @@ We have showed activity with indicators just as rotating blades show the activit
 
 - [Customize Loading Icon](../../how_to/styling/load_icon.md)
 - [Migrate from Streamlit | Show Activity](../../how_to/streamlit_migration/activity.md)
-- [Defer Load](../../how_to/callbacks/defer_load.html)
+- [Defer Load](../../how_to/callbacks/defer_load.md)

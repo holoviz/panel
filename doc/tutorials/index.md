@@ -11,9 +11,9 @@ We believe the skills you will be getting are easily transferable to any domain,
 
 In this series of tutorials, we'll embark on a journey to explore the world of wind turbine data and build some really cool wind turbine data apps using Panel by HoloViz.
 
-Whether you're a newcomer or an experienced developer, our goal is to take you from a novice to a data exploration and data app hero, expert or rock star.
+Whether you're a newcomer or an experienced developer, our goal is to take you from zero to a data app hero.
 
-Please put on your safety helmet before entering the world of (wind turbine) data apps.
+Please put on your safety helmet before entering the world of wind turbine data apps.
 
 ## Select Tutorials
 
@@ -30,7 +30,9 @@ These tutorials are for those who are just starting to discover Panel.
 
 Together, we will explore the wind turbine dataset and build a chatbot, a static report, a todo app, an image classifier app, a dashboard, and a streaming application.
 
-After completing these tutorials, you will be able to build a wide range of polished, single-page apps from a single file using a *function-based approach*. You will be a Panel *Hero*.
+After completing these tutorials, you will be able to build a wide range of polished, single-page apps from a single file using a *function-based approach*.
+
+You will be a Panel *Hero*.
 :::
 
 :::{grid-item-card} {octicon}`mortar-board;2.5em;sd-mr-1` Intermediate
@@ -41,7 +43,9 @@ These tutorials are for those who are ready to navigate and explore more advance
 
 We will build more performant, scalable, polished, reusable, and maintainable versions of the applications from the basic tutorial.
 
-After completing these tutorials, you will be able to build a wide range of large and complex multi-page apps structured across multiple files using a *class-based approach*. You will be a Panel *Expert*.
+After completing these tutorials, you will be able to build a wide range of large and complex multi-page apps structured across multiple files using a *class-based approach*.
+
+You will be a Panel *Expert*.
 :::
 
 :::{grid-item-card} {octicon}`star;2.5em;sd-mr-1` Expert

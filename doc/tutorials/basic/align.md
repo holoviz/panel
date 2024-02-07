@@ -1,6 +1,6 @@
 # Align Content
 
-In this tutorial, we will explore alignment and spacing options for content:
+In this tutorial, we will explore alignment, margin and spacing options for content:
 
 - `align`: We can align content `'start'`, `'center'`, or `'end'` inside a container.
 - `margin`: To fine-tune alignment by a few *pixels* or add space between content.
@@ -8,7 +8,7 @@ In this tutorial, we will explore alignment and spacing options for content:
 
 ## Align a Button
 
-Let's run the code below to see how we can horizontally center-align the `Button`.
+Run the code below.
 
 ```{pyodide}
 import panel as pn
@@ -17,7 +17,7 @@ pn.extension()
 
 pn.Column(
     pn.pane.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=150, sizing_mode="scale_width"),
-    pn.widgets.Button(name="Stop the Turbine", icon="hand-stop", align="center"),
+    pn.widgets.Button(name="Stop the Turbine", icon="hand-stop",),
     sizing_mode="fixed", width=400, height=400, styles={"border": "1px solid black"}
 ).servable()
 ```

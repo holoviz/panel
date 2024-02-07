@@ -4,22 +4,7 @@ In this guide, we will explore how to accept user input using *widgets*:
 
 - *Widgets* are accessible in the `pn.widgets` namespace.
 - *Widgets* typically provide user input via the `value` parameter.
-- *Widgets* often allow you to specify an initial `value`.
-- Common parameters for *widgets* include `name`, `description`, and `disabled`.
-  - The `name` is frequently used as a *label*.
-  - The `description` is often employed as a tooltip.
-- We'll explore accepting *click* input with the `Button` widget.
-- We'll accept *text* input with the `TextInput` widget.
-- We'll choose an object from a list of objects using the `Select` widget.
-- Panel widgets are grouped into sets of *interchangeable* widgets.
-  - We can switch out the `Select` widget with the `RadioButtonGroup` widget to modify the user experience.
 - You can explore all available *widgets* and their *reference guides* in the [Widgets Section](https://panel.holoviz.org/reference/index.html#widgets) of the [Component Gallery](../../reference/index.md).
-
-In this tutorial, we will **not learn** how to:
-
-- Use specific *widgets* in great detail, as the details are covered in the *[reference guides](https://panel.holoviz.org/reference/index.html#widgets)*.
-- React to user input, as this is addressed in the [React to User Input](bind.md) tutorial.
-- Style or align *widgets*, as these topics are covered in other tutorials.
 
 :::{note}
 A *Widget* is a component that can accept user inputs via the `value` parameter. Certain more complex widgets, such as [`Tabulator`](../../reference/widgets/Tabulator.ipynb), may allow additional forms of input through other parameters.
@@ -28,7 +13,7 @@ A *Widget* is defined as a component that inherits from the `Widget` base class.
 :::
 
 :::{note}
-In some cases, Panes can accept user input too. For example, the [`ECharts`](../../reference/panes/ECharts.ipynb), [`Plotly`](../../reference/panes/Plotly.ipynb), and [`Vega`](../../reference/panes/Vega.ipynb) (Altair) panes can accept user inputs. These are usually selections, instead of modifying the underlying `object`.
+In some cases, Panes can accept user input too. For example, the [`ECharts`](../../reference/panes/ECharts.ipynb), [`Plotly`](../../reference/panes/Plotly.ipynb), and [`Vega`](../../reference/panes/Vega.ipynb) (Altair) panes can accept user inputs.
 :::
 
 :::{note}
@@ -156,11 +141,11 @@ pn.widgets.RadioButtonGroup(
     description="Select a Study",
     name="Study",
     options=["Wind Turbine", "Solar Panel", "Battery Storage"],
-    value="Physics",
+    value="Solar Panel",
 ).servable()
 ```
 
-You will notice how `Physics` is now displayed as the *initial* `value`, and how the `Button`'s type and style were changed.
+You will notice how `Solar Panel` is now displayed as the *initial* `value`, and how the `Button`'s type and style were changed.
 
 ## Recap
 
@@ -172,6 +157,7 @@ In this tutorial, we have learned:
 - *Widgets* have common parameters like `name`, `description`, and `disabled`.
   - The `name` is often used as a *label*.
   - The `description` is often used as a tooltip.
+  - The `disabled` argument can be used to disable the widget.
 - We can accept *click* input with the `Button` widget.
 - We can accept *text* input with the `TextInput` widget.
 - We can accept an object from a list of objects with the `Select` widget.

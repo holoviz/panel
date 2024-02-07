@@ -148,16 +148,18 @@ md = pn.pane.Markdown(
 pn.Row(fig, md, height=500, sizing_mode="stretch_width").servable()
 ```
 
+:::{note}
+**Hint 1**: Use `min_width`, `max_width` and `sizing_mode` arguments.
+
+**Hint 2**: To get the *content* to display correctly, it sometimes requires a combination of arguments to 1) the underlying object to display and 2) The Panel component displaying it.
+:::
+
 Test your solution by changing the window size of your browser. It should look like below.
 
 <video controls="" poster="https://assets.holoviz.org/panel/tutorials/exercise_configure_sizing_mode.png">
     <source src="https://assets.holoviz.org/panel/tutorials/exercise_configure_sizing_mode.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
     Your browser does not support the video tag.
 </video>
-
-:::{note}
-**Hint**: To get the *content* to display correctly, it sometimes requires a combination of arguments to 1) the underlying object to display and 2) The Panel component displaying it.
-:::
 
 :::{dropdown} Solution
 
@@ -265,7 +267,7 @@ Let's redo the initial `sizing_mode` exercise, but this time with a default `siz
 
 :::{dropdown} Solution
 
-```python
+```{pyodide}
 import pandas as pd
 import panel as pn
 from bokeh.plotting import figure

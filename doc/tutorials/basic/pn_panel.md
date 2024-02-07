@@ -2,14 +2,7 @@
 
 In this guide, we will learn to display Python objects easily and dynamically with `pn.panel`:
 
-- Display a string with `pn.panel(some_string)`
-- Display plot figures like [Altair](https://altair-viz.github.io/), [hvPlot](https://hvplot.holoviz.org), [Matplotlib](https://matplotlib.org/) and [Plotly](https://plotly.com/python/) with `pn.panel(fig)`
-- Display DataFrames with `pn.panel(df)`
-- Display most Python objects with `pn.panel(some_python_object)`
-- Configure how an object is displayed by giving arguments to `pn.panel`
-- Display most Python objects in *layouts* like `pn.Column` with and without the use of `pn.panel`
-- Use a specific *Pane* instead of `pn.panel` if performance is key
-- Add JavaScript dependencies via `pn.extension`. For example `pn.extension("plotly")`
+- Display any Python object via `pn.panel(the_object)`.
 
 :::{note}
 When we ask to *run the code* in the sections below, we may execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
@@ -105,7 +98,14 @@ print(component)
 component.servable()
 ```
 
-## Display an Altair plot
+## Display Plots
+
+Pick a plotting library below.
+
+:::::{tab-set}
+
+::::{tab-item} Altair
+:sync: altair
 
 Run the code below.
 
@@ -140,7 +140,21 @@ component.servable()
 
 Please notice that `pn.panel` chose a [`Vega`](../../reference/panes/Vega.ipynb) pane to display the [Altair](https://altair-viz.github.io/) figure.
 
-## Display a hvPlot plot
+:::{note}
+Vega is the name of the JavaScript plotting library used by Altair.
+
+We must add `"vega"` as an argument to `pn.extension` in the example to load the Vega Javascript dependencies in the browser.
+
+If we forget to add `"vega"` to `pn.extension`, then the Altair figure will not display in
+
+- a notebook
+- a served app. But only if the Altair figure is displayed dynamically after the app has loaded.
+:::
+
+::::
+
+::::{tab-item} hvPlot
+:sync: hvPlot
 
 Run the code below.
 
@@ -171,7 +185,10 @@ Please notice that `pn.panel` chose a [`HoloViews`](../../reference/panes/HoloVi
 [hvPlot](https://hvplot.holoviz.org) is the **easy to use** plotting sister of Panel. It works similarly to the familiar [Pandas `.plot` API](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.plot.html). hvPlot is built on top of the data visualization library [HoloViews](https://holoviews.org/). hvPlot, HoloViews, and Panel are all part of the [HoloViz](https://holoviz.org/) family.
 :::
 
-## Display a Matplotlib plot
+::::
+
+::::{tab-item} Matplotlib
+:sync: matplotlib
 
 Run the code below.
 
@@ -219,9 +236,10 @@ In the example above we provided arguments to `pn.panel`. These will be applied 
 The arguments `dpi`, `format` and `tight` would not make sense if a string was provided as an argument to `pn.panel`. In that case, `pn.panel` would pick a [Markdown](../../reference/panes/Markdown.ipynb) *pane* and the exception `TypeError: Markdown.__init__() got an unexpected keyword argument 'dpi'` would be raised.
 :::
 
-## Display a Plotly plot
+::::
 
-Run the code below.
+::::{tab-item} Plotly
+:sync: plotly
 
 ```{pyodide}
 import pandas as pd
@@ -256,6 +274,10 @@ If we forget to add `"plotly"` to `pn.extension`, then the Plotly figure will no
 - a notebook
 - a served app. But only if the Plotly figure is displayed dynamically after the app has loaded.
 :::
+
+::::
+
+:::::
 
 ## Display a DataFrame
 
@@ -343,6 +365,10 @@ print(component)
 component.servable()
 ```
 
+:::{note}
+The example above sets the *css* `styles` of the `Audio` player. The `styles` parameter is introduced in the [Styles](../intermediate/style.md) tutorial.
+:::
+
 ## Consider Performance
 
 :::{note}
@@ -402,7 +428,7 @@ In this guide, we have learned to display Python objects easily with `pn.panel`:
 - Configure how an object is displayed by giving arguments to `pn.panel`
 - Display most Python objects in *layouts* like `pn.Column` with and without the use of `pn.panel`
 - Use a specific *Pane* instead of `pn.panel` if performance is key
-- Add JavaScript dependencies via `pn.extension`. For example `pn.extension("plotly")`
+- Add JavaScript dependencies via `pn.extension`. For example `pn.extension("vega")` or `pn.extension("plotly")`
 
 ## Resources
 

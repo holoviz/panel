@@ -42,17 +42,18 @@ progress_message = pn.Row(
 
 
 def get_prediction(running):
-    if not running:
-        yield "Click Submit"
+    if not running: # If the Button was not clicked
+        yield "Click Submit" # Ask the user to Click Submit
         return
 
-    yield progress_message
+    yield progress_message # Yield the progress message
     prediction = classify(None)
-    yield f"It's a {prediction}"
-
+    yield f"It's a {prediction}" # Yield the result
 
 pn.Column(run, pn.bind(get_prediction, run)).servable()
 ```
+
+Click the *Submit* `Button.`
 
 #### Exercise: Disable the Button
 
@@ -110,8 +111,8 @@ pn.Column(run, pn.bind(get_prediction, run)).servable()
 
 :::
 
-:::{tab-item} .update
-:sync: disabled
+:::{tab-item} .param.update
+:sync: param-update
 
 ```{pyodide}
 import random
@@ -227,6 +228,8 @@ progress_message = pn.Row(
 pn.Column(run, click_submit, result, progress_message).servable()
 ```
 
+Click the *Submit* `Button`.
+
 :::{note}
 The generator (`yield`) approach and the state (`.rx`) approach are both powerful. They complement each other.
 
@@ -287,7 +290,7 @@ pn.Column(run, pn.bind(get_prediction, run)).servable()
 
 Reimplement the app using *reactive expressions* (`pn.rx`). You are not allowed to use a generator function (`yield`).
 
-:::{dropdown} Solution
+:::{dropdown} Solution: pn.rx
 
 ```{pyodide}
 import random

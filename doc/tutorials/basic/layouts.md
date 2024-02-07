@@ -4,15 +4,7 @@ In this guide, we will learn how to layout, i.e., arrange, Python objects, inclu
 
 - *Layouts* are available in the `pn` namespace.
 - Arrange Python objects, including Panel components, using [`pn.Column`](../../reference/layouts/Column.ipynb) and [`pn.Row`](../../reference/layouts/Row.ipynb).
-- A *layout* will automatically use `pn.panel` to determine how to best display non-Panel objects.
-- Layouts like [`Column`](../../reference/layouts/Column.ipynb) and [`Row`](../../reference/layouts/Row.ipynb) behave like lists.
-- Create complex arrangements by combining and nesting *layouts*.
 - Explore all available *layouts* and their *reference guides* in the [Layouts Section](https://panel.holoviz.org/reference/index.html#layouts) of the [Component Gallery](../../reference/index.md).
-
-In this tutorial, we will **not learn** how to:
-
-- Use specific *layouts* in detail. Details are covered in the *[reference guides](https://panel.holoviz.org/reference/index.html#layouts)*.
-- Style *layouts*. This topic is covered in the [Use Styles](style.md) tutorial.
 
 :::{note}
 When we ask to *run the code* in the sections below, we may execute the code directly in the Panel documentation by using the green *run* button, in a notebook cell, or in a file named `app.py` served with `panel serve app.py --autoreload`.
@@ -221,7 +213,9 @@ pn.Column(component[0], component[2], component[1]).servable()
 ```
 
 :::{note}
-We are utilizing the *list-like* properties of the `Column` layout to rearrange its elements. More specifically, we are using *list-indexing* as in `component[2]`. The `Column` layout implements all the methods you would expect from a *list-like* object, including `.append` and `.remove`.
+We are utilizing the *list-like* properties of the `Column` layout to rearrange its elements. More specifically, we are using *list-indexing* as in `component[0], component[2], component[1]`.
+
+The `Column` layout implements all the methods you would expect from a *list-like* object, including `.append` and `.remove`.
 :::
 
 ## Combine Layouts

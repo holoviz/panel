@@ -1,6 +1,6 @@
 # Basic Tutorials
 
-These tutorials are for those who have decided they would like to start learning Panel systematically. For those that have not decided yet, we recommend doing the less comprehensive [Getting Started Guide](../../getting_started/index.md) instead.
+These tutorials are for those who have decided they would like to start learning Panel systematically. For those that have not decided yet, we recommend doing [Getting Started Guide](../../getting_started/index.md) instead.
 
 Together, we will explore the world of (wind turbine) data and give you the skills to build a chat bot, a static report, a todo app, an image classifier app, a dashboard, and a streaming application. We will take you *from zero to hero*.
 
@@ -84,6 +84,8 @@ We will discover how sizing works in Panel, exploring the differences between in
 
 We will align our wind turbine images perfectly using `align`, `margin` and `Spacer`s.
 :::
+
+::::
 
 ## Part 4. Handle User Input
 
@@ -185,7 +187,7 @@ Get your dashboard in the hands of your users. Let's deploy it to Hugging Face s
 
 Congrats. You have now acquired the *basic* skills required to build a wide range of Panel apps. You are now a *Panel Hero*.
 
-The recommend next steps are to check out the the *apps* on the *Apps* tab, check out the *topics* on the *Topics* tab and start using Panel for real.
+The recommended next steps are to check out the the *apps* on the *Apps* tab above, check out the *topics* on the *Topics* tab above and start using Panel for real.
 
 When you are ready to acquire the skills to build larger and more complex apps then check out the [Intermediate Tutorials](../intermediate/index.md).
 
@@ -194,12 +196,17 @@ When you are ready to acquire the skills to build larger and more complex apps t
 :::::{tab-item} Apps
 :sync: apps
 
-We should be able to build any of the apps below using the skills acquired on the *Skills* tab.
-
-Pick an app!
+Using the skills acquired on the *Skills* tab, we should be able to build any of the apps below.
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`dependabot;2.5em;sd-mr-1` Build a Chat Bot
+:link: build_chatbot
+:link-type: doc
+
+Develop a Streaming Wind Turbine Chat Bot that can handle many questions about wind turbines.
+:::
 
 :::{grid-item-card} {octicon}`clock;2.5em;sd-mr-1` Build a Monitoring Dashboard
 :link: build_monitoring_dashboard
@@ -236,13 +243,6 @@ We will build an image classifier to identify wind turbine images.
 Build a live, updating dashboard to monitor your wind turbines.
 :::
 
-:::{grid-item-card} {octicon}`dependabot;2.5em;sd-mr-1` Build a Chat Bot
-:link: build_chatbot
-:link-type: doc
-
-Develop a Streaming Wind Turbine Chat Bot that can handle many questions about wind turbines.
-:::
-
 ::::
 
 :::::
@@ -250,7 +250,7 @@ Develop a Streaming Wind Turbine Chat Bot that can handle many questions about w
 :::::{tab-item} Topics
 :sync: topics
 
-Pick any topic below to supplement the *basic skills* you acquired on the *Skills* tab.
+Supplement the *basic skills* acquired on the *Skills* tab by doing one or more of the tutorials below.
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2

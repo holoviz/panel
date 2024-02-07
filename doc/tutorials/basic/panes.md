@@ -4,16 +4,7 @@ In this tutorial, we will learn to display objects with *Panes*:
 
 - *Panes* are available in the `pn.pane` namespace.
 - *Panes* take an `object` argument as well as other arguments.
-- Display strings with the [`Str`](../../reference/panes/Str.ipynb), [`Markdown`](../../reference/panes/Markdown.ipynb), and [`Alert`](../../reference/panes/Alert.ipynb) panes.
-- Display plot figures like [Altair](https://altair-viz.github.io/), [hvPlot](https://hvplot.holoviz.org), [Matplotlib](https://matplotlib.org/) and [Plotly](https://plotly.com/python/) with the ,  [`Vega`](../../reference/panes/Vega.ipynb), [`HoloViews`](../../reference/panes/HoloViews.ipynb), [`Matplotlib`](../../reference/panes/Matplotlib.ipynb) and [`Plotly`](../../reference/panes/Plotly.ipynb) *panes*, respectively.
-- Display *DataFrames* with the [`DataFrame`](../../reference/panes/DataFrame.ipynb) and [`Perspective`](../../reference/panes/Perspective.ipynb) *panes*.
-- Add JavaScript dependencies via `pn.extension`. For example, `pn.extension("plotly")`.
 - Discover all *Panes* and their *reference guides* in the [Panes Section](https://panel.holoviz.org/reference/index.html#panes) of the [Component Gallery](../../reference/index.md).
-
-In this tutorial, we will **not learn** how to:
-
-- Use *Panes* in detail. Details are covered by the *[reference guides](https://panel.holoviz.org/reference/index.html#panes)*.
-- Layout and style *Panes*. These topics are covered by other tutorials.
 
 :::{note}
 A *Pane* is a component that can display an object. It takes an `object` as an argument.
@@ -80,7 +71,7 @@ We add `.servable()` to the component to add it to the app served by `panel serv
 To learn in detail how a pane like `Str` works, refer to its *reference guide*.
 :::
 
-Click [this link](../../reference/panes/Str.ipynb) to the `Str` reference guide and spend a few minutes to familiarize yourself with its organization and content.
+Click [this link](../../reference/panes/Str.ipynb) to the `Str` *reference guide* and spend a few minutes to familiarize yourself with its organization and content.
 
 ## Display Markdown
 
@@ -161,6 +152,17 @@ fig = (
 pn.pane.Vega(fig, sizing_mode="stretch_width", height=400).servable()
 ```
 
+:::{note}
+Vega is the name of the JavaScript plotting library used by Altair.
+
+We must add `"vega"` as an argument to `pn.extension` in the example to load the Vega Javascript dependencies in the browser.
+
+If we forget to add `"vega"` to `pn.extension`, then the Altair figure will not display in
+
+- a notebook
+- a served app. But only if the Altair figure is displayed dynamically after the app has loaded.
+:::
+
 ## Display a hvPlot plot
 
 Run the code below.
@@ -219,11 +221,11 @@ ax.set(
 ax.grid()
 plt.close(fig)  # CLOSE THE FIGURE TO AVOID MEMORY LEAKS!
 
-pn.pane.Matplotlib(fig, dpi=144, tight=True).servable()
+pn.pane.Matplotlib(fig, dpi=144, tight=True, format="svg", sizing_mode="stretch_width").servable()
 ```
 
 :::{note}
-In the example, we provide the arguments dpi and tight to the Matplotlib pane.
+In the example, we provide the arguments `dpi`, `format` and `tight` to the Matplotlib pane.
 
 The `Matplotlib` pane can display figures from any framework that produces Matplotlib `Figure` objects like Seaborn, Plotnine and Pandas `.plot`.
 
@@ -311,7 +313,7 @@ In this guide, we have learned to display Python objects with *Panes*:
 - Display strings with the [`Str`]((../../reference/panes/Str.ipynb)), [`Markdown`]((../../reference/panes/Markdown.ipynb)) and [`Alert`]((../../reference/panes/Alert.ipynb)) panes
 - Display plot figures like [Altair](https://altair-viz.github.io/), [hvPlot](https://hvplot.holoviz.org), [Matplotlib](https://matplotlib.org/) and [Plotly](https://plotly.com/python/) with the ,  [`Vega`](../../reference/panes/Vega.ipynb), [`HoloViews`](../../reference/panes/HoloViews.ipynb), [`Matplotlib`](../../reference/panes/Matplotlib.ipynb) and [`Plotly`](../../reference/panes/Plotly.ipynb) *panes*, respectively.
 - Display *DataFrames* with the [`DataFrame`](../../reference/panes/DataFrame.ipynb) and [`Perspective`]((../../reference/panes/Perspective.ipynb)) *panes*.
-- Add JavaScript dependencies via `pn.extension`. For example `pn.extension("plotly")`
+- Add JavaScript dependencies via `pn.extension`. For example `pn.extension("vega")` or `pn.extension("plotly")`
 - Discover all *Panes* and their *reference guides* in the [Panes Section](https://panel.holoviz.org/reference/index.html#panes) of the [Component Gallery](../../reference/index.md).
 
 ## Resources

@@ -3,8 +3,8 @@
 In this tutorial, we will develop and *serve* a *Hello World* Panel:
 
 - Serve the app with `panel serve app.py`, `panel serve app.ipynb`, or `panel serve app.md`.
-- serve with auto reload by adding the flag --autoreload.
-- stop your server with CTRL+C.
+- serve with auto reload by adding the flag `--autoreload`.
+- stop your server with `CTRL+C`.
 
 ## Serve the App
 

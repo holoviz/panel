@@ -10,7 +10,7 @@ When we ask to *run the code* in the sections below, we may execute the code dir
 
 ## Understand the Load
 
-To understand why caching can be helpful and how to apply it its important to understand how a Panel application executes code.
+To understand why caching can be helpful and how to apply it, its important to understand how a Panel application executes code.
 
 Create a file `external_module.py` containing the code below:
 
@@ -105,7 +105,7 @@ Please note
 
 Run the code below
 
-```{pydodide}
+```{pyodide}
 from datetime import datetime
 from time import sleep
 
@@ -222,9 +222,9 @@ pn.Column(
 
 Try dragging the slider. Notice how the app is initially responding slowly but as the cache is *populated* it starts responding instantly.
 
-## Fine-tune your caching
-
+:::{hint}
 You can learn to fine-tune `pn.cache` in the [Automatically Cache](../../how_to/caching/memoization.md) guide.
+:::
 
 ## Recap
 

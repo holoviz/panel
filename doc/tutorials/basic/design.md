@@ -51,7 +51,7 @@ pn.extension(design="fast", theme="dark")
 pn.Column(
     pn.widgets.FloatSlider(name="Slider"),
     pn.widgets.TextInput(name="TextInput"),
-    pn.widgets.Select(name="Select", options=["Biology", "Chemistry", "Physics"]),
+    pn.widgets.Select(name="Select", options=["Wind Turbine", "Solar Panel", "Battery Storage"]),
     pn.widgets.Button(name="Click me!", icon="hand-click", button_type="primary"),
     styles={"background": "#181818"} # remove this line
 ).servable()
