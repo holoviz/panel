@@ -112,8 +112,7 @@ import os
 import pathlib
 import sys
 
-if os.environ.get('BOKEH_RESOURCES') == 'inline':
-    os.environ['BOKEH_RESOURCES'] = 'server'
+os.environ['BOKEH_RESOURCES'] = 'server'
 app = r'{{ path }}'
 os.chdir(str(pathlib.Path(app).parent))
 sys.path = [os.getcwd()] + sys.path[1:]

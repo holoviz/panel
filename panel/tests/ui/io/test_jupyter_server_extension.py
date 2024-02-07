@@ -1,3 +1,7 @@
+import sys
+
+from pathlib import Path
+
 import pytest
 
 pytest.importorskip("playwright")
@@ -49,3 +53,9 @@ def test_jupyter_server_session_arg_theme(page, jupyter_preview):
     page.goto(f"{jupyter_preview}/app.py?theme=dark", timeout=30000)
 
     expect(page.locator('body')).to_have_css('color', 'rgb(0, 0, 0)')
+
+
+def test_jupyter_config():
+    # If this test fails run `pip install .` again
+    jp_files = (Path(sys.prefix) / 'etc' / 'jupyter').rglob('panel-client-jupyter.json')
+    assert len(list(jp_files)) == 2
