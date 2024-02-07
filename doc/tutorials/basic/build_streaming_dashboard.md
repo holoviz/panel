@@ -36,7 +36,7 @@ pip install scipy
 
 ## Build the App
 
-```python
+```{pyodide}
 import numpy as np
 import panel as pn
 from scipy.interpolate import interp1d

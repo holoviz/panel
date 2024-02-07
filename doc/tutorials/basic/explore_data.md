@@ -178,7 +178,7 @@ year = pn.widgets.Player(
     align="center",
 )
 plot = pn.pane.Vega(pn.bind(get_plot, year))
-pn.Column(plot, year, sizing_mode="stretch_width").servable()
+pn.Column("# Manufacturer Capacity 1982-2022", plot, year, sizing_mode="stretch_width").servable()
 ```
 
 :::{note}

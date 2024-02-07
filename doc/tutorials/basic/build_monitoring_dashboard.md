@@ -179,7 +179,7 @@ pn.extension("deckgl")
 
 The `TEXT` is displayed in a [`Markdown`](../../reference/panes/Markdown.ipynb) *pane* implicitly picked by `pn.panel`.
 
-Finally, we use the [`FastListTemplate`](../../reference/templates/FastListTemplate.ipynb) to easily layout and style the dashboard. We will learn more about *templates* in the [Use Templates](templates.md) tutorial.
+Finally, we use the [`FastListTemplate`](../../reference/templates/FastListTemplate.ipynb) to easily layout and style the dashboard.
 
 Here we use the `meta_refresh` argument to instruct the browser to automatically refresh the page every 10 seconds.
 
@@ -187,8 +187,8 @@ Here we use the `meta_refresh` argument to instruct the browser to automatically
     meta_refresh="10",
 ```
 
-:::{note}
-Using the `meta_refresh` argument can be a really robust way to build a *display-only* dashboard for a control room or similar.
+:::{hint}
+Using the `meta_refresh` argument can be a really *robust* way to build a *display-only* dashboard for a control room or similar.
 :::
 
 ## Recap
