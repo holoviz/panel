@@ -56,6 +56,6 @@ def test_jupyter_server_session_arg_theme(page, jupyter_preview):
 
 
 def test_jupyter_config():
-    # If this test fails run `pip install .` again
+    # If this test fails, run `pip install -e .` again
     jp_files = (Path(sys.prefix) / 'etc' / 'jupyter').rglob('panel-client-jupyter.json')
     assert len(list(jp_files)) == 2
