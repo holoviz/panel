@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import json
 import os
+import shutil
 import sys
 
 from setuptools import find_packages, setup
@@ -47,12 +48,23 @@ def _build_paneljs():
         fcntl.fcntl(sys.stdout, fcntl.F_SETFL, flags&~os.O_NONBLOCK)
 
 
+def _install_jupyter_server_extension():
+    # data_files are not copied for editable installs returning
+    files = setup_args['data_files']
+    for dst, (src,) in files:
+        dst = os.path.join(sys.prefix, dst)
+        os.makedirs(dst, exist_ok=True)
+        shutil.copy2(src, dst)
+        print(f"Copied {src} to {dst}")
+
+
 class CustomDevelopCommand(develop):
     """Custom installation for development mode."""
 
     def run(self):
         if not PANEL_LITE_BUILD:
             _build_paneljs()
+            _install_jupyter_server_extension()
         develop.run(self)
 
 
