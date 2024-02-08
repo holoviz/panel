@@ -22,7 +22,6 @@
   height: var(--loading-spinner-size);
   width: var(--loading-spinner-size);
   position: absolute;
-  animation: spin 2s linear infinite;
 }
 
 :host(.loader) div > span {
