@@ -10,7 +10,7 @@ When we ask to *run the code* in the sections below, we may execute the code dir
 
 ```{pyodide}
 import panel as pn
-pn.extension("plotly")
+pn.extension("plotly", "vega")
 ```
 
 ## Install the Dependencies

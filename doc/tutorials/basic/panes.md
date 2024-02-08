@@ -18,7 +18,7 @@ When we ask you to *run the code* in the sections below, you may either execute 
 
 ```{pyodide}
 import panel as pn
-pn.extension("plotly")
+pn.extension("echarts", "plotly", "vega", "vizzu")
 ```
 
 ## Install the Dependencies
@@ -122,7 +122,14 @@ This sample text is from [The Markdown Guide](https://www.markdownguide.org)!
 """, alert_type="info").servable()
 ```
 
-## Display an Altair plot
+## Display Plots
+
+Pick a plotting library below.
+
+:::::{tab-set}
+
+::::{tab-item} Altair
+:sync: altair
 
 Run the code below.
 
@@ -146,7 +153,7 @@ fig = (
         y=alt.Y("Wind Speed (m/s)", scale=alt.Scale(domain=(0, 10))),
         tooltip=["Day", "Wind Speed (m/s)"],
     )
-    .properties(width="container", height="container", title="Wind Speed Over the Week")
+    .properties(width="container", height="container", title="Wind Speed")
 )
 
 pn.pane.Vega(fig, sizing_mode="stretch_width", height=400).servable()
@@ -163,7 +170,49 @@ If we forget to add `"vega"` to `pn.extension`, then the Altair figure will not 
 - a served app. But only if the Altair figure is displayed dynamically after the app has loaded.
 :::
 
-## Display a hvPlot plot
+::::
+
+::::{tab-item} ECharts
+:sync: echarts
+
+Run the code below.
+
+```{pyodide}
+import panel as pn
+
+pn.extension("echarts")
+
+config = {
+    'title': {
+        'text': 'Wind Speed'
+    },
+    "tooltip": {},
+    'xAxis': {
+        'data': ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    },
+    'yAxis': {},
+    'series': [{
+        'name': 'Sales',
+        'type': 'line',
+        'data': [7, 4, 9, 4, 4, 5, 4]
+    }],
+}
+pn.pane.ECharts(config, height=400, sizing_mode="stretch_width").servable()
+```
+
+:::{note}
+We must add `"echarts"` as an argument to `pn.extension` in the example to load the ECharts Javascript dependencies in the browser.
+
+If we forget to add `"echarts"` to `pn.extension`, then the ECharts figure will not display in
+
+- a notebook
+- a served app. But only if the ECharts figure is displayed dynamically after the app has loaded.
+:::
+
+::::
+
+::::{tab-item} hvPlot
+:sync: hvplot
 
 Run the code below.
 
@@ -180,7 +229,7 @@ data = pd.DataFrame([
     ('Friday', 4), ('Saturday', 5), ('Sunday', 4)], columns=['Day', 'Wind Speed (m/s)']
 )
 
-fig = data.hvplot(x="Day", y="Wind Speed (m/s)", line_width=10, ylim=(0,10))
+fig = data.hvplot(x="Day", y="Wind Speed (m/s)", line_width=10, ylim=(0,10), title="Wind Speed")
 
 pn.pane.HoloViews(fig, sizing_mode="stretch_width").servable()
 ```
@@ -189,7 +238,10 @@ pn.pane.HoloViews(fig, sizing_mode="stretch_width").servable()
 [hvPlot](https://hvplot.holoviz.org) is the **easy to use** plotting sister of Panel. It works similarly to the familiar [Pandas `.plot` api](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.plot.html). hvPlot is built on top of the data visualization library [HoloViews](https://holoviews.org/). hvPlot, HoloViews, and Panel are all part of the [HoloViz](https://holoviz.org/) family.
 :::
 
-## Display a Matplotlib plot
+::::
+
+::::{tab-item} Matplotlib
+:sync: matplotlib
 
 Run the code below.
 
@@ -215,7 +267,7 @@ ax.plot(
 ax.set(
     xlabel="Day",
     ylabel="Wind Speed (m/s)",
-    title="Wind Speed Over the Week",
+    title="Wind Speed",
     ylim=(0, 10),
 )
 ax.grid()
@@ -232,7 +284,10 @@ The `Matplotlib` pane can display figures from any framework that produces Matpl
 We can find more details in the [Matplotlib Reference Guide](../../reference/panes/Matplotlib.ipynb).
 :::
 
-## Display a Plotly plot
+::::
+
+::::{tab-item} Plotly
+:sync: plotly
 
 Run the code below.
 
@@ -264,6 +319,43 @@ If we forget to add `"plotly"` to `pn.extension`, then the Plotly figure will no
 - a notebook
 - a served app. But only if the Plotly figure is displayed dynamically after the app has loaded.
 :::
+
+::::
+
+::::{tab-item} Vizzu
+:sync: vizzu
+
+Run the code below.
+
+```{pyodide}
+import pandas as pd
+import panel as pn
+
+pn.extension("vizzu")
+
+data = pd.DataFrame([
+    ('Monday', 7), ('Tuesday', 4), ('Wednesday', 9), ('Thursday', 4),
+    ('Friday', 4), ('Saturday', 5), ('Sunday', 4)], columns=['Day', 'Wind Speed (m/s)']
+)
+
+pn.pane.Vizzu(
+    data, config={'geometry': 'line', 'x': 'Day', 'y': 'Wind Speed (m/s)', 'title': 'Wind Speed'},
+    duration=400, height=400, sizing_mode='stretch_width', tooltip=True
+).servable()
+```
+
+:::{note}
+We must add `"vizzu"` as an argument to `pn.extension` in the example to load the Vizzu JavaScript dependencies in the browser.
+
+If we forget to add `"vizzu"` to `pn.extension`, then the Vizzu figure will not display in
+
+- a notebook
+- a served app. But only if the Vizzu figure is displayed dynamically after the app has loaded.
+:::
+
+::::
+
+:::::
 
 ## Display a DataFrame
 
@@ -311,7 +403,7 @@ In this guide, we have learned to display Python objects with *Panes*:
 - *Panes* are available in the `pn.pane` namespace
 - *Panes* take an `object` argument as well as other arguments
 - Display strings with the [`Str`]((../../reference/panes/Str.ipynb)), [`Markdown`]((../../reference/panes/Markdown.ipynb)) and [`Alert`]((../../reference/panes/Alert.ipynb)) panes
-- Display plot figures like [Altair](https://altair-viz.github.io/), [hvPlot](https://hvplot.holoviz.org), [Matplotlib](https://matplotlib.org/) and [Plotly](https://plotly.com/python/) with the ,  [`Vega`](../../reference/panes/Vega.ipynb), [`HoloViews`](../../reference/panes/HoloViews.ipynb), [`Matplotlib`](../../reference/panes/Matplotlib.ipynb) and [`Plotly`](../../reference/panes/Plotly.ipynb) *panes*, respectively.
+- Display plot figures like [Altair](https://altair-viz.github.io/), [ECharts](https://echarts.apache.org/en/index.html), [hvPlot](https://hvplot.holoviz.org), [Matplotlib](https://matplotlib.org/), [Plotly](https://plotly.com/python/) and [Vizzu](https://vizzuhq.com/) with the [`Vega`](../../reference/panes/Vega.ipynb), [`ECharts`](../../reference/panes/ECharts.ipynb), [`HoloViews`](../../reference/panes/HoloViews.ipynb), [`Matplotlib`](../../reference/panes/Matplotlib.ipynb), [`Plotly`](../../reference/panes/Plotly.ipynb) and [`Vizzu`](../../reference/panes/Vizzu.ipynb) *panes*, respectively.
 - Display *DataFrames* with the [`DataFrame`](../../reference/panes/DataFrame.ipynb) and [`Perspective`]((../../reference/panes/Perspective.ipynb)) *panes*.
 - Add JavaScript dependencies via `pn.extension`. For example `pn.extension("vega")` or `pn.extension("plotly")`
 - Discover all *Panes* and their *reference guides* in the [Panes Section](https://panel.holoviz.org/reference/index.html#panes) of the [Component Gallery](../../reference/index.md).
@@ -325,8 +417,12 @@ In this guide, we have learned to display Python objects with *Panes*:
 ### How-to
 
 - [Construct Panes](../../how_to/components/construct_panes.md)
-- [Style Components](../../how_to/styling/index.md)
 - [Migrate from Streamlit | Display Content with Panes](../../how_to/streamlit_migration/panes.md)
+- [Style Altair Plots](../../how_to/styling/altair.md)
+- [Style Echarts Plots](../../how_to/styling/echarts.md)
+- [Style Matplotlib Plots](../../how_to/styling/matplotlib.md)
+- [Style Plotly Plots](../../how_to/styling/plotly.md)
+- [Style Vega/ Altair Plots](../../how_to/styling/vega.md)
 
 ### Explanation
 

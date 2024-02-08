@@ -1,6 +1,6 @@
 # Basic Tutorials
 
-These tutorials are for those who have decided they would like to start learning Panel systematically. For those that have not decided yet, we recommend doing [Getting Started Guide](../../getting_started/index.md) instead.
+These tutorials are for those who have decided they would like to start learning Panel systematically. For those that have not decided yet, we recommend doing the [Getting Started Guide](../../getting_started/index.md) instead.
 
 Together, we will explore the world of (wind turbine) data and give you the skills to build a chat bot, a static report, a todo app, an image classifier app, a dashboard, and a streaming application. We will take you *from zero to hero*.
 
@@ -192,7 +192,7 @@ Get your dashboard in the hands of your users. Let's deploy it to Hugging Face s
 
 ::::
 
-Congrats. You have now acquired the *basic* skills required to build a wide range of Panel apps. You are now a *Panel Hero*.
+🥳 Congrats. You have now acquired the *basic* skills required to build a wide range of Panel apps. You are now a *Panel Hero*.
 
 The recommended next steps are to check out the the *apps* on the *Apps* tab above, check out the *topics* on the *Topics* tab above and start using Panel for real.
 
