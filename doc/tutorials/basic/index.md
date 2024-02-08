@@ -134,12 +134,26 @@ Use pre-made templates to easily layout our apps with a header, sidebar, and mai
 Just as wind turbines come in various designs, this section empowers us to choose a design that best suits our app's style and functionality.
 :::
 
+:::{grid-item-card} {octicon}`paintbrush;2.5em;sd-mr-1` Use Styles
+:link: style
+:link-type: doc
+
+Fine-tune the styling of our components with `styles` and `stylesheets`. This will ensure our wind turbine data apps are both aesthetically pleasing and user-friendly.
+:::
+
 ::::
 
 ## Part 6. Improve the Feel
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`archive;2.5em;sd-mr-1` Add Caching
+:link: caching
+:link-type: doc
+
+Caching allows our apps to store and reuse valuable computations, reducing the energy required for calculations and making our apps run faster and smoother.
+:::
 
 :::{grid-item-card} {octicon}`hourglass;2.5em;sd-mr-1` Display Activity with Indicators
 :link: indicators_activity
@@ -155,13 +169,6 @@ Show activity with indicators just as rotating blades show the activity of wind 
 Unleash the power of generators and reactive expressions in our Wind Turbine Apps!
 :::
 
-:::{grid-item-card} {octicon}`archive;2.5em;sd-mr-1` Add Caching
-:link: caching
-:link-type: doc
-
-Caching allows our apps to store and reuse valuable computations, reducing the energy required for calculations and making our apps run faster and smoother.
-:::
-
 ::::
 
 ## Part 7. Share as a Hero
@@ -169,7 +176,7 @@ Caching allows our apps to store and reuse valuable computations, reducing the e
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`globe;2.5em;sd-mr-1` Build a Dashboard
+:::{grid-item-card} {octicon}`project;2.5em;sd-mr-1` Build a Dashboard
 :link: build_dashboard
 :link-type: doc
 
@@ -309,6 +316,7 @@ progressive_layouts
 caching
 templates
 design
+style
 build_dashboard
 deploy
 build_chatbot

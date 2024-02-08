@@ -78,13 +78,6 @@ Elevate our app's functionality by accepting user input from plots.
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`paintbrush;2.5em;sd-mr-1` Use Styles
-:link: style
-:link-type: doc
-
-Fine-tune the styling of our components with `styles` and `stylesheets`. This will ensure our wind turbine data apps are both aesthetically pleasing and user-friendly.
-:::
-
 :::{grid-item-card} {octicon}`image;2.5em;sd-mr-1` Build a Polished Dashboard
 :link: build_polished_dashboard
 :link-type: doc

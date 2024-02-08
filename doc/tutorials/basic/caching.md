@@ -2,7 +2,7 @@
 
 Caching allows us to store and reuse valuable computations, reducing the energy required for calculations and making our apps run faster and smoother:
 
-- Use the `@pn.cache` annotator to *cache* function results.
+- Use `pn.cache` to *cache* function results.
 
 :::{note}
 When we ask to *run the code* in the sections below, we may execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
@@ -14,7 +14,7 @@ To understand why caching can be helpful and how to apply it, its important to u
 
 Create a file `external_module.py` containing the code below:
 
-```{python}
+```python
 print("running external_module.py")
 
 # I'm defined once and shared between all sessions (i.e. between all users)
@@ -23,16 +23,14 @@ external_data={"__name__": __name__}
 
 Create a file `app.py` containing the code below
 
-```{python}
+```python
+print("running app.py")
 import panel as pn
 
 from external_module import external_data
 
 pn.extension()
 
-print("running app.py")
-
-# I'm defined when the servers starts and
 # I'm defined each time the app loads and only shared within that session
 data = {"__name__": __name__}
 
@@ -48,57 +46,41 @@ Run
 panel serve app.py
 ```
 
+Open the app in your browser and refresh it a few times.
+
 It should look like
 
-```bash
-$ panel serve app.py --autoreload
-running external_module.py
-running app.py
-2024-02-05 07:35:52,083 Starting Bokeh server version 3.3.3 (running on Tornado 6.4)
-2024-02-05 07:35:52,085 User authentication hooks NOT provided (default user enabled)
-2024-02-05 07:35:52,087 Bokeh app running at: http://localhost:5006/app
-2024-02-05 07:35:52,087 Starting Bokeh server with process id: 35656
-```
+<video controls="" poster="https://assets.holoviz.org/panel/tutorials/page_load_end.png">
+    <source src="https://assets.holoviz.org/panel/tutorials/page_load.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
+    Your browser does not support the video tag.
+</video>
 
-Now open [http://localhost:5006/app](http://localhost:5006/app)
-
-In the terminal you will find the additional lines
-
-```bash
-running app.py
-2024-02-05 07:37:50,024 WebSocket connection opened
-2024-02-05 07:37:50,025 ServerConnection created
-```
-
-And the app will look like
-
-![Load App](../../_static/images/understand_load.png)
-
-Refresh [http://localhost:5006/app](http://localhost:5006/app).
-
-In the terminal you will find the additional lines
-
-```bash
-running app.py
-2024-02-05 07:38:53,340 WebSocket connection closed: code=1001, reason=None
-2024-02-05 07:38:53,449 WebSocket connection opened
-2024-02-05 07:38:53,450 ServerConnection created
-```
-
-The app will look like
-
-![Load App](../../_static/images/understand_load_refresh.png)
-
-Please note how the `__name__` and `id` did not change for the imported *Module* while it did for the served *App* file.
+Please note how the `__name__` and `id` does not change for the `external_module` when you refresh the page. Note that they do change for the served `app`.
 
 :::{note}
 Please note
 
-- imported modules are run once when the server starts only.
-  - Objects defined in imported modules are shared between all *sessions*
-- your served app code is run once when the server starts and every time a user loads the app.
-  - Objects defined here are shared within the single *session* only (unless they are cached).
+- imported modules are run once the first time they are imported.
+  - Objects defined in imported modules are shared between all user *sessions*
+- the served `app.py` code is run every time the app is loaded.
+  - Objects defined here are shared within the single user *session* only (unless they are cached).
 - only *specific, bound functions* are rerun on user interactions. Not the entire `app.py` script.
+:::
+
+### Exercise: Add `--autoreload`
+
+Try repeating the steps above with `--autoreload`
+
+```bash
+panel serve app.py --autoreload
+```
+
+What changes?
+
+:::{dropdown}{Solution}
+With `--autoreload` both files are run when the server starts and before the page is loaded the first time.
+
+<img src="https://assets.holoviz.org/panel/tutorials/page_load_end_autoreload.png"></img>
 :::
 
 ## Load Fast with Caching
@@ -230,7 +212,7 @@ You can learn to fine-tune `pn.cache` in the [Automatically Cache](../../how_to/
 
 We have been speeding up our apps using caching.
 
-- Use the `@pn.cache` annotator to *cache* function results.
+- Use `pn.cache` to *cache* function results.
 
 ## Resources
 
