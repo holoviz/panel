@@ -9,7 +9,6 @@ import asyncio
 import traceback
 
 from enum import Enum
-from functools import partial
 from inspect import (
     isasyncgen, isasyncgenfunction, isawaitable, iscoroutinefunction,
     isgenerator,
