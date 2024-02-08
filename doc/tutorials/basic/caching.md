@@ -77,10 +77,12 @@ panel serve app.py --autoreload
 
 What changes?
 
-:::{dropdown}{Solution}
+:::{dropdown} Solution
+
 With `--autoreload` both files are run when the server starts and before the page is loaded the first time.
 
 <img src="https://assets.holoviz.org/panel/tutorials/page_load_end_autoreload.png"></img>
+
 :::
 
 ## Load Fast with Caching
@@ -166,9 +168,9 @@ def get_data():
     sleep(2)
     return {"last_update": str(datetime.now())}
 
-get_data = pn.cache(get_data)
+get_data_cached = pn.cache(get_data)
 
-data = get_data()
+data = get_data_cached()
 
 pn.pane.JSON(data).servable()
 ```
