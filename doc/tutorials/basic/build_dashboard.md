@@ -4,7 +4,7 @@ In this tutorial we will build a beautiful dashboard showing key metrics of wind
 
 <iframe src="https://awesome-panel-build-dashboard.hf.space" frameborder="0" style="width: 100%;height:1000px"></iframe>
 
-Click the dropdowns below to see the requirements or full code.
+Click the dropdowns below to see the requirements or the full code.
 
 :::::{dropdown} Requirements
 
@@ -183,7 +183,7 @@ styles = {
 }
 ```
 
-We extract the data and *cache* it.
+We extract the once data across all user *sessions* by using `pn.cache`.
 
 ```{pyodide}
 @pn.cache()  # only download data once
@@ -191,6 +191,7 @@ def get_data():
     return pd.read_csv("https://assets.holoviz.org/panel/tutorials/turbines.csv.gz")
 
 source_data = get_data()
+pn.panel(source_data.head())
 ```
 
 We transform the data
@@ -245,9 +246,10 @@ fig = (
     xlim=(min_year, max_year),
     color=ACCENT,
 )
+pn.panel(fig, height=300, sizing_mode="stretch_width")
 ```
 
-Lets display the data
+Lets display the data. Notice how we set the `styles` on the components.
 
 ```{pyodide}
 image = pn.pane.JPG("https://assets.holoviz.org/panel/tutorials/wind_turbines_sunset.png")
