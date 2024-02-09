@@ -122,16 +122,6 @@ Let's perform the following actions:
 A todo app can be built in many other ways. The main purpose of this example is for all of us to acquire the basic skills needed to develop *stateful*, *dynamically updating* apps like this one.
 :::
 
-## Break it down
-
-We will now break down the example together to get a better understanding of the code.
-
-COMING UP
-
 ## Recap
 
 In this section, we have built a *Todo App* with many features. We needed to combine many of the things we have learned so far.
-
-## Resources
-
-COMING UP

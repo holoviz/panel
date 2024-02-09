@@ -22,10 +22,25 @@ pn.extension("vega", sizing_mode="stretch_width")
 
 # Extract Data
 
-TEXT ="""Lorem ipsum dolor sit amet, consectetur adipiscing elit. \
-Proin scelerisque in arcu tristique sollicitudin. Aliquam ornare bibendum blandit."""* 10
+TEXT ="""# Wind Turbine
 
-df = pd.read_csv("https://assets.holoviz.org/panel/tutorials/turbines.csv.gz")
+A wind turbine is a device that converts the kinetic energy of wind into \
+[electrical energy](https://en.wikipedia.org/wiki/Electrical_energy).
+
+The most visible part of a wind turbine is its *rotor*, which typically consists of two or three long *blades* attached to a central hub. These blades are meticulously designed to efficiently capture the energy of the wind as it passes through them. Through careful aerodynamic engineering, the shape, length, and angle of the blades are optimized to maximize the amount of kinetic energy they can extract from the wind.
+
+As the wind blows, it causes the rotor blades to rotate. This rotational motion is transferred to a generator housed within the turbine's nacelle, a large enclosure situated atop a tall tower. The generator converts the mechanical energy of the rotating blades into electrical energy through the principles of electromagnetic induction. This electricity is then transmitted via cables down the tower and into the electrical grid for distribution to homes, businesses, and industries.
+
+The height of the tower plays a crucial role in the efficiency of a wind turbine. By elevating the rotor assembly high above the ground, turbines can access stronger and more consistent wind speeds, which translates to higher energy production. Taller towers also help minimize the impact of surface friction and turbulence near the ground, allowing the rotor blades to operate more smoothly and efficiently.
+
+Read more [here](https://en.wikipedia.org/wiki/Wind_turbine).
+"""
+
+@pn.cache
+def get_data():
+    return pd.read_csv("https://assets.holoviz.org/panel/tutorials/turbines.csv.gz")
+
+df = get_data()
 
 # Transform Data
 
@@ -147,7 +162,7 @@ report.servable()
 ```
 
 :::{note}
-If the code was run in a notebook or Python file, the report will have been saved to the file `report.html`.
+If the code was run in a notebook or Python file, the report will have been saved by `report.save("report.html")` to the file `report.html`.
 :::
 
 Please verify that the file `report.html` has been created.
@@ -157,12 +172,6 @@ Please verify that the file `report.html` has been created.
 Attach the `report.html` file generated in the previous section to an email and send it to yourself. When you receive the email, then open the `report.html` attachment.
 
 🥳 Congrats! Together, we have successfully created and distributed an interactive report based on DataFrames and one of our favorite plotting libraries. This is an amazing achievement!
-
-## Break it down
-
-We will now break down the example together to get a better understanding of the code.
-
-COMING UP.
 
 ## Recap
 

@@ -69,31 +69,4 @@ After completing these tutorials you can call your self a Panel *Rock Star*.
 basic/index
 intermediate/index
 expert/index
-param
-interactivity
-layouts
-styling
 ```
-
-## Move
-
-Find a new home for the below
-
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
-
-:::{grid-item-card} {octicon}`plug;2.5em;sd-mr-1` Param
-:link: param
-:link-type: doc
-
-Panel and other projects in the HoloViz ecosystem all built on Param. In this section you will learn the basic concepts behind Param that you need to know to become an effective user of Panel.
-:::
-
-:::{grid-item-card} {octicon}`pulse;2.5em;sd-mr-1` Interactivity
-:link: interactivity
-:link-type: doc
-
-In this section you learn how to leverage Parameters and dependencies on parameters to add interactivity. In particular we will focus on implementing interactivity through reactivity, rather than the more imperative style of programming you might be used to from other UI frameworks.
-:::
-
-::::
