@@ -10,7 +10,7 @@ We will assume you have *signed up* for [Hugging Face](https://huggingface.co/sp
 
 ## Clone the Project
 
-Open [awesome-panel/build_dashboard](https://huggingface.co/spaces/awesome-panel/build_dashboard).
+Open [panel-Org/build_dashboard](https://huggingface.co/spaces/panel-Org/build_dashboard).
 
 Click the three vertical dots and then click *Duplicate this Space*.
 
@@ -21,6 +21,8 @@ A new form will open. Change the *Visibility* to *Public* if you want to share i
 ![Duplicate Space Form](../../_static/images/hugging_face_spaces_duplicate_form.png)
 
 Then click *Duplicate Space*.
+
+Hugging Face will now *build* your image. It should take less than a minute.
 
 You should now have your own copy of the dashboard running.
 
@@ -33,7 +35,7 @@ Lets check the files tab
 The *Files Tab* makes it really easy to update your project.
 
 - `+ Add File`: Click `+ Add File` to add or update files via *drag and drop*.
-- *File*: Click any file and then *edit* to edit it.
+- *File*: Click any file and then *edit* to edit it. Remember to *commit* when you are done.
 
 ### Check the Dockerfile
 

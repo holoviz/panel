@@ -300,6 +300,7 @@ Find inspiration in the community forums, ask for help, help others, share your 
 :titlesonly:
 :hidden:
 :maxdepth: 2
+:caption: Skills
 
 serve
 pn_panel
@@ -319,12 +320,28 @@ design
 style
 build_dashboard
 deploy
+```
+
+```{toctree}
+:titlesonly:
+:hidden:
+:maxdepth: 2
+:caption: Build an App
+
 build_chatbot
 build_monitoring_dashboard
 build_report
 build_todo
 build_image_classifier
 build_streaming_dashboard
+```
+
+```{toctree}
+:titlesonly:
+:hidden:
+:maxdepth: 2
+:caption: Topics
+
 explore_data
 develop_notebook
 develop_editor
