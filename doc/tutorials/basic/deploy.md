@@ -1,4 +1,4 @@
-# Deploy an App
+# Deploy a Dashboard
 
 Lets get your dashboard in the hands of your users. Lets deploy it to [Hugging Face Spaces](https://huggingface.co/spaces?sort=trending&search=panel).
 

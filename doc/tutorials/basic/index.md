@@ -243,6 +243,13 @@ Enable our wind turbine technicians to keep track of their tasks.
 We will build an image classifier to identify wind turbine images.
 :::
 
+:::{grid-item-card} {octicon}`project;2.5em;sd-mr-1` Build a Dashboard
+:link: build_dashboard
+:link-type: doc
+
+Lets build that dashboard!
+:::
+
 :::{grid-item-card} {octicon}`clock;2.5em;sd-mr-1` Build a Streaming Dashboard
 :link: build_streaming_dashboard
 :link-type: doc
@@ -333,6 +340,7 @@ build_monitoring_dashboard
 build_report
 build_todo
 build_image_classifier
+build_dashboard
 build_streaming_dashboard
 ```
 
