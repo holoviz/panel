@@ -4,9 +4,9 @@ Lets get your dashboard in the hands of your users. Lets deploy it to [Hugging F
 
 ## Prerequisites
 
-We will assume you have *signed up* for [Hugging Face](https://huggingface.co/spaces?sort=trending&search=panel) and your user is logged in. If not click the `Sign Up` button at [Hugging Face](https://huggingface.co/spaces?sort=trending&search=panel) and follow the instructions.
+We will assume you have *signed up* for [Hugging Face](hc) and your user is logged in. If not click the `Sign Up` button at [Hugging Face](https://huggingface.co/spaces?sort=trending&search=panel) and follow the instructions.
 
-![Hugging Face Spaces](../../_static/images/hugging_face_spaces_panel.png)
+[![Hugging Face Spaces](../../_static/images/hugging_face_spaces_panel.png)](https://huggingface.co/spaces?sort=trending&search=panel)
 
 ## Clone the Project
 
@@ -14,7 +14,7 @@ Open [panel-Org/build_dashboard](https://huggingface.co/spaces/panel-Org/build_d
 
 Click the three vertical dots and then click *Duplicate this Space*.
 
-![Duplicate Space](../../_static/images/hugging_face_spaces_duplicate.png)
+[![Duplicate Space](../../_static/images/hugging_face_spaces_duplicate.png)](https://huggingface.co/spaces/panel-Org/build_dashboard)
 
 A new form will open. Change the *Visibility* to *Public* if you want to share it with the world.
 
@@ -30,7 +30,7 @@ You should now have your own copy of the dashboard running.
 
 Lets check the files tab
 
-![Files Tab](../../_static/images/hugging_face_spaces_files.png)
+[![Files Tab](../../_static/images/hugging_face_spaces_files.png)](https://huggingface.co/spaces/Panel-Org/build_dashboard/tree/main)
 
 The *Files Tab* makes it really easy to update your project.
 
@@ -96,3 +96,10 @@ When you are ready to acquire the skills to build larger and more complex apps, 
 - [Configure the Server](../../how_to/server/index.md)
 - [Deploy Panel Applications](../../how_to/deployment/index.md)
 - [Enable Automatic Threading](../../how_to/concurrency/threading.md)
+
+### Hugging Face Spaces
+
+- [Andrew Huang](https://huggingface.co/ahuang11)
+- [Awesome Panel](https://huggingface.co/awesome-panel)
+- [Panel-Org](https://huggingface.co/Panel-Org)
+- [Sophia Yang](https://huggingface.co/sophiamyang)
