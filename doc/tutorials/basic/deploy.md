@@ -35,7 +35,7 @@ Lets check the files tab
 The *Files Tab* makes it really easy to update your project.
 
 - `+ Add File`: Click `+ Add File` to add or update files via *drag and drop*.
-- *File*: Click any file and then *edit* to edit it. Remember to *commit* when you are done.
+- *File*: Click any file and then *edit* to edit it. Remember to *Commit changes* when you are done.
 
 ### Check the Dockerfile
 
