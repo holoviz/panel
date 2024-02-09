@@ -85,6 +85,16 @@ Open the *Settings* tab. Navigate to the bottom of the page. Follow the instruct
 
 You have now acquired the *basic* skills required to build a wide range of Panel apps. You are now a *Panel Hero*.
 
+You may now use the badge below on your blog, in your repository or in your apps.
+
+![Static Badge](https://img.shields.io/badge/Panel-Hero-blue)
+
+```markdown
+![Panel Hero](https://img.shields.io/badge/Panel-Hero-blue)
+```
+
+## Next Steps
+
 The recommended next steps are to check out the the *basic apps* on the [*Basic Tutorials*](index.md) page, check out the *basic Topics* on the [*Basic Tutorials*](index.md) page and start using Panel for real.
 
 When you are ready to acquire the skills to build larger and more complex apps, then check out the [Intermediate Tutorials](../intermediate/index.md).
