@@ -2,7 +2,7 @@
 
 In this guide, we will learn to display Python objects easily and dynamically with `pn.panel`:
 
-- Display any Python object via `pn.panel(the_object)`.
+- Display any Python object via `pn.panel(the_object, ...)`.
 
 :::{note}
 When we ask to *run the code* in the sections below, we may execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
@@ -145,10 +145,7 @@ Vega is the name of the JavaScript plotting library used by Altair.
 
 We must add `"vega"` as an argument to `pn.extension` in the example to load the Vega Javascript dependencies in the browser.
 
-If we forget to add `"vega"` to `pn.extension`, then the Altair figure will not display in
-
-- a notebook
-- a served app. But only if the Altair figure is displayed dynamically after the app has loaded.
+If we forget to add `"vega"` to `pn.extension`, then the Altair figure might not display.
 :::
 
 ::::
@@ -269,10 +266,7 @@ Please notice that `pn.panel` chose a [`Plotly`](../../reference/panes/Plotly.ip
 :::{note}
 We must add `"plotly"` as an argument to `pn.extension` in the example to load the Plotly Javascript dependencies in the browser.
 
-If we forget to add `"plotly"` to `pn.extension`, then the Plotly figure will not display in
-
-- a notebook
-- a served app. But only if the Plotly figure is displayed dynamically after the app has loaded.
+If we forget to add `"plotly"` to `pn.extension`, then the Plotly figure might not display.
 :::
 
 ::::
@@ -366,17 +360,15 @@ component.servable()
 ```
 
 :::{note}
-The example above sets the *css* `styles` of the `Audio` player. The `styles` parameter is introduced in the [Styles](../intermediate/style.md) tutorial.
+The example above sets the *css* `styles` of the `Audio` player. The `styles` parameter is introduced in the [Styles](style.md) tutorial.
 :::
 
 ## Consider Performance
 
 :::{note}
-`pn.panel` is an easy to use and flexible **helper function** that will convert an object into a [*Pane*](https://panel.holoviz.org/reference/index.html#panes).
+`pn.panel` is a versatile helper function that converts objects into a [*Pane*](https://panel.holoviz.org/reference/index.html#panes). It automatically selects the best *representation* for an object based on available [*Pane*](https://panel.holoviz.org/reference/index.html#panes) types, ranking them by priority.
 
-More specifically, `pn.panel` resolves the appropriate *representation* for an object by checking all [*Pane*](https://panel.holoviz.org/reference/index.html#panes) object types available and then ranking them by priority. When passing a string (for instance), there are many representations, but the [`PNG`](../../reference/panes/PNG.ipynb) pane takes precedence if the string is a valid URL or local file path ending in `.png`.
-
-Resolving the appropriate *representation* for an object takes time. So if performance is key, we should specify the specific type of *Pane* to use directly. i.e. use `pn.pane.Matplotlib(fig)` instead of `pn.panel(fig)`.
+For optimal performance, specify the desired *Pane* type directly, like `pn.pane.Matplotlib(fig)` instead of using `pn.panel(fig)`.
 :::
 
 Run the code below
@@ -385,6 +377,7 @@ Run the code below
 import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
+
 import panel as pn
 
 matplotlib.use("agg")
@@ -414,7 +407,7 @@ ax.set(
 )
 ax.grid()
 plt.close(fig)  # CLOSE THE FIGURE TO AVOID MEMORY LEAKS!
-pn.pane.Matplotlib(fig, dpi=144, tight=True).servable()
+pn.pane.Matplotlib(fig, dpi=144, tight=True, sizing_mode="stretch_width").servable()
 ```
 
 ## Recap

@@ -21,16 +21,16 @@ Please make sure [Matplotlib](https://matplotlib.org/) and [Numpy](https://numpy
 :sync: conda
 
 ``` bash
-conda install -y -c conda-forge matplotlib numpy
+conda install -y -c conda-forge matplotlib
 ```
+
 :::
 
 :::{tab-item} pip
 :sync: pip
 
 ``` bash
-pip install matplotlib numpy
-```
+pip install matplotlib
 :::
 
 ::::
@@ -146,7 +146,7 @@ import numpy as np
 from matplotlib.figure import Figure
 
 ACCENT = "goldenrod"
-LOGO = "https://s3.eu-west-1.amazonaws.com/assets.holoviz.org/panel/tutorials/matplotlib-logo.png"
+LOGO = "https://assets.holoviz.org/panel/tutorials/matplotlib-logo.png"
 
 pn.extension(sizing_mode="stretch_width")
 ```

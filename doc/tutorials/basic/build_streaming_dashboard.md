@@ -48,7 +48,7 @@ WIND_SPEED_MEAN = 8
 WIND_SPEED_STD_DEV = 0.5
 POWER_OUTPUTS = np.array([0, 0.03, 0.20, 0.6, 1.0, 1.0, 0, 0])  # Power output (MW)
 
-# State
+# Define State
 
 wind_speed = pn.rx(8.0)
 
@@ -60,7 +60,7 @@ def get_wind_speed():
         np.random.normal(WIND_SPEED_MEAN, WIND_SPEED_STD_DEV), 1
     )
 
-## Extract Transformations
+## Transform Data
 
 power_interpolation = interp1d(
     WIND_SPEEDS, POWER_OUTPUTS, kind="linear", fill_value="extrapolate"
@@ -69,7 +69,7 @@ power_interpolation = interp1d(
 def get_power_output(wind_speed):
     return np.round(power_interpolation(wind_speed), 2)
 
-## Views
+## View Data
 
 wind_speed_view = pn.indicators.Number(
     name="Wind Speed",

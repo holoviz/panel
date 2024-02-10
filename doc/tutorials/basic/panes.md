@@ -164,10 +164,7 @@ Vega is the name of the JavaScript plotting library used by Altair.
 
 We must add `"vega"` as an argument to `pn.extension` in the example to load the Vega Javascript dependencies in the browser.
 
-If we forget to add `"vega"` to `pn.extension`, then the Altair figure will not display in
-
-- a notebook
-- a served app. But only if the Altair figure is displayed dynamically after the app has loaded.
+If we forget to add `"vega"` to `pn.extension`, then the Altair figure might not display.
 :::
 
 ::::
@@ -203,10 +200,7 @@ pn.pane.ECharts(config, height=400, sizing_mode="stretch_width").servable()
 :::{note}
 We must add `"echarts"` as an argument to `pn.extension` in the example to load the ECharts Javascript dependencies in the browser.
 
-If we forget to add `"echarts"` to `pn.extension`, then the ECharts figure will not display in
-
-- a notebook
-- a served app. But only if the ECharts figure is displayed dynamically after the app has loaded.
+If we forget to add `"echarts"` to `pn.extension`, then the ECharts figure might not display.
 :::
 
 ::::
@@ -314,10 +308,7 @@ pn.pane.Plotly(fig, height=400, sizing_mode="stretch_width").servable()
 :::{note}
 We must add `"plotly"` as an argument to `pn.extension` in the example to load the Plotly JavaScript dependencies in the browser.
 
-If we forget to add `"plotly"` to `pn.extension`, then the Plotly figure will not display in
-
-- a notebook
-- a served app. But only if the Plotly figure is displayed dynamically after the app has loaded.
+If we forget to add `"plotly"` to `pn.extension`, then the Plotly figure might not display.
 :::
 
 ::::
@@ -347,10 +338,7 @@ pn.pane.Vizzu(
 :::{note}
 We must add `"vizzu"` as an argument to `pn.extension` in the example to load the Vizzu JavaScript dependencies in the browser.
 
-If we forget to add `"vizzu"` to `pn.extension`, then the Vizzu figure will not display in
-
-- a notebook
-- a served app. But only if the Vizzu figure is displayed dynamically after the app has loaded.
+If we forget to add `"vizzu"` to `pn.extension`, then the Vizzu figure might not display.
 :::
 
 ::::

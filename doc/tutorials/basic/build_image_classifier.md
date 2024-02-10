@@ -7,11 +7,37 @@ In this tutorial, we will collaboratively build an *Image Classifier* that can d
 - Viewing the image file
 - Viewing the predicted result
 
-We will be using a *random* classifier initially, but you can later replace it with your own custom classifier if you want.
+We will be using a *random* classifier, but you can later replace it with your own custom classifier if you want.
 
 :::{note}
 When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
+
+## Install the Dependencies
+
+Please ensure that [hvPlot](https://hvplot.holoviz.org) is installed.
+
+::::{tab-set}
+
+:::{tab-item} conda
+:sync: conda
+
+``` bash
+conda install -y -c conda-forge hvplot
+```
+
+:::
+
+:::{tab-item} pip
+:sync: pip
+
+``` bash
+pip install hvplot
+```
+
+:::
+
+::::
 
 ## Create the App
 
@@ -83,9 +109,6 @@ def image_classification_interface(fn, examples):
 
     ## State
 
-    # The image_view holds the *application state*
-    # The whole application is about updating or viewing it
-    # Should it be defined at the top?
     image_view = pn.pane.Image(
         get_pil_image(examples[0]),
         height=IMAGE_DIM,
