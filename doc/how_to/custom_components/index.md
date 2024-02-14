@@ -18,6 +18,14 @@ How to build custom components that are combinations of existing components.
 
 ::::
 
+```{toctree}
+:titlesonly:
+:hidden:
+:maxdepth: 2
+
+custom_viewer
+```
+
 ## `ReactiveHTML` Components
 
 Build custom components using HTML, CSS and Javascript and without Javascript build tools.
@@ -25,14 +33,14 @@ Build custom components using HTML, CSS and Javascript and without Javascript bu
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`columns-2;2.5em;sd-mr-1 sd-animate-grow50` Layouts
+:::{grid-item-card} {octicon}`columns;2.5em;sd-mr-1 sd-animate-grow50` Layouts
 :link: reactive_html/reactive_html_layout
 :link-type: doc
 
 How to create layouts using `ReactiveHTML`
 :::
 
-:::{grid-item-card} {octicon}`brush;2.5em;sd-mr-1 sd-animate-grow50` Styling
+:::{grid-item-card} {octicon}`paintbrush;2.5em;sd-mr-1 sd-animate-grow50` Styling
 :link: reactive_html/reactive_html_styling
 :link-type: doc
 
@@ -53,21 +61,21 @@ How to create panes using `ReactiveHTML`
 How to create indicators using `ReactiveHTML`
 :::
 
-:::{grid-item-card} {octicon}`bolt;2.5em;sd-mr-1 sd-animate-grow50` Callbacks
+:::{grid-item-card} {octicon}`arrow-left;2.5em;sd-mr-1 sd-animate-grow50` Callbacks
 :link: reactive_html/reactive_html_callbacks
 :link-type: doc
 
 How to add Python and JS callbacks to `ReactiveHTML`
 :::
 
-:::{grid-item-card} {octicon}`select;2.5em;sd-mr-1 sd-animate-grow50` Widgets
+:::{grid-item-card} {octicon}`single-select;2.5em;sd-mr-1 sd-animate-grow50` Widgets
 :link: reactive_html/reactive_html_widgets
 :link-type: doc
 
 How to create input widgets using `ReactiveHTML`
 :::
 
-:::{grid-item-card} {octicon}`border-all;2.5em;sd-mr-1 sd-animate-grow50` DataFrame
+:::{grid-item-card} {octicon}`table;2.5em;sd-mr-1 sd-animate-grow50` DataFrame
 :link: reactive_html/reactive_html_dataframe
 :link-type: doc
 
@@ -81,9 +89,13 @@ How to create components using `ReactiveHTML` and a DataFrame parameter
 :hidden:
 :maxdepth: 2
 
-reactive_html_layout
-reactive_html_styling
-reactive_html_widgets
+reactive_html/reactive_html_layout
+reactive_html/reactive_html_styling
+reactive_html/reactive_html_panes
+reactive_html/reactive_html_indicators
+reactive_html/reactive_html_callbacks
+reactive_html/reactive_html_widgets
+reactive_html/reactive_html_dataframe
 ```
 
 ## Examples
@@ -146,6 +158,10 @@ Build custom component wrapping a Vue.js app using `ReactiveHTML`.
 :hidden:
 :maxdepth: 2
 
-custom_viewer
-custom_reactiveHTML
+examples/plot_viewer
+examples/table_viewer
+examples/canvas_draw
+examples/leaflet
+examples/material_ui
+examples/vue
 ```
