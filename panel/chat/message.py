@@ -49,6 +49,7 @@ USER_LOGO = "🧑"
 ASSISTANT_LOGO = "🤖"
 SYSTEM_LOGO = "⚙️"
 ERROR_LOGO = "❌"
+HELP_LOGO = "❓"
 GPT_3_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_logo.svg/1024px-ChatGPT_logo.svg.png?20230318122128"
 GPT_4_LOGO = "https://upload.wikimedia.org/wikipedia/commons/a/a4/GPT-4.png"
 WOLFRAM_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/WolframCorporateLogo.svg/1920px-WolframCorporateLogo.svg.png"
@@ -73,6 +74,7 @@ DEFAULT_AVATARS = {
     "system": SYSTEM_LOGO,
     "exception": ERROR_LOGO,
     "error": ERROR_LOGO,
+    "help": HELP_LOGO,
     # Human
     "adult": "🧑",
     "baby": "👶",
