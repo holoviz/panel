@@ -98,6 +98,8 @@ class ChatCopyIcon(ReactiveHTML):
 
     value = param.String(default=None, doc="The text to copy to the clipboard.")
 
+    css_classes = param.List(default=["copy-icon"], doc="The CSS classes of the widget.")
+
     _template = """
         <div
             type="button"
