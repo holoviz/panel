@@ -102,9 +102,7 @@ def test_azure_oauth(py_file, page):
         expect(page.locator('input[type="submit"]')).to_have_attribute('value', 'Sign in')
         page.locator('input[type="password"]').fill(azure_password)
         page.locator('input[type="submit"]').click(force=True)
-
-        page.wait_for_timeout(1000)
-        page.locator('button[type="submit"][id="acceptButton"]').click(force=True)
+        page.locator('button[type="submit"][id="acceptButton"]').click(force=True)  # Stay signed in
         expect(page.locator('.markdown')).to_have_text(f'live.com#{azure_user}', timeout=10000)
 
 
