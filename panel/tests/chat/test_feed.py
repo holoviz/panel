@@ -528,7 +528,7 @@ class TestChatFeedCallback:
         assert chat_feed.objects[1].object == "Message"
 
     def test_generator(self, chat_feed):
-        async def echo(contents, user, instance):
+        def echo(contents, user, instance):
             message = ""
             for char in contents:
                 message += char
