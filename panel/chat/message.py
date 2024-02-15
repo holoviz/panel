@@ -21,6 +21,8 @@ from zoneinfo import ZoneInfo
 
 import param
 
+from panel.io.resources import get_dist_path
+
 from ..io.resources import CDN_DIST
 from ..io.state import state
 from ..layout import Column, Row
@@ -45,18 +47,19 @@ if TYPE_CHECKING:
 Avatar = Union[str, BytesIO, bytes, ImageBase]
 AvatarDict = Dict[str, Avatar]
 
+DIST_PATH = get_dist_path()
 USER_LOGO = "🧑"
 ASSISTANT_LOGO = "🤖"
 SYSTEM_LOGO = "⚙️"
 ERROR_LOGO = "❌"
 HELP_LOGO = "❓"
-GPT_3_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_logo.svg/1024px-ChatGPT_logo.svg.png?20230318122128"
-GPT_4_LOGO = "https://upload.wikimedia.org/wikipedia/commons/a/a4/GPT-4.png"
-WOLFRAM_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/WolframCorporateLogo.svg/1920px-WolframCorporateLogo.svg.png"
-LUMEN_LOGO = "https://raw.githubusercontent.com/holoviz/lumen/main/doc/_static/logo.svg"
-HOLOVIEWS_LOGO = "https://raw.githubusercontent.com/holoviz/holoviews/main/doc/_static/logo.svg"
-HVPLOT_LOGO = "https://github.com/holoviz/hvplot/blob/main/doc/_static/logo.png"
-PANEL_LOGO = "https://raw.githubusercontent.com/holoviz/panel/main/doc/_static/logo.svg"
+GPT_3_LOGO = f"{DIST_PATH}assets/logo/gpt-3.svg"
+GPT_4_LOGO = f"{DIST_PATH}assets/logo/gpt-4.svg"
+WOLFRAM_LOGO = f"{DIST_PATH}assets/logo/wolfram.svg"
+LUMEN_LOGO = f"{DIST_PATH}assets/logo/lumen.svg"
+HOLOVIEWS_LOGO = f"{DIST_PATH}assets/logo/holoviews.svg"
+HVPLOT_LOGO = f"{DIST_PATH}assets/logo/hvplot.svg"
+PANEL_LOGO = f"{DIST_PATH}assets/logo/panel.svg"
 
 DEFAULT_AVATARS = {
     # User
