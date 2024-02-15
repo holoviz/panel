@@ -102,7 +102,6 @@ def test_azure_oauth(py_file, page):
         expect(page.locator('input[type="submit"]')).to_have_attribute('value', 'Sign in')
         page.locator('input[type="password"]').fill(azure_password)
         page.locator('input[type="submit"]').click(force=True)
-        page.locator('input[type="submit"]').click(force=True)
 
         # Stay signed in button
         page.get_by_role("button", name="Yes", exact=True).click(force=True)
