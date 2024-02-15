@@ -104,6 +104,9 @@ def test_azure_oauth(py_file, page):
         page.locator('input[type="submit"]').click(force=True)
         page.locator('input[type="submit"]').click(force=True)
 
+        # Stay signed in button
+        page.get_by_role("button", name="Yes", exact=True).click(force=True)
+
         expect(page.locator('.markdown')).to_have_text(f'live.com#{azure_user}', timeout=10000)
 
 
