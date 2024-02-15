@@ -53,6 +53,10 @@ HELP_LOGO = "❓"
 GPT_3_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_logo.svg/1024px-ChatGPT_logo.svg.png?20230318122128"
 GPT_4_LOGO = "https://upload.wikimedia.org/wikipedia/commons/a/a4/GPT-4.png"
 WOLFRAM_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/WolframCorporateLogo.svg/1920px-WolframCorporateLogo.svg.png"
+LUMEN_LOGO = "https://raw.githubusercontent.com/holoviz/lumen/main/doc/_static/logo.svg"
+HOLOVIEWS_LOGO = "https://raw.githubusercontent.com/holoviz/holoviews/main/doc/_static/logo.svg"
+HVPLOT_LOGO = "https://github.com/holoviz/hvplot/blob/main/doc/_static/logo.png"
+PANEL_LOGO = "https://raw.githubusercontent.com/holoviz/panel/main/doc/_static/logo.svg"
 
 DEFAULT_AVATARS = {
     # User
@@ -100,6 +104,12 @@ DEFAULT_AVATARS = {
     # Llama
     "llama": "🦙",
     "llama2": "🐪",
+    # Plotting
+    "plot": "📊",
+    "lumen": LUMEN_LOGO,
+    "holoviews": HOLOVIEWS_LOGO,
+    "hvplot": HVPLOT_LOGO,
+    "panel": PANEL_LOGO,
 }
 
 
