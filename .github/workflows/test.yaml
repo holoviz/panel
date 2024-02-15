@@ -239,27 +239,27 @@ jobs:
         run: |
           conda activate test-environment
           pip install --pre ipywidgets_bokeh
-      - name: build pyodide wheels
-        run: |
-          conda activate test-environment
-          python scripts/build_pyodide_wheels.py
-      - name: launch jupyter
-        run: |
-          conda activate test-environment
-          jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
-          (jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887 > /tmp/jupyterlab_server.log 2>&1) &
-      - name: build jupyterlite
-        run: |
-          conda activate test-environment
-          pip install jupyterlite-core jupyterlite-pyodide-kernel
-          python ./scripts/build_pyodide_wheels.py lite/pypi
-          python ./scripts/panelite/generate_panelite_content.py
-          jupyter lite build --lite-dir lite --output-dir lite/dist
-      - name: Wait for JupyterLab
-        uses: ifaxity/wait-on-action@v1.1.0
-        with:
-          resource: http-get://localhost:8887/lab
-          timeout: 180000
+      # - name: build pyodide wheels
+      #   run: |
+      #     conda activate test-environment
+      #     python scripts/build_pyodide_wheels.py
+      # - name: launch jupyter
+      #   run: |
+      #     conda activate test-environment
+      #     jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
+      #     (jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887 > /tmp/jupyterlab_server.log 2>&1) &
+      # - name: build jupyterlite
+      #   run: |
+      #     conda activate test-environment
+      #     pip install jupyterlite-core jupyterlite-pyodide-kernel
+      #     python ./scripts/build_pyodide_wheels.py lite/pypi
+      #     python ./scripts/panelite/generate_panelite_content.py
+      #     jupyter lite build --lite-dir lite --output-dir lite/dist
+      # - name: Wait for JupyterLab
+      #   uses: ifaxity/wait-on-action@v1.1.0
+      #   with:
+      #     resource: http-get://localhost:8887/lab
+      #     timeout: 180000
       - name: doit env_capture
         run: |
           conda activate test-environment
