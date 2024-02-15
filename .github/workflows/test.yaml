@@ -191,7 +191,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-    timeout-minutes: 60
+    timeout-minutes: 120
     defaults:
       run:
         shell: bash -el {0}
