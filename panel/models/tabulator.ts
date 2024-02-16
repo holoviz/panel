@@ -436,6 +436,11 @@ export class DataTabulatorView extends HTMLBoxView {
     this._initializing = false
   }
 
+  after_resize(): void {
+    super.after_resize()
+    this.redraw()
+  }
+
   setCSSClasses(el: HTMLDivElement): void {
     el.className = "pnx-tabulator tabulator"
     for (const cls of this.model.theme_classes)

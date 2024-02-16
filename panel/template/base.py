@@ -555,7 +555,10 @@ class TemplateActions(ReactiveHTML):
     _template: ClassVar[str] = ""
 
     _scripts: ClassVar[Dict[str, List[str] | str]] = {
-        'open_modal': ["document.getElementById('pn-Modal').style.display = 'block'"],
+        'open_modal': ["""
+          document.getElementById('pn-Modal').style.display = 'block'
+          window.dispatchEvent(new Event('resize'));
+        """],
         'close_modal': ["document.getElementById('pn-Modal').style.display = 'none'"],
     }
 
