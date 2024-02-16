@@ -1,4 +1,5 @@
-<div id="flexbox" style="display: flex; flex-wrap: ${flex_wrap}; justify-content: ${justify_content}; flex-direction: ${flex_direction}; align-content: ${align_content}; align-items: ${align_items}; height: 100%;">
+<div id="flexbox"
+     style="display: flex; flex-wrap: ${flex_wrap}; justify-content: ${justify_content}; flex-direction: ${flex_direction}; align-content: ${align_content}; align-items: ${align_items}; gap: ${gap}; height: 100%;">
   {% for obj in objects %}
   <div id="flex-item-{{ loop.index0 }}" style="display: contents;">
     ${objects[{{ loop.index0 }}]}
