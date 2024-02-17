@@ -138,7 +138,7 @@ jobs:
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
-          channels: pyviz/label/dev,numba,bokeh,conda-forge,nodefaults
+          channels: pyviz/label/dev,numba,bokeh/label/dev,conda-forge,nodefaults
           conda-update: true
           nodejs: true
           envs: -o examples -o recommended -o tests -o build
@@ -229,7 +229,7 @@ jobs:
         with:
           name: ui_test_suite
           python-version: 3.9
-          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
+          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
           envs: "-o recommended -o tests -o build"
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           nodejs: true
