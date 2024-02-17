@@ -47,7 +47,7 @@ def write_bundled_files(name, files, explicit_dir=None, ext=None):
             except Exception as e:
                 raise ConnectionError(
                     f"Failed to fetch {name} dependency: {bundle_file}. Errored with {e}."
-                )
+                ) from e
         try:
             map_file = f'{bundle_file}.map'
             map_response = requests.get(map_file)

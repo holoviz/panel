@@ -145,7 +145,7 @@ img.app-logo {
   flex: 1 0 0%;
   height: 100%;
   overflow-y: auto;
-  padding: 15px;
+  padding: 10px;
   transition: all 0.2s cubic-bezier(0.945, 0.02, 0.27, 0.665);
 }
 

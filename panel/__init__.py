@@ -54,6 +54,7 @@ from . import pane  # noqa
 from . import param  # noqa
 from . import pipeline  # noqa
 from . import reactive  # noqa
+from . import template  # noqa
 from . import viewable  # noqa
 from . import widgets  # noqa
 from .config import __version__, config, panel_extension as extension  # noqa
@@ -63,8 +64,8 @@ from .io import (  # noqa
     _jupyter_server_extension_paths, cache, ipywidget, serve, state,
 )
 from .layout import (  # noqa
-    Accordion, Card, Column, FlexBox, FloatPanel, GridBox, GridSpec, GridStack,
-    HSpacer, Row, Spacer, Swipe, Tabs, VSpacer, WidgetBox,
+    Accordion, Card, Column, Feed, FlexBox, FloatPanel, GridBox, GridSpec,
+    GridStack, HSpacer, Row, Spacer, Swipe, Tabs, VSpacer, WidgetBox,
 )
 from .pane import panel  # noqa
 from .param import Param, ReactiveExpr  # noqa
@@ -77,6 +78,7 @@ __all__ = (
     "Card",
     "chat",
     "Column",
+    "Feed",
     "FlexBox",
     "FloatPanel",
     "GridBox",
@@ -87,6 +89,7 @@ __all__ = (
     "ReactiveExpr",
     "Row",
     "Spacer",
+    "Swipe",
     "Tabs",
     "Template",
     "VSpacer",
@@ -108,6 +111,7 @@ __all__ = (
     "rx",
     "serve",
     "state",
+    "template",
     "viewable",
     "widgets",
     "widget"

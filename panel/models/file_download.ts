@@ -8,7 +8,7 @@ import {Icon, IconView} from "@bokehjs/models/ui/icons/icon"
 
 import buttons_css, * as buttons from "@bokehjs/styles/buttons.css"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
-import {prepend, nbsp, text, button} from "@bokehjs/core/dom"
+import {prepend, nbsp, text, button, input} from "@bokehjs/core/dom"
 
 function dataURItoBlob(dataURI: string) {
   // convert base64 to raw binary data held in a string
@@ -37,6 +37,7 @@ export class FileDownloadView extends InputWidgetView {
 
   anchor_el: HTMLAnchorElement
   button_el: HTMLButtonElement
+  input_el: HTMLInputElement  // HACK: So this.input_el.id = "input" can be set in Bokeh 3.4
   _downloadable: boolean = false
   _click_listener: any
   _prev_href: string | null = ""
@@ -75,10 +76,7 @@ export class FileDownloadView extends InputWidgetView {
     }
   }
 
-  render(): void {
-    super.render()
-    this.group_el.style.display = "flex"
-    this.group_el.style.alignItems = "stretch"
+  _render_input(): HTMLElement {
     // Create an anchor HTML element that is styled as a bokeh button.
     // When its 'href' and 'download' attributes are set, it's a downloadable link:
     // * A click triggers a download
@@ -90,8 +88,7 @@ export class FileDownloadView extends InputWidgetView {
     // 3. auto=True: The widget is a button, i.e right click to "Save as..." won't work
     this.anchor_el = document.createElement('a')
     this.button_el = button({
-      disabled: this.model.disabled,
-      type: "bk_btn, bk_btn_type",
+      disabled: this.model.disabled
     })
     if (this.icon_view != null) {
       const separator = this.model.label != "" ? nbsp() : text("")
@@ -128,7 +125,14 @@ export class FileDownloadView extends InputWidgetView {
       this.anchor_el.addEventListener("click", this._click_listener)
     }
     this.button_el.appendChild(this.anchor_el)
-    this.group_el.appendChild(this.button_el)
+    this.input_el = input() // HACK: So this.input_el.id = "input" can be set in Bokeh 3.4
+    return this.button_el
+  }
+
+  render(): void {
+    super.render()
+    this.group_el.style.display = "flex"
+    this.group_el.style.alignItems = "stretch"
   }
 
   stylesheets(): StyleSheetLike[] {

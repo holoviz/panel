@@ -23,12 +23,14 @@ from bokeh.models.widgets import (
 )
 
 from ..io.resources import CDN_DIST
-from ..layout import Column
+from ..layout.base import Column, ListPanel, NamedListPanel
 from ..models import (
     CheckboxButtonGroup as _BkCheckboxButtonGroup, CustomSelect,
     RadioButtonGroup as _BkRadioButtonGroup, SingleSelect as _BkSingleSelect,
 )
-from ..util import PARAM_NAME_PATTERN, indexOf, isIn
+from ..util import (
+    PARAM_NAME_PATTERN, bokeh33, bokeh34, indexOf, isIn,
+)
 from ._mixin import TooltipMixin
 from .base import CompositeWidget, Widget
 from .button import Button, _ButtonBase
@@ -349,6 +351,11 @@ class NestedSelect(CompositeWidget):
         level that updated and `value` is a dictionary of the current values, containing keys
         up to the level that was updated.""")
 
+    layout = param.Parameter(default=Column, doc="""
+        The layout type of the widgets. If a dictionary, a "type" key can be provided,
+        to specify the layout type of the widgets, and any additional keyword arguments
+        will be used to instantiate the layout.""")
+
     levels = param.List(doc="""
         Either a list of strings or a list of dictionaries. If a list of strings, the strings
         are used as the names of the levels. If a list of dictionaries, each dictionary may
@@ -365,8 +372,6 @@ class NestedSelect(CompositeWidget):
 
     _levels = param.List(doc="""
         The internal rep of levels to prevent overwriting user provided levels.""")
-
-    _composite_type = Column
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -385,7 +390,7 @@ class NestedSelect(CompositeWidget):
                 name = level.get("name", i)
             else:
                 name = level
-            values[name] = select.value
+            values[name] = select.value if select.options else None
 
         return values
 
@@ -414,7 +419,9 @@ class NestedSelect(CompositeWidget):
         for value in d.values():
             if isinstance(value, dict):
                 max_depth = max(max_depth, self._find_max_depth(value, depth + 1))
-            if len(value) == 0:
+            # dict means it's a level, so it's not the last level
+            # list means it's a leaf, so it's the last level
+            if isinstance(value, list) and len(value) == 0 and max_depth > 0:
                 max_depth -= 1
         return max_depth
 
@@ -424,7 +431,7 @@ class NestedSelect(CompositeWidget):
         options = options(level=level, value=value)
         return options
 
-    @param.depends("options", "levels", watch=True)
+    @param.depends("options", "layout", "levels", watch=True)
     def _update_widgets(self):
         """
         When options is changed, reflect changes on the select widgets.
@@ -464,8 +471,18 @@ class NestedSelect(CompositeWidget):
                     f"{type(options).__name__}"
                 )
 
-        self._composite[:] = self._widgets
+        if isinstance(self.layout, dict):
+            layout_type = self.layout.pop("type", Column)
+            layout_kwargs = self.layout.copy()
+        elif issubclass(self.layout, (ListPanel, NamedListPanel)):
+            layout_type = self.layout
+            layout_kwargs = {}
+        else:
+            raise ValueError(
+                f"The layout must be a subclass of ListLike or dict, got {self.layout!r}."
+            )
 
+        self._composite = layout_type(*self._widgets, **layout_kwargs)
         if self.options is not None:
             self.value = self._gather_values_from_widgets()
 
@@ -543,7 +560,7 @@ class NestedSelect(CompositeWidget):
 
         # little optimization to avoid looping through all the
         # widgets and updating their value
-        for start_i, select in enumerate(self._widgets):
+        for start_i, select in enumerate(self._widgets):  # noqa: B007
             if select is event.obj:
                 break
 
@@ -562,7 +579,7 @@ class NestedSelect(CompositeWidget):
                             options = options[select.value]
                         else:
                             options = options[list(options.keys())[0]]
-                    visible = True
+                    visible = bool(options)
 
                 if i < start_i:
                     # If the select widget is before the one
@@ -672,11 +689,14 @@ class ColorMap(SingleSelectBase):
 
     @property
     def _widget_type(self) -> Type[Model]:
-        try:
+        if bokeh34:
+            from bokeh.models import PaletteSelect
+            return PaletteSelect
+        elif bokeh33:
             from bokeh.models import ColorMap
-        except Exception:
+            return ColorMap
+        else:
             raise ImportError('ColorMap widget requires bokeh version >= 3.3.0.')
-        return ColorMap
 
     @param.depends('value_name', watch=True, on_init=True)
     def _sync_value_name(self):

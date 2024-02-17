@@ -2,6 +2,157 @@
 
 See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual summary of the major features added in each release.
 
+## Version 1.3.8
+
+Date: 2024-01-24
+
+This patch release fixes an important regression in the 1.3.6 release that resulted in global state to be incorrectly resolved in certain cases. Many thanks to our new contributor @fohrloop and our maintainers @ahuang11
+
+## Bug fixes
+
+- Ensure `ReactiveHTML` correctly resets `Event` parameters ([#6247](https://github.com/holoviz/panel/pull/6247))
+- Fix `ChatFeed` / `ChatInterface` tests and async generator placeholders ([#6245](https://github.com/holoviz/panel/pull/6245))
+- Fix logic when looking up `pn.state.curdoc` ([#6254](https://github.com/holoviz/panel/pull/6254))
+- Handle margin=None in layout sizing mode computation ([#6267](https://github.com/holoviz/panel/pull/6267))
+
+## Compatibility
+
+- Updates for compatibility with pandas 2.2 ([#6259](https://github.com/holoviz/panel/pull/6259))
+
+## Documentation
+
+- Fix typos and add a cross-reference in docs (User Profiling) ([#6263](https://github.com/holoviz/panel/pull/6263))
+- Improve documentation on `TextAreaInput` ([#6264](https://github.com/holoviz/panel/pull/6264))
+
+## Version 1.3.7
+
+Date: 2024-01-19
+
+This patch release focuses on a number of fixes and minor enhancements for the chat components and various other smaller improvements and fixes including docs improvements. In particular we want to highlight the new Ploomber deployment guide contributed by @neelash23. Next we want to welcome @jz314, @fayssalelmofatiche and @neelasha23 as new contributors and welcome back @SultanOrazbayev as a returning contributor. Lastly we want to thank the core contributor team, including @MarcSkovMadsen, @ahuang11, @maximlt, @Hoxbro and @philippjfr for their continued efforts maintaining Panel.
+
+### Enhancements
+
+- Add `filter_by` to `ChatMessage.serialize` ([#6090](https://github.com/holoviz/panel/pull/6090))
+- Support using an SVG for `ToggleIcon` ([#6127](https://github.com/holoviz/panel/pull/6127))
+- Add resizable param to `TextAreaInput` ([#6126](https://github.com/holoviz/panel/pull/6126))
+- Improve date and datetime picker functionality ([#6152](https://github.com/holoviz/panel/pull/6152))
+- Add activity indicator to `ChatMessage` ([#6153](https://github.com/holoviz/panel/pull/6153))
+- Lazily import bleach HTML sanitizer ([#6179](https://github.com/holoviz/panel/pull/6179))
+
+### Bug fixes
+
+- Fix alignment issues in chat components ([#6104](https://github.com/holoviz/panel/pull/6104), [#6135](https://github.com/holoviz/panel/pull/6135))
+- Fix generator placeholder and optimize updates in Chat components ([#6105](https://github.com/holoviz/panel/pull/6105))
+- Fix issue with callback future handling on Chat components ([#6120](https://github.com/holoviz/panel/pull/6120))
+- Fix bug in Chat interfaces related to `pn.state.browser_info` ([#6122](https://github.com/holoviz/panel/pull/6122))
+- Allow instantiating empty `Matplotlib` pane ([#6128](https://github.com/holoviz/panel/pull/6128))
+- Ensure icon displays inline with text on `FileDownload` ([#6133](https://github.com/holoviz/panel/pull/6133))
+- Fix styling of links in `Tabulator` fast theme ([#6146](https://github.com/holoviz/panel/pull/6146))
+- Fix passing of `card_params` on `ChatFeed` ([#6154](https://github.com/holoviz/panel/pull/6154))
+- Handle `Tabulator.title_formatter` if is type `dict` ([#6166](https://github.com/holoviz/panel/pull/6166))
+- Fix `per_session` caching ([#6169](https://github.com/holoviz/panel/pull/6169))
+- Correctly reshape nd-arrays in `Plotly` pane ([#6174](https://github.com/holoviz/panel/pull/6174))
+- Handle NaT values on `Perspective` pane ([#6176](https://github.com/holoviz/panel/pull/6176))
+- Do not rerender output if `ReplacementPane` object identity is unchanged ([#6183](https://github.com/holoviz/panel/pull/6183))
+- Tabulator: fix valuesLookup set up for older list-like editors ([#6192](https://github.com/holoviz/panel/pull/6192))
+- Fix pyodide loading message styling issues ([#6194](https://github.com/holoviz/panel/pull/6194))
+- More complete patch for the `TextEditor` to support being rendered in the Shadow DOM ([#6222](https://github.com/holoviz/panel/pull/6222))
+- Add guard to `Tabulator` ensuring that it does not error when it is not rendered ([#6223](https://github.com/holoviz/panel/pull/6223))
+- Fix race conditions when instantiating Comm in Jupyter causing notifications to break ([#6229](https://github.com/holoviz/panel/pull/6229), [#6234](https://github.com/holoviz/panel/pull/6234))
+- Handle duplicate attempts at refreshing auth tokens ([#6233](https://github.com/holoviz/panel/pull/6233))
+
+### Compatibility & Security
+
+- Upgrade Plotly.js to 2.25.3 to address CVE-2023-46308 ([#6230](https://github.com/holoviz/panel/pull/6230))
+
+### Documentation
+
+- Add `Design` and `Theme` explanation documentation ([#4741](https://github.com/holoviz/panel/pull/4741))
+- Fix pyodide execution in documentation
+- Fix wrong and broken link ([#5988](https://github.com/holoviz/panel/pull/5988), [#6132](https://github.com/holoviz/panel/pull/6132))
+- Use GoatCounter for website analytics ([#6117](https://github.com/holoviz/panel/pull/6117))
+- Add Dask How to guide ([#4234](https://github.com/holoviz/panel/pull/4234))
+- Fix `Material` template notebook .show() call ([#6137](https://github.com/holoviz/panel/pull/6137))
+- Add missing item in docstring ([#6167](https://github.com/holoviz/panel/pull/6167))
+- Ploomber Cloud deployment documentation ([#6182](https://github.com/holoviz/panel/pull/6182))
+- Correct duplicate wording ([#6188](https://github.com/holoviz/panel/pull/6188))
+- Update JupyterLite Altair example to latest API ([#6226](https://github.com/holoviz/panel/pull/6226))
+
+## Version 1.3.6
+
+Date: 2023-12-20
+
+This patch release addresses a major regression in server performance introduced in 1.3.5 along with some additional minor fixes. We want to welcome @nenb as a new contributor and want to thank the maintainers @ahuang11, @maximlt and @philippjfr for their contributions to this release.
+
+### Enhancements
+
+- Add explicit size option to ToggleIcon ([#6092](https://github.com/holoviz/panel/pull/6092))
+
+### Bug fixes
+
+- Fix execution of OAuth of callback to refresh `access_token` ([#6084](https://github.com/holoviz/panel/pull/6084))
+- Fix `ChatReactionIcons` alignment and trigger reactions correctly ([#6086](https://github.com/holoviz/panel/pull/6086))
+- Change `Column` `scroll_position` default value from `None` to `0` ([#6082](https://github.com/holoviz/panel/pull/6082))
+- Fix issue with accumulating callbacks on server ([#6091](https://github.com/holoviz/panel/pull/6091))
+- Ensure `ReactiveExpr` renders in pyodide ([#6097](https://github.com/holoviz/panel/pull/6097))
+- Ensure `TooltipIcon` description can be updated ([#6099](https://github.com/holoviz/panel/pull/6099))
+- Fix IPyWidgets rendering in `BootstrapTemplate` ([#6100](https://github.com/holoviz/panel/pull/6100))
+- Fix padding and alignment of `FileDownload` ([#6101](https://github.com/holoviz/panel/pull/6101))
+
+## Version 1.3.5
+
+Date: 2023-12-18
+
+This micro-release fixes a large number of issues, applies some performance optimizations and resolves some regressions introduced in previous micro-releases. The main regressions that were addressed include rendering of `ChatMessage` reaction icons, the ability to obtain an OAuth `access_token` if it is not a valid JWT token, and issues with async callbacks. We are very pleased to welcome new contributors @mitulb, @fazledyn-or, @benbarn313 and @vaniisgh and want to thank them for their contributions. We also want to thank @cdeil for continuing to contribute and the maintainer team including @MarcSkovMadsen, @Hoxbro, @maximlt, @ahuang11, @droumis and @philippjfr for their continued efforts.
+
+## Enhancements
+
+- Add support for timestamp timezones for `ChatMessage` ([#5961](https://github.com/holoviz/panel/pull/5961))
+- Replace whitelist blacklist with allowlist denylist ([#5975](https://github.com/holoviz/panel/pull/5975))
+- Allow stopping respond callbacks midway on `ChatInterface` ([#5962](https://github.com/holoviz/panel/pull/5962))
+- Add support for `Image.caption` ([#6003](https://github.com/holoviz/panel/pull/6003))
+- Improvements for `Fast` template styling ([#6023](https://github.com/holoviz/panel/pull/6023))
+- Replace `Player` widget unicode icons with SVG for more consistency ([#6030](https://github.com/holoviz/panel/pull/6030))
+- Elaborate on `ChatInterface` callback exception summary ([#6046](https://github.com/holoviz/panel/pull/6046))
+- Add `ToggleIcon` widget ([#6034](https://github.com/holoviz/panel/pull/6034))
+- Use minified `Tabulator.js` ([#6060]https://github.com/holoviz/panel/pull/6060))
+- Support rendering `GeoDataFrame` and `GeoSeries` in `DataFrame` pane ([#6061](https://github.com/holoviz/panel/pull/6061))
+- Optimize rendering of `ChatMessage` ([#6069](https://github.com/holoviz/panel/pull/6069))
+- Apply smaller  optimizations for `Viewable` and `ChatMessage` ([#6074](https://github.com/holoviz/panel/pull/6074))
+- Add bottom padding to `MaterialTemplate` ([#6075](https://github.com/holoviz/panel/pull/6075))
+- Update mapbox-gl version for `DeckGL` pane ([#6077](https://github.com/holoviz/panel/pull/6077))
+
+## Bug fixes
+
+- Remove duplicate property definition of `VizzuChart.config` ([#5947](https://github.com/holoviz/panel/pull/5947))
+- Remove stray print in `Tabulator` styler handling ([#5944](https://github.com/holoviz/panel/pull/5944))
+- Fix bug when clearing `pn.cache` before anything has been cached ([#5981](https://github.com/holoviz/panel/pull/5981))
+- Fix `obj.save()` when threading is enabled ([#5993](https://github.com/holoviz/panel/pull/5993))
+- Fix `Matplotlib` responsiveness and improve reference notebook ([#5973](https://github.com/holoviz/panel/pull/5973))
+- Gracefully handle non-decodable `access_token` ([#5994](https://github.com/holoviz/panel/pull/5994))
+- Ensure `onload` callbacks scheduled during or after load are still executed ([#6005](https://github.com/holoviz/panel/pull/6005))
+- Don't attempt to set Tabulator `text_align` on Bokeh formatters that don't support it ([#6010](https://github.com/holoviz/panel/pull/6010))
+- Correctly set error page to be rendered on auth failure ([#6014](https://github.com/holoviz/panel/pull/6014))
+- Fix `ChatInterface` post callback for default ([#5998](https://github.com/holoviz/panel/pull/5998))
+- Ensure matplotlib backend is set correctly in pyodide worker ([#6029](https://github.com/holoviz/panel/pull/6029))
+- Synchronously create Document patch message to avoid race conditions ([#6028](https://github.com/holoviz/panel/pull/6028))
+- Do not inline CSS if it can be loaded from CDN ([#6039](https://github.com/holoviz/panel/pull/6039))
+- Fix `ChatMessage` reactions icon rendering ([#6034](https://github.com/holoviz/panel/pull/6034))
+- Fix issues with `ChatInterface` stop ensuring send button is re-enabled and placeholder removed ([#6033](https://github.com/holoviz/panel/pull/6033))
+- Ensure that `Design` does not override properties on `HoloViews` pane ([#6051](https://github.com/holoviz/panel/pull/6051))
+- Ensure async callbacks correctly dispatch events when Websocket is locked ([#6052](https://github.com/holoviz/panel/pull/6052))
+- Fix `state.add_periodic_callback` when callback is async ([#6053](https://github.com/holoviz/panel/pull/6053))
+- Do no update objects inplace unless explicitly requested fixing issues with non-updating components ([#6055](https://github.com/holoviz/panel/pull/6055))
+- Update sizing of Panel models dynamically ([#6054](https://github.com/holoviz/panel/pull/6054))
+- Make `panel.chat.langchain` import lazy improving import time ([#6056](https://github.com/holoviz/panel/pull/6056))
+- Change prominence of `TooltipIcon` ([#6057](https://github.com/holoviz/panel/pull/6057))
+
+## Documentation
+
+- Improve reactive expression notebook ([#5960](https://github.com/holoviz/panel/pull/5960))
+- Document requirement to install `pyviz_comms` in same env as Jupyter ([#5980](https://github.com/holoviz/panel/pull/5980))
+- Update documentation's pyodide version to use version from panel.io.convert ([#5996](https://github.com/holoviz/panel/pull/5996))
+
 ## Version 1.3.4
 
 Date: 2023-11-29

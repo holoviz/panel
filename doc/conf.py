@@ -81,7 +81,8 @@ extensions += [
     'sphinx.ext.napoleon',
     'nbsite.gallery',
     'sphinx_copybutton',
-    'nbsite.pyodide'
+    'nbsite.pyodide',
+    'nbsite.analytics',
 ]
 napoleon_numpy_docstring = True
 
@@ -91,6 +92,10 @@ gallery_endpoint = 'panel-gallery-dev' if is_dev else 'panel-gallery'
 gallery_url = f'https://{gallery_endpoint}.pyviz.demo.anaconda.com'
 jlite_url = 'https://pyviz-dev.github.io/panelite-dev' if is_dev else 'https://panelite.holoviz.org'
 pyodide_url = 'https://pyviz-dev.github.io/panel/pyodide' if is_dev else 'https://panel.holoviz.org/pyodide'
+
+nbsite_analytics = {
+    'goatcounter_holoviz': True,
+}
 
 nbsite_gallery_conf = {
     'github_org': 'holoviz',
@@ -171,6 +176,10 @@ nbbuild_patterns_to_take_along = ["simple.html", "*.json", "json_*"]
 # Override the Sphinx default title that appends `documentation`
 html_title = f'{project} v{version}'
 
+# Ensure the global version string includes the SHA to ensure the service
+# worker is invalidated on builds between tags
+if is_dev:
+    version = panel.__version__
 
 # Patching GridItemCardDirective to be able to substitute the domain name
 # in the link option.

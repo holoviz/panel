@@ -41,6 +41,19 @@ def test_get_matplotlib_pane_type():
 
 
 @mpl_available
+def test_matplotlib_pane_initially_empty(document, comm):
+    pane = pn.pane.Matplotlib()
+    assert pane.object is None
+
+    model = pane.get_root(document, comm=comm)
+    assert model.text == '<img></img>'
+
+    pane.object = mpl_figure()
+    assert model.text.startswith('&lt;img src=&quot;data:image/png;base64,')
+    assert pane._models[model.ref['id']][0] is model
+
+
+@mpl_available
 def test_matplotlib_pane(document, comm):
     pane = pn.pane.Matplotlib(mpl_figure())
 

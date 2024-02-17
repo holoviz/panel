@@ -18,6 +18,10 @@ Enjoying Panel? Show your support with a [Github star](https://github.com/holovi
 <table>
 <tbody>
 <tr>
+<td>Downloads</td>
+<td><a href="https://pypistats.org/packages/panel" alt="PyPi Downloads"><img src="https://img.shields.io/pypi/dm/panel?label=pypi" /></a> <a href="https://anaconda.org/pyviz/panel" alt="Conda Downloads"><img src="https://pyviz.org/_static/cache/panel_conda_downloads_badge.svg" /></a></td>
+</tr>
+<tr>
 <td>Build Status</td>
 <td><a href="https://github.com/holoviz/panel/actions/workflows/test.yaml?query=branch%3Amain"><img src="https://github.com/holoviz/panel/workflows/tests/badge.svg?query=branch%3Amain" alt="Linux/MacOS Build Status"></a></td>
 </tr>
@@ -65,7 +69,7 @@ Panel works really well with the visualization tools you already know and love l
 
 Panel provides bi-directional communication making it possible to react to clicks, selections, hover etc. events.
 
-[![Vega Selections](https://blog.holoviz.org/images/vega_selection.gif)](https://panel.holoviz.org/reference/panes/Vega.html)
+[![Vega Selections](https://assets.holoviz.org/panel/readme/vega_selections.gif)](https://panel.holoviz.org/reference/panes/Vega.html)
 
 You can develop in [Jupyter Notebooks](http://jupyter.org) as well as editors like [VS Code](https://code.visualstudio.com/), [PyCharm](https://www.jetbrains.com/pycharm/) or [Spyder](https://www.spyder-ide.org/).
 
@@ -165,7 +169,9 @@ panel serve name_of_notebook.ipynb --show
 
 [![Panel Gallery](https://assets.holoviz.org/panel/readme/gallery.jpg)](https://panel.holoviz.org/gallery/index.html)
 
-[![Awesome Panel Gallery](https://assets.holoviz.org/panel/readme/awesome_panel.jpg)](https://www.awesome-panel.org/gallery?theme=default)
+[![Panel Chat Examples](https://assets.holoviz.org/panel/readme/panel-chat-examples.jpg)](https://holoviz-topics.github.io/panel-chat-examples/)
+
+[![Awesome Panel Gallery](https://assets.holoviz.org/panel/readme/awesome_panel.jpg)](https://www.awesome-panel.org)
 
 ## Get started
 

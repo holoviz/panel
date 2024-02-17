@@ -14,7 +14,6 @@ import pathlib
 import re
 import textwrap
 
-from base64 import b64encode
 from collections import OrderedDict
 from contextlib import contextmanager
 from functools import lru_cache
@@ -38,8 +37,7 @@ from jinja2.loaders import FileSystemLoader
 from markupsafe import Markup
 
 from ..config import config, panel_extension as extension
-from ..util import isurl, url_path
-from .loading import LOADING_INDICATOR_CSS_CLASS
+from ..util import bokeh34, isurl, url_path
 from .state import state
 
 if TYPE_CHECKING:
@@ -71,10 +69,18 @@ def get_env():
 def conffilter(value):
     return json.dumps(OrderedDict(value)).replace('"', '\'')
 
+class json_dumps(json.JSONEncoder):
+    def default(self, obj):
+        if bokeh34:
+            from bokeh.embed.bundle import URL
+            if isinstance(obj, URL):
+                return str(obj)
+        return super().default(obj)
+
 _env = get_env()
 _env.trim_blocks = True
 _env.lstrip_blocks = True
-_env.filters['json'] = lambda obj: Markup(json.dumps(obj))
+_env.filters['json'] = lambda obj: Markup(json.dumps(obj, cls=json_dumps))
 _env.filters['conffilter'] = conffilter
 _env.filters['sorted'] = sorted
 
@@ -102,7 +108,7 @@ DOC_DIST = "https://panel.holoviz.org/_static/"
 LOCAL_DIST = "static/extensions/panel/"
 COMPONENT_PATH = "components/"
 
-BK_PREFIX_RE = re.compile('\.bk\.')
+BK_PREFIX_RE = re.compile(r'\.bk\.')
 
 RESOURCE_URLS = {
     'font-awesome': {
@@ -182,13 +188,10 @@ def process_raw_css(raw_css):
 
 @lru_cache(maxsize=None)
 def loading_css(loading_spinner, color, max_height):
-    with open(ASSETS_DIR / f'{loading_spinner}_spinner.svg', encoding='utf-8') as f:
-        svg = f.read().replace('\n', '').format(color=color)
-    b64 = b64encode(svg.encode('utf-8')).decode('utf-8')
     return textwrap.dedent(f"""
-    :host(.{LOADING_INDICATOR_CSS_CLASS}.pn-{loading_spinner}):before, .pn-loading.pn-{loading_spinner}:before {{
-      background-image: url("data:image/svg+xml;base64,{b64}");
-      background-size: auto calc(min(50%, {max_height}px));
+    :host(.pn-loading):before, .pn-loading:before {{
+      background-color: {color};
+      mask-size: auto calc(min(50%, {max_height}px));
     }}""")
 
 def resolve_custom_path(
@@ -263,6 +266,9 @@ def patch_stylesheet(stylesheet, dist_url):
     except Exception:
         pass
 
+def _is_file_path(stylesheet: str)->bool:
+    return stylesheet.lower().endswith(".css")
+
 def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
     """
     Resolves a stylesheet definition, e.g. originating on a component
@@ -271,6 +277,7 @@ def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
 
     - Absolute URL defined with http(s) protocol
     - A path relative to the component
+    - A raw css string
 
     Arguments
     ---------
@@ -280,7 +287,7 @@ def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
         The stylesheet definition
     """
     stylesheet = str(stylesheet)
-    if not stylesheet.startswith('http') and attribute and (custom_path:= resolve_custom_path(cls, stylesheet)):
+    if not stylesheet.startswith('http') and attribute and _is_file_path(stylesheet) and (custom_path:= resolve_custom_path(cls, stylesheet)):
         if not state._is_pyodide and state.curdoc and state.curdoc.session_context:
             stylesheet = component_resource_path(cls, attribute, stylesheet)
         else:
@@ -384,7 +391,7 @@ def bundle_resources(roots, resources, notebook=False, reloading=False, enable_m
     extensions = _bundle_extensions(None, js_resources)
     if reloading:
         extensions = [
-            ext for ext in extensions if not (ext.cdn_url is not None and ext.cdn_url.startswith('https://unpkg.com/@holoviz/panel@'))
+            ext for ext in extensions if not (ext.cdn_url is not None and str(ext.cdn_url).startswith('https://unpkg.com/@holoviz/panel@'))
         ]
 
     extra_js = []
@@ -393,6 +400,8 @@ def bundle_resources(roots, resources, notebook=False, reloading=False, enable_m
     elif mode == "server":
         for bundle in extensions:
             server_url = bundle.server_url
+            if not isinstance(server_url, str):
+                server_url = str(server_url)
             if resources.root_url and not resources.absolute:
                 server_url = server_url.replace(resources.root_url, '', 1)
                 if state.rel_path:
@@ -413,6 +422,13 @@ def bundle_resources(roots, resources, notebook=False, reloading=False, enable_m
         js_raw.append(ext)
 
     hashes = js_resources.hashes if js_resources else {}
+
+    if bokeh34:
+        from bokeh.embed.bundle import URL
+
+        js_files = list(map(URL, js_files))
+        css_files = list(map(URL, css_files))
+
     return Bundle(
         css_files=css_files,
         css_raw=css_raw,
@@ -600,6 +616,8 @@ class Resources(BkResources):
         new_resources = []
         cdn_base = f'{config.npm_cdn}/@holoviz/panel@{JS_VERSION}/dist/'
         for resource in resources:
+            if not isinstance(resource, str):
+                resource = str(resource)
             resource = resource.replace('https://unpkg.com', config.npm_cdn)
             if resource.startswith(cdn_base):
                 resource = resource.replace(cdn_base, CDN_DIST)
@@ -674,10 +692,11 @@ class Resources(BkResources):
         # Inline local dist resources
         css_files = self._collect_external_resources("__css__")
         self.extra_resources(css_files, '__css__')
-        raw += [
-            (DIST_DIR / css.replace(CDN_DIST, '')).read_text(encoding='utf-8')
-            for css in css_files if is_cdn_url(css)
-        ]
+        if self.mode.lower() != 'cdn':
+            raw += [
+                (DIST_DIR / css.replace(CDN_DIST, '')).read_text(encoding='utf-8')
+                for css in css_files if is_cdn_url(css)
+            ]
 
         # Add local CSS files
         for cssf in config.css_files:

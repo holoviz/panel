@@ -18,9 +18,9 @@ except Exception:
 plotly_available = pytest.mark.skipif(hv_plotly is None, reason="requires plotly backend")
 
 from bokeh.models import (
-    Column as BkColumn, ColumnDataSource, GlyphRenderer, GridPlot, Line,
-    Row as BkRow, Scatter, Select as BkSelect, Slider as BkSlider,
-    Spacer as BkSpacer,
+    Column as BkColumn, ColumnDataSource, GlyphRenderer, GridPlot,
+    ImportedStyleSheet, Line, Row as BkRow, Scatter, Select as BkSelect,
+    Slider as BkSlider, Spacer as BkSpacer,
 )
 from bokeh.plotting import figure
 
@@ -30,8 +30,11 @@ from panel.depends import bind
 from panel.layout import (
     Column, FlexBox, HSpacer, Row,
 )
-from panel.pane import HoloViews, PaneBase, panel
+from panel.pane import (
+    HoloViews, PaneBase, Plotly, panel,
+)
 from panel.tests.util import hv_available, mpl_available
+from panel.theme import Native
 from panel.util.warnings import PanelDeprecationWarning
 from panel.widgets import (
     Checkbox, DiscreteSlider, FloatSlider, Select,
@@ -224,6 +227,25 @@ def test_holoviews_pane_reflect_responsive_plotly(document, comm):
 
     assert row.sizing_mode is None
     assert pane.sizing_mode is None
+
+
+@hv_available
+@plotly_available
+def test_holoviews_pane_inherits_design_stylesheets(document, comm):
+    curve = hv.Curve([1, 2, 3]).opts(responsive=True, backend='plotly')
+    pane = HoloViews(curve, backend='plotly')
+
+
+    # Create pane
+    row = pane.get_root(document, comm=comm)
+
+    Native().apply(pane, row)
+
+    plotly_model = row.children[0]
+
+    assert len(plotly_model.stylesheets) == 6
+    stylesheets = [st.url for st in plotly_model.stylesheets if isinstance(st, ImportedStyleSheet)]
+    assert all(st in stylesheets for st in Plotly._stylesheets)
 
 @hv_available
 def test_holoviews_widgets_from_dynamicmap(document, comm):
@@ -721,3 +743,37 @@ def test_holoviews_property_override(document, comm):
 
     assert model.styles["background"] == 'red'
     assert model.children[0].css_classes == ['test_class']
+
+
+@hv_available
+def test_holoviews_date_picker_widget(document, comm):
+    ds = {
+        "time": [np.datetime64("2000-01-01"), np.datetime64("2000-01-02")],
+        "x": [0, 1],
+        "y": [0, 1],
+    }
+    viz = hv.Dataset(ds, ["x", "time"], ["y"])
+    layout = pn.panel(viz.to(
+        hv.Scatter, ["x"], ["y"]), widgets={"time": pn.widgets.DatePicker}
+    )
+    widget_box = layout[0][1]
+    assert isinstance(layout, pn.Row)
+    assert isinstance(widget_box, pn.WidgetBox)
+    assert isinstance(widget_box[0], pn.widgets.DatePicker)
+
+
+@hv_available
+def test_holoviews_datetime_picker_widget(document, comm):
+    ds = {
+        "time": [np.datetime64("2000-01-01"), np.datetime64("2000-01-02")],
+        "x": [0, 1],
+        "y": [0, 1],
+    }
+    viz = hv.Dataset(ds, ["x", "time"], ["y"])
+    layout = pn.panel(viz.to(
+        hv.Scatter, ["x"], ["y"]), widgets={"time": pn.widgets.DatetimePicker}
+    )
+    widget_box = layout[0][1]
+    assert isinstance(layout, pn.Row)
+    assert isinstance(widget_box, pn.WidgetBox)
+    assert isinstance(widget_box[0], pn.widgets.DatetimePicker)

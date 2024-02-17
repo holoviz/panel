@@ -21,7 +21,10 @@ export class SingleSelectView extends InputWidgetView {
 
   render(): void {
     super.render()
+    this.render_selection()
+  }
 
+  _render_input(): HTMLElement {
     const options = this.model.options.map((opt) => {
       let value, _label
       if (isString(opt))
@@ -43,9 +46,7 @@ export class SingleSelectView extends InputWidgetView {
     this.input_el.style.backgroundImage = 'none';
 
     this.input_el.addEventListener("change", () => this.change_input())
-    this.group_el.appendChild(this.input_el)
-
-    this.render_selection()
+    return this.input_el
   }
 
   render_selection(): void {

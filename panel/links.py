@@ -578,10 +578,10 @@ class JSCallbackGenerator(CallbackGenerator):
     def _get_specs(
         self, link: 'Link', source: 'Reactive', target: 'JSLinkTarget'
     ) -> Sequence[Tuple['SourceModelSpec', 'TargetModelSpec', str | None]]:
-        for src_spec, code in link.code.items():
-            src_specs = src_spec.split('.')
-            if src_spec.startswith('event:'):
-                src_spec = (None, src_spec)
+        for spec in link.code:
+            src_specs = spec.split('.')
+            if spec.startswith('event:'):
+                src_spec = (None, spec)
             elif len(src_specs) > 1:
                 src_spec = ('.'.join(src_specs[:-1]), src_specs[-1])
             else:
@@ -589,7 +589,7 @@ class JSCallbackGenerator(CallbackGenerator):
                 if isinstance(source, Reactive):
                     src_prop = source._rename.get(src_prop, src_prop)
                 src_spec = (None, src_prop)
-        return [(src_spec, (None, None), code)]
+        return [(src_spec, (None, None), link.code[spec])]
 
 
 

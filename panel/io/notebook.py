@@ -8,9 +8,11 @@ import json
 import os
 import sys
 import uuid
+import warnings
 
 from collections import OrderedDict
 from contextlib import contextmanager
+from functools import partial
 from typing import (
     TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Optional, Tuple,
 )
@@ -63,13 +65,31 @@ HTML_MIME: str = 'text/html'
 def _jupyter_server_extension_paths() -> List[Dict[str, str]]:
     return [{"module": "panel.io.jupyter_server_extension"}]
 
-def push(doc: 'Document', comm: 'Comm', binary: bool = True) -> None:
+def push(doc: Document, comm: Comm, binary: bool = True, msg: any = None) -> None:
     """
     Pushes events stored on the document across the provided comm.
     """
-    msg = diff(doc, binary=binary)
+    if msg is None:
+        msg = diff(doc, binary=binary)
     if msg is None:
         return
+    elif not comm._comm:
+        try:
+            from tornado.ioloop import IOLoop
+            IOLoop.current().call_later(0.1, partial(push, doc, comm, binary, msg=msg))
+        except Exception:
+            warnings.warn(
+                'Attempted to send message over Jupyter Comm but it was not '
+                'yet open and also could not be rescheduled to a later time. '
+                'The update will not be sent.', UserWarning, stacklevel=0
+            )
+    else:
+        send(comm, msg)
+
+def send(comm: Comm, msg: any):
+    """
+    Sends a bokeh message across a pyviz_comms.Comm.
+    """
     # WARNING: CommManager model assumes that either JSON content OR a buffer
     #          is sent. Therefore we must NEVER(!!!) send both at once.
     comm.send(msg.header_json)
@@ -221,6 +241,13 @@ def render_mimebundle(
     Displays bokeh output inside a notebook using the PyViz display
     and comms machinery.
     """
+    # WARNING: Patches the client comm created by some external library
+    #          e.g. HoloViews, with an on_open handler that will initialize
+    #          the server comm.
+    if manager and manager.client_comm_id in _JupyterCommManager._comms:
+        client_comm = _JupyterCommManager._comms[manager.client_comm_id]
+        if not client_comm._on_open:
+            client_comm._on_open = lambda _: comm.init()
     if not isinstance(model, Model):
         raise ValueError('Can only render bokeh LayoutDOM models')
     add_to_doc(model, doc, True)

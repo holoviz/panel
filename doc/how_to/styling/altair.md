@@ -1,6 +1,6 @@
 # Style Altair Plots
 
-This guide addresses how to style Altair plots displayed using the [Vega pane](../../../examples/reference/panes/Vega).
+This guide addresses how to style Altair plots displayed using the [Vega pane](../../reference/panes/Vega.md).
 
 You can select the theme of Altair plots using [`altair.themes.enable`](https://altair-viz.github.io/user_guide/customization.html#changing-the-theme) and an accent color using the `configure_mark` method. The list of themes is available via `altair.themes.names()`.
 

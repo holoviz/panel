@@ -5,7 +5,7 @@ import {is_equal} from "@bokehjs/core/util/eq"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source";
 
 import {debounce} from  "debounce"
-import {deepCopy, isPlainObject, get, throttle} from "./util"
+import {deepCopy, isPlainObject, get, reshape, throttle} from "./util"
 
 import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 
@@ -316,17 +316,12 @@ export class PlotlyPlotView extends HTMLBoxView {
   }
 
   _get_trace(index: number, update: boolean): any {
-    const trace = clone(this.model.data[index]);
+    const trace = clone(this.model.data[index]) as any;
     const cds = this.model.data_sources[index];
     for (const column of cds.columns()) {
       let array = cds.get_array(column)[0];
       if (array.shape != null && array.shape.length > 1) {
-        const arrays = [];
-        const shape = array.shape;
-        for (let s = 0; s < shape[0]; s++) {
-          arrays.push(array.slice(s*shape[1], (s+1)*shape[1]));
-        }
-        array = arrays;
+	array = reshape(array, array.shape);
       }
       let prop_path = column.split(".");
       let prop = prop_path[prop_path.length - 1];

@@ -10,7 +10,8 @@ import json
 from base64 import b64decode
 from datetime import date, datetime
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional, Tuple, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, Iterable, Mapping, Optional, Tuple,
+    Type,
 )
 
 import numpy as np
@@ -30,7 +31,7 @@ from ..layout import Column, Panel
 from ..models import (
     DatetimePicker as _bkDatetimePicker, TextAreaInput as _bkTextAreaInput,
 )
-from ..util import param_reprs
+from ..util import param_reprs, try_datetime64_to_datetime
 from .base import CompositeWidget, Widget
 
 if TYPE_CHECKING:
@@ -141,6 +142,12 @@ class TextAreaInput(TextInput):
 
     rows = param.Integer(default=2, doc="""
         Number of rows in the text input field.""")
+
+    resizable = param.ObjectSelector(
+        objects=["both", "width", "height", False], doc="""
+        Whether the layout is interactively resizable,
+        and if so in which dimensions: `width`, `height`, or `both`.
+        Can only be set during initialization.""")
 
     _widget_type: ClassVar[Type[Model]] = _bkTextAreaInput
 
@@ -329,6 +336,20 @@ class DatePicker(Widget):
 
     _widget_type: ClassVar[Type[Model]] = _BkDatePicker
 
+    def __init__(self, **params):
+        # Since options is the standard for other widgets,
+        # it makes sense to also support options here, converting
+        # it to enabled_dates
+        if 'options' in params:
+            options = list(params.pop('options'))
+            params['enabled_dates'] = options
+        if 'value' in params:
+            value = try_datetime64_to_datetime(params['value'])
+            if hasattr(value, "date"):
+                value = value.date()
+            params["value"] = value
+        super().__init__(**params)
+
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
         for p in ('start', 'end', 'value'):
@@ -452,12 +473,16 @@ class _DatetimePickerBase(Widget):
     description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
 
+    as_numpy_datetime64 = param.Boolean(default=None, doc="""
+        Whether to return values as numpy.datetime64. If left unset,
+        will be True if value is a numpy.datetime64, else False.""")
+
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'value': None, 'start': None, 'end': None, 'mode': None
     }
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'start': 'min_date', 'end': 'max_date'
+        'start': 'min_date', 'end': 'max_date', 'as_numpy_datetime64': None,
     }
 
     _widget_type: ClassVar[Type[Model]] = _bkDatetimePicker
@@ -465,15 +490,38 @@ class _DatetimePickerBase(Widget):
     __abstract = True
 
     def __init__(self, **params):
+        # Since options is the standard for other widgets,
+        # it makes sense to also support options here, converting
+        # it to enabled_dates
+        if 'options' in params:
+            options = list(params.pop('options'))
+            params['enabled_dates'] = options
+        if params.get('as_numpy_datetime64', None) is None:
+            params['as_numpy_datetime64'] = isinstance(
+                params.get("value"), np.datetime64)
         super().__init__(**params)
         self._update_value_bounds()
 
-    @staticmethod
-    def _convert_to_datetime(v):
+    def _convert_to_datetime(self, v):
+        if v is None:
+            return
+
+        if isinstance(v, Iterable) and not isinstance(v, str):
+            container_type = type(v)
+            return container_type(
+                self._convert_to_datetime(vv)
+                for vv in v
+            )
+
+        v = try_datetime64_to_datetime(v)
         if isinstance(v, datetime):
             return v
         elif isinstance(v, date):
             return datetime(v.year, v.month, v.day)
+        elif isinstance(v, str):
+            return datetime.strptime(v, r'%Y-%m-%d %H:%M:%S')
+        else:
+            raise ValueError(f"Could not convert {v} to datetime")
 
     @param.depends('start', 'end', watch=True)
     def _update_value_bounds(self):
@@ -481,7 +529,9 @@ class _DatetimePickerBase(Widget):
             self._convert_to_datetime(self.start),
             self._convert_to_datetime(self.end)
         )
-        self.param.value._validate(self.value)
+        self.param.value._validate(
+            self._convert_to_datetime(self.value)
+        )
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
@@ -492,7 +542,7 @@ class _DatetimePickerBase(Widget):
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         if 'value' in msg:
-            msg['value'] = self._deserialize_value(msg['value'])
+            msg['value'] = self._deserialize_value(self._convert_to_datetime(msg['value']))
         if 'min_date' in msg:
             msg['min_date'] = self._convert_to_datetime(msg['min_date'])
         if 'max_date' in msg:
@@ -523,14 +573,15 @@ class DatetimePicker(_DatetimePickerBase):
 
     def _serialize_value(self, value):
         if isinstance(value, str) and value:
-            value = datetime.strptime(value, r'%Y-%m-%d %H:%M:%S')
-
+            if self.as_numpy_datetime64:
+                value = np.datetime64(value)
+            else:
+                value = datetime.strptime(value, r'%Y-%m-%d %H:%M:%S')
         return value
 
     def _deserialize_value(self, value):
         if isinstance(value, (datetime, date)):
             value = value.strftime(r'%Y-%m-%d %H:%M:%S')
-
         return value
 
 
@@ -558,11 +609,11 @@ class DatetimeRangePicker(_DatetimePickerBase):
     def _serialize_value(self, value):
         if isinstance(value, str) and value:
             value = [
-                datetime.strptime(value, r'%Y-%m-%d %H:%M:%S')
+                np.datetime64(value)
+                if self.as_numpy_datetime64
+                else datetime.strptime(value, r'%Y-%m-%d %H:%M:%S')
                 for value in value.split(' to ')
             ]
-
-
             value = tuple(value)
 
         return value

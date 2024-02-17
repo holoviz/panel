@@ -349,6 +349,9 @@ class Matplotlib(Image, IPyWidget):
         manager.canvas.draw_idle()
 
     def _data(self, obj):
+        if obj is None:
+            return
+
         try:
             obj.set_dpi(self.dpi)
         except Exception as ex:
