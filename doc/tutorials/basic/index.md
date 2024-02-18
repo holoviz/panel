@@ -243,6 +243,13 @@ Build a periodically refreshing dashboard to monitor your wind turbines.
 Construct a static Wind Turbine Report, exportable to HTML for efficient distribution to management.
 :::
 
+:::{grid-item-card} {octicon}`play;2.5em;sd-mr-1` Build an Animation
+:link: build_animation
+:link-type: doc
+
+Construct a *bar chart race* of wind turbine capacities.
+:::
+
 :::{grid-item-card} {octicon}`checklist;2.5em;sd-mr-1` Build a Todo App
 :link: build_todo
 :link-type: doc
@@ -282,13 +289,6 @@ Supplement the *basic skills* acquired on the *Skills* tab by doing one or more 
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
-
-:::{grid-item-card} {octicon}`beaker;2.5em;sd-mr-1` Data Exploration
-:link: explore_data
-:link-type: doc
-
-We will explore the wind turbine dataset and discover how Panel can power up our data exploration workflow.
-:::
 
 :::{grid-item-card} {octicon}`people;2.5em;sd-mr-1` Join the community
 :link: join_community
@@ -340,6 +340,7 @@ deploy
 build_chatbot
 build_monitoring_dashboard
 build_report
+build_animation
 build_todo
 build_image_classifier
 build_dashboard
@@ -352,6 +353,5 @@ build_streaming_dashboard
 :maxdepth: 2
 :caption: Topics
 
-explore_data
 join_community
 ```
