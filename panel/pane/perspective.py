@@ -277,7 +277,7 @@ class Perspective(ModelPane, ReactiveData):
     editable = param.Boolean(default=True, allow_None=True, doc="""
       Whether items are editable.""")
 
-    expressions = param.List(default=None, nested_refs=True, doc="""
+    expressions = param.ClassSelector(class_=(dict, list), default=None, nested_refs=True, doc="""
       A list of expressions computing new columns from existing columns.
       For example [""x"+"index""]""")
 
@@ -446,6 +446,8 @@ class Perspective(ModelPane, ReactiveData):
             props['filters'] = [[str(col), *args] for col, *args in props['filters']]
         if props.get('aggregates'):
             props['aggregates'] = {str(col): agg for col, agg in props['aggregates'].items()}
+        if isinstance(props.get('expressions'), list):
+            props['expressions'] = {f'expression_{i}': exp for i, exp in enumerate(props['expressions'])}
         return props
 
     def _as_digit(self, col):

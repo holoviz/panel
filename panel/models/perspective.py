@@ -1,5 +1,5 @@
 from bokeh.core.properties import (
-    Any, Bool, Dict, Either, Enum, Instance, List, Null, Nullable, String,
+    Any, Bool, Dict, Either, Enum, Instance, List, Null, String,
 )
 from bokeh.events import ModelEvent
 from bokeh.models import ColumnDataSource
@@ -14,7 +14,7 @@ PERSPECTIVE_THEMES = [
     'pro', 'pro-dark', 'gruvbox', 'gruvbox-dark',
 ]
 
-PERSPECTIVE_VERSION = '2.7.1'
+PERSPECTIVE_VERSION = '2.8.0'
 
 THEME_PATH = f"@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/css/"
 THEME_URL = f"{config.npm_cdn}/{THEME_PATH}"
@@ -52,7 +52,7 @@ class Perspective(HTMLBox):
 
     columns = Either(List(Either(String, Null)), Null())
 
-    expressions = Nullable(List(String))
+    expressions = Either(Dict(String, Any), Null())
 
     editable = Bool(default=True)
 
@@ -78,12 +78,19 @@ class Perspective(HTMLBox):
 
     __javascript_module_exports__ = ['perspective']
 
-    __javascript_modules__ = [
+    __javascript_modules_raw__ = [
         f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/cdn/perspective.js",
+        f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/cdn/perspective.worker.js",
+        f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/cdn/perspective.cpp.wasm",
         f"{config.npm_cdn}/@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer.js",
+        f"{config.npm_cdn}/@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/cdn/perspective_bg.wasm",
         f"{config.npm_cdn}/@finos/perspective-viewer-datagrid@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer-datagrid.js",
         f"{config.npm_cdn}/@finos/perspective-viewer-d3fc@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer-d3fc.js",
     ]
+
+    @classproperty
+    def __javascript_modules__(cls):
+        return [js for js in bundled_files(cls, 'javascript_modules') if 'wasm' not in js and 'worker' not in js]
 
     __js_skip__ = {
         "perspective": __javascript_modules__,
