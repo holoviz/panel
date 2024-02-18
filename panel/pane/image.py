@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import struct
 
 from io import BytesIO
 from pathlib import PurePath
@@ -524,10 +525,22 @@ class WebP(ImageBase):
     def _imgshape(cls, data):
         with BytesIO(data) as b:
             b.read(12)  # Skip RIFF header
-            chunk_header = b.read(8)
-            if chunk_header[:3] != b'VP8':
+            chunk_header = b.read(4).decode('utf-8')
+            if chunk_header[:3] != 'VP8':
                 raise ValueError("Invalid WebP file")
+            wptype = chunk_header[3]
             b.read(4)
-            w = int.from_bytes(b.read(3), 'little') + 1
-            h = int.from_bytes(b.read(3), 'little') + 1
+            if wptype == 'X':
+                b.read(4)
+                w = int.from_bytes(b.read(3), 'little') + 1
+                h = int.from_bytes(b.read(3), 'little') + 1
+            elif wptype == 'L':
+                b.read(1)
+                bits = struct.unpack("<I", b.read(4))[0]
+                w = (bits & 0x3FFF) + 1
+                h = ((bits >> 14) & 0x3FFF) + 1
+            elif wptype == ' ':
+                b.read(6)
+                w = int.from_bytes(b.read(2), 'little') + 1
+                h = int.from_bytes(b.read(2), 'little') + 1
         return int(w), int(h)
