@@ -208,6 +208,7 @@ explanation/index
 reference/index
 gallery/index
 api/index
+tutorials/basic/join_community
 upgrade
 FAQ
 about/index

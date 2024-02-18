@@ -1,10 +1,6 @@
-# Join the Community
+# Community
 
 Find inspiration in the community forums, ask for help, help others, share your work, report issues, add feature requests, and contribute improvements.
-
-## Prerequisites
-
-We will assume you already have a [Github](https://github.com/) account. If not, please follow the official [Creating an account on Github](https://docs.github.com/en/get-started/quickstart/creating-an-account-on-github) guide.
 
 ## Detailed discussions on Discourse
 
@@ -41,6 +37,8 @@ Before reporting bugs or asking for new features, please make sure they are not 
 :::
 
 [![Github Issues](../../_static/images/join_community_github.png)](https://github.com/holoviz/panel/issues).
+
+Create an account by following [this guide](https://docs.github.com/en/get-started/quickstart/creating-an-account-on-github).
 
 ## Announcements and Showcases on Social Media
 

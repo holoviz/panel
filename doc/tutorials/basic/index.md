@@ -282,25 +282,6 @@ Build a live, updating dashboard to monitor your wind turbines.
 
 :::::
 
-:::::{tab-item} Topics
-:sync: topics
-
-Supplement the *basic skills* acquired on the *Skills* tab by doing one or more of the tutorials below.
-
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
-
-:::{grid-item-card} {octicon}`people;2.5em;sd-mr-1` Join the community
-:link: join_community
-:link-type: doc
-
-Find inspiration in the community forums, ask for help, help others, share your work, report issues, and add feature requests.
-:::
-
-::::
-
-:::::
-
 ::::::
 
 ```{toctree}
@@ -345,13 +326,4 @@ build_todo
 build_image_classifier
 build_dashboard
 build_streaming_dashboard
-```
-
-```{toctree}
-:titlesonly:
-:hidden:
-:maxdepth: 2
-:caption: Topics
-
-join_community
 ```
