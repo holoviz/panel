@@ -1,15 +1,48 @@
-# Display Activity with Indicators
+# Display Activity
 
-Show activity with indicators just as rotating blades show the activity of wind turbines:
+Show activity with indicators and notifications just as rotating blades show the activity of wind turbines:
 
 - Overlay a loading indicator with the `loading` parameter.
 - Automatically overlay a loading indicator on output from *bound functions* by setting `loading_indicator=True`.
 - Improve the user experience of slowly loading applications by setting `defer_load=True` .
 - Customize the loading indication with *loading indicator* components.
+- Provide notifications using `pn.state.notifications`
 
 :::{note}
 In the sections below, we may execute the code directly in the Panel documentation by using the green *run* button, in a notebook cell, or in a file named `app.py` served with `panel serve app.py --autoreload`.
 :::
+
+```{pyodide}
+import panel as pn
+
+pn.extension(notifications=True)
+```
+
+## Install the Dependencies
+
+Please ensure that [hvPlot](https://hvplot.holoviz.org) and [Pandas](https://pandas.pydata.org) are installed.
+
+::::{tab-set}
+
+:::{tab-item} conda
+:sync: conda
+
+``` bash
+conda install -y -c conda-forge hvplot pandas
+```
+
+:::
+
+:::{tab-item} pip
+:sync: pip
+
+``` bash
+pip install hvplot pandas
+```
+
+:::
+
+::::
 
 ## Overlay a Loading Indicator
 
@@ -48,10 +81,17 @@ We can automatically overlay a loading indicator on *bound functions* by setting
 Run the code below
 
 ```{pyodide}
-import panel as pn
 from time import sleep
+import hvplot.pandas
+import pandas as pd
+import panel as pn
 
-pn.extension("vega")
+pn.extension()
+
+data = pd.DataFrame([
+    ('Monday', 7), ('Tuesday', 4), ('Wednesday', 9), ('Thursday', 4),
+    ('Friday', 4), ('Saturday', 5), ('Sunday', 4)], columns=['Day', 'Wind Speed (m/s)']
+)
 
 button = pn.widgets.Button(name="Submit", button_type="primary")
 
@@ -60,34 +100,25 @@ def get_figure(running):
         return "Click Submit"
 
     sleep(2)
-    return pn.pane.Vega({
-        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-        "data": {
-            "values": [
-            {"Day": "Monday", "Wind Speed (m/s)": 7},
-            {"Day": "Tuesday", "Wind Speed (m/s)": 4},
-            {"Day": "Wednesday", "Wind Speed (m/s)": 9},
-            {"Day": "Thursday", "Wind Speed (m/s)": 4},
-            {"Day": "Friday", "Wind Speed (m/s)": 4},
-            {"Day": "Saturday", "Wind Speed (m/s)": 5},
-            {"Day": "Sunday", "Wind Speed (m/s)": 4}
-            ]
-        },
-        "mark": {"type": "line", "point": True},
-        "encoding": {
-            "x": {"field": "Day", "type": "ordinal"},
-            "y": {"field": "Wind Speed (m/s)", "type": "quantitative", "scale": {"domain": [0, 10]}},
-            "tooltip": [{"field": "Day"}, {"field": "Wind Speed (m/s)"}]
-        },
-        "width": "container",
-        "height": "container",
-        "title": "Wind Speed Over the Week"
-    }, height=400, sizing_mode="stretch_width")
+    return data.hvplot(x="Day", y="Wind Speed (m/s)", line_width=10, ylim=(0,10), title="Wind Speed")
 
 bound_function = pn.bind(get_figure, button)
-plot = pn.panel(bound_function, loading_indicator=True)
-pn.Column(button, plot, sizing_mode="stretch_width").servable()
+plot = pn.panel(bound_function, height=400, sizing_mode="stretch_width", loading_indicator=True)
+
+pn.Column(button, plot).servable()
 ```
+
+```{note}
+The code refers to
+
+- `get_figure`: The function returns a plot. We use hvPlot, but any other plotting library could be used.
+- `bound_function`: We *bind* the `get_figure` function to the `button`. When we click the `button`, the plot will be created.
+- `pn.panel(bound_function, ..., loading_indicator=True)`: We display the `bound_function` and display a *loading indicator* when the `bound_function` is running.
+```
+
+### Exercise: Configure Global Loading Indicator
+
+Add two more plots to the previous example. Make sure a *loading indicator* is applied to all 3 plots when loading.
 
 :::{hint}
 You can configure a *global* `loading_indicator` via one of
@@ -97,55 +128,36 @@ You can configure a *global* `loading_indicator` via one of
 
 :::
 
-### Exercise: Configure Global Loading Indicator
-
-Add two more plots to the previous example. Make sure a *loading indicator* is applied to all 3 plots when loading.
-
 :::{dropdown} Solution: 3 Plots with loading indicator
 
 ```{pyodide}
-import panel as pn
 from time import sleep
+import hvplot.pandas
+import pandas as pd
+import panel as pn
 
-pn.extension("vega", sizing_mode="stretch_width", loading_indicator=True)
+pn.extension(sizing_mode="stretch_width", loading_indicator=True)
 
 button = pn.widgets.Button(name="Submit", button_type="primary")
 
+data = pd.DataFrame([
+    ('Monday', 7), ('Tuesday', 4), ('Wednesday', 9), ('Thursday', 4),
+    ('Friday', 4), ('Saturday', 5), ('Sunday', 4)], columns=['Day', 'Wind Speed (m/s)']
+)
+
 def get_figure(running):
     if not running:
-        return "Click Submit"
+        return None
 
     sleep(2)
-    return pn.pane.Vega({
-        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-        "data": {
-            "values": [
-            {"Day": "Monday", "Wind Speed (m/s)": 7},
-            {"Day": "Tuesday", "Wind Speed (m/s)": 4},
-            {"Day": "Wednesday", "Wind Speed (m/s)": 9},
-            {"Day": "Thursday", "Wind Speed (m/s)": 4},
-            {"Day": "Friday", "Wind Speed (m/s)": 4},
-            {"Day": "Saturday", "Wind Speed (m/s)": 5},
-            {"Day": "Sunday", "Wind Speed (m/s)": 4}
-            ]
-        },
-        "mark": {"type": "line", "point": True},
-        "encoding": {
-            "x": {"field": "Day", "type": "ordinal"},
-            "y": {"field": "Wind Speed (m/s)", "type": "quantitative", "scale": {"domain": [0, 10]}},
-            "tooltip": [{"field": "Day"}, {"field": "Wind Speed (m/s)"}]
-        },
-        "width": "container",
-        "height": "container",
-        "title": "Wind Speed Over the Week"
-    }, height=400)
+    return data.hvplot(x="Day", y="Wind Speed (m/s)", line_width=10, ylim=(0,10), title="Wind Speed")
 
 bound_function = pn.bind(get_figure, button)
-plot = pn.panel(bound_function)
+plot = pn.panel(bound_function, height=400)
 bound_function2 = pn.bind(get_figure, button)
-plot2 = pn.panel(bound_function2)
+plot2 = pn.panel(bound_function2, height=400)
 bound_function3 = pn.bind(get_figure, button)
-plot3 = pn.panel(bound_function3)
+plot3 = pn.panel(bound_function3, height=400)
 
 pn.Column(button, plot, pn.Row(plot2, plot3), sizing_mode="stretch_width").servable()
 ```
@@ -163,45 +175,30 @@ We can improve the user experience by using `defer_load=True`. This can be used 
 Run the code below
 
 ```{pyodide}
-import panel as pn
 from time import sleep
+import hvplot.pandas
+import pandas as pd
+import panel as pn
 
-pn.extension("vega", sizing_mode="stretch_width")
+pn.extension(sizing_mode="stretch_width")
 
 button = pn.widgets.Button(name="Submit", button_type="primary")
 
-def get_figure(_):
+data = pd.DataFrame([
+    ('Monday', 7), ('Tuesday', 4), ('Wednesday', 9), ('Thursday', 4),
+    ('Friday', 4), ('Saturday', 5), ('Sunday', 4)], columns=['Day', 'Wind Speed (m/s)']
+)
+
+def get_figure(running):
     sleep(2)
-    return pn.pane.Vega({
-        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-        "data": {
-            "values": [
-            {"Day": "Monday", "Wind Speed (m/s)": 7},
-            {"Day": "Tuesday", "Wind Speed (m/s)": 4},
-            {"Day": "Wednesday", "Wind Speed (m/s)": 9},
-            {"Day": "Thursday", "Wind Speed (m/s)": 4},
-            {"Day": "Friday", "Wind Speed (m/s)": 4},
-            {"Day": "Saturday", "Wind Speed (m/s)": 5},
-            {"Day": "Sunday", "Wind Speed (m/s)": 4}
-            ]
-        },
-        "mark": {"type": "line", "point": True},
-        "encoding": {
-            "x": {"field": "Day", "type": "ordinal"},
-            "y": {"field": "Wind Speed (m/s)", "type": "quantitative", "scale": {"domain": [0, 10]}},
-            "tooltip": [{"field": "Day"}, {"field": "Wind Speed (m/s)"}]
-        },
-        "width": "container",
-        "height": "container",
-        "title": "Wind Speed Over the Week"
-    }, height=400)
+    return data.hvplot(x="Day", y="Wind Speed (m/s)", line_width=10, ylim=(0,10), title="Wind Speed")
 
 bound_function = pn.bind(get_figure, button)
-plot = pn.panel(bound_function)
+plot = pn.panel(bound_function, height=400)
 bound_function2 = pn.bind(get_figure, button)
-plot2 = pn.panel(bound_function2)
+plot2 = pn.panel(bound_function2, height=400)
 bound_function3 = pn.bind(get_figure, button)
-plot3 = pn.panel(bound_function3)
+plot3 = pn.panel(bound_function3, height=400)
 
 pn.Column(button, plot, pn.Row(plot2, plot3), sizing_mode="stretch_width").servable()
 ```
@@ -215,45 +212,30 @@ Improve the user experience by *deferring the load* and adding a *loading indica
 :::{dropdown} Solution: Loading Indicator + Defer Load
 
 ```{pyodide}
-import panel as pn
 from time import sleep
+import hvplot.pandas
+import pandas as pd
+import panel as pn
 
-pn.extension("vega", sizing_mode="stretch_width", defer_load=True, loading_indicator=True)
+pn.extension(sizing_mode="stretch_width", defer_load=True, loading_indicator=True)
 
 button = pn.widgets.Button(name="Submit", button_type="primary")
 
-def get_figure(_):
+data = pd.DataFrame([
+    ('Monday', 7), ('Tuesday', 4), ('Wednesday', 9), ('Thursday', 4),
+    ('Friday', 4), ('Saturday', 5), ('Sunday', 4)], columns=['Day', 'Wind Speed (m/s)']
+)
+
+def get_figure(running):
     sleep(2)
-    return pn.pane.Vega({
-        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-        "data": {
-            "values": [
-            {"Day": "Monday", "Wind Speed (m/s)": 7},
-            {"Day": "Tuesday", "Wind Speed (m/s)": 4},
-            {"Day": "Wednesday", "Wind Speed (m/s)": 9},
-            {"Day": "Thursday", "Wind Speed (m/s)": 4},
-            {"Day": "Friday", "Wind Speed (m/s)": 4},
-            {"Day": "Saturday", "Wind Speed (m/s)": 5},
-            {"Day": "Sunday", "Wind Speed (m/s)": 4}
-            ]
-        },
-        "mark": {"type": "line", "point": True},
-        "encoding": {
-            "x": {"field": "Day", "type": "ordinal"},
-            "y": {"field": "Wind Speed (m/s)", "type": "quantitative", "scale": {"domain": [0, 10]}},
-            "tooltip": [{"field": "Day"}, {"field": "Wind Speed (m/s)"}]
-        },
-        "width": "container",
-        "height": "container",
-        "title": "Wind Speed Over the Week"
-    }, height=400)
+    return data.hvplot(x="Day", y="Wind Speed (m/s)", line_width=10, ylim=(0,10), title="Wind Speed")
 
 bound_function = pn.bind(get_figure, button)
-plot = pn.panel(bound_function)
+plot = pn.panel(bound_function, height=400)
 bound_function2 = pn.bind(get_figure, button)
-plot2 = pn.panel(bound_function2)
+plot2 = pn.panel(bound_function2, height=400)
 bound_function3 = pn.bind(get_figure, button)
-plot3 = pn.panel(bound_function3)
+plot3 = pn.panel(bound_function3, height=400)
 
 pn.Column(button, plot, pn.Row(plot2, plot3), sizing_mode="stretch_width").servable()
 ```
@@ -419,6 +401,36 @@ pn.Column(button, running_indicator, prediction).servable()
 
 :::::
 
+## Notifications
+
+Lets display an `info` *notification*.
+
+```{pyodide}
+import panel as pn
+
+pn.extension(notifications=True)
+
+def send_notification(event):
+    pn.state.notifications.info("This is a notification", duration=3000)
+
+pn.widgets.Button(name="Send", on_click=send_notification).servable()
+```
+
+Try clicking the `Button`. You should see a notification *pop up* in the lower left corner of the app.
+
+:::{note}
+The code refers to
+
+- `pn.extension(notifications=True)`: We need to set `notifications=True` to support notifications in Panel.
+- `pn.state.notifications.info("This is a notification", duration=3000)`: We send an `info` notification. The notification is shown for `3000` milli seconds.
+:::
+
+Try changing `pn.state.notifications.info` to `pn.state.notifications.warning`. Then click the `Button`. What happens?
+
+Try changing `duration=3000` to `duration=0`. Then click the `Button`. What happens?
+
+See the [Notifications](../../reference/global/Notifications.ipynb) reference guide for more detail.
+
 ## Recap
 
 We have showed activity with indicators just as rotating blades show the activity of wind turbines:
@@ -427,6 +439,7 @@ We have showed activity with indicators just as rotating blades show the activit
 - Automatically overlay a loading indicator on output from *bound functions* by setting `loading_indicator=True`.
 - Improve the user experience of slowly loading applications by setting `defer_load=True` .
 - Customize the loading indication with *loading indicator* components.
+- Provide notifications using `pn.state.notifications`
 
 ## Resources
 
@@ -435,3 +448,7 @@ We have showed activity with indicators just as rotating blades show the activit
 - [Customize Loading Icon](../../how_to/styling/load_icon.md)
 - [Migrate from Streamlit | Show Activity](../../how_to/streamlit_migration/activity.md)
 - [Defer Load](../../how_to/callbacks/defer_load.md)
+
+### Reference Guides
+
+- [Notifications](../../reference/global/Notifications.ipynb)

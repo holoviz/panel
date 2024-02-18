@@ -67,8 +67,6 @@ Click [here](../../reference/indicators/Trend.ipynb) and spend a couple of minut
 
 Discover all *indicators* and their *reference guides* in the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators) of the [Component Gallery](../../reference/index.md).
 
-[![Indicators Section](../../_static/images/indicators_section.png)](https://panel.holoviz.org/reference/index.html#indicators)
-
 ## Recap
 
 In this tutorial, we have been displaying the performance of our wind turbines using Panels *indicators*:

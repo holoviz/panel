@@ -7,9 +7,11 @@ In this guide, we will explore how to accept user input using *widgets*:
 - You can explore all available *widgets* and their *reference guides* in the [Widgets Section](https://panel.holoviz.org/reference/index.html#widgets) of the [Component Gallery](../../reference/index.md).
 
 :::{note}
-A *Widget* is a component that can accept user inputs via the `value` parameter. Certain more complex widgets, such as [`Tabulator`](../../reference/widgets/Tabulator.ipynb), may allow additional forms of input through other parameters.
+A *Widget* is a component that can accept user inputs via the `value` parameter.
 
-A *Widget* is defined as a component that inherits from the `Widget` base class.
+Some widgets, such as [`Button`]((../../reference/widgets/Button.ipynb)), allow you to directly register *callback* functions that are triggered when interacted with.
+
+Certain more complex widgets, such as [`Tabulator`](../../reference/widgets/Tabulator.ipynb), may allow multiple forms of input.
 :::
 
 :::{note}
@@ -51,10 +53,6 @@ For an in-depth understanding of how a *widget* like `Button` works, please refe
 
 Click [this link](../../reference/widgets/Button.ipynb) to the `Button` Reference Guide, and let's spend a few minutes familiarizing ourselves with its organization and content.
 
-It should look like
-
-[![Button reference guide](../../_static/images/widgets_button_reference.png)](../../reference/widgets/Button.ipynb)
-
 ## Accept Text
 
 Now, let's run the code below together:
@@ -85,10 +83,6 @@ Your success with Panel hinges on your ability to navigate the [Component Galler
 :::
 
 Click [this link](https://panel.holoviz.org/reference/index.html#widgets) to access the Widgets Section of the [Component Gallery](../../reference/index.md). Locate the [TextInput Reference Guide](../../reference/widgets/TextInput.ipynb) and open it. You don't have to delve into the details right now.
-
-It should look like
-
-[![Widgets Gallery and TextInput Reference Guide](../../_static/images/widgets_textinput_reference.png)](https://panel.holoviz.org/reference/index.html#widgets)
 
 ## Accept an object from a list
 

@@ -3,15 +3,12 @@
 In this section, we will collaboratively create a *Wind Turbine Report*. Together, we will:
 
 - Layout and style the report nicely.
-- Export the report to a static `.html` file and distribute it via email.
-
-:::{note}
-When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
-:::
+- Export the report to a static `.html` file using the `.save` method.
+- Distribute the report via email.
 
 ## Create the Report
 
-Let's run the code below:
+Copy the code below into a file `app.py`.
 
 ```{pyodide}
 import panel as pn
@@ -157,15 +154,27 @@ report = pn.Column(header, main_container, sizing_mode="stretch_width")
 ## Export and save it
 
 report.save("report.html")
+```
 
-report.servable()
+Run the code with `python app.py`.
+
+Please verify that the file `report.html` has been created.
+
+Please open the `report.html` file in your browser. It should look like:
+
+```{pyodide}
+report
 ```
 
 :::{note}
-If the code was run in a notebook or Python file, the report will have been saved by `report.save("report.html")` to the file `report.html`.
+The code refers to
+
+- `report.save("report.html")`: Saves the Panel component `report` to the file `report.html`.
 :::
 
-Please verify that the file `report.html` has been created.
+:::{note}
+With `.save` you can produce *static* reports that display content and have very limited interactivity. It is possible to add more interactivity. Check out the [*Embed State*](../../how_to/export/embedding.md) or [Convert Panel Applications](../../how_to/wasm/convert.md) guides for more detail.
+:::
 
 ## Distribute the report
 
@@ -175,7 +184,7 @@ Attach the `report.html` file generated in the previous section to an email and 
 
 ## Recap
 
-In this section we have built a *Wind Turbine Report* with a nice user experience, exported it to `.html` and distributed it via email.
+In this section we have built a *Wind Turbine Report* with a nice user experience, exported it to a `.html` file using the `.save` method and distributed it via email.
 
 ## Resources
 

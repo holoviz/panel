@@ -1,9 +1,9 @@
 # Layout Content
 
-In this guide, we will learn how to layout, i.e., arrange, Python objects, including Panel components:
+In this guide, we will learn how to layout Python objects, including Panel components:
 
 - *Layouts* are available in the `pn` namespace.
-- Arrange Python objects, including Panel components, using [`pn.Column`](../../reference/layouts/Column.ipynb) and [`pn.Row`](../../reference/layouts/Row.ipynb).
+- Layout Python objects, including Panel components, using [`pn.Column`](../../reference/layouts/Column.ipynb) and [`pn.Row`](../../reference/layouts/Row.ipynb).
 - Explore all available *layouts* and their *reference guides* in the [Layouts Section](https://panel.holoviz.org/reference/index.html#layouts) of the [Component Gallery](../../reference/index.md).
 
 :::{note}
@@ -213,7 +213,7 @@ pn.Column(component[0], component[2], component[1]).servable()
 ```
 
 :::{note}
-We are utilizing the *list-like* properties of the `Column` layout to rearrange its elements. More specifically, we are using *list-indexing* as in `component[0], component[2], component[1]`.
+We are utilizing the *list-like* properties of the `Column` layout to re-layout its elements. More specifically, we are using *list-indexing* as in `component[0], component[2], component[1]`.
 
 The `Column` layout implements all the methods you would expect from a *list-like* object, including `.append` and `.remove`.
 :::
@@ -221,7 +221,7 @@ The `Column` layout implements all the methods you would expect from a *list-lik
 ## Combine Layouts
 
 :::{note}
-To create more complex arrangements of objects, we can combine and nest *layouts*.
+To create more complex layouts of objects, we can combine and nest *layouts*.
 :::
 
 Let's run the code below:
@@ -267,17 +267,15 @@ Panel provides a large collection of layouts.
 
 Click [this link](https://panel.holoviz.org/reference/index.html#layouts) and spend a couple of minutes exploring the available layouts and their reference guides.
 
-[![Layouts Section](../../_static/images/layouts_section.png)](https://panel.holoviz.org/reference/index.html#layouts)
-
 ## Recap
 
 In this guide, we have learned:
 
 - *Layouts* are available in the `pn` namespace.
-- Arrange Python objects, including Panel components, using [`pn.Column`](../../reference/layouts/Column.ipynb) and [`pn.Row`](../../reference/layouts/Row.ipynb).
+- Layout Python objects, including Panel components, using [`pn.Column`](../../reference/layouts/Column.ipynb) and [`pn.Row`](../../reference/layouts/Row.ipynb).
 - A *layout* will automatically use `pn.panel` to determine how to best display Python objects.
 - Layouts like [`Column`](../../reference/layouts/Column.ipynb) and [`Row`](../../reference/layouts/Row.ipynb) behave like lists.
-- Create complex arrangements by combining and nesting *layouts*.
+- Create complex layouts by combining and nesting *layouts*.
 - Explore all available *layouts* and their *reference guides* in the [Layouts Section](https://panel.holoviz.org/reference/index.html#layouts) of the [Component Gallery](../../reference/index.md).
 
 ## References

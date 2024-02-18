@@ -307,32 +307,6 @@ pn.Row(fig, md, height=500,).servable()
 
 :::
 
-### Change the Defaults Temporarily
-
-We can use `pn.config.set` as a *context manager* to temporarily change one or more default *configuration settings*.
-
-Run the code below:
-
-```{pyodide}
-import panel as pn
-
-pn.extension()
-
-with pn.config.set(sizing_mode="stretch_width"):
-    width_responsive = pn.Spacer(styles={"background": "green"}, height=100)
-
-with pn.config.set(sizing_mode="stretch_height"):
-    height_responsive = pn.Spacer(styles={"background": "red"}, width=100)
-
-pn.Column(
-    width_responsive,
-    height_responsive,
-    width=300,
-    height=300,
-    styles={"border": "1px solid black"},
-).servable()
-```
-
 ## Responsive Layouts with FlexBox
 
 So far when we have talked about responsive layouts we have primarily focused on simple `width`/`height` responsiveness of individual components, i.e. whether they will grow and shrink to fill the available space. For a truly responsive experience however we will need responsive layouts that will reflow the content depending on the size of the screen, browser window or the container they are placed inside of, much like how text wraps when there is insufficient width to accommodate it:

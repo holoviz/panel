@@ -79,8 +79,8 @@ Spend a couple of minutes checking out the [Templates Section](https://panel.hol
 
 ## Use a Template in a Notebook
 
-:::{note}
-Currently *templates* do not display in a notebook.
+:::{admonition} Warning
+Currently *templates* do not display in a notebook. We hope to support this one day. Please upvote [Issue #2677](https://github.com/holoviz/panel/issues/2677) if this use case is important to you.
 :::
 
 Copy the two code cells below into a notebook.

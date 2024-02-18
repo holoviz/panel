@@ -2,7 +2,7 @@
 
 In this tutorial, we will develop and *serve* a *Hello World* Panel:
 
-- Serve the app with `panel serve app.py`, `panel serve app.ipynb`, or `panel serve app.md`.
+- Serve the app with `panel serve app.py` or `panel serve app.ipynb`.
 - serve with auto reload by adding the flag `--autoreload`.
 - stop your server with `CTRL+C`.
 
@@ -124,61 +124,6 @@ The command `panel serve app.ipynb --autoreload` refers to:
 
 ::::
 
-::::{tab-item} Markdown File
-:sync: markdown
-
-The simplest Panel `.md` app could look like this:
-
-````markdown
-```python
-import panel as pn
-
-pn.extension
-
-pn.panel("Hello World").servable()
-```
-````
-
-:::{note}
-The code refers to
-
-- `panel`: The Panel python package. It's a convention to import it as `pn`.
-- `pn.extension()`: Loads javascript dependencies and configures Panel.
-- `pn.panel(...)`: Creates a *displayable* Panel component.
-- `.servable()`: Displays the component in a *server app*.
-:::
-
-Copy the code into a file named `app.md`.
-
-Save the file.
-
-Run the Panel server in your terminal with
-
-```bash
-panel serve app.md --autoreload
-```
-
-When the server has started, the terminal output should look like this
-
-```bash
-$ panel serve app.md --autoreload
-2024-02-03 17:13:55,444 Starting Bokeh server version 3.3.3 (running on Tornado 6.4)
-2024-02-03 17:13:55,446 User authentication hooks NOT provided (default user enabled)
-2024-02-03 17:13:55,448 Bokeh app running at: http://localhost:5006/app
-2024-02-03 17:13:55,448 Starting Bokeh server with process id: 34596
-```
-
-:::{note}
-The command `panel serve app.py --autoreload` refers to:
-
-- `panel`: the panel executable.
-- `serve`: the command you want Panel to run
-- `app.md`: the file `app.md` you want to serve
-- `--autoreload`: make the server restart after code changes. Use this for **development only**.
-:::
-
-::::
-
 :::::
 
 In the output, you will find the line
@@ -209,7 +154,7 @@ Now stop the server by pressing `CTRL+C` one or more times in the terminal.
 
 Congratulations. We have just served our first Panel app. Along the way, we have learned to
 
-- serve a Python script, Notebook or Markdown file with the commands `panel serve app.py`, `panel serve app.ipynb` or `panel serve app.md` respectively.
+- serve a Python script or Notebook with the commands `panel serve app.py` or `panel serve app.ipynb` respectively.
 - serve with *auto reload* by adding the flag `--autoreload`.
 - stop the Panel server with `CTRL+C`.
 

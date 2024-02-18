@@ -26,7 +26,21 @@ Each section builds on the previous section.
 :link: serve
 :link-type: doc
 
-Kickstart our journey by creating a *Hello World* app from a Python script, Notebook, or Markdown document.
+Kickstart our journey by creating a *Hello World* app from a Python script or Notebook.
+:::
+
+:::{grid-item-card} {octicon}`note;2.5em;sd-mr-1` Develop in a Notebook
+:link: develop_notebook
+:link-type: doc
+
+Discover tips and tricks that will make you *swift as the wind* at exploring turbine data and building wind turbine data apps in a notebook.
+:::
+
+:::{grid-item-card} {octicon}`code;2.5em;sd-mr-1` Develop in an Editor
+:link: develop_editor
+:link-type: doc
+
+Discover tips and tricks that will increase your *developer capacity* from kilowatts to megawatts when developing in an editor!
 :::
 
 ::::
@@ -155,11 +169,11 @@ Fine-tune the styling of our components with `styles` and `stylesheets`. This wi
 Caching allows our apps to store and reuse valuable computations, reducing the energy required for calculations and making our apps run faster and smoother.
 :::
 
-:::{grid-item-card} {octicon}`hourglass;2.5em;sd-mr-1` Display Activity with Indicators
+:::{grid-item-card} {octicon}`hourglass;2.5em;sd-mr-1` Display Activity
 :link: indicators_activity
 :link-type: doc
 
-Show activity with indicators just as rotating blades show the activity of wind turbines.
+Show activity with indicators and notifications just as rotating blades show the activity of wind turbines.
 :::
 
 :::{grid-item-card} {octicon}`versions;2.5em;sd-mr-1` Update Progressively
@@ -276,20 +290,6 @@ Supplement the *basic skills* acquired on the *Skills* tab by doing one or more 
 We will explore the wind turbine dataset and discover how Panel can power up our data exploration workflow.
 :::
 
-:::{grid-item-card} {octicon}`note;2.5em;sd-mr-1` Develop in a Notebook
-:link: develop_notebook
-:link-type: doc
-
-Discover tips and tricks that will make you *swift as the wind* at exploring turbine data and building wind turbine data apps in a notebook.
-:::
-
-:::{grid-item-card} {octicon}`code;2.5em;sd-mr-1` Develop in an Editor
-:link: develop_editor
-:link-type: doc
-
-Discover tips and tricks that will increase your *developer capacity* from kilowatts to megawatts when developing in an editor!
-:::
-
 :::{grid-item-card} {octicon}`people;2.5em;sd-mr-1` Join the community
 :link: join_community
 :link-type: doc
@@ -310,6 +310,8 @@ Find inspiration in the community forums, ask for help, help others, share your 
 :caption: Skills
 
 serve
+develop_notebook
+develop_editor
 pn_panel
 panes
 indicators_performance
@@ -351,7 +353,5 @@ build_streaming_dashboard
 :caption: Topics
 
 explore_data
-develop_notebook
-develop_editor
 join_community
 ```

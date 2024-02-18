@@ -95,6 +95,14 @@ The `margin` value can take a single value, a 2-tuple (top/bottom, left/right), 
 
 :::::
 
+:::{note}
+As a rule of thumb
+
+- Use `align` to change the overall alignment.
+- use `margin` to change the alignment minimally or add some fixed size spacing.
+- use `Spacer` to change the overall alignment or spacing when `align` is not enough.
+:::
+
 ## Exercise: Align Cards
 
 Run the code below:

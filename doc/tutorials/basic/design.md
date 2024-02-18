@@ -2,9 +2,9 @@
 
 Panel does not require frontend developer experience; instead, we provide high-level `design`s to style our apps:
 
-- `"bootstrap"`: Based on the [Bootstrap](https://getbootstrap.com/) library
-- `"fast"`: Based on the [Microsoft Fast Design](https://www.fast.design/) library
-- `"material"`: Based on [Material Design](https://m3.material.io/)
+- `"bootstrap"`: Based on the [Bootstrap](https://getbootstrap.com/) library.
+- `"fast"`: Based on the [Microsoft Fast Design](https://www.fast.design/) library.
+- `"material"`: Based on [Material Design](https://m3.material.io/).
 - `"native"`: The default styling inherited from [Bokeh](https://bokeh.org/).
 
 We also support the `"default"` and `"dark"` `theme`s.

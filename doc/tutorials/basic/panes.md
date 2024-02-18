@@ -8,8 +8,6 @@ In this tutorial, we will learn to display objects with *Panes*:
 
 :::{note}
 A *Pane* is a component that can display an object. It takes an `object` as an argument.
-
-A *Pane* is defined as a component that inherits from the `PaneBase` class.
 :::
 
 :::{note}
@@ -99,10 +97,6 @@ It's key for success with Panel to be able to navigate the [Component Gallery](.
 :::
 
 Click [this link](https://panel.holoviz.org/reference/index.html#panes) to the [Panes Section](https://panel.holoviz.org/reference/index.html#panes) of the [Component Gallery](../../reference/index.md). Identify the [Markdown Reference Guide](../../reference/panes/Markdown.ipynb) and open it. You don't have to spend time studying the details right now.
-
-It should look like
-
-[![Panes Gallery and Markdown Reference Guide](../../_static/images/panes_markdown_reference.png)](https://panel.holoviz.org/reference/index.html#panes)
 
 ### Display Alerts
 

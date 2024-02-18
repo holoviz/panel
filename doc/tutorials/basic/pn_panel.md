@@ -292,9 +292,9 @@ print(component)
 component.servable()
 ```
 
-```{note}
+:::{note}
 If we want to display larger dataframes, customize the way the dataframes are displayed, or make them more interactive, we can find specialized components in the [Component Gallery](../../reference/index.md) supporting these use cases. For example, the [Tabulator](../../reference/widgets/Tabulator.ipynb) widget and [Perspective](../../reference/panes/Perspective.ipynb) pane.
-```
+:::
 
 ## Display any Python object
 
@@ -368,7 +368,7 @@ The example above sets the *css* `styles` of the `Audio` player. The `styles` pa
 :::{note}
 `pn.panel` is a versatile helper function that converts objects into a [*Pane*](https://panel.holoviz.org/reference/index.html#panes). It automatically selects the best *representation* for an object based on available [*Pane*](https://panel.holoviz.org/reference/index.html#panes) types, ranking them by priority.
 
-For optimal performance, specify the desired *Pane* type directly, like `pn.pane.Matplotlib(fig)` instead of using `pn.panel(fig)`.
+For optimal performance, specify the desired *Pane* type directly, like `pn.pane.Matplotlib(fig)` instead of using `pn.panel(fig)`. You will learn about *Panes*  in the [Display Content with Panes](panes.md) section.
 :::
 
 Run the code below

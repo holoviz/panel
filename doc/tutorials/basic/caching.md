@@ -8,7 +8,7 @@ Caching allows us to store and reuse valuable computations, reducing the energy 
 When we ask to *run the code* in the sections below, we may execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
-## Understand the Load
+## Understand Panel Application Execution
 
 To understand why caching can be helpful and how to apply it, its important to understand how a Panel application executes code.
 
@@ -115,7 +115,7 @@ Notice that it takes +2 seconds for the application to load and the timestamp is
 
 ### Exercise: Apply Caching
 
-Now let's add caching to the `get_data` function by *annotating* it with `@pn.cache`.
+Now let's add caching to the `get_data` function by *decorating* it with `@pn.cache` *decorator*.
 
 Notice in the terminal that the `data` is loaded once when the server starts.
 
@@ -125,8 +125,8 @@ Try loading and refreshing the app several times. It's nice, right?
 
 ::::{tab-set}
 
-:::{tab-item} Annotation
-:sync: annotation
+:::{tab-item} Decorator
+:sync: decorator
 
 ```{pyodide}
 from datetime import datetime

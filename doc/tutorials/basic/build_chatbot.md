@@ -54,7 +54,7 @@ def get_response(contents, user, instance):
         response = "Sorry, I don't know."
     for index in range(len(response)):
         yield response[0:index+1]
-        sleep(0.03)
+        sleep(0.03) # to simulate slowish response
 
 chat_bot = pn.chat.ChatInterface(callback=get_response, max_height=500)
 chat_bot.send("Ask me anything!", user="Assistant", respond=False)
