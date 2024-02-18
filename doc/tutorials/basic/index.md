@@ -13,7 +13,7 @@ Please put on your safety helmet before entering the world of (wind turbine) dat
 :::::{tab-item} Skills
 :sync: skills
 
-The sections below will give you the skills to build *basic apps* from *single files* using a *function-based approach*.
+The sections below will give you the skills to build a wide range of *basic apps* from *single files* using a *function-based approach*.
 
 Each section builds on the previous section.
 
