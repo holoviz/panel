@@ -16,9 +16,7 @@ from panel.reactive import ReactiveHTML
 pn.extension()
 
 class SensorLayout(ReactiveHTML):
-    object = param.Parameter()
-
-    _ignored_refs = ("object",)
+    object = param.Parameter(allow_refs=False)
 
     _template = """
     <div class="pn-container styled-container">
