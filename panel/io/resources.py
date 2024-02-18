@@ -751,6 +751,10 @@ class Resources(BkResources):
         from ..reactive import ReactiveHTML
 
         modules = list(config.js_modules.values())
+        for model in Model.model_class_reverse_map.values():
+            if hasattr(model, '__javascript_modules__'):
+                modules.extend(model.__javascript_modules__)
+
         self.extra_resources(modules, '__javascript_modules__')
         if config.design:
             design_resources = config.design().resolve_resources(

@@ -34,9 +34,8 @@ def test_perspective_click_event(page):
     perspective.on_click(lambda e: events.append(e))
 
     serve_component(page, perspective)
-    page.wait_for_timeout(1000)
 
-    page.locator('tr').nth(3).click()
+    page.locator('.pnx-perspective-viewer').locator('tr').nth(4).locator('td').nth(3).click(force=True)
 
     wait_until(lambda: len(events) == 1, page)
 
