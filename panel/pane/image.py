@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import struct
 
 from io import BytesIO
 from pathlib import PurePath
@@ -496,3 +497,50 @@ class PDF(FileBase):
         page = f'#page={self.start_page}' if getattr(self, 'start_page', None) else ''
         html = f'<embed src="{obj}{page}" width={w!r} height={h!r} type="application/pdf">'
         return dict(text=escape(html))
+
+class WebP(ImageBase):
+    """
+    The `WebP` pane embeds a .webp image file in a panel if
+    provided a local path, or will link to a remote image if provided
+    a URL.
+
+    Reference: https://developers.google.com/speed/webp/docs/riff_container
+
+    :Example:
+
+    >>> WebP(
+    ...     'https://assets.holoviz.org/panel/samples/webp_sample.webp',
+    ...     alt_text='A nice tree',
+    ...     link_url='https://en.wikipedia.org/wiki/WebP',
+    ...     width=500,
+    ...     caption='A nice tree'
+    ... )
+    """
+
+    filetype: ClassVar[str] = 'webp'
+
+    _extensions: ClassVar[Tuple[str, ...]] = ('webp',)
+
+    @classmethod
+    def _imgshape(cls, data):
+        with BytesIO(data) as b:
+            b.read(12)  # Skip RIFF header
+            chunk_header = b.read(4).decode('utf-8')
+            if chunk_header[:3] != 'VP8':
+                raise ValueError("Invalid WebP file")
+            wptype = chunk_header[3]
+            b.read(4)
+            if wptype == 'X':
+                b.read(4)
+                w = int.from_bytes(b.read(3), 'little') + 1
+                h = int.from_bytes(b.read(3), 'little') + 1
+            elif wptype == 'L':
+                b.read(1)
+                bits = struct.unpack("<I", b.read(4))[0]
+                w = (bits & 0x3FFF) + 1
+                h = ((bits >> 14) & 0x3FFF) + 1
+            elif wptype == ' ':
+                b.read(6)
+                w = int.from_bytes(b.read(2), 'little') + 1
+                h = int.from_bytes(b.read(2), 'little') + 1
+        return int(w), int(h)
