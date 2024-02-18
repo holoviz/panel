@@ -74,14 +74,15 @@ export class DatetimePickerView extends InputWidgetView {
     return [...super.stylesheets(), flatpickr_css]
   }
 
+  _render_input(): HTMLElement {
+    return this.input_el = input({type: "text", class: inputs.input, disabled: this.model.disabled})
+  }
+
   render(): void {
     if (this._picker != null)
       return
 
     super.render()
-
-    this.input_el = input({type: "text", class: inputs.input, disabled: this.model.disabled})
-    this.group_el.appendChild(this.input_el)
 
     const options: flatpickr.Options.Options = {
       appendTo: this.group_el,

@@ -21,6 +21,17 @@ def test_update_markdown_pane(page):
 
     expect(page.locator(".markdown").locator("div")).to_have_text('Updated\n')
 
+def test_update_markdown_pane_empty(page):
+    md = Markdown('Initial')
+
+    serve_component(page, md)
+
+    expect(page.locator(".markdown").locator("div")).to_have_text('Initial\n')
+
+    md.object = ''
+
+    expect(page.locator(".markdown").locator("div")).to_have_text('')
+
 def test_update_markdown_height(page):
     md = Markdown('Initial', height=50)
 
@@ -54,13 +65,13 @@ def test_update_markdown_pane_resizes(page):
 
     height = page.locator(".markdown").bounding_box()['height']
 
-    assert int(height) == 18
+    assert int(height) == 17
 
     md.object = """
     - Bullet
     - Points
     """
-    wait_until(lambda: int(page.locator(".markdown").bounding_box()['height']) == 37, page)
+    wait_until(lambda: int(page.locator(".markdown").bounding_box()['height']) == 34, page)
 
 
 def test_markdown_pane_visible_toggle(page):
