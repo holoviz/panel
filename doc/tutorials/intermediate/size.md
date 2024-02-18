@@ -75,7 +75,7 @@ Using only the `styles` of the components, distribute the two `dataframe`s and t
 
 You might find inspiration in [this guide on aligning items in a flex container](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_flexible_box_layout/Aligning_items_in_a_flex_container).
 
-````{pyodide}
+```{pyodide}
 import pandas as pd
 import panel as pn
 
