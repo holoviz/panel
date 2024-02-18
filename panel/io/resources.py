@@ -604,7 +604,7 @@ class Resources(BkResources):
             if not (getattr(model, resource_type, None) and model._loaded()):
                 continue
             for resource in getattr(model, resource_type, []):
-                if not isurl(resource) and not resource.startswith('static/extensions'):
+                if not isurl(resource) and not resource.lstrip('./').startswith('static/extensions'):
                     resource = component_resource_path(model, resource_type, resource)
                 if resource not in resources:
                     resources.append(resource)
