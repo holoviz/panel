@@ -896,6 +896,80 @@ def test_tabulator_frozen_columns(page, df_mixed):
     assert int_bb == page.locator('text="int"').bounding_box()
 
 
+def test_tabulator_frozen_columns_with_positions(page, df_mixed):
+    widths = 100
+    width = int(((df_mixed.shape[1] + 1) * widths) / 2)
+    frozen_cols = {"float": "left", "int": "right"}
+    widget = Tabulator(df_mixed, frozen_columns=frozen_cols, width=width, widths=widths)
+
+    serve_component(page, widget)
+
+    expected_text = """
+    float
+    index
+    str
+    bool
+    date
+    datetime
+    int
+    3.14
+    idx0
+    A
+    true
+    2019-01-01
+    2019-01-01 10:00:00
+    1
+    6.28
+    idx1
+    B
+    true
+    2020-01-01
+    2020-01-01 12:00:00
+    2
+    9.42
+    idx2
+    C
+    true
+    2020-01-10
+    2020-01-10 13:00:00
+    3
+    -2.45
+    idx3
+    D
+    false
+    2019-01-10
+    2020-01-15 13:00:00
+    4
+    """
+    # Check that the whole table content is on the page, it is not in the
+    # same order as if the table was displayed without frozen columns
+    table = page.locator('.pnx-tabulator.tabulator')
+    expect(table).to_have_text(
+        expected_text,
+        use_inner_text=True
+    )
+
+    float_bb = page.locator('text="float"').bounding_box()
+    int_bb = page.locator('text="int"').bounding_box()
+    str_bb = page.locator('text="str"').bounding_box()
+
+    # Check that the float column is rendered before the int col
+    assert float_bb['x'] < int_bb['x']
+
+    # Check the bool is before int column
+    assert str_bb['x'] < int_bb['x']
+
+    # Scroll to the right, and give it a little extra time
+    page.locator('text="2019-01-01 10:00:00"').scroll_into_view_if_needed()
+
+    # Check that the position of one of the non-frozen columns has indeed moved
+    wait_until(lambda: page.locator('text="str"').bounding_box()['x'] < str_bb['x'], page)
+
+    # Check that the two frozen columns haven't moved after scrolling right
+    assert float_bb == page.locator('text="float"').bounding_box()
+    assert int_bb == page.locator('text="int"').bounding_box()
+
+
 def test_tabulator_frozen_rows(page):
     arr = np.array(['a'] * 10)
 

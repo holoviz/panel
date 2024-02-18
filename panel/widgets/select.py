@@ -28,7 +28,9 @@ from ..models import (
     CheckboxButtonGroup as _BkCheckboxButtonGroup, CustomSelect,
     RadioButtonGroup as _BkRadioButtonGroup, SingleSelect as _BkSingleSelect,
 )
-from ..util import PARAM_NAME_PATTERN, indexOf, isIn
+from ..util import (
+    PARAM_NAME_PATTERN, bokeh33, bokeh34, indexOf, isIn,
+)
 from ._mixin import TooltipMixin
 from .base import CompositeWidget, Widget
 from .button import Button, _ButtonBase
@@ -687,11 +689,14 @@ class ColorMap(SingleSelectBase):
 
     @property
     def _widget_type(self) -> Type[Model]:
-        try:
+        if bokeh34:
+            from bokeh.models import PaletteSelect
+            return PaletteSelect
+        elif bokeh33:
             from bokeh.models import ColorMap
-        except Exception:
-            raise ImportError('ColorMap widget requires bokeh version >= 3.3.0.') from None
-        return ColorMap
+            return ColorMap
+        else:
+            raise ImportError('ColorMap widget requires bokeh version >= 3.3.0.')
 
     @param.depends('value_name', watch=True, on_init=True)
     def _sync_value_name(self):
