@@ -95,7 +95,7 @@ You may now use the badge below on your blog, in your repository or in your apps
 
 ## Next Steps
 
-The recommended next steps are to check out the the *basic apps* on the [*Basic Tutorials*](index.md) page, check out the *basic Topics* on the [*Basic Tutorials*](index.md) page and start using Panel for real.
+The recommended next steps are to check out the the *basic apps* on the [*Basic Tutorials*](index.md) page and start using Panel for real.
 
 When you are ready to acquire the skills to build larger and more complex apps, then check out the [Intermediate Tutorials](../intermediate/index.md).
 

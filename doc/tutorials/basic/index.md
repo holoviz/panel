@@ -208,7 +208,7 @@ Get your dashboard in the hands of your users. Let's deploy it to Hugging Face s
 
 🥳 Congrats. You have now acquired the *basic* skills required to build a wide range of Panel apps. You are now a *Panel Hero*.
 
-The recommended next steps are to check out the the *apps* on the *Apps* tab above, check out the *topics* on the *Topics* tab above and start using Panel for real.
+The recommended next steps are to check out the the *apps* on the *Apps* tab above and start using Panel for real.
 
 When you are ready to acquire the skills to build larger and more complex apps then check out the [Intermediate Tutorials](../intermediate/index.md).
 
