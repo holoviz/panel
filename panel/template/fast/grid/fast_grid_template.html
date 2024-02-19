@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
       </div>
       <fast-dialog id="pn-Modal" hidden>
         <fast-button class="pn-modalclose" id="pn-closeModal">&times;</fast-button>
-	<div>
+	<div class="pn-modal-content">
           {% for doc in docs %}
           {% for root in doc.roots %}
           {% if "modal" in root.tags %}

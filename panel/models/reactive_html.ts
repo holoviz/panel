@@ -138,7 +138,8 @@ export class ReactiveHTMLView extends HTMLBoxView {
     super.connect_signals()
     this.connect(this.model.properties.children.change, async () => {
       this.html = htmlDecode(this.model.html) || this.model.html
-      await this.rebuild()
+      await this.build_child_views()
+      this.invalidate_render()
     })
     this._recursive_connect(this.model.data, true, '')
     this.connect(this.model.properties.events.change, () => {

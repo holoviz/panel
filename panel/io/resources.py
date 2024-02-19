@@ -37,7 +37,7 @@ from jinja2.loaders import FileSystemLoader
 from markupsafe import Markup
 
 from ..config import config, panel_extension as extension
-from ..util import isurl, url_path
+from ..util import bokeh34, isurl, url_path
 from .state import state
 
 if TYPE_CHECKING:
@@ -69,10 +69,18 @@ def get_env():
 def conffilter(value):
     return json.dumps(OrderedDict(value)).replace('"', '\'')
 
+class json_dumps(json.JSONEncoder):
+    def default(self, obj):
+        if bokeh34:
+            from bokeh.embed.bundle import URL
+            if isinstance(obj, URL):
+                return str(obj)
+        return super().default(obj)
+
 _env = get_env()
 _env.trim_blocks = True
 _env.lstrip_blocks = True
-_env.filters['json'] = lambda obj: Markup(json.dumps(obj))
+_env.filters['json'] = lambda obj: Markup(json.dumps(obj, cls=json_dumps))
 _env.filters['conffilter'] = conffilter
 _env.filters['sorted'] = sorted
 
@@ -383,7 +391,7 @@ def bundle_resources(roots, resources, notebook=False, reloading=False, enable_m
     extensions = _bundle_extensions(None, js_resources)
     if reloading:
         extensions = [
-            ext for ext in extensions if not (ext.cdn_url is not None and ext.cdn_url.startswith('https://unpkg.com/@holoviz/panel@'))
+            ext for ext in extensions if not (ext.cdn_url is not None and str(ext.cdn_url).startswith('https://unpkg.com/@holoviz/panel@'))
         ]
 
     extra_js = []
@@ -392,6 +400,8 @@ def bundle_resources(roots, resources, notebook=False, reloading=False, enable_m
     elif mode == "server":
         for bundle in extensions:
             server_url = bundle.server_url
+            if not isinstance(server_url, str):
+                server_url = str(server_url)
             if resources.root_url and not resources.absolute:
                 server_url = server_url.replace(resources.root_url, '', 1)
                 if state.rel_path:
@@ -412,6 +422,13 @@ def bundle_resources(roots, resources, notebook=False, reloading=False, enable_m
         js_raw.append(ext)
 
     hashes = js_resources.hashes if js_resources else {}
+
+    if bokeh34:
+        from bokeh.embed.bundle import URL
+
+        js_files = list(map(URL, js_files))
+        css_files = list(map(URL, css_files))
+
     return Bundle(
         css_files=css_files,
         css_raw=css_raw,
@@ -587,7 +604,7 @@ class Resources(BkResources):
             if not (getattr(model, resource_type, None) and model._loaded()):
                 continue
             for resource in getattr(model, resource_type, []):
-                if not isurl(resource) and not resource.startswith('static/extensions'):
+                if not isurl(resource) and not resource.lstrip('./').startswith('static/extensions'):
                     resource = component_resource_path(model, resource_type, resource)
                 if resource not in resources:
                     resources.append(resource)
@@ -599,6 +616,8 @@ class Resources(BkResources):
         new_resources = []
         cdn_base = f'{config.npm_cdn}/@holoviz/panel@{JS_VERSION}/dist/'
         for resource in resources:
+            if not isinstance(resource, str):
+                resource = str(resource)
             resource = resource.replace('https://unpkg.com', config.npm_cdn)
             if resource.startswith(cdn_base):
                 resource = resource.replace(cdn_base, CDN_DIST)
@@ -732,6 +751,10 @@ class Resources(BkResources):
         from ..reactive import ReactiveHTML
 
         modules = list(config.js_modules.values())
+        for model in Model.model_class_reverse_map.values():
+            if hasattr(model, '__javascript_modules__'):
+                modules.extend(model.__javascript_modules__)
+
         self.extra_resources(modules, '__javascript_modules__')
         if config.design:
             design_resources = config.design().resolve_resources(

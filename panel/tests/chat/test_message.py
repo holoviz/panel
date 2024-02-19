@@ -51,7 +51,10 @@ class TestChatMessage:
         icons = center_row[1]
         assert isinstance(icons, ChatReactionIcons)
 
-        timestamp_pane = columns[1][2]
+        footer_row = columns[1][2]
+        assert isinstance(footer_row, Row)
+
+        timestamp_pane = footer_row[0]
         assert isinstance(timestamp_pane, HTML)
 
     def test_reactions_link(self):
@@ -143,39 +146,39 @@ class TestChatMessage:
     def test_update_timestamp(self):
         message = ChatMessage()
         columns = message._composite.objects
-        timestamp_pane = columns[1][2]
+        timestamp_pane = columns[1][2][0]
         assert isinstance(timestamp_pane, HTML)
         dt_str = datetime.datetime.now().strftime("%H:%M")
         assert timestamp_pane.object == dt_str
 
         message = ChatMessage(timestamp_tz="UTC")
         columns = message._composite.objects
-        timestamp_pane = columns[1][2]
+        timestamp_pane = columns[1][2][0]
         assert isinstance(timestamp_pane, HTML)
         dt_str = datetime.datetime.utcnow().strftime("%H:%M")
         assert timestamp_pane.object == dt_str
 
         message = ChatMessage(timestamp_tz="US/Pacific")
         columns = message._composite.objects
-        timestamp_pane = columns[1][2]
+        timestamp_pane = columns[1][2][0]
         assert isinstance(timestamp_pane, HTML)
         dt_str = datetime.datetime.now(tz=ZoneInfo("US/Pacific")).strftime("%H:%M")
         assert timestamp_pane.object == dt_str
 
         special_dt = datetime.datetime(2023, 6, 24, 15)
         message.timestamp = special_dt
-        timestamp_pane = columns[1][2]
+        timestamp_pane = columns[1][2][0]
         dt_str = special_dt.strftime("%H:%M")
         assert timestamp_pane.object == dt_str
 
         mm_dd_yyyy = "%b %d, %Y"
         message.timestamp_format = mm_dd_yyyy
-        timestamp_pane = columns[1][2]
+        timestamp_pane = columns[1][2][0]
         dt_str = special_dt.strftime(mm_dd_yyyy)
         assert timestamp_pane.object == dt_str
 
         message.show_timestamp = False
-        timestamp_pane = columns[1][2]
+        timestamp_pane = columns[1][2][0]
         assert not timestamp_pane.visible
 
     def test_does_not_turn_widget_into_str(self):

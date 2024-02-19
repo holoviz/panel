@@ -12,11 +12,8 @@ import param
 
 pn.extension()
 
-
 class LayoutSingleObject(pn.reactive.ReactiveHTML):
-    object = param.Parameter()
-
-    _ignored_refs = ("object",)
+    object = param.Parameter(allow_refs=False)
 
     _template = """
     <div>
@@ -25,7 +22,6 @@ class LayoutSingleObject(pn.reactive.ReactiveHTML):
         <div id="object">${object}</div>
     </div>
 """
-
 
 dial = pn.widgets.Dial(
     name="°C",
@@ -42,7 +38,9 @@ LayoutSingleObject(
 ).servable()
 ```
 
-Please notice
+:::{note}
+
+Please note
 
 - We define the HTML layout in the `_template` attribute.
 - We can refer to the parameter `object` in the `_template` via the *template parameter* `${object}`.
@@ -53,6 +51,8 @@ parameter can be called anything. For example `value`, `dial` or `temperature`.
 - We add the `border` in the `styles` parameter so that we can better see how the `_template` layes
 out inside the `ReactiveHTML` component. This can be very useful for development.
 
+:::
+
 ## Layout multiple parameters
 
 ```{pyodide}
@@ -62,10 +62,8 @@ import param
 pn.extension()
 
 class LayoutMultipleValues(pn.reactive.ReactiveHTML):
-    object1 = param.Parameter()
-    object2 = param.Parameter()
-
-    _ignored_refs = ("object1", "object2")
+    object1 = param.Parameter(allow_refs=False)
+    object2 = param.Parameter(allow_refs=False)
 
     _template = """
     <div>
@@ -121,7 +119,6 @@ class LayoutLiteralValues(pn.reactive.ReactiveHTML):
     object1 = param.Parameter()
     object2 = param.Parameter()
 
-    _ignored_refs = ("object1", "object2")
     _child_config = {"object1": "literal", "object2": "literal"}
 
     _template = """
@@ -182,16 +179,20 @@ LayoutOfList(objects=[
 
 The component will trigger a rerendering if you update the `List` value.
 
-Please note that you must
+:::{note}
+
+You must
 
 - wrap the `{% for object in objects %}` loop in an HTML element with an `id`. Here it is wrapped
 with `<div id="container">...</div>`.
 - close all HTML tags! `<hr>` is valid HTML, but not valid with `ReactiveHTML`. You must close it
 as `<hr/>`.
 
-Please note you can optionally
+You can optionally
 
 - get the index of the `{% for object in objects %}` loop via `{{ loop.index0 }}`.
+
+:::
 
 ## Create a list like layout
 
@@ -226,13 +227,15 @@ layout = ListLikeLayout(
 layout.servable()
 ```
 
-Please note that you must
-
-- list `NamedListLike, ReactiveHTML` in exactly that order when you define the class! The other
-way around `ReactiveHTML, NamedListLike` will not work.
-
 You can now use `[...]` indexing and the `.append`, `.insert`, `pop`, ... methods that you would
 expect.
+
+:::{note}
+
+You must list `NamedListLike, ReactiveHTML` in exactly that order when you define the class! The other
+way around `ReactiveHTML, NamedListLike` will not work.
+
+::::
 
 ## Layout a dictionary
 
@@ -266,9 +269,13 @@ LayoutOfDict(object={
 ).servable()
 ```
 
+:::{note}
+
 Please note
 
 - We can insert the `key` as a literal value only using `{{ key }}`. Inserting it as a template
-variable ${key} will not work.
+variable `${key}` will not work.
 - We must not give the HTML element containing `{{ key }}` an `id`. If we do, an exception will be
 raised.
+
+:::

@@ -29,10 +29,11 @@ if TYPE_CHECKING:
 
     from ..model.perspective import PerspectiveClickEvent
 
-DEFAULT_THEME = "material"
+DEFAULT_THEME = "pro"
 
 THEMES = [
-    'material', 'material-dark', 'monokai', 'solarized', 'solarized-dark', 'vaporwave'
+    'material', 'material-dark', 'monokai', 'solarized', 'solarized-dark',
+    'vaporwave', 'pro', 'pro-dark'
 ]
 
 class Plugin(Enum):
@@ -264,7 +265,7 @@ class Perspective(ModelPane, ReactiveData):
 
     :Example:
 
-    >>> Perspective(df, plugin='hypergrid', theme='material-dark')
+    >>> Perspective(df, plugin='hypergrid', theme='pro-dark')
     """
 
     aggregates = param.Dict(default=None, nested_refs=True, doc="""
@@ -276,7 +277,7 @@ class Perspective(ModelPane, ReactiveData):
     editable = param.Boolean(default=True, allow_None=True, doc="""
       Whether items are editable.""")
 
-    expressions = param.List(default=None, nested_refs=True, doc="""
+    expressions = param.ClassSelector(class_=(dict, list), default=None, nested_refs=True, doc="""
       A list of expressions computing new columns from existing columns.
       For example [""x"+"index""]""")
 
@@ -310,8 +311,8 @@ class Perspective(ModelPane, ReactiveData):
     toggle_config = param.Boolean(default=True, doc="""
       Whether to show the config menu.""")
 
-    theme = param.ObjectSelector(default='material', objects=THEMES, doc="""
-      The style of the PerspectiveViewer. For example material-dark""")
+    theme = param.ObjectSelector(default='pro', objects=THEMES, doc="""
+      The style of the PerspectiveViewer. For example pro-dark""")
 
     priority: ClassVar[float | bool | None] = None
 
@@ -373,6 +374,8 @@ class Perspective(ModelPane, ReactiveData):
 
     def _get_properties(self, doc, source=None):
         props = super()._get_properties(doc)
+        if 'theme' in props and 'material' in props['theme']:
+            props['theme'] = props['theme'].replace('material', 'pro')
         del props['object']
         if props.get('toggle_config'):
             props['height'] = self.height or 300
@@ -431,6 +434,8 @@ class Perspective(ModelPane, ReactiveData):
             params['stylesheets'] = [
                 ImportedStyleSheet(url=ss) for ss in css
             ] + params.get('stylesheets', self.stylesheets)
+        if 'theme' in params and 'material' in params['theme']:
+            params['theme'] = params['theme'].replace('material', 'pro')
         props = super()._process_param_change(params)
         for p in ('columns', 'group_by', 'split_by'):
             if props.get(p):
@@ -441,6 +446,8 @@ class Perspective(ModelPane, ReactiveData):
             props['filters'] = [[str(col), *args] for col, *args in props['filters']]
         if props.get('aggregates'):
             props['aggregates'] = {str(col): agg for col, agg in props['aggregates'].items()}
+        if isinstance(props.get('expressions'), list):
+            props['expressions'] = {f'expression_{i}': exp for i, exp in enumerate(props['expressions'])}
         return props
 
     def _as_digit(self, col):

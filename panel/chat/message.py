@@ -250,6 +250,11 @@ class ChatMessage(PaneBase):
             )
         self._internal = True
         super().__init__(object=object, **params)
+        self.chat_copy_icon = ChatCopyIcon(
+            visible=False, width=15, height=15, css_classes=["copy-icon"],
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
+        )
+        self.reaction_icons.stylesheets = self._stylesheets + self.param.stylesheets.rx()
         self.reaction_icons.link(self, value="reactions", bidirectional=True)
         self.reaction_icons.visible = self.param.show_reaction_icons
         if not self.avatar:
@@ -258,14 +263,17 @@ class ChatMessage(PaneBase):
 
     def _build_layout(self):
         self._activity_dot = HTML(
-            "●", css_classes=["activity-dot"], visible=self.param.show_activity_dot
+            "●",
+            css_classes=["activity-dot"],
+            visible=self.param.show_activity_dot,
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
         )
         self._left_col = left_col = Column(
             self._render_avatar(),
             max_width=60,
             height=100,
             css_classes=["left"],
-            stylesheets=self._stylesheets,
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
             visible=self.param.show_avatar,
             sizing_mode=None,
         )
@@ -277,7 +285,7 @@ class ChatMessage(PaneBase):
             self._object_panel,
             self.reaction_icons,
             css_classes=["center"],
-            stylesheets=self._stylesheets,
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
             sizing_mode=None
         )
         self.param.watch(self._update_object_pane, "object")
@@ -286,24 +294,34 @@ class ChatMessage(PaneBase):
             self.param.user, height=20, css_classes=["name"],
             visible=self.param.show_user, stylesheets=self._stylesheets,
         )
+        header_row = Row(
+            self._user_html,
+            self.chat_copy_icon,
+            self._activity_dot,
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
+            sizing_mode="stretch_width",
+            css_classes=["header"]
+        )
+
         self._timestamp_html = HTML(
             self.param.timestamp.rx().strftime(self.param.timestamp_format),
             css_classes=["timestamp"],
             visible=self.param.show_timestamp
         )
-        self._right_col = right_col = Column(
-            Row(
-                self._user_html,
-                self.chat_copy_icon,
-                self._activity_dot,
-                stylesheets=self._stylesheets,
-                sizing_mode="stretch_width",
-                css_classes=["header"]
-            ),
-            self._center_row,
+
+        footer_row = Row(
             self._timestamp_html,
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
+            sizing_mode="stretch_width",
+            css_classes=["footer"]
+        )
+
+        self._right_col = right_col = Column(
+            header_row,
+            self._center_row,
+            footer_row,
             css_classes=["right"],
-            stylesheets=self._stylesheets,
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
             sizing_mode=None
         )
         viewable_params = {
