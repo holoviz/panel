@@ -789,6 +789,8 @@ class ParamMethod(ReplacementPane):
     def __init__(self, object=None, **params):
         if 'defer_load' not in params:
             params['defer_load'] = config.defer_load
+        if 'loading_indicator' not in params:
+            params['loading_indicator'] = ParamMethod.loading_indicator
         super().__init__(object, **params)
         self._async_task = None
         self._evaled = not (self.lazy or self.defer_load)

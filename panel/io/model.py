@@ -7,7 +7,7 @@ import textwrap
 
 from contextlib import contextmanager
 from typing import (
-    TYPE_CHECKING, Any, Iterable, List, Optional,
+    TYPE_CHECKING, Any, Iterable, List, Optional, Set,
 )
 
 import numpy as np
@@ -92,27 +92,33 @@ def diff(
             msg.add_buffer(buffer)
     return msg
 
-def remove_root(obj: Model, replace: Document | None = None) -> None:
+def remove_root(obj: Model, replace: Document | None = None, skip: Set[Model] | None = None) -> None:
     """
     Removes the document from any previously displayed bokeh object
     """
+    models = set()
     for model in obj.select({'type': Model}):
+        if skip and model in skip:
+            continue
         prev_doc = model.document
         model._document = None
         if prev_doc:
             prev_doc.remove_root(model)
         if replace:
             model._document = replace
+        models.add(model)
+    return models
 
-def add_to_doc(obj: Model, doc: Document, hold: bool = False):
+def add_to_doc(obj: Model, doc: Document, hold: bool = False, skip: Set[Model] | None = None):
     """
     Adds a model to the supplied Document removing it from any existing Documents.
     """
     # Add new root
-    remove_root(obj)
+    models = remove_root(obj, skip=skip)
     doc.add_root(obj)
     if doc.callbacks.hold_value is None and hold:
         doc.hold()
+    return models
 
 def patch_cds_msg(model, msg):
     """

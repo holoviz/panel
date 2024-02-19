@@ -54,6 +54,9 @@ class FlexBox(ListLike, ReactiveHTML):
         'space-evenly', 'start', 'end', 'left', 'right'], doc="""
         Defines the alignment along the main axis.""")
 
+    gap = param.String(default='', doc="""
+        Defines the spacing between flex items, supporting various units (px, em, rem, %, vw/vh).""")
+
     _template = (Path(__file__).parent / 'flexbox.html').read_text('utf-8')
 
     def __init__(self, *objects, **params):

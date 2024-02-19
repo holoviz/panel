@@ -211,6 +211,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         # Add all render items to the document
         objs, models = [], []
         sizing_modes = {}
+        tracked_models = set()
         for name, (obj, tags) in self._render_items.items():
 
             # Render root without pre-processing
@@ -241,7 +242,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                 objs.append(obj)
                 models.append(model)
 
-            add_to_doc(model, document, hold=bool(comm))
+            tracked_models |= add_to_doc(model, document, hold=bool(comm), skip=tracked_models)
             document.on_session_destroyed(obj._server_destroy) # type: ignore
 
         # Here we ensure that the preprocessor is run across all roots
@@ -554,7 +555,10 @@ class TemplateActions(ReactiveHTML):
     _template: ClassVar[str] = ""
 
     _scripts: ClassVar[Dict[str, List[str] | str]] = {
-        'open_modal': ["document.getElementById('pn-Modal').style.display = 'block'"],
+        'open_modal': ["""
+          document.getElementById('pn-Modal').style.display = 'block'
+          window.dispatchEvent(new Event('resize'));
+        """],
         'close_modal': ["document.getElementById('pn-Modal').style.display = 'none'"],
     }
 

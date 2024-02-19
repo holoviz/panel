@@ -199,12 +199,13 @@ a.navbar-brand {
 
 .pn-modal-content {
   background-color: var(--surface-color);
+  border: 1px solid #888;
   color: var(--surface-text-color);
   margin: auto;
   margin-top: 25px;
   margin-bottom: 25px;
+  overflow-x: auto;
   padding: 15px 20px 20px 20px;
-  border: 1px solid #888;
   width: 80% !important;
 }
 

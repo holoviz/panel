@@ -24,18 +24,6 @@ export class AcePlotView extends HTMLBoxView {
   protected _modelist: ModeList
   protected _container: HTMLDivElement
 
-  initialize(): void {
-    super.initialize()
-    this._container = div({
-      id: ID(),
-      style: {
-        width: "100%",
-        height: "100%",
-        zIndex: 0,
-      }
-    })
-  }
-
   connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.code.change, () => this._update_code_from_model())
@@ -51,24 +39,32 @@ export class AcePlotView extends HTMLBoxView {
 
   render(): void {
     super.render()
-    if (!(this._container === this.shadow_el.childNodes[0]))
-      this.shadow_el.append(this._container)
-      this._container.textContent = this.model.code
-      this._editor = ace.edit(this._container)
-      this._editor.renderer.attachToShadowRoot()
-      this._langTools = ace.require('ace/ext/language_tools')
-      this._modelist = ace.require("ace/ext/modelist")
-      this._editor.setOptions({
-        enableBasicAutocompletion: true,
-        enableSnippets: true,
-        fontFamily: "monospace", //hack for cursor position
-      });
-      this._update_theme()
-      this._update_filename()
-      this._update_language()
-      this._editor.setReadOnly(this.model.readonly)
-      this._editor.setShowPrintMargin(this.model.print_margin);
-      this._editor.on('change', () => this._update_code_from_editor())
+
+    this._container = div({
+      id: ID(),
+      style: {
+        width: "100%",
+        height: "100%",
+        zIndex: 0,
+      }
+    })
+    this.shadow_el.append(this._container)
+    this._container.textContent = this.model.code
+    this._editor = ace.edit(this._container)
+    this._editor.renderer.attachToShadowRoot()
+    this._langTools = ace.require('ace/ext/language_tools')
+    this._modelist = ace.require("ace/ext/modelist")
+    this._editor.setOptions({
+      enableBasicAutocompletion: true,
+      enableSnippets: true,
+      fontFamily: "monospace", //hack for cursor position
+    });
+    this._update_theme()
+    this._update_filename()
+    this._update_language()
+    this._editor.setReadOnly(this.model.readonly)
+    this._editor.setShowPrintMargin(this.model.print_margin);
+    this._editor.on('change', () => this._update_code_from_editor())
   }
 
   _update_code_from_model(): void {
@@ -109,7 +105,9 @@ export class AcePlotView extends HTMLBoxView {
 
   after_layout(): void{
     super.after_layout()
-    this._editor.resize()
+    if (this._editor !== undefined) {
+      this._editor.resize()
+    }
   }
 }
 
