@@ -81,6 +81,8 @@ export class HTMLView extends PanelMarkupView {
     const html = this.process_tex()
     this.watch_stylesheets()
     this.set_html(html)
+    if (this.model.stylesheets.length === 0)
+      this.style_redraw()
   }
 
   style_redraw(): void {
