@@ -1,6 +1,8 @@
-# Build Monitoring Dashboard
+# Build a Monitoring Dashboard
 
-In this tutorial, we will build a basic monitoring dashboard that *refreshes* the entire page periodically. We will be using `pn.panel`, the [`DeckGL`](../../reference/panes/DeckGL.ipynb) *pane*, and the [`Number`](../../reference/indicators/Number.ipynb) *indicator*.
+In this tutorial, we will build a *display only* dashboard that *refreshes* the entire page periodically.
+
+These kinds of dashboards can be displayed on a big screen running 24/7 in for example a call center, control room or trading area.
 
 ## Install the Dependencies
 
@@ -37,18 +39,7 @@ import numpy as np
 import panel as pn
 from scipy.interpolate import interp1d
 
-pn.extension("deckgl")
-
-TEXT = """
-# Hornsea Two
-
-Hornsea Two is located  89km off the Yorkshire coast, adjacent to sister project Hornsea 1. \
-The 1.3GW project comprises 165 wind turbines which will help power over 1.4 million \
-UK homes with low-cost renewable energy.
-"""
-
 ACCENT="teal"
-MAPBOX_KEY = "pk.eyJ1IjoicGFuZWxvcmciLCJhIjoiY2s1enA3ejhyMWhmZjNobjM1NXhtbWRrMyJ9.B_frQsAVepGIe-HiOJeqvQ"
 
 WIND_SPEED_STD_DEV = 2.0
 WIND_SPEED_MEAN = 8.0
@@ -93,38 +84,12 @@ power_output_view = pn.indicators.Number(
     ],
 )
 
-LATITUDE = 53.918333
-LONGITUDE = 1.560000
-deck = {
-    "initialViewState": {
-        "bearing": -27.36,
-        "latitude": LATITUDE,
-        "longitude": LONGITUDE,
-        "pitch": 40.5,
-        "zoom": 8,
-    },
-    "layers": [
-        {
-            "@@type": "HexagonLayer",
-            "data": [{"lat": LATITUDE-0.05, "lon": LONGITUDE, "title": "HornSea Two"}],
-            "getPosition": "@@=[lon, lat]",
-        }
-    ],
-    "mapStyle": "mapbox://styles/mapbox/dark-v9",
-    "views": [{"@@type": "MapView", "controller": True}],
-}
-map = pn.pane.DeckGL(
-    deck, mapbox_api_key=MAPBOX_KEY, sizing_mode="stretch_width", height=600
-)
-
 ## Layout and style with a template
 
 pn.template.FastListTemplate(
     title="WTG Monitoring Dashboard",
     main=[
-        TEXT,
-        pn.Row(wind_speed_view, power_output_view),
-        map,
+        pn.FlexBox(wind_speed_view, power_output_view),
     ],
     accent=ACCENT,
     main_layout=None,
@@ -163,23 +128,7 @@ wind_speed_view = pn.indicators.Number(
 )
 ```
 
-The *map* is displayed with a [`DeckGL`](../../reference/panes/DeckGL.ipynb) *pane*
-
-```python
-map = pn.pane.DeckGL(
-    deck, mapbox_api_key=MAPBOX_KEY, sizing_mode="stretch_width", height=600
-)
-```
-
-We remember to import the DeckGL JavaScript dependencies via
-
-```python
-pn.extension("deckgl")
-```
-
-The `TEXT` is displayed in a [`Markdown`](../../reference/panes/Markdown.ipynb) *pane* implicitly picked by `pn.panel`.
-
-Finally, we use the [`FastListTemplate`](../../reference/templates/FastListTemplate.ipynb) to easily layout and style the dashboard.
+We use the [`FastListTemplate`](../../reference/templates/FastListTemplate.ipynb) to easily layout and style the dashboard.
 
 Here we use the `meta_refresh` argument to instruct the browser to automatically refresh the page every 10 seconds.
 
@@ -187,13 +136,13 @@ Here we use the `meta_refresh` argument to instruct the browser to automatically
     meta_refresh="10",
 ```
 
-:::{hint}
-Using the `meta_refresh` argument can be a really *robust* way to build a *display-only* dashboard for a control room or similar.
+:::{tip}
+Using the `meta_refresh` argument can be a really *simple* and *robust* way to build a *display-only* dashboard for a call center, control room or trading area.
 :::
 
 ## Recap
 
-In this tutorial, we have built a basic monitoring dashboard that *refreshes* the entire page periodically. We have used  `pn.panel`, the [`DeckGL`](../../reference/panes/DeckGL.ipynb) *pane*, and the [`Number`](../../reference/indicators/Number.ipynb) *indicator*.
+In this tutorial, we have built a basic monitoring dashboard that *refreshes* the entire page periodically. We have used  `pn.panel`, the [`Number`](../../reference/indicators/Number.ipynb) *indicator* and the [`FastListTemplate`](../../reference/templates/FastListTemplate.ipynb).
 
 We used the `meta_refresh` argument of the [FastListTemplate](../../reference/templates/FastListTemplate.ipynb) to automatically *refresh* the dashboard periodically.
 

@@ -79,10 +79,6 @@ Spend a couple of minutes checking out the [Templates Section](https://panel.hol
 
 ## Use a Template in a Notebook
 
-:::{admonition} Warning
-Currently *templates* do not display in a notebook. We hope to support this one day. Please upvote [Issue #2677](https://github.com/holoviz/panel/issues/2677) if this use case is important to you.
-:::
-
 Copy the two code cells below into a notebook.
 
 ```python
@@ -106,6 +102,10 @@ Add a `;` after `.servable()` to not display the template in the notebook.
 It should look like
 
 ![Hello World FastListTemplate App](../../_static/images/templates_hello_world_notebook.png)
+
+:::{warning}
+Currently *templates* do not display in a notebook. We hope to support this one day. Please upvote [Issue #2677](https://github.com/holoviz/panel/issues/2677) if this use case is important to you.
+:::
 
 ## Customize the Template
 

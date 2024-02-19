@@ -1,6 +1,6 @@
 # Display Content with `pn.panel`
 
-In this guide, we will learn to display Python objects easily and dynamically with `pn.panel`:
+In this guide, we will learn to display Python objects easily with `pn.panel`:
 
 - Display any Python object via `pn.panel(the_object, ...)`.
 
@@ -41,6 +41,8 @@ pip install altair hvplot matplotlib plotly
 
 ## Display a String
 
+To build an app, our first step is to display things. Luckily, Panel provides us with the simple yet powerful `pn.panel()` function. This function effortlessly transforms Python objects into viewable components within our app. Let's start with something simple: a string.
+
 Run the code:
 
 ```{pyodide}
@@ -55,9 +57,7 @@ pn.panel("Hello World").servable()
 We add `.servable()` to the component to add it to the app served by `panel serve app.py --autoreload`. Adding `.servable()` is not needed to display the component in a notebook.
 :::
 
-:::{note}
-`pn.panel` uses a *heuristic* algorithm to determine how to best display the `object` passed as an argument. To make this very explicit, we will `print` the component in all the examples below.
-:::
+`pn.panel` uses a *heuristic* algorithm to determine how to best display the `object`. To make this very explicit, we will `print` the component in all the examples below.
 
 Run the code:
 
@@ -72,9 +72,7 @@ print(component)
 component.servable()
 ```
 
-:::{note}
-Your cell or terminal output should contain `Markdown(str)`. It means `pn.panel` has picked the [`Markdown`](../../reference/panes/Markdown.ipynb) pane to display the `str` object.
-:::
+Your cell or terminal output should contain `Markdown(str)`. It means `pn.panel` has picked a [`Markdown`](../../reference/panes/Markdown.ipynb) *pane* to display the `str` object.
 
 Let's verify that *markdown strings* are actually displayed and rendered nicely.
 
@@ -98,7 +96,38 @@ print(component)
 component.servable()
 ```
 
+```{tip}
+Markdown rendering is very useful in Panel applications, such as for displaying formatted text, headers, links, images, LaTeX formulas and other rich content
+```
+
+## Display a DataFrame
+
+Now that we've mastered the art of displaying strings, let's take it up a notch. In our journey to build a data-centric app, we'll often need to display more complex objects like dataframes. With Panel, it's as easy as pie.
+
+Run the code:
+
+```{pyodide}
+import pandas as pd
+import panel as pn
+
+pn.extension()
+
+data = pd.DataFrame([
+    ('Monday', 7), ('Tuesday', 4), ('Wednesday', 9), ('Thursday', 4),
+    ('Friday', 4), ('Saturday', 5), ('Sunday', 4)], columns=['Day', 'Wind Speed (m/s)']
+)
+component = pn.panel(data)
+print(component)
+component.servable()
+```
+
+:::{tip}
+If we want to display larger dataframes, customize the way the dataframes are displayed, or make them more interactive, we can find specialized components in the [Component Gallery](../../reference/index.md) supporting these use cases. For example, the [Tabulator](../../reference/widgets/Tabulator.ipynb) *widget* and [Perspective](../../reference/panes/Perspective.ipynb) *pane*.
+:::
+
 ## Display Plots
+
+Many data apps contains one or more plots. Lets try to display some.
 
 Pick a plotting library below.
 
@@ -107,7 +136,7 @@ Pick a plotting library below.
 ::::{tab-item} Altair
 :sync: altair
 
-Run the code below.
+Run the code below:
 
 ```{pyodide}
 import altair as alt
@@ -153,7 +182,7 @@ If we forget to add `"vega"` to `pn.extension`, then the Altair figure might not
 ::::{tab-item} hvPlot
 :sync: hvPlot
 
-Run the code below.
+Run the code below:
 
 ```{pyodide}
 import hvplot.pandas
@@ -187,7 +216,7 @@ Please notice that `pn.panel` chose a [`HoloViews`](../../reference/panes/HoloVi
 ::::{tab-item} Matplotlib
 :sync: matplotlib
 
-Run the code below.
+Run the code below:
 
 ```{pyodide}
 import matplotlib
@@ -273,34 +302,11 @@ If we forget to add `"plotly"` to `pn.extension`, then the Plotly figure might n
 
 :::::
 
-## Display a DataFrame
-
-Run the code:
-
-```{pyodide}
-import pandas as pd
-import panel as pn
-
-pn.extension()
-
-data = pd.DataFrame([
-    ('Monday', 7), ('Tuesday', 4), ('Wednesday', 9), ('Thursday', 4),
-    ('Friday', 4), ('Saturday', 5), ('Sunday', 4)], columns=['Day', 'Wind Speed (m/s)']
-)
-component = pn.panel(data)
-print(component)
-component.servable()
-```
-
-:::{note}
-If we want to display larger dataframes, customize the way the dataframes are displayed, or make them more interactive, we can find specialized components in the [Component Gallery](../../reference/index.md) supporting these use cases. For example, the [Tabulator](../../reference/widgets/Tabulator.ipynb) widget and [Perspective](../../reference/panes/Perspective.ipynb) pane.
-:::
-
 ## Display any Python object
 
 `pn.panel` can display (almost) any Python object.
 
-Run the code below
+Run the code below:
 
 ```{pyodide}
 import panel as pn
@@ -319,7 +325,9 @@ component.servable()
 
 ## Display any Python object in a layout
 
-Run the code below
+If we place objects in a [*layout*](https://panel.holoviz.org/reference/index.html#layouts) like [`pn.Column`](../../reference/layouts/Column.ipynb) (more about layouts later), then the layout will apply `pn.panel` for us automatically.
+
+Run the code below:
 
 ```{pyodide}
 import panel as pn
@@ -327,7 +335,7 @@ import panel as pn
 pn.extension()
 
 component = pn.Column(
-    pn.panel({"Wind Speeds": [0, 3, 6, 9, 12, 15, 18, 21], "Power Output": [0,39,260,780, 1300, 1300, 0, 0]}),
+    {"Wind Speeds": [0, 3, 6, 9, 12, 15, 18, 21], "Power Output": [0,39,260,780, 1300, 1300, 0, 0]},
     "https://assets.holoviz.org/panel/tutorials/wind_turbine.png",
     "https://assets.holoviz.org/panel/tutorials/wind_turbine.mp3",
 )
@@ -336,13 +344,9 @@ print(component)
 component.servable()
 ```
 
-:::{note}
-When Python objects are given as an argument to a Panel [Layout](https://panel.holoviz.org/reference/index.html#layouts) like [`pn.Column`](../../reference/layouts/Column.ipynb), then `pn.Column` will automatically apply `pn.panel` to the objects for you.
-:::
+Please notice that the image of the dice is very tall. To fine-tune the way it is displayed, we can use `pn.panel` with arguments.
 
-Please notice that the image of the dice is very tall. To fine-tune the way it is displayed, we can use `pn.panel`.
-
-Run the code below
+Run the code below:
 
 ```{pyodide}
 import panel as pn
@@ -365,50 +369,9 @@ The example above sets the *css* `styles` of the `Audio` player. The `styles` pa
 
 ## Consider Performance
 
-:::{note}
 `pn.panel` is a versatile helper function that converts objects into a [*Pane*](https://panel.holoviz.org/reference/index.html#panes). It automatically selects the best *representation* for an object based on available [*Pane*](https://panel.holoviz.org/reference/index.html#panes) types, ranking them by priority.
 
 For optimal performance, specify the desired *Pane* type directly, like `pn.pane.Matplotlib(fig)` instead of using `pn.panel(fig)`. You will learn about *Panes*  in the [Display Content with Panes](panes.md) section.
-:::
-
-Run the code below
-
-```{pyodide}
-import matplotlib
-import matplotlib.pyplot as plt
-import pandas as pd
-
-import panel as pn
-
-matplotlib.use("agg")
-
-pn.extension()
-
-data = pd.DataFrame(
-    [
-        ("Monday", 7),
-        ("Tuesday", 4),
-        ("Wednesday", 9),
-        ("Thursday", 4),
-        ("Friday", 4),
-        ("Saturday", 5),
-        ("Sunday", 4),
-    ],
-    columns=["Day", "Wind Speed (m/s)"],
-)
-
-fig, ax = plt.subplots(figsize=(8, 3))
-ax.plot(data["Day"], data["Wind Speed (m/s)"], marker="o", markersize=10, linewidth=4)
-ax.set(
-    xlabel="Day",
-    ylabel="Wind Speed (m/s)",
-    title="Wind Speed Over the Week",
-    ylim=(0, 10),
-)
-ax.grid()
-plt.close(fig)  # CLOSE THE FIGURE TO AVOID MEMORY LEAKS!
-pn.pane.Matplotlib(fig, dpi=144, tight=True, sizing_mode="stretch_width").servable()
-```
 
 ## Recap
 

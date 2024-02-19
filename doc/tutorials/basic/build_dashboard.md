@@ -1,6 +1,12 @@
 # Build a Dashboard
 
-In this tutorial we will build a beautiful dashboard showing key metrics of wind turbine manufacturers.
+Welcome to our tutorial on building an interactive dashboard showcasing essential metrics from wind turbine manufacturers.
+
+We'll demonstrate how to leverage a variety of components such as sliders, dropdowns, plots, indicators, tables and layouts to craft a visually stunning and functional application.
+
+By following along, you'll gain insights into how these components can be seamlessly combined to present data in a meaningful way.
+
+Our objective is to empower you to replicate this process for your own datasets and use cases, enabling you to create impactful dashboards tailored to your specific needs.
 
 <iframe src="https://panel-org-build-dashboard.hf.space" frameborder="0" style="width: 100%;height:1000px"></iframe>
 
@@ -183,7 +189,7 @@ styles = {
 }
 ```
 
-We extract the once data across all user *sessions* by using `pn.cache`.
+We extract the data once across all user *sessions* by using `pn.cache`.
 
 ```{pyodide}
 @pn.cache()  # only download data once

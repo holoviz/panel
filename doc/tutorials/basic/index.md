@@ -54,7 +54,7 @@ Discover tips and tricks that will increase your *developer capacity* from kilow
 :link: pn_panel
 :link-type: doc
 
-Display our beloved wind turbine images, data, and plots easily and dynamically with `pn.panel`.
+Display our beloved wind turbine images, data, and plots easily with `pn.panel`.
 :::
 
 :::{grid-item-card} {octicon}`device-desktop;2.5em;sd-mr-1` Display Content with Panes
@@ -222,13 +222,6 @@ Using the skills acquired on the *Skills* tab, we should be able to build any of
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`dependabot;2.5em;sd-mr-1` Build a Chat Bot
-:link: build_chatbot
-:link-type: doc
-
-Develop a Streaming Wind Turbine Chat Bot that can handle many questions about wind turbines.
-:::
-
 :::{grid-item-card} {octicon}`clock;2.5em;sd-mr-1` Build a Monitoring Dashboard
 :link: build_monitoring_dashboard
 :link-type: doc
@@ -278,6 +271,13 @@ Lets build that dashboard!
 Build a live, updating dashboard to monitor your wind turbines.
 :::
 
+:::{grid-item-card} {octicon}`dependabot;2.5em;sd-mr-1` Build a Chat Bot
+:link: build_chatbot
+:link-type: doc
+
+Develop a Streaming Wind Turbine Chat Bot that can handle many questions about wind turbines.
+:::
+
 ::::
 
 :::::
@@ -318,7 +318,6 @@ deploy
 :maxdepth: 2
 :caption: Build an App
 
-build_chatbot
 build_monitoring_dashboard
 build_report
 build_animation
@@ -326,4 +325,5 @@ build_todo
 build_image_classifier
 build_dashboard
 build_streaming_dashboard
+build_chatbot
 ```

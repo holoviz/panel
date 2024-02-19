@@ -1,19 +1,21 @@
 # Apply a Design
 
-Panel does not require frontend developer experience; instead, we provide high-level `design`s to style our apps:
+In Panel, you can effortlessly style your apps using pre-built *designs*, even if you have no prior frontend development experience. These *designs*, provide ready-made visual themes for your applications:
 
-- `"bootstrap"`: Based on the [Bootstrap](https://getbootstrap.com/) library.
-- `"fast"`: Based on the [Microsoft Fast Design](https://www.fast.design/) library.
-- `"material"`: Based on [Material Design](https://m3.material.io/).
-- `"native"`: The default styling inherited from [Bokeh](https://bokeh.org/).
+- **"bootstrap"**: This design is based on the popular [Bootstrap](https://getbootstrap.com/) library, offering a sleek and responsive user interface.
+- **"fast"**: Utilizing the [Microsoft Fast Design](https://www.fast.design/) library, this design emphasizes speed and modern aesthetics.
+- **"material"**: Inspired by Google's [Material Design](https://m3.material.io/), this design provides a clean and intuitive user experience.
+- **"native"**: The default styling inherited from [Bokeh](https://bokeh.org/) ensures compatibility and consistency.
 
-We also support the `"default"` and `"dark"` `theme`s.
+Additionally, Panel supports both `"default"` and `"dark"` themes to further customize the appearance of your application.
 
 :::{note}
 When we ask to *run the code* in the sections below, we may execute the code directly in the Panel documentation by using the green *run* button, in a notebook cell, or in a file named `app.py` served with `panel serve app.py --autoreload`.
 :::
 
 ## Change the Design
+
+Lets give our apps a *clean and intuitive user experience* using the `"material"` *design*.
 
 Run the code:
 

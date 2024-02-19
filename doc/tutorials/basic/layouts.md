@@ -38,6 +38,8 @@ pip install hvplot pandas
 
 ## Layout in a Column
 
+When building apps we will very most like want to layout objects vertically. The [Column](../../reference/layouts/Column.ipynb) layout can do this.
+
 Run the following code:
 
 ```{pyodide}
@@ -74,6 +76,8 @@ Click [this link](../../reference/layouts/Column.ipynb) to access the `Column` R
 
 ## Layout in a Row
 
+Lets layout objects horizontally in a [`Row`](../../reference/layouts/Row.ipynb).
+
 Run the following code:
 
 ```{pyodide}
@@ -100,11 +104,9 @@ plot = data.hvplot(x="Day", y="Wind Speed (m/s)", kind="bar", color="goldenrod",
 pn.Row(plot, data).servable()
 ```
 
-Click [this link](https://panel.holoviz.org/reference/index.html#layouts) to access the Layouts section of the [Component Gallery](../../reference/index.md).
-
-Open the [`Row`](../../reference/layouts/Row.ipynb) reference guide and take a few minutes to familiarize yourself with its organization and content.
-
 ## Displays using `pn.panel`
+
+Layouts will automatically display objects using `pn.panel`.
 
 Run the code below:
 
@@ -113,8 +115,6 @@ import pandas as pd
 import panel as pn
 
 pn.extension()
-
-button = pn.widgets.Button(name="Refresh", icon="refresh", button_type="primary")
 
 data = pd.DataFrame(
     [
@@ -128,13 +128,12 @@ data = pd.DataFrame(
     ],
     columns=["Day", "Wind Speed (m/s)"],
 )
-
+button = pn.widgets.Button(name="Refresh", icon="refresh", button_type="primary")
 component = pn.Column("# Wind Speed", data, button)
 print(component)
 component.servable()
 ```
 
-:::{note}
 The `print` statement will output something like:
 
 ```bash
@@ -146,6 +145,7 @@ Column
 
 Under the hood, the `Column` layout has used `pn.panel` to convert the string to a [`Markdown`](../../reference/panes/Markdown.ipynb) pane and the DataFrame to a [`DataFrame`](../../reference/panes/DataFrame.ipynb) pane.
 
+:::{tip}
 You can customize how the objects are displayed using `pn.panel` arguments, specific *Panes* or specific *Widgets*.
 ::::
 
@@ -177,13 +177,11 @@ pn.Column(
 ).servable()
 ```
 
-Notice how the string and DataFrame objects are displayed differently.
+Notice how the string and DataFrame objects are now displayed differently.
 
 ## Works like a list
 
-:::{note}
 `Column`, `Row`, and many other layouts are *list-like*.
-:::
 
 Run the code below:
 
