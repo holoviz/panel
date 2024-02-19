@@ -496,7 +496,7 @@ class ChatFeed(ListPanel):
             response = self.callback(*callback_args)
         else:
             self._callback_future = None
-            response = await asyncio.to_thread(self.callback, *callback_args)
+            response = self.callback(*callback_args)
         await self._serialize_response(response)
 
     async def _prepare_response(self, _) -> None:
