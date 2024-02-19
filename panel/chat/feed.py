@@ -6,12 +6,14 @@ with a list of `ChatMessage` objects through the backend methods.
 from __future__ import annotations
 
 import asyncio
+import contextvars
+import functools
 import traceback
 
 from enum import Enum
 from inspect import (
     isasyncgen, isasyncgenfunction, isawaitable, iscoroutinefunction,
-    isgenerator,
+    isgenerator, isgeneratorfunction,
 )
 from io import BytesIO
 from typing import (
@@ -488,6 +490,32 @@ class ChatFeed(ListPanel):
                 return
             await asyncio.sleep(0.1)
 
+    async def _to_thread(self, func, /, *args, **kwargs):
+        """
+        Polyfill for asyncio.to_thread in Python < 3.9
+        """
+        loop = asyncio.get_running_loop()
+        ctx = contextvars.copy_context()
+        func_call = functools.partial(ctx.run, func, *args, **kwargs)
+        return await loop.run_in_executor(None, func_call)
+
+    async def _to_async_gen(self, sync_gen):
+        done = object()
+
+        def safe_next():
+            # Converts StopIteration to a sentinel value to avoid:
+            # TypeError: StopIteration interacts badly with generators and cannot be raised into a Future
+            try:
+                return next(sync_gen)
+            except StopIteration:
+                return done
+
+        while True:
+            value = await asyncio.to_thread(safe_next)
+            if value is done:
+                break
+            yield value
+
     async def _handle_callback(self, message, loop: asyncio.BaseEventLoop):
         callback_args = self._gather_callback_args(message)
         if iscoroutinefunction(self.callback):
@@ -495,8 +523,11 @@ class ChatFeed(ListPanel):
         elif isasyncgenfunction(self.callback):
             response = self.callback(*callback_args)
         else:
-            self._callback_future = None
-            response = self.callback(*callback_args)
+            if isgeneratorfunction(self.callback):
+                response = self._to_async_gen(self.callback(*callback_args))
+                # printing type(response) -> <class 'async_generator'>
+            else:
+                response = await asyncio.to_thread(self.callback, *callback_args)
         await self._serialize_response(response)
 
     async def _prepare_response(self, _) -> None:
