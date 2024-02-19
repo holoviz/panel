@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 
 
 PLACEHOLDER_SVG = """
-    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-loader-3" width="40" height="40" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-loader-3" width="35" height="35" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
         <path d="M3 12a9 9 0 0 0 9 9a9 9 0 0 0 9 -9a9 9 0 0 0 -9 -9"></path>
         <path d="M17 12a5 5 0 1 0 -5 5"></path>
@@ -135,8 +135,15 @@ class ChatFeed(ListPanel):
         and will not be included in the `serialize` method by default.""")
 
     placeholder_text = param.String(default="", doc="""
-        If placeholder is the default LoadingSpinner the text to display
-        next to it.""")
+        The text to display next to the placeholder icon.""")
+
+    placeholder_params = param.Dict(default={
+        "user": " ", "reaction_icons": {}, "show_copy_icon": False, "show_timestamp": False
+    }, doc="""
+        Params to pass to the placeholder ChatMessage, like `reaction_icons`,
+        `timestamp_format`, `show_avatar`, `show_user`, `show_timestamp`.
+        """
+    )
 
     placeholder_threshold = param.Number(default=1, bounds=(0, None), doc="""
         Min duration in seconds of buffering before displaying the placeholder.
@@ -273,22 +280,17 @@ class ChatFeed(ListPanel):
         card_params.pop('stylesheets', None)
         self._card.param.update(**card_params)
 
-    @param.depends("placeholder_text", watch=True, on_init=True)
+    @param.depends("placeholder_text", "placeholder_params", watch=True, on_init=True)
     def _update_placeholder(self):
-        if self._placeholder is not None:
-            self._placeholder.param.update(object=self.placeholder_text)
-            return
-
         loading_avatar = SVG(
-            PLACEHOLDER_SVG, sizing_mode=None, css_classes=["rotating-placeholder"]
+            PLACEHOLDER_SVG, sizing_mode="fixed", width=35, height=35,
+            css_classes=["rotating-placeholder"]
         )
         self._placeholder = ChatMessage(
             self.placeholder_text,
-            user=" ",
-            show_timestamp=False,
             avatar=loading_avatar,
-            reaction_icons={},
-            show_copy_icon=False,
+            css_classes=["message"],
+            **self.placeholder_params
         )
 
     def _replace_placeholder(self, message: ChatMessage | None = None) -> None:
