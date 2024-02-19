@@ -21,9 +21,7 @@ from zoneinfo import ZoneInfo
 
 import param
 
-from panel.io.resources import get_dist_path
-
-from ..io.resources import CDN_DIST
+from ..io.resources import CDN_DIST, get_dist_path
 from ..io.state import state
 from ..layout import Column, Row
 from ..pane.base import PaneBase, ReplacementPane, panel as _panel
@@ -47,19 +45,18 @@ if TYPE_CHECKING:
 Avatar = Union[str, BytesIO, bytes, ImageBase]
 AvatarDict = Dict[str, Avatar]
 
-DIST_PATH = get_dist_path()
 USER_LOGO = "🧑"
 ASSISTANT_LOGO = "🤖"
 SYSTEM_LOGO = "⚙️"
 ERROR_LOGO = "❌"
 HELP_LOGO = "❓"
-GPT_3_LOGO = f"{DIST_PATH}assets/logo/gpt-3.svg"
-GPT_4_LOGO = f"{DIST_PATH}assets/logo/gpt-4.svg"
-WOLFRAM_LOGO = f"{DIST_PATH}assets/logo/wolfram.svg"
-LUMEN_LOGO = f"{DIST_PATH}assets/logo/lumen.svg"
-HOLOVIEWS_LOGO = f"{DIST_PATH}assets/logo/holoviews.svg"
-HVPLOT_LOGO = f"{DIST_PATH}assets/logo/hvplot.svg"
-PANEL_LOGO = f"{DIST_PATH}assets/logo/panel.svg"
+GPT_3_LOGO = "{dist_path}assets/logo/gpt-3.svg"
+GPT_4_LOGO = "{dist_path}assets/logo/gpt-4.svg"
+WOLFRAM_LOGO = "{dist_path}assets/logo/wolfram.svg"
+LUMEN_LOGO = "{dist_path}assets/logo/lumen.svg"
+HOLOVIEWS_LOGO = "{dist_path}assets/logo/holoviews.svg"
+HVPLOT_LOGO = "{dist_path}assets/logo/hvplot.svg"
+PANEL_LOGO = "{dist_path}assets/logo/panel.svg"
 
 DEFAULT_AVATARS = {
     # User
@@ -234,6 +231,7 @@ class ChatMessage(PaneBase):
 
     def __init__(self, object=None, **params):
         self._exit_stack = ExitStack()
+        self._dist_path = get_dist_path()
         self.chat_copy_icon = ChatCopyIcon(
             visible=False, width=15, height=15, css_classes=["copy-icon"]
         )
@@ -420,7 +418,9 @@ class ChatMessage(PaneBase):
             self._to_alpha_numeric(key): value for key, value in updated_avatars.items()
         }
         # now lookup the avatar
-        return updated_avatars.get(alpha_numeric_key, self.avatar)
+        return updated_avatars.get(alpha_numeric_key, self.avatar).format(
+            dist_path=self._dist_path
+        )
 
     def _select_renderer(
         self,
