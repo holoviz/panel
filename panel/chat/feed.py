@@ -6,8 +6,6 @@ with a list of `ChatMessage` objects through the backend methods.
 from __future__ import annotations
 
 import asyncio
-import contextvars
-import functools
 import traceback
 
 from enum import Enum
@@ -446,15 +444,6 @@ class ChatFeed(ListPanel):
                 self.append(self._placeholder)
                 return
             await asyncio.sleep(0.1)
-
-    async def _to_thread(self, func, /, *args, **kwargs):
-        """
-        Polyfill for asyncio.to_thread in Python < 3.9
-        """
-        loop = asyncio.get_running_loop()
-        ctx = contextvars.copy_context()
-        func_call = functools.partial(ctx.run, func, *args, **kwargs)
-        return await loop.run_in_executor(None, func_call)
 
     async def _to_async_gen(self, sync_gen):
         done = object()
