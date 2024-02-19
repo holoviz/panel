@@ -24,7 +24,7 @@ on:
 jobs:
   build_docs:
     name: Documentation
-    runs-on: 'macos-latest'
+    runs-on: 'macos-14'
     timeout-minutes: 180
     defaults:
       run:
