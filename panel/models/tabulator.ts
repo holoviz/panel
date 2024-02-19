@@ -302,8 +302,10 @@ export class DataTabulatorView extends HTMLBoxView {
   _selection_updating: boolean = false
   _initializing: boolean
   _lastVerticalScrollbarTopPosition: number = 0;
+  _lastHorizontalScrollbarLeftPosition: number = 0;
   _applied_styles: boolean = false
   _building: boolean = false
+  _restore_scroll: boolean = false
 
   connect_signals(): void {
     super.connect_signals()
@@ -378,6 +380,7 @@ export class DataTabulatorView extends HTMLBoxView {
     this.connect(this.model.source.patching, () => {
       const inds = this.model.source.selected.indices
       this.updateOrAddData();
+      this.record_scroll()
       this.tabulator.rowManager.element.scrollTop = this._lastVerticalScrollbarTopPosition;
       // Restore indices since updating data may have reset checkbox column
       this.model.source.selected.indices = inds;
@@ -427,6 +430,7 @@ export class DataTabulatorView extends HTMLBoxView {
       this.renderChildren()
       this.setStyles()
     }
+    this._restore_scroll = true
   }
 
   after_layout(): void {
@@ -497,7 +501,11 @@ export class DataTabulatorView extends HTMLBoxView {
       return cell.getColumn().getField() + ": " + cell.getValue();
     })
     this.tabulator.on("scrollVertical", debounce(() => {
+      this.record_scroll()
       this.setStyles()
+    }, 50, false))
+    this.tabulator.on("scrollHorizontal", debounce(() => {
+      this.record_scroll()
     }, 50, false))
 
     // Sync state with model
@@ -505,6 +513,7 @@ export class DataTabulatorView extends HTMLBoxView {
     this.tabulator.on("rowClick", (e: any, row: any) => this.rowClicked(e, row))
     this.tabulator.on("cellEdited", (cell: any) => this.cellEdited(cell))
     this.tabulator.on("dataFiltering", (filters: any) => {
+      this.record_scroll()
       this.model.filters = filters
     })
     this.tabulator.on("dataFiltered", (_: any, rows: any[]) => {
@@ -930,6 +939,10 @@ export class DataTabulatorView extends HTMLBoxView {
   postUpdate(): void {
     this.setSelection()
     this.setStyles()
+    if (this._restore_scroll) {
+      this.restore_scroll()
+      this._restore_scroll = false
+    }
   }
 
   updateOrAddData(): void {
@@ -1063,7 +1076,22 @@ export class DataTabulatorView extends HTMLBoxView {
     this._selection_updating = false
   }
 
+  restore_scroll(): void {
+    const opts = {
+      top: this._lastVerticalScrollbarTopPosition,
+      left: this._lastHorizontalScrollbarLeftPosition,
+      behavior: "instant"
+    }
+    setTimeout(() => this.tabulator.rowManager.element.scrollTo(opts), 0)
+  }
+
   // Update model
+
+  record_scroll() {
+    this._lastVerticalScrollbarTopPosition = this.tabulator.rowManager.element.scrollTop
+    this._lastHorizontalScrollbarLeftPosition = this.tabulator.rowManager.element.scrollLeft
+  }
+
   rowClicked(e: any, row: any) {
     if (
         this._selection_updating ||
