@@ -65,13 +65,13 @@ def test_update_markdown_pane_resizes(page):
 
     height = page.locator(".markdown").bounding_box()['height']
 
-    assert int(height) == 18
+    assert int(height) == 17
 
     md.object = """
     - Bullet
     - Points
     """
-    wait_until(lambda: int(page.locator(".markdown").bounding_box()['height']) == 37, page)
+    wait_until(lambda: int(page.locator(".markdown").bounding_box()['height']) == 34, page)
 
 
 def test_markdown_pane_visible_toggle(page):

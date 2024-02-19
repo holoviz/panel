@@ -31,6 +31,12 @@ def chat_feed():
 @pytest.mark.xdist_group("chat")
 class TestChatFeed:
 
+    def test_init_with_help_text(self):
+        chat_feed = ChatFeed(help_text="Instructions")
+        message = chat_feed._chat_log[0]
+        assert message.object == "Instructions"
+        assert message.user == "Help"
+
     def test_hide_header(self, chat_feed):
         assert chat_feed.header is None
 
@@ -865,6 +871,34 @@ class TestChatFeedSerializeForTransformers:
         filtered = chat_feed.serialize(filter_by=filter_by_reactions)
         assert len(filtered) == 1
         assert filtered[0]["content"] == "yes"
+
+    def test_serialize_exclude_users_default(self):
+        def say_hi(contents, user, instance):
+            return f"Hi {user}!"
+
+        chat_feed = ChatFeed(
+            help_text="This chat feed will respond by saying hi!",
+            callback=say_hi
+        )
+        chat_feed.send("Hello there!")
+        assert chat_feed.serialize() == [
+            {"role": "user", "content": "Hello there!"},
+            {"role": "assistant", "content": "Hi User!"}
+        ]
+
+    def test_serialize_exclude_users_custom(self):
+        def say_hi(contents, user, instance):
+            return f"Hi {user}!"
+
+        chat_feed = ChatFeed(
+            help_text="This chat feed will respond by saying hi!",
+            callback=say_hi
+        )
+        chat_feed.send("Hello there!")
+        assert chat_feed.serialize(exclude_users=["assistant"]) == [
+            {"role": "assistant", "content": "This chat feed will respond by saying hi!"},
+            {"role": "user", "content": "Hello there!"},
+        ]
 
 
 @pytest.mark.xdist_group("chat")

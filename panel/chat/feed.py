@@ -36,58 +36,6 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
-USER_LOGO = "🧑"
-ASSISTANT_LOGO = "🤖"
-SYSTEM_LOGO = "⚙️"
-ERROR_LOGO = "❌"
-GPT_3_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_logo.svg/1024px-ChatGPT_logo.svg.png?20230318122128"
-GPT_4_LOGO = "https://upload.wikimedia.org/wikipedia/commons/a/a4/GPT-4.png"
-WOLFRAM_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/WolframCorporateLogo.svg/1920px-WolframCorporateLogo.svg.png"
-
-DEFAULT_AVATARS = {
-    # User
-    "client": USER_LOGO,
-    "customer": USER_LOGO,
-    "employee": USER_LOGO,
-    "human": USER_LOGO,
-    "person": USER_LOGO,
-    "user": USER_LOGO,
-    # Assistant
-    "agent": ASSISTANT_LOGO,
-    "ai": ASSISTANT_LOGO,
-    "assistant": ASSISTANT_LOGO,
-    "bot": ASSISTANT_LOGO,
-    "chatbot": ASSISTANT_LOGO,
-    "machine": ASSISTANT_LOGO,
-    "robot": ASSISTANT_LOGO,
-    # System
-    "system": SYSTEM_LOGO,
-    "exception": ERROR_LOGO,
-    "error": ERROR_LOGO,
-    # Human
-    "adult": "🧑",
-    "baby": "👶",
-    "boy": "👦",
-    "child": "🧒",
-    "girl": "👧",
-    "man": "👨",
-    "woman": "👩",
-    # Machine
-    "chatgpt": GPT_3_LOGO,
-    "gpt3": GPT_3_LOGO,
-    "gpt4": GPT_4_LOGO,
-    "dalle": GPT_4_LOGO,
-    "openai": GPT_4_LOGO,
-    "huggingface": "🤗",
-    "calculator": "🧮",
-    "langchain": "🦜",
-    "translator": "🌐",
-    "wolfram": WOLFRAM_LOGO,
-    "wolfram alpha": WOLFRAM_LOGO,
-    # Llama
-    "llama": "🦙",
-    "llama2": "🐪",
-}
 
 PLACEHOLDER_SVG = """
     <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-loader-3" width="40" height="40" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -182,6 +130,12 @@ class ChatFeed(ListPanel):
     objects = param.List(default=[], doc="""
         The list of child objects that make up the layout.""")
 
+    help_text = param.String(default="", doc="""
+        If provided, initializes a chat message in the chat log
+        using the provided help text as the message object and
+        `help` as the user. This is useful for providing instructions,
+        and will not be included in the `serialize` method by default.""")
+
     placeholder_text = param.String(default="", doc="""
         If placeholder is the default LoadingSpinner the text to display
         next to it.""")
@@ -239,6 +193,9 @@ class ChatFeed(ListPanel):
 
         super().__init__(*objects, **params)
 
+        if self.help_text:
+            self.objects = [ChatMessage(self.help_text, user="Help"), *self.objects]
+
         # instantiate the card's column
         linked_params = dict(
             design=self.param.design,
@@ -250,7 +207,7 @@ class ChatFeed(ListPanel):
         )
         # we separate out chat log for the auto scroll feature
         self._chat_log = Column(
-            *objects,
+            *self.objects,
             auto_scroll_limit=self.auto_scroll_limit,
             scroll_button_threshold=self.scroll_button_threshold,
             css_classes=["chat-feed-log"],
@@ -805,6 +762,7 @@ class ChatFeed(ListPanel):
 
     def serialize(
         self,
+        exclude_users: List[str] | None = None,
         filter_by: Callable | None = None,
         format: Literal["transformers"] = "transformers",
         custom_serializer: Callable | None = None,
@@ -818,6 +776,9 @@ class ChatFeed(ListPanel):
         format : str
             The format to export the chat log as; currently only
             supports "transformers".
+        exclude_users : list(str) | None
+            A list of user (case insensitive names) to exclude from serialization.
+            If not provided, defaults to ["help"]. This will be executed before `filter_by`.
         filter_by : callable
             A function to filter the chat log by.
             The function must accept and return a list of ChatMessage objects.
@@ -843,7 +804,15 @@ class ChatFeed(ListPanel):
         -------
         The chat log serialized in the specified format.
         """
-        messages = self._chat_log.objects.copy()
+        if exclude_users is None:
+            exclude_users = ["help"]
+        else:
+            exclude_users = [user.lower() for user in exclude_users]
+        messages = [
+            message for message in self._chat_log.objects
+            if message.user.lower() not in exclude_users
+        ]
+
         if filter_by is not None:
             messages = filter_by(messages)
 

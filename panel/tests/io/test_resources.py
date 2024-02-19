@@ -2,10 +2,11 @@ import os
 
 from pathlib import Path
 
+import bokeh
+
 from packaging.version import Version
 
 from panel.config import config, panel_extension as extension
-from panel.io.convert import BOKEH_VERSION
 from panel.io.resources import (
     CDN_DIST, DIST_DIR, PANEL_DIR, Resources, resolve_custom_path,
     resolve_stylesheet, set_resource_mode,
@@ -14,7 +15,7 @@ from panel.io.state import set_curdoc
 from panel.theme.native import Native
 from panel.widgets import Button
 
-bokeh_version = Version(BOKEH_VERSION)
+bokeh_version = Version(bokeh.__version__)
 if bokeh_version.is_devrelease or bokeh_version.is_prerelease:
     bk_prefix = 'dev'
 else:
@@ -42,11 +43,11 @@ def test_resources_cdn():
     resources = Resources(mode='cdn', minified=True)
     assert resources.js_raw == ['Bokeh.set_log_level("info");']
     assert resources.js_files == [
-        f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-{BOKEH_VERSION}.min.js',
-        f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-gl-{BOKEH_VERSION}.min.js',
-        f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-widgets-{BOKEH_VERSION}.min.js',
-        f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-tables-{BOKEH_VERSION}.min.js',
-        f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-mathjax-{BOKEH_VERSION}.min.js',
+        f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-{bokeh_version}.min.js',
+        f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-gl-{bokeh_version}.min.js',
+        f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-widgets-{bokeh_version}.min.js',
+        f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-tables-{bokeh_version}.min.js',
+        f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-mathjax-{bokeh_version}.min.js',
     ]
 
 def test_resources_server_absolute():
