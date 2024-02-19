@@ -40,7 +40,7 @@ jobs:
       - uses: holoviz-dev/holoviz_tasks/install@v0.1a18
         with:
           name: doc_build
-          python-version: "3.9"
+          python-version: "3.11"
           channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
           conda-update: 'true'
           nodejs: true
