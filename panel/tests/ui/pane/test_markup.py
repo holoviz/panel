@@ -89,7 +89,8 @@ def test_markdown_pane_visible_toggle(page):
 
     wait_until(lambda: page.locator(".markdown").locator("div").is_visible(), page)
 
-def test_html_model(page):
+def test_html_model_no_stylesheet(page):
+    # regression test for https://github.com/holoviz/holoviews/issues/5963
     text = "<h1>Header</h1>"
     html = HTML(text=escape(text), width=200, height=200)
     serve_component(page, html)
