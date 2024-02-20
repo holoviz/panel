@@ -567,6 +567,18 @@ class TestChatFeedCallback:
         assert chat_feed.objects[1].object == "Message"
         assert not chat_feed.objects[-1].show_activity_dot
 
+    def test_placeholder_text_params(self, chat_feed):
+        def echo(contents, user, instance):
+            assert instance._placeholder.user == "Loading..."
+            assert instance._placeholder.object == "Thinking..."
+            time.sleep(1.25)
+            return "hey testing"
+
+        chat_feed.callback = echo
+        chat_feed.placeholder_text = "Thinking..."
+        chat_feed.placeholder_params = {"user": "Loading..."}
+        chat_feed.send("Message", respond=True)
+
     def test_placeholder_disabled(self, chat_feed):
         def echo(contents, user, instance):
             time.sleep(1.25)
