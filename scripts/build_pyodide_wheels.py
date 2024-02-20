@@ -27,10 +27,6 @@ parser.add_argument(
 args = parser.parse_args()
 
 command = ["pip", "wheel", "."]
-bokeh_version = Version(version("bokeh"))
-bokeh_dev = bokeh_version.is_devrelease
-if bokeh_dev:
-    command.append("--pre")
 
 if args.no_deps:
     command.append("--no-deps")
@@ -50,7 +46,8 @@ if not panel_wheels:
     raise RuntimeError("Panel wheel not found.")
 panel_wheel = sorted(panel_wheels)[-1]
 
-if bokeh_dev:
+bokeh_version = version(version("bokeh"))
+if bokeh_version.is_devrelease:
     zin = zipfile.ZipFile(panel_wheel, "r")
     zout = zipfile.ZipFile(out / os.path.basename(panel_wheel).replace(".dirty", ""), "w")
     for item in zin.infolist():
