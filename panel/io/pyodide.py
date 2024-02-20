@@ -114,10 +114,14 @@ if pyodide_http is None:
         return _read_json_original(*args, **kwargs)
     pandas.read_json = _read_json
 
+_tasks = set()
+
 def async_execute(func: Any):
     event_loop = asyncio.get_running_loop()
     if event_loop.is_running():
-        asyncio.create_task(func())
+        task = asyncio.create_task(func())
+        _tasks.add(task)
+        task.add_done_callback(_tasks.discard)
     else:
         event_loop.run_until_complete(func())
     return
@@ -410,7 +414,9 @@ def render_script(obj: Any, target: str) -> str:
         render_item.roots._roots[root] = target
     document.getElementById(target).classList.add('bk-root')
     script = script_for_render_items(docs_json, [render_item])
-    asyncio.create_task(_link_model(doc.roots[0].ref['id'], doc))
+    task = asyncio.create_task(_link_model(doc.roots[0].ref['id'], doc))
+    _tasks.add(task)
+    task.add_done_callback(_tasks.discard)
     return wrap_in_script_tag(script)
 
 def serve(*args, **kwargs):
