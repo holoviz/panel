@@ -42,7 +42,7 @@ export class PanelMarkupView extends WidgetView {
         })
       }
     }
-    if (this.model.stylesheets.length === 0)
+    if (Object.keys(this._initialized_stylesheets).length === 0)
       this.style_redraw()
   }
 
