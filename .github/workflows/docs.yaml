@@ -60,6 +60,7 @@ jobs:
           (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
           pip install --pre --upgrade bokeh
+          pip install git+https://github.com/holoviz-dev/nbsite@bokeh34
       - name: bokeh sampledata
         run: |
           conda activate test-environment
