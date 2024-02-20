@@ -10,6 +10,10 @@ import shutil
 import subprocess
 import zipfile
 
+from importlib.metadata import version
+
+from packaging.version import Version
+
 PANEL_BASE = pathlib.Path(__file__).parent.parent
 
 parser = argparse.ArgumentParser()
@@ -22,7 +26,10 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-command = ["pip", "wheel", ".", "--pre"]
+command = ["pip", "wheel", "."]
+
+if Version(version("bokeh")).is_devrelease:
+    command.append("--pre")
 
 if args.no_deps:
     command.append("--no-deps")
