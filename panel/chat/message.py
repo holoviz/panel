@@ -56,7 +56,7 @@ WOLFRAM_LOGO = "{dist_path}assets/logo/wolfram.svg"
 LUMEN_LOGO = "{dist_path}assets/logo/lumen.svg"
 HOLOVIEWS_LOGO = "{dist_path}assets/logo/holoviews.svg"
 HVPLOT_LOGO = "{dist_path}assets/logo/hvplot.svg"
-PANEL_LOGO = "{dist_path}assets/logo/panel.svg"
+PANEL_LOGO = "{dist_path}images/icon-vector.svg"
 
 DEFAULT_AVATARS = {
     # User
