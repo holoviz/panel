@@ -1,5 +1,5 @@
 awscli
-bokeh ==3.4.0.dev8
+bokeh
 ipywidgets
 jupyter_bokeh
 jupyterlab

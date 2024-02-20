@@ -22,7 +22,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-command = ["pip", "wheel", "."]
+command = ["pip", "wheel", ".", "--pre"]
 
 if args.no_deps:
     command.append("--no-deps")
