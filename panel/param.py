@@ -37,6 +37,14 @@ from param.parameterized import (
 )
 from param.reactive import rx
 
+try:
+    from param import Skip
+except Exception:
+    class Skip(RuntimeError):
+        """
+        Exception that allows skipping an update for function-level updates.
+        """
+
 from .config import config
 from .io import state
 from .layout import (
@@ -119,10 +127,6 @@ def set_values(*parameterizeds, **param_values):
         for parameterized, old_values in old:
             parameterized.param.update(**old_values)
 
-class Skip(RuntimeError):
-    """
-    Exception that allows skipping an update for function-level updates.
-    """
 
 class Param(PaneBase):
     """
