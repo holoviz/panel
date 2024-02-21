@@ -98,9 +98,6 @@ Enjoying Panel? Show your support with a [Github star](https://github.com/holovi
 The getting started guide will get you set up with Panel and provide a basic overview of the features and strengths of Panel.
 :::
 
-::::{grid} 1 2 2 4
-:gutter: 1 1 1 2
-
 :::{grid-item-card} {octicon}`mortar-board;2.5em;sd-mr-1` Tutorials
 :link: tutorials/index
 :link-type: doc

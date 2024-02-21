@@ -6,11 +6,16 @@ In this section, we will collaboratively create a *Wind Turbine Report*. Togethe
 - Export the report to a static `.html` file using the `.save` method.
 - Distribute the report via email.
 
-![Wind Turbine Report](https://assets.holoviz.org/panel/tutorials/wind_turbine_report.gif)
+<video controls="" poster="https://assets.holoviz.org/panel/tutorials/wind_turbine_report.png">
+    <source src="https://assets.holoviz.org/panel/tutorials/wind_turbine_report.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
+    Your browser does not support the video tag.
+</video>
 
 :::::{dropdown} Dependencies
 
+```bash
 altair panel
+```
 
 :::::
 
@@ -160,6 +165,8 @@ report = pn.Column(header, main_container)
 ## Export and save it
 
 report.save("report.html")
+
+report.servable() # Added such that the report can be served for development
 ```
 
 :::::
@@ -359,7 +366,7 @@ report = pn.Column(header, main_container)
 report
 ```
 
-We create a container (`main_container`) to hold the main content with a maximum width and some margin styling. Then, we compose the entire report (`report`) by combining the header and the main container, setting the sizing mode to stretch the width.
+We create a container (`main_container`) to hold the main content with a maximum width and some margin styling. Then, we compose the entire report (`report`) by combining the header and the main container.
 
 ```python
 report.save("report.html")
@@ -379,7 +386,10 @@ Please verify that the file `report.html` has been created.
 
 Please open the `report.html` file in your browser. It should look like:
 
-![Wind Turbine Report](https://assets.holoviz.org/panel/tutorials/wind_turbine_report.gif)
+<video controls="" poster="https://assets.holoviz.org/panel/tutorials/wind_turbine_report.png">
+    <source src="https://assets.holoviz.org/panel/tutorials/wind_turbine_report.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
+    Your browser does not support the video tag.
+</video>
 
 ## Distribute the report
 

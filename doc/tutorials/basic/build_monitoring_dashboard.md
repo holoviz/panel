@@ -8,7 +8,9 @@ These types of dashboards are suitable for displaying on a large screen running 
 
 :::::{dropdown} Dependencies
 
+```bash
 panel scipy
+```
 
 :::::
 
@@ -65,14 +67,13 @@ power_output_view = pn.indicators.Number(
         (max(POWER_OUTPUTS), "red"),
     ],
 )
+indicators = pn.FlexBox(wind_speed_view, power_output_view)
 
-# Layout and style with a template
+# Layout and style with template
 
 pn.template.FastListTemplate(
     title="WTG Monitoring Dashboard",
-    main=[
-        pn.FlexBox(wind_speed_view, power_output_view),
-    ],
+    main=[indicators],
     accent=ACCENT,
     main_layout=None,
     theme="dark",
@@ -113,7 +114,7 @@ pip install panel scipy
 
 Let's dissect the code that brings our dashboard to life:
 
-```python
+```{pyodide}
 import numpy as np
 import panel as pn
 from scipy.interpolate import interp1d
@@ -121,13 +122,13 @@ from scipy.interpolate import interp1d
 
 We import the necessary libraries: [NumPy](https://numpy.org/) for numerical computations, [Panel](https://panel.holoviz.org) for building interactive web apps, and [SciPy](https://scipy.org/) for interpolation.
 
-```python
+```{pyodide}
 pn.extension()
 ```
 
 We load the JavaScript dependencies required by our app.
 
-```python
+```{pyodide}
 ACCENT = "teal"
 
 WIND_SPEED_STD_DEV = 2.0
@@ -139,7 +140,7 @@ POWER_OUTPUTS = np.array([0, 39, 260, 780, 1300, 1300, 0, 0])  # Power output (M
 
 We set some constants related to wind speed and power output data.
 
-```python
+```{pyodide}
 def get_wind_speed():
     return round(np.random.normal(WIND_SPEED_MEAN, WIND_SPEED_STD_DEV), 1)
 
@@ -148,7 +149,7 @@ wind_speed = get_wind_speed()
 
 A function `get_wind_speed()` generates a random wind speed value based on a normal distribution.
 
-```python
+```{pyodide}
 def get_power_output(wind_speed):
     power_interpolation = interp1d(
         WIND_SPEEDS, POWER_OUTPUTS, kind="linear", fill_value="extrapolate"
@@ -160,7 +161,7 @@ power_output = get_power_output(wind_speed)
 
 Another function `get_power_output(wind_speed)` calculates the corresponding power output based on the provided wind speed using linear interpolation.
 
-```python
+```{pyodide}
 wind_speed_view = pn.indicators.Number(
     name="Wind Speed",
     value=wind_speed,
@@ -176,9 +177,11 @@ power_output_view = pn.indicators.Number(
         (max(POWER_OUTPUTS), "red"),
     ],
 )
+indicators = pn.FlexBox(wind_speed_view, power_output_view)
+indicators
 ```
 
-We create [`Number`](../../reference/indicators/Number.ipynb) indicators to display the wind speed and power output.
+We create [`Number`](../../reference/indicators/Number.ipynb) indicators to display the wind speed and power output. The [`FlexBox`](../../reference/layouts/FlexBox.ipynb) layout will arrange the indicators horizontally or vertically depending on the screen size.
 
 ::::{tab-set}
 
@@ -188,9 +191,7 @@ We create [`Number`](../../reference/indicators/Number.ipynb) indicators to disp
 ```python
 pn.template.FastListTemplate(
     title="WTG Monitoring Dashboard",
-    main=[
-        pn.FlexBox(wind_speed_view, power_output_view),
-    ],
+    main=[indicators],
     accent=ACCENT,
     main_layout=None,
     theme="dark",
@@ -207,9 +208,7 @@ pn.template.FastListTemplate(
 ```python
 pn.template.FastListTemplate(
     title="WTG Monitoring Dashboard",
-    main=[
-        pn.FlexBox(wind_speed_view, power_output_view),
-    ],
+    main=[indicators],
     accent=ACCENT,
     main_layout=None,
     theme="dark",
@@ -222,10 +221,10 @@ pn.template.FastListTemplate(
 
 ::::
 
-Finally, we construct the dashboard using the [`FastListTemplate`](../../reference/templates/FastListTemplate.ipynb), arranging the indicators in a [`FlexBox`](../../reference/layouts/FlexBox.ipynb) layout. We set the accent color, theme, and enable automatic refreshing every 2 seconds.
+Finally, we construct the dashboard using the [`FastListTemplate`](../../reference/templates/FastListTemplate.ipynb). We set the accent color, theme, and enable automatic refreshing every 2 seconds.
 
 :::{note}
-In the example, we use a `meta_refresh` rate of 2 for illustration purposes. For real use cases, we recommend `meta_refresh` rates of 15 or above. For lower refresh rates we would be using a *Periodic Callback* or *generator* function in combination with a `meta_refresh` rate of 900 or above.
+In the example, we use a `meta_refresh` rate of 2 for illustration purposes. For real use cases, we recommend `meta_refresh` rates of 15 or above. For lower refresh rates we would be using a [*Periodic Callback*](../../how_to/callbacks/periodic.md) or [*generators*](../../how_to/interactivity/bind_generators.md) in combination with a `meta_refresh` rate of 900 or above.
 :::
 
 ## Serve the App
@@ -237,7 +236,7 @@ Now serve the app with:
 :::{tab-item} Script
 :sync: script
 
-```python
+```bash
 panel serve app.py --autoreload
 ```
 
@@ -246,7 +245,7 @@ panel serve app.py --autoreload
 :::{tab-item} Notebook
 :sync: notebook
 
-```python
+```bash
 panel serve app.ipynb --autoreload
 ```
 
