@@ -331,6 +331,8 @@ class PanelWSProxy(WSHandler, JupyterHandler):
     receives Bokeh protocol messages via a Jupyter Comm.
     """
 
+    _tasks = set()
+
     def __init__(self, tornado_app, *args, **kw) -> None:
         # Note: tornado_app is stored as self.application
         kw['application_context'] = None
@@ -398,7 +400,9 @@ class PanelWSProxy(WSHandler, JupyterHandler):
         await self.send_message(msg)
 
         self._ping_job.start()
-        asyncio.create_task(self._check_for_message())
+        task = asyncio.create_task(self._check_for_message())
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
 
     async def _check_for_message(self):
         while True:
