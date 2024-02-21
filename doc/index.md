@@ -86,7 +86,7 @@ Panel makes it simple to:
 
 Enjoying Panel? Show your support with a [Github star](https://github.com/holoviz/panel) — it’s a simple click that means the world to us and helps others discover it too! ⭐️
 
-## Usage
+## Getting Started
 
 ::::{grid} 1 2 2 4
 :gutter: 1 1 1 2
@@ -97,6 +97,13 @@ Enjoying Panel? Show your support with a [Github star](https://github.com/holovi
 
 The getting started guide will get you set up with Panel and provide a basic overview of the features and strengths of Panel.
 :::
+
+::::
+
+## Usage
+
+::::{grid} 1 2 2 4
+:gutter: 1 1 1 2
 
 :::{grid-item-card} {octicon}`mortar-board;2.5em;sd-mr-1` Tutorials
 :link: tutorials/index
