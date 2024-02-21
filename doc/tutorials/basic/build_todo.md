@@ -11,9 +11,19 @@ In this section, we will work on building a *Todo App* together so that our wind
 When we ask everyone to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
-## Create the App
+<iframe src="https://panel-org-build-todo-app.hf.space" frameborder="0" style="width: 100%;height:1000px"></iframe>
 
-```{pyodide}
+:::{dropdown} Requirements
+
+```bash
+panel
+```
+
+:::
+
+:::{dropdown} Code
+
+```python
 import panel as pn
 
 pn.extension(sizing_mode="stretch_width", design="material")
@@ -110,6 +120,36 @@ pn.Column(
     max_width=500,
 ).servable()
 ```
+
+:::
+
+## Install the Requirements
+
+::::{tab-set}
+
+:::{tab-item} pip
+:sync: pip
+
+```bash
+pip install panel
+```
+
+:::
+
+:::{tab-item} conda
+:sync: conda
+
+```bash
+conda install -y -c conda-forge panel
+```
+
+:::
+
+::::
+
+## Explanation
+
+COMING UP
 
 Let's perform the following actions:
 
