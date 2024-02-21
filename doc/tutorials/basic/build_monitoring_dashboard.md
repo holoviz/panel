@@ -6,34 +6,6 @@ These types of dashboards are suitable for displaying on a large screen running 
 
 ![Monitoring Dashboard](https://assets.holoviz.org/panel/tutorials/build-monitoring-dashboard.gif)
 
-:::::{dropdown} Dependencies
-
-Please ensure that Panel and [SciPy](https://scipy.org/) are installed.
-
-::::{tab-set}
-
-:::{tab-item} conda
-:sync: conda
-
-```bash
-conda install -y -c conda-forge panel scipy
-```
-
-:::
-
-:::{tab-item} pip
-:sync: pip
-
-```bash
-pip install panel scipy
-```
-
-:::
-
-::::
-
-:::::
-
 :::::{dropdown} Code
 
 ```python
@@ -105,6 +77,32 @@ pn.template.FastListTemplate(
 
 :::::
 
+## Install the dependencies
+
+Please ensure that [Panel](https://panel.holoviz.org) and [SciPy](https://scipy.org/) are installed.
+
+::::{tab-set}
+
+:::{tab-item} conda
+:sync: conda
+
+```bash
+conda install -y -c conda-forge panel scipy
+```
+
+:::
+
+:::{tab-item} pip
+:sync: pip
+
+```bash
+pip install panel scipy
+```
+
+:::
+
+::::
+
 ## Explanation
 
 Let's dissect the code that brings our dashboard to life:
@@ -174,7 +172,7 @@ power_output_view = pn.indicators.Number(
 )
 ```
 
-We create indicators to display the wind speed and power output.
+We create [`Number`](../../reference/indicators/Number.ipynb) indicators to display the wind speed and power output.
 
 ::::{tab-set}
 
@@ -220,6 +218,12 @@ pn.template.FastListTemplate(
 
 Finally, we construct the dashboard using the [`FastListTemplate`](../../reference/templates/FastListTemplate.ipynb), arranging the indicators in a [`FlexBox`](../../reference/layouts/FlexBox.ipynb) layout. We set the accent color, theme, and enable automatic refreshing every 2 seconds.
 
+:::{note}
+In the example, we use a `meta_refresh` rate of 2 for illustration purposes. For real use cases, we recommend `meta_refresh` rates of 15 or above. For lower refresh rates we would be using a *Periodic Callback* or *generator* function in combination with a `meta_refresh` rate of 900 or above.
+:::
+
+## Serve the App
+
 Now serve the app with:
 
 ::::{tab-set}
@@ -249,10 +253,6 @@ Open [http://localhost:5006/app](http://localhost:5006/app)
 It should resemble
 
 ![Monitoring Dashboard](https://assets.holoviz.org/panel/tutorials/build-monitoring-dashboard.gif)
-
-:::{note}
-In the example, we use a `meta_refresh` rate of 2 for illustration purposes. For real use cases, we recommend `meta_refresh` rates of 900 or above.
-:::
 
 ## Recap
 
