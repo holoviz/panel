@@ -34,16 +34,16 @@ export class PanelMarkupView extends WidgetView {
     for (const sts of this._applied_stylesheets) {
       const style_el = (sts as any).el
       if (style_el instanceof HTMLLinkElement) {
-	this._initialized_stylesheets[style_el.href] = false
-	style_el.addEventListener("load", () => {
-	  this._initialized_stylesheets[style_el.href] = true
-	  if (
-	    Object.values(this._initialized_stylesheets).every(Boolean)
-	  )
-	    this.style_redraw()
-	})
+        this._initialized_stylesheets[style_el.href] = false
+        style_el.addEventListener('load', () => {
+          this._initialized_stylesheets[style_el.href] = true
+          if (Object.values(this._initialized_stylesheets).every(Boolean))
+            this.style_redraw()
+        })
       }
     }
+    if (Object.keys(this._initialized_stylesheets).length === 0)
+      this.style_redraw()
   }
 
   style_redraw(): void {

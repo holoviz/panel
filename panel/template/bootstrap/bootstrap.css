@@ -162,6 +162,7 @@ img.app-logo {
 .pn-modal-content {
   display: block;
   min-height: 42px;
+  overflow-x: auto;
 }
 
 .pn-modal-close {
@@ -182,8 +183,8 @@ img.app-logo {
 
 .pn-busy-container {
   align-items: center;
-  justify-content: center;
   display: flex;
+  justify-content: center;
   margin-left: auto;
 }
 

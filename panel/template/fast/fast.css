@@ -366,3 +366,8 @@ fast-card {
   --background-color: var(--neutral-layer-floating);
   z-index: 10;
 }
+
+.pn-modal-content {
+  display: block;
+  overflow-x: auto;
+}

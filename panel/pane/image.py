@@ -23,6 +23,8 @@ from .markup import HTMLBasePane, escape
 if TYPE_CHECKING:
     from bokeh.model import Model
 
+_tasks = set()
+
 class FileBase(HTMLBasePane):
 
     embed = param.Boolean(default=False, doc="""
@@ -110,7 +112,9 @@ class FileBase(HTMLBasePane):
                 from pyodide.http import pyfetch
                 async def replace_content():
                     self.object = await (await pyfetch(obj)).bytes()
-                asyncio.create_task(replace_content())
+                task = asyncio.create_task(replace_content())
+                _tasks.add(task)
+                task.add_done_callback(_tasks.discard)
         else:
             import requests
             r = requests.request(url=obj, method='GET')

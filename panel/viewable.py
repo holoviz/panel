@@ -59,6 +59,9 @@ if TYPE_CHECKING:
     from .theme import Design
 
 
+_tasks = set()
+
+
 class Layoutable(param.Parameterized):
     """
     Layoutable defines shared style and layout related parameters
@@ -405,7 +408,9 @@ class ServableMixin:
             except Exception:
                 target = None
             if target is not None:
-                asyncio.create_task(write(target, self))
+                task = asyncio.create_task(write(target, self))
+                _tasks.add(task)
+                task.add_done_callback(_tasks.discard)
         return self
 
     def show(

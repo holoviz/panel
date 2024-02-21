@@ -604,7 +604,7 @@ class Resources(BkResources):
             if not (getattr(model, resource_type, None) and model._loaded()):
                 continue
             for resource in getattr(model, resource_type, []):
-                if not isurl(resource) and not resource.startswith('static/extensions'):
+                if not isurl(resource) and not resource.lstrip('./').startswith('static/extensions'):
                     resource = component_resource_path(model, resource_type, resource)
                 if resource not in resources:
                     resources.append(resource)
@@ -751,6 +751,10 @@ class Resources(BkResources):
         from ..reactive import ReactiveHTML
 
         modules = list(config.js_modules.values())
+        for model in Model.model_class_reverse_map.values():
+            if hasattr(model, '__javascript_modules__'):
+                modules.extend(model.__javascript_modules__)
+
         self.extra_resources(modules, '__javascript_modules__')
         if config.design:
             design_resources = config.design().resolve_resources(

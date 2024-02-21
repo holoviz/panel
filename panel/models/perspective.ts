@@ -6,8 +6,8 @@ import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 import type {Attrs} from "@bokehjs/core/types"
 
 const THEMES: any = {
-  'material-dark': 'Material Dark',
-  'material': 'Material Light',
+  'pro-dark': 'Pro Dark',
+  'pro': 'Pro Light',
   'vaporwave': 'Vaporwave',
   'solarized': 'Solarized',
   'solarized-dark': 'Solarized Dark',
@@ -200,7 +200,7 @@ export class PerspectiveView extends HTMLBoxView {
       const props: any =  {}
       for (let option in config) {
         let value = config[option]
-        if (value === undefined || (option == 'plugin' && value === "debug") || option === 'settings')
+        if (value === undefined || (option == 'plugin' && value === "debug") || this.model.properties.hasOwnProperty(option) === undefined)
           continue
         if (option === 'filter')
           option = 'filters'
@@ -256,7 +256,7 @@ export namespace Perspective {
     aggregates: p.Property<any>
     split_by: p.Property<any[] | null>
     columns: p.Property<any[]>
-    expressions: p.Property<any[] | null>
+    expressions: p.Property<any>
     editable: p.Property<boolean | null>
     filters: p.Property<any[] | null>
     group_by: p.Property<any[] | null>
@@ -288,7 +288,7 @@ export class Perspective extends HTMLBox {
     this.define<Perspective.Props>(({Any, Array, Boolean, Ref, Nullable, String}) => ({
       aggregates:       [ Any,                                 {} ],
       columns:          [ Array(Nullable(String)),             [] ],
-      expressions:      [ Nullable(Array(String)),           null ],
+      expressions:      [ Any,                                 {} ],
       split_by:         [ Nullable(Array(String)),           null ],
       editable:         [ Boolean,                           true ],
       filters:          [ Nullable(Array(Any)),              null ],
@@ -300,7 +300,7 @@ export class Perspective extends HTMLBox {
       toggle_config:    [ Boolean,                           true ],
       sort:             [ Nullable(Array(Array(String))),    null ],
       source:           [ Ref(ColumnDataSource),                  ],
-      theme:            [ String,                      'material' ]
+      theme:            [ String,                           'pro' ]
     }))
   }
 }
