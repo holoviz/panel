@@ -19,20 +19,20 @@ Please make sure [Altair](https://altair-viz.github.io/), [hvPlot](https://hvplo
 
 ::::{tab-set}
 
-:::{tab-item} conda
-:sync: conda
-
-```bash
-conda install -y -c conda-forge altair hvplot matplotlib plotly
-```
-
-:::
-
 :::{tab-item} pip
 :sync: pip
 
 ```bash
-pip install altair hvplot matplotlib plotly
+pip install altair hvplot matplotlib panel plotly
+```
+
+:::
+
+:::{tab-item} conda
+:sync: conda
+
+```bash
+conda install -y -c conda-forge altair hvplot matplotlib panel plotly
 ```
 
 :::

@@ -12,20 +12,20 @@ Please make sure [Vega-Altair](https://altair-viz.github.io/) is installed.
 
 ::::{tab-set}
 
-:::{tab-item} conda
-:sync: conda
-
-``` bash
-conda install -y -c conda-forge altair
-```
-
-:::
-
 :::{tab-item} pip
 :sync: pip
 
 ``` bash
-pip install altair
+pip install altair panel
+```
+
+:::
+
+:::{tab-item} conda
+:sync: conda
+
+``` bash
+conda install -y -c conda-forge altair panel
 ```
 
 :::

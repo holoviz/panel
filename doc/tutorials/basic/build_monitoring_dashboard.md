@@ -90,20 +90,20 @@ Please ensure that [Panel](https://panel.holoviz.org) and [SciPy](https://scipy.
 
 ::::{tab-set}
 
-:::{tab-item} conda
-:sync: conda
-
-```bash
-conda install -y -c conda-forge panel scipy
-```
-
-:::
-
 :::{tab-item} pip
 :sync: pip
 
 ```bash
 pip install panel scipy
+```
+
+:::
+
+:::{tab-item} conda
+:sync: conda
+
+```bash
+conda install -y -c conda-forge panel scipy
 ```
 
 :::

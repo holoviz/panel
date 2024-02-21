@@ -19,20 +19,20 @@ Please ensure that [hvPlot](https://hvplot.holoviz.org) is installed.
 
 ::::{tab-set}
 
-:::{tab-item} conda
-:sync: conda
-
-``` bash
-conda install -y -c conda-forge hvplot
-```
-
-:::
-
 :::{tab-item} pip
 :sync: pip
 
 ``` bash
-pip install hvplot
+pip install hvplot panel
+```
+
+:::
+
+:::{tab-item} conda
+:sync: conda
+
+``` bash
+conda install -y -c conda-forge hvplot panel
 ```
 
 :::

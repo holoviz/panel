@@ -24,20 +24,22 @@ Please make sure [Altair](https://altair-viz.github.io/), [Pandas](https://panda
 
 ::::{tab-set}
 
-:::{tab-item} conda
-:sync: conda
-
-``` bash
-conda install -y -c conda-forge altair pandas pyarrow
-```
-:::
-
 :::{tab-item} pip
 :sync: pip
 
 ``` bash
-pip install altair pandas pyarrow
+pip install altair pandas panel pyarrow
 ```
+
+:::
+
+:::{tab-item} conda
+:sync: conda
+
+``` bash
+conda install -y -c conda-forge altair pandas panel pyarrow
+```
+
 :::
 
 ::::

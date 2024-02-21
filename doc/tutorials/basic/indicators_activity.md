@@ -24,20 +24,20 @@ Please ensure that [hvPlot](https://hvplot.holoviz.org) and [Pandas](https://pan
 
 ::::{tab-set}
 
-:::{tab-item} conda
-:sync: conda
-
-``` bash
-conda install -y -c conda-forge hvplot pandas
-```
-
-:::
-
 :::{tab-item} pip
 :sync: pip
 
 ``` bash
-pip install hvplot pandas
+pip install hvplot pandas panel
+```
+
+:::
+
+:::{tab-item} conda
+:sync: conda
+
+``` bash
+conda install -y -c conda-forge hvplot pandas panel
 ```
 
 :::

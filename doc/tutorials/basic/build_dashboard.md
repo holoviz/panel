@@ -16,20 +16,20 @@ Click the dropdowns below to see the requirements or the full code.
 
 ::::{tab-set}
 
-:::{tab-item} conda
-:sync: conda
-
-```bash
-conda install -y -c conda-forge hvplot panel pandas
-```
-
-:::
-
 :::{tab-item} pip
 :sync: pip
 
 ```bash
-pip install hvplot panel pandas
+pip install hvplot pandas panel
+```
+
+:::
+
+:::{tab-item} conda
+:sync: conda
+
+```bash
+conda install -y -c conda-forge hvplot pandas panel
 ```
 
 :::

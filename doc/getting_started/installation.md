@@ -27,12 +27,6 @@ Open up a terminal and run the following command, which will install Panel with 
 
 ::::{tab-set}
 
-:::{tab-item} conda
-:sync: conda
-
-``` bash
-conda install panel
-```
 :::
 
 :::{tab-item} pip
@@ -41,7 +35,15 @@ conda install panel
 ``` bash
 pip install panel
 ```
+
 :::
+
+:::{tab-item} conda
+:sync: conda
+
+``` bash
+conda install panel
+```
 
 ::::
 

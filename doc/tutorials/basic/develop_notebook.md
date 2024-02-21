@@ -17,20 +17,22 @@ Please make sure [Matplotlib](https://matplotlib.org/) and [Numpy](https://numpy
 
 ::::{tab-set}
 
-:::{tab-item} conda
-:sync: conda
-
-``` bash
-conda install -y -c conda-forge matplotlib
-```
-
-:::
-
 :::{tab-item} pip
 :sync: pip
 
 ``` bash
-pip install matplotlib
+pip install matplotlib numpy panel
+```
+
+:::
+
+:::{tab-item} conda
+:sync: conda
+
+``` bash
+conda install -y -c conda-forge matplotlib numpy panel
+```
+
 :::
 
 ::::
