@@ -6,6 +6,12 @@ These types of dashboards are suitable for displaying on a large screen running 
 
 ![Monitoring Dashboard](https://assets.holoviz.org/panel/tutorials/build-monitoring-dashboard.gif)
 
+:::::{dropdown} Dependencies
+
+panel scipy
+
+:::::
+
 :::::{dropdown} Code
 
 ```python
@@ -113,7 +119,7 @@ import panel as pn
 from scipy.interpolate import interp1d
 ```
 
-We import the necessary libraries: [NumPy](https://numpy.org/) for numerical computations, Panel for building interactive web apps, and [SciPy](https://scipy.org/) for interpolation.
+We import the necessary libraries: [NumPy](https://numpy.org/) for numerical computations, [Panel](https://panel.holoviz.org) for building interactive web apps, and [SciPy](https://scipy.org/) for interpolation.
 
 ```python
 pn.extension()
