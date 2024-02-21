@@ -36,6 +36,8 @@ pip install scipy
 
 ## Build the App
 
+Run the code below:
+
 ```{pyodide}
 import numpy as np
 import panel as pn
