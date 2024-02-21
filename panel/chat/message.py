@@ -231,7 +231,6 @@ class ChatMessage(PaneBase):
 
     def __init__(self, object=None, **params):
         self._exit_stack = ExitStack()
-        self._dist_path = get_dist_path()
         self.chat_copy_icon = ChatCopyIcon(
             visible=False, width=15, height=15, css_classes=["copy-icon"]
         )
@@ -437,7 +436,7 @@ class ChatMessage(PaneBase):
         }
         # now lookup the avatar
         return updated_avatars.get(alpha_numeric_key, self.avatar).format(
-            dist_path=self._dist_path
+            dist_path=get_dist_path()
         )
 
     def _select_renderer(
