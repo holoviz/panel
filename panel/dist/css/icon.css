@@ -1,0 +1,7 @@
+:host(.bk-panel-models-icon-ToggleIcon) {
+  transition: transform 0.1s ease-in;
+}
+
+:host(.bk-panel-models-icon-ToggleIcon:hover) {
+  transform: scale(1.2);
+}
