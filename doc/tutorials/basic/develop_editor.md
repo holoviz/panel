@@ -1,19 +1,12 @@
 # Develop in an Editor
 
-In this section, we will learn the basics of developing Panel apps in an editor:
+Welcome to the "Develop in an Editor" section! Here, we'll explore how to develop Panel apps efficiently right within your favorite editor.
 
-- Serve an app with *autoreload* using `panel serve app.py --autoreload`.
-- Display the app in a *simple* browser tab inside the editor if possible.
-- Inspect Panel objects via *hover* and `print`.
-- Inspect a component's parameters via `.param` and `.param._repr_html_()`.
+Let's dive in!
 
-:::{note}
-Some of the features demonstrated in this guide might require special configuration of your specific editor. For configuration, we refer to the [Resources](#resources) section below and general resources on the web.
-:::
+## Serve Your App with Autoreload
 
-## Install the Dependencies
-
-Please make sure [Matplotlib](https://matplotlib.org/) and [Numpy](https://numpy.org/) are installed.
+First things first, let's ensure we have all the necessary dependencies installed. You can do this easily via `pip` or `conda`:
 
 ::::{tab-set}
 
@@ -37,9 +30,11 @@ conda install -y -c conda-forge matplotlib numpy panel
 
 ::::
 
-## Serve an app with autoreload
+Now that we have our dependencies sorted, let's serve our app with autoreload. Autoreload ensures that your app updates in real-time as you make changes, providing a smooth development experience.
 
-A simple Panel app could look like the following.
+### Serving Your App
+
+Imagine you have a simple Panel app like the following:
 
 ```python
 import panel as pn
@@ -64,27 +59,15 @@ pn.template.FastListTemplate(
 ).servable()
 ```
 
-Copy the code above into a file named `app.py`.
+Copy this code into a file named `app.py` and save it.
 
-Save the file if you have not already done it.
-
-Serve the app by running the following command in a terminal.
+Now, open a terminal and run the following command:
 
 ```bash
 panel serve app.py --autoreload
 ```
 
-It should look like
-
-```bash
-$ panel serve app.py --autoreload
-2024-01-20 07:49:06,767 Starting Bokeh server version 3.3.3 (running on Tornado 6.4)
-2024-01-20 07:49:06,769 User authentication hooks NOT provided (default user enabled)
-2024-01-20 07:49:06,771 Bokeh app running at: http://localhost:5006/app
-2024-01-20 07:49:06,771 Starting Bokeh server with process id: 22100
-```
-
-Open [http://localhost:5006/app](http://localhost:5006/app) in a browser.
+This will start the server and provide you with a URL where your app is being served. Open this URL in your browser to see your app in action.
 
 It should look like
 
@@ -103,72 +86,19 @@ It should look like
     Your browser does not support the video tag.
 </video>
 
-:::{note}
-In the video above, you will notice that the app is displayed inside the editor. This feature is supported in VS Code as the *simple browser*. PyCharm supports a similar feature via an extension.
-:::
+## Inspect via Hover
 
-:::{note}
-We should only serve our apps with `--autoreload` while developing.
-:::
+One of the benefits of developing in an editor is the ability to inspect Panel objects conveniently via hover. Simply hover over the object you want to inspect, and you'll see tooltips providing useful information and links to reference guides.
 
-Stop the Panel server by sending a termination signal. In most terminal environments, you can do this by pressing `CTRL+C` one or more times.
-
-## Inspect via hover
-
-Copy the code below into a file named `app.py`.
-
-```python
-import panel as pn
-import numpy as np
-
-from matplotlib.figure import Figure
-
-ACCENT = "teal"
-LOGO = "https://assets.holoviz.org/panel/tutorials/matplotlib-logo.png"
-
-pn.extension(sizing_mode="stretch_width")
-
-data = np.random.normal(1, 1, size=100)
-fig = Figure(figsize=(8, 4))
-ax = fig.subplots()
-ax.hist(data, bins=15, color=ACCENT)
-
-component = pn.pane.Matplotlib(fig, format='svg', sizing_mode='scale_both')
-
-pn.template.FastListTemplate(
-    title="My Matplotlib App", sidebar=[LOGO], main=[component], accent=ACCENT
-).servable()
-```
-
-Save the file if you have not already done it.
-
-Hover over the word `FastListTemplate`.
-
-It would look something like
+Let's say you want to inspect the `FastListTemplate` object in your code. Hover over it, and you'll see a tooltip with an example code snippet and a reference link. Clicking the reference link takes you directly to the reference guide for further information.
 
 ![Tooltip of FastListTemplate](../../_static/images/develop_editor_hover.png)
 
-:::{note}
-The tooltip of Panel components normally provides an *Example* code snippet and a *Reference* link. The *Reference* link makes it very easy to navigate to the reference guides on the Panel website for more information.
-:::
-
-:::{note}
-If your editor does not show any tooltips, then please refer to your editor's documentation to figure out how to enable it.
-:::
-
-Hover again and click the *Reference* link <a href="https://panel.holoviz.org/reference/templates/FastListTemplate.html" target="_blank">https://panel.holoviz.org/reference/templates/FastListTemplate.html</a>.
-
-This should open the `FastListTemplate` reference guide
-
-[![FastListTemplate reference guide](../../_static/images/develop_editor_reference_guide.png)](https://panel.holoviz.org/reference/templates/FastListTemplate.html)
-
-:::{note}
-It is a great idea to use the *Example* code snippets and *Reference* links to speed up our workflow.
-:::
-
 ## Inspect via `print`
 
-Copy the code below into a file named `app.py`.
+Another handy way to inspect objects is by printing them. This allows you to see detailed information about the object's structure and contents.
+
+Consider the following code snippet:
 
 ```python
 import panel as pn
@@ -176,7 +106,6 @@ import panel as pn
 pn.extension(design="material")
 
 component = pn.panel("Hello World")
-print(component)
 layout = pn.Column(
     component, pn.widgets.IntSlider(value=2, start=0, end=10, name="Value")
 )
@@ -184,7 +113,7 @@ print(layout)
 layout.servable()
 ```
 
-Save the file if you have not already done it.
+Serving this code will print information about the `component` object, revealing its structure and attributes.
 
 Serve the app by running the below command in a terminal.
 
@@ -197,44 +126,22 @@ Open [http://localhost:5006/app](http://localhost:5006/app) in a browser.
 This will look something like the below in the terminal.
 
 ```bash
-$ panel serve app.py --autoreload
-Markdown(str, design=<class 'panel.theme.materi...)
+2024-02-22 20:39:50,405 Starting Bokeh server version 3.3.3 (running on Tornado 6.4)
+2024-02-22 20:39:50,406 User authentication hooks NOT provided (default user enabled)
+2024-02-22 20:39:50,413 Bokeh app running at: http://localhost:5006/app
+2024-02-22 20:39:50,413 Starting Bokeh server with process id: 38480
 Column(design=<class 'panel.theme.materi...)
     [0] Markdown(str, design=<class 'panel.theme.materi...)
     [1] IntSlider(design=<class 'panel.theme.materi..., end=10, name='Value', value=2)
-2024-01-20 08:05:21,789 Starting Bokeh server version 3.3.3 (running on Tornado 6.4)
-2024-01-20 08:05:21,791 User authentication hooks NOT provided (default user enabled)
-2024-01-20 08:05:21,793 Bokeh app running at: http://localhost:5006/app
-2024-01-20 08:05:21,794 Starting Bokeh server with process id: 11092
-Markdown(str, design=<class 'panel.theme.materi...)
-Column(design=<class 'panel.theme.materi...)
-    [0] Markdown(str, design=<class 'panel.theme.materi...)
-    [1] IntSlider(design=<class 'panel.theme.materi..., end=10, name='Value', value=2)
-2024-01-20 08:05:25,768 WebSocket connection opened
-2024-01-20 08:05:25,768 ServerConnection created
+2024-02-22 20:39:52,712 WebSocket connection opened
+2024-02-22 20:39:52,713 ServerConnection created
 ```
-
-:::{note}
-By printing *layout* components like `Column`, we can understand how they are composed. This enables us to *access* the subcomponents of the layout.
-:::
-
-Replace `layout.servable()` with `layout[0].servable()` and save the file.
-
-This will look like
-
-![Layout[0]](../../_static/images/develop_editor_layout0.png)
-
-Replace `layout[0].servable()` with `layout[1].servable()` and save the file.
-
-This will look like
-
-![Layout[1]](../../_static/images/develop_editor_layout1.png)
 
 ## Inspect Parameters via `.param`
 
-We can inspect the *parameters* of Panel's components via the `.param` namespace and its `._repr_html_` method.
+You can inspect the parameters of Panel components using the `.param` namespace and its `_repr_html_` method.
 
-Replace the content of the `app.py` file with
+Copy the code below into a file `app.py`:
 
 ```python
 import panel as pn
@@ -258,14 +165,17 @@ It should look like
 
 ## Recap
 
-We have learned to
+In this section, we've covered:
 
-- Serve an app with *autoreload* using `panel serve app.py --autoreload`.
-- Display the app in a *simple* browser tab inside our editor if possible.
-- Inspect Panel objects via *hover* and `print`.
-- Inspect a component's parameters via `.param` and `.param._repr_html_()`.
+- Serving your app with autoreload for seamless development.
+- Inspecting Panel objects conveniently via hover and `print`.
+- Exploring component parameters using `.param`.
+
+With these techniques, you can streamline your development workflow and build awesome Panel apps more efficiently!
 
 ## Resources
+
+For more advanced techniques and configuration options, check out the resources below:
 
 ### Tutorials
 
@@ -274,8 +184,6 @@ We have learned to
 ### How-to
 
 - [Configure VS Code](../../how_to/editor/vscode_configure.md)
-- [Write apps in Markdown](../../how_to/editor/markdown.md)
+- [Write Apps in Markdown](../../how_to/editor/markdown.md)
 
-## Explanation
-
-- [Develop Seamlessly](../../explanation/develop_seamlessly.md)
+Happy coding! 🚀

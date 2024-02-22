@@ -129,7 +129,7 @@ Start from an empty notebook named `app.ipynb`.
 
 Copy-paste the code below into the first cell
 
-```{python}
+```python
 import panel as pn
 
 pn.extension()
@@ -153,7 +153,7 @@ It should now look like
 
 [![IntSlider Reference Documentation](../../_static/images/notebook_intslider_reference_doc.png)](https://panel.holoviz.org/reference/widgets/IntSlider.html)
 
-:::{note}
+:::{tip}
 It is a great idea to use the *Example* code snippets and *Reference* links to speed up our workflow.
 :::
 
