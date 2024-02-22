@@ -52,10 +52,6 @@
   width: fit-content;
 }
 
-.header:hover {
-  opacity: 1;
-}
-
 .name {
   font-size: 1em;
   margin-bottom: 0px;
@@ -89,10 +85,6 @@
   align-items: center;
   justify-content: center;
   overflow-wrap: anywhere;
-}
-
-.footer:hover {
-  opacity: 1;
 }
 
 .footer {

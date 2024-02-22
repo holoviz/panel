@@ -297,19 +297,17 @@ class ChatMessage(PaneBase):
             css_classes=["timestamp"],
             visible=self.param.show_timestamp,
         )
-        footer_row = Row(
+        self._footer_row = Row(
             self._timestamp_html,
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
             sizing_mode="stretch_width",
-            css_classes=["footer"] + self.param.show_footer.rx().rx.pipe(
-                lambda x: ["show-on-hover"] if x == "hover" else []
-            ),
-            visible=self.param.show_footer.rx().rx.pipe(bool)
+            css_classes=["footer"],
         )
+        self._update_footer_row()
         self._right_col = right_col = Column(
             header_row,
             self._center_row,
-            footer_row,
+            self._footer_row,
             css_classes=["right"],
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
             sizing_mode=None
@@ -625,6 +623,16 @@ class ChatMessage(PaneBase):
         else:
             self.chat_copy_icon.value = ""
             self.chat_copy_icon.visible = False
+
+    @param.depends("show_footer", watch=True)
+    def _update_footer_row(self):
+        self._footer_row.visible = bool(self.show_footer)
+        if self.show_footer == "hover" and "hover" not in self._footer_row.css_classes:
+            self._footer_row.css_classes += ["show-on-hover"]
+        else:
+            self._footer_row.css_classes = [
+                css for css in self._footer_row.css_classes if css != "show-on-hover"
+            ]
 
     def _cleanup(self, root=None) -> None:
         """

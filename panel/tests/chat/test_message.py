@@ -223,6 +223,21 @@ class TestChatMessage:
         message.show_reaction_icons = False
         assert not message.reaction_icons.visible
 
+    def test_show_footer(self):
+        message = ChatMessage()
+        assert message.show_footer
+        message.show_footer = "hover"
+        message._footer_row.css_classes = ["footer", "show-on-hover"]
+        assert message._footer_row.visible
+
+        message.show_footer = False
+        assert message._footer_row.css_classes == ["footer"]
+        assert not message._footer_row.visible
+
+        message.show_footer = True
+        message._footer_row.css_classes = ["footer"]
+        assert message._footer_row.visible
+
     def test_default_avatars(self):
         assert isinstance(ChatMessage.default_avatars, dict)
         assert (
