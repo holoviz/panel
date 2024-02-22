@@ -1,288 +1,90 @@
 # Basic Tutorials
 
-These tutorials are for those who have decided they would like to start learning Panel systematically. For those that have not decided yet, we recommend doing the [Getting Started Guide](../../getting_started/index.md) instead.
+Welcome to our Basic Tutorials, tailored for those who are eager to start their journey into Panel systematically. If you're still undecided, we highly recommend starting with the [Getting Started Guide](../../getting_started/index.md) first.
 
-Together, we will explore the world of (wind turbine) data and give you the skills to build a chat bot, a static report, a todo app, an image classifier app, a dashboard, and a streaming application. We will take you *from zero to hero*.
+Get ready to embark on an exciting exploration of wind turbine data! We'll equip you with the skills to build a diverse range of applications, including a chatbot, a static report, a todo app, an image classifier app, a dashboard, and even a streaming application. Consider yourself on the path from zero to hero in no time!
 
-We will assume you have successfully been able to [install Panel](../../getting_started/installation.md) as described in the [Getting Started Guide](../../getting_started/index.md). If not, please reach out for help on [Discord](https://discord.gg/rb6gPXbdAr).
+Before we dive in, ensure you've successfully [installed Panel](../../getting_started/installation.md) as outlined in the [Getting Started Guide](../../getting_started/index.md). If you encounter any hurdles along the way, don't hesitate to seek assistance on [Discord](https://discord.gg/rb6gPXbdAr).
 
-Please put on your safety helmet before entering the world of (wind turbine) data apps.
+But first, safety first! Don't forget to put on your metaphorical safety helmet before immersing yourself in the world of wind turbine data apps.
 
-::::::{tab-set}
+## Skills
 
-:::::{tab-item} Skills
-:sync: skills
+Let's lay the groundwork by acquiring essential skills to craft a variety of basic apps efficiently using a function-based approach.
 
-The sections below will give you the skills to build a wide range of *basic apps* from *single files* using a *function-based approach*.
+### Part 1. Start from Zero
 
-Each section builds on the previous section.
+Kickstart our journey with foundational steps:
 
-## Part 1. Start from Zero
+- **[Build Hello World App](serve.md):** Start with a simple *Hello World* app either from a Python script or Notebook.
+- **[Develop in a Notebook](develop_notebook.md):** Discover tips and tricks to swiftly explore turbine data and build apps within a notebook.
+- **[Develop in an Editor](develop_editor.md):** Boost your developer capacity from kilowatts to megawatts with essential tricks for developing in an editor.
 
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
+### Part 2. Display Content
 
-:::{grid-item-card} {octicon}`browser;2.5em;sd-mr-1` Build Hello World App
-:link: serve
-:link-type: doc
+Learn to showcase content effectively:
 
-Kickstart our journey by creating a *Hello World* app from a Python script or Notebook.
-:::
+- **[Display Content with `pn.panel`](pn_panel.md):** Easily present wind turbine images, data, and plots using `pn.panel`.
+- **[Display Content with Panes](panes.md):** Fine-tune how wind turbine data is displayed with Panes for tailored visualization.
+- **[Display Performance with Indicators](indicators_performance.md):** Showcase performance metrics of your wind turbines using Panel's Indicators.
 
-:::{grid-item-card} {octicon}`note;2.5em;sd-mr-1` Develop in a Notebook
-:link: develop_notebook
-:link-type: doc
+### Part 3. Organize Content
 
-Discover tips and tricks that will make you *swift as the wind* at exploring turbine data and building wind turbine data apps in a notebook.
-:::
+Master the art of organizing content:
 
-:::{grid-item-card} {octicon}`code;2.5em;sd-mr-1` Develop in an Editor
-:link: develop_editor
-:link-type: doc
+- **[Layout Content](layouts.md):** Efficiently arrange Panel apps for both beauty and functionality.
+- **[Control the Size](size.md):** Explore sizing options in Panel, ensuring responsiveness and adaptability.
+- **[Align Content](align.md):** Perfectly align wind turbine images using alignment tools and spacers.
 
-Discover tips and tricks that will increase your *developer capacity* from kilowatts to megawatts when developing in an editor!
-:::
+### Part 4. Handle User Input
 
-::::
+Enhance interactivity by handling user input:
 
-## Part 2. Display Content
+- **[Accept Inputs with Widgets](widgets.md):** Elevate app functionality by incorporating user inputs via widgets.
+- **[React to User Input](pn_bind.md):** Foster user engagement by responding dynamically to user interactions.
+- **[Handle State](state.md):** Manage state effectively to build larger and more complex apps.
 
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
+### Part 5. Improve the Look
 
-:::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` Display Content with `pn.panel`
-:link: pn_panel
-:link-type: doc
+Enhance visual appeal:
 
-Display our beloved wind turbine images, data, and plots easily with `pn.panel`.
-:::
+- **[Use Templates](templates.md):** Employ pre-made templates for streamlined app layout.
+- **[Apply A Design](design.md):** Customize app design to suit your style and functionality.
+- **[Use Styles](style.md):** Fine-tune component styling for aesthetic and user-friendly apps.
 
-:::{grid-item-card} {octicon}`device-desktop;2.5em;sd-mr-1` Display Content with Panes
-:link: panes
-:link-type: doc
+### Part 6. Improve the Feel
 
-Fine-tune how the wind turbine data is displayed with Panes, ensuring our data apps can meet the unique demands of wind turbine data visualization.
-:::
+Optimize performance and user experience:
 
-:::{grid-item-card} {octicon}`pulse;2.5em;sd-mr-1` Display Performance with Indicators
-:link: indicators_performance
-:link-type: doc
+- **[Add Caching](caching.md):** Optimize app performance with caching for smoother operation.
+- **[Display Activity](indicators_activity.md):** Show app activity with indicators and notifications for enhanced user feedback.
+- **[Update Progressively](progressive_layouts.md):** Leverage generators and reactive expressions for dynamic app updates.
 
-Show the performance of your wind turbines with Panel's Indicators.
-:::
+### Part 7. Share as a Hero
 
-::::
+Share your creations with the world:
 
-## Part 3. Organize Content
+- **[Build a Dashboard](build_dashboard.md):** Construct a comprehensive dashboard for insightful data presentation.
+- **[Deploy a Dashboard](deploy.md):** Share your dashboard with users by deploying it to Hugging Face spaces.
 
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
+🥳 Congratulations! You've acquired the basic skills needed to build a diverse range of Panel apps. Consider yourself a Panel Hero!
 
-:::{grid-item-card} {octicon}`table;2.5em;sd-mr-1` Layout Content
-:link: layouts
-:link-type: doc
+For hands-on practice, check out the apps listed listed below. Ready to tackle larger and more complex projects? Dive into the [Intermediate Tutorials](../intermediate/index.md) when you're ready!
 
-Layout Panel apps as beautifully as efficiently as a wind farm is laid out.
-:::
+## Build an App
 
-:::{grid-item-card} {octicon}`screen-full;2.5em;sd-mr-1` Control the Size
-:link: size
-:link-type: doc
+Now that you've acquired the necessary skills, it's time to put them to use! Choose from a variety of app-building projects below:
 
-We will discover how sizing works in Panel, exploring the differences between inherent sizing, fixed sizing and responsive sizing. Finally we will cover responsive layouts.
-:::
+- **[Build a Report](build_report.md):** Craft a static Wind Turbine Report exportable to HTML for efficient distribution.
+- **[Build a Monitoring Dashboard](build_monitoring_dashboard.md):** Create a dashboard to monitor your wind turbines with periodic updates.
+- **[Build an Animation](build_animation.md):** Develop a dynamic bar chart race of wind turbine capacities.
+- **[Build a Todo App](build_todo.md):** Enable wind turbine technicians to track their tasks efficiently.
+- **[Build an Image Classifier](build_image_classifier.md):** Create an image classifier to identify wind turbine images.
+- **[Build a Dashboard](build_dashboard.md):** Construct a comprehensive dashboard for insightful data presentation.
+- **[Build a Streaming Dashboard](build_streaming_dashboard.md):** Develop a live, updating dashboard for real-time monitoring.
+- **[Build a Chat Bot](build_chatbot.md):** Create a streaming Wind Turbine Chat Bot capable of handling various questions.
 
-:::{grid-item-card} {octicon}`arrow-switch;2.5em;sd-mr-1` Align Content
-:link: align
-:link-type: doc
-
-We will align our wind turbine images perfectly using `align`, `margin` and `Spacer`s.
-:::
-
-::::
-
-## Part 4. Handle User Input
-
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
-
-:::{grid-item-card} {octicon}`person;2.5em;sd-mr-1` Accept Inputs with Widgets
-:link: widgets
-:link-type: doc
-
-Elevate our app's functionality by accepting user input via widgets. Add nice tooltips with explanations to our users or disable widgets for security reasons.
-:::
-
-:::{grid-item-card} {octicon}`arrow-switch;2.5em;sd-mr-1` React to User Input
-:link: pn_bind
-:link-type: doc
-
-React to user input by leveraging `pn.bind`, enabling our users to foster a deeper understanding of wind turbine data through exploration.
-:::
-
-:::{grid-item-card} {octicon}`list-ordered;2.5em;sd-mr-1` Handle State
-:link: state
-:link-type: doc
-
-Be able to build larger and more complex apps by defining and maintaining state via `pn.rx`.
-:::
-
-::::
-
-## Part 5. Improve the look
-
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
-
-:::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` Use Templates
-:link: templates
-:link-type: doc
-
-Use pre-made templates to easily layout our apps with a header, sidebar, and main area.
-:::
-
-:::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` Apply A Design
-:link: design
-:link-type: doc
-
-Just as wind turbines come in various designs, this section empowers us to choose a design that best suits our app's style and functionality.
-:::
-
-:::{grid-item-card} {octicon}`paintbrush;2.5em;sd-mr-1` Use Styles
-:link: style
-:link-type: doc
-
-Fine-tune the styling of our components with `styles` and `stylesheets`. This will ensure our wind turbine data apps are both aesthetically pleasing and user-friendly.
-:::
-
-::::
-
-## Part 6. Improve the Feel
-
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
-
-:::{grid-item-card} {octicon}`archive;2.5em;sd-mr-1` Add Caching
-:link: caching
-:link-type: doc
-
-Caching allows our apps to store and reuse valuable computations, reducing the energy required for calculations and making our apps run faster and smoother.
-:::
-
-:::{grid-item-card} {octicon}`hourglass;2.5em;sd-mr-1` Display Activity
-:link: indicators_activity
-:link-type: doc
-
-Show activity with indicators and notifications just as rotating blades show the activity of wind turbines.
-:::
-
-:::{grid-item-card} {octicon}`versions;2.5em;sd-mr-1` Update Progressively
-:link: progressive_layouts
-:link-type: doc
-
-Unleash the power of generators and reactive expressions in our Wind Turbine Apps!
-:::
-
-::::
-
-## Part 7. Share as a Hero
-
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
-
-:::{grid-item-card} {octicon}`project;2.5em;sd-mr-1` Build a Dashboard
-:link: build_dashboard
-:link-type: doc
-
-Lets build that dashboard!
-:::
-
-:::{grid-item-card} {octicon}`globe;2.5em;sd-mr-1` Deploy a Dashboard
-:link: deploy
-:link-type: doc
-
-Get your dashboard in the hands of your users. Let's deploy it to Hugging Face spaces together.
-:::
-
-::::
-
-🥳 Congrats. You have now acquired the *basic* skills required to build a wide range of Panel apps. You are now a *Panel Hero*.
-
-The recommended next steps are to check out the the *apps* on the *Apps* tab above and start using Panel for real.
-
-When you are ready to acquire the skills to build larger and more complex apps then check out the [Intermediate Tutorials](../intermediate/index.md).
-
-:::::
-
-:::::{tab-item} Apps
-:sync: apps
-
-Using the skills acquired on the *Skills* tab, we should be able to build any of the apps below.
-
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
-
-:::{grid-item-card} {octicon}`clock;2.5em;sd-mr-1` Build a Monitoring Dashboard
-:link: build_monitoring_dashboard
-:link-type: doc
-
-Build a periodically refreshing dashboard to monitor your wind turbines.
-:::
-
-:::{grid-item-card} {octicon}`file;2.5em;sd-mr-1` Build a Report
-:link: build_report
-:link-type: doc
-
-Construct a static Wind Turbine Report, exportable to HTML for efficient distribution to management.
-:::
-
-:::{grid-item-card} {octicon}`play;2.5em;sd-mr-1` Build an Animation
-:link: build_animation
-:link-type: doc
-
-Construct a *bar chart race* of wind turbine capacities.
-:::
-
-:::{grid-item-card} {octicon}`checklist;2.5em;sd-mr-1` Build a Todo App
-:link: build_todo
-:link-type: doc
-
-Enable our wind turbine technicians to keep track of their tasks.
-:::
-
-:::{grid-item-card} {octicon}`image;2.5em;sd-mr-1` Build an Image Classifier
-:link: build_image_classifier
-:link-type: doc
-
-We will build an image classifier to identify wind turbine images.
-:::
-
-:::{grid-item-card} {octicon}`project;2.5em;sd-mr-1` Build a Dashboard
-:link: build_dashboard
-:link-type: doc
-
-Lets build that dashboard!
-:::
-
-:::{grid-item-card} {octicon}`clock;2.5em;sd-mr-1` Build a Streaming Dashboard
-:link: build_streaming_dashboard
-:link-type: doc
-
-Build a live, updating dashboard to monitor your wind turbines.
-:::
-
-:::{grid-item-card} {octicon}`dependabot;2.5em;sd-mr-1` Build a Chat Bot
-:link: build_chatbot
-:link-type: doc
-
-Develop a Streaming Wind Turbine Chat Bot that can handle many questions about wind turbines.
-:::
-
-::::
-
-:::::
-
-::::::
+Let the wind turbine adventures begin! 🌬️🌀
 
 ```{toctree}
 :titlesonly:
