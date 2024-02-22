@@ -1,7 +1,9 @@
 :host(.bk-panel-models-icon-ToggleIcon) {
-  transition: transform 0.1s ease-in;
+  opacity: 0.8;
+  transition: opacity transform 0.3s ease-in;
 }
 
 :host(.bk-panel-models-icon-ToggleIcon:hover) {
-  transform: scale(1.2);
+  opacity: 1;
+  transform: scale(1.1);
 }
