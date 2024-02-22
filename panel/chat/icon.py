@@ -8,9 +8,8 @@ import param
 
 from ..io.resources import CDN_DIST
 from ..layout import Column
-from ..reactive import ReactiveHTML
 from ..widgets.base import CompositeWidget
-from ..widgets.icon import ToggleIcon
+from ..widgets.icon import ButtonIcon, ToggleIcon
 
 
 class ChatReactionIcons(CompositeWidget):
@@ -92,37 +91,24 @@ class ChatReactionIcons(CompositeWidget):
         self.value = reactions
 
 
-class ChatCopyIcon(ReactiveHTML):
+class ChatCopyIcon(ButtonIcon):
 
-    fill = param.String(default="none", doc="The fill color of the icon.")
+    active_icon = param.String(default="check", doc="The active icon name.")
 
-    value = param.String(default=None, doc="The text to copy to the clipboard.")
+    icon = param.String(default="clipboard", doc="The icon name.")
+
+    text = param.String(default=None, doc="The text to copy to the clipboard.")
+
+    toggle_duration = param.Integer(default=500, doc="""
+        The number of milliseconds the active_icon should be shown for
+        and how long the button should be disabled for.""")
 
     css_classes = param.List(default=["copy-icon"], doc="The CSS classes of the widget.")
 
-    _template = """
-        <div
-            type="button"
-            id="copy-button"
-            onclick="${script('copy_to_clipboard')}"
-            style="cursor: pointer; width: ${model.width}px; height: ${model.height}px;"
-            title="Copy message to clipboard"
-        >
-            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copy" id="copy-icon"
-                width="${model.width}" height="${model.height}" viewBox="0 0 24 24"
-                stroke-width="2" stroke="currentColor" fill=${fill} stroke-linecap="round" stroke-linejoin="round"
-            >
-                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
-                <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
-            </svg>
-        </div>
-    """
-
-    _scripts = {"copy_to_clipboard": """
-        navigator.clipboard.writeText(`${data.value}`);
-        data.fill = "currentColor";
-        setTimeout(() => data.fill = "none", 50);
-    """}
-
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_copy_icon.css"]
+
+    _rename: ClassVar[param.Dict] = {"text": None, **ButtonIcon._rename}
+
+    @param.depends("text", watch=True, on_init=True)
+    def _update_js_on_click(self):
+        self.js_on_click = f"navigator.clipboard.writeText('{self.text}');"
