@@ -616,10 +616,10 @@ class ChatMessage(PaneBase):
         elif isinstance(object_panel, Widget):
             object_panel = object_panel.value
         if isinstance(object_panel, str) and self.show_copy_icon:
-            self.chat_copy_icon.value = object_panel
+            self.chat_copy_icon.text = object_panel
             self.chat_copy_icon.visible = True
         else:
-            self.chat_copy_icon.value = ""
+            self.chat_copy_icon.text = ""
             self.chat_copy_icon.visible = False
 
     def _cleanup(self, root=None) -> None:
