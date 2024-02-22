@@ -203,6 +203,9 @@ class ChatMessage(PaneBase):
     show_activity_dot = param.Boolean(default=False, doc="""
         Whether to show the activity dot.""")
 
+    show_footer = param.ClassSelector(class_=(bool, str), default="hover", doc="""
+        Whether to show the footer.""")
+
     renderers = param.HookList(doc="""
         A callable or list of callables that accept the object and return a
         Panel object to render the object. If a list is provided, will
@@ -292,16 +295,17 @@ class ChatMessage(PaneBase):
         self._timestamp_html = HTML(
             self.param.timestamp.rx().strftime(self.param.timestamp_format),
             css_classes=["timestamp"],
-            visible=self.param.show_timestamp
+            visible=self.param.show_timestamp,
         )
-
         footer_row = Row(
             self._timestamp_html,
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
             sizing_mode="stretch_width",
-            css_classes=["footer"]
+            css_classes=["footer"] + self.param.show_footer.rx().rx.pipe(
+                lambda x: ["show-on-hover"] if x == "hover" else []
+            ),
+            visible=self.param.show_footer.rx().rx.pipe(bool)
         )
-
         self._right_col = right_col = Column(
             header_row,
             self._center_row,
