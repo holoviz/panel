@@ -1,26 +1,19 @@
 # Develop in a Notebook
 
-In this section, we will learn the basics of developing Panel apps efficiently in a notebook:
+Welcome to the "Develop in a Notebook" section! Here, we'll explore the fundamentals of efficiently developing Panel apps directly within a notebook environment.
 
-- Preview a notebook app in Jupyter lab with the *Jupyter Panel Preview*.
-- Serve a notebook app with autoreload using `panel serve app.ipynb --autoreload`.
-- Inspect a component using `SHIFT+Tab` and `print`.
-- Inspect a component's class and instance parameters using `.param`.
+Let's dive in!
 
-:::{note}
-When we are asked to *run the code* in the sections below, we may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.ipynb` that is served with `panel serve app.ipynb --autoreload`.
-:::
+## Preview Your App
 
-## Install the Dependencies
-
-Please make sure [Matplotlib](https://matplotlib.org/) and [Numpy](https://numpy.org/) are installed.
+Before we get started, let's ensure we have all the necessary dependencies installed. You can install them via `pip` or `conda`:
 
 ::::{tab-set}
 
 :::{tab-item} pip
 :sync: pip
 
-``` bash
+```bash
 pip install matplotlib numpy panel
 ```
 
@@ -29,7 +22,7 @@ pip install matplotlib numpy panel
 :::{tab-item} conda
 :sync: conda
 
-``` bash
+```bash
 conda install -y -c conda-forge matplotlib numpy panel
 ```
 
@@ -37,15 +30,17 @@ conda install -y -c conda-forge matplotlib numpy panel
 
 ::::
 
-## Preview your app
+Now that we have our dependencies installed, let's preview our app.
 
-A simple notebook file containing a Panel app could look like.
+Start by creating a new notebook named `app.ipynb`.
+
+### Preview Example
+
+Here's a simple notebook containing a Panel app:
 
 ![Panel Notebook Example App](../../_static/images/develop_notebook_simple_example.png)
 
-Start from an empty notebook named `app.ipynb`.
-
-Copy-paste the 3 code cells below into the notebook
+Copy and paste the following code cells into your notebook:
 
 ```python
 import panel as pn
@@ -58,88 +53,48 @@ pn.panel("Hello World").servable()
 ```
 
 ```python
-pn.panel("Hello Again")
-```
-
-Run the cells and save it as `app.ipynb` if you have not already done it.
-
-It should look like
-
-![Panel Notebook App](../../_static/images/develop_notebook_simple_example.png)
-
-:::{note}
-The code in the notebook refers to
-
-- `panel`: The Panel python package. It's a convention to import it as `pn`.
-- `pn.extension()`: **Loads the [`pyviz_comms`](https://github.com/holoviz/pyviz_comms) notebook extension**, loads javascript dependencies, and configures Panel.
-- `pn.panel(...)`: Creates a *displayable* Panel component. **The component can be displayed directly in the notebook**.
-- `.servable()`: Displays the component in a *server app*.
-:::
-
-:::{note}
-The little, blue Panel icon above the notebook will launch a *preview* of your app. We call this icon the *Jupyter Panel Preview* icon.
-:::
-
-Click the *Jupyter Panel Preview* icon.
-
-You will see the app launching in a separate window on the right.
-
-![Jupyter Panel Preview](../../_static/images/develop_notebook_simple_example_open_preview.png)
-
-:::{note}
-You will notice that "Hello Again" is not displayed in the app preview. That is because `pn.panel("Hello Again")` has not been marked `.servable()`.
-:::
-
-Replace `pn.panel("Hello Again")` with
-
-```python
 pn.panel("Hello Again").servable()
 ```
 
-Save the notebook.
+Run the cells and save the notebook as `app.ipynb`.
 
-Click the *Reload Preview* button in the *Jupyter Panel Preview*.
+You can now preview the app by clicking the *Jupyter Panel Preview* icon. This icon can be found above the notebook.
 
-![Reload Preview Button](../../_static/images/develop_notebook_reload_preview.png)
+![Jupyter Panel Preview](../../_static/images/develop_notebook_simple_example_open_preview.png)
 
-The *preview* will reload and look like
+Upon clicking the *Jupyter Panel Preview* icon, you'll see your app launch in a separate window. If "Hello Again" isn't displayed, it's because it hasn't been marked as `.servable()`. Update the cell containing `pn.panel("Hello Again")` to include `.servable()` and save the notebook. Click the *Reload Preview* button in the *Jupyter Panel Preview*.
+
+It should look like
 
 ![Reloaded Preview](../../_static/images/develop_notebook_simple_example_add_hello_again.png)
 
-:::{note}
-To enable a more efficient workflow you can check the *Render on Save* checkbox. This will *auto reload* your app when the notebook is saved.
+:::{tip}
+You can enhance your workflow by enabling *auto-reload* with the *Render on Save* option, which automatically reloads your app when the notebook is saved.
 :::
 
-Check the *Render on Save* checkbox.
-
-Change the last cell to
-
-```python
-pn.panel("Hello Again and Again").servable()
-```
-
-Save the notebook.
-
-The preview will automatically reload and look like
-
-![Automatically Reloaded Preview](../../_static/images/develop_notebook_simple_example_add_hello_again_and_again.png)
-
-Watch the video below to learn how the techniques above can be used to develop a more advanced app.
+The video shows how a larger app could be developed.
 
 <video controls="" poster="../../_static/images/jupyter_panel_preview_in_action.png">
     <source src="https://assets.holoviz.org/panel/tutorials/jupyter_panel_preview_in_action.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
     Your browser does not support the video tag.
 </video>
 
-## Serve your app with autoreload
+## Serve Your App with Autoreload
 
-:::{note}
-A currently faster alternative to the *Jupyter Panel Preview* is serving the notebook externally with autoreload using a command like `panel serve app.ipynb --autoreload`.
-:::
+Alternatively, you can serve your notebook externally with autoreload using the following command:
 
-Start from an empty notebook named `app.ipynb`.
+```bash
+panel serve app.ipynb --autoreload
+```
 
-Copy-paste the 2 cells below into the notebook.
+This method provides a faster alternative to the *Jupyter Panel Preview*. Check out the video for inspiration.
+
+<video controls="" poster="../../_static/images/develop_notebook_panel_serve_after.png">
+    <source src="https://assets.holoviz.org/panel/tutorials/develop_notebook_panel_serve.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
+    Your browser does not support the video tag.
+</video>
+
+:::{dropdown} Code
 
 ```python
 import panel as pn
@@ -166,48 +121,7 @@ pn.template.FastListTemplate(
 ).servable();
 ```
 
-Save the notebook.
-
-Serve the app by running the below in a terminal
-
-```bash
-panel serve app.ipynb --autoreload
-```
-
-It would look something like
-
-```bash
-$ panel serve app.ipynb --autoreload
-2024-01-20 05:48:38,688 Starting Bokeh server version 3.3.3 (running on Tornado 6.4)
-2024-01-20 05:48:38,688 User authentication hooks NOT provided (default user enabled)
-2024-01-20 05:48:38,688 Bokeh app running at: http://localhost:5006/app
-2024-01-20 05:48:38,688 Starting Bokeh server with process id: 13840
-```
-
-Open [http://localhost:5006/app](http://localhost:5006/app) in a browser.
-
-It would look something like
-
-![Panel served notebook app](../../_static/images/develop_notebook_panel_serve_before.png)
-
-Now change the
-
-- `ACCENT` value to `teal` and save the `app.ipynb` notebook.
-- `bins` value to `15` and save
-- `title` value to `"My Matplotlib App"` and save
-
-It should look something like
-
-<video controls="" poster="../../_static/images/develop_notebook_panel_serve_after.png">
-    <source src="https://assets.holoviz.org/panel/tutorials/develop_notebook_panel_serve.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
-    Your browser does not support the video tag.
-</video>
-
-:::{note}
-We should only serve our apps with `--autoreload` while developing.
 :::
-
-Stop the Panel server by sending a termination signal. In most terminal environments, we can do this by pressing `CTRL+C` one or more times.
 
 ## Inspect a Component using `SHIFT+Tab`
 
@@ -235,7 +149,7 @@ Use the mouse to scroll down until we find the *Example* code snippet and *Refer
 
 Click the *Reference* link <a href="https://panel.holoviz.org/reference/widgets/IntSlider.html" target="_blank">https://panel.holoviz.org/reference/widgets/IntSlider.html</a>.
 
-It should look like
+It should now look like
 
 [![IntSlider Reference Documentation](../../_static/images/notebook_intslider_reference_doc.png)](https://panel.holoviz.org/reference/widgets/IntSlider.html)
 
@@ -273,7 +187,7 @@ It should look like
 ![Inspect a Panel component](../../_static/images/notebook_inspect_print.png)
 
 :::{note}
-By printing *layout* components like `Column` we can understand how it's composed. This enables us to *access* the subcomponents of the layout.
+By printing *layout* components like `Column` we can understand how they are composed. This enables us to *access* the subcomponents of the layout.
 :::
 
 Add the two code cells below
@@ -337,23 +251,22 @@ It should look like
 
 ## Recap
 
-We can
+In this section, we covered:
 
-- Preview a notebook app in Jupyter lab with the *Jupyter Panel Preview*.
-- Serve anotebook app with autoreload using `panel serve app.ipynb --autoreload`.
-- Inspect a component using `SHIFT+Tab` and `print`.
-- Inspect a component's class and instance parameters using `.param`.
+- Previewing a notebook app with the *Jupyter Panel Preview*.
+- Serving a notebook app with autoreload.
+- Inspecting components using `SHIFT+Tab`, `print`, and `.param`.
+
+Now you're equipped with the tools to efficiently develop Panel apps directly within a notebook environment!
 
 ## Resources
 
-### How-to
+For more detailed instructions and explanations, check out the resources below:
 
-- [Develop in other notebook environments](../../how_to/notebook/notebook.md)
+- [Develop in Other Notebook Environments](../../how_to/notebook/notebook.md)
 - [Display Output in Notebooks](../../how_to/notebook/notebook.md)
-- [Preview Apps in Jupyterlab](../../how_to/notebook/jupyterlabpreview.md)
-- [Serve an app from a notebook file](serve.md)
+- [Preview Apps in JupyterLab](../../how_to/notebook/jupyterlabpreview.md)
+- [Serve an App from a Notebook File](serve.md)
 - [Use VS Code Notebook and Interactive Environment](https://panel.holoviz.org//how_to/editor/vscode_configure.html#notebook-and-interactive-environment)
 
-## Explanation
-
-- [Develop Seamlessly](../../explanation/develop_seamlessly.md)
+Happy developing! 🚀
