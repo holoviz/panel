@@ -13,7 +13,7 @@ def test_copy_icon_click(page):
     icons = ChatCopyIcon(text="test")
     serve_component(page, icons)
 
-    page.locator(".ti-clipboard").click()
+    page.locator(".ti-copy").click()
     assert page.locator(".ti-check")
 
     # Couldn't get the following to work, but tested manually

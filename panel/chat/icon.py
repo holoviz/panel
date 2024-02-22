@@ -95,7 +95,7 @@ class ChatCopyIcon(ButtonIcon):
 
     active_icon = param.String(default="check", doc="The active icon name.")
 
-    icon = param.String(default="clipboard", doc="The icon name.")
+    icon = param.String(default="copy", doc="The icon name.")
 
     text = param.String(default=None, doc="The text to copy to the clipboard.")
 
