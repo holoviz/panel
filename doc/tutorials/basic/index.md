@@ -71,7 +71,7 @@ Share your creations with the world:
 
 For hands-on practice, check out the apps listed listed below. Ready to tackle larger and more complex projects? Dive into the [Intermediate Tutorials](../intermediate/index.md) when you're ready!
 
-## Build an App
+## Projects
 
 Now that you've acquired the necessary skills, it's time to put them to use! Choose from a variety of app-building projects below:
 

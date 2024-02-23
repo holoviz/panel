@@ -36,19 +36,6 @@ Copy the code into a file named `app.py` and save it. Then, run the Panel server
 panel serve app.py --autoreload
 ```
 
-Upon successful startup, you'll see the server's URL in the terminal.
-
-```bash
-2024-01-17 15:49:11,443 Starting Bokeh server version 3.3.2 (running on Tornado 6.3.3)
-2024-01-17 15:49:11,444 User authentication hooks NOT provided (default user enabled)
-2024-01-17 15:49:11,450 Bokeh app running at: http://localhost:5006/app
-2024-01-17 15:49:11,450 Starting Bokeh server with process id: 47256
-```
-
-Open your browser at that URL to view the app.
-
-:::
-
 ::::
 
 ::::{tab-item} Notebook
@@ -83,6 +70,8 @@ Then, run the Panel server in your terminal with:
 panel serve app.ipynb --autoreload
 ```
 
+:::::
+
 Upon successful startup, you'll see the server's URL in the terminal.
 
 ```bash
@@ -92,17 +81,11 @@ Upon successful startup, you'll see the server's URL in the terminal.
 2024-01-17 21:05:32,342 Starting Bokeh server with process id: 42008
 ```
 
-Open your browser at that URL to view the app.
-
-:::
-
-:::::
-
-Once the server is running, you'll see the app displayed in your browser. It should look like
+Open your browser at that URL to view the app. It should look like
 
 ![Panel serve app](../../_static/images/panel-serve-py-app.png).
 
-Play around with the app by modifying the text, saving the file and observe how it updates in real-time. To stop the server, simply press `CTRL+C` in the terminal.
+Play around with the app by modifying the `"Hello World"` text, saving the file and observe how it updates in real-time. To stop the server, simply press `CTRL+C` in the terminal.
 
 ## Recap
 

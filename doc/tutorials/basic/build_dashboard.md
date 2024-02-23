@@ -40,14 +40,14 @@ conda install -y -c conda-forge hvplot pandas panel
 
 :::{dropdown} Code
 
-```python
-import panel as pn
-import pandas as pd
+```{pyodide}
 import hvplot.pandas
+import pandas as pd
+import panel as pn
 
 pn.extension("tabulator")
 
-ACCENT="teal"
+ACCENT = "teal"
 
 styles = {
     "box-shadow": "rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px",
@@ -154,33 +154,32 @@ pn.template.FastListTemplate(
 
 :::
 
-```{pyodide}
-import panel as pn
-
-pn.extension("tabulator")
-```
-
 ## Explanation
 
-Lets start by importing the packages
+### Importing Libraries
 
 ```{pyodide}
-import panel as pn
-import pandas as pd
 import hvplot.pandas
+import pandas as pd
+import panel as pn
 ```
 
-To later use the [Tabulator](../../reference/widgets/Tabulator.ipynb) widget we need to add it to `pn.extension`.
+- `hvplot.pandas`: This library provides a high-level plotting interface for Pandas DataFrames using [HoloViews](https://holoviews.holoviz.org/).
+- `pandas`: This library is used for data manipulation and analysis.
+- `panel`: This is the [Panel](https://panel.holoviz.org/) library used for creating interactive dashboards and apps.
+
+### Extension
 
 ```{pyodide}
 pn.extension("tabulator")
 ```
 
-We define an `ACCENT` color and `styles` we will be using later.
+- `pn.extension("tabulator")`: This line enables the Tabulator widget, which provides a high-performance interactive table widget in Panel.
+
+### Styles
 
 ```{pyodide}
-
-ACCENT="teal"
+ACCENT = "teal"
 
 styles = {
     "box-shadow": "rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px",
@@ -189,21 +188,25 @@ styles = {
 }
 ```
 
-We extract the data once across all user *sessions* by using `pn.cache`.
+- `ACCENT`: This variable stores the color teal, which will be used as the accent color throughout the dashboard.
+- `styles`: This dictionary contains CSS styles to be applied to various components in the dashboard for consistent styling, including box shadow, border radius, and padding.
+
+### Data Extraction
 
 ```{pyodide}
-@pn.cache()  # only download data once
+@pn.cache()
 def get_data():
     return pd.read_csv("https://assets.holoviz.org/panel/tutorials/turbines.csv.gz")
 
 source_data = get_data()
-pn.panel(source_data.head())
 ```
 
-We transform the data
+- `get_data()`: This function is decorated with `@pn.cache()`, which ensures that the data is only downloaded once, improving performance by caching the result.
+- `source_data`: This variable stores the downloaded CSV data as a Pandas DataFrame.
+
+### Data Transformation
 
 ```{pyodide}
-
 min_year = int(source_data["p_year"].min())
 max_year = int(source_data["p_year"].max())
 top_manufacturers = (
@@ -215,7 +218,11 @@ def filter_data(t_manu, year):
     return data
 ```
 
-Lets define a couple of widgets to filter the data
+- `min_year`, `max_year`: These variables store the minimum and maximum values of the "p_year" column in the DataFrame, representing the earliest and latest years.
+- `top_manufacturers`: This variable stores the top 10 manufacturers based on the sum of their turbine capacities.
+- `filter_data()`: This function filters the source data based on the selected manufacturer and year.
+
+### Widgets
 
 ```{pyodide}
 t_manu = pn.widgets.Select(
@@ -225,11 +232,12 @@ t_manu = pn.widgets.Select(
     description="The name of the manufacturer",
 )
 p_year = pn.widgets.IntSlider(name="Year", value=max_year, start=min_year, end=max_year)
-pn.Column(t_manu, p_year)
 ```
 
-Lets continue to filter and transform the data. We will be using `pn.rx` to make the transformations
-*depend* on the widgets.
+- `t_manu`: This widget is a select dropdown for choosing the manufacturer.
+- `p_year`: This widget is an integer slider for selecting the year.
+
+### Data Transformation 2
 
 ```{pyodide}
 df = pn.rx(filter_data)(t_manu=t_manu, year=p_year)
@@ -239,7 +247,10 @@ avg_capacity = df.t_cap.mean()
 avg_rotor_diameter = df.t_rd.mean()
 ```
 
-Now its time to plot the data
+- `df`: This variable stores the filtered DataFrame based on the selected manufacturer and year.
+- `count`, `total_capacity`, `avg_capacity`, `avg_rotor_diameter`: These variables calculate various statistics from the filtered DataFrame, such as count, total capacity, average capacity, and average rotor diameter.
+
+### Plotting Data
 
 ```{pyodide}
 fig = (
@@ -252,10 +263,11 @@ fig = (
     xlim=(min_year, max_year),
     color=ACCENT,
 )
-pn.panel(fig, height=300, sizing_mode="stretch_width")
 ```
 
-Lets display the data. Notice how we set the `styles` on the components.
+- `fig`: This variable stores a bar plot of the total turbine capacity over the years.
+
+### Displaying Data
 
 ```{pyodide}
 image = pn.pane.JPG("https://assets.holoviz.org/panel/tutorials/wind_turbines_sunset.png")
@@ -283,30 +295,45 @@ indicators = pn.FlexBox(
         styles=styles,
     ),
 )
+```
 
+- `image`: This variable stores an image pane displaying a background image for the dashboard.
+- `indicators`: This variable stores a collection of indicator widgets displaying various statistics.
+
+### Creating Components
+
+```{pyodide}
 plot = pn.pane.HoloViews(fig, sizing_mode="stretch_both", name="Plot")
 table = pn.widgets.Tabulator(df, sizing_mode="stretch_both", name="Table")
 ```
 
-Lets layout the components
+- `plot`: This variable stores a HoloViews plot pane displaying the bar plot.
+- `table`: This variable stores a Tabulator widget displaying the filtered DataFrame as a table.
+
+### Layout
 
 ```{pyodide}
 tabs = pn.Tabs(
     plot, table, styles=styles, sizing_mode="stretch_width", height=500, margin=10
 )
-
-main = pn.Column(indicators, tabs, sizing_mode="stretch_both")
-main
 ```
 
-Finally lets style and layout via the `FastListTemplate`.
+- `tabs`: This variable stores a Tabs widget containing the plot and table, allowing users to switch between them.
+
+### Creating the Dashboard
 
 ```python
 pn.template.FastListTemplate(
     title="Wind Turbine Dashboard",
     sidebar=[image, t_manu, p_year],
-    main=[main],
+    main=[pn.Column(indicators, tabs, sizing_mode="stretch_both")],
     main_layout=None,
     accent=ACCENT,
 ).servable()
 ```
+
+- This code creates a `FastListTemplate` dashboard with a sidebar containing the image, manufacturer select dropdown, and year slider, and a main section containing the indicators and tabs.
+
+### Conclusion
+
+This code sets up a dynamic dashboard for exploring wind turbine data, including filtering, data transformation, visualization, and statistics display. It leverages various Panel widgets, HoloViews plots, and CSS styling to create an interactive and informative dashboard.
