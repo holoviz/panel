@@ -154,6 +154,7 @@ jobs:
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: build pyodide wheels for CDN
         run: |
+          python -m pip install packaging
           python ./scripts/build_pyodide_wheels.py
           SETUPTOOLS_ENABLE_FEATURES="legacy-editable" python -m pip install -ve .
       - uses: actions/upload-artifact@v3
