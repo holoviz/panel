@@ -173,7 +173,8 @@ _tests = _tests_core + [
 _ui = [
     'jupyter-server',
     'playwright',
-    'pytest-playwright'
+    'pytest-playwright',
+    'tomli',
 ]
 
 _examples = [
