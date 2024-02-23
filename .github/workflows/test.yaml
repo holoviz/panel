@@ -240,19 +240,6 @@ jobs:
         run: |
           conda activate test-environment
           pip install --pre ipywidgets_bokeh
-      - name: build pyodide wheels
-        run: |
-          conda activate test-environment
-          pwd
-          python scripts/build_pyodide_wheels.py
-      - uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: cdn_wheels
-          path: |
-            ./panel/dist/wheels/panel*.whl
-            ./panel/dist/wheels/bokeh*.whl
-          if-no-files-found: error
       - name: launch jupyter
         run: |
           conda activate test-environment
@@ -265,6 +252,14 @@ jobs:
           python ./scripts/build_pyodide_wheels.py lite/pypi
           python ./scripts/panelite/generate_panelite_content.py
           jupyter lite build --lite-dir lite --output-dir lite/dist
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: pyodide_wheels
+          if-no-files-found: error
+          path: |
+            ./lite/pypi/panel*.whl
+            ./lite/pypi/bokeh*.whl
       - name: Wait for JupyterLab
         uses: ifaxity/wait-on-action@v1.1.0
         with:

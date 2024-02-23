@@ -57,8 +57,8 @@ jobs:
         if: always()
         with:
           name: conda_build
-          path: ${{ env.CONDA_FILE }}
           if-no-files-found: error
+          path: ${{ env.CONDA_FILE }}
       - name: conda dev deploy
         if: (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
@@ -111,8 +111,8 @@ jobs:
         if: always()
         with:
           name: npm_build
-          path: ./panel/${{ env.TARBALL }}
           if-no-files-found: error
+          path: ./panel/${{ env.TARBALL }}
       - name: npm dev deploy
         if: (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
@@ -161,10 +161,10 @@ jobs:
         if: always()
         with:
           name: cdn_wheels
-          path: |
-            ./dist/wheels/panel*.whl
-            ./dist/wheels/bokeh*.whl
           if-no-files-found: error
+          path: |
+            ./panel/dist/wheels/panel*.whl
+            ./panel/dist/wheels/bokeh*.whl
       - name: Deploy to cdn.holoviz.org
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
