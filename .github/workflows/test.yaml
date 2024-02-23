@@ -252,14 +252,6 @@ jobs:
           python ./scripts/build_pyodide_wheels.py lite/pypi
           python ./scripts/panelite/generate_panelite_content.py
           jupyter lite build --lite-dir lite --output-dir lite/dist
-      - uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: pyodide_wheels
-          if-no-files-found: error
-          path: |
-            ./lite/pypi/panel*.whl
-            ./lite/pypi/bokeh*.whl
       - name: Wait for JupyterLab
         uses: ifaxity/wait-on-action@v1.1.0
         with:

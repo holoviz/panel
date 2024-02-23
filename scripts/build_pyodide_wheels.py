@@ -31,7 +31,23 @@ parser.add_argument(
     default=False,
     help="Don't install package dependencies.",
 )
+parser.add_argument(
+    "--verify-clean",
+    action="store_true",
+    default=False,
+    help="Check if panel folder is clean before running.",
+)
 args = parser.parse_args()
+
+if args.verify_clean:
+    # -n dry run, -d directories, -x remove ignored files
+    output = subprocess.check_output(["git", "clean", "-nxd", "panel/"])
+    if output:
+        print(output.decode("utf-8"))
+        msg = "Please clean the panel folder before running this script."
+        raise RuntimeError(msg)
+    else:
+        print("panel folder is clean.")
 
 command = ["pip", "wheel", "."]
 if bokeh_dev:

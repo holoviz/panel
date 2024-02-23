@@ -155,7 +155,7 @@ jobs:
       - name: build pyodide wheels for CDN
         run: |
           python -m pip install packaging tomli
-          python ./scripts/build_pyodide_wheels.py
+          python ./scripts/build_pyodide_wheels.py --verify-clean
           SETUPTOOLS_ENABLE_FEATURES="legacy-editable" python -m pip install -ve .
       - uses: actions/upload-artifact@v3
         if: always()
