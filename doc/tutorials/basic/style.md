@@ -1,21 +1,18 @@
-# Use Styles
+# Enhance the Style
 
-We can finetune the style of our Panel components with [*css*](https://www.w3schools.com/css/):
+Let's elevate the appearance of our Panel components using the power of [*CSS*](https://www.w3schools.com/css/)!
 
-- Use `styles` to style the *outer container*.
-- Use `stylesheets` to style the *inner contents of the container*.
-
-This will ensure our wind turbine data apps are both aesthetically pleasing and user-friendly.
+By employing *CSS*, we can finely adjust the look and feel of our wind turbine data apps, ensuring they are not only visually appealing but also user-friendly.
 
 :::{note}
-When we ask to *run the code* in the sections below, we may execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
+To execute the code snippets below, feel free to run them directly in the Panel documentation via the convenient green *run* button, within a notebook cell, or within a `app.py` file served with `panel serve app.py --autoreload`.
 :::
 
-## Use `styles`
+## Utilize `styles`
 
-Applying `styles` allows us to style the **container** of a component in a straightforward manner.
+With `styles`, we can effortlessly style the **container** of a component.
 
-Run the code below:
+Give it a try:
 
 ```{pyodide}
 import panel as pn
@@ -40,16 +37,16 @@ pn.indicators.Number(
 ).servable()
 ```
 
-Try changing the
+Feel free to experiment by adjusting:
 
-- `border` color from `black` to `teal`.
-- `padding` from `20px` to `50px`.
+- The `border` color from `black` to `teal`.
+- The `padding` from `20px` to `50px`.
 
-## Use `stylesheets`
+## Employ `stylesheets`
 
-Since `styles` only applies to the outer `<div>` that holds the component, we cannot use `styles` to directly modify the styling of the **contents** of the component. This is where `stylesheets` come in.
+While `styles` beautify the outer container, they don't directly impact the styling of the **contents** within the component. Here enters `stylesheets`.
 
-Run the code below:
+Give this a go:
 
 ```{pyodide}
 import panel as pn
@@ -84,22 +81,15 @@ pn.indicators.Number(
 ).servable()
 ```
 
-Try changing the `background-color` from `pink` to `lightgray`.
+Feel free to play with changing the `background-color` from `pink` to `lightgray`.
 
-:::{note}
-While `stylesheets` are relatively straightforward to use (just ask chatGPT for help), using `stylesheets` sometimes requires a deeper investigation of *shadow DOM* and Bokeh/Panel implementation details.
-
-Learn more about `stylesheets` in the [Apply CSS](../../how_to/styling/apply_css.md) how-to guide.
+:::{tip}
+For more insights into `stylesheets`, refer to the [Apply CSS](../../how_to/styling/apply_css.md) how-to guide.
 :::
 
-## Recap
+## Wrapping Up
 
-We can finetune the style of our Panel components with [*css*](https://www.w3schools.com/css/):
-
-- Use `styles` to style the *outer container*.
-- Use `stylesheets` to style the *inner contents of the container*.
-
-This will ensure our wind turbine data apps are both aesthetically pleasing and user-friendly.
+With *CSS*, we can refine the style of our Panel components, ensuring they're not only visually appealing but also provide a delightful user experience.
 
 ## Resources
 

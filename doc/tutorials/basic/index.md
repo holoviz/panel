@@ -50,7 +50,7 @@ Enhance visual appeal:
 
 - **[Utilize Templates](templates.md):** Employ pre-made templates for streamlined app layout.
 - **[Apply A Design](design.md):** Customize app design to suit your style and functionality.
-- **[Use Styles](style.md):** Fine-tune component styling for aesthetic and user-friendly apps.
+- **[Enhance the Style](style.md):** Fine-tune component styling for aesthetic and user-friendly apps.
 
 ### Part 6. Improve the Feel
 
