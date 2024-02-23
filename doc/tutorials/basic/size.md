@@ -1,6 +1,10 @@
 # Control the Size
 
-In this tutorial, we will discover how *sizing* works in Panel, explore the difference between *inherent sizing*, *fixed sizing*, and *responsive sizing*. Finally, we will touch upon the *fully responsive* layouts and [`FlexBox`](../../reference/layouts/FlexBox.ipynb):
+Welcome to our tutorial on controlling the size of components in Panel! In this guide, we'll explore how sizing works, including inherent sizing, fixed sizing, and responsive sizing. We'll also delve into fully responsive layouts using the powerful [`FlexBox`](../../reference/layouts/FlexBox.ipynb) layout.
+
+## Explore Sizing Modes
+
+Panel provides various options to control the size of components:
 
 - `sizing_mode`: Allows toggling between fixed sizing and responsive sizing along vertical and/or horizontal dimensions.
 - `width`/`height`: Allows setting a fixed width or height.
@@ -8,17 +12,12 @@ In this tutorial, we will discover how *sizing* works in Panel, explore the diff
 - `max_width`/`max_height`: Allows setting a maximum width or height if responsive sizing is set along the corresponding dimension.
 
 :::{note}
-In the sections below, we may execute the code directly in the Panel documentation by using the green *run* button, in a notebook cell, or in a file named `app.py` served with `panel serve app.py --autoreload`.
+Throughout this tutorial, you can execute the provided code directly in the Panel documentation using the green *run* button, in a notebook cell, or within a file named `app.py` served with `panel serve app.py --autoreload`.
 :::
 
-```{pyodide}
-import panel as pn
-pn.extension('tabulator')
-```
+## Inherent and Absolute Sizing
 
-## Inherent and absolute sizing
-
-Many components we might want to display have an *inherent size*, e.g., take some text, based on the font size and the content of the text, it will take up a certain amount of space. When we render it, it will fill the available space and wrap if necessary:
+Many components have inherent sizes. For instance, text will take up space based on its font size and content. Let's see how different sizing parameters affect the display:
 
 ```{pyodide}
 import panel as pn
@@ -30,7 +29,7 @@ text = """A wind turbine is a renewable energy device that converts the kinetic 
 pn.panel(text).servable()
 ```
 
-By restricting the width, we can force it to rewrap, and it will have a different inherent height.
+By restricting the `width`, we can force the text to wrap:
 
 ```{pyodide}
 import panel as pn
@@ -42,7 +41,7 @@ text = """A wind turbine is a renewable energy device that converts the kinetic 
 pn.panel(text, width=300).servable()
 ```
 
-Explicitly setting both width and height will force the resulting display to scroll to ensure that it is not cut off:
+Explicitly setting both `width` and `height` will force the display to scroll:
 
 ```{pyodide}
 import panel as pn
@@ -56,9 +55,7 @@ pn.panel(text, width=300, height=100).servable()
 
 ## Sizing Mode
 
-The `sizing_mode` option can be used to toggle responsiveness in the width or height dimension or both. To see the effect of this, we will create a fixed size `Column` that we place the component into.
-
-Run the code from each of the 3 tabs below:
+The `sizing_mode` option toggles responsiveness. Let's create a fixed-size `Column` and observe its behavior:
 
 ::::{tab-set}
 
@@ -149,9 +146,9 @@ pn.Row(fig, md, height=500, sizing_mode="stretch_width").servable()
 ```
 
 :::{note}
-**Hint 1**: Use `min_width`, `max_width` and `sizing_mode` arguments.
+**Hint 1**: Use `min_width`, `max_width`, and `sizing_mode` arguments.
 
-**Hint 2**: To get the *content* to display correctly, it sometimes requires a combination of arguments to 1) the underlying object to display and 2) The Panel component displaying it.
+**Hint 2**: To ensure the content displays correctly, you may need to adjust both the underlying object's settings and the Panel component displaying it.
 :::
 
 Test your solution by changing the window size of your browser. It should look like below.
@@ -202,19 +199,17 @@ pn.Row(fig, md, height=500, sizing_mode="stretch_width").servable()
 
 #### Finetune with Widgets
 
-:::{note}
-**Pro Tip**: When fine-tuning the `size_mode`, `height`, `width` and other parameters of your Panel component, you can speed up the process by using widgets interactively instead of code. Panel's `pn.Param` provides an easy way to create widgets to control your Panel component.
+:::{tip}
+**Pro Tip**: Speed up the process of fine-tuning by using interactive widgets instead of code. Panel's `pn.Param` provides an easy way to create widgets to control your Panel component.
 :::
 
-Continue from the solution in the previous section.
-
-Add the `settings` component below to your `Row`
+Continue from the previous exercise solution. Add the `settings` component below your `Row`:
 
 ```python
 settings = pn.Param(md, parameters=["sizing_mode", "min_width", "max_width"])
 ```
 
-Try changing the values of the `sizing_mode`, `min_height`, and `max_height` widgets interactively. For each change in value, change the width of your browser window to see the effect(s).
+Try changing the values of the `sizing_mode`, `min_height`, and `max_height` widgets interactively. Observe the effect on the component's display as you adjust the values.
 
 :::{dropdown} Solution
 
@@ -224,7 +219,6 @@ import panel as pn
 from bokeh.plotting import figure
 
 pn.extension()
-pn.config.sizing_mode="stretch_width"
 
 text = """A *wind turbine* is a renewable energy device that converts the kinetic energy from wind into electricity. It typically consists of a tall tower with large blades attached to a rotor. As the wind blows, it causes the rotor to spin, which in turn rotates a generator to produce electricity. Wind turbines are designed to harness the natural power of the wind and are used to generate clean, sustainable energy. They come in various sizes, from small residential turbines to massive commercial installations, and play a crucial role in reducing greenhouse gas emissions and meeting renewable energy goals."""
 data = pd.DataFrame(
@@ -273,9 +267,6 @@ import panel as pn
 from bokeh.plotting import figure
 
 pn.extension(sizing_mode="stretch_width")
-# or
-# pn.extension()
-# pn.config.sizing_mode="stretch_width"
 
 text = """A *wind turbine* is a renewable energy device that converts the kinetic energy from wind into electricity. It typically consists of a tall tower with large blades attached to a rotor. As the wind blows, it causes the rotor to spin, which in turn rotates a generator to produce electricity. Wind turbines are designed to harness the natural power of the wind and are used to generate clean, sustainable energy. They come in various sizes, from small residential turbines to massive commercial installations, and play a crucial role in reducing greenhouse gas emissions and meeting renewable energy goals."""
 data = pd.DataFrame(
@@ -309,11 +300,9 @@ pn.Row(fig, md, height=500,).servable()
 
 ## Responsive Layouts with FlexBox
 
-So far when we have talked about responsive layouts we have primarily focused on simple `width`/`height` responsiveness of individual components, i.e. whether they will grow and shrink to fill the available space. For a truly responsive experience however we will need responsive layouts that will reflow the content depending on the size of the screen, browser window or the container they are placed inside of, much like how text wraps when there is insufficient width to accommodate it:
+Responsive layouts are essential for adapting to various screen sizes. Panel's `FlexBox` layout provides this functionality out of the box.
 
-Panel offers one such component out of the box, the [`FlexBox`](../../reference/layouts/FlexBox.ipynb) layout.
-
-Let's try the `FlexBox`:
+Let's try out `FlexBox`:
 
 ```{pyodide}
 import panel as pn
@@ -333,20 +322,20 @@ spacers = [create_random_spacer() for _ in range(10)]
 pn.FlexBox(*spacers).servable()
 ```
 
-Try adjusting the width of your browser window.
+Adjust the width of your browser window to observe the layout's responsiveness.
 
 :::{note}
-We will explore the `FlexBox` in more detail in the [Control the Size (intermediate)](../intermediate/size.md) tutorial.
+We'll explore `FlexBox` in more detail in the [Control the Size (intermediate)](../intermediate/size.md) tutorial.
 :::
 
 ## Recap
 
-In this tutorial, we have discovered how *sizing* works in Panel. We have explored the difference between *inherent sizing*, *fixed sizing*, and *responsive sizing*. Finally, we touched upon *fully responsive* layouts and [`FlexBox`](../../reference/layouts/FlexBox.ipynb):
+In this tutorial, we've explored various aspects of controlling component size in Panel. We've covered inherent sizing, fixed sizing, and responsive sizing, along with the powerful [`FlexBox`](../../reference/layouts/FlexBox.ipynb) layout:
 
 - `sizing_mode`: Allows toggling between fixed sizing and responsive sizing along vertical and/or horizontal dimensions.
-- `width`/`height`:  Allows setting a fixed width or height
-- `min_width`/`min_height`: Allows setting a minimum width or height, if responsive sizing is set along the corresponding dimension.
-- `max_width`/`max_height` : Allows setting a maximum width or height, if responsive sizing is set along the corresponding dimension.
+- `width`/`height`: Allows setting a fixed width or height.
+- `min_width`/`min_height`: Allows setting a minimum width or height if responsive sizing is set along the corresponding dimension.
+- `max_width`/`max_height`: Allows setting a maximum width or height if responsive sizing is set along the corresponding dimension.
 
 ## Resources
 
