@@ -1,14 +1,20 @@
-# Align Content
+# Aligning Content
 
-In this tutorial, we will explore alignment, margin and spacing options for content:
+Welcome to our tutorial on aligning content in Panel! Let's dive into exploring various alignment, margin, and spacing options to make your content look polished and visually appealing.
 
-- `align`: We can align content `'start'`, `'center'`, or `'end'` inside a container.
-- `margin`: To fine-tune alignment by a few *pixels* or add space between content.
-- `Spacer`: Utilize `Spacer`s to align or add space between content.
+## Understand Alignment Options
+
+In this tutorial, we'll delve into three key aspects:
+
+- **Alignment (`align`)**: You can align content horizontally and vertically within a container, choosing from options like `'start'`, `'center'`, or `'end'`.
+- **Margin**: Fine-tune alignment by adding margins to content elements.
+- **Spacer Component**: Utilize `Spacer` components to adjust alignment or add space between content.
+
+Let's jump in and explore these concepts in action!
 
 ## Align a Button
 
-Run the code below.
+Let's start by aligning a button horizontally within a container. Run the code below to see it in action:
 
 ```{pyodide}
 import panel as pn
@@ -22,14 +28,19 @@ pn.Column(
 ).servable()
 ```
 
-We will now align the `Button` *center* horizontally.
+Now, let's align the button to the center horizontally using three different techniques:
 
-Run the code for each of the 3 *aligning techniques* below:
+- Using the `align` parameter
+- Leveraging `Spacer` components
+- Adjusting margin values
+
+Feel free to run the code snippets for each technique below and observe the changes.
+
+### Try it Out!
 
 :::::{tab-set}
 
 ::::{tab-item} Align
-:sync: align
 
 ```{pyodide}
 import panel as pn
@@ -43,14 +54,13 @@ pn.Column(
 ).servable()
 ```
 
-:::{note}
-The `align` value can take a single value or a 2-tuple (horizontal, vertical).
+:::{tip}
+You can use a single value or a 2-tuple (horizontal, vertical) with the `align` parameter.
 :::
 
 ::::
 
 ::::{tab-item} Spacer
-:sync: spacer
 
 ```{pyodide}
 import panel as pn
@@ -71,7 +81,6 @@ pn.Column(
 ::::
 
 ::::{tab-item} Margin
-:sync: margin
 
 ```{pyodide}
 import panel as pn
@@ -87,25 +96,25 @@ pn.Column(
 ).servable()
 ```
 
-:::{note}
-The `margin` value can take a single value, a 2-tuple (top/bottom, left/right), or a 4-tuple (top, right, bottom, left).
+:::{tip}
+The `margin` parameter can take a single value, a 2-tuple (top/bottom, left/right), or a 4-tuple (top, right, bottom, left).
 :::
 
 ::::
 
 :::::
 
-:::{note}
-As a rule of thumb
+:::{tip}
+As a rule of thumb:
 
-- Use `align` to change the overall alignment.
-- use `margin` to change the alignment minimally or add some fixed size spacing.
-- use `Spacer` to change the overall alignment or spacing when `align` is not enough.
+- Use `align` to adjust the overall alignment.
+- Use `margin` for fine-tuning alignment or adding fixed-size spacing.
+- Use `Spacer` for broader alignment or spacing adjustments when `align` alone isn't sufficient.
 :::
 
 ## Exercise: Align Cards
 
-Run the code below:
+Let's practice aligning cards within a container. Run the code snippet below:
 
 ```{pyodide}
 import panel as pn
@@ -123,9 +132,7 @@ pn.Column(
 ).servable()
 ```
 
-Let's align each of the two *cards* in the center of their respective *vertical halves*.
-
-There can be many solutions, but the solution should look like this:
+Your task is to align each card in the center of its respective vertical half. There are multiple solutions, but your solution should resemble the image below:
 
 ![Align Cards Solution](../../_static/images/align-cards-solution.png)
 
@@ -134,7 +141,6 @@ There can be many solutions, but the solution should look like this:
 ::::{tab-set}
 
 :::{tab-item} Align + Spacer
-:sync: solution-align-spacer
 
 ```{pyodide}
 import panel as pn
@@ -156,7 +162,6 @@ pn.Column(
 :::
 
 :::{tab-item} Align + Margin
-:sync: solution-align-margin
 
 ```{pyodide}
 import panel as pn
@@ -182,18 +187,16 @@ pn.Column(
 
 ## Recap
 
-In this tutorial, we have explored alignment and spacing options for content:
+In this tutorial, we've explored various alignment and spacing options for content in Panel:
 
-- `align`: Align content `'start'`, `'center'`, or `'end'` inside a container.
-- `margin`: Use `margin` to fine-tune alignment by a few *pixels* or add space between content.
-- `Spacer`: Utilize `Spacer`s to align or add space between content.
+- **Alignment (`align`)**: Adjust content alignment horizontally and vertically within a container.
+- **Margin**: Fine-tune alignment or add space between content using margin.
+- **Spacer Component**: Utilize `Spacer` components to align or add space between content elements.
+
+Now, you're equipped with the knowledge to beautifully align and space your content in Panel!
 
 ## References
 
-### How-to
+### How-to Guides
 
 - [Align Components](../../how_to/layout/align.md)
-
-### Explanation
-
-- [`align`](https://holoviz-dev.github.io/panel/explanation/components/components_overview.html#align)
