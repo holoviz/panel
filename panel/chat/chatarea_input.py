@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, ClassVar, Optional, Type,
+    TYPE_CHECKING, ClassVar, Mapping, Optional, Type,
 )
 
 import param
 
 from ..models.chatarea_input import (
-    ChatAreaInput as _bkChatAreaInput, ShiftEnterKeyDown,
+    ChatAreaInput as _bkChatAreaInput, ChatMessageEvent,
 )
 from ..widgets import TextAreaInput as _PnTextAreaInput
 
@@ -21,19 +21,30 @@ from bokeh.model import Model
 class ChatAreaInput(_PnTextAreaInput):
     """
     The `ChatAreaInput` allows entering any multiline string using a text input
-    box.
+    box, with the ability to click enter to submit the message.
+
+    Unlike TextAreaInput, the `ChatAreaInput` defaults to auto_grow=True and
+    max_rows=10, and the value is not synced to the server until the enter key
+    is pressed so key on `value_input` if you need to access the existing value.
 
     Lines are joined with the newline character `\n`.
 
-    Reference: https://panel.holoviz.org/reference/widgets/TextAreaInput.html
+    Reference: https://panel.holoviz.org/reference/widgets/ChatAreaInput.html
     :Example:
 
-    >>> ChatAreaInput(
-    ...     name='Description', placeholder='Enter your description here...'
-    ... )
+    >>> ChatAreaInput(max_rows=10)
     """
 
+    auto_grow = param.Boolean(default=True, doc="""
+        Whether the text area should automatically grow vertically to
+        accommodate the current text.""")
+
+    max_rows = param.Integer(default=10, doc="""
+        When combined with auto_grow this determines the maximum number
+        of rows the input area can grow.""")
+
     resizable = param.ObjectSelector(
+        default="height",
         objects=["both", "width", "height", False],
         doc="""
         Whether the layout is interactively resizable,
@@ -43,6 +54,10 @@ class ChatAreaInput(_PnTextAreaInput):
 
     _widget_type: ClassVar[Type[Model]] = _bkChatAreaInput
 
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        "value": None, **_PnTextAreaInput._rename,
+    }
+
     def _get_model(
         self,
         doc: Document,
@@ -51,15 +66,13 @@ class ChatAreaInput(_PnTextAreaInput):
         comm: Optional[Comm] = None,
     ) -> Model:
         model = super()._get_model(doc, root, parent, comm)
-        self._register_events("shift_enter_key_down", model=model, doc=doc, comm=comm)
+        self._register_events("chat_message_event", model=model, doc=doc, comm=comm)
         return model
 
-    def _process_event(self, event: ShiftEnterKeyDown) -> None:
+    def _process_event(self, event: ChatMessageEvent) -> None:
         """
         Clear value on shift enter key down.
         """
-        with param.parameterized.batch_call_watchers(self):
-            self.value = self.value_input
+        self.value = event.value
         with param.discard_events(self):
             self.value = ""
-        self.value_input = ""

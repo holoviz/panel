@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shift + Enter Example</title>
+</head>
+<body>
+
+<!-- Text area with an id for reference -->
+<textarea id="myTextArea" placeholder="Type something..."></textarea>
+
+<script>
+    // Get a reference to the text area
+    const textArea = document.getElementById('myTextArea');
+
+    // Add a keydown event listener
+    textArea.addEventListener('keydown', function(event) {
+        // Log key and shift status for debugging
+        console.log('Key:', event.key, 'Shift:', event.shiftKey);
+
+        // Check if the pressed key is Enter and the Shift key is also pressed
+        if (event.key === 'Enter' && event.shiftKey) {
+            // Handle Shift + Enter - add a new line (you can modify this behavior)
+            textArea.value = '';
+
+            // Prevent the default Enter key behavior (new line)
+            event.preventDefault();
+        }
+    });
+</script>
+
+</body>
+</html>

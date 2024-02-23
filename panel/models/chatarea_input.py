@@ -3,12 +3,12 @@ from bokeh.events import ModelEvent
 from .widgets import TextAreaInput
 
 
-class ShiftEnterKeyDown(ModelEvent):
+class ChatMessageEvent(ModelEvent):
 
-    event_name = 'shift_enter_key_down'
+    event_name = 'chat_message_event'
 
-    def __init__(self, model, data=None):
-        self.data = data
+    def __init__(self, model, value=None):
+        self.value = value
         super().__init__(model=model)
 
 

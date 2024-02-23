@@ -367,7 +367,9 @@ class ChatInterface(ChatFeed):
             return
 
         active_widget = self.active_widget
-        value = active_widget.value
+        # value_input for ChatAreaInput because value is unsynced until "Enter",
+        # value for TextInput and others
+        value = active_widget.value or active_widget.value_input
         if value:
             if isinstance(active_widget, FileInput):
                 value = _FileInputMessage(
@@ -381,7 +383,8 @@ class ChatInterface(ChatFeed):
                 if hasattr(active_widget, "value_input"):
                     updates["value_input"] = ""
                 try:
-                    active_widget.param.update(updates)
+                    with param.discard_events(self):
+                        active_widget.param.update(updates)
                 except ValueError:
                     pass
         else:
