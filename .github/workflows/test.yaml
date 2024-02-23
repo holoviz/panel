@@ -244,6 +244,14 @@ jobs:
         run: |
           conda activate test-environment
           python scripts/build_pyodide_wheels.py
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: cdn_wheels
+          path: |
+            ./build/panel*.whl
+            ./build/bokeh*.whl
+          if-no-files-found: error
       - name: launch jupyter
         run: |
           conda activate test-environment
