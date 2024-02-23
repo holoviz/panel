@@ -8,7 +8,7 @@ cffi==1.13.2
 channels==2.4.0
 colorcet==2.0.5
 constantly==15.1.0
-cryptography==42.0.2
+cryptography==42.0.4
 daphne==2.4.1
 Django==3.2.24
 holoviews==1.13.2
