@@ -27,8 +27,6 @@ Open up a terminal and run the following command, which will install Panel with 
 
 ::::{tab-set}
 
-:::
-
 :::{tab-item} pip
 :sync: pip
 
