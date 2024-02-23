@@ -774,6 +774,9 @@ class DatetimeRangeSlider(DateRangeSlider):
     ... )
     """
 
+    step = param.Number(default=60_000, doc="""
+        The step size in ms. Default is 1 min.""")
+
     _property_conversion = staticmethod(value_as_datetime)
 
     @property
