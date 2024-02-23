@@ -22,6 +22,7 @@ from ..viewable import Viewable
 from ..widgets.base import Widget
 from ..widgets.button import Button
 from ..widgets.input import FileInput, TextInput
+from .chatarea_input import ChatAreaInput
 from .feed import CallbackState, ChatFeed
 from .message import ChatMessage, _FileInputMessage
 
@@ -147,7 +148,7 @@ class ChatInterface(ChatFeed):
     def __init__(self, *objects, **params):
         widgets = params.get("widgets")
         if widgets is None:
-            params["widgets"] = [TextInput(placeholder="Send a message")]
+            params["widgets"] = [ChatAreaInput(placeholder="Send a message")]
         elif not isinstance(widgets, list):
             params["widgets"] = [widgets]
         active = params.pop("active", None)
@@ -267,7 +268,7 @@ class ChatInterface(ChatFeed):
             # TextAreaInput will trigger auto send!
             auto_send = (
                 isinstance(widget, tuple(self.auto_send_types)) or
-                type(widget) is TextInput
+                type(widget) in (TextInput, ChatAreaInput)
             )
             if auto_send and widget in new_widgets:
                 callback = partial(self._button_data["send"].callback, self)
