@@ -19,7 +19,7 @@ Throughout this tutorial, whenever we refer to "running the code," you can execu
 
 Let's start by displaying the wind speed using the `Number` indicator:
 
-```python
+```{pyodide}
 import panel as pn
 
 pn.extension()
@@ -42,7 +42,7 @@ Feel free to tweak the `value` from `8.6` to `11.4` and observe the color change
 
 Next, let's visualize the hourly average wind speed trend:
 
-```python
+```{pyodide}
 import panel as pn
 import numpy as np
 
@@ -64,6 +64,10 @@ Experiment by adjusting the `height` parameter from `300` to `500`.
 
 For more detailed insights into the `Trend` indicator, take a moment to explore its [reference guide](../../reference/indicators/Trend.ipynb). Trust us, it's worth it!
 
+## Discover More Indicators
+
+Explore all indicators and their respective reference guides in the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators) of the [Component Gallery](../../reference/index.md).
+
 ## Recap
 
 In this tutorial, we've embarked on visualizing the performance metrics of wind turbines using Panel's versatile indicators:
@@ -71,4 +75,4 @@ In this tutorial, we've embarked on visualizing the performance metrics of wind 
 - Leveraged the [`Number`](../../reference/indicators/Number.ipynb) indicator to display current performance.
 - Utilized the [`Trend`](../../reference/indicators/Trend.ipynb) indicator to showcase trending performance over time.
 
-Remember, there's a plethora of indicators waiting for you to explore in the [Component Gallery](../../reference/index.md). Keep experimenting and uncovering new insights! 🚀
+Remember, there's a plethora of indicators waiting for you to explore in the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators) of the [Component Gallery](../../reference/index.md). Keep experimenting and uncovering new insights! 🚀
