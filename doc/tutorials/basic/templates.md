@@ -1,30 +1,31 @@
-# Use Templates
+# Utilize Templates
 
-In this tutorial, we will use *pre-made templates* to easily layout an app with a *header*, *sidebar*, and *main* area:
+Welcome to the world of Panel templates! In this tutorial, we'll explore how to harness pre-made templates to effortlessly structure your app with a header, sidebar, and main area.
 
-- Templates are available in the `pn.template` namespace
-- Templates can be found in the [Templates Section](https://panel.holoviz.org/reference/index.html#templates) of the [Component Gallery](../../reference/index.md).
-- Templates are highly customizable
+Templates offer a streamlined approach to app layout and design, providing:
 
-## Install the Dependencies
+- Ready-made templates accessible in the `pn.template` namespace.
+- A variety of customizable options to suit your specific needs.
 
-Please make sure [Vega-Altair](https://altair-viz.github.io/) is installed.
+## Installing Dependencies
+
+Before we dive in, ensure you have [Altair](https://altair-viz.github.io/) installed:
 
 ::::{tab-set}
 
-:::{tab-item} pip
+:::{tab-item} via pip
 :sync: pip
 
-``` bash
+```bash
 pip install altair panel
 ```
 
 :::
 
-:::{tab-item} conda
+:::{tab-item} via conda
 :sync: conda
 
-``` bash
+```bash
 conda install -y -c conda-forge altair panel
 ```
 
@@ -32,9 +33,9 @@ conda install -y -c conda-forge altair panel
 
 ::::
 
-## Create a Hello World App
+## Crafting a Hello World App
 
-Copy the code below to a file `app.py`.
+Let's start by creating a basic app using the [`FastListTemplate`](../../reference/templates/FastListTemplate.ipynb). Copy the following code into a file named `app.py`:
 
 ```python
 import panel as pn
@@ -48,38 +49,35 @@ pn.template.FastListTemplate(
 ).servable()
 ```
 
-Serve the app with
+Serve the app with:
 
 ```bash
 panel serve app.py --autoreload
 ```
 
-It should look like below
+It should resemble the following:
 
 ![Hello World FastListTemplate App](../../_static/images/templates_hello_world.png)
 
 :::{note}
-The code refers to
+In the code snippet:
 
-- `pn.template.FastListTemplate`: The specific *template* to use.
-- `title`: An optional title to be displayed in the top *header*.
-- `sidebar`: An optional list of objects to display in the left *sidebar*.
-- `main`: A list of objects to display in the *main* area.
+- `pn.template.FastListTemplate` defines the template to use.
+- `title` sets an optional title for the top header.
+- `sidebar` and `main` designate content areas for the sidebar and main section, respectively.
 
-See the [FastListTemplate](../../reference/templates/FastListTemplate.ipynb) *reference guide* for more configuration options.
+For additional configuration options, refer to the [`FastListTemplate` reference guide](../../reference/templates/FastListTemplate.ipynb).
 :::
 
 :::{tip}
-Panel ships with a large collection of built-in templates. There is even a [`Slides`](../../reference/templates/Slides.ipynb) template.
+Panel offers a rich assortment of built-in templates, including a versatile [`Slides`](../../reference/templates/Slides.ipynb) template.
 :::
 
-Spend a couple of minutes checking out the [Templates Section](https://panel.holoviz.org/reference/index.html#templates) of the [Component Gallery](../../reference/index.md). Then return here.
+Take a moment to explore the [Templates Section](https://panel.holoviz.org/reference/index.html#templates) in the [Component Gallery](../../reference/index.md), then return here.
 
-[![Templates Section](../../_static/images/templates_section.png)](https://panel.holoviz.org/reference/index.html#templates)
+## Integrating Templates in a Notebook
 
-## Use a Template in a Notebook
-
-Copy the two code cells below into a notebook.
+While templates shine in serving apps, they're currently not displayable within notebooks. Copy the following two code cells into a notebook:
 
 ```python
 import panel as pn
@@ -95,21 +93,17 @@ pn.template.FastListTemplate(
 ).servable()
 ```
 
-Add a `;` after `.servable()` to not display the template in the notebook.
-
-*Preview* the app.
-
-It should look like
+Append a `;` after `.servable()` to prevent template display in the notebook. Preview the app; it should resemble:
 
 ![Hello World FastListTemplate App](../../_static/images/templates_hello_world_notebook.png)
 
 :::{warning}
-Currently *templates* do not display in a notebook. We hope to support this one day. Please upvote [Issue #2677](https://github.com/holoviz/panel/issues/2677) if this use case is important to you.
+Notebook display of templates is not currently supported. Show your support for this feature by upvoting [Issue #2677](https://github.com/holoviz/panel/issues/2677).
 :::
 
-## Customize the Template
+## Tailoring the Template
 
-Copy the code below to a file `app.py`.
+Let's customize the template further. Copy the code below into `app.py`:
 
 ```python
 import panel as pn
@@ -167,44 +161,42 @@ pn.template.FastListTemplate(
 ).servable()
 ```
 
-Serve the app with
+Serve the app with:
 
 ```bash
 panel serve app.py --autoreload
 ```
 
-It should look like below
+It should appear as shown below. Try toggling the theme button in the upper right corner.
 
 ![Customized FastListTemplate App](../../_static/images/templates_customized_default.png)
 
-Try clicking the *theme toggle button* in the upper right corner.
-
-It should look like
+Upon toggling, the app should switch to dark mode:
 
 ![Customized FastListTemplate App](../../_static/images/templates_customized_dark.png)
 
 :::{note}
-The code refers to
+In the code:
 
-- `pn.config.theme`: The name of the selected *theme*. Either `"default"` or `"dark"`.
-- `alt.themes.enable("dark")`: We use this Altair code to give the plot a `"dark"` theme. Panel will not do that automatically for you. In the [References](#references) section below you can find a list of how-to guides for styling plots.
-- `accent`: A *primary* or *accent* color to apply to the template. Can be a [*named color*](https://www.w3schools.com/tags/ref_colornames.asp) or a [*hex color value*](https://www.w3schools.com/html/html_colors_hex.asp). You can use this to quickly *brand* your entire app.
-- `main_layout`. A layout to wrap each object in the `main` list in. One of `"card"` (default) or `None`.
+- `pn.config.theme` determines the selected theme ("default" or "dark").
+- `alt.themes.enable("dark")` applies the "dark" theme to the plot. Panel doesn't do this automatically.
+- `accent` sets the primary or accent color for the template, allowing quick branding of the app.
+- `main_layout` specifies a layout to wrap each object in the main list. Choose from `"card"` (default) or `None`.
 
-The `accent` and `main_layout` arguments only apply to the *Fast* templates, i.e. the [FastListTemplate](../../reference/templates/FastListTemplate.ipynb) and the [FastGridTemplate](../../reference/templates/FastGridTemplate.ipynb).
+Note that `accent` and `main_layout` are exclusive to Fast templates like [FastListTemplate](../../reference/templates/FastListTemplate.ipynb) and [FastGridTemplate](../../reference/templates/FastGridTemplate.ipynb).
 :::
 
 ## Recap
 
-In this tutorial, we have used *pre-made templates* to easily layout an app with a *header*, *sidebar*, and *main* area:
+In this tutorial, we've explored the power of pre-made templates for structuring your app with ease:
 
-- Templates are available in the `pn.template` namespace
-- Templates can be found in the [Templates Section](https://panel.holoviz.org/reference/index.html#templates) of the [Component Gallery](../../reference/index.md).
-- Templates are highly customizable
+- Templates are available in the `pn.template` namespace.
+- Find a variety of templates in the [Templates Section](https://panel.holoviz.org/reference/index.html#templates) of the [Component Gallery](../../reference/index.md).
+- Templates offer high customizability.
 
 ## References
 
-### How-to
+### How-to Guides
 
 - [Arrange Components in a Template](../../how_to/templates/template_arrange.md)
 - [Build a Custom Template](../../how_to/templates/template_custom.md)
@@ -217,10 +209,10 @@ In this tutorial, we have used *pre-made templates* to easily layout an app with
 - [Style Vega/ Altair Plots](../../how_to/styling/vega.md)
 - [Toggle Modal](../../how_to/templates/template_modal.md)
 
-### Explanation
+### Explanations
 
-- [Templates](../../explanation/styling/templates_overview.md)
+- [Templates Overview](../../explanation/styling/templates_overview.md)
 
 ### Component Gallery
 
-- [Templates Section](https://panel.holoviz.org/reference/index.html#templates) of the [Component Gallery](../../reference/index.md)
+- Explore the [Templates Section](https://panel.holoviz.org/reference/index.html#templates) in the [Component Gallery](../../reference/index.md) for more options.

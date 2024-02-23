@@ -48,7 +48,7 @@ Enhance interactivity by handling user input:
 
 Enhance visual appeal:
 
-- **[Use Templates](templates.md):** Employ pre-made templates for streamlined app layout.
+- **[Utilize Templates](templates.md):** Employ pre-made templates for streamlined app layout.
 - **[Apply A Design](design.md):** Customize app design to suit your style and functionality.
 - **[Use Styles](style.md):** Fine-tune component styling for aesthetic and user-friendly apps.
 
