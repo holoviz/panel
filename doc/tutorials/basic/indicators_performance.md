@@ -1,20 +1,25 @@
 # Display Performance with Indicators
 
-In this tutorial, we will be displaying the performance of our wind turbines using Panels *indicators*:
+Welcome to our tutorial on displaying the performance of wind turbines using Panel's [indicators](https://panel.holoviz.org/reference/index.html#indicators)! Let's delve into visualizing the key metrics of our wind turbines in an engaging and insightful manner.
 
-- Display the current performance using the [`Number`](../../reference/indicators/Number.ipynb) *indicator*.
-- Display the trending performance using the [`Trend`](../../reference/indicators/Trend.ipynb) *indicator*
-- Discover all *indicators* and their *reference guides* in the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators) of the [Component Gallery](../../reference/index.md).
+## Explore Indicators
+
+In this tutorial, we'll explore various indicators offered by Panel to showcase the performance metrics:
+
+- **Current Performance**: Utilize the [`Number`](../../reference/indicators/Number.ipynb) indicator to display the current performance.
+- **Trending Performance**: Employ the [`Trend`](../../reference/indicators/Trend.ipynb) indicator to showcase the trending performance over time.
+
+For a comprehensive list of indicators and their detailed reference guides, you can always refer to the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators) in the [Component Gallery](../../reference/index.md).
 
 :::{note}
-When we ask to *run the code* in the sections below, we may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
+Throughout this tutorial, whenever we refer to "running the code," you can execute it directly in the Panel docs using the green *run* button, in a notebook cell, or within a file named `app.py` served with `panel serve app.py --autoreload`.
 :::
 
 ## Display a Number
 
-Run the code below
+Let's start by displaying the wind speed using the `Number` indicator:
 
-```{pyodide}
+```python
 import panel as pn
 
 pn.extension()
@@ -28,28 +33,24 @@ pn.indicators.Number(
 ```
 
 :::{note}
-We add `.servable()` to the `Number` *indicator* to add it to the app served by `panel serve app.py --autoreload`. Adding `.servable()` is not needed to display the *indicator* in a notebook.
+Adding `.servable()` to the `Number` indicator incorporates it into the app served by `panel serve app.py --autoreload`. Note that it's not necessary for displaying the indicator in a notebook.
 :::
 
-Try changing the `value` from `8.6` to `11.4`.
-
-Notice that the color changes to *red*.
+Feel free to tweak the `value` from `8.6` to `11.4` and observe the color change to *red*.
 
 ## Display a Trend
 
-Run the code below
+Next, let's visualize the hourly average wind speed trend:
 
-```{pyodide}
+```python
 import panel as pn
 import numpy as np
 
 pn.extension()
 
-
 def get_wind_speeds(n):
-    # replace with your own wind speeds source
+    # Replace this with your own wind speed data source
     return {"x": np.arange(n), "y": 8 + np.random.randn(n)}
-
 
 pn.indicators.Trend(
     name="Wind Speed (m/s, hourly avg.)",
@@ -59,18 +60,15 @@ pn.indicators.Trend(
 ).servable()
 ```
 
-Try changing the `height` from `300` to `500`.
+Experiment by adjusting the `height` parameter from `300` to `500`.
 
-Click [here](../../reference/indicators/Trend.ipynb) and spend a couple of minutes checking out the *reference guide* of the [`Trend`](../../reference/indicators/Trend.ipynb) *indicator*. It's *awesome*.
-
-## Discover Indicators
-
-Discover all *indicators* and their *reference guides* in the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators) of the [Component Gallery](../../reference/index.md).
+For more detailed insights into the `Trend` indicator, take a moment to explore its [reference guide](../../reference/indicators/Trend.ipynb). Trust us, it's worth it!
 
 ## Recap
 
-In this tutorial, we have been displaying the performance of our wind turbines using Panels *indicators*:
+In this tutorial, we've embarked on visualizing the performance metrics of wind turbines using Panel's versatile indicators:
 
-- Display the current performance using the [`Number`](../../reference/indicators/Number.ipynb) *indicator*.
-- Display the trending performance using the [`Trend`](../../reference/indicators/Trend.ipynb) *indicator*
-- Discover all *indicators* and their *reference guides* in the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators) of the [Component Gallery](../../reference/index.md).
+- Leveraged the [`Number`](../../reference/indicators/Number.ipynb) indicator to display current performance.
+- Utilized the [`Trend`](../../reference/indicators/Trend.ipynb) indicator to showcase trending performance over time.
+
+Remember, there's a plethora of indicators waiting for you to explore in the [Component Gallery](../../reference/index.md). Keep experimenting and uncovering new insights! 🚀
