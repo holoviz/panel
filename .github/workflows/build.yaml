@@ -143,7 +143,7 @@ jobs:
           fetch-depth: "100"
       - uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: ${{ env.PYTHON_VERSION }}
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -154,7 +154,7 @@ jobs:
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: build pyodide wheels for CDN
         run: |
-          python -m pip install packaging
+          python -m pip install packaging tomli
           python ./scripts/build_pyodide_wheels.py
           SETUPTOOLS_ENABLE_FEATURES="legacy-editable" python -m pip install -ve .
       - uses: actions/upload-artifact@v3

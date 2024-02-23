@@ -10,12 +10,16 @@ import shutil
 import subprocess
 import zipfile
 
-from tomllib import loads
+try:
+    import tomllib
+except ModuleNotFoundError:
+    # Can be removed after 3.11 is the minimum version
+    import tomli as tomllib
 
 from packaging.requirements import Requirement
 
 PANEL_BASE = pathlib.Path(__file__).parent.parent
-PACKAGE_INFO = loads((PANEL_BASE / "pyproject.toml").read_text())
+PACKAGE_INFO = tomllib.loads((PANEL_BASE / "pyproject.toml").read_text())
 bokeh_requirement = next(p for p in PACKAGE_INFO['build-system']['requires'] if "bokeh" in p.lower())
 bokeh_dev = Requirement(bokeh_requirement).specifier.prereleases
 
