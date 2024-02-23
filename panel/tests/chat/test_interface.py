@@ -5,6 +5,7 @@ from io import BytesIO
 import pytest
 import requests
 
+from panel.chat.chatarea_input import ChatAreaInput
 from panel.chat.interface import ChatInterface
 from panel.layout import Row, Tabs
 from panel.pane import Image
@@ -24,7 +25,7 @@ class TestChatInterface:
         assert len(chat_interface._button_data) == 5
         assert len(chat_interface._widgets) == 1
         assert isinstance(chat_interface._input_layout, Row)
-        assert isinstance(chat_interface._widgets["TextInput"], TextInput)
+        assert isinstance(chat_interface._widgets["ChatAreaInput"], ChatAreaInput)
 
         assert chat_interface.active == -1
 
