@@ -249,8 +249,8 @@ jobs:
         with:
           name: cdn_wheels
           path: |
-            ./build/panel*.whl
-            ./build/bokeh*.whl
+            ./dist/wheels/panel*.whl
+            ./dist/wheels/bokeh*.whl
           if-no-files-found: error
       - name: launch jupyter
         run: |

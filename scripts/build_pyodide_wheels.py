@@ -22,8 +22,6 @@ PANEL_BASE = pathlib.Path(__file__).parent.parent
 PACKAGE_INFO = tomllib.loads((PANEL_BASE / "pyproject.toml").read_text())
 bokeh_requirement = next(p for p in PACKAGE_INFO['build-system']['requires'] if "bokeh" in p.lower())
 bokeh_dev = Requirement(bokeh_requirement).specifier.prereleases
-print(bokeh_requirement, bokeh_dev)
-bokeh_dev = True
 
 parser = argparse.ArgumentParser()
 parser.add_argument("out", default="panel/dist/wheels", nargs="?", help="Output dir")
