@@ -1,7 +1,8 @@
 import { Enum } from "@bokehjs/core/kinds"
 import * as p from "@bokehjs/core/properties"
-import { div } from "@bokehjs/core/dom"
+import { div, empty, span} from "@bokehjs/core/dom"
 import { Widget, WidgetView } from "@bokehjs/models/widgets/widget"
+import {to_string} from "@bokehjs/core/util/pretty"
 
 const SVG_STRINGS = {
   slower: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-minus" width="24" \
@@ -68,6 +69,7 @@ export class PlayerView extends WidgetView {
   model: Player
 
   protected buttonEl: HTMLDivElement
+  protected titleEl: HTMLLabelElement
   protected groupEl: HTMLDivElement
   protected sliderEl: HTMLInputElement
   protected loop_state: HTMLFormElement
@@ -79,6 +81,8 @@ export class PlayerView extends WidgetView {
 
   connect_signals(): void {
     super.connect_signals()
+    this.connect(this.model.properties.title.change, () => this.update_title())
+    this.connect(this.model.properties.value_location.change, () => this.set_value_location())
     this.connect(this.model.properties.direction.change, () => this.set_direction())
     this.connect(this.model.properties.value.change, () => this.render())
     this.connect(this.model.properties.loop_policy.change, () => this.set_loop_state(this.model.loop_policy))
@@ -89,6 +93,8 @@ export class PlayerView extends WidgetView {
       else if (!this.model.show_loop_controls && this.loop_state.parentNode == this.groupEl)
         this.groupEl.removeChild(this.loop_state)
     })
+    this.connect(this.model.properties.show_value.change, () => this.update_title())
+
   }
 
   toggle_disable() {
@@ -124,7 +130,12 @@ export class PlayerView extends WidgetView {
     this.groupEl = div()
     this.groupEl.style.display = "flex"
     this.groupEl.style.flexDirection = "column"
-    this.groupEl.style.alignItems = "center"
+
+    // Display Value
+    this.titleEl = document.createElement('label');
+    this.update_title()
+    this.titleEl.style.cssText = "padding: 0 5px 0 5px; user-select:none;"
+    this.set_value_location()
 
     // Slider
     this.sliderEl = document.createElement('input')
@@ -259,6 +270,7 @@ export class PlayerView extends WidgetView {
     this.loop_state.appendChild(reflect)
     this.loop_state.appendChild(reflect_label)
 
+    this.groupEl.appendChild(this.titleEl)
     this.groupEl.appendChild(this.sliderEl)
     this.groupEl.appendChild(button_div)
     if (this.model.show_loop_controls)
@@ -270,6 +282,7 @@ export class PlayerView extends WidgetView {
 
   set_frame(frame: number, throttled: boolean = true): void {
     this.model.value = frame
+    this.update_title()
     if (throttled)
       this.model.value_throttled = frame
     if (this.sliderEl.value != String(frame))
@@ -284,6 +297,47 @@ export class PlayerView extends WidgetView {
         return button.value;
     }
     return "once"
+  }
+
+  update_title(): void {
+    empty(this.titleEl)
+
+    const hide_header = this.model.title == null || (this.model.title.length == 0 && !this.model.show_value)
+    this.titleEl.style.display = hide_header ? "none" : ""
+
+    if (!hide_header) {
+      this.titleEl.style.visibility = 'visible';
+      const {title} = this.model
+      if (title != null && title.length > 0) {
+        if (this.contains_tex_string(title)) {
+          this.titleEl.innerHTML = `${this.process_tex(title)}: `
+        } else {
+          this.titleEl.textContent = `${title}: `
+        }
+      }
+
+      if (this.model.show_value) {
+
+        this.titleEl.appendChild(span({class: 'pn-player-value'}, to_string(this.model.value)))
+      }
+    }
+    else{
+      this.titleEl.style.visibility = 'hidden';
+    }
+  }
+
+  set_value_location(): void {
+    switch (this.model.value_location){
+      case 'top_left':
+        this.titleEl.style.textAlign = "left";
+        break;
+      case 'top_center':
+        this.titleEl.style.textAlign = "center";
+        break;
+      case 'top_right':
+        this.titleEl.style.textAlign = "right";
+        break;
+    }
   }
 
   set_loop_state(state: string): void {
@@ -415,9 +469,12 @@ export namespace Player {
     end: p.Property<number>
     step: p.Property<number>
     loop_policy: p.Property<typeof LoopPolicy["__type__"]>
+    title: p.Property<string>
     value: p.Property<any>
+    value_location: p.Property <string>
     value_throttled: p.Property<any>
     show_loop_controls: p.Property<boolean>
+    show_value: p.Property<boolean>
   }
 }
 
@@ -437,16 +494,19 @@ export class Player extends Widget {
   static {
     this.prototype.default_view = PlayerView
 
-    this.define<Player.Props>(({ Boolean, Int }) => ({
+    this.define<Player.Props>(({ Boolean, Int, String }) => ({
       direction: [Int, 0],
       interval: [Int, 500],
       start: [Int, 0],
       end: [Int, 10],
       step: [Int, 1],
       loop_policy: [LoopPolicy, "once"],
+      title: [String,""],
       value: [Int, 0],
+      value_location: [String, "top_center"],
       value_throttled: [Int, 0],
       show_loop_controls: [Boolean, true],
+      show_value: [Boolean, true]
     }))
 
     this.override<Player.Props>({ width: 400 })
