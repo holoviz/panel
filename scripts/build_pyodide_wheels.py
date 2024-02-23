@@ -10,13 +10,14 @@ import shutil
 import subprocess
 import zipfile
 
-from importlib.metadata import version
+from tomllib import loads
 
-from packaging.version import Version
+from packaging.requirements import Requirement
 
 PANEL_BASE = pathlib.Path(__file__).parent.parent
-bokeh_version = Version(version("bokeh"))
-bokeh_dev = bokeh_version.is_devrelease
+PACKAGE_INFO = loads((PANEL_BASE / "pyproject.toml").read_text())
+bokeh_requirement = next(p for p in PACKAGE_INFO['build-system']['requires'] if "bokeh" in p.lower())
+bokeh_dev = Requirement(bokeh_requirement).specifier.prereleases
 
 parser = argparse.ArgumentParser()
 parser.add_argument("out", default="panel/dist/wheels", nargs="?", help="Output dir")
@@ -59,7 +60,7 @@ if bokeh_dev:
         if filename.startswith("panel-") and filename.endswith("METADATA"):
             lines = buffer.decode("utf-8").split("\n")
             lines = [
-                f"Requires-Dist: bokeh =={bokeh_version}"
+                f"Requires-Dist: {bokeh_requirement}"
                 if line.startswith("Requires-Dist: bokeh")
                 else line for line in lines
             ]

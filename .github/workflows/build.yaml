@@ -143,7 +143,7 @@ jobs:
           fetch-depth: "100"
       - uses: actions/setup-python@v4
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: 3.11
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
