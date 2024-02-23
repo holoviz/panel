@@ -45,6 +45,8 @@ pip install panel
 conda install panel
 ```
 
+:::
+
 ::::
 
 :::{important}
