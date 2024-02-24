@@ -6,8 +6,6 @@ Let's take your dashboard to the next level and get it into the hands of your us
 
 Before we begin, ensure that you've signed up for [Hugging Face](https://huggingface.co/) and logged into your account. If not, simply click the "Sign Up" button on the [Hugging Face](https://huggingface.co/spaces?sort=trending&search=panel) page and follow the instructions to create your account.
 
-[![Hugging Face Spaces](../../_static/images/hugging_face_spaces_panel.png)](https://huggingface.co/spaces?sort=trending&search=panel)
-
 ## Clone the Project
 
 First things first, let's clone the project:

@@ -1,15 +1,15 @@
 # Display Activity
 
-Show activity with indicators and notifications just as rotating blades show the activity of wind turbines:
+Let's bring our Panel apps to life with dynamic indicators and notifications, much like the rotating blades of wind turbines indicate activity.
 
-- Overlay a loading indicator with the `loading` parameter.
-- Automatically overlay a loading indicator on output from *bound functions* by setting `loading_indicator=True`.
-- Improve the user experience of slowly loading applications by setting `defer_load=True` .
-- Customize the loading indication with *loading indicator* components.
-- Provide notifications using `pn.state.notifications`
+- Overlay loading indicators using the `loading` parameter.
+- Automatically overlay loading indicators on outputs from *bound functions* by enabling `loading_indicator=True`.
+- Enhance user experience with slowly loading applications by deferring load with `defer_load=True`.
+- Customize loading indicators with various components.
+- Provide notifications using `pn.state.notifications`.
 
 :::{note}
-In the sections below, we may execute the code directly in the Panel documentation by using the green *run* button, in a notebook cell, or in a file named `app.py` served with `panel serve app.py --autoreload`.
+In the sections below, you can execute the code directly in the Panel documentation using the green *run* button, in a notebook cell, or in a file named `app.py` served with `panel serve app.py --autoreload`.
 :::
 
 ```{pyodide}
@@ -20,14 +20,14 @@ pn.extension(notifications=True)
 
 ## Install the Dependencies
 
-Please ensure that [hvPlot](https://hvplot.holoviz.org) and [Pandas](https://pandas.pydata.org) are installed.
+Ensure that [hvPlot](https://hvplot.holoviz.org) and [Pandas](https://pandas.pydata.org) are installed.
 
 ::::{tab-set}
 
 :::{tab-item} pip
 :sync: pip
 
-``` bash
+```bash
 pip install hvplot pandas panel
 ```
 
@@ -36,7 +36,7 @@ pip install hvplot pandas panel
 :::{tab-item} conda
 :sync: conda
 
-``` bash
+```bash
 conda install -y -c conda-forge hvplot pandas panel
 ```
 
@@ -58,7 +58,7 @@ pn.extension()
 pn.widgets.Button(name="Loading", loading=True, button_type="primary").servable()
 ```
 
-It also works for composed components
+It also works for composed components.
 
 Run the code below:
 
@@ -74,11 +74,11 @@ pn.WidgetBox(
 ).servable()
 ```
 
-## Automatically overlay a Loading Indicator
+## Automatically Overlay a Loading Indicator
 
 We can automatically overlay a loading indicator on *bound functions* by setting `loading_indicator=True` in `pn.panel`.
 
-Run the code below
+Run the code below:
 
 ```{pyodide}
 from time import sleep
@@ -108,27 +108,19 @@ plot = pn.panel(bound_function, height=400, sizing_mode="stretch_width", loading
 pn.Column(button, plot).servable()
 ```
 
-```{note}
-The code refers to
-
-- `get_figure`: The function returns a plot. We use hvPlot, but any other plotting library could be used.
-- `bound_function`: We *bind* the `get_figure` function to the `button`. When we click the `button`, the plot will be created.
-- `pn.panel(bound_function, ..., loading_indicator=True)`: We display the `bound_function` and display a *loading indicator* when the `bound_function` is running.
-```
-
 ### Exercise: Configure Global Loading Indicator
 
-Add two more plots to the previous example. Make sure a *loading indicator* is applied to all 3 plots when loading.
+Add two more plots to the previous example. Make sure a loading indicator is applied to all three plots when loading.
 
 :::{hint}
-You can configure a *global* `loading_indicator` via one of
+You can configure a global `loading_indicator` via one of:
 
 - `pn.extension(..., loading_indicator=True)`
 - `pn.config.loading_indicator=True`.
 
 :::
 
-:::{dropdown} Solution: 3 Plots with loading indicator
+:::{dropdown} Solution
 
 ```{pyodide}
 from time import sleep
@@ -167,7 +159,7 @@ pn.Column(button, plot, pn.Row(plot2, plot3), sizing_mode="stretch_width").serva
 ### Exercise: Defer the Load
 
 :::{hint}
-If the *bound functions* in the application are slow, it will take a while for the application to *load*.
+If the bound functions in the application are slow, it will take a while for the application to load.
 
 We can improve the user experience by using `defer_load=True`. This can be used locally in `pn.panel` or globally via `pn.extension(..., defer_load=True)` or `pn.config.defer_load=True`.
 :::
@@ -205,11 +197,11 @@ pn.Column(button, plot, pn.Row(plot2, plot3), sizing_mode="stretch_width").serva
 
 Notice that it takes +6 seconds before the application loads.
 
-Click the `Submit` button. Notice the *missing* *loading indicator*.
+Click the `Submit` button. Notice the missing loading indicator.
 
-Improve the user experience by *deferring the load* and adding a *loading indicator* to each plot.
+Improve the user experience by deferring the load and adding a loading indicator to each plot.
 
-:::{dropdown} Solution: Loading Indicator + Defer Load
+:::{dropdown} Solution
 
 ```{pyodide}
 from time import sleep
@@ -244,7 +236,7 @@ pn.Column(button, plot, pn.Row(plot2, plot3), sizing_mode="stretch_width").serva
 
 ## Loading Indicators
 
-Panel provides a selection of *loading indicators*. For example the [`LoadingSpinner`](../../reference/indicators/LoadingSpinner.ipynb) and [`Progress`](../../reference/indicators/Progress.ipynb) indicator.
+Panel provides a selection of loading indicators, such as the [`LoadingSpinner`](../../reference/indicators/LoadingSpinner.ipynb) and [`Progress`](../../reference/indicators/Progress.ipynb) indicator.
 
 Run the code below
 
@@ -300,7 +292,7 @@ def predict(running):
         return "Click Submit"
 
     sleep(2)
-    return "Its a Wind Turbine!"
+    return "It's a Wind Turbine!"
 
 
 prediction = pn.bind(predict, button)
@@ -314,12 +306,12 @@ pn.Column(
 
 Notice the poor user experience.
 
-Now fix the issues
+Now fix the issues:
 
-- Only show `LoadingSpinner` when the prediction is running.
-- Make the `LoadingSpinner` spin when the prediction is running
+- Show `LoadingSpinner` only when the prediction is running.
+- Make the `LoadingSpinner` spin when the prediction is running.
 
-:::::{dropdown} Solutions: LoadingSpinner
+::::{dropdown} Solutions
 
 ::::{tab-set}
 
@@ -348,7 +340,7 @@ def predict(running):
 
     sleep(2)
     running_indicator.value = running_indicator.visible = False
-    return "Its a Wind Turbine!"
+    return "It's a Wind Turbine!"
 
 
 prediction = pn.bind(predict, button)
@@ -387,7 +379,7 @@ def predict(running):
     is_running.rx.value=True
     sleep(2)
     is_running.rx.value=False
-    return "Its a Wind Turbine!"
+    return "It's a Wind Turbine!"
 
 
 prediction = pn.bind(predict, button)
@@ -403,7 +395,7 @@ pn.Column(button, running_indicator, prediction).servable()
 
 ## Notifications
 
-Lets display an `info` *notification*.
+Let's display an `info` notification.
 
 ```{pyodide}
 import panel as pn
@@ -416,13 +408,13 @@ def send_notification(event):
 pn.widgets.Button(name="Send", on_click=send_notification).servable()
 ```
 
-Try clicking the `Button`. You should see a notification *pop up* in the lower left corner of the app.
+Try clicking the `Button`. You should see a notification pop up in the lower left corner of the app.
 
 :::{note}
-The code refers to
+The code refers to:
 
 - `pn.extension(notifications=True)`: We need to set `notifications=True` to support notifications in Panel.
-- `pn.state.notifications.info("This is a notification", duration=3000)`: We send an `info` notification. The notification is shown for `3000` milli seconds.
+- `pn.state.notifications.info(..., duration=3000)`: We send an `info` notification. The notification is shown for `3000` milliseconds.
 :::
 
 Try changing `pn.state.notifications.info` to `pn.state.notifications.warning`. Then click the `Button`. What happens?
@@ -433,13 +425,13 @@ See the [Notifications](../../reference/global/Notifications.ipynb) reference gu
 
 ## Recap
 
-We have showed activity with indicators just as rotating blades show the activity of wind turbines:
+We've explored how to show activity with indicators, much like the rotating blades of wind turbines:
 
 - Overlay a loading indicator with the `loading` parameter.
 - Automatically overlay a loading indicator on output from *bound functions* by setting `loading_indicator=True`.
-- Improve the user experience of slowly loading applications by setting `defer_load=True` .
-- Customize the loading indication with *loading indicator* components.
-- Provide notifications using `pn.state.notifications`
+- Improve the user experience of slowly loading applications by setting `defer_load=True`.
+- Customize the loading indication with various components.
+- Provide notifications using `pn.state.notifications`.
 
 ## Resources
 

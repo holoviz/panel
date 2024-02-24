@@ -30,7 +30,7 @@ Once you're comfortable, it's time to dive deeper:
 - **[Utilize Templates](templates.md)**
 - **[Apply Design](design.md)**
 - **[Enhance Style](style.md)**
-- **[Add Caching](caching.md)**
+- **[Optimize Performance with Caching](caching.md)**
 - **[Display Activity with Indicators](indicators_activity.md)**
 - **[Update Progressively](progressive_layouts.md)**
 

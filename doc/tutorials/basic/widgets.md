@@ -1,6 +1,6 @@
 # Accept Inputs with Widgets
 
-Welcome to the guide on accepting user inputs with widgets in Panel! Let's dive into the world of interactive components and explore how they can enhance your Panel applications.
+Welcome to the tutorial on accepting user inputs with widgets in Panel! Let's dive into the world of interactive components and explore how they can enhance your Panel applications.
 
 ## Introduction to Widgets
 
@@ -8,7 +8,7 @@ Widgets, found within the `pn.widgets` namespace, are powerful tools for capturi
 
 You can explore the full array of available widgets and their detailed reference guides in the [Widgets Section](https://panel.holoviz.org/reference/index.html#widgets) of the [Component Gallery](../../reference/index.md).
 
-:::{tip}
+:::{note}
 Widgets typically utilize the `value` parameter to capture user input.
 Some widgets, such as the [`Button`](../../reference/widgets/Button.ipynb), even allow you to register callback functions that trigger actions upon interaction.
 
@@ -103,7 +103,7 @@ pn.widgets.RadioButtonGroup(
 
 In this tutorial, we've covered various ways to accept user input using widgets in Panel. From simple clicks to text input and selection from lists, widgets provide powerful tools for building interactive applications.
 
-Don't forget to explore the [Component Gallery](https://panel.holoviz.org/reference/index.html#widgets) for more widgets and their detailed reference guides, and keep experimenting to create dynamic and engaging Panel apps!
+Don't forget to explore the [Component Gallery](https://panel.holoviz.org/reference/index.html#widgets) for more widgets and their detailed reference guides.
 
 ## Resources
 

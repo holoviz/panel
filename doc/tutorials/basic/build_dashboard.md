@@ -40,7 +40,7 @@ conda install -y -c conda-forge hvplot pandas panel
 
 :::{dropdown} Code
 
-```{pyodide}
+```python
 import hvplot.pandas
 import pandas as pd
 import panel as pn

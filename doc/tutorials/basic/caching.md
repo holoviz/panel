@@ -1,27 +1,29 @@
-# Add Caching
+# Optimize Performance with Caching
 
-Caching allows us to store and reuse valuable computations, reducing the energy required for calculations and making our apps run faster and smoother:
+Caching is a powerful technique that not only accelerates your applications but also conserves computational resources by storing and reusing valuable computations. Let's dive into how you can leverage caching in your Panel apps to enhance their speed and efficiency.
 
-- Use `pn.cache` to *cache* function results.
+## Harness the Power of Caching
+
+With `pn.cache`, you can effortlessly cache function results, unlocking a plethora of performance benefits for your Panel apps.
 
 :::{note}
-When we ask to *run the code* in the sections below, we may execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
+As you proceed through the sections below, feel free to execute the code directly in the Panel docs using the handy green *run* button, in a notebook cell, or within a Python file `app.py` served with `panel serve app.py --autoreload`.
 :::
 
-## Understand Panel Application Execution
+## Grasp Panel Application Execution
 
-To understand why caching can be helpful and how to apply it, its important to understand how a Panel application executes code.
+Before delving into caching, it's crucial to comprehend how Panel applications execute code. Let's gain some insights into this process.
 
-Create a file `external_module.py` containing the code below:
+Create a file named `external_module.py` with the following content:
 
 ```python
 print("running external_module.py")
 
-# I'm defined once and shared between all sessions (i.e. between all users)
-external_data={"__name__": __name__}
+# This object is defined once and shared across all sessions (i.e., all users)
+external_data = {"__name__": __name__}
 ```
 
-Create a file `app.py` containing the code below
+Next, create a file named `app.py` with the following code:
 
 ```python
 print("running app.py")
@@ -31,7 +33,7 @@ from external_module import external_data
 
 pn.extension()
 
-# I'm defined each time the app loads and only shared within that session
+# This object is defined each time the app loads and is shared only within that session
 data = {"__name__": __name__}
 
 pn.Column(
@@ -40,7 +42,7 @@ pn.Column(
 ).servable()
 ```
 
-Run
+Now, execute the following command in your terminal:
 
 ```bash
 panel serve app.py
@@ -55,39 +57,37 @@ It should look like
     Your browser does not support the video tag.
 </video>
 
-Please note how the `__name__` and `id` does not change for the `external_module` when you refresh the page. Note that they do change for the served `app`.
-
 :::{note}
-Please note
 
-- imported modules are run once the first time they are imported.
-  - Objects defined in imported modules are shared between all user *sessions*
-- the served `app.py` code is run every time the app is loaded.
-  - Objects defined here are shared within the single user *session* only (unless they are cached).
-- only *specific, bound functions* are rerun on user interactions. Not the entire `app.py` script.
+- Imported modules are executed once when they are first imported. Objects defined in these modules are shared across all user sessions.
+- The `app.py` script is executed each time the app is loaded. Objects defined here are shared within the single user session only (unless cached).
+- Only specific, bound functions are re-executed upon user interactions, not the entire `app.py` script.
+
 :::
 
-### Exercise: Add `--autoreload`
+### Exercise: Enable `--autoreload`
 
-Try repeating the steps above with `--autoreload`
+Try repeating the aforementioned steps with `--autoreload`.
 
 ```bash
 panel serve app.py --autoreload
 ```
 
-What changes?
+Observe the changes.
 
 :::{dropdown} Solution
 
-With `--autoreload` both files are run when the server starts and before the page is loaded the first time.
+With `--autoreload`, both files are executed when the server starts and before the page is loaded for the first time.
 
 <img src="https://assets.holoviz.org/panel/tutorials/page_load_end_autoreload.png"></img>
 
 :::
 
-## Load Fast with Caching
+## Enhance Loading Speed with Caching
 
-Run the code below
+Now, let's explore how caching can dramatically improve the loading speed of your Panel apps.
+
+Execute the code snippet below:
 
 ```{pyodide}
 from datetime import datetime
@@ -109,24 +109,17 @@ data = get_data()
 pn.pane.JSON(data).servable()
 ```
 
-Try refreshing the browser a few times.
+Refresh the browser a few times and observe the loading time.
 
-Notice that it takes +2 seconds for the application to load and the timestamp is updated every time the app is reloaded.
+### Exercise: Implement Caching
 
-### Exercise: Apply Caching
+Let's apply caching to the `get_data` function by decorating it with the `@pn.cache` decorator.
 
-Now let's add caching to the `get_data` function by *decorating* it with `@pn.cache` *decorator*.
+Observe in the terminal that the `data` is loaded only once when the server starts.
 
-Notice in the terminal that the `data` is loaded once when the server starts.
-
-Try loading and refreshing the app several times. It's nice, right?
+Try loading and refreshing the app several times to experience the improved performance.
 
 :::::{dropdown} Solution
-
-::::{tab-set}
-
-:::{tab-item} Decorator
-:sync: decorator
 
 ```{pyodide}
 from datetime import datetime
@@ -148,12 +141,13 @@ data = get_data()
 pn.pane.JSON(data).servable()
 ```
 
-:::
+:::::
 
-:::{tab-item} Function
-:sync: function
+If the `get_data` function is provided externally, you can utilize `pn.cache` as a function instead.
 
-If the `get_data` function is externally given, you can use `pn.cache` as a function instead.
+Try using `pn.cache` as a function instead of a decorator.
+
+:::::{dropdown} Solution
 
 ```{pyodide}
 from datetime import datetime
@@ -175,15 +169,11 @@ data = get_data_cached()
 pn.pane.JSON(data).servable()
 ```
 
-:::
-
-::::
-
 :::::
 
-## Reuse Function Results
+## Maximize Efficiency by Reusing Function Results
 
-Run the code below
+Execute the following code snippet:
 
 ```{pyodide}
 from time import sleep
@@ -204,22 +194,24 @@ pn.Column(
 ).servable()
 ```
 
-Try dragging the slider. Notice how the app is initially responding slowly but as the cache is *populated* it starts responding instantly.
+Drag the slider and notice the initial slow response of the app, which progressively becomes instantaneous as the cache is populated.
 
-:::{hint}
-You can learn to fine-tune `pn.cache` in the [Automatically Cache](../../how_to/caching/memoization.md) guide.
+:::{tip}
+For further optimization, explore fine-tuning options for `pn.cache` in the [Automatically Cache](../../how_to/caching/memoization.md) guide.
 :::
 
 ## Recap
 
-We have been speeding up our apps using caching.
+In this section, we've learned how to significantly enhance the performance of Panel apps through caching:
 
-- Use `pn.cache` to *cache* function results.
+- Leveraged `pn.cache` to cache function results efficiently.
 
 ## Resources
 
-### How-to
+### How-to Guides
 
 - [Automatically Cache](../../how_to/caching/memoization.md)
 - [Manually Cache](../../how_to/caching/manual.md)
-- [Migrate from Streamlit | Add Caching](../../how_to/streamlit_migration/caching.md)
+- [Migration from Streamlit: Adding Caching](../../how_to/streamlit_migration/caching.md)
+
+Keep exploring and optimizing your Panel apps for maximum efficiency! 🚀

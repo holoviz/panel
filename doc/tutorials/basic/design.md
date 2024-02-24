@@ -59,14 +59,27 @@ pn.Column(
 ).servable()
 ```
 
-Try toggling the `theme` from `"dark"` to `"default"`.
-
 :::
 
 :::{tab-item} Notebook
 :sync: script
 
 In the notebook, the `theme` automatically adapts to the current JupyterLab theme.
+
+Run the code below:
+
+```{pyodide}
+import panel as pn
+
+pn.extension(design="material")
+
+pn.Column(
+    pn.widgets.FloatSlider(name="Slider"),
+    pn.widgets.TextInput(name="TextInput"),
+    pn.widgets.Select(name="Select", options=["Wind Turbine", "Solar Panel", "Battery Storage"]),
+    pn.widgets.Button(name="Click me!", icon="hand-click", button_type="primary"),
+).servable()
+```
 
 Experiment by switching the JupyterLab Theme from Dark to Light or vice versa.
 
