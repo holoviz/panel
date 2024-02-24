@@ -8,7 +8,7 @@ Are you ready to dive into the exciting world of Panel? Our Basic Tutorials are 
 
 Before we dive in, make sure you've followed along with our [Getting Started Guide](../../getting_started/index.md).
 
-Please execute the following command to install the required dependencies:
+Please execute the following command to install the dependencies required by the basic tutorials:
 
 ::::{tab-set}
 
@@ -32,8 +32,8 @@ conda install -y -c conda-forge altair hvplot matplotlib numpy pandas panel plot
 
 ::::
 
-:::{warning}
-If you are running your Jupyter Lab or notebook server in a separate Python environment, then please make sure `panel` is installed in that environment too.
+:::{important}
+Is Panel installed together with JupyterLab/Jupyter Notebook in your working environment? If not, you need to make sure that `panel` is also installed in the same environment as JupyterLab/Jupyter Notebook (`conda install -c conda-forge panel` or `pip install panel`).
 :::
 
 ## Let's Get Started
