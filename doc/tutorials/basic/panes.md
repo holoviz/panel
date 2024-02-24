@@ -19,32 +19,6 @@ import panel as pn
 pn.extension("echarts", "plotly", "vega", "vizzu")
 ```
 
-## Install the Dependencies
-
-Please make sure [Altair](https://altair-viz.github.io/), [hvPlot](https://hvplot.holoviz.org/index.html), [Matplotlib](https://matplotlib.org/), and [Plotly](https://plotly.com/python/) are installed.
-
-::::{tab-set}
-
-:::{tab-item} pip
-:sync: pip
-
-```bash
-pip install altair hvplot matplotlib panel plotly
-```
-
-:::
-
-:::{tab-item} conda
-:sync: conda
-
-```bash
-conda install -y -c conda-forge altair hvplot matplotlib panel plotly
-```
-
-:::
-
-::::
-
 ## Display Strings
 
 The [`Str`](../../reference/panes/Str.ipynb) pane can display any text.

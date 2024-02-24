@@ -7,32 +7,6 @@ Templates offer a streamlined approach to app layout and design, providing:
 - Ready-made templates accessible in the `pn.template` namespace.
 - A variety of customizable options to suit your specific needs.
 
-## Installing Dependencies
-
-Before we dive in, ensure you have [Altair](https://altair-viz.github.io/) installed:
-
-::::{tab-set}
-
-:::{tab-item} via pip
-:sync: pip
-
-```bash
-pip install altair panel
-```
-
-:::
-
-:::{tab-item} via conda
-:sync: conda
-
-```bash
-conda install -y -c conda-forge altair panel
-```
-
-:::
-
-::::
-
 ## Crafting a Hello World App
 
 Let's start by creating a basic app using the [`FastListTemplate`](../../reference/templates/FastListTemplate.ipynb). Copy the following code into a file named `app.py`:

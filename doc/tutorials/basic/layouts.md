@@ -14,32 +14,6 @@ In this guide, we'll explore the following aspects of layouts:
 As you follow along with the code examples below, feel free to execute them directly in the Panel documentation, a notebook cell, or within a file named `app.py` served with `panel serve app.py --autoreload`.
 :::
 
-## Install Dependencies
-
-Before we begin, ensure that you have [hvPlot](https://hvplot.holoviz.org) and [Pandas](https://pandas.pydata.org) installed.
-
-::::{tab-set}
-
-:::{tab-item} pip
-:sync: pip
-
-```bash
-pip install hvplot pandas panel
-```
-
-:::
-
-:::{tab-item} conda
-:sync: conda
-
-```bash
-conda install -y -c conda-forge hvplot pandas panel
-```
-
-:::
-
-::::
-
 ## Layout in a Column
 
 Let's start by arranging objects vertically using the [Column](../../reference/layouts/Column.ipynb) layout.

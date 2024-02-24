@@ -18,32 +18,6 @@ import panel as pn
 pn.extension(notifications=True)
 ```
 
-## Install the Dependencies
-
-Ensure that [hvPlot](https://hvplot.holoviz.org) and [Pandas](https://pandas.pydata.org) are installed.
-
-::::{tab-set}
-
-:::{tab-item} pip
-:sync: pip
-
-```bash
-pip install hvplot pandas panel
-```
-
-:::
-
-:::{tab-item} conda
-:sync: conda
-
-```bash
-conda install -y -c conda-forge hvplot pandas panel
-```
-
-:::
-
-::::
-
 ## Overlay a Loading Indicator
 
 We can overlay a loading indicator on a Panel component by setting `loading=True`.

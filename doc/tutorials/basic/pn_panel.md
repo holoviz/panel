@@ -13,32 +13,6 @@ import panel as pn
 pn.extension("plotly", "vega")
 ```
 
-## Install the Dependencies
-
-Please make sure [Altair](https://altair-viz.github.io/), [hvPlot](https://hvplot.holoviz.org/index.html), [Matplotlib](https://matplotlib.org/), and [Plotly](https://plotly.com/python/) are installed.
-
-::::{tab-set}
-
-:::{tab-item} pip
-:sync: pip
-
-```bash
-pip install altair hvplot matplotlib panel plotly
-```
-
-:::
-
-:::{tab-item} conda
-:sync: conda
-
-```bash
-conda install -y -c conda-forge altair hvplot matplotlib panel plotly
-```
-
-:::
-
-::::
-
 ## Display a String
 
 To build an app, our first step is to display things. Luckily, Panel provides us with the simple yet powerful `pn.panel()` function. This function effortlessly transforms Python objects into viewable components within our app. Let's start with something simple: a string.

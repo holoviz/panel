@@ -18,7 +18,7 @@ Please ensure that [SciPy](https://scipy.org/) is installed.
 :sync: conda
 
 ``` bash
-conda install -y -c conda-forge scipy
+conda install -y -c conda-forge panel scipy
 ```
 
 :::
@@ -27,7 +27,7 @@ conda install -y -c conda-forge scipy
 :sync: pip
 
 ``` bash
-pip install scipy
+pip install panel scipy
 ```
 
 :::

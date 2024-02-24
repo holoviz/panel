@@ -6,31 +6,7 @@ Let's dive in!
 
 ## Serve Your App with Autoreload
 
-First things first, let's ensure we have all the necessary dependencies installed. You can do this easily via `pip` or `conda`:
-
-::::{tab-set}
-
-:::{tab-item} pip
-:sync: pip
-
-```bash
-pip install matplotlib numpy panel
-```
-
-:::
-
-:::{tab-item} conda
-:sync: conda
-
-```bash
-conda install -y -c conda-forge matplotlib numpy panel
-```
-
-:::
-
-::::
-
-Now that we have our dependencies sorted, let's serve our app with autoreload. Autoreload ensures that your app updates in real-time as you make changes, providing a smooth development experience.
+Let's serve our app with autoreload. Autoreload ensures that your app updates in real-time as you make changes, providing a smooth development experience.
 
 ### Serving Your App
 

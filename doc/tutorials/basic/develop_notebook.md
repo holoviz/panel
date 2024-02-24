@@ -6,31 +6,7 @@ Let's dive in!
 
 ## Preview Your App
 
-Before we get started, let's ensure we have all the necessary dependencies installed. You can install them via `pip` or `conda`:
-
-::::{tab-set}
-
-:::{tab-item} pip
-:sync: pip
-
-```bash
-pip install matplotlib numpy panel
-```
-
-:::
-
-:::{tab-item} conda
-:sync: conda
-
-```bash
-conda install -y -c conda-forge matplotlib numpy panel
-```
-
-:::
-
-::::
-
-Now that we have our dependencies installed, let's preview our app.
+Let's preview our app.
 
 Start by creating a new notebook named `app.ipynb`.
 
