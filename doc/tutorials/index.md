@@ -2,16 +2,7 @@
 
 Welcome to our tutorials designed for those eager to dive into the world of Panel! If you're still undecided, we suggest starting with the [Getting Started Guide](../getting_started/index.md) to get a taste of what Panel has to offer.
 
-:::{note}
-
-Get ready for an exciting journey into the realm of wind turbines! Our instructor's enthusiasm for wind turbines knows no bounds, so get ready to have some fun while learning.
-
-We firmly believe that the skills you'll acquire are not only valuable but also easily applicable across various domains, including yours.
-:::
-
-Throughout this series, we'll delve into wind turbine data and craft some impressive wind turbine data apps using Panel by HoloViz.
-
-Whether you're a beginner or a seasoned developer, our aim is to guide you *from zero to a data app hero*.
+Throughout this series, we'll delve into wind turbine data and craft some impressive wind turbine data apps using Panel by HoloViz. We firmly believe that the skills you'll acquire are not only valuable but also easily applicable across various domains, including yours.
 
 Before we begin, remember to put on your safety helmet – we're about to venture into the world of wind turbine data apps!
 

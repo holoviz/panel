@@ -130,14 +130,14 @@ How-to guides provide step by step recipes for solving essential problems and ta
 :link: reference/index
 :link-type: doc
 
-The Panel Component Gallery showcases the wide array of components that are included with Panel, along with their respective reference guides.
+The Component Gallery showcases Panel's components and their essential reference guides, offering users vital usage information.
 :::
 
 :::{grid-item-card} {octicon}`book;2.5em;sd-mr-1` API Reference
 :link: api/index
 :link-type: doc
 
-The Panel API Reference Manual provides a comprehensive reference for all methods and parameters on Panel components.
+The Panel API Reference Manual furnishes an extensive guide covering Panels methods and parameters.
 :::
 
 ::::

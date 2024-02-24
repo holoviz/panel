@@ -76,7 +76,7 @@ The `Column` layout organizes the elements `"# Wind Speed"`, `data`, and `button
 We add `.servable()` to display the `Column` component in a server app. It's not necessary for displaying it in a notebook.
 :::
 
-Click [this link](../../reference/layouts/Column.ipynb) to access the `Column` Reference Guide and familiarize yourself with its functionality.
+Click [this link](../../reference/layouts/Column.ipynb) to access the `Column` *reference guide* and familiarize yourself with its functionality.
 
 ## Layout in a Row
 

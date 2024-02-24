@@ -12,7 +12,7 @@ In this tutorial, we'll explore various indicators offered by Panel to showcase 
 For a comprehensive list of indicators and their detailed reference guides, you can always refer to the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators) in the [Component Gallery](../../reference/index.md).
 
 :::{note}
-Throughout this tutorial, whenever we refer to "running the code," you can execute it directly in the Panel docs using the green *run* button, in a notebook cell, or within a file named `app.py` served with `panel serve app.py --autoreload`.
+Throughout this tutorial, whenever we refer to "run the code," you can execute it directly in the Panel docs using the green *run* button, in a notebook cell, or within a file named `app.py` served with `panel serve app.py --autoreload`.
 :::
 
 ## Display a Number
@@ -64,9 +64,11 @@ Experiment by adjusting the `height` parameter from `300` to `500`.
 
 For more detailed insights into the `Trend` indicator, take a moment to explore its [reference guide](../../reference/indicators/Trend.ipynb). Trust us, it's worth it!
 
-## Discover More Indicators
+## Explore the Indicators
 
-Explore all indicators and their respective reference guides in the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators) of the [Component Gallery](../../reference/index.md).
+Panel provides a vast collection of indicators to suit your needs.
+
+Click [this link](https://panel.holoviz.org/reference/index.html#indicators) to explore the available indicators and their detailed reference guides.
 
 ## Recap
 

@@ -66,9 +66,9 @@ import panel as pn
 
 pn.extension()
 
-width_responsive = pn.Spacer(styles={'background': 'red'}, sizing_mode='stretch_width', height=200)
+layout = pn.Spacer(styles={'background': 'green'}, sizing_mode='stretch_width', height=200)
 
-pn.Column(width_responsive, width=400, height=400, styles={'border': '1px solid black'}).servable()
+pn.Column(layout, width=400, height=400, styles={'border': '1px solid black'}).servable()
 ```
 
 :::
@@ -80,9 +80,9 @@ import panel as pn
 
 pn.extension()
 
-height_responsive = pn.Spacer(styles={'background': 'green'}, sizing_mode='stretch_height', width=200)
+layout = pn.Spacer(styles={'background': 'green'}, sizing_mode='stretch_height', width=200)
 
-pn.Column(height_responsive, width=400, height=400, styles={'border': '1px solid black'}).servable()
+pn.Column(layout, width=400, height=400, styles={'border': '1px solid black'}).servable()
 ```
 
 :::
@@ -94,9 +94,9 @@ import panel as pn
 
 pn.extension()
 
-both_responsive = pn.Spacer(styles={'background': 'blue'}, sizing_mode='stretch_both')
+layout = pn.Spacer(styles={'background': 'green'}, sizing_mode='stretch_both')
 
-pn.Column(both_responsive, width=400, height=400, styles={'border': '1px solid black'}).servable()
+pn.Column(layout, width=400, height=400, styles={'border': '1px solid black'}).servable()
 ```
 
 :::
@@ -135,7 +135,8 @@ data = pd.DataFrame(
 fig = figure(
     x_range=data["Day"],
     title="Wind Speed by Day",
-    y_axis_label="Wind Speed (m/s)", # <- insert argument here
+    y_axis_label="Wind Speed (m/s)",
+    # <- insert argument here
 )
 fig.vbar(x=data["Day"], top=data["Wind Speed (m/s)"], width=0.5, color="navy", )
 
@@ -145,7 +146,7 @@ md = pn.pane.Markdown(
 pn.Row(fig, md, height=500, sizing_mode="stretch_width").servable()
 ```
 
-:::{note}
+:::{hint}
 **Hint 1**: Use `min_width`, `max_width`, and `sizing_mode` arguments.
 
 **Hint 2**: To ensure the content displays correctly, you may need to adjust both the underlying object's settings and the Panel component displaying it.
