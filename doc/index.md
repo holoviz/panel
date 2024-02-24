@@ -119,18 +119,18 @@ Introduces you to some of the core concepts behind Panel and some of the advance
 ::::{grid} 1 2 2 4
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`beaker;2.5em;sd-mr-1` How-to
-:link: how_to/index
-:link-type: doc
-
-How-to guides provide step by step recipes for solving essential problems and tasks that arise during your work.
-:::
-
 :::{grid-item-card} {octicon}`package;2.5em;sd-mr-1` Component Gallery
 :link: reference/index
 :link-type: doc
 
 The Component Gallery showcases Panel's components and their essential reference guides, offering users vital usage information.
+:::
+
+:::{grid-item-card} {octicon}`beaker;2.5em;sd-mr-1` How-to
+:link: how_to/index
+:link-type: doc
+
+How-to guides provide step by step recipes for solving essential problems and tasks that arise during your work.
 :::
 
 :::{grid-item-card} {octicon}`book;2.5em;sd-mr-1` API Reference
@@ -215,8 +215,8 @@ alt: Quansight Logo
 getting_started/index
 tutorials/index
 explanation/index
-how_to/index
 reference/index
+how_to/index
 gallery/index
 api/index
 tutorials/basic/join_community
