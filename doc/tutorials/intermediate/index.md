@@ -34,8 +34,6 @@ Embark on a deeper exploration of supplementary topics to further hone your Pane
 - **[Serving Panel Apps](serve.md):** Serve multi-page apps effortlessly while customizing the Panel server to suit your needs.
 - **[Advanced Layouts](size.md):** Attain responsive sizing with ease using FlexBox and media queries.
 
-Ready to transcend the ordinary and sculpt extraordinary Panel apps? Let's plunge into the realm of advanced Panel development!
-
 ## Projects
 
 Now that you've mastered the more advanced concepts of Panel, it's time to put your skills to the test:

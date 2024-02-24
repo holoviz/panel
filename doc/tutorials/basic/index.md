@@ -48,7 +48,7 @@ Start your journey with these foundational tutorials:
 
 Once you're comfortable, it's time to dive deeper:
 
-| Section |  |  |  |
+| Part | Section A | Section B| Section C |
 |--------------------------|---------------------------|-------------------|------------------------------------------------------|
 | **1. Display Content**       | [`pn.panel`](pn_panel.md) | [Panes](panes.md) | [Performance Indicators](indicators_performance.md) |
 | **2. Organize Content**      | [Layouts](layouts.md)    | [Control the Size](size.md) | [Align Content](align.md)                           |
