@@ -1,133 +1,45 @@
 # Intermediate Tutorials
 
-These tutorials are for those that is ready to navigate and explore more advanced features of Python and Panel.
+Welcome to the Intermediate Tutorials!
 
-Together, we will build more performant, scalable, polished, reusable and maintainable versions of the applications from the basic tutorial.
-
-After these tutorials you will be able to build a wide range of large and complex multi-page apps structured across multiple files using a *class based approach* and more advanced Python features like `async`.
+Ready to take your Panel skills to the next level? Dive into these tutorials to explore advanced features, best practices, and techniques for building robust and scalable apps with Panel. Whether you're aiming for better code organization, improved performance, or exploring additional topics, we've got you covered!
 
 ## Prerequisites
 
-We assume a *basic level of Panel skills* corresponding to the skills that can be acquired from the [Basic Tutorial](../basic/index.md).
+Before delving into the intermediate tutorials, ensure you have a solid understanding of Panel basics. If not, refer to our [Basic Tutorial](../basic/index.md) to get started.
 
-## Get Started
+## Mastering Intermediate Panel Techniques
 
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
+Ready to transition from being a *basic* to an *intermediate* Panel user? Let's uncover techniques for constructing reusable components and structuring your projects with maintainability in mind:
 
-:::{grid-item-card} {octicon}`browser;2.5em;sd-mr-1` Serve Panel Apps
-:link: serve
-:link-type: doc
+- **[Class-Based Approach](param.md):** Construct reusable components utilizing Param and a class-based approach.
+- **[Advanced Interactivity](interactivity.md):** Harness the power of Parameters and parameter dependencies to infuse interactivity.
+- **Introduce Side Effects:** Infuse your apps with additional functionality using `.watch` and `watch=True`.
+- **Create Reusable Components:** Engineer reusable Panel components using the Viewer class.
+- **[Structuring with DataStore](structure_data_store.md):** Employ the DataStore pattern to organize larger applications efficiently.
+- **Organize your Project:** Maintain orderliness in larger applications by compartmentalizing them into multiple modules and folders.
 
-Learn to serve multi-page apps and how-to customize the Panel server.
-:::
+## Enhancing Performance
 
-::::
+Supercharge your app's performance through asynchronous programming, threaded operations, and efficient task scheduling:
 
-## Develop Seamlessly
+- **Schedule Tasks:** Leverage functionalities such as `pn.state.onload`, `pn.state.schedule_task`, `pn.state.add_periodic_callback`, `pn.state.on_session_created`, `pn.state.on_session_destroyed`, `async` generators, and `pn.state.execute`.
+- **Concurrent Execution:** Unleash the full potential of Panel by embracing threads and async operations to execute tasks concurrently.
 
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
+## Exploring Additional Topics
 
-:::{grid-item-card} {octicon}`code;2.5em;sd-mr-1` Develop in an Editor
-:link: develop_editor
-:link-type: doc
+Embark on a deeper exploration of supplementary topics to further hone your Panel development prowess:
 
-Learn how to debug applications in an Editor
-:::
+- **[Efficient Development in Editors](develop_editor.md):** Streamline the debugging process within your preferred editor environment.
+- **[Serving Panel Apps](serve.md):** Serve multi-page apps effortlessly while customizing the Panel server to suit your needs.
+- **[Advanced Layouts](size.md):** Attain responsive sizing with ease using FlexBox and media queries.
 
-::::
+Ready to transcend the ordinary and sculpt extraordinary Panel apps? Let's plunge into the realm of advanced Panel development!
 
-## Organize Content
+## Projects
 
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
+Now that you've mastered the more advanced concepts of Panel, it's time to put your skills to the test:
 
-:::{grid-item-card} {octicon}`screen-full;2.5em;sd-mr-1` Control the Size
-:link: size
-:link-type: doc
-
-We will discover how how to achieve truly responsive sizing with the FlexBox. We will use *media queries* to support different devices.
-:::
-
-::::
-
-## Handle User Input
-
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
-
-:::{grid-item-card} {octicon}`table;2.5em;sd-mr-1` Accept Inputs from tables
-:link: table_events
-:link-type: doc
-
-Elevate our app's functionality by accepting user input from tables.
-:::
-
-:::{grid-item-card} {octicon}`graph;2.5em;sd-mr-1` Accept Inputs from plots
-:link: plot_events
-:link-type: doc
-
-Elevate our app's functionality by accepting user input from plots.
-:::
-
-::::
-
-## Improve the look
-
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
-
-:::{grid-item-card} {octicon}`image;2.5em;sd-mr-1` Build a Polished Dashboard
-:link: build_polished_dashboard
-:link-type: doc
-
-We'll guide you through advanced styling, layout optimization, and data visualization techniques to build a refined Wind Turbine Dashboard.
-:::
-
-::::
-
-## Structure Applications
-
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
-
-:::{grid-item-card} {octicon}`code;2.5em;sd-mr-1` Structure with DataStore
-:link: structure_data_store
-:link-type: doc
-
-Learn how to structure larger applications with the `DataStore` pattern
-:::
-
-::::
-
-```{toctree}
-:titlesonly:
-:hidden:
-:maxdepth: 2
-
-serve
-develop_editor
-size
-table_events
-plot_events
-structure_data_store
-```
-
-## COMING UP
-
-- Work with Parameters and Events: Param
-- Organize Components flexibly with FlexBox
-- Schedule Tasks: pn.state.onload, pn.state.schedule_task, pn.state.add_periodic_callback, pn.state.on_session_created, pn.state.on_session_destroyed, async generators, pn.state.execute
-- Build custom components easily: Viewable
-- Sync location
-- Add interactivity flexibly: `.rx`
-- Add side effects: `.watch` (or `watch=True` ?)
-- Avoid Common Mistakes: Defining "global" widgets in utility modules that ends up being shared between users.
-- Show progress dynamically with generators
-- Enable Throtttling
-- Share your work: Embed, Save, link to other deployment options including WASM
-- Build maintainable apps: Class based approach, `@pn.depends`
-- Organizing your code: How to organize the code into sections or modules for efficient maintenance and reuse (data, models, plots, components, app).
-- Improve performance by using async and threads
-- Testing
+- **Create an Interactive Report:** Elevate the interactivity of your reports through embedding.
+- **Serve Apps without a Server:** Explore the realm of WASM to serve your apps without traditional servers.
+- **Build a Streaming Dashboard:** Engineer a high-performing streaming dashboard employing a *producer/consumer* architecture.
