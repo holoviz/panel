@@ -285,7 +285,7 @@ Now fix the issues:
 - Show `LoadingSpinner` only when the prediction is running.
 - Make the `LoadingSpinner` spin when the prediction is running.
 
-::::{dropdown} Solutions
+:::::{dropdown} Solutions
 
 ::::{tab-set}
 
