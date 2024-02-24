@@ -48,21 +48,13 @@ Start your journey with these foundational tutorials:
 
 Once you're comfortable, it's time to dive deeper:
 
-- **[Display Content with `pn.panel`](pn_panel.md)**
-- **[Display Content with Panes](panes.md)**
-- **[Display Performance with Indicators](indicators_performance.md)**
-- **[Layout Content](layouts.md)**
-- **[Control the Size](size.md)**
-- **[Align Content](align.md)**
-- **[Accept Inputs with Widgets](widgets.md)**
-- **[React to User Input](pn_bind.md)**
-- **[Handle State](state.md)**
-- **[Utilize Templates](templates.md)**
-- **[Apply Design](design.md)**
-- **[Enhance Style](style.md)**
-- **[Optimize Performance with Caching](caching.md)**
-- **[Display Activity with Indicators](indicators_activity.md)**
-- **[Update Progressively](progressive_layouts.md)**
+| Section |  |  |  |
+|--------------------------|---------------------------|-------------------|------------------------------------------------------|
+| **1. Display Content**       | [`pn.panel`](pn_panel.md) | [Panes](panes.md) | [Performance Indicators](indicators_performance.md) |
+| **2. Organize Content**      | [Layouts](layouts.md)    | [Control the Size](size.md) | [Align Content](align.md)                           |
+| **3. Handle User Input**     | [Widgets](widgets.md)    | [React to User Input](pn_bind.md) | [Handle State](state.md)                        |
+| **4. Improve the look**      | [Templates](templates.md)| [Designs](design.md) | [Styles](style.md)                                |
+| **5. Improve the Feel**      | [Caching](caching.md)    | [Activity Indicators](indicators_activity.md) | [Progressive Updates](progressive_layouts.md)  |
 
 ## Share Your Creations
 
