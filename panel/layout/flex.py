@@ -79,7 +79,7 @@ class FlexBox(ListLike, ReactiveHTML):
             objects = params['objects']
             if not resolve_ref(objects) or iscoroutinefunction(objects):
                 params['objects'] = [panel(pane) for pane in objects]
-        super().__init__(objects=list(objects), **params)
+        super().__init__(**params)
 
     def select(self, selector=None):
         """
