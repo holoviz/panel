@@ -98,6 +98,7 @@ img {
 #sidebar .mdc-list {
   padding-left: 5px;
   padding-right: 5px;
+  width: 100%;
 }
 
 .mdc-drawer-app-content {

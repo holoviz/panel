@@ -10,13 +10,18 @@ import shutil
 import subprocess
 import zipfile
 
-from importlib.metadata import version
+try:
+    import tomllib
+except ModuleNotFoundError:
+    # Can be removed after 3.11 is the minimum version
+    import tomli as tomllib
 
-from packaging.version import Version
+from packaging.requirements import Requirement
 
 PANEL_BASE = pathlib.Path(__file__).parent.parent
-bokeh_version = Version(version("bokeh"))
-bokeh_dev = bokeh_version.is_devrelease
+PACKAGE_INFO = tomllib.loads((PANEL_BASE / "pyproject.toml").read_text())
+bokeh_requirement = next(p for p in PACKAGE_INFO['build-system']['requires'] if "bokeh" in p.lower())
+bokeh_dev = Requirement(bokeh_requirement).specifier.prereleases
 
 parser = argparse.ArgumentParser()
 parser.add_argument("out", default="panel/dist/wheels", nargs="?", help="Output dir")
@@ -26,7 +31,23 @@ parser.add_argument(
     default=False,
     help="Don't install package dependencies.",
 )
+parser.add_argument(
+    "--verify-clean",
+    action="store_true",
+    default=False,
+    help="Check if panel folder is clean before running.",
+)
 args = parser.parse_args()
+
+if args.verify_clean:
+    # -n dry run, -d directories, -x remove ignored files
+    output = subprocess.check_output(["git", "clean", "-nxd", "panel/"])
+    if output:
+        print(output.decode("utf-8"))
+        msg = "Please clean the panel folder before running this script."
+        raise RuntimeError(msg)
+    else:
+        print("panel folder is clean.")
 
 command = ["pip", "wheel", "."]
 if bokeh_dev:
@@ -59,7 +80,7 @@ if bokeh_dev:
         if filename.startswith("panel-") and filename.endswith("METADATA"):
             lines = buffer.decode("utf-8").split("\n")
             lines = [
-                f"Requires-Dist: bokeh =={bokeh_version}"
+                f"Requires-Dist: {bokeh_requirement}"
                 if line.startswith("Requires-Dist: bokeh")
                 else line for line in lines
             ]
