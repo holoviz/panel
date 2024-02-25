@@ -102,8 +102,8 @@ design
 style
 build_dashboard
 deploy
-build_monitoring_dashboard
 build_report
+build_monitoring_dashboard
 build_animation
 build_todo
 build_image_classifier
