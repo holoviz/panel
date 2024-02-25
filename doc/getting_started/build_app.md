@@ -45,6 +45,8 @@ def get_data():
   return pd.read_csv(CSV_FILE, parse_dates=["date"], index_col="date")
 
 data = get_data()
+
+data.tail()
 ```
 
 We'll speed up our application by caching (`@pn.cache`) the data across users.
