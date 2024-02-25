@@ -1,4 +1,4 @@
-# Core Concepts
+# {octicon}`telescope;2em;sd-mr-1` Core Concepts
 
 In the previous section, we delved into [building a simple app](build_app.md). A Panel app like this makes exploration of various visualizations very easy, supporting types such as Matplotlib, Bokeh, Plotly, Altair, DataFrame, and various text and image types.
 
