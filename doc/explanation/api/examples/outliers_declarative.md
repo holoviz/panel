@@ -1,62 +1,80 @@
-# Simple Outlier App - Declarative API
+# Declarative API with Class-Based Approach
 
-This app is a complement to the simple app demonstrated in the [Getting Started > Build an app](../../../getting_started/build_app.md) tutorial which utilized the reactive API.
+This section introduces a more advanced and powerful method of creating Panel apps using a declarative, class-based approach. It builds upon the simple app demonstrated in the [Getting Started > Build an app](../../../getting_started/build_app.md) tutorial, which utilized the reactive, function-based API.
 
-The reactive API approach is very flexible, but it ties your domain-specific code (the parts about sine waves) with your widget display code. That's fine for small, quick projects or projects dominated by visualization code, but what about large-scale, long-lived projects, where the code is used in many different contexts over time, such as in large batch runs, one-off command-line usage, notebooks, and deployed dashboards?  For larger projects like that, it's important to be able to separate the parts of the code that are about the underlying domain (i.e. application or research area) from those that are tied to specific display technologies (such as Jupyter notebooks or web servers).
+While the reactive API approach is flexible, it intertwines domain-specific code with widget display code. This works well for small projects or those heavily focused on visualization. However, for larger, long-term projects used across various contexts like batch runs, command-line usage, notebooks, and deployed dashboards, it becomes crucial to separate domain logic from display technologies.
 
-For such usages, Panel supports objects declared with the separate [Param](http://param.pyviz.org) library, which provides a GUI-independent way of capturing and declaring the parameters of your objects (and dependencies between your code and those parameters), in a way that's independent of any particular application or dashboard technology. For instance, the app in [Getting Started > Build an app](../../../getting_started/build_app.md) can be captured in an object that declares the ranges and values of all parameters, as well as how to generate the plot, independently of the Panel library or any other way of interacting with the object. First, we'll copy the initial steps :
+For such scenarios, Panel supports the use of objects declared with the separate [Param](http://param.holoviz.org) library. Param provides a GUI-independent way to capture and declare object parameters and dependencies, irrespective of any specific application or dashboard technology. This allows for modularization, making it easier to manage and reuse code across different environments.
 
+In this approach, the app's logic is encapsulated within a class, separating concerns and promoting code organization. Let's walk through the steps:
 
 ```{pyodide}
-import panel as pn
 import hvplot.pandas
 import numpy as np
-import param
 import pandas as pd
+import panel as pn
+import param
 
-pn.extension()
+PRIMARY_COLOR = "#0072B5"
+SECONDARY_COLOR = "#B54300"
+CSV_FILE = (
+    "https://raw.githubusercontent.com/holoviz/panel/main/examples/assets/occupancy.csv"
+)
 
+pn.extension(design="material")
+```
 
-csv_file = 'https://raw.githubusercontent.com/holoviz/panel/main/examples/assets/occupancy.csv'
-data = pd.read_csv(csv_file, parse_dates=['date'], index_col='date')
+```{pyodide}
+@pn.cache
+def get_data():
+    return pd.read_csv(CSV_FILE, parse_dates=["date"], index_col="date")
+
+data = get_data()
 
 data.tail()
 ```
 
 ```{pyodide}
-def view_hvplot(avg, highlight):
-    return avg.hvplot(height=300, width=400, legend=False) * highlight.hvplot.scatter(
-        color="orange", padding=0.1, legend=False
-    )
-
-def find_outliers(variable="Temperature", window=30, sigma=10, view_fn=view_hvplot):
+def transform_data(variable, window, sigma):
+    """Calculates the rolling average and identifies outliers"""
     avg = data[variable].rolling(window=window).mean()
     residual = data[variable] - avg
     std = residual.rolling(window=window).std()
     outliers = np.abs(residual) > std * sigma
-    return view_fn(avg, avg[outliers])
+    return avg, avg[outliers]
+
+
+def get_plot(variable="Temperature", window=30, sigma=10):
+    """Plots the rolling average and the outliers"""
+    avg, highlight = transform_data(variable, window, sigma)
+    return avg.hvplot(
+        height=300, width=800, legend=False, color=PRIMARY_COLOR
+    ) * highlight.hvplot.scatter(color=SECONDARY_COLOR, padding=0.1, legend=False)
 ```
 
-Now, let's implement the declarative API approach:
+```{pyodide}
+get_plot(variable='Temperature', window=20, sigma=10)
+```
+
+Now, let's implement the declarative API approach using a `Parameterized` class:
 
 ```{pyodide}
 class RoomOccupancy(param.Parameterized):
-    variable  = param.Selector(default="Temperature", objects=list(data.columns))
-    window    = param.Integer(default=30, bounds=(1, 60))
-    sigma     = param.Number(default=10, bounds=(0, 20))
+    variable = param.Selector(default="Temperature", objects=list(data.columns))
+    window = param.Integer(default=30, bounds=(1, 60))
+    sigma = param.Number(default=10, bounds=(0, 20))
 
     def view(self):
-        return find_outliers(self.variable, self.window, self.sigma, view_fn=view_hvplot)
+        return get_plot(self.variable, self.window, self.sigma)
 
 obj = RoomOccupancy()
 obj
 ```
 
-The `RoomOccupancy` class and the `obj` instance have no dependency on Panel, Jupyter, or any other GUI or web toolkit; they simply declare facts about a certain domain (such as that smoothing requires window and sigma parameters, and that window is an integer greater than 0 and sigma is a positive real number).  This information is then enough for Panel to create an editable and viewable representation for this object without having to specify anything that depends on the domain-specific details encapsulated in `obj`:
-
+The `RoomOccupancy` class and the `obj` instance have no direct dependency on Panel, Jupyter, or any other GUI toolkit. They solely declare facts about a specific domain, such as the parameters required for smoothing. This information is sufficient for Panel to create an interactive representation without needing domain-specific details encapsulated in `obj`:
 
 ```{pyodide}
 pn.Column(obj.param, obj.view)
 ```
 
-To support a particular domain, you can create hierarchies of such classes encapsulating all the parameters and functionality you need across different families of objects, with both parameters and code inheriting across the classes as appropriate, all without any dependency on a particular GUI library or even the presence of a GUI at all.  This approach makes it practical to maintain a large codebase, all fully displayable and editable with Panel, in a way that can be maintained and adapted over time. See the [Attractors Panel app](https://examples.pyviz.org/attractors/attractors_panel.html) ([source](https://github.com/holoviz-topics/examples/tree/main/attractors)) for a more complex illustration of this approach, and the Panel codebase itself for the ultimate demonstration of using Param throughout a codebase!
+To support various domains, you can create hierarchies of classes encapsulating parameters and functionality across different object families. Parameters and code can inherit across classes as needed, without depending on any specific GUI library. This approach facilitates the maintenance of large codebases, all displayable and editable with Panel, adaptable over time. For a more complex illustration, refer to the [Attractors Panel app](https://examples.holoviz.org/gallery/attractors/attractors_panel.html) ([source](https://github.com/holoviz-topics/examples/tree/main/attractors)), and explore the Panel codebase itself for extensive usage of Param throughout the codebase.

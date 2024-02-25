@@ -14,14 +14,14 @@ These guides can also be used as:
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`rocket;2.5em;sd-mr-1 sd-animate-grow50` Get Started
+:::{grid-item-card} {octicon}`rocket;2.5em;sd-mr-1 sd-animate-grow50` Serve Apps
 :link: get_started
 :link-type: doc
 
-How to convert a Hello World application from Streamlit to Panel
+How to convert a *Hello World* application from Streamlit to Panel and serve it
 :::
 
-:::{grid-item-card} {octicon}`device-desktop;2.5em;sd-mr-1 sd-animate-grow50` Display Content
+:::{grid-item-card} {octicon}`device-desktop;2.5em;sd-mr-1 sd-animate-grow50` Display Objects
 :link: panes
 :link-type: doc
 

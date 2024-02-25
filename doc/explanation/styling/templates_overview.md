@@ -1,4 +1,4 @@
-# Templates
+# Templates Overview
 
 When deploying a Panel app or dashboard as a Bokeh application, it is rendered into a default template that serves the JS and CSS resources as well as the actual Panel object being shown. However, it is often desirable to customize the layout of the deployed app, or even to embed multiple separate panels into an app. The ``Template`` component in Panel allows customizing this default template, including the ability to rendering multiple components in a single document easily.
 

@@ -2,7 +2,7 @@
 
 Welcome to Panel!
 
-The getting started guide will get you set up with Panel and provide a basic overview of the features and strengths of Panel.
+The getting started guides are for those who would like to **quickly try out Panel** and **explore the features and strengths of Panel**.
 
 ---
 
@@ -19,7 +19,7 @@ Walks you through setting up your Python environment, installing Panel into it a
 [Learn more »](installation)
 :::
 
-:::{grid-item-card} {octicon}`tools;2.5em;sd-mr-1` Build an app
+:::{grid-item-card} {octicon}`mortar-board;2.5em;sd-mr-1` Build an app
 :link: build_app
 :link-type: doc
 
@@ -29,17 +29,19 @@ Before we dig into some of the core concepts behind Panel this guide gives you a
 [Learn more »](build_app)
 :::
 
-:::{grid-item-card} {octicon}`rocket;2.5em;sd-mr-1` Core Concepts
+:::{grid-item-card} {octicon}`telescope;2.5em;sd-mr-1` Core Concepts
 :link: core_concepts
 :link-type: doc
 
-Introduces you to some of the core concepts behind Panel, how to develop Panel applications effectively both in your IDE and in the notebook and some of the core features that make Panel such a powerful library.
+Introduces you to some of the core concepts behind Panel, how to develop Panel applications effectively both in your Editor and in the notebook and some of the core features that make Panel such a powerful library.
 
 +++
 [Learn more »](core_concepts)
 :::
 
 ::::
+
+As the next step after this Getting Started guide, we recommend learning the basics of Panel systematically via the *in depth* [Basic Tutorials](../tutorials/basic/index.md).
 
 ## Additional Resources
 
