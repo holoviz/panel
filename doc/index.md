@@ -219,7 +219,7 @@ reference/index
 how_to/index
 gallery/index
 api/index
-tutorials/basic/join_community
+community
 upgrade
 FAQ
 about/index

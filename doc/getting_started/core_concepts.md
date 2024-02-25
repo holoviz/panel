@@ -346,4 +346,4 @@ During **Panel usage**, consult the [Component Gallery](../reference/index.rst) 
 
 ## Getting Help
 
-Explore the [Panel Community](../tutorials/basic/join_community.md) page for all options to connect with other users and the core developers.
+Explore the [Panel Community](../community.md) page for all options to connect with other users and the core developers.
