@@ -2,8 +2,10 @@ from pathlib import Path
 
 import param
 
+from param.parameterized import iscoroutinefunction, resolve_ref
+
 from ..reactive import ReactiveHTML
-from .base import ListLike
+from .base import ListLike, panel
 
 
 class FlexBox(ListLike, ReactiveHTML):
@@ -66,6 +68,16 @@ class FlexBox(ListLike, ReactiveHTML):
                 params['sizing_mode'] = 'stretch_width'
             else:
                 params['sizing_mode'] = 'stretch_height'
+        if objects:
+            if 'objects' in params:
+                raise ValueError("A %s's objects should be supplied either "
+                                 "as positional arguments or as a keyword, "
+                                 "not both." % type(self).__name__)
+            params['objects'] = [panel(pane) for pane in objects]
+        elif 'objects' in params:
+            objects = params['objects']
+            if not resolve_ref(objects) or iscoroutinefunction(objects):
+                params['objects'] = [panel(pane) for pane in objects]
         super().__init__(objects=list(objects), **params)
 
     def select(self, selector=None):
