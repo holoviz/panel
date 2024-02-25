@@ -5,7 +5,7 @@ import param
 from param.parameterized import iscoroutinefunction, resolve_ref
 
 from ..reactive import ReactiveHTML
-from .base import ListLike, panel
+from .base import ListLike
 
 
 class FlexBox(ListLike, ReactiveHTML):
@@ -62,6 +62,7 @@ class FlexBox(ListLike, ReactiveHTML):
     _template = (Path(__file__).parent / 'flexbox.html').read_text('utf-8')
 
     def __init__(self, *objects, **params):
+        from ..pane.base import panel
         if 'sizing_mode' not in params:
             direction = params.get('flex_direction', self.flex_direction)
             if direction.startswith('row'):
