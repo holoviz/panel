@@ -94,9 +94,9 @@ align
 widgets
 pn_bind
 state
+caching
 indicators_activity
 progressive_layouts
-caching
 templates
 design
 style
