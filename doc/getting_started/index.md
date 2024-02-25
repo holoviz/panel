@@ -9,7 +9,7 @@ The getting started guides are for those who would like to **quickly try out Pan
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`plug;2.5em;sd-mr-1` Installation
+:::{grid-item-card} {octicon}`desktop-download;2.5em;sd-mr-1` Installation
 :link: installation
 :link-type: doc
 

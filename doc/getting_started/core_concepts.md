@@ -15,10 +15,10 @@ As you gear up to develop your Panel application, you'll encounter a couple of i
    :::{dropdown} Interested in a class-based approach instead?
    :margin: 4
    :color: muted
-   Explore the same ['outlier' app built using a class-based declarative API](../explanation/api/examples/outliers_declarative.md). Study the [Explanation > APIs](../explanation/apis/index.md) section for a detailed discussion on each of the API options.
+   Explore the same ['outlier' app built using a class-based declarative API](../explanation/api/examples/outliers_declarative.md). Study the [Explanation > APIs](../explanation/api/index.md) section for a detailed discussion on each of the API options.
    :::
 
-2. **Development Environment:** Will you develop in a [notebook](https://jupyter.org/) or in an editor environment?
+2. **Development Environment:** Will you develop in a notebook or in an editor environment?
    - If you're unsure, starting in a notebook is recommended as you familiarize yourself with Panel. However, you can switch between them at any time.
 
 ### Notebook
@@ -54,17 +54,19 @@ Upon running that command, Panel launches a server that serves your app, opens a
 
 <img src="https://assets.holoviz.org/panel/gifs/vscode_autoreload.gif" style="margin-left: auto; margin-right: auto; display: block;"></img>
 
-```{note}
-We recommend installing `watchfiles` to get the best user experience when using `--autoreload`.
+```{tip}
+We recommend installing [`watchfiles`](https://watchfiles.helpmanual.io) to get the best user experience when using `--autoreload`.
 ```
 
-> Explore [How-to > Prepare to Develop](../how_to/prepare_to_develop.md) for more guidance on each development environment option.
+```{tip}
+Explore [How-to > Prepare to Develop](../how_to/prepare_to_develop.md) for more guidance on each development environment option.
+```
 
 ## Control Flow
 
 Panel operates on a powerful framework called [Param](https://param.holoviz.org/), which governs how information flows within your app. When a change occurs, such as the value of a slider or a manual update in your code, events are triggered for your app to respond to. Panel provides various methods for setting up this interactivity. Understanding the basics of Param is crucial to mastering Panel. However, it's not necessary to get started as a new, basic user.
 
-So, what exactly is Param? It's a framework that enables Python classes to have attributes with defaults, type/value validation, and callbacks when values change. You can liken it to other frameworks like Python dataclasses, pydantic, and traitlets.
+So, what exactly is Param? It's a framework that enables Python classes to have attributes with defaults, type/value validation, and callbacks when values change. You can liken it to other frameworks like Python dataclasses, [Pydantic](https://docs.pydantic.dev/latest/), and [Traitlets](https://traitlets.readthedocs.io).
 
 Reactivity is a key concept in both Param and Panel. This means changes in one part of your app can automatically update other parts. Think of it like Excel, where altering one cell can prompt updates in cells that reference it. Param objects operate similarly.
 
@@ -74,7 +76,7 @@ In Panel, understanding the distinction between a Parameter's value and the Para
 text = pn.widgets.TextInput()
 
 text.value  # 👈 The current value of the widget
-text.param.value  # 👈 A reference to the "value" Parameter, used in Panel to *bind* to the "value"
+text.param.value  # 👈 A reference to the "value" Parameter, used in Panel to bind to the "value"
 ```
 
 We'll delve deeper into this later. For now, remember that parameter objects (whether associated with widgets or not) enable you to pass around a reference to a value that automatically updates if the original value changes.

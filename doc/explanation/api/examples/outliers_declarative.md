@@ -2,11 +2,15 @@
 
 This section introduces a more advanced and powerful method of creating Panel apps using a declarative, class-based approach. It builds upon the simple app demonstrated in the [Getting Started > Build an app](../../../getting_started/build_app.md) tutorial, which utilized the reactive, function-based API.
 
+![Getting Started App](../../../_static/images/getting_started_app.png)
+
 While the reactive API approach is flexible, it intertwines domain-specific code with widget display code. This works well for small projects or those heavily focused on visualization. However, for larger, long-term projects used across various contexts like batch runs, command-line usage, notebooks, and deployed dashboards, it becomes crucial to separate domain logic from display technologies.
 
 For such scenarios, Panel supports the use of objects declared with the separate [Param](http://param.holoviz.org) library. Param provides a GUI-independent way to capture and declare object parameters and dependencies, irrespective of any specific application or dashboard technology. This allows for modularization, making it easier to manage and reuse code across different environments.
 
-In this approach, the app's logic is encapsulated within a class, separating concerns and promoting code organization. Let's walk through the steps:
+In this approach, the app's logic is encapsulated within a class, separating concerns and promoting code organization.
+
+Let's begin by reusing most of the code from the [Getting Started > Build an app](../../../getting_started/build_app.md) tutorial:
 
 ```{pyodide}
 import hvplot.pandas

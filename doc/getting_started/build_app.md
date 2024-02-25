@@ -1,8 +1,8 @@
-# {octicon}`tools;2em;sd-mr-1` Build an App
+# {octicon}`mortar-board;2em;sd-mr-1` Build an App
 
 By now, you should have [set up your environment and installed Panel](installation.md), so you're all set to dive in!
 
-In this section, we'll walk through creating a basic interactive application using [NumPy](https://numpy.org/), [Pandas](https://pandas.pydata.org/), and [hvplot](https://hvplot.holoviz.org/). If you haven't installed `hvPlot` yet, you can do so with `pip install hvplot` or `conda install -c conda-forge hvplot`.
+In this section, we'll walk through creating a basic interactive application using [NumPy](https://numpy.org/), [Pandas](https://pandas.pydata.org/), and [hvPlot](https://hvplot.holoviz.org/). If you haven't installed `hvPlot` yet, you can do so with `pip install hvplot` or `conda install -c conda-forge hvplot`.
 
 Let's envision what our app will look like:
 
@@ -37,7 +37,7 @@ Next, we'll import the Panel JavaScript dependencies using `pn.extension(...)`. 
 pn.extension(design="material", sizing_mode="stretch_width")
 ```
 
-Now, let's load the [UCI ML dataset](http://archive.ics.uci.edu/ml/datasets/Occupancy+Detection+) that measured the environment in a meeting room:
+Now, let's load the [UCI ML dataset](http://archive.ics.uci.edu/ml/datasets/Occupancy+Detection+) that measured the environment in a meeting room. We'll speed up our application by caching (`@pn.cache`) the data across users:
 
 ```{pyodide}
 @pn.cache
@@ -49,11 +49,9 @@ data = get_data()
 data.tail()
 ```
 
-We'll speed up our application by caching (`@pn.cache`) the data across users.
-
 ## Visualizing a Subset of the Data
 
-Before diving into Panel, let's create a function that smooths one of our time series and identifies outliers. Then, we'll plot the result using hvplot:
+Before diving into Panel, let's create a function that smooths one of our time series and identifies outliers. Then, we'll plot the result using hvPlot:
 
 ```{pyodide}
 def transform_data(variable, window, sigma):
@@ -112,7 +110,7 @@ As long as you have a live Python process running, dragging these widgets will t
 
 We'll organize our components in a nicely styled template (`MaterialTemplate`) and mark it `.servable()` to add it to our served app:
 
-```{pyodide}
+```python
 pn.template.MaterialTemplate(
     site="Panel",
     title="Getting Started App",
@@ -129,19 +127,21 @@ Finally, we'll serve the app with:
 panel serve app.ipynb --autoreload
 ```
 
-Now, open the app in your browser at `http://localhost:5006/app`.
+Now, open the app in your browser at [http://localhost:5006/app](http://localhost:5006/app).
 
 It should look like this:
 
 ![Getting Started App](../_static/images/getting_started_app.png)
 
-:::{note}
+:::{tip}
 
 If you prefer developing in a Python Script using an editor, you can copy the code into a file `app.py` and serve it.
 
 ```bash
 panel serve app.py --autoreload
 ```
+
+:::
 
 ## What's Next?
 
