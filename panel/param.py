@@ -830,7 +830,7 @@ class ParamRef(ReplacementPane):
     #----------------------------------------------------------------
 
     @classmethod
-    def eval(self, ref):
+    def eval(cls, ref):
         return resolve_value(ref)
 
     async def _eval_async(self, awaitable):
@@ -1014,7 +1014,7 @@ class ParamMethod(ParamRef):
             self._internal_callbacks.append(watcher)
 
     @classmethod
-    def eval(self, ref):
+    def eval(cls, ref):
         return eval_function_with_deps(ref)
 
 
