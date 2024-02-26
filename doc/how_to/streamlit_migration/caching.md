@@ -14,7 +14,7 @@ In Panel
 - your script is run once when a user visits the page.
 - only *specific, bound functions* are rerun on user interactions.
 
-Thus with Panel you *may use* caching to to make the user experience nice and fast.
+Thus with Panel you *may use* caching to make the user experience nice and fast.
 
 In Panel you use `pn.cache` to speed up your apps. Check out the [Cache How-To Guides](../caching/index.md) for more details.
 

@@ -24,7 +24,7 @@ on:
 jobs:
   build_docs:
     name: Documentation
-    runs-on: 'macos-latest'
+    runs-on: 'macos-14'
     timeout-minutes: 180
     defaults:
       run:
@@ -37,18 +37,18 @@ jobs:
       DISPLAY: ":99.0"
       PANEL_IPYWIDGET: 1
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a18
+      - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
         with:
           name: doc_build
-          python-version: "3.9"
-          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
+          python-version: "3.11"
+          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
           conda-update: 'true'
           nodejs: true
+          nodejs-version: 20
           # Remove when all examples tools can be installed on 3.10
           envs: -o examples -o doc -o build
           cache: true
           opengl: true
-          conda-mamba: mamba
       - name: doit develop_install
         if: steps.install.outputs.cache-hit != 'true'
         run: |

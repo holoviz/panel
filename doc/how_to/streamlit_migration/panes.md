@@ -1,4 +1,4 @@
-# Displaying Content with Panes
+# Display Objects with Panes
 
 In Panel the objects that can display your Python objects are called *panes*. With Panels *panes* you will be able to:
 

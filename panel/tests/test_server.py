@@ -178,11 +178,14 @@ def test_server_async_local_state(bokeh_curdoc):
 
 def test_server_async_local_state_nested_tasks(bokeh_curdoc):
     docs = {}
+    _tasks = set()
 
     async def task(depth=1):
         await asyncio.sleep(0.5)
         if depth > 0:
-            asyncio.ensure_future(task(depth-1))
+            _task = asyncio.ensure_future(task(depth-1))
+            _tasks.add(_task)
+            _task.add_done_callback(_tasks.discard)
         docs[state.curdoc] = []
         for _ in range(10):
             await asyncio.sleep(0.1)

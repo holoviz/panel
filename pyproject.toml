@@ -48,6 +48,7 @@ select = [
     "W",
     "PIE",
     "T20",
+    "RUF006",
 ]
 
 [tool.ruff.lint.per-file-ignores]

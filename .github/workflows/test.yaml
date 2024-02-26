@@ -69,6 +69,7 @@ jobs:
               - 'doc/getting_started/**'
               - 'doc/how_to/**'
               - 'scripts/**'
+              - 'lite/**'
       - name: Set matrix option
         run: |
           if [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then
@@ -239,10 +240,6 @@ jobs:
         run: |
           conda activate test-environment
           pip install --pre ipywidgets_bokeh
-      - name: build pyodide wheels
-        run: |
-          conda activate test-environment
-          python scripts/build_pyodide_wheels.py
       - name: launch jupyter
         run: |
           conda activate test-environment

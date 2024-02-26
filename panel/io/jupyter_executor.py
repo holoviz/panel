@@ -55,6 +55,8 @@ class PanelExecutor(WSHandler):
     to send and receive messages to and from the frontend.
     """
 
+    _tasks = set()
+
     def __init__(self, path, token, root_url):
         self.path = path
         self.token = token
@@ -98,7 +100,9 @@ class PanelExecutor(WSHandler):
             state.rel_path = self.root_url
 
     def _receive_msg(self, msg) -> None:
-        asyncio.ensure_future(self._receive_msg_async(msg))
+        task = asyncio.ensure_future(self._receive_msg_async(msg))
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
 
     async def _receive_msg_async(self, msg) -> None:
         try:

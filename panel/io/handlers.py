@@ -151,7 +151,13 @@ def capture_code_cell(cell):
 
     # Remove code comments
     if '#' in cell_out:
-        cell_out = cell_out[:cell_out.index('#')].rstrip()
+        try:
+            # To not remove "#000000"
+            cell_tmp = cell_out[:cell_out.index('#')].rstrip()
+            ast.parse(cell_tmp)
+            cell_out = cell_tmp
+        except SyntaxError:
+            pass
 
     # Use eval mode to check whether cell ends in a statement or an
     # expression that will be rendered

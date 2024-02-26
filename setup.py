@@ -112,7 +112,7 @@ except Exception:
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=3.2.0,<3.5.0',
+    'bokeh >=3.4.0.dev8,<3.5.0',
     'param >=2.0.0,<3.0',
     'pyviz_comms >=2.0.0',
     'xyzservices >=2021.09.1', # Bokeh dependency, but pyodide 23.0.0 does not always pick it up
@@ -173,7 +173,8 @@ _tests = _tests_core + [
 _ui = [
     'jupyter-server',
     'playwright',
-    'pytest-playwright'
+    'pytest-playwright',
+    'tomli',
 ]
 
 _examples = [

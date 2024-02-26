@@ -22,6 +22,7 @@ from bokeh.models.widgets import (
     DateRangeSlider as _BkDateRangeSlider, DateSlider as _BkDateSlider,
     RangeSlider as _BkRangeSlider, Slider as _BkSlider,
 )
+from bokeh.models.widgets.sliders import NumericalSlider as _BkNumericalSlider
 from param.parameterized import resolve_value
 
 from ..config import config
@@ -120,6 +121,12 @@ class ContinuousSlider(_SliderBase):
     def _get_embed_state(self, root, values=None, max_opts=3):
         ref = root.ref['id']
         w_model, parent = self._models[ref]
+        if not isinstance(w_model, _BkNumericalSlider):
+            is_composite = True
+            parent = w_model
+            w_model = w_model.select_one({'type': _BkNumericalSlider})
+        else:
+            is_composite = False
         _, _, doc, comm = state._views[ref]
 
         # Compute sampling
@@ -138,8 +145,13 @@ class ContinuousSlider(_SliderBase):
         layout_opts = {k: v for k, v in self.param.values().items()
                        if k in Layoutable.param and k != 'name'}
 
+        if is_composite:
+            layout_opts['show_value'] = False
+        else:
+            layout_opts['name'] = self.name
+
         value = values[np.argmin(np.abs(np.array(values)-self.value))]
-        dw = DiscreteSlider(options=values, value=value, name=self.name, **layout_opts)
+        dw = DiscreteSlider(options=values, value=value,  **layout_opts)
         dw.link(self, value='value')
         self._models.pop(ref)
         index = parent.children.index(w_model)
@@ -367,7 +379,9 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
                              'is one of the declared options.'
                              % self.value)
 
-        self._text = StaticText(margin=(5, 0, 0, 5), styles={'white-space': 'nowrap'})
+        self._text = StaticText(
+            margin=(5, 0, 0, 5), styles={'white-space': 'nowrap'}
+        )
         self._slider = None
         self._composite = Column(self._text, self._slider)
         self._update_options()
@@ -450,6 +464,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         slider_margin = (0, r, b, l)
         text_style = {k: v for k, v in style.items()
                       if k not in ('style', 'orientation')}
+        text_style['visible'] = self.show_value and text_style['visible']
         self._text.param.update(margin=text_margin, **text_style)
         self._slider.param.update(margin=slider_margin, **style)
         if self.width:
@@ -774,6 +789,9 @@ class DatetimeRangeSlider(DateRangeSlider):
     ... )
     """
 
+    step = param.Number(default=60_000, doc="""
+        The step size in ms. Default is 1 min.""")
+
     _property_conversion = staticmethod(value_as_datetime)
 
     @property
@@ -811,6 +829,7 @@ class _EditableContinuousSlider(CompositeWidget):
         self._label = StaticText(margin=0, align='end')
         self._slider = self._slider_widget(
             value=self.value, margin=(0, 0, 5, 0), sizing_mode='stretch_width',
+            tags=['composite']
         )
         self._slider.param.watch(self._sync_value, 'value')
         self._slider.param.watch(self._sync_value, 'value_throttled')
