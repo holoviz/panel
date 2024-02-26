@@ -1049,6 +1049,10 @@ class ParamFunction(ParamRef):
             return None
         return False
 
+    @classmethod
+    def eval(self, ref):
+        return eval_function_with_deps(ref)
+
 
 class ReactiveExpr(PaneBase):
     """
