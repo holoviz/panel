@@ -5,7 +5,7 @@ from io import BytesIO
 import pytest
 import requests
 
-from panel.chat.chatarea_input import ChatAreaInput
+from panel.chat.input import ChatAreaInput
 from panel.chat.interface import ChatInterface
 from panel.layout import Row, Tabs
 from panel.pane import Image
