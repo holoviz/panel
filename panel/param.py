@@ -25,8 +25,8 @@ from typing import (
 import param
 
 from param.parameterized import (
-    classlist, discard_events, get_method_owner, iscoroutinefunction,
-    resolve_ref, resolve_value,
+    classlist, discard_events, eval_function_with_deps, get_method_owner,
+    iscoroutinefunction, resolve_ref, resolve_value,
 )
 from param.reactive import rx
 
@@ -965,7 +965,7 @@ class ParamMethod(ParamRef):
     return any object which itself can be rendered as a Pane.
     """
 
-    priority: ClassVar[float | bool | None] = 0.6
+    priority: ClassVar[float | bool | None] = 0.5
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
@@ -1012,6 +1012,10 @@ class ParamMethod(ParamRef):
                     pobj.jslink(self._inner_layout, **props)
             watcher = pobj.param.watch(update_pane, ps, p.what)
             self._internal_callbacks.append(watcher)
+
+    @classmethod
+    def eval(self, ref):
+        return eval_function_with_deps(ref)
 
 
 class ParamFunction(ParamRef):
