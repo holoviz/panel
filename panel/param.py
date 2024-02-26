@@ -24,6 +24,13 @@ from typing import (
 
 import param
 
+try:
+    from param import Skip
+except Exception:
+    class Skip(RuntimeError):
+        """
+        Exception that allows skipping an update for function-level updates.
+        """
 from param.parameterized import (
     classlist, discard_events, eval_function_with_deps, get_method_owner,
     iscoroutinefunction, resolve_ref, resolve_value,
@@ -829,7 +836,10 @@ class ParamRef(ReplacementPane):
                         self._inner_layout.append(new_obj)
                         self._pane = self._inner_layout[-1]
                     else:
-                        self._update_inner(new_obj)
+                        try:
+                            self._update_inner(new_obj)
+                        except Skip:
+                            pass
             else:
                 self._update_inner(await awaitable)
         except Exception as e:
@@ -850,7 +860,10 @@ class ParamRef(ReplacementPane):
             if self.object is None:
                 new_object = Spacer()
             else:
-                new_object = self.eval(self.object)
+                try:
+                    new_object = self.eval(self.object)
+                except Skip:
+                    return
             if inspect.isawaitable(new_object) or isinstance(new_object, types.AsyncGeneratorType):
                 param.parameterized.async_executor(partial(self._eval_async, new_object))
                 return

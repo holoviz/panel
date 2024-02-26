@@ -6,10 +6,10 @@ import param
 import pytest
 
 from bokeh.models import (
-    AutocompleteInput as BkAutocompleteInput, Button, Checkbox as BkCheckbox,
-    Column as BkColumn, Div, MultiSelect, RangeSlider as BkRangeSlider,
-    Row as BkRow, Select, Slider, Tabs as BkTabs, TextInput,
-    TextInput as BkTextInput, Toggle,
+    AutocompleteInput as BkAutocompleteInput, Button as BkButton,
+    Checkbox as BkCheckbox, Column as BkColumn, Div, MultiSelect,
+    RangeSlider as BkRangeSlider, Row as BkRow, Select, Slider, Tabs as BkTabs,
+    TextInput, TextInput as BkTextInput, Toggle,
 )
 from packaging.version import Version
 
@@ -22,11 +22,11 @@ from panel.pane import (
     HTML, Bokeh, Markdown, Matplotlib, PaneBase, Str, panel,
 )
 from panel.param import (
-    JSONInit, Param, ParamFunction, ParamMethod,
+    JSONInit, Param, ParamFunction, ParamMethod, Skip,
 )
 from panel.tests.util import mpl_available, mpl_figure
 from panel.widgets import (
-    AutocompleteInput, Checkbox, DatePicker, DatetimeInput,
+    AutocompleteInput, Button, Checkbox, DatePicker, DatetimeInput,
     EditableFloatSlider, EditableRangeSlider, LiteralInput, NumberInput,
     RangeSlider,
 )
@@ -392,7 +392,7 @@ def test_action_param(document, comm):
     model = test_pane.get_root(document, comm=comm)
 
     button = model.children[1]
-    assert isinstance(button, Button)
+    assert isinstance(button, BkButton)
 
     # Check that the action is actually executed
     pn_button = test_pane.layout[1]
@@ -1920,3 +1920,48 @@ async def test_param_async_generator_abort(document, comm):
     assert root.children[0].text == '&lt;p&gt;5&lt;/p&gt;\n'
     await asyncio.sleep(0.1)
     assert root.children[0].text == '&lt;p&gt;6&lt;/p&gt;\n'
+
+
+def test_skip_param(document, comm):
+    checkbox = Checkbox(value=False)
+    button = Button()
+
+    def layout(value, click):
+        if not click:
+            raise Skip()
+        return Markdown(f"{value}")
+
+    layout = ParamFunction(bind(layout, checkbox, button))
+
+    root = layout.get_root(document, comm)
+
+    div = root.children[0]
+    assert div.text == '&lt;pre&gt; &lt;/pre&gt;'
+    checkbox.value = True
+    assert div.text == '&lt;pre&gt; &lt;/pre&gt;'
+    button.param.trigger('value')
+    assert div.text == '&lt;pre&gt; &lt;/pre&gt;'
+
+@pytest.mark.asyncio
+async def test_async_skip_param(document, comm):
+    checkbox = Checkbox(value=False)
+    button = Button()
+
+    async def layout(value, click):
+        if not click:
+            raise Skip()
+        return Markdown(f"{value}")
+
+    layout = ParamFunction(bind(layout, checkbox, button))
+
+    root = layout.get_root(document, comm)
+
+    div = root.children[0]
+    await asyncio.sleep(0.01)
+    assert div.text == '&lt;pre&gt; &lt;/pre&gt;'
+    checkbox.value = True
+    await asyncio.sleep(0.01)
+    assert div.text == '&lt;pre&gt; &lt;/pre&gt;'
+    button.param.trigger('value')
+    await asyncio.sleep(0.01)
+    assert div.text == '&lt;pre&gt; &lt;/pre&gt;'
