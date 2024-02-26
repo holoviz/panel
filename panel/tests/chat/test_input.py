@@ -1,4 +1,4 @@
-from panel.chat.chatarea_input import ChatAreaInput
+from panel.chat.input import ChatAreaInput
 
 
 class TestChatAreaInput:
