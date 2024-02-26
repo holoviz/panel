@@ -783,6 +783,8 @@ class ParamRef(ReplacementPane):
         Whether to show a loading indicator while the pane is updating.
         Can be set as parameter or by setting panel.config.loading_indicator.""")
 
+    priority: ClassVar[float | bool | None] = 0
+
     def __init__(self, object=None, **params):
         if 'defer_load' not in params:
             params['defer_load'] = config.defer_load
@@ -799,10 +801,15 @@ class ParamRef(ReplacementPane):
 
     @param.depends('object', watch=True)
     def _validate_object(self):
+        if not callable(self.object):
+            return
         dependencies = getattr(self.object, '_dinfo', {})
         if not dependencies or not dependencies.get('watch'):
             return
-        fn_type = 'method' if type(self) is ParamMethod else 'function'
+        if isinstance(self, ParamMethod):
+            fn_type = 'method'
+        else:
+            fn_type = 'function'
         self.param.warning(
             f"The {fn_type} supplied for Panel to display was declared "
             f"with `watch=True`, which will cause the {fn_type} to be "
@@ -813,6 +820,10 @@ class ParamRef(ReplacementPane):
             "via side-effects, e.g. by modifying internal state of a "
             "class or global state in an application's namespace."
         )
+
+    @classmethod
+    def applies(cls, obj: Any) -> float | bool | None:
+        return bool(resolve_ref(obj))
 
     #----------------------------------------------------------------
     # Callback API
@@ -883,7 +894,7 @@ class ParamRef(ReplacementPane):
     def _update_pane(self, *events):
         callbacks = []
         for watcher in self._internal_callbacks:
-            obj = watcher.inst if watcher.inst is None else watcher.cls
+            obj = watcher.cls if watcher.inst is None else watcher.inst
             if obj is self:
                 callbacks.append(watcher)
                 continue
@@ -908,7 +919,7 @@ class ParamRef(ReplacementPane):
 
     def _link_object_params(self):
         dep_params = resolve_ref(self.object)
-        if not dep_params and not self.lazy and not self.defer_load and not iscoroutinefunction(self.object):
+        if callable(self.object) and not (dep_params or self.lazy or self.defer_load or iscoroutinefunction(self.object)):
             fn = getattr(self.object, '__bound_function__', self.object)
             fn_name = getattr(fn, '__name__', repr(self.object))
             self.param.warning(
@@ -953,6 +964,10 @@ class ParamMethod(ParamRef):
     the method using the param.depends decorator. The method may
     return any object which itself can be rendered as a Pane.
     """
+
+    priority: ClassVar[float | bool | None] = 0.6
+
+    _applies_kw: ClassVar[bool] = True
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
