@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, ClassVar, Mapping, Optional, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional, Type,
 )
 
 import param
@@ -35,13 +35,19 @@ class ChatAreaInput(_PnTextAreaInput):
     >>> ChatAreaInput(max_rows=10)
     """
 
-    auto_grow = param.Boolean(default=True, doc="""
+    auto_grow = param.Boolean(
+        default=True,
+        doc="""
         Whether the text area should automatically grow vertically to
-        accommodate the current text.""")
+        accommodate the current text.""",
+    )
 
-    max_rows = param.Integer(default=10, doc="""
+    max_rows = param.Integer(
+        default=10,
+        doc="""
         When combined with auto_grow this determines the maximum number
-        of rows the input area can grow.""")
+        of rows the input area can grow.""",
+    )
 
     resizable = param.ObjectSelector(
         default="height",
@@ -55,8 +61,14 @@ class ChatAreaInput(_PnTextAreaInput):
     _widget_type: ClassVar[Type[Model]] = _bkChatAreaInput
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        "value": None, **_PnTextAreaInput._rename,
+        "value": None,
+        **_PnTextAreaInput._rename,
     }
+
+    def _get_properties(self, doc: Document) -> Dict[str, Any]:
+        props = super()._get_properties(doc)
+        props.update({"value_input": self.value, "value": self.value})
+        return props
 
     def _get_model(
         self,

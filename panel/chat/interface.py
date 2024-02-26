@@ -22,8 +22,8 @@ from ..viewable import Viewable
 from ..widgets.base import Widget
 from ..widgets.button import Button
 from ..widgets.input import FileInput, TextInput
-from .chatarea_input import ChatAreaInput
 from .feed import CallbackState, ChatFeed
+from .input import ChatAreaInput
 from .message import ChatMessage, _FileInputMessage
 
 

@@ -30,9 +30,9 @@ https://panel.holoviz.org/reference/chat/ChatInterface.html
 """
 import importlib as _importlib
 
-from .chatarea_input import ChatAreaInput  # noqa
 from .feed import ChatFeed  # noqa
 from .icon import ChatReactionIcons  # noqa
+from .input import ChatAreaInput  # noqa
 from .interface import ChatInterface  # noqa
 from .message import ChatMessage  # noqa
 
