@@ -967,8 +967,6 @@ class ParamMethod(ParamRef):
 
     priority: ClassVar[float | bool | None] = 0.6
 
-    _applies_kw: ClassVar[bool] = True
-
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
         return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
