@@ -799,7 +799,7 @@ class ParamRef(ReplacementPane):
 
     @param.depends('object', watch=True)
     def _validate_object(self):
-        dependencies = getattr(self.object, '_dinfo', None)
+        dependencies = getattr(self.object, '_dinfo', {})
         if not dependencies or not dependencies.get('watch'):
             return
         fn_type = 'method' if type(self) is ParamMethod else 'function'
