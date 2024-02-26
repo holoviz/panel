@@ -62,11 +62,11 @@ conda install panel watchfiles
 :::::
 
 ```{tip}
-We recommend also installing `watchfiles` while developing. This will provide a significantly better experience when using Panel's `--autoreload` feature. It's not needed for production.
+We recommend also installing [`watchfiles`](https://watchfiles.helpmanual.io) while developing. This will provide a significantly better experience when using Panel's `--autoreload` feature. It's not needed for production.
 ```
 
 :::{important}
-Make sure Panel is installed in the same environment as JupyterLab/Jupyter Notebook (`conda install panel` or `pip install panel`) to ensure all features work correctly.
+Make sure Panel is installed in the same environment as JupyterLab/Jupyter Notebook (`pip install panel` or `conda install panel`) to ensure all features work correctly.
 :::
 
 :::{seealso}

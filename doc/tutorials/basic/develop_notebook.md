@@ -29,7 +29,7 @@ pn.panel("Hello World").servable()
 ```
 
 ```python
-pn.panel("Hello Again").servable()
+pn.panel("Hello Again")
 ```
 
 Run the cells and save the notebook as `app.ipynb`.

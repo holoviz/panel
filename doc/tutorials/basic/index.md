@@ -16,7 +16,7 @@ Please execute the following command to install the dependencies required by the
 :sync: pip
 
 ```bash
-pip install altair hvplot matplotlib numpy pandas panel plotly scipy
+pip install altair hvplot matplotlib numpy pandas panel plotly scipy watchfiles
 ```
 
 :::
@@ -25,7 +25,7 @@ pip install altair hvplot matplotlib numpy pandas panel plotly scipy
 :sync: conda
 
 ```bash
-conda install -y -c conda-forge altair hvplot matplotlib numpy pandas panel plotly scipy
+conda install -y -c conda-forge altair hvplot matplotlib numpy pandas panel plotly scipy watchfiles
 ```
 
 :::
@@ -33,7 +33,7 @@ conda install -y -c conda-forge altair hvplot matplotlib numpy pandas panel plot
 ::::
 
 :::{important}
-Is Panel installed together with JupyterLab/Jupyter Notebook in your working environment? If not, you need to make sure that `panel` is also installed in the same environment as JupyterLab/Jupyter Notebook (`conda install -c conda-forge panel` or `pip install panel`).
+Is Panel installed together with JupyterLab/Jupyter Notebook in your working environment? If not, you need to make sure that `panel` is also installed in the same environment as JupyterLab/Jupyter Notebook (`pip install panel` or `conda install panel`).
 :::
 
 ## Let's Get Started
@@ -94,16 +94,16 @@ align
 widgets
 pn_bind
 state
+caching
 indicators_activity
 progressive_layouts
-caching
 templates
 design
 style
 build_dashboard
 deploy
-build_monitoring_dashboard
 build_report
+build_monitoring_dashboard
 build_animation
 build_todo
 build_image_classifier
