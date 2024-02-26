@@ -247,6 +247,8 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
 
     widget_data, merged, ignore = [], {}, []
     for widget in widgets:
+        if 'composite' in widget.tags:
+            continue
         if widget._param_pane is not None:
             # Replace parameter links with JS links
             link = param_to_jslink(model, widget)
