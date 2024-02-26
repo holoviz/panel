@@ -799,28 +799,6 @@ class ParamRef(ReplacementPane):
             if not self.defer_load:
                 self._replace_pane()
 
-    @param.depends('object', watch=True)
-    def _validate_object(self):
-        if not callable(self.object):
-            return
-        dependencies = getattr(self.object, '_dinfo', {})
-        if not dependencies or not dependencies.get('watch'):
-            return
-        if isinstance(self, ParamMethod):
-            fn_type = 'method'
-        else:
-            fn_type = 'function'
-        self.param.warning(
-            f"The {fn_type} supplied for Panel to display was declared "
-            f"with `watch=True`, which will cause the {fn_type} to be "
-            "called twice for any change in a dependent Parameter. "
-            "`watch` should be False when Panel is responsible for "
-            f"displaying the result of the {fn_type} call, while "
-            f"`watch=True` should be reserved for {fn_type}s that work "
-            "via side-effects, e.g. by modifying internal state of a "
-            "class or global state in an application's namespace."
-        )
-
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
         return bool(resolve_ref(obj))
@@ -967,9 +945,21 @@ class ParamMethod(ParamRef):
 
     priority: ClassVar[float | bool | None] = 0.5
 
-    @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
+    @param.depends('object', watch=True)
+    def _validate_object(self):
+        dependencies = getattr(self.object, '_dinfo', {})
+        if not dependencies or not dependencies.get('watch'):
+            return
+        self.param.warning(
+            "The method supplied for Panel to display was declared "
+            "with `watch=True`, which will cause the method to be "
+            "called twice for any change in a dependent Parameter. "
+            "`watch` should be False when Panel is responsible for "
+            "displaying the result of the method call, while "
+            "`watch=True` should be reserved for methods that work "
+            "via side-effects, e.g. by modifying internal state of a "
+            "class or global state in an application's namespace."
+        )
 
     def _link_object_params(self):
         parameterized = get_method_owner(self.object)
@@ -1013,6 +1003,14 @@ class ParamMethod(ParamRef):
             watcher = pobj.param.watch(update_pane, ps, p.what)
             self._internal_callbacks.append(watcher)
 
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
+
+    @classmethod
+    def applies(cls, obj: Any) -> float | bool | None:
+        return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
+
     @classmethod
     def eval(cls, ref):
         return eval_function_with_deps(ref)
@@ -1030,6 +1028,22 @@ class ParamFunction(ParamRef):
     priority: ClassVar[float | bool | None] = 0.6
 
     _applies_kw: ClassVar[bool] = True
+
+    @param.depends('object', watch=True)
+    def _validate_object(self):
+        dependencies = getattr(self.object, '_dinfo', {})
+        if not dependencies or not dependencies.get('watch'):
+            return
+        self.param.warning(
+            "The function supplied for Panel to display was declared "
+            "with `watch=True`, which will cause the function to be "
+            "called twice for any change in a dependent Parameter. "
+            "`watch` should be False when Panel is responsible for "
+            "displaying the result of the function call, while "
+            "`watch=True` should be reserved for functions that work "
+            "via side-effects, e.g. by modifying internal state of a "
+            "class or global state in an application's namespace."
+        )
 
     #----------------------------------------------------------------
     # Public API
