@@ -122,12 +122,26 @@ class TestChatInterface:
         send_button = chat_interface._input_layout[1]
         assert not send_button.disabled
 
-    def test_show_stop_for_sync(self, chat_interface: ChatInterface):
+    def test_show_stop_for_async_generator(self, chat_interface: ChatInterface):
+        async def callback(msg, user, instance):
+            send_button = instance._buttons["send"]
+            stop_button = instance._buttons["stop"]
+            await async_wait_until(lambda: stop_button.visible)
+            await async_wait_until(lambda: not send_button.visible)
+            yield "Hello"
+
+        chat_interface.callback = callback
+        chat_interface.send("Message", respond=True)
+        send_button = chat_interface._input_layout[1]
+        assert not send_button.disabled
+
+    def test_show_stop_for_sync_generator(self, chat_interface: ChatInterface):
         def callback(msg, user, instance):
             send_button = instance._buttons["send"]
             stop_button = instance._buttons["stop"]
             wait_until(lambda: stop_button.visible)
             wait_until(lambda: not send_button.visible)
+            yield "Hello"
 
         chat_interface.callback = callback
         chat_interface.send("Message", respond=True)
