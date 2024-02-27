@@ -263,6 +263,17 @@ class Callback(param.Parameterized):
             overrides = arg_overrides.get(id(link), {})
             cb(root_model, link, src, tgt, arg_overrides=overrides)
 
+    def unlink(self) -> None:
+        """
+        Unregisters the Link
+        """
+        source = self.source
+        if source is None:
+            return
+        links = self.registry.get(source, [])
+        if self in links:
+            links.remove(self)
+
 
 class Link(Callback):
     """
@@ -323,18 +334,6 @@ class Link(Callback):
             self.registry[source].append(self)
         else:
             self.registry[source] = [self]
-
-    def unlink(self) -> None:
-        """
-        Unregisters the Link
-        """
-        source = self.source
-        if source is None:
-            return
-        links = self.registry.get(source, [])
-        if self in links:
-            links.remove(self)
-
 
 
 class CallbackGenerator(object):

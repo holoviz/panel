@@ -109,6 +109,14 @@ class ChatCopyIcon(ButtonIcon):
 
     _rename: ClassVar[param.Dict] = {"text": None, **ButtonIcon._rename}
 
+    def __init__(self, **params):
+        self._link = None
+        super().__init__(**params)
+
     @param.depends("text", watch=True, on_init=True)
     def _update_js_on_click(self):
-        self.js_on_click(code=f"navigator.clipboard.writeText('{self.text}');")
+        if self.text:
+            link = self.js_on_click(code=f"await navigator.clipboard.writeText('{self.text}');")
+            if self._link is not None:
+                self._link.unlink()
+            self._link = link
