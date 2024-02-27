@@ -841,7 +841,10 @@ class ParamRef(ReplacementPane):
                         except Skip:
                             pass
             else:
-                self._update_inner(await awaitable)
+                try:
+                    self._update_inner(await awaitable)
+                except Skip:
+                    pass
         except Exception as e:
             if not curdoc or (has_context and curdoc.session_context):
                 raise e
