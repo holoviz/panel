@@ -116,7 +116,7 @@ class ChatCopyIcon(ButtonIcon):
     @param.depends("text", watch=True, on_init=True)
     def _update_js_on_click(self):
         if self.text:
-            link = self.js_on_click(code=f"await navigator.clipboard.writeText('{self.text}');")
+            link = self.js_on_click(code=f"navigator.clipboard.writeText('{self.text}');")
             if self._link is not None:
                 self._link.unlink()
             self._link = link
