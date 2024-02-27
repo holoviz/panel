@@ -237,8 +237,9 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         if expires_in:
             expires_in = int(expires_in)
         if refresh_token:
+            # When refreshing the tokens we do not need to re-fetch the id_token or user info
             return None, access_token, refresh_token, expires_in
-        if id_token:= body.get('id_token'):
+        elif id_token:= body.get('id_token'):
             try:
                 user = self._on_auth(id_token, access_token, refresh_token, expires_in)
             except HTTPError:
@@ -248,23 +249,29 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
                 return user, access_token, refresh_token, expires_in
 
         user_headers = dict(self._API_BASE_HEADERS)
-        if self._access_token_header:
-            user_url = self._OAUTH_USER_URL
-            user_headers['Authorization'] = self._access_token_header.format(
-                body['access_token']
-            )
-        else:
-            user_url = '{}{}'.format(self._OAUTH_USER_URL, body['access_token'])
+        if self._OAUTH_USER_URL:
+            if self._access_token_header:
+                user_url = self._OAUTH_USER_URL
+                user_headers['Authorization'] = self._access_token_header.format(
+                    body['access_token']
+                )
+            else:
+                user_url = '{}{}'.format(self._OAUTH_USER_URL, body['access_token'])
 
-        log.debug("%s requesting OpenID userinfo.", type(self).__name__)
-        try:
-            user_response = await http.fetch(user_url, headers=user_headers)
-            id_token = decode_response_body(user_response)
-        except HTTPClientError:
-            id_token = None
+            log.debug("%s requesting OpenID userinfo.", type(self).__name__)
+            try:
+                user_response = await http.fetch(user_url, headers=user_headers)
+                id_token = decode_response_body(user_response)
+            except HTTPClientError:
+                id_token = None
 
         if not id_token:
-            log.debug("%s could not obtain userinfo or id_token, falling back to decoding access_token.", type(self).__name__)
+            log.debug(
+                "%s could not fetch user information, the token endpoint did not "
+                "return an id_token and no OpenID user info endpoint was provided. "
+                "Attempting to code access_token to resolve user information.",
+                type(self).__name__
+            )
             try:
                 id_token = decode_token(body['access_token'])
             except Exception:
