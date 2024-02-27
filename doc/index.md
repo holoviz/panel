@@ -86,7 +86,7 @@ Panel makes it simple to:
 
 Enjoying Panel? Show your support with a [Github star](https://github.com/holoviz/panel) — it’s a simple click that means the world to us and helps others discover it too! ⭐️
 
-## Usage
+## Learn Panel
 
 ::::{grid} 1 2 2 4
 :gutter: 1 1 1 2
@@ -98,6 +98,34 @@ Enjoying Panel? Show your support with a [Github star](https://github.com/holovi
 The getting started guide will get you set up with Panel and provide a basic overview of the features and strengths of Panel.
 :::
 
+:::{grid-item-card} {octicon}`mortar-board;2.5em;sd-mr-1` Tutorials
+:link: tutorials/index
+:link-type: doc
+
+Through guided steps and activities the tutorials will help you acquire the skills and knowledge to use Panel.
+:::
+
+:::{grid-item-card} {octicon}`telescope;2.5em;sd-mr-1` Explanation
+:link: explanation/index
+:link-type: doc
+
+Introduces you to some of the core concepts behind Panel and some of the advanced features that make Panel such a powerful library.
+:::
+
+::::
+
+## Use Panel
+
+::::{grid} 1 2 2 4
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`package;2.5em;sd-mr-1` Component Gallery
+:link: reference/index
+:link-type: doc
+
+The Component Gallery showcases Panel's components and their essential reference guides, offering users vital usage information.
+:::
+
 :::{grid-item-card} {octicon}`beaker;2.5em;sd-mr-1` How-to
 :link: how_to/index
 :link-type: doc
@@ -105,18 +133,11 @@ The getting started guide will get you set up with Panel and provide a basic ove
 How-to guides provide step by step recipes for solving essential problems and tasks that arise during your work.
 :::
 
-:::{grid-item-card} {octicon}`mortar-board;2.5em;sd-mr-1` Explanation
-:link: explanation/index
-:link-type: doc
-
-Introduces you to some of the core concepts behind Panel and some of the advanced features that make Panel such a powerful library.
-:::
-
 :::{grid-item-card} {octicon}`book;2.5em;sd-mr-1` API Reference
 :link: api/index
 :link-type: doc
 
-The Panel API Reference Manual provides a comprehensive reference for all methods and parameters on Panel components.
+The Panel API Reference Manual furnishes an extensive guide covering Panels methods and parameters.
 :::
 
 ::::
@@ -193,11 +214,12 @@ alt: Quansight Logo
 
 getting_started/index
 tutorials/index
-how_to/index
 explanation/index
 reference/index
+how_to/index
 gallery/index
 api/index
+community
 upgrade
 FAQ
 about/index

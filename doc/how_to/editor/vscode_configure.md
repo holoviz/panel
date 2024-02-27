@@ -4,7 +4,7 @@ This guide addresses how to configure VS Code for an efficient Panel development
 
 We assume you have
 
-- a basic understanding of [developing Panel apps in an editor](editor.md) and [working with Python in VS Code](https://code.visualstudio.com/docs/python/python-tutorial).
+- a basic understanding of [working with Python in VS Code](https://code.visualstudio.com/docs/python/python-tutorial).
 - installed the VS Code [Python extension](https://github.com/Microsoft/vscode-python)
 
 ---

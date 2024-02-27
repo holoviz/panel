@@ -59,7 +59,7 @@ panel serve app.py --basic-auth credentials.json --cookie-secret my_super_safe_c
 
 The basic auth provider will now check the provided credentials against the credentials declared in this file.
 
-:::note
+:::{admonition} Note
 When serving an application dynamically using `pn.serve` you can also provide a dictionary of usernames and passwords via the `basic_auth` keyword argument.
 :::
 
