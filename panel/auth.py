@@ -236,6 +236,8 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         expires_in = body.get('expires_in')
         if expires_in:
             expires_in = int(expires_in)
+        if refresh_token:
+            return None, access_token, refresh_token, expires_in
         if id_token:= body.get('id_token'):
             try:
                 user = self._on_auth(id_token, access_token, refresh_token, expires_in)
