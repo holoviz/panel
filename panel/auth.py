@@ -198,8 +198,11 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         if code:
             params['code'] = code
         if refresh_token:
+            refreshing = True
             params['refresh_token'] = refresh_token
             params['grant_type'] = 'refresh_token'
+        else:
+            refreshing = False
         if client_secret:
             params['client_secret'] = client_secret
         elif username:
@@ -232,11 +235,12 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
                 return None, None, None
             self._raise_error(response, body, status=401)
 
-        access_token, refresh_token = body['access_token'], body.get('refresh_token')
         expires_in = body.get('expires_in')
         if expires_in:
             expires_in = int(expires_in)
-        if refresh_token:
+
+        access_token, refresh_token = body['access_token'], body.get('refresh_token')
+        if refreshing:
             # When refreshing the tokens we do not need to re-fetch the id_token or user info
             return None, access_token, refresh_token, expires_in
         elif id_token:= body.get('id_token'):
