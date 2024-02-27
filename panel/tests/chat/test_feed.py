@@ -33,7 +33,7 @@ class TestChatFeed:
 
     def test_init_with_help_text(self):
         chat_feed = ChatFeed(help_text="Instructions")
-        message = chat_feed._chat_log[0]
+        message = chat_feed.objects[0]
         assert message.object == "Instructions"
         assert message.user == "Help"
 
