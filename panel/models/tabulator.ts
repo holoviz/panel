@@ -1267,7 +1267,7 @@ export class DataTabulator extends HTMLBox {
   static {
     this.prototype.default_view = DataTabulatorView;
 
-    this.define<DataTabulator.Props>(({Any, Array, Bool, Nullable, Float, Ref, String}) => ({
+    this.define<DataTabulator.Props>(({Any, Array, Bool, Nullable, Float, Ref, Str}) => ({
       aggregators:    [ Any,                     {} ],
       buttons:        [ Any,                     {} ],
       children:       [ Any,              new Map() ],
@@ -1276,16 +1276,16 @@ export class DataTabulator extends HTMLBox {
       download:       [ Bool,              false ],
       editable:       [ Bool,               true ],
       expanded:       [ Array(Float),           [] ],
-      filename:       [ String,         "table.csv" ],
+      filename:       [ Str,         "table.csv" ],
       filters:        [ Array(Any),              [] ],
       follow:         [ Bool,               true ],
       frozen_rows:    [ Array(Float),           [] ],
-      groupby:        [ Array(String),           [] ],
-      hidden_columns: [ Array(String),           [] ],
-      indexes:        [ Array(String),           [] ],
+      groupby:        [ Array(Str),           [] ],
+      hidden_columns: [ Array(Str),           [] ],
+      indexes:        [ Array(Str),           [] ],
       layout:         [ TableLayout,     "fit_data" ],
       max_page:       [ Float,                   0 ],
-      pagination:     [ Nullable(String),      null ],
+      pagination:     [ Nullable(Str),      null ],
       page:           [ Float,                   0 ],
       page_size:      [ Float,                   0 ],
       select_mode:    [ Any,                   true ],
@@ -1293,7 +1293,7 @@ export class DataTabulator extends HTMLBox {
       source:         [ Ref(ColumnDataSource)       ],
       sorters:        [ Array(Any),              [] ],
       cell_styles:    [ Any,                     {} ],
-      theme_classes:  [ Array(String),           [] ],
+      theme_classes:  [ Array(Str),           [] ],
     }))
   }
 }

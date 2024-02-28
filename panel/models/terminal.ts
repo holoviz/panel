@@ -138,10 +138,10 @@ export class Terminal extends HTMLBox {
   static {
     this.prototype.default_view = TerminalView;
 
-    this.define<Terminal.Props>(({Any, Int, String}) => ({
+    this.define<Terminal.Props>(({Any, Int, Str}) => ({
       _clears:        [ Int,     0 ],
       options:        [ Any,    {} ],
-      output:         [ String, '' ],
+      output:         [ Str, '' ],
       ncols:          [ Int,     0 ],
       nrows:          [ Int,     0 ],
     }))

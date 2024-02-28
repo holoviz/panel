@@ -255,14 +255,14 @@ export class DeckGLPlot extends LayoutDOM {
   static {
     this.prototype.default_view = DeckGLPlotView;
 
-    this.define<DeckGLPlot.Props>(({Any, Array, String, Ref}) => ({
+    this.define<DeckGLPlot.Props>(({Any, Array, Str, Ref}) => ({
       data:             [ Any                              ],
       data_sources:     [ Array(Ref(ColumnDataSource)), [] ],
       clickState:       [ Any,                          {} ],
       hoverState:       [ Any,                          {} ],
       initialViewState: [ Any,                          {} ],
       layers:           [ Array(Any),                   [] ],
-      mapbox_api_key:   [ String,                       '' ],
+      mapbox_api_key:   [ Str,                       '' ],
       throttle:         [ Any,                          {} ],
       tooltip:          [ Any,                        true ],
       viewState:        [ Any,                          {} ],

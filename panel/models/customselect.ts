@@ -54,9 +54,9 @@ export class CustomSelect extends Select {
   static {
     this.prototype.default_view = CustomSelectView
 
-    this.define<CustomSelect.Props>(({Array, String}) => {
+    this.define<CustomSelect.Props>(({Array, Str}) => {
       return {
-        disabled_options:   [ Array(String), [] ],
+        disabled_options:   [ Array(Str), [] ],
       }
     })
   }

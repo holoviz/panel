@@ -109,11 +109,11 @@ export class SingleSelect extends InputWidget {
   static {
     this.prototype.default_view = SingleSelectView
 
-    this.define<SingleSelect.Props>(({Any, Array, Int, Nullable, String}) => ({
-      disabled_options: [ Array(String), [] ],
+    this.define<SingleSelect.Props>(({Any, Array, Int, Nullable, Str}) => ({
+      disabled_options: [ Array(Str), [] ],
       options:          [ Array(Any), []    ],
       size:             [ Int,         4    ], // 4 is the HTML default
-      value:            [ Nullable(String),     null ],
+      value:            [ Nullable(Str),     null ],
     }))
   }
 }

@@ -212,24 +212,24 @@ export class SpeechToText extends HTMLBox {
   static {
     this.prototype.default_view = SpeechToTextView
 
-    this.define<SpeechToText.Props>(({Any, Array, Bool, Float, String}) => ({
+    this.define<SpeechToText.Props>(({Any, Array, Bool, Float, Str}) => ({
       start: [ Bool, false ],
       stop: [ Bool, false ],
       abort: [ Bool, false ],
       grammars: [ Array(Any), [] ],
-      lang: [ String, '' ],
+      lang: [ Str, '' ],
       continuous: [ Bool,   false ],
       interim_results: [ Bool,   false ],
       max_alternatives: [ Float,   1 ],
-      service_uri: [ String, '' ],
+      service_uri: [ Str, '' ],
       started: [ Bool,   false ],
       audio_started: [ Bool,   false ],
       sound_started: [ Bool,   false ],
       speech_started: [ Bool,   false ],
-      button_type: [ String, 'light' ],
+      button_type: [ Str, 'light' ],
       button_hide: [ Bool,   false ],
-      button_not_started: [ String,   '' ],
-      button_started: [ String,   '' ],
+      button_not_started: [ Str,   '' ],
+      button_started: [ Str,   '' ],
       results: [ Array(Any), [] ],
     }))
   }

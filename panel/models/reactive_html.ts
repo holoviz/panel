@@ -530,16 +530,16 @@ export class ReactiveHTML extends HTMLBox {
 
   static {
     this.prototype.default_view = ReactiveHTMLView
-    this.define<ReactiveHTML.Props>(({Array, Any, String}) => ({
+    this.define<ReactiveHTML.Props>(({Array, Any, Str}) => ({
       attrs:     [ Any,    {} ],
       callbacks: [ Any,    {} ],
       children:  [ Any,    {} ],
       data:      [ Any,       ],
-      event_params: [ Array(String), [] ],
+      event_params: [ Array(Str), [] ],
       events:    [ Any,    {} ],
-      html:      [ String, "" ],
-      looped:    [ Array(String), [] ],
-      nodes:     [ Array(String), [] ],
+      html:      [ Str, "" ],
+      looped:    [ Array(Str), [] ],
+      nodes:     [ Array(Str), [] ],
       scripts:   [ Any,    {} ],
     }))
   }

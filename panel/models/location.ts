@@ -91,14 +91,14 @@ export class Location extends Model {
   static {
     this.prototype.default_view = LocationView
 
-    this.define<Location.Props>(({Bool, String}) => ({
-      href:     [ String,     "" ],
-      hostname: [ String,     "" ],
-      pathname: [ String,     "" ],
-      protocol: [ String,     "" ],
-      port:     [ String,     "" ],
-      search:   [ String,     "" ],
-      hash:     [ String,     "" ],
+    this.define<Location.Props>(({Bool, Str}) => ({
+      href:     [ Str,     "" ],
+      hostname: [ Str,     "" ],
+      pathname: [ Str,     "" ],
+      protocol: [ Str,     "" ],
+      port:     [ Str,     "" ],
+      search:   [ Str,     "" ],
+      hash:     [ Str,     "" ],
       reload:   [ Bool, false ],
     }))
   }

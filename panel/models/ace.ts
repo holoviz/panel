@@ -138,11 +138,11 @@ export class AcePlot extends HTMLBox {
   static {
     this.prototype.default_view = AcePlotView
 
-    this.define<AcePlot.Props>(({Any, Array, Bool, String, Nullable}) => ({
-      code:         [ String,       '' ],
-      filename:     [ Nullable(String), null],
-      language:     [ String,       '' ],
-      theme:        [ String, 'chrome' ],
+    this.define<AcePlot.Props>(({Any, Array, Bool, Str, Nullable}) => ({
+      code:         [ Str,       '' ],
+      filename:     [ Nullable(Str), null],
+      language:     [ Str,       '' ],
+      theme:        [ Str, 'chrome' ],
       annotations:  [ Array(Any),   [] ],
       readonly:     [ Bool,   false ],
       print_margin: [ Bool,   false ]

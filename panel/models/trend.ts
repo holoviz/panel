@@ -246,19 +246,19 @@ export class TrendIndicator extends HTMLBox {
   static {
     this.prototype.default_view = TrendIndicatorView;
 
-    this.define<TrendIndicator.Props>(({Float, String, Ref}) => ({
-      description:  [ String,              "" ],
+    this.define<TrendIndicator.Props>(({Float, Str, Ref}) => ({
+      description:  [ Str,              "" ],
       formatter:        [ Ref(TickFormatter), () => new BasicTickFormatter() ],
       change_formatter: [ Ref(TickFormatter), () => new NumeralTickFormatter() ],
-      layout:       [ String,        "column" ],
+      layout:       [ Str,        "column" ],
       source:       [ Ref(ColumnDataSource)   ],
-      plot_x:       [ String,             "x" ],
-      plot_y:       [ String,             "y" ],
-      plot_color:   [ String,            blue ],
-      plot_type:    [ String,           "bar" ],
-      pos_color:    [ String,           green ],
-      neg_color:    [ String,             red ],
-      title:        [ String,              "" ],
+      plot_x:       [ Str,             "x" ],
+      plot_y:       [ Str,             "y" ],
+      plot_color:   [ Str,            blue ],
+      plot_type:    [ Str,           "bar" ],
+      pos_color:    [ Str,           green ],
+      neg_color:    [ Str,             red ],
+      title:        [ Str,              "" ],
       value:        [ Float,               0 ],
       value_change: [ Float,               0 ],
     }))
