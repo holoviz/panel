@@ -7,7 +7,8 @@ import {HTMLBox, HTMLBoxView} from "./layout"
 const Jupyter = (window as any).Jupyter
 
 export class IPyWidgetView extends HTMLBoxView {
-  model: IPyWidget
+  declare model: IPyWidget
+
   private ipyview: any
   private ipychildren: any[]
   private manager: any
@@ -89,7 +90,7 @@ export namespace IPyWidget {
 export interface IPyWidget extends IPyWidget.Attrs {}
 
 export class IPyWidget extends HTMLBox {
-  properties: IPyWidget.Props
+  declare properties: IPyWidget.Props
 
   constructor(attrs?: Partial<IPyWidget.Attrs>) {
     super(attrs)

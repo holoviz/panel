@@ -3,7 +3,7 @@ import {Markup} from "@bokehjs/models/widgets/markup"
 import {PanelMarkupView} from "./layout"
 
 export class KaTeXView extends PanelMarkupView {
-  model: KaTeX
+  declare model: KaTeX
 
   connect_signals(): void {
     super.connect_signals()
@@ -37,7 +37,7 @@ export namespace KaTeX {
 export interface KaTeX extends KaTeX.Attrs {}
 
 export class KaTeX extends Markup {
-  properties: KaTeX.Props
+  declare properties: KaTeX.Props
 
   constructor(attrs?: Partial<KaTeX.Attrs>) {
     super(attrs)

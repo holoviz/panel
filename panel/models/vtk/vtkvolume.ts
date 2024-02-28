@@ -12,7 +12,8 @@ import {
 
 
 export class VTKVolumePlotView extends AbstractVTKView {
-  model: VTKVolumePlot
+  declare model: VTKVolumePlot
+
   protected _controllerWidget: any
   protected _vtk_image_data: any
 
@@ -416,7 +417,7 @@ export namespace VTKVolumePlot {
 export interface VTKVolumePlot extends VTKVolumePlot.Attrs {}
 
 export class VTKVolumePlot extends AbstractVTKPlot {
-  properties: VTKVolumePlot.Props
+  declare properties: VTKVolumePlot.Props
 
   constructor(attrs?: Partial<VTKVolumePlot.Attrs>) {
     super(attrs)

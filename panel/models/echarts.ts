@@ -36,7 +36,8 @@ export class EChartsEvent extends ModelEvent {
 }
 
 export class EChartsView extends HTMLBoxView {
-  model: ECharts
+  declare model: ECharts
+
   container: Element
   _chart: any
   _callbacks: Array<any>[] = []
@@ -158,7 +159,7 @@ export namespace ECharts {
 export interface ECharts extends ECharts.Attrs {}
 
 export class ECharts extends HTMLBox {
-  properties: ECharts.Props
+  declare properties: ECharts.Props
 
   constructor(attrs?: Partial<ECharts.Attrs>) {
     super(attrs)

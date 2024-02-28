@@ -304,7 +304,8 @@ const datetimeEditor = function(cell: any, onRendered: any, success: any, cancel
 }
 
 export class DataTabulatorView extends HTMLBoxView {
-  model: DataTabulator
+  declare model: DataTabulator
+
   tabulator: any
   columns: Map<string, any> = new Map()
   _tabulator_cell_updating: boolean=false
@@ -1337,7 +1338,7 @@ export interface DataTabulator extends DataTabulator.Attrs { }
 
 // The Bokeh .ts model corresponding to the Bokeh .py model
 export class DataTabulator extends HTMLBox {
-  properties: DataTabulator.Props
+  declare properties: DataTabulator.Props
 
   constructor(attrs?: Partial<DataTabulator.Attrs>) {
     super(attrs)

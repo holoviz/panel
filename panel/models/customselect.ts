@@ -2,7 +2,7 @@ import {Select, SelectView} from "@bokehjs/models/widgets/select"
 import type * as p from "@bokehjs/core/properties"
 
 export class CustomSelectView extends SelectView {
-  override model: CustomSelect
+  declare model: CustomSelect
 
   connect_signals(): void {
     super.connect_signals()
@@ -41,8 +41,8 @@ export namespace CustomSelect {
 export interface CustomSelect extends CustomSelect.Attrs {}
 
 export class CustomSelect extends Select {
-  override properties: CustomSelect.Props
-  override __view_type__: CustomSelectView
+  declare properties: CustomSelect.Props
+  declare __view_type__: CustomSelectView
 
   constructor(attrs?: Partial<CustomSelect.Attrs>) {
     super(attrs)

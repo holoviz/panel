@@ -3,7 +3,8 @@ import {View} from "@bokehjs/core/view"
 import {Model} from "@bokehjs/model"
 
 export class LocationView extends View {
-  model: Location
+  declare model: Location
+
   _hash_listener: any
 
   initialize(): void {
@@ -84,7 +85,7 @@ export namespace Location {
 export interface Location extends Location.Attrs { }
 
 export class Location extends Model {
-  properties: Location.Props
+  declare properties: Location.Props
 
   static __module__ = "panel.models.location"
 

@@ -92,7 +92,8 @@ function element_lookup(root: ShadowRoot, el_id: string): HTMLElement | null {
 }
 
 export class ReactiveHTMLView extends HTMLBoxView {
-  model: ReactiveHTML
+  declare model: ReactiveHTML
+
   html: string
   container: HTMLDivElement
   _parent: any = null
@@ -547,7 +548,7 @@ export namespace ReactiveHTML {
 export interface ReactiveHTML extends ReactiveHTML.Attrs {}
 
 export class ReactiveHTML extends HTMLBox {
-  properties: ReactiveHTML.Props
+  declare properties: ReactiveHTML.Props
 
   constructor(attrs?: Partial<ReactiveHTML.Attrs>) {
     super(attrs)

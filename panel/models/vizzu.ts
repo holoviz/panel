@@ -25,8 +25,9 @@ export class VizzuEvent extends ModelEvent {
 const VECTORIZED_PROPERTIES = ["x", "y", "color", "label", "lightness", "size", "splittedBy", "dividedBy"]
 
 export class VizzuChartView extends HTMLBoxView {
+  declare model: VizzuChart
+
   container: HTMLDivElement
-  model: VizzuChart
   update: string[] = []
   vizzu_view: any
   _animating: boolean = false
@@ -174,7 +175,7 @@ export namespace VizzuChart {
 export interface VizzuChart extends VizzuChart.Attrs {}
 
 export class VizzuChart extends HTMLBox {
-  properties: VizzuChart.Props
+  declare properties: VizzuChart.Props
 
   constructor(attrs?: Partial<VizzuChart.Attrs>) {
     super(attrs)

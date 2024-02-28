@@ -3,7 +3,8 @@ import type * as p from "@bokehjs/core/properties"
 import {HTMLBox, HTMLBoxView} from "./layout"
 
 export class VideoStreamView extends HTMLBoxView {
-  model: VideoStream
+  declare model: VideoStream
+
   protected videoEl: HTMLVideoElement
   protected canvasEl: HTMLCanvasElement
   protected constraints = {
@@ -113,7 +114,7 @@ export namespace VideoStream {
 export interface VideoStream extends VideoStream.Attrs {}
 
 export class VideoStream extends HTMLBox {
-  properties: VideoStream.Props
+  declare properties: VideoStream.Props
 
   constructor(attrs?: Partial<VideoStream.Attrs>) {
     super(attrs)

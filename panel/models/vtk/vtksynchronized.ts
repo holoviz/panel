@@ -12,7 +12,8 @@ import {vtkns} from "./util"
 const CONTEXT_NAME = "panel"
 
 export class VTKSynchronizedPlotView extends AbstractVTKView {
-  model: VTKSynchronizedPlot
+  declare model: VTKSynchronizedPlot
+
   protected _synchronizer_context: any
   protected _arrays: any
   public registerArray: CallableFunction
@@ -111,7 +112,7 @@ export namespace VTKSynchronizedPlot {
 export interface VTKSynchronizedPlot extends VTKSynchronizedPlot.Attrs {}
 
 export class VTKSynchronizedPlot extends AbstractVTKPlot {
-  properties: VTKSynchronizedPlot.Props
+  declare properties: VTKSynchronizedPlot.Props
   outline: any
   outline_actor: any
 

@@ -2,7 +2,7 @@ import {ClickableIcon, ClickableIconView} from "./icon"
 import type * as p from "@bokehjs/core/properties"
 
 export class ToggleIconView extends ClickableIconView {
-  model: ToggleIcon
+  declare model: ToggleIcon
 
   public *controls() { }
 
@@ -23,7 +23,7 @@ export namespace ToggleIcon {
 export interface ToggleIcon extends ToggleIcon.Attrs { }
 
 export class ToggleIcon extends ClickableIcon {
-  properties: ToggleIcon.Props
+  declare properties: ToggleIcon.Props
   declare __view_type__: ToggleIconView
   static __module__ = "panel.models.icon"
 

@@ -24,7 +24,8 @@ export class VegaEvent extends ModelEvent {
 }
 
 export class VegaPlotView extends LayoutDOMView {
-  model: VegaPlot
+  declare model: VegaPlot
+
   vega_view: any
   container: HTMLDivElement
   _callbacks: string[]
@@ -196,7 +197,7 @@ export namespace VegaPlot {
 export interface VegaPlot extends VegaPlot.Attrs {}
 
 export class VegaPlot extends LayoutDOM {
-  properties: VegaPlot.Props
+  declare properties: VegaPlot.Props
 
   constructor(attrs?: Partial<VegaPlot.Attrs>) {
     super(attrs)

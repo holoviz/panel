@@ -6,7 +6,7 @@ import {InputWidget, InputWidgetView} from "@bokehjs/models/widgets/input_widget
 import * as inputs from "@bokehjs/styles/widgets/inputs.css"
 
 export class SingleSelectView extends InputWidgetView {
-  model: SingleSelect
+  declare model: SingleSelect
 
   declare input_el: HTMLSelectElement
 
@@ -101,8 +101,8 @@ export namespace SingleSelect {
 export interface SingleSelect extends SingleSelect.Attrs {}
 
 export class SingleSelect extends InputWidget {
-  properties: SingleSelect.Props
-  __view_type__: SingleSelectView
+  declare properties: SingleSelect.Props
+  declare __view_type__: SingleSelectView
 
   constructor(attrs?: Partial<SingleSelect.Attrs>) {
     super(attrs)

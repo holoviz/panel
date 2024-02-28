@@ -3,7 +3,8 @@ import * as DOM from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
 
 export class ColumnView extends BkColumnView {
-  model: Column
+  declare model: Column
+
   scroll_down_button_el: HTMLElement
 
   connect_signals(): void {
@@ -97,7 +98,7 @@ export namespace Column {
 export interface Column extends Column.Attrs { }
 
 export class Column extends BkColumn {
-  properties: Column.Props
+  declare properties: Column.Props
 
   constructor(attrs?: Partial<Column.Attrs>) {
     super(attrs)

@@ -20,7 +20,8 @@ export class KeystrokeEvent extends ModelEvent {
 }
 
 export class TerminalView extends HTMLBoxView {
-  model: Terminal
+  declare model: Terminal
+
   term: any // Element
   webLinksAddon: any
   container: HTMLDivElement
@@ -131,7 +132,7 @@ export interface Terminal extends Terminal.Attrs { }
 
 // The Bokeh .ts model corresponding to the Bokeh .py model
 export class Terminal extends HTMLBox {
-  properties: Terminal.Props
+  declare properties: Terminal.Props
 
   constructor(attrs?: Partial<Terminal.Attrs>) {
     super(attrs)

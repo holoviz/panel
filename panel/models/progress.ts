@@ -4,7 +4,8 @@ import type * as p from "@bokehjs/core/properties"
 import {HTMLBox, HTMLBoxView} from "./layout"
 
 export class ProgressView extends HTMLBoxView {
-  model: Progress
+  declare model: Progress
+
   protected progressEl: HTMLProgressElement
 
   connect_signals(): void {
@@ -85,7 +86,7 @@ export namespace Progress {
 export interface Progress extends Progress.Attrs {}
 
 export class Progress extends HTMLBox {
-  properties: Progress.Props
+  declare properties: Progress.Props
 
   constructor(attrs?: Partial<Progress.Attrs>) {
     super(attrs)

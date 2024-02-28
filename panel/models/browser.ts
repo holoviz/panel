@@ -3,7 +3,7 @@ import {View} from "@bokehjs/core/view"
 import {Model} from "@bokehjs/model"
 
 export class BrowserInfoView extends View {
-  model: BrowserInfo
+  declare model: BrowserInfo
 
   initialize(): void {
     super.initialize()
@@ -44,7 +44,7 @@ export namespace BrowserInfo {
 export interface BrowserInfo extends BrowserInfo.Attrs { }
 
 export class BrowserInfo extends Model {
-  properties: BrowserInfo.Props
+  declare properties: BrowserInfo.Props
 
   static __module__ = "panel.models.browser"
 

@@ -29,7 +29,7 @@ export namespace VTKAxes {
 export interface VTKAxes extends VTKAxes.Attrs {}
 
 export class VTKAxes extends Model {
-  properties: VTKAxes.Props
+  declare properties: VTKAxes.Props
 
   constructor(attrs?: Partial<VTKAxes.Attrs>) {
     super(attrs)

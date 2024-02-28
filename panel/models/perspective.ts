@@ -56,7 +56,8 @@ export class PerspectiveClickEvent extends ModelEvent {
 }
 
 export class PerspectiveView extends HTMLBoxView {
-  model: Perspective
+  declare model: Perspective
+
   perspective_element: any
   table: any
   worker: any
@@ -305,7 +306,7 @@ export namespace Perspective {
 export interface Perspective extends Perspective.Attrs { }
 
 export class Perspective extends HTMLBox {
-  properties: Perspective.Props
+  declare properties: Perspective.Props
 
   constructor(attrs?: Partial<Perspective.Attrs>) {
     super(attrs)

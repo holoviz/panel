@@ -32,13 +32,13 @@ function dataURItoBlob(dataURI: string) {
 }
 
 export class FileDownloadView extends InputWidgetView {
-  model: FileDownload
+  declare model: FileDownload
 
   protected icon_view?: IconView
 
   anchor_el: HTMLAnchorElement
   button_el: HTMLButtonElement
-  input_el: HTMLInputElement  // HACK: So this.input_el.id = "input" can be set in Bokeh 3.4
+  declare input_el: HTMLInputElement  // HACK: So this.input_el.id = "input" can be set in Bokeh 3.4
   _downloadable: boolean = false
   _click_listener: any
   _prev_href: string | null = ""
@@ -234,7 +234,7 @@ export namespace FileDownload {
 export interface FileDownload extends FileDownload.Attrs {}
 
 export class FileDownload extends InputWidget {
-  properties: FileDownload.Props
+  declare properties: FileDownload.Props
 
   constructor(attrs?: Partial<FileDownload.Attrs>) {
     super(attrs)

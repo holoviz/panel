@@ -2,7 +2,7 @@ import {TextAreaInput as BkTextAreaInput, TextAreaInputView as BkTextAreaInputVi
 import type * as p from "@bokehjs/core/properties"
 
 export class TextAreaInputView extends BkTextAreaInputView {
-  model: TextAreaInput
+  declare model: TextAreaInput
 
   connect_signals(): void {
     super.connect_signals()
@@ -44,7 +44,7 @@ export namespace TextAreaInput {
 export interface TextAreaInput extends TextAreaInput.Attrs { }
 
 export class TextAreaInput extends BkTextAreaInput {
-  properties: TextAreaInput.Props
+  declare properties: TextAreaInput.Props
 
   constructor(attrs?: Partial<TextAreaInput.Attrs>) {
     super(attrs)

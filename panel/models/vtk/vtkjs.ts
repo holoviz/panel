@@ -4,7 +4,7 @@ import {AbstractVTKView, AbstractVTKPlot} from "./vtklayout"
 import {vtkns} from "./util"
 
 export class VTKJSPlotView extends AbstractVTKView {
-  model: VTKJSPlot
+  declare model: VTKJSPlot
 
   connect_signals(): void {
     super.connect_signals()
@@ -68,7 +68,7 @@ export namespace VTKJSPlot {
 export interface VTKJSPlot extends VTKJSPlot.Attrs {}
 
 export class VTKJSPlot extends AbstractVTKPlot {
-  properties: VTKJSPlot.Props
+  declare properties: VTKJSPlot.Props
 
   static {
     this.prototype.default_view = VTKJSPlotView

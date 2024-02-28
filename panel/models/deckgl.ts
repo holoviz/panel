@@ -22,7 +22,8 @@ function extractClasses() {
 }
 
 export class DeckGLPlotView extends LayoutDOMView {
-  model: DeckGLPlot
+  declare model: DeckGLPlot
+
   jsonConverter: any
   deckGL: any
   _connected: any[]
@@ -249,7 +250,7 @@ export namespace DeckGLPlot {
 export interface DeckGLPlot extends DeckGLPlot.Attrs { }
 
 export class DeckGLPlot extends LayoutDOM {
-  properties: DeckGLPlot.Props
+  declare properties: DeckGLPlot.Props
 
   constructor(attrs?: Partial<DeckGLPlot.Attrs>) {
     super(attrs)

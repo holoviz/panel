@@ -29,7 +29,8 @@ const INFO_DIV_STYLE: CSSProperties = {
 const textPositions = Enum("LowerLeft", "LowerRight", "UpperLeft", "UpperRight", "LowerEdge", "RightEdge", "LeftEdge", "UpperEdge")
 
 export abstract class AbstractVTKView extends HTMLBoxView {
-  model: AbstractVTKPlot
+  declare model: AbstractVTKPlot
+
   protected _axes: any
   protected _camera_callbacks: any[]
   protected _orientationWidget: any
@@ -496,7 +497,7 @@ export namespace AbstractVTKPlot {
 export interface AbstractVTKPlot extends AbstractVTKPlot.Attrs {}
 
 export abstract class AbstractVTKPlot extends HTMLBox {
-  properties: AbstractVTKPlot.Props
+  declare properties: AbstractVTKPlot.Props
   renderer_el: any
 
   static __module__ = "panel.models.vtk"

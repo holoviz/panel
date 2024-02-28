@@ -37,7 +37,8 @@ export function runScripts(node: any): void {
 }
 
 export class HTMLView extends PanelMarkupView {
-  model: HTML
+  declare model: HTML
+
   _event_listeners: any = {}
 
   connect_signals(): void {
@@ -173,7 +174,7 @@ export namespace HTML {
 export interface HTML extends HTML.Attrs {}
 
 export class HTML extends Markup {
-  properties: HTML.Props
+  declare properties: HTML.Props
 
   constructor(attrs?: Partial<HTML.Attrs>) {
     super(attrs)

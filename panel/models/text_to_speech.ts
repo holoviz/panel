@@ -17,7 +17,8 @@ function toVoicesList(voices: SpeechSynthesisVoice[]) {
 }
 
 export class TextToSpeechView extends HTMLBoxView {
-  model: TextToSpeech
+  declare model: TextToSpeech
+
   voices: SpeechSynthesisVoice[]
   _callback: any
 
@@ -148,7 +149,7 @@ export namespace TextToSpeech {
 export interface TextToSpeech extends TextToSpeech.Attrs {}
 
 export class TextToSpeech extends HTMLBox {
-  properties: TextToSpeech.Props
+  declare properties: TextToSpeech.Props
 
   constructor(attrs?: Partial<TextToSpeech.Attrs>) {
     super(attrs)

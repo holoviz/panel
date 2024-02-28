@@ -12,7 +12,8 @@ import {ButtonClick} from "@bokehjs/core/bokeh_events"
 import type {EventCallback} from "@bokehjs/model"
 
 export class ClickableIconView extends ControlView {
-  model: ClickableIcon
+  declare model: ClickableIcon
+
   icon_view: TablerIconView | SVGIconView
   was_svg_icon: boolean
 
@@ -157,7 +158,7 @@ export namespace ClickableIcon {
 export interface ClickableIcon extends ClickableIcon.Attrs { }
 
 export class ClickableIcon extends Control {
-  properties: ClickableIcon.Props
+  declare properties: ClickableIcon.Props
   declare __view_type__: ClickableIconView
   static __module__ = "panel.models.icon"
 

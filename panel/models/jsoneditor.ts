@@ -20,7 +20,8 @@ export class JSONEditEvent extends ModelEvent {
 }
 
 export class JSONEditorView extends HTMLBoxView {
-  model: JSONEditor
+  declare model: JSONEditor
+
   editor: any
   _menu_context: any
 
@@ -96,7 +97,7 @@ export namespace JSONEditor {
 export interface JSONEditor extends JSONEditor.Attrs {}
 
 export class JSONEditor extends HTMLBox {
-  properties: JSONEditor.Props
+  declare properties: JSONEditor.Props
 
   constructor(attrs?: Partial<JSONEditor.Attrs>) {
     super(attrs)

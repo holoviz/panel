@@ -5,7 +5,7 @@ import JSONFormatter from "json-formatter-js"
 import {PanelMarkupView} from "./layout"
 
 export class JSONView extends PanelMarkupView {
-  model: JSON
+  declare model: JSON
 
   connect_signals(): void {
     super.connect_signals()
@@ -52,7 +52,7 @@ export namespace JSON {
 export interface JSON extends JSON.Attrs {}
 
 export class JSON extends Markup {
-  properties: JSON.Props
+  declare properties: JSON.Props
 
   constructor(attrs?: Partial<JSON.Attrs>) {
     super(attrs)

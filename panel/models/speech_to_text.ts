@@ -66,7 +66,8 @@ function serializeResults(results_: any) {
 }
 
 export class SpeechToTextView extends HTMLBoxView {
-  model: SpeechToText
+  declare model: SpeechToText
+
   recognition: any
   buttonEl: HTMLElement
 
@@ -211,7 +212,7 @@ export namespace SpeechToText {
 export interface SpeechToText extends SpeechToText.Attrs {}
 
 export class SpeechToText extends HTMLBox {
-  properties: SpeechToText.Props
+  declare properties: SpeechToText.Props
 
   constructor(attrs?: Partial<SpeechToText.Attrs>) {
     super(attrs)

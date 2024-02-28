@@ -12,7 +12,8 @@ const green: string="#5cb85c"
 const blue: string="#428bca"
 
 export class TrendIndicatorView extends HTMLBoxView {
-  model: TrendIndicator
+  declare model: TrendIndicator
+
   containerDiv: HTMLDivElement
   textDiv: HTMLDivElement
   titleDiv: HTMLDivElement
@@ -238,7 +239,7 @@ export namespace TrendIndicator {
 export interface TrendIndicator extends TrendIndicator.Attrs { }
 
 export class TrendIndicator extends HTMLBox {
-  properties: TrendIndicator.Props
+  declare properties: TrendIndicator.Props
 
   constructor(attrs?: Partial<TrendIndicator.Attrs>) {
     super(attrs)

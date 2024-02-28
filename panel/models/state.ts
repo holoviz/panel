@@ -18,7 +18,7 @@ function get_json(file: string, callback: any): void {
 }
 
 export class StateView extends View {
-  model: State
+  declare model: State
 }
 
 export namespace State {
@@ -35,7 +35,7 @@ export namespace State {
 export interface State extends State.Attrs {}
 
 export class State extends Model {
-  properties: State.Props
+  declare properties: State.Props
   _receiver: Receiver
   _cache: {[key: string]: string}
 

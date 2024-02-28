@@ -3,7 +3,8 @@ import type * as p from "@bokehjs/core/properties"
 import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 
 export class AudioView extends HTMLBoxView {
-  model: Audio
+  declare model: Audio
+
   protected audioEl: HTMLAudioElement
   protected dialogEl: HTMLElement
   private _blocked: boolean
@@ -138,7 +139,7 @@ export namespace Audio {
 export interface Audio extends Audio.Attrs {}
 
 export class Audio extends HTMLBox {
-  properties: Audio.Props
+  declare properties: Audio.Props
 
   constructor(attrs?: Partial<Audio.Attrs>) {
     super(attrs)

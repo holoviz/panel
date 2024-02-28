@@ -12,7 +12,8 @@ export class ScrollButtonClick extends ModelEvent {
 }
 
 export class FeedView extends ColumnView {
-  model: Feed
+  declare model: Feed
+
   _intersection_observer: IntersectionObserver
   _last_visible: UIElementView | null
   _sync: boolean
@@ -116,7 +117,7 @@ export namespace Feed {
 export interface Feed extends Feed.Attrs { }
 
 export class Feed extends Column {
-  properties: Feed.Props
+  declare properties: Feed.Props
 
   constructor(attrs?: Partial<Feed.Attrs>) {
     super(attrs)

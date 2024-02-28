@@ -3,7 +3,8 @@ import * as DOM from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
 
 export class CardView extends ColumnView {
-  model: Card
+  declare model: Card
+
   button_el: HTMLButtonElement
   header_el: HTMLElement
 
@@ -157,7 +158,7 @@ export namespace Card {
 export interface Card extends Card.Attrs {}
 
 export class Card extends Column {
-  properties: Card.Props
+  declare properties: Card.Props
 
   constructor(attrs?: Partial<Card.Attrs>) {
     super(attrs)

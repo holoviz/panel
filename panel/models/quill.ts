@@ -4,7 +4,8 @@ import {div} from "@bokehjs/core/dom"
 import {HTMLBox, HTMLBoxView} from "./layout"
 
 export class QuillInputView extends HTMLBoxView {
-  override model: QuillInput
+  declare model: QuillInput
+
   protected container: HTMLDivElement
   protected _editor: HTMLDivElement
   protected _editing: boolean
@@ -203,7 +204,7 @@ export namespace QuillInput {
 export interface QuillInput extends QuillInput.Attrs { }
 
 export class QuillInput extends HTMLBox {
-  properties: QuillInput.Props
+  declare properties: QuillInput.Props
 
   constructor(attrs?: Partial<QuillInput.Attrs>) {
     super(attrs)

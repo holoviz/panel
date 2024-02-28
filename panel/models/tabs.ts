@@ -18,7 +18,7 @@ function hide(element: HTMLElement): void {
 }
 
 export class TabsView extends BkTabsView {
-  model: Tabs
+  declare model: Tabs
 
   connect_signals(): void {
     super.connect_signals()
@@ -149,7 +149,7 @@ export namespace Tabs {
 export interface Tabs extends BkTabs.Attrs {}
 
 export class Tabs extends BkTabs {
-  properties: Tabs.Props
+  declare properties: Tabs.Props
 
   static __module__ = "panel.models.tabs"
 

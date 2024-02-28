@@ -2,7 +2,8 @@ import {ClickableIcon, ClickableIconView} from "./icon"
 import type * as p from "@bokehjs/core/properties"
 
 export class ButtonIconView extends ClickableIconView {
-  model: ButtonIcon
+  declare model: ButtonIcon
+
   _click_listener: any
 
   public *controls() { }
@@ -38,7 +39,7 @@ export namespace ButtonIcon {
 export interface ButtonIcon extends ButtonIcon.Attrs { }
 
 export class ButtonIcon extends ClickableIcon {
-  properties: ButtonIcon.Props
+  declare properties: ButtonIcon.Props
   declare __view_type__: ButtonIconView
   static __module__ = "panel.models.icon"
 

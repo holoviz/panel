@@ -6,8 +6,9 @@ import {LayoutDOM, LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 import type * as p from "@bokehjs/core/properties"
 
 export class PanelMarkupView extends WidgetView {
+  declare model: Markup
+
   container: HTMLDivElement
-  model: Markup
   _initialized_stylesheets: any
 
   connect_signals(): void {
@@ -143,7 +144,8 @@ export function set_size(el: HTMLElement, model: HTMLBox, adjustMargin: boolean 
 }
 
 export abstract class HTMLBoxView extends LayoutDOMView {
-  override model: HTMLBox
+  declare model: HTMLBox
+
   _initialized_stylesheets: any
 
   connect_signals(): void {
@@ -193,7 +195,7 @@ export namespace HTMLBox {
 export interface HTMLBox extends HTMLBox.Attrs {}
 
 export abstract class HTMLBox extends LayoutDOM {
-  override properties: HTMLBox.Props
+  declare properties: HTMLBox.Props
 
   constructor(attrs?: Partial<HTMLBox.Attrs>) {
     super(attrs)

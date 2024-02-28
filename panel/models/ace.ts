@@ -19,7 +19,8 @@ function ID() {
 }
 
 export class AcePlotView extends HTMLBoxView {
-  model: AcePlot
+  declare model: AcePlot
+
   protected _editor: Ace.Editor
   protected _langTools: unknown
   protected _modelist: ModeList
@@ -129,7 +130,7 @@ export namespace AcePlot {
 export interface AcePlot extends AcePlot.Attrs {}
 
 export class AcePlot extends HTMLBox {
-  properties: AcePlot.Props
+  declare properties: AcePlot.Props
 
   constructor(attrs?: Partial<AcePlot.Attrs>) {
     super(attrs)

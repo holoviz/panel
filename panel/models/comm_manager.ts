@@ -11,7 +11,7 @@ export const comm_settings: any = {
 }
 
 export class CommManagerView extends View {
-  override model: CommManager
+  declare model: CommManager
 }
 
 export namespace CommManager {
@@ -28,8 +28,8 @@ export namespace CommManager {
 export interface CommManager extends CommManager.Attrs {}
 
 export class CommManager extends Model {
-  override properties: CommManager.Props
-  override __view_type__: CommManagerView
+  declare properties: CommManager.Props
+  declare __view_type__: CommManagerView
 
   ns: any
   _receiver: Receiver

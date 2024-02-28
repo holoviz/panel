@@ -65,7 +65,7 @@ function unpress(btn_list: HTMLButtonElement[]): void {
 }
 
 export class PlayerView extends WidgetView {
-  model: Player
+  declare model: Player
 
   protected buttonEl: HTMLDivElement
   protected groupEl: HTMLDivElement
@@ -437,7 +437,7 @@ export interface Player extends Player.Attrs { }
 
 export class Player extends Widget {
 
-  properties: Player.Props
+  declare properties: Player.Props
 
   constructor(attrs?: Partial<Player.Attrs>) {
     super(attrs)

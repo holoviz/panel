@@ -4,7 +4,7 @@ import {PanelMarkupView} from "./layout"
 import {htmlDecode} from "./html"
 
 export class PDFView extends PanelMarkupView {
-  model: PDF
+  declare model: PDF
 
   connect_signals(): void {
     super.connect_signals()
@@ -61,7 +61,7 @@ export namespace PDF {
 export interface PDF extends PDF.Attrs {}
 
 export class PDF extends Markup {
-  properties: PDF.Props
+  declare properties: PDF.Props
 
   constructor(attrs?: Partial<PDF.Attrs>) {
     super(attrs)

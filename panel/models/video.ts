@@ -3,7 +3,8 @@ import type * as p from "@bokehjs/core/properties"
 import {HTMLBox, HTMLBoxView} from "./layout"
 
 export class VideoView extends HTMLBoxView {
-  model: Video
+  declare model: Video
+
   protected videoEl: HTMLVideoElement
   protected containerEl: HTMLElement
   protected dialogEl: HTMLElement
@@ -161,7 +162,7 @@ export namespace Video {
 export interface Video extends Video.Attrs {}
 
 export class Video extends HTMLBox {
-  properties: Video.Props
+  declare properties: Video.Props
 
   constructor(attrs?: Partial<Video.Attrs>) {
     super(attrs)

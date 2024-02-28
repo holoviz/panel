@@ -118,7 +118,8 @@ const _isHidden = (gd: any) => {
 }
 
 export class PlotlyPlotView extends HTMLBoxView {
-  model: PlotlyPlot
+  declare model: PlotlyPlot
+
   _setViewport: Function
   _settingViewport: boolean = false
   _plotInitialized: boolean = false
@@ -437,7 +438,7 @@ export namespace PlotlyPlot {
 export interface PlotlyPlot extends PlotlyPlot.Attrs {}
 
 export class PlotlyPlot extends HTMLBox {
-  properties: PlotlyPlot.Props
+  declare properties: PlotlyPlot.Props
 
   constructor(attrs?: Partial<PlotlyPlot.Attrs>) {
     super(attrs)
