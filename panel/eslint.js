@@ -76,6 +76,7 @@ module.exports = {
       "FunctionExpression": {"body": 1, "parameters": "off"},
       "ignoredNodes": ["ConditionalExpression"],
     }],
+    "@typescript-eslint/no-floating-promises": ["error", {ignoreVoid: true}],
     "no-debugger": "error",
     "no-floating-decimal": ["error"],
     "no-multiple-empty-lines": ["error", {"max": 1, "maxBOF": 0, "maxEOF": 0}],
@@ -112,6 +113,7 @@ module.exports = {
     }],
     "guard-for-in": ["error"],
     "quotes": ["error", "double", {"avoidEscape": true, "allowTemplateLiterals": false}],
+    "curly": ["error", "all"],
     "prefer-template": ["error"],
     "generator-star-spacing": ["error", {
       "before": false,
@@ -119,6 +121,6 @@ module.exports = {
       "anonymous": {"before": false, "after": true},
       "method": {"before": true, "after": false},
     }],
-    "yield-star-spacing": ["error", {"before": false, "after": true}]
-  }
+    "yield-star-spacing": ["error", {"before": false, "after": true}],
+  },
 }
