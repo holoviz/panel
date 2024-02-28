@@ -15,6 +15,7 @@ from panel.layout import Column, Row
 from panel.pane.image import PNG, SVG, Image
 from panel.pane.markup import HTML, DataFrame, Markdown
 from panel.pane.media import Audio
+from panel.param import ParamFunction
 from panel.tests.util import mpl_available, mpl_figure
 from panel.widgets.button import Button
 from panel.widgets.input import (
@@ -28,7 +29,7 @@ SVG_FILE = 'https://assets.holoviz.org/panel/samples/svg_sample.svg'
 
 class TestChatMessage:
     def test_layout(self):
-        message = ChatMessage(object="ABC")
+        message = ChatMessage(object="ABC", header_objects=["Header Test"], footer_objects=["Footer Test"])
         columns = message._composite.objects
         assert len(columns) == 2
 
@@ -36,10 +37,14 @@ class TestChatMessage:
         assert isinstance(avatar_pane, HTML)
         assert avatar_pane.object == "🧑"
 
-        row = columns[1][0]
-        user_pane = row[0]
+        header_row = columns[1][0]
+        user_pane = header_row[0]
         assert isinstance(user_pane, HTML)
         assert user_pane.object == "User"
+
+        header_objects = header_row[1][0]
+        assert isinstance(header_objects, Row)
+        assert isinstance(header_objects.objects[0], ParamFunction)
 
         center_row = columns[1][1]
         assert isinstance(center_row, Row)
@@ -51,10 +56,14 @@ class TestChatMessage:
         icons = center_row[1]
         assert isinstance(icons, ChatReactionIcons)
 
-        footer_row = columns[1][2]
-        assert isinstance(footer_row, Row)
+        footer_col = columns[1][2]
+        assert isinstance(footer_col, Column)
 
-        timestamp_pane = footer_row[0]
+        footer_objects = footer_col[0][0]
+        assert isinstance(footer_objects, Row)
+        assert isinstance(footer_objects.objects[0], ParamFunction)
+
+        timestamp_pane = footer_col[1]
         assert isinstance(timestamp_pane, HTML)
 
     def test_reactions_link(self):
