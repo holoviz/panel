@@ -1,6 +1,6 @@
 import {select, option} from "@bokehjs/core/dom"
 import {isString} from "@bokehjs/core/util/types"
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 
 import {InputWidget, InputWidgetView} from "@bokehjs/models/widgets/input_widget"
 import * as inputs from "@bokehjs/styles/widgets/inputs.css"
@@ -27,14 +27,15 @@ export class SingleSelectView extends InputWidgetView {
   _render_input(): HTMLElement {
     const options = this.model.options.map((opt) => {
       let value, _label
-      if (isString(opt))
+      if (isString(opt)) {
         value = _label  = opt
-      else
+      } else {
         [value, _label] = opt
+      }
 
-      let disabled = this.model.disabled_options.includes(value)
+      const disabled = this.model.disabled_options.includes(value)
 
-      return option({value: value, disabled: disabled}, _label)
+      return option({value, disabled}, _label)
     })
 
     this.input_el = select({
@@ -43,7 +44,7 @@ export class SingleSelectView extends InputWidgetView {
       name: this.model.name,
       disabled: this.model.disabled,
     }, options)
-    this.input_el.style.backgroundImage = 'none';
+    this.input_el.style.backgroundImage = "none"
 
     this.input_el.addEventListener("change", () => this.change_input())
     return this.input_el
@@ -52,9 +53,11 @@ export class SingleSelectView extends InputWidgetView {
   render_selection(): void {
     const selected = this.model.value
 
-    for (const el of this.input_el.querySelectorAll('option'))
-      if (el.value === selected)
+    for (const el of this.input_el.querySelectorAll("option")) {
+      if (el.value === selected) {
         el.selected = true
+      }
+    }
 
     // Note that some browser implementations might not reduce
     // the number of visible options for size <= 3.
@@ -62,10 +65,10 @@ export class SingleSelectView extends InputWidgetView {
   }
 
   change_input(): void {
-    const is_focused = this.el.querySelector('select:focus') != null
+    const is_focused = this.el.querySelector("select:focus") != null
 
     let value = null
-    for (const el of this.shadow_el.querySelectorAll('option')) {
+    for (const el of this.shadow_el.querySelectorAll("option")) {
       if (el.selected) {
         value = el.value
         break
@@ -78,8 +81,9 @@ export class SingleSelectView extends InputWidgetView {
     // so that even if python on_change callback is invoked,
     // focus remains on <select> and one can seamlessly scroll
     // up/down.
-    if (is_focused)
+    if (is_focused) {
       this.input_el.focus()
+    }
   }
 }
 

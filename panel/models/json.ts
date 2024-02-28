@@ -1,5 +1,5 @@
 import {Enum} from "@bokehjs/core/kinds"
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 import {Markup} from "@bokehjs/models/widgets/markup"
 import JSONFormatter from "json-formatter-js"
 import {PanelMarkupView} from "./layout"
@@ -16,22 +16,23 @@ export class JSONView extends PanelMarkupView {
   render(): void {
     super.render()
     const text = this.model.text.replace(/(\r\n|\n|\r)/gm, "")
-    let json;
+    let json
     try {
       json = window.JSON.parse(text)
-    } catch(err) {
-      this.container.innerHTML = "<b>Invalid JSON:</b> " + err.toString()
+    } catch (err) {
+      this.container.innerHTML = `<b>Invalid JSON:</b> ${err.toString()}`
       return
     }
     const config = {hoverPreviewEnabled: this.model.hover_preview, theme: this.model.theme}
     const depth = this.model.depth == null ? Infinity : this.model.depth
     const formatter = new JSONFormatter(json, depth, config)
     const rendered = formatter.render()
-    let style = "border-radius: 5px; padding: 10px; width: 100%; height: 100%;";
-    if (this.model.theme == "dark")
-      rendered.style.cssText = "background-color: rgb(30, 30, 30);" + style;
-    else
-      rendered.style.cssText = style;
+    const style = "border-radius: 5px; padding: 10px; width: 100%; height: 100%;"
+    if (this.model.theme == "dark") {
+      rendered.style.cssText = `background-color: rgb(30, 30, 30);${style}`
+    } else {
+      rendered.style.cssText = style
+    }
     this.container.append(rendered)
   }
 }

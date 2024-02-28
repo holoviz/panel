@@ -1,10 +1,9 @@
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
 import {ImportedStyleSheet} from "@bokehjs/core/dom"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {HTMLBox, HTMLBoxView} from "./layout"
 import type {Attrs} from "@bokehjs/core/types"
-
 
 export class JSONEditEvent extends ModelEvent {
   constructor(readonly data: any) {
@@ -19,7 +18,6 @@ export class JSONEditEvent extends ModelEvent {
     this.prototype.event_name = "json_edit"
   }
 }
-
 
 export class JSONEditorView extends HTMLBoxView {
   model: JSONEditor
@@ -43,15 +41,16 @@ export class JSONEditorView extends HTMLBoxView {
       this.editor.options.schema = this.model.schema
     })
     this.on_change([disabled, mode], () => {
-      const mode = this.model.disabled ? 'view': this.model.mode;
+      const mode = this.model.disabled ? "view": this.model.mode
       this.editor.setMode(mode)
     })
   }
 
   override stylesheets(): StyleSheetLike[] {
     const styles = super.stylesheets()
-    for (const css of this.model.css)
+    for (const css of this.model.css) {
       styles.push(new ImportedStyleSheet(css))
+    }
     return styles
   }
 
@@ -61,11 +60,11 @@ export class JSONEditorView extends HTMLBoxView {
   }
 
   render(): void {
-    super.render();
-    const mode = this.model.disabled ? 'view': this.model.mode;
+    super.render()
+    const mode = this.model.disabled ? "view": this.model.mode
     this.editor = new (window as any).JSONEditor(this.shadow_el, {
       menu: this.model.menu,
-      mode: mode,
+      mode,
       onChangeJSON: (json: any) => {
         this.model.data = json
       },
@@ -75,8 +74,8 @@ export class JSONEditorView extends HTMLBoxView {
       search: this.model.search,
       schema: this.model.schema,
       templates: this.model.templates,
-    });
-    this.editor.set(this.model.data);
+    })
+    this.editor.set(this.model.data)
   }
 }
 
@@ -110,7 +109,7 @@ export class JSONEditor extends HTMLBox {
     this.define<JSONEditor.Props>(({Any, List, Bool, Str}) => ({
       css:       [ List(Str), [] ],
       data:      [ Any,           {} ],
-      mode:      [ Str,    'tree' ],
+      mode:      [ Str,    "tree" ],
       menu:      [ Bool,     true ],
       search:    [ Bool,     true ],
       selection: [ List(Any),    [] ],

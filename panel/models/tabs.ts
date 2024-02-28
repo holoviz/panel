@@ -1,4 +1,4 @@
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 import * as tabs from "@bokehjs/styles/tabs.css"
 
 import {Container} from "@bokehjs/core/layout/grid"
@@ -24,7 +24,7 @@ export class TabsView extends BkTabsView {
     super.connect_signals()
     let view: any = this
     while (view != null) {
-      if (view.model.type.endsWith('Tabs')) {
+      if (view.model.type.endsWith("Tabs")) {
         view.connect(view.model.properties.active.change, () => this.update_zindex())
       }
       view = view.parent || view._parent // Handle ReactiveHTML
@@ -35,7 +35,7 @@ export class TabsView extends BkTabsView {
     let parent: any = this.parent
     let current_view: any = this
     while (parent != null) {
-      if (parent.model.type.endsWith('Tabs')) {
+      if (parent.model.type.endsWith("Tabs")) {
         if (parent.child_views.indexOf(current_view) !== parent.model.active) {
           return false
         }
@@ -55,13 +55,14 @@ export class TabsView extends BkTabsView {
     const {child_views} = this
     for (const child_view of child_views) {
       if (child_view != null && child_view.el != null) {
-	child_view.el.style.zIndex = ""
+        child_view.el.style.zIndex = ""
       }
     }
     if (this.is_visible) {
       const active = child_views[this.model.active]
-      if (active != null && active.el != null)
+      if (active != null && active.el != null) {
         active.el.style.zIndex = "1"
+      }
     }
   }
 
@@ -70,15 +71,17 @@ export class TabsView extends BkTabsView {
 
     const {child_views} = this
     for (const child_view of child_views) {
-      if (child_view !== undefined)
+      if (child_view !== undefined) {
         hide(child_view.el)
+      }
     }
 
     const {active} = this.model
     if (active in child_views) {
       const tab = child_views[active]
-      if (tab !== undefined)
+      if (tab !== undefined) {
         show(tab.el)
+      }
     }
   }
 
@@ -92,8 +95,9 @@ export class TabsView extends BkTabsView {
     const layoutable = new Container<LayoutDOMView>()
 
     for (const view of this.child_views) {
-      if (view == undefined)
+      if (view == undefined) {
         continue
+      }
       view.style.append(":host", {grid_area: "stack"})
 
       if (view instanceof LayoutDOMView && view.layout != null) {
@@ -129,8 +133,9 @@ export class TabsView extends BkTabsView {
     if (i in child_views) {
       const view: any = child_views[i]
       show(view.el)
-      if (view.invalidate_render == null)
-	view.invalidate_render()
+      if (view.invalidate_render == null) {
+        view.invalidate_render()
+      }
     }
   }
 }

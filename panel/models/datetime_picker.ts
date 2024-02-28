@@ -4,12 +4,11 @@ import {InputWidget, InputWidgetView} from "@bokehjs/models/widgets/input_widget
 import type {StyleSheetLike} from "@bokehjs/core/dom"
 import {bounding_box, input} from "@bokehjs/core/dom"
 import {CalendarPosition} from "@bokehjs/core/enums"
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 import {isString} from "@bokehjs/core/util/types"
 
 import * as inputs from "@bokehjs/styles/widgets/inputs.css"
 import flatpickr_css from "@bokehjs/styles/widgets/flatpickr.css"
-
 
 type DateStr = string
 type DatesList = (DateStr | [DateStr, DateStr])[]
@@ -17,9 +16,9 @@ type DatesList = (DateStr | [DateStr, DateStr])[]
 function _convert_date_list(value: DatesList): flatpickr.Options.DateLimit[] {
   const result: flatpickr.Options.DateLimit[] = []
   for (const item of value) {
-    if (isString(item))
+    if (isString(item)) {
       result.push(item)
-    else {
+    } else {
       const [from, to] = item
       result.push({from, to})
     }
@@ -36,7 +35,7 @@ export class DatetimePickerView extends InputWidgetView {
     super.connect_signals()
 
     const {value, min_date, max_date, disabled_dates, enabled_dates, inline,
-      enable_time, enable_seconds, military_time, date_format, mode} = this.model.properties
+           enable_time, enable_seconds, military_time, date_format, mode} = this.model.properties
     this.connect(value.change, () => this.model.value ? this._picker?.setDate(this.model.value) : this._clear())
     this.connect(min_date.change, () => this._picker?.set("minDate", this.model.min_date))
     this.connect(max_date.change, () => this._picker?.set("maxDate", this.model.max_date))
@@ -79,8 +78,9 @@ export class DatetimePickerView extends InputWidgetView {
   }
 
   render(): void {
-    if (this._picker != null)
+    if (this._picker != null) {
       return
+    }
 
     super.render()
 
@@ -99,14 +99,18 @@ export class DatetimePickerView extends InputWidgetView {
     }
 
     const {min_date, max_date, disabled_dates, enabled_dates} = this.model
-    if (min_date != null)
+    if (min_date != null) {
       options.minDate = min_date
-    if (max_date != null)
+    }
+    if (max_date != null) {
       options.maxDate = max_date
-    if (disabled_dates != null)
+    }
+    if (disabled_dates != null) {
       options.disable = _convert_date_list(disabled_dates)
-    if (enabled_dates != null)
+    }
+    if (enabled_dates != null) {
       options.enable = _convert_date_list(enabled_dates)
+    }
 
     this._picker = flatpickr(this.input_el, options)
     this._picker.maxDateHasTime = true
@@ -119,8 +123,9 @@ export class DatetimePickerView extends InputWidgetView {
   }
 
   protected _on_close(_selected_dates: Date[], date_string: string, _instance: flatpickr.Instance): void {
-    if (this.model.mode == "range" && !date_string.includes("to"))
+    if (this.model.mode == "range" && !date_string.includes("to")) {
       return
+    }
     this.model.value = date_string
     this.change_input()
   }
@@ -163,7 +168,9 @@ export class DatetimePickerView extends InputWidgetView {
     self.calendarContainer.classList.toggle("arrowTop", !showOnTop)
     self.calendarContainer.classList.toggle("arrowBottom", showOnTop)
 
-    if (self.config.inline) return
+    if (self.config.inline) {
+      return
+    }
 
     let left = window.scrollX + inputBounds.left
     let isCenter = false
@@ -189,7 +196,9 @@ export class DatetimePickerView extends InputWidgetView {
 
     self.calendarContainer.classList.toggle("rightMost", rightMost)
 
-    if (self.config.static) return
+    if (self.config.static) {
+      return
+    }
 
     self.calendarContainer.style.top = `${top}px`
 

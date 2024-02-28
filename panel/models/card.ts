@@ -1,6 +1,6 @@
 import {Column, ColumnView} from "./column"
 import * as DOM from "@bokehjs/core/dom"
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 
 export class CardView extends ColumnView {
   model: Card
@@ -18,8 +18,9 @@ export class CardView extends ColumnView {
 
     this.on_change([active_header_background, collapsed, header_background], () => {
       const header_background = this.header_background
-      if (header_background == null)
-	return
+      if (header_background == null) {
+        return
+      }
       this.child_views[0].el.style.backgroundColor = header_background
       this.header_el.style.backgroundColor = header_background
     })
@@ -32,19 +33,21 @@ export class CardView extends ColumnView {
 
   get header_background(): string | null {
     let header_background = this.model.header_background
-    if (!this.model.collapsed && this.model.active_header_background)
+    if (!this.model.collapsed && this.model.active_header_background) {
       header_background = this.model.active_header_background
+    }
     return header_background
   }
 
   render(): void {
     this.empty()
 
-    if (this.model.collapsed)
+    if (this.model.collapsed) {
       this.collapsed_style.replace(":host", {
-	"height": "fit-content",
-	"flex": "none"
+        height: "fit-content",
+        flex: "none",
       })
+    }
 
     this._update_stylesheets()
     this._update_css_classes()
@@ -84,8 +87,9 @@ export class CardView extends ColumnView {
       header.after_render()
     }
 
-    if (this.model.collapsed)
+    if (this.model.collapsed) {
       return
+    }
 
     for (const child_view of this.child_views.slice(1)) {
       this.shadow_el.appendChild(child_view.el)
@@ -108,21 +112,22 @@ export class CardView extends ColumnView {
     for (const child_view of this.child_views.slice(1)) {
       if (this.model.collapsed) {
         this.shadow_el.removeChild(child_view.el)
-	child_view.model.visible = false
+        child_view.model.visible = false
       } else {
-	child_view.render()
-	child_view.after_render()
+        child_view.render()
+        child_view.after_render()
         this.shadow_el.appendChild(child_view.el)
-	child_view.model.visible = true
+        child_view.model.visible = true
       }
     }
     if (this.model.collapsed) {
       this.collapsed_style.replace(":host", {
-	"height": "fit-content",
-	'flex': "none"
+        height: "fit-content",
+        flex: "none",
       })
-    } else
+    } else {
       this.collapsed_style.clear()
+    }
     this.button_el.children[0].innerHTML = this.model.collapsed ? "\u25ba" : "\u25bc"
     this.invalidate_layout()
   }

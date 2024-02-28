@@ -2,14 +2,14 @@ import {HTMLBox, HTMLBoxView} from "./layout"
 import {build_view} from "@bokehjs/core/build_views"
 import {Plot} from "@bokehjs/models/plots"
 import {Line, Step, VArea, VBar} from "@bokehjs/models/glyphs"
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 import {div} from "@bokehjs/core/dom"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 import {BasicTickFormatter, NumeralTickFormatter, TickFormatter} from "@bokehjs/models/formatters"
 
-const red: string="#d9534f";
-const green: string="#5cb85c";
-const blue: string="#428bca";
+const red: string="#d9534f"
+const green: string="#5cb85c"
+const blue: string="#428bca"
 
 export class TrendIndicatorView extends HTMLBoxView {
   model: TrendIndicator
@@ -72,48 +72,48 @@ export class TrendIndicatorView extends HTMLBoxView {
       min_border: 0,
       sizing_mode: "stretch_both",
       toolbar_location: null,
-    });
+    })
 
-    var source = this.model.source
-    if (this.model.plot_type === "line"){
+    const source = this.model.source
+    if (this.model.plot_type === "line") {
       var line = new Line({
-        x: { field: this.model.plot_x },
-        y: { field: this.model.plot_y },
+        x: {field: this.model.plot_x},
+        y: {field: this.model.plot_y},
         line_width: 4,
         line_color: this.model.plot_color,
       })
       this.plot.add_glyph(line, source)
-    } else if (this.model.plot_type === "step"){
-      var step = new Step({
-        x: { field: this.model.plot_x },
-        y: { field: this.model.plot_y },
+    } else if (this.model.plot_type === "step") {
+      const step = new Step({
+        x: {field: this.model.plot_x},
+        y: {field: this.model.plot_y},
         line_width: 3,
         line_color: this.model.plot_color,
       })
       this.plot.add_glyph(step, source)
     } else if (this.model.plot_type === "area") {
-      var varea = new VArea({
-        x: { field: this.model.plot_x },
-        y1: { field: this.model.plot_y },
+      const varea = new VArea({
+        x: {field: this.model.plot_x},
+        y1: {field: this.model.plot_y},
         y2: 0,
         fill_color: this.model.plot_color,
         fill_alpha: 0.5,
       })
       this.plot.add_glyph(varea, source)
       var line = new Line({
-        x: { field: this.model.plot_x },
-        y: { field: this.model.plot_y },
+        x: {field: this.model.plot_x},
+        y: {field: this.model.plot_y},
         line_width: 3,
         line_color: this.model.plot_color,
       })
       this.plot.add_glyph(line, source)
     } else {
-      var vbar = new VBar({
-        x: { field: this.model.plot_x },
-        top: { field: this.model.plot_y },
+      const vbar = new VBar({
+        x: {field: this.model.plot_x},
+        top: {field: this.model.plot_y},
         width: 0.9,
         line_color: null,
-        fill_color: this.model.plot_color
+        fill_color: this.model.plot_color,
       })
       this.plot.add_glyph(vbar, source)
     }
@@ -129,16 +129,17 @@ export class TrendIndicatorView extends HTMLBoxView {
   }
 
   updateTextFontSize(): void {
-    this.updateTextFontSizeColumn();
+    this.updateTextFontSizeColumn()
   }
 
   updateTextFontSizeColumn(): void {
-    let elWidth = this.containerDiv.clientWidth;
-    let elHeight = this.containerDiv.clientHeight;
-    if (this.model.layout === "column")
+    let elWidth = this.containerDiv.clientWidth
+    let elHeight = this.containerDiv.clientHeight
+    if (this.model.layout === "column") {
       elHeight = Math.round(elHeight/2)
-    else
+    } else {
       elWidth = Math.round(elWidth/2)
+    }
 
     const widthTitle = this.model.title.length
     const widthValue = 2*this._value_format.length
@@ -150,64 +151,66 @@ export class TrendIndicatorView extends HTMLBoxView {
     const heightConstraint = elHeight/6
 
     const fontSize = Math.min(widthConstraint1, widthConstraint2, widthConstraint3, heightConstraint)
-    this.textDiv.style.fontSize = Math.trunc(fontSize) + "px";
-    this.textDiv.style.lineHeight = "1.3";
+    this.textDiv.style.fontSize = `${Math.trunc(fontSize)  }px`
+    this.textDiv.style.lineHeight = "1.3"
   }
 
   updateTitle(update_fontsize: boolean = false): void {
     this.titleDiv.innerText = this.model.title
-    if (update_fontsize)
+    if (update_fontsize) {
       this.updateTextFontSize()
+    }
   }
 
   updateValue(update_fontsize: boolean = false): void {
     this._value_format = this.model.formatter.doFormat([this.model.value], {loc: 0})[0]
     this.valueDiv.innerText = this._value_format
-    if (update_fontsize)
+    if (update_fontsize) {
       this.updateTextFontSize()
+    }
   }
 
   updateValue2(update_fontsize: boolean = false): void {
     this._value_change_format = this.model.change_formatter.doFormat([this.model.value_change], {loc: 0})[0]
     this.value2Div.innerText = this._value_change_format
     this.updateValueChange()
-    if (update_fontsize)
+    if (update_fontsize) {
       this.updateTextFontSize()
+    }
   }
 
   updateValueChange(): void {
     if (this.model.value_change > 0) {
       this.changeDiv.innerHTML = "&#9650;"
       this.changeDiv.style.color = this.model.pos_color
-    }
-    else if (this.model.value_change < 0) {
+    } else if (this.model.value_change < 0) {
       this.changeDiv.innerHTML = "&#9660;"
       this.changeDiv.style.color = this.model.neg_color
-    }
-    else {
+    } else {
       this.changeDiv.innerHTML = "&nbsp;"
       this.changeDiv.style.color = "inherit"
     }
   }
 
   updateLayout(): void {
-    if (this.model.layout === "column"){
+    if (this.model.layout === "column") {
       this.containerDiv.style.display = "block"
-      this.textDiv.style.height = "50%";
-      this.textDiv.style.width = "100%";
-      this.plotDiv.style.height = "50%";
-      this.plotDiv.style.width = "100%";
+      this.textDiv.style.height = "50%"
+      this.textDiv.style.width = "100%"
+      this.plotDiv.style.height = "50%"
+      this.plotDiv.style.width = "100%"
     } else {
       this.containerDiv.style.display = "flex"
-      this.textDiv.style.height = "100%";
-      this.textDiv.style.width = "";
-      this.plotDiv.style.height = "100%";
-      this.plotDiv.style.width = "";
+      this.textDiv.style.height = "100%"
+      this.textDiv.style.width = ""
+      this.plotDiv.style.height = "100%"
+      this.plotDiv.style.width = ""
       this.textDiv.style.flex = "1"
       this.plotDiv.style.flex = "1"
     }
-    if (this._has_finished)
+    if (this._has_finished) {
       this.invalidate_layout()
+    }
   }
 }
 
@@ -244,7 +247,7 @@ export class TrendIndicator extends HTMLBox {
   static __module__ = "panel.models.trend"
 
   static {
-    this.prototype.default_view = TrendIndicatorView;
+    this.prototype.default_view = TrendIndicatorView
 
     this.define<TrendIndicator.Props>(({Float, Str, Ref}) => ({
       description:  [ Str,              "" ],

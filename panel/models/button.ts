@@ -1,9 +1,10 @@
-import {Tooltip, TooltipView} from "@bokehjs/models/ui/tooltip"
-import { build_view, IterViews} from "@bokehjs/core/build_views"
-import * as p from "@bokehjs/core/properties"
+import type {TooltipView} from "@bokehjs/models/ui/tooltip"
+import {Tooltip} from "@bokehjs/models/ui/tooltip"
+import type {IterViews} from "@bokehjs/core/build_views"
+import {build_view} from "@bokehjs/core/build_views"
+import type * as p from "@bokehjs/core/properties"
 
 import {Button as BkButton, ButtonView as BkButtonView} from "@bokehjs/models/widgets/button"
-
 
 export class ButtonView extends BkButtonView {
   declare model: Button
@@ -12,15 +13,17 @@ export class ButtonView extends BkButtonView {
 
   override *children(): IterViews {
     yield* super.children()
-    if (this.tooltip != null)
+    if (this.tooltip != null) {
       yield this.tooltip
+    }
   }
 
   override async lazy_initialize(): Promise<void> {
     await super.lazy_initialize()
     const {tooltip} = this.model
-    if (tooltip != null)
+    if (tooltip != null) {
       this.tooltip = await build_view(tooltip, {parent: this})
+    }
   }
 
   override remove(): void {

@@ -1,4 +1,4 @@
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 import {Markup} from "@bokehjs/models/widgets/markup"
 import {PanelMarkupView} from "./layout"
 
@@ -6,8 +6,8 @@ export class MathJaxView extends PanelMarkupView {
   model: MathJax
 
   connect_signals(): void {
-    super.connect_signals();
-    this.connect(this.model.properties.text.change, () => this.render());
+    super.connect_signals()
+    this.connect(this.model.properties.text.change, () => this.render())
   }
 
   override render(): void {

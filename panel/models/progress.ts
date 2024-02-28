@@ -1,6 +1,6 @@
 import type {StyleSheetLike} from "@bokehjs/core/dom"
 import {ImportedStyleSheet} from "@bokehjs/core/dom"
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 import {HTMLBox, HTMLBoxView} from "./layout"
 
 export class ProgressView extends HTMLBoxView {
@@ -25,43 +25,48 @@ export class ProgressView extends HTMLBoxView {
   render(): void {
     super.render()
     const style: any = {...this.model.styles, display: "inline-block"}
-    this.progressEl = document.createElement('progress')
+    this.progressEl = document.createElement("progress")
     this.setValue()
     this.setMax()
 
     // Set styling
     this.setCSS()
-    for (const prop in style)
-      this.progressEl.style.setProperty(prop, style[prop]);
+    for (const prop in style) {
+      this.progressEl.style.setProperty(prop, style[prop])
+    }
     this.shadow_el.appendChild(this.progressEl)
   }
 
   override stylesheets(): StyleSheetLike[] {
     const styles = super.stylesheets()
-    for (const css of this.model.css)
+    for (const css of this.model.css) {
       styles.push(new ImportedStyleSheet(css))
+    }
     return styles
   }
 
   setCSS(): void {
-    let css = this.model.css_classes.join(" ") + " " + this.model.bar_color;
-    if (this.model.active)
-      css = css + " active";
-    this.progressEl.className = css;
+    let css = `${this.model.css_classes.join(" ")} ${this.model.bar_color}`
+    if (this.model.active) {
+      css = `${css} active`
+    }
+    this.progressEl.className = css
   }
 
   setValue(): void {
-    if (this.model.value == null)
+    if (this.model.value == null) {
       this.progressEl.value = 0
-    else if (this.model.value >= 0)
+    } else if (this.model.value >= 0) {
       this.progressEl.value = this.model.value
-    else if (this.model.value < 0)
+    } else if (this.model.value < 0) {
       this.progressEl.removeAttribute("value")
+    }
   }
 
   setMax(): void {
-    if (this.model.max != null)
+    if (this.model.max != null) {
       this.progressEl.max = this.model.max
+    }
   }
 }
 
@@ -92,7 +97,7 @@ export class Progress extends HTMLBox {
     this.prototype.default_view = ProgressView
     this.define<Progress.Props>(({Any, List, Bool, Float, Str}) => ({
       active:    [ Bool, true ],
-      bar_color: [ Str, 'primary' ],
+      bar_color: [ Str, "primary" ],
       css:       [ List(Str), [] ],
       max:       [ Float, 100 ],
       value:     [ Any, null ],

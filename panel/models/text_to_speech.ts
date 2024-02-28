@@ -1,19 +1,19 @@
-import * as p from "@bokehjs/core/properties"
-import { HTMLBox, HTMLBoxView } from "./layout"
+import type * as p from "@bokehjs/core/properties"
+import {HTMLBox, HTMLBoxView} from "./layout"
 
 function toVoicesList(voices: SpeechSynthesisVoice[]) {
-  var voicesList = [];
-  for (let voice of voices) {
-    var item = {
+  const voicesList = []
+  for (const voice of voices) {
+    const item = {
       default: voice.default,
       lang: voice.lang,
       local_service: voice.localService,
       name: voice.name,
       voice_uri: voice.voiceURI,
-    };
-    voicesList.push(item);
+    }
+    voicesList.push(item)
   }
-  return voicesList;
+  return voicesList
 }
 
 export class TextToSpeechView extends HTMLBoxView {
@@ -30,33 +30,36 @@ export class TextToSpeechView extends HTMLBoxView {
 
     // Hack: Keeps speeking for longer texts
     // https://stackoverflow.com/questions/21947730/chrome-speech-synthesis-with-longer-texts
-    this._callback = window.setInterval(function(){
-      if (!speechSynthesis.paused && speechSynthesis.speaking){
-        window.speechSynthesis.resume();
+    this._callback = window.setInterval(function() {
+      if (!speechSynthesis.paused && speechSynthesis.speaking) {
+        window.speechSynthesis.resume()
       }
     }, 10000)
 
     const populateVoiceList = () => {
-      if(typeof speechSynthesis === 'undefined')
+      if (typeof speechSynthesis === "undefined") {
         return
+      }
 
       // According to https://talkrapp.com/speechSynthesis.html not all voices are available
       // The article includes code for ios to handle this. Might be useful.
-      this.voices = speechSynthesis.getVoices();
-      if (!this.voices)
+      this.voices = speechSynthesis.getVoices()
+      if (!this.voices) {
         return
+      }
 
-      this.model.voices = toVoicesList(this.voices);
+      this.model.voices = toVoicesList(this.voices)
     }
-    populateVoiceList();
-    if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined)
+    populateVoiceList()
+    if (typeof speechSynthesis !== "undefined" && speechSynthesis.onvoiceschanged !== undefined) {
       speechSynthesis.onvoiceschanged = populateVoiceList
+    }
   }
 
-
   remove(): void {
-    if (this._callback != null)
+    if (this._callback != null) {
       clearInterval(this._callback)
+    }
     speechSynthesis.cancel()
     super.remove()
   }
@@ -69,7 +72,7 @@ export class TextToSpeechView extends HTMLBoxView {
     })
     this.connect(this.model.properties.pause.change, () => {
       this.model.pause = false
-      speechSynthesis.pause();
+      speechSynthesis.pause()
     })
     this.connect(this.model.properties.resume.change, () => {
       this.model.resume = false
@@ -82,14 +85,15 @@ export class TextToSpeechView extends HTMLBoxView {
   }
 
   speak(): void {
-    let utterance = new SpeechSynthesisUtterance(this.model.speak.text)
+    const utterance = new SpeechSynthesisUtterance(this.model.speak.text)
     utterance.pitch = this.model.speak.pitch
     utterance.volume = this.model.speak.volume
     utterance.rate = this.model.speak.rate
     if (this.model.voices) {
-      for (let voice of this.voices) {
-        if (voice.name === this.model.speak.voice)
+      for (const voice of this.voices) {
+        if (voice.name === this.model.speak.voice) {
           utterance.voice = voice
+        }
       }
     }
 
@@ -118,10 +122,12 @@ export class TextToSpeechView extends HTMLBoxView {
     super.render()
     // Hack: This will make sure voices are assigned when
     // Bokeh/ Panel is served first time with --show option.
-    if (!this.model.voices)
+    if (!this.model.voices) {
       this.model.voices = toVoicesList(this.voices)
-    if (this.model.speak != null && this.model.speak.text)
+    }
+    if (this.model.speak != null && this.model.speak.text) {
       this.speak()
+    }
   }
 }
 

@@ -1,4 +1,4 @@
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 import {Markup} from "@bokehjs/models/widgets/markup"
 import {PanelMarkupView} from "./layout"
 
@@ -6,13 +6,13 @@ export class KaTeXView extends PanelMarkupView {
   model: KaTeX
 
   connect_signals(): void {
-    super.connect_signals();
-    this.connect(this.model.properties.text.change, () => this.render());
+    super.connect_signals()
+    this.connect(this.model.properties.text.change, () => this.render())
   }
 
   render(): void {
-    super.render();
-    this.container.innerHTML = this.model.text;
+    super.render()
+    this.container.innerHTML = this.model.text
     if (!(window as any).renderMathInElement) {
       return
     }
@@ -21,8 +21,8 @@ export class KaTeXView extends PanelMarkupView {
         {left: "$$", right: "$$", display: true},
         {left: "\\[", right: "\\]", display: true},
         {left: "$", right: "$", display: false},
-        {left: "\\(", right: "\\)", display: false}
-      ]
+        {left: "\\(", right: "\\)", display: false},
+      ],
     })
   }
 }

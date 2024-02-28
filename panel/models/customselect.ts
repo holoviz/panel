@@ -1,6 +1,5 @@
-import { Select, SelectView } from "@bokehjs/models/widgets/select"
-import * as p from "@bokehjs/core/properties"
-
+import {Select, SelectView} from "@bokehjs/models/widgets/select"
+import type * as p from "@bokehjs/core/properties"
 
 export class CustomSelectView extends SelectView {
   override model: CustomSelect
@@ -11,21 +10,21 @@ export class CustomSelectView extends SelectView {
   }
 
   protected options_el(): HTMLOptionElement[] | HTMLOptGroupElement[] {
-    let opts = super.options_el()
+    const opts = super.options_el()
     opts.forEach((element) => {
       if (this.model.disabled_options.includes(element.value)) {
-        element.setAttribute('disabled', 'true')
+        element.setAttribute("disabled", "true")
       }
-  })
+    })
     return opts
-}
+  }
 
   protected _update_disabled_options(): void {
     for (const element of this.input_el.options) {
       if (this.model.disabled_options.includes(element.value)) {
-        element.setAttribute('disabled', 'true')
+        element.setAttribute("disabled", "true")
       } else {
-        element.removeAttribute('disabled')
+        element.removeAttribute("disabled")
       }
     }
   }

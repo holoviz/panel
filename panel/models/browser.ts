@@ -1,4 +1,4 @@
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 import {View} from "@bokehjs/core/view"
 import {Model} from "@bokehjs/model"
 
@@ -6,10 +6,10 @@ export class BrowserInfoView extends View {
   model: BrowserInfo
 
   initialize(): void {
-    super.initialize();
+    super.initialize()
 
     if (window.matchMedia != null) {
-      this.model.dark_mode = window.matchMedia('(prefers-color-scheme: dark)').matches
+      this.model.dark_mode = window.matchMedia("(prefers-color-scheme: dark)").matches
     }
     this.model.device_pixel_ratio = window.devicePixelRatio
     if (navigator != null) {
@@ -17,11 +17,13 @@ export class BrowserInfoView extends View {
       this.model.webdriver = navigator.webdriver
     }
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
-    if (timezone != null)
-      this.model.timezone = timezone;
+    if (timezone != null) {
+      this.model.timezone = timezone
+    }
     const timezone_offset = new Date().getTimezoneOffset()
-    if (timezone_offset != null)
-      this.model.timezone_offset = timezone_offset;
+    if (timezone_offset != null) {
+      this.model.timezone_offset = timezone_offset
+    }
     this._has_finished = true
     this.notify_finished()
   }
@@ -59,7 +61,7 @@ export class BrowserInfo extends Model {
       language:           [ Nullable(Str),  null ],
       timezone:           [ Nullable(Str),  null ],
       timezone_offset:    [ Nullable(Float),  null ],
-      webdriver:          [ Nullable(Bool), null ]
+      webdriver:          [ Nullable(Bool), null ],
     }))
   }
 }

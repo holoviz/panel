@@ -1,13 +1,13 @@
-import { Tooltip } from '@bokehjs/models/ui/tooltip'
-import { UIElement } from "@bokehjs/models/ui/ui_element"
-import { LayoutDOM, LayoutDOMView } from "@bokehjs/models/layouts/layout_dom"
+import {Tooltip} from "@bokehjs/models/ui/tooltip"
+import type {UIElement} from "@bokehjs/models/ui/ui_element"
+import {LayoutDOM, LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 
-import type {StyleSheetLike} from '@bokehjs/core/dom'
-import {div, label} from '@bokehjs/core/dom'
-import * as p from '@bokehjs/core/properties'
+import type {StyleSheetLike} from "@bokehjs/core/dom"
+import {div, label} from "@bokehjs/core/dom"
+import type * as p from "@bokehjs/core/properties"
 
-import inputs_css, * as inputs from '@bokehjs/styles/widgets/inputs.css'
-import icons_css from '@bokehjs/styles/icons.css'
+import inputs_css, * as inputs from "@bokehjs/styles/widgets/inputs.css"
+import icons_css from "@bokehjs/styles/icons.css"
 
 export class TooltipIconView extends LayoutDOMView {
   declare model: TooltipIcon
@@ -15,8 +15,9 @@ export class TooltipIconView extends LayoutDOMView {
   protected desc_el: HTMLElement
 
   get child_models(): UIElement[] {
-    if (this.model.description == null)
+    if (this.model.description == null) {
       return []
+    }
     return [this.model.description]
   }
 
@@ -33,8 +34,8 @@ export class TooltipIconView extends LayoutDOMView {
   override render(): void {
     super.render()
 
-    const icon_el = div({ class: inputs.icon })
-    this.desc_el = div({ class: inputs.description }, icon_el)
+    const icon_el = div({class: inputs.icon})
+    this.desc_el = div({class: inputs.description}, icon_el)
 
     this.model.description.target = this.desc_el
 
@@ -49,19 +50,21 @@ export class TooltipIconView extends LayoutDOMView {
     }
 
     this.on_change(this.model.description.properties.visible, () => {
-      const { visible } = this.model.description
+      const {visible} = this.model.description
       if (!visible) {
         persistent = false
       }
       toggle(visible)
     })
-    this.desc_el.addEventListener('mouseenter', () => {
+    this.desc_el.addEventListener("mouseenter", () => {
       toggle(true)
     })
-    this.desc_el.addEventListener('mouseleave', () => {
-      if (!persistent) toggle(false)
+    this.desc_el.addEventListener("mouseleave", () => {
+      if (!persistent) {
+        toggle(false)
+      }
     })
-    document.addEventListener('mousedown', (event) => {
+    document.addEventListener("mousedown", (event) => {
       const path = event.composedPath()
       const tooltip_view = this._child_views.get(this.model.description)
       if (tooltip_view !== undefined && path.includes(tooltip_view.el)) {
@@ -74,7 +77,7 @@ export class TooltipIconView extends LayoutDOMView {
         toggle(false)
       }
     })
-    window.addEventListener('blur', () => {
+    window.addEventListener("blur", () => {
       persistent = false
       toggle(false)
     })
@@ -97,7 +100,7 @@ export interface TooltipIcon extends TooltipIcon.Attrs {}
 export class TooltipIcon extends LayoutDOM {
   declare properties: TooltipIcon.Props
   declare __view_type__: TooltipIconView
-  static __module__ = 'panel.models.widgets'
+  static __module__ = "panel.models.widgets"
 
   constructor(attrs?: Partial<TooltipIcon.Attrs>) {
     super(attrs)
@@ -106,7 +109,7 @@ export class TooltipIcon extends LayoutDOM {
   static {
     this.prototype.default_view = TooltipIconView
 
-    this.define<TooltipIcon.Props>(({ Ref }) => ({
+    this.define<TooltipIcon.Props>(({Ref}) => ({
       description: [Ref(Tooltip), new Tooltip()],
     }))
   }

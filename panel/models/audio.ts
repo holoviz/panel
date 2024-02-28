@@ -1,4 +1,4 @@
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 
 import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 
@@ -30,25 +30,27 @@ export class AudioView extends HTMLBoxView {
 
   render(): void {
     super.render()
-    this.audioEl = document.createElement('audio')
+    this.audioEl = document.createElement("audio")
     this.audioEl.controls = true
     this.audioEl.src = this.model.value
     this.audioEl.currentTime = this.model.time
     this.audioEl.loop = this.model.loop
     this.audioEl.muted = this.model.muted
     this.audioEl.autoplay = this.model.autoplay
-    if (this.model.volume != null)
+    if (this.model.volume != null) {
       this.audioEl.volume = this.model.volume/100
-    else
+    } else {
       this.model.volume = this.audioEl.volume*100
+    }
     this.audioEl.onpause = () => this.model.paused = true
     this.audioEl.onplay = () => this.model.paused = false
     this.audioEl.ontimeupdate = () => this.update_time(this)
     this.audioEl.onvolumechange = () => this.update_volume(this)
     set_size(this.audioEl, this.model, false)
     this.shadow_el.appendChild(this.audioEl)
-    if (!this.model.paused)
+    if (!this.model.paused) {
       this.audioEl.play()
+    }
   }
 
   update_time(view: AudioView): void {
@@ -56,8 +58,9 @@ export class AudioView extends HTMLBoxView {
       view._setting = false
       return
     }
-    if ((Date.now() - view._time) < view.model.throttle)
+    if ((Date.now() - view._time) < view.model.throttle) {
       return
+    }
     view._blocked = true
     view.model.time = view.audioEl.currentTime
     view._time = Date.now()
@@ -85,10 +88,12 @@ export class AudioView extends HTMLBoxView {
   }
 
   set_paused(): void {
-    if (!this.audioEl.paused && this.model.paused)
+    if (!this.audioEl.paused && this.model.paused) {
       this.audioEl.pause()
-    if (this.audioEl.paused && !this.model.paused)
+    }
+    if (this.audioEl.paused && !this.model.paused) {
       this.audioEl.play()
+    }
   }
 
   set_volume(): void {
@@ -96,9 +101,9 @@ export class AudioView extends HTMLBoxView {
       this._blocked = false
       return
     }
-    this._setting = true;
+    this._setting = true
     if (this.model.volume != null) {
-      this.audioEl.volume = (this.model.volume as number)/100
+      this.audioEl.volume = this.model.volume/100
     }
   }
 
@@ -107,7 +112,7 @@ export class AudioView extends HTMLBoxView {
       this._blocked = false
       return
     }
-    this._setting = true;
+    this._setting = true
     this.audioEl.currentTime = this.model.time
   }
 
@@ -151,7 +156,7 @@ export class Audio extends HTMLBox {
       autoplay: [ Bool, false ],
       time:     [ Float,      0 ],
       throttle: [ Float,    250 ],
-      value:    [ Any,        '' ],
+      value:    [ Any,        "" ],
       volume:   [ Nullable(Float), null ],
     }))
   }
