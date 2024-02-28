@@ -186,6 +186,25 @@ class TestChatMessage:
         message = ChatMessage(object=button)
         assert message.object == button
 
+    def test_include_stylesheets_inplace_on_layouts(self):
+        message = ChatMessage(
+            Row(Markdown("Hello", css_classes=["message"]), stylesheets=["row.css"]),
+            stylesheets=["chat.css"]
+        )
+        assert message.stylesheets == ["chat.css"]
+        assert message.object.stylesheets == message._stylesheets + ["chat.css", "row.css"]
+
+        # # nested
+        message = ChatMessage(
+            Row(
+                Row(Markdown("Hello", css_classes=["message"]), stylesheets=["row2.css"]),
+                stylesheets=["row.css"]
+            ),
+            stylesheets=["chat.css"]
+        )
+        assert message.object.stylesheets == ChatMessage._stylesheets + ["chat.css", "row.css"]
+        assert message.object.objects[0].stylesheets == ChatMessage._stylesheets + ["chat.css", "row2.css"]
+
     @mpl_available
     def test_can_display_any_python_object_that_panel_can_display(self):
         # For example matplotlib figures
