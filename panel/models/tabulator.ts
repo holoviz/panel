@@ -20,7 +20,7 @@ export class TableEditEvent extends ModelEvent {
     super()
   }
 
-  protected get event_values(): Attrs {
+  protected override get event_values(): Attrs {
     return {model: this.origin, column: this.column, row: this.row, pre: this.pre}
   }
 
@@ -34,7 +34,7 @@ export class CellClickEvent extends ModelEvent {
     super()
   }
 
-  protected get event_values(): Attrs {
+  protected override get event_values(): Attrs {
     return {model: this.origin, column: this.column, row: this.row}
   }
 
@@ -48,7 +48,7 @@ export class SelectionEvent extends ModelEvent {
     super()
   }
 
-  protected get event_values(): Attrs {
+  protected override get event_values(): Attrs {
     return {model: this.origin, indices: this.indices, selected: this.selected, flush: this.flush}
   }
 
@@ -319,7 +319,7 @@ export class DataTabulatorView extends HTMLBoxView {
   _building: boolean = false
   _restore_scroll: boolean = false
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
 
     const p = this.model.properties
@@ -431,7 +431,7 @@ export class DataTabulatorView extends HTMLBoxView {
     return sorters
   }
 
-  invalidate_render(): void {
+  override invalidate_render(): void {
     this.tabulator.destroy()
     this.tabulator = null
     this.render()
@@ -452,7 +452,7 @@ export class DataTabulatorView extends HTMLBoxView {
     this._restore_scroll = true
   }
 
-  after_layout(): void {
+  override after_layout(): void {
     super.after_layout()
     if (this.tabulator != null && this._initializing) {
       this.redraw()
@@ -460,7 +460,7 @@ export class DataTabulatorView extends HTMLBoxView {
     this._initializing = false
   }
 
-  after_resize(): void {
+  override after_resize(): void {
     super.after_resize()
     this.redraw()
   }
@@ -472,7 +472,7 @@ export class DataTabulatorView extends HTMLBoxView {
     }
   }
 
-  render(): void {
+  override render(): void {
     if (this.tabulator != null) {
       this.tabulator.destroy()
     }
@@ -490,7 +490,7 @@ export class DataTabulatorView extends HTMLBoxView {
     this.init_callbacks()
   }
 
-  style_redraw(): void {
+  override style_redraw(): void {
     if (this.model.visible) {
       this.tabulator.element.style.visibility = "visible"
     }
@@ -672,7 +672,7 @@ export class DataTabulatorView extends HTMLBoxView {
     }
   }
 
-  get child_models(): LayoutDOM[] {
+  override get child_models(): LayoutDOM[] {
     const children: LayoutDOM[] = []
     for (const idx of this.model.expanded) {
       const child = this.model.children.get(idx)
@@ -1344,7 +1344,7 @@ export class DataTabulator extends HTMLBox {
     super(attrs)
   }
 
-  static __module__ = "panel.models.tabulator"
+  static override __module__ = "panel.models.tabulator"
 
   static {
     this.prototype.default_view = DataTabulatorView

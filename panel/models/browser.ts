@@ -5,7 +5,7 @@ import {Model} from "@bokehjs/model"
 export class BrowserInfoView extends View {
   declare model: BrowserInfo
 
-  initialize(): void {
+  override initialize(): void {
     super.initialize()
 
     if (window.matchMedia != null) {
@@ -46,7 +46,7 @@ export interface BrowserInfo extends BrowserInfo.Attrs { }
 export class BrowserInfo extends Model {
   declare properties: BrowserInfo.Props
 
-  static __module__ = "panel.models.browser"
+  static override __module__ = "panel.models.browser"
 
   constructor(attrs?: Partial<BrowserInfo.Attrs>) {
     super(attrs)

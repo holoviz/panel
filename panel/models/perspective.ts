@@ -46,7 +46,7 @@ export class PerspectiveClickEvent extends ModelEvent {
     super()
   }
 
-  protected get event_values(): Attrs {
+  protected override get event_values(): Attrs {
     return {model: this.origin, config: this.config, column_names: this.column_names, row: this.row}
   }
 
@@ -66,7 +66,7 @@ export class PerspectiveView extends HTMLBoxView {
   _current_config: any = null
   _loaded: boolean = false
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
 
     this.connect(this.model.source.properties.data.change, () => this.setData())
@@ -150,7 +150,7 @@ export class PerspectiveView extends HTMLBoxView {
     })
   }
 
-  disconnect_signals(): void {
+  override disconnect_signals(): void {
     if (this._config_listener != null) {
       this.perspective_element.removeEventListener("perspective-config-update", this._config_listener)
     }
@@ -163,7 +163,7 @@ export class PerspectiveView extends HTMLBoxView {
     super.remove()
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     this.worker = (window as any).perspective.worker()
     const container = div({
@@ -312,7 +312,7 @@ export class Perspective extends HTMLBox {
     super(attrs)
   }
 
-  static __module__ = "panel.models.perspective"
+  static override __module__ = "panel.models.perspective"
 
   static {
     this.prototype.default_view = PerspectiveView

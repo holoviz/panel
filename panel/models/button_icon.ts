@@ -6,13 +6,13 @@ export class ButtonIconView extends ClickableIconView {
 
   _click_listener: any
 
-  public *controls() { }
+  public override *controls() {}
 
-  update_cursor(): void {
+  override update_cursor(): void {
     this.icon_view.el.style.cursor = this.model.disabled ? "default" : "pointer"
   }
 
-  click(): void {
+  override click(): void {
     if (this.model.disabled) {
       return
     }
@@ -41,7 +41,7 @@ export interface ButtonIcon extends ButtonIcon.Attrs { }
 export class ButtonIcon extends ClickableIcon {
   declare properties: ButtonIcon.Props
   declare __view_type__: ButtonIconView
-  static __module__ = "panel.models.icon"
+  static override __module__ = "panel.models.icon"
 
   constructor(attrs?: Partial<ButtonIcon.Attrs>) {
     super(attrs)

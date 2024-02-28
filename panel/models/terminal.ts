@@ -10,7 +10,7 @@ export class KeystrokeEvent extends ModelEvent {
     super()
   }
 
-  protected get event_values(): Attrs {
+  protected override get event_values(): Attrs {
     return {model: this.origin, key: this.key}
   }
 
@@ -27,13 +27,13 @@ export class TerminalView extends HTMLBoxView {
   container: HTMLDivElement
   _rendered: boolean
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.output.change, this.write)
     this.connect(this.model.properties._clears.change, this.clear)
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     this.container = div({class: "terminal-container"})
     set_size(this.container, this.model)
@@ -111,7 +111,7 @@ export class TerminalView extends HTMLBoxView {
     this._rendered = true
   }
 
-  after_layout(): void {
+  override after_layout(): void {
     super.after_layout()
     this.fit()
   }
@@ -138,7 +138,7 @@ export class Terminal extends HTMLBox {
     super(attrs)
   }
 
-  static __module__ = "panel.models.terminal"
+  static override __module__ = "panel.models.terminal"
 
   static {
     this.prototype.default_view = TerminalView

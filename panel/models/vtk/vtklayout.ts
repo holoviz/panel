@@ -42,7 +42,7 @@ export abstract class AbstractVTKView extends HTMLBoxView {
   protected _annotations_container: HTMLDivElement
   protected _rendered: boolean
 
-  initialize(): void {
+  override initialize(): void {
     super.initialize()
     this._camera_callbacks = []
     this._renderable = true
@@ -176,7 +176,7 @@ export abstract class AbstractVTKView extends HTMLBoxView {
     }
   }
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     this.on_change(this.model.properties.orientation_widget, () => {
       this._orientation_widget_visibility(this.model.orientation_widget)
@@ -193,7 +193,7 @@ export abstract class AbstractVTKView extends HTMLBoxView {
     this.on_change(this.model.properties.annotations, () => this._add_annotations())
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     this._rendered = false
     if (this._vtk_renwin && this._vtk_container) {
@@ -220,7 +220,7 @@ export abstract class AbstractVTKView extends HTMLBoxView {
     this.shadow_el.appendChild(this._annotations_container)
   }
 
-  after_layout(): void {
+  override after_layout(): void {
     super.after_layout()
     if (this._renderable)
       this._vtk_renwin.resize() // resize call render method
@@ -232,12 +232,12 @@ export abstract class AbstractVTKView extends HTMLBoxView {
     }
   }
 
-  invalidate_render(): void {
+  override invalidate_render(): void {
     this._unsubscribe_camera_cb()
     super.invalidate_render()
   }
 
-  remove(): void {
+  override remove(): void {
     this._unsubscribe_camera_cb()
     window.removeEventListener("resize", this._vtk_renwin.resize)
     if (this._orientationWidget!=null) this._orientationWidget.delete()
@@ -500,7 +500,7 @@ export abstract class AbstractVTKPlot extends HTMLBox {
   declare properties: AbstractVTKPlot.Props
   renderer_el: any
 
-  static __module__ = "panel.models.vtk"
+  static override __module__ = "panel.models.vtk"
 
   constructor(attrs?: Partial<AbstractVTKPlot.Attrs>) {
     setup_vtkns()

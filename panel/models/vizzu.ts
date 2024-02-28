@@ -10,14 +10,14 @@ import {debounce} from  "debounce"
 import {HTMLBox, HTMLBoxView} from "./layout"
 
 export class VizzuEvent extends ModelEvent {
-  event_name: string = "vizzu_event"
-  publish: boolean = true
+  override event_name: string = "vizzu_event"
+  override publish: boolean = true
 
   constructor(readonly data: any) {
     super()
   }
 
-  protected get event_values(): Attrs {
+  protected override get event_values(): Attrs {
     return {model: this.origin, data: this.data}
   }
 }
@@ -32,7 +32,7 @@ export class VizzuChartView extends HTMLBoxView {
   vizzu_view: any
   _animating: boolean = false
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     const update = debounce(() => {
       if (!this.valid_config) {
@@ -135,7 +135,7 @@ export class VizzuChartView extends HTMLBoxView {
     return {series}
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     this.container = div({style: "display: contents;"})
     this.shadow_el.append(this.container)
@@ -181,7 +181,7 @@ export class VizzuChart extends HTMLBox {
     super(attrs)
   }
 
-  static __module__ = "panel.models.vizzu"
+  static override __module__ = "panel.models.vizzu"
 
   static {
     this.prototype.default_view = VizzuChartView

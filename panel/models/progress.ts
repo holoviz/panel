@@ -8,7 +8,7 @@ export class ProgressView extends HTMLBoxView {
 
   protected progressEl: HTMLProgressElement
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     const render = () => this.render()
     this.connect(this.model.properties.height.change, render)
@@ -23,7 +23,7 @@ export class ProgressView extends HTMLBoxView {
     this.connect(this.model.properties.max.change, () => this.setMax())
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     const style: any = {...this.model.styles, display: "inline-block"}
     this.progressEl = document.createElement("progress")
@@ -92,7 +92,7 @@ export class Progress extends HTMLBox {
     super(attrs)
   }
 
-  static __module__ = "panel.models.widgets"
+  static override __module__ = "panel.models.widgets"
 
   static {
     this.prototype.default_view = ProgressView

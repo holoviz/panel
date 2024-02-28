@@ -7,7 +7,7 @@ export class ColumnView extends BkColumnView {
 
   scroll_down_button_el: HTMLElement
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
 
     const {children, scroll_position, scroll_button_threshold} = this.model.properties
@@ -58,7 +58,7 @@ export class ColumnView extends BkColumnView {
     }
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     this.scroll_down_button_el = DOM.createElement("div", {class: "scroll-button"})
     this.shadow_el.appendChild(this.scroll_down_button_el)
@@ -71,7 +71,7 @@ export class ColumnView extends BkColumnView {
     })
   }
 
-  after_render(): void {
+  override after_render(): void {
     super.after_render()
     requestAnimationFrame(() => {
       if (this.model.scroll_position) {
@@ -104,7 +104,7 @@ export class Column extends BkColumn {
     super(attrs)
   }
 
-  static __module__ = "panel.models.layout"
+  static override __module__ = "panel.models.layout"
 
   static {
     this.prototype.default_view = ColumnView

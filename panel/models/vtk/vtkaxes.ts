@@ -35,7 +35,7 @@ export class VTKAxes extends Model {
     super(attrs)
   }
 
-  static __module__ = "panel.models.vtk"
+  static override __module__ = "panel.models.vtk"
 
   static {
     this.define<VTKAxes.Props>(({Any, Array, Boolean, Number}) => ({

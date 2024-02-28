@@ -78,7 +78,7 @@ export class CommManager extends Model {
 
   protected _document_listener: (event: DocumentChangedEvent) => void = (event) => this._document_changed(event)
 
-  protected _doc_attached(): void {
+  protected override _doc_attached(): void {
     super._doc_attached()
     if (this.document != null) {
       this.document.on_change(this._document_listener)
@@ -204,7 +204,7 @@ export class CommManager extends Model {
     }
   }
 
-  static __module__ = "panel.models.comm_manager"
+  static override __module__ = "panel.models.comm_manager"
 
   static {
     this.prototype.default_view = CommManagerView

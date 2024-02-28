@@ -10,7 +10,7 @@ export class DOMEvent extends ModelEvent {
     super()
   }
 
-  protected get event_values(): Attrs {
+  protected override get event_values(): Attrs {
     return {model: this.origin, node: this.node, data: this.data}
   }
 
@@ -41,7 +41,7 @@ export class HTMLView extends PanelMarkupView {
 
   _event_listeners: any = {}
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.text.change, () => {
       const html = this.process_tex()
@@ -73,7 +73,7 @@ export class HTMLView extends PanelMarkupView {
     }
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     this.container.style.visibility = "hidden"
     this.shadow_el.appendChild(this.container)
@@ -87,13 +87,13 @@ export class HTMLView extends PanelMarkupView {
     this.set_html(html)
   }
 
-  style_redraw(): void {
+  override style_redraw(): void {
     if (this.model.visible) {
       this.container.style.visibility = "visible"
     }
   }
 
-  process_tex(): string {
+  override process_tex(): string {
     const decoded = htmlDecode(this.model.text)
     const text = decoded || this.model.text
     if (this.model.disable_math || !this.contains_tex(text)) {
@@ -180,7 +180,7 @@ export class HTML extends Markup {
     super(attrs)
   }
 
-  static __module__ = "panel.models.markup"
+  static override __module__ = "panel.models.markup"
 
   static {
     this.prototype.default_view = HTMLView

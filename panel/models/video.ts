@@ -12,14 +12,14 @@ export class VideoView extends HTMLBoxView {
   private _time: any
   private _setting: boolean
 
-  initialize(): void {
+  override initialize(): void {
     super.initialize()
     this._blocked = false
     this._setting = false
     this._time = Date.now()
   }
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.loop.change, () => this.set_loop())
     this.connect(this.model.properties.paused.change, () => this.set_paused())
@@ -30,7 +30,7 @@ export class VideoView extends HTMLBoxView {
     this.connect(this.model.properties.volume.change, () => this.set_volume())
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     this.videoEl = document.createElement("video")
     this.containerEl = document.createElement("div")
@@ -168,7 +168,7 @@ export class Video extends HTMLBox {
     super(attrs)
   }
 
-  static __module__ = "panel.models.widgets"
+  static override __module__ = "panel.models.widgets"
 
   static {
     this.prototype.default_view = VideoView

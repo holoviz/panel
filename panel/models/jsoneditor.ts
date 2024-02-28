@@ -10,7 +10,7 @@ export class JSONEditEvent extends ModelEvent {
     super()
   }
 
-  protected get event_values(): Attrs {
+  protected override get event_values(): Attrs {
     return {model: this.origin, data: this.data}
   }
 
@@ -25,7 +25,7 @@ export class JSONEditorView extends HTMLBoxView {
   editor: any
   _menu_context: any
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     const {data, disabled, templates, menu, mode, search, schema} = this.model.properties
     this.on_change([data], () => this.editor.update(this.model.data))
@@ -60,7 +60,7 @@ export class JSONEditorView extends HTMLBoxView {
     this.editor.destroy()
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     const mode = this.model.disabled ? "view": this.model.mode
     this.editor = new (window as any).JSONEditor(this.shadow_el, {
@@ -103,7 +103,7 @@ export class JSONEditor extends HTMLBox {
     super(attrs)
   }
 
-  static __module__ = "panel.models.jsoneditor"
+  static override __module__ = "panel.models.jsoneditor"
 
   static {
     this.prototype.default_view = JSONEditorView

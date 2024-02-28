@@ -13,14 +13,14 @@ export class VideoStreamView extends HTMLBoxView {
   }
   protected timer: any
 
-  initialize(): void {
+  override initialize(): void {
     super.initialize()
     if (this.model.timeout !== null) {
       this.set_timeout()
     }
   }
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.timeout.change, () => this.set_timeout())
     this.connect(this.model.properties.snapshot.change, () => this.snapshot())
@@ -60,7 +60,7 @@ export class VideoStreamView extends HTMLBoxView {
     this.model.value = this.canvasEl.toDataURL(`image/${this.model.format}`, 0.95)
   }
 
-  remove(): void {
+  override remove(): void {
     super.remove()
     if (this.timer) {
       clearInterval(this.timer)
@@ -68,7 +68,7 @@ export class VideoStreamView extends HTMLBoxView {
     }
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     if (this.videoEl) {
       return
@@ -120,7 +120,7 @@ export class VideoStream extends HTMLBox {
     super(attrs)
   }
 
-  static __module__ = "panel.models.widgets"
+  static override __module__ = "panel.models.widgets"
 
   static {
     this.prototype.default_view = VideoStreamView

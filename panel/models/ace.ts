@@ -26,7 +26,7 @@ export class AcePlotView extends HTMLBoxView {
   protected _modelist: ModeList
   protected _container: HTMLDivElement
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.code.change, () => this._update_code_from_model())
     this.connect(this.model.properties.theme.change, () => this._update_theme())
@@ -39,7 +39,7 @@ export class AcePlotView extends HTMLBoxView {
     })
   }
 
-  render(): void {
+  override render(): void {
     super.render()
 
     this._container = div({
@@ -106,7 +106,7 @@ export class AcePlotView extends HTMLBoxView {
     this._editor.session.setAnnotations(this.model.annotations)
   }
 
-  after_layout(): void {
+  override after_layout(): void {
     super.after_layout()
     if (this._editor !== undefined) {
       this._editor.resize()
@@ -136,7 +136,7 @@ export class AcePlot extends HTMLBox {
     super(attrs)
   }
 
-  static __module__ = "panel.models.ace"
+  static override __module__ = "panel.models.ace"
 
   static {
     this.prototype.default_view = AcePlotView

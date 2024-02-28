@@ -6,7 +6,7 @@ import {htmlDecode} from "./html"
 export class PDFView extends PanelMarkupView {
   declare model: PDF
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     const p = this.model.properties
     const {text, width, height, embed, start_page} = p
@@ -15,7 +15,7 @@ export class PDFView extends PanelMarkupView {
     })
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     this.update()
   }
@@ -67,7 +67,7 @@ export class PDF extends Markup {
     super(attrs)
   }
 
-  static __module__ = "panel.models.markup"
+  static override __module__ = "panel.models.markup"
 
   static {
     this.prototype.default_view = PDFView

@@ -11,7 +11,7 @@ export class PanelMarkupView extends WidgetView {
   container: HTMLDivElement
   _initialized_stylesheets: any
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     const {width, height, min_height, max_height, margin, sizing_mode} = this.model.properties
     this.on_change([width, height, min_height, max_height, margin, sizing_mode], () => {
@@ -148,7 +148,7 @@ export abstract class HTMLBoxView extends LayoutDOMView {
 
   _initialized_stylesheets: any
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     const {width, height, min_height, max_height, margin, sizing_mode} = this.model.properties
     this.on_change([width, height, min_height, max_height, margin, sizing_mode], () => {
@@ -156,7 +156,7 @@ export abstract class HTMLBoxView extends LayoutDOMView {
     })
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     set_size(this.el, this.model)
   }

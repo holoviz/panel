@@ -6,20 +6,20 @@ import {vtkns} from "./util"
 export class VTKJSPlotView extends AbstractVTKView {
   declare model: VTKJSPlot
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.data.change, () => {
       this.invalidate_render()
     })
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     this._create_orientation_widget()
     this._set_axes()
   }
 
-  invalidate_render(): void {
+  override invalidate_render(): void {
     this._vtk_renwin = null
     super.invalidate_render()
   }

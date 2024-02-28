@@ -4,9 +4,9 @@ import type * as p from "@bokehjs/core/properties"
 export class ToggleIconView extends ClickableIconView {
   declare model: ToggleIcon
 
-  public *controls() { }
+  public override *controls() { }
 
-  click(): void {
+  override click(): void {
     if (this.model.disabled) {
       return
     }
@@ -25,7 +25,7 @@ export interface ToggleIcon extends ToggleIcon.Attrs { }
 export class ToggleIcon extends ClickableIcon {
   declare properties: ToggleIcon.Props
   declare __view_type__: ToggleIconView
-  static __module__ = "panel.models.icon"
+  static override __module__ = "panel.models.icon"
 
   constructor(attrs?: Partial<ToggleIcon.Attrs>) {
     super(attrs)

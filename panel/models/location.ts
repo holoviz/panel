@@ -7,7 +7,7 @@ export class LocationView extends View {
 
   _hash_listener: any
 
-  initialize(): void {
+  override initialize(): void {
     super.initialize()
 
     this.model.pathname = window.location.pathname
@@ -29,7 +29,7 @@ export class LocationView extends View {
     this.notify_finished()
   }
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
 
     this.connect(this.model.properties.pathname.change, () => this.update("pathname"))
@@ -38,7 +38,7 @@ export class LocationView extends View {
     this.connect(this.model.properties.reload.change, () => this.update("reload"))
   }
 
-  remove(): void {
+  override remove(): void {
     super.remove()
     window.removeEventListener("hashchange", this._hash_listener)
   }
@@ -87,7 +87,7 @@ export interface Location extends Location.Attrs { }
 export class Location extends Model {
   declare properties: Location.Props
 
-  static __module__ = "panel.models.location"
+  static override __module__ = "panel.models.location"
 
   constructor(attrs?: Partial<Location.Attrs>) {
     super(attrs)

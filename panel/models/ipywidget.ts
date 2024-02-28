@@ -13,7 +13,7 @@ export class IPyWidgetView extends HTMLBoxView {
   private ipychildren: any[]
   private manager: any
 
-  initialize(): void {
+  override initialize(): void {
     super.initialize()
     let manager: any
     if ((Jupyter != null) && (Jupyter.notebook != null)) {
@@ -53,7 +53,7 @@ export class IPyWidgetView extends HTMLBoxView {
     return [...super.stylesheets(), ...this._ipy_stylesheets()]
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     const {spec, state} = this.model.bundle
     this.manager.set_state(state).then(async (models: any) => {
@@ -96,7 +96,7 @@ export class IPyWidget extends HTMLBox {
     super(attrs)
   }
 
-  static __module__ = "panel.models.ipywidget"
+  static override __module__ = "panel.models.ipywidget"
 
   static {
     this.prototype.default_view = IPyWidgetView

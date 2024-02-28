@@ -7,13 +7,13 @@ import {PanelMarkupView} from "./layout"
 export class JSONView extends PanelMarkupView {
   declare model: JSON
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     const {depth, hover_preview, text, theme} = this.model.properties
     this.on_change([depth, hover_preview, text, theme], () => this.render())
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     const text = this.model.text.replace(/(\r\n|\n|\r)/gm, "")
     let json
@@ -58,7 +58,7 @@ export class JSON extends Markup {
     super(attrs)
   }
 
-  static __module__ = "panel.models.markup"
+  static override __module__ = "panel.models.markup"
 
   static {
     this.prototype.default_view = JSONView

@@ -132,7 +132,7 @@ export class PlotlyPlotView extends HTMLBoxView {
     this._relayouting = false
   }, 2000, false)
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     const {data, data_sources, layout, relayout, restyle} = this.model.properties
     this.on_change([data, data_sources, layout], () => {
@@ -178,7 +178,7 @@ export class PlotlyPlotView extends HTMLBoxView {
     super.remove()
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     this.container = div() as PlotlyHTMLElement
     set_size(this.container, this.model)
@@ -194,13 +194,13 @@ export class PlotlyPlotView extends HTMLBoxView {
     })
   }
 
-  style_redraw(): void {
+  override style_redraw(): void {
     if (this._rendered) {
       (window as any).Plotly.Plots.resize(this.container)
     }
   }
 
-  after_layout(): void {
+  override after_layout(): void {
     super.after_layout()
     if (this._rendered) {
       (window as any).Plotly.Plots.resize(this.container)
@@ -444,7 +444,7 @@ export class PlotlyPlot extends HTMLBox {
     super(attrs)
   }
 
-  static __module__ = "panel.models.plotly"
+  static override __module__ = "panel.models.plotly"
 
   static {
     this.prototype.default_view = PlotlyPlotView

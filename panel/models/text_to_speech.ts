@@ -22,7 +22,7 @@ export class TextToSpeechView extends HTMLBoxView {
   voices: SpeechSynthesisVoice[]
   _callback: any
 
-  initialize(): void {
+  override initialize(): void {
     super.initialize()
 
     this.model.paused = speechSynthesis.paused
@@ -57,7 +57,7 @@ export class TextToSpeechView extends HTMLBoxView {
     }
   }
 
-  remove(): void {
+  override remove(): void {
     if (this._callback != null) {
       clearInterval(this._callback)
     }
@@ -65,7 +65,7 @@ export class TextToSpeechView extends HTMLBoxView {
     super.remove()
   }
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
 
     this.connect(this.model.properties.speak.change, () => {
@@ -119,7 +119,7 @@ export class TextToSpeechView extends HTMLBoxView {
     this.model.pending = speechSynthesis.pending
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     // Hack: This will make sure voices are assigned when
     // Bokeh/ Panel is served first time with --show option.
@@ -155,7 +155,7 @@ export class TextToSpeech extends HTMLBox {
     super(attrs)
   }
 
-  static __module__ = "panel.models.text_to_speech"
+  static override __module__ = "panel.models.text_to_speech"
 
   static {
     this.prototype.default_view = TextToSpeechView

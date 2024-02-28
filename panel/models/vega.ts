@@ -14,7 +14,7 @@ export class VegaEvent extends ModelEvent {
     super()
   }
 
-  protected get event_values(): Attrs {
+  protected override get event_values(): Attrs {
     return {model: this.origin, data: this.data}
   }
 
@@ -34,7 +34,7 @@ export class VegaPlotView extends LayoutDOMView {
   _resize: any
   _rendered: boolean = false
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     const {data, show_actions, theme} = this.model.properties
     this._replot = debounce(() => this._plot(), 20)
@@ -116,7 +116,7 @@ export class VegaPlotView extends LayoutDOMView {
     return []
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     this._rendered = false
     this.container = div()
@@ -162,7 +162,7 @@ export class VegaPlotView extends LayoutDOMView {
     })
   }
 
-  after_layout(): void {
+  override after_layout(): void {
     super.after_layout()
     if (this.vega_view != null) {
       this._resize()
@@ -203,7 +203,7 @@ export class VegaPlot extends LayoutDOM {
     super(attrs)
   }
 
-  static __module__ = "panel.models.vega"
+  static override __module__ = "panel.models.vega"
 
   static {
     this.prototype.default_view = VegaPlotView

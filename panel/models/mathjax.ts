@@ -5,7 +5,7 @@ import {PanelMarkupView} from "./layout"
 export class MathJaxView extends PanelMarkupView {
   declare model: MathJax
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.text.change, () => this.render())
   }
@@ -32,7 +32,7 @@ export class MathJax extends Markup {
     super(attrs)
   }
 
-  static __module__ = "panel.models.mathjax"
+  static override __module__ = "panel.models.mathjax"
 
   static {
     this.prototype.default_view = MathJaxView

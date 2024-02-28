@@ -61,14 +61,14 @@ export class FeedView extends ColumnView {
     return nodes
   }
 
-  async update_children(): Promise<void> {
+  override async update_children(): Promise<void> {
     this._sync = false
     await super.update_children()
     this._sync = true
     this._last_visible?.el.scrollIntoView(true)
   }
 
-  async build_child_views(): Promise<UIElementView[]> {
+  override async build_child_views(): Promise<UIElementView[]> {
     const {created, removed} = await build_views(this._child_views, this.child_models, {parent: this})
 
     const visible = this.model.visible_children
@@ -89,14 +89,14 @@ export class FeedView extends ColumnView {
     return created
   }
 
-  scroll_to_latest(emit_event: boolean = true): void {
+  override scroll_to_latest(emit_event: boolean = true): void {
     if (emit_event) {
       this.model.trigger_event(new ScrollButtonClick())
     }
     super.scroll_to_latest()
   }
 
-  trigger_auto_scroll(): void {
+  override trigger_auto_scroll(): void {
     const limit = this.model.auto_scroll_limit
     const within_limit = this.distance_from_latest <= limit
     if (limit == 0 || !within_limit) {
@@ -123,7 +123,7 @@ export class Feed extends Column {
     super(attrs)
   }
 
-  static __module__ = "panel.models.feed"
+  static override __module__ = "panel.models.feed"
 
   static {
     this.prototype.default_view = FeedView

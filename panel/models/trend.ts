@@ -25,7 +25,7 @@ export class TrendIndicatorView extends HTMLBoxView {
   _value_format: string
   _value_change_format: string
 
-  initialize(): void {
+  override initialize(): void {
     super.initialize()
     this.containerDiv = div({style: "height:100%; width:100%;"})
     this.titleDiv = div({style: "font-size: 1em; word-wrap: break-word;"})
@@ -45,7 +45,7 @@ export class TrendIndicatorView extends HTMLBoxView {
     this.updateLayout()
   }
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
 
     const {pos_color, neg_color} = this.model.properties
@@ -59,7 +59,7 @@ export class TrendIndicatorView extends HTMLBoxView {
     this.connect(this.model.properties.layout.change, () => this.updateLayout())
   }
 
-  async render(): Promise<void> {
+  override async render(): Promise<void> {
     super.render()
     this.shadow_el.appendChild(this.containerDiv)
     await this.setPlot()
@@ -124,7 +124,7 @@ export class TrendIndicatorView extends HTMLBoxView {
     view.render_to(this.plotDiv)
   }
 
-  after_layout(): void {
+  override after_layout(): void {
     super.after_layout()
     this.updateTextFontSize()
   }
@@ -245,7 +245,7 @@ export class TrendIndicator extends HTMLBox {
     super(attrs)
   }
 
-  static __module__ = "panel.models.trend"
+  static override __module__ = "panel.models.trend"
 
   static {
     this.prototype.default_view = TrendIndicatorView

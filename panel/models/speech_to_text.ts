@@ -71,7 +71,7 @@ export class SpeechToTextView extends HTMLBoxView {
   recognition: any
   buttonEl: HTMLElement
 
-  initialize(): void {
+  override initialize(): void {
     super.initialize()
 
     this.recognition = new webkitSpeechRecognition()
@@ -146,7 +146,7 @@ export class SpeechToTextView extends HTMLBoxView {
     }
   }
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
 
     this.connect(this.model.properties.start.change, () => {
@@ -177,7 +177,7 @@ export class SpeechToTextView extends HTMLBoxView {
     this.recognition.grammars = deserializeGrammars(this.model.grammars)
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     if (!this.model.button_hide) {
       this.shadow_el.appendChild(this.buttonEl)
@@ -218,7 +218,7 @@ export class SpeechToText extends HTMLBox {
     super(attrs)
   }
 
-  static __module__ = "panel.models.speech_to_text"
+  static override __module__ = "panel.models.speech_to_text"
 
   static {
     this.prototype.default_view = SpeechToTextView

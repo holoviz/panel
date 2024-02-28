@@ -51,12 +51,12 @@ export class FileDownloadView extends InputWidgetView {
     }
   }
 
-  public *controls() {
+  override *controls() {
     yield (this.anchor_el as any)
     yield (this.button_el as any)
   }
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.button_type.change, () => this._update_button_style())
     this.connect(this.model.properties.filename.change, () => this._update_download())
@@ -135,13 +135,13 @@ export class FileDownloadView extends InputWidgetView {
     return this.button_el
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     this.group_el.style.display = "flex"
     this.group_el.style.alignItems = "stretch"
   }
 
-  stylesheets(): StyleSheetLike[] {
+  override stylesheets(): StyleSheetLike[] {
     return [...super.stylesheets(), buttons_css]
   }
 
@@ -240,7 +240,7 @@ export class FileDownload extends InputWidget {
     super(attrs)
   }
 
-  static __module__ = "panel.models.widgets"
+  static override __module__ = "panel.models.widgets"
 
   static {
     this.prototype.default_view = FileDownloadView

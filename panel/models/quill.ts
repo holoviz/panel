@@ -13,7 +13,7 @@ export class QuillInputView extends HTMLBoxView {
 
   quill: any
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.disabled.change, () => this.quill.enable(!this.model.disabled))
     this.connect(this.model.properties.visible.change, () => {
@@ -52,7 +52,7 @@ export class QuillInputView extends HTMLBoxView {
     }
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     this.container = div({style: "visibility: hidden;"})
     this.shadow_el.appendChild(this.container)
@@ -173,7 +173,7 @@ export class QuillInputView extends HTMLBoxView {
     })
   }
 
-  style_redraw(): void {
+  override style_redraw(): void {
     if (this.model.visible) {
       this.container.style.visibility = "visible"
     }
@@ -184,7 +184,7 @@ export class QuillInputView extends HTMLBoxView {
     this.invalidate_layout()
   }
 
-  after_layout(): void {
+  override after_layout(): void {
     super.after_layout()
     this._layout_toolbar()
   }
@@ -210,7 +210,7 @@ export class QuillInput extends HTMLBox {
     super(attrs)
   }
 
-  static __module__ = "panel.models.quill"
+  static override __module__ = "panel.models.quill"
 
   static {
     this.prototype.default_view = QuillInputView

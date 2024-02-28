@@ -20,7 +20,7 @@ function hide(element: HTMLElement): void {
 export class TabsView extends BkTabsView {
   declare model: Tabs
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     let view: any = this
     while (view != null) {
@@ -113,7 +113,7 @@ export class TabsView extends BkTabsView {
     }
   }
 
-  update_active(): void {
+  override update_active(): void {
     const i = this.model.active
 
     const {header_els} = this
@@ -151,7 +151,7 @@ export interface Tabs extends BkTabs.Attrs {}
 export class Tabs extends BkTabs {
   declare properties: Tabs.Props
 
-  static __module__ = "panel.models.tabs"
+  static override __module__ = "panel.models.tabs"
 
   static {
     this.prototype.default_view = TabsView

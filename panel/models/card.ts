@@ -10,7 +10,7 @@ export class CardView extends ColumnView {
 
   readonly collapsed_style = new DOM.InlineStyleSheet()
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
 
     const {active_header_background, collapsed, header_background, header_color, hide_header} = this.model.properties
@@ -40,7 +40,7 @@ export class CardView extends ColumnView {
     return header_background
   }
 
-  render(): void {
+  override render(): void {
     this.empty()
 
     if (this.model.collapsed) {
@@ -99,7 +99,7 @@ export class CardView extends ColumnView {
     }
   }
 
-  async update_children(): Promise<void> {
+  override async update_children(): Promise<void> {
     await this.build_child_views()
     this.render()
     this.invalidate_layout()
@@ -133,7 +133,7 @@ export class CardView extends ColumnView {
     this.invalidate_layout()
   }
 
-  protected _createElement(): HTMLElement {
+  protected override _createElement(): HTMLElement {
     return DOM.createElement((this.model.tag as any), {class: this.css_classes()})
   }
 }
@@ -164,7 +164,7 @@ export class Card extends Column {
     super(attrs)
   }
 
-  static __module__ = "panel.models.layout"
+  static override __module__ = "panel.models.layout"
 
   static {
     this.prototype.default_view = CardView

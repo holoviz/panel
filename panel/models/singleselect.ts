@@ -10,7 +10,7 @@ export class SingleSelectView extends InputWidgetView {
 
   declare input_el: HTMLSelectElement
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.value.change, () => this.render_selection())
     this.connect(this.model.properties.options.change, () => this.render())
@@ -19,7 +19,7 @@ export class SingleSelectView extends InputWidgetView {
     this.connect(this.model.properties.disabled.change, () => this.render())
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     this.render_selection()
   }
@@ -64,7 +64,7 @@ export class SingleSelectView extends InputWidgetView {
     this.input_el.size = this.model.size
   }
 
-  change_input(): void {
+  override change_input(): void {
     const is_focused = this.el.querySelector("select:focus") != null
 
     let value = null
@@ -108,7 +108,7 @@ export class SingleSelect extends InputWidget {
     super(attrs)
   }
 
-  static __module__ = "panel.models.widgets"
+  static override __module__ = "panel.models.widgets"
 
   static {
     this.prototype.default_view = SingleSelectView

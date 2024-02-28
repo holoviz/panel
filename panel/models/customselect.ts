@@ -4,12 +4,12 @@ import type * as p from "@bokehjs/core/properties"
 export class CustomSelectView extends SelectView {
   declare model: CustomSelect
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.disabled_options.change, () => this._update_disabled_options())
   }
 
-  protected options_el(): HTMLOptionElement[] | HTMLOptGroupElement[] {
+  protected override options_el(): HTMLOptionElement[] | HTMLOptGroupElement[] {
     const opts = super.options_el()
     opts.forEach((element) => {
       if (this.model.disabled_options.includes(element.value)) {
@@ -48,7 +48,7 @@ export class CustomSelect extends Select {
     super(attrs)
   }
 
-  static __module__ = "panel.models.widgets"
+  static override __module__ = "panel.models.widgets"
 
   static {
     this.prototype.default_view = CustomSelectView

@@ -5,12 +5,12 @@ import {PanelMarkupView} from "./layout"
 export class KaTeXView extends PanelMarkupView {
   declare model: KaTeX
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.text.change, () => this.render())
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     this.container.innerHTML = this.model.text
     if (!(window as any).renderMathInElement) {
@@ -43,7 +43,7 @@ export class KaTeX extends Markup {
     super(attrs)
   }
 
-  static __module__ = "panel.models.katex"
+  static override __module__ = "panel.models.katex"
 
   static {
     this.prototype.default_view = KaTeXView

@@ -103,7 +103,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
   _script_fns: any = {}
   _state: any = {}
 
-  initialize(): void {
+  override initialize(): void {
     super.initialize()
     this.html = htmlDecode(this.model.html) || this.model.html
   }
@@ -143,7 +143,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
     }
   }
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.children.change, async () => {
       this.html = htmlDecode(this.model.html) || this.model.html
@@ -222,7 +222,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
     return dict_to_records(this.model.data[property], index)
   }
 
-  disconnect_signals(): void {
+  override disconnect_signals(): void {
     super.disconnect_signals()
     this._remove_event_listeners()
     this._remove_mutation_observers()
@@ -233,7 +233,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
     super.remove()
   }
 
-  get child_models(): LayoutDOM[] {
+  override get child_models(): LayoutDOM[] {
     const models = []
     for (const parent in this.model.children) {
       for (const model of this.model.children[parent]) {
@@ -245,11 +245,11 @@ export class ReactiveHTMLView extends HTMLBoxView {
     return models
   }
 
-  _after_layout(): void {
+  override _after_layout(): void {
     this.run_script("after_layout", true)
   }
 
-  render(): void {
+  override render(): void {
     this.empty()
     this._update_stylesheets()
     this._update_css_classes()
@@ -554,7 +554,7 @@ export class ReactiveHTML extends HTMLBox {
     super(attrs)
   }
 
-  static __module__ = "panel.models.reactive_html"
+  static override __module__ = "panel.models.reactive_html"
 
   static {
     this.prototype.default_view = ReactiveHTMLView

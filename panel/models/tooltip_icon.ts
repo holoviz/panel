@@ -100,7 +100,7 @@ export interface TooltipIcon extends TooltipIcon.Attrs {}
 export class TooltipIcon extends LayoutDOM {
   declare properties: TooltipIcon.Props
   declare __view_type__: TooltipIconView
-  static __module__ = "panel.models.widgets"
+  static override __module__ = "panel.models.widgets"
 
   constructor(attrs?: Partial<TooltipIcon.Attrs>) {
     super(attrs)

@@ -77,7 +77,7 @@ export class PlayerView extends WidgetView {
   protected _toggle_play: CallableFunction
   protected _changing: boolean = false
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.direction.change, () => this.set_direction())
     this.connect(this.model.properties.value.change, () => this.render())
@@ -111,7 +111,7 @@ export class PlayerView extends WidgetView {
     return 250
   }
 
-  render(): void {
+  override render(): void {
     if (this.sliderEl == null) {
       super.render()
     } else {
@@ -443,7 +443,7 @@ export class Player extends Widget {
     super(attrs)
   }
 
-  static __module__ = "panel.models.widgets"
+  static override __module__ = "panel.models.widgets"
 
   static {
     this.prototype.default_view = PlayerView

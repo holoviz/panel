@@ -96,7 +96,7 @@ export class State extends Model {
     }
   }
 
-  static __module__ = "panel.models.state"
+  static override __module__ = "panel.models.state"
 
   static {
     this.prototype.default_view = StateView

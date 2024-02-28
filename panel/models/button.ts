@@ -66,7 +66,7 @@ export class Button extends BkButton {
   declare properties: Button.Props
   declare __view_type__: ButtonView
 
-  static __module__ = "panel.models.widgets"
+  static override __module__ = "panel.models.widgets"
 
   constructor(attrs?: Partial<Button.Attrs>) {
     super(attrs)

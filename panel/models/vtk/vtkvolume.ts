@@ -17,7 +17,7 @@ export class VTKVolumePlotView extends AbstractVTKView {
   protected _controllerWidget: any
   protected _vtk_image_data: any
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.data.change, () => {
       this._vtk_image_data = data2VTKImageData(this.model.data as VolumeType)
@@ -117,7 +117,7 @@ export class VTKVolumePlotView extends AbstractVTKView {
     })
   }
 
-  render(): void {
+  override render(): void {
     this._vtk_renwin = null
     this._orientationWidget = null
     this._axes = null
@@ -130,7 +130,7 @@ export class VTKVolumePlotView extends AbstractVTKView {
     this._get_camera_state()
   }
 
-  invalidate_render(): void {
+  override invalidate_render(): void {
     this._vtk_renwin = null
     super.invalidate_render()
   }

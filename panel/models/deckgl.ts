@@ -29,7 +29,7 @@ export class DeckGLPlotView extends LayoutDOMView {
   _connected: any[]
   _layer_map: any
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     const {data, mapbox_api_key, tooltip, layers, initialViewState, data_sources} = this.model.properties
     this.on_change([mapbox_api_key, tooltip], () => this.render())
@@ -61,7 +61,7 @@ export class DeckGLPlotView extends LayoutDOMView {
     this._update_data(render)
   }
 
-  initialize(): void {
+  override initialize(): void {
     super.initialize()
     if ((window as any).deck.JSONConverter) {
       const {CSVLoader, Tiles3DLoader} = (window as any).loaders;
@@ -199,7 +199,7 @@ export class DeckGLPlotView extends LayoutDOMView {
     return deckgl
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     const container = div({class: "deckgl"})
 
@@ -225,7 +225,7 @@ export class DeckGLPlotView extends LayoutDOMView {
     this.shadow_el.appendChild(container)
   }
 
-  after_layout(): void {
+  override after_layout(): void {
     super.after_layout()
     this.deckGL.redraw(true)
   }
@@ -256,7 +256,7 @@ export class DeckGLPlot extends LayoutDOM {
     super(attrs)
   }
 
-  static __module__ = "panel.models.deckgl"
+  static override __module__ = "panel.models.deckgl"
 
   static {
     this.prototype.default_view = DeckGLPlotView

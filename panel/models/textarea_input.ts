@@ -4,7 +4,7 @@ import type * as p from "@bokehjs/core/properties"
 export class TextAreaInputView extends BkTextAreaInputView {
   declare model: TextAreaInput
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
 
     const {value, max_rows} = this.model.properties
@@ -24,7 +24,7 @@ export class TextAreaInputView extends BkTextAreaInputView {
     textarea.rows = Math.min(numRows, this.model.max_rows || Infinity)
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     this.update_rows()
     this.el.addEventListener("input", () => {
@@ -50,7 +50,7 @@ export class TextAreaInput extends BkTextAreaInput {
     super(attrs)
   }
 
-  static __module__ = "panel.models.widgets"
+  static override __module__ = "panel.models.widgets"
 
   static {
     this.prototype.default_view = TextAreaInputView

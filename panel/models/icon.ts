@@ -50,7 +50,7 @@ export class ClickableIconView extends ControlView {
     return icon.trim().startsWith("<svg")
   }
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     const {icon, active_icon, disabled, value, size} = this.model.properties
     this.on_change([active_icon, icon, value], () => this.update_icon())
@@ -58,7 +58,7 @@ export class ClickableIconView extends ControlView {
     this.on_change(size, () => this.update_size())
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     this.icon_view.render()
     this.update_icon()
@@ -160,7 +160,7 @@ export interface ClickableIcon extends ClickableIcon.Attrs { }
 export class ClickableIcon extends Control {
   declare properties: ClickableIcon.Props
   declare __view_type__: ClickableIconView
-  static __module__ = "panel.models.icon"
+  static override __module__ = "panel.models.icon"
 
   constructor(attrs?: Partial<ClickableIcon.Attrs>) {
     super(attrs)

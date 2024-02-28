@@ -69,7 +69,7 @@ export class CheckboxButtonGroup extends bkCheckboxButtonGroup {
   declare properties: CheckboxButtonGroup.Props
   declare __view_type__: CheckboxButtonGroupView
 
-  static __module__ = "panel.models.widgets"
+  static override __module__ = "panel.models.widgets"
 
   constructor(attrs?: Partial<CheckboxButtonGroup.Attrs>) {
     super(attrs)

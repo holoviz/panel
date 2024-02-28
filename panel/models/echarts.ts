@@ -26,7 +26,7 @@ export class EChartsEvent extends ModelEvent {
     super()
   }
 
-  protected get event_values(): Attrs {
+  protected override get event_values(): Attrs {
     return {model: this.origin, type: this.type, data: this.data, query: this.query}
   }
 
@@ -42,7 +42,7 @@ export class EChartsView extends HTMLBoxView {
   _chart: any
   _callbacks: Array<any>[] = []
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.data.change, () => this._plot())
     const {width, height, renderer, theme, event_config, js_events} = this.model.properties
@@ -54,7 +54,7 @@ export class EChartsView extends HTMLBoxView {
     this.on_change([event_config, js_events], () => this._subscribe())
   }
 
-  render(): void {
+  override render(): void {
     if (this._chart != null) {
       (window as any).echarts.dispose(this._chart)
     }
@@ -78,7 +78,7 @@ export class EChartsView extends HTMLBoxView {
     }
   }
 
-  after_layout(): void {
+  override after_layout(): void {
     super.after_layout()
     this._chart.resize()
   }
@@ -165,7 +165,7 @@ export class ECharts extends HTMLBox {
     super(attrs)
   }
 
-  static __module__ = "panel.models.echarts"
+  static override __module__ = "panel.models.echarts"
 
   static {
     this.prototype.default_view = EChartsView

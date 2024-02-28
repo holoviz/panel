@@ -31,7 +31,7 @@ export class DatetimePickerView extends InputWidgetView {
 
   private _picker?: flatpickr.Instance
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
 
     const {value, min_date, max_date, disabled_dates, enabled_dates, inline,
@@ -64,7 +64,7 @@ export class DatetimePickerView extends InputWidgetView {
     this.connect(date_format.change, () => this._picker?.set("dateFormat", this.model.date_format))
   }
 
-  remove(): void {
+  override remove(): void {
     this._picker?.destroy()
     super.remove()
   }
@@ -77,7 +77,7 @@ export class DatetimePickerView extends InputWidgetView {
     return this.input_el = input({type: "text", class: inputs.input, disabled: this.model.disabled})
   }
 
-  render(): void {
+  override render(): void {
     if (this._picker != null) {
       return
     }
@@ -254,7 +254,7 @@ export class DatetimePicker extends InputWidget {
     super(attrs)
   }
 
-  static __module__ = "panel.models.datetime_picker"
+  static override __module__ = "panel.models.datetime_picker"
 
   static {
     this.prototype.default_view = DatetimePickerView

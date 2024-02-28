@@ -69,7 +69,7 @@ export class RadioButtonGroup extends bkRadioButtonGroup {
   declare properties: RadioButtonGroup.Props
   declare __view_type__: RadioButtonGroupView
 
-  static __module__ = "panel.models.widgets"
+  static override __module__ = "panel.models.widgets"
 
   constructor(attrs?: Partial<RadioButtonGroup.Attrs>) {
     super(attrs)
