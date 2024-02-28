@@ -19,8 +19,8 @@ export class JSONView extends PanelMarkupView {
     let json
     try {
       json = window.JSON.parse(text)
-    } catch (err) {
-      this.container.innerHTML = `<b>Invalid JSON:</b> ${err.toString()}`
+    } catch (err: unknown) {
+      this.container.innerHTML = `<b>Invalid JSON:</b> ${err}`
       return
     }
     const config = {hoverPreviewEnabled: this.model.hover_preview, theme: this.model.theme}

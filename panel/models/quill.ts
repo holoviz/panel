@@ -115,7 +115,7 @@ export class QuillInputView extends HTMLBoxView {
      * Original implementation relies on Selection.addRange to programmatically set the range, which does not work
      * in Webkit with Native Shadow. Selection.addRange works fine in Chromium and Gecko.
      **/
-    this.quill.selection.setNativeRange = (startNode: any, startOffset: any) => {
+    this.quill.selection.setNativeRange = (startNode: Element, startOffset: number) => {
       let endNode = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : startNode
       let endOffset = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : startOffset
       const force = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false
@@ -133,11 +133,11 @@ export class QuillInputView extends HTMLBoxView {
         const native = (this.quill.selection.getNativeRange() || {}).native
         if (native == null || force || startNode !== native.startContainer || startOffset !== native.startOffset || endNode !== native.endContainer || endOffset !== native.endOffset) {
           if (startNode.tagName == "BR") {
-            startOffset = [].indexOf.call(startNode.parentNode.childNodes, startNode)
-            startNode = startNode.parentNode
+            startOffset = Array.prototype.indexOf.call(startNode.parentNode?.childNodes ?? [], startNode)
+            startNode = startNode.parentNode as any
           }
           if (endNode.tagName == "BR") {
-            endOffset = [].indexOf.call(endNode.parentNode.childNodes, endNode)
+            endOffset = Array.prototype.indexOf(endNode.parentNode?.childNodes ?? [], endNode)
             endNode = endNode.parentNode
           }
           selection.setBaseAndExtent(startNode, startOffset, endNode, endOffset)

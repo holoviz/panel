@@ -11,8 +11,10 @@ export class CustomSelectView extends SelectView {
 
   protected override options_el(): HTMLOptionElement[] | HTMLOptGroupElement[] {
     const opts = super.options_el()
+    const {disabled_options} = this.model
     opts.forEach((element) => {
-      if (this.model.disabled_options.includes(element.value)) {
+      // XXX: what about HTMLOptGroupElement?
+      if (element instanceof HTMLOptionElement && disabled_options.includes(element.value)) {
         element.setAttribute("disabled", "true")
       }
     })
