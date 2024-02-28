@@ -90,9 +90,20 @@ export class FeedView extends ColumnView {
     return created
   }
 
-  scroll_to_latest(): void {
-    this.model.trigger_event(new ScrollButtonClick())
+  scroll_to_latest(emit_event: boolean = true): void {
+    if (emit_event) {
+      this.model.trigger_event(new ScrollButtonClick())
+    }
     super.scroll_to_latest()
+  }
+
+  trigger_auto_scroll(): void {
+    const limit = this.model.auto_scroll_limit
+    const within_limit = this.distance_from_latest <= limit
+    if (limit == 0 || !within_limit)
+      return
+
+    this.scroll_to_latest(false)
   }
 }
 

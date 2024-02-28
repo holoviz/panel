@@ -1,59 +1,55 @@
 # Tutorials
 
-The [getting started guides](../getting_started/index.md) aims to get you set up with Panel and introduces you to some of the core concepts. The tutorials on the other hand will take you from being a beginner and guide you through your learning.
+Welcome to our tutorials designed for those eager to dive into the world of Panel! If you're still undecided, we suggest starting with the [Getting Started Guide](../getting_started/index.md) to get a taste of what Panel has to offer.
 
----
+Throughout this series, we'll delve into wind turbine data and craft some impressive wind turbine data apps using Panel by HoloViz. We firmly believe that the skills you'll acquire are not only valuable but also easily applicable across various domains, including yours.
+
+Before we begin, remember to put on your safety helmet – we're about to venture into the world of wind turbine data apps!
+
+## Select Tutorials
+
+Choose the tutorials that best match your skill level.
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`plug;2.5em;sd-mr-1` Param
-:link: param
+:::{grid-item-card} {octicon}`rocket;2.5em;sd-mr-1` Basic
+:link: basic/index
 :link-type: doc
 
-Panel and other projects in the HoloViz ecosystem all build on Param. In this section you will learn the basic concepts behind Param that you need to know to become an effective user of Panel.
+These tutorials are perfect for those just starting their journey with Panel.
+
+Together, we'll explore the wind turbine dataset and create exciting projects like a chatbot, a static report, a todo app, an image classifier app, a dashboard, and even a streaming application.
+
+By the end, you'll have the skills to develop polished, single-page apps efficiently using a *function-based approach*.
+
+Prepare to become a Panel *Hero*!
 :::
 
-:::{grid-item-card} {octicon}`container;2.5em;sd-mr-1` Components
-:link: components
+:::{grid-item-card} {octicon}`mortar-board;2.5em;sd-mr-1` Intermediate
+:link: intermediate/index
 :link-type: doc
 
-Panel is a library that provides a lot of object types and while building an app, even a simple one, you will create and interact with many of them. In this section you will get a high-level overview of the different component types Panel offers and how to use them.
+Ready to dive deeper into the world of Python and Panel?
+
+These tutorials are tailored for those eager to explore more advanced features.
+
+We'll enhance our applications from the basic tutorial, focusing on performance, scalability, reusability, and maintainability.
+
+Upon completion, you'll be equipped to build large, complex multi-page apps using a *class-based approach*.
+
+You're on your way to becoming a Panel *Expert*!
 :::
 
-:::{grid-item-card} {octicon}`pulse;2.5em;sd-mr-1` Interactivity
-:link: interactivity
+:::{grid-item-card} {octicon}`star;2.5em;sd-mr-1` Expert
+:link: expert/index
 :link-type: doc
 
-In this section you learn how to leverage Parameters and dependencies on parameters to add interactivity. In particular we will focus on implementing interactivity through reactivity, rather than the more imperative style of programming you might be used to from other UI frameworks.
-:::
+Ready to push the boundaries of Panel and become a pioneer in your field?
 
-:::{grid-item-card} {octicon}`browser;2.5em;sd-mr-1` Effective Development
-:link: development
-:link-type: doc
+These tutorials are for the daring souls who want to extend Panel's capabilities to suit their specialized domains and use cases.
 
-In this section we will introduce you to the most important concepts you need to know to become an effective Panel developer in notebooks and your favorite editor.
-:::
-
-:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1` Layouts
-:link: layouts
-:link-type: doc
-
-In this section we will discover how layouts and sizing works in Panel, taking you through the difference between inherent sizing, fixed sizing and responsive sizing and then cover responsive layouts.
-:::
-
-:::{grid-item-card} {octicon}`code;2.5em;sd-mr-1` Structuring Applications
-:link: structure
-:link-type: doc
-
-In this section we will take you through the process of structuring a more complex application, discussing different approaches for managing reactivity and how to create a composable architecture for your applications.
-:::
-
-:::{grid-item-card} {octicon}`paintbrush;2.5em;sd-mr-1` Styling
-:link: styling
-:link-type: doc
-
-In this section we will review different approaches for styling components, from applying `Design` components, through applying `stylesheets` and `css_classes`.
+Once you've completed these tutorials, you'll truly earn the title of Panel *Rock Star*.
 :::
 
 ::::
@@ -63,11 +59,9 @@ In this section we will review different approaches for styling components, from
 :hidden:
 :maxdepth: 2
 
-param
-components
-interactivity
-development
-layouts
-structure
-styling
+basic/index
+intermediate/index
+expert/index
 ```
+
+Let the wind turbine adventure begin! 🌬️🌀

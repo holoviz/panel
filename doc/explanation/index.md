@@ -4,6 +4,20 @@ The explanation section aims to clarify, deepen, and broaden the understanding o
 
 Beyond the [Getting Started > Core Concepts](../getting_started/core_concepts.md), which new users must complete before working with Panel, this explanation section is intended to help practitioners form and strengthen a conceptual web that facilitates new and advanced usage directions.
 
+## Develop
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`code;2.5em;sd-mr-1 sd-animate-grow50` Develop Seamlessly
+:link: api/index
+:link-type: doc
+
+Learn how we enable you and your team to work seamlessly with Panel across a wide range of development environments
+:::
+
+::::
+
 ## APIs
 
 ::::{grid} 1 2 2 3

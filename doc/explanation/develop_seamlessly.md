@@ -1,19 +1,17 @@
-# Effective Development
+# Develop Seamlessly Across Environments
 
-:::{note} Tutorial 4. **Efficient Development**
-:icon: false
+Our objective is to empower teams to seamlessly utilize Panel regardless of the development environment, e.g. Jupyter Notebook, Jupyter Lab, Binder, Google Colab, Spyder, VS Code, and PyCharm.
 
- It's also important for you to be able to use a coding environment you are comfortable with. To this end, Panel offers very good support for Jupyter Notebooks (Classic and JupyterLab) and editors like Visual Studio Code, which are the two environments we will cover in this guide.
-
-:::
 
 ## Notebook
 
+We love notebooks.
+
 ### Notebook friendly
 
-Jupyter notebooks have been supported in Panel since day 1 and more generally since the inception of the HoloViz project. Notebooks are environments that allow to iterate quickly, running some code and observing instantaneously its output. Notebooks also happen to be a valid deployment option:
+Jupyter notebooks have been supported in Panel since day 1. Notebooks are environments that allow one to iterate quickly, running some code and observing instantaneously its output. Notebooks also happen to be a valid deployment option:
 
-- you can actually develop apps that are meant to live only in a notebook, that you will share as a file with your colleagues and friends. Panel allows you to make your notebooks more user friendly, like IPywidgets does.
+- you can actually develop apps that are meant to live only in a notebook, that you will share as a file with your colleagues and friends. Panel allows you to make your notebooks more user friendly, like [IPywidgets](https://ipywidgets.readthedocs.io/en/stable/) does.
 - you can serve a notebook with `panel serve file.ipynb`, Panel will parse your notebook to collect all of its code and run it as if it were a Python script.
 
 Jupyter notebooks aren't the only flavor of notebooks available, Panel also supports Visual Studio Code and Google Colab notebooks, and probably works fine on other platforms. For Visual Studio Code notebooks, you will need to install the `jupyter_bokeh` package in your environment.
@@ -28,7 +26,7 @@ import panel as pn
 pn.extension()
 ```
 
-The extension ensures that all required Javascript and CSS resources are added to your notebook environment. If you are going to be using any custom extensions, such as [Vega](../reference/panes/Vega.md) or [Tabulator](../reference/widgets/Tabulator.md) you must ensure that you initialize these as well.
+The extension ensures that the [`pyviz_comms`](https://github.com/holoviz/pyviz_comms) and all required Javascript and CSS resources are added to your notebook environment. If you are going to be using any custom extensions, such as [Vega](../reference/panes/Vega.md) or [Tabulator](../reference/widgets/Tabulator.md) you must ensure that you initialize these as well.
 
 ```{pyodide}
 pn.extension('vega', 'tabulator')
@@ -69,7 +67,7 @@ pn.Row(w, pn.bind(compute, w))
 
 ### Render templates
 
-You have been told in the previous guide to avoid rendering Panel templates in a notebook. That's however not a dead end! There are two approaches you can leverage to display an app that is wrapped in a template while working from a notebook, in addition to just being able to serve the notebook with `panel serve notebook.ipynb`.
+You have been told in the Panel tutorial to avoid rendering Panel templates in a notebook. That's however not a dead end! There are two approaches you can leverage to display an app that is wrapped in a template while working from a notebook, in addition to just being able to serve the notebook with `panel serve notebook.ipynb`.
 
 Templates, as any other Panel visual components, are equipped with the `.show()` method that when called starts a Bokeh server, serves your app and opens it in a new tab. While this approach doesn't allow you to iterate super quickly, it's a simple way to check what your app looks like when served.
 
@@ -116,11 +114,13 @@ This is what you should be able to see after a little while. Now tick `Render on
 
 ![alt text](../_static/images/jlabpreview.png)
 
-## Visual Studio Code
+## Editor
 
-Visual Studio Code (VS Code) has quickly become one of the most popular Python coding environment. In this section you will see how you can to set yourself a nice developer experience with VS Code when developing a Panel app.
+Editors like VS Code and PyCharm have quickly become some of the most popular Python coding environment.
 
-### Setup and autoreload
+### Serve apps with autoreload
+
+To enable a quick feedback loop while developing, we support serving your apps with autoreload.
 
 Save the content of the next cell in a file named `app.py`.
 
@@ -153,35 +153,15 @@ The `--show` flag will open a browser tab with the live app and the `--autoreloa
 
 ![VSCode Preview](../_static/images/vscode_preview.png)
 
-### Debugging
+## Resources
 
-While you can debug your app using the often blamed but never outperformed `print`, or by manually adding breakpoints with `breakpoint()`, the VS Code integrated debugger offers a more user friendly experience.
+### Tutorials
 
-To configure the integrated debugger for Panel, you will need to add a debugging configuration like the following.
+- [Develop in an Editor (Basic)](../tutorials/basic/develop_editor.md)
+- [Develop in an Editor (Intermediate)](../tutorials/intermediate/develop_editor.md)¨
+- [Develop in a Notebook (Basic)](../tutorials/basic/develop_notebook.md)
 
-```json
-// .vscode/launch.json
-{
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "panel serve",
-            "type": "python",
-            "request": "launch",
-            "program": "-m",
-            "args": [
-                "panel",
-                "serve",
-                "${relativeFile}",
-                "--show"
-            ],
-            "console": "integratedTerminal",
-            "justMyCode": true
-        }
-    ]
-}
-```
+### How-to
 
-With this configuration in place, launching the debugger will serve the file you are working on with Panel, open a new browser tab pointing at the served app. Interact then with your app to hit one of the breakpoints you set up in VS Code.
-
-![VSCode Debugging](../static/images/vscode_debug.png)
+- [Configure VS Code](../how_to/editor/vscode_configure.md)
+- [Write apps in Markdown](../how_to/editor/markdown.md)

@@ -9,10 +9,9 @@ import asyncio
 import traceback
 
 from enum import Enum
-from functools import partial
 from inspect import (
     isasyncgen, isasyncgenfunction, isawaitable, iscoroutinefunction,
-    isgenerator,
+    isgenerator, isgeneratorfunction,
 )
 from io import BytesIO
 from typing import (
@@ -37,7 +36,7 @@ if TYPE_CHECKING:
 
 
 PLACEHOLDER_SVG = """
-    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-loader-3" width="40" height="40" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-loader-3" width="35" height="35" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
         <path d="M3 12a9 9 0 0 0 9 9a9 9 0 0 0 9 -9a9 9 0 0 0 -9 -9"></path>
         <path d="M17 12a5 5 0 1 0 -5 5"></path>
@@ -136,8 +135,15 @@ class ChatFeed(ListPanel):
         and will not be included in the `serialize` method by default.""")
 
     placeholder_text = param.String(default="", doc="""
-        If placeholder is the default LoadingSpinner the text to display
-        next to it.""")
+        The text to display next to the placeholder icon.""")
+
+    placeholder_params = param.Dict(default={
+        "user": " ", "reaction_icons": {}, "show_copy_icon": False, "show_timestamp": False
+    }, doc="""
+        Params to pass to the placeholder ChatMessage, like `reaction_icons`,
+        `timestamp_format`, `show_avatar`, `show_user`, `show_timestamp`.
+        """
+    )
 
     placeholder_threshold = param.Number(default=1, bounds=(0, None), doc="""
         Min duration in seconds of buffering before displaying the placeholder.
@@ -274,22 +280,17 @@ class ChatFeed(ListPanel):
         card_params.pop('stylesheets', None)
         self._card.param.update(**card_params)
 
-    @param.depends("placeholder_text", watch=True, on_init=True)
+    @param.depends("placeholder_text", "placeholder_params", watch=True, on_init=True)
     def _update_placeholder(self):
-        if self._placeholder is not None:
-            self._placeholder.param.update(object=self.placeholder_text)
-            return
-
         loading_avatar = SVG(
-            PLACEHOLDER_SVG, sizing_mode=None, css_classes=["rotating-placeholder"]
+            PLACEHOLDER_SVG, sizing_mode="fixed", width=35, height=35,
+            css_classes=["rotating-placeholder"]
         )
         self._placeholder = ChatMessage(
             self.placeholder_text,
-            user=" ",
-            show_timestamp=False,
             avatar=loading_avatar,
-            reaction_icons={},
-            show_copy_icon=False,
+            css_classes=["message"],
+            **self.placeholder_params
         )
 
     def _replace_placeholder(self, message: ChatMessage | None = None) -> None:
@@ -441,21 +442,40 @@ class ChatFeed(ListPanel):
         start = asyncio.get_event_loop().time()
         while not task.done() and num_entries == len(self._chat_log):
             duration = asyncio.get_event_loop().time() - start
-            if duration > self.placeholder_threshold:
+            if duration > self.placeholder_threshold or self._callback_future is None:
                 self.append(self._placeholder)
                 return
             await asyncio.sleep(0.1)
 
-    async def _handle_callback(self, message, loop):
+    async def _to_async_gen(self, sync_gen):
+        done = object()
+
+        def safe_next():
+            # Converts StopIteration to a sentinel value to avoid:
+            # TypeError: StopIteration interacts badly with generators and cannot be raised into a Future
+            try:
+                return next(sync_gen)
+            except StopIteration:
+                return done
+
+        while True:
+            value = await asyncio.to_thread(safe_next)
+            if value is done:
+                break
+            yield value
+
+    async def _handle_callback(self, message, loop: asyncio.BaseEventLoop):
         callback_args = self._gather_callback_args(message)
         if iscoroutinefunction(self.callback):
             response = await self.callback(*callback_args)
         elif isasyncgenfunction(self.callback):
             response = self.callback(*callback_args)
         else:
-            response = await loop.run_in_executor(
-                None, partial(self.callback, *callback_args)
-            )
+            if isgeneratorfunction(self.callback):
+                response = self._to_async_gen(self.callback(*callback_args))
+                # printing type(response) -> <class 'async_generator'>
+            else:
+                response = await asyncio.to_thread(self.callback, *callback_args)
         await self._serialize_response(response)
 
     async def _prepare_response(self, _) -> None:

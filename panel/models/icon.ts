@@ -97,6 +97,7 @@ export class ClickableIconView extends ControlView {
 
   async update_icon(): Promise<void> {
     const icon = this.model.value ? this.get_active_icon() : this.model.icon;
+    this.class_list.toggle("active", this.model.value);
     const is_svg_icon = this.is_svg_icon(icon)
 
     if (this.was_svg_icon !== is_svg_icon) {

@@ -1,6 +1,8 @@
-# Param
+# Reactive Parameters
 
-:::{note} Tutorial 1. **Param**
+NOTE: ChatGPT suggests this is *basic* level stuff: You can include this section within the "Basic" tutorials as it seems like it covers fundamental concepts that newcomers might need to know before diving into more complex topics. I don't agree, but I am in doubt.
+
+:::{note} Tutorial 1. **Reactive Parameters**
 :icon: false
 
 Panel and other projects in the HoloViz ecosystem all build on Param. Param provides a framework to add validation, documentation and interactivity to a project. It is similar to more modern projects such as Pydantic but focuses primarily on providing APIs that make it easy to express complex dependencies, reactivity and UI interactions.
@@ -93,7 +95,7 @@ with text_input.param.update(value='Temporary'):
 
 ### Validation
 
-The primary purpose of parameters is to perform validation, e.g. if I try to assign an invalid value to a parameter, we will get an error:
+The primary purpose of parameters is to perform validation, e.g. if we try to assign an invalid value to a parameter, we will get an error:
 
 ```{pyodide}
 import traceback as tb

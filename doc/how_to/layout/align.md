@@ -8,7 +8,6 @@ The `align` parameter controls how components align vertically and horizontally.
 
 One common use-case where alignment is important is when placing multiple items with different heights in a `Row`. Let's create a big button and align a slider to the center of the button using `align=center`:
 
-
 ```{pyodide}
 import panel as pn
 pn.extension() # for notebook
