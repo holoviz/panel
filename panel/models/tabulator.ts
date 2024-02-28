@@ -1267,7 +1267,7 @@ export class DataTabulator extends HTMLBox {
   static {
     this.prototype.default_view = DataTabulatorView;
 
-    this.define<DataTabulator.Props>(({Any, Array, Bool, Nullable, Number, Ref, String}) => ({
+    this.define<DataTabulator.Props>(({Any, Array, Bool, Nullable, Float, Ref, String}) => ({
       aggregators:    [ Any,                     {} ],
       buttons:        [ Any,                     {} ],
       children:       [ Any,              new Map() ],
@@ -1275,21 +1275,21 @@ export class DataTabulator extends HTMLBox {
       columns:        [ Array(Ref(TableColumn)), [] ],
       download:       [ Bool,              false ],
       editable:       [ Bool,               true ],
-      expanded:       [ Array(Number),           [] ],
+      expanded:       [ Array(Float),           [] ],
       filename:       [ String,         "table.csv" ],
       filters:        [ Array(Any),              [] ],
       follow:         [ Bool,               true ],
-      frozen_rows:    [ Array(Number),           [] ],
+      frozen_rows:    [ Array(Float),           [] ],
       groupby:        [ Array(String),           [] ],
       hidden_columns: [ Array(String),           [] ],
       indexes:        [ Array(String),           [] ],
       layout:         [ TableLayout,     "fit_data" ],
-      max_page:       [ Number,                   0 ],
+      max_page:       [ Float,                   0 ],
       pagination:     [ Nullable(String),      null ],
-      page:           [ Number,                   0 ],
-      page_size:      [ Number,                   0 ],
+      page:           [ Float,                   0 ],
+      page_size:      [ Float,                   0 ],
       select_mode:    [ Any,                   true ],
-      selectable_rows: [ Nullable(Array(Number)), null ],
+      selectable_rows: [ Nullable(Array(Float)), null ],
       source:         [ Ref(ColumnDataSource)       ],
       sorters:        [ Array(Any),              [] ],
       cell_styles:    [ Any,                     {} ],

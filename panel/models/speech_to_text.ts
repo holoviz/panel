@@ -212,7 +212,7 @@ export class SpeechToText extends HTMLBox {
   static {
     this.prototype.default_view = SpeechToTextView
 
-    this.define<SpeechToText.Props>(({Any, Array, Bool, Number, String}) => ({
+    this.define<SpeechToText.Props>(({Any, Array, Bool, Float, String}) => ({
       start: [ Bool, false ],
       stop: [ Bool, false ],
       abort: [ Bool, false ],
@@ -220,7 +220,7 @@ export class SpeechToText extends HTMLBox {
       lang: [ String, '' ],
       continuous: [ Bool,   false ],
       interim_results: [ Bool,   false ],
-      max_alternatives: [ Number,   1 ],
+      max_alternatives: [ Float,   1 ],
       service_uri: [ String, '' ],
       started: [ Bool,   false ],
       audio_started: [ Bool,   false ],

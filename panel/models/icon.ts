@@ -163,13 +163,13 @@ export class ClickableIcon extends Control {
   static {
     this.prototype.default_view = ClickableIconView;
 
-    this.define<ClickableIcon.Props>(({ Nullable, Ref, Number, String, Bool }) => ({
+    this.define<ClickableIcon.Props>(({ Nullable, Ref, Float, String, Bool }) => ({
       active_icon: [String, ""],
       icon: [String, "heart"],
       size: [Nullable(String), null],
       value: [Bool, false],
       tooltip: [Nullable(Ref(Tooltip)), null],
-      tooltip_delay: [Number, 500],
+      tooltip_delay: [Float, 500],
     }));
   }
 

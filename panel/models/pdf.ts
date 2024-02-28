@@ -54,7 +54,7 @@ export namespace PDF {
 
   export type Props = Markup.Props & {
     embed: p.Property<boolean>;
-    start_page: p.Property<Number>;
+    start_page: p.Property<number>;
   };
 }
 
@@ -71,9 +71,9 @@ export class PDF extends Markup {
 
   static {
     this.prototype.default_view = PDFView;
-    this.define<PDF.Props>(({ Number, Bool }) => ({
+    this.define<PDF.Props>(({ Float, Bool }) => ({
       embed: [Bool, true],
-      start_page: [Number, 1],
+      start_page: [Float, 1],
     }));
   }
 }

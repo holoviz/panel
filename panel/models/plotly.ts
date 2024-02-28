@@ -436,7 +436,7 @@ export class PlotlyPlot extends HTMLBox {
   static {
     this.prototype.default_view = PlotlyPlotView
 
-    this.define<PlotlyPlot.Props>(({Array, Any, Nullable, Number, Ref, String}) => ({
+    this.define<PlotlyPlot.Props>(({Array, Any, Nullable, Float, Ref, String}) => ({
       data: [ Array(Any), [] ],
       layout: [ Any, {} ],
       config: [ Any, {} ],
@@ -452,8 +452,8 @@ export class PlotlyPlot extends HTMLBox {
       selected_data: [ Any, {} ],
       viewport: [ Any, {} ],
       viewport_update_policy: [ String, "mouseup" ],
-      viewport_update_throttle: [ Number, 200 ],
-      _render_count: [ Number, 0 ],
+      viewport_update_throttle: [ Float, 200 ],
+      _render_count: [ Float, 0 ],
     }))
   }
 }
