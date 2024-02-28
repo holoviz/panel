@@ -461,20 +461,18 @@ class ChatMessage(PaneBase):
                 contents = contents.decode("utf-8")
         return contents, renderer
 
+    def _update_stylesheets(self, obj):
+        obj.stylesheets =[
+            stylesheets for stylesheets in self._stylesheets
+            if stylesheets not in obj.stylesheets
+        ] + self._stylesheets
+        return obj
+
     def _set_params(self, obj, **params):
         """
         Set the sizing mode and height of the object.
         """
-        if hasattr(obj, "objects"):
-            params['css_classes'] = (
-                [css for css in obj.stylesheets if css not in self._stylesheets] +
-                self._stylesheets
-            )
-            for subobj in obj.objects:
-                self._set_params(subobj)
-            obj.param.update(params)
-            return
-
+        obj = self._update_stylesheets(obj)
         is_markup = isinstance(obj, HTMLBasePane) and not isinstance(obj, FileBase)
         if is_markup:
             if len(str(obj.object)) > 0:  # only show a background if there is content
@@ -498,6 +496,7 @@ class ChatMessage(PaneBase):
         """
         if isinstance(value, Viewable):
             self._internal = False
+            value = self._update_stylesheets(value)
             return value
 
         renderer = None
