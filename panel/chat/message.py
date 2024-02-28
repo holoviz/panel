@@ -479,6 +479,20 @@ class ChatMessage(PaneBase):
             for o in obj.objects:
                 self._include_stylesheets_inplace(o)
 
+    def _include_message_css_class_inplace(self, obj):
+        if hasattr(obj, "objects"):
+            for o in obj.objects:
+                self._include_message_css_class_inplace(o)
+        elif isinstance(obj, str):
+            return self._include_message_css_class_inplace(Markdown(obj))
+
+        is_markup = isinstance(obj, HTMLBasePane) and not isinstance(obj, FileBase)
+        if obj.css_classes or not is_markup:
+            return
+        if len(str(obj.object)) > 0:  # only show a background if there is content
+            obj.css_classes = [*(css for css in obj.css_classes if css != "message"), "message"]
+        obj.sizing_mode = None
+
     def _set_params(self, obj, **params):
         """
         Set the sizing mode and height of the object.
@@ -486,9 +500,7 @@ class ChatMessage(PaneBase):
         self._include_stylesheets_inplace(obj)
         is_markup = isinstance(obj, HTMLBasePane) and not isinstance(obj, FileBase)
         if is_markup:
-            if len(str(obj.object)) > 0:  # only show a background if there is content
-                params['css_classes'] = [*(css for css in obj.css_classes if css != "message"), "message"]
-            params['sizing_mode'] = None
+            self._include_message_css_class_inplace(obj)
         else:
             if obj.sizing_mode is None and not obj.width:
                 params['sizing_mode'] = "stretch_width"
@@ -508,6 +520,7 @@ class ChatMessage(PaneBase):
         if isinstance(value, Viewable):
             self._internal = False
             self._include_stylesheets_inplace(value)
+            self._include_message_css_class_inplace(value)
             return value
 
         renderer = None
