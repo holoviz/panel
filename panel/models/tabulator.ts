@@ -1267,33 +1267,33 @@ export class DataTabulator extends HTMLBox {
   static {
     this.prototype.default_view = DataTabulatorView;
 
-    this.define<DataTabulator.Props>(({Any, Array, Bool, Nullable, Float, Ref, Str}) => ({
+    this.define<DataTabulator.Props>(({Any, List, Bool, Nullable, Float, Ref, Str}) => ({
       aggregators:    [ Any,                     {} ],
       buttons:        [ Any,                     {} ],
       children:       [ Any,              new Map() ],
       configuration:  [ Any,                     {} ],
-      columns:        [ Array(Ref(TableColumn)), [] ],
+      columns:        [ List(Ref(TableColumn)), [] ],
       download:       [ Bool,              false ],
       editable:       [ Bool,               true ],
-      expanded:       [ Array(Float),           [] ],
+      expanded:       [ List(Float),           [] ],
       filename:       [ Str,         "table.csv" ],
-      filters:        [ Array(Any),              [] ],
+      filters:        [ List(Any),              [] ],
       follow:         [ Bool,               true ],
-      frozen_rows:    [ Array(Float),           [] ],
-      groupby:        [ Array(Str),           [] ],
-      hidden_columns: [ Array(Str),           [] ],
-      indexes:        [ Array(Str),           [] ],
+      frozen_rows:    [ List(Float),           [] ],
+      groupby:        [ List(Str),           [] ],
+      hidden_columns: [ List(Str),           [] ],
+      indexes:        [ List(Str),           [] ],
       layout:         [ TableLayout,     "fit_data" ],
       max_page:       [ Float,                   0 ],
       pagination:     [ Nullable(Str),      null ],
       page:           [ Float,                   0 ],
       page_size:      [ Float,                   0 ],
       select_mode:    [ Any,                   true ],
-      selectable_rows: [ Nullable(Array(Float)), null ],
+      selectable_rows: [ Nullable(List(Float)), null ],
       source:         [ Ref(ColumnDataSource)       ],
-      sorters:        [ Array(Any),              [] ],
+      sorters:        [ List(Any),              [] ],
       cell_styles:    [ Any,                     {} ],
-      theme_classes:  [ Array(Str),           [] ],
+      theme_classes:  [ List(Str),           [] ],
     }))
   }
 }

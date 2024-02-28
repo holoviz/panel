@@ -128,8 +128,8 @@ export class Feed extends Column {
   static {
     this.prototype.default_view = FeedView;
 
-    this.define<Feed.Props>(({ Array, Str }) => ({
-      visible_children: [Array(Str), []],
+    this.define<Feed.Props>(({ List, Str }) => ({
+      visible_children: [List(Str), []],
     }));
   }
 

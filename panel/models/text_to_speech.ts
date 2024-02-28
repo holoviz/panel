@@ -153,11 +153,11 @@ export class TextToSpeech extends HTMLBox {
   static {
     this.prototype.default_view = TextToSpeechView
 
-    this.define<TextToSpeech.Props>(({Any, Array, Bool}) => ({
+    this.define<TextToSpeech.Props>(({Any, List, Bool}) => ({
       paused:   [ Bool,    false ],
       pending:  [ Bool,    false ],
       speaking: [ Bool,    false ],
-      voices:   [ Array(Any),    [] ],
+      voices:   [ List(Any),    [] ],
       cancel:   [ Bool,    false ],
       pause:    [ Bool,    false ],
       resume:   [ Bool,    false ],

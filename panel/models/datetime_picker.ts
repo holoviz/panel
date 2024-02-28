@@ -250,9 +250,9 @@ export class DatetimePicker extends InputWidget {
   static {
     this.prototype.default_view = DatetimePickerView
 
-    this.define<DatetimePicker.Props>(({Bool, Str, Array, Tuple, Or, Nullable}) => {
+    this.define<DatetimePicker.Props>(({Bool, Str, List, Tuple, Or, Nullable}) => {
       const DateStr = Str
-      const DatesList = Array(Or(DateStr, Tuple(DateStr, DateStr)))
+      const DatesList = List(Or(DateStr, Tuple(DateStr, DateStr)))
       return {
         value:          [ Nullable(Str), null ],
         min_date:       [ Nullable(Str), null ],

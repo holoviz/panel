@@ -436,16 +436,16 @@ export class PlotlyPlot extends HTMLBox {
   static {
     this.prototype.default_view = PlotlyPlotView
 
-    this.define<PlotlyPlot.Props>(({Array, Any, Nullable, Float, Ref, Str}) => ({
-      data: [ Array(Any), [] ],
+    this.define<PlotlyPlot.Props>(({List, Any, Nullable, Float, Ref, Str}) => ({
+      data: [ List(Any), [] ],
       layout: [ Any, {} ],
       config: [ Any, {} ],
-      frames: [ Nullable(Array(Any)), null ],
-      data_sources: [ Array(Ref(ColumnDataSource)), [] ],
+      frames: [ Nullable(List(Any)), null ],
+      data_sources: [ List(Ref(ColumnDataSource)), [] ],
       relayout: [ Nullable(Any), {} ],
       restyle: [ Nullable(Any), {} ],
       relayout_data: [ Any, {} ],
-      restyle_data: [ Array(Any), [] ],
+      restyle_data: [ List(Any), [] ],
       click_data: [ Any, {} ],
       hover_data: [ Any, {} ],
       clickannotation_data: [ Any, {} ],

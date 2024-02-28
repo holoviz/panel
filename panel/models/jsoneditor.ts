@@ -107,15 +107,15 @@ export class JSONEditor extends HTMLBox {
 
   static {
     this.prototype.default_view = JSONEditorView
-    this.define<JSONEditor.Props>(({Any, Array, Bool, Str}) => ({
-      css:       [ Array(Str), [] ],
+    this.define<JSONEditor.Props>(({Any, List, Bool, Str}) => ({
+      css:       [ List(Str), [] ],
       data:      [ Any,           {} ],
       mode:      [ Str,    'tree' ],
       menu:      [ Bool,     true ],
       search:    [ Bool,     true ],
-      selection: [ Array(Any),    [] ],
+      selection: [ List(Any),    [] ],
       schema:    [ Any,         null ],
-      templates: [ Array(Any),    [] ],
+      templates: [ List(Any),    [] ],
     }))
   }
 }

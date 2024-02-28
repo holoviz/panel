@@ -205,10 +205,10 @@ export class VegaPlot extends LayoutDOM {
   static {
     this.prototype.default_view = VegaPlotView
 
-    this.define<VegaPlot.Props>(({Any, Array, Bool, Nullable, Str}) => ({
+    this.define<VegaPlot.Props>(({Any, List, Bool, Nullable, Str}) => ({
       data:         [ Any,                {} ],
       data_sources: [ Any,                {} ],
-      events:       [ Array(Str),      [] ],
+      events:       [ List(Str),      [] ],
       show_actions: [ Bool,         false ],
       theme:        [ Nullable(Str), null ],
       throttle:     [ Any,                {} ]

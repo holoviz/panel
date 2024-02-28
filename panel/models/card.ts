@@ -163,14 +163,14 @@ export class Card extends Column {
   static {
     this.prototype.default_view = CardView
 
-    this.define<Card.Props>(({Array, Bool, Nullable, Str}) => ({
+    this.define<Card.Props>(({List, Bool, Nullable, Str}) => ({
       active_header_background: [ Nullable(Str), null ],
-      button_css_classes:       [ Array(Str),      [] ],
+      button_css_classes:       [ List(Str),      [] ],
       collapsed:                [ Bool,          true ],
       collapsible:              [ Bool,          true ],
       header_background:        [ Nullable(Str), null ],
       header_color:             [ Nullable(Str), null ],
-      header_css_classes:       [ Array(Str),      [] ],
+      header_css_classes:       [ List(Str),      [] ],
       header_tag:               [ Str,          "div" ],
       hide_header:              [ Bool,         false ],
       tag:                      [ Str,          "div" ],
