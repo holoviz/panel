@@ -1267,18 +1267,18 @@ export class DataTabulator extends HTMLBox {
   static {
     this.prototype.default_view = DataTabulatorView;
 
-    this.define<DataTabulator.Props>(({Any, Array, Boolean, Nullable, Number, Ref, String}) => ({
+    this.define<DataTabulator.Props>(({Any, Array, Bool, Nullable, Number, Ref, String}) => ({
       aggregators:    [ Any,                     {} ],
       buttons:        [ Any,                     {} ],
       children:       [ Any,              new Map() ],
       configuration:  [ Any,                     {} ],
       columns:        [ Array(Ref(TableColumn)), [] ],
-      download:       [ Boolean,              false ],
-      editable:       [ Boolean,               true ],
+      download:       [ Bool,              false ],
+      editable:       [ Bool,               true ],
       expanded:       [ Array(Number),           [] ],
       filename:       [ String,         "table.csv" ],
       filters:        [ Array(Any),              [] ],
-      follow:         [ Boolean,               true ],
+      follow:         [ Bool,               true ],
       frozen_rows:    [ Array(Number),           [] ],
       groupby:        [ Array(String),           [] ],
       hidden_columns: [ Array(String),           [] ],

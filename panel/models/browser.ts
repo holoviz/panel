@@ -53,13 +53,13 @@ export class BrowserInfo extends Model {
   static {
     this.prototype.default_view = BrowserInfoView
 
-    this.define<BrowserInfo.Props>(({Boolean, Nullable, Number, String}) => ({
-      dark_mode:          [ Nullable(Boolean), null ],
+    this.define<BrowserInfo.Props>(({Bool, Nullable, Number, String}) => ({
+      dark_mode:          [ Nullable(Bool), null ],
       device_pixel_ratio: [ Nullable(Number),  null ],
       language:           [ Nullable(String),  null ],
       timezone:           [ Nullable(String),  null ],
       timezone_offset:    [ Nullable(Number),  null ],
-      webdriver:          [ Nullable(Boolean), null ]
+      webdriver:          [ Nullable(Bool), null ]
     }))
   }
 }

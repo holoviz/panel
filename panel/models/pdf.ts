@@ -71,8 +71,8 @@ export class PDF extends Markup {
 
   static {
     this.prototype.default_view = PDFView;
-    this.define<PDF.Props>(({ Number, Boolean }) => ({
-      embed: [Boolean, true],
+    this.define<PDF.Props>(({ Number, Bool }) => ({
+      embed: [Bool, true],
       start_page: [Number, 1],
     }));
   }

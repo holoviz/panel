@@ -175,9 +175,9 @@ export class HTML extends Markup {
 
   static {
     this.prototype.default_view = HTMLView
-    this.define<HTML.Props>(({Any, Boolean}) => ({
+    this.define<HTML.Props>(({Any, Bool}) => ({
       events: [ Any, {} ],
-      run_scripts: [ Boolean, true ]
+      run_scripts: [ Bool, true ]
     }))
   }
 }

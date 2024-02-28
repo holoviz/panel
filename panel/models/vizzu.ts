@@ -175,14 +175,14 @@ export class VizzuChart extends HTMLBox {
   static {
     this.prototype.default_view = VizzuChartView
 
-    this.define<VizzuChart.Props>(({Any, Array, Boolean, Number, Ref}) => ({
+    this.define<VizzuChart.Props>(({Any, Array, Bool, Number, Ref}) => ({
       animation:   [ Any,                     {} ],
       config:      [ Any,                     {} ],
       columns:     [ Array(Any),              [] ],
       source:      [ Ref(ColumnDataSource),      ],
       duration:    [ Number,                 500 ],
       style:       [ Any,                     {} ],
-      tooltip:     [ Boolean,              false ],
+      tooltip:     [ Bool,              false ],
     }))
   }
 }

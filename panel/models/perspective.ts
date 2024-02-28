@@ -285,19 +285,19 @@ export class Perspective extends HTMLBox {
   static {
     this.prototype.default_view = PerspectiveView
 
-    this.define<Perspective.Props>(({Any, Array, Boolean, Ref, Nullable, String}) => ({
+    this.define<Perspective.Props>(({Any, Array, Bool, Ref, Nullable, String}) => ({
       aggregates:       [ Any,                                 {} ],
       columns:          [ Array(Nullable(String)),             [] ],
       expressions:      [ Any,                                 {} ],
       split_by:         [ Nullable(Array(String)),           null ],
-      editable:         [ Boolean,                           true ],
+      editable:         [ Bool,                           true ],
       filters:          [ Nullable(Array(Any)),              null ],
       group_by:         [ Nullable(Array(String)),           null ],
       plugin:           [ String,                                 ],
       plugin_config:    [ Any,                                 {} ],
-      selectable:       [ Boolean,                           true ],
+      selectable:       [ Bool,                           true ],
       schema:           [ Any,                                 {} ],
-      toggle_config:    [ Boolean,                           true ],
+      toggle_config:    [ Bool,                           true ],
       sort:             [ Nullable(Array(Array(String))),    null ],
       source:           [ Ref(ColumnDataSource),                  ],
       theme:            [ String,                           'pro' ]

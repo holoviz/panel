@@ -90,8 +90,8 @@ export class Progress extends HTMLBox {
 
   static {
     this.prototype.default_view = ProgressView
-    this.define<Progress.Props>(({Any, Array, Boolean, Number, String}) => ({
-      active:    [ Boolean, true ],
+    this.define<Progress.Props>(({Any, Array, Bool, Number, String}) => ({
+      active:    [ Bool, true ],
       bar_color: [ String, 'primary' ],
       css:       [ Array(String), [] ],
       max:       [ Number, 100 ],

@@ -55,8 +55,8 @@ export class TextAreaInput extends BkTextAreaInput {
   static {
     this.prototype.default_view = TextAreaInputView;
 
-    this.define<TextAreaInput.Props>(({ Boolean, Int, Nullable }) => ({
-      auto_grow: [ Boolean,       false ],
+    this.define<TextAreaInput.Props>(({ Bool, Int, Nullable }) => ({
+      auto_grow: [ Bool,       false ],
       max_rows:  [ Nullable(Int),  null ]
     }));
   }

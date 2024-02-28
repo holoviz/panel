@@ -116,10 +116,10 @@ export class VideoStream extends HTMLBox {
   static {
     this.prototype.default_view = VideoStreamView
 
-    this.define<VideoStream.Props>(({Any, Boolean, Int, Nullable, String}) => ({
+    this.define<VideoStream.Props>(({Any, Bool, Int, Nullable, String}) => ({
       format:   [ String,       'png' ],
-      paused:   [ Boolean,      false ],
-      snapshot: [ Boolean,      false ],
+      paused:   [ Bool,      false ],
+      snapshot: [ Bool,      false ],
       timeout:  [ Nullable(Int), null ],
       value:    [ Any                 ]
     }))

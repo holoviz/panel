@@ -437,7 +437,7 @@ export class Player extends Widget {
   static {
     this.prototype.default_view = PlayerView
 
-    this.define<Player.Props>(({ Boolean, Int }) => ({
+    this.define<Player.Props>(({ Bool, Int }) => ({
       direction: [Int, 0],
       interval: [Int, 500],
       start: [Int, 0],
@@ -446,7 +446,7 @@ export class Player extends Widget {
       loop_policy: [LoopPolicy, "once"],
       value: [Int, 0],
       value_throttled: [Int, 0],
-      show_loop_controls: [Boolean, true],
+      show_loop_controls: [Bool, true],
     }))
 
     this.override<Player.Props>({ width: 400 })

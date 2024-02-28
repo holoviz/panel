@@ -61,10 +61,10 @@ export class JSON extends Markup {
 
   static {
     this.prototype.default_view = JSONView
-    this.define<JSON.Props>(({Array, Boolean, Int, Nullable, String}) => ({
+    this.define<JSON.Props>(({Array, Bool, Int, Nullable, String}) => ({
       css:           [ Array(String), [] ],
       depth:         [ Nullable(Int),  1 ],
-      hover_preview: [ Boolean,    false ],
+      hover_preview: [ Bool,    false ],
       theme:         [ JSONTheme, "dark" ],
     }))
   }
