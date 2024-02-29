@@ -162,13 +162,13 @@ export class ECharts extends HTMLBox {
   static {
     this.prototype.default_view = EChartsView
 
-    this.define<ECharts.Props>(({ Any, String }) => ({
+    this.define<ECharts.Props>(({ Any, Str }) => ({
       data:          [ Any,           {} ],
       options:       [ Any,           {} ],
       event_config:  [ Any,           {} ],
       js_events:     [ Any,           {} ],
-      theme:         [ String,  "default"],
-      renderer:      [ String,   "canvas"]
+      theme:         [ Str,  "default"],
+      renderer:      [ Str,   "canvas"]
     }))
   }
 }

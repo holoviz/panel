@@ -72,9 +72,9 @@ export class Button extends BkButton {
   static {
     this.prototype.default_view = ButtonView
 
-    this.define<Button.Props>(({Nullable, Ref, Number}) => ({
+    this.define<Button.Props>(({Nullable, Ref, Float}) => ({
       tooltip: [ Nullable(Ref(Tooltip)), null ],
-      tooltip_delay: [ Number, 500],
+      tooltip_delay: [ Float, 500],
     }))
   }
 }

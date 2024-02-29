@@ -75,9 +75,9 @@ export class CheckboxButtonGroup extends bkCheckboxButtonGroup {
   static {
     this.prototype.default_view = CheckboxButtonGroupView
 
-    this.define<CheckboxButtonGroup.Props>(({Nullable, Ref, Number}) => ({
+    this.define<CheckboxButtonGroup.Props>(({Nullable, Ref, Float}) => ({
       tooltip: [ Nullable(Ref(Tooltip)), null ],
-      tooltip_delay: [ Number, 500],
+      tooltip_delay: [ Float, 500],
     }))
   }
 }

@@ -107,11 +107,11 @@ export class Column extends BkColumn {
   static {
     this.prototype.default_view = ColumnView;
 
-    this.define<Column.Props>(({ Int, Boolean }) => ({
+    this.define<Column.Props>(({ Int, Bool }) => ({
       scroll_position: [Int, 0],
       auto_scroll_limit: [Int, 0],
       scroll_button_threshold: [Int, 0],
-      view_latest: [Boolean, false],
+      view_latest: [Bool, false],
     }));
   }
 }

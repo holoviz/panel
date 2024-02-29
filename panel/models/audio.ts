@@ -144,15 +144,15 @@ export class Audio extends HTMLBox {
   static {
     this.prototype.default_view = AudioView
 
-    this.define<Audio.Props>(({Any, Boolean, Number, Nullable}) => ({
-      loop:     [ Boolean, false ],
-      paused:   [ Boolean,  true ],
-      muted:    [ Boolean, false ],
-      autoplay: [ Boolean, false ],
-      time:     [ Number,      0 ],
-      throttle: [ Number,    250 ],
+    this.define<Audio.Props>(({Any, Bool, Float, Nullable}) => ({
+      loop:     [ Bool, false ],
+      paused:   [ Bool,  true ],
+      muted:    [ Bool, false ],
+      autoplay: [ Bool, false ],
+      time:     [ Float,      0 ],
+      throttle: [ Float,    250 ],
       value:    [ Any,        '' ],
-      volume:   [ Nullable(Number), null ],
+      volume:   [ Nullable(Float), null ],
     }))
   }
 }

@@ -250,22 +250,22 @@ export class DatetimePicker extends InputWidget {
   static {
     this.prototype.default_view = DatetimePickerView
 
-    this.define<DatetimePicker.Props>(({Boolean, String, Array, Tuple, Or, Nullable}) => {
-      const DateStr = String
-      const DatesList = Array(Or(DateStr, Tuple(DateStr, DateStr)))
+    this.define<DatetimePicker.Props>(({Bool, Str, List, Tuple, Or, Nullable}) => {
+      const DateStr = Str
+      const DatesList = List(Or(DateStr, Tuple(DateStr, DateStr)))
       return {
-        value:          [ Nullable(String), null ],
-        min_date:       [ Nullable(String), null ],
-        max_date:       [ Nullable(String), null ],
+        value:          [ Nullable(Str), null ],
+        min_date:       [ Nullable(Str), null ],
+        max_date:       [ Nullable(Str), null ],
         disabled_dates: [ Nullable(DatesList), null ],
         enabled_dates:  [ Nullable(DatesList), null ],
         position:       [ CalendarPosition, "auto" ],
-        inline:         [ Boolean, false ],
-        enable_time:    [ Boolean, true ],
-        enable_seconds: [ Boolean, true ],
-        military_time:  [ Boolean, true ],
-        date_format:    [ String, "Y-m-d H:i:S" ],
-        mode:           [ String, "single" ],
+        inline:         [ Bool, false ],
+        enable_time:    [ Bool, true ],
+        enable_seconds: [ Bool, true ],
+        military_time:  [ Bool, true ],
+        date_format:    [ Str, "Y-m-d H:i:S" ],
+        mode:           [ Str, "single" ],
       }
     })
   }

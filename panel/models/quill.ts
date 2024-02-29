@@ -205,10 +205,10 @@ export class QuillInput extends HTMLBox {
   static {
     this.prototype.default_view = QuillInputView
 
-    this.define<QuillInput.Props>(({Any, String}) => ({
-      mode:         [ String, 'toolbar' ],
-      placeholder:  [ String,        '' ],
-      text:         [ String,        '' ],
+    this.define<QuillInput.Props>(({Any, Str}) => ({
+      mode:         [ Str, 'toolbar' ],
+      placeholder:  [ Str,        '' ],
+      text:         [ Str,        '' ],
       toolbar:      [ Any,         null ],
     }))
 

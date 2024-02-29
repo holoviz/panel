@@ -75,9 +75,9 @@ export class RadioButtonGroup extends bkRadioButtonGroup {
   static {
     this.prototype.default_view = RadioButtonGroupView
 
-    this.define<RadioButtonGroup.Props>(({Nullable, Ref, Number}) => ({
+    this.define<RadioButtonGroup.Props>(({Nullable, Ref, Float}) => ({
       tooltip: [ Nullable(Ref(Tooltip)), null ],
-      tooltip_delay: [ Number, 500],
+      tooltip_delay: [ Float, 500],
     }))
   }
 }

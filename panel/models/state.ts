@@ -97,8 +97,8 @@ export class State extends Model {
   static {
     this.prototype.default_view = StateView
 
-    this.define<State.Props>(({Any, Boolean}) => ({
-      json:    [ Boolean, false ],
+    this.define<State.Props>(({Any, Bool}) => ({
+      json:    [ Bool, false ],
       state:   [ Any,        {} ],
       widgets: [ Any,        {} ],
       values:  [ Any,        [] ],
