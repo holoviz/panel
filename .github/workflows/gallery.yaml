@@ -60,7 +60,7 @@ jobs:
           ae5 deployment stop panel-gallery-dev --yes || :
           ae5 project delete panel-gallery-dev --yes || :
           ae5 project upload examples/gallery --name panel-gallery-dev --tag ${{ steps.vars.outputs.tag || '0.0.1dev' }}
-          ae5 deployment start panel-gallery-dev --endpoint panel-gallery-dev --command default --public --command default --resource-profile large --wait
+          ae5 deployment start panel-gallery-dev --endpoint panel-gallery-dev --command dev --public --resource-profile large --wait
       - name: Upload and deploy prod gallery
         if: |
           (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
@@ -71,4 +71,4 @@ jobs:
           ae5 deployment stop panel-gallery --yes || :
           ae5 project delete panel-gallery --yes || :
           ae5 project upload examples/gallery --name panel-gallery --tag ${{ steps.vars.outputs.tag }}
-          ae5 deployment start panel-gallery --endpoint panel-gallery --command default --public --command default --resource-profile extra_large --wait
+          ae5 deployment start panel-gallery --endpoint panel-gallery --command prod --public --resource-profile extra_large --wait
