@@ -89,7 +89,7 @@ napoleon_numpy_docstring = True
 myst_enable_extensions = ["colon_fence", "deflist"]
 
 gallery_endpoint = 'panel-gallery-dev' if is_dev else 'panel-gallery'
-gallery_url = f'https://{gallery_endpoint}.pyviz.demo.anaconda.com'
+gallery_url = f'https://{gallery_endpoint}.holoviz.dsp.anaconda.com'
 jlite_url = 'https://pyviz-dev.github.io/panelite-dev' if is_dev else 'https://panelite.holoviz.org'
 pyodide_url = 'https://pyviz-dev.github.io/panel/pyodide' if is_dev else 'https://panel.holoviz.org/pyodide'
 
