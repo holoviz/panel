@@ -25,8 +25,8 @@ from typing import (
 import param
 
 from bokeh.embed.bundle import (
-    CSS_RESOURCES as BkCSS_RESOURCES, Bundle as BkBundle, _bundle_extensions,
-    _use_mathjax, bundle_models, extension_dirs,
+    CSS_RESOURCES as BkCSS_RESOURCES, URL, Bundle as BkBundle,
+    _bundle_extensions, _use_mathjax, bundle_models, extension_dirs,
 )
 from bokeh.model import Model
 from bokeh.models import ImportedStyleSheet
@@ -37,7 +37,7 @@ from jinja2.loaders import FileSystemLoader
 from markupsafe import Markup
 
 from ..config import config, panel_extension as extension
-from ..util import bokeh34, isurl, url_path
+from ..util import isurl, url_path
 from .state import state
 
 if TYPE_CHECKING:
@@ -71,10 +71,8 @@ def conffilter(value):
 
 class json_dumps(json.JSONEncoder):
     def default(self, obj):
-        if bokeh34:
-            from bokeh.embed.bundle import URL
-            if isinstance(obj, URL):
-                return str(obj)
+        if isinstance(obj, URL):
+            return str(obj)
         return super().default(obj)
 
 _env = get_env()
@@ -423,11 +421,8 @@ def bundle_resources(roots, resources, notebook=False, reloading=False, enable_m
 
     hashes = js_resources.hashes if js_resources else {}
 
-    if bokeh34:
-        from bokeh.embed.bundle import URL
-
-        js_files = list(map(URL, js_files))
-        css_files = list(map(URL, css_files))
+    js_files = list(map(URL, js_files))
+    css_files = list(map(URL, css_files))
 
     return Bundle(
         css_files=css_files,
