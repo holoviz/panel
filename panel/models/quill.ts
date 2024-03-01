@@ -1,10 +1,11 @@
-import * as p from "@bokehjs/core/properties"
-import { div } from "@bokehjs/core/dom"
+import type * as p from "@bokehjs/core/properties"
+import {div} from "@bokehjs/core/dom"
 
-import { HTMLBox, HTMLBoxView } from "./layout"
+import {HTMLBox, HTMLBoxView} from "./layout"
 
 export class QuillInputView extends HTMLBoxView {
-  override model: QuillInput
+  declare model: QuillInput
+
   protected container: HTMLDivElement
   protected _editor: HTMLDivElement
   protected _editing: boolean
@@ -12,16 +13,18 @@ export class QuillInputView extends HTMLBoxView {
 
   quill: any
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.disabled.change, () => this.quill.enable(!this.model.disabled))
     this.connect(this.model.properties.visible.change, () => {
-      if (this.model.visible)
-        this.container.style.visibility = 'visible';
+      if (this.model.visible) {
+        this.container.style.visibility = "visible"
+      }
     })
     this.connect(this.model.properties.text.change, () => {
-      if (this._editing)
+      if (this._editing) {
         return
+      }
       this._editing = true
       this.quill.enable(false)
       this.quill.setContents([])
@@ -29,9 +32,9 @@ export class QuillInputView extends HTMLBoxView {
       this.quill.enable(!this.model.disabled)
       this._editing = false
     })
-    const { mode, toolbar, placeholder } = this.model.properties
+    const {mode, toolbar, placeholder} = this.model.properties
     this.on_change([placeholder], () => {
-      this.quill.root.setAttribute('data-placeholder', this.model.placeholder)
+      this.quill.root.setAttribute("data-placeholder", this.model.placeholder)
     })
     this.on_change([mode, toolbar], () => {
       this.render()
@@ -41,51 +44,51 @@ export class QuillInputView extends HTMLBoxView {
 
   _layout_toolbar(): void {
     if (this._toolbar == null) {
-      this.el.style.removeProperty('padding-top')
+      this.el.style.removeProperty("padding-top")
     } else {
       const height = this._toolbar.getBoundingClientRect().height + 1
-      this.el.style.paddingTop = height + "px"
-      this._toolbar.style.marginTop = -height + "px"
+      this.el.style.paddingTop = `${height}px`
+      this._toolbar.style.marginTop = `${-height}px`
     }
   }
 
-  render(): void {
+  override render(): void {
     super.render()
-    this.container = div({ style: "visibility: hidden;" })
+    this.container = div({style: "visibility: hidden;"})
     this.shadow_el.appendChild(this.container)
-    const theme = (this.model.mode === 'bubble') ? 'bubble' : 'snow'
+    const theme = (this.model.mode === "bubble") ? "bubble" : "snow"
     this.watch_stylesheets()
     this.quill = new (window as any).Quill(this.container, {
       modules: {
-        toolbar: this.model.toolbar
+        toolbar: this.model.toolbar,
       },
       readOnly: true,
       placeholder: this.model.placeholder,
-      theme: theme
-    });
+      theme,
+    })
 
     // Apply ShadowDOM patch found at:
     // https://github.com/quilljs/quill/issues/2961#issuecomment-1775999845
 
-    const hasShadowRootSelection = !!((document.createElement('div').attachShadow({ mode: 'open' }) as any).getSelection);
+    const hasShadowRootSelection = !!((document.createElement("div").attachShadow({mode: "open"}) as any).getSelection)
     // Each browser engine has a different implementation for retrieving the Range
     const getNativeRange = (rootNode: any) => {
       try {
         if (hasShadowRootSelection) {
           // In Chromium, the shadow root has a getSelection function which returns the range
-          return rootNode.getSelection().getRangeAt(0);
+          return rootNode.getSelection().getRangeAt(0)
         } else {
-          const selection = window.getSelection();
+          const selection = window.getSelection()
           if ((selection as any).getComposedRanges) {
             // Webkit range retrieval is done with getComposedRanges (see: https://bugs.webkit.org/show_bug.cgi?id=163921)
-            return (selection as any).getComposedRanges(rootNode)[0];
+            return (selection as any).getComposedRanges(rootNode)[0]
           } else {
             // Gecko implements the range API properly in Native Shadow: https://developer.mozilla.org/en-US/docs/Web/API/Selection/getRangeAt
-            return (selection as any).getRangeAt(0);
+            return (selection as any).getRangeAt(0)
           }
         }
       } catch {
-        return null;
+        return null
       }
     }
 
@@ -94,8 +97,8 @@ export class QuillInputView extends HTMLBoxView {
      * Replace document.activeElement with shadowRoot.activeElement
      **/
     this.quill.selection.hasFocus = () => {
-      const rootNode = (this.quill.root.getRootNode() as ShadowRoot);
-      return rootNode.activeElement === this.quill.root;
+      const rootNode = (this.quill.root.getRootNode() as ShadowRoot)
+      return rootNode.activeElement === this.quill.root
     }
 
     /**
@@ -103,78 +106,85 @@ export class QuillInputView extends HTMLBoxView {
      * Replace document.getSelection with shadow dom equivalent (different for each browser)
      **/
     this.quill.selection.getNativeRange = () => {
-      const rootNode = (this.quill.root.getRootNode() as ShadowRoot);
-      const nativeRange = getNativeRange(rootNode);
-      return !!nativeRange ? this.quill.selection.normalizeNative(nativeRange) : null;
-    };
+      const rootNode = (this.quill.root.getRootNode() as ShadowRoot)
+      const nativeRange = getNativeRange(rootNode)
+      return !!nativeRange ? this.quill.selection.normalizeNative(nativeRange) : null
+    }
 
     /**
      * Original implementation relies on Selection.addRange to programmatically set the range, which does not work
      * in Webkit with Native Shadow. Selection.addRange works fine in Chromium and Gecko.
      **/
-    this.quill.selection.setNativeRange = (startNode: any, startOffset: any) => {
-      var endNode = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : startNode;
-      var endOffset = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : startOffset;
-      var force = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
+    this.quill.selection.setNativeRange = (startNode: Element, startOffset: number) => {
+      let endNode = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : startNode
+      let endOffset = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : startOffset
+      const force = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false
       if (startNode != null && (this.quill.selection.root.parentNode == null || startNode.parentNode == null || endNode.parentNode == null)) {
-        return;
+        return
       }
-      var selection = document.getSelection();
-      if (selection == null) return;
+      const selection = document.getSelection()
+      if (selection == null) {
+        return
+      }
       if (startNode != null) {
-        if (!this.quill.selection.hasFocus()) this.quill.selection.root.focus();
-        var native = (this.quill.selection.getNativeRange() || {}).native;
+        if (!this.quill.selection.hasFocus()) {
+          this.quill.selection.root.focus()
+        }
+        const native = (this.quill.selection.getNativeRange() || {}).native
         if (native == null || force || startNode !== native.startContainer || startOffset !== native.startOffset || endNode !== native.endContainer || endOffset !== native.endOffset) {
           if (startNode.tagName == "BR") {
-            startOffset = [].indexOf.call(startNode.parentNode.childNodes, startNode);
-            startNode = startNode.parentNode;
+            startOffset = Array.prototype.indexOf.call(startNode.parentNode?.childNodes ?? [], startNode)
+            startNode = startNode.parentNode as any
           }
           if (endNode.tagName == "BR") {
-            endOffset = [].indexOf.call(endNode.parentNode.childNodes, endNode);
-            endNode = endNode.parentNode;
+            endOffset = Array.prototype.indexOf(endNode.parentNode?.childNodes ?? [], endNode)
+            endNode = endNode.parentNode
           }
-          selection.setBaseAndExtent(startNode, startOffset, endNode, endOffset);
+          selection.setBaseAndExtent(startNode, startOffset, endNode, endOffset)
         }
       } else {
-        selection.removeAllRanges();
-        this.quill.selection.root.blur();
-        document.body.focus();
+        selection.removeAllRanges()
+        this.quill.selection.root.blur()
+        document.body.focus()
       }
     }
 
-    this._editor = (this.shadow_el.querySelector('.ql-editor') as HTMLDivElement)
-    this._toolbar = (this.shadow_el.querySelector('.ql-toolbar') as HTMLDivElement)
+    this._editor = (this.shadow_el.querySelector(".ql-editor") as HTMLDivElement)
+    this._toolbar = (this.shadow_el.querySelector(".ql-toolbar") as HTMLDivElement)
 
-    const delta = this.quill.clipboard.convert(this.model.text);
-    this.quill.setContents(delta);
+    const delta = this.quill.clipboard.convert(this.model.text)
+    this.quill.setContents(delta)
 
-    this.quill.on('text-change', () => {
-      if (this._editing)
+    this.quill.on("text-change", () => {
+      if (this._editing) {
         return
+      }
       this._editing = true
       this.model.text = this._editor.innerHTML
       this._editing = false
-    });
-    if (!this.model.disabled)
+    })
+    if (!this.model.disabled) {
       this.quill.enable(!this.model.disabled)
+    }
 
     document.addEventListener("selectionchange", (..._args: any[]) => {
       // Update selection and some other properties
       this.quill.selection.update()
-    });
+    })
   }
 
-  style_redraw(): void {
-    if (this.model.visible)
-      this.container.style.visibility = 'visible';
+  override style_redraw(): void {
+    if (this.model.visible) {
+      this.container.style.visibility = "visible"
+    }
 
-    const delta = this.quill.clipboard.convert(this.model.text);
-    this.quill.setContents(delta);
+    const delta = this.quill.clipboard.convert(this.model.text)
+    this.quill.setContents(delta)
 
     this.invalidate_layout()
   }
 
-  after_layout(): void {
+  override after_layout(): void {
     super.after_layout()
     this._layout_toolbar()
   }
@@ -194,26 +204,26 @@ export namespace QuillInput {
 export interface QuillInput extends QuillInput.Attrs { }
 
 export class QuillInput extends HTMLBox {
-  properties: QuillInput.Props
+  declare properties: QuillInput.Props
 
   constructor(attrs?: Partial<QuillInput.Attrs>) {
     super(attrs)
   }
 
-  static __module__ = "panel.models.quill"
+  static override __module__ = "panel.models.quill"
 
   static {
     this.prototype.default_view = QuillInputView
 
     this.define<QuillInput.Props>(({Any, Str}) => ({
-      mode:         [ Str, 'toolbar' ],
-      placeholder:  [ Str,        '' ],
-      text:         [ Str,        '' ],
+      mode:         [ Str, "toolbar" ],
+      placeholder:  [ Str,        "" ],
+      text:         [ Str,        "" ],
       toolbar:      [ Any,         null ],
     }))
 
     this.override<QuillInput.Props>({
-      height: 300
+      height: 300,
     })
   }
 }

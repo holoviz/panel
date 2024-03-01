@@ -29,13 +29,13 @@ export namespace VTKAxes {
 export interface VTKAxes extends VTKAxes.Attrs {}
 
 export class VTKAxes extends Model {
-  properties: VTKAxes.Props
+  declare properties: VTKAxes.Props
 
   constructor(attrs?: Partial<VTKAxes.Attrs>) {
     super(attrs)
   }
 
-  static __module__ = "panel.models.vtk"
+  static override __module__ = "panel.models.vtk"
 
   static {
     this.define<VTKAxes.Props>(({Any, Array, Boolean, Number}) => ({

@@ -1,12 +1,13 @@
-import {Tooltip, TooltipView} from "@bokehjs/models/ui/tooltip"
-import { build_view, IterViews} from "@bokehjs/core/build_views"
-import * as p from "@bokehjs/core/properties"
+import type {TooltipView} from "@bokehjs/models/ui/tooltip"
+import {Tooltip} from "@bokehjs/models/ui/tooltip"
+import type {IterViews} from "@bokehjs/core/build_views"
+import {build_view} from "@bokehjs/core/build_views"
+import type * as p from "@bokehjs/core/properties"
 
 import {
   RadioButtonGroup as bkRadioButtonGroup,
   RadioButtonGroupView as bkRadioButtonGroupView,
-} from '@bokehjs/models/widgets/radio_button_group'
-
+} from "@bokehjs/models/widgets/radio_button_group"
 
 export class RadioButtonGroupView extends bkRadioButtonGroupView {
   declare model: RadioButtonGroup
@@ -15,15 +16,17 @@ export class RadioButtonGroupView extends bkRadioButtonGroupView {
 
   override *children(): IterViews {
     yield* super.children()
-    if (this.tooltip != null)
+    if (this.tooltip != null) {
       yield this.tooltip
+    }
   }
 
   override async lazy_initialize(): Promise<void> {
     await super.lazy_initialize()
     const {tooltip} = this.model
-    if (tooltip != null)
+    if (tooltip != null) {
       this.tooltip = await build_view(tooltip, {parent: this})
+    }
   }
 
   override remove(): void {
@@ -66,7 +69,7 @@ export class RadioButtonGroup extends bkRadioButtonGroup {
   declare properties: RadioButtonGroup.Props
   declare __view_type__: RadioButtonGroupView
 
-  static __module__ = "panel.models.widgets"
+  static override __module__ = "panel.models.widgets"
 
   constructor(attrs?: Partial<RadioButtonGroup.Attrs>) {
     super(attrs)
