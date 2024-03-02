@@ -64,7 +64,7 @@ alt: Videostream App
 
 ::::
 
-Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library designed to streamline the **development of robust tools, dashboards, and complex applications entirely within Python**. With a comprehensive philosophy, Panel integrates seamlessly with the PyData ecosystem, offering powerful data tables and more for efficient workflows.
+Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library designed to streamline the **development of robust tools, dashboards, and complex applications entirely within Python**. With a comprehensive philosophy, Panel integrates seamlessly with the PyData ecosystem, offering powerful, interactive data tables and visualizations, and more for efficient workflows.
 
 Its feature set includes high-level reactive APIs and lower-level callback-based APIs, ensuring rapid development of exploratory applications and facilitating the creation of intricate, multi-page applications with extensive interactivity.
 
@@ -143,7 +143,7 @@ How-to guides provide step-by-step recipes for solving essential problems and ta
 :link: api/index
 :link-type: doc
 
-The Panel API Reference Manual furnishes an extensive guide covering Panel's methods and parameters.
+The Panel API Reference Manual provides an extensive guide covering Panel's methods and parameters.
 :::
 
 ::::
