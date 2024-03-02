@@ -108,7 +108,9 @@ export class TerminalView extends HTMLBoxView {
 
   after_layout(): void {
     super.after_layout()
-    this.fit()
+    if (this.container != null) {
+      this.fit()
+    }
   }
 }
 
