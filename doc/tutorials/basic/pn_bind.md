@@ -1,4 +1,4 @@
-# Reacting to User Input
+# React to User Input
 
 Welcome to the interactive world of Panel! In this section, you'll learn how to make your Panel applications come alive by reacting to user input. We'll explore how to bind functions to widgets and add side effects using the `watch=True` parameter in Panel.
 
