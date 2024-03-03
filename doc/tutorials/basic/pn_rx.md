@@ -194,9 +194,9 @@ pn.Column(
 
 If you look in the terminal you will see that `pn.rx` only reruns your functions once every time you change an input widget. This is a big contrast to `pn.bind` which might rerun the functions multiple times.
 
-## Triggering Side Effects with `watch`
+## Triggering Side Effects with `.watch`
 
-When you need to trigger additional tasks in response to user actions, using `watch` comes in handy:
+When you need to trigger additional tasks in response to user actions, using `.watch` comes in handy:
 
 ```{pyodide}
 import panel as pn
@@ -219,11 +219,7 @@ def start_stop_wind_turbine(clicked):
     print("running action")
     is_stopped.rx.value = not is_stopped.rx.value
 
-# Todo: Figure out how to watch efficiently
-# See https://github.com/holoviz/param/issues/806#issuecomment-1974715821
-# https://github.com/holoviz/panel/issues/6426
-# https://github.com/holoviz/param/issues/912
-b_stop_wind_turbine = pn.rx(start_stop_wind_turbine)(submit)
+b_stop_wind_turbine = submit.rx.watch(start_stop_wind_turbine)
 
 pn.Column(submit, b_stop_wind_turbine).servable()
 ```
@@ -267,16 +263,14 @@ async def start_stop_wind_turbine(clicked):
     is_active.rx.value=False
     print("done")
 
+# Todo: Fix https://github.com/holoviz/param/issues/913
+b_stop_wind_turbine = submit.rx.watch(start_stop_wind_turbine)
 
-b_stop_wind_turbine = pn.rx(start_stop_wind_turbine)(submit)
-
-# Todo: Fix same problems as in Watch section
-
-pn.Column(submit, b_stop_wind_turbine, is_active).servable()
+pn.Column(submit, b_stop_wind_turbine).servable()
 ```
 
 :::{note}
-In the example we use a `ThreadPoolExecutor` this should work great if your blocking task releases the GIL while running. Tasks that request data from the web or read data from files typically do this. Some computational methods from Numpy, Pandas etc. also release the GIL. If your long running task does not release the GIL you might want to replace the `ThreadPoolExecutor` with a `ProcessPoolExecutor`. This introduces some overhead though.
+In the example we use a `ThreadPoolExecutor` this should work great if your blocking task releases the GIL while running. Tasks that request data from the web or read data from files typically do this. Some computational methods from Numpy, Pandas etc. also release the GIL. If your long running task does not release the GIL you might want to replace the `ThreadPoolExecutor` with a `ProcessPoolExecutor`. This introduces some performance overhead though.
 :::
 
 ## Recommended Reading
