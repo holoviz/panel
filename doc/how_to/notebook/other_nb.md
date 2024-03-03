@@ -12,7 +12,7 @@ In the Google Colaboratory notebook, first make sure to load the `pn.extension()
 
 ### Anaconda Cloud
 
-When using Anaconda Coud, make sure to upgrade the Panel package to the latest version using !pip install
+When using Anaconda Cloud, make sure to upgrade the Panel package to the latest version using !pip install
 
 ### VSCode notebook
 
