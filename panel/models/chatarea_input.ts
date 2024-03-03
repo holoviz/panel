@@ -9,7 +9,7 @@ export class ChatMessageEvent extends ModelEvent {
     super()
   }
 
-  protected get event_values(): Attrs {
+  override get event_values(): Attrs {
     return {model: this.origin, value: this.value}
   }
 
@@ -19,9 +19,9 @@ export class ChatMessageEvent extends ModelEvent {
 }
 
 export class ChatAreaInputView extends PnTextAreaInputView {
-  model: ChatAreaInput;
+  declare  model: ChatAreaInput;
 
-  render(): void {
+  override render(): void {
     super.render()
 
     this.el.addEventListener("keydown", (event) => {
@@ -43,13 +43,13 @@ export namespace ChatAreaInput {
 export interface ChatAreaInput extends ChatAreaInput.Attrs { }
 
 export class ChatAreaInput extends PnTextAreaInput {
-  properties: ChatAreaInput.Props;
+  declare: ChatAreaInput.Props;
 
   constructor(attrs?: Partial<ChatAreaInput.Attrs>) {
     super(attrs);
   }
 
-  static __module__ = "panel.models.chatarea_input";
+  static override __module__ = "panel.models.chatarea_input";
 
   static {
     this.prototype.default_view = ChatAreaInputView;
