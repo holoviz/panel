@@ -15,7 +15,7 @@ import panel as pn
 
 pn.extension()
 
-def calculate_power_generation(wind_speed, efficiency):
+def calculate_power(wind_speed, efficiency):
     power_generation = wind_speed * efficiency
     return f"Wind Speed: {wind_speed} m/s, Efficiency: {efficiency}, Power Generation: {power_generation:.1f} kW"
 
@@ -25,23 +25,23 @@ wind_speed = pn.widgets.FloatSlider(
 
 efficiency = 0.3
 
-calculate_power_fn = pn.rx(calculate_power_generation)(wind_speed=wind_speed, efficiency=efficiency)
+calculate_power_rx = pn.rx(calculate_power)(wind_speed=wind_speed, efficiency=efficiency)
 
 pn.Column(
-    calculate_power_fn
+    calculate_power_rx
 ).servable()
 ```
 
-You will notice how adding `calculate_power_fn` to the `Column` displays both the widget and the bound function.
+You will notice how adding `calculate_power_rx` to the `Column` displays both the widget and the bound function.
 
-To separate the widget and bound function we use the `calculate_power_fn` as a reference to a Pane:
+To separate the widget and bound function we use the `calculate_power_rx` as a reference to a Pane:
 
 ```{pyodide}
 import panel as pn
 
 pn.extension()
 
-def calculate_power_generation(wind_speed, efficiency):
+def calculate_power(wind_speed, efficiency):
     power_generation = wind_speed * efficiency
     return f"Wind Speed: {wind_speed} m/s, Efficiency: {efficiency}, Power Generation: {power_generation:.1f} kW"
 
@@ -51,10 +51,10 @@ wind_speed = pn.widgets.FloatSlider(
 
 efficiency = 0.3
 
-calculate_power_fn = pn.rx(calculate_power_generation)(wind_speed=wind_speed, efficiency=efficiency)
+calculate_power_rx = pn.rx(calculate_power)(wind_speed=wind_speed, efficiency=efficiency)
 
 pn.Column(
-    wind_speed, pn.pane.Markdown(calculate_power_fn)
+    wind_speed, pn.pane.Markdown(calculate_power_rx)
 ).servable()
 ```
 
@@ -75,7 +75,7 @@ import panel as pn
 pn.extension()
 
 
-def calculate_power_generation(wind_speed, efficiency):
+def calculate_power(wind_speed, efficiency):
     power_generation = wind_speed * efficiency
     return f"Wind Speed: {wind_speed} m/s, Efficiency: {efficiency}, Power Generation: {power_generation:.1f} kW"
 
@@ -85,10 +85,10 @@ wind_speed = pn.widgets.FloatSlider(
 )
 efficiency = pn.widgets.FloatInput(value=0.3, start=0.0, end=1.0, name="Efficiency (kW/(m/s))")
 
-calculate_power_fn = pn.rx(calculate_power_generation)(wind_speed=wind_speed, efficiency=efficiency)
+calculate_power_rx = pn.rx(calculate_power)(wind_speed=wind_speed, efficiency=efficiency)
 
 pn.Column(
-    wind_speed, efficiency, pn.pane.Markdown(calculate_power_fn)
+    wind_speed, efficiency, pn.pane.Markdown(calculate_power_rx)
 ).servable()
 ```
 
@@ -102,7 +102,7 @@ import panel as pn
 pn.extension()
 
 
-def calculate_power_generation(wind_speed, efficiency):
+def calculate_power(wind_speed, efficiency):
     power_generation = wind_speed * efficiency
     return f"Wind Speed: {wind_speed} m/s, Efficiency: {efficiency}, Power Generation: {power_generation:.1f} kW"
 
@@ -113,17 +113,17 @@ wind_speed = pn.widgets.FloatSlider(
 efficiency = pn.widgets.FloatInput(value=0.3, start=0.0, end=1.0, name="Efficiency (kW/(m/s))")
 submit = pn.widgets.Button(name="Submit")
 
-calculate_power_fn = pn.rx(calculate_power_generation)(wind_speed=wind_speed, efficiency=efficiency)
+calculate_power_rx = pn.rx(calculate_power)(wind_speed=wind_speed, efficiency=efficiency)
 
 
-result_fn = calculate_power_fn.rx.when(submit)
+result_fn = calculate_power_rx.rx.when(submit)
 
 pn.Column(
     wind_speed, efficiency, submit, pn.pane.Markdown(result_fn)
 ).servable()
 ```
 
-Try changing some of the inputs and clicking the submit Button. Try again. Notice how the `calculate_power_fn` is only run when we click the submit Button - we used `.when` to achieve this effect.
+Try changing some of the inputs and clicking the submit Button. Try again. Notice how the `calculate_power_rx` is only run when we click the submit Button - we used `.when` to achieve this effect.
 
 ## Harnessing Throttling for Performance
 
@@ -136,7 +136,7 @@ from time import sleep
 pn.extension()
 
 
-def calculate_power_generation(wind_speed, efficiency):
+def calculate_power(wind_speed, efficiency):
     print("calculate", wind_speed)
     sleep(1)
     power_generation = wind_speed * efficiency
@@ -149,18 +149,18 @@ wind_speed = pn.widgets.FloatSlider(
 
 efficiency = 0.3
 
-calculate_power_fn = pn.rx(calculate_power_generation)(wind_speed=wind_speed.param.value_throttled, efficiency=efficiency)
+calculate_power_rx = pn.rx(calculate_power)(wind_speed=wind_speed.param.value_throttled, efficiency=efficiency)
 
 pn.Column(
-    wind_speed, pn.pane.Markdown(calculate_power_fn)
+    wind_speed, pn.pane.Markdown(calculate_power_rx)
 ).servable()
 ```
 
-Try dragging the slider. Notice that the `calculate_power_generation` function is only run when you release the mouse.
+Try dragging the slider. Notice that the `calculate_power` function is only run when you release the mouse.
 
 ### Binding to reactive expressions
 
-You might want to break down your reactive expressions into smaller sub reactive expressions
+You might want to break down your reactive expressions into smaller sub reactive expressions for better reusability and maintainability.
 
 ```{pyodide}
 import panel as pn
@@ -183,12 +183,12 @@ wind_speed = pn.widgets.FloatSlider(
 
 efficiency = 0.3
 
-b_power_generation = pn.rx(power_generation)(wind_speed=wind_speed, efficiency=efficiency)
+power_generation_rx = pn.rx(power_generation)(wind_speed=wind_speed, efficiency=efficiency)
 
-b_power_generation_text = pn.rx(power_generation_text)(wind_speed, efficiency, b_power_generation)
+power_generation_text_rx = pn.rx(power_generation_text)(wind_speed, efficiency, power_generation_rx)
 
 pn.Column(
-    wind_speed, pn.pane.Str(b_power_generation), pn.pane.Markdown(b_power_generation_text)
+    wind_speed, pn.pane.Str(power_generation_rx), pn.pane.Markdown(power_generation_text_rx)
 ).servable()
 ```
 
@@ -203,6 +203,7 @@ import panel as pn
 
 pn.extension()
 
+# Declare state of application
 is_stopped=pn.rx(True)
 
 def name(stopped):
@@ -219,10 +220,14 @@ def start_stop_wind_turbine(clicked):
     print("running action")
     is_stopped.rx.value = not is_stopped.rx.value
 
-b_stop_wind_turbine = submit.rx.watch(start_stop_wind_turbine)
+submit.rx.watch(start_stop_wind_turbine)
 
-pn.Column(submit, b_stop_wind_turbine).servable()
+pn.Column(submit).servable()
 ```
+
+:::{tip}
+We recommend using this recommended approach when developing more dynamic applications. Applications are easier to reason about when the application displays according to the state instead of being changed directly.
+:::
 
 ### Keep the UI responsive with threads or processes
 
@@ -237,8 +242,9 @@ import panel as pn
 
 pn.extension()
 
-is_stopped=pn.rx(True)
+is_stopped = pn.rx(True)
 is_active = pn.rx(False)
+
 
 def name(stopped):
     if stopped:
@@ -246,27 +252,30 @@ def name(stopped):
     else:
         return "Stop the wind turbine"
 
+
 rx_name = pn.rx(name)(is_stopped)
 
 submit = pn.widgets.Button(name=rx_name, disabled=is_active, loading=is_active)
 
+
 async def start_stop_wind_turbine(clicked):
     if not clicked:
         return
-    is_active.rx.value=True
+    is_active.rx.value = True
     with submit.param.update(loading=True, disabled=True):
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future = executor.submit(sleep, 1)
             result = await asyncio.wrap_future(future)
 
         is_stopped.rx.value = not is_stopped.rx.value
-    is_active.rx.value=False
+    is_active.rx.value = False
     print("done")
 
-# Todo: Fix https://github.com/holoviz/param/issues/913
-b_stop_wind_turbine = submit.rx.watch(start_stop_wind_turbine)
 
-pn.Column(submit, b_stop_wind_turbine).servable()
+# Todo: Fix https://github.com/holoviz/param/issues/913
+submit.rx.watch(start_stop_wind_turbine)
+
+pn.Column(submit).servable()
 ```
 
 :::{note}
