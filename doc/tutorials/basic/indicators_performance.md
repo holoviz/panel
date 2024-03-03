@@ -80,7 +80,7 @@ Click [this link](https://panel.holoviz.org/reference/index.html#indicators) to 
 
 ## Recap
 
-In this tutorial, we have epxlored using Panel's versatile indicators by creating a visualization of the performance metrics of wind turbines. We:
+In this tutorial, we have explored using Panel's versatile indicators by creating a visualization of the performance metrics of wind turbines. We:
 
 - Leveraged the [`Number`](../../reference/indicators/Number.ipynb) indicator to display current performance.
 - Utilized the [`Trend`](../../reference/indicators/Trend.ipynb) indicator to showcase trending performance over time.
