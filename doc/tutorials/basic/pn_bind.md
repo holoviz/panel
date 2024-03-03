@@ -383,11 +383,21 @@ pn.Column(submit).servable()
 In the example we use a `ThreadPoolExecutor` this should work great if your blocking task releases the GIL while running. Tasks that request data from the web or read data from files typically do this. Some computational methods from Numpy, Pandas etc. also release the GIL. If your long running task does not release the GIL you might want to replace the `ThreadPoolExecutor` with a `ProcessPoolExecutor`. This introduces some overhead though.
 :::
 
+## Recap
+
+In this section you have learned to `bind` your functions to widgets such that Panel can react to user input and update the display:
+
+- `pn.bind(some_function, widget_1, widget_2)` to update the display
+- `pn.bind(some_task, some_widget, watch=True)` to trigger a task when a button is clicked or a widget value is changed.
+- Use throttling to only trigger computations when the user releases the mouse
+- Use async and threads or process to keep your UI and server response while long running tasks are running.
+
 ## Resources
 
 ### How-to
 
 - [Add interactivity to a function](../../how_to/interactivity/bind_function.md)
+- [Add Interactivity with `pn.bind` | Migrate from Streamlit](../../how_to/streamlit_migration/interactivity.md)
 - [Enable Throttling](../../how_to/performance/throttling.md)
 - [Run synchronous functions asynchronously](../../how_to/concurrency/sync_to_async.md)
 - [Setup Manual Threading](../../how_to/concurrency/manual_threading.md)
