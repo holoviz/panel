@@ -484,7 +484,7 @@ class ChatMessage(PaneBase):
             for o in obj.objects:
                 self._include_message_css_class_inplace(o)
         elif isinstance(obj, str):
-            return self._include_message_css_class_inplace(Markdown(obj))
+            obj = Markdown(obj)
 
         is_markup = isinstance(obj, HTMLBasePane) and not isinstance(obj, FileBase)
         if obj.css_classes or not is_markup:
