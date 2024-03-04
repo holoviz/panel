@@ -64,6 +64,7 @@ class ChatReactionIcons(CompositeWidget):
                 icon=icon,
                 active_icon=active_icon,
                 value=option in self.value,
+                margin=0,
             )
             icon._reaction = option
             icon.param.watch(self._update_value, "value")
