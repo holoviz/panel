@@ -27,13 +27,13 @@ import param
 try:
     from param import Skip
 except Exception:
-    class Skip(RuntimeError):
+    class Skip(Exception):
         """
         Exception that allows skipping an update for function-level updates.
         """
 from param.parameterized import (
-    classlist, discard_events, eval_function_with_deps, get_method_owner,
-    iscoroutinefunction, resolve_ref, resolve_value,
+    Undefined, classlist, discard_events, eval_function_with_deps,
+    get_method_owner, iscoroutinefunction, resolve_ref, resolve_value,
 )
 from param.reactive import rx
 
@@ -842,9 +842,14 @@ class ParamRef(ReplacementPane):
                             pass
             else:
                 try:
-                    self._update_inner(await awaitable)
+                    new = await awaitable
+                    if new is Skip or new is Undefined:
+                        raise Skip
+                    self._update_inner(new)
                 except Skip:
-                    pass
+                    self.param.log(
+                        param.DEBUG, 'Skip event was raised, skipping update.'
+                    )
         except Exception as e:
             if not curdoc or (has_context and curdoc.session_context):
                 raise e
@@ -865,7 +870,12 @@ class ParamRef(ReplacementPane):
             else:
                 try:
                     new_object = self.eval(self.object)
+                    if new_object is Skip and new_object is Undefined:
+                        raise Skip
                 except Skip:
+                    self.param.log(
+                        param.DEBUG, 'Skip event was raised, skipping update.'
+                    )
                     return
             if inspect.isawaitable(new_object) or isinstance(new_object, types.AsyncGeneratorType):
                 param.parameterized.async_executor(partial(self._eval_async, new_object))
