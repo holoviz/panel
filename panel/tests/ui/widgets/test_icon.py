@@ -337,3 +337,29 @@ def test_button_icon_tooltip(page):
     page.hover(".bk-TablerIcon")
     wait_until(lambda: page.locator(".bk-tooltip-content") is not None, page)
     assert page.locator(".bk-tooltip-content").text_content() == "Click me"
+
+
+def test_button_icon_name(page):
+    button = ButtonIcon(name="Like")
+    serve_component(page, button)
+
+    assert button.name == "Like"
+    assert page.locator(".bk-IconLabel").text_content() == "Like"
+
+
+def test_button_icon_name_dynamically(page):
+    button = ButtonIcon(name="Like")
+    serve_component(page, button)
+
+    assert button.name == "Like"
+    assert page.locator(".bk-IconLabel").text_content() == "Like"
+
+    button.name = "Dislike"
+    assert button.name == "Dislike"
+    assert page.locator(".bk-IconLabel").text_content() == "Dislike"
+
+    assert page.locator(".bk-IconLabel").bounding_box()["width"] < 40
+
+    button.size = "2em"
+    # check size
+    assert page.locator(".bk-IconLabel").bounding_box()["width"] >= 40

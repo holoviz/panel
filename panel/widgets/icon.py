@@ -17,6 +17,7 @@ from .button import ButtonClick, _ClickButton
 
 
 class _ClickableIcon(Widget):
+
     active_icon = param.String(default='', doc="""
         The name of the icon to display when toggled from
         [tabler-icons.io](https://tabler-icons.io)/ or an SVG.""")
@@ -34,7 +35,7 @@ class _ClickableIcon(Widget):
     _widget_type = _PnClickableIcon
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        **TooltipMixin._rename, 'name': 'name',
+        **TooltipMixin._rename, 'name': 'title',
     }
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
@@ -78,7 +79,7 @@ class ButtonIcon(_ClickableIcon, _ClickButton, TooltipMixin):
     _widget_type = _PnButtonIcon
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        **TooltipMixin._rename, 'name': 'name', 'clicks': None,
+        **TooltipMixin._rename, 'name': 'title', 'clicks': None,
     }
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
