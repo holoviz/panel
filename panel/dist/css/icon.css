@@ -10,3 +10,13 @@
   opacity: 1;
   transform: scale(1.1);
 }
+
+.bk-IconLabel {
+  margin-left: 5px;
+}
+
+.bk-IconRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
