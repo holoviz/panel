@@ -1,23 +1,24 @@
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 
 import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 
 export class AudioView extends HTMLBoxView {
-  model: Audio
+  declare model: Audio
+
   protected audioEl: HTMLAudioElement
   protected dialogEl: HTMLElement
   private _blocked: boolean
   private _time: any
   private _setting: boolean
 
-  initialize(): void {
+  override initialize(): void {
     super.initialize()
     this._blocked = false
     this._setting = false
     this._time = Date.now()
   }
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.loop.change, () => this.set_loop())
     this.connect(this.model.properties.paused.change, () => this.set_paused())
@@ -28,27 +29,29 @@ export class AudioView extends HTMLBoxView {
     this.connect(this.model.properties.autoplay.change, () => this.set_autoplay())
   }
 
-  render(): void {
+  override render(): void {
     super.render()
-    this.audioEl = document.createElement('audio')
+    this.audioEl = document.createElement("audio")
     this.audioEl.controls = true
     this.audioEl.src = this.model.value
     this.audioEl.currentTime = this.model.time
     this.audioEl.loop = this.model.loop
     this.audioEl.muted = this.model.muted
     this.audioEl.autoplay = this.model.autoplay
-    if (this.model.volume != null)
+    if (this.model.volume != null) {
       this.audioEl.volume = this.model.volume/100
-    else
+    } else {
       this.model.volume = this.audioEl.volume*100
+    }
     this.audioEl.onpause = () => this.model.paused = true
     this.audioEl.onplay = () => this.model.paused = false
     this.audioEl.ontimeupdate = () => this.update_time(this)
     this.audioEl.onvolumechange = () => this.update_volume(this)
     set_size(this.audioEl, this.model, false)
     this.shadow_el.appendChild(this.audioEl)
-    if (!this.model.paused)
+    if (!this.model.paused) {
       this.audioEl.play()
+    }
   }
 
   update_time(view: AudioView): void {
@@ -56,8 +59,9 @@ export class AudioView extends HTMLBoxView {
       view._setting = false
       return
     }
-    if ((Date.now() - view._time) < view.model.throttle)
+    if ((Date.now() - view._time) < view.model.throttle) {
       return
+    }
     view._blocked = true
     view.model.time = view.audioEl.currentTime
     view._time = Date.now()
@@ -85,10 +89,12 @@ export class AudioView extends HTMLBoxView {
   }
 
   set_paused(): void {
-    if (!this.audioEl.paused && this.model.paused)
+    if (!this.audioEl.paused && this.model.paused) {
       this.audioEl.pause()
-    if (this.audioEl.paused && !this.model.paused)
+    }
+    if (this.audioEl.paused && !this.model.paused) {
       this.audioEl.play()
+    }
   }
 
   set_volume(): void {
@@ -96,9 +102,9 @@ export class AudioView extends HTMLBoxView {
       this._blocked = false
       return
     }
-    this._setting = true;
+    this._setting = true
     if (this.model.volume != null) {
-      this.audioEl.volume = (this.model.volume as number)/100
+      this.audioEl.volume = this.model.volume/100
     }
   }
 
@@ -107,7 +113,7 @@ export class AudioView extends HTMLBoxView {
       this._blocked = false
       return
     }
-    this._setting = true;
+    this._setting = true
     this.audioEl.currentTime = this.model.time
   }
 
@@ -133,26 +139,26 @@ export namespace Audio {
 export interface Audio extends Audio.Attrs {}
 
 export class Audio extends HTMLBox {
-  properties: Audio.Props
+  declare properties: Audio.Props
 
   constructor(attrs?: Partial<Audio.Attrs>) {
     super(attrs)
   }
 
-  static __module__ = "panel.models.widgets"
+  static override __module__ = "panel.models.widgets"
 
   static {
     this.prototype.default_view = AudioView
 
-    this.define<Audio.Props>(({Any, Boolean, Number, Nullable}) => ({
-      loop:     [ Boolean, false ],
-      paused:   [ Boolean,  true ],
-      muted:    [ Boolean, false ],
-      autoplay: [ Boolean, false ],
-      time:     [ Number,      0 ],
-      throttle: [ Number,    250 ],
-      value:    [ Any,        '' ],
-      volume:   [ Nullable(Number), null ],
+    this.define<Audio.Props>(({Any, Bool, Float, Nullable}) => ({
+      loop:     [ Bool, false ],
+      paused:   [ Bool,  true ],
+      muted:    [ Bool, false ],
+      autoplay: [ Bool, false ],
+      time:     [ Float,      0 ],
+      throttle: [ Float,    250 ],
+      value:    [ Any,        "" ],
+      volume:   [ Nullable(Float), null ],
     }))
   }
 }

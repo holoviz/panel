@@ -546,7 +546,7 @@ class TestChatFeedCallback:
         assert chat_feed.objects[1].object == "Message"
 
     def test_generator(self, chat_feed):
-        async def echo(contents, user, instance):
+        def echo(contents, user, instance):
             message = ""
             for char in contents:
                 message += char
@@ -578,6 +578,18 @@ class TestChatFeedCallback:
         await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "Message"
         assert not chat_feed.objects[-1].show_activity_dot
+
+    def test_placeholder_text_params(self, chat_feed):
+        def echo(contents, user, instance):
+            assert instance._placeholder.user == "Loading..."
+            assert instance._placeholder.object == "Thinking..."
+            time.sleep(1.25)
+            return "hey testing"
+
+        chat_feed.callback = echo
+        chat_feed.placeholder_text = "Thinking..."
+        chat_feed.placeholder_params = {"user": "Loading..."}
+        chat_feed.send("Message", respond=True)
 
     def test_placeholder_disabled(self, chat_feed):
         def echo(contents, user, instance):
@@ -722,6 +734,23 @@ class TestChatFeedCallback:
             chat_feed.send("Message", respond=True)
         wait_until(lambda: len(chat_feed.objects) == 1)
 
+    def test_callback_stop_generator(self, chat_feed):
+        def callback(msg, user, instance):
+            yield "A"
+            assert chat_feed.stop()
+            time.sleep(0.5)
+            yield "B"
+
+        chat_feed.callback = callback
+        try:
+            chat_feed.send("Message", respond=True)
+        except asyncio.CancelledError:  # tests pick up this error
+            pass
+        # use sleep here instead of wait for because
+        # the callback is timed and I want to confirm stop works
+        time.sleep(1)
+        assert chat_feed.objects[-1].object == "A"
+
     def test_callback_stop_async_generator(self, chat_feed):
         async def callback(msg, user, instance):
             yield "A"
@@ -739,29 +768,24 @@ class TestChatFeedCallback:
         time.sleep(1)
         assert chat_feed.objects[-1].object == "A"
 
+    def test_callback_stop_function(self, chat_feed):
+        def callback(msg, user, instance):
+            assert chat_feed.stop()
+            return "B"
+
+        chat_feed.callback = callback
+        try:
+            chat_feed.send("Message", respond=True)
+        except asyncio.CancelledError:  # tests pick up this error
+            pass
+        assert chat_feed.objects[-1].object == "Message"
+
     def test_callback_stop_async_function(self, chat_feed):
         async def callback(msg, user, instance):
             message = instance.stream("A")
             assert chat_feed.stop()
             await asyncio.sleep(0.5)
             instance.stream("B", message=message)
-
-        chat_feed.callback = callback
-        try:
-            chat_feed.send("Message", respond=True)
-        except asyncio.CancelledError:
-            pass
-        # use sleep here instead of wait for because
-        # the callback is timed and I want to confirm stop works
-        time.sleep(1)
-        assert chat_feed.objects[-1].object == "A"
-
-    def test_callback_stop_sync_function(self, chat_feed):
-        def callback(msg, user, instance):
-            message = instance.stream("A")
-            assert chat_feed.stop()
-            time.sleep(0.5)
-            instance.stream("B", message=message)  # should not reach this point
 
         chat_feed.callback = callback
         try:

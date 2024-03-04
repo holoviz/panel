@@ -1,31 +1,32 @@
-import { Select, SelectView } from "@bokehjs/models/widgets/select"
-import * as p from "@bokehjs/core/properties"
-
+import {Select, SelectView} from "@bokehjs/models/widgets/select"
+import type * as p from "@bokehjs/core/properties"
 
 export class CustomSelectView extends SelectView {
-  override model: CustomSelect
+  declare model: CustomSelect
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.disabled_options.change, () => this._update_disabled_options())
   }
 
-  protected options_el(): HTMLOptionElement[] | HTMLOptGroupElement[] {
-    let opts = super.options_el()
+  protected override options_el(): HTMLOptionElement[] | HTMLOptGroupElement[] {
+    const opts = super.options_el()
+    const {disabled_options} = this.model
     opts.forEach((element) => {
-      if (this.model.disabled_options.includes(element.value)) {
-        element.setAttribute('disabled', 'true')
+      // XXX: what about HTMLOptGroupElement?
+      if (element instanceof HTMLOptionElement && disabled_options.includes(element.value)) {
+        element.setAttribute("disabled", "true")
       }
-  })
+    })
     return opts
-}
+  }
 
   protected _update_disabled_options(): void {
     for (const element of this.input_el.options) {
       if (this.model.disabled_options.includes(element.value)) {
-        element.setAttribute('disabled', 'true')
+        element.setAttribute("disabled", "true")
       } else {
-        element.removeAttribute('disabled')
+        element.removeAttribute("disabled")
       }
     }
   }
@@ -42,21 +43,21 @@ export namespace CustomSelect {
 export interface CustomSelect extends CustomSelect.Attrs {}
 
 export class CustomSelect extends Select {
-  override properties: CustomSelect.Props
-  override __view_type__: CustomSelectView
+  declare properties: CustomSelect.Props
+  declare __view_type__: CustomSelectView
 
   constructor(attrs?: Partial<CustomSelect.Attrs>) {
     super(attrs)
   }
 
-  static __module__ = "panel.models.widgets"
+  static override __module__ = "panel.models.widgets"
 
   static {
     this.prototype.default_view = CustomSelectView
 
-    this.define<CustomSelect.Props>(({Array, String}) => {
+    this.define<CustomSelect.Props>(({List, Str}) => {
       return {
-        disabled_options:   [ Array(String), [] ],
+        disabled_options:   [ List(Str), [] ],
       }
     })
   }

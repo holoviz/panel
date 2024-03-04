@@ -161,6 +161,12 @@ class ChatMessage(PaneBase):
         to use when the user is specified but the avatar is. You can
         modify, but not replace the dictionary.""")
 
+    footer_objects = param.List(doc="""
+        A list of objects to display in the column of the footer of the message.""")
+
+    header_objects = param.List(doc="""
+        A list of objects to display in the row of the header of the message.""")
+
     max_width = param.Integer(default=1200, bounds=(0, None))
 
     object = param.Parameter(allow_refs=False, doc="""
@@ -280,8 +286,10 @@ class ChatMessage(PaneBase):
             self.param.user, height=20, css_classes=["name"],
             visible=self.param.show_user, stylesheets=self._stylesheets,
         )
+
         header_row = Row(
             self._user_html,
+            *self.param.header_objects.rx(),
             self.chat_copy_icon,
             self._activity_dot,
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
@@ -295,7 +303,8 @@ class ChatMessage(PaneBase):
             visible=self.param.show_timestamp
         )
 
-        footer_row = Row(
+        footer_col = Column(
+            *self.param.footer_objects.rx(),
             self._timestamp_html,
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
             sizing_mode="stretch_width",
@@ -305,7 +314,7 @@ class ChatMessage(PaneBase):
         self._right_col = right_col = Column(
             header_row,
             self._center_row,
-            footer_row,
+            footer_col,
             css_classes=["right"],
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
             sizing_mode=None
@@ -461,20 +470,20 @@ class ChatMessage(PaneBase):
                 contents = contents.decode("utf-8")
         return contents, renderer
 
+    def _include_stylesheets_inplace(self, obj):
+        obj.stylesheets = [
+            stylesheet for stylesheet in self._stylesheets + self.stylesheets
+            if stylesheet not in obj.stylesheets
+        ] + obj.stylesheets
+        if hasattr(obj, "objects"):
+            for o in obj.objects:
+                self._include_stylesheets_inplace(o)
+
     def _set_params(self, obj, **params):
         """
         Set the sizing mode and height of the object.
         """
-        if hasattr(obj, "objects"):
-            params['css_classes'] = (
-                [css for css in obj.stylesheets if css not in self._stylesheets] +
-                self._stylesheets
-            )
-            for subobj in obj.objects:
-                self._set_params(subobj)
-            obj.param.update(params)
-            return
-
+        self._include_stylesheets_inplace(obj)
         is_markup = isinstance(obj, HTMLBasePane) and not isinstance(obj, FileBase)
         if is_markup:
             if len(str(obj.object)) > 0:  # only show a background if there is content
@@ -498,6 +507,7 @@ class ChatMessage(PaneBase):
         """
         if isinstance(value, Viewable):
             self._internal = False
+            self._include_stylesheets_inplace(value)
             return value
 
         renderer = None

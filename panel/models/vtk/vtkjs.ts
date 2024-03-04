@@ -4,22 +4,22 @@ import {AbstractVTKView, AbstractVTKPlot} from "./vtklayout"
 import {vtkns} from "./util"
 
 export class VTKJSPlotView extends AbstractVTKView {
-  model: VTKJSPlot
+  declare model: VTKJSPlot
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.data.change, () => {
       this.invalidate_render()
     })
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     this._create_orientation_widget()
     this._set_axes()
   }
 
-  invalidate_render(): void {
+  override invalidate_render(): void {
     this._vtk_renwin = null
     super.invalidate_render()
   }
@@ -68,7 +68,7 @@ export namespace VTKJSPlot {
 export interface VTKJSPlot extends VTKJSPlot.Attrs {}
 
 export class VTKJSPlot extends AbstractVTKPlot {
-  properties: VTKJSPlot.Props
+  declare properties: VTKJSPlot.Props
 
   static {
     this.prototype.default_view = VTKJSPlotView

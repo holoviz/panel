@@ -1,5 +1,5 @@
 import {div} from "@bokehjs/core/dom"
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {isArray} from "@bokehjs/core/util/types"
 import {LayoutDOM, LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
@@ -9,13 +9,12 @@ import {set_size} from "./layout"
 
 import {debounce} from  "debounce"
 
-
 export class VegaEvent extends ModelEvent {
   constructor(readonly data: any) {
     super()
   }
 
-  protected get event_values(): Attrs {
+  protected override get event_values(): Attrs {
     return {model: this.origin, data: this.data}
   }
 
@@ -25,7 +24,8 @@ export class VegaEvent extends ModelEvent {
 }
 
 export class VegaPlotView extends LayoutDOMView {
-  model: VegaPlot
+  declare model: VegaPlot
+
   vega_view: any
   container: HTMLDivElement
   _callbacks: string[]
@@ -34,7 +34,7 @@ export class VegaPlotView extends LayoutDOMView {
   _resize: any
   _rendered: boolean = false
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     const {data, show_actions, theme} = this.model.properties
     this._replot = debounce(() => this._plot(), 20)
@@ -44,8 +44,9 @@ export class VegaPlotView extends LayoutDOMView {
     this.connect(this.model.properties.data_sources.change, () => this._connect_sources())
     this.connect(this.model.properties.events.change, () => {
       for (const event of this.model.events) {
-        if (this._callbacks.indexOf(event) > -1)
+        if (this._callbacks.indexOf(event) > -1) {
           continue
+        }
         this._callbacks.push(event)
         const callback = (name: string, value: any) => this._dispatch_event(name, value)
         const timeout = this.model.throttle[event] || 20
@@ -74,29 +75,29 @@ export class VegaPlotView extends LayoutDOMView {
   }
 
   _dispatch_event(name: string, value: any): void {
-    if ('vlPoint' in value && value.vlPoint.or != null) {
+    if ("vlPoint" in value && value.vlPoint.or != null) {
       const indexes = []
       for (const index of value.vlPoint.or) {
         if (index._vgsid_ !== undefined) {  // If "_vgsid_" property exists
-          indexes.push(index._vgsid_);
+          indexes.push(index._vgsid_)
         } else {  // If "_vgsid_" property doesn't exist
           // Iterate through all properties in the "index" object
           for (const key in index) {
             if (index.hasOwnProperty(key)) {  // To ensure key comes from "index" object itself, not its prototype
-              indexes.push({[key]: index[key]});  // Push a new object with this key-value pair into the array
+              indexes.push({[key]: index[key]})  // Push a new object with this key-value pair into the array
             }
           }
         }
       }
       value = indexes
     }
-    this.model.trigger_event(new VegaEvent({type: name, value: value}))
+    this.model.trigger_event(new VegaEvent({type: name, value}))
   }
 
   _fetch_datasets() {
     const datasets: any = {}
     for (const ds in this.model.data_sources) {
-      const cds = this.model.data_sources[ds];
+      const cds = this.model.data_sources[ds]
       const data: any = []
       const columns = cds.columns()
       for (let i = 0; i < cds.get_length(); i++) {
@@ -106,7 +107,7 @@ export class VegaPlotView extends LayoutDOMView {
         }
         data.push(item)
       }
-      datasets[ds] = data;
+      datasets[ds] = data
     }
     return datasets
   }
@@ -115,7 +116,7 @@ export class VegaPlotView extends LayoutDOMView {
     return []
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     this._rendered = false
     this.container = div()
@@ -127,24 +128,25 @@ export class VegaPlotView extends LayoutDOMView {
 
   _plot(): void {
     const data = this.model.data
-    if ((data == null) || !(window as any).vegaEmbed)
+    if ((data == null) || !(window as any).vegaEmbed) {
       return
+    }
     if (this.model.data_sources && (Object.keys(this.model.data_sources).length > 0)) {
       const datasets = this._fetch_datasets()
-      if ('data' in datasets) {
-        data.data['values'] = datasets['data']
-        delete datasets['data']
+      if ("data" in datasets) {
+        data.data.values = datasets.data
+        delete datasets.data
       }
       if (data.data != null) {
         const data_objs = isArray(data.data) ? data.data : [data.data]
         for (const d of data_objs) {
           if (d.name in datasets) {
-            d['values'] = datasets[d.name]
+            d.values = datasets[d.name]
             delete datasets[d.name]
           }
         }
       }
-      this.model.data['datasets'] = datasets
+      this.model.data.datasets = datasets
     }
     const config: any = {actions: this.model.show_actions, theme: this.model.theme};
 
@@ -160,7 +162,7 @@ export class VegaPlotView extends LayoutDOMView {
     })
   }
 
-  after_layout(): void {
+  override after_layout(): void {
     super.after_layout()
     if (this.vega_view != null) {
       this._resize()
@@ -171,8 +173,9 @@ export class VegaPlotView extends LayoutDOMView {
     const canvas = view._renderer.canvas()
     if (!this._rendered && canvas !== null) {
       for (const listener of view._eventListeners) {
-	if (listener.type === 'resize')
-	  listener.handler(new Event('resize'))
+        if (listener.type === "resize") {
+          listener.handler(new Event("resize"))
+        }
       }
       this._rendered = true
     }
@@ -194,24 +197,24 @@ export namespace VegaPlot {
 export interface VegaPlot extends VegaPlot.Attrs {}
 
 export class VegaPlot extends LayoutDOM {
-  properties: VegaPlot.Props
+  declare properties: VegaPlot.Props
 
   constructor(attrs?: Partial<VegaPlot.Attrs>) {
     super(attrs)
   }
 
-  static __module__ = "panel.models.vega"
+  static override __module__ = "panel.models.vega"
 
   static {
     this.prototype.default_view = VegaPlotView
 
-    this.define<VegaPlot.Props>(({Any, Array, Boolean, Nullable, String}) => ({
+    this.define<VegaPlot.Props>(({Any, List, Bool, Nullable, Str}) => ({
       data:         [ Any,                {} ],
       data_sources: [ Any,                {} ],
-      events:       [ Array(String),      [] ],
-      show_actions: [ Boolean,         false ],
-      theme:        [ Nullable(String), null ],
-      throttle:     [ Any,                {} ]
+      events:       [ List(Str),      [] ],
+      show_actions: [ Bool,         false ],
+      theme:        [ Nullable(Str), null ],
+      throttle:     [ Any,                {} ],
     }))
   }
 }

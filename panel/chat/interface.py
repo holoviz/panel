@@ -23,6 +23,7 @@ from ..widgets.base import Widget
 from ..widgets.button import Button
 from ..widgets.input import FileInput, TextInput
 from .feed import CallbackState, ChatFeed
+from .input import ChatAreaInput
 from .message import ChatMessage, _FileInputMessage
 
 
@@ -147,7 +148,7 @@ class ChatInterface(ChatFeed):
     def __init__(self, *objects, **params):
         widgets = params.get("widgets")
         if widgets is None:
-            params["widgets"] = [TextInput(placeholder="Send a message")]
+            params["widgets"] = [ChatAreaInput(placeholder="Send a message")]
         elif not isinstance(widgets, list):
             params["widgets"] = [widgets]
         active = params.pop("active", None)
@@ -267,7 +268,7 @@ class ChatInterface(ChatFeed):
             # TextAreaInput will trigger auto send!
             auto_send = (
                 isinstance(widget, tuple(self.auto_send_types)) or
-                type(widget) is TextInput
+                type(widget) in (TextInput, ChatAreaInput)
             )
             if auto_send and widget in new_widgets:
                 callback = partial(self._button_data["send"].callback, self)
@@ -366,7 +367,9 @@ class ChatInterface(ChatFeed):
             return
 
         active_widget = self.active_widget
-        value = active_widget.value
+        # value_input for ChatAreaInput because value is unsynced until "Enter",
+        # value for TextInput and others
+        value = active_widget.value or active_widget.value_input
         if value:
             if isinstance(active_widget, FileInput):
                 value = _FileInputMessage(
@@ -380,7 +383,8 @@ class ChatInterface(ChatFeed):
                 if hasattr(active_widget, "value_input"):
                     updates["value_input"] = ""
                 try:
-                    active_widget.param.update(updates)
+                    with param.discard_events(self):
+                        active_widget.param.update(updates)
                 except ValueError:
                     pass
         else:
@@ -582,7 +586,7 @@ class ChatInterface(ChatFeed):
     @param.depends("_callback_state", watch=True)
     async def _update_input_disabled(self):
         busy_states = (CallbackState.RUNNING, CallbackState.GENERATING)
-        if not self.show_stop or self._callback_state not in busy_states:
+        if not self.show_stop or self._callback_state not in busy_states or self._callback_future is None:
             with param.parameterized.batch_call_watchers(self):
                 self._buttons["send"].visible = True
                 self._buttons["stop"].visible = False

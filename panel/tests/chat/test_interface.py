@@ -5,6 +5,7 @@ from io import BytesIO
 import pytest
 import requests
 
+from panel.chat.input import ChatAreaInput
 from panel.chat.interface import ChatInterface
 from panel.layout import Row, Tabs
 from panel.pane import Image
@@ -24,7 +25,7 @@ class TestChatInterface:
         assert len(chat_interface._button_data) == 5
         assert len(chat_interface._widgets) == 1
         assert isinstance(chat_interface._input_layout, Row)
-        assert isinstance(chat_interface._widgets["TextInput"], TextInput)
+        assert isinstance(chat_interface._widgets["ChatAreaInput"], ChatAreaInput)
 
         assert chat_interface.active == -1
 
@@ -122,12 +123,26 @@ class TestChatInterface:
         send_button = chat_interface._input_layout[1]
         assert not send_button.disabled
 
-    def test_show_stop_for_sync(self, chat_interface: ChatInterface):
+    def test_show_stop_for_async_generator(self, chat_interface: ChatInterface):
+        async def callback(msg, user, instance):
+            send_button = instance._buttons["send"]
+            stop_button = instance._buttons["stop"]
+            await async_wait_until(lambda: stop_button.visible)
+            await async_wait_until(lambda: not send_button.visible)
+            yield "Hello"
+
+        chat_interface.callback = callback
+        chat_interface.send("Message", respond=True)
+        send_button = chat_interface._input_layout[1]
+        assert not send_button.disabled
+
+    def test_show_stop_for_sync_generator(self, chat_interface: ChatInterface):
         def callback(msg, user, instance):
             send_button = instance._buttons["send"]
             stop_button = instance._buttons["stop"]
             wait_until(lambda: stop_button.visible)
             wait_until(lambda: not send_button.visible)
+            yield "Hello"
 
         chat_interface.callback = callback
         chat_interface.send("Message", respond=True)

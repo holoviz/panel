@@ -12,12 +12,13 @@ import {vtkns} from "./util"
 const CONTEXT_NAME = "panel"
 
 export class VTKSynchronizedPlotView extends AbstractVTKView {
-  model: VTKSynchronizedPlot
+  declare model: VTKSynchronizedPlot
+
   protected _synchronizer_context: any
   protected _arrays: any
   public registerArray: CallableFunction
 
-  initialize(): void {
+  override initialize(): void {
     super.initialize()
     this._renderable = false
 
@@ -27,7 +28,7 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
     )
   }
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     const update = debounce(() => {
       this._vtk_renwin.delete()
@@ -111,11 +112,11 @@ export namespace VTKSynchronizedPlot {
 export interface VTKSynchronizedPlot extends VTKSynchronizedPlot.Attrs {}
 
 export class VTKSynchronizedPlot extends AbstractVTKPlot {
-  properties: VTKSynchronizedPlot.Props
+  declare properties: VTKSynchronizedPlot.Props
   outline: any
   outline_actor: any
 
-  static __module__ = "panel.models.vtk"
+  static override __module__ = "panel.models.vtk"
 
   constructor(attrs?: Partial<VTKSynchronizedPlot.Attrs>) {
     super(attrs)
@@ -127,7 +128,7 @@ export class VTKSynchronizedPlot extends AbstractVTKPlot {
     this.outline_actor.setMapper(mapper)
   }
 
-  getActors(ptr_ref?: string): [any] {
+  override getActors(ptr_ref?: string): [any] {
     let actors = this.renderer_el.getRenderer().getActors()
     if (ptr_ref) {
       const context = this.renderer_el.getSynchronizerContext(CONTEXT_NAME)

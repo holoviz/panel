@@ -19,7 +19,7 @@ sd_hide_title: true
 ::::{grid} 2 4 4 4
 
 :::{grid-item-card} Portfolio Analyzer
-:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/portfolio_analyzer
+:link: https://|gallery-endpoint|.holoviz.dsp.anaconda.com/portfolio_analyzer
 :link-type: url
 
 ```{image} https://assets.holoviz.org/panel/gallery/portfolio_analyzer.png
@@ -30,7 +30,7 @@ alt: Portfolio Analyzer App
 :::
 
 :::{grid-item-card} Portfolio Optimizer
-:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/portfolio_optimizer
+:link: https://|gallery-endpoint|.holoviz.dsp.anaconda.com/portfolio_optimizer
 :link-type: url
 
 ```{image} https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
@@ -41,7 +41,7 @@ alt: Portfolio Optimizer App
 :::
 
 :::{grid-item-card} MRI Slicer
-:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/vtk_slicer
+:link: https://|gallery-endpoint|.holoviz.dsp.anaconda.com/vtk_slicer
 :link-type: url
 
 ```{image} https://assets.holoviz.org/panel/gallery/vtk_slicer.png
@@ -52,7 +52,7 @@ alt: VTK 3D Slicer App
 :::
 
 :::{grid-item-card} Videostream
-:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/streaming_videostream
+:link: https://|gallery-endpoint|.holoviz.dsp.anaconda.com/streaming_videostream
 :link-type: url
 
 ```{image} https://assets.holoviz.org/panel/gallery/streaming_videostream.png
