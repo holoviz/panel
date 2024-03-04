@@ -15,6 +15,7 @@ from typing import (
 )
 
 from bokeh.application.application import SessionContext
+from bokeh.core.serialization import Serializable
 from bokeh.document.document import Document
 from bokeh.document.events import (
     ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
@@ -341,6 +342,8 @@ def unlocked() -> Iterator:
         except RuntimeError:
             if not remaining_events:
                 return
+            leftover_events = [e for e in remaining_events if not isinstance(e, Serializable)]
+            remaining_events = [e for e in remaining_events if isinstance(e, Serializable)]
             # Create messages for remaining events
             msgs = {}
             for conn in connections:
@@ -349,6 +352,9 @@ def unlocked() -> Iterator:
                 # Create a protocol message for any events that cannot be immediately dispatched
                 msgs[conn] = conn.protocol.create('PATCH-DOC', remaining_events)
             _dispatch_write_task(curdoc, _dispatch_msgs, curdoc, msgs)
+            curdoc.hold()
+            curdoc.callbacks._held_events = leftover_events
+            curdoc.unhold()
 
 @contextmanager
 def immediate_dispatch(doc: Document | None = None):
