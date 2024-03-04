@@ -50,7 +50,7 @@ export class ClickableIconView extends ControlView {
     return icon.trim().startsWith("<svg")
   }
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals();
     const { icon, active_icon, disabled, value, size } = this.model.properties;
     this.on_change([active_icon, icon, value], () => this.update_icon());
