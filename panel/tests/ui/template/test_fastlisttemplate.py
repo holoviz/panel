@@ -26,7 +26,7 @@ def test_fast_list_template_no_console_errors(page):
         "[bokeh] Websocket connection 0 is now open",
         "[bokeh] document idle at",
         "Bokeh items were rendered successfully",
-        "[bokeh] JS/Python version mismatch",
+        "[bokeh] JS/Python version mismatch (3.4.0-rc.",
         "[bokeh] Library versions: JS"
     ]
     assert len([
