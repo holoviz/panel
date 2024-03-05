@@ -64,9 +64,9 @@ class ChatReactionIcons(CompositeWidget):
                 icon=icon,
                 active_icon=active_icon,
                 value=option in self.value,
-                name=option,
                 margin=0,
             )
+            icon._reaction = option
             icon.param.watch(self._update_value, "value")
             self._rendered_icons[option] = icon
         self._composite[:] = list(self._rendered_icons.values())
@@ -82,7 +82,7 @@ class ChatReactionIcons(CompositeWidget):
             icon.active_icon = self.active_icons.get(option, "")
 
     def _update_value(self, event):
-        reaction = event.obj.name
+        reaction = event.obj._reaction
         icon_value = event.new
         reactions = self.value.copy()
         if icon_value and reaction not in self.value:
