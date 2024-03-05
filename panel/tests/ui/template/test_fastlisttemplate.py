@@ -26,8 +26,8 @@ def test_fast_list_template_no_console_errors(page):
         "[bokeh] Websocket connection 0 is now open",
         "[bokeh] document idle at",
         "Bokeh items were rendered successfully",
-        "[bokeh] JS/Python version mismatch (3.4.0-rc.",
-        "[bokeh] Library versions: JS"
+        "[bokeh] JS/Python version mismatch",
+        "[bokeh] Library versions: JS (3.4.0-rc."
     ]
     assert len([
         msg for msg in msgs if not any(msg.text.startswith(known) for known in known_messages)
