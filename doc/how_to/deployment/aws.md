@@ -66,6 +66,3 @@ where x.x.x.x is your instance's Public IP address.
 #### Other deployment notes
 - Using `nohup` for final deploy: This keeps your session running even when you disconnect from your session.
 - You can register for a SSL certificate & set up a reverse proxy using NGINX or Apache. There may be further specifications to AWS security groups.
-
-
-
