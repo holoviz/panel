@@ -228,7 +228,7 @@ class ChatFeed(ListPanel):
         card_params.update(
             margin=self.param.margin,
             align=self.param.align,
-            header=self.header,
+            header=self.param.header,
             height=self.param.height,
             hide_header=self.param.header.rx().rx.in_((None, "")),
             collapsible=False,
