@@ -55,7 +55,7 @@ class Tabs(NamedListPanel):
 
     _bokeh_model: ClassVar[Type[Model]] = BkTabs
 
-    _direction: ClassVar[str | None] = 'vertical'
+    _direction: ClassVar[str | None] = None
 
     _js_transforms: ClassVar[Mapping[str, str]] = {'tabs': """
     var ids = [];
