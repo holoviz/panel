@@ -593,7 +593,7 @@ class ChatFeed(ListPanel):
 
     def stream(
         self,
-        value: str,
+        value: str | dict | ChatMessage,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
         message: ChatMessage | None = None,

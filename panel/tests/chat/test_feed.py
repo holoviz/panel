@@ -227,7 +227,7 @@ class TestChatFeed:
         assert chat_feed.objects[0].user == user
         assert chat_feed.objects[0].avatar == avatar
 
-    def test_stream_entry(self, chat_feed):
+    def test_stream_message(self, chat_feed):
         message = ChatMessage("Streaming message", user="Person", avatar="P")
         chat_feed.stream(message)
         wait_until(lambda: len(chat_feed.objects) == 1)
@@ -235,6 +235,11 @@ class TestChatFeed:
         assert chat_feed.objects[0].object == "Streaming message"
         assert chat_feed.objects[0].user == "Person"
         assert chat_feed.objects[0].avatar == "P"
+
+    def test_stream_message_error_passed_user_avatar(self, chat_feed):
+        message = ChatMessage("Streaming message", user="Person", avatar="P")
+        with pytest.raises(ValueError, match="Cannot set user or avatar"):
+            chat_feed.stream(message, user="Bob", avatar="👨")
 
     def test_stream_replace(self, chat_feed):
         message = chat_feed.stream("Hello")
