@@ -345,10 +345,21 @@ def unlocked() -> Iterator:
             else:
                 curdoc.add_next_tick_callback(partial(_run_write_futures, futures))
     except Exception as e:
+        # If we error out during the yield, there won't be any events
+        # captured so we end up simply calling curdoc.unhold() and
+        # raising the exception. If instead we error during event
+        # dispatch we restore the events in the order they were created
+        # and then let the finally section create a protocol message
+        # to dispatch the events, ensuring that the events which were
+        # marked for immediate dispatch are not lost.
         if events is not None:
             remaining_events = events
         raise e
     finally:
+        # If for whatever reasons there are still events that couldn't
+        # be dispatched we create a protocol message for these immediately
+        # and then schedule a task to write the message to the websocket
+        # on the next iteration of the event loop.
         if remaining_events:
             # Separate serializable and non-serializable events
             leftover_events = [e for e in remaining_events if not isinstance(e, Serializable)]
