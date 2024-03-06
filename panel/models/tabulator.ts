@@ -437,14 +437,14 @@ export class DataTabulatorView extends HTMLBoxView {
     this.render()
   }
 
-  redraw(): void {
+  redraw(columns: boolean = true, rows: boolean = true): void {
     if (this._building) {
       return
     }
-    if (this.tabulator.columnManager.element != null) {
+    if (columns && (this.tabulator.columnManager.element != null)) {
       this.tabulator.columnManager.redraw(true)
     }
-    if (this.tabulator.rowManager.renderer != null) {
+    if (rows && (this.tabulator.rowManager.renderer != null)) {
       this.tabulator.rowManager.redraw(true)
       this.renderChildren()
       this.setStyles()
@@ -462,7 +462,7 @@ export class DataTabulatorView extends HTMLBoxView {
 
   override after_resize(): void {
     super.after_resize()
-    this.redraw()
+    this.redraw(false, true)
   }
 
   setCSSClasses(el: HTMLDivElement): void {

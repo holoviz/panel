@@ -245,9 +245,7 @@ class _state(param.Parameterized):
 
     @property
     def _current_thread(self) -> str | None:
-        thread = threading.current_thread()
-        thread_id = thread.ident if thread else None
-        return thread_id
+        return threading.get_ident()
 
     @property
     def _is_launching(self) -> bool:

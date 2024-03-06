@@ -37,6 +37,14 @@ class TestChatFeed:
         assert message.object == "Instructions"
         assert message.user == "Help"
 
+    def test_update_header(self):
+        chat_feed = ChatFeed(header="1")
+        assert chat_feed._card.header == "1"
+        chat_feed.header = "2"
+        assert chat_feed._card.header == "2"
+        chat_feed.header = HTML("<b>3</b>")
+        assert chat_feed._card.header.object == "<b>3</b>"
+
     def test_hide_header(self, chat_feed):
         assert chat_feed.header is None
 

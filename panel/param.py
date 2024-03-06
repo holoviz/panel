@@ -810,6 +810,9 @@ class ParamRef(ReplacementPane):
     def applies(cls, obj: Any) -> float | bool | None:
         return bool(resolve_ref(obj))
 
+    def _validate_object(self):
+        return
+
     #----------------------------------------------------------------
     # Callback API
     #----------------------------------------------------------------
@@ -871,6 +874,7 @@ class ParamRef(ReplacementPane):
                 try:
                     new_object = self.eval(self.object)
                     if new_object is Skip and new_object is Undefined:
+                        self._inner_layout.loading = False
                         raise Skip
                 except Skip:
                     self.param.log(

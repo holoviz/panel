@@ -148,7 +148,7 @@ class Feed(Column):
         ref = root.ref['id']
         for i in range(*self._last_synced):
             pane = current_objects[i]
-            if pane in old_objects and ref in pane._models:
+            if ref in pane._models:
                 child, _ = pane._models[root.ref['id']]
                 old_models.append(child)
             else:

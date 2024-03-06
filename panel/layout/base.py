@@ -160,7 +160,7 @@ class Panel(Reactive):
         current_objects = list(self.objects)
         ref = root.ref['id']
         for i, pane in enumerate(self.objects):
-            if pane in old_objects and ref in pane._models:
+            if ref in pane._models:
                 child, _ = pane._models[root.ref['id']]
                 old_models.append(child)
             else:
@@ -293,7 +293,7 @@ class Panel(Reactive):
         properties = {'sizing_mode': sizing_mode}
         if (sizing_mode.endswith(("_width", "_both")) and
             widths and 'min_width' not in properties):
-            width_op = max if self._direction == 'vertical' else sum
+            width_op = max if self._direction in ('vertical', None) else sum
             min_width = width_op(widths)
             op_widths = [min_width]
             if 'max_width' in properties:
@@ -301,7 +301,7 @@ class Panel(Reactive):
             properties['min_width'] = min(op_widths)
         if (sizing_mode.endswith(("_height", "_both")) and
             heights and 'min_height' not in properties):
-            height_op = max if self._direction == 'horizontal' else sum
+            height_op = max if self._direction in ('horizontal', None) else sum
             min_height = height_op(heights)
             op_heights = [min_height]
             if 'max_height' in properties:
