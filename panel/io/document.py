@@ -289,7 +289,7 @@ def unlocked() -> Iterator:
     curdoc = state.curdoc
     session_context = getattr(curdoc, 'session_context', None)
     session = getattr(session_context, 'session', None)
-    if state._current_thread != state._thread_id:
+    if state._current_thread != state._thread_id and state.loaded:
         logger.error(
             "Using the unlocked decorator when running inside a thread "
             "is not safe! Ensure you check that pn.state._current_thread "
