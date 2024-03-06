@@ -42,6 +42,9 @@ class ChatAreaInput(_PnTextAreaInput):
         accommodate the current text.""",
     )
 
+    rows = param.Integer(default=1, doc="""
+        Number of rows in the text input field.""")
+
     max_rows = param.Integer(
         default=10,
         doc="""
