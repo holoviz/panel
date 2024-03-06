@@ -316,6 +316,11 @@ class Matplotlib(Image, IPyWidget):
     ):
         return self._img_type._format_html(self, src, width, height)
 
+    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+        if self.interactive:
+            return {}
+        return self._img_type._transform_object(self, obj)
+
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
@@ -325,12 +330,10 @@ class Matplotlib(Image, IPyWidget):
         self.object.set_dpi(self.dpi)
         manager = self._get_widget(self.object)
         properties = self._get_properties(doc)
-        del properties['width']
-        del properties['height']
-        del properties['text']
         model = self._get_ipywidget(
             manager.canvas, doc, root, comm, **properties
         )
+        manager.canvas.draw()
         root = root or model
         self._models[root.ref['id']] = (model, parent)
         self._managers[root.ref['id']] = manager
@@ -342,7 +345,8 @@ class Matplotlib(Image, IPyWidget):
 
     def _update(self, ref: str, model: Model) -> None:
         if not self.interactive:
-            model.update(**self._get_properties(model.document))
+            props = self._get_properties(model.document)
+            model.update(**props)
             return
         manager = self._managers[ref]
         if self.object is not manager.canvas.figure:
