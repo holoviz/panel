@@ -245,9 +245,7 @@ class _state(param.Parameterized):
 
     @property
     def _current_thread(self) -> str | None:
-        thread = threading.current_thread()
-        thread_id = thread.ident if thread else None
-        return thread_id
+        return threading.get_ident()
 
     @property
     def _is_launching(self) -> bool:
@@ -270,7 +268,7 @@ class _state(param.Parameterized):
             self._thread_id_[self.curdoc] = thread_id
 
     def _unblocked(self, doc: Document) -> bool:
-        return doc is self.curdoc and self._thread_id in (self._current_thread, None)
+        return doc is self.curdoc and self.loaded and self._thread_id in (self._current_thread, None)
 
     @param.depends('_busy_counter', watch=True)
     def _update_busy_counter(self):

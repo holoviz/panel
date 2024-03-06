@@ -190,9 +190,9 @@ def init_doc(doc: Optional[Document]) -> Document:
     if not curdoc.session_context:
         return curdoc
 
-    thread = threading.current_thread()
-    if thread:
-        state._thread_id_[curdoc] = thread.ident
+    thread_id = threading.get_ident()
+    if thread_id:
+        state._thread_id_[curdoc] = thread_id
 
     if config.global_loading_spinner:
         curdoc.js_on_event(
@@ -320,6 +320,7 @@ def unlocked() -> Iterator:
                 break
 
         events = curdoc.callbacks._held_events
+        curdoc.callbacks._held_events = []
         monkeypatch_events(events)
         remaining_events, dispatch_events = [], []
         for event in events:
@@ -342,27 +343,27 @@ def unlocked() -> Iterator:
                 _dispatch_write_task(curdoc, _run_write_futures, futures)
             else:
                 curdoc.add_next_tick_callback(partial(_run_write_futures, futures))
+    except Exception:
+        remaining_events = events
 
-        curdoc.callbacks._held_events = remaining_events
-    finally:
-        try:
-            curdoc.unhold()
-        except RuntimeError:
-            if not remaining_events:
-                return
-            leftover_events = [e for e in remaining_events if not isinstance(e, Serializable)]
-            remaining_events = [e for e in remaining_events if isinstance(e, Serializable)]
-            # Create messages for remaining events
-            msgs = {}
-            for conn in connections:
-                if not remaining_events:
-                    continue
-                # Create a protocol message for any events that cannot be immediately dispatched
-                msgs[conn] = conn.protocol.create('PATCH-DOC', remaining_events)
-            _dispatch_write_task(curdoc, _dispatch_msgs, curdoc, msgs)
-            curdoc.hold()
-            curdoc.callbacks._held_events = leftover_events
-            curdoc.unhold()
+    if not remaining_events:
+        curdoc.unhold()
+        return
+
+    # Separate serializable and non-serializable events
+    leftover_events = [e for e in remaining_events if not isinstance(e, Serializable)]
+    remaining_events = [e for e in remaining_events if isinstance(e, Serializable)]
+
+    # Create messages for remaining events
+    msgs = {}
+    for conn in connections:
+        if not remaining_events:
+            continue
+        # Create a protocol message for any events that cannot be immediately dispatched
+        msgs[conn] = conn.protocol.create('PATCH-DOC', remaining_events)
+    _dispatch_write_task(curdoc, _dispatch_msgs, curdoc, msgs)
+    curdoc.callbacks._held_events = leftover_events
+    curdoc.unhold()
 
 @contextmanager
 def immediate_dispatch(doc: Document | None = None):
@@ -379,7 +380,7 @@ def immediate_dispatch(doc: Document | None = None):
     doc = doc or state.curdoc
 
     # Skip if not in a server context
-    if not doc or not doc._session_context:
+    if not doc or not doc._session_context or not state._unblocked(doc):
         yield
         return
 
