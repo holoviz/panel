@@ -16,6 +16,7 @@ from typing import (
 import numpy as np
 import param
 
+from bokeh.models import PaletteSelect
 from bokeh.models.widgets import (
     AutocompleteInput as _BkAutocompleteInput,
     CheckboxGroup as _BkCheckboxGroup, MultiChoice as _BkMultiChoice,
@@ -28,9 +29,7 @@ from ..models import (
     CheckboxButtonGroup as _BkCheckboxButtonGroup, CustomSelect,
     RadioButtonGroup as _BkRadioButtonGroup, SingleSelect as _BkSingleSelect,
 )
-from ..util import (
-    PARAM_NAME_PATTERN, bokeh33, bokeh34, indexOf, isIn,
-)
+from ..util import PARAM_NAME_PATTERN, indexOf, isIn
 from ._mixin import TooltipMixin
 from .base import CompositeWidget, Widget
 from .button import Button, _ButtonBase
@@ -687,16 +686,7 @@ class ColorMap(SingleSelectBase):
 
     _rename = {'options': 'items', 'value_name': None}
 
-    @property
-    def _widget_type(self) -> Type[Model]:
-        if bokeh34:
-            from bokeh.models import PaletteSelect
-            return PaletteSelect
-        elif bokeh33:
-            from bokeh.models import ColorMap
-            return ColorMap
-        else:
-            raise ImportError('ColorMap widget requires bokeh version >= 3.3.0.')
+    _widget_type: ClassVar[Type[Model]] = PaletteSelect
 
     @param.depends('value_name', watch=True, on_init=True)
     def _sync_value_name(self):
