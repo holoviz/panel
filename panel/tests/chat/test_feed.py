@@ -33,7 +33,7 @@ class TestChatFeed:
 
     def test_init_with_help_text(self):
         chat_feed = ChatFeed(help_text="Instructions")
-        message = chat_feed._chat_log[0]
+        message = chat_feed.objects[0]
         assert message.object == "Instructions"
         assert message.user == "Help"
 
@@ -427,6 +427,18 @@ class TestChatFeed:
         assert chat_message.reactions == ["like"]
         assert chat_message.reaction_icons.options == {"like": "thumb-up"}
 
+    def test_update_chat_log_params(self, chat_feed):
+        chat_feed = ChatFeed(load_buffer=5, scroll_button_threshold=5, auto_scroll_limit=5)
+        assert chat_feed._chat_log.load_buffer == 5
+        assert chat_feed._chat_log.scroll_button_threshold == 5
+        assert chat_feed._chat_log.auto_scroll_limit == 5
+
+        chat_feed.load_buffer = 10
+        chat_feed.scroll_button_threshold = 10
+        chat_feed.auto_scroll_limit = 10
+        assert chat_feed._chat_log.load_buffer == 10
+        assert chat_feed._chat_log.scroll_button_threshold == 10
+        assert chat_feed._chat_log.auto_scroll_limit == 10
 
 @pytest.mark.xdist_group("chat")
 class TestChatFeedCallback:
