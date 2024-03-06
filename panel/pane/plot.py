@@ -7,6 +7,7 @@ import re
 import sys
 
 from contextlib import contextmanager
+from functools import partial
 from io import BytesIO
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional,
@@ -19,7 +20,7 @@ from bokeh.models import (
 )
 from bokeh.themes import Theme
 
-from ..io import remove_root
+from ..io import remove_root, state
 from ..io.notebook import push
 from ..util import escape
 from ..viewable import Layoutable
@@ -250,6 +251,8 @@ class Matplotlib(Image, IPyWidget):
         'interactive', 'object', 'dpi', 'tight', 'high_dpi'
     ]
 
+    _num = 0
+
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
         if 'matplotlib' not in sys.modules:
@@ -269,22 +272,21 @@ class Matplotlib(Image, IPyWidget):
         import matplotlib.backends
         old_backend = getattr(matplotlib.backends, 'backend', 'agg')
 
-        from ipympl.backend_nbagg import Canvas, FigureManager, is_interactive
+        from ipympl.backend_nbagg import Canvas, FigureManager
         from matplotlib._pylab_helpers import Gcf
 
         matplotlib.use(old_backend)
 
         def closer(event):
-            Gcf.destroy(0)
+            canvas.mpl_disconnect(cid)
+            Gcf.destroy(manager)
 
         canvas = Canvas(fig)
         fig.patch.set_alpha(0)
-        manager = FigureManager(canvas, 0)
-
-        if is_interactive():
-            fig.canvas.draw_idle()
-
-        canvas.mpl_connect('close_event', closer)
+        manager = FigureManager(canvas, self._num)
+        self._num += 1
+        cid = canvas.mpl_connect('close_event', closer)
+        state.onload(partial(self._initialize_canvas, manager.canvas))
         return manager
 
     @property
@@ -302,7 +304,6 @@ class Matplotlib(Image, IPyWidget):
 
     def _transform_object(self, obj: Any) -> Dict[str, Any]:
         return self._img_type._transform_object(self, obj)
-
 
     def _imgshape(self, data):
         try:
@@ -324,6 +325,8 @@ class Matplotlib(Image, IPyWidget):
         self.object.set_dpi(self.dpi)
         manager = self._get_widget(self.object)
         properties = self._get_properties(doc)
+        del properties['width']
+        del properties['height']
         del properties['text']
         model = self._get_ipywidget(
             manager.canvas, doc, root, comm, **properties
@@ -332,6 +335,10 @@ class Matplotlib(Image, IPyWidget):
         self._models[root.ref['id']] = (model, parent)
         self._managers[root.ref['id']] = manager
         return model
+
+    def _initialize_canvas(self, canvas):
+        canvas._device_pixel_ratio = 2 if self.high_dpi else 1
+        canvas._handle_message(None, {'type': 'initialized'}, None)
 
     def _update(self, ref: str, model: Model) -> None:
         if not self.interactive:
@@ -343,8 +350,11 @@ class Matplotlib(Image, IPyWidget):
             self.object.patch.set_alpha(0)
             manager.canvas.figure = self.object
             self.object.set_canvas(manager.canvas)
-            event = {'width': manager.canvas._width,
-                     'height': manager.canvas._height}
+            if hasattr(manager.canvas, '_size'):
+                cw, ch = manager.canvas._size
+            elif hasattr(manager.canvas, '_width'):
+                cw, ch = manager.canvas._width, manager.canvas._height
+            event = {'width': cw, 'height': ch}
             manager.canvas.handle_resize(event)
         manager.canvas.draw_idle()
 
