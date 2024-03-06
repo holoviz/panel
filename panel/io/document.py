@@ -297,7 +297,8 @@ def unlocked() -> Iterator:
         )
         yield
         return
-    elif curdoc is None or session_context is None or session is None or state._jupyter_kernel_context:
+    elif (curdoc is None or session_context is None or session is None or
+          not state.loaded or state._jupyter_kernel_context):
         yield
         return
     elif curdoc.callbacks.hold_value:
