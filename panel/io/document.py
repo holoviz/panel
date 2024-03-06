@@ -289,7 +289,7 @@ def unlocked() -> Iterator:
     curdoc = state.curdoc
     session_context = getattr(curdoc, 'session_context', None)
     session = getattr(session_context, 'session', None)
-    if state._current_thread != state._thread_id and state.loaded:
+    if state._current_thread != state._thread_id and state.loaded and session:
         logger.error(
             "Using the unlocked decorator when running inside a thread "
             "is not safe! Ensure you check that pn.state._current_thread "
@@ -297,8 +297,8 @@ def unlocked() -> Iterator:
         )
         yield
         return
-    elif (curdoc is None or session_context is None or session is None or
-          not state.loaded or state._jupyter_kernel_context):
+    elif (curdoc is None or session is None or not state.loaded or
+          state._jupyter_kernel_context):
         yield
         return
     elif curdoc.callbacks.hold_value:
