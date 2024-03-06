@@ -160,7 +160,7 @@ class Panel(Reactive):
         current_objects = list(self.objects)
         ref = root.ref['id']
         for i, pane in enumerate(self.objects):
-            if pane in old_objects and ref in pane._models:
+            if ref in pane._models:
                 child, _ = pane._models[root.ref['id']]
                 old_models.append(child)
             else:
