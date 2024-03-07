@@ -107,9 +107,9 @@ async def async_file_watcher(stop_event=None):
     async for changes in awatch(*files, stop_event=stop_event):
         for _, path in changes:
             if path in modules:
-                module = modules[path]
-                if module in sys.modules:
-                    del sys.modules[module]
+                for module in _modules:
+                    if module in sys.modules:
+                        del sys.modules[module]
         _reload(changes)
 
 async def setup_autoreload_watcher(stop_event=None):
