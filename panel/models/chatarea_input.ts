@@ -21,6 +21,14 @@ export class ChatMessageEvent extends ModelEvent {
 export class ChatAreaInputView extends PnTextAreaInputView {
   declare  model: ChatAreaInput;
 
+  override connect_signals(): void {
+    super.connect_signals()
+
+    const {value_input} = this.model.properties
+
+    this.on_change(value_input, () => this.update_rows())
+  }
+
   override render(): void {
     super.render()
 
@@ -28,10 +36,10 @@ export class ChatAreaInputView extends PnTextAreaInputView {
       if (event.key === 'Enter' && !event.shiftKey) {
         this.model.trigger_event(new ChatMessageEvent(this.model.value_input))
         this.model.value_input = ""
-        this.update_rows()
         event.preventDefault();
       }
     });
+
   }
 }
 
