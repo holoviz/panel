@@ -1,8 +1,8 @@
 # AWS: Amazon Web Services
 
-The following guide demonstrates how to deploy a Panel app on an AWS EC2 instance. 
+The following guide demonstrates how to deploy a Panel app on an AWS EC2 instance.
 
-#### 1. Set up an EC2 instance with your selected AMI 
+#### 1. Set up an EC2 instance with your selected AMI
 
 To get started, AWS EC2 has a free tier with Linux and Windows t2/t3.micro instances.
 
@@ -17,7 +17,7 @@ The second rule which we will add, configures the port that Panel will serve the
     - Port Range: 5006
     - Source*: MyIP
 
-:::{note} 
+:::{note}
 On final deployment, setting ssh's Source to *MyIP* and panel's port Source to *Anywhere* could be the set-up for a publicly available site, though there are other security considerations here.
 :::
 
@@ -58,7 +58,7 @@ $ scp -i <keypair-name>.pem -r <directory> <Public DNS>:</path-to-destination/>
 
 #### 6. Serve app
 
-Assuming `app.py` returns a `xyz.servable()` panel object, the command below serves your app on the specified port. 
+Assuming `app.py` returns a `xyz.servable()` panel object, the command below serves your app on the specified port.
 
 ```bash
 $ python3 -m panel serve app.py --address 0.0.0.0 --port 5006 --allow-websocket-origin=<Public IPv4>:5006
