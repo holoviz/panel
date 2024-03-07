@@ -641,7 +641,7 @@ class ChatInterface(ChatFeed):
 
     def stream(
         self,
-        value: str,
+        value: str | dict | ChatMessage,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
         message: ChatMessage | None = None,
@@ -675,4 +675,9 @@ class ChatInterface(ChatFeed):
         -------
         The message that was updated.
         """
-        return super().stream(value, user=user or self.user, avatar=avatar or self.avatar, message=message, replace=replace)
+        if not isinstance(value, ChatMessage):
+            # ChatMessage cannot set user or avatar when explicitly streaming
+            # so only set to the default when not a ChatMessage
+            user = user or self.user
+            avatar = avatar or self.avatar
+        return super().stream(value, user=user, avatar=avatar, message=message, replace=replace)

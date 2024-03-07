@@ -7,6 +7,7 @@ import requests
 
 from panel.chat.input import ChatAreaInput
 from panel.chat.interface import ChatInterface
+from panel.chat.message import ChatMessage
 from panel.layout import Row, Tabs
 from panel.pane import Image
 from panel.tests.util import async_wait_until, wait_until
@@ -378,6 +379,25 @@ class TestChatInterface:
         assert chat_interface.user == "New User"
         chat_interface.send("Test")
         assert chat_interface.objects[0].user == "New User"
+
+    def test_stream_chat_message(self, chat_interface):
+        chat_interface.stream(ChatMessage("testeroo", user="useroo", avatar="avataroo"))
+        chat_message = chat_interface.objects[0]
+        assert chat_message.user == "useroo"
+        assert chat_message.avatar == "avataroo"
+        assert chat_message.object == "testeroo"
+
+    def test_stream_chat_message_error_passed_user(self, chat_interface):
+        with pytest.raises(ValueError, match="Cannot set user or avatar"):
+            chat_interface.stream(ChatMessage(
+                "testeroo", user="useroo", avatar="avataroo",
+            ), user="newuser")
+
+    def test_stream_chat_message_error_passed_avatar(self, chat_interface):
+        with pytest.raises(ValueError, match="Cannot set user or avatar"):
+            chat_interface.stream(ChatMessage(
+                "testeroo", user="useroo", avatar="avataroo",
+            ), avatar="newavatar")
 
 class TestChatInterfaceWidgetsSizingMode:
     def test_none(self):
