@@ -1,11 +1,12 @@
 import {div} from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
+import {isPlainObject} from "@bokehjs/core/util/types"
 import {clone} from "@bokehjs/core/util/object"
 import {is_equal} from "@bokehjs/core/util/eq"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 
 import {debounce} from  "debounce"
-import {deepCopy, isPlainObject, get, reshape, throttle} from "./util"
+import {deepCopy, get, reshape, throttle} from "./util"
 
 import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 
@@ -27,7 +28,7 @@ function convertUndefined(obj: any): any {
   Object
     .entries(obj)
     .forEach(([key, value]) => {
-      if (!!value && (typeof value === "object")) {
+      if (isPlainObject(value)) {
         convertUndefined(value)
       } else if (value === undefined) {
         obj[key] = null

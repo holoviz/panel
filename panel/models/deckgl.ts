@@ -1,5 +1,6 @@
 import {div} from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
+import {isNumber} from "@bokehjs/core/util/types"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 
 import {debounce} from  "debounce"
@@ -91,7 +92,7 @@ export class DeckGLPlotView extends LayoutDOMView {
       n += 1
       if ((n-1) in this._layer_map) {
         cds = this.model.data_sources[this._layer_map[n-1]]
-      } else if (typeof layer.data != "number") {
+      } else if (!isNumber(layer.data)) {
         continue
       } else {
         this._layer_map[n-1] = layer.data

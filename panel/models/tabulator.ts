@@ -1,5 +1,5 @@
 import {undisplay} from "@bokehjs/core/dom"
-import {isArray} from "@bokehjs/core/util/types"
+import {isArray, isBoolean, isString, isNumber} from "@bokehjs/core/util/types"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {div} from "@bokehjs/core/dom"
 import {Enum} from "@bokehjs/core/kinds"
@@ -909,8 +909,7 @@ export class DataTabulatorView extends HTMLBoxView {
       tab_column.visible = (tab_column.visible != false && !this.model.hidden_columns.includes(column.field))
       tab_column.editable = () => (this.model.editable && (editor.default_view != null))
       if (tab_column.headerFilter) {
-        if ((typeof tab_column.headerFilter) === "boolean" &&
-            (typeof tab_column.editor) === "string") {
+        if (isBoolean(tab_column.headerFilter) && isString(tab_column.editor)) {
           tab_column.headerFilter = tab_column.editor
           tab_column.headerFilterParams = tab_column.editorParams
         }
@@ -1169,7 +1168,7 @@ export class DataTabulatorView extends HTMLBoxView {
     if (
       this._selection_updating ||
         this._initializing ||
-        (typeof this.model.select_mode) === "string" ||
+        isString(this.model.select_mode) ||
         this.model.select_mode === false ||  // selection disabled
         this.model.configuration.dataTree || // dataTree does not support selection
         e.srcElement?.innerText === "►"      // expand button
@@ -1223,7 +1222,7 @@ export class DataTabulatorView extends HTMLBoxView {
       indices.splice(indices.indexOf(index), 1)
     }
     // Remove the first selected indices when selectable is an int.
-    if (typeof this.model.select_mode === "number") {
+    if (isNumber(this.model.select_mode)) {
       while (indices.length > this.model.select_mode) {
         indices.shift()
       }
@@ -1251,8 +1250,8 @@ export class DataTabulatorView extends HTMLBoxView {
     if (
       this._selection_updating ||
         this._initializing ||
-        (typeof this.model.select_mode) === "boolean" ||
-        (typeof this.model.select_mode) === "number" ||
+        isBoolean(this.model.select_mode) ||
+        isNumber(this.model.select_mode) ||
         this.model.configuration.dataTree
     ) {
       return
