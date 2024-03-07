@@ -28,6 +28,7 @@ export class ChatAreaInputView extends PnTextAreaInputView {
       if (event.key === 'Enter' && !event.shiftKey) {
         this.model.trigger_event(new ChatMessageEvent(this.model.value_input))
         this.model.value_input = ""
+        this.update_rows()
         event.preventDefault();
       }
     });
