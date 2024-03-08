@@ -44,3 +44,28 @@ def test_chat_area_input_enter(page):
     wait_until(lambda: chat_area_input.value_input == "", page)
     assert chat_area_input.value == ""
     assert output_markdown.object == "Try again now!"
+
+
+def test_chat_area_input_resets_to_row(page):
+
+    chat_area_input = ChatAreaInput(rows=2)
+    serve_component(page, chat_area_input)
+
+    # find chat area input and type a message
+    textbox = page.locator(".bk-input")
+    textbox.fill("Hello World!")
+    # click shift_enter 3 times
+    textbox.press("Shift+Enter")
+    textbox.press("Shift+Enter")
+    textbox.press("Shift+Enter")
+    wait_until(lambda: chat_area_input.value_input == "Hello World!\n\n\n", page)
+    assert chat_area_input.value == ""
+    textbox_rows = textbox.evaluate("el => el.rows")
+    assert textbox_rows == 4
+
+    # Click enter with textbox having focus
+    textbox.press("Enter")
+    wait_until(lambda: chat_area_input.value_input == "", page)
+    assert chat_area_input.value == ""
+    textbox_rows = textbox.evaluate("el => el.rows")
+    assert textbox_rows == 2
