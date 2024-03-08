@@ -81,6 +81,7 @@ from .logging import (
     LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING,
 )
 from .profile import profile_ctx
+from .reload import record_modules
 from .resources import (
     BASE_TEMPLATE, CDN_DIST, COMPONENT_PATH, ERROR_TEMPLATE, LOCAL_DIST,
     Resources, _env, bundle_resources, patch_model_css, resolve_custom_path,
@@ -856,7 +857,8 @@ def modify_document(self, doc: 'Document'):
         with _monkeypatch_io(self._loggers):
             with patch_curdoc(doc):
                 with profile_ctx(config.profiler) as sessions:
-                    self._runner.run(module, post_check)
+                    with record_modules(handler=self):
+                        self._runner.run(module, post_check)
 
         def _log_session_destroyed(session_context):
             logger.info(LOG_SESSION_DESTROYED, id(doc))
