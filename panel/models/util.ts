@@ -53,10 +53,6 @@ export function deepCopy(obj: any): any {
   throw new Error("Unable to copy obj! Its type isn't supported.")
 }
 
-export function isPlainObject(obj: any) {
-  return Object.prototype.toString.call(obj) === "[object Object]"
-}
-
 export function reshape(arr: any[], dim: number[]) {
   let elemIndex = 0
 

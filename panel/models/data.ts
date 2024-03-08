@@ -1,4 +1,5 @@
 import type {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
+import {isNumber} from "@bokehjs/core/util/types"
 
 export function transform_cds_to_records(cds: ColumnDataSource, addId: boolean = false, start: number = 0): any {
   const data: any = []
@@ -13,7 +14,7 @@ export function transform_cds_to_records(cds: ColumnDataSource, addId: boolean =
     for (const column of columns) {
       const array: any = cds.get_array(column)
       const shape = (array[0] == null || array[0].shape == null) ? null : array[0].shape
-      if ((shape != null) && (shape.length > 1) && (typeof shape[0] == "number")) {
+      if (shape != null && shape.length > 1 && isNumber(shape[0])) {
         item[column] = array.slice(i*shape[1], i*shape[1]+shape[1])
       } else if (array.length != cdsLength && (array.length % cdsLength === 0)) {
         const offset = array.length / cdsLength

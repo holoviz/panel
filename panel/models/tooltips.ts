@@ -23,6 +23,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+import {isBoolean, isString, isNumber, isPlainObject} from "@bokehjs/core/util/types"
+
 /* global document */
 let lastPickedObject: any
 let lastTooltip: any
@@ -117,9 +119,9 @@ export function toText(jsonValue: any) {
   let text
   if (Array.isArray(jsonValue) && jsonValue.length > 4) {
     text = `Array<${jsonValue.length}>`
-  } else if (typeof jsonValue === "string") {
+  } else if (isString(jsonValue)) {
     text = jsonValue
-  } else if (typeof jsonValue === "number") {
+  } else if (isNumber(jsonValue)) {
     text = String(jsonValue)
   } else {
     try {
@@ -138,7 +140,7 @@ export function toText(jsonValue: any) {
 export function substituteIn(template: any, json: any) {
   let output = template
   for (const key in json) {
-    if (typeof json[key] === "object") {
+    if (isPlainObject(json[key])) {
       for (const subkey in json[key]) {
         output = output.replace(`{${key}.${subkey}}`, json[key][subkey])
       }
@@ -164,7 +166,7 @@ export function makeTooltip(tooltips: any, layers: any[]) {
   for (let i = 0; i < layers.length; i++) {
     const layer = layers[i]
     const layer_id = (layer.id as string)
-    if (typeof tooltips !== "boolean" && (i.toString() in tooltips || layer_id in tooltips)) {
+    if (!isBoolean(tooltips) && (i.toString() in tooltips || layer_id in tooltips)) {
       layer_tooltips[layer_id] = layer_id in tooltips ? tooltips[layer_id]: tooltips[i.toString()]
       per_layer = true
     }
@@ -179,7 +181,7 @@ export function makeTooltip(tooltips: any, layers: any[]) {
       const tooltip = (per_layer) ? layer_tooltips[pickedInfo.layer.id]: tooltips
       if (tooltip == null) {
         return
-      } else if (typeof tooltip === "boolean") {
+      } else if (isBoolean(tooltip)) {
         return tooltip ? getTooltipDefault(pickedInfo) : null
       }
 

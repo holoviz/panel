@@ -33,9 +33,17 @@ class TestChatFeed:
 
     def test_init_with_help_text(self):
         chat_feed = ChatFeed(help_text="Instructions")
-        message = chat_feed._chat_log[0]
+        message = chat_feed.objects[0]
         assert message.object == "Instructions"
         assert message.user == "Help"
+
+    def test_update_header(self):
+        chat_feed = ChatFeed(header="1")
+        assert chat_feed._card.header == "1"
+        chat_feed.header = "2"
+        assert chat_feed._card.header == "2"
+        chat_feed.header = HTML("<b>3</b>")
+        assert chat_feed._card.header.object == "<b>3</b>"
 
     def test_hide_header(self, chat_feed):
         assert chat_feed.header is None
@@ -219,7 +227,7 @@ class TestChatFeed:
         assert chat_feed.objects[0].user == user
         assert chat_feed.objects[0].avatar == avatar
 
-    def test_stream_entry(self, chat_feed):
+    def test_stream_message(self, chat_feed):
         message = ChatMessage("Streaming message", user="Person", avatar="P")
         chat_feed.stream(message)
         wait_until(lambda: len(chat_feed.objects) == 1)
@@ -227,6 +235,11 @@ class TestChatFeed:
         assert chat_feed.objects[0].object == "Streaming message"
         assert chat_feed.objects[0].user == "Person"
         assert chat_feed.objects[0].avatar == "P"
+
+    def test_stream_message_error_passed_user_avatar(self, chat_feed):
+        message = ChatMessage("Streaming message", user="Person", avatar="P")
+        with pytest.raises(ValueError, match="Cannot set user or avatar"):
+            chat_feed.stream(message, user="Bob", avatar="👨")
 
     def test_stream_replace(self, chat_feed):
         message = chat_feed.stream("Hello")
@@ -419,6 +432,18 @@ class TestChatFeed:
         assert chat_message.reactions == ["like"]
         assert chat_message.reaction_icons.options == {"like": "thumb-up"}
 
+    def test_update_chat_log_params(self, chat_feed):
+        chat_feed = ChatFeed(load_buffer=5, scroll_button_threshold=5, auto_scroll_limit=5)
+        assert chat_feed._chat_log.load_buffer == 5
+        assert chat_feed._chat_log.scroll_button_threshold == 5
+        assert chat_feed._chat_log.auto_scroll_limit == 5
+
+        chat_feed.load_buffer = 10
+        chat_feed.scroll_button_threshold = 10
+        chat_feed.auto_scroll_limit = 10
+        assert chat_feed._chat_log.load_buffer == 10
+        assert chat_feed._chat_log.scroll_button_threshold == 10
+        assert chat_feed._chat_log.auto_scroll_limit == 10
 
 @pytest.mark.xdist_group("chat")
 class TestChatFeedCallback:

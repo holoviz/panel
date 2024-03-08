@@ -3,7 +3,7 @@ import {useCallback} from "preact/hooks"
 import {html} from "htm/preact"
 
 import {div} from "@bokehjs/core/dom"
-import {isArray} from "@bokehjs/core/util/types"
+import {isArray, isString} from "@bokehjs/core/util/types"
 import type * as p from "@bokehjs/core/properties"
 import type {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
 
@@ -16,7 +16,7 @@ function serialize_attrs(attrs: any): any {
   const serialized: any = {}
   for (const attr in attrs) {
     let value = attrs[attr]
-    if (typeof value !== "string") {
+    if (!isString(value)) {
       value = value
     } else if (value !== "" && (value === "NaN" || !isNaN(Number(value)))) {
       value = Number(value)
@@ -237,7 +237,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
     const models = []
     for (const parent in this.model.children) {
       for (const model of this.model.children[parent]) {
-        if (typeof model !== "string") {
+        if (!isString(model)) {
           models.push(model)
         }
       }
@@ -313,7 +313,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
   private _render_children(): void {
     for (const node in this.model.children) {
       let children = this.model.children[node]
-      if (typeof children == "string") {
+      if (isString(children)) {
         children = this.model.data[children]
         if (!isArray(children)) {
           children = [children]
@@ -501,7 +501,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
       let value = attr === "children" ? el.innerHTML : el[attr]
       if (tokens.length === 1 && (`{${tokens[0]}}` === template)) {
         attrs[tokens[0]] = value
-      } else if (typeof value === "string") {
+      } else if (isString(value)) {
         value = extractToken(template, value, tokens)
         if (value == null) {
           console.warn(`Could not resolve parameters in ${name} element ${attr} attribute value ${value}.`)

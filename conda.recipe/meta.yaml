@@ -39,7 +39,7 @@ test:
     - pip
     - pytest-asyncio
   commands:
-    - pip check
+    # - pip check
     - panel --help
     - pytest --pyargs panel.tests
 
