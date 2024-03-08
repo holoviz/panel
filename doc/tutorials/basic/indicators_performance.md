@@ -1,14 +1,6 @@
 # Display Performance with Indicators
 
-Welcome to our tutorial on  Panel's [indicators](https://panel.holoviz.org/reference/index.html#indicators)!
-
-We will delve into the use of Indicators with an example that uses them to visualizes the key metrics of wind turbines in an engaging and insightful manner. The result will be this:
-
-:::{grid-item-card} Windturbines Explorer
-
-:target: https://|gallery-endpoint|.pyviz.demo.anaconda.com/windturbines
-:width: 100%
-Visually explore a dataset of US Windturbines. +++ See source :::
+Welcome to our tutorial on displaying the performance of wind turbines using Panel's [indicators](https://panel.holoviz.org/reference/index.html#indicators)! Let's delve into visualizing the key metrics of our wind turbines in an engaging and insightful manner.
 
 ## Explore Indicators
 
@@ -74,15 +66,15 @@ For more detailed insights into the `Trend` indicator, take a moment to explore 
 
 ## Explore the Indicators
 
-Panel provides a large collection of indicators to suit your needs.
+Panel provides a vast collection of indicators to suit your needs.
 
 Click [this link](https://panel.holoviz.org/reference/index.html#indicators) to explore the available indicators and their detailed reference guides.
 
 ## Recap
 
-In this tutorial, we have explored using Panel's versatile indicators by creating a visualization of the performance metrics of wind turbines. We:
+In this tutorial, we've embarked on visualizing the performance metrics of wind turbines using Panel's versatile indicators:
 
 - Leveraged the [`Number`](../../reference/indicators/Number.ipynb) indicator to display current performance.
 - Utilized the [`Trend`](../../reference/indicators/Trend.ipynb) indicator to showcase trending performance over time.
 
-Remember, there's a collection of indicators waiting for you to explore in the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators) of the [Component Gallery](../../reference/index.md). Keep experimenting and uncovering new insights! 🚀
+Remember, there's a plethora of indicators waiting for you to explore in the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators) of the [Component Gallery](../../reference/index.md). Keep experimenting and uncovering new insights! 🚀
