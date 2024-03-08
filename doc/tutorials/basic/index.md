@@ -75,9 +75,11 @@ Now that you've got the basics down, it's time to put your skills to the test:
 - **[Build a Streaming Dashboard](build_streaming_dashboard.md)**
 - **[Build a Chat Bot](build_chatbot.md)**
 
+Let's start building some amazing wind turbine apps! 🌬️🌀
+
 ## Community Tutorials
 
-Check out some amazing tutorials by the community.
+Want more? Check out some amazing tutorials by the community.
 
 - [3 Ways to Build a Panel Visualization Dashboard - Sophia Yang](https://towardsdatascience.com/3-ways-to-build-a-panel-visualization-dashboard-6e14148f529d) (Blog Post) | [PyTexas 2023](https://www.youtube.com/watch?v=8du4NNoOtII) (Video)
 - [HoloViz: Visualization and Interactive Dashboards in Python - Jean-Luc Stevens](https://www.youtube.com/watch?v=61uHwBlxRug) (Video)
@@ -85,8 +87,6 @@ Check out some amazing tutorials by the community.
 - [Step-by-Step Guide to Create Multi-Page Dashboard using Panel - CoderzColumn](https://www.youtube.com/watch?v=G3M0lQcWpqE) (Video)
 - [Transform a Python script into an interactive, web app and make it performant - Andrew Huang](https://blog.stackademic.com/transform-a-python-script-into-an-interactive-web-app-and-make-it-performant-73fa3b304cdf) (Blog Post)
 - [Using Panel to Build Data Dashboards in Python - Will Norris](https://towardsdatascience.com/using-panel-to-build-data-dashboards-in-python-e87a04c9034d) (Blog Post)
-
-Let's start building some amazing wind turbine apps! 🌬️🌀
 
 ```{toctree}
 :titlesonly:
