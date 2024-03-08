@@ -4,38 +4,17 @@ In this tutorial, we will create a *bar chart race* using the [Altair](https://a
 
 *Todo: The below is for testing on ios. Clean up*
 
-https://assets.holoviz.org/panel/tutorials/bar_chart_race_1.mp4
+https://assets.holoviz.org/panel/tutorials/bar_chart_race.mp4 NOT PLAYING ON IPHONE
 
 <video controls="" poster="https://assets.holoviz.org/panel/tutorials/bar_chart_race.png">
-    <source src="https://assets.holoviz.org/panel/tutorials/bar_chart_race_1.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
+    <source src="https://assets.holoviz.org/panel/tutorials/bar_chart_race.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
     Your browser does not support the video tag.
 </video>
 
-https://assets.holoviz.org/panel/tutorials/bar_chart_race_1.mp4
+../../_static/bar_chart_race_2.mp4 IS PLAYING ON IPHONE
 
 <video controls="" poster="https://assets.holoviz.org/panel/tutorials/bar_chart_race.png">
-    <source src="https://assets.holoviz.org/panel/tutorials/bar_chart_race_1.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
-    Your browser does not support the video tag.
-</video>
-
-https://github.com/holoviz-topics/panel-chat-examples/raw/main/docs/assets/videos/langchain_chat_pandas_df.mp4
-
-<video controls="" poster="https://assets.holoviz.org/panel/tutorials/bar_chart_race.png">
-    <source src="https://github.com/holoviz-topics/panel-chat-examples/raw/main/docs/assets/videos/langchain_chat_pandas_df.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
-    Your browser does not support the video tag.
-</video>
-
-https://assets.holoviz.org/panel/tutorials/bar_chart_race_2.mp4
-
-<video controls="" poster="https://assets.holoviz.org/panel/tutorials/bar_chart_race.png">
-    <source src="https://assets.holoviz.org/panel/tutorials/bar_chart_race_2.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
-    Your browser does not support the video tag.
-</video>
-
-../../_static/bar_chart_race_2.mp4
-
-<video controls="" poster="https://assets.holoviz.org/panel/tutorials/bar_chart_race.png">
-    <source src="../../_static/bar_chart_race_2.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
+    <source src="../../_static/bar_chart_race.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
     Your browser does not support the video tag.
 </video>
 
