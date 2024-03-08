@@ -24,6 +24,8 @@ Let us take a simple example of an application that has three widgets that gathe
 Let's take the example of a form that allows us to register a new user and their age:
 
 ```{pyodide}
+import panel as pn
+
 user   = pn.widgets.TextInput(name='User')
 age    = pn.widgets.IntSlider(name='Age', start=0, end=100)
 submit = pn.widgets.Button(name='Submit')
@@ -46,7 +48,6 @@ user.param.watch(update_preview)
 age.param.watch(update_preview)
 submit.onclick(submit_form)
 
-
 pn.Row(widgets, md)
 ```
 
@@ -67,6 +68,8 @@ In the reactive approach things are much simpler; the three inputs are bound to 
 
 :::{tab-item} Code Example
 ```{pyodide}
+import panel as pn
+
 user   = pn.widgets.TextInput(name='User')
 age    = pn.widgets.IntSlider(name='Age', start=0, end=100)
 submit = pn.widgets.Button(name='Submit')
@@ -95,19 +98,21 @@ Note the simplicity of binding all three parameters to one function which genera
 
 Now that we have introduced some of the concepts behind the reactive approaches, let's dive into the nitty gritty and try to understand how Panel actually implements the abstract concepts of reactivity in practice. As we discussed previously, reactive approaches rely on **data binding**, and we also mentioned that Parameters are the native way for Panel to express the data model. At the implementation level, data binding therefore happens by binding parameter state to some component or function. The important thing to understand is that for binding to be expressed in code, we have to make a distinction between the parameter **value** and the abstract parameter **reference**. To make this concrete, to perform binding we have to use the parameter **object**, which acts as a proxy or reference for its value. Let's say we have a `TextInput` widget:
 
-```python
+```{pyodide}
 text = pn.widgets.TextInput(value='Hello world!')
+
+text
 ```
 
 The widget's value parameter value can be accessed as `text.value`, but executing that code would resolve to the single value at that point in time. To perform binding we need an indirect reference to the object that contains the current value, so that we can get notified about any future new value. For a TextInput, the underlying Parameter object is named "value", and the way to access that Parameter object `text.param.value`. (Yes, it's confusing that the Parameter we need is named "value", such that here we are choosing between getting a "value" of the "value" object (a text string) or the object itself (a Parameter instance)! In Panel there are two main ways of binding to a reference. The first option is to directly bind a parameter object as input to some other component:
 
-```python
+```{pyodide}
 pn.pane.Markdown(object=text.param.value)
 ```
 
 Where supported, this syntax performs data binding between the `value` parameter of the widget and the `object` parameter of the `Markdown` pane and provides a declarative specification of this reactive component, making its `object` update automatically whenever the text changes. We will refer to this approach as **component-level binding**. Component-level bindings are the simplest and most explicit form of data binding in Panel, and can be distinguished from **function-level binding** where we use `pn.bind` to bind a parameter reference to a function:
 
-```python
+```{pyodide}
 a_slider = pn.widgets.FloatSlider(start=0, end=10)
 b_slider = pn.widgets.FloatSlider(start=0, end=10)
 
@@ -126,7 +131,7 @@ In this example, we have bound two inputs to the function and return an output, 
 :::{important}
 Note that since we have created a `Str` pane inside the function the `ParamFunction` pane has to figure out how best to update the displayed output. The problem it runs into is that you (the user) may have kept a separate handle on the `Str` object you created and may want to reuse it later, e.g. to manually update the object. Therefore Panel has to make the assumption that it cannot safely modify this object inplace, i.e. update the `object` on the existing `Str` the next time `add` is called. This means that in this simple setup with function-level binding, Panel has to re-render the corresponding model every time the inputs change instead of simply update the pane `object` parameter and sending the updated string. For complex panes and output this approach can lead to undesirable flicker. To avoid flickering, you can tell Panel that the output can be safely updated `inplace`:
 
-```python
+```{pyodide}
 pn.param.ParamFunction(pn.bind(add, a_slider.param.value, b_slider.param.value), inplace=True)
 ```
 
@@ -199,7 +204,7 @@ pn.pane.Markdown(object=template.format(text=text))
 :::{tab-item} (Async) Generators
 (Asynchronous) generators functions can be used as a reference, to drive streaming outputs.
 
-```python
+```{pyodide}
 import time
 
 def gen():
@@ -222,7 +227,7 @@ pn.pane.Markdown(object=gen)
 
 To unpack these options a little bit, let's go back to our earlier example, which used function-level binding to add two values and render the output using a `Str` pane:
 
-```python
+```{pyodide}
 a_slider = pn.widgets.FloatSlider(start=0, end=10)
 b_slider = pn.widgets.FloatSlider(start=0, end=10)
 
@@ -234,7 +239,7 @@ pn.Column(a_slider, b_slider, pn.bind(add, a_slider.param.value, b_slider.param.
 
 As we emphasized earlier, function-level binding is often inefficient, but using a bound function as a reference we can rewrite this to use component-level binding instead:
 
-```python
+```{pyodide}
 a_slider = pn.widgets.FloatSlider(start=0, end=10)
 b_slider = pn.widgets.FloatSlider(start=0, end=10)
 
@@ -262,7 +267,7 @@ Certain user interactions are, by their very nature more amenable to an event-dr
 
 Let us, for example, extend our simple addition app with a button that triggers the calculation:
 
-```python
+```{pyodide}
 a = pn.widgets.FloatSlider()
 b = pn.widgets.FloatSlider()
 button = pn.widgets.Button(name='Calculate')
@@ -279,7 +284,7 @@ pn.Column(a_slider, b_slider, button, str_pane)
 
 Defining a click handler using the `on_click` method to trigger the computation feels natural, but we again struggle with the fact that we have to access the state from multiple widgets. The reactive approaches therefore do provide alternatives here, e.g. when using function level binding we can determine if the button has been clicked and raise `Skip` error if it hasn't, causing the update event to be skipped:
 
-```python
+```{pyodide}
 a_slider = pn.widgets.FloatSlider()
 b_slider = pn.widgets.FloatSlider()
 button = pn.widgets.Button(name='Calculate')
@@ -294,12 +299,14 @@ pn.Column(a_slider, b_slider, button, pn.bind(add, a_slider, b_slider, button))
 
 Reactive expressions also have a mechanism to condition an event being emitted on a transient event, using the `.rx.when` method:
 
-```python
+```{pyodide}
 a_slider = pn.widgets.FloatSlider()
 b_slider = pn.widgets.FloatSlider()
 button = pn.widgets.Button(name='Calculate')
 
-out = pn.rx('{a} + {b} = {c}').format(a=a_slider, b=b_slider, c=a_slider.rx()+b_slider.rx()).rx.when(button)
+out = pn.rx('{a} + {b} = {c}').format(
+    a=a_slider, b=b_slider, c=a_slider.rx()+b_slider.rx()
+).rx.when(button)
 
 pn.Column(a_slider, b_slider, button, pn.pane.Str(out))
 ```
