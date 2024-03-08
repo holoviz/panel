@@ -33,13 +33,14 @@ md = pn.pane.Markdown()
 
 def update_preview(event):
     if not user.value:
-        md.value = 'Please add a user'
-	md.object = f'Hit submit to add user {user.value!r} who is {age.value} years old.'
+        md.object = 'Please add a user'
+        return
+    md.object = f'Hit submit to add user {user.value!r} who is {age.value} years old.'
 
 def submit_form(event):
-	# db.insert({'user': user.value, 'age': age.value})
-	user.value = ''
-	age.value = 0
+    # db.insert({'user': user.value, 'age': age.value})
+    user.value = ''
+    age.value = 0
 
 user.param.watch(update_preview)
 age.param.watch(update_preview)
@@ -73,11 +74,12 @@ submit = pn.widgets.Button(name='Submit')
 widgets = pn.Column(user, age, submit)
 
 def preview(user, age, submit):
-	if not user:
+    if not user:
         return 'Please add a user'
     elif submit:
-		# db.insert({'user': user, 'age': age})
-	return f'Hit submit to add user {user!r} who is {age} years old.'
+        # db.insert({'user': user, 'age': age})
+        pass
+    return f'Hit submit to add user {user!r} who is {age} years old.'
 
 md = pn.pane.Markdown(pn.bind(preview, user, age, submit))
 
@@ -202,14 +204,14 @@ import time
 
 def gen():
     """
-	Endless cycles through a few phrases such as 'Hello there!'
-	"""
+    Endless cycles through a few phrases such as 'Hello there!'
+    """
     i = 0
     options = ['world', 'you', 'there', 'human']
     while True:
         yield f'Hello {options[i]}!'
-		i = (i+1) % len(options)
-		time.sleep(1)
+        i = (i+1) % len(options)
+        time.sleep(1)
 
 pn.pane.Markdown(object=gen)
 ```
@@ -284,7 +286,7 @@ button = pn.widgets.Button(name='Calculate')
 
 def add(a, b, compute):
     if not compute:
-	    raise pn.param.Skip()
+        raise pn.param.Skip
     return f'{a} + {b} = {a+b}'
 
 pn.Column(a_slider, b_slider, button, pn.bind(add, a_slider, b_slider, button))
