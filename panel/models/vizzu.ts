@@ -67,14 +67,15 @@ export class VizzuChartView extends HTMLBoxView {
       }
       update()
     }
-    this.connect(this.model.properties.config.change, () => update_prop("config"))
-    this.connect(this.model.source.properties.data.change, () => update_prop("data"))
+    const {config, tooltip, style} = this.model.properties
+    this.on_change(config, () => update_prop("config"))
+    this.on_change(this.model.source.properties.data, () => update_prop("data"))
     this.connect(this.model.source.streaming, () => update_prop("data"))
     this.connect(this.model.source.patching, () => update_prop("data"))
-    this.connect(this.model.properties.tooltip.change, () => {
+    this.on_change(tooltip, () => {
       this.vizzu_view.feature("tooltip", this.model.tooltip)
     })
-    this.connect(this.model.properties.style.change, () => update_prop("style"))
+    this.on_change(style, () => update_prop("style"))
   }
 
   get valid_config(): boolean {

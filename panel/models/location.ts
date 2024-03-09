@@ -32,10 +32,11 @@ export class LocationView extends View {
   override connect_signals(): void {
     super.connect_signals()
 
-    this.connect(this.model.properties.pathname.change, () => this.update("pathname"))
-    this.connect(this.model.properties.search.change, () => this.update("search"))
-    this.connect(this.model.properties.hash.change, () => this.update("hash"))
-    this.connect(this.model.properties.reload.change, () => this.update("reload"))
+    const {pathname, search, hash, reload} = this.model.properties
+    this.on_change(pathname, () => this.update("pathname"))
+    this.on_change(search, () => this.update("search"))
+    this.on_change(hash, () => this.update("hash"))
+    this.on_change(reload, () => this.update("reload"))
   }
 
   override remove(): void {

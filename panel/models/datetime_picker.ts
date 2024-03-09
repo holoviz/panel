@@ -34,16 +34,19 @@ export class DatetimePickerView extends InputWidgetView {
   override connect_signals(): void {
     super.connect_signals()
 
-    const {value, min_date, max_date, disabled_dates, enabled_dates, inline,
-           enable_time, enable_seconds, military_time, date_format, mode} = this.model.properties
-    this.connect(value.change, () => this.model.value ? this._picker?.setDate(this.model.value) : this._clear())
-    this.connect(min_date.change, () => this._picker?.set("minDate", this.model.min_date))
-    this.connect(max_date.change, () => this._picker?.set("maxDate", this.model.max_date))
-    this.connect(disabled_dates.change, () => {
+    const {
+      value, min_date, max_date, disabled_dates, enabled_dates, inline,
+      enable_time, enable_seconds, military_time, date_format, mode,
+    } = this.model.properties
+
+    this.on_change(value, () => this.model.value ? this._picker?.setDate(this.model.value) : this._clear())
+    this.on_change(min_date, () => this._picker?.set("minDate", this.model.min_date))
+    this.on_change(max_date, () => this._picker?.set("maxDate", this.model.max_date))
+    this.on_change(disabled_dates, () => {
       const {disabled_dates} = this.model
       this._picker?.set("disable", disabled_dates != null ? _convert_date_list(disabled_dates) : [])
     })
-    this.connect(enabled_dates.change, () => {
+    this.on_change(enabled_dates, () => {
       const {enabled_dates} = this.model
       if (enabled_dates != null) {
         this._picker?.set("enable", _convert_date_list(enabled_dates))
@@ -56,12 +59,12 @@ export class DatetimePickerView extends InputWidgetView {
         }
       }
     })
-    this.connect(inline.change, () => this._picker?.set("inline", this.model.inline))
-    this.connect(enable_time.change, () => this._picker?.set("enableTime", this.model.enable_time))
-    this.connect(enable_seconds.change, () => this._picker?.set("enableSeconds", this.model.enable_seconds))
-    this.connect(military_time.change, () => this._picker?.set("time_24hr", this.model.military_time))
-    this.connect(mode.change, () => this._picker?.set("mode", this.model.mode))
-    this.connect(date_format.change, () => this._picker?.set("dateFormat", this.model.date_format))
+    this.on_change(inline, () => this._picker?.set("inline", this.model.inline))
+    this.on_change(enable_time, () => this._picker?.set("enableTime", this.model.enable_time))
+    this.on_change(enable_seconds, () => this._picker?.set("enableSeconds", this.model.enable_seconds))
+    this.on_change(military_time, () => this._picker?.set("time_24hr", this.model.military_time))
+    this.on_change(mode, () => this._picker?.set("mode", this.model.mode))
+    this.on_change(date_format, () => this._picker?.set("dateFormat", this.model.date_format))
   }
 
   override remove(): void {

@@ -72,82 +72,64 @@ export class PerspectiveView extends HTMLBoxView {
     this.connect(this.model.source.properties.data.change, () => this.setData())
     this.connect(this.model.source.streaming, () => this.stream())
     this.connect(this.model.source.patching, () => this.patch())
-    this.connect(this.model.properties.schema.change, () => {
+
+    const {
+      schema, toggle_config, columns, expressions, split_by, group_by,
+      aggregates, filters, sort, plugin, selectable, editable, theme,
+    } = this.model.properties
+
+    const not_updating = (fn: () => void) => {
+      return () => {
+        if (this._updating) {
+          return
+        }
+        fn()
+      }
+    }
+
+    this.on_change(schema, () => {
       this.worker.table(this.model.schema).then((table: any) => {
         this.table = table
         this.table.update(this.data)
         this.perspective_element.load(this.table)
       })
     })
-    this.connect(this.model.properties.toggle_config.change, () => {
+    this.on_change(toggle_config, () => {
       this.perspective_element.toggleConfig()
     })
-    this.connect(this.model.properties.columns.change, () => {
-      if (this._updating) {
-        return
-      }
+    this.on_change(columns, not_updating(() => {
       this.perspective_element.restore({columns: this.model.columns})
-    })
-    this.connect(this.model.properties.expressions.change, () => {
-      if (this._updating) {
-        return
-      }
+    }))
+    this.on_change(expressions, not_updating(() => {
       this.perspective_element.restore({expressions: this.model.expressions})
-    })
-    this.connect(this.model.properties.split_by.change, () => {
-      if (this._updating) {
-        return
-      }
+    }))
+    this.on_change(split_by, not_updating(() => {
       this.perspective_element.restore({split_by: this.model.split_by})
-    })
-    this.connect(this.model.properties.group_by.change, () => {
-      if (this._updating) {
-        return
-      }
+    }))
+    this.on_change(group_by, not_updating(() => {
       this.perspective_element.restore({group_by: this.model.group_by})
-    })
-    this.connect(this.model.properties.aggregates.change, () => {
-      if (this._updating) {
-        return
-      }
+    }))
+    this.on_change(aggregates, not_updating(() => {
       this.perspective_element.restore({aggregates: this.model.aggregates})
-    })
-    this.connect(this.model.properties.filters.change, () => {
-      if (this._updating) {
-        return
-      }
+    }))
+    this.on_change(filters, not_updating(() => {
       this.perspective_element.restore({filter: this.model.filters})
-    })
-    this.connect(this.model.properties.sort.change, () => {
-      if (this._updating) {
-        return
-      }
+    }))
+    this.on_change(sort, not_updating(() => {
       this.perspective_element.restore({sort: this.model.sort})
-    })
-    this.connect(this.model.properties.plugin.change, () => {
-      if (this._updating) {
-        return
-      }
-      this.perspective_element.restore({plugin: PLUGINS[this.model.plugin ]})
-    })
-    this.connect(this.model.properties.selectable.change, () => {
-      if (this._updating) {
-        return
-      }
+    }))
+    this.on_change(plugin, not_updating(() => {
+      this.perspective_element.restore({plugin: PLUGINS[this.model.plugin]})
+    }))
+    this.on_change(selectable, not_updating(() => {
       this.perspective_element.restore({plugin_config: {...this._current_config, selectable: this.model.selectable}})
-    })
-    this.connect(this.model.properties.editable.change, () => {
-      if (this._updating) {
-        return
-      }
+    }))
+    this.on_change(editable, not_updating(() => {
       this.perspective_element.restore({plugin_config: {...this._current_config, editable: this.model.editable}})
-    })
-    this.connect(this.model.properties.theme.change, () => {
-      if (this._updating) {
-        return
-      }
+    }))
+    this.on_change(theme, not_updating(() => {
       this.perspective_element.restore({theme: THEMES[this.model.theme as string]}).catch(() => {})
-    })
+    }))
   }
 
   override disconnect_signals(): void {
