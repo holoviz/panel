@@ -32,9 +32,8 @@ import tornado
 
 # Bokeh imports
 from bokeh.application import Application as BkApplication
-from bokeh.application.handlers.function import (
-    DirectoryHandler, FunctionHandler,
-)
+from bokeh.application.handlers.directory import DirectoryHandler
+from bokeh.application.handlers.function import FunctionHandler
 from bokeh.core.json_encoder import serialize_json
 from bokeh.core.templates import AUTOLOAD_JS, FILE, MACROS
 from bokeh.core.validation import silence
