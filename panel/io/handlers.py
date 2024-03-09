@@ -1,28 +1,38 @@
 from __future__ import annotations
 
 import ast
+import html
 import json
 import logging
 import os
 import pathlib
 import re
 import sys
+import traceback
 
 from contextlib import contextmanager
+from functools import partial
 from types import ModuleType
 from typing import IO, Any, Callable
 
 import bokeh.command.util
 
 from bokeh.application.handlers.code import CodeHandler
+from bokeh.application.handlers.code_runner import CodeRunner
+from bokeh.application.handlers.handler import Handler, handle_exception
 from bokeh.command.util import (
     build_single_handler_application as _build_application,
 )
 from bokeh.core.types import PathLike
 from bokeh.document import Document
-from bokeh.io.doc import patch_curdoc
+from bokeh.io.doc import curdoc, patch_curdoc, set_curdoc as bk_set_curdoc
 from bokeh.util.dependencies import import_required
 
+from ..config import config
+from .document import _destroy_document
+from .logging import LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING
+from .profile import profile_ctx
+from .reload import record_modules
 from .state import state
 
 log = logging.getLogger('panel.io.handlers')
@@ -180,8 +190,153 @@ if _fig__out:
 """)
     return code
 
+def autoreload_handle_exception(handler, module, e):
+    if not config.autoreload:
+        handle_exception(handler, e)
+        return
 
-class MarkdownHandler(CodeHandler):
+    from ..pane import Alert
+
+    # Clean up module
+    del sys.modules[module.__name__]
+    state.curdoc.modules._modules.remove(module)
+
+    # Serve error
+    e_msg = str(e).replace('\033[1m', '<b>').replace('\033[0m', '</b>')
+    tb = html.escape(traceback.format_exc()).replace('\033[1m', '<b>').replace('\033[0m', '</b>')
+    Alert(
+        f'<b>{type(e).__name__}</b>: {e_msg}\n<pre style="overflow-y: auto">{tb}</pre>',
+        alert_type='danger', margin=5, sizing_mode='stretch_width'
+    ).servable()
+
+bokeh.application.handlers.code_runner.handle_exception = autoreload_handle_exception
+
+def run_app(handler, module, doc, post_run=None):
+    try:
+        old_doc = curdoc()
+    except RuntimeError:
+        old_doc = None
+        bk_set_curdoc(doc)
+
+    sessions = []
+
+    def post_check():
+        newdoc = curdoc()
+        # Do not let curdoc track modules when autoreload is enabled
+        # otherwise it will erroneously complain that there is
+        # a memory leak
+        if config.autoreload:
+            newdoc.modules._modules = []
+
+        # script is supposed to edit the doc not replace it
+        if newdoc is not doc:
+            raise RuntimeError("%s at '%s' replaced the output document" % (handler._origin, handler._runner.path))
+
+    try:
+        state._launching.append(doc)
+        with _monkeypatch_io(handler._loggers):
+            with patch_curdoc(doc):
+                with profile_ctx(config.profiler) as sessions:
+                    with record_modules(handler=handler):
+                        handler._runner.run(module, post_check)
+                        if post_run:
+                            post_run()
+
+        def _log_session_destroyed(session_context):
+            log.info(LOG_SESSION_DESTROYED, id(doc))
+
+        doc.on_session_destroyed(_log_session_destroyed)
+        doc.destroy = partial(_destroy_document, doc) # type: ignore
+    finally:
+        state._launching.remove(doc)
+        if config.profiler:
+            try:
+                path = doc.session_context.request.path
+                state._profiles[(path, config.profiler)] += sessions
+                state.param.trigger('_profiles')
+            except Exception:
+                pass
+        if old_doc is not None:
+            bk_set_curdoc(old_doc)
+
+
+class PanelCodeRunner(CodeRunner):
+
+    def run(self, module: ModuleType, post_check: Callable[[], None] | None = None) -> None:
+        """
+        Execute the configured source code in a module and run any post
+        checks.
+
+        See bokeh.application.handlers.code_runner for original implementation.
+        """
+        _cwd = os.getcwd()
+        _sys_path = list(sys.path)
+        _sys_argv = list(sys.argv)
+        sys.path.insert(0, os.path.dirname(self._path))
+        sys.argv = [os.path.basename(self._path), *self._argv]
+
+        # XXX: self._code shouldn't be None at this point but types don't reflect this
+        assert self._code is not None
+
+        try:
+            exec(self._code, module.__dict__)
+
+            if post_check:
+                post_check()
+        except Exception as e:
+            autoreload_handle_exception(self, module, e)
+        finally:
+            # undo sys.path, CWD fixups
+            os.chdir(_cwd)
+            sys.path = _sys_path
+            sys.argv = _sys_argv
+            self.ran = True
+
+
+class PanelCodeHandler(CodeHandler):
+
+    def __init__(self, *, source: str, filename: PathLike, argv: list[str] = [], package: ModuleType | None = None) -> None:
+        Handler.__init__(self)
+
+        self._runner = PanelCodeRunner(source, filename, argv, package=package)
+
+        self._loggers = {}
+        for f in PanelCodeHandler._io_functions:
+            self._loggers[f] = self._make_io_logger(f)
+
+    def modify_document(self, doc: 'Document'):
+        from ..config import config
+
+        log.info(LOG_SESSION_LAUNCHING, id(doc))
+
+        doc.on_event('document_ready', partial(state._schedule_on_load, doc))
+
+        if config.autoreload:
+            path = self._runner.path
+            argv = self._runner._argv
+            handler = type(self)(filename=path, argv=argv)
+            self._runner = handler._runner
+
+        module = self._runner.new_module()
+
+        # If no module was returned it means the code runner has some permanent
+        # unfixable problem, e.g. the configured source code has a syntax error
+        if module is None:
+            return
+
+        # One reason modules are stored is to prevent the module from being gc'd
+        # before the document is. A symptom of a gc'd module is that its globals
+        # become None. Additionally stored modules are used to provide correct
+        # paths to custom models resolver.
+        doc.modules.add(module)
+
+        run_app(handler, module, doc)
+
+
+CodeHandler.modify_document = PanelCodeHandler.modify_document
+
+
+class MarkdownHandler(PanelCodeHandler):
     ''' Modify Bokeh documents by creating Dashboard from a Markdown file.
 
     '''
@@ -202,7 +357,7 @@ class MarkdownHandler(CodeHandler):
         super().__init__(*args, **kwargs)
 
 
-class NotebookHandler(CodeHandler):
+class NotebookHandler(PanelCodeHandler):
     ''' Modify Bokeh documents by creating Dashboard from a notebook file.
 
     '''
@@ -300,6 +455,60 @@ class NotebookHandler(CodeHandler):
             self._layout = {}
         return self._layout
 
+    def _render_template(self, doc, path):
+        from ..config import config
+        from ..layout import Column
+        from .state import state
+
+        config.template = 'editable'
+        persist = state._jupyter_kernel_context
+        editable = 'editable' in state.session_args
+        if not (editable or persist):
+            state.template.editable = False
+        state.template.title = os.path.basename(path)
+
+        layouts, outputs, cells = {}, {}, {}
+        for cell_id, out in state._cell_outputs.items():
+            spec = state._cell_layouts[self].get(cell_id, {})
+            if 'width' in spec and 'height' in spec:
+                sizing_mode = 'stretch_both'
+            else:
+                sizing_mode = 'stretch_width'
+            pout = Column(
+                *(o for o in out if o is not None),
+                sizing_mode=sizing_mode
+            )
+            for po in pout:
+                po.sizing_mode = sizing_mode
+            outputs[cell_id] = pout
+            layouts[id(pout)] = state._cell_layouts[self][cell_id]
+            cells[cell_id] = id(pout)
+            pout.servable()
+
+        # Reorder outputs based on notebook metadata
+        import nbformat
+        nb = nbformat.read(self._runner._path, nbformat.NO_CONVERT)
+        ordered = {}
+        for cell_id in nb['metadata'].get('panel-cell-order', []):
+            if cell_id not in cells:
+                continue
+            obj_id = cells[cell_id]
+            ordered[obj_id] = layouts[obj_id]
+            for cell_id in self._layout.get('order', []):
+                if cell_id not in cells:
+                    continue
+                obj_id = cells[cell_id]
+                ordered[obj_id] = layouts[obj_id]
+            for obj_id, spec in layouts.items():
+                if obj_id not in ordered:
+                    ordered[obj_id] = spec
+
+        # Set up state
+        state.template.layout = ordered
+        if persist:
+            state.template.param.watch(self._update_position_metadata, 'layout')
+        state._session_outputs[doc] = outputs
+
     def modify_document(self, doc: Document) -> None:
         ''' Run Bokeh application code to update a ``Document``
 
@@ -307,8 +516,10 @@ class NotebookHandler(CodeHandler):
             doc (Document) : a ``Document`` to update
 
         '''
+        doc.on_event('document_ready', partial(state._schedule_on_load, doc))
+
         path = self._runner._path
-        if self._stale:
+        if self._stale or config.autoreload:
             self._load_layout(path)
             source = self._parse(path)
             nodes = ast.parse(source, os.fspath(path))
@@ -328,69 +539,13 @@ class NotebookHandler(CodeHandler):
         # paths to custom models resolver.
         doc.modules.add(module)
 
-        with _monkeypatch_io(self._loggers):
-            with patch_curdoc(doc):
-                from ..config import config
-                from ..layout import Column
-                from .state import state
+        def post_run():
+            if not (doc.roots or doc in state._templates):
+                self._render_template(doc, path)
+            state._cell_outputs.clear()
 
-                with set_env_vars(MPLBACKEND='agg'):
-                    self._runner.run(module, self._make_post_doc_check(doc))
-
-                if doc.roots or doc in state._templates:
-                    state._cell_outputs.clear()
-                    return
-
-                # If no contents we add all cell outputs to the editable template
-                config.template = 'editable'
-                persist = state._jupyter_kernel_context
-                editable = 'editable' in state.session_args
-                if not (editable or persist):
-                    state.template.editable = False
-                state.template.title = os.path.basename(path)
-
-                layouts, outputs, cells = {}, {}, {}
-                for cell_id, out in state._cell_outputs.items():
-                    spec = state._cell_layouts[self].get(cell_id, {})
-                    if 'width' in spec and 'height' in spec:
-                        sizing_mode = 'stretch_both'
-                    else:
-                        sizing_mode = 'stretch_width'
-                    pout = Column(
-                        *(o for o in out if o is not None),
-                        sizing_mode=sizing_mode
-                    )
-                    for po in pout:
-                        po.sizing_mode = sizing_mode
-                    outputs[cell_id] = pout
-                    layouts[id(pout)] = state._cell_layouts[self][cell_id]
-                    cells[cell_id] = id(pout)
-                    pout.servable()
-
-                # Reorder outputs based on notebook metadata
-                import nbformat
-                nb = nbformat.read(self._runner._path, nbformat.NO_CONVERT)
-                ordered = {}
-                for cell_id in nb['metadata'].get('panel-cell-order', []):
-                    if cell_id not in cells:
-                        continue
-                    obj_id = cells[cell_id]
-                    ordered[obj_id] = layouts[obj_id]
-                for cell_id in self._layout.get('order', []):
-                    if cell_id not in cells:
-                        continue
-                    obj_id = cells[cell_id]
-                    ordered[obj_id] = layouts[obj_id]
-                for obj_id, spec in layouts.items():
-                    if obj_id not in ordered:
-                        ordered[obj_id] = spec
-
-                # Set up state
-                state.template.layout = ordered
-                if persist:
-                    state.template.param.watch(self._update_position_metadata, 'layout')
-                state._session_outputs[doc] = outputs
-                state._cell_outputs.clear()
+        with set_env_vars(MPLBACKEND='agg'):
+            run_app(self, module, doc, post_run)
 
     def _update_position_metadata(self, event):
         """

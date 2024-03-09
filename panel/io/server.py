@@ -5,8 +5,6 @@ from __future__ import annotations
 
 import asyncio
 import datetime as dt
-import gc
-import html
 import importlib
 import inspect
 import logging
@@ -15,9 +13,7 @@ import pathlib
 import signal
 import sys
 import threading
-import traceback
 import uuid
-import weakref
 
 from collections import OrderedDict
 from contextlib import contextmanager
@@ -36,9 +32,6 @@ import tornado
 
 # Bokeh imports
 from bokeh.application import Application as BkApplication
-from bokeh.application.handlers.code import (
-    CodeHandler, _monkeypatch_io, patch_curdoc,
-)
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.core.json_encoder import serialize_json
 from bokeh.core.templates import AUTOLOAD_JS, FILE, MACROS
@@ -48,7 +41,6 @@ from bokeh.embed.bundle import Script
 from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import RenderItem
 from bokeh.embed.wrappers import wrap_in_script_tag
-from bokeh.io import curdoc
 from bokeh.models import CustomJS
 from bokeh.server.server import Server as BokehServer
 from bokeh.server.urls import per_app_patterns, toplevel_patterns
@@ -80,8 +72,6 @@ from .loading import LOADING_INDICATOR_CSS_CLASS
 from .logging import (
     LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING,
 )
-from .profile import profile_ctx
-from .reload import record_modules
 from .resources import (
     BASE_TEMPLATE, CDN_DIST, COMPONENT_PATH, ERROR_TEMPLATE, LOCAL_DIST,
     Resources, _env, bundle_resources, patch_model_css, resolve_custom_path,
@@ -217,7 +207,6 @@ state._on_session_created_internal.append(_initialize_session_info)
 # Bokeh patches
 #---------------------------------------------------------------------
 
-
 def html_page_for_render_items(
     bundle: Bundle | tuple[str, str], docs_json: dict[ID, DocJson],
     render_items: list[RenderItem], title: str, template: Template | str | None = None,
@@ -335,43 +324,6 @@ def autoload_js_script(doc, resources, token, element_id, app_path, absolute_url
 
     return AUTOLOAD_JS.render(bundle=bundle, elementid=element_id)
 
-def destroy_document(self, session):
-    """
-    Override for Document.destroy() without calling gc.collect directly.
-    The gc.collect() call is scheduled as a task, ensuring that when
-    multiple documents are destroyed in quick succession we do not
-    schedule excessive garbage collection.
-    """
-    if session is not None:
-        self.remove_on_change(session)
-
-    del self._roots
-    del self._theme
-    del self._template
-    self._session_context = None
-
-    self.callbacks.destroy()
-    self.models.destroy()
-    self.modules.destroy()
-
-    # Clear periodic callbacks
-    for cb in state._periodic.get(self, []):
-        cb.stop()
-
-    # Clean up pn.state to avoid tasks getting executed on dead session
-    for attr in dir(state):
-        # _param_watchers is deprecated in Param 2.0 and will raise a warning
-        if not attr.startswith('_') or attr == "_param_watchers":
-            continue
-        state_obj = getattr(state, attr)
-        if isinstance(state_obj, weakref.WeakKeyDictionary) and self in state_obj:
-            del state_obj[self]
-
-    # Schedule GC
-    at = dt.datetime.now() + dt.timedelta(seconds=5)
-    state.schedule_task('gc.collect', gc.collect, at=at)
-
-    del self.destroy
 
 # Patch Server to attach task factory to asyncio loop and handle Admin server context
 class Server(BokehServer):
@@ -473,7 +425,6 @@ class LoginUrlMixin:
         raise RuntimeError('login_url or get_login_url() must be supplied when authentication hooks are enabled')
 
 
-# Patch Bokeh DocHandler URL
 class DocHandler(LoginUrlMixin, BkDocHandler, SessionPrefixHandler):
 
     @authenticated
@@ -684,6 +635,40 @@ class RootHandler(LoginUrlMixin, BkRootHandler):
 toplevel_patterns[0] = (r'/?', RootHandler)
 bokeh.server.tornado.RootHandler = RootHandler
 
+# Copied from bokeh 2.4.0, to fix directly in bokeh at some point.
+def create_static_handler(prefix, key, app):
+    # patch
+    key = '/__patchedroot' if key == '/' else key
+
+    route = prefix
+    route += "/static/(.*)" if key == "/" else key + "/static/(.*)"
+    if app.static_path is not None:
+        return (route, StaticFileHandler, {"path" : app.static_path})
+    return (route, StaticHandler, {})
+
+bokeh.server.tornado.create_static_handler = create_static_handler
+
+#---------------------------------------------------------------------
+# Async patches
+#---------------------------------------------------------------------
+
+# Bokeh 2.4.x patches the asyncio event loop policy but Tornado 6.1
+# support the WindowsProactorEventLoopPolicy so we restore it,
+# unless we detect we are running on jupyter_server.
+if (
+    sys.platform == 'win32' and
+    sys.version_info[:3] >= (3, 8, 0) and
+    tornado.version_info >= (6, 1) and
+    type(asyncio.get_event_loop_policy()) is asyncio.WindowsSelectorEventLoopPolicy and
+    (('jupyter_server' not in sys.modules and
+      'jupyter_client' not in sys.modules) or
+     'pytest' in sys.modules)
+):
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
+#---------------------------------------------------------------------
+# Public API
+#---------------------------------------------------------------------
 
 class ComponentResourceHandler(StaticFileHandler):
     """
@@ -776,143 +761,6 @@ class ComponentResourceHandler(StaticFileHandler):
             raise HTTPError(403, "%s is not a file", self.path)
         return absolute_path
 
-
-def modify_document(self, doc: 'Document'):
-    from bokeh.io.doc import set_curdoc as bk_set_curdoc
-
-    from ..config import config
-
-    logger.info(LOG_SESSION_LAUNCHING, id(doc))
-
-    doc.on_event('document_ready', partial(state._schedule_on_load, doc))
-
-    if config.autoreload:
-        path = self._runner.path
-        argv = self._runner._argv
-        handler = type(self)(filename=path, argv=argv)
-        self._runner = handler._runner
-
-    module = self._runner.new_module()
-
-    # If no module was returned it means the code runner has some permanent
-    # unfixable problem, e.g. the configured source code has a syntax error
-    if module is None:
-        return
-
-    # One reason modules are stored is to prevent the module
-    # from being gc'd before the document is. A symptom of a
-    # gc'd module is that its globals become None. Additionally
-    # stored modules are used to provide correct paths to
-    # custom models resolver.
-    sys.modules[module.__name__] = module
-    doc.modules._modules.append(module)
-
-    try:
-        old_doc = curdoc()
-    except RuntimeError:
-        old_doc = None
-    bk_set_curdoc(doc)
-
-    sessions = []
-
-    try:
-        def post_check():
-            newdoc = curdoc()
-            # Do not let curdoc track modules when autoreload is enabled
-            # otherwise it will erroneously complain that there is
-            # a memory leak
-            if config.autoreload:
-                newdoc.modules._modules = []
-
-            # script is supposed to edit the doc not replace it
-            if newdoc is not doc:
-                raise RuntimeError("%s at '%s' replaced the output document" % (self._origin, self._runner.path))
-
-        def handle_exception(handler, e):
-            from bokeh.application.handlers.handler import handle_exception
-
-            from ..pane import Alert
-
-            # Clean up
-            del sys.modules[module.__name__]
-
-            if hasattr(doc, 'modules'):
-                doc.modules._modules.remove(module)
-            else:
-                doc._modules.remove(module)
-            bokeh.application.handlers.code_runner.handle_exception = handle_exception
-            tb = html.escape(traceback.format_exc()).replace('\033[1m', '<b>').replace('\033[0m', '</b>')
-
-            # Serve error
-            e_msg = str(e).replace('\033[1m', '<b>').replace('\033[0m', '</b>')
-            Alert(
-                f'<b>{type(e).__name__}</b>: {e_msg}\n<pre style="overflow-y: auto">{tb}</pre>',
-                alert_type='danger', margin=5, sizing_mode='stretch_width'
-            ).servable()
-
-        if config.autoreload:
-            bokeh.application.handlers.code_runner.handle_exception = handle_exception
-
-        state._launching.append(doc)
-        with _monkeypatch_io(self._loggers):
-            with patch_curdoc(doc):
-                with profile_ctx(config.profiler) as sessions:
-                    with record_modules(handler=self):
-                        self._runner.run(module, post_check)
-
-        def _log_session_destroyed(session_context):
-            logger.info(LOG_SESSION_DESTROYED, id(doc))
-
-        doc.on_session_destroyed(_log_session_destroyed)
-        doc.destroy = partial(destroy_document, doc) # type: ignore
-    finally:
-        state._launching.remove(doc)
-        if config.profiler:
-            try:
-                path = doc.session_context.request.path
-                state._profiles[(path, config.profiler)] += sessions
-                state.param.trigger('_profiles')
-            except Exception:
-                pass
-        if old_doc is not None:
-            bk_set_curdoc(old_doc)
-
-CodeHandler.modify_document = modify_document # type: ignore
-
-# Copied from bokeh 2.4.0, to fix directly in bokeh at some point.
-def create_static_handler(prefix, key, app):
-    # patch
-    key = '/__patchedroot' if key == '/' else key
-
-    route = prefix
-    route += "/static/(.*)" if key == "/" else key + "/static/(.*)"
-    if app.static_path is not None:
-        return (route, StaticFileHandler, {"path" : app.static_path})
-    return (route, StaticHandler, {})
-
-bokeh.server.tornado.create_static_handler = create_static_handler
-
-#---------------------------------------------------------------------
-# Async patches
-#---------------------------------------------------------------------
-
-# Bokeh 2.4.x patches the asyncio event loop policy but Tornado 6.1
-# support the WindowsProactorEventLoopPolicy so we restore it,
-# unless we detect we are running on jupyter_server.
-if (
-    sys.platform == 'win32' and
-    sys.version_info[:3] >= (3, 8, 0) and
-    tornado.version_info >= (6, 1) and
-    type(asyncio.get_event_loop_policy()) is asyncio.WindowsSelectorEventLoopPolicy and
-    (('jupyter_server' not in sys.modules and
-      'jupyter_client' not in sys.modules) or
-     'pytest' in sys.modules)
-):
-    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-
-#---------------------------------------------------------------------
-# Public API
-#---------------------------------------------------------------------
 
 def serve(
     panels: TViewableFuncOrPath | Mapping[str, TViewableFuncOrPath],
