@@ -20,9 +20,6 @@ import bokeh.command.util
 from bokeh.application.handlers.code import CodeHandler
 from bokeh.application.handlers.code_runner import CodeRunner
 from bokeh.application.handlers.handler import Handler, handle_exception
-from bokeh.command.util import (
-    build_single_handler_application as _build_application,
-)
 from bokeh.core.types import PathLike
 from bokeh.document import Document
 from bokeh.io.doc import curdoc, patch_curdoc, set_curdoc as bk_set_curdoc
@@ -51,7 +48,6 @@ def _monkeypatch_io(loggers: dict[str, Callable[..., None]]) -> dict[str, Any]:
     for f in old:
         setattr(io, f, old[f])
 
-
 @contextmanager
 def set_env_vars(**env_vars):
     old = {var: os.environ.get(var) for var in env_vars}
@@ -63,7 +59,6 @@ def set_env_vars(**env_vars):
         else:
             os.environ[var] = value
 
-
 def get_figure():
     if 'matplotlib.pyplot' not in sys.modules:
         return None
@@ -72,10 +67,8 @@ def get_figure():
     if fig.get_axes():
         return fig
 
-
 def display(*args, **kwargs):
     CELL_DISPLAY.extend(args)
-
 
 def extract_code(
     filehandle: IO, supported_syntax: tuple[str, ...] = ('{pyodide}', 'python')
@@ -209,8 +202,6 @@ def autoreload_handle_exception(handler, module, e):
         alert_type='danger', margin=5, sizing_mode='stretch_width'
     ).servable()
 
-bokeh.application.handlers.code_runner.handle_exception = autoreload_handle_exception
-
 def run_app(handler, module, doc, post_run=None):
     try:
         old_doc = curdoc()
@@ -259,6 +250,9 @@ def run_app(handler, module, doc, post_run=None):
         if old_doc is not None:
             bk_set_curdoc(old_doc)
 
+#---------------------------------------------------------------------
+# Handler classes
+#---------------------------------------------------------------------
 
 class PanelCodeRunner(CodeRunner):
 
@@ -294,6 +288,17 @@ class PanelCodeRunner(CodeRunner):
 
 
 class PanelCodeHandler(CodeHandler):
+    """Modify Bokeh documents by creating Dashboard from code.
+
+    Additionally this subclass adds support for the ability to:
+
+    - Log session launch, load and destruction
+    - Capture document_ready events to track when app is loaded.
+    - Add profiling support
+    - Ensure that state.curdoc is set
+    - Reload the application module if autoreload is enabled
+    - Track modules loaded during app execution to enable autoreloading
+    """
 
     def __init__(self, *, source: str, filename: PathLike, argv: list[str] = [], package: ModuleType | None = None) -> None:
         Handler.__init__(self)
@@ -332,14 +337,40 @@ class PanelCodeHandler(CodeHandler):
 
         run_app(handler, module, doc)
 
-
 CodeHandler.modify_document = PanelCodeHandler.modify_document
 
 
-class MarkdownHandler(PanelCodeHandler):
-    ''' Modify Bokeh documents by creating Dashboard from a Markdown file.
+class ScriptHandler(PanelCodeHandler):
+    """Modify Bokeh documents by creating Dashboard from a Python script.
+    """
 
-    '''
+
+    _logger_text = "%s: call to %s() ignored when running scripts with the 'bokeh' command."
+
+    _origin = "Script"
+
+    def __init__(self, *, filename: PathLike, argv: list[str] = [], package: ModuleType | None = None) -> None:
+        '''
+
+        Keywords:
+            filename (str) : a path to a Python source (".py") file
+
+        '''
+        with open(filename, encoding='utf-8') as f:
+            source = f.read()
+
+        super().__init__(source=source, filename=filename, argv=argv, package=package)
+
+bokeh.applications.handlers.directory.NotebookHandler = ScriptHandler
+
+
+class MarkdownHandler(PanelCodeHandler):
+    """Modify Bokeh documents by creating Dashboard from a Markdown file.
+    """
+
+    _logger_text = "%s: call to %s() ignored when running Markdown files with the 'panel' command."
+
+    _origin = "Markdown"
 
     def __init__(self, *args, **kwargs):
         '''
@@ -358,14 +389,17 @@ class MarkdownHandler(PanelCodeHandler):
 
 
 class NotebookHandler(PanelCodeHandler):
-    ''' Modify Bokeh documents by creating Dashboard from a notebook file.
-
-    '''
+    """Modify Bokeh documents by creating Dashboard from a notebook file.
+    """
 
     _imports = [
         'from panel import state as _pn__state',
         'from panel.io.handlers import CELL_DISPLAY as _CELL__DISPLAY, display, get_figure as _get__figure\n'
     ]
+
+    _logger_text = "%s: call to %s() ignored when running notebooks with the 'panel' command."
+
+    _origin = "Notebook"
 
     def __init__(self, *, filename: PathLike, argv: list[str] = [], package: ModuleType | None = None) -> None:
         '''
@@ -456,6 +490,19 @@ class NotebookHandler(PanelCodeHandler):
         return self._layout
 
     def _render_template(self, doc, path):
+        """Renders template containing cell outputs.
+
+        Creates an EditableTemplate containing all cell outputs
+        found in the notebook and lays them out according to the
+        cell metadata (if present).
+
+        Arguments
+        ----------
+        doc (Document)
+            A ``Document`` to render the template into
+        path (str):
+            The path to the application code.
+        """
         from ..config import config
         from ..layout import Column
         from .state import state
@@ -510,12 +557,12 @@ class NotebookHandler(PanelCodeHandler):
         state._session_outputs[doc] = outputs
 
     def modify_document(self, doc: Document) -> None:
-        ''' Run Bokeh application code to update a ``Document``
+        """Run Bokeh application code to update a ``Document``
 
-        Args:
-            doc (Document) : a ``Document`` to update
-
-        '''
+        Arguments
+        ----------
+        doc (Document) : a ``Document`` to update
+        """
         doc.on_event('document_ready', partial(state._schedule_on_load, doc))
 
         path = self._runner._path
@@ -575,19 +622,4 @@ class NotebookHandler(PanelCodeHandler):
             json.dump(nb_layout, f)
         self._stale = True
 
-
-def build_single_handler_application(path, argv=None):
-    if not os.path.isfile(path) or not path.endswith((".md", ".ipynb")):
-        return _build_application(path, argv)
-
-    from .server import Application
-    code_handler = NotebookHandler if path.endswith('.ipynb') else MarkdownHandler
-    handler = code_handler(filename=path)
-    if handler.failed:
-        raise RuntimeError("Error loading %s:\n\n%s\n%s " % (path, handler.error, handler.error_detail))
-
-    application = Application(handler)
-
-    return application
-
-bokeh.command.util.build_single_handler_application = build_single_handler_application
+bokeh.applications.handlers.directory.NotebookHandler = NotebookHandler

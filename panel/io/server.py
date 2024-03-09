@@ -32,7 +32,9 @@ import tornado
 
 # Bokeh imports
 from bokeh.application import Application as BkApplication
-from bokeh.application.handlers.function import FunctionHandler
+from bokeh.application.handlers.function import (
+    DirectoryHandler, FunctionHandler,
+)
 from bokeh.core.json_encoder import serialize_json
 from bokeh.core.templates import AUTOLOAD_JS, FILE, MACROS
 from bokeh.core.validation import silence
@@ -66,7 +68,7 @@ from ..config import config
 from ..util import edit_readonly, fullpath
 from ..util.warnings import warn
 from .document import init_doc, unlocked, with_lock  # noqa
-from .handlers import build_single_handler_application
+from .handlers import MarkdownHandler, NotebookHandler, ScriptHandler
 from .liveness import LivenessHandler
 from .loading import LOADING_INDICATOR_CSS_CLASS
 from .logging import (
@@ -82,6 +84,7 @@ from .state import set_curdoc, state
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from bokeh.application.handlers.handler import Handler
     from bokeh.bundle import Bundle
     from bokeh.core.types import ID
     from bokeh.document.document import DocJson, Document
@@ -356,6 +359,36 @@ class Server(BokehServer):
 
 bokeh.server.server.Server = Server
 
+def build_single_handler_application(path, argv=None):
+    argv = argv or []
+    path = os.path.abspath(os.path.expanduser(path))
+    handler: Handler
+
+    # There are certainly race conditions here if the file/directory is deleted
+    # in between the isdir/isfile tests and subsequent code. But it would be a
+    # failure if they were not there to begin with, too (just a different error)
+    if os.path.isdir(path):
+        handler = DirectoryHandler(filename=path, argv=argv)
+    elif os.path.isfile(path):
+        if path.endswith(".ipynb"):
+            handler = NotebookHandler(filename=path, argv=argv)
+        if path.endswith(".md"):
+            handler = MarkdownHandler(filename=path, argv=argv)
+        elif path.endswith(".py"):
+            handler = ScriptHandler(filename=path, argv=argv)
+        else:
+            raise ValueError("Expected a '.py' script or '.ipynb' notebook, got: '%s'" % path)
+    else:
+        raise ValueError("Path for Bokeh server application does not exist: %s" % path)
+
+    if handler.failed:
+        raise RuntimeError(f"Error loading {path}:\n\n{handler.error}\n{handler.error_detail} ")
+
+    application = Application(handler)
+
+    return application
+
+bokeh.command.util.build_single_handler_application = build_single_handler_application
 
 # Patch Application to handle session callbacks
 class Application(BkApplication):
