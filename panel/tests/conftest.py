@@ -12,7 +12,6 @@ import socket
 import tempfile
 import time
 import unittest
-import uuid
 
 from contextlib import contextmanager
 from subprocess import PIPE, Popen
@@ -374,15 +373,6 @@ def autoreload():
         yield watch
     finally:
         config.autoreload = False
-
-@pytest.fixture
-def server_id():
-    try:
-        server_id = uuid.uuid4().hex
-        yield server_id
-    finally:
-        if server_id in state._servers:
-            state._servers.pop(server_id)[0].stop()
 
 @pytest.fixture
 def py_file():

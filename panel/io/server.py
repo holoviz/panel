@@ -344,11 +344,12 @@ class Server(BokehServer):
 
     def stop(self, wait: bool = True) -> None:
         if self._autoreload_stop_event:
-            self._autoreload_stop_event.set()
             # For the stop event to be processed we have to restart
             # the IOLoop briefly, ensuring an orderly cleanup
-            sleep = asyncio.sleep(0.1)
-            self._loop.asyncio_loop.run_until_complete(sleep)
+            async def stop_autoreload():
+                self._autoreload_stop_event.set()
+                await asyncio.sleep(1)
+            self._loop.asyncio_loop.run_until_complete(stop_autoreload())
         super().stop(wait=wait)
         if state._admin_context:
             state._admin_context.run_unload_hook()

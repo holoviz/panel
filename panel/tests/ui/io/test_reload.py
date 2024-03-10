@@ -20,7 +20,7 @@ CURPATH = pathlib.Path(__file__).parent
     str(CURPATH / 'app.md'),
     str(CURPATH / 'app.ipynb'),
 ])
-def test_reload_app_on_touch(page, autoreload, server_id, app):
+def test_reload_app_on_touch(page, autoreload, app):
     if 'num' in state.cache:
         del state.cache['num']
 
@@ -28,7 +28,7 @@ def test_reload_app_on_touch(page, autoreload, server_id, app):
 
     autoreload(path)
 
-    serve_component(page, path, server_id=server_id)
+    serve_component(page, path)
 
     expect(page.locator('.counter')).to_have_text('0')
 
@@ -37,7 +37,7 @@ def test_reload_app_on_touch(page, autoreload, server_id, app):
     expect(page.locator('.counter')).to_have_text('1')
 
 
-def test_reload_app_with_error(page, autoreload, server_id, py_file):
+def test_reload_app_with_error(page, autoreload, py_file):
     py_file.write("import panel as pn; pn.panel('foo').servable();")
     py_file.flush()
     time.sleep(0.1) # Give the filesystem time to execute the write
@@ -45,7 +45,7 @@ def test_reload_app_with_error(page, autoreload, server_id, py_file):
     path = pathlib.Path(py_file.name)
 
     autoreload(path)
-    serve_component(page, path, server_id=server_id)
+    serve_component(page, path)
 
     expect(page.locator('.markdown')).to_have_text('foo')
 
