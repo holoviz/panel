@@ -33,7 +33,7 @@ class Text(param.Parameterized):
 Now, let's create an instance and examine its current value:
 
 ```{pyodide}
-text = Text(value="What is Param?")
+text = Text(value="Are you a Python programmer? If so, you need Param!")
 
 text.value
 ```
@@ -198,7 +198,7 @@ pn.extension()
 
 data_url = 'https://assets.holoviz.org/panel/tutorials/turbines.csv.gz'
 
-df = pd.read_csv(data_url)
+df = pn.cache(pd.read_csv)(data_url)
 
 dfrx = pn.rx(df)
 
@@ -217,7 +217,7 @@ pn.extension()
 
 data_url = 'https://assets.holoviz.org/panel/tutorials/turbines.csv.gz'
 
-df = pd.read_csv(data_url)
+df = pn.cache(pd.read_csv)(data_url)
 
 dfrx = pn.rx(df)
 
@@ -237,7 +237,7 @@ import numpy as np
 pn.extension()
 
 data_url = 'https://assets.holoviz.org/panel/tutorials/turbines.csv.gz'
-df = pd.read_csv(data_url)
+df = pn.cache(pd.read_csv)(data_url)
 
 dfrx = pn.rx(df)
 
@@ -272,7 +272,7 @@ import numpy as np
 pn.extension()
 
 data_url = 'https://assets.holoviz.org/panel/tutorials/turbines.csv.gz'
-df = pd.read_csv(data_url)
+df = pn.cache(pd.read_csv)(data_url)
 
 dfrx = pn.rx(df)
 
@@ -368,11 +368,11 @@ pn.Column(intslider, markdown).servable()
 
 ## Recommended Reading
 
-To harness the full potential of [Param](https://param.holoviz.org/) and Reactive Parameters in Panel, we recommend studying the [Param User Guide](https://param.holoviz.org/user_guide/index.html).
+To harness the full potential of [Param](https://param.holoviz.org/) and Reactive Parameters in Panel, we recommend studying the [Param User Guide](https://param.holoviz.org/user_guide/index.html) and the [`ReactiveExpr`](../../reference/panes/ReactiveExpr.ipynb) reference guide.
 
 ## Recap
 
-Param serves as the backbone of Panel, providing a robust framework for adding validation, documentation, and interactivity. By grasping the fundamentals discussed here, you'll be well-equipped to leverage Panel's interactivity and reactivity effectively.
+[Param](https://param.holoviz.org) serves as the backbone of Panel, providing a robust framework for adding validation, documentation, and interactivity. By grasping the fundamentals discussed here, you'll be well-equipped to leverage Panel's interactivity and reactivity effectively.
 
 Now, we should be able to:
 
