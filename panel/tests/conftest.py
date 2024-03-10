@@ -12,6 +12,7 @@ import socket
 import tempfile
 import time
 import unittest
+import uuid
 
 from contextlib import contextmanager
 from subprocess import PIPE, Popen
@@ -26,7 +27,7 @@ from pyviz_comms import Comm
 
 from panel import config, serve
 from panel.config import panel_extension
-from panel.io.reload import _modules, _watched_files
+from panel.io.reload import _local_modules, _modules, _watched_files
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
 
@@ -356,10 +357,32 @@ def server_cleanup():
         state.reset()
         _watched_files.clear()
         _modules.clear()
+        _local_modules.clear()
 
 @pytest.fixture(autouse=True)
 def cache_cleanup():
     state.clear_caches()
+
+@pytest.fixture
+def autoreload():
+    config.autoreload = True
+    def watch(files):
+        if isinstance(files, (str, os.PathLike)):
+            files = [files]
+        _watched_files.update({str(f) for f in files})
+    try:
+        yield watch
+    finally:
+        config.autoreload = False
+
+@pytest.fixture
+def server_id():
+    try:
+        server_id = uuid.uuid4().hex
+        yield server_id
+    finally:
+        if server_id in state._servers:
+            state._servers.pop(server_id)[0].stop()
 
 @pytest.fixture
 def py_file():

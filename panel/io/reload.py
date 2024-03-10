@@ -87,7 +87,6 @@ def file_is_in_folder_glob(filepath, folderpath_glob):
     file_dir = os.path.dirname(filepath) + "/"
     return fnmatch.fnmatch(file_dir, folderpath_glob)
 
-
 def watched_modules():
     files = list(_watched_files)
     module_paths = {}
@@ -226,6 +225,7 @@ def _reload(module_paths, changes):
         modules_to_reload |= _modules
     if local_:
         modules_to_reload |= _local_modules
+
     for module in modules_to_reload:
         if module in sys.modules:
             del sys.modules[module]
@@ -235,10 +235,10 @@ def _reload(module_paths, changes):
             continue
         elif state._loaded.get(doc):
             loc.reload = True
-            continue
-        def reload_session(event, loc=loc):
-            loc.reload = True
-        doc.on_event('document_ready', reload_session)
+        else:
+            def reload_session(event, loc=loc):
+                loc.reload = True
+            doc.on_event('document_ready', reload_session)
 
 def _check_file(path, modify_times):
     """

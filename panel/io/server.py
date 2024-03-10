@@ -1033,7 +1033,9 @@ def get_server(
     else:
         if isinstance(panel, pathlib.Path):
             panel = str(panel) # enables serving apps from Paths
-        if (isinstance(panel, str) and panel.endswith(('.py', '.ipynb', '.md'))
+        if isinstance(panel, BkApplication):
+            panel = {'/': app}
+        elif (isinstance(panel, str) and panel.endswith(('.py', '.ipynb', '.md'))
             and os.path.isfile(panel)):
             apps = {'/': build_single_handler_application(panel)}
         else:

@@ -320,7 +320,7 @@ class PanelCodeHandler(CodeHandler):
         # paths to custom models resolver.
         doc.modules.add(module)
 
-        run_app(handler, module, doc)
+        run_app(self, module, doc)
 
 CodeHandler.modify_document = PanelCodeHandler.modify_document
 
