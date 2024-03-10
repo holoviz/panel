@@ -37,6 +37,14 @@ from param.parameterized import (
 )
 from param.reactive import rx
 
+try:
+    from param import Skip
+except Exception:
+    class Skip(RuntimeError):
+        """
+        Exception that allows skipping an update for function-level updates.
+        """
+
 from .config import config
 from .io import state
 from .layout import (
