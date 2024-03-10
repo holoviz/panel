@@ -26,13 +26,11 @@ from typing import (
 from urllib.parse import urljoin, urlparse
 
 import bokeh
-import bokeh.command.util
 import param
 import tornado
 
 # Bokeh imports
 from bokeh.application import Application as BkApplication
-from bokeh.application.handlers.directory import DirectoryHandler
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.core.json_encoder import serialize_json
 from bokeh.core.templates import AUTOLOAD_JS, FILE, MACROS
@@ -66,8 +64,8 @@ from tornado.wsgi import WSGIContainer
 from ..config import config
 from ..util import edit_readonly, fullpath
 from ..util.warnings import warn
+from .application import Application, build_single_handler_application
 from .document import init_doc, unlocked, with_lock  # noqa
-from .handlers import MarkdownHandler, NotebookHandler, ScriptHandler
 from .liveness import LivenessHandler
 from .loading import LOADING_INDICATOR_CSS_CLASS
 from .logging import (
@@ -83,7 +81,6 @@ from .state import set_curdoc, state
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from bokeh.application.handlers.handler import Handler
     from bokeh.bundle import Bundle
     from bokeh.core.types import ID
     from bokeh.document.document import DocJson, Document
@@ -357,61 +354,6 @@ class Server(BokehServer):
             state._admin_context.run_unload_hook()
 
 bokeh.server.server.Server = Server
-
-def build_single_handler_application(path, argv=None):
-    argv = argv or []
-    path = os.path.abspath(os.path.expanduser(path))
-    handler: Handler
-
-    # There are certainly race conditions here if the file/directory is deleted
-    # in between the isdir/isfile tests and subsequent code. But it would be a
-    # failure if they were not there to begin with, too (just a different error)
-    if os.path.isdir(path):
-        handler = DirectoryHandler(filename=path, argv=argv)
-    elif os.path.isfile(path):
-        if path.endswith(".ipynb"):
-            handler = NotebookHandler(filename=path, argv=argv)
-        if path.endswith(".md"):
-            handler = MarkdownHandler(filename=path, argv=argv)
-        elif path.endswith(".py"):
-            handler = ScriptHandler(filename=path, argv=argv)
-        else:
-            raise ValueError("Expected a '.py' script or '.ipynb' notebook, got: '%s'" % path)
-    else:
-        raise ValueError("Path for Bokeh server application does not exist: %s" % path)
-
-    if handler.failed:
-        raise RuntimeError(f"Error loading {path}:\n\n{handler.error}\n{handler.error_detail} ")
-
-    application = Application(handler)
-
-    return application
-
-bokeh.command.util.build_single_handler_application = build_single_handler_application
-
-# Patch Application to handle session callbacks
-class Application(BkApplication):
-
-    def __init__(self, *args, **kwargs):
-        self._admin = kwargs.pop('admin', None)
-        super().__init__(*args, **kwargs)
-
-    async def on_session_created(self, session_context):
-        with set_curdoc(session_context._document):
-            if self._admin is not None:
-                config._admin = self._admin
-            for cb in state._on_session_created_internal+state._on_session_created:
-                cb(session_context)
-        await super().on_session_created(session_context)
-
-    def initialize_document(self, doc):
-        super().initialize_document(doc)
-        if doc in state._templates and doc not in state._templates[doc]._documents:
-            template = state._templates[doc]
-            with set_curdoc(doc):
-                template.server_doc(title=template.title, location=True, doc=doc)
-
-bokeh.command.util.Application = Application # type: ignore
 
 class SessionPrefixHandler:
 

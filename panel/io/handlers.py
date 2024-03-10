@@ -11,7 +11,6 @@ import sys
 import traceback
 
 from contextlib import contextmanager
-from functools import partial
 from types import ModuleType
 from typing import IO, Any, Callable
 
@@ -26,8 +25,6 @@ from bokeh.io.doc import curdoc, patch_curdoc, set_curdoc as bk_set_curdoc
 from bokeh.util.dependencies import import_required
 
 from ..config import config
-from .document import _destroy_document
-from .logging import LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING
 from .profile import profile_ctx
 from .reload import record_modules
 from .state import state
@@ -232,14 +229,7 @@ def run_app(handler, module, doc, post_run=None):
                         handler._runner.run(module, post_check)
                         if post_run:
                             post_run()
-
-        def _log_session_destroyed(session_context):
-            log.info(LOG_SESSION_DESTROYED, id(doc))
-
-        doc.on_session_destroyed(_log_session_destroyed)
-        doc.destroy = partial(_destroy_document, doc) # type: ignore
     finally:
-        state._launching.remove(doc)
         if config.profiler:
             try:
                 path = doc.session_context.request.path
@@ -247,6 +237,7 @@ def run_app(handler, module, doc, post_run=None):
                 state.param.trigger('_profiles')
             except Exception:
                 pass
+        state._launching.remove(doc)
         if old_doc is not None:
             bk_set_curdoc(old_doc)
 
@@ -310,12 +301,6 @@ class PanelCodeHandler(CodeHandler):
             self._loggers[f] = self._make_io_logger(f)
 
     def modify_document(self, doc: 'Document'):
-        from ..config import config
-
-        log.info(LOG_SESSION_LAUNCHING, id(doc))
-
-        doc.on_event('document_ready', partial(state._schedule_on_load, doc))
-
         if config.autoreload:
             path = self._runner.path
             argv = self._runner._argv
@@ -361,7 +346,7 @@ class ScriptHandler(PanelCodeHandler):
 
         super().__init__(source=source, filename=filename, argv=argv, package=package)
 
-bokeh.applications.handlers.directory.NotebookHandler = ScriptHandler
+bokeh.application.handlers.directory.NotebookHandler = ScriptHandler
 
 
 class MarkdownHandler(PanelCodeHandler):
@@ -563,8 +548,6 @@ class NotebookHandler(PanelCodeHandler):
         ----------
         doc (Document) : a ``Document`` to update
         """
-        doc.on_event('document_ready', partial(state._schedule_on_load, doc))
-
         path = self._runner._path
         if self._stale or config.autoreload:
             self._load_layout(path)
@@ -622,4 +605,4 @@ class NotebookHandler(PanelCodeHandler):
             json.dump(nb_layout, f)
         self._stale = True
 
-bokeh.applications.handlers.directory.NotebookHandler = NotebookHandler
+bokeh.application.handlers.directory.NotebookHandler = NotebookHandler
