@@ -12,17 +12,13 @@ By the end of this tutorial you should have learned:
 
 :::
 
-```{pyodide}
-import pandas as pd
-import param
-import panel as pn
-
-pn.extension('tabulator')
-```
-
-## Declarative vs. Imperative programming
+## Imperative vs Declarative Programming
 
 To build an interactive component in Panel we have two options, either we define callbacks that perform explicit actions, e.g. "when this widget changes update this component", or we declare reactive functions, methods or expressions that returns a specific output given some input and automatically manage the state.
+
+:::{warning}
+For Panel users of all skill levels we recommend using the Declarative Programming approach as it will make the code more maintainable and performant. If you are using the Imperative Approach it is normally a sign of wrong design.
+:::
 
 Let's look at what this looks like in practice by building a simple app that allows us to select a subset of columns to display in a table.
 
@@ -31,37 +27,42 @@ Let's look at what this looks like in practice by building a simple app that all
 In both cases we start by loading our data and then defining a widget that will allow us to interact with the data:
 
 ```{pyodide}
-data_url = 'https://datasets.holoviz.org/windturbines/v1/windturbines.parq'
+import panel as pn
+import pandas as pd
 
-turbines = pd.read_parquet(data_url)
+pn.extension("tabulator")
+
+data_url = 'https://assets.holoviz.org/panel/tutorials/turbines.csv.gz'
+
+turbines = pd.read_csv(data_url)
 
 cols = pn.widgets.MultiChoice(
     options=turbines.columns.to_list(), value=['p_name', 't_state', 't_county', 'p_year', 't_manu', 'p_cap'],
-    width=500, height=120, name='Columns'
+    width=500, height=100, name='Columns'
 )
 ```
 
 In the imperative approach we use `.param.watch` to set up a callback that will update the data when the widget changes:
 
 ```{pyodide}
-table = pn.widgets.Tabulator(turbines[cols.value], page_size=5)
+table = pn.widgets.Tabulator(turbines[cols.value], page_size=5, pagination="remote")
 
 def update_data(event):
     table.value = turbines[event.new]
 
 cols.param.watch(update_data, 'value')
 
-pn.Column(cols, table)
+pn.Column(cols, table).servable()
 ```
 
-## Declarative
+### Declarative
 
 The declarative and reactive approach differs in that we only have to declare what we want to display and Panel takes care of the actual mechanics of updating the table for us:
 
 ```{pyodide}
 dfrx = pn.rx(turbines)[cols]
 
-pn.Column(cols, pn.widgets.Tabulator(dfrx, page_size=5))
+pn.Column(cols, pn.widgets.Tabulator(dfrx, page_size=5, pagination="remote")).servable()
 ```
 
 Note how we pass the reactive DataFrame to the `Tabulator` widget. This goes back to the concept of passing references, which Param and Panel will resolve. Valid references include:
@@ -73,23 +74,112 @@ Note how we pass the reactive DataFrame to the `Tabulator` widget. This goes bac
 
 ### Exercise
 
-Extend the app below by adding widgets that will let you to filter the data by year (`p_year`) and capacity (`p_cap`):
+Extend the app by adding widgets that will let you to filter the data by year (`p_year`) and capacity (`p_cap`):
 
-:::{note} Hint
-:class: dropdown
+:::{hint}
 
 ```python
  You can filter a reactive DataFrame in the same way as a regular DataFrame.
 ```
+
 :::
 
-Now briefly consider how this would look if you wrote this application using the imperative style of programming.
+:::{dropdown} Solution: Declarative (Recommended)
+
+```{pyodide}
+import pandas as pd
+import panel as pn
+
+pn.extension("tabulator")
+
+data_url = "https://assets.holoviz.org/panel/tutorials/turbines.csv.gz"
+
+turbines = pd.read_csv(data_url)
+
+cols = pn.widgets.MultiChoice(
+    options=turbines.columns.to_list(),
+    value=["p_name", "t_state", "t_county", "p_year", "t_manu", "p_cap"],
+    width=500,
+    height=100,
+    name="Columns",
+)
+p_year_options = sorted(int(year) for year in turbines.p_year.unique() if not pd.isna(year))
+p_year = pn.widgets.Select(value=max(p_year_options), options=p_year_options, name="Year")
+
+p_cap_bounds = (turbines.p_cap.min(), turbines.p_cap.max())
+p_cap = pn.widgets.RangeSlider(value=p_cap_bounds, start=p_cap_bounds[0], end=p_cap_bounds[1])
+
+dfrx = pn.rx(turbines)
+dfrx = dfrx[
+    (dfrx.p_year == p_year)
+    & (dfrx.p_cap >= p_cap.param.value_start)
+    & (dfrx.p_cap <= p_cap.param.value_end)
+][cols]
+pn.Column(
+    cols, p_year, p_cap, pn.widgets.Tabulator(dfrx, pagination="remote", page_size=5)
+).servable()
+```
+
+:::
+
+:::{dropdown} Solution: Imperative (Not recommended)
+
+```{podide}
+import pandas as pd
+import panel as pn
+
+pn.extension("tabulator")
+
+data_url = "https://assets.holoviz.org/panel/tutorials/turbines.csv.gz"
+
+turbines = pd.read_csv(data_url)
+
+cols = pn.widgets.MultiChoice(
+    options=turbines.columns.to_list(),
+    value=["p_name", "t_state", "t_county", "p_year", "t_manu", "p_cap"],
+    width=500,
+    height=100,
+    name="Columns",
+)
+p_year_options = sorted(
+    int(year) for year in turbines.p_year.unique() if not pd.isna(year)
+)
+p_year = pn.widgets.Select(
+    value=max(p_year_options), options=p_year_options, name="Year"
+)
+
+p_cap_bounds = (turbines.p_cap.min(), turbines.p_cap.max())
+p_cap = pn.widgets.RangeSlider(
+    value=p_cap_bounds, start=p_cap_bounds[0], end=p_cap_bounds[1], name="Capacity"
+)
+
+table = pn.widgets.Tabulator(turbines[cols.value], page_size=5, pagination="remote")
+
+
+def update_data(event):
+    value = turbines[
+        (turbines.p_year == p_year.value)
+        & (turbines.p_cap >= p_cap.value_start)
+        & (turbines.p_cap <= p_cap.value_end)
+    ][cols.value]
+
+    table.value = value
+
+
+cols.param.watch(update_data, "value")
+p_year.param.watch(update_data, "value")
+p_cap.param.watch(update_data, "value")
+
+pn.Column(cols, p_year, p_cap, table).servable()
+```
+
+:::
 
 ## Function vs. class based
 
 Reactive functions and expressions based on `pn.bind` and `pn.rx` provide an excellent entrypoint when writing dynamic UIs. However as soon as we want to track state or have many consumers of the output it can be hard to keep track. This is where classes come in.
 
-If you remember the [Param section](./01_Param.ipynb) a `Parameterized` class allows you to encapsulate state as parameters and those parameters can then be passed around to set up interactivity. Let's revive our `DataExplorer` class from that earlier lesson and see how we can structure a filtering application like above:
+If you remember the [Reactive Parameters Section](parameters.md) a `Parameterized` class allows you to encapsulate state as parameters and those parameters can then be passed around to set up interactivity. Let's revive our `DataExplorer` class from that earlier lesson and see how we can structure a filtering application like above:
 
 ```{pyodide}
 import param
