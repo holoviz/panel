@@ -6,10 +6,10 @@ Welcome to the world of reactive parameters in Panel! In this section, we'll del
 
 Panel and other projects in the [HoloViz](https://holoviz.org/) ecosystem build on the foundation provided by [Param](https://param.holoviz.org/). Param offers a robust framework for adding validation, documentation, and interactivity to projects. Similar to projects like [Pydantic](https://docs.pydantic.dev/latest/) in some aspects, but Param focuses on providing APIs that simplify the expression of complex dependencies, reactivity, and UI interactions.
 
-In this section, we won't delve into the inner workings of Param but rather focus on understanding the fundamentals. By the end of this section, you'll:
+In this section, we won't delve into the inner workings of Param but rather focus on understanding the fundamentals. By the end of this section, we will:
 
-- Gain a clear understanding of the difference between the Parameter value and the Parameter object.
-- Learn how to use Parameter objects, bound functions, and reactive expressions as proxies or references for their current value.
+- Understand the difference between the Parameter value and the Parameter object.
+- Know how to use Parameter objects, bound functions, and reactive expressions as proxies or references for their current value.
 
 ```{pyodide}
 import panel as pn
@@ -21,7 +21,7 @@ pn.extension('tabulator')
 
 Parameters serve as objects expressing the semantics of a value of an attribute on an object, encompassing not only Python types but also broader semantics.
 
-Let's define a simple Parameterized class with a Parameter:
+Let's define a simple `Parameterized` class with a `value` Parameter:
 
 ```{pyodide}
 import param
@@ -30,7 +30,7 @@ class Text(param.Parameterized):
     value = param.String(default='', allow_None=True, doc="The text value")
 ```
 
-Now, let's create an instance and examine its value:
+Now, let's create an instance and examine its current value:
 
 ```{pyodide}
 text = Text(value="What is Param?")
@@ -48,7 +48,7 @@ text.param.value
 
 Parameters act as references to underlying values, making them invaluable for enhancing UI interactivity.
 
-Parameters imbue validation, documentation, and interactivity into Panel, with most Panel components built as Parameterized classes with Parameters.
+Parameters imbue validation, documentation, and interactivity into Panel, with most Panel components built as `Parameterized` classes with Parameters.
 
 For instance, consider the `value` Parameter of the Panel `TextInput` widget:
 
@@ -205,7 +205,7 @@ dfrx = pn.rx(df)
 dfrx.head(2)
 ```
 
-Explore the potential by replacing `2` with an instance of an `IntSlider`.
+Please explore the potential by replacing `2` with an instance of an `IntSlider`.
 
 :::{dropdown} Solution
 
@@ -299,10 +299,11 @@ pn.panel(styled_df).servable()
 
 Write a small app where you can scale the `font-size` of a `Markdown` pane with another widget, e.g. an `IntSlider`. The `font-size` can be set using the `styles` parameter.
 
-:::{note} Hint
-:class: dropdown
+:::{hint}
 
-The `styles` parameter only accepts dictionaries of **strings** but `IntSlider` returns `int` types.
+- The `styles` parameter only accepts dictionaries of **strings** but `IntSlider` returns `int` types.
+- The `font-size` value should be a string value in pixels, eg. `"15px"` is a valid `font-size`.
+
 :::
 
 :::{dropdown} Solution 1: Reactive String Formatting
@@ -367,16 +368,16 @@ pn.Column(intslider, markdown).servable()
 
 ## Recommended Reading
 
-To harness the full potential of Param and Reactive Parameters in Panel, we recommend studying the [Param User Guide](https://param.holoviz.org/user_guide/index.html).
+To harness the full potential of [Param](https://param.holoviz.org/) and Reactive Parameters in Panel, we recommend studying the [Param User Guide](https://param.holoviz.org/user_guide/index.html).
 
 ## Recap
 
 Param serves as the backbone of Panel, providing a robust framework for adding validation, documentation, and interactivity. By grasping the fundamentals discussed here, you'll be well-equipped to leverage Panel's interactivity and reactivity effectively.
 
-Now, you should:
+Now, we should be able to:
 
 - Clearly understand the distinction between Parameter values and Parameter objects.
-- Know how to use Parameter objects, bound functions, and expressions as proxies or references for their current value.
+- Use Parameter objects, bound functions, and expressions as proxies or references for their current value.
 
 ## Resources
 

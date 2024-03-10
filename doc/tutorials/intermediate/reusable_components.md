@@ -1,20 +1,20 @@
 # Reusable Components
 
-In this guide, we will explore how to structure our code to make it easily reusable and avoid callback hell:
+In this guide, we will explore how to structure our components to make them easily reusable and avoid callback hell:
 
 - Write `Parameterized` and `Viewer` classes that encapsulate multiple components.
 
 ## Writing Parameterized Classes
 
-When creating larger Panel projects, we recommend using classes. This approach is useful for several reasons:
+When creating larger Panel projects, we recommend using `Parameterized` classes. This approach is useful for several reasons:
 
 1. Organizing complex pieces of code and functionality
 2. Creating reusable components composed of multiple Panel objects
 
 A Parameterized class must inherit from `param.Parameterized` and should declare one or more parameters. Here, we will start building a `DataExplorer` by declaring two parameters:
 
-1. `data`: Accepts a DataFrame
-2. `page_size`: Controls the page size
+- `data`: Accepts a DataFrame
+- `page_size`: Controls the page size
 
 ```{pyodide}
 import pandas as pd
@@ -141,7 +141,7 @@ DataExplorer(data=df).servable()
 
 ## Recap
 
-We have learned how to structure our code to make it easily reusable and avoid callback hell.
+We have learned how to structure our components to make them easily reusable and avoid callback hell.
 
 We should now be able to write `Parameterized` and `Viewer` classes that encapsulate multiple components.
 
