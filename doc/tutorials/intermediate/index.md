@@ -12,10 +12,10 @@ Before delving into the intermediate tutorials, ensure you have a solid understa
 
 Ready to transition from being a *basic* to an *intermediate* Panel user? Let's uncover techniques for constructing reusable components and structuring your projects with maintainability in mind:
 
-- **[Class-Based Approach](param.md):** Construct reusable components utilizing Param and a class-based approach.
+- **[Reactive Parameters](parameters.md):** Discover why Panel is built on top of Reactive Parameters and how to effectively utilize them.
+- **[Create Reusable Components](reusable_components.md):** Develop reusable Panel components using the Viewer class.
 - **[Advanced Interactivity](interactivity.md):** Harness the power of Parameters and parameter dependencies to infuse interactivity.
 - **Introduce Side Effects:** Infuse your apps with additional functionality using `.watch` and `watch=True`.
-- **Create Reusable Components:** Engineer reusable Panel components using the Viewer class.
 - **[Structuring with DataStore](structure_data_store.md):** Employ the DataStore pattern to organize larger applications efficiently.
 - **Organize your Project:** Maintain orderliness in larger applications by compartmentalizing them into multiple modules and folders.
 
@@ -41,3 +41,17 @@ Now that you've mastered the more advanced concepts of Panel, it's time to put y
 - **Create an Interactive Report:** Elevate the interactivity of your reports through embedding.
 - **Serve Apps without a Server:** Explore the realm of WASM to serve your apps without traditional servers.
 - **Build a Streaming Dashboard:** Engineer a high-performing streaming dashboard employing a *producer/consumer* architecture.
+
+```{toctree}
+:titlesonly:
+:hidden:
+:maxdepth: 2
+
+parameters
+reusable_components
+interactivity
+structure_data_store
+develop_editor
+serve
+size
+```
