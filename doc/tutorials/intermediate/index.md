@@ -8,6 +8,34 @@ Ready to take your Panel skills to the next level? Dive into these tutorials to 
 
 Before delving into the intermediate tutorials, ensure you have a solid understanding of Panel basics. If not, refer to our [Basic Tutorial](../basic/index.md) to get started.
 
+Please execute the following command to install the dependencies required by the basic tutorials:
+
+::::{tab-set}
+
+:::{tab-item} pip
+:sync: pip
+
+```bash
+pip install altair hvplot numpy pandas panel watchfiles
+```
+
+:::
+
+:::{tab-item} conda
+:sync: conda
+
+```bash
+conda install -y -c conda-forge altair hvplot matplotlib numpy pandas panel plotly scipy watchfiles
+```
+
+:::
+
+::::
+
+:::{important}
+Is Panel installed together with JupyterLab/Jupyter Notebook in your working environment? If not, you need to make sure that `panel` is also installed in the same environment as JupyterLab/Jupyter Notebook (`pip install panel` or `conda install panel`).
+:::
+
 ## Mastering Intermediate Panel Techniques
 
 Ready to transition from being a *basic* to an *intermediate* Panel user? Let's uncover techniques for constructing reusable components and structuring your projects with maintainability in mind:
