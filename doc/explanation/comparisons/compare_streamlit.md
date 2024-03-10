@@ -8,20 +8,17 @@ Streamlit's key difference from those other tools is that **with Streamlit, the 
 
 Another major difference is that **Panel, in contrast to Streamlit, fully supports Jupyter notebooks**, for when you wish to preserve a series of text/code/output steps as an exploratory record, whether to document a workflow for later reproducibility, to tell a story about data, or for any other approach where having individual outputs per cell is useful. Thus Panel does not require you to make a binary switch between "exploring some data" or "telling a story" and "developing an app"; it simply lets you use widgets and layouts whenever they are useful or appropriate, without ever having a cost to switch between such activities. Of course, Panel does not *require* Jupyter, but because it supports Jupyter fully it is usable in a wide range of situations for which Streamlit is not designed.
 
-One more key difference between Streamlit and Panel is the organization of the developer community. Streamlit is run and owned by Snowflake, while Panel was developed at Anaconda and was not developed as a product. This difference means that Panel does not have many of the same commercial incentives. As a consequence you **won't** have to provide your email or opt out of telemetry data collection. We have never collected or had plans to collect telemetry data from our users apps.
+One more key difference between Streamlit and Panel is the organization of the developer community. Streamlit is run and owned by [Snowflake](https://www.snowflake.com), while Panel was developed at [Anaconda](https://www.anaconda.com) and was not developed as a product. This difference means that Panel does not have many of the same commercial incentives. As a consequence you **won't** have to [provide your email or opt out of telemetry data collection](https://github.com/streamlit/streamlit/issues/4747). We have never collected or had plans to collect telemetry data from our users apps. Furthermore we would not [ask for access to your private Github accounts for deployment](https://github.com/streamlit/streamlit/issues/4344) if we offered free deployment. That would simply go against our core values.
 
 Overall, **Panel can be used in a much wider range of applications than Streamlit**, including exploratory data analysis and capturing a reproducible workflow in a Jupyter notebook, developing a simple Streamlit-like app, or developing complex, multi-page responsive apps, all without having to switch frameworks or learn a new set of tools. **Panel supports the entire life cycle of data science, engineering, or scientific artifacts, not just a narrow task of developing a specific type of simple app**.
 
 ## Streamlits limitations
 
-[This video](https://youtu.be/QiiwEAz6BVY) from a die hard Streamlit fan takes *an unfiltered deep dive into Streamlit's limitations*. The Streamlit community lives happily with these *dead ends*. They
-might not even be aware or limited by them. The Panel contributors on the other hand could not
-imagine working with a limiting framework like that. They need other features, more flexibility,
-higher performance and a fundamentally different architecture to support their use cases.
+These videos from a die hard Streamlit fan walks you through some of Streamlits fundamental limitations. Limitations that we have carefully tried to avoid in Panel.
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/QiiwEAz6BVY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
-We don't think Streamlit sucks as the ironic title of the video thumbnail suggests. There are many enthusiastic Streamlits users that have been enabled by Streamlit to solve their problems. It's created the *data app* genre, its inspired lots of data app innovation and still stands out as one of the benchmark data app frameworks to measure up against.
+<iframe width="560" height="315" src="https://www.youtube.com/embed/IOYHVPPbZII?si=GwV4muZWYAB94GDo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
 ## Code Examples
 
