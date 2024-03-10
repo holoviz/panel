@@ -31,7 +31,7 @@ class DataExplorer(param.Parameterized):
     )
 
 data_url = "https://assets.holoviz.org/panel/tutorials/turbines.csv.gz"
-df = pd.read_csv(data_url)
+df = pn.cache(pd.read_csv)(data_url)
 
 explorer = DataExplorer(data=df, page_size=5)
 ```
@@ -83,7 +83,7 @@ class DataExplorer(pn.viewable.Viewer):
         )
 
 data_url = "https://assets.holoviz.org/panel/tutorials/turbines.csv.gz"
-df = pd.read_csv(data_url)
+df = pn.cache(pd.read_csv)(data_url)
 
 DataExplorer(data=df).servable()
 ```
@@ -96,12 +96,13 @@ Extend the `DataExplorer` class by adding parameters to control the Tabulator `t
 
 ```{pyodide}
 import pandas as pd
-import panel as pn
 import param
+
+import panel as pn
+
 from panel.widgets import IntSlider, Tabulator
 
 pn.extension("tabulator")
-
 
 class DataExplorer(pn.viewable.Viewer):
     data = param.DataFrame(doc="Stores a DataFrame to explore")
@@ -130,9 +131,8 @@ class DataExplorer(pn.viewable.Viewer):
             ),
         )
 
-
 data_url = "https://assets.holoviz.org/panel/tutorials/turbines.csv.gz"
-df = pd.read_csv(data_url)
+df = pn.cache(pd.read_csv)(data_url)
 
 DataExplorer(data=df).servable()
 ```

@@ -1,13 +1,11 @@
 # Interactivity
 
-In the previous sections, we delved into Param, which not only forms the core architecture of Panel but also serves as the foundation for adding interactivity to your applications. This section explores how to leverage Parameters and their dependencies to incorporate interactivity. We'll focus on implementing interactivity through reactivity, departing from the more imperative style of programming commonly found in other UI frameworks.
+In the previous sections, we delved into [Param](https://param.holoviz.org/), which not only forms the core architecture of Panel but also serves as the foundation for adding interactivity to your applications. This section explores how to leverage Parameters and their dependencies to incorporate interactivity. We'll focus on implementing interactivity through reactivity, departing from the more imperative style of programming commonly found in other UI frameworks.
 
 By the end of this tutorial, you'll learn:
 
 - How to utilize both declarative and imperative APIs for interactivity
 - How to develop both functional and class-based interactive apps
-
-:::
 
 ## Imperative vs Declarative Programming
 
@@ -64,7 +62,7 @@ dfrx = pn.rx(turbines)[cols]
 pn.Column(cols, pn.widgets.Tabulator(dfrx, page_size=5, pagination="remote")).servable()
 ```
 
-Note how we pass the reactive DataFrame to the `Tabulator` widget. This aligns with the concept of passing references, which Param and Panel resolve. Valid references include:
+Note how we pass the reactive DataFrame `dfrx` to the `Tabulator` widget. This aligns with the concept of passing references, which Param and Panel resolve. Valid references include:
 
 - `param.Parameter()`
 - `param.rx(...)`
@@ -77,9 +75,7 @@ Enhance the app by adding widgets to filter the data by year (`p_year`) and capa
 
 :::{hint}
 
-```python
- You can filter a reactive DataFrame in the same way as a regular DataFrame.
-```
+You can filter a reactive DataFrame in the same way as a regular DataFrame.
 
 :::
 
@@ -111,8 +107,7 @@ p_cap = pn.widgets.RangeSlider(value=p_cap_bounds, start=p_cap_bounds[0], end=p_
 dfrx = pn.rx(turbines)
 dfrx = dfrx[
     (dfrx.p_year == p_year)
-    & (dfrx.p_cap >= p_cap.param.value_start)
-    & (dfrx.p_cap <= p_cap.param.value_end)
+    & (dfrx.p_cap.between(p_cap.param.value_start, p_cap.param.value_end))
 ][cols]
 pn.Column(
     cols, p_year, p_cap, pn.widgets.Tabulator(dfrx, pagination="remote", page_size=5)
@@ -123,7 +118,7 @@ pn.Column(
 
 :::{dropdown} Solution: Imperative (Not recommended)
 
-```{podide}
+```{pyodide}
 import pandas as pd
 import panel as pn
 
@@ -158,8 +153,7 @@ table = pn.widgets.Tabulator(turbines[cols.value], page_size=5, pagination="remo
 def update_data(event):
     value = turbines[
         (turbines.p_year == p_year.value)
-        & (turbines.p_cap >= p_cap.value_start)
-        & (turbines.p_cap <= p_cap.value_end)
+        & (turbines.p_cap.between(p_cap.value_start, p_cap.value_end))
     ][cols.value]
 
     table.value = value
@@ -176,7 +170,7 @@ pn.Column(cols, p_year, p_cap, table).servable()
 
 ## Function vs. Class-based
 
-Reactive functions and expressions based on `pn.rx` or `pn.bind` provide an excellent entry point for writing dynamic UIs. However, when we need to track state or have many consumers of the output, it can be challenging to manage. This is where classes come in handy.
+Reactive functions and expressions based on `pn.rx` or `pn.bind` provide an excellent entry point for writing dynamic UIs. However, when we need to track state or have many consumers of the output, it can be challenging to manage. This is where `Parameterized` classes come in handy.
 
 If you recall the [Reactive Parameters Section](parameters.md), a `Parameterized` class enables you to encapsulate state as parameters, which can then be passed around to set up interactivity.
 
@@ -186,7 +180,7 @@ The class-based approach is recommended for larger, more complex applications.
 
 :::
 
-### Making the Class-Based Approach Efficient
+## Making the Class-Based Approach Efficient
 
 Let's revisit our `DataExplorer` class from the previous lesson and see how we can structure a filtering application like before:
 
@@ -283,7 +277,6 @@ class DataExplorer(Viewer):
         self.filtered_data=df[df.p_year.between(*self.year) & df.p_cap.between(*self.capacity)][
             self.columns
         ]
-        print("updated")
 
     @param.depends('filtered_data')
     def number_of_rows(self):
@@ -302,7 +295,7 @@ class DataExplorer(Viewer):
 DataExplorer(data=turbines).servable()
 ```
 
-Storing the filtered data has the benefit that multiple consumers can now access it without recalculating it.
+Storing the `filtered_data` has the benefit that multiple consumers can now access it without recalculating it.
 
 We can also combine the class-based approach with `pn.rx` to achieve an efficient solution:
 
@@ -377,8 +370,7 @@ DataExplorer(data=turbines).servable()
 
 Write an app that allows filtering the DataFrame and displays both a table and a plot, caching the data on an intermediate parameter. You can use any plotting library you want.
 
-:::{note} Hint
-:class: dropdown
+:::{hint}
 
 ```python
 import hvplot.pandas
@@ -426,7 +418,6 @@ class DataExplorer(Viewer):
         self.filtered_data = df[
             df.p_year.between(*self.year) & df.p_cap.between(*self.capacity)
         ]
-        print("updated")
 
     @param.depends("filtered_data", "columns")
     def table(self):
@@ -454,7 +445,7 @@ DataExplorer(data=turbines).servable()
 
 ### Recap
 
-In this tutorial, we explored how to build an efficient filtering application using Panel, a powerful Python library for creating interactive web apps. The focus was on optimizing the class-based approach to handle filtering operations on a DataFrame efficiently.
+In this tutorial, we explored how to build an efficient filtering application using Panel. The focus was on optimizing the class-based approach to handle filtering operations on a DataFrame efficiently.
 
 #### Key Concepts Covered
 
