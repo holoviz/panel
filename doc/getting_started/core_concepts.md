@@ -6,7 +6,7 @@ Now, let's explain the core concepts of Panel.
 
 ## Development Flow
 
-As you gear up to develop your Panel application, you'll encounter a couple of initial decisions to make regarding **API** and **environment**:
+As you gear up to develop your Panel application, you'll encounter a couple of initial decisions to make regarding **approach** and **environment**:
 
 1. **Programming Approach:** Will you opt for a Python *function-based* approach or a *class-based* approach?
    - The function-based approach is recommended for new and basic users. It utilizes `pn.bind`, as you've already experienced while [building a simple app](build_app.md).
