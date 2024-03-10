@@ -222,7 +222,6 @@ pn.pane.Markdown(object=gen)
 ```
 :::
 
-
 ::::
 
 To unpack these options a little bit, let's go back to our earlier example, which used function-level binding to add two values and render the output using a `Str` pane:
@@ -246,7 +245,7 @@ b_slider = pn.widgets.FloatSlider(start=0, end=10)
 def add(a, b):
     return f'{a} + {b} = {a+b}'
 
-pn.Column(a_slider, b_slider, pn.pane.Str(object=pn.bind(add, a_slider, b_slider))
+pn.Column(a_slider, b_slider, pn.pane.Str(object=pn.bind(add, a_slider, b_slider)))
 ```
 
 ## So when _should_ you use callbacks?
