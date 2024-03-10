@@ -14,7 +14,7 @@ Overall, **Panel can be used in a much wider range of applications than Streamli
 
 ## Streamlit's Limitations
 
-These videos from a dedicated Streamlit fan walk you through some of Streamlit's fundamental limitations, which we have carefully tried to avoid in Panel.
+These videos from a dedicated Streamlit fan walk you through some of Streamlit's fundamental limitations.
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/QiiwEAz6BVY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
