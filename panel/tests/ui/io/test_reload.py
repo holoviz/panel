@@ -21,17 +21,16 @@ CURPATH = pathlib.Path(__file__).parent
     str(CURPATH / 'app.ipynb'),
 ])
 def test_reload_app_on_touch(page, autoreload, app):
-    if 'num' in state.cache:
-        del state.cache['num']
-
     path = pathlib.Path(app)
 
     autoreload(path)
 
+    state.cache['num'] = 0
     serve_component(page, path)
 
     expect(page.locator('.counter')).to_have_text('0')
 
+    state.cache['num'] = 1
     path.touch()
 
     expect(page.locator('.counter')).to_have_text('1')

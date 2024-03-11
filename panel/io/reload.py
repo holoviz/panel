@@ -141,8 +141,6 @@ async def setup_autoreload_watcher(stop_event=None):
 def watch(filename):
     """
     Add a file to the watch list.
-
-    All imported modules are watched by default.
     """
     _watched_files.add(filename)
 
