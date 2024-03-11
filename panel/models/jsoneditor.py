@@ -43,15 +43,15 @@ class JSONEditor(HTMLBox):
     templates = List(Any)
 
     __javascript_raw__ = [
-        f"{config.npm_cdn}/jsoneditor@9.5.6/dist/jsoneditor.min.js"
+        f"{config.npm_cdn}/jsoneditor@10.0.1/dist/jsoneditor.min.js"
     ]
 
     __css_raw__ = [
-        f"{config.npm_cdn}/jsoneditor@9.5.6/dist/jsoneditor.min.css"
+        f"{config.npm_cdn}/jsoneditor@10.0.1/dist/jsoneditor.min.css"
     ]
 
     __resources__ = [
-        f"{config.npm_cdn}/jsoneditor@9.5.6/dist/img/jsoneditor-icons.svg"
+        f"{config.npm_cdn}/jsoneditor@10.0.1/dist/img/jsoneditor-icons.svg"
     ]
 
     @classproperty
@@ -68,7 +68,7 @@ class JSONEditor(HTMLBox):
 
     __js_require__ = {
         'paths': {
-            'jsoneditor': "//cdn.jsdelivr.net/npm/jsoneditor@9.5.6/dist/jsoneditor.min"
+            'jsoneditor': "//cdn.jsdelivr.net/npm/jsoneditor@10.0.1/dist/jsoneditor.min"
         },
         'exports': {'jsoneditor': 'JSONEditor'},
         'shim': {

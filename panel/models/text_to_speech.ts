@@ -68,18 +68,19 @@ export class TextToSpeechView extends HTMLBoxView {
   override connect_signals(): void {
     super.connect_signals()
 
-    this.connect(this.model.properties.speak.change, () => {
+    const {speak, pause, resume, cancel} = this.model.properties
+    this.on_change(speak, () => {
       this.speak()
     })
-    this.connect(this.model.properties.pause.change, () => {
+    this.on_change(pause, () => {
       this.model.pause = false
       speechSynthesis.pause()
     })
-    this.connect(this.model.properties.resume.change, () => {
+    this.on_change(resume, () => {
       this.model.resume = false
       speechSynthesis.resume()
     })
-    this.connect(this.model.properties.cancel.change, () => {
+    this.on_change(cancel, () => {
       this.model.cancel = false
       speechSynthesis.cancel()
     })

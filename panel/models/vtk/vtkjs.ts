@@ -8,7 +8,8 @@ export class VTKJSPlotView extends AbstractVTKView {
 
   override connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.data.change, () => {
+    const {data} = this.model.properties
+    this.on_change(data, () => {
       this.invalidate_render()
     })
   }

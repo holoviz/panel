@@ -12,11 +12,13 @@ export class SingleSelectView extends InputWidgetView {
 
   override connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.value.change, () => this.render_selection())
-    this.connect(this.model.properties.options.change, () => this.render())
-    this.connect(this.model.properties.disabled_options.change, () => this.render())
-    this.connect(this.model.properties.size.change, () => this.render())
-    this.connect(this.model.properties.disabled.change, () => this.render())
+
+    const {value, options, disabled_options, size, disabled} = this.model.properties
+    this.on_change(value, () => this.render_selection())
+    this.on_change(options, () => this.render())
+    this.on_change(disabled_options, () => this.render())
+    this.on_change(size, () => this.render())
+    this.on_change(disabled, () => this.render())
   }
 
   override render(): void {

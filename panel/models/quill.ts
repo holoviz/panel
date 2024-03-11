@@ -15,13 +15,17 @@ export class QuillInputView extends HTMLBoxView {
 
   override connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.disabled.change, () => this.quill.enable(!this.model.disabled))
-    this.connect(this.model.properties.visible.change, () => {
+
+    const {disabled, visible, text, mode, toolbar, placeholder} = this.model.properties
+    this.on_change(disabled, () => {
+      this.quill.enable(!this.model.disabled)
+    })
+    this.on_change(visible, () => {
       if (this.model.visible) {
         this.container.style.visibility = "visible"
       }
     })
-    this.connect(this.model.properties.text.change, () => {
+    this.on_change(text, () => {
       if (this._editing) {
         return
       }
@@ -32,8 +36,7 @@ export class QuillInputView extends HTMLBoxView {
       this.quill.enable(!this.model.disabled)
       this._editing = false
     })
-    const {mode, toolbar, placeholder} = this.model.properties
-    this.on_change([placeholder], () => {
+    this.on_change(placeholder, () => {
       this.quill.root.setAttribute("data-placeholder", this.model.placeholder)
     })
     this.on_change([mode, toolbar], () => {
