@@ -32,6 +32,9 @@ from bokeh.models import Model
 from bokeh.resources import CDN, INLINE
 from bokeh.settings import _Unset, settings
 from bokeh.util.serialization import make_id
+from param.display import (
+    register_display_accessor, unregister_display_accessor,
+)
 from pyviz_comms import (
     PYVIZ_PROXY, Comm, JupyterCommJS,
     JupyterCommManager as _JupyterCommManager, nb_mime_js,
@@ -53,6 +56,7 @@ if TYPE_CHECKING:
     from ..viewable import Viewable
     from ..widgets.base import Widget
     from .location import Location
+
 
 #---------------------------------------------------------------------
 # Private API
@@ -575,3 +579,14 @@ def ipywidget(obj: Any, doc=None, **kwargs: Any):
                 current[:] = [new_model]
         widget.observe(view_count_changed, '_view_count')
     return widget
+
+
+try:
+    unregister_display_accessor('_ipython_display_')
+except KeyError:
+    pass
+
+try:
+    register_display_accessor('_repr_mimebundle_', mime_renderer)
+except Exception:
+    pass
