@@ -17,13 +17,15 @@ How to use indicators
 """
 from __future__ import annotations
 
+import asyncio
 import math
 import os
 import sys
+import time
 
 from math import pi
 from typing import (
-    TYPE_CHECKING, ClassVar, Dict, List, Mapping, Optional, Tuple, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, Tuple, Type,
 )
 
 import numpy as np
@@ -80,10 +82,58 @@ class BooleanIndicator(Indicator):
     visually indicate a boolean value.
     """
 
+    throttle = param.Integer(default=500, doc=""""
+        Throttles value change events, ensuring that they only toggle
+        off after a minimum time specified in milliseconds has passed.""")
+
     value = param.Boolean(default=False, doc="""
         Whether the indicator is active or not.""")
 
+    _rename: ClassVar[Mapping[str, str | None]] = {'throttle': None}
+
     __abstract = True
+
+    def __init__(self, **params):
+        super().__init__(**params)
+        self._last__updated = time.monotonic()
+        self._reset__task = None
+
+    def _throttle_events(self, events):
+        if not (io_loop:= asyncio.get_running_loop()) or not io_loop.is_running():
+            return events
+        throttled_events = {}
+        async def schedule_off():
+            await asyncio.sleep(self.throttle/1000)
+            if self._reset__task:
+                self.param.trigger('value')
+            self._reset__task = None
+        for k, e in events.items():
+            if e.name != 'value':
+                throttled_events[k] = e
+                continue
+            new_time = time.monotonic()
+            if ((new_time - self._last__updated) < self.throttle/1000) and not e.new:
+                if self._reset__task:
+                    self._reset__task.cancel()
+                self._reset__task = asyncio.create_task(schedule_off())
+                continue
+            elif self._reset__task and e.new:
+                self._last__updated = new_time
+                self._reset__task.cancel()
+                self._reset__task = None
+                continue
+            throttled_events[k] = e
+            self._last__updated = new_time
+        return throttled_events
+
+    def _update_model(
+        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+    ) -> None:
+        events = self._throttle_events(events)
+        if not events:
+            return
+        super()._update_model(events, msg, root, model, doc, comm)
 
 
 class BooleanStatus(BooleanIndicator):
@@ -183,8 +233,10 @@ class LoadingSpinner(BooleanIndicator):
             if 'width' in msg and msg['width'] == msg.get('height'):
                 del msg['width']
             size = int(min(msg.pop('height', self.height) or float('inf'), msg.pop('size', self.size)))
-            msg['stylesheets'] = ([f':host {{ --loading-spinner-size: {size}px; }}'] +
-                                  msg.get('stylesheets', []))
+            msg['stylesheets'] = (
+                [f':host {{ --loading-spinner-size: {size}px; }}'] +
+                msg.get('stylesheets', [])
+            )
             msg['min_width'] = msg['min_height'] = size
         if value is None and not (color or bgcolor):
             return msg
