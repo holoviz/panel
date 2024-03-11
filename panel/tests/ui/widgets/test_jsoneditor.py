@@ -30,7 +30,6 @@ def test_json_editor_edit(page):
     page.locator('.jsoneditor-string').click()
     ctrl_key = 'Meta' if sys.platform == 'darwin' else 'Control'
     page.keyboard.press(f'{ctrl_key}+A')
-    page.keyboard.press('Meta+A')
     page.keyboard.press('Backspace')
     page.keyboard.type('new')
     page.locator('.jsoneditor').click()
