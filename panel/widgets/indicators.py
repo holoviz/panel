@@ -99,14 +99,20 @@ class BooleanIndicator(Indicator):
         self._reset__task = None
 
     def _throttle_events(self, events):
-        if not (io_loop:= asyncio.get_running_loop()) or not io_loop.is_running():
+        try:
+            io_loop = asyncio.get_running_loop()
+        except RuntimeError:
             return events
+        if not io_loop.is_running():
+            return events
+
         throttled_events = {}
         async def schedule_off():
             await asyncio.sleep(self.throttle/1000)
             if self._reset__task:
                 self.param.trigger('value')
             self._reset__task = None
+
         for k, e in events.items():
             if e.name != 'value':
                 throttled_events[k] = e
