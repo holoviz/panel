@@ -12,11 +12,39 @@ Let's work through each API with an example app, while pointing out the benefits
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
+:::{grid-item-card} {octicon}`infinity;2.5em;sd-mr-1 sd-animate-grow50` Parameters in Panel
+:link: reactivity
+:link-type: doc
+
+Background on the use of Param in Panel.
+:::
+
+:::{grid-item-card} {octicon}`infinity;2.5em;sd-mr-1 sd-animate-grow50` Reactivity in Panel
+:link: reactivity
+:link-type: doc
+
+A deep dive into the reactive and callback based APIs in Panel.
+:::
+
+:::{grid-item-card} {octicon}`infinity;2.5em;sd-mr-1 sd-animate-grow50` Functions vs Classes
+:link: functions_vs_classes
+:link-type: doc
+
+A discussion that contrasts function and class based APIs in Panel.
+:::
+
+::::
+
+Next let us contrast the different APIs offered by Panel by applying them to a particular problem.
+
+::::{grid} 1 1 3 3
+:gutter: 1 1 1 2
+
 :::{grid-item-card} {octicon}`infinity;2.5em;sd-mr-1 sd-animate-grow50` 1. Reactive API
 :link: reactive
 :link-type: doc
 
-Linking functions or methods to widgets using ``pn.bind`` or the equivalent ``pn.depends`` decorator.
+Linking functions or methods to widgets using `pn.bind` or the equivalent `pn.depends` decorator.
 :::
 
 :::{grid-item-card} {octicon}`codespaces;2.5em;sd-mr-1 sd-animate-grow50` 2. Declarative API
