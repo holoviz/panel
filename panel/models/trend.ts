@@ -48,15 +48,17 @@ export class TrendIndicatorView extends HTMLBoxView {
   override connect_signals(): void {
     super.connect_signals()
 
-    const {pos_color, neg_color} = this.model.properties
-    this.on_change([pos_color, neg_color], () => this.updateValueChange())
-    const {plot_color, plot_type, width, height, sizing_mode} = this.model.properties
-    this.on_change([plot_color, plot_type, width, height, sizing_mode], () => this.render())
+    const {
+      pos_color, neg_color, plot_color, plot_type, width,
+      height, sizing_mode, title, value, value_change, layout,
+    } = this.model.properties
 
-    this.connect(this.model.properties.title.change, () => this.updateTitle(true))
-    this.connect(this.model.properties.value.change, () => this.updateValue(true))
-    this.connect(this.model.properties.value_change.change, () => this.updateValue2(true))
-    this.connect(this.model.properties.layout.change, () => this.updateLayout())
+    this.on_change([pos_color, neg_color], () => this.updateValueChange())
+    this.on_change([plot_color, plot_type, width, height, sizing_mode], () => this.render())
+    this.on_change(title, () => this.updateTitle(true))
+    this.on_change(value, () => this.updateValue(true))
+    this.on_change(value_change, () => this.updateValue2(true))
+    this.on_change(layout, () => this.updateLayout())
   }
 
   override async render(): Promise<void> {

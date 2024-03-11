@@ -149,27 +149,31 @@ export class SpeechToTextView extends HTMLBoxView {
   override connect_signals(): void {
     super.connect_signals()
 
-    this.connect(this.model.properties.start.change, () => {
+    const {
+      start, stop, abort, grammars, lang, continuous, interim_results, max_alternatives,
+      service_uri, button_type, button_hide, button_not_started, button_started,
+    } = this.model.properties
+
+    this.on_change(start, () => {
       this.model.start = false
       this.recognition.start()
     })
-    this.connect(this.model.properties.stop.change, () => {
+    this.on_change(stop, () => {
       this.model.stop = false
       this.recognition.stop()
     })
-    this.connect(this.model.properties.abort.change, () => {
+    this.on_change(abort, () => {
       this.model.abort = false
       this.recognition.abort()
     })
-    this.connect(this.model.properties.grammars.change, () => this.setGrammars())
-    this.connect(this.model.properties.lang.change, () => this.recognition.lang = this.model.lang)
-    this.connect(this.model.properties.continuous.change, () => this.recognition.continuous = this.model.continuous)
-    this.connect(this.model.properties.interim_results.change, () => this.recognition.interimResults = this.model.interim_results)
-    this.connect(this.model.properties.max_alternatives.change, () => this.recognition.maxAlternatives = this.model.max_alternatives)
-    this.connect(this.model.properties.service_uri.change, () => this.recognition.serviceURI = this.model.service_uri)
-    this.connect(this.model.properties.button_type.change, () => this.buttonEl.className = `bk bk-btn bk-btn-${this.model.button_type}`)
-    this.connect(this.model.properties.button_hide.change, () => this.render())
-    const {button_not_started, button_started} = this.model.properties
+    this.on_change(grammars, () => this.setGrammars())
+    this.on_change(lang, () => this.recognition.lang = this.model.lang)
+    this.on_change(continuous, () => this.recognition.continuous = this.model.continuous)
+    this.on_change(interim_results, () => this.recognition.interimResults = this.model.interim_results)
+    this.on_change(max_alternatives, () => this.recognition.maxAlternatives = this.model.max_alternatives)
+    this.on_change(service_uri, () => this.recognition.serviceURI = this.model.service_uri)
+    this.on_change(button_type, () => this.buttonEl.className = `bk bk-btn bk-btn-${this.model.button_type}`)
+    this.on_change(button_hide, () => this.render())
     this.on_change([button_not_started, button_started], () => this.setIcon())
   }
 

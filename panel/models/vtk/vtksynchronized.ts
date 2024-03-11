@@ -30,14 +30,14 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
 
   override connect_signals(): void {
     super.connect_signals()
-    const update = debounce(() => {
+
+    const {arrays, scene, one_time_reset} = this.model.properties
+    this.on_change([arrays, scene], debounce(() => {
       this._vtk_renwin.delete()
       this._vtk_renwin = null
       this.invalidate_render()
-    }, 20)
-    this.connect(this.model.properties.arrays.change, update)
-    this.connect(this.model.properties.scene.change, update)
-    this.connect(this.model.properties.one_time_reset.change, () => {
+    }, 20))
+    this.on_change(one_time_reset, () => {
       this._vtk_renwin.getRenderWindow().clearOneTimeUpdaters()
     })
   }

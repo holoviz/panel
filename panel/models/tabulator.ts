@@ -322,30 +322,34 @@ export class DataTabulatorView extends HTMLBoxView {
   override connect_signals(): void {
     super.connect_signals()
 
-    const p = this.model.properties
-    const {configuration, layout, columns, groupby} = p
+    const {
+      configuration, layout, columns, groupby, visible, download,
+      children, expanded, cell_styles, hidden_columns, page_size,
+      page, max_page, frozen_rows, sorters, theme_classes,
+    } = this.model.properties
+
     this.on_change([configuration, layout, groupby], debounce(() => {
       this.invalidate_render()
     }, 20, false))
 
-    this.connect(this.model.properties.visible.change, () => {
+    this.on_change(visible, () => {
       if (this.model.visible) {
         this.tabulator.element.style.visibility = "visible"
       }
     })
-    this.on_change([columns], () => {
+    this.on_change(columns, () => {
       this.tabulator.setColumns(this.getColumns())
       this.setHidden()
     })
 
-    this.connect(p.download.change, () => {
+    this.on_change(download, () => {
       const ftype = this.model.filename.endsWith(".json") ? "json" : "csv"
       this.tabulator.download(ftype, this.model.filename)
     })
 
-    this.connect(p.children.change, () => this.renderChildren())
+    this.on_change(children, () => this.renderChildren())
 
-    this.connect(p.expanded.change, () => {
+    this.on_change(expanded, () => {
       // The first cell is the cell of the frozen _index column.
       for (const row of this.tabulator.rowManager.getRows()) {
         if (row.cells.length > 0) {
@@ -363,28 +367,29 @@ export class DataTabulatorView extends HTMLBoxView {
       }
     })
 
-    this.connect(p.cell_styles.change, () => {
+    this.on_change(cell_styles, () => {
       if (this._applied_styles) {
         this.tabulator.redraw(true)
       }
       this.setStyles()
     })
-    this.connect(p.hidden_columns.change, () => {
+    this.on_change(hidden_columns, () => {
       this.setHidden()
       this.tabulator.redraw(true)
     })
-    this.connect(p.page_size.change, () => this.setPageSize())
-    this.connect(p.page.change, () => {
+    this.on_change(page_size, () => this.setPageSize())
+    this.on_change(page, () => {
       if (!this._updating_page) {
         this.setPage()
       }
     })
-    this.connect(p.visible.change, () => this.setVisibility())
-    this.connect(p.max_page.change, () => this.setMaxPage())
-    this.connect(p.frozen_rows.change, () => this.setFrozen())
-    this.connect(p.sorters.change, () => this.setSorters())
-    this.connect(p.theme_classes.change, () => this.setCSSClasses(this.tabulator.element))
-    this.connect(this.model.source.properties.data.change, () => {
+    this.on_change(visible, () => this.setVisibility())
+    this.on_change(max_page, () => this.setMaxPage())
+    this.on_change(frozen_rows, () => this.setFrozen())
+    this.on_change(sorters, () => this.setSorters())
+    this.on_change(theme_classes, () => this.setCSSClasses(this.tabulator.element))
+
+    this.on_change(this.model.source.properties.data, () => {
       if (this.tabulator === undefined) {
         return
       }

@@ -58,10 +58,12 @@ export class FileDownloadView extends InputWidgetView {
 
   override connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.button_type.change, () => this._update_button_style())
-    this.connect(this.model.properties.filename.change, () => this._update_download())
-    this.connect(this.model.properties._transfers.change, () => this._handle_click())
-    this.connect(this.model.properties.label.change, () => this._update_label())
+
+    const {button_type, filename, _transfers, label} = this.model.properties
+    this.on_change(button_type, () => this._update_button_style())
+    this.on_change(filename, () => this._update_download())
+    this.on_change(_transfers, () => this._handle_click())
+    this.on_change(label, () => this._update_label())
   }
 
   override remove(): void {

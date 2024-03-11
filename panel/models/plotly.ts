@@ -135,7 +135,12 @@ export class PlotlyPlotView extends HTMLBoxView {
 
   override connect_signals(): void {
     super.connect_signals()
-    const {data, data_sources, layout, relayout, restyle} = this.model.properties
+
+    const {
+      data, data_sources, layout, relayout, restyle, viewport_update_policy,
+      viewport_update_throttle, _render_count, frames, viewport,
+    } = this.model.properties
+
     this.on_change([data, data_sources, layout], () => {
       const render_count = this.model._render_count
       setTimeout(() => {
@@ -144,14 +149,14 @@ export class PlotlyPlotView extends HTMLBoxView {
         }
       }, 250)
     })
-    this.on_change([relayout], () => {
+    this.on_change(relayout, () => {
       if (this.model.relayout == null) {
         return
       }
       (window as any).Plotly.relayout(this.container, this.model.relayout)
       this.model.relayout = null
     })
-    this.on_change([restyle], () => {
+    this.on_change(restyle, () => {
       if (this.model.restyle == null) {
         return
       }
@@ -159,19 +164,21 @@ export class PlotlyPlotView extends HTMLBoxView {
       this.model.restyle = null
     })
 
-    this.connect(this.model.properties.viewport_update_policy.change, () => {
+    this.on_change(viewport_update_policy, () => {
       this._updateSetViewportFunction()
     })
-    this.connect(this.model.properties.viewport_update_throttle.change, () => {
+    this.on_change(viewport_update_throttle, () => {
       this._updateSetViewportFunction()
     })
-    this.connect(this.model.properties._render_count.change, () => {
+    this.on_change(_render_count, () => {
       this.plot()
     })
-    this.connect(this.model.properties.frames.change, () => {
+    this.on_change(frames, () => {
       this.plot(true)
     })
-    this.connect(this.model.properties.viewport.change, () => this._updateViewportFromProperty())
+    this.on_change(viewport, () => {
+      this._updateViewportFromProperty()
+    })
   }
 
   override remove(): void {

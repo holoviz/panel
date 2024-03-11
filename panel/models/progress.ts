@@ -10,17 +10,16 @@ export class ProgressView extends HTMLBoxView {
 
   override connect_signals(): void {
     super.connect_signals()
-    const render = () => this.render()
-    this.connect(this.model.properties.height.change, render)
-    this.connect(this.model.properties.width.change, render)
-    this.connect(this.model.properties.height_policy.change, render)
-    this.connect(this.model.properties.width_policy.change, render)
-    this.connect(this.model.properties.sizing_mode.change, render)
-    this.connect(this.model.properties.active.change, () => this.setCSS())
-    this.connect(this.model.properties.bar_color.change, () => this.setCSS())
-    this.connect(this.model.properties.css_classes.change, () => this.setCSS())
-    this.connect(this.model.properties.value.change, () => this.setValue())
-    this.connect(this.model.properties.max.change, () => this.setMax())
+
+    const {
+      width, height, height_policy, width_policy, sizing_mode,
+      active, bar_color, css_classes, value, max,
+    } = this.model.properties
+
+    this.on_change([width, height, height_policy, width_policy, sizing_mode], () => this.render())
+    this.on_change([active, bar_color, css_classes], () => this.setCSS())
+    this.on_change(value, () => this.setValue())
+    this.on_change(max, () => this.setMax())
   }
 
   override render(): void {

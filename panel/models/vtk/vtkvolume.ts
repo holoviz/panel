@@ -19,97 +19,105 @@ export class VTKVolumePlotView extends AbstractVTKView {
 
   override connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.data.change, () => {
+
+    const {
+      data, colormap, shadow, sampling, edge_gradient, rescale, ambient, diffuse,
+      camera, specular, specular_power, display_volume, display_slices, slice_i,
+      slice_j, slice_k, render_background, interpolation, controller_expanded,
+      nan_opacity,
+    } = this.model.properties
+
+    this.on_change(data, () => {
       this._vtk_image_data = data2VTKImageData(this.model.data as VolumeType)
       this.invalidate_render()
     })
-    this.connect(this.model.properties.colormap.change, () => {
+    this.on_change(colormap, () => {
       this.colormap_selector.value = this.model.colormap
       const event = new Event("change")
       this.colormap_selector.dispatchEvent(event)
     })
-    this.connect(this.model.properties.shadow.change, () => {
+    this.on_change(shadow, () => {
       this.shadow_selector.value = this.model.shadow ? "1" : "0"
       const event = new Event("change")
       this.shadow_selector.dispatchEvent(event)
     })
-    this.connect(this.model.properties.sampling.change, () => {
+    this.on_change(sampling, () => {
       this.sampling_slider.value = this.model.sampling.toFixed(2)
       const event = new Event("input")
       this.sampling_slider.dispatchEvent(event)
     })
-    this.connect(this.model.properties.edge_gradient.change, () => {
+    this.on_change(edge_gradient, () => {
       this.edge_gradient_slider.value = this.model.edge_gradient.toFixed(2)
       const event = new Event("input")
       this.edge_gradient_slider.dispatchEvent(event)
     })
-    this.connect(this.model.properties.rescale.change, () => {
+    this.on_change(rescale, () => {
       this._controllerWidget.setRescaleColorMap(this.model.rescale)
       this._vtk_renwin.getRenderWindow().render()
     })
-    this.connect(this.model.properties.ambient.change, () => {
+    this.on_change(ambient, () => {
       this.volume.getProperty().setAmbient(this.model.ambient)
       this._vtk_renwin.getRenderWindow().render()
     })
-    this.connect(this.model.properties.diffuse.change, () => {
+    this.on_change(diffuse, () => {
       this.volume.getProperty().setDiffuse(this.model.diffuse)
       this._vtk_renwin.getRenderWindow().render()
     })
-    this.connect(this.model.properties.camera.change, () => {
+    this.on_change(camera, () => {
       if (!this._setting_camera) {
-	this._set_camera_state()
-	this._vtk_renwin.getRenderWindow().render()
+        this._set_camera_state()
+        this._vtk_renwin.getRenderWindow().render()
       }
     })
-    this.connect(this.model.properties.specular.change, () => {
+    this.on_change(specular, () => {
       this.volume.getProperty().setSpecular(this.model.specular)
       this._vtk_renwin.getRenderWindow().render()
     })
-    this.connect(this.model.properties.specular_power.change, () => {
+    this.on_change(specular_power, () => {
       this.volume.getProperty().setSpecularPower(this.model.specular_power)
       this._vtk_renwin.getRenderWindow().render()
     })
-    this.connect(this.model.properties.display_volume.change, () => {
+    this.on_change(display_volume, () => {
       this._set_volume_visibility(this.model.display_volume)
       this._vtk_renwin.getRenderWindow().render()
     })
-    this.connect(this.model.properties.display_slices.change, () => {
+    this.on_change(display_slices, () => {
       this._set_slices_visibility(this.model.display_slices)
       this._vtk_renwin.getRenderWindow().render()
     })
-    this.connect(this.model.properties.slice_i.change, () => {
+    this.on_change(slice_i, () => {
       if (this.image_actor_i !== undefined) {
         this.image_actor_i.getMapper().setISlice(this.model.slice_i)
         this._vtk_renwin.getRenderWindow().render()
       }
     })
-    this.connect(this.model.properties.slice_j.change, () => {
+    this.on_change(slice_j, () => {
       if (this.image_actor_j !== undefined) {
         this.image_actor_j.getMapper().setJSlice(this.model.slice_j)
         this._vtk_renwin.getRenderWindow().render()
       }
     })
-    this.connect(this.model.properties.slice_k.change, () => {
+    this.on_change(slice_k, () => {
       if (this.image_actor_k !== undefined) {
         this.image_actor_k.getMapper().setKSlice(this.model.slice_k)
         this._vtk_renwin.getRenderWindow().render()
       }
     })
-    this.connect(this.model.properties.render_background.change, () => {
+    this.on_change(render_background, () => {
       this._vtk_renwin
         .getRenderer()
         .setBackground(...hexToRGB(this.model.render_background))
       this._vtk_renwin.getRenderWindow().render()
     })
-    this.connect(this.model.properties.interpolation.change, () => {
+    this.on_change(interpolation, () => {
       this._set_interpolation(this.model.interpolation)
       this._vtk_renwin.getRenderWindow().render()
     })
-    this.connect(this.model.properties.controller_expanded.change, () => {
+    this.on_change(controller_expanded, () => {
       if (this._controllerWidget != null)
         this._controllerWidget.setExpanded(this.model.controller_expanded)
     })
-    this.connect(this.model.properties.nan_opacity.change, () => {
+    this.on_change(nan_opacity, () => {
       const scalar_opacity = this.image_actor_i.getProperty().getScalarOpacity()
       scalar_opacity.get(["nodes"]).nodes[0].y = this.model.nan_opacity
       scalar_opacity.modified()

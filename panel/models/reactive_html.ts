@@ -123,7 +123,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
       if (obj.properties != null) {
         this._recursive_connect(obj, true, subpath)
       }
-      this.connect(model.properties[prop].change, () => {
+      this.on_change(model.properties[prop], () => {
         if (update_children) {
           for (const node in this.model.children) {
             if (this.model.children[node] == prop) {
@@ -145,13 +145,15 @@ export class ReactiveHTMLView extends HTMLBoxView {
 
   override connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.children.change, async () => {
+
+    const {children, events} = this.model.properties
+    this.on_change(children, async () => {
       this.html = htmlDecode(this.model.html) || this.model.html
       await this.build_child_views()
       this.invalidate_render()
     })
     this._recursive_connect(this.model.data, true, "")
-    this.connect(this.model.properties.events.change, () => {
+    this.on_change(events, () => {
       this._remove_event_listeners()
       this._setup_event_listeners()
     })
@@ -182,7 +184,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
           continue
         }
         const is_event_param = this.model.event_params.includes(prop)
-        this.connect(property.change, () => {
+        this.on_change(property, () => {
           if (!this._changing && !(is_event_param && !data_model[prop])) {
             this.run_script(prop)
 	    if (is_event_param) {
