@@ -25,7 +25,7 @@ pip install altair hvplot numpy pandas panel watchfiles
 :sync: conda
 
 ```bash
-conda install -y -c conda-forge altair hvplot matplotlib numpy pandas panel plotly scipy watchfiles
+conda install -y -c conda-forge altair hvplot numpy pandas panel watchfiles
 ```
 
 :::
