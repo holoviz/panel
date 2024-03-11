@@ -12,8 +12,8 @@ Let's work through each API with an example app, while pointing out the benefits
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`infinity;2.5em;sd-mr-1 sd-animate-grow50` Parameters in Panel
-:link: reactivity
+:::{grid-item-card} {octicon}`list-unordered;2.5em;sd-mr-1 sd-animate-grow50` Parameters in Panel
+:link: param
 :link-type: doc
 
 Background on the use of Param in Panel.
@@ -26,7 +26,7 @@ Background on the use of Param in Panel.
 A deep dive into the reactive and callback based APIs in Panel.
 :::
 
-:::{grid-item-card} {octicon}`infinity;2.5em;sd-mr-1 sd-animate-grow50` Functions vs Classes
+:::{grid-item-card} {octicon}`code-square;2.5em;sd-mr-1 sd-animate-grow50` Functions vs Classes
 :link: functions_vs_classes
 :link-type: doc
 
@@ -108,6 +108,9 @@ Build a simple outlier explorer app using the declarative API.
 :hidden:
 :maxdepth: 2
 
+param
+reactivity
+functions_vs_classes
 reactive
 interact
 parameterized

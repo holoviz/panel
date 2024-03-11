@@ -44,8 +44,8 @@ def submit_form(event):
     user.value = ''
     age.value = 0
 
-user.param.watch(update_preview)
-age.param.watch(update_preview)
+user.param.watch(update_preview, 'value')
+age.param.watch(update_preview, 'value')
 submit.onclick(submit_form)
 
 pn.Row(widgets, md)
@@ -129,7 +129,7 @@ In this example, we have bound two inputs to the function and return an output, 
 3. When a slider is dragged and the input changes, the `ParamFunction` will re-evaluate the function with the new inputs and then figure out the appropriate update.
 
 :::{important}
-Note that since we have created a `Str` pane inside the function the `ParamFunction` pane has to figure out how best to update the displayed output. The problem it runs into is that you (the user) may have kept a separate handle on the `Str` object you created and may want to reuse it later, e.g. to manually update the object. Therefore Panel has to make the assumption that it cannot safely modify this object inplace, i.e. update the `object` on the existing `Str` the next time `add` is called. This means that in this simple setup with function-level binding, Panel has to re-render the corresponding model every time the inputs change instead of simply update the pane `object` parameter and sending the updated string. For complex panes and output this approach can lead to undesirable flicker. To avoid flickering, you can tell Panel that the output can be safely updated `inplace`:
+Note that since we have created a `Str` pane inside the function the `ParamFunction` pane has to figure out how best to update the displayed output. The problem it runs into is that you (the user) may have kept a separate handle on the `Str` object you created and may want to reuse it later, e.g. to manually update the object. Therefore Panel has to make the assumption that it cannot safely modify this object inplace, i.e. update the `object` on the existing `Str` the next time `add` is called. This means that in this simple setup with function-level binding, Panel has to re-render the corresponding model every time the inputs change instead of simply updating the pane `object` parameter and sending the updated string. For complex panes and output this approach can lead to undesirable flicker. To avoid flickering, you can tell Panel that the output can be safely updated `inplace`:
 
 ```{pyodide}
 pn.param.ParamFunction(pn.bind(add, a_slider.param.value, b_slider.param.value), inplace=True)
@@ -271,7 +271,7 @@ a = pn.widgets.FloatSlider()
 b = pn.widgets.FloatSlider()
 button = pn.widgets.Button(name='Calculate')
 
-str_pane = pn.pane.Str(f'{a} + {b} = {a+b}')
+str_pane = pn.pane.Str(f'{a.value} + {b.value} = {a.value+b.value}')
 
 def update(_=None):
     str_pane.object = f'{a.value} + {b.value} = {a.value+b.value}'
