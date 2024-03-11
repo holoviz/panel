@@ -175,7 +175,9 @@ export class PlotlyPlotView extends HTMLBoxView {
   }
 
   override remove(): void {
-    (window as any).Plotly.purge(this.container)
+    if (this.container != null) {
+      (window as any).Plotly.purge(this.container)
+    }
     super.remove()
   }
 
@@ -196,14 +198,14 @@ export class PlotlyPlotView extends HTMLBoxView {
   }
 
   override style_redraw(): void {
-    if (this._rendered) {
+    if (this._rendered && this.container != null) {
       (window as any).Plotly.Plots.resize(this.container)
     }
   }
 
   override after_layout(): void {
     super.after_layout()
-    if (this._rendered) {
+    if (this._rendered && this.container != null) {
       (window as any).Plotly.Plots.resize(this.container)
     }
   }
