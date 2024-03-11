@@ -62,8 +62,8 @@ class TextFormatter(param.Parameterized):
 
     text = param.String(allow_refs=True)
 
-	def __str__(self):
-	    return f'**{self.text}**'
+    def __str__(self):
+        return f'**{self.text}**'
 
 text_input = pn.widgets.TextInput(value='A string!')
 
