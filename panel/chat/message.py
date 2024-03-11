@@ -471,27 +471,33 @@ class ChatMessage(PaneBase):
         return contents, renderer
 
     def _include_stylesheets_inplace(self, obj):
+        if hasattr(obj, "objects"):
+            obj.objects[:] = [
+                self._include_stylesheets_inplace(o) for o in obj.objects
+            ]
+        else:
+            obj = _panel(obj)
         obj.stylesheets = [
             stylesheet for stylesheet in self._stylesheets + self.stylesheets
             if stylesheet not in obj.stylesheets
         ] + obj.stylesheets
-        if hasattr(obj, "objects"):
-            for o in obj.objects:
-                self._include_stylesheets_inplace(o)
+        return obj
 
     def _include_message_css_class_inplace(self, obj):
         if hasattr(obj, "objects"):
-            for o in obj.objects:
+            obj.objects[:] = [
                 self._include_message_css_class_inplace(o)
-        elif isinstance(obj, str):
-            obj = Markdown(obj)
-
+                for o in obj.objects
+            ]
+        else:
+            obj = _panel(obj)
         is_markup = isinstance(obj, HTMLBasePane) and not isinstance(obj, FileBase)
         if obj.css_classes or not is_markup:
-            return
+            return obj
         if len(str(obj.object)) > 0:  # only show a background if there is content
             obj.css_classes = [*(css for css in obj.css_classes if css != "message"), "message"]
         obj.sizing_mode = None
+        return obj
 
     def _set_params(self, obj, **params):
         """
