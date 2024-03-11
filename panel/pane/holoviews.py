@@ -683,6 +683,7 @@ class HoloViews(PaneBase):
                                      **widget_kwargs)
                 widget = widget_type(**widget_kwargs)
             if widget is not None:
+                widget.param.name.constant = True
                 widgets.append(widget)
         if widgets_type == 'scrubber':
             widgets = [Player(length=nframes, width=550)]
