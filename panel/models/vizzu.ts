@@ -145,7 +145,7 @@ export class VizzuChartView extends HTMLBoxView {
     this._animating = true
     this.vizzu_view.initializing.then((chart: any) => {
       chart.on("click", (event: any) => {
-        this.model.trigger_event(new VizzuEvent(event.data))
+        this.model.trigger_event(new VizzuEvent({...event.target, ...event.detail}))
       })
       chart.feature("tooltip", this.model.tooltip)
       this._animating = false
