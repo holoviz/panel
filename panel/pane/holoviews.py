@@ -1,5 +1,6 @@
 """
 HoloViews integration for Panel including a Pane to render HoloViews
+
 objects and their widgets and support for Links
 """
 from __future__ import annotations
@@ -59,6 +60,9 @@ class HoloViews(PaneBase):
     center = param.Boolean(default=False, doc="""
         Whether to center the plot.""")
 
+    format = param.Selector(default='png', objects=['png', 'svg'], doc="""
+        The format to render Matplotlib plots with.""")
+
     linked_axes = param.Boolean(default=True, doc="""
         Whether to link the axes of bokeh plots inside this pane
         across a panel layout.""")
@@ -116,10 +120,10 @@ class HoloViews(PaneBase):
         'backend': None, 'center': None, 'linked_axes': None,
         'renderer': None, 'theme': None, 'widgets': None,
         'widget_layout': None, 'widget_location': None,
-        'widget_type': None
+        'widget_type': None, 'format': None
     }
 
-    _rerender_params = ['object', 'backend']
+    _rerender_params = ['object', 'backend', 'format']
 
     _skip_layoutable = (
         'background', 'css_classes', 'margin', 'name', 'sizing_mode',
@@ -477,6 +481,7 @@ class HoloViews(PaneBase):
         if isinstance(pane_type, type):
             if issubclass(pane_type, Matplotlib):
                 kwargs['tight'] = True
+                kwargs['format'] = self.format
             if issubclass(pane_type, Bokeh):
                 kwargs['autodispatch'] = False
         return pane_type(state, **kwargs)
