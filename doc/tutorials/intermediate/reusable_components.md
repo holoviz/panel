@@ -59,6 +59,57 @@ pn.Column(
 ).servable()
 ```
 
+### Exercise: Add Typehints
+
+:::{tip}
+If you or your team are working in editors or IDEs like VS Code or PyCharm, or using static analysis tools like mypy, we recommend adding type hints to your reusable `Parameterized` classes.
+:::
+
+Please add typehints to the `DataExplorer`.
+
+:::{dropdown}: Solution: Basic
+
+```python
+import pandas as pd
+import panel as pn
+import param
+
+pn.extension("tabulator")
+
+class DataExplorer(param.Parameterized):
+    data: pd.DataFrame | None = param.DataFrame(doc="Stores a DataFrame to explore")
+
+    page_size: int = param.Integer(
+        default=10, doc="Number of rows per page.", bounds=(1, 20)
+    )
+```
+
+:::
+
+:::{dropdown} Solution: Extended
+
+```python
+import pandas as pd
+import panel as pn
+import param
+
+pn.extension("tabulator")
+
+class DataExplorer(param.Parameterized):
+    data: pd.DataFrame = param.DataFrame(doc="Stores a DataFrame to explore", allow_None=False)
+
+    page_size: int = param.Integer(
+        default=10, doc="Number of rows per page.", bounds=(1, 20)
+    )
+
+    def __init__(self, data: pd.DataFrame, page_size: int=10):
+        super().__init__(data=data, page_size=page_size)
+```
+
+:::{note}
+We hope and dream that Param 3.0 will function much like `dataclasses`, enabling editors, IDEs, and static analysis tools like mypy to automatically infer parameter types and `__init__` signatures.
+:::
+
 ## Creating Reusable Viewer Components
 
 The whole point of using classes is to encapsulate the logic in them, so let's do that. For that, we can use a slight extension of the `Parameterized` class that makes the object behave as if it were a regular Panel object. The `Viewer` class does exactly that; all you have to do is implement the `__panel__` method:
@@ -143,7 +194,7 @@ DataExplorer(data=df).servable()
 
 We have learned how to structure our components to make them easily reusable and avoid callback hell.
 
-We should now be able to write `Parameterized` and `Viewer` classes that encapsulate multiple components.
+We should now be able to write reusable `Parameterized` and `Viewer` classes that encapsulate multiple components.
 
 ## Resources
 
