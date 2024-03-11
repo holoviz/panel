@@ -8,6 +8,9 @@ import pandas as pd
 import altair as alt
 import plotly.graph_objects as go
 
+from bokeh.sampledata import download
+download()
+
 from bokeh.sampledata import stocks
 from matplotlib.figure import Figure
 
