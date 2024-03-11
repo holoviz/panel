@@ -136,7 +136,7 @@ class FastWrapper(ReactiveHTML):
     using the Fast design system have access to the Fast CSS variables.
     """
 
-    object = param.ClassSelector(class_=Viewable)
+    object = param.ClassSelector(class_=Viewable, allow_refs=False)
 
     style = param.ClassSelector(class_=FastStyle)
 

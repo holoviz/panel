@@ -28,13 +28,15 @@ export class AcePlotView extends HTMLBoxView {
 
   override connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.code.change, () => this._update_code_from_model())
-    this.connect(this.model.properties.theme.change, () => this._update_theme())
-    this.connect(this.model.properties.language.change, () => this._update_language())
-    this.connect(this.model.properties.filename.change, () => this._update_filename())
-    this.connect(this.model.properties.print_margin.change, () => this._update_print_margin())
-    this.connect(this.model.properties.annotations.change, () => this._add_annotations())
-    this.connect(this.model.properties.readonly.change, () => {
+
+    const {code, theme, language, filename, print_margin, annotations, readonly} = this.model.properties
+    this.on_change(code, () => this._update_code_from_model())
+    this.on_change(theme, () => this._update_theme())
+    this.on_change(language, () => this._update_language())
+    this.on_change(filename, () => this._update_filename())
+    this.on_change(print_margin, () => this._update_print_margin())
+    this.on_change(annotations, () => this._add_annotations())
+    this.on_change(readonly, () => {
       this._editor.setReadOnly(this.model.readonly)
     })
   }
@@ -70,7 +72,7 @@ export class AcePlotView extends HTMLBoxView {
   }
 
   _update_code_from_model(): void {
-    if (this._editor && this._editor.getValue() !=  this.model.code) {
+    if (this._editor && this._editor.getValue() != this.model.code) {
       this._editor.setValue(this.model.code)
     }
   }

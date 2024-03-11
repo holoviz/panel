@@ -79,11 +79,13 @@ export class PlayerView extends WidgetView {
 
   override connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.direction.change, () => this.set_direction())
-    this.connect(this.model.properties.value.change, () => this.render())
-    this.connect(this.model.properties.loop_policy.change, () => this.set_loop_state(this.model.loop_policy))
-    this.connect(this.model.properties.disabled.change, () => this.toggle_disable())
-    this.connect(this.model.properties.show_loop_controls.change, () => {
+
+    const {direction, value, loop_policy, disabled, show_loop_controls} = this.model.properties
+    this.on_change(direction, () => this.set_direction())
+    this.on_change(value, () => this.render())
+    this.on_change(loop_policy, () => this.set_loop_state(this.model.loop_policy))
+    this.on_change(disabled, () => this.toggle_disable())
+    this.on_change(show_loop_controls, () => {
       if (this.model.show_loop_controls && this.loop_state.parentNode != this.groupEl) {
         this.groupEl.appendChild(this.loop_state)
       } else if (!this.model.show_loop_controls && this.loop_state.parentNode == this.groupEl) {

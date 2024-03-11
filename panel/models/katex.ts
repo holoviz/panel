@@ -7,7 +7,9 @@ export class KaTeXView extends PanelMarkupView {
 
   override connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.text.change, () => this.render())
+
+    const {text} = this.model.properties
+    this.on_change(text, () => this.render())
   }
 
   override render(): void {

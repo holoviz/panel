@@ -29,8 +29,10 @@ export class TerminalView extends HTMLBoxView {
 
   override connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.output.change, this.write)
-    this.connect(this.model.properties._clears.change, this.clear)
+
+    const {output, _clears} = this.model.properties
+    this.on_change(output, this.write)
+    this.on_change(_clears, this.clear)
   }
 
   override render(): void {

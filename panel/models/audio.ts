@@ -20,13 +20,15 @@ export class AudioView extends HTMLBoxView {
 
   override connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.loop.change, () => this.set_loop())
-    this.connect(this.model.properties.paused.change, () => this.set_paused())
-    this.connect(this.model.properties.time.change, () => this.set_time())
-    this.connect(this.model.properties.value.change, () => this.set_value())
-    this.connect(this.model.properties.volume.change, () => this.set_volume())
-    this.connect(this.model.properties.muted.change, () => this.set_muted())
-    this.connect(this.model.properties.autoplay.change, () => this.set_autoplay())
+
+    const {loop, paused, time, value, volume, muted, autoplay} = this.model.properties
+    this.on_change(loop, () => this.set_loop())
+    this.on_change(paused, () => this.set_paused())
+    this.on_change(time, () => this.set_time())
+    this.on_change(value, () => this.set_value())
+    this.on_change(volume, () => this.set_volume())
+    this.on_change(muted, () => this.set_muted())
+    this.on_change(autoplay, () => this.set_autoplay())
   }
 
   override render(): void {

@@ -22,9 +22,11 @@ export class VideoStreamView extends HTMLBoxView {
 
   override connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.timeout.change, () => this.set_timeout())
-    this.connect(this.model.properties.snapshot.change, () => this.snapshot())
-    this.connect(this.model.properties.paused.change, () => this.pause())
+
+    const {timeout, snapshot, paused} = this.model.properties
+    this.on_change(timeout, () => this.set_timeout())
+    this.on_change(snapshot, () => this.snapshot())
+    this.on_change(paused, () => this.pause())
   }
 
   pause(): void {

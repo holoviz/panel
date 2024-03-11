@@ -44,8 +44,8 @@ export class EChartsView extends HTMLBoxView {
 
   override connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.data.change, () => this._plot())
-    const {width, height, renderer, theme, event_config, js_events} = this.model.properties
+    const {width, height, renderer, theme, event_config, js_events, data} = this.model.properties
+    this.on_change(data, () => this._plot())
     this.on_change([width, height], () => this._resize())
     this.on_change([theme, renderer], () => {
       this.render()
