@@ -276,8 +276,10 @@ class HoloViews(PaneBase):
         if self.object is None:
             widgets, values = [], []
         else:
+            direction = getattr(self.widget_layout, '_direction', 'vertical')
             widgets, values = self.widgets_from_dimensions(
-                self.object, self.widgets, self.widget_type)
+                self.object, self.widgets, self.widget_type, direction
+            )
         self._values = values
 
         # Clean up anything models listening to the previous widgets
@@ -560,7 +562,7 @@ class HoloViews(PaneBase):
     jslink.__doc__ = PaneBase.jslink.__doc__
 
     @classmethod
-    def widgets_from_dimensions(cls, object, widget_types=None, widgets_type='individual'):
+    def widgets_from_dimensions(cls, object, widget_types=None, widgets_type='individual', direction='vertical'):
         from holoviews.core import Dimension, DynamicMap
         from holoviews.core.options import SkipRendering
         from holoviews.core.traversal import unique_dimkeys
@@ -607,7 +609,7 @@ class HoloViews(PaneBase):
         for i, dim in enumerate(dims):
             widget_type, widget, widget_kwargs = None, None, {}
 
-            if widgets_type == 'individual':
+            if widgets_type == 'individual' and direction == 'vertical':
                 if i == 0 and i == (len(dims)-1):
                     margin = (20, 20, 20, 20)
                 elif i == 0:
