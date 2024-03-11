@@ -443,7 +443,7 @@ DataExplorer(data=turbines).servable()
 
 :::
 
-### Recap
+## Recap
 
 In this tutorial, we explored how to build an efficient filtering application using Panel. The focus was on optimizing the class-based approach to handle filtering operations on a DataFrame efficiently.
 
@@ -469,7 +469,7 @@ In this tutorial, we explored how to build an efficient filtering application us
      - Storing the filtered data as a parameter and updating it when dependencies change.
      - Combining the class-based approach with `pn.rx` for reactive programming.
 
-#### Key Takeaways
+### Key Takeaways
 
 - **Imperative vs Declarative Programming:** Understanding the difference between imperative and declarative programming paradigms helps in choosing the most suitable approach for building interactive components in Panel.
 

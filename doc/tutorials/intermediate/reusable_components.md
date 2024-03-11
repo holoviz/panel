@@ -67,7 +67,7 @@ If you or your team are working in editors or IDEs like VS Code or PyCharm, or u
 
 Please add typehints to the `DataExplorer`.
 
-:::{dropdown}: Solution: Basic
+:::{dropdown} Solution: Basic
 
 ```python
 import pandas as pd
@@ -105,6 +105,8 @@ class DataExplorer(param.Parameterized):
     def __init__(self, data: pd.DataFrame, page_size: int=10):
         super().__init__(data=data, page_size=page_size)
 ```
+
+:::
 
 :::{note}
 We hope and dream that Param 3.0 will function much like `dataclasses`, enabling editors, IDEs, and static analysis tools like mypy to automatically infer parameter types and `__init__` signatures.

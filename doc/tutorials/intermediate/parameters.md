@@ -368,7 +368,7 @@ pn.Column(intslider, markdown).servable()
 
 ## Recommended Reading
 
-To harness the full potential of [Param](https://param.holoviz.org/) and Reactive Parameters in Panel, we recommend studying the [Param User Guide](https://param.holoviz.org/user_guide/index.html) and the [`ReactiveExpr`](../../reference/panes/ReactiveExpr.ipynb) reference guide.
+To harness the full potential of [Param](https://param.holoviz.org/) and Reactive Parameters in Panel, we recommend studying the [Param User Guide](https://param.holoviz.org/user_guide/index.html) and the [`ReactiveExpr` reference guide](../../reference/panes/ReactiveExpr.ipynb).
 
 ## Recap
 
