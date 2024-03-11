@@ -112,7 +112,7 @@ except Exception:
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=3.4.0rc2,<3.5,!=3.4.0.dev*',
+    'bokeh ==3.4.0rc2',
     'param >=2.0.0,<3.0',
     'pyviz_comms >=2.0.0',
     'xyzservices >=2021.09.1', # Bokeh dependency, but pyodide 23.0.0 does not always pick it up
