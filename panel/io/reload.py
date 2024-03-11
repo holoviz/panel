@@ -105,6 +105,7 @@ def watched_modules():
             continue
         if path.endswith((".pyc", ".pyo")):
             path = path[:-1]
+        path = str(pathlib.Path(path).resolve())
         module_paths[path] = module_name
         files.append(path)
     return module_paths, files
@@ -223,7 +224,7 @@ def _reload(module_paths, changes):
     modules_to_reload = set()
     if global_:
         modules_to_reload |= _modules
-    if local_:
+    if global_ or local_:
         modules_to_reload |= _local_modules
 
     for module in modules_to_reload:

@@ -54,3 +54,25 @@ def test_reload_app_with_error(page, autoreload, py_file):
     path.touch()
 
     expect(page.locator('.alert')).to_have_count(1)
+
+def test_reload_app_on_local_module_change(page, autoreload, py_files):
+    py_file, module = py_files
+    import_name = pathlib.Path(module.name).stem
+    module.write("var = 'foo';")
+    module.flush()
+    py_file.write(f"import panel as pn; from {import_name} import var; pn.panel(var).servable();")
+    py_file.flush()
+    time.sleep(0.1) # Give the filesystem time to execute the write
+
+    path = pathlib.Path(py_file.name)
+
+    autoreload(path)
+    serve_component(page, path, warm=True)
+
+    expect(page.locator('.markdown')).to_have_text('foo')
+
+    module.write("var = 'bar';")
+    module.flush()
+    pathlib.Path(module.name).touch()
+
+    expect(page.locator('.markdown')).to_have_text('bar')

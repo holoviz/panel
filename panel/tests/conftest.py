@@ -383,6 +383,16 @@ def py_file():
         tf.close()
 
 @pytest.fixture
+def py_files():
+    tf = tempfile.NamedTemporaryFile(mode='w', suffix='.py')
+    tf2 = tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=os.path.split(tf.name)[0])
+    try:
+        yield tf, tf2
+    finally:
+        tf.close()
+        tf2.close()
+
+@pytest.fixture
 def html_file():
     tf = tempfile.NamedTemporaryFile(mode='w', suffix='.html')
     try:

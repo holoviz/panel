@@ -65,12 +65,15 @@ from ..config import config
 from ..util import edit_readonly, fullpath
 from ..util.warnings import warn
 from .application import Application, build_single_handler_application
-from .document import init_doc, unlocked, with_lock  # noqa
+from .document import (  # noqa
+    _cleanup_doc, init_doc, unlocked, with_lock,
+)
 from .liveness import LivenessHandler
 from .loading import LOADING_INDICATOR_CSS_CLASS
 from .logging import (
     LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING,
 )
+from .reload import record_modules
 from .resources import (
     BASE_TEMPLATE, CDN_DIST, COMPONENT_PATH, ERROR_TEMPLATE, LOCAL_DIST,
     Resources, _env, bundle_resources, patch_model_css, resolve_custom_path,
@@ -892,6 +895,7 @@ def get_server(
     logout_template: Optional[str] = None,
     session_history: Optional[int] = None,
     liveness: bool | str = False,
+    warm: bool = False,
     **kwargs
 ) -> Server:
     """
@@ -980,6 +984,9 @@ def get_server(
       Whether to add a liveness endpoint. If a string is provided
       then this will be used as the endpoint, otherwise the endpoint
       will be hosted at /liveness.
+    warm: bool (optional, default=False)
+      Whether to run the applications before serving them to ensure
+      all imports and caches are fully warmed up before serving the app.
     kwargs: dict
       Additional keyword arguments to pass to Server instance.
 
@@ -1042,6 +1049,17 @@ def get_server(
         else:
             handler = FunctionHandler(partial(_eval_panel, panel, server_id, title, location, admin))
             apps = {'/': Application(handler, admin=admin)}
+
+    if warm or config.autoreload:
+        for app in apps.values():
+            if config.autoreload:
+                with record_modules(list(apps.values())):
+                    session = generate_session(app)
+            else:
+                session = generate_session(app)
+            with set_curdoc(session.document):
+                state._on_load(None)
+            _cleanup_doc(session.document, destroy=True)
 
     if admin:
         if '/admin' in apps:
