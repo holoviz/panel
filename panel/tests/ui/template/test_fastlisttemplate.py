@@ -22,15 +22,13 @@ def test_fast_list_template_no_console_errors(page):
     expect(page.locator(".markdown").locator("div")).to_have_text('Initial\n')
 
     known_messages = [
-        "[bokeh] setting log level to: 'info'",
-        "[bokeh] Websocket connection 0 is now open",
-        "[bokeh] document idle at",
-        "Bokeh items were rendered successfully",
-        "[bokeh] JS/Python version mismatch",
-        "[bokeh] Library versions: JS (3.4.0-rc."
+        "setting log level to: 'info'",
+        "Websocket connection 0 is now open",
+        "document idle at",
+        "items were rendered successfully",
     ]
     assert len([
-        msg for msg in msgs if not any(msg.text.startswith(known) for known in known_messages)
+        msg for msg in msgs if not any(known in msg.text for known in known_messages)
     ]) == 0
 
 
