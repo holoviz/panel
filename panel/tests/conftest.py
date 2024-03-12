@@ -26,7 +26,9 @@ from pyviz_comms import Comm
 
 from panel import config, serve
 from panel.config import panel_extension
-from panel.io.reload import _local_modules, _modules, _watched_files
+from panel.io.reload import (
+    _local_modules, _modules, _watched_files, async_file_watcher, watch,
+)
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
 
@@ -183,6 +185,23 @@ def stop_event():
         yield event
     finally:
         event.set()
+
+@pytest.fixture
+async def watch_files(stop_event):
+    tasks = []
+    def watch_files(*files):
+        watch(*files)
+        tasks.append(asyncio.create_task(async_file_watcher(stop_event)))
+    try:
+        yield watch_files
+    finally:
+        if tasks:
+            try:
+                await tasks[0]
+            except FileNotFoundError:
+                # Watched files may be deleted before autoreloader
+                # is shut down, therefore we catch the error on deletion.
+                pass
 
 @pytest.fixture
 def port():

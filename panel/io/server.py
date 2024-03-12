@@ -343,7 +343,7 @@ class Server(BokehServer):
         if config.autoreload:
             from .reload import setup_autoreload_watcher
             self._autoreload_stop_event = stop_event = asyncio.Event()
-            self._loop.add_callback(setup_autoreload_watcher, stop_event=stop_event)
+            self._autoreload_task = self._loop.asyncio_loop.create_task(setup_autoreload_watcher(stop_event))
 
     def stop(self, wait: bool = True) -> None:
         if self._autoreload_stop_event:
@@ -351,7 +351,7 @@ class Server(BokehServer):
             # the IOLoop briefly, ensuring an orderly cleanup
             async def stop_autoreload():
                 self._autoreload_stop_event.set()
-                await asyncio.sleep(1)
+                await self._autoreload_task
             self._loop.asyncio_loop.run_until_complete(stop_autoreload())
         super().stop(wait=wait)
         if state._admin_context:
