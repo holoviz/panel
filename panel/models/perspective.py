@@ -78,7 +78,7 @@ class Perspective(HTMLBox):
 
     theme = Enum(*PERSPECTIVE_THEMES, default="pro")
 
-    title = String()
+    title = Either(String(), Null())
 
     __javascript_module_exports__ = ['perspective']
 

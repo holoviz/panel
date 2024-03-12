@@ -317,7 +317,7 @@ class Perspective(ModelPane, ReactiveData):
     theme = param.ObjectSelector(default='pro', objects=THEMES, doc="""
       The style of the PerspectiveViewer. For example pro-dark""")
 
-    title = param.String(default='Table', doc="""
+    title = param.String(default=None, doc="""
       Title for the Perspective viewer.""")
 
     priority: ClassVar[float | bool | None] = None

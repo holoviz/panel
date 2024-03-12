@@ -292,7 +292,7 @@ export namespace Perspective {
     sort: p.Property<any[] | null>
     source: p.Property<ColumnDataSource>
     theme: p.Property<any>
-    title: p.Property<string>
+    title: p.Property<string | null>
   }
 }
 
@@ -326,8 +326,8 @@ export class Perspective extends HTMLBox {
       toggle_config:    [ Bool,                      true ],
       sort:             [ Nullable(List(List(Str))), null ],
       source:           [ Ref(ColumnDataSource)           ],
-      theme:            [ Str,                     "pro"  ],
-      title:            [ Str,                 "untitled" ]
+      theme:            [ Str,                      "pro" ],
+      title:            [ Nullable(Str),             null ]
     }))
   }
 }
