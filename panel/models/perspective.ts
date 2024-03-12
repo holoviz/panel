@@ -170,7 +170,6 @@ export class PerspectiveView extends HTMLBoxView {
     set_size(container, this.model)
     this.shadow_el.appendChild(container)
 
-    console.log(this.model.schema)
     this.worker.table(this.model.schema).then((table: any) => {
       this.table = table
       this.table.update(this.data)
@@ -231,7 +230,6 @@ export class PerspectiveView extends HTMLBoxView {
         props[option] = value
       }
       this._updating = true
-      console.log(props)
       this.model.setv(props)
       this._updating = false
     })
