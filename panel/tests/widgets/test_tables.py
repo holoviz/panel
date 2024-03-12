@@ -1,3 +1,4 @@
+import asyncio
 import datetime as dt
 
 import numpy as np
@@ -1992,7 +1993,6 @@ def test_server_cell_click_async_event():
 
     counts = []
     async def cb(event, count=[0]):
-        import asyncio
         count[0] += 1
         counts.append(count[0])
         await asyncio.sleep(1)

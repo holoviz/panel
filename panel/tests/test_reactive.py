@@ -195,7 +195,6 @@ def test_pass_bind_function_by_reference():
 
     assert text_input.width == 111
 
-@pytest.mark.asyncio
 async def test_pass_bind_async_func_by_reference():
     int_input = IntInput(start=0, end=400, value=42)
 
@@ -212,7 +211,6 @@ async def test_pass_bind_async_func_by_reference():
     await asyncio.sleep(0.01)
     assert text_input.width == 111
 
-@pytest.mark.asyncio
 async def test_pass_bind_async_generator_by_reference():
     int_input = IntInput(start=0, end=400, value=42)
 
@@ -229,7 +227,6 @@ async def test_pass_bind_async_generator_by_reference():
     await asyncio.sleep(0.01)
     assert text_input.width == 111
 
-@pytest.mark.asyncio
 async def test_pass_bind_multi_async_generator_by_reference():
     int_input = IntInput(start=0, end=400, value=42)
 
@@ -250,7 +247,6 @@ async def test_pass_bind_multi_async_generator_by_reference():
     await asyncio.sleep(0.01)
     assert widths == [52, 62, 111, 121]
     assert text_input.width == 121
-
 
 def test_pass_refs():
     slider = IntSlider(value=5, start=1, end=10, name='Number')
@@ -275,8 +271,6 @@ def test_pass_refs():
     size.value = 7
     assert md.styles == {'font-size': '7pt'}
 
-
-@pytest.mark.asyncio
 async def test_pass_refs_async():
     async def refs():
         yield {
@@ -301,8 +295,6 @@ async def test_pass_refs_async():
     assert md.object == '***'
     assert md.styles == {'font-size': '7pt'}
 
-
-@pytest.mark.asyncio
 async def test_pass_bind_multi_async_generator_by_reference_and_abort():
     int_input = IntInput(start=0, end=400, value=42)
 
@@ -360,7 +352,6 @@ def test_pass_depends_function_by_reference():
 
     assert text_input.width == 111
 
-
 def test_text_input_controls_explicit():
     text_input = TextInput()
 
@@ -379,7 +370,6 @@ def test_text_input_controls_explicit():
 
     text_input.placeholder = "Test placeholder..."
     assert placeholder.value == "Test placeholder..."
-
 
 def test_reactive_html_basic():
 
@@ -470,7 +460,6 @@ def test_reactive_html_dom_events():
     assert root.callbacks == {}
     assert root.events == {'div': {'change': True}}
 
-
 def test_reactive_html_inline():
     class TestInline(ReactiveHTML):
 
@@ -508,7 +497,6 @@ def test_reactive_html_inline():
     test.on_event('div', 'click', print)
     assert root.events == {'div': {'click': False}}
 
-
 def test_reactive_html_children():
 
     class TestChildren(ReactiveHTML):
@@ -538,7 +526,6 @@ def test_reactive_html_children():
     test._cleanup(root)
     assert len(test._models) == 0
     assert len(widget_new._models) == 0
-
 
 def test_reactive_html_templated_children():
 
@@ -571,7 +558,6 @@ def test_reactive_html_templated_children():
     assert len(widget._models) == 0
     assert root.children == {'option': [widget_new._models[root.ref['id']][0]]}
     assert test._panes == {'children': [widget_new]}
-
 
 def test_reactive_html_templated_dict_children():
 
@@ -611,7 +597,6 @@ def test_reactive_html_templated_dict_children():
     }
     assert test._panes == {'children': [widget_new, widget]}
 
-
 def test_reactive_html_templated_children_add_loop_id():
 
     class TestTemplatedChildren(ReactiveHTML):
@@ -644,7 +629,6 @@ def test_reactive_html_templated_children_add_loop_id():
     assert test._attrs == {}
     assert model.looped == ['option']
 
-
 def test_reactive_html_templated_children_add_loop_id_and_for_loop_var():
 
     class TestTemplatedChildren(ReactiveHTML):
@@ -675,7 +659,6 @@ def test_reactive_html_templated_children_add_loop_id_and_for_loop_var():
     model = test.get_root()
     assert test._attrs == {}
     assert model.looped == ['option']
-
 
 def test_reactive_html_templated_children_add_loop_id_and_for_loop_var_insensitive_to_spaces():
 
@@ -708,7 +691,6 @@ def test_reactive_html_templated_children_add_loop_id_and_for_loop_var_insensiti
     assert test._attrs == {}
     assert model.looped == ['option']
 
-
 def test_reactive_html_scripts_linked_properties_assignment_operator():
 
     for operator in ['', '+', '-', '*', '\\', '%', '**', '>>', '<<', '>>>', '&', '^', '&&', '||', '??']:
@@ -723,7 +705,6 @@ def test_reactive_html_scripts_linked_properties_assignment_operator():
                 _scripts = {'render': f'test.onclick = () => {{ data.clicks{sep}{operator}= 1 }}'}
 
             assert TestScripts()._linked_properties == ('clicks',)
-
 
 def test_reactive_html_templated_literal_add_loop_id_and_for_loop_var():
 
@@ -756,7 +737,6 @@ def test_reactive_html_templated_literal_add_loop_id_and_for_loop_var():
     assert test._attrs == {}
     assert model.looped == ['option']
 
-
 def test_reactive_html_templated_literal_add_loop_id_and_for_loop_var_insensitive_to_spaces():
 
     class TestTemplatedChildren(ReactiveHTML):
@@ -787,7 +767,6 @@ def test_reactive_html_templated_literal_add_loop_id_and_for_loop_var_insensitiv
     model = test.get_root()
     assert test._attrs == {}
     assert model.looped == ['option']
-
 
 def test_reactive_html_templated_variable_not_in_declared_node():
     with pytest.raises(ValueError) as excinfo:

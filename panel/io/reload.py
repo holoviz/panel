@@ -15,8 +15,8 @@ try:
     from watchfiles import awatch
 except Exception:
     async def awatch(*files, stop_event=None):
+        stop_event = stop_event or asyncio.Event()
         modify_times = {}
-        stop_event = stop_event if stop_event else asyncio.Event()
         while not stop_event.is_set():
             changes = set()
             for path in files:
