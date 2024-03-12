@@ -1,5 +1,6 @@
 import asyncio
 import os
+import pathlib
 import tempfile
 
 import pytest
@@ -45,12 +46,17 @@ async def test_reload_on_update(server_document, stop_event):
     state._locations[server_document] = location
     state._loaded[server_document] = True
     with tempfile.NamedTemporaryFile() as temp:
+        # Write to file and wait for filesystem to perform write
         temp.write(b'Foo')
         temp.flush()
+        await asyncio.sleep(0.1)
+
         watch(temp.name)
         task = asyncio.create_task(async_file_watcher(stop_event))
-        await asyncio.sleep(0.51)
+        await asyncio.sleep(0.1)
+
         temp.write(b'Bar')
         temp.flush()
+        pathlib.Path(temp.name).touch()
         await async_wait_until(lambda: location.reload)
-    del task
+    task.cancel()
