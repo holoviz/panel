@@ -187,8 +187,9 @@ def stop_event():
         event.set()
 
 @pytest.fixture
-async def watch_files(stop_event):
+async def watch_files():
     tasks = []
+    stop_event = asyncio.Event()
     def watch_files(*files):
         watch(*files)
         tasks.append(asyncio.create_task(async_file_watcher(stop_event)))
@@ -197,6 +198,7 @@ async def watch_files(stop_event):
     finally:
         if tasks:
             try:
+                stop_event.set()
                 await tasks[0]
             except FileNotFoundError:
                 # Watched files may be deleted before autoreloader
