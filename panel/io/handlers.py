@@ -346,7 +346,7 @@ class ScriptHandler(PanelCodeHandler):
 
         super().__init__(source=source, filename=filename, argv=argv, package=package)
 
-bokeh.application.handlers.directory.NotebookHandler = ScriptHandler
+bokeh.application.handlers.directory.ScriptHandler = ScriptHandler
 
 
 class MarkdownHandler(PanelCodeHandler):
