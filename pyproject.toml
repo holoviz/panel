@@ -65,6 +65,7 @@ write-changes = true
 [tool.pytest.ini_options]
 addopts = "-v --pyargs --doctest-ignore-import-errors --color=yes"
 norecursedirs = "doc .git dist build _build .ipynb_checkpoints panel/examples"
+asyncio_mode = "auto"
 xfail_strict = true
 filterwarnings = [
     # 2023-11: ChatBox and ChatRow are deprecated
