@@ -66,6 +66,8 @@ class Perspective(HTMLBox):
 
     selectable = Bool(default=True)
 
+    settings = Bool(default=True)
+
     schema = Dict(String, String)
 
     sort = Either(List(List(String)), Null())
