@@ -158,6 +158,7 @@ _tests_core = [
     'ipython >=7.0',
     'scipy',
     'textual',
+    'watchfiles'
 ]
 
 _tests = _tests_core + [
