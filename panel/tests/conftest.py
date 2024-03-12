@@ -397,21 +397,24 @@ def autoreload():
 
 @pytest.fixture
 def py_file():
-    tf = tempfile.NamedTemporaryFile(mode='w', suffix='.py')
+    tf = tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False)
     try:
         yield tf
     finally:
         tf.close()
+        os.unlink(tf.name)
 
 @pytest.fixture
 def py_files():
-    tf = tempfile.NamedTemporaryFile(mode='w', suffix='.py')
-    tf2 = tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=os.path.split(tf.name)[0])
+    tf = tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False)
+    tf2 = tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=os.path.split(tf.name)[0], delete=False)
     try:
         yield tf, tf2
     finally:
         tf.close()
         tf2.close()
+        os.unlink(tf.name)
+        os.unlink(tf2.name)
 
 @pytest.fixture
 def html_file():

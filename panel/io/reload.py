@@ -219,13 +219,13 @@ def _reload(module_paths, changes):
         else:
             global_ = True
 
-    modules_to_reload = set()
+    modules_to_delete = set()
     if global_:
-        modules_to_reload |= _modules
+        modules_to_delete |= _modules
     if global_ or local_:
-        modules_to_reload |= _local_modules
+        modules_to_delete |= _local_modules
 
-    for module in modules_to_reload:
+    for module in modules_to_delete:
         if module in sys.modules:
             del sys.modules[module]
 

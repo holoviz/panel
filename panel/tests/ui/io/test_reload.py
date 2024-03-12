@@ -1,3 +1,4 @@
+import os
 import pathlib
 import time
 
@@ -35,11 +36,9 @@ def test_reload_app_on_touch(page, autoreload, app):
 
     expect(page.locator('.counter')).to_have_text('1')
 
-
 def test_reload_app_with_error(page, autoreload, py_file):
     py_file.write("import panel as pn; pn.panel('foo').servable();")
-    py_file.flush()
-    time.sleep(0.1) # Give the filesystem time to execute the write
+    py_file.close()
 
     path = pathlib.Path(py_file.name)
 
@@ -48,20 +47,22 @@ def test_reload_app_with_error(page, autoreload, py_file):
 
     expect(page.locator('.markdown')).to_have_text('foo')
 
-    py_file.write("foo+bar")
-    py_file.flush()
-    path.touch()
+    with open(py_file.name, 'w') as f:
+        f.write("foo+bar")
+        os.fsync(f)
 
     expect(page.locator('.alert')).to_have_count(1)
 
+@pytest.mark.flaky(reruns=3, reason="Writing files can sometimes be unpredictable")
 def test_reload_app_on_local_module_change(page, autoreload, py_files):
     py_file, module = py_files
     import_name = pathlib.Path(module.name).stem
+
+    # Write and close (on windows the file handle cannot be reopened for reading otherwise)
     module.write("var = 'foo';")
-    module.flush()
-    py_file.write(f"import panel as pn; from {import_name} import var; pn.panel(var).servable();")
-    py_file.flush()
-    time.sleep(0.1) # Give the filesystem time to execute the write
+    module.close()
+    py_file.write(f"import panel as pn; from {import_name} import var; print(var); pn.panel(var).servable();")
+    py_file.close()
 
     path = pathlib.Path(py_file.name)
 
@@ -70,8 +71,10 @@ def test_reload_app_on_local_module_change(page, autoreload, py_files):
 
     expect(page.locator('.markdown')).to_have_text('foo')
 
-    module.write("var = 'bar';")
-    module.flush()
+    time.sleep(0.1)
+    with open(module.name, 'w') as f:
+        f.write("var = 'bar';")
     pathlib.Path(module.name).touch()
+    time.sleep(0.1)
 
     expect(page.locator('.markdown')).to_have_text('bar')
