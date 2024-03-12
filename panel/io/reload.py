@@ -55,6 +55,7 @@ DEFAULT_FOLDER_DENYLIST = [
 
 IGNORED_MODULES = [
     'bokeh_app',
+    'geoviews.models.',
     'panel.',
     'torch.'
 ]
@@ -105,7 +106,7 @@ def watched_modules():
             continue
         if path.endswith((".pyc", ".pyo")):
             path = path[:-1]
-        path = str(pathlib.Path(path).resolve())
+        path = os.path.abspath(os.path.realpath(path))
         module_paths[path] = module_name
         files.append(path)
     return module_paths, files
@@ -146,7 +147,7 @@ def watch(filename):
 
 def is_subpath(subpath, path):
     try:
-        return bool(pathlib.Path(subpath).relative_to(pathlib.Path(path)))
+        return os.path.commonpath([path, subpath]) == path
     except Exception:
         return False
 
@@ -157,7 +158,7 @@ def record_modules(applications=None, handler=None):
     """
     app_paths = set()
     if hasattr(handler, '_runner'):
-        app_paths.add(pathlib.Path(handler._runner.path).parent)
+        app_paths.add(os.path.dirname(handler._runner.path))
     for app in (applications or ()):
         if not app._handlers:
             continue
@@ -167,7 +168,7 @@ def record_modules(applications=None, handler=None):
         else:
             continue
         if hasattr(handler, '_runner'):
-            app_paths.add(pathlib.Path(handler._runner.path).parent)
+            app_paths.add(os.path.dirname(handler._runner.path))
     modules = set(sys.modules)
     yield
     for module_name in set(sys.modules).difference(modules):
@@ -191,7 +192,7 @@ def record_modules(applications=None, handler=None):
             if not os.path.isfile(filepath): # e.g. built-in
                continue
 
-            parent_path = pathlib.Path(filepath).parent
+            parent_path = os.path.dirname(filepath)
             if any(parent_path == app_path or is_subpath(app_path, parent_path) for app_path in app_paths):
                 _local_modules.add(module_name)
             else:
