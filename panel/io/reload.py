@@ -265,6 +265,7 @@ def _check_file(path, modify_times):
     except FileNotFoundError:
         if last_modified:
             return 3
+        return 0
     except Exception:
         return 0
     if last_modified is None:
