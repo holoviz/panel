@@ -308,6 +308,9 @@ class Perspective(ModelPane, ReactiveData):
     plugin_config = param.Dict(default={}, nested_refs=True, doc="""
       Configuration for the PerspectiveViewerPlugin.""")
 
+    settings = param.Boolean(default=True, doc="""
+      Whether to show the settings menu.""")
+
     toggle_config = param.Boolean(default=True, doc="""
       Whether to show the config menu.""")
 
