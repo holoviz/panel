@@ -213,7 +213,8 @@ _examples = [
     'reacton',
     'scikit-image',
     'fastparquet',
-    'textual'
+    'textual',
+    'dask-expr'
 ]
 
 # Anything only installable via conda
