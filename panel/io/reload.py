@@ -2,7 +2,6 @@ import asyncio
 import fnmatch
 import logging
 import os
-import pathlib
 import sys
 import types
 import warnings
