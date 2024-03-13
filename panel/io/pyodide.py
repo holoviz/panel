@@ -262,7 +262,9 @@ def _bytes_converter(value, converter, other):
         return value
     value = dict(value.object_entries())
     uid = uuid.uuid4().hex
-    _current_buffers.append(Buffer(id=uid, data=value['buffer'].to_bytes()))
+    _current_buffers.append(
+        Buffer(id=uid, data=value['buffer'].to_bytes())
+    )
     return {'id': uid}
 
 def _convert_json_patch(json_patch):
