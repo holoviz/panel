@@ -8,6 +8,7 @@ import json
 import os
 import pathlib
 import sys
+import uuid
 
 from typing import (
     Any, Callable, List, Tuple,
@@ -20,7 +21,7 @@ import param
 import pyodide # isort: split
 
 from bokeh import __version__
-from bokeh.core.serialization import Buffer, Serializer
+from bokeh.core.serialization import Buffer, Serialized, Serializer
 from bokeh.document import Document
 from bokeh.document.json import PatchJson
 from bokeh.embed.elements import script_for_render_items
@@ -253,6 +254,25 @@ _dict_converter = pyodide.code.run_js("""
 })
 """)
 
+_current_buffers = []
+_patching = False
+
+def _bytes_converter(value, converter, other):
+    if not hasattr(value, 'buffer'):
+        return value
+    value = dict(value.object_entries())
+    uid = uuid.uuid4().hex
+    _current_buffers.append(Buffer(id=uid, data=value['buffer'].to_bytes()))
+    return {'id': uid}
+
+def _convert_json_patch(json_patch):
+    try:
+        patch = json_patch.to_py(default_converter=_bytes_converter)
+        serialized = Serialized(content=patch, buffers=list(_current_buffers))
+    finally:
+        _current_buffers.clear()
+    return serialized
+
 def _link_docs(pydoc: Document, jsdoc: Any) -> None:
     """
     Links Python and JS documents in Pyodide ensuring that messages
@@ -265,23 +285,30 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
     jsdoc: Javascript Document
         The Javascript Bokeh Document instance to sync.
     """
+
     def jssync(event):
         setter_id = getattr(event, 'setter_id', None)
-        if (setter_id is not None and setter_id == 'python'):
+        if (setter_id is not None and setter_id == 'python') or _patching:
             return
         json_patch = jsdoc.create_json_patch(pyodide.ffi.to_js([event]))
-        pydoc.apply_json_patch(json_patch.to_py(), setter='js')
+        patch = _convert_json_patch(json_patch)
+        pydoc.apply_json_patch(patch, setter='js')
 
     jsdoc.on_change(pyodide.ffi.create_proxy(jssync), pyodide.ffi.to_js(False))
 
     def pysync(event):
+        global _patching
         setter = getattr(event, 'setter', None)
         if setter is not None and setter == 'js':
             return
         json_patch, buffer_map = _process_document_events(pydoc, [event])
         json_patch = pyodide.ffi.to_js(json_patch, dict_converter=_dict_converter)
         buffer_map = pyodide.ffi.to_js(buffer_map)
-        jsdoc.apply_json_patch(json_patch, buffer_map)
+        _patching = True
+        try:
+            jsdoc.apply_json_patch(json_patch, buffer_map)
+        finally:
+            _patching = False
 
     pydoc.on_change(pysync)
 
