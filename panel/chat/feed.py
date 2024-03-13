@@ -484,12 +484,11 @@ class ChatFeed(ListPanel):
             response = await self.callback(*callback_args)
         elif isasyncgenfunction(self.callback):
             response = self.callback(*callback_args)
+        elif isgeneratorfunction(self.callback):
+            response = self._to_async_gen(self.callback(*callback_args))
+            # printing type(response) -> <class 'async_generator'>
         else:
-            if isgeneratorfunction(self.callback):
-                response = self._to_async_gen(self.callback(*callback_args))
-                # printing type(response) -> <class 'async_generator'>
-            else:
-                response = await asyncio.to_thread(self.callback, *callback_args)
+            response = await asyncio.to_thread(self.callback, *callback_args)
         await self._serialize_response(response)
 
     async def _prepare_response(self, _) -> None:

@@ -300,8 +300,7 @@ jobs:
       PYTHON_VERSION: ${{ matrix.python-version }}
       SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
     steps:
-      # Add back when this works on Python 3.12
-      # - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
+    # - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
       #   with:
       #     name: core_test_suite
       #     python-version: ${{ matrix.python-version }}
@@ -331,4 +330,4 @@ jobs:
       - name: doit test_unit
         run: |
           # conda activate test-environment
-          pytest panel
+          pytest panel -n logical --dist loadgroup
