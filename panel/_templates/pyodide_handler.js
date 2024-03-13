@@ -2,7 +2,7 @@ const pyodideWorker = new Worker("./{{ name }}.js");
 pyodideWorker.busy = false
 pyodideWorker.queue = []
 
-const patching = false
+let patching = false
 
 function send_change(jsdoc, event) {
   if ((event.setter_id != null && event.setter_id == 'py') || patching) {
