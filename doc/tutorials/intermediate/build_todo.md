@@ -369,6 +369,19 @@ class TaskListEditor(pn.viewable.Viewer):
 
     value: TaskList = param.ClassSelector(class_=TaskList)
 
+    @param.depends("value.value")
+    def _layout(self):
+        tasks = self.value.value
+        rows = [TaskRow(value=task) for task in tasks]
+        for row in rows:
+
+            def remove(_, task=row.value):
+                self.value.value = [item for item in tasks if not item == task]
+
+            pn.bind(remove, row.param.remove, watch=True)
+
+        return pn.Column(*rows)
+
     def __panel__(self):
         task_input = TaskInput()
         pn.bind(self.value.add_task, task_input.param.value, watch=True)
