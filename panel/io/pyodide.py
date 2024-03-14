@@ -58,7 +58,7 @@ except Exception:
         if _IN_PYSCRIPT_WORKER:
             from pyscript import document, window
             js.document = document
-            js.Bokeh = window.Bokeh
+            js.window = window
     except Exception:
         _IN_PYSCRIPT_WORKER = False
     _IN_WORKER = True
@@ -360,12 +360,12 @@ async def _link_model(ref: str, doc: Document) -> None:
     doc: bokeh.document.Document
         The bokeh Document to sync the rendered Model with.
     """
-    rendered = js.Bokeh.index.object_keys()
+    rendered = js.window.Bokeh.index.object_keys()
     if ref not in rendered:
         await asyncio.sleep(0.1)
         await _link_model(ref, doc)
         return
-    views = js.Bokeh.index.object_values()
+    views = js.window.Bokeh.index.object_values()
     view = views[rendered.indexOf(ref)]
     _link_docs(doc, view.model.document)
 
@@ -495,7 +495,7 @@ async def write(target: str, obj: Any) -> None:
 
     obj = as_panel(obj)
     pydoc, model_json = _model_json(obj, target)
-    views = await js.Bokeh.embed.embed_item(JSON.parse(model_json))
+    views = await js.window.Bokeh.embed.embed_item(JSON.parse(model_json))
     jsdoc = list(views.roots)[0].model.document
     _link_docs(pydoc, jsdoc)
     pydoc.unhold()
@@ -516,7 +516,10 @@ def sync_location():
     if not state.location:
         return
     from js import window
-    loc_string = JSON.stringify(window.location)
+    try:
+        loc_string = JSON.stringify(window.location)
+    except TypeError:
+        return
     loc_data = json.loads(loc_string)
     with edit_readonly(state.location):
         state.location.param.update({
@@ -560,7 +563,7 @@ async def write_doc(doc: Document | None = None) -> Tuple[str, str, str]:
 
     # If we have DOM access render and sync the document
     if root_els is not None:
-        views = await js.Bokeh.embed.embed_items(JSON.parse(docs_json), JSON.parse(render_items))
+        views = await js.window.Bokeh.embed.embed_items(JSON.parse(docs_json), JSON.parse(render_items))
         jsdoc = list(views[0].roots)[0].model.document
         _link_docs(pydoc, jsdoc)
         sync_location()
