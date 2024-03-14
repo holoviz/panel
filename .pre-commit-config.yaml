@@ -48,6 +48,14 @@ repos:
     hooks:
       - id: oxipng
         stages: [manual]
+  - repo: local
+    hooks:
+      - id: eslint
+        name: eslint
+        entry: npm run --prefix panel lint
+        language: system
+        always_run: true
+        pass_filenames: false
 ci:
   autofix_prs: false
   autoupdate_schedule: quarterly
