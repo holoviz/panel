@@ -7,7 +7,7 @@ module.exports = {
     "tsconfigRootDir": ".",
     "sourceType": "module",
   },
-  "plugins": ["@typescript-eslint"],
+  "plugins": ["@typescript-eslint", "@stylistic/eslint-plugin"],
   "extends": [],
   "rules": {
     "@typescript-eslint/ban-types": ["error", {
@@ -63,7 +63,9 @@ module.exports = {
     "comma-spacing": ["error", {"before": false, "after": true}],
     "dot-notation": "error",
     "eol-last": ["error", "always"],
-    "indent": "off",
+    "no-irregular-whitespace": ["error"],
+    "@stylistic/indent": ["error", 2],
+    "@stylistic/no-mixed-spaces-and-tabs": ["error"],
     "@typescript-eslint/indent": ["error", 2, {
       "SwitchCase": 1,
       "outerIIFEBody": 1,
