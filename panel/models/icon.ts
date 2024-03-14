@@ -1,24 +1,27 @@
-import { Tooltip, TooltipView } from "@bokehjs/models/ui/tooltip"
-import { TablerIcon, TablerIconView } from "@bokehjs/models/ui/icons/tabler_icon";
-import { SVGIcon, SVGIconView } from "@bokehjs/models/ui/icons/svg_icon";
-import { Control, ControlView } from '@bokehjs/models/widgets/control';
-import type { IterViews } from '@bokehjs/core/build_views';
-import * as p from "@bokehjs/core/properties";
-import { div } from "@bokehjs/core/dom";
-import { build_view } from '@bokehjs/core/build_views';
-import { ButtonClick } from "@bokehjs/core/bokeh_events"
-import type { EventCallback } from "@bokehjs/model"
+import type {TooltipView} from "@bokehjs/models/ui/tooltip"
+import {Tooltip} from "@bokehjs/models/ui/tooltip"
+import type {TablerIconView} from "@bokehjs/models/ui/icons/tabler_icon"
+import {TablerIcon} from "@bokehjs/models/ui/icons/tabler_icon"
+import type {SVGIconView} from "@bokehjs/models/ui/icons/svg_icon"
+import {SVGIcon} from "@bokehjs/models/ui/icons/svg_icon"
+import {Control, ControlView} from "@bokehjs/models/widgets/control"
+import type {IterViews} from "@bokehjs/core/build_views"
+import type * as p from "@bokehjs/core/properties"
+import {div} from "@bokehjs/core/dom"
+import {build_view} from "@bokehjs/core/build_views"
+import {ButtonClick} from "@bokehjs/core/bokeh_events"
+import type {EventCallback} from "@bokehjs/model"
 
 export class ClickableIconView extends ControlView {
-  declare model: ClickableIcon;
-  icon_view: TablerIconView | SVGIconView;
-  label_el: HTMLDivElement;
+  declare model: ClickableIcon
+  icon_view: TablerIconView | SVGIconView
+  label_el: HTMLDivElement
   was_svg_icon: boolean
   row_div: HTMLDivElement
 
   protected tooltip: TooltipView | null
 
-  public *controls() { }
+  public *controls() {}
 
   override remove(): void {
     this.tooltip?.remove()
@@ -30,12 +33,13 @@ export class ClickableIconView extends ControlView {
     await super.lazy_initialize()
 
     this.was_svg_icon = this.is_svg_icon(this.model.icon)
-    this.label_el = div({ class: 'bk-IconLabel' }, this.model.title);
-    this.label_el.style.fontSize = this.calculate_size(0.6);
-    this.icon_view = await this.build_icon_model(this.model.icon, this.was_svg_icon);
-    const { tooltip } = this.model
-    if (tooltip != null)
-      this.tooltip = await build_view(tooltip, { parent: this })
+    this.label_el = div({class: "bk-IconLabel"}, this.model.title)
+    this.label_el.style.fontSize = this.calculate_size(0.6)
+    this.icon_view = await this.build_icon_model(this.model.icon, this.was_svg_icon)
+    const {tooltip} = this.model
+    if (tooltip != null) {
+      this.tooltip = await build_view(tooltip, {parent: this})
+    }
   }
 
   override *children(): IterViews {
@@ -51,12 +55,12 @@ export class ClickableIconView extends ControlView {
   }
 
   override connect_signals(): void {
-    super.connect_signals();
-    const { icon, active_icon, disabled, value, size } = this.model.properties;
-    this.on_change([active_icon, icon, value], () => this.update_icon());
-    this.on_change(this.model.properties.title, () => this.update_label());
-    this.on_change(disabled, () => this.update_cursor());
-    this.on_change(size, () => this.update_size());
+    super.connect_signals()
+    const {icon, active_icon, disabled, value, size} = this.model.properties
+    this.on_change([active_icon, icon, value], () => this.update_icon())
+    this.on_change(this.model.properties.title, () => this.update_label())
+    this.on_change(disabled, () => this.update_cursor())
+    this.on_change(size, () => this.update_size())
   }
 
   override render(): void {
@@ -66,9 +70,9 @@ export class ClickableIconView extends ControlView {
     this.update_label()
     this.update_cursor()
     this.row_div = div({
-      class: 'bk-IconRow'
+      class: "bk-IconRow",
     }, this.icon_view.el, this.label_el)
-    this.shadow_el.appendChild(this.row_div);
+    this.shadow_el.appendChild(this.row_div)
 
     const toggle_tooltip = (visible: boolean) => {
       this.tooltip?.model.setv({
@@ -86,7 +90,7 @@ export class ClickableIconView extends ControlView {
   }
 
   update_label(): void {
-    this.label_el.innerText = this.model.title;
+    this.label_el.innerText = this.model.title
   }
 
   update_cursor(): void {
@@ -94,18 +98,19 @@ export class ClickableIconView extends ControlView {
   }
 
   update_size(): void {
-    this.icon_view.model.size = this.calculate_size();
-    this.label_el.style.fontSize = this.calculate_size(0.6);
+    this.icon_view.model.size = this.calculate_size()
+    this.label_el.style.fontSize = this.calculate_size(0.6)
   }
 
   async build_icon_model(icon: string, is_svg_icon: boolean): Promise<TablerIconView | SVGIconView> {
     const size = this.calculate_size()
-    let icon_model
-    if (is_svg_icon) {
-      icon_model = new SVGIcon({svg: icon, size})
-    } else {
-      icon_model = new TablerIcon({icon_name: icon, size})
-    }
+    const icon_model = (() => {
+      if (is_svg_icon) {
+        return new SVGIcon({svg: icon, size})
+      } else {
+        return new TablerIcon({icon_name: icon, size})
+      }
+    })()
     const icon_view = await build_view(icon_model, {parent: this})
     icon_view.el.addEventListener("click", () => this.click())
     return icon_view
@@ -119,17 +124,16 @@ export class ClickableIconView extends ControlView {
     if (this.was_svg_icon !== is_svg_icon) {
       // If the icon type has changed, we need to rebuild the icon view
       // and invalidate the old one.
-      const icon_view = await this.build_icon_model(icon, is_svg_icon);
-      icon_view.render();
-      this.icon_view.remove();
-      this.icon_view = icon_view;
-      this.was_svg_icon = is_svg_icon;
-      this.update_cursor();
+      const icon_view = await this.build_icon_model(icon, is_svg_icon)
+      icon_view.render()
+      this.icon_view.remove()
+      this.icon_view = icon_view
+      this.was_svg_icon = is_svg_icon
+      this.update_cursor()
       // We need to re-append the new icon view to the DOM
-      this.row_div.insertBefore(this.icon_view.el, this.label_el);
-    }
-    else if (is_svg_icon) {
-      (this.icon_view as SVGIconView).model.svg = icon;
+      this.row_div.insertBefore(this.icon_view.el, this.label_el)
+    } else if (is_svg_icon) {
+      (this.icon_view as SVGIconView).model.svg = icon
     } else {
       (this.icon_view as TablerIconView).model.icon_name = icon
     }
@@ -141,12 +145,13 @@ export class ClickableIconView extends ControlView {
   }
 
   calculate_size(factor: number = 1): string {
-    if (this.model.size !== null)
-      return `calc(${this.model.size} * ${factor})`;
-    const maxWidth = this.model.width ?? 15;
-    const maxHeight = this.model.height ?? 15;
-    const size = Math.max(maxWidth, maxHeight) * factor;
-    return `${size}px`;
+    if (this.model.size !== null) {
+      return `calc(${this.model.size} * ${factor})`
+    }
+    const maxWidth = this.model.width ?? 15
+    const maxHeight = this.model.height ?? 15
+    const size = Math.max(maxWidth, maxHeight) * factor
+    return `${size}px`
   }
 
   click(): void {
@@ -157,11 +162,11 @@ export class ClickableIconView extends ControlView {
 export namespace ClickableIcon {
   export type Attrs = p.AttrsOf<Props>
   export type Props = Control.Props & {
-    active_icon: p.Property<string>;
-    icon: p.Property<string>;
-    size: p.Property<string | null>;
-    value: p.Property<boolean>;
-    title: p.Property<string>;
+    active_icon: p.Property<string>
+    icon: p.Property<string>
+    size: p.Property<string | null>
+    value: p.Property<boolean>
+    title: p.Property<string>
     tooltip: p.Property<Tooltip | null>
     tooltip_delay: p.Property<number>
   }

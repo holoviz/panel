@@ -187,10 +187,10 @@ export class ReactiveHTMLView extends HTMLBoxView {
         this.on_change(property, () => {
           if (!this._changing && !(is_event_param && !data_model[prop])) {
             this.run_script(prop)
-	    if (is_event_param) {
+            if (is_event_param) {
               data_model.setv({[prop]: false})
             }
-	  }
+          }
         })
       }
     }
