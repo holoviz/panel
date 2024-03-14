@@ -235,11 +235,8 @@ jobs:
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           nodejs: true
           playwright: true
+          playwright-version: 1.41.2
         id: install
-      - name: doit develop_install
-        run: |
-          conda activate test-environment
-          pip install --pre ipywidgets_bokeh
       - name: launch jupyter
         run: |
           conda activate test-environment
