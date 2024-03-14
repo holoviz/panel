@@ -11,7 +11,7 @@ In this section, we will work on building a *Todo App* together so that our wind
 When we ask everyone to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
-<iframe src="https://panel-org-build-todo-app.hf.space" frameborder="0" style="width: 100%;height:1000px"></iframe>
+<iframe src="https://panel-org-build-todo-app.hf.space" frameborder="0" style="width: 100%;height:500px"></iframe>
 
 :::{dropdown} Requirements
 
