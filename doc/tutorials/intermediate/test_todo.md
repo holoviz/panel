@@ -354,7 +354,7 @@ def test_can_create_task_list_without_tasks():
 
 This test validates the behavior of creating a `TaskList` instance without any tasks. It checks if the task list initializes with an empty list, and if the status attributes are correctly set reflecting no tasks.
 
-### 3. `test_can_create_task_list_with_tasks`
+### `test_can_create_task_list_with_tasks`
 
 ```python
 def test_can_create_task_list_with_tasks():
@@ -374,7 +374,7 @@ def test_can_create_task_list_with_tasks():
 
 This test ensures that we can create a `TaskList` instance with a predefined list of tasks. It checks if the task list initializes with the provided tasks, calculates the total number of tasks accurately, and sets the status attribute accordingly.
 
-### 4. `test_can_add_new_task_to_task_list`
+### `test_can_add_new_task_to_task_list`
 
 ```python
 def test_can_add_new_task_to_task_list():
@@ -395,7 +395,7 @@ def test_can_add_new_task_to_task_list():
 
 This test verifies if we can add a new task to the `TaskList` instance successfully. It adds a new task to the task list, checks if the task list reflects the addition, and updates the status attribute accordingly when the task is marked as completed.
 
-### 5. `test_can_replace_tasks`
+### `test_can_replace_tasks`
 
 ```python
 def test_can_replace_tasks():
@@ -416,7 +416,7 @@ def test_can_replace_tasks():
 
 This test validates if we can replace the list of tasks in the `TaskList` instance successfully. It replaces the task list with a new list containing a single task, checks if the task list reflects the replacement, and updates the status attribute accordingly when the task is marked as completed.
 
-### 6. `test_create_task_input`
+### `test_create_task_input`
 
 ```python
 def test_create_task_input():
@@ -427,7 +427,7 @@ def test_create_task_input():
 
 This test ensures that we can create a `TaskInput` widget successfully. It checks if the initial value of the widget is `None`.
 
-### 7. `test_enter_text_into_task_input`
+### `test_enter_text_into_task_input`
 
 ```python
 def test_enter_text_into_task_input():
@@ -443,7 +443,7 @@ def test_enter_text_into_task_input():
 
 This test verifies the behavior of entering text into the `TaskInput` widget. It sets a text value into the input field, checks if a task is created from the entered text, and if the task value matches the entered text. Additionally, it ensures that the input field is cleared after setting the value.
 
-### 8. `test_can_create_task_list_editor`
+### `test_can_create_task_list_editor`
 
 ```python
 def test_can_create_task_list_editor():
