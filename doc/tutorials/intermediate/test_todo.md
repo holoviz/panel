@@ -1,10 +1,12 @@
-# Test Todo App
+# Testing the Todo App
 
-In the previous section we built a Todo app using the `Parameterized` class based approach. In this tutorial we will show how this makes you app easily testable in Python. This ensures you app will be extensible and maintainable in the long term.
+In the previous section, we constructed a Todo app using the `Parameterized` class-based approach. Now, we'll delve into how this approach enables easy testing of your app in Python. Ensuring your app's testability guarantees its extensibility and maintainability over time.
 
-## Run the tests
+<iframe src="https://panel-org-build-todo-app.hf.space" frameborder="0" style="width: 100%;height:500px"></iframe>
 
-Copy the app code above into a file `app.py` and the test code into a file `test_app.py`.
+## Running the Tests
+
+First, copy the app code above into a file named `app.py`, and the test code into a file named `test_app.py`.
 
 :::{dropdown} Code: app.py
 
@@ -299,7 +301,7 @@ def test_can_create_task_list_editor():
 
 :::
 
-Run the tests with `pytest test_app.py`. It should look like
+Run the tests with `pytest test_app.py`. It should look like this:
 
 ```bash
 $ pytest test_app.py
@@ -338,7 +340,7 @@ def test_create_task():
     assert task.__panel__()
 ```
 
-This test verifies if we can create a `Task` instance successfully. It initializes a task with a description "Do this" and marks it as completed. Then, it checks if the task's attributes are correctly set and if the `__panel__()` method returns a valid Panel component.
+This test ensures that a `Task` instance can be created successfully. It initializes a task with the description "Do this" and marks it as completed. Then, it checks if the task's attributes are correctly set and if the `__panel__()` method returns a valid Panel component.
 
 ### `test_can_create_task_list_without_tasks`
 
@@ -352,7 +354,7 @@ def test_can_create_task_list_without_tasks():
     assert task_list.status == "0 of 0 tasks completed"
 ```
 
-This test validates the behavior of creating a `TaskList` instance without any tasks. It checks if the task list initializes with an empty list, and if the status attributes are correctly set reflecting no tasks.
+This test validates the behavior of creating a `TaskList` instance without any tasks. It checks if the task list initializes with an empty list and if the status attributes are correctly set to reflect no tasks.
 
 ### `test_can_create_task_list_with_tasks`
 
@@ -460,3 +462,13 @@ def test_can_create_task_list_editor():
 ```
 
 This test validates if we can create a `TaskListEditor` successfully. It initializes a task list with predefined tasks and creates a task list editor from it, ensuring that the editor is correctly instantiated.
+
+## Recap
+
+In this tutorial, you have learned how to test Panel apps built using the class-based approach.
+
+We believe that a straightforward and easy way of testing Panel components represents a competitive advantage over most other data app frameworks.
+
+## Further Learning
+
+To dive deeper into testing Panel apps, explore the [Testing How-To Guides](../../how_to/test/index.md) and [Panel's own tests](https://github.com/holoviz/panel/tree/main/panel/tests).
