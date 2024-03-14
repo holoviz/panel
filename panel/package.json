@@ -32,6 +32,6 @@
   ],
   "main": "dist/panel.min.js",
   "scripts": {
-    "lint": "npx eslint -c eslint.js *.ts models/*.ts"
+    "lint": "npx eslint -c eslint.js './*.ts' './models/**/*.ts'"
   }
 }
