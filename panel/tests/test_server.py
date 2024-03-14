@@ -15,9 +15,7 @@ from bokeh.events import ButtonClick
 from panel.config import config
 from panel.io import state
 from panel.io.resources import DIST_DIR
-from panel.io.server import (
-    INDEX_HTML, get_server, serve, set_curdoc,
-)
+from panel.io.server import INDEX_HTML, get_server, set_curdoc
 from panel.layout import Row
 from panel.models import HTML as BkHTML
 from panel.models.tabulator import TableEditEvent
@@ -283,7 +281,7 @@ def test_server_session_info():
     assert state.session_info['live'] == 0
 
 
-def test_server_periodic_async_callback(threads, port):
+def test_server_periodic_async_callback(threads):
     counts = []
 
     async def cb(count=[0]):
@@ -498,7 +496,7 @@ def test_serve_can_serve_bokeh_app_from_file():
     assert "/bk-app" in server._tornado.applications
 
 
-def test_server_on_load_after_init(threads, port):
+def test_server_on_load_after_init(threads):
     loaded = []
 
     def cb():
@@ -522,7 +520,7 @@ def test_server_on_load_after_init(threads, port):
     wait_until(lambda: loaded == [False, True])
 
 
-def test_server_on_load_during_load(threads, port):
+def test_server_on_load_during_load(threads):
     loaded = []
 
     def cb():
@@ -546,7 +544,7 @@ def test_server_on_load_during_load(threads, port):
     wait_until(lambda: loaded == [False, False])
 
 
-def test_server_thread_pool_on_load(threads, port):
+def test_server_thread_pool_on_load(threads):
     counts = []
 
     def cb(count=[0]):
@@ -572,7 +570,7 @@ def test_server_thread_pool_on_load(threads, port):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_execute(threads, port):
+def test_server_thread_pool_execute(threads):
     counts = []
 
     def cb(count=[0]):
@@ -592,7 +590,7 @@ def test_server_thread_pool_execute(threads, port):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_defer_load(threads, port):
+def test_server_thread_pool_defer_load(threads):
     counts = []
 
     def cb(count=[0]):
@@ -620,7 +618,7 @@ def test_server_thread_pool_defer_load(threads, port):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_change_event(threads, port):
+def test_server_thread_pool_change_event(threads):
     button = Button(name='Click')
     button2 = Button(name='Click')
 
@@ -648,7 +646,7 @@ def test_server_thread_pool_change_event(threads, port):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_bokeh_event(threads, port):
+def test_server_thread_pool_bokeh_event(threads):
     import pandas as pd
 
     df = pd.DataFrame([[1, 1], [2, 2]], columns=['A', 'B'])
@@ -676,7 +674,7 @@ def test_server_thread_pool_bokeh_event(threads, port):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_periodic(threads, port):
+def test_server_thread_pool_periodic(threads):
     counts = []
 
     def cb(count=[0]):
@@ -696,7 +694,7 @@ def test_server_thread_pool_periodic(threads, port):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_onload(threads, port):
+def test_server_thread_pool_onload(threads):
     counts = []
 
     def app(count=[0]):
@@ -722,7 +720,7 @@ def test_server_thread_pool_onload(threads, port):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
-def test_server_thread_pool_busy(threads, port):
+def test_server_thread_pool_busy(threads):
     button = Button(name='Click')
 
     def cb(event):
@@ -744,7 +742,7 @@ def test_server_thread_pool_busy(threads, port):
     wait_until(lambda: state._busy_counter == 0 and not state.busy)
 
 
-def test_server_async_onload(threads, port):
+def test_server_async_onload(threads):
     counts = []
 
     def app(count=[0]):
@@ -882,7 +880,7 @@ async def async_handler(event=None):
         ('threads', async_handler),
         ('nothreads', async_handler)
 ])
-def test_server_exception_handler_bokeh_event(threads, handler, port, request):
+def test_server_exception_handler_bokeh_event(threads, handler, request):
     request.getfixturevalue(threads)
 
     exceptions = []
@@ -913,7 +911,7 @@ def test_server_exception_handler_bokeh_event(threads, handler, port, request):
         ('threads', async_handler),
         ('nothreads', async_handler)
 ])
-def test_server_exception_handler_async_change_event(threads, handler, port, request):
+def test_server_exception_handler_async_change_event(threads, handler, request):
     request.getfixturevalue(threads)
 
     exceptions = []
@@ -944,7 +942,7 @@ def test_server_exception_handler_async_change_event(threads, handler, port, req
         ('threads', async_handler),
         ('nothreads', async_handler)
 ])
-def test_server_exception_handler_async_onload_event(threads, handler, port, request):
+def test_server_exception_handler_async_onload_event(threads, handler, request):
     request.getfixturevalue(threads)
 
     exceptions = []
@@ -968,7 +966,7 @@ def test_server_exception_handler_async_onload_event(threads, handler, port, req
     wait_until(lambda: len(exceptions) == 1)
 
 
-def test_server_no_warning_empty_layout(port, caplog):
+def test_server_no_warning_empty_layout(caplog):
 
     bk_logger = logging.getLogger('bokeh')
     old_level = bk_logger.level
@@ -980,11 +978,8 @@ def test_server_no_warning_empty_layout(port, caplog):
 
         app = Row()
 
-        serve(app, port=port, threaded=True, show=False)
+        serve_and_request(app)
 
-        # Wait for server to start
-        time.sleep(1)
-        requests.get(f"http://localhost:{port}")
         time.sleep(1)
 
         for rec in caplog.records:
@@ -995,7 +990,7 @@ def test_server_no_warning_empty_layout(port, caplog):
         bk_logger.propagate = old_propagate
 
 
-def test_server_threads_save(threads, port, tmp_path):
+def test_server_threads_save(threads, tmp_path):
     # https://github.com/holoviz/panel/issues/5957
 
     button = Button()
