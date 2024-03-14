@@ -286,7 +286,7 @@ def script_to_html(
             css_resources = []
         pyconfig = json.dumps({'packages': reqs, 'plugins': ["!error"]})
         if 'worker' in runtime:
-            plot_script = f'<script type="pyodide" async worker config=\'{pyconfig}\' src="{app_name}.py"></script>'
+            plot_script = f'<script type="py" async worker config=\'{pyconfig}\' src="{app_name}.py"></script>'
             web_worker = code
         else:
             plot_script = f'<py-script config=\'{pyconfig}\'>{code}</py-script>'
