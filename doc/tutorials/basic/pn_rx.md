@@ -57,7 +57,7 @@ power_text = pn.rx(
     "Power Generation: {power:.1f} kW"
 ).format(wind_speed=wind_speed, efficiency=efficiency, power=power)
 
-power_md = pn.pane.Markdown(calculate_power_rx)
+power_md = pn.pane.Markdown(power_text)
 
 pn.Column(wind_speed, power_md).servable()
 ```
@@ -82,7 +82,7 @@ power_text = pn.rx(
     "Power Generation: {power:.1f} kW"
 ).format(wind_speed=wind_speed, efficiency=efficiency, power=power)
 
-power_md = pn.pane.Markdown(calculate_power_rx)
+power_md = pn.pane.Markdown(power_text)
 
 pn.Column(wind_speed, efficiency, power_md).servable()
 ```
@@ -102,7 +102,7 @@ wind_speed = pn.widgets.FloatSlider(
 efficiency = pn.widgets.FloatInput(
     value=0.3, start=0.0, end=1.0, name="Efficiency (kW/(m/s))"
 )
-submit = pn.widgets.Button(name="Submit")
+submit = pn.widgets.Button(name="Submit", button_type="primary")
 
 power = wind_speed.rx() * efficiency.rx()
 
@@ -125,7 +125,7 @@ Try changing some of the inputs and clicking the submit Button. Try again. Notic
 
 ## Harnessing Throttling for Performance
 
-To prevent excessive updates and ensure smoother performance, you can apply throttling. This limits the rate at which certain actions or events occur, maintaining a balanced user experience:
+To prevent excessive updates and ensure smoother performance, you can apply throttling (`.value_throttled`). This limits the rate at which certain actions or events occur, maintaining a balanced user experience:
 
 ```{pyodide}
 import panel as pn
@@ -137,14 +137,14 @@ wind_speed = pn.widgets.FloatSlider(
 )
 efficiency = 0.3
 
-power = wind_speed.rx() * efficiency
+power = wind_speed.param.value_throttled.rx() * efficiency
 
 power_text = pn.rx(
     "Wind Speed: {wind_speed} m/s, "
     "Efficiency: {efficiency}, "
     "Power Generation: {power:.1f} kW"
 ).format(
-    wind_speed=wind_speed.param.value,
+    wind_speed=wind_speed.param.value_throttled,
     efficiency=0.3,
     power=power
 )
