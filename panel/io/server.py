@@ -811,10 +811,13 @@ def serve(
     ))
     if threaded:
         kwargs['loop'] = loop = IOLoop(make_current=False) if loop is None else loop
+        if 'server_id' not in kwargs:
+            kwargs['server_id'] = uuid.uuid4().hex
+
         server = StoppableThread(
             target=get_server, io_loop=loop, args=(panels,), kwargs=kwargs
         )
-        server_id = kwargs.get('server_id', uuid.uuid4().hex)
+        server_id = kwargs['server_id']
         state._threads[server_id] = server
         server.start()
     else:
