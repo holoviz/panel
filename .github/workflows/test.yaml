@@ -235,7 +235,6 @@ jobs:
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           nodejs: true
           playwright: true
-          playwright-version: 1.41.2
         id: install
       - name: launch jupyter
         run: |
@@ -258,10 +257,6 @@ jobs:
         run: |
           conda activate test-environment
           doit env_capture
-      - name: Check if auth should run
-        if: '!github.event.pull_request.head.repo.fork'
-        run: |
-          echo "PANEL_TEST_AUTH=1" >> $GITHUB_ENV
       - name: doit test_ui
         run: |
           conda activate test-environment
