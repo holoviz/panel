@@ -49,11 +49,19 @@ os.environ['BOKEH_RESOURCES'] = 'cdn'
 
 try:
     from js import document as js_document  # noqa
-    _IN_WORKER = False
-    _IN_PYSCRIPT_WORKER = False
+    try:
+        # PyScript Next Worker now patches js.document by default
+        from pyscript import RUNNING_IN_WORKER as _IN_PYSCRIPT_WORKER
+        if _IN_PYSCRIPT_WORKER:
+            from pyscript import window
+            js.window = window
+        _IN_WORKER = True
+    except Exception:
+        _IN_PYSCRIPT_WORKER = False
+        _IN_WORKER = False
 except Exception:
     try:
-        # PyScript Next Worker support
+        # Initial version of PyScript Next Worker support did not patch js.document
         from pyscript import RUNNING_IN_WORKER as _IN_PYSCRIPT_WORKER
         if _IN_PYSCRIPT_WORKER:
             from pyscript import document, window
@@ -515,10 +523,9 @@ def sync_location():
     """
     if not state.location:
         return
-    from js import window
     try:
-        loc_string = JSON.stringify(window.location)
-    except TypeError:
+        loc_string = JSON.stringify(js.window.location)
+    except Exception:
         return
     loc_data = json.loads(loc_string)
     with edit_readonly(state.location):
