@@ -66,6 +66,8 @@ class Perspective(HTMLBox):
 
     selectable = Bool(default=True)
 
+    settings = Bool(default=True)
+
     schema = Dict(String, String)
 
     sort = Either(List(List(String)), Null())
@@ -75,6 +77,8 @@ class Perspective(HTMLBox):
     toggle_config = Bool(True)
 
     theme = Enum(*PERSPECTIVE_THEMES, default="pro")
+
+    title = Either(String(), Null())
 
     __javascript_module_exports__ = ['perspective']
 

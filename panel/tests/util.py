@@ -277,7 +277,7 @@ def get_ctrl_modifier():
 
 
 def serve_and_wait(app, page=None, prefix=None, port=None, **kwargs):
-    server_id = uuid.uuid4().hex
+    server_id = kwargs.pop('server_id', uuid.uuid4().hex)
     serve(app, port=port or 0, threaded=True, show=False, liveness=True, server_id=server_id, prefix=prefix or "", **kwargs)
     wait_until(lambda: server_id in state._servers, page)
     server = state._servers[server_id][0]

@@ -644,18 +644,16 @@ class _state(param.Parameterized):
         """
         Stop all servers and clear them from the current state.
         """
-        for thread in self._threads.values():
-            try:
-                thread.stop()
-            except Exception:
-                pass
-        self._threads = {}
         for server_id in self._servers:
-            try:
-                self._servers[server_id][0].stop()
-            except AssertionError:  # can't stop a server twice
-                pass
-        self._servers = {}
+            if server_id in self._threads:
+                self._threads[server_id].stop()
+            else:
+                try:
+                    self._servers[server_id][0].stop()
+                except AssertionError:  # can't stop a server twice
+                    pass
+        self._servers.clear()
+        self._threads.clear()
 
     def log(self, msg: str, level: str = 'info') -> None:
         """

@@ -24,7 +24,7 @@ from bokeh.util.serialization import make_id
 
 from .. import __version__, config
 from ..util import base_version, escape
-from .handlers import build_single_handler_application
+from .application import build_single_handler_application
 from .loading import LOADING_INDICATOR_CSS_CLASS
 from .mime_render import find_requirements
 from .resources import (

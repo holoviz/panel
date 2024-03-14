@@ -871,11 +871,30 @@ class panel_extension(_pyviz_extension):
 
         # Try to detect environment so that we can enable comms
         if "google.colab" in sys.modules:
-            config.comms = "colab"
+            try:
+                import jupyter_bokeh  # noqa
+                config.comms = "colab"
+            except Exception:
+                warnings.warn(
+                    'Using Panel interactively in Colab notebooks requires '
+                    'the jupyter_bokeh package to be installed. '
+                    'Install it with:\n\n    !pip install jupyter_bokeh'
+                    '\n\nand try again.', stacklevel=5
+                )
             return
 
         if "VSCODE_CWD" in os.environ or "VSCODE_PID" in os.environ:
-            config.comms = "vscode"
+            try:
+                import jupyter_bokeh  # noqa
+                config.comms = "vscode"
+            except Exception:
+                warnings.warn(
+                    'Using Panel interactively in VSCode notebooks requires '
+                    'the jupyter_bokeh package to be installed. '
+                    'You can install it with:\n\n   pip install jupyter_bokeh'
+                    '\n\nor:\n    conda install jupyter_bokeh\n\nand try again.',
+                    stacklevel=5
+                )
             self._ignore_bokeh_warnings()
             return
 

@@ -38,10 +38,11 @@ test:
   requires:
     - pip
     - pytest-asyncio
+    - pytest-xdist
   commands:
     # - pip check
     - panel --help
-    - pytest --pyargs panel.tests
+    - pytest --pyargs panel.tests -n logical --dist loadgroup
 
 about:
   home: {{ sdata['url'] }}
