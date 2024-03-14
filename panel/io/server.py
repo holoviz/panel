@@ -811,6 +811,8 @@ def serve(
     ))
     if threaded:
         kwargs['loop'] = loop = IOLoop(make_current=False) if loop is None else loop
+        # To ensure that we have correspondence between state._threads and state._servers
+        # we must provide a server_id here
         if 'server_id' not in kwargs:
             kwargs['server_id'] = uuid.uuid4().hex
 
