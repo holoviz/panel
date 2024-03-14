@@ -69,7 +69,7 @@ PWA_IMAGES = [
     ICON_DIR / 'index_background.png'
 ]
 
-Runtimes = Literal['pyodide', 'pyscript', 'pyodide-worker']
+Runtimes = Literal['pyodide', 'pyscript', 'pyodide-worker', 'pyscript-worker']
 
 PRE = """
 import asyncio
