@@ -1,19 +1,15 @@
 # Build a Todo App
 
-In this section, we will work on building a *Todo App* together so that our wind turbine technicians can keep track of their tasks. As a team, we will collaborate to create an app that provides the following functionality:
+Welcome to the "Build a Todo App" tutorial! In this section, we're going to create a dynamic *Todo App* together. Imagine our wind turbine technicians being able to manage their tasks efficiently with this application. We'll collaborate to develop an app with features like:
 
-- Adding, removing, and clearing all tasks
-- Marking a task as solved
-- Keeping track of the number of completed tasks
-- Disabling or hiding buttons when necessary
+- Adding, removing, and clearing tasks
+- Marking tasks as completed
+- Tracking the number of completed tasks
+- Dynamically disabling or hiding buttons
 
-In the basic tutorials we built a [basic todo app](../basic/build_todo.md) using a *function based approach*. This time we will be using a Parameterized class based approach which will make the todo app more extensible and maintainable in the long term.
+Previously, we built a [basic todo app](../basic/build_todo.md) using a function-based approach. This time, we'll employ a more sophisticated `Parameterized` class-based approach. This method will enhance the extensibility and maintainability of our todo app in the long run.
 
-:::{note}
-When we ask everyone to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
-:::
-
-<iframe src="https://panel-org-build-todo-app.hf.space" frameborder="0" style="width: 100%;height:1000px"></iframe>
+<iframe src="https://panel-org-build-todo-app.hf.space" frameborder="0" style="width: 100%;height:500px"></iframe>
 
 :::{dropdown} Requirements
 
@@ -210,9 +206,11 @@ if pn.state.served:
 
 ## Explanation
 
+Let's break down the todo app.
+
 ### Import Necessary Libraries
 
-```python
+```{pyodide}
 """An app to manage tasks"""
 from typing import List
 import param
@@ -221,11 +219,11 @@ import panel as pn
 pn.extension(sizing_mode="stretch_width", design="material")
 ```
 
-Here, we import the required libraries for our task management app. We use `List` from `typing` module to define a list of tasks, `param` for declaring parameters, and `panel` for creating the user interface.
+Here, we import the required libraries for our task management app. We use `List` from the `typing` module to define a list of tasks, [`param`](https://param.holoviz.org) for declaring parameters, and `panel` for creating the user interface. We configure the `"material"` design to give the todo app a modern look and feel.
 
 ### Define Constants
 
-```python
+```{pyodide}
 BUTTON_WIDTH = 125
 ```
 
@@ -233,7 +231,7 @@ We set a constant `BUTTON_WIDTH` to control the width of buttons in our app.
 
 ### Define Task Model
 
-```python
+```{pyodide}
 class Task(pn.viewable.Viewer):
     """A model of a Task"""
 
@@ -248,13 +246,15 @@ class Task(pn.viewable.Viewer):
         )
         content = pn.pane.Markdown(object=self.param.value)
         return pn.Row(completed, content, sizing_mode="stretch_width")
+
+Task(value="Inspect the blades")
 ```
 
 This class defines the model of a task. It has two attributes: `value` (description of the task) and `completed` (whether the task is completed or not). The `__panel__` method renders the task as a row containing a checkbox for completion status and the task description.
 
 ### Define TaskList Class
 
-```python
+```{pyodide}
 class TaskList(param.Parameterized):
     """Provides methods to add and remove tasks as well as calculate summary statistics"""
 
@@ -270,12 +270,10 @@ class TaskList(param.Parameterized):
     )
 
     def __init__(self, **params):
-        # Initialize task watchers
         self._task_watchers = {}
 
         super().__init__(**params)
 
-        # Update completed tasks count
         self._handle_completed_changed()
 
     def add_task(self, task: Task):
@@ -288,15 +286,22 @@ class TaskList(param.Parameterized):
         self.value = []
 
     def _handle_completed_changed(self, _=None):
-        # Update completed tasks count when tasks are marked as completed
         self.completed_tasks = sum(task.completed for task in self.value)
+
+TaskList(value=[Task(value="Inspect the blades")])
 ```
 
 This class represents a list of tasks. It provides methods to add and remove tasks, as well as calculate summary statistics such as the total number of tasks, the number of completed tasks, and a status message.
 
+:::{note}
+
+The `TaskList` and the rest of the todo app follows the *DataStore design pattern* introduced in [Structure with a DataStore](structure_data_store.md).
+
+:::
+
 ### Define TaskInput Class
 
-```python
+```{pyodide}
 class TaskInput(pn.viewable.Viewer):
     """A Widget that provides tasks as input"""
 
@@ -323,6 +328,8 @@ class TaskInput(pn.viewable.Viewer):
             text_input.value = text_input.value_input = ""
 
     return pn.Row(text_input, submit_task, sizing_mode="stretch_width")
+
+TaskInput()
 ```
 
 This class represents a widget for users to input tasks.
@@ -331,7 +338,7 @@ The `__panel__` method defines the appearance and behavior of the task input wid
 
 ### Define TaskRow Class
 
-```python
+```{pyodide}
 class TaskRow(pn.viewable.Viewer):
     """Display a task in a Row together with a Remove button"""
 
@@ -348,13 +355,15 @@ class TaskRow(pn.viewable.Viewer):
             self.param.remove, width=BUTTON_WIDTH, icon="trash", sizing_mode="fixed"
         )
         return pn.Row(self.value, remove_button)
+
+TaskRow(value=Task(value="Inspect the blades"))
 ```
 
 This method defines the appearance of the task row, which consists of the task description and a button to remove the task.
 
 ### Define TaskListEditor Class
 
-```python
+```{pyodide}
 class TaskListEditor(pn.viewable.Viewer):
     """Component that enables a user to manage a list of tasks"""
 
@@ -381,28 +390,21 @@ class TaskListEditor(pn.viewable.Viewer):
             pn.Row(pn.Spacer(), clear),
             max_width=500,
         )
+
+task_list = TaskList(
+    value=[
+        Task(value="Inspect the blades", completed=True),
+        Task(value="Inspect the nacelle"),
+        Task(value="Tighten the bolts"),
+    ]
+)
+TaskListEditor(value=task_list).servable()
 ```
 
 This class represents a component that allows users to manage a list of tasks.
 
 This `__panel__` method defines the appearance and behavior of the task list editor component. It consists of an input field for adding tasks, a list of tasks, and a button to remove all tasks.
 
-### Main Execution
+## Recap
 
-```python
-if pn.state.served:
-    pn.extension(sizing_mode="stretch_width", design="material")
-
-    task_list = TaskList(
-        value=[
-            Task(value="Inspect the blades", completed=True),
-            Task(value="Inspect the nacelle"),
-            Task(value="Tighten the bolts"),
-        ]
-    )
-    TaskListEditor(value=task_list).servable()
-```
-
-This part of the code checks if the script is being served (run as a Panel app), then initializes the task list with some example tasks and serves the `TaskListEditor` component. It sets the styling of the app to
-
-"material" design and ensures that components stretch to fit the width of the app.
+We've built a todo app using a `Parameterized` class-based approach and the *DataStore design pattern*. Now, our wind turbine technicians can manage their tasks efficiently and collaboratively.
