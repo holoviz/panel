@@ -130,11 +130,12 @@
         margin: auto 0 auto auto;
       }
       #title {
-        font-size: 1.5em;
+        font-size: 1.8em;
         font-weight: bold;
       }
       #subtitle {
         font-size: 1.2em;
+	text-align: right;
       }
     </style>
     <script type="text/javascript">
@@ -179,8 +180,8 @@
           <img id="panel-logo" src="{{ PANEL_CDN }}images/logo_horizontal.png"/>
         </div>
         <div class="title-area">
-          <span id="title">Running Applications</span>
-          <span id="subtitle">Serving {{ len(items) }} apps</span>
+          <span id="title">Panel Applications</span>
+          <span id="subtitle">Running {{ len(items) }} apps</span>
         </div>
       </div>
     </section>
@@ -206,7 +207,7 @@
             </div>
           </a>
         </li>
-        {% endfor %}
+        {% end %}
       </ul>
     </section>
     </div>

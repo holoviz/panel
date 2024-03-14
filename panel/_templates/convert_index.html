@@ -130,11 +130,12 @@
         margin: auto 0 auto auto;
       }
       #title {
-        font-size: 1.5em;
+        font-size: 1.8em;
         font-weight: bold;
       }
       #subtitle {
         font-size: 1.2em;
+	text-align: right;
       }
     </style>
     {% if manifest %}
@@ -187,7 +188,7 @@
         </div>
         <div class="title-area">
           <span id="title">{{ title|default('Panel Applications', true)  }}</span>
-          <span id="subtitle">Serving {{ len(items) }} apps</span>
+          <span id="subtitle">Running {{ items | length }} apps</span>
         </div>
       </div>
     </section>
@@ -211,7 +212,7 @@
             </div>
           </a>
         </li>
-      {% end %}
+      {% endfor %}
       </ul>
     </section>
     </div>
