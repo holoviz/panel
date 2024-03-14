@@ -141,6 +141,7 @@ doc/reference/*
 /panel/dist/*
 !/panel/dist/css
 !/panel/dist/css/*.css
+/panel/dist/css/models/
 .venv2/
 .npm/*
 .local/*

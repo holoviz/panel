@@ -860,8 +860,7 @@ export class DataTabulatorView extends HTMLBoxView {
             const node = div()
             node.innerHTML = formatted
             const child = node.children[0]
-            if (child.innerHTML === "function(){return c.convert(arguments)}") // If the formatter fails
-            {
+            if (child.innerHTML === "function(){return c.convert(arguments)}") { // If the formatter fails
               return ""
             }
             return child
@@ -942,7 +941,7 @@ export class DataTabulatorView extends HTMLBoxView {
         hozAlign: "center",
         cellClick: (_: any, cell: any) => {
           const index = cell.getData()._index
-	  const event = new CellClickEvent(col, index)
+          const event = new CellClickEvent(col, index)
           this.model.trigger_event(event)
         },
       }

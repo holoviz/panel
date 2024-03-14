@@ -76,7 +76,7 @@ export class PerspectiveView extends HTMLBoxView {
     const {
       schema, toggle_config, columns, expressions, split_by, group_by,
       aggregates, filters, sort, plugin, selectable, editable, theme,
-      title, settings
+      title, settings,
     } = this.model.properties
 
     const not_updating = (fn: () => void) => {
@@ -190,10 +190,10 @@ export class PerspectiveView extends HTMLBoxView {
         group_by: this.model.group_by,
         plugin: PLUGINS[this.model.plugin ],
         plugin_config,
-	settings: this.model.settings,
+        settings: this.model.settings,
         sort: this.model.sort,
         theme: THEMES[this.model.theme ],
-	title: this.model.title
+        title: this.model.title,
       }).catch(() => {})
 
       this.perspective_element.save().then((config: any) => {
@@ -327,7 +327,7 @@ export class Perspective extends HTMLBox {
       sort:             [ Nullable(List(List(Str))), null ],
       source:           [ Ref(ColumnDataSource)           ],
       theme:            [ Str,                      "pro" ],
-      title:            [ Nullable(Str),             null ]
+      title:            [ Nullable(Str),             null ],
     }))
   }
 }

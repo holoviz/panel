@@ -7,9 +7,9 @@ import {div} from "@bokehjs/core/dom"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 import {BasicTickFormatter, NumeralTickFormatter, TickFormatter} from "@bokehjs/models/formatters"
 
-const red: string="#d9534f"
-const green: string="#5cb85c"
-const blue: string="#428bca"
+const red: string = "#d9534f"
+const green: string = "#5cb85c"
+const blue: string = "#428bca"
 
 export class TrendIndicatorView extends HTMLBoxView {
   declare model: TrendIndicator
@@ -79,7 +79,7 @@ export class TrendIndicatorView extends HTMLBoxView {
 
     const source = this.model.source
     if (this.model.plot_type === "line") {
-      var line = new Line({
+      const line = new Line({
         x: {field: this.model.plot_x},
         y: {field: this.model.plot_y},
         line_width: 4,
@@ -103,7 +103,7 @@ export class TrendIndicatorView extends HTMLBoxView {
         fill_alpha: 0.5,
       })
       this.plot.add_glyph(varea, source)
-      var line = new Line({
+      const line = new Line({
         x: {field: this.model.plot_x},
         y: {field: this.model.plot_y},
         line_width: 3,

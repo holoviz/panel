@@ -65,7 +65,7 @@ const elementTransformCategories: any = {
     currentTime: element.currentTime,
   }),
   hasFiles: (element: HTMLInputElement) => {
-    if (element?.type === "file") {
+    if (element.type === "file") {
       return {
         files: [...element.files ?? []].map((file) => ({
           lastModified: file.lastModified,

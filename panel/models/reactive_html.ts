@@ -17,7 +17,6 @@ function serialize_attrs(attrs: any): any {
   for (const attr in attrs) {
     let value = attrs[attr]
     if (!isString(value)) {
-      value = value
     } else if (value !== "" && (value === "NaN" || !isNaN(Number(value)))) {
       value = Number(value)
     } else if (value === "false" || value === "true") {
@@ -187,10 +186,10 @@ export class ReactiveHTMLView extends HTMLBoxView {
         this.on_change(property, () => {
           if (!this._changing && !(is_event_param && !data_model[prop])) {
             this.run_script(prop)
-	    if (is_event_param) {
+            if (is_event_param) {
               data_model.setv({[prop]: false})
             }
-	  }
+          }
         })
       }
     }
