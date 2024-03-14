@@ -1,4 +1,4 @@
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 
 import {div, canvas} from "@bokehjs/core/dom"
 import {clone} from "@bokehjs/core/util/object"
@@ -53,15 +53,17 @@ export abstract class AbstractVTKView extends HTMLBoxView {
   _add_colorbars(): void {
     //construct colorbars
     const old_info_div = this.shadow_el.querySelector(".vtk_info")
-    if (old_info_div)
+    if (old_info_div) {
       this.shadow_el.removeChild(old_info_div)
-    if (this.model.color_mappers.length < 1)
+    }
+    if (this.model.color_mappers.length < 1) {
       return
+    }
 
     const info_div = document.createElement("div")
     const expand_width = "350px"
     const collapsed_width = "30px"
-    info_div.classList.add('vtk_info')
+    info_div.classList.add("vtk_info")
     applyStyle(info_div, INFO_DIV_STYLE)
     applyStyle(info_div, {width: expand_width})
     this.shadow_el.appendChild(info_div)
@@ -74,11 +76,11 @@ export abstract class AbstractVTKView extends HTMLBoxView {
     })
 
     //content when collapsed
-    const dots = document.createElement('div');
+    const dots = document.createElement("div")
     applyStyle(dots, {textAlign: "center", fontSize: "20px"})
     dots.innerText = "..."
 
-    info_div.addEventListener('click', () => {
+    info_div.addEventListener("click", () => {
       if (info_div.style.width === collapsed_width) {
         info_div.removeChild(dots)
         applyStyle(info_div, {height: "auto", width: expand_width})
@@ -117,61 +119,60 @@ export abstract class AbstractVTKView extends HTMLBoxView {
     this._clean_annotations()
     const {annotations} = this.model
     if (annotations != null) {
-      for (let annotation of annotations) {
+      for (const annotation of annotations) {
         const {viewport, color, fontSize, fontFamily} = annotation
         textPositions.values.forEach((pos) => {
-            const text = annotation[pos]
-            if (text) {
-              const div = document.createElement("div")
-              div.textContent = text
-              const {style} = div
-              style.position = "absolute"
-              style.color = `rgb(${color.map((val)=>255*val).join(",")})`
-              style.fontSize = `${fontSize}px`
-              style.padding = "5px"
-              style.fontFamily = fontFamily
-              style.width = "fit-content"
+          const text = annotation[pos]
+          if (text) {
+            const div = document.createElement("div")
+            div.textContent = text
+            const {style} = div
+            style.position = "absolute"
+            style.color = `rgb(${color.map((val)=>255*val).join(",")})`
+            style.fontSize = `${fontSize}px`
+            style.padding = "5px"
+            style.fontFamily = fontFamily
+            style.width = "fit-content"
 
-              if (pos == "UpperLeft") {
-                style.top = `${(1 - viewport[3])*100}%`
-                style.left = `${viewport[0]*100}%`
-              }
-              if (pos == "UpperRight") {
-                style.top = `${(1 - viewport[3])*100}%`
-                style.right = `${(1-viewport[2])*100}%`
-              }
-              if (pos == "LowerLeft") {
-                style.bottom = `${viewport[1]*100}%`
-                style.left = `${viewport[0]*100}%`
-              }
-              if (pos == "LowerRight") {
-                style.bottom = `${viewport[1]*100}%`
-                style.right = `${(1-viewport[2])*100}%`
-              }
-              if (pos == "UpperEdge") {
-                style.top = `${(1 - viewport[3])*100}%`
-                style.left = `${(viewport[0] + (viewport[2] - viewport[0])/2) *100}%`
-                style.transform = "translateX(-50%)"
-              }
-              if (pos == "LowerEdge") {
-                style.bottom = `${viewport[1]*100}%`
-                style.left = `${(viewport[0] + (viewport[2] - viewport[0])/2) *100}%`
-                style.transform = "translateX(-50%)"
-              }
-              if (pos == "LeftEdge") {
-                style.left = `${viewport[0]*100}%`
-                style.top = `${(1 - viewport[3] + (viewport[3] - viewport[1])/2) *100}%`
-                style.transform = "translateY(-50%)"
-              }
-              if (pos == "RightEdge") {
-                style.right = `${(1-viewport[2])*100}%`
-                style.top = `${(1 - viewport[3] + (viewport[3] - viewport[1])/2) *100}%`
-                style.transform = "translateY(-50%)"
-              }
-              this._annotations_container.appendChild(div)
+            if (pos == "UpperLeft") {
+              style.top = `${(1 - viewport[3])*100}%`
+              style.left = `${viewport[0]*100}%`
             }
+            if (pos == "UpperRight") {
+              style.top = `${(1 - viewport[3])*100}%`
+              style.right = `${(1-viewport[2])*100}%`
+            }
+            if (pos == "LowerLeft") {
+              style.bottom = `${viewport[1]*100}%`
+              style.left = `${viewport[0]*100}%`
+            }
+            if (pos == "LowerRight") {
+              style.bottom = `${viewport[1]*100}%`
+              style.right = `${(1-viewport[2])*100}%`
+            }
+            if (pos == "UpperEdge") {
+              style.top = `${(1 - viewport[3])*100}%`
+              style.left = `${(viewport[0] + (viewport[2] - viewport[0])/2) *100}%`
+              style.transform = "translateX(-50%)"
+            }
+            if (pos == "LowerEdge") {
+              style.bottom = `${viewport[1]*100}%`
+              style.left = `${(viewport[0] + (viewport[2] - viewport[0])/2) *100}%`
+              style.transform = "translateX(-50%)"
+            }
+            if (pos == "LeftEdge") {
+              style.left = `${viewport[0]*100}%`
+              style.top = `${(1 - viewport[3] + (viewport[3] - viewport[1])/2) *100}%`
+              style.transform = "translateY(-50%)"
+            }
+            if (pos == "RightEdge") {
+              style.right = `${(1-viewport[2])*100}%`
+              style.top = `${(1 - viewport[3] + (viewport[3] - viewport[1])/2) *100}%`
+              style.transform = "translateY(-50%)"
+            }
+            this._annotations_container.appendChild(div)
           }
-        )
+        })
       }
     }
   }
@@ -181,12 +182,12 @@ export abstract class AbstractVTKView extends HTMLBoxView {
     this.on_change(this.model.properties.orientation_widget, () => {
       this._orientation_widget_visibility(this.model.orientation_widget)
     })
-    this.on_change(this.model.properties.camera,
-      () => this._set_camera_state()
-    )
+    this.on_change(this.model.properties.camera, () => this._set_camera_state())
     this.on_change(this.model.properties.axes, () => {
       this._delete_axes()
-      if (this.model.axes) this._set_axes()
+      if (this.model.axes) {
+        this._set_axes()
+      }
       this._vtk_render()
     })
     this.on_change(this.model.properties.color_mappers, () => this._add_colorbars())
@@ -222,8 +223,9 @@ export abstract class AbstractVTKView extends HTMLBoxView {
 
   override after_layout(): void {
     super.after_layout()
-    if (this._renderable)
+    if (this._renderable) {
       this._vtk_renwin.resize() // resize call render method
+    }
     this._vtk_render()
     if (!this._rendered) {
       this._add_colorbars()
@@ -240,7 +242,9 @@ export abstract class AbstractVTKView extends HTMLBoxView {
   override remove(): void {
     this._unsubscribe_camera_cb()
     window.removeEventListener("resize", this._vtk_renwin.resize)
-    if (this._orientationWidget!=null) this._orientationWidget.delete()
+    if (this._orientationWidget != null) {
+      this._orientationWidget.delete()
+    }
     this._vtk_renwin.getRenderWindow().getInteractor().delete()
     this._vtk_renwin.delete()
     super.remove()
@@ -253,7 +257,7 @@ export abstract class AbstractVTKView extends HTMLBoxView {
   get _vtk_camera_state(): any {
     const vtk_camera = this._vtk_renwin.getRenderer().getActiveCamera()
     let state: any
-    if (vtk_camera){
+    if (vtk_camera) {
       state = clone(vtk_camera.get())
       delete state.cameraLightTransform
       delete state.classHierarchy
@@ -268,9 +272,7 @@ export abstract class AbstractVTKView extends HTMLBoxView {
   }
 
   get _axes_canvas(): HTMLCanvasElement {
-    let axes_canvas = this._vtk_container.querySelector(
-      ".axes-canvas"
-    ) as HTMLCanvasElement
+    let axes_canvas = this._vtk_container.querySelector(".axes-canvas") as HTMLCanvasElement
     if (!axes_canvas) {
       axes_canvas = canvas({
         style: {
@@ -334,14 +336,13 @@ export abstract class AbstractVTKView extends HTMLBoxView {
       interactor: this._vtk_renwin.getInteractor(),
     })
     this._orientationWidget.setEnabled(true)
-    this._orientationWidget.setViewportCorner(
-      vtkns.OrientationMarkerWidget.Corners.BOTTOM_RIGHT
-    )
+    this._orientationWidget.setViewportCorner(vtkns.OrientationMarkerWidget.Corners.BOTTOM_RIGHT)
     this._orientationWidget.setViewportSize(0.15)
     this._orientationWidget.setMinPixelSize(75)
     this._orientationWidget.setMaxPixelSize(300)
-    if (this.model.interactive_orientation_widget)
+    if (this.model.interactive_orientation_widget) {
       this._make_orientation_widget_interactive()
+    }
     this._orientation_widget_visibility(this.model.orientation_widget)
   }
 
@@ -365,20 +366,26 @@ export abstract class AbstractVTKView extends HTMLBoxView {
       const viewUp = camera.getViewUp()
 
       const distance = Math.sqrt(
-        Math.pow(position[0] - focalPoint[0], 2) +
-          Math.pow(position[1] - focalPoint[1], 2) +
-          Math.pow(position[2] - focalPoint[2], 2)
+        (position[0] - focalPoint[0])**2 +
+        (position[1] - focalPoint[1])**2 +
+        (position[2] - focalPoint[2])**2,
       )
 
       camera.setPosition(
         focalPoint[0] + direction[0] * distance,
         focalPoint[1] + direction[1] * distance,
-        focalPoint[2] + direction[2] * distance
+        focalPoint[2] + direction[2] * distance,
       )
 
-      if (direction[0]) camera.setViewUp(majorAxis(viewUp, 1, 2))
-      if (direction[1]) camera.setViewUp(majorAxis(viewUp, 0, 2))
-      if (direction[2]) camera.setViewUp(majorAxis(viewUp, 0, 1))
+      if (direction[0]) {
+        camera.setViewUp(majorAxis(viewUp, 1, 2))
+      }
+      if (direction[1]) {
+        camera.setViewUp(majorAxis(viewUp, 0, 2))
+      }
+      if (direction[2]) {
+        camera.setViewUp(majorAxis(viewUp, 0, 1))
+      }
 
       this._vtk_renwin.getRenderer().resetCameraClippingRange()
       this._vtk_render()
@@ -386,21 +393,21 @@ export abstract class AbstractVTKView extends HTMLBoxView {
     })
   }
 
-
   _delete_axes(): void {
     if (this._axes) {
-      Object.keys(this._axes).forEach((key) =>
+      Object.keys(this._axes).forEach((key) => {
         this._vtk_renwin.getRenderer().removeActor(this._axes[key])
-      )
+      })
       this._axes = null
       const textCtx = this._axes_canvas.getContext("2d")
-      if (textCtx)
+      if (textCtx) {
         textCtx.clearRect(
           0,
           0,
           this._axes_canvas.clientWidth * window.devicePixelRatio,
-          this._axes_canvas.clientHeight * window.devicePixelRatio
+          this._axes_canvas.clientHeight * window.devicePixelRatio,
         )
+      }
     }
   }
 
@@ -414,9 +421,12 @@ export abstract class AbstractVTKView extends HTMLBoxView {
 
   _orientation_widget_visibility(visibility: boolean): void {
     this._orientationWidget.setEnabled(visibility)
-    if (this._widgetManager != null){
-      if (visibility) this._widgetManager.enablePicking()
-      else this._widgetManager.disablePicking()
+    if (this._widgetManager != null) {
+      if (visibility) {
+        this._widgetManager.enablePicking()
+      } else {
+        this._widgetManager.disablePicking()
+      }
     }
     this._vtk_render()
   }
@@ -436,30 +446,32 @@ export abstract class AbstractVTKView extends HTMLBoxView {
 
   _set_axes(): void {
     if (this.model.axes && this._vtk_renwin.getRenderer()) {
-      const {psActor, axesActor, gridActor} = this.model.axes.create_axes(
-        this._axes_canvas
-      )
+      const {psActor, axesActor, gridActor} = this.model.axes.create_axes(this._axes_canvas)
       this._axes = {psActor, axesActor, gridActor}
-      if (psActor)
-	this._vtk_renwin.getRenderer().addActor(psActor)
-      if (axesActor)
-	this._vtk_renwin.getRenderer().addActor(axesActor)
-      if (gridActor)
-	this._vtk_renwin.getRenderer().addActor(gridActor)
+      if (psActor) {
+        this._vtk_renwin.getRenderer().addActor(psActor)
+      }
+      if (axesActor) {
+        this._vtk_renwin.getRenderer().addActor(axesActor)
+      }
+      if (gridActor) {
+        this._vtk_renwin.getRenderer().addActor(gridActor)
+      }
     }
   }
 
   _set_camera_state(): void {
     if (!this._setting_camera && this._vtk_renwin.getRenderer() !== undefined) {
       this._setting_camera = true
-        if (
-          this.model.camera &&
-          JSON.stringify(this.model.camera) != JSON.stringify(this._vtk_camera_state)
-        )
-          this._vtk_renwin
-            .getRenderer()
-            .getActiveCamera()
-            .set(this.model.camera)
+      if (
+        this.model.camera &&
+        JSON.stringify(this.model.camera) != JSON.stringify(this._vtk_camera_state)
+      ) {
+        this._vtk_renwin
+          .getRenderer()
+          .getActiveCamera()
+          .set(this.model.camera)
+      }
       this._vtk_renwin.getRenderer().resetCameraClippingRange()
       this._setting_camera = false
     }
@@ -472,9 +484,10 @@ export abstract class AbstractVTKView extends HTMLBoxView {
   }
 
   _vtk_render(): void {
-    if (this._renderable){
-      if (this._orientationWidget)
+    if (this._renderable) {
+      if (this._orientationWidget) {
         this._orientationWidget.updateMarkerOrientation()
+      }
       this._vtk_renwin.getRenderWindow().render()
     }
   }

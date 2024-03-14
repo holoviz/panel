@@ -17,7 +17,6 @@ function serialize_attrs(attrs: any): any {
   for (const attr in attrs) {
     let value = attrs[attr]
     if (!isString(value)) {
-      value = value
     } else if (value !== "" && (value === "NaN" || !isNaN(Number(value)))) {
       value = Number(value)
     } else if (value === "false" || value === "true") {
