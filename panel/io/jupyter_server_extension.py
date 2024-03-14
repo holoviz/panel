@@ -256,7 +256,7 @@ class PanelJupyterHandler(PanelBaseHandler):
                 html = KERNEL_ERROR_TEMPLATE.render(
                     base_url=f'{root_url}/',
                     kernels=available_kernels,
-                    error_type='Kernel error',
+                    error_type='Kernel Error',
                     error=f"No such kernel '{requested_kernel}'",
                     title='Panel: Kernel not found'
                 )
