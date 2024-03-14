@@ -87,7 +87,7 @@ power = pn.bind(
     calculate_power, wind_speed=wind_speed, efficiency=efficiency
 )
 
-power_md = pn.widgets.Markdown(power)
+power_md = pn.pane.Markdown(power)
 
 pn.Column(wind_speed, efficiency, power_md).servable()
 ```
@@ -205,7 +205,7 @@ pn.Column(wind_speed, power, power_text).servable()
 ```
 
 :::{warning}
-Binding to bound functions can help you to quickly explore your data, but its highly inefficient as the results are calculated from scratch for each call.
+Binding to bound functions can help you to quickly explore your data, but it can be inefficient as the results are calculated from scratch for each call.
 :::
 
 Try changing the `power_generation` function to:
