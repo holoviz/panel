@@ -9,7 +9,7 @@ module.exports = {
   },
   "plugins": ["@typescript-eslint", "@stylistic/eslint-plugin"],
   "extends": [],
-  "ignorePatterns": ["./dist", "*/theme/**/*.js", "eslint.js"],
+  "ignorePatterns": ["*/dist", "*/theme/**/*.js", "eslint.js", "*/_templates/*.js"],
   "rules": {
     "@typescript-eslint/ban-types": ["error", {
       "types": {
