@@ -302,8 +302,8 @@ class PanelJupyterHandler(PanelBaseHandler):
             html = ERROR_TEMPLATE.render(
                 npm_cdn=config.npm_cdn,
                 base_url=f'{root_url}/',
-                error_type="Kernel error",
-                error="Failed to start kernel",
+                error_type="Kernel Error",
+                error="Failed to start application",
                 error_msg=str(e),
                 title="Panel: Kernel Error"
             )
