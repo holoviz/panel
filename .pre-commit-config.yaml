@@ -48,14 +48,15 @@ repos:
     hooks:
       - id: oxipng
         stages: [manual]
-  - repo: local
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.56.0
     hooks:
       - id: eslint
-        name: eslint
-        entry: npm run --prefix panel lint
-        language: system
-        always_run: true
-        pass_filenames: false
+        args: ['-c', 'panel/eslint.js', 'panel/*.ts', 'panel/models/**/*.ts']
+        additional_dependencies:
+          - '@stylistic/eslint-plugin@1.6.3'
+          - '@typescript-eslint/eslint-plugin@7.2.0'
+          - '@typescript-eslint/parser@7.2.0'
 ci:
   autofix_prs: false
   autoupdate_schedule: quarterly
