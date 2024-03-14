@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import concurrent.futures
 import dataclasses
+import json
 import os
 import pathlib
 import uuid
@@ -41,17 +42,17 @@ WORKER_HANDLER_TEMPLATE  = _pn_env.get_template('pyodide_handler.js')
 PANEL_ROOT = pathlib.Path(__file__).parent.parent
 BOKEH_VERSION = base_version(bokeh.__version__)
 PY_VERSION = base_version(__version__)
-PYODIDE_VERSION = 'v0.24.1'
-PYSCRIPT_VERSION = '2023.05.1'
+PYODIDE_VERSION = 'v0.25.0'
+PYSCRIPT_VERSION = '2024.2.1'
 PANEL_LOCAL_WHL = DIST_DIR / 'wheels' / f'panel-{__version__.replace("-dirty", "")}-py3-none-any.whl'
 BOKEH_LOCAL_WHL = DIST_DIR / 'wheels' / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PANEL_CDN_WHL = f'{CDN_DIST}wheels/panel-{PY_VERSION}-py3-none-any.whl'
 BOKEH_CDN_WHL = f'{CDN_ROOT}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PYODIDE_URL = f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/full/pyodide.js'
 PYODIDE_PYC_URL = f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/pyc/pyodide.js'
-PYSCRIPT_CSS = f'<link rel="stylesheet" href="https://pyscript.net/releases/{PYSCRIPT_VERSION}/pyscript.css" />'
+PYSCRIPT_CSS = f'<link rel="stylesheet" href="https://pyscript.net/releases/{PYSCRIPT_VERSION}/core.css" />'
 PYSCRIPT_CSS_OVERRIDES = f'<link rel="stylsheet" href="{CDN_DIST}css/pyscript.css" />'
-PYSCRIPT_JS = f'<script defer src="https://pyscript.net/releases/{PYSCRIPT_VERSION}/pyscript.js"></script>'
+PYSCRIPT_JS = f'<script type="module" src="https://pyscript.net/releases/{PYSCRIPT_VERSION}/core.js"></script>'
 PYODIDE_JS = f'<script src="{PYODIDE_URL}"></script>'
 PYODIDE_PYC_JS = f'<script src="{PYODIDE_PYC_URL}"></script>'
 
@@ -276,15 +277,19 @@ def script_to_html(
     web_worker = None
     if css_resources is None:
         css_resources = []
-    if runtime == 'pyscript':
+    if runtime.startswith('pyscript'):
         if js_resources == 'auto':
             js_resources = [PYSCRIPT_JS]
         if css_resources == 'auto':
             css_resources = [PYSCRIPT_CSS, PYSCRIPT_CSS_OVERRIDES]
         elif not css_resources:
             css_resources = []
-        pyenv = ','.join([repr(req) for req in reqs])
-        plot_script = f'<py-config>\npackages = [{pyenv}]\n</py-config>\n<py-script>{code}</py-script>'
+        pyconfig = json.dumps({'packages': reqs, 'plugins': ["!error"]})
+        if 'worker' in runtime:
+            plot_script = f'<script type="pyodide" async worker config=\'{pyconfig}\' src="{app_name}.py"></script>'
+            web_worker = code
+        else:
+            plot_script = f'<py-script config=\'{pyconfig}\'>{code}</py-script>'
     else:
         if css_resources == 'auto':
             css_resources = []
@@ -316,8 +321,8 @@ def script_to_html(
         json_id = make_id()
         docs_json, render_items = standalone_docs_json_and_render_items(document)
         render_item = render_items[0]
-        json = escape(serialize_json(docs_json), quote=False)
-        plot_script += wrap_in_script_tag(json, "application/json", json_id)
+        escaped_json = escape(serialize_json(docs_json), quote=False)
+        plot_script += wrap_in_script_tag(escaped_json, "application/json", json_id)
         plot_script += wrap_in_script_tag(script_for_render_items(json_id, render_items))
     else:
         render_item = RenderItem(
@@ -333,7 +338,7 @@ def script_to_html(
         config.loading_spinner, config.loading_color, config.loading_max_height
     )
     css_resources.append(
-        f'<style type="text/css">\n{spinner_css}\n</style>'
+        f'<style type="text/css">\n{spinner_css}\n.py-error {{ display: none; }}</style>'
     )
     with set_curdoc(document):
         bokeh_js, bokeh_css = bundle_resources(document.roots, resources)
@@ -368,6 +373,13 @@ def script_to_html(
     html = (html
         .replace('<body>', f'<body class="{LOADING_INDICATOR_CSS_CLASS} pn-{config.loading_spinner}">')
     )
+    if runtime == 'pyscript-worker':
+        # pyscript-worker apps must have strict cross-origin policies
+        html = (html
+            .replace('<script type="text/javascript"', '<script type="text/javascript" crossorigin="anonymous"')
+            .replace('<link rel="stylesheet"', '<link rel="stylesheet" crossorigin="anonymous"')
+            .replace('<link rel="icon"', '<link rel="icon" crossorigin="anonymous"')
+        )
     return html, web_worker
 
 
@@ -391,7 +403,7 @@ def convert_app(
 
     try:
         with set_resource_mode('inline' if inline else 'cdn'):
-            html, js_worker = script_to_html(
+            html, worker = script_to_html(
                 app, requirements=requirements, runtime=runtime,
                 prerender=prerender, manifest=manifest,
                 panel_version=panel_version, http_patch=http_patch,
@@ -407,9 +419,12 @@ def convert_app(
 
     with open(dest_path / filename, 'w', encoding="utf-8") as out:
         out.write(html)
-    if runtime == 'pyodide-worker':
+    if runtime == 'pyscript-worker':
+        with open(dest_path / f'{name}.py', 'w', encoding="utf-8") as out:
+            out.write(worker)
+    elif runtime == 'pyodide-worker':
         with open(dest_path / f'{name}.js', 'w', encoding="utf-8") as out:
-            out.write(js_worker)
+            out.write(worker)
     if verbose:
         print(f'Successfully converted {app} to {runtime} target and wrote output to {filename}.')
     return (name.replace('_', ' '), filename)
