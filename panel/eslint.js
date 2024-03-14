@@ -2,14 +2,14 @@ module.exports = {
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "project": [
-      "./tsconfig.json",
+      "./tsconfig.json"
     ],
-    "tsconfigRootDir": ".",
+    "tsconfigRootDir": __dirname,
     "sourceType": "module",
   },
   "plugins": ["@typescript-eslint", "@stylistic/eslint-plugin"],
   "extends": [],
-  "ignorePatterns": ["./dist"],
+  "ignorePatterns": ["./dist", "*/theme/**/*.js", "eslint.js"],
   "rules": {
     "@typescript-eslint/ban-types": ["error", {
       "types": {
