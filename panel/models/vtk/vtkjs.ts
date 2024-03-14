@@ -1,4 +1,4 @@
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 
 import {AbstractVTKView, AbstractVTKPlot} from "./vtklayout"
 import {vtkns} from "./util"
@@ -47,12 +47,14 @@ export class VTKJSPlotView extends AbstractVTKView {
         const fn = (window as any).vtk.macro.debounce(
           () => {
             setTimeout(() => {
-              if (this._axes == null && this.model.axes) this._set_axes()
+              if (this._axes == null && this.model.axes) {
+                this._set_axes()
+              }
               this._set_camera_state()
               this._get_camera_state()
-	      this._vtk_renwin.getRenderWindow().render()
+              this._vtk_renwin.getRenderWindow().render()
             }, 100)
-	  }, 100
+          }, 100,
         )
         sceneImporter.setUrl("index.json")
         sceneImporter.onReady(fn)

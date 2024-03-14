@@ -54,14 +54,14 @@ export class CommManager extends Model {
       this.ns = (window as any).PyViz
       this.ns.comm_manager.register_target(this.plot_id, this.comm_id, (msg: any) => {
         for (const view of this.ns.shared_views.get(this.plot_id)) {
-	  if (view !== this) {
+          if (view !== this) {
             view.msg_handler(msg)
           }
         }
         try {
-	  this.msg_handler(msg)
+          this.msg_handler(msg)
         } catch (e) {
-	  console.error(e)
+          console.error(e)
         }
       })
       this._client_comm = this.ns.comm_manager.get_client_comm(this.plot_id, this.client_comm_id, (msg: any) => this.on_ack(msg))
@@ -112,10 +112,10 @@ export class CommManager extends Model {
       extracted = {}
       for (const key in value) {
         if (key === "buffer" && value[key] instanceof ArrayBuffer) {
-	  const id = Object.keys(buffers).length
-	  extracted = {id}
-	  buffers.push(value[key])
-	  break
+          const id = Object.keys(buffers).length
+          extracted = {id}
+          buffers.push(value[key])
+          break
         }
         extracted[key] = this._extract_buffers(value[key], buffers)
       }

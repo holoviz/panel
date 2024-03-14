@@ -1,4 +1,4 @@
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 
 import {AbstractVTKPlot, AbstractVTKView} from "./vtklayout"
 import type {ColorMapper, VolumeType} from "./util"
@@ -9,7 +9,6 @@ import {
   hexToRGB,
   vtkLutToMapper,
 } from "./util"
-
 
 export class VTKVolumePlotView extends AbstractVTKView {
   declare model: VTKVolumePlot
@@ -114,8 +113,9 @@ export class VTKVolumePlotView extends AbstractVTKView {
       this._vtk_renwin.getRenderWindow().render()
     })
     this.on_change(controller_expanded, () => {
-      if (this._controllerWidget != null)
+      if (this._controllerWidget != null) {
         this._controllerWidget.setExpanded(this.model.controller_expanded)
+      }
     })
     this.on_change(nan_opacity, () => {
       const scalar_opacity = this.image_actor_i.getProperty().getScalarOpacity()
@@ -133,8 +133,9 @@ export class VTKVolumePlotView extends AbstractVTKView {
     this._create_orientation_widget()
     this._set_axes()
     this._vtk_renwin.getRenderer().resetCamera()
-    if (Object.keys(this.model.camera).length)
+    if (Object.keys(this.model.camera).length) {
       this._set_camera_state()
+    }
     this._get_camera_state()
   }
 
@@ -160,7 +161,7 @@ export class VTKVolumePlotView extends AbstractVTKView {
     this._controllerWidget.setupContent(
       this._vtk_renwin.getRenderWindow(),
       this.volume,
-      true
+      true,
     )
     this._controllerWidget.setContainer(this.el)
     this._controllerWidget.setExpanded(this.model.controller_expanded)
@@ -177,8 +178,9 @@ export class VTKVolumePlotView extends AbstractVTKView {
   }
 
   get vtk_image_data(): any {
-    if (!this._vtk_image_data)
+    if (!this._vtk_image_data) {
       this._vtk_image_data = data2VTKImageData(this.model.data as VolumeType)
+    }
     return this._vtk_image_data
   }
   get volume(): any {
@@ -214,48 +216,50 @@ export class VTKVolumePlotView extends AbstractVTKView {
   }
 
   _connect_js_controls(): void {
-    const {el: controller_el} = this._controllerWidget.get('el')
-    if(controller_el !== undefined) {
-      const controller_button = (controller_el as HTMLElement).querySelector('.js-button')
-      controller_button!.addEventListener('click', () => this.model.controller_expanded = this._controllerWidget.getExpanded())
+    const {el: controller_el} = this._controllerWidget.get("el")
+    if (controller_el !== undefined) {
+      const controller_button = (controller_el as HTMLElement).querySelector(".js-button")
+      controller_button!.addEventListener("click", () => this.model.controller_expanded = this._controllerWidget.getExpanded())
     }
     // Colormap selector
     this.colormap_selector.addEventListener("change", () => {
       this.model.colormap = this.colormap_selector.value
     })
-    if (!this.model.colormap) this.model.colormap = this.colormap_selector.value
-    else this.model.properties.colormap.change.emit()
+    if (!this.model.colormap) {
+      this.model.colormap = this.colormap_selector.value
+    } else {
+      this.model.properties.colormap.change.emit()
+    }
 
     // Shadow selector
     this.shadow_selector.addEventListener("change", () => {
       this.model.shadow = !!Number(this.shadow_selector.value)
     })
-    if ((this.model.shadow = !!Number(this.shadow_selector.value)))
+    if ((this.model.shadow = !!Number(this.shadow_selector.value))) {
       this.model.properties.shadow.change.emit()
+    }
 
     // Sampling slider
     this.sampling_slider.addEventListener("input", () => {
       const js_sampling_value = Number(this.sampling_slider.value)
-      if (Math.abs(this.model.sampling - js_sampling_value) >= 5e-3)
+      if (Math.abs(this.model.sampling - js_sampling_value) >= 5e-3) {
         this.model.sampling = js_sampling_value
+      }
     })
-    if (
-      Math.abs(this.model.sampling - Number(this.shadow_selector.value)) >= 5e-3
-    )
+    if (Math.abs(this.model.sampling - Number(this.shadow_selector.value)) >= 5e-3) {
       this.model.properties.sampling.change.emit()
+    }
 
     // Edge Gradient slider
     this.edge_gradient_slider.addEventListener("input", () => {
       const js_edge_gradient_value = Number(this.edge_gradient_slider.value)
-      if (Math.abs(this.model.edge_gradient - js_edge_gradient_value) >= 5e-3)
+      if (Math.abs(this.model.edge_gradient - js_edge_gradient_value) >= 5e-3) {
         this.model.edge_gradient = js_edge_gradient_value
+      }
     })
-    if (
-      Math.abs(
-        this.model.edge_gradient - Number(this.edge_gradient_slider.value)
-      ) >= 5e-3
-    )
+    if (Math.abs(this.model.edge_gradient - Number(this.edge_gradient_slider.value)) >= 5e-3) {
       this.model.properties.edge_gradient.change.emit()
+    }
   }
 
   _plot_slices(): void {
@@ -317,11 +321,11 @@ export class VTKVolumePlotView extends AbstractVTKView {
 
     const lookupTable = vtkns.ColorTransferFunction.newInstance()
     if (this.model.colormap != null) {
-      const preset = vtkns.ColorTransferFunction.vtkColorMaps.getPresetByName(this.model.colormap);
-      lookupTable.applyColorMap(preset);
+      const preset = vtkns.ColorTransferFunction.vtkColorMaps.getPresetByName(this.model.colormap)
+      lookupTable.applyColorMap(preset)
     }
     lookupTable.onModified(
-      () => (this.model.mapper = vtkLutToMapper(lookupTable))
+      () => (this.model.mapper = vtkLutToMapper(lookupTable)),
     )
     const piecewiseFunction = vtkns.PiecewiseFunction.newInstance()
     const sampleDistance =
@@ -330,7 +334,7 @@ export class VTKVolumePlotView extends AbstractVTKView {
         source
           .getSpacing()
           .map((v: number) => v * v)
-          .reduce((a: number, b: number) => a + b, 0)
+          .reduce((a: number, b: number) => a + b, 0),
       )
     mapper.setSampleDistance(sampleDistance)
 
@@ -346,7 +350,7 @@ export class VTKVolumePlotView extends AbstractVTKView {
       .setScalarOpacityUnitDistance(
         0,
         vtkns.BoundingBox.getDiagonalLength(source.getBounds()) /
-          Math.max(...source.getDimensions())
+          Math.max(...source.getDimensions()),
       )
     // - control how we emphasize surface boundaries
     //  => max should be around the average gradient magnitude for the
@@ -442,10 +446,10 @@ export class VTKVolumePlot extends AbstractVTKPlot {
       display_slices:       [ Boolean,         false ],
       display_volume:       [ Boolean,          true ],
       edge_gradient:        [ Number,            0.2 ],
-      interpolation:        [ Interpolation, 'fast_linear'],
+      interpolation:        [ Interpolation, "fast_linear"],
       mapper:               [ Struct({palette: Array(String), low: Number, high: Number}), {palette: [], low: 0, high: 0} ],
       nan_opacity:          [ Number,              1 ],
-      render_background:    [ String,      '#52576e' ],
+      render_background:    [ String,      "#52576e" ],
       rescale:              [ Boolean,         false ],
       sampling:             [ Number,            0.4 ],
       shadow:               [ Boolean,          true ],
