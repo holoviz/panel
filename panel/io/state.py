@@ -685,8 +685,7 @@ class _state(param.Parameterized):
         """
         if self.curdoc is None or self._is_pyodide or self.loaded:
             if self._thread_pool:
-                future = self._thread_pool.submit(partial(self.execute, callback, schedule=False))
-                future.add_done_callback(self._handle_future_exception)
+                self.execute(callback, schedule='threaded')
             else:
                 self.execute(callback, schedule=False)
             return

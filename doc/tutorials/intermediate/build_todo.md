@@ -51,9 +51,10 @@ class Task(pn.viewable.Viewer):
 class TaskList(param.Parameterized):
     """Provides methods to add and remove tasks as well as calculate summary statistics"""
 
-    value: List[Task] = param.List(class_=Task, doc="A list of Tasks")
+    value: List[Task] = param.List(item_type=Task, doc="A list of Tasks")
 
     total_tasks = param.Integer(doc="The number of Tasks")
+
     has_tasks = param.Boolean(doc="Whether or not the TaskList contains Tasks")
 
     completed_tasks = param.Integer(doc="The number of completed tasks")
@@ -102,7 +103,7 @@ class TaskList(param.Parameterized):
 class TaskInput(pn.viewable.Viewer):
     """A Widget that provides tasks as input"""
 
-    value: Task = param.ClassSelector(class_=Task, doc="""The Task input by the user""")
+    value: Task = param.ClassSelector(item_type=Task, doc="""The Task input by the user""")
 
     def _no_value(self, value):
         return not bool(value)
@@ -307,6 +308,9 @@ class TaskInput(pn.viewable.Viewer):
 
     value: Task = param.ClassSelector(class_=Task, doc="""The Task input by the user""")
 
+    def _no_value(self, value):
+        return not bool(value)
+
     def __panel__(self):
         text_input = pn.widgets.TextInput(
             name="Task", placeholder="Enter a task", sizing_mode="stretch_width"
@@ -321,13 +325,12 @@ class TaskInput(pn.viewable.Viewer):
             disabled=text_input_has_value,
         )
 
-    @pn.depends(text_input, submit_task, watch=True)
-    def clear_text_input(*_):
-        if text_input.value:
-            self.value = Task(value=text_input.value)
-            text_input.value = text_input.value_input = ""
-
-    return pn.Row(text_input, submit_task, sizing_mode="stretch_width")
+        @pn.depends(text_input, submit_task, watch=True)
+        def clear_text_input(*_):
+            if text_input.value:
+                self.value = Task(value=text_input.value)
+                text_input.value = text_input.value_input = ""
+        return pn.Row(text_input, submit_task, sizing_mode="stretch_width")
 
 TaskInput()
 ```
@@ -368,6 +371,19 @@ class TaskListEditor(pn.viewable.Viewer):
     """Component that enables a user to manage a list of tasks"""
 
     value: TaskList = param.ClassSelector(class_=TaskList)
+
+    @param.depends("value.value")
+    def _layout(self):
+        tasks = self.value.value
+        rows = [TaskRow(value=task) for task in tasks]
+        for row in rows:
+
+            def remove(_, task=row.value):
+                self.value.value = [item for item in tasks if not item == task]
+
+            pn.bind(remove, row.param.remove, watch=True)
+
+        return pn.Column(*rows)
 
     def __panel__(self):
         task_input = TaskInput()

@@ -211,6 +211,7 @@ def test_holoviews_pane_reflect_responsive_bind_function(document, comm):
 
     assert col.sizing_mode == 'fixed'
 
+@pytest.mark.usefixtures("hv_plotly")
 @hv_available
 @plotly_available
 def test_holoviews_pane_reflect_responsive_plotly(document, comm):
@@ -229,6 +230,7 @@ def test_holoviews_pane_reflect_responsive_plotly(document, comm):
     assert pane.sizing_mode is None
 
 
+@pytest.mark.usefixtures("hv_plotly")
 @hv_available
 @plotly_available
 def test_holoviews_pane_inherits_design_stylesheets(document, comm):
@@ -530,6 +532,7 @@ def test_holoviews_widgets_explicit_widget_instance_override():
     assert widgets[0] is widget
 
 
+@pytest.mark.usefixtures("hv_bokeh")
 @hv_available
 def test_holoviews_linked_axes(document, comm):
     c1 = hv.Curve([1, 2, 3])
@@ -545,6 +548,7 @@ def test_holoviews_linked_axes(document, comm):
     assert p1.y_range is p2.y_range
 
 
+@pytest.mark.usefixtures("hv_bokeh")
 @hv_available
 def test_holoviews_linked_axes_flexbox(document, comm):
     c1 = hv.Curve([1, 2, 3])
@@ -560,6 +564,7 @@ def test_holoviews_linked_axes_flexbox(document, comm):
     assert p1.y_range is p2.y_range
 
 
+@pytest.mark.usefixtures("hv_bokeh")
 @hv_available
 def test_holoviews_linked_axes_merged_ranges(document, comm):
     c1 = hv.Curve([1, 2, 3])
@@ -577,6 +582,7 @@ def test_holoviews_linked_axes_merged_ranges(document, comm):
     assert p1.y_range.end == 4.4
 
 
+@pytest.mark.usefixtures("hv_bokeh")
 @hv_available
 def test_holoviews_linked_x_axis(document, comm):
     c1 = hv.Curve([1, 2, 3])
@@ -592,6 +598,7 @@ def test_holoviews_linked_x_axis(document, comm):
     assert p1.y_range is not p2.y_range
 
 
+@pytest.mark.usefixtures("hv_bokeh")
 @hv_available
 def test_holoviews_axiswise_not_linked_axes(document, comm):
     c1 = hv.Curve([1, 2, 3])
@@ -607,6 +614,7 @@ def test_holoviews_axiswise_not_linked_axes(document, comm):
     assert p1.y_range is not p2.y_range
 
 
+@pytest.mark.usefixtures("hv_bokeh")
 @hv_available
 def test_holoviews_shared_axes_opt_not_linked_axes(document, comm):
     c1 = hv.Curve([1, 2, 3])
@@ -622,6 +630,7 @@ def test_holoviews_shared_axes_opt_not_linked_axes(document, comm):
     assert p1.y_range is not p2.y_range
 
 
+@pytest.mark.usefixtures("hv_bokeh")
 @hv_available
 def test_holoviews_not_linked_axes(document, comm):
     c1 = hv.Curve([1, 2, 3])
@@ -640,6 +649,7 @@ def test_holoviews_not_linked_axes(document, comm):
     assert p1.y_range is not p2.y_range
 
 
+@pytest.mark.usefixtures("hv_bokeh")
 @hv_available
 def test_holoviews_link_across_panes(document, comm):
     from bokeh.models.tools import RangeTool
@@ -664,6 +674,7 @@ def test_holoviews_link_across_panes(document, comm):
     assert range_tool.x_range == p2.x_range
 
 
+@pytest.mark.usefixtures("hv_bokeh")
 @hv_available
 def test_holoviews_link_after_adding_item(document, comm):
     from bokeh.models.tools import RangeTool
@@ -692,6 +703,7 @@ def test_holoviews_link_after_adding_item(document, comm):
     assert range_tool.x_range == p2.x_range
 
 
+@pytest.mark.usefixtures("hv_bokeh")
 @hv_available
 def test_holoviews_link_within_pane(document, comm):
     from bokeh.models.tools import RangeTool

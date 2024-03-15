@@ -236,10 +236,6 @@ jobs:
           nodejs: true
           playwright: true
         id: install
-      - name: doit develop_install
-        run: |
-          conda activate test-environment
-          pip install --pre ipywidgets_bokeh
       - name: launch jupyter
         run: |
           conda activate test-environment
@@ -261,10 +257,6 @@ jobs:
         run: |
           conda activate test-environment
           doit env_capture
-      - name: Check if auth should run
-        if: '!github.event.pull_request.head.repo.fork'
-        run: |
-          echo "PANEL_TEST_AUTH=1" >> $GITHUB_ENV
       - name: doit test_ui
         run: |
           conda activate test-environment

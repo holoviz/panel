@@ -212,9 +212,9 @@ class TestChatInterface:
 
         chat_interface.callback = callback
         chat_interface.send("Message 1")
-        assert chat_interface.objects[1].object == 1
+        wait_until(lambda: chat_interface.objects[1].object == 1)
         chat_interface._click_rerun(None)
-        assert chat_interface.objects[1].object == 2
+        wait_until(lambda: chat_interface.objects[1].object == 2)
 
     def test_click_rerun_null(self, chat_interface):
         chat_interface._click_rerun(None)
