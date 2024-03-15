@@ -203,9 +203,6 @@ class ChatFeed(ListPanel):
 
         super().__init__(*objects, **params)
 
-        if self.help_text:
-            self.objects = [ChatMessage(self.help_text, user="Help"), *self.objects]
-
         # instantiate the card's column
         linked_params = dict(
             design=self.param.design,
@@ -262,6 +259,9 @@ class ChatFeed(ListPanel):
         # handle async callbacks using this trick
         self._callback_trigger = Button(visible=False)
         self._callback_trigger.on_click(self._prepare_response)
+
+        if self.help_text:
+            self.objects = [ChatMessage(self.help_text, user="Help"), *self.objects]
 
     def _get_model(
         self, doc: Document, root: Model | None = None,
