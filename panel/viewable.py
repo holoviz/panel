@@ -41,13 +41,12 @@ from .io.loading import start_loading_spinner, stop_loading_spinner
 from .io.model import add_to_doc, patch_cds_msg
 from .io.notebook import (
     JupyterCommManagerBinary as JupyterCommManager, ipywidget, render_embed,
-    render_mimebundle, render_model, show_server,
+    render_mimebundle, render_model,
 )
 from .io.save import save
 from .io.state import curdoc_locked, set_curdoc, state
 from .util import escape, param_reprs
 from .util.parameters import get_params_to_inherit
-from .util.warnings import deprecated
 
 if TYPE_CHECKING:
     from bokeh.model import Model
@@ -853,13 +852,6 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         inherited = get_params_to_inherit(self)
         return type(self)(**dict(inherited, **params))
 
-    def pprint(self) -> None:
-        """
-        Prints a compositional repr of the class.
-        """
-        deprecated('1.4', f'{type(self).__name__}.pprint', 'print')
-        print(self)  # noqa: T201
-
     def select(
         self, selector: Optional[type | Callable[['Viewable'], bool]] = None
     ) -> List['Viewable']:
@@ -883,20 +875,6 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             return [self]
         else:
             return []
-
-    def app(self, notebook_url: str = "localhost:8888", port: int = 0) -> 'Server':
-        """
-        Displays a bokeh server app inline in the notebook.
-
-        Arguments
-        ---------
-        notebook_url: str
-          URL to the notebook server
-        port: int (optional, default=0)
-          Allows specifying a specific port
-        """
-        deprecated('1.4', f'{type(self).__name__}.app', 'panel.io.notebook.show_server')
-        return show_server(self, notebook_url, port)
 
     def embed(
         self, max_states: int = 1000, max_opts: int = 3, json: bool = False,
