@@ -43,7 +43,7 @@ export class VizzuChartView extends HTMLBoxView {
       } else {
         let change = {}
         for (const prop of this.update) {
-	  if (prop === "config") {
+          if (prop === "config") {
             change = {...change, config: this.config()}
           } else if (prop === "data") {
             change = {...change, data: this.data()}
@@ -53,8 +53,8 @@ export class VizzuChartView extends HTMLBoxView {
         }
         this._animating = true
         this.vizzu_view.animate(change, `${this.model.duration}ms`).then(() => {
-	  this._animating = false
-	  if (this.update.length > 0) {
+          this._animating = false
+          if (this.update.length > 0) {
             update()
           }
         })
@@ -83,19 +83,19 @@ export class VizzuChartView extends HTMLBoxView {
     if ("channels" in this.model.config) {
       for (const col of Object.values(this.model.config.channels)) {
         if (isArray(col)) {
-	  for (const c of col) {
-	    if (col != null && !columns.includes(c as string)) {
+          for (const c of col) {
+            if (col != null && !columns.includes(c as string)) {
               return false
             }
-	  }
+          }
         } else if (isObject(col)) {
-	  for (const prop of Object.keys(col)) {
-	    for (const c of ((col as any)[prop] as string[])) {
-	      if (col != null && !columns.includes(c)) {
+          for (const prop of Object.keys(col)) {
+            for (const c of ((col as any)[prop] as string[])) {
+              if (col != null && !columns.includes(c)) {
                 return false
               }
-	    }
-	  }
+            }
+          }
         } else if (col != null && !columns.includes(col as string)) {
           return false
         }

@@ -570,7 +570,7 @@ class NotebookHandler(PanelCodeHandler):
         doc.modules.add(module)
 
         def post_run():
-            if not (doc.roots or doc in state._templates):
+            if not (doc.roots or doc in state._templates or self._runner.error):
                 self._render_template(doc, path)
             state._cell_outputs.clear()
 
