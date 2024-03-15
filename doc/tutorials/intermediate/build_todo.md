@@ -24,13 +24,12 @@ panel
 ```python
 """An app to manage tasks"""
 from typing import List
-
 import param
-
 import panel as pn
 
 BUTTON_WIDTH = 125
 
+pn.extension(sizing_mode="stretch_width", design="material")
 
 class Task(pn.viewable.Viewer):
     """A model of a Task"""
@@ -189,10 +188,7 @@ class TaskListEditor(pn.viewable.Viewer):
             max_width=500,
         )
 
-
 if pn.state.served:
-    pn.extension(sizing_mode="stretch_width", design="material")
-
     task_list = TaskList(
         value=[
             Task(value="Inspect the blades", completed=True),

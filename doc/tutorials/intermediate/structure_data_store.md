@@ -1,15 +1,14 @@
 # Structure with a DataStore
 
-In this tutorial you will learn how to use the `DataStore` *design pattern*:
+Welcome to the tutorial on structuring our Panel app with a DataStore! Here, we'll delve into the powerful `DataStore` design pattern, which forms the backbone of many successful applications.
 
-- The `DataStore` design pattern has proven quite successful across a wide range of use cases.
-- The `DataStore` component receives `data` and `filters`. Based on the `data` and `filters` it *transforms* the data.
-- One or more `View` components consumes the *transformed* data.
-- The components can be (re-)used for data exploration in notebooks and for building apps.
+## Understanding the DataStore Design Pattern
 
-:::{note}
-When building a larger application we generally recommend using a *class based construction* and following best practices for object-oriented programming, specifically composition.
-:::
+The `DataStore` design pattern has emerged as a reliable solution across diverse application scenarios. At its core:
+
+- **Data Transformation**: The `DataStore` component ingests raw `data` along with `filters`, and then orchestrates transformations based on these inputs.
+- **Consumption by Views**: Transformed data is then consumed by one or more `View` components, enabling flexible visualization and interaction.
+- **Reusable Components**: These components are designed to be reusable, facilitating seamless integration in both notebooks and standalone applications.
 
 ```{pyodide}
 import panel as pn
@@ -18,37 +17,11 @@ pn.extension('tabulator', 'vega', throttled=True)
 
 <div class="header-box" style="box-shadow: rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px; padding: 5px 10px; border-left: 4px solid green;">
 
-## Install the dependencies
-
-Please make sure [Altair](https://altair-viz.github.io/), [Pandas](https://pandas.pydata.org) and [PyArrow](https://arrow.apache.org/docs/python/index.html) are installed.
-
-::::{tab-set}
-
-:::{tab-item} pip
-:sync: pip
-
-``` bash
-pip install altair pandas panel pyarrow
-```
-
-:::
-
-:::{tab-item} conda
-:sync: conda
-
-``` bash
-conda install -y -c conda-forge altair pandas panel pyarrow
-```
-
-:::
-
-::::
-
-## Build the app
+## Build the App
 
 ### The Data Store
 
-Copy the code below into a new file and save the file as `data_store.py`.
+Let's start by creating the core `DataStore` component. Copy the following code into a new file named `data_store.py`.
 
 ```{pyodide}
 import param
@@ -62,11 +35,11 @@ CARD_STYLE = """
   padding: {padding};
 }} """
 
-TURBINES_URL = "https://datasets.holoviz.org/windturbines/v1/windturbines.parq"
+TURBINES_URL = "https://assets.holoviz.org/panel/tutorials/turbines.csv.gz"
 
 @pn.cache(ttl=15 * 60)
 def get_turbines():
-    return pd.read_parquet(TURBINES_URL)
+    return pd.read_csv(TURBINES_URL)
 
 
 class DataStore(Viewer):
@@ -116,15 +89,15 @@ class DataStore(Viewer):
 ```
 
 :::{note}
-The `DataStore` class is be responsible for transforming `data` in various ways.
+The `DataStore` class serves as the engine for transforming `data`. It performs various transformations based on provided `filters`.
 
-1. The `DataStore` must receive `data` as an argument when instantiated.
-2. When the `filters` value is updated, it triggers an update of the `count`, `total_capacity`, ... etc. values.
+1. Initialize with `data`.
+2. Update calculations when `filters` change.
 :::
 
-### The Views
+### Continuing with Views
 
-Copy the code below into a new file, remove the `#` from the import and save the file as `views.py`.
+After defining the `DataStore`, we'll create `View` components that leverage the transformed data. This enables diverse ways of visualizing and interacting with the data. Copy the code into a new file named `views.py`.
 
 ```{pyodide}
 import altair as alt
@@ -218,12 +191,12 @@ class Indicators(View):
 ```
 
 :::{note}
-Here we declared a *base* `View` class that holds a reference to the `DataStore` as a parameter. Now we can have any number of concrete `View` classes that consume data from the `DataStore` and render it in any number of ways:
+By establishing a base `View` class linked to the `DataStore`, we can create various concrete `View` classes tailored to different visualization requirements.
 :::
 
-### The App
+### Assembling the App
 
-Copy the code below into a new file and save the file as `app.py`.
+With the `DataStore` and `View` components in place, we'll now assemble the complete app. Copy the code below into a new file named `app.py`.
 
 ```python
 import param
@@ -274,7 +247,7 @@ App(
 ).servable()
 ```
 
-Run `panel serve app.py --autoreload`
+Once saved, run `panel serve app.py --autoreload` in your terminal to launch the app.
 
 The app will look something like
 
@@ -282,11 +255,7 @@ The app will look something like
 
 ## Reuse in a Notebook
 
-:::{note}
-The beauty of the *compositional approach* to constructing application components is that they are now usable in multiple contexts.
-:::
-
-Copy the two cells below into a notebook, remove the `#` from the imports and run the cells.
+The compositional approach of constructing application components enables their seamless integration into various contexts, including notebooks. Copy the following cells into a notebook, ensuring to uncomment the imports, and execute them.
 
 ```{pyodide}
 # from data_store import DataStore, get_turbines
@@ -315,11 +284,10 @@ pn.Row(
 
 ## Recap
 
-In this tutorial you have learned:
+In this tutorial, we've explored:
 
-- The `DataStore` design pattern has proven quite successful across a wide range of use cases.
-- The `DataStore` component receives `data` and `filters`. Based on the `data` and `filters` it *transforms* the data.
-- One or more `View` components consumes the *transformed* data.
-- The components can be (re-)used for data exploration in notebooks and for building apps.
+- The versatility of the `DataStore` design pattern, which adapts to diverse use cases.
+- The seamless integration of `DataStore` and `View` components, enabling flexible data exploration and visualization.
+- The reusability of these components across notebooks and standalone applications.
 
-## Resources
+Ready to apply these principles in your own projects? Let's embark on your Panel journey! 🚀
