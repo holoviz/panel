@@ -214,6 +214,27 @@ class TestChatMessage:
         assert message.object.stylesheets == ChatMessage._stylesheets + ["chat.css", "row.css"]
         assert message.object.objects[0].stylesheets == ChatMessage._stylesheets + ["chat.css", "row2.css"]
 
+    def test_include_message_css_class_inplace(self):
+        # markdown
+        message = ChatMessage(object=Markdown("hello"))
+        assert message.object.css_classes == ["message"]
+
+        # custom css class; no message appended
+        message = ChatMessage(object=Markdown("hello", css_classes=["custom"]))
+        assert message.object.css_classes == ["custom"]
+
+        # nested in layout; message appended
+        message = ChatMessage(object=Row(Markdown("hello")))
+        assert message.object.objects[0].css_classes == ["message"]
+
+        # nested in layout as a string; message appended
+        message = ChatMessage(object=Row("hello"))
+        assert message.object.objects[0].css_classes == ["message"]
+
+        # nested in layout with custom css; no message appended
+        message = ChatMessage(object=Row(Markdown("hello", css_classes=["custom"])))
+        assert message.object.objects[0].css_classes == ["custom"]
+
     @mpl_available
     def test_can_display_any_python_object_that_panel_can_display(self):
         # For example matplotlib figures

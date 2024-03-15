@@ -3,10 +3,12 @@ from __future__ import annotations
 import asyncio
 import dataclasses
 import datetime as dt
+import gc
 import inspect
 import json
 import logging
 import threading
+import weakref
 
 from contextlib import contextmanager
 from functools import partial, wraps
@@ -172,6 +174,44 @@ async def _dispatch_msgs(doc, msgs):
         return
     await asyncio.sleep(0.01)
     _dispatch_write_task(doc, _dispatch_msgs, doc, remaining)
+
+def _destroy_document(self, session):
+    """
+    Override for Document.destroy() without calling gc.collect directly.
+    The gc.collect() call is scheduled as a task, ensuring that when
+    multiple documents are destroyed in quick succession we do not
+    schedule excessive garbage collection.
+    """
+    if session is not None:
+        self.remove_on_change(session)
+
+    del self._roots
+    del self._theme
+    del self._template
+    self._session_context = None
+
+    self.callbacks.destroy()
+    self.models.destroy()
+    self.modules.destroy()
+
+    # Clear periodic callbacks
+    for cb in state._periodic.get(self, []):
+        cb.stop()
+
+    # Clean up pn.state to avoid tasks getting executed on dead session
+    for attr in dir(state):
+        # _param_watchers is deprecated in Param 2.0 and will raise a warning
+        if not attr.startswith('_') or attr == "_param_watchers":
+            continue
+        state_obj = getattr(state, attr)
+        if isinstance(state_obj, weakref.WeakKeyDictionary) and self in state_obj:
+            del state_obj[self]
+
+    # Schedule GC
+    at = dt.datetime.now() + dt.timedelta(seconds=5)
+    state.schedule_task('gc.collect', gc.collect, at=at)
+
+    del self.destroy
 
 #---------------------------------------------------------------------
 # Public API

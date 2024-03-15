@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import ast
+import html
 import json
 import logging
 import os
 import pathlib
 import re
 import sys
+import traceback
 
 from contextlib import contextmanager
 from types import ModuleType
@@ -15,14 +17,16 @@ from typing import IO, Any, Callable
 import bokeh.command.util
 
 from bokeh.application.handlers.code import CodeHandler
-from bokeh.command.util import (
-    build_single_handler_application as _build_application,
-)
+from bokeh.application.handlers.code_runner import CodeRunner
+from bokeh.application.handlers.handler import Handler, handle_exception
 from bokeh.core.types import PathLike
 from bokeh.document import Document
-from bokeh.io.doc import patch_curdoc
+from bokeh.io.doc import curdoc, patch_curdoc, set_curdoc as bk_set_curdoc
 from bokeh.util.dependencies import import_required
 
+from ..config import config
+from .profile import profile_ctx
+from .reload import record_modules
 from .state import state
 
 log = logging.getLogger('panel.io.handlers')
@@ -41,7 +45,6 @@ def _monkeypatch_io(loggers: dict[str, Callable[..., None]]) -> dict[str, Any]:
     for f in old:
         setattr(io, f, old[f])
 
-
 @contextmanager
 def set_env_vars(**env_vars):
     old = {var: os.environ.get(var) for var in env_vars}
@@ -53,7 +56,6 @@ def set_env_vars(**env_vars):
         else:
             os.environ[var] = value
 
-
 def get_figure():
     if 'matplotlib.pyplot' not in sys.modules:
         return None
@@ -62,10 +64,8 @@ def get_figure():
     if fig.get_axes():
         return fig
 
-
 def display(*args, **kwargs):
     CELL_DISPLAY.extend(args)
-
 
 def extract_code(
     filehandle: IO, supported_syntax: tuple[str, ...] = ('{pyodide}', 'python')
@@ -180,11 +180,182 @@ if _fig__out:
 """)
     return code
 
+def autoreload_handle_exception(handler, module, e):
+    if not config.autoreload:
+        handle_exception(handler, e)
+        return
 
-class MarkdownHandler(CodeHandler):
-    ''' Modify Bokeh documents by creating Dashboard from a Markdown file.
+    from ..pane import Alert
 
-    '''
+    # Clean up module
+    del sys.modules[module.__name__]
+    state.curdoc.modules._modules.remove(module)
+
+    # Serve error
+    e_msg = str(e).replace('\033[1m', '<b>').replace('\033[0m', '</b>')
+    tb = html.escape(traceback.format_exc()).replace('\033[1m', '<b>').replace('\033[0m', '</b>')
+    Alert(
+        f'<b>{type(e).__name__}</b>: {e_msg}\n<pre style="overflow-y: auto">{tb}</pre>',
+        alert_type='danger', margin=5, sizing_mode='stretch_width'
+    ).servable()
+
+def run_app(handler, module, doc, post_run=None):
+    try:
+        old_doc = curdoc()
+    except RuntimeError:
+        old_doc = None
+        bk_set_curdoc(doc)
+
+    sessions = []
+
+    def post_check():
+        newdoc = curdoc()
+        # Do not let curdoc track modules when autoreload is enabled
+        # otherwise it will erroneously complain that there is
+        # a memory leak
+        if config.autoreload:
+            newdoc.modules._modules = []
+
+        # script is supposed to edit the doc not replace it
+        if newdoc is not doc:
+            raise RuntimeError("%s at '%s' replaced the output document" % (handler._origin, handler._runner.path))
+
+    try:
+        state._launching.append(doc)
+        with _monkeypatch_io(handler._loggers):
+            with patch_curdoc(doc):
+                with profile_ctx(config.profiler) as sessions:
+                    with record_modules(handler=handler):
+                        handler._runner.run(module, post_check)
+                        if post_run:
+                            post_run()
+    finally:
+        if config.profiler:
+            try:
+                path = doc.session_context.request.path
+                state._profiles[(path, config.profiler)] += sessions
+                state.param.trigger('_profiles')
+            except Exception:
+                pass
+        state._launching.remove(doc)
+        if old_doc is not None:
+            bk_set_curdoc(old_doc)
+
+#---------------------------------------------------------------------
+# Handler classes
+#---------------------------------------------------------------------
+
+class PanelCodeRunner(CodeRunner):
+
+    def run(self, module: ModuleType, post_check: Callable[[], None] | None = None) -> None:
+        """
+        Execute the configured source code in a module and run any post
+        checks.
+
+        See bokeh.application.handlers.code_runner for original implementation.
+        """
+        _cwd = os.getcwd()
+        _sys_path = list(sys.path)
+        _sys_argv = list(sys.argv)
+        sys.path.insert(0, os.path.dirname(self._path))
+        sys.argv = [os.path.basename(self._path), *self._argv]
+
+        # XXX: self._code shouldn't be None at this point but types don't reflect this
+        assert self._code is not None
+
+        try:
+            exec(self._code, module.__dict__)
+
+            if post_check:
+                post_check()
+        except Exception as e:
+            autoreload_handle_exception(self, module, e)
+        finally:
+            # undo sys.path, CWD fixups
+            os.chdir(_cwd)
+            sys.path = _sys_path
+            sys.argv = _sys_argv
+            self.ran = True
+
+
+class PanelCodeHandler(CodeHandler):
+    """Modify Bokeh documents by creating Dashboard from code.
+
+    Additionally this subclass adds support for the ability to:
+
+    - Log session launch, load and destruction
+    - Capture document_ready events to track when app is loaded.
+    - Add profiling support
+    - Ensure that state.curdoc is set
+    - Reload the application module if autoreload is enabled
+    - Track modules loaded during app execution to enable autoreloading
+    """
+
+    def __init__(self, *, source: str, filename: PathLike, argv: list[str] = [], package: ModuleType | None = None) -> None:
+        Handler.__init__(self)
+
+        self._runner = PanelCodeRunner(source, filename, argv, package=package)
+
+        self._loggers = {}
+        for f in PanelCodeHandler._io_functions:
+            self._loggers[f] = self._make_io_logger(f)
+
+    def modify_document(self, doc: 'Document'):
+        if config.autoreload:
+            path = self._runner.path
+            argv = self._runner._argv
+            handler = type(self)(filename=path, argv=argv)
+            self._runner = handler._runner
+
+        module = self._runner.new_module()
+
+        # If no module was returned it means the code runner has some permanent
+        # unfixable problem, e.g. the configured source code has a syntax error
+        if module is None:
+            return
+
+        # One reason modules are stored is to prevent the module from being gc'd
+        # before the document is. A symptom of a gc'd module is that its globals
+        # become None. Additionally stored modules are used to provide correct
+        # paths to custom models resolver.
+        doc.modules.add(module)
+
+        run_app(self, module, doc)
+
+CodeHandler.modify_document = PanelCodeHandler.modify_document
+
+
+class ScriptHandler(PanelCodeHandler):
+    """Modify Bokeh documents by creating Dashboard from a Python script.
+    """
+
+
+    _logger_text = "%s: call to %s() ignored when running scripts with the 'bokeh' command."
+
+    _origin = "Script"
+
+    def __init__(self, *, filename: PathLike, argv: list[str] = [], package: ModuleType | None = None) -> None:
+        '''
+
+        Keywords:
+            filename (str) : a path to a Python source (".py") file
+
+        '''
+        with open(filename, encoding='utf-8') as f:
+            source = f.read()
+
+        super().__init__(source=source, filename=filename, argv=argv, package=package)
+
+bokeh.application.handlers.directory.ScriptHandler = ScriptHandler
+
+
+class MarkdownHandler(PanelCodeHandler):
+    """Modify Bokeh documents by creating Dashboard from a Markdown file.
+    """
+
+    _logger_text = "%s: call to %s() ignored when running Markdown files with the 'panel' command."
+
+    _origin = "Markdown"
 
     def __init__(self, *args, **kwargs):
         '''
@@ -202,15 +373,18 @@ class MarkdownHandler(CodeHandler):
         super().__init__(*args, **kwargs)
 
 
-class NotebookHandler(CodeHandler):
-    ''' Modify Bokeh documents by creating Dashboard from a notebook file.
-
-    '''
+class NotebookHandler(PanelCodeHandler):
+    """Modify Bokeh documents by creating Dashboard from a notebook file.
+    """
 
     _imports = [
         'from panel import state as _pn__state',
         'from panel.io.handlers import CELL_DISPLAY as _CELL__DISPLAY, display, get_figure as _get__figure\n'
     ]
+
+    _logger_text = "%s: call to %s() ignored when running notebooks with the 'panel' command."
+
+    _origin = "Notebook"
 
     def __init__(self, *, filename: PathLike, argv: list[str] = [], package: ModuleType | None = None) -> None:
         '''
@@ -300,15 +474,82 @@ class NotebookHandler(CodeHandler):
             self._layout = {}
         return self._layout
 
+    def _render_template(self, doc, path):
+        """Renders template containing cell outputs.
+
+        Creates an EditableTemplate containing all cell outputs
+        found in the notebook and lays them out according to the
+        cell metadata (if present).
+
+        Arguments
+        ----------
+        doc (Document)
+            A ``Document`` to render the template into
+        path (str):
+            The path to the application code.
+        """
+        from ..config import config
+        from ..layout import Column
+        from .state import state
+
+        config.template = 'editable'
+        persist = state._jupyter_kernel_context
+        editable = 'editable' in state.session_args
+        if not (editable or persist):
+            state.template.editable = False
+        state.template.title = os.path.basename(path)
+
+        layouts, outputs, cells = {}, {}, {}
+        for cell_id, out in state._cell_outputs.items():
+            spec = state._cell_layouts[self].get(cell_id, {})
+            if 'width' in spec and 'height' in spec:
+                sizing_mode = 'stretch_both'
+            else:
+                sizing_mode = 'stretch_width'
+            pout = Column(
+                *(o for o in out if o is not None),
+                sizing_mode=sizing_mode
+            )
+            for po in pout:
+                po.sizing_mode = sizing_mode
+            outputs[cell_id] = pout
+            layouts[id(pout)] = state._cell_layouts[self][cell_id]
+            cells[cell_id] = id(pout)
+            pout.servable()
+
+        # Reorder outputs based on notebook metadata
+        import nbformat
+        nb = nbformat.read(self._runner._path, nbformat.NO_CONVERT)
+        ordered = {}
+        for cell_id in nb['metadata'].get('panel-cell-order', []):
+            if cell_id not in cells:
+                continue
+            obj_id = cells[cell_id]
+            ordered[obj_id] = layouts[obj_id]
+            for cell_id in self._layout.get('order', []):
+                if cell_id not in cells:
+                    continue
+                obj_id = cells[cell_id]
+                ordered[obj_id] = layouts[obj_id]
+            for obj_id, spec in layouts.items():
+                if obj_id not in ordered:
+                    ordered[obj_id] = spec
+
+        # Set up state
+        state.template.layout = ordered
+        if persist:
+            state.template.param.watch(self._update_position_metadata, 'layout')
+        state._session_outputs[doc] = outputs
+
     def modify_document(self, doc: Document) -> None:
-        ''' Run Bokeh application code to update a ``Document``
+        """Run Bokeh application code to update a ``Document``
 
-        Args:
-            doc (Document) : a ``Document`` to update
-
-        '''
+        Arguments
+        ----------
+        doc (Document) : a ``Document`` to update
+        """
         path = self._runner._path
-        if self._stale:
+        if self._stale or config.autoreload:
             self._load_layout(path)
             source = self._parse(path)
             nodes = ast.parse(source, os.fspath(path))
@@ -328,69 +569,13 @@ class NotebookHandler(CodeHandler):
         # paths to custom models resolver.
         doc.modules.add(module)
 
-        with _monkeypatch_io(self._loggers):
-            with patch_curdoc(doc):
-                from ..config import config
-                from ..layout import Column
-                from .state import state
+        def post_run():
+            if not (doc.roots or doc in state._templates or self._runner.error):
+                self._render_template(doc, path)
+            state._cell_outputs.clear()
 
-                with set_env_vars(MPLBACKEND='agg'):
-                    self._runner.run(module, self._make_post_doc_check(doc))
-
-                if doc.roots or doc in state._templates:
-                    state._cell_outputs.clear()
-                    return
-
-                # If no contents we add all cell outputs to the editable template
-                config.template = 'editable'
-                persist = state._jupyter_kernel_context
-                editable = 'editable' in state.session_args
-                if not (editable or persist):
-                    state.template.editable = False
-                state.template.title = os.path.basename(path)
-
-                layouts, outputs, cells = {}, {}, {}
-                for cell_id, out in state._cell_outputs.items():
-                    spec = state._cell_layouts[self].get(cell_id, {})
-                    if 'width' in spec and 'height' in spec:
-                        sizing_mode = 'stretch_both'
-                    else:
-                        sizing_mode = 'stretch_width'
-                    pout = Column(
-                        *(o for o in out if o is not None),
-                        sizing_mode=sizing_mode
-                    )
-                    for po in pout:
-                        po.sizing_mode = sizing_mode
-                    outputs[cell_id] = pout
-                    layouts[id(pout)] = state._cell_layouts[self][cell_id]
-                    cells[cell_id] = id(pout)
-                    pout.servable()
-
-                # Reorder outputs based on notebook metadata
-                import nbformat
-                nb = nbformat.read(self._runner._path, nbformat.NO_CONVERT)
-                ordered = {}
-                for cell_id in nb['metadata'].get('panel-cell-order', []):
-                    if cell_id not in cells:
-                        continue
-                    obj_id = cells[cell_id]
-                    ordered[obj_id] = layouts[obj_id]
-                for cell_id in self._layout.get('order', []):
-                    if cell_id not in cells:
-                        continue
-                    obj_id = cells[cell_id]
-                    ordered[obj_id] = layouts[obj_id]
-                for obj_id, spec in layouts.items():
-                    if obj_id not in ordered:
-                        ordered[obj_id] = spec
-
-                # Set up state
-                state.template.layout = ordered
-                if persist:
-                    state.template.param.watch(self._update_position_metadata, 'layout')
-                state._session_outputs[doc] = outputs
-                state._cell_outputs.clear()
+        with set_env_vars(MPLBACKEND='agg'):
+            run_app(self, module, doc, post_run)
 
     def _update_position_metadata(self, event):
         """
@@ -420,19 +605,4 @@ class NotebookHandler(CodeHandler):
             json.dump(nb_layout, f)
         self._stale = True
 
-
-def build_single_handler_application(path, argv=None):
-    if not os.path.isfile(path) or not path.endswith((".md", ".ipynb")):
-        return _build_application(path, argv)
-
-    from .server import Application
-    code_handler = NotebookHandler if path.endswith('.ipynb') else MarkdownHandler
-    handler = code_handler(filename=path)
-    if handler.failed:
-        raise RuntimeError("Error loading %s:\n\n%s\n%s " % (path, handler.error, handler.error_detail))
-
-    application = Application(handler)
-
-    return application
-
-bokeh.command.util.build_single_handler_application = build_single_handler_application
+bokeh.application.handlers.directory.NotebookHandler = NotebookHandler

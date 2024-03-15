@@ -168,10 +168,8 @@ export abstract class HTMLBoxView extends LayoutDOMView {
       if (style_el instanceof HTMLLinkElement) {
         this._initialized_stylesheets[style_el.href] = false
         style_el.addEventListener("load", () => {
-	  this._initialized_stylesheets[style_el.href] = true
-	  if (
-	    Object.values(this._initialized_stylesheets).every(Boolean)
-	  ) {
+          this._initialized_stylesheets[style_el.href] = true
+          if (Object.values(this._initialized_stylesheets).every(Boolean)) {
             this.style_redraw()
           }
         })

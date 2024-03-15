@@ -1,13 +1,11 @@
 import asyncio
 import os
+import pathlib
 import tempfile
-
-import pytest
 
 from panel.io.location import Location
 from panel.io.reload import (
-    _check_file, _modules, _watched_files, async_file_watcher, in_denylist,
-    record_modules, watch,
+    _check_file, _modules, _watched_files, in_denylist, record_modules, watch,
 )
 from panel.io.state import state
 from panel.tests.util import async_wait_until
@@ -39,18 +37,21 @@ def test_watch():
     # Cleanup
     _watched_files.clear()
 
-@pytest.mark.flaky(reruns=3)
-async def test_reload_on_update(server_document, stop_event):
+async def test_reload_on_update(server_document, watch_files):
     location = Location()
     state._locations[server_document] = location
     state._loaded[server_document] = True
     with tempfile.NamedTemporaryFile() as temp:
+        # Write to file and wait for filesystem to perform write
         temp.write(b'Foo')
         temp.flush()
-        watch(temp.name)
-        task = asyncio.create_task(async_file_watcher(stop_event))
-        await asyncio.sleep(0.51)
+        await asyncio.sleep(0.1)
+
+        watch_files(temp.name)
+        await asyncio.sleep(0.1)
+
         temp.write(b'Bar')
         temp.flush()
+        pathlib.Path(temp.name).touch()
+
         await async_wait_until(lambda: location.reload)
-    del task

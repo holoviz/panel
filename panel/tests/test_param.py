@@ -1799,8 +1799,6 @@ def test_param_generator_append(document, comm):
     assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
     assert root.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n'
 
-
-@pytest.mark.asyncio
 async def test_param_async_generator(document, comm):
     checkbox = Checkbox(value=False)
 
@@ -1821,8 +1819,6 @@ async def test_param_async_generator(document, comm):
 
     assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
 
-
-@pytest.mark.asyncio
 async def test_param_async_generator_append(document, comm):
     checkbox = Checkbox(value=False)
 
@@ -1871,7 +1867,6 @@ def test_param_generator_multiple(document, comm):
 
     assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
 
-@pytest.mark.asyncio
 async def test_param_async_generator_multiple(document, comm):
     checkbox = Checkbox(value=False)
 
@@ -1896,8 +1891,6 @@ async def test_param_async_generator_multiple(document, comm):
     await asyncio.sleep(0.2)
     assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
 
-
-@pytest.mark.asyncio
 async def test_param_async_generator_abort(document, comm):
     number = NumberInput(value=0)
 
@@ -1942,7 +1935,6 @@ def test_skip_param(document, comm):
     button.param.trigger('value')
     assert div.text == '&lt;pre&gt; &lt;/pre&gt;'
 
-@pytest.mark.asyncio
 async def test_async_skip_param(document, comm):
     checkbox = Checkbox(value=False)
     button = Button()
