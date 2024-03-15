@@ -34,7 +34,6 @@ https://panel.holoviz.org/getting_started/index.html
 """
 from .base import CompositeWidget, Widget  # noqa
 from .button import Button, MenuButton, Toggle  # noqa
-from .chatbox import ChatBox  # noqa
 from .codeeditor import Ace, CodeEditor  # noqa
 from .debugger import Debugger  # noqa
 from .file_selector import FileSelector  # noqa

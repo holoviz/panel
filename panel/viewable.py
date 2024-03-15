@@ -82,9 +82,6 @@ class Layoutable(param.Parameterized):
         be used to determine the aspect (if not set, no aspect will be
         preserved).""")
 
-    background = param.Parameter(default=None, doc="""
-        Background color of the component.""")
-
     css_classes = param.List(default=[], nested_refs=True, doc="""
         CSS classes to apply to the layout.""")
 
@@ -706,10 +703,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
         if self.loading:
             self._update_loading()
-        self._update_background()
         self._update_design()
         self._internal_callbacks.extend([
-            self.param.watch(self._update_background, 'background'),
             self.param.watch(self._update_design, 'design'),
             self.param.watch(self._update_loading, 'loading')
         ])
@@ -733,17 +728,6 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             start_loading_spinner(self)
         else:
             stop_loading_spinner(self)
-
-    def _update_background(self, *_) -> None:
-        if self.background == self.styles.get("background", None) or self.background is None:
-            return
-
-        # Warning
-        prev = f'{type(self).name}(..., background={self.background!r})'
-        new = f"{type(self).name}(..., styles={{'background': {self.background!r}}})"
-        deprecated("1.4", prev, new)
-
-        self.styles = dict(self.styles, background=self.background)
 
     def _render_model(self, doc: Optional[Document] = None, comm: Optional[Comm] = None) -> 'Model':
         if doc is None:
