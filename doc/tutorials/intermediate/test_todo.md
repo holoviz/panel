@@ -2,6 +2,8 @@
 
 In the previous section, we constructed a Todo app using the `Parameterized` class-based approach. Now, we'll delve into how this approach enables easy testing of your app in Python. Ensuring your app's testability guarantees its extensibility and maintainability over time.
 
+We firmly believe that the simplicity and accessibility of testing Panel components underscore a truly invaluable facet of Panel.
+
 <iframe src="https://panel-org-build-todo-app.hf.space" frameborder="0" style="width: 100%;height:500px"></iframe>
 
 ## Running the Tests
@@ -467,7 +469,7 @@ This test validates if we can create a `TaskListEditor` successfully. It initial
 
 In this tutorial, you have learned how to test Panel apps built using the class-based approach.
 
-We believe that a straightforward and easy way of testing Panel components represents a competitive advantage over most other data app frameworks.
+We firmly believe that the simplicity and accessibility of testing Panel components underscore a truly invaluable facet of Panel.
 
 ## Further Learning
 
