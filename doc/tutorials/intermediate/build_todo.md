@@ -308,6 +308,9 @@ class TaskInput(pn.viewable.Viewer):
 
     value: Task = param.ClassSelector(class_=Task, doc="""The Task input by the user""")
 
+    def _no_value(self, value):
+        return not bool(value)
+
     def __panel__(self):
         text_input = pn.widgets.TextInput(
             name="Task", placeholder="Enter a task", sizing_mode="stretch_width"
