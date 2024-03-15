@@ -103,7 +103,7 @@ class TaskList(param.Parameterized):
 class TaskInput(pn.viewable.Viewer):
     """A Widget that provides tasks as input"""
 
-    value: Task = param.ClassSelector(class_=Task, doc="""The Task input by the user""")
+    value: Task = param.ClassSelector(item_type=Task, doc="""The Task input by the user""")
 
     def _no_value(self, value):
         return not bool(value)
