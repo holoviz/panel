@@ -113,8 +113,7 @@ for item in zin.infolist():
                 line
                 for line in buffer.decode("utf-8").split("\n")
                 if not (
-                    "Requires-Dist:" in line
-                    and ("tornado" in line or "contourpy" in line)
+                    "Requires-Dist:" in line and "tornado" in line
                 )
             ]
         ).encode("utf-8")
