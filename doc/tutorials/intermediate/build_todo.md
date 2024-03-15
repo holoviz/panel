@@ -50,9 +50,10 @@ class Task(pn.viewable.Viewer):
 class TaskList(param.Parameterized):
     """Provides methods to add and remove tasks as well as calculate summary statistics"""
 
-    value: List[Task] = param.List(class_=Task, doc="A list of Tasks")
+    value: List[Task] = param.List(item_type=Task, doc="A list of Tasks")
 
     total_tasks = param.Integer(doc="The number of Tasks")
+
     has_tasks = param.Boolean(doc="Whether or not the TaskList contains Tasks")
 
     completed_tasks = param.Integer(doc="The number of completed tasks")
@@ -101,7 +102,7 @@ class TaskList(param.Parameterized):
 class TaskInput(pn.viewable.Viewer):
     """A Widget that provides tasks as input"""
 
-    value: Task = param.ClassSelector(class_=Task, doc="""The Task input by the user""")
+    value: Task = param.ClassSelector(item_type=Task, doc="""The Task input by the user""")
 
     def _no_value(self, value):
         return not bool(value)
@@ -325,7 +326,6 @@ class TaskInput(pn.viewable.Viewer):
             if text_input.value:
                 self.value = Task(value=text_input.value)
                 text_input.value = text_input.value_input = ""
-
         return pn.Row(text_input, submit_task, sizing_mode="stretch_width")
 
 TaskInput()
