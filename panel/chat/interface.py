@@ -369,7 +369,10 @@ class ChatInterface(ChatFeed):
         active_widget = self.active_widget
         # value_input for ChatAreaInput because value is unsynced until "Enter",
         # value for TextInput and others
-        value = active_widget.value or active_widget.value_input
+        value = active_widget.value
+        if not value and hasattr(active_widget, "value_input"):
+            value = active_widget.value_input
+
         if value:
             if isinstance(active_widget, FileInput):
                 value = _FileInputMessage(
