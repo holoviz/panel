@@ -1,8 +1,7 @@
-import { TextAreaInput as PnTextAreaInput, TextAreaInputView as PnTextAreaInputView } from "./textarea_input";
-import * as p from "@bokehjs/core/properties";
-import { ModelEvent } from "@bokehjs/core/bokeh_events"
+import {TextAreaInput as PnTextAreaInput, TextAreaInputView as PnTextAreaInputView} from "./textarea_input"
+import type * as p from "@bokehjs/core/properties"
+import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import type {Attrs} from "@bokehjs/core/types"
-
 
 export class ChatMessageEvent extends ModelEvent {
   constructor(readonly value: string) {
@@ -19,13 +18,12 @@ export class ChatMessageEvent extends ModelEvent {
 }
 
 export class ChatAreaInputView extends PnTextAreaInputView {
-  declare  model: ChatAreaInput;
+  declare model: ChatAreaInput
 
   override connect_signals(): void {
     super.connect_signals()
 
     const {value_input} = this.model.properties
-
     this.on_change(value_input, () => this.update_rows())
   }
 
@@ -33,37 +31,32 @@ export class ChatAreaInputView extends PnTextAreaInputView {
     super.render()
 
     this.el.addEventListener("keydown", (event) => {
-      if (event.key === 'Enter' && !event.shiftKey) {
+      if (event.key === "Enter" && !event.shiftKey) {
         this.model.trigger_event(new ChatMessageEvent(this.model.value_input))
         this.model.value_input = ""
-        event.preventDefault();
+        event.preventDefault()
       }
-    });
-
+    })
   }
 }
 
 export namespace ChatAreaInput {
-  export type Attrs = p.AttrsOf<Props>;
-  export type Props = PnTextAreaInput.Props & {
-  };
+  export type Attrs = p.AttrsOf<Props>
+  export type Props = PnTextAreaInput.Props
 }
 
 export interface ChatAreaInput extends ChatAreaInput.Attrs { }
 
 export class ChatAreaInput extends PnTextAreaInput {
-  declare: ChatAreaInput.Props;
+  declare: ChatAreaInput.Props
 
   constructor(attrs?: Partial<ChatAreaInput.Attrs>) {
-    super(attrs);
+    super(attrs)
   }
 
-  static override __module__ = "panel.models.chatarea_input";
+  static override __module__ = "panel.models.chatarea_input"
 
   static {
-    this.prototype.default_view = ChatAreaInputView;
-
-    this.define<ChatAreaInput.Props>(({ }) => ({
-    }));
+    this.prototype.default_view = ChatAreaInputView
   }
 }

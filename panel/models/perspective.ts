@@ -72,82 +72,71 @@ export class PerspectiveView extends HTMLBoxView {
     this.connect(this.model.source.properties.data.change, () => this.setData())
     this.connect(this.model.source.streaming, () => this.stream())
     this.connect(this.model.source.patching, () => this.patch())
-    this.connect(this.model.properties.schema.change, () => {
+
+    const {
+      schema, toggle_config, columns, expressions, split_by, group_by,
+      aggregates, filters, sort, plugin, selectable, editable, theme,
+      title, settings,
+    } = this.model.properties
+
+    const not_updating = (fn: () => void) => {
+      return () => {
+        if (this._updating) {
+          return
+        }
+        fn()
+      }
+    }
+
+    this.on_change(schema, () => {
       this.worker.table(this.model.schema).then((table: any) => {
         this.table = table
         this.table.update(this.data)
         this.perspective_element.load(this.table)
       })
     })
-    this.connect(this.model.properties.toggle_config.change, () => {
+    this.on_change(toggle_config, () => {
       this.perspective_element.toggleConfig()
     })
-    this.connect(this.model.properties.columns.change, () => {
-      if (this._updating) {
-        return
-      }
+    this.on_change(columns, not_updating(() => {
       this.perspective_element.restore({columns: this.model.columns})
-    })
-    this.connect(this.model.properties.expressions.change, () => {
-      if (this._updating) {
-        return
-      }
+    }))
+    this.on_change(expressions, not_updating(() => {
       this.perspective_element.restore({expressions: this.model.expressions})
-    })
-    this.connect(this.model.properties.split_by.change, () => {
-      if (this._updating) {
-        return
-      }
+    }))
+    this.on_change(split_by, not_updating(() => {
       this.perspective_element.restore({split_by: this.model.split_by})
-    })
-    this.connect(this.model.properties.group_by.change, () => {
-      if (this._updating) {
-        return
-      }
+    }))
+    this.on_change(group_by, not_updating(() => {
       this.perspective_element.restore({group_by: this.model.group_by})
-    })
-    this.connect(this.model.properties.aggregates.change, () => {
-      if (this._updating) {
-        return
-      }
+    }))
+    this.on_change(aggregates, not_updating(() => {
       this.perspective_element.restore({aggregates: this.model.aggregates})
-    })
-    this.connect(this.model.properties.filters.change, () => {
-      if (this._updating) {
-        return
-      }
+    }))
+    this.on_change(filters, not_updating(() => {
       this.perspective_element.restore({filter: this.model.filters})
-    })
-    this.connect(this.model.properties.sort.change, () => {
-      if (this._updating) {
-        return
-      }
+    }))
+    this.on_change(settings, not_updating(() => {
+      this.perspective_element.restore({settings: this.model.settings})
+    }))
+    this.on_change(title, not_updating(() => {
+      this.perspective_element.restore({title: this.model.title})
+    }))
+    this.on_change(sort, not_updating(() => {
       this.perspective_element.restore({sort: this.model.sort})
-    })
-    this.connect(this.model.properties.plugin.change, () => {
-      if (this._updating) {
-        return
-      }
-      this.perspective_element.restore({plugin: PLUGINS[this.model.plugin ]})
-    })
-    this.connect(this.model.properties.selectable.change, () => {
-      if (this._updating) {
-        return
-      }
+    }))
+    this.on_change(plugin, not_updating(() => {
+      this.perspective_element.restore({plugin: PLUGINS[this.model.plugin]})
+    }))
+    this.on_change(selectable, not_updating(() => {
       this.perspective_element.restore({plugin_config: {...this._current_config, selectable: this.model.selectable}})
-    })
-    this.connect(this.model.properties.editable.change, () => {
-      if (this._updating) {
-        return
-      }
+    }))
+    this.on_change(editable, not_updating(() => {
       this.perspective_element.restore({plugin_config: {...this._current_config, editable: this.model.editable}})
-    })
-    this.connect(this.model.properties.theme.change, () => {
-      if (this._updating) {
-        return
-      }
+    }))
+    this.on_change(theme, not_updating(() => {
       this.perspective_element.restore({theme: THEMES[this.model.theme as string]}).catch(() => {})
-    })
+    }))
   }
 
   override disconnect_signals(): void {
@@ -201,8 +190,10 @@ export class PerspectiveView extends HTMLBoxView {
         group_by: this.model.group_by,
         plugin: PLUGINS[this.model.plugin ],
         plugin_config,
+        settings: this.model.settings,
         sort: this.model.sort,
         theme: THEMES[this.model.theme ],
+        title: this.model.title,
       }).catch(() => {})
 
       this.perspective_element.save().then((config: any) => {
@@ -226,7 +217,7 @@ export class PerspectiveView extends HTMLBoxView {
       const props: any =  {}
       for (let option in config) {
         let value = config[option]
-        if (value === undefined || (option == "plugin" && value === "debug") || this.model.properties.hasOwnProperty(option) === undefined) {
+        if (value === undefined || (option == "plugin" && value === "debug") || option == "version" || this.model.properties.hasOwnProperty(option) === undefined) {
           continue
         }
         if (option === "filter") {
@@ -297,9 +288,11 @@ export namespace Perspective {
     selectable: p.Property<boolean | null>
     toggle_config: p.Property<boolean>
     schema: p.Property<any>
+    settings: p.Property<boolean>
     sort: p.Property<any[] | null>
     source: p.Property<ColumnDataSource>
     theme: p.Property<any>
+    title: p.Property<string | null>
   }
 }
 
@@ -318,21 +311,23 @@ export class Perspective extends HTMLBox {
     this.prototype.default_view = PerspectiveView
 
     this.define<Perspective.Props>(({Any, List, Bool, Ref, Nullable, Str}) => ({
-      aggregates:       [ Any,                                 {} ],
-      columns:          [ List(Nullable(Str)),             [] ],
-      expressions:      [ Any,                                 {} ],
-      split_by:         [ Nullable(List(Str)),           null ],
-      editable:         [ Bool,                           true ],
-      filters:          [ Nullable(List(Any)),              null ],
-      group_by:         [ Nullable(List(Str)),           null ],
-      plugin:           [ Str                                 ],
-      plugin_config:    [ Any,                                 {} ],
-      selectable:       [ Bool,                           true ],
-      schema:           [ Any,                                 {} ],
-      toggle_config:    [ Bool,                           true ],
-      sort:             [ Nullable(List(List(Str))),    null ],
-      source:           [ Ref(ColumnDataSource)                  ],
-      theme:            [ Str,                           "pro" ],
+      aggregates:       [ Any,                         {} ],
+      columns:          [ List(Nullable(Str)),         [] ],
+      expressions:      [ Any,                         {} ],
+      split_by:         [ Nullable(List(Str)),       null ],
+      editable:         [ Bool,                      true ],
+      filters:          [ Nullable(List(Any)),       null ],
+      group_by:         [ Nullable(List(Str)),       null ],
+      plugin:           [ Str                             ],
+      plugin_config:    [ Any,                         {} ],
+      selectable:       [ Bool,                      true ],
+      settings:         [ Bool,                      true ],
+      schema:           [ Any,                         {} ],
+      toggle_config:    [ Bool,                      true ],
+      sort:             [ Nullable(List(List(Str))), null ],
+      source:           [ Ref(ColumnDataSource)           ],
+      theme:            [ Str,                      "pro" ],
+      title:            [ Nullable(Str),             null ],
     }))
   }
 }

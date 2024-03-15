@@ -6,7 +6,9 @@ export class CustomSelectView extends SelectView {
 
   override connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.disabled_options.change, () => this._update_disabled_options())
+
+    const {disabled_options} = this.model.properties
+    this.on_change(disabled_options, () => this._update_disabled_options())
   }
 
   protected override options_el(): HTMLOptionElement[] | HTMLOptGroupElement[] {

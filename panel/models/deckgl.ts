@@ -55,7 +55,7 @@ export class DeckGLPlotView extends LayoutDOMView {
   _connect_sources(render: boolean = false): void {
     for (const cds of this.model.data_sources) {
       if (this._connected.indexOf(cds) < 0) {
-        this.connect(cds.properties.data.change, () => this._update_data(true))
+        this.on_change(cds.properties.data, () => this._update_data(true))
         this._connected.push(cds)
       }
     }

@@ -7,9 +7,9 @@ import {div} from "@bokehjs/core/dom"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 import {BasicTickFormatter, NumeralTickFormatter, TickFormatter} from "@bokehjs/models/formatters"
 
-const red: string="#d9534f"
-const green: string="#5cb85c"
-const blue: string="#428bca"
+const red: string = "#d9534f"
+const green: string = "#5cb85c"
+const blue: string = "#428bca"
 
 export class TrendIndicatorView extends HTMLBoxView {
   declare model: TrendIndicator
@@ -48,15 +48,17 @@ export class TrendIndicatorView extends HTMLBoxView {
   override connect_signals(): void {
     super.connect_signals()
 
-    const {pos_color, neg_color} = this.model.properties
-    this.on_change([pos_color, neg_color], () => this.updateValueChange())
-    const {plot_color, plot_type, width, height, sizing_mode} = this.model.properties
-    this.on_change([plot_color, plot_type, width, height, sizing_mode], () => this.render())
+    const {
+      pos_color, neg_color, plot_color, plot_type, width,
+      height, sizing_mode, title, value, value_change, layout,
+    } = this.model.properties
 
-    this.connect(this.model.properties.title.change, () => this.updateTitle(true))
-    this.connect(this.model.properties.value.change, () => this.updateValue(true))
-    this.connect(this.model.properties.value_change.change, () => this.updateValue2(true))
-    this.connect(this.model.properties.layout.change, () => this.updateLayout())
+    this.on_change([pos_color, neg_color], () => this.updateValueChange())
+    this.on_change([plot_color, plot_type, width, height, sizing_mode], () => this.render())
+    this.on_change(title, () => this.updateTitle(true))
+    this.on_change(value, () => this.updateValue(true))
+    this.on_change(value_change, () => this.updateValue2(true))
+    this.on_change(layout, () => this.updateLayout())
   }
 
   override async render(): Promise<void> {
@@ -77,7 +79,7 @@ export class TrendIndicatorView extends HTMLBoxView {
 
     const source = this.model.source
     if (this.model.plot_type === "line") {
-      var line = new Line({
+      const line = new Line({
         x: {field: this.model.plot_x},
         y: {field: this.model.plot_y},
         line_width: 4,
@@ -101,7 +103,7 @@ export class TrendIndicatorView extends HTMLBoxView {
         fill_alpha: 0.5,
       })
       this.plot.add_glyph(varea, source)
-      var line = new Line({
+      const line = new Line({
         x: {field: this.model.plot_x},
         y: {field: this.model.plot_y},
         line_width: 3,

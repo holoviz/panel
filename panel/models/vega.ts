@@ -36,13 +36,13 @@ export class VegaPlotView extends LayoutDOMView {
 
   override connect_signals(): void {
     super.connect_signals()
-    const {data, show_actions, theme} = this.model.properties
+    const {data, show_actions, theme, data_sources, events} = this.model.properties
     this._replot = debounce(() => this._plot(), 20)
     this.on_change([data, show_actions, theme], () => {
       this._replot()
     })
-    this.connect(this.model.properties.data_sources.change, () => this._connect_sources())
-    this.connect(this.model.properties.events.change, () => {
+    this.on_change(data_sources, () => this._connect_sources())
+    this.on_change(events, () => {
       for (const event of this.model.events) {
         if (this._callbacks.indexOf(event) > -1) {
           continue

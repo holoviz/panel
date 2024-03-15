@@ -112,7 +112,7 @@ except Exception:
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=3.4.0rc1,<3.5.0',
+    'bokeh ==3.4.0rc2',
     'param >=2.0.0,<3.0',
     'pyviz_comms >=2.0.0',
     'xyzservices >=2021.09.1', # Bokeh dependency, but pyodide 23.0.0 does not always pick it up
@@ -158,6 +158,7 @@ _tests_core = [
     'ipython >=7.0',
     'scipy',
     'textual',
+    'watchfiles'
 ]
 
 _tests = _tests_core + [
@@ -213,7 +214,8 @@ _examples = [
     'reacton',
     'scikit-image',
     'fastparquet',
-    'textual'
+    'textual',
+    'dask-expr'
 ]
 
 # Anything only installable via conda
@@ -248,7 +250,7 @@ extras_require['build'] = [
     'setuptools >=42',
     'requests',
     'packaging',
-    'bokeh ==3.4.0rc1',
+    'bokeh >=3.4.0rc2,<3.5.0',
     'pyviz_comms >=2.0.0',
     'bleach',
     'markdown',

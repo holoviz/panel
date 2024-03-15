@@ -43,7 +43,7 @@ export class VizzuChartView extends HTMLBoxView {
       } else {
         let change = {}
         for (const prop of this.update) {
-	  if (prop === "config") {
+          if (prop === "config") {
             change = {...change, config: this.config()}
           } else if (prop === "data") {
             change = {...change, data: this.data()}
@@ -53,8 +53,8 @@ export class VizzuChartView extends HTMLBoxView {
         }
         this._animating = true
         this.vizzu_view.animate(change, `${this.model.duration}ms`).then(() => {
-	  this._animating = false
-	  if (this.update.length > 0) {
+          this._animating = false
+          if (this.update.length > 0) {
             update()
           }
         })
@@ -67,14 +67,15 @@ export class VizzuChartView extends HTMLBoxView {
       }
       update()
     }
-    this.connect(this.model.properties.config.change, () => update_prop("config"))
-    this.connect(this.model.source.properties.data.change, () => update_prop("data"))
+    const {config, tooltip, style} = this.model.properties
+    this.on_change(config, () => update_prop("config"))
+    this.on_change(this.model.source.properties.data, () => update_prop("data"))
     this.connect(this.model.source.streaming, () => update_prop("data"))
     this.connect(this.model.source.patching, () => update_prop("data"))
-    this.connect(this.model.properties.tooltip.change, () => {
+    this.on_change(tooltip, () => {
       this.vizzu_view.feature("tooltip", this.model.tooltip)
     })
-    this.connect(this.model.properties.style.change, () => update_prop("style"))
+    this.on_change(style, () => update_prop("style"))
   }
 
   get valid_config(): boolean {
@@ -82,19 +83,19 @@ export class VizzuChartView extends HTMLBoxView {
     if ("channels" in this.model.config) {
       for (const col of Object.values(this.model.config.channels)) {
         if (isArray(col)) {
-	  for (const c of col) {
-	    if (col != null && !columns.includes(c as string)) {
+          for (const c of col) {
+            if (col != null && !columns.includes(c as string)) {
               return false
             }
-	  }
+          }
         } else if (isObject(col)) {
-	  for (const prop of Object.keys(col)) {
-	    for (const c of ((col as any)[prop] as string[])) {
-	      if (col != null && !columns.includes(c)) {
+          for (const prop of Object.keys(col)) {
+            for (const c of ((col as any)[prop] as string[])) {
+              if (col != null && !columns.includes(c)) {
                 return false
               }
-	    }
-	  }
+            }
+          }
         } else if (col != null && !columns.includes(col as string)) {
           return false
         }
@@ -144,7 +145,7 @@ export class VizzuChartView extends HTMLBoxView {
     this._animating = true
     this.vizzu_view.initializing.then((chart: any) => {
       chart.on("click", (event: any) => {
-        this.model.trigger_event(new VizzuEvent(event.data))
+        this.model.trigger_event(new VizzuEvent({...event.target, ...event.detail}))
       })
       chart.feature("tooltip", this.model.tooltip)
       this._animating = false

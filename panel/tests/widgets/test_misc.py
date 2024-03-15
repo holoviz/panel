@@ -104,8 +104,6 @@ def test_file_download_callback():
     assert file_download.filename == "cba.py"
     assert file_download.label == "Download cba.py"
 
-
-@pytest.mark.asyncio
 async def test_file_download_async_callback():
     async def cb():
         return StringIO("data")
@@ -120,7 +118,6 @@ async def test_file_download_async_callback():
 
     assert file_download.data == "data:application/octet-stream;base64,ZGF0YQ=="
 
-
 def test_file_download_transfers():
     file_download = FileDownload(__file__, embed=True)
     assert file_download._transfers == 1
@@ -129,7 +126,6 @@ def test_file_download_transfers():
     assert file_download._transfers == 0
     file_download._clicks += 1
     assert file_download._transfers == 1
-
 
 def test_file_download_data():
     file_download = FileDownload(__file__, embed=True)

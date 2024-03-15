@@ -43,9 +43,7 @@ function panelFullScreenRenderWindowSynchronized(publicAPI: any, model: any) {
 
   // Interactor
   model.interactor = vtkns.RenderWindowInteractor.newInstance()
-  model.interactor.setInteractorStyle(
-    vtkns.InteractorStyleTrackballCamera.newInstance()
-  )
+  model.interactor.setInteractorStyle(vtkns.InteractorStyleTrackballCamera.newInstance())
   model.interactor.setView(model.openGLRenderWindow)
   model.interactor.initialize()
   model.interactor.bindEvents(model.container)
@@ -78,7 +76,7 @@ function panelFullScreenRenderWindowSynchronized(publicAPI: any, model: any) {
     model.controlContainer = document.createElement("div")
     applyStyle(
       model.controlContainer,
-      model.controlPanelStyle || STYLE_CONTROL_PANEL
+      model.controlPanelStyle || STYLE_CONTROL_PANEL,
     )
     model.rootContainer.appendChild(model.controlContainer)
     model.controlContainer.innerHTML = html
@@ -96,7 +94,7 @@ function panelFullScreenRenderWindowSynchronized(publicAPI: any, model: any) {
   publicAPI.delete = (window as any).vtk.macro.chain(
     publicAPI.setContainer,
     model.openGLRenderWindow.delete,
-    publicAPI.delete
+    publicAPI.delete,
   )
 
   // Handle window resize
@@ -105,7 +103,7 @@ function panelFullScreenRenderWindowSynchronized(publicAPI: any, model: any) {
     const devicePixelRatio = window.devicePixelRatio || 1
     model.openGLRenderWindow.setSize(
       Math.floor(dims.width * devicePixelRatio),
-      Math.floor(dims.height * devicePixelRatio)
+      Math.floor(dims.height * devicePixelRatio),
     )
     if (model.resizeCallback) {
       model.resizeCallback(dims)
@@ -125,14 +123,14 @@ function panelFullScreenRenderWindowSynchronized(publicAPI: any, model: any) {
 }
 
 export function initialize_fullscreen_render(): void {
-  let FullScreenRenderWindowSynchronized: any = {
+  const FullScreenRenderWindowSynchronized: any = {
     newInstance: (window as any).vtk.macro.newInstance(
       (publicAPI: any, model: any, initialValues: any = {}) => {
-	Object.assign(model, DEFAULT_VALUES, initialValues);
+        Object.assign(model, DEFAULT_VALUES, initialValues);
 
-	// Object methods
-	(window as any).vtk.macro.obj(publicAPI, model);
-	(window as any).vtk.macro.get(publicAPI, model, [
+        // Object methods
+        (window as any).vtk.macro.obj(publicAPI, model);
+        (window as any).vtk.macro.get(publicAPI, model, [
           "renderWindow",
           "openGLRenderWindow",
           "interactor",
@@ -140,11 +138,11 @@ export function initialize_fullscreen_render(): void {
           "container",
           "controlContainer",
           "synchronizerContext",
-	]);
+        ])
 
-	// Object specific methods
-	panelFullScreenRenderWindowSynchronized(publicAPI, model);
-      }
+        // Object specific methods
+        panelFullScreenRenderWindowSynchronized(publicAPI, model)
+      },
     ),
   }
   vtkns.FullScreenRenderWindowSynchronized = FullScreenRenderWindowSynchronized

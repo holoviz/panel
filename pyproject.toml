@@ -3,7 +3,7 @@ requires = [
     "param >=2.0.0",
     "pyct >=0.4.4",
     "setuptools >=42",
-    "bokeh ==3.4.0rc1",
+    "bokeh >=3.4.0rc2,<3.5.0",
     "pyviz_comms >=0.7.4",
     "requests",
     "packaging",
@@ -65,6 +65,7 @@ write-changes = true
 [tool.pytest.ini_options]
 addopts = "-v --pyargs --doctest-ignore-import-errors --color=yes"
 norecursedirs = "doc .git dist build _build .ipynb_checkpoints panel/examples"
+asyncio_mode = "auto"
 xfail_strict = true
 filterwarnings = [
     # 2023-11: ChatBox and ChatRow are deprecated

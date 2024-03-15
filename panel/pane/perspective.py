@@ -308,11 +308,17 @@ class Perspective(ModelPane, ReactiveData):
     plugin_config = param.Dict(default={}, nested_refs=True, doc="""
       Configuration for the PerspectiveViewerPlugin.""")
 
+    settings = param.Boolean(default=True, doc="""
+      Whether to show the settings menu.""")
+
     toggle_config = param.Boolean(default=True, doc="""
       Whether to show the config menu.""")
 
     theme = param.ObjectSelector(default='pro', objects=THEMES, doc="""
       The style of the PerspectiveViewer. For example pro-dark""")
+
+    title = param.String(default=None, doc="""
+      Title for the Perspective viewer.""")
 
     priority: ClassVar[float | bool | None] = None
 
@@ -404,10 +410,10 @@ class Perspective(ModelPane, ReactiveData):
             else:
                 if len(array):
                     value = array[0]
-                    if isinstance(value, dt.date):
-                        schema[col] = 'date'
-                    elif isinstance(value, datetime_types):
+                    if isinstance(value, datetime_types) and type(value) is not dt.date:
                         schema[col] = 'datetime'
+                    elif isinstance(value, dt.date):
+                        schema[col] = 'date'
                     elif isinstance(value, str):
                         schema[col] = 'string'
                     elif isinstance(value, (float, np.floating)):

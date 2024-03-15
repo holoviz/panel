@@ -44,8 +44,8 @@ export class EChartsView extends HTMLBoxView {
 
   override connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.data.change, () => this._plot())
-    const {width, height, renderer, theme, event_config, js_events} = this.model.properties
+    const {width, height, renderer, theme, event_config, js_events, data} = this.model.properties
+    this.on_change(data, () => this._plot())
     this.on_change([width, height], () => this._resize())
     this.on_change([theme, renderer], () => {
       this.render()
@@ -110,10 +110,10 @@ export class EChartsView extends HTMLBoxView {
       const queries = this.model.event_config[event_type]
       for (const query of queries) {
         const callback = (event: any) => {
-	  const processed = {...event}
-	  processed.event = serializeEvent(event.event?.event)
-	  const serialized = JSON.parse(JSON.stringify(processed))
-	  this.model.trigger_event(new EChartsEvent(event_type, serialized, query))
+          const processed = {...event}
+          processed.event = serializeEvent(event.event?.event)
+          const serialized = JSON.parse(JSON.stringify(processed))
+          this.model.trigger_event(new EChartsEvent(event_type, serialized, query))
         }
         if (query == null) {
           this._chart.on(event_type, query, callback)
@@ -131,7 +131,7 @@ export class EChartsView extends HTMLBoxView {
       const handlers = this.model.js_events[event_type]
       for (const handler of handlers) {
         const callback = (event: any) => {
-	  handler.callback.execute(this._chart, event)
+          handler.callback.execute(this._chart, event)
         }
         if ("query" in handler) {
           this._chart.on(event_type, handler.query, callback)
