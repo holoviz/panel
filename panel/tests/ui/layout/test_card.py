@@ -131,17 +131,6 @@ def test_card_background(page, card_components):
     expect(card_widget).to_have_css('background-color', background)
 
 
-def test_card_background_legacy(page, card_components):
-    w1, w2 = card_components
-    background = 'rgb(128, 128, 128)'
-    card = Card(w1, w2, background=background)
-
-    serve_component(page, card)
-
-    card_widget = page.locator('.card')
-    expect(card_widget).to_have_css('background-color', background)
-
-
 def test_card_header_color_formatting(page):
     header_color = 'rgb(0, 0, 128)'
     active_header_background = 'rgb(0, 128, 0)'

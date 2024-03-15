@@ -737,11 +737,9 @@ def test_holoviews_property_override_old_method(document, comm):
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", PanelDeprecationWarning)
-        pane = pn.panel(c1, backend='bokeh', background='red',
-                        css_classes=['test_class'])
+        pane = pn.panel(c1, backend='bokeh', css_classes=['test_class'])
     model = pane.get_root(document, comm=comm)
 
-    assert model.styles["background"] == 'red'
     assert model.children[0].css_classes == ['test_class']
 
 @hv_available
