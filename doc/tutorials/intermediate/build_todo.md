@@ -24,13 +24,12 @@ panel
 ```python
 """An app to manage tasks"""
 from typing import List
-
 import param
-
 import panel as pn
 
 BUTTON_WIDTH = 125
 
+pn.extension(sizing_mode="stretch_width", design="material")
 
 class Task(pn.viewable.Viewer):
     """A model of a Task"""
@@ -188,10 +187,7 @@ class TaskListEditor(pn.viewable.Viewer):
             max_width=500,
         )
 
-
 if pn.state.served:
-    pn.extension(sizing_mode="stretch_width", design="material")
-
     task_list = TaskList(
         value=[
             Task(value="Inspect the blades", completed=True),
@@ -307,6 +303,9 @@ class TaskInput(pn.viewable.Viewer):
 
     value: Task = param.ClassSelector(class_=Task, doc="""The Task input by the user""")
 
+    def _no_value(self, value):
+        return not bool(value)
+
     def __panel__(self):
         text_input = pn.widgets.TextInput(
             name="Task", placeholder="Enter a task", sizing_mode="stretch_width"
@@ -321,13 +320,13 @@ class TaskInput(pn.viewable.Viewer):
             disabled=text_input_has_value,
         )
 
-    @pn.depends(text_input, submit_task, watch=True)
-    def clear_text_input(*_):
-        if text_input.value:
-            self.value = Task(value=text_input.value)
-            text_input.value = text_input.value_input = ""
+        @pn.depends(text_input, submit_task, watch=True)
+        def clear_text_input(*_):
+            if text_input.value:
+                self.value = Task(value=text_input.value)
+                text_input.value = text_input.value_input = ""
 
-    return pn.Row(text_input, submit_task, sizing_mode="stretch_width")
+        return pn.Row(text_input, submit_task, sizing_mode="stretch_width")
 
 TaskInput()
 ```
@@ -368,6 +367,19 @@ class TaskListEditor(pn.viewable.Viewer):
     """Component that enables a user to manage a list of tasks"""
 
     value: TaskList = param.ClassSelector(class_=TaskList)
+
+    @param.depends("value.value")
+    def _layout(self):
+        tasks = self.value.value
+        rows = [TaskRow(value=task) for task in tasks]
+        for row in rows:
+
+            def remove(_, task=row.value):
+                self.value.value = [item for item in tasks if not item == task]
+
+            pn.bind(remove, row.param.remove, watch=True)
+
+        return pn.Column(*rows)
 
     def __panel__(self):
         task_input = TaskInput()
