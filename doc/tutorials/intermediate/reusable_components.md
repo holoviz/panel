@@ -8,8 +8,10 @@ In this guide, we will explore how to structure our components to make them easi
 
 When creating larger Panel projects, we recommend using `Parameterized` classes. This approach is useful for several reasons:
 
-1. Organizing complex pieces of code and functionality
-2. Creating reusable components composed of multiple Panel objects
+1. Organizing intricate sections of code and functionality
+2. Crafting reusable components composed of multiple Panel objects
+3. Incorporating validation and documentation
+4. Facilitating seamless testing
 
 A Parameterized class must inherit from `param.Parameterized` and should declare one or more parameters. Here, we will start building a `DataExplorer` by declaring two parameters:
 
