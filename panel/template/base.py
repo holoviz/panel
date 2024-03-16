@@ -677,7 +677,7 @@ class BasicTemplate(BaseTemplate):
         tmpl_string = self._template.read_text(encoding='utf-8')
         try:
             template = _env.get_template(str(self._template.relative_to(Path(__file__).parent)))
-        except jinja2.exceptions.TemplateNotFound:
+        except (jinja2.exceptions.TemplateNotFound, ValueError):
             template = parse_template(tmpl_string)
 
         if 'header' not in params:

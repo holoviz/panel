@@ -8,12 +8,14 @@ import warnings
 
 from contextlib import contextmanager
 
+from bokeh.application.handlers import CodeHandler
+
 try:
     from watchfiles import awatch
 except Exception:
     async def awatch(*files, stop_event=None):
+        stop_event = stop_event or asyncio.Event()
         modify_times = {}
-        stop_event = stop_event if stop_event else asyncio.Event()
         while not stop_event.is_set():
             changes = set()
             for path in files:
@@ -31,6 +33,7 @@ _reload_logger = logging.getLogger('panel.io.reload')
 
 _watched_files = set()
 _modules = set()
+_local_modules = set()
 
 # List of paths to ignore
 DEFAULT_FOLDER_DENYLIST = [
@@ -51,9 +54,10 @@ DEFAULT_FOLDER_DENYLIST = [
 
 IGNORED_MODULES = [
     'bokeh_app',
-    'panel.'
+    'geoviews.models.',
+    'panel.',
+    'torch.'
 ]
-
 
 def in_denylist(filepath):
     return any(
@@ -83,10 +87,10 @@ def file_is_in_folder_glob(filepath, folderpath_glob):
     file_dir = os.path.dirname(filepath) + "/"
     return fnmatch.fnmatch(file_dir, folderpath_glob)
 
-async def async_file_watcher(stop_event=None):
+def watched_modules():
     files = list(_watched_files)
-    modules = {}
-    for module_name in _modules:
+    module_paths = {}
+    for module_name in (_modules | _local_modules):
         # Some modules play games with sys.modules (e.g. email/__init__.py
         # in the standard library), and occasionally this can cause strange
         # failures in getattr.  Just ignore anything that's not an ordinary
@@ -101,16 +105,20 @@ async def async_file_watcher(stop_event=None):
             continue
         if path.endswith((".pyc", ".pyo")):
             path = path[:-1]
-        modules[path] = module_name
+        path = os.path.abspath(os.path.realpath(path))
+        module_paths[path] = module_name
         files.append(path)
+    return module_paths, files
 
-    async for changes in awatch(*files, stop_event=stop_event):
-        for _, path in changes:
-            if path in modules:
-                module = modules[path]
-                if module in sys.modules:
-                    del sys.modules[module]
-        _reload(changes)
+async def async_file_watcher(stop_event=None):
+    while True:
+        module_paths, files = watched_modules()
+        async for changes in awatch(*files, stop_event=stop_event):
+            _reload(module_paths, changes)
+            await asyncio.sleep(1)
+            break
+        if stop_event.is_set():
+            break
 
 async def setup_autoreload_watcher(stop_event=None):
     """
@@ -133,20 +141,35 @@ async def setup_autoreload_watcher(stop_event=None):
 def watch(filename):
     """
     Add a file to the watch list.
-
-    All imported modules are watched by default.
     """
     _watched_files.add(filename)
 
+def is_subpath(subpath, path):
+    try:
+        return os.path.commonpath([path, subpath]) == path
+    except Exception:
+        return False
+
 @contextmanager
-def record_modules():
+def record_modules(applications=None, handler=None):
     """
     Records modules which are currently imported.
     """
+    app_paths = set()
+    if hasattr(handler, '_runner'):
+        app_paths.add(os.path.dirname(handler._runner.path))
+    for app in (applications or ()):
+        if not app._handlers:
+            continue
+        for handler in app._handlers:
+            if isinstance(handler, CodeHandler):
+                break
+        else:
+            continue
+        if hasattr(handler, '_runner'):
+            app_paths.add(os.path.dirname(handler._runner.path))
     modules = set(sys.modules)
     yield
-    if _modules:
-        return
     for module_name in set(sys.modules).difference(modules):
         if any(module_name.startswith(imodule) for imodule in IGNORED_MODULES):
             continue
@@ -166,22 +189,55 @@ def record_modules():
                 continue
 
             if not os.path.isfile(filepath): # e.g. built-in
-                continue
-            _modules.add(module_name)
+               continue
+
+            parent_path = os.path.dirname(filepath)
+            if any(parent_path == app_path or is_subpath(app_path, parent_path) for app_path in app_paths):
+                _local_modules.add(module_name)
+            else:
+                _modules.add(module_name)
         except Exception:
             continue
 
-def _reload(changes):
-    _reload_logger.debug('Changes detected by autoreload watcher, reloading sessions.')
+def _reload(module_paths, changes):
+    """
+    Reloads modules depending on the module files that were changed.
+    Specifically we make a distinction between local modules relative
+    to the current application paths and global modules. This allows
+    us to reload the application itself, any local modules imported
+    by the application or all global modules independently.
+    """
+    _reload_logger.debug('Changes detected by autoreload watcher, unloading modules and reloading sessions.')
+
+    local_, global_ = False, False
+    for _, path in changes:
+        if path not in module_paths:
+            continue
+        module = module_paths[path]
+        if module in _local_modules and not any(m_.startswith(f'{module}.') for m_ in _modules):
+            local_ = True
+        else:
+            global_ = True
+
+    modules_to_delete = set()
+    if global_:
+        modules_to_delete |= _modules
+    if global_ or local_:
+        modules_to_delete |= _local_modules
+
+    for module in modules_to_delete:
+        if module in sys.modules:
+            del sys.modules[module]
+
     for doc, loc in state._locations.items():
         if not doc.session_context:
             continue
         elif state._loaded.get(doc):
             loc.reload = True
-            continue
-        def reload_session(event, loc=loc):
-            loc.reload = True
-        doc.on_event('document_ready', reload_session)
+        else:
+            def reload_session(event, loc=loc):
+                loc.reload = True
+            doc.on_event('document_ready', reload_session)
 
 def _check_file(path, modify_times):
     """
@@ -209,6 +265,7 @@ def _check_file(path, modify_times):
     except FileNotFoundError:
         if last_modified:
             return 3
+        return 0
     except Exception:
         return 0
     if last_modified is None:

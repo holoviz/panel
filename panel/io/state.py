@@ -245,9 +245,7 @@ class _state(param.Parameterized):
 
     @property
     def _current_thread(self) -> str | None:
-        thread = threading.current_thread()
-        thread_id = thread.ident if thread else None
-        return thread_id
+        return threading.get_ident()
 
     @property
     def _is_launching(self) -> bool:
@@ -646,18 +644,16 @@ class _state(param.Parameterized):
         """
         Stop all servers and clear them from the current state.
         """
-        for thread in self._threads.values():
-            try:
-                thread.stop()
-            except Exception:
-                pass
-        self._threads = {}
         for server_id in self._servers:
-            try:
-                self._servers[server_id][0].stop()
-            except AssertionError:  # can't stop a server twice
-                pass
-        self._servers = {}
+            if server_id in self._threads:
+                self._threads[server_id].stop()
+            else:
+                try:
+                    self._servers[server_id][0].stop()
+                except AssertionError:  # can't stop a server twice
+                    pass
+        self._servers.clear()
+        self._threads.clear()
 
     def log(self, msg: str, level: str = 'info') -> None:
         """
@@ -689,8 +685,7 @@ class _state(param.Parameterized):
         """
         if self.curdoc is None or self._is_pyodide or self.loaded:
             if self._thread_pool:
-                future = self._thread_pool.submit(partial(self.execute, callback, schedule=False))
-                future.add_done_callback(self._handle_future_exception)
+                self.execute(callback, schedule='threaded')
             else:
                 self.execute(callback, schedule=False)
             return

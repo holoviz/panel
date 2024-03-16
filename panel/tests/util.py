@@ -7,7 +7,6 @@ import subprocess
 import sys
 import time
 import uuid
-import warnings
 
 from queue import Empty, Queue
 from threading import Thread
@@ -76,12 +75,6 @@ def mpl_figure():
 def check_layoutable_properties(layoutable, model):
     layoutable.styles = {"background": '#fffff0'}
     assert model.styles["background"] == '#fffff0'
-
-    # Is deprecated, but we still support it for now.
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        layoutable.background = '#ffffff'
-    assert model.styles["background"] == '#ffffff'
 
     layoutable.css_classes = ['custom_class']
     if isinstance(layoutable, Alert):
@@ -277,7 +270,7 @@ def get_ctrl_modifier():
 
 
 def serve_and_wait(app, page=None, prefix=None, port=None, **kwargs):
-    server_id = uuid.uuid4().hex
+    server_id = kwargs.pop('server_id', uuid.uuid4().hex)
     serve(app, port=port or 0, threaded=True, show=False, liveness=True, server_id=server_id, prefix=prefix or "", **kwargs)
     wait_until(lambda: server_id in state._servers, page)
     server = state._servers[server_id][0]

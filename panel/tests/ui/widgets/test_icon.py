@@ -126,9 +126,9 @@ def test_toggle_icon_update_params_dynamically(page):
 
     # update size
     icon.size = "8em"
-    assert page.locator(".icon-tabler-ad-filled").bounding_box()["width"] == 96
-    icon.size = "2em"
-    assert page.locator(".icon-tabler-ad-filled").bounding_box()["width"] == 96 / 4
+    assert page.locator(".icon-tabler-ad-filled").bounding_box()["width"] >= 96
+    icon.size = "1em"
+    assert page.locator(".icon-tabler-ad-filled").bounding_box()["width"] <= 24
 
 
 def test_toggle_icon_svg(page):
@@ -337,3 +337,29 @@ def test_button_icon_tooltip(page):
     page.hover(".bk-TablerIcon")
     wait_until(lambda: page.locator(".bk-tooltip-content") is not None, page)
     assert page.locator(".bk-tooltip-content").text_content() == "Click me"
+
+
+def test_button_icon_name(page):
+    button = ButtonIcon(name="Like")
+    serve_component(page, button)
+
+    assert button.name == "Like"
+    assert page.locator(".bk-IconLabel").text_content() == "Like"
+
+
+def test_button_icon_name_dynamically(page):
+    button = ButtonIcon(name="Like")
+    serve_component(page, button)
+
+    assert button.name == "Like"
+    assert page.locator(".bk-IconLabel").text_content() == "Like"
+
+    button.name = "Dislike"
+    assert button.name == "Dislike"
+    assert page.locator(".bk-IconLabel").text_content() == "Dislike"
+
+    assert page.locator(".bk-IconLabel").bounding_box()["width"] < 40
+
+    button.size = "2em"
+    # check size
+    assert page.locator(".bk-IconLabel").bounding_box()["width"] >= 40

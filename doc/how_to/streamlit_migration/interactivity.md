@@ -93,7 +93,7 @@ data = np.random.normal(1, 1, size=100)
 bins_input = pn.widgets.IntSlider(value=20, start=10, end=30, step=1, name="Bins")
 bplot = pn.bind(plot, data=data, bins=bins_input)
 
-pn.Column(bins, bplot).servable()
+pn.Column(bins_input, bplot).servable()
 ```
 
 ![Panel Basic Interactivity Example](https://assets.holoviz.org/panel/gifs/panel_interactivity_example.gif)

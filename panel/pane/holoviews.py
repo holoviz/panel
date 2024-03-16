@@ -1,5 +1,6 @@
 """
 HoloViews integration for Panel including a Pane to render HoloViews
+
 objects and their widgets and support for Links
 """
 from __future__ import annotations
@@ -52,12 +53,15 @@ class HoloViews(PaneBase):
     """
 
     backend = param.ObjectSelector(
-        default=None, objects=['bokeh', 'plotly', 'matplotlib'], doc="""
+        default=None, objects=['bokeh', 'matplotlib', 'plotly'], doc="""
         The HoloViews backend used to render the plot (if None defaults
         to the currently selected renderer).""")
 
     center = param.Boolean(default=False, doc="""
         Whether to center the plot.""")
+
+    format = param.Selector(default='png', objects=['png', 'svg'], doc="""
+        The format to render Matplotlib plots with.""")
 
     linked_axes = param.Boolean(default=True, doc="""
         Whether to link the axes of bokeh plots inside this pane
@@ -116,13 +120,13 @@ class HoloViews(PaneBase):
         'backend': None, 'center': None, 'linked_axes': None,
         'renderer': None, 'theme': None, 'widgets': None,
         'widget_layout': None, 'widget_location': None,
-        'widget_type': None
+        'widget_type': None, 'format': None
     }
 
-    _rerender_params = ['object', 'backend']
+    _rerender_params = ['object', 'backend', 'format']
 
     _skip_layoutable = (
-        'background', 'css_classes', 'margin', 'name', 'sizing_mode',
+        'css_classes', 'margin', 'name', 'sizing_mode',
         'width', 'height', 'max_width', 'max_height'
     )
 
@@ -276,8 +280,10 @@ class HoloViews(PaneBase):
         if self.object is None:
             widgets, values = [], []
         else:
+            direction = getattr(self.widget_layout, '_direction', 'vertical')
             widgets, values = self.widgets_from_dimensions(
-                self.object, self.widgets, self.widget_type)
+                self.object, self.widgets, self.widget_type, direction
+            )
         self._values = values
 
         # Clean up anything models listening to the previous widgets
@@ -475,6 +481,7 @@ class HoloViews(PaneBase):
         if isinstance(pane_type, type):
             if issubclass(pane_type, Matplotlib):
                 kwargs['tight'] = True
+                kwargs['format'] = self.format
             if issubclass(pane_type, Bokeh):
                 kwargs['autodispatch'] = False
         return pane_type(state, **kwargs)
@@ -560,7 +567,7 @@ class HoloViews(PaneBase):
     jslink.__doc__ = PaneBase.jslink.__doc__
 
     @classmethod
-    def widgets_from_dimensions(cls, object, widget_types=None, widgets_type='individual'):
+    def widgets_from_dimensions(cls, object, widget_types=None, widgets_type='individual', direction='vertical'):
         from holoviews.core import Dimension, DynamicMap
         from holoviews.core.options import SkipRendering
         from holoviews.core.traversal import unique_dimkeys
@@ -607,7 +614,7 @@ class HoloViews(PaneBase):
         for i, dim in enumerate(dims):
             widget_type, widget, widget_kwargs = None, None, {}
 
-            if widgets_type == 'individual':
+            if widgets_type == 'individual' and direction == 'vertical':
                 if i == 0 and i == (len(dims)-1):
                     margin = (20, 20, 20, 20)
                 elif i == 0:
@@ -681,6 +688,7 @@ class HoloViews(PaneBase):
                                      **widget_kwargs)
                 widget = widget_type(**widget_kwargs)
             if widget is not None:
+                widget.param.name.constant = True
                 widgets.append(widget)
         if widgets_type == 'scrubber':
             widgets = [Player(length=nframes, width=550)]

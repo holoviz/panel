@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import html
 import os
 import weakref
 
@@ -25,7 +26,7 @@ from bokeh.util.token import get_session_id, get_token_payload
 from ipykernel.comm import Comm
 
 from ..util import edit_readonly
-from .handlers import build_single_handler_application
+from .application import build_single_handler_application
 from .resources import Resources
 from .server import server_html_page_for_session
 from .state import set_curdoc, state
@@ -55,6 +56,8 @@ class PanelExecutor(WSHandler):
     to send and receive messages to and from the frontend.
     """
 
+    _tasks = set()
+
     def __init__(self, path, token, root_url):
         self.path = path
         self.token = token
@@ -75,7 +78,7 @@ class PanelExecutor(WSHandler):
         )
         self._set_state()
         try:
-            self.session = self._create_server_session()
+            self.session, self._error = self._create_server_session()
             self.connection = ServerConnection(self.protocol, self, None, self.session)
         except Exception as e:
             self.exception = e
@@ -98,7 +101,9 @@ class PanelExecutor(WSHandler):
             state.rel_path = self.root_url
 
     def _receive_msg(self, msg) -> None:
-        asyncio.ensure_future(self._receive_msg_async(msg))
+        task = asyncio.ensure_future(self._receive_msg_async(msg))
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
 
     async def _receive_msg_async(self, msg) -> None:
         try:
@@ -152,10 +157,11 @@ class PanelExecutor(WSHandler):
         with set_curdoc(doc):
             app.initialize_document(doc)
 
+        runner = app._handlers[0]._runner
         loop = tornado.ioloop.IOLoop.current()
         session = ServerSession(self.session_id, doc, io_loop=loop, token=self.token)
         session_context._set_session(session)
-        return session
+        return session, runner.error_detail
 
     async def write_message(
         self, message: Union[bytes, str, Dict[str, Any]],
@@ -176,6 +182,18 @@ class PanelExecutor(WSHandler):
             return Mimebundle({'text/error': f'Session did not start correctly: {self.exception}'})
         with set_curdoc(self.session.document):
             if not self.session.document.roots:
+                if self._error:
+                    lines = self._error.split('\n')
+                    error = html.escape('\n'.join(lines[:1]+lines[3:]))
+                    return Mimebundle({
+                        'text/error': (
+                            "<span>Application errored while starting up:</span>"
+                            "<br><br>"
+                            "<div style='overflow: auto'>"
+                            f"  <code style='font-size: 0.75em; white-space: pre;'>{error}</code>"
+                            "</div>"
+                        )
+                    })
                 return Mimebundle({
                     'text/error': (
                         "The Panel application being served did not serve any contents. "
@@ -183,7 +201,7 @@ class PanelExecutor(WSHandler):
                         "script with .servable(), e.g. pn.Row('Hello World!').servable()."
                     )
                 })
-            html = server_html_page_for_session(
+            html_page = server_html_page_for_session(
                 self.session,
                 resources=self.resources,
                 title=self.session.document.title,
@@ -191,7 +209,7 @@ class PanelExecutor(WSHandler):
                 template_variables=self.session.document.template_variables
             )
         return Mimebundle({
-            'text/html': html,
+            'text/html': html_page,
             'application/bokeh-extensions': {
                 name: str(ext) for name, ext in extension_dirs.items()
             }

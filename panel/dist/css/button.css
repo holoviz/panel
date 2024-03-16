@@ -157,3 +157,12 @@
 :host(.bk-panel-models-widgets-FileDownload) .bk-btn .bk-TablerIcon {
   margin-left: 0.5em;
 }
+
+input[type='file'].bk-input {
+  padding-left: 10px;
+}
+
+input[type='file']::file-selector-button {
+  background: var(--surface-color);
+  color: var(--surface-text-color);
+}

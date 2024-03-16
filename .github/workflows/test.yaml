@@ -69,6 +69,7 @@ jobs:
               - 'doc/getting_started/**'
               - 'doc/how_to/**'
               - 'scripts/**'
+              - 'lite/**'
       - name: Set matrix option
         run: |
           if [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then
@@ -235,14 +236,6 @@ jobs:
           nodejs: true
           playwright: true
         id: install
-      - name: doit develop_install
-        run: |
-          conda activate test-environment
-          pip install --pre ipywidgets_bokeh
-      - name: build pyodide wheels
-        run: |
-          conda activate test-environment
-          python scripts/build_pyodide_wheels.py
       - name: launch jupyter
         run: |
           conda activate test-environment
@@ -264,10 +257,6 @@ jobs:
         run: |
           conda activate test-environment
           doit env_capture
-      - name: Check if auth should run
-        if: '!github.event.pull_request.head.repo.fork'
-        run: |
-          echo "PANEL_TEST_AUTH=1" >> $GITHUB_ENV
       - name: doit test_ui
         run: |
           conda activate test-environment
@@ -303,8 +292,7 @@ jobs:
       PYTHON_VERSION: ${{ matrix.python-version }}
       SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
     steps:
-      # Add back when this works on Python 3.12
-      # - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
+    # - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
       #   with:
       #     name: core_test_suite
       #     python-version: ${{ matrix.python-version }}
@@ -334,4 +322,4 @@ jobs:
       - name: doit test_unit
         run: |
           # conda activate test-environment
-          pytest panel
+          pytest panel -n logical --dist loadgroup

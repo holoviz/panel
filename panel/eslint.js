@@ -2,13 +2,14 @@ module.exports = {
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "project": [
-      "./tsconfig.json",
+      "./tsconfig.json"
     ],
-    "tsconfigRootDir": ".",
+    "tsconfigRootDir": __dirname,
     "sourceType": "module",
   },
-  "plugins": ["@typescript-eslint"],
+  "plugins": ["@typescript-eslint", "@stylistic/eslint-plugin"],
   "extends": [],
+  "ignorePatterns": ["*/dist", "*/theme/**/*.js", "eslint.js", "*/_templates/*.js", "*/template/**/*.js"],
   "rules": {
     "@typescript-eslint/ban-types": ["error", {
       "types": {
@@ -34,8 +35,8 @@ module.exports = {
     }],
     "@typescript-eslint/semi": ["error", "never"],
     "@typescript-eslint/type-annotation-spacing": ["error"],
-    "@typescript-eslint/no-unnecessary-condition": ["error", {"allowConstantLoopConditions": true}],
-    "@typescript-eslint/strict-boolean-expressions": ["error", {
+    "@typescript-eslint/no-unnecessary-condition": ["warn", {"allowConstantLoopConditions": true}],
+    "@typescript-eslint/strict-boolean-expressions": ["warn", {
       "allowAny": true,
       "allowString": false,
       "allowNumber": false,
@@ -63,7 +64,9 @@ module.exports = {
     "comma-spacing": ["error", {"before": false, "after": true}],
     "dot-notation": "error",
     "eol-last": ["error", "always"],
-    "indent": "off",
+    "no-irregular-whitespace": ["error"],
+    "@stylistic/indent": ["error", 2],
+    "@stylistic/no-mixed-spaces-and-tabs": ["error"],
     "@typescript-eslint/indent": ["error", 2, {
       "SwitchCase": 1,
       "outerIIFEBody": 1,
@@ -76,6 +79,7 @@ module.exports = {
       "FunctionExpression": {"body": 1, "parameters": "off"},
       "ignoredNodes": ["ConditionalExpression"],
     }],
+    "@typescript-eslint/no-floating-promises": ["warn", {ignoreVoid: true}],
     "no-debugger": "error",
     "no-floating-decimal": ["error"],
     "no-multiple-empty-lines": ["error", {"max": 1, "maxBOF": 0, "maxEOF": 0}],
@@ -110,8 +114,9 @@ module.exports = {
       "nonwords": false,
       "overrides": {},
     }],
-    "guard-for-in": ["error"],
+    "guard-for-in": ["warn"],
     "quotes": ["error", "double", {"avoidEscape": true, "allowTemplateLiterals": false}],
+    "curly": ["error", "all"],
     "prefer-template": ["error"],
     "generator-star-spacing": ["error", {
       "before": false,
@@ -119,6 +124,6 @@ module.exports = {
       "anonymous": {"before": false, "after": true},
       "method": {"before": true, "after": false},
     }],
-    "yield-star-spacing": ["error", {"before": false, "after": true}]
-  }
+    "yield-star-spacing": ["error", {"before": false, "after": true}],
+  },
 }

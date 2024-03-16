@@ -20,7 +20,7 @@ The *Preview* offers two update modes that are configurable in the preview tab:
 - automatic: toggle the *Render on save* checkbox ({far}`square-check`) for the app to be automatically re-rendered when you save your notebook.
 
 :::{tip}
-Panel [built-in templates](../../reference/index.md#templates) don't render necessarily well in a notebook as their styling can badly interact with the notebook built-in styling. Using the *Preview* is a good way to circumvent this issue, while still being able to work within JupyterLab .
+Panel [built-in templates](https://panel.holoviz.org/reference/index.md#templates) don't render necessarily well in a notebook as their styling can badly interact with the notebook built-in styling. Using the *Preview* is a good way to circumvent this issue, while still being able to work within JupyterLab .
 :::
 
 ## Related Resources

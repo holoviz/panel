@@ -5,27 +5,33 @@
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
+    "noImplicitOverride": true,
     "strictNullChecks": true,
-    "strictBindCallApply": false,
-    "strictFunctionTypes": false,
+    "strictBindCallApply": true,
+    "strictFunctionTypes": true,
     "strictPropertyInitialization": false,
+    "useUnknownInCatchVariables": true,
     "alwaysStrict": true,
     "noErrorTruncation": true,
     "noEmitOnError": false,
+    "stripInternal": true,
     "declaration": true,
     "sourceMap": true,
+    "declarationMap": true,
     "importHelpers": false,
     "experimentalDecorators": true,
     "module": "ES2022",
     "moduleResolution": "node",
     "isolatedModules": true,
-    "esModuleInterop": true,
+    "verbatimModuleSyntax": true,
     "resolveJsonModule": true,
+    "esModuleInterop": true,
     "skipLibCheck": true,
-    "target": "ES2020",
-    "lib": ["es2020", "dom", "dom.iterable"],
+    "target": "ES2022",
+    "lib": ["es2022", "dom", "dom.iterable"],
     "baseUrl": ".",
     "outDir": "./dist/lib",
+    "rootDirs": [".", "./dist/dts/"],
     "paths": {
       "@bokehjs/*": [
         "node_modules/@bokeh/bokehjs/build/js/lib/*"
@@ -34,5 +40,5 @@
       "react-dom": ["node_modules/preact/compat"]
     }
   },
-  "include": ["./*.ts", "./models/**/*.ts"]
+  "include": ["./*.ts", "./models/", "./dist/dts/styles/models/"]
 }

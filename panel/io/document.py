@@ -3,10 +3,12 @@ from __future__ import annotations
 import asyncio
 import dataclasses
 import datetime as dt
+import gc
 import inspect
 import json
 import logging
 import threading
+import weakref
 
 from contextlib import contextmanager
 from functools import partial, wraps
@@ -15,6 +17,7 @@ from typing import (
 )
 
 from bokeh.application.application import SessionContext
+from bokeh.core.serialization import Serializable
 from bokeh.document.document import Document
 from bokeh.document.events import (
     ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
@@ -172,6 +175,44 @@ async def _dispatch_msgs(doc, msgs):
     await asyncio.sleep(0.01)
     _dispatch_write_task(doc, _dispatch_msgs, doc, remaining)
 
+def _destroy_document(self, session):
+    """
+    Override for Document.destroy() without calling gc.collect directly.
+    The gc.collect() call is scheduled as a task, ensuring that when
+    multiple documents are destroyed in quick succession we do not
+    schedule excessive garbage collection.
+    """
+    if session is not None:
+        self.remove_on_change(session)
+
+    del self._roots
+    del self._theme
+    del self._template
+    self._session_context = None
+
+    self.callbacks.destroy()
+    self.models.destroy()
+    self.modules.destroy()
+
+    # Clear periodic callbacks
+    for cb in state._periodic.get(self, []):
+        cb.stop()
+
+    # Clean up pn.state to avoid tasks getting executed on dead session
+    for attr in dir(state):
+        # _param_watchers is deprecated in Param 2.0 and will raise a warning
+        if not attr.startswith('_') or attr == "_param_watchers":
+            continue
+        state_obj = getattr(state, attr)
+        if isinstance(state_obj, weakref.WeakKeyDictionary) and self in state_obj:
+            del state_obj[self]
+
+    # Schedule GC
+    at = dt.datetime.now() + dt.timedelta(seconds=5)
+    state.schedule_task('gc.collect', gc.collect, at=at)
+
+    del self.destroy
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
@@ -189,9 +230,9 @@ def init_doc(doc: Optional[Document]) -> Document:
     if not curdoc.session_context:
         return curdoc
 
-    thread = threading.current_thread()
-    if thread:
-        state._thread_id_[curdoc] = thread.ident
+    thread_id = threading.get_ident()
+    if thread_id:
+        state._thread_id_[curdoc] = thread_id
 
     if config.global_loading_spinner:
         curdoc.js_on_event(
@@ -288,7 +329,16 @@ def unlocked() -> Iterator:
     curdoc = state.curdoc
     session_context = getattr(curdoc, 'session_context', None)
     session = getattr(session_context, 'session', None)
-    if curdoc is None or session_context is None or session is None or state._jupyter_kernel_context:
+    if state._current_thread != state._thread_id and state.loaded and session:
+        logger.error(
+            "Using the unlocked decorator when running inside a thread "
+            "is not safe! Ensure you check that pn.state._current_thread "
+            "matches the current thread id."
+        )
+        yield
+        return
+    elif (curdoc is None or session is None or not state.loaded or
+          state._jupyter_kernel_context):
         yield
         return
     elif curdoc.callbacks.hold_value:
@@ -300,9 +350,10 @@ def unlocked() -> Iterator:
     connections = session._subscribed_connections
 
     curdoc.hold()
+    events = None
+    remaining_events, dispatch_events = [], []
     try:
         yield
-
         locked = False
         for conn in connections:
             socket = conn._socket
@@ -311,8 +362,8 @@ def unlocked() -> Iterator:
                 break
 
         events = curdoc.callbacks._held_events
+        curdoc.callbacks._held_events = []
         monkeypatch_events(events)
-        remaining_events, dispatch_events = [], []
         for event in events:
             if isinstance(event, DISPATCH_EVENTS) and not locked:
                 dispatch_events.append(event)
@@ -333,14 +384,27 @@ def unlocked() -> Iterator:
                 _dispatch_write_task(curdoc, _run_write_futures, futures)
             else:
                 curdoc.add_next_tick_callback(partial(_run_write_futures, futures))
-
-        curdoc.callbacks._held_events = remaining_events
+    except Exception as e:
+        # If we error out during the yield, there won't be any events
+        # captured so we end up simply calling curdoc.unhold() and
+        # raising the exception. If instead we error during event
+        # dispatch we restore the events in the order they were created
+        # and then let the finally section create a protocol message
+        # to dispatch the events, ensuring that the events which were
+        # marked for immediate dispatch are not lost.
+        if events is not None:
+            remaining_events = events
+        raise e
     finally:
-        try:
-            curdoc.unhold()
-        except RuntimeError:
-            if not remaining_events:
-                return
+        # If for whatever reasons there are still events that couldn't
+        # be dispatched we create a protocol message for these immediately
+        # and then schedule a task to write the message to the websocket
+        # on the next iteration of the event loop.
+        if remaining_events:
+            # Separate serializable and non-serializable events
+            leftover_events = [e for e in remaining_events if not isinstance(e, Serializable)]
+            remaining_events = [e for e in remaining_events if isinstance(e, Serializable)]
+
             # Create messages for remaining events
             msgs = {}
             for conn in connections:
@@ -349,6 +413,8 @@ def unlocked() -> Iterator:
                 # Create a protocol message for any events that cannot be immediately dispatched
                 msgs[conn] = conn.protocol.create('PATCH-DOC', remaining_events)
             _dispatch_write_task(curdoc, _dispatch_msgs, curdoc, msgs)
+            curdoc.callbacks._held_events += leftover_events
+        curdoc.unhold()
 
 @contextmanager
 def immediate_dispatch(doc: Document | None = None):
@@ -365,7 +431,7 @@ def immediate_dispatch(doc: Document | None = None):
     doc = doc or state.curdoc
 
     # Skip if not in a server context
-    if not doc or not doc._session_context:
+    if not doc or not doc._session_context or not state._unblocked(doc):
         yield
         return
 

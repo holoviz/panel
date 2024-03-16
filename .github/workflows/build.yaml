@@ -57,8 +57,8 @@ jobs:
         if: always()
         with:
           name: conda_build
-          path: ${{ env.CONDA_FILE }}
           if-no-files-found: error
+          path: ${{ env.CONDA_FILE }}
       - name: conda dev deploy
         if: (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
@@ -111,8 +111,8 @@ jobs:
         if: always()
         with:
           name: npm_build
-          path: ./panel/${{ env.TARBALL }}
           if-no-files-found: error
+          path: ./panel/${{ env.TARBALL }}
       - name: npm dev deploy
         if: (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
@@ -154,16 +154,17 @@ jobs:
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: build pyodide wheels for CDN
         run: |
-          python ./scripts/build_pyodide_wheels.py
+          python -m pip install packaging tomli
+          python ./scripts/build_pyodide_wheels.py --verify-clean
           SETUPTOOLS_ENABLE_FEATURES="legacy-editable" python -m pip install -ve .
       - uses: actions/upload-artifact@v3
         if: always()
         with:
           name: cdn_wheels
-          path: |
-            ./build/panel*.whl
-            ./build/bokeh*.whl
           if-no-files-found: error
+          path: |
+            ./panel/dist/wheels/panel*.whl
+            ./panel/dist/wheels/bokeh*.whl
       - name: Deploy to cdn.holoviz.org
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}

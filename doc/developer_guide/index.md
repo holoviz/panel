@@ -121,7 +121,7 @@ Once pyctdev is available and you are in the cloned panel repository you can set
 doit env_create -c pyviz/label/dev -c conda-forge --name=panel_dev --python=3.9
 ```
 
-Specify the desired Python version, currently Panel officially supports Python 3.8 or later. Once the environment has been created you can activate it with:
+Specify the desired Python version, currently Panel officially supports Python 3.9 or later. Once the environment has been created you can activate it with:
 
 ```bash
 conda activate panel_dev
@@ -132,7 +132,7 @@ conda activate panel_dev
 To perform an editable install of Panel, including all the dependencies required to run the full unit test suite, run the following:
 
 ```bash
-doit develop_install -c pyviz/label/dev -c conda-forge -c bokeh -o build -o tests -o recommended
+doit develop_install -c pyviz/label/dev -c conda-forge -c bokeh -c bokeh/label/dev -o build -o tests -o recommended
 ```
 
 The above command installs Panel's dependencies using conda, then performs a pip editable install of Panel. If it fails, `nodejs>=14.0.0` may be missing from your environment, fix it with `conda install -c conda-forge nodejs` then rerun above command.

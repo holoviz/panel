@@ -28,6 +28,9 @@ class _ClickableIcon(Widget):
     value = Bool(default=False, help="""
         Whether the icon is toggled on or off.""")
 
+    title = String(default="", help="""
+        The title of the icon.""")
+
     tooltip = Nullable(Instance(Tooltip), help="""
         A tooltip with plain text or rich HTML contents, providing general help or
         description of a widget's or component's function.

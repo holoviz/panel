@@ -9,10 +9,9 @@ import asyncio
 import traceback
 
 from enum import Enum
-from functools import partial
 from inspect import (
     isasyncgen, isasyncgenfunction, isawaitable, iscoroutinefunction,
-    isgenerator,
+    isgenerator, isgeneratorfunction,
 )
 from io import BytesIO
 from typing import (
@@ -23,7 +22,7 @@ import param
 
 from .._param import Margin
 from ..io.resources import CDN_DIST
-from ..layout import Column, ListPanel
+from ..layout import Feed, ListPanel
 from ..layout.card import Card
 from ..layout.spacer import VSpacer
 from ..pane.image import SVG
@@ -37,7 +36,7 @@ if TYPE_CHECKING:
 
 
 PLACEHOLDER_SVG = """
-    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-loader-3" width="40" height="40" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-loader-3" width="35" height="35" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
         <path d="M3 12a9 9 0 0 0 9 9a9 9 0 0 0 9 -9a9 9 0 0 0 -9 -9"></path>
         <path d="M17 12a5 5 0 1 0 -5 5"></path>
@@ -136,8 +135,15 @@ class ChatFeed(ListPanel):
         and will not be included in the `serialize` method by default.""")
 
     placeholder_text = param.String(default="", doc="""
-        If placeholder is the default LoadingSpinner the text to display
-        next to it.""")
+        The text to display next to the placeholder icon.""")
+
+    placeholder_params = param.Dict(default={
+        "user": " ", "reaction_icons": {}, "show_copy_icon": False, "show_timestamp": False
+    }, doc="""
+        Params to pass to the placeholder ChatMessage, like `reaction_icons`,
+        `timestamp_format`, `show_avatar`, `show_user`, `show_timestamp`.
+        """
+    )
 
     placeholder_threshold = param.Number(default=1, bounds=(0, None), doc="""
         Min duration in seconds of buffering before displaying the placeholder.
@@ -149,6 +155,11 @@ class ChatFeed(ListPanel):
         attempt to use the first renderer that does not raise an
         exception. If None, will attempt to infer the renderer
         from the value.""")
+
+    load_buffer = param.Integer(default=50, bounds=(0, None), doc="""
+        The number of objects loaded on each side of the visible objects.
+        When scrolled halfway into the buffer, the feed will automatically
+        load additional objects while unloading objects on the opposite side.""")
 
     scroll_button_threshold = param.Integer(default=100, bounds=(0, None),doc="""
         Min pixel distance from the latest object in the Column to
@@ -205,14 +216,17 @@ class ChatFeed(ListPanel):
             visible=self.param.visible
         )
         # we separate out chat log for the auto scroll feature
-        self._chat_log = Column(
+        self._chat_log = Feed(
             *self.objects,
+            load_buffer=self.load_buffer,
             auto_scroll_limit=self.auto_scroll_limit,
             scroll_button_threshold=self.scroll_button_threshold,
+            view_latest=self.view_latest,
             css_classes=["chat-feed-log"],
             stylesheets=self._stylesheets,
             **linked_params
         )
+        self._chat_log.height = None
         card_params = linked_params.copy()
         card_stylesheets = (
             self._stylesheets +
@@ -222,7 +236,7 @@ class ChatFeed(ListPanel):
         card_params.update(
             margin=self.param.margin,
             align=self.param.align,
-            header=self.header,
+            header=self.param.header,
             height=self.param.height,
             hide_header=self.param.header.rx().rx.in_((None, "")),
             collapsible=False,
@@ -268,28 +282,29 @@ class ChatFeed(ListPanel):
         self._card._cleanup(root)
         super()._cleanup(root)
 
+    @param.depends("load_buffer", "auto_scroll_limit", "scroll_button_threshold", watch=True)
+    def _update_chat_log_params(self):
+        self._chat_log.load_buffer = self.load_buffer
+        self._chat_log.auto_scroll_limit = self.auto_scroll_limit
+        self._chat_log.scroll_button_threshold = self.scroll_button_threshold
+
     @param.depends("card_params", watch=True)
     def _update_card_params(self):
         card_params = self.card_params.copy()
         card_params.pop('stylesheets', None)
         self._card.param.update(**card_params)
 
-    @param.depends("placeholder_text", watch=True, on_init=True)
+    @param.depends("placeholder_text", "placeholder_params", watch=True, on_init=True)
     def _update_placeholder(self):
-        if self._placeholder is not None:
-            self._placeholder.param.update(object=self.placeholder_text)
-            return
-
         loading_avatar = SVG(
-            PLACEHOLDER_SVG, sizing_mode=None, css_classes=["rotating-placeholder"]
+            PLACEHOLDER_SVG, sizing_mode="fixed", width=35, height=35,
+            css_classes=["rotating-placeholder"]
         )
         self._placeholder = ChatMessage(
             self.placeholder_text,
-            user=" ",
-            show_timestamp=False,
             avatar=loading_avatar,
-            reaction_icons={},
-            show_copy_icon=False,
+            css_classes=["message"],
+            **self.placeholder_params
         )
 
     def _replace_placeholder(self, message: ChatMessage | None = None) -> None:
@@ -441,21 +456,39 @@ class ChatFeed(ListPanel):
         start = asyncio.get_event_loop().time()
         while not task.done() and num_entries == len(self._chat_log):
             duration = asyncio.get_event_loop().time() - start
-            if duration > self.placeholder_threshold:
+            if duration > self.placeholder_threshold or self._callback_future is None:
                 self.append(self._placeholder)
                 return
             await asyncio.sleep(0.1)
 
-    async def _handle_callback(self, message, loop):
+    async def _to_async_gen(self, sync_gen):
+        done = object()
+
+        def safe_next():
+            # Converts StopIteration to a sentinel value to avoid:
+            # TypeError: StopIteration interacts badly with generators and cannot be raised into a Future
+            try:
+                return next(sync_gen)
+            except StopIteration:
+                return done
+
+        while True:
+            value = await asyncio.to_thread(safe_next)
+            if value is done:
+                break
+            yield value
+
+    async def _handle_callback(self, message, loop: asyncio.BaseEventLoop):
         callback_args = self._gather_callback_args(message)
         if iscoroutinefunction(self.callback):
             response = await self.callback(*callback_args)
         elif isasyncgenfunction(self.callback):
             response = self.callback(*callback_args)
+        elif isgeneratorfunction(self.callback):
+            response = self._to_async_gen(self.callback(*callback_args))
+            # printing type(response) -> <class 'async_generator'>
         else:
-            response = await loop.run_in_executor(
-                None, partial(self.callback, *callback_args)
-            )
+            response = await asyncio.to_thread(self.callback, *callback_args)
         await self._serialize_response(response)
 
     async def _prepare_response(self, _) -> None:
@@ -559,7 +592,7 @@ class ChatFeed(ListPanel):
 
     def stream(
         self,
-        value: str,
+        value: str | dict | ChatMessage,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
         message: ChatMessage | None = None,

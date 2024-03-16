@@ -26,7 +26,9 @@ from pyviz_comms import Comm
 
 from panel import config, serve
 from panel.config import panel_extension
-from panel.io.reload import _modules, _watched_files
+from panel.io.reload import (
+    _local_modules, _modules, _watched_files, async_file_watcher, watch,
+)
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
 
@@ -185,6 +187,25 @@ def stop_event():
         event.set()
 
 @pytest.fixture
+async def watch_files():
+    tasks = []
+    stop_event = asyncio.Event()
+    def watch_files(*files):
+        watch(*files)
+        tasks.append(asyncio.create_task(async_file_watcher(stop_event)))
+    try:
+        yield watch_files
+    finally:
+        if tasks:
+            try:
+                stop_event.set()
+                await tasks[0]
+            except FileNotFoundError:
+                # Watched files may be deleted before autoreloader
+                # is shut down, therefore we catch the error on deletion.
+                pass
+
+@pytest.fixture
 def port():
     worker_id = os.environ.get("PYTEST_XDIST_WORKER", "0")
     worker_count = int(os.environ.get("PYTEST_XDIST_WORKER_COUNT", "1"))
@@ -224,6 +245,16 @@ def get_display_handle():
     for ref in cleanup:
         if ref in state._handles:
             del state._handles[ref]
+
+
+@pytest.fixture
+def hv_plotly():
+    import holoviews as hv
+    hv.renderer('plotly')
+    prev_backend = hv.Store.current_backend
+    hv.Store.current_backend = 'plotly'
+    yield
+    hv.Store.current_backend = prev_backend
 
 
 @pytest.fixture
@@ -356,18 +387,44 @@ def server_cleanup():
         state.reset()
         _watched_files.clear()
         _modules.clear()
+        _local_modules.clear()
 
 @pytest.fixture(autouse=True)
 def cache_cleanup():
     state.clear_caches()
 
 @pytest.fixture
+def autoreload():
+    config.autoreload = True
+    def watch(files):
+        if isinstance(files, (str, os.PathLike)):
+            files = [files]
+        _watched_files.update({str(f) for f in files})
+    try:
+        yield watch
+    finally:
+        config.autoreload = False
+
+@pytest.fixture
 def py_file():
-    tf = tempfile.NamedTemporaryFile(mode='w', suffix='.py')
+    tf = tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False)
     try:
         yield tf
     finally:
         tf.close()
+        os.unlink(tf.name)
+
+@pytest.fixture
+def py_files():
+    tf = tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False)
+    tf2 = tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=os.path.split(tf.name)[0], delete=False)
+    try:
+        yield tf, tf2
+    finally:
+        tf.close()
+        tf2.close()
+        os.unlink(tf.name)
+        os.unlink(tf2.name)
 
 @pytest.fixture
 def html_file():

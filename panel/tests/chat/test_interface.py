@@ -5,12 +5,15 @@ from io import BytesIO
 import pytest
 import requests
 
+from panel.chat.input import ChatAreaInput
 from panel.chat.interface import ChatInterface
+from panel.chat.message import ChatMessage
 from panel.layout import Row, Tabs
 from panel.pane import Image
 from panel.tests.util import async_wait_until, wait_until
 from panel.widgets.button import Button
 from panel.widgets.input import FileInput, TextAreaInput, TextInput
+from panel.widgets.select import RadioButtonGroup
 
 ChatInterface.callback_exception = "raise"
 
@@ -24,7 +27,7 @@ class TestChatInterface:
         assert len(chat_interface._button_data) == 5
         assert len(chat_interface._widgets) == 1
         assert isinstance(chat_interface._input_layout, Row)
-        assert isinstance(chat_interface._widgets["TextInput"], TextInput)
+        assert isinstance(chat_interface._widgets["ChatAreaInput"], ChatAreaInput)
 
         assert chat_interface.active == -1
 
@@ -89,6 +92,12 @@ class TestChatInterface:
         chat_interface._click_send(None)
         assert len(chat_interface.objects) == 1
 
+    def test_click_send_with_no_value_input(self, chat_interface: ChatInterface):
+        chat_interface.widgets = [RadioButtonGroup(options=["A", "B"])]
+        chat_interface.active_widget.value = "A"
+        chat_interface._click_send(None)
+        assert chat_interface.objects[0].object == "A"
+
     def test_show_stop_disabled(self, chat_interface: ChatInterface):
         async def callback(msg, user, instance):
             yield "A"
@@ -122,12 +131,26 @@ class TestChatInterface:
         send_button = chat_interface._input_layout[1]
         assert not send_button.disabled
 
-    def test_show_stop_for_sync(self, chat_interface: ChatInterface):
+    def test_show_stop_for_async_generator(self, chat_interface: ChatInterface):
+        async def callback(msg, user, instance):
+            send_button = instance._buttons["send"]
+            stop_button = instance._buttons["stop"]
+            await async_wait_until(lambda: stop_button.visible)
+            await async_wait_until(lambda: not send_button.visible)
+            yield "Hello"
+
+        chat_interface.callback = callback
+        chat_interface.send("Message", respond=True)
+        send_button = chat_interface._input_layout[1]
+        assert not send_button.disabled
+
+    def test_show_stop_for_sync_generator(self, chat_interface: ChatInterface):
         def callback(msg, user, instance):
             send_button = instance._buttons["send"]
             stop_button = instance._buttons["stop"]
             wait_until(lambda: stop_button.visible)
             wait_until(lambda: not send_button.visible)
+            yield "Hello"
 
         chat_interface.callback = callback
         chat_interface.send("Message", respond=True)
@@ -196,9 +219,9 @@ class TestChatInterface:
 
         chat_interface.callback = callback
         chat_interface.send("Message 1")
-        assert chat_interface.objects[1].object == 1
+        wait_until(lambda: chat_interface.objects[1].object == 1)
         chat_interface._click_rerun(None)
-        assert chat_interface.objects[1].object == 2
+        wait_until(lambda: chat_interface.objects[1].object == 2)
 
     def test_click_rerun_null(self, chat_interface):
         chat_interface._click_rerun(None)
@@ -363,6 +386,25 @@ class TestChatInterface:
         assert chat_interface.user == "New User"
         chat_interface.send("Test")
         assert chat_interface.objects[0].user == "New User"
+
+    def test_stream_chat_message(self, chat_interface):
+        chat_interface.stream(ChatMessage("testeroo", user="useroo", avatar="avataroo"))
+        chat_message = chat_interface.objects[0]
+        assert chat_message.user == "useroo"
+        assert chat_message.avatar == "avataroo"
+        assert chat_message.object == "testeroo"
+
+    def test_stream_chat_message_error_passed_user(self, chat_interface):
+        with pytest.raises(ValueError, match="Cannot set user or avatar"):
+            chat_interface.stream(ChatMessage(
+                "testeroo", user="useroo", avatar="avataroo",
+            ), user="newuser")
+
+    def test_stream_chat_message_error_passed_avatar(self, chat_interface):
+        with pytest.raises(ValueError, match="Cannot set user or avatar"):
+            chat_interface.stream(ChatMessage(
+                "testeroo", user="useroo", avatar="avataroo",
+            ), avatar="newavatar")
 
 class TestChatInterfaceWidgetsSizingMode:
     def test_none(self):

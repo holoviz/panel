@@ -21,9 +21,6 @@ from bokeh.core.has_props import _default_resolver
 from bokeh.document import Document
 from bokeh.model import Model
 from bokeh.settings import settings as bk_settings
-from param.display import (
-    register_display_accessor, unregister_display_accessor,
-)
 from pyviz_comms import (
     JupyterCommManager as _JupyterCommManager, extension as _pyviz_extension,
 )
@@ -812,17 +809,7 @@ class panel_extension(_pyviz_extension):
         except Exception:
             return
 
-        from .io.notebook import load_notebook, mime_renderer
-
-        try:
-            unregister_display_accessor('_ipython_display_')
-        except KeyError:
-            pass
-
-        try:
-            register_display_accessor('_repr_mimebundle_', mime_renderer)
-        except Exception:
-            pass
+        from .io.notebook import load_notebook
 
         self._detect_comms(params)
 
@@ -884,11 +871,30 @@ class panel_extension(_pyviz_extension):
 
         # Try to detect environment so that we can enable comms
         if "google.colab" in sys.modules:
-            config.comms = "colab"
+            try:
+                import jupyter_bokeh  # noqa
+                config.comms = "colab"
+            except Exception:
+                warnings.warn(
+                    'Using Panel interactively in Colab notebooks requires '
+                    'the jupyter_bokeh package to be installed. '
+                    'Install it with:\n\n    !pip install jupyter_bokeh'
+                    '\n\nand try again.', stacklevel=5
+                )
             return
 
         if "VSCODE_CWD" in os.environ or "VSCODE_PID" in os.environ:
-            config.comms = "vscode"
+            try:
+                import jupyter_bokeh  # noqa
+                config.comms = "vscode"
+            except Exception:
+                warnings.warn(
+                    'Using Panel interactively in VSCode notebooks requires '
+                    'the jupyter_bokeh package to be installed. '
+                    'You can install it with:\n\n   pip install jupyter_bokeh'
+                    '\n\nor:\n    conda install jupyter_bokeh\n\nand try again.',
+                    stacklevel=5
+                )
             self._ignore_bokeh_warnings()
             return
 

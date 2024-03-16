@@ -1,5 +1,5 @@
-import * as p from "@bokehjs/core/properties"
-import {div} from "@bokehjs/core/dom";
+import type * as p from "@bokehjs/core/properties"
+import {div} from "@bokehjs/core/dom"
 import {HTMLBox, HTMLBoxView} from "./layout"
 
 import type {Ace} from "ace-code"
@@ -14,30 +14,34 @@ function ID() {
   // Math.random should be unique because of its seeding algorithm.
   // Convert it to base 36 (numbers + letters), and grab the first 9 characters
   // after the decimal.
-  return '_' + Math.random().toString(36).substr(2, 9);
+  const id = Math.random().toString(36).substr(2, 9)
+  return `_${id}`
 }
 
 export class AcePlotView extends HTMLBoxView {
-  model: AcePlot
+  declare model: AcePlot
+
   protected _editor: Ace.Editor
   protected _langTools: unknown
   protected _modelist: ModeList
   protected _container: HTMLDivElement
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.code.change, () => this._update_code_from_model())
-    this.connect(this.model.properties.theme.change, () => this._update_theme())
-    this.connect(this.model.properties.language.change, () => this._update_language())
-    this.connect(this.model.properties.filename.change, () => this._update_filename())
-    this.connect(this.model.properties.print_margin.change, () => this._update_print_margin())
-    this.connect(this.model.properties.annotations.change, () => this._add_annotations())
-    this.connect(this.model.properties.readonly.change, () => {
+
+    const {code, theme, language, filename, print_margin, annotations, readonly} = this.model.properties
+    this.on_change(code, () => this._update_code_from_model())
+    this.on_change(theme, () => this._update_theme())
+    this.on_change(language, () => this._update_language())
+    this.on_change(filename, () => this._update_filename())
+    this.on_change(print_margin, () => this._update_print_margin())
+    this.on_change(annotations, () => this._add_annotations())
+    this.on_change(readonly, () => {
       this._editor.setReadOnly(this.model.readonly)
     })
   }
 
-  render(): void {
+  override render(): void {
     super.render()
 
     this._container = div({
@@ -46,38 +50,39 @@ export class AcePlotView extends HTMLBoxView {
         width: "100%",
         height: "100%",
         zIndex: 0,
-      }
+      },
     })
     this.shadow_el.append(this._container)
     this._container.textContent = this.model.code
     this._editor = ace.edit(this._container)
     this._editor.renderer.attachToShadowRoot()
-    this._langTools = ace.require('ace/ext/language_tools')
+    this._langTools = ace.require("ace/ext/language_tools")
     this._modelist = ace.require("ace/ext/modelist")
     this._editor.setOptions({
       enableBasicAutocompletion: true,
       enableSnippets: true,
       fontFamily: "monospace", //hack for cursor position
-    });
+    })
     this._update_theme()
     this._update_filename()
     this._update_language()
     this._editor.setReadOnly(this.model.readonly)
-    this._editor.setShowPrintMargin(this.model.print_margin);
-    this._editor.on('change', () => this._update_code_from_editor())
+    this._editor.setShowPrintMargin(this.model.print_margin)
+    this._editor.on("change", () => this._update_code_from_editor())
   }
 
   _update_code_from_model(): void {
-    if (this._editor && this._editor.getValue() !=  this.model.code)
+    if (this._editor && this._editor.getValue() != this.model.code) {
       this._editor.setValue(this.model.code)
+    }
   }
 
   _update_print_margin(): void {
-    this._editor.setShowPrintMargin(this.model.print_margin);
+    this._editor.setShowPrintMargin(this.model.print_margin)
   }
 
   _update_code_from_editor(): void {
-    if(this._editor.getValue() !=  this.model.code){
+    if (this._editor.getValue() !=  this.model.code) {
       this.model.code = this._editor.getValue()
     }
   }
@@ -93,17 +98,17 @@ export class AcePlotView extends HTMLBoxView {
     }
   }
 
-  _update_language(): void{
+  _update_language(): void {
     if (this.model.language != null) {
       this._editor.session.setMode(`ace/mode/${this.model.language}`)
     }
   }
 
-  _add_annotations(): void{
+  _add_annotations(): void {
     this._editor.session.setAnnotations(this.model.annotations)
   }
 
-  after_layout(): void{
+  override after_layout(): void {
     super.after_layout()
     if (this._editor !== undefined) {
       this._editor.resize()
@@ -127,30 +132,30 @@ export namespace AcePlot {
 export interface AcePlot extends AcePlot.Attrs {}
 
 export class AcePlot extends HTMLBox {
-  properties: AcePlot.Props
+  declare properties: AcePlot.Props
 
   constructor(attrs?: Partial<AcePlot.Attrs>) {
     super(attrs)
   }
 
-  static __module__ = "panel.models.ace"
+  static override __module__ = "panel.models.ace"
 
   static {
     this.prototype.default_view = AcePlotView
 
-    this.define<AcePlot.Props>(({Any, Array, Boolean, String, Nullable}) => ({
-      code:         [ String,       '' ],
-      filename:     [ Nullable(String), null],
-      language:     [ String,       '' ],
-      theme:        [ String, 'chrome' ],
-      annotations:  [ Array(Any),   [] ],
-      readonly:     [ Boolean,   false ],
-      print_margin: [ Boolean,   false ]
+    this.define<AcePlot.Props>(({Any, List, Bool, Str, Nullable}) => ({
+      code:         [ Str,       "" ],
+      filename:     [ Nullable(Str), null],
+      language:     [ Str,       "" ],
+      theme:        [ Str, "chrome" ],
+      annotations:  [ List(Any),   [] ],
+      readonly:     [ Bool,   false ],
+      print_margin: [ Bool,   false ],
     }))
 
     this.override<AcePlot.Props>({
       height: 300,
-      width: 300
+      width: 300,
     })
   }
 }

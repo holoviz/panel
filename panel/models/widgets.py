@@ -110,7 +110,7 @@ class Video(HTMLBox):
     throttle = Int(250, help="""
         The frequency at which the time value is updated in milliseconds.""")
 
-    value = Any(help="Encoded file data")
+    value = String(help="Encoded file data")
 
     volume = Int(help="""The volume of the video player.""")
 
