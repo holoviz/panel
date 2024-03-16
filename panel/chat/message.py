@@ -21,7 +21,7 @@ from zoneinfo import ZoneInfo
 
 import param
 
-from ..io.resources import CDN_DIST
+from ..io.resources import CDN_DIST, get_dist_path
 from ..io.state import state
 from ..layout import Column, Row
 from ..pane.base import PaneBase, ReplacementPane, panel as _panel
@@ -50,9 +50,13 @@ ASSISTANT_LOGO = "🤖"
 SYSTEM_LOGO = "⚙️"
 ERROR_LOGO = "❌"
 HELP_LOGO = "❓"
-GPT_3_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_logo.svg/1024px-ChatGPT_logo.svg.png?20230318122128"
-GPT_4_LOGO = "https://upload.wikimedia.org/wikipedia/commons/a/a4/GPT-4.png"
-WOLFRAM_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/WolframCorporateLogo.svg/1920px-WolframCorporateLogo.svg.png"
+GPT_3_LOGO = "{dist_path}assets/logo/gpt-3.svg"
+GPT_4_LOGO = "{dist_path}assets/logo/gpt-4.svg"
+WOLFRAM_LOGO = "{dist_path}assets/logo/wolfram.svg"
+LUMEN_LOGO = "{dist_path}assets/logo/lumen.svg"
+HOLOVIEWS_LOGO = "{dist_path}assets/logo/holoviews.svg"
+HVPLOT_LOGO = "{dist_path}assets/logo/hvplot.svg"
+PANEL_LOGO = "{dist_path}images/icon-vector.svg"
 
 DEFAULT_AVATARS = {
     # User
@@ -100,6 +104,12 @@ DEFAULT_AVATARS = {
     # Llama
     "llama": "🦙",
     "llama2": "🐪",
+    # Plotting
+    "plot": "📊",
+    "lumen": LUMEN_LOGO,
+    "holoviews": HOLOVIEWS_LOGO,
+    "hvplot": HVPLOT_LOGO,
+    "panel": PANEL_LOGO,
 }
 
 
@@ -227,6 +237,9 @@ class ChatMessage(PaneBase):
 
     def __init__(self, object=None, **params):
         self._exit_stack = ExitStack()
+        self.chat_copy_icon = ChatCopyIcon(
+            visible=False, width=15, height=15, css_classes=["copy-icon"]
+        )
         if params.get("timestamp") is None:
             tz = params.get("timestamp_tz")
             if tz is not None:
@@ -405,6 +418,11 @@ class ChatMessage(PaneBase):
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = self._composite._get_model(doc, root, parent, comm)
+        if not comm:
+            # If not in a notebook environment we potentially need to
+            # replace path to avatar with server URL
+            avatar = model.children[0].children[0]
+            avatar.text = avatar.text.replace(CDN_DIST, get_dist_path())
         ref = (root or model).ref['id']
         self._models[ref] = (model, parent)
         return model
@@ -430,8 +448,9 @@ class ChatMessage(PaneBase):
         updated_avatars = {
             self._to_alpha_numeric(key): value for key, value in updated_avatars.items()
         }
+
         # now lookup the avatar
-        return updated_avatars.get(alpha_numeric_key, self.avatar)
+        return updated_avatars.get(alpha_numeric_key, self.avatar).format(dist_path=CDN_DIST)
 
     def _select_renderer(
         self,
