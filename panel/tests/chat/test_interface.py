@@ -399,6 +399,45 @@ class TestChatInterface:
                 "testeroo", user="useroo", avatar="avataroo",
             ), avatar="newavatar")
 
+    async def test_nested_disabled(self, chat_interface):
+        PERSON_1 = "Happy User"
+        PERSON_2 = "Excited User"
+        PERSON_3 = "Passionate User"
+
+        async def callback(contents: str, user: str, instance: ChatInterface):
+            await asyncio.sleep(0.1)
+            if user == "User":
+                instance.send(
+                    f"Hey, {PERSON_2}! Did you hear the user?",
+                    user=PERSON_1,
+                    avatar="😊",
+                    respond=True,  # This is the default, but it's here for clarity
+                )
+            elif user == PERSON_1:
+                user_message = instance.objects[-2]
+                user_contents = user_message.object
+                yield ChatMessage(
+                    f'Yeah, they said "{user_contents}"! Did you also hear {PERSON_3}?',
+                    user=PERSON_2,
+                    avatar="😄",
+                )
+                instance.respond()
+            elif user == PERSON_2:
+                instance.send(
+                    'Yup, I heard!',
+                    user=PERSON_3,
+                    avatar="😆",
+                    respond=False,
+                )
+
+        chat_interface.callback = callback
+        chat_interface.send("Hello")
+        await async_wait_until(lambda: chat_interface.objects[-1].object == "Hey, Excited User! Did you hear the user?")
+        assert chat_interface.disabled
+        await async_wait_until(lambda: chat_interface.objects[-1].object == "Yup, I heard!")
+        await asyncio.sleep(0.2)  # give a little time for enabling
+        assert not chat_interface.disabled
+
 class TestChatInterfaceWidgetsSizingMode:
     def test_none(self):
         chat_interface = ChatInterface()
