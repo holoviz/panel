@@ -13,6 +13,7 @@ from panel.pane import Image
 from panel.tests.util import async_wait_until, wait_until
 from panel.widgets.button import Button
 from panel.widgets.input import FileInput, TextAreaInput, TextInput
+from panel.widgets.select import RadioButtonGroup
 
 ChatInterface.callback_exception = "raise"
 
@@ -90,6 +91,12 @@ class TestChatInterface:
         assert len(chat_interface.objects) == 0
         chat_interface._click_send(None)
         assert len(chat_interface.objects) == 1
+
+    def test_click_send_with_no_value_input(self, chat_interface: ChatInterface):
+        chat_interface.widgets = [RadioButtonGroup(options=["A", "B"])]
+        chat_interface.active_widget.value = "A"
+        chat_interface._click_send(None)
+        assert chat_interface.objects[0].object == "A"
 
     def test_show_stop_disabled(self, chat_interface: ChatInterface):
         async def callback(msg, user, instance):
