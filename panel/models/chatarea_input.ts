@@ -1,7 +1,7 @@
-import { TextAreaInput as PnTextAreaInput, TextAreaInputView as PnTextAreaInputView } from "./textarea_input"
+import {TextAreaInput as PnTextAreaInput, TextAreaInputView as PnTextAreaInputView} from "./textarea_input"
 import type * as p from "@bokehjs/core/properties"
-import { ModelEvent } from "@bokehjs/core/bokeh_events"
-import type { Attrs } from "@bokehjs/core/types"
+import {ModelEvent} from "@bokehjs/core/bokeh_events"
+import type {Attrs} from "@bokehjs/core/types"
 
 export class ChatMessageEvent extends ModelEvent {
   constructor(readonly value: string) {
@@ -9,7 +9,7 @@ export class ChatMessageEvent extends ModelEvent {
   }
 
   override get event_values(): Attrs {
-    return { model: this.origin, value: this.value }
+    return {model: this.origin, value: this.value}
   }
 
   static {
@@ -23,23 +23,22 @@ export class ChatAreaInputView extends PnTextAreaInputView {
   override connect_signals(): void {
     super.connect_signals()
 
-    const { value_input } = this.model.properties
+    const {value_input} = this.model.properties
     this.on_change(value_input, () => this.update_rows())
-  }
-
-  on_enter(event: KeyboardEvent): void {
-    if (event.key === "Enter" && !event.shiftKey) {
-      if (!this.model.disabled_enter) {
-        this.model.trigger_event(new ChatMessageEvent(this.model.value_input))
-        this.model.value_input = ""
-      }
-      event.preventDefault()
-    }
   }
 
   override render(): void {
     super.render()
-    this.el.addEventListener("keydown", (event) => this.on_enter(event))
+
+    this.el.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        if (!this.model.disabled_enter) {
+          this.model.trigger_event(new ChatMessageEvent(this.model.value_input))
+          this.model.value_input = ""
+        }
+        event.preventDefault()
+      }
+    })
   }
 }
 
@@ -63,9 +62,9 @@ export class ChatAreaInput extends PnTextAreaInput {
 
   static {
     this.prototype.default_view = ChatAreaInputView
-    this.define<ChatAreaInput.Props>(({ Bool }) => {
+    this.define<ChatAreaInput.Props>(({Bool}) => {
       return {
-        disabled_enter: [Bool, false],
+        disabled_enter: [ Bool, false ],
       }
     })
   }
