@@ -84,6 +84,7 @@
   align-items: center;
   justify-content: center;
   overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .footer {
