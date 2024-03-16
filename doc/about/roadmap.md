@@ -8,7 +8,7 @@ Panel is dedicated to enhancing the development experience, making it simpler, m
 
 ### Hatch Integration and Pip-Only Workflows
 
-We plan to switch the current project build and testing infrastructure to Hatch, enabling more streamlined processes and easier developer setup. This change will simplify the build process and allow users to develop Panel using either pip OR conda based installs, providing an easier onramp for non-conda users.
+We plan to switch the current project build and testing infrastructure to [Hatch](https://hatch.pypa.io/latest/), enabling more streamlined processes and easier developer setup. This change will simplify the build process and allow users to develop Panel using either pip OR conda based installs, providing an easier onramp for non-conda users.
 
 ### Updated Contributor Guides
 
