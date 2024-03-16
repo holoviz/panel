@@ -12,7 +12,7 @@ For more detailed information, refer to [`bokeh.util.logconfig`](https://github.
 
 ## Reconfigure the Root Logger
 
-Bokeh executes `logging.basicConfig` to configure the root logger. Fortunately, since Python 3.9, we can redo this using `force=True`.
+Bokeh executes `logging.basicConfig` to configure the root logger. Fortunately we can redo this using `force=True`.
 
 ```python
 import logging
@@ -58,7 +58,7 @@ Please be aware that loggers like `tornado`, which were not displayed previously
 
 :::{note}
 
-We utilize caching (`pn.cache`) because `reconfig_basic_config` runs each time a new Panel session starts. If you move the logging reconfiguration to a separate module, caching won't be necessary.
+We utilize caching (`pn.cache`) because `reconfig_basic_config` runs each time a new Panel session starts. If you move the logging reconfiguration to a separate module or a `--setup` script, caching won't be necessary.
 
 :::
 
