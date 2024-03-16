@@ -277,6 +277,8 @@ class ChatInterface(ChatFeed):
                 sizing_mode="stretch_width",
                 css_classes=["chat-interface-input-widget"]
             )
+            if isinstance(widget, ChatAreaInput):
+                self.link(widget, disabled="disabled_enter")
 
             self._buttons = {}
             for button_data in self._button_data.values():

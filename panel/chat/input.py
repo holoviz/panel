@@ -61,6 +61,11 @@ class ChatAreaInput(_PnTextAreaInput):
         Can only be set during initialization.""",
     )
 
+    disabled_enter = param.Boolean(
+        default=False,
+        doc="If True, the enter key will not submit the message (clear the value).",
+    )
+
     _widget_type: ClassVar[Type[Model]] = _bkChatAreaInput
 
     _rename: ClassVar[Mapping[str, str | None]] = {
