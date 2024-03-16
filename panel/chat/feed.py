@@ -217,7 +217,7 @@ class ChatFeed(ListPanel):
         )
         # we separate out chat log for the auto scroll feature
         self._chat_log = Feed(
-            *objects,
+            *self.objects,
             load_buffer=self.load_buffer,
             auto_scroll_limit=self.auto_scroll_limit,
             scroll_button_threshold=self.scroll_button_threshold,
