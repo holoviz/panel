@@ -409,6 +409,11 @@ class ChatMessage(PaneBase):
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = self._composite._get_model(doc, root, parent, comm)
+        if not comm:
+            # If not in a notebook environment we potentially need to
+            # replace path to avatar with server URL
+            avatar = model.children[0].children[0]
+            avatar.text = avatar.text.replace(CDN_DIST, get_dist_path())
         ref = (root or model).ref['id']
         self._models[ref] = (model, parent)
         return model
@@ -434,10 +439,9 @@ class ChatMessage(PaneBase):
         updated_avatars = {
             self._to_alpha_numeric(key): value for key, value in updated_avatars.items()
         }
+
         # now lookup the avatar
-        return updated_avatars.get(alpha_numeric_key, self.avatar).format(
-            dist_path=get_dist_path()
-        )
+        return updated_avatars.get(alpha_numeric_key, self.avatar).format(dist_path=CDN_DIST)
 
     def _select_renderer(
         self,
