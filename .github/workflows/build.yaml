@@ -90,13 +90,11 @@ jobs:
       - name: conda dev upload
         if: contains(env.TAG, 'a') || contains(env.TAG, 'b') || contains(env.TAG, 'rc')
         run: |
-          echo UNCOMMENT
-          # anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev $CONDA_FILE
+          anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev $CONDA_FILE
       - name: conda main upload
         if: (!(contains(env.TAG, 'a') || contains(env.TAG, 'b') || contains(env.TAG, 'rc')))
         run: |
-          echo UNCOMMENT
-          # anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev --label=main $CONDA_FILE
+          anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev --label=main $CONDA_FILE
 
   pip_build:
     name: Build PyPI Package
@@ -152,12 +150,12 @@ jobs:
         with:
           name: pip_build
           path: dist/
-      # - name: Publish to PyPI
-      #   uses: pypa/gh-action-pypi-publish@release/v1
-      #   with:
-      #     user: ${{ secrets.PPU }}
-      #     password: ${{ secrets.PPP }}
-      #     repository-url: "https://upload.pypi.org/legacy/"
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: ${{ secrets.PPU }}
+          password: ${{ secrets.PPP }}
+          repository-url: "https://upload.pypi.org/legacy/"
 
   npm_build:
     name: Build NPM Package
