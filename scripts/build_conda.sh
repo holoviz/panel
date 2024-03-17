@@ -11,4 +11,4 @@ git diff --exit-code
 
 VERSION=$(find dist -name "*.whl" -exec basename {} \; | cut -d- -f2)
 export VERSION
-conda build conda.recipe/ --no-anaconda-upload --no-verify
+conda build conda.recipe/ --no-anaconda-upload --no-verify -c bokeh

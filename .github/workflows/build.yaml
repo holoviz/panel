@@ -10,6 +10,11 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "0 19 * * SUN"
+  # TEMP ONLY FOR THIS PR
+  pull_request:
+    branches:
+    - '*'
+
 
 defaults:
   run:
