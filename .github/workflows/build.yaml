@@ -232,12 +232,9 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow -f
-      - name: Set output
-        id: vars
-        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: build pyodide wheels
         run: |
-          python -m pip install packaging tomli
+          python -m pip install packaging
           python ./scripts/build_pyodide_wheels.py --verify-clean
       - name: build CDN
         run: |
