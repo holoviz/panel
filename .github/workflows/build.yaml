@@ -22,7 +22,7 @@ defaults:
 env:
   PACKAGE: "panel"
   PYTHON_VERSION: "3.9"
-  NODE_VERSION: "18"
+  NODE_VERSION: "20"
   MPLBACKEND: "Agg"
   SETUPTOOLS_ENABLE_FEATURES: "legacy"
 
@@ -102,7 +102,7 @@ jobs:
     name: Build PyPI Package
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: "100"
       - name: Fetch unshallow
@@ -190,7 +190,7 @@ jobs:
           echo "TARBALL=$TARBALL" >> $GITHUB_ENV
           npm publish --dry-run $TARBALL
           cd ..
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: npm_build
@@ -206,17 +206,22 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: npm_build
-          path: ./panel
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Set name
+        run: |
+          TARBALL=$(ls *.tgz)
+          echo $TARBALL
+          echo "TARBALL=$TARBALL" >> $GITHUB_ENV
       - name: npm dev deploy
         if: (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
-          cd ./panel
           # npm publish --tag dev $TARBALL
           ls
       - name: npm main deploy
         if: (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
-          cd ./panel
           # npm publish --tag latest $TARBALL
           ls
 
@@ -251,7 +256,7 @@ jobs:
   #         python -m pip install packaging tomli
   #         python ./scripts/build_pyodide_wheels.py --verify-clean
   #         SETUPTOOLS_ENABLE_FEATURES="legacy-editable" python -m pip install -ve .
-  #     - uses: actions/upload-artifact@v3
+  #     - uses: actions/upload-artifact@v4
   #       if: always()
   #       with:
   #         name: cdn_wheels
