@@ -40,7 +40,7 @@ test:
     - pytest-asyncio
     - pytest-xdist
   commands:
-    # - pip check
+    - pip check
     - panel --help
     - pytest --pyargs panel.tests -n logical --dist loadgroup
 
