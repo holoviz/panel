@@ -38,7 +38,7 @@ jobs:
       - run: echo "All builds have finished, have been approved, and ready to publish"
 
   conda_build:
-    name: Build Conda Package
+    name: Build Conda
     runs-on: "ubuntu-latest"
     steps:
       - uses: actions/checkout@v4
@@ -46,7 +46,7 @@ jobs:
           fetch-depth: "100"
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow -f
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           miniconda-version: "latest"
       - uses: actions/setup-node@v4
@@ -67,7 +67,7 @@ jobs:
           if-no-files-found: error
 
   conda_publish:
-    name: Publish Conda Package
+    name: Publish Conda
     runs-on: ubuntu-latest
     needs: [conda_build, waiting_room]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -96,7 +96,7 @@ jobs:
           anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev --label=main $CONDA_FILE
 
   pip_build:
-    name: Build PyPI Package
+    name: Build PyPI
     runs-on: "ubuntu-latest"
     steps:
       - uses: actions/checkout@v4
@@ -123,7 +123,7 @@ jobs:
           if-no-files-found: error
 
   pip_install:
-    name: Install PyPI Package
+    name: Install PyPI
     runs-on: "ubuntu-latest"
     needs: [pip_build]
     steps:
@@ -140,7 +140,7 @@ jobs:
         run: python -c "import $PACKAGE; print($PACKAGE.__version__)"
 
   pip_publish:
-    name: Publish PyPI Package
+    name: Publish PyPI
     runs-on: ubuntu-latest
     needs: [pip_build, waiting_room]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -157,7 +157,7 @@ jobs:
           repository-url: "https://upload.pypi.org/legacy/"
 
   npm_build:
-    name: Build NPM Package
+    name: Build NPM
     runs-on: "ubuntu-latest"
     steps:
       - uses: actions/checkout@v4
@@ -197,7 +197,7 @@ jobs:
           path: ./panel/${{ env.TARBALL }}
 
   npm_publish:
-    name: Publish NPM Package
+    name: Publish NPM
     runs-on: "ubuntu-latest"
     needs: [npm_build, waiting_room]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -215,17 +215,11 @@ jobs:
       - name: npm dev deploy
         if: contains(env.TAG, 'a') || contains(env.TAG, 'b') || contains(env.TAG, 'rc')
         run: |
-          # npm publish --tag dev $TARBALL
-          echo $TARBALL
-          echo $TAG
-          ls
+          npm publish --tag dev $TARBALL
       - name: npm main deploy
         if: (!(contains(env.TAG, 'a') || contains(env.TAG, 'b') || contains(env.TAG, 'rc')))
         run: |
-          # npm publish --tag latest $TARBALL
-          echo $TARBALL
-          echo $TAG
-          ls
+          npm publish --tag latest $TARBALL
 
   # cdn:
   #   name: Build CDN
