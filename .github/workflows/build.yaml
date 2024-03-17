@@ -50,7 +50,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
       - name: conda setup
         run: |
-          conda install -y conda-build build -c pyviz/label/dev
+          conda install -y conda-build build
       - name: conda build
         run: |
           source ./scripts/build_conda.sh
