@@ -58,7 +58,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: conda_build
+          name: conda
           path: ${{ env.CONDA_FILE }}
           if-no-files-found: error
 
@@ -70,7 +70,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: conda_build
+          name: conda
           path: dist/
       - name: Set environment variables
         run: |
@@ -114,7 +114,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: pip_build
+          name: pip
           path: dist/
           if-no-files-found: error
 
@@ -128,7 +128,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
       - uses: actions/download-artifact@v4
         with:
-          name: pip_build
+          name: pip
           path: dist/
       - name: Install package
         run: python -m pip install dist/*.whl
@@ -143,7 +143,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: pip_build
+          name: pip
           path: dist/
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -188,7 +188,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: npm_build
+          name: npm
           if-no-files-found: error
           path: ./panel/${{ env.TARBALL }}
 
@@ -200,7 +200,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: npm_build
+          name: npm
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -245,7 +245,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: cdn_build
+          name: cdn
           if-no-files-found: error
           path: |
             ./panel/dist/
@@ -262,7 +262,7 @@ jobs:
           fetch-depth: "1"
       - uses: actions/download-artifact@v4
         with:
-          name: cdn_build
+          name: cdn
           path: panel/
       - name: Deploy to cdn.holoviz.org
         env:
