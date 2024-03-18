@@ -13,6 +13,9 @@ import bokeh.command.util
 
 from bokeh.application import Application as BkApplication
 from bokeh.application.handlers.directory import DirectoryHandler
+from bokeh.application.handlers.document_lifecycle import (
+    DocumentLifecycleHandler,
+)
 
 from ..config import config
 from .document import _destroy_document
@@ -21,9 +24,24 @@ from .logging import LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING
 from .state import set_curdoc, state
 
 if TYPE_CHECKING:
+    from boekh.application.application import SessionContext
     from bokeh.application.handlers.handler import Handler
 
 log = logging.getLogger('panel.io.application')
+
+
+def _on_session_destroyed(session_context: SessionContext) -> None:
+    """
+    Calls any on_session_destroyed callbacks defined on the Document
+    """
+    callbacks = session_context._document.session_destroyed_callbacks
+    session_context._document.session_destroyed_callbacks = set()
+    for callback in callbacks:
+        try:
+            callback(session_context)
+        except Exception as e:
+            log.warning("DocumentLifecycleHandler on_session_destroyed "
+                        f"callback {callback} failed with following error: {e}")
 
 
 class Application(BkApplication):
@@ -44,6 +62,14 @@ class Application(BkApplication):
             for cb in state._on_session_created_internal+state._on_session_created:
                 cb(session_context)
         await super().on_session_created(session_context)
+
+    def add(self, handler: Handler) -> None:
+        """
+        Override default DocumentLifeCycleHandler
+        """
+        if type(handler) is DocumentLifecycleHandler:
+            handler._on_session_destroyed = _on_session_destroyed
+        super().add(handler)
 
     def initialize_document(self, doc):
         log.info(LOG_SESSION_LAUNCHING, id(doc))
