@@ -646,10 +646,10 @@ class IntRangeSlider(RangeSlider):
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
         if 'value' in msg:
-            msg['value'] = tuple([v if v is None else int(v)
+            msg['value'] = tuple([v if v is None else round(v)
                                   for v in msg['value']])
         if 'value_throttled' in msg:
-            msg['value_throttled'] = tuple([v if v is None else int(v)
+            msg['value_throttled'] = tuple([v if v is None else round(v)
                                             for v in msg['value_throttled']])
         return msg
 

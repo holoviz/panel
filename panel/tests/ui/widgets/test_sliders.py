@@ -5,6 +5,7 @@ pytestmark = pytest.mark.ui
 from panel.tests.util import serve_component, wait_until
 from panel.widgets import (
     EditableFloatSlider, EditableIntSlider, EditableRangeSlider,
+    IntRangeSlider,
 )
 
 
@@ -297,3 +298,18 @@ def test_editablerangeslider_no_overlap(page):
 
     down_end.click(click_count=3)
     wait_until(lambda: widget.value == (1, 1), page)
+
+
+def test_intrangeslider(page):
+    # Test for https://github.com/holoviz/panel/issues/6483
+    # Which has floating point error, e.g., 4 will return
+    # 3.9999999999999996, so we can't use int() in our code
+    # but needs to use round() instead.
+    widget = IntRangeSlider(start=1, end=10, step=1)
+    serve_component(page, widget)
+
+    page.locator(".noUi-touch-area").nth(0).click()
+    for _ in range(3):
+        page.keyboard.press("ArrowRight")
+
+    wait_until(lambda: widget.value == (4, 10), page)
