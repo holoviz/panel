@@ -572,6 +572,14 @@
 .tabulator-row.tabulator-selectable:hover a {
   color: var(--foreground-on-accent-rest);
 }
+.tabulator-row.tabulator-selectable:hover .tabulator-cell.tabulator-editing input,
+.tabulator-row.tabulator-selectable:hover .tabulator-cell.tabulator-editing select {
+  color: var(--foreground-on-accent-rest);
+}
+.tabulator-row.tabulator-selected .tabulator-cell.tabulator-editing input,
+.tabulator-row.tabulator-selected .tabulator-cell.tabulator-editing select {
+  color: var(--foreground-on-accent-rest);
+}
 .tabulator-row.tabulator-row-moving {
   border: 1px solid #000;
   background: #fff;

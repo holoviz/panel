@@ -1,21 +1,14 @@
 import random
 
-from pytest import warns
-
 from panel import (
     Column, Param, Row, WidgetBox, state,
 )
 from panel.pane import HTML
-from panel.util.warnings import PanelDeprecationWarning
 from panel.widgets import IntSlider, Trend
 
 
 def test_constructor():
     Trend(name="Test")
-
-def test_deprecated_parameter():
-    with warns(PanelDeprecationWarning):
-        Trend(title="Test")
 
 
 def manualtest_constructor():

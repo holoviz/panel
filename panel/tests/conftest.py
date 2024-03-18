@@ -248,6 +248,16 @@ def get_display_handle():
 
 
 @pytest.fixture
+def hv_plotly():
+    import holoviews as hv
+    hv.renderer('plotly')
+    prev_backend = hv.Store.current_backend
+    hv.Store.current_backend = 'plotly'
+    yield
+    hv.Store.current_backend = prev_backend
+
+
+@pytest.fixture
 def hv_mpl():
     import holoviews as hv
     hv.renderer('matplotlib')

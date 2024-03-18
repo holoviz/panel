@@ -15,4 +15,5 @@ If you like Panel and have built something you want to share, tweet a link or sc
 :maxdepth: 2
 
 releases
+roadmap
 ```

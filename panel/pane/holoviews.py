@@ -126,7 +126,7 @@ class HoloViews(PaneBase):
     _rerender_params = ['object', 'backend', 'format']
 
     _skip_layoutable = (
-        'background', 'css_classes', 'margin', 'name', 'sizing_mode',
+        'css_classes', 'margin', 'name', 'sizing_mode',
         'width', 'height', 'max_width', 'max_height'
     )
 

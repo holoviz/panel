@@ -1219,8 +1219,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
         ]
         unselected = [k for k in labels if k not in selected]
         layout = dict(
-            sizing_mode='stretch_both', margin=0,
-            styles=dict(background=self.background),
+            sizing_mode='stretch_both', margin=0
         )
         self._lists = {
             False: MultiSelect(options=unselected, size=self.size, **layout),

@@ -8,14 +8,42 @@ Ready to take your Panel skills to the next level? Dive into these tutorials to 
 
 Before delving into the intermediate tutorials, ensure you have a solid understanding of Panel basics. If not, refer to our [Basic Tutorial](../basic/index.md) to get started.
 
+Please execute the following command to install the dependencies required by the basic tutorials:
+
+::::{tab-set}
+
+:::{tab-item} pip
+:sync: pip
+
+```bash
+pip install altair hvplot numpy pandas panel pytest watchfiles
+```
+
+:::
+
+:::{tab-item} conda
+:sync: conda
+
+```bash
+conda install -y -c conda-forge altair hvplot numpy pandas panel pytest watchfiles
+```
+
+:::
+
+::::
+
+:::{important}
+Is Panel installed together with JupyterLab/Jupyter Notebook in your working environment? If not, you need to make sure that `panel` is also installed in the same environment as JupyterLab/Jupyter Notebook (`pip install panel` or `conda install panel`).
+:::
+
 ## Mastering Intermediate Panel Techniques
 
 Ready to transition from being a *basic* to an *intermediate* Panel user? Let's uncover techniques for constructing reusable components and structuring your projects with maintainability in mind:
 
-- **[Class-Based Approach](param.md):** Construct reusable components utilizing Param and a class-based approach.
+- **[Reactive Parameters](parameters.md):** Discover why Panel is built on top of Reactive Parameters and how to effectively utilize them.
+- **[Create Reusable Components](reusable_components.md):** Develop reusable Panel components using the Viewer class.
 - **[Advanced Interactivity](interactivity.md):** Harness the power of Parameters and parameter dependencies to infuse interactivity.
 - **Introduce Side Effects:** Infuse your apps with additional functionality using `.watch` and `watch=True`.
-- **Create Reusable Components:** Engineer reusable Panel components using the Viewer class.
 - **[Structuring with DataStore](structure_data_store.md):** Employ the DataStore pattern to organize larger applications efficiently.
 - **Organize your Project:** Maintain orderliness in larger applications by compartmentalizing them into multiple modules and folders.
 
@@ -39,7 +67,23 @@ Embark on a deeper exploration of supplementary topics to further hone your Pane
 Now that you've mastered the more advanced concepts of Panel, it's time to put your skills to the test:
 
 - **Create an Interactive Report:** Elevate the interactivity of your reports through embedding.
-- **[Create a Todo App](build_todo.md):** Create a Todo App using a class based approach
-- **[Test a Todo App](test_todo.md):** Learn how to test a class based Panel apps
+- **[Create a Todo App](build_todo.md):** Create a Todo App using a class based approach.
+- **[Test a Todo App](test_todo.md):** Learn how to test a class based Panel app.
 - **Serve Apps without a Server:** Explore the realm of WASM to serve your apps without traditional servers.
 - **Build a Streaming Dashboard:** Engineer a high-performing streaming dashboard employing a *producer/consumer* architecture.
+
+```{toctree}
+:titlesonly:
+:hidden:
+:maxdepth: 2
+
+parameters
+reusable_components
+interactivity
+structure_data_store
+develop_editor
+serve
+size
+build_todo
+test_todo
+```

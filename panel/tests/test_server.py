@@ -496,18 +496,15 @@ def test_serve_can_serve_bokeh_app_from_file():
     assert "/bk-app" in server._tornado.applications
 
 
-def test_server_on_load_after_init(threads):
+
+def test_server_on_load_after_init_with_threads(threads):
     loaded = []
 
     def cb():
-        loaded.append(state.loaded)
-
-    def cb2():
-        state.execute(cb, schedule=True)
+        loaded.append((state.curdoc, state.loaded))
 
     def app():
         state.onload(cb)
-        state.onload(cb2)
         # Simulate rendering
         def loaded():
             state._schedule_on_load(state.curdoc, None)
@@ -516,8 +513,40 @@ def test_server_on_load_after_init(threads):
 
     serve_and_request(app)
 
-    # Checks whether onload callback was executed twice once before and once after load
-    wait_until(lambda: loaded == [False, True])
+    wait_until(lambda: len(loaded) == 1)
+
+    doc = loaded[0][0]
+    with set_curdoc(doc):
+        state.onload(cb)
+
+    wait_until(lambda: len(loaded) == 2)
+    assert loaded == [(doc, False), (doc, True)]
+
+
+def test_server_on_load_after_init():
+    loaded = []
+
+    def cb():
+        loaded.append((state.curdoc, state.loaded))
+
+    def app():
+        state.onload(cb)
+        # Simulate rendering
+        def loaded():
+            state._schedule_on_load(state.curdoc, None)
+        state.execute(loaded, schedule=True)
+        return 'App'
+
+    serve_and_request(app)
+
+    wait_until(lambda: len(loaded) == 1)
+
+    doc = loaded[0][0]
+    with set_curdoc(doc):
+        state.onload(cb)
+
+    wait_until(lambda: len(loaded) == 2)
+    assert loaded == [(doc, False), (doc, True)]
 
 
 def test_server_on_load_during_load(threads):
