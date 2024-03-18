@@ -53,7 +53,7 @@ repos:
     rev: v8.56.0
     hooks:
       - id: eslint
-        args: ['-c', 'panel/eslint.js', 'panel/*.ts', 'panel/models/**/*.ts']
+        args: ['-c', 'panel/.eslintrc.js', 'panel/*.ts', 'panel/models/**/*.ts']
         additional_dependencies:
           - 'eslint@8.57.0'
           - '@stylistic/eslint-plugin@1.6.3'
