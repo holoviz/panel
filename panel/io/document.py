@@ -50,7 +50,7 @@ DISPATCH_EVENTS = (
 GC_DEBOUNCE = 5
 WRITE_LOCK = asyncio.Lock()
 
-_last_cleanup = None
+_panel_last_cleanup = None
 _write_tasks = []
 
 @dataclasses.dataclass
@@ -180,7 +180,7 @@ async def _dispatch_msgs(doc, msgs):
     _dispatch_write_task(doc, _dispatch_msgs, doc, remaining)
 
 def _garbage_collect():
-    if (new_time:= time.monotonic()-_last_cleanup) < GC_DEBOUNCE:
+    if (new_time:= time.monotonic()-_panel_last_cleanup) < GC_DEBOUNCE:
         at = dt.datetime.now() + dt.timedelta(seconds=new_time)
         state.schedule_task('gc.collect', _garbage_collect, at=at)
         return
@@ -229,8 +229,8 @@ def _destroy_document(self, session):
             del state_obj[self]
 
     # Schedule GC
-    global _last_cleanup
-    _last_cleanup = time.monotonic()
+    global _panel_last_cleanup
+    _panel_last_cleanup = time.monotonic()
     at = dt.datetime.now() + dt.timedelta(seconds=GC_DEBOUNCE)
     state.schedule_task('gc.collect', _garbage_collect, at=at)
 

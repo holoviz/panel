@@ -24,7 +24,7 @@ from .logging import LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING
 from .state import set_curdoc, state
 
 if TYPE_CHECKING:
-    from boekh.application.application import SessionContext
+    from bokeh.application.application import SessionContext
     from bokeh.application.handlers.handler import Handler
 
 log = logging.getLogger('panel.io.application')
