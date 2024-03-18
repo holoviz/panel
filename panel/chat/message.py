@@ -697,6 +697,9 @@ class ChatMessage(PaneBase):
         object_panel = self
         attr = "object"
         obj = self.object
+        if obj is None:
+            obj = ""
+
         while not isinstance(obj, str) or isinstance(object_panel, ImageBase):
             object_panel = obj
             if hasattr(obj, "objects"):

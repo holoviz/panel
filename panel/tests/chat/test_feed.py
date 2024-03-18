@@ -252,6 +252,16 @@ class TestChatFeed:
         chat_feed.stream("Goodbye", message=message, replace=True)
         wait_until(lambda: chat_feed.objects[-1].object == "Goodbye")
 
+    @pytest.mark.parametrize("replace", [True, False])
+    def test_stream_originally_none_message(self, chat_feed, replace):
+        def callback(contents, user, instance):
+            for i in range(3):
+                chat_feed.stream(f"{i}.", message=base_message, replace=replace)
+        chat_feed.callback = callback
+        base_message = ChatMessage()
+        chat_feed.send(base_message, respond=True)
+        assert chat_feed.objects[0].object == "2." if replace else "0.1.2."
+
     @pytest.mark.parametrize(
         "obj",
         [
