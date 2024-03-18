@@ -7,7 +7,9 @@ import gc
 import inspect
 import json
 import logging
+import sys
 import threading
+import time
 import weakref
 
 from contextlib import contextmanager
@@ -45,9 +47,11 @@ DISPATCH_EVENTS = (
     ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
     ModelChangedEvent
 )
-
-WRITE_TASKS = []
+GC_DEBOUNCE = 5
 WRITE_LOCK = asyncio.Lock()
+
+_panel_last_cleanup = None
+_write_tasks = []
 
 @dataclasses.dataclass
 class Request:
@@ -74,8 +78,8 @@ class MockSessionContext(SessionContext):
         return Request(headers={}, cookies={}, arguments={})
 
 def _cleanup_task(task):
-    if task in WRITE_TASKS:
-        WRITE_TASKS.remove(task)
+    if task in _write_tasks:
+        _write_tasks.remove(task)
 
 def _dispatch_events(doc: Document, events: List[DocumentChangedEvent]) -> None:
     """
@@ -148,7 +152,7 @@ def _dispatch_write_task(doc, func, *args, **kwargs):
     """
     try:
         task = asyncio.ensure_future(func(*args, **kwargs))
-        WRITE_TASKS.append(task)
+        _write_tasks.append(task)
         task.add_done_callback(_cleanup_task)
     except RuntimeError:
         doc.add_next_tick_callback(partial(func, *args, **kwargs))
@@ -175,6 +179,13 @@ async def _dispatch_msgs(doc, msgs):
     await asyncio.sleep(0.01)
     _dispatch_write_task(doc, _dispatch_msgs, doc, remaining)
 
+def _garbage_collect():
+    if (new_time:= time.monotonic()-_panel_last_cleanup) < GC_DEBOUNCE:
+        at = dt.datetime.now() + dt.timedelta(seconds=new_time)
+        state.schedule_task('gc.collect', _garbage_collect, at=at)
+        return
+    gc.collect()
+
 def _destroy_document(self, session):
     """
     Override for Document.destroy() without calling gc.collect directly.
@@ -192,7 +203,17 @@ def _destroy_document(self, session):
 
     self.callbacks.destroy()
     self.models.destroy()
-    self.modules.destroy()
+
+    # Module cleanup without trawling through referrers (as self.modules.destroy() does)
+    for module in self.modules._modules:
+        # remove the reference from sys.modules
+        if module.__name__ in sys.modules:
+            del sys.modules[module.__name__]
+
+        # explicitly clear the module contents and the module here itself
+        module.__dict__.clear()
+        del module
+    self.modules._modules = []
 
     # Clear periodic callbacks
     for cb in state._periodic.get(self, []):
@@ -208,8 +229,10 @@ def _destroy_document(self, session):
             del state_obj[self]
 
     # Schedule GC
-    at = dt.datetime.now() + dt.timedelta(seconds=5)
-    state.schedule_task('gc.collect', gc.collect, at=at)
+    global _panel_last_cleanup
+    _panel_last_cleanup = time.monotonic()
+    at = dt.datetime.now() + dt.timedelta(seconds=GC_DEBOUNCE)
+    state.schedule_task('gc.collect', _garbage_collect, at=at)
 
     del self.destroy
 
