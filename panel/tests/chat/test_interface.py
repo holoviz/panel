@@ -219,6 +219,7 @@ class TestChatInterface:
 
         chat_interface.callback = callback
         chat_interface.send("Message 1")
+        wait_until(lambda: len(chat_interface.objects) >= 2)
         wait_until(lambda: chat_interface.objects[1].object == 1)
         chat_interface._click_rerun(None)
         wait_until(lambda: chat_interface.objects[1].object == 2)
