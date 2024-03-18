@@ -4,11 +4,14 @@ Welcome to our tutorial on  Panel's [indicators](https://panel.holoviz.org/refer
 
 We will delve into the use of Indicators with an example that uses them to visualizes the key metrics of wind turbines in an engaging and insightful manner. The result will be this:
 
-:::{grid-item-card} Windturbines Explorer
-
-:target: https://|gallery-endpoint|.pyviz.demo.anaconda.com/windturbines
+:::{card} Windturbines Explorer
+:link: https://|gallery-endpoint|.holoviz.dsp.anaconda.com/windturbines
 :width: 100%
-Visually explore a dataset of US Windturbines. +++ See source :::
+
+Visually explore a dataset of US Windturbines.
++++
+[See source](../../gallery/windturbines)
+:::
 
 ## Explore Indicators
 

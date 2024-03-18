@@ -3,7 +3,7 @@
 In this section you will learn about `pn.rx`. `pn.rx` extends the concepts from `pn.bind` that your learned in the previous section.
 
 :::{note}
-You might feel some repetition from the previous section on `pn.bind`. We do this on purpose to enable you to compare and contrast. `pn.rx` is the new, and much more flexibly big brother of `pn.bind`. But `pn.bind` has been the core API in Panel for a long time, so you will meet it across our documentation and community sites, and thus its very important to learn.
+You might feel some repetition from the previous section on `pn.bind`. We do this on purpose to enable you to compare and contrast. `pn.rx` is the an extension of `pn.bind` that provides more power and flexibility. `pn.bind` has been the core API in Panel for a long time, so you will meet it across our documentation and community sites, and thus its very important to learn.
 
 `pn.rx` will enable you to build more complicated applications using a more flexible and maintainable architecture.
 :::
@@ -166,28 +166,24 @@ import panel as pn
 pn.extension()
 
 # Declare state of application
-is_stopped=pn.rx(True)
+is_stopped = pn.rx(True)
 
-def name(stopped):
-    if stopped:
-        return "Start the wind turbine"
-    else:
-        return "Stop the wind turbine"
-
-rx_name = pn.rx(name)(is_stopped)
+rx_name = is_stopped.rx.where("Start the wind turbine", "Stop the wind turbine")
 
 submit = pn.widgets.Button(name=rx_name)
 
-def start_stop_wind_turbine(clicked):
+def toggle_wind_turbine(clicked):
     is_stopped.rx.value = not is_stopped.rx.value
 
-submit.rx.watch(start_stop_wind_turbine)
+submit.rx.watch(toggle_wind_turbine)
 
 pn.Column(submit).servable()
 ```
 
+Here we store the state of the windturbine in a separate `rx` variable, whenever the submit button is clicked we toggle the state.
+
 :::{tip}
-We recommend using this recommended approach when developing more dynamic applications. Applications are easier to reason about when the application displays according to the state instead of being changed directly.
+When building apps using functions we recommend this approach to storing state. Applications are easier to reason about when the application displays according to the state instead of being changed directly.
 :::
 
 ### Keep the UI responsive with threads or processes
@@ -196,7 +192,7 @@ To keep your UI and server responsive while the long running, blocking task is r
 
 ```python
 import asyncio
-from time import sleep
+import time
 
 import panel as pn
 
@@ -210,7 +206,7 @@ submit = pn.widgets.Button(
 
 async def start_stop_wind_turbine(clicked):
     with submit.param.update(loading=True, disabled=True):
-        await asyncio.to_thread(sleep, 1)
+        await asyncio.to_thread(time.sleep, 1)
         is_stopped.rx.value = not is_stopped.rx.value
 
 submit.rx.watch(start_stop_wind_turbine)
@@ -255,7 +251,7 @@ Now, let your imagination run wild and craft dynamic, engaging Panel application
 
 ### Explanation
 
-- [Reactive API](../../explanation/api/reactive.md)
+- [Reactivity](../../explanation/api/reactivity.md)
 
 ### External
 
