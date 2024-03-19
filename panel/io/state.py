@@ -268,7 +268,7 @@ class _state(param.Parameterized):
             self._thread_id_[self.curdoc] = thread_id
 
     def _unblocked(self, doc: Document) -> bool:
-        return doc is self.curdoc and self._thread_id in (self._current_thread, None)
+        return doc is self.curdoc and self._thread_id in (self._current_thread, None) and (not doc.session_context or self._loaded.get(doc))
 
     @param.depends('_busy_counter', watch=True)
     def _update_busy_counter(self):
