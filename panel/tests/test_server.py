@@ -291,6 +291,9 @@ def test_server_periodic_async_callback(threads):
     def app():
         button = Button(name='Click')
         state.add_periodic_callback(cb, 100)
+        def loaded():
+            state._schedule_on_load(state.curdoc, None)
+        state.execute(loaded, schedule=True)
         return button
 
     serve_and_request(app)
@@ -715,6 +718,9 @@ def test_server_thread_pool_periodic(threads):
     def app():
         button = Button(name='Click')
         state.add_periodic_callback(cb, 100)
+        def loaded():
+            state._schedule_on_load(state.curdoc, None)
+        state.execute(loaded, schedule=True)
         return button
 
     serve_and_request(app)
