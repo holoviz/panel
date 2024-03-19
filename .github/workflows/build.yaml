@@ -167,9 +167,6 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow -f
-      - name: Set output
-        id: vars
-        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: package install
         run: |
           python -m pip install -ve .
