@@ -262,7 +262,6 @@ class ChatFeed(ListPanel):
 
         # handle async callbacks using this trick
         self.param.watch(self._prepare_response, '_callback_trigger')
-        self.param.trigger('_callback_trigger')
 
     def _get_model(
         self, doc: Document, root: Model | None = None,
