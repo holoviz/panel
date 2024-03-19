@@ -145,6 +145,13 @@ How to profile and debug your application using the admin dashboard and other to
 How to set up unit tests, UI tests and load testing to ensure your applications are (and stay) robust and scalable.
 :::
 
+:::{grid-item-card} {octicon}`pencil;2.5em;sd-mr-1 sd-animate-grow50` Configure Logging
+:link: configure_logging
+:link-type: doc
+
+How to configure the logging level and format
+:::
+
 ::::
 
 

@@ -45,7 +45,6 @@ from ..models import (
 from ..pane.markup import Str
 from ..reactive import SyncableData
 from ..util import PARAM_NAME_PATTERN, escape, updating
-from ..util.warnings import deprecated
 from ..viewable import Viewable
 from .base import Widget
 
@@ -573,6 +572,9 @@ class Dial(ValueIndicator):
 
     annulus_width = param.Number(default=0.2, doc="""
       Width of the radial annulus as a fraction of the total.""")
+
+    background = param.Parameter(default=None, doc="""
+        Background color of the component.""")
 
     bounds = param.Range(default=(0, 100), doc="""
       The upper and lower bound of the dial.""")
@@ -1142,12 +1144,6 @@ class Trend(SyncableData, Indicator):
     }
 
     _widget_type: ClassVar[Type[Model]] = _BkTrendIndicator
-
-    def __init__(self, **params):
-        if "title" in params:
-            params["name"] = params.pop("title")
-            deprecated("1.4", "title",  "name")
-        super().__init__(**params)
 
     def _get_data(self):
         if self.data is None:

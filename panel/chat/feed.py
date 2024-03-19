@@ -181,7 +181,7 @@ class ChatFeed(ListPanel):
     _callback_state = param.ObjectSelector(objects=list(CallbackState), doc="""
         The current state of the callback.""")
 
-    _was_disabled = param.Boolean(default=False, doc="""
+    _disabled_stack = param.List(doc="""
         The previous disabled state of the feed.""")
 
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_feed.css"]
@@ -217,7 +217,7 @@ class ChatFeed(ListPanel):
         )
         # we separate out chat log for the auto scroll feature
         self._chat_log = Feed(
-            *objects,
+            *self.objects,
             load_buffer=self.load_buffer,
             auto_scroll_limit=self.auto_scroll_limit,
             scroll_button_threshold=self.scroll_button_threshold,
@@ -499,7 +499,7 @@ class ChatFeed(ListPanel):
         if self.callback is None:
             return
 
-        self._was_disabled = self.disabled
+        self._disabled_stack.append(self.disabled)
         try:
             with param.parameterized.batch_call_watchers(self):
                 self.disabled = True
@@ -543,7 +543,7 @@ class ChatFeed(ListPanel):
         with param.parameterized.batch_call_watchers(self):
             self._replace_placeholder(None)
             self._callback_state = CallbackState.IDLE
-            self.disabled = self._was_disabled
+            self.disabled = self._disabled_stack.pop() if self._disabled_stack else False
 
     # Public API
 
@@ -678,7 +678,7 @@ class ChatFeed(ListPanel):
             cancelled = self._callback_future.cancel()
 
         if cancelled:
-            self.disabled = self._was_disabled
+            self.disabled = self._disabled_stack.pop() if self._disabled_stack else False
             self._replace_placeholder(None)
         return cancelled
 

@@ -17,7 +17,6 @@ import param  # type: ignore
 from ..io.resources import CDN_DIST
 from ..models import HTML as _BkHTML, JSON as _BkJSON
 from ..util import HTML_SANITIZER, escape
-from ..util.warnings import deprecated
 from .base import ModelPane
 
 if TYPE_CHECKING:
@@ -39,13 +38,6 @@ class HTMLBasePane(ModelPane):
     _updates: ClassVar[bool] = True
 
     __abstract = True
-
-    def __init__(self, object=None, **params):
-        if "style" in params:
-            # In Bokeh 3 'style' was changed to 'styles'.
-            params["styles"] = params.pop("style")
-            deprecated("1.4", "style",  "styles")
-        super().__init__(object=object, **params)
 
 
 class HTML(HTMLBasePane):

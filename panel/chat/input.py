@@ -42,6 +42,11 @@ class ChatAreaInput(_PnTextAreaInput):
         accommodate the current text.""",
     )
 
+    disabled_enter = param.Boolean(
+        default=False,
+        doc="If True, the enter key will not submit the message (clear the value).",
+    )
+
     rows = param.Integer(default=1, doc="""
         Number of rows in the text input field.""")
 
