@@ -11,6 +11,10 @@ A *Pane* is a component that can display an object. It takes an `object` as an a
 :::
 
 :::{note}
+You might notice a lot of repetition from the previous section regarding `pn.panel`. Don't worry, it's intentional! We're doing this to empower you with the ability to compare and contrast. While `pn.panel` is incredibly user-friendly and versatile, specific Panes allow you to display output with precision and efficiency. This enables you to construct more intricate and high-performing applications.
+:::
+
+:::{note}
 When we ask you to *run the code* in the sections below, you may either execute the code directly in the Panel docs via the green *run* button, in a cell in a notebook, or in a file `app.py` that is served with `panel serve app.py --autoreload`.
 :::
 
