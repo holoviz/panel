@@ -26,7 +26,6 @@ from ..layout import Feed, ListPanel
 from ..layout.card import Card
 from ..layout.spacer import VSpacer
 from ..pane.image import SVG
-from ..widgets.button import Button
 from .message import ChatMessage
 
 if TYPE_CHECKING:
@@ -181,6 +180,8 @@ class ChatFeed(ListPanel):
     _callback_state = param.ObjectSelector(objects=list(CallbackState), doc="""
         The current state of the callback.""")
 
+    _callback_trigger = param.Event(doc="Triggers the callback to respond.")
+
     _disabled_stack = param.List(doc="""
         The previous disabled state of the feed.""")
 
@@ -260,8 +261,8 @@ class ChatFeed(ListPanel):
         )
 
         # handle async callbacks using this trick
-        self._callback_trigger = Button(visible=False)
-        self._callback_trigger.on_click(self._prepare_response)
+        self.param.watch(self._prepare_response, '_callback_trigger')
+        self.param.trigger('_callback_trigger')
 
     def _get_model(
         self, doc: Document, root: Model | None = None,
@@ -491,7 +492,7 @@ class ChatFeed(ListPanel):
             response = await asyncio.to_thread(self.callback, *callback_args)
         await self._serialize_response(response)
 
-    async def _prepare_response(self, _) -> None:
+    async def _prepare_response(self, *_) -> None:
         """
         Prepares the response by scheduling the placeholder and
         executing the callback.
@@ -656,7 +657,7 @@ class ChatFeed(ListPanel):
         """
         Executes the callback with the latest message in the chat log.
         """
-        self._callback_trigger.param.trigger("clicks")
+        self.param.trigger("_callback_trigger")
 
     def stop(self) -> bool:
         """
