@@ -61,6 +61,7 @@ class DeckGLPlot(HTMLBox):
             ("loader-json", f"{config.npm_cdn}/@loaders.gl/json@3.1.7/dist/dist.min"),
             ("loader-tiles", f"{config.npm_cdn}/@loaders.gl/3d-tiles@3.1.7/dist/dist.min"),
             ("mapbox-gl", "https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl"),
+            ("carto", "{config.npm_cdn}/@deck.gl/carto@^8.7.0/dist.min.js"),
         ]),
         'exports': {"deck-gl": "deck", "mapbox-gl": "mapboxgl", "h3": "h3"},
         'shim': {
