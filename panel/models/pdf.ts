@@ -1,7 +1,7 @@
 import type * as p from "@bokehjs/core/properties"
 import {Markup} from "@bokehjs/models/widgets/markup"
 import {PanelMarkupView} from "./layout"
-import {htmlDecode} from "./html"
+import {html_decode} from "./html"
 
 export class PDFView extends PanelMarkupView {
   declare model: PDF
@@ -23,7 +23,7 @@ export class PDFView extends PanelMarkupView {
       const url = URL.createObjectURL(blob)
       this.container.innerHTML = `<embed src="${url}#page=${this.model.start_page}" type="application/pdf" width="100%" height="100%"></embed>`
     } else {
-      const html = htmlDecode(this.model.text)
+      const html = html_decode(this.model.text)
       this.container.innerHTML = html || ""
     }
   }
