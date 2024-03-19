@@ -170,11 +170,6 @@ jobs:
       - name: Set output
         id: vars
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-      - name: npm setup
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_API_TOKEN }}" > $HOME/.npmrc
-          npm whoami
-          npm -v
       - name: package install
         run: |
           python -m pip install -ve .
@@ -208,6 +203,11 @@ jobs:
         run: |
           echo "TAG=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
           echo "TARBALL=$(ls *.tgz)" >> $GITHUB_ENV
+      - name: npm setup
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_API_TOKEN }}" > $HOME/.npmrc
+          npm whoami
+          npm -v
       - name: npm dev deploy
         if: contains(env.TAG, 'a') || contains(env.TAG, 'b') || contains(env.TAG, 'rc')
         run: |
