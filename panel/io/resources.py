@@ -257,6 +257,8 @@ def patch_stylesheet(stylesheet, dist_url):
         patched_url = url.replace(CDN_DIST+dist_url, dist_url) + f'?v={JS_VERSION}'
     elif url.startswith(CDN_DIST) and dist_url != CDN_DIST:
         patched_url = url.replace(CDN_DIST, dist_url) + f'?v={JS_VERSION}'
+    elif url.startswith(LOCAL_DIST) and dist_url.lstrip('./').startswith(LOCAL_DIST):
+        patched_url = url.replace(LOCAL_DIST, dist_url) + f'?v={JS_VERSION}'
     else:
         return
     try:
@@ -777,7 +779,7 @@ class Resources(BkResources):
         for model in Model.model_class_reverse_map.values():
             if hasattr(model, '__javascript_module_exports__'):
                 modules.update(dict(zip(model.__javascript_module_exports__, model.__javascript_modules__)))
-        return modules
+        return dict(zip(modules, self.adjust_paths(modules.values())))
 
     @property
     def js_raw(self):
