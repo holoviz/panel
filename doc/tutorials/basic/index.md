@@ -46,15 +46,62 @@ Start your journey with these foundational tutorials:
 
 ## Master Panel Basics
 
-Once you're comfortable, it's time to dive deeper:
+Once you're comfortable, it's time to dive deeper. Through a series of lessons we will learn about displaying content, arranging it on the page, handling user inputs and then how to improve the UI and UX of our applications.
 
-| Part | Section A | Section B| Section C |
-|--------------------------|---------------------------|-------------------|------------------------------------------------------|
-| **1. Display Content**       | [`pn.panel`](pn_panel.md) | [Panes](panes.md) | [Performance Indicators](indicators_performance.md) |
-| **2. Organize Content**      | [Layouts](layouts.md)    | [Control the Size](size.md) | [Align Content](align.md)                           |
-| **3. Handle User Input**     | [Widgets](widgets.md)    | [React to User Input](pn_bind.md) | [Reactive Expressions](pn_rx.md)                        |
-| **4. Improve the look**      | [Templates](templates.md)| [Designs](design.md) | [Styles](style.md)                                |
-| **5. Improve the Feel**      | [Caching](caching.md)    | [Activity Indicators](indicators_activity.md) | [Progressive Updates](progressive_layouts.md)  |
+### 1. Display Content
+
+[`pn.panel`](pn_panel.md)
+: Learn to display Python objects easily with `pn.panel`
+
+[Panes](panes.md)
+: Learn to display content by creating Panes.
+
+[Indicators](indicators_performance.md)
+: Visualize key metrics with simple indicators
+
+### 2. Organize Content
+
+[Layouts](layouts.md)
+: Arrange output on the page using layouts.
+
+[Control the Size](size.md)
+: Learn to control the sizing of your components.
+
+[Align Content](align.md)
+: Discover how to align content on the page.
+
+### 3. Handle User Input
+
+[Widgets](widgets.md)
+: Learn about handling user input with widgets.
+
+[React to User Input](pn_bind.md)
+: Learn about reacting to user input by binding it to interactive components.
+
+[Reactive Expressions](pn_rx.md)
+: Learn about handling state and writing entire reactive expressions.
+
+### 4. Improve the Look
+
+[Templates](templates.md)
+: Learn to structure your app with pre-built templates.
+
+[Designs](design.md)
+: Style your apps using pre-built *designs*
+
+[Styles](style.md)
+: Further customize the look and feel by adding CSS styling.
+
+### 5. Improve the Feel
+
+[Caching](caching.md)
+: Leverage caching to enhance the speed and efficiency of your app.
+
+[Activity Indicators](indicators_activity.md)
+: Indicate progress and add notifications to improve the user experience.
+
+[Progressive Updates](progressive_layouts.md)
+: Efficiently and effortlessly update the content in your app with progressive updates.
 
 ## Share Your Creations
 

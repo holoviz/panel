@@ -4,7 +4,7 @@ Welcome to the interactive world of Panel! In this section, you'll learn how to 
 
 ## Embrace `pn.bind`
 
-The `pn.bind` method is your gateway to interactive Panel applications. It enables you to connect widgets to functions seamlessly, triggering updates whenever the widget values change. Let's dive into an example:
+The `pn.bind` method is your gateway to interactive Panel applications. It enables you to build interactive components that respond to user inputs simply by binding widgets to functions. Let's dive into an example:
 
 ```{pyodide}
 import panel as pn
@@ -34,7 +34,7 @@ pn.Column(wind_speed, power).servable()
 
 As you interact with the slider, notice how the displayed power generation dynamically updates, reflecting changes in wind speed.
 
-You can of course bind to multiple widgets. Let's make the `efficiency` a widget:
+You can of course bind multiple widgets. Let's make the `efficiency` a widget:
 
 ```{pyodide}
 import panel as pn
@@ -92,7 +92,7 @@ power_md = pn.pane.Markdown(power)
 pn.Column(wind_speed, efficiency, power_md).servable()
 ```
 
-Note how we pass the bound function as an argument to the `Markdown` pane.
+Note how we pass the bound function as an argument to the `Markdown` pane. This way the Markdown pane only has to send the updated text.
 
 ## Crafting Interactive Forms
 
@@ -174,7 +174,7 @@ Try dragging the slider. Notice that the `calculate_power` function is only run 
 
 ### Binding to bound functions
 
-You may also `bind` to bound functions. This can help you break down you reactivity into smaller, reusable steps.
+Bound functions can themselves be bound to other functions. This can help you break down you reactivity into smaller, reusable steps.
 
 ```{pyodide}
 import panel as pn
@@ -248,11 +248,10 @@ In the example provided, our side effect directly modifies the UI by altering th
 It's advisable to avoid directly updating the UI through side effects. Instead, focus on updating the application's *state*, allowing the UI to respond automatically to any changes in the state. The concept of state will be explored further in the subsequent section.
 ```
 
-If your task is long running your might want to disable the `Button` and add a loading indicator while the task is running.
+If your task is long running you might want to disable the `Button` and add a loading indicator while the task is running.
 
 ```{pyodide}
-from time import sleep
-
+import time
 import panel as pn
 
 pn.extension()
@@ -261,7 +260,7 @@ submit = pn.widgets.Button(name="Start the wind turbine")
 
 def start_stop_wind_turbine(clicked):
     with submit.param.update(loading=True, disabled=True):
-        sleep(2)
+        time.sleep(2)
         if bool(submit.clicks%2):
             submit.name = "Start the wind turbine"
         else:
@@ -302,7 +301,9 @@ pn.Column(submit).servable()
 ```
 
 :::{note}
-In the example we use a `asyncio.to_thread` this should work great if your blocking task releases the GIL while running. Tasks that request data from the web or read data from files typically do this. Some computational methods from Numpy, Pandas etc. also release the GIL. If your long running task does not release the GIL you may have to use a `ProcessPoolExecutor` instead. This introduces some overhead though.
+In the example we use a `asyncio.to_thread` this should work great if your blocking task releases the GIL while running. Tasks that request data from the web or read data from files typically do this. Some computational methods from Numpy, Pandas etc. also release the GIL.
+
+If your long running task does not release the GIL you may have to use a `ProcessPoolExecutor` instead. This introduces some overhead though.
 :::
 
 ## Recap
