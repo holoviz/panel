@@ -440,9 +440,16 @@ class Markdown(HTMLBasePane):
                 **self.renderer_options
             )
         else:
-            html = self._get_parser(
+            parser = self._get_parser(
                 self.renderer, tuple(self.plugins), **self.renderer_options
-            ).render(obj)
+            )
+            try:
+                html = parser.render(obj)
+            except IndexError:
+                # Likely markdown-it mdurl parser error
+                with parser.reset_rules():
+                    parser.disable('link')
+                    html = parser.render(obj)
         return dict(object=escape(html))
 
     def _process_param_change(self, params):

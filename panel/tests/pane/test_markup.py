@@ -101,7 +101,6 @@ def test_markdown_pane_newline(document, comm):
     assert pane._models[model.ref['id']][0] is model
     assert model.text == "&lt;p&gt;Hello\nWorld\nI&#x27;m here!&lt;/p&gt;\n"
 
-
 def test_markdown_pane_markdown_it_renderer(document, comm):
     pane = Markdown("""
     - [x] Task1
@@ -121,6 +120,20 @@ def test_markdown_pane_markdown_it_renderer(document, comm):
         'class=&quot;task-list-item-checkbox&quot; disabled=&quot;disabled&quot; '
         'type=&quot;checkbox&quot;&gt; Task2&lt;/li&gt;\n&lt;/ul&gt;\n'
     )
+
+def test_markdown_pane_markdown_it_renderer_partial_links(document, comm):
+    pane = Markdown("[Test](http:/", renderer='markdown-it')
+
+    model = pane.get_root(document, comm=comm)
+
+    assert model.text == '&lt;p&gt;[Test](http:/&lt;/p&gt;\n'
+
+    pane.object = "[Test](http://"
+
+    assert model.text == '&lt;p&gt;[Test](http://&lt;/p&gt;\n'
+
+    pane.object = "[Test](http://google.com)"
+    assert model.text == '&lt;p&gt;&lt;a href=&quot;http://google.com&quot;&gt;Test&lt;/a&gt;&lt;/p&gt;\n'
 
 def test_markdown_pane_extensions(document, comm):
     pane = Markdown("""
