@@ -137,7 +137,7 @@ def capture_code_cell(cell):
 
     # Expand last statement or expression until it can be parsed
     parses = False
-    while not parses or not code:
+    while not parses:
         try:
             ast.parse(cell_out)
             parses = True
