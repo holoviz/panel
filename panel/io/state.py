@@ -268,7 +268,20 @@ class _state(param.Parameterized):
             self._thread_id_[self.curdoc] = thread_id
 
     def _unblocked(self, doc: Document) -> bool:
-        return doc is self.curdoc and self._thread_id in (self._current_thread, None) and (not doc.session_context or self._loaded.get(doc))
+        """
+        Indicates whether Document events can be dispatched or have
+        to scheduled on the event loop. Events can only be safely
+        dispatched if:
+
+        1. The Document to be modified is the same one that the server
+           is currently processing.
+        2. We are on the same thread that the Document was created on.
+        3. The application has fully loaded and the Websocket is open.
+        """
+        return (
+            doc is self.curdoc and self._thread_id in (self._current_thread, None) and
+            (not doc or not doc.session_context or self._loaded.get(doc))
+        )
 
     @param.depends('_busy_counter', watch=True)
     def _update_busy_counter(self):
