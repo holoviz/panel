@@ -1,23 +1,152 @@
 # Releases
 
+## Version 1.4.0
+
+Date: 2024-01-21
+
+### Features
+
+- Add `EditableTemplate` to support dashboard builder UI in Jupyter (#5802)
+- Add `ChatAreaInput` as default text input widget for `ChatInterface` (#6379)
+- Add `NestedSelect` widget (#5791, #6011)
+- Improve `--autoreload` by using watchfiles and selectively reloading packages (#5894, #6459)
+- Add Panel tutorials (#5525, #6208, #6212, #6388, #6425, #6466, #6491, )
+- Add `DateRangePicker` widget (#6027)
+- Add `Feed` layout and use it as layout for `ChatFeed` (#6031, #6296)
+- Add `WebP` pane (#6035)
+- Add `ButtonIcon` (#6138)
+- Add `Textual` pane (#6181)
+
+### Enhancements
+
+- Load loading indicator from file instead of inlining (#6112)
+- Allow providing additional stylesheets in `card_params` (#6242)
+- Add `scroll` options to permanently toggle on layouts (#6266)
+- Allow choosing position of frozen columns on `Tabulator` (#6309)
+- Add help message on `ChatFeed` (#6311)
+- Ensure CSS can be applied to every aspect of `ChatMessage` (#6346)
+- Add HoloViz logos as `ChatMessage` avatars (#6348)
+- Add `gap` parameter to `FlexBox` (#6354)
+- Set default `step` of `DatetimeRangeSlider` to 1 minute (#6373)
+- Add support for passing objects reference to `FlexBox` (#6387)
+- Allow editable sliders to be embedded (#6391)
+- Add `message` into `css_classes` to `ChatMessage` markup (#6407)
+- Allow appending objects to the `ChatMessage` header & footer (#6410)
+- Add ability to declare icon label (#6411)
+- Add title and settings and fix datetime to `Perspective` (#6482)
+- Warn user if loading extension in VSCode or Colab without `jupyter_bokeh` (#6485)
+- Throttle updates to Boolean indicators (#6481)
+- Add `ParamRef` baseclass for `ParamFunction` and `ParamMethod` (#6392)
+- Add ability to Skip `Param<Ref|Function|Method>` updates (#6396)
+- Add `Param<Ref|Method|Function>` and `ReactiveExpr` to panes module (#6432)
+- Set up `param.rx` display accessor on import (#6470)
+- Allow using Carto tiles in `DeckGL` (#6531)
+
+#### Styling
+
+- Ensure navbar toggle icon is correct color in `BootstrapTemplate` (#6111)
+- Improve styling of `FileInput` widget (#6479)
+- Improve Jupyter Preview error handling and error template (#6496)
+- Add scale animation to icons on hover and click (#6376)
+- Redesign index pages (#6497)
+- Improve `Tabulator` editor text color in `Fast` design (#6512)
+
+### Compatibility & Version Updates
+
+- Bump `Perspective` version to 2.8.0 (#5722)
+- Support for Bokeh 3.4 (#6072)
+- Upgrade `Vizzu` to 0.9.3 (#6476)
+- Bump `JSONEditor` version to 10.0.1 (#6477)
+- Upgrade to PyScript Next and Pyodide 0.25.0 in `panel convert` (#6490)
+
+### Bug fixes
+
+- Add resize handler for `FloatPanel` (#6201)
+- Fix serving of global template in notebook (#6210)
+- Ensure `Tabulator` renders in collapsed `Card` (#6223)
+- Ensure `ChatInterface` respect supplied default user (#6290)
+- Ensure `HTML` and other markup panes can be emptied (#6303)
+- Ensure `ChatMessage` internals correctly respect `Design` (#6304)
+- Ensure collapsed `Card` does not cause stretching (#6305)
+- Ensure notebook preview always uses server resources (#6317)
+- Remove animation from loading spinner without spin (#6324)
+- Ensure model is only added/removed from Document once (#6342)
+- Ensure `loading_indicator` resets when configured with context manager (#6343)
+- Fix modal overflow and resizing issues (#6355)
+- Ensure that ripple matches notification size (#6360)
+- Fully re-render `CodeEditor` on render calls ensuring it displays correctly (#6361)
+- Ensure `FileDownload` button has correct height (#6362)
+- Ensure `HTML` model is redrawn if `stylesheets` is emptied (#6365)
+- Allow providing custom template (#6383)
+- Ensure `Debugger` renders without error (#6423)
+- Ensure `ChatMessage` `header` updates dynamically  (#6441)
+- Ensure pending writes are dispatched in order and only from correct thread (#6443)
+- Ensure layout reuses model if available (#6446)
+- Improved exception handler in unlocked message dispatch (#6447)
+- Fix display of interactive `Matplotlib` (#6450)
+- Ensure streaming `ChatMessage` on `ChatInterface` and mention `serialize` (#6452)
+- Ensure `Plotly` pane renders and hides correctly in `Card` (#6468)
+- Fix issues rendering widget components with `Fast` design (#6474)
+- Fix binary serialization from JS -> Pyodide (#6490)
+- Avoid overeager garbage collection (#6518)
+- Fix floating point error in `IntRangeSlider` (#6516)
+- Load JS modules from relative path (#6526)
+- Ensure no events are dispatched before the websocket is open (#6528)
+- Ensure `Markdown` parsing does not choke on partial links (#6535)
+
+#### Chat Components
+
+- Fix `ChatInterface` `stop` button for synchronous functions (#6312)
+- Include `stylesheets` downstream, including layouts in ChatMessage (#6405)
+- Ensure ChatInterface supports chat input without `value_input` parameter  (#6505)
+- Ensure word breaks to avoid overflow in `ChatMessage` (#6187, #6509)
+- Ensure nested disabled state stays disabled on `ChatFeed` (#6507)
+- Allow streaming `None` as the initial `ChatMessage` value (#6522)
+
+### Documentation
+
+- Add Roadmap to documentation (#5443)
+- Refactor `ReactiveHTML` docs (#5448, #6358)
+- Improve `HoloViews` reference guide (#6065)
+- Improve the user experience for resetting Jupyterlite (#6198)
+- Add explanation docs about APIs (#6289, #6469)
+- Add section headers to Chat reference documentation (#6370)
+- Migrate gallery to new Anaconda DSP instance (#6413)
+- Improve home page (#6422)
+- Adding AWS deployment to documentation (#6434)
+- Update Streamlit comparison (#6467)
+- Add logging how-to guide (#6511)
+- Document pygments dependency for code syntax highlighting (#6519)
+- Add how-to guide on configuring PyCharm (#6525)
+
+### Deprecations
+
+- Remove `Ace` alias for `CodeEditor`
+- Remove `ChatBox` which has been replaced by `panel.chat` components
+- Remove `HTML.style` which is now replaced with `HTML.styles`
+- Remove `Trend.title` which is now replaced by `Trend.name`
+- Remove `Viewable.app` which is now replaced with `pn.io.notebook.show_server`
+- Remove `Viewable.background` which is now replaced with `Viewable(styles={'background': ...})`
+- Remove `Viewable.pprint` which is now replaced with `print(Viewable(...))`
+
 ## Version 1.3.8
 
 Date: 2024-01-24
 
 This patch release fixes an important regression in the 1.3.6 release that resulted in global state to be incorrectly resolved in certain cases. Many thanks to our new contributor @fohrloop and our maintainers @ahuang11, @Hoxbro and @philippjfr for contributing to this release.
 
-## Bug fixes
+### Bug fixes
 
 - Ensure `ReactiveHTML` correctly resets `Event` parameters ([#6247](https://github.com/holoviz/panel/pull/6247))
 - Fix `ChatFeed` / `ChatInterface` tests and async generator placeholders ([#6245](https://github.com/holoviz/panel/pull/6245))
 - Fix logic when looking up `pn.state.curdoc` ([#6254](https://github.com/holoviz/panel/pull/6254))
 - Handle margin=None in layout sizing mode computation ([#6267](https://github.com/holoviz/panel/pull/6267))
 
-## Compatibility
+### Compatibility
 
 - Updates for compatibility with pandas 2.2 ([#6259](https://github.com/holoviz/panel/pull/6259))
 
-## Documentation
+### Documentation
 
 - Fix typos and add a cross-reference in docs (User Profiling) ([#6263](https://github.com/holoviz/panel/pull/6263))
 - Improve documentation on `TextAreaInput` ([#6264](https://github.com/holoviz/panel/pull/6264))
