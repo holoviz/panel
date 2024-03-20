@@ -137,15 +137,24 @@ def capture_code_cell(cell):
 
     # Expand last statement or expression until it can be parsed
     parses = False
-    while not parses:
+    while not parses or not code:
         try:
             ast.parse(cell_out)
             parses = True
         except SyntaxError:
+            if not code:
+                break
             cell_out = f'{code.pop()}\n{cell_out}'
 
-    # Skip cells ending in semi-colon
-    if cell_out.rstrip().endswith(';'):
+    if not parses:
+        # Skip cell if it cannot be parsed
+        log.warn(
+            "The following cell did not contain valid Python syntax "
+            f"and was skipped:\n\n{cell['source']}"
+        )
+        return code
+    elif cell_out.rstrip().endswith(';'):
+        # Do not record output of cells ending in semi-colon
         code.append(cell_out)
         return code
 
