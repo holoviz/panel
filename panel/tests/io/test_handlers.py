@@ -1,6 +1,6 @@
 from io import StringIO
 
-from panel.io.handlers import capture_code_cell, extract_code
+from panel.io.handlers import capture_code_cell, extract_code, parse_notebook
 
 md1 = """
 ```python
@@ -127,3 +127,13 @@ _fig__out = _get__figure()
 if _fig__out:
     _pn__state._cell_outputs['foo'].append(_fig__out)
 """]
+
+def test_parse_notebook_markdown_escaped():
+    import nbformat
+
+    cell = nbformat.v4.new_markdown_cell('This is a test of markdown terminated by a quote"')
+    nb = nbformat.v4.new_notebook(cells=[cell])
+    sio = StringIO(nbformat.v4.writes(nb))
+    nb, code, layout = parse_notebook(sio)
+
+    assert code == f"_pn__state._cell_outputs['{cell.id}'].append(\"\"\"This is a test of markdown terminated by a quote\\\"\"\"\")"
