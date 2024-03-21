@@ -178,7 +178,7 @@ def capture_code_cell(cell):
 
     # Capture cell outputs
     cell_id = cell['id']
-    code.append(f"""
+    code.append(f"""\
 _pn__state._cell_outputs[{cell_id!r}].append(({cell_out}))
 for _cell__out in _CELL__DISPLAY:
     _pn__state._cell_outputs[{cell_id!r}].append(_cell__out)

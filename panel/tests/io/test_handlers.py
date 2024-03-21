@@ -1,6 +1,15 @@
 from io import StringIO
 
+import pytest
+
 from panel.io.handlers import capture_code_cell, extract_code, parse_notebook
+
+try:
+    import nbformat
+except Exception:
+    nbformat = None
+nbformat_available = pytest.mark.skipif(nbformat is None, reason="requires nbformat")
+
 
 md1 = """
 ```python
@@ -91,7 +100,7 @@ def test_capture_code_cell_expression_semicolon():
 
 def test_capture_code_cell_expression():
     assert capture_code_cell({'id': 'foo', 'source': code_expr}) == [
-        '', """
+        '', """\
 _pn__state._cell_outputs['foo'].append((1+1))
 for _cell__out in _CELL__DISPLAY:
     _pn__state._cell_outputs['foo'].append(_cell__out)
@@ -104,7 +113,7 @@ if _fig__out:
 
 def test_capture_code_cell_multi_line_expression():
     assert capture_code_cell({'id': 'foo', 'source': code_multi_line}) == [
-        '', """
+        '', """\
 _pn__state._cell_outputs['foo'].append((pd.read_csv(
     'test.csv'
 )))
@@ -118,7 +127,7 @@ if _fig__out:
 
 def test_capture_code_cell_expression_with_comment():
     assert capture_code_cell({'id': 'foo', 'source': code_expr_comment}) == [
-        '', """
+        '', """\
 _pn__state._cell_outputs['foo'].append((1+1))
 for _cell__out in _CELL__DISPLAY:
     _pn__state._cell_outputs['foo'].append(_cell__out)
@@ -128,9 +137,19 @@ if _fig__out:
     _pn__state._cell_outputs['foo'].append(_fig__out)
 """]
 
-def test_parse_notebook_markdown_escaped():
-    import nbformat
 
+@nbformat_available
+def test_parse_notebook_loads_layout():
+    cell = nbformat.v4.new_code_cell('1+1', metadata={'panel-layout': 'foo'})
+    nb = nbformat.v4.new_notebook(cells=[cell])
+    sio = StringIO(nbformat.v4.writes(nb))
+    nb, code, layout = parse_notebook(sio)
+
+    assert layout == {cell.id: 'foo'}
+    assert code.startswith(f"_pn__state._cell_outputs['{cell.id}'].append((1+1))")
+
+@nbformat_available
+def test_parse_notebook_markdown_escaped():
     cell = nbformat.v4.new_markdown_cell('This is a test of markdown terminated by a quote"')
     nb = nbformat.v4.new_notebook(cells=[cell])
     sio = StringIO(nbformat.v4.writes(nb))
