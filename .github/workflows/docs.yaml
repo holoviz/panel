@@ -41,7 +41,7 @@ jobs:
         with:
           name: doc_build
           python-version: "3.11"
-          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
+          channels: pyviz/label/dev,conda-forge,nodefaults
           conda-update: 'true'
           nodejs: true
           nodejs-version: 20
@@ -54,12 +54,6 @@ jobs:
         run: |
           conda activate test-environment
           pip install --use-deprecated=legacy-resolver pyecharts ipywidgets_bokeh==1.5.0
-      - name: install bokeh-dev
-        if: |
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
-          (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
-        run: |
-          pip install --pre --upgrade bokeh
       - name: bokeh sampledata
         run: |
           conda activate test-environment

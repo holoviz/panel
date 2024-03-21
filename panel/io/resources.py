@@ -254,13 +254,16 @@ def component_resource_path(component, attr, path):
 def patch_stylesheet(stylesheet, dist_url):
     url = stylesheet.url
     if url.startswith(CDN_DIST+dist_url) and dist_url != CDN_DIST:
-        patched_url = url.replace(CDN_DIST+dist_url, dist_url) + f'?v={JS_VERSION}'
+        patched_url = url.replace(CDN_DIST+dist_url, dist_url)
     elif url.startswith(CDN_DIST) and dist_url != CDN_DIST:
-        patched_url = url.replace(CDN_DIST, dist_url) + f'?v={JS_VERSION}'
+        patched_url = url.replace(CDN_DIST, dist_url)
     elif url.startswith(LOCAL_DIST) and dist_url.lstrip('./').startswith(LOCAL_DIST):
-        patched_url = url.replace(LOCAL_DIST, dist_url) + f'?v={JS_VERSION}'
+        patched_url = url.replace(LOCAL_DIST, dist_url)
     else:
         return
+    version_suffix = f'?v={JS_VERSION}'
+    if not patched_url.endswith(version_suffix):
+        patched_url += version_suffix
     try:
         stylesheet.url = patched_url
     except Exception:
