@@ -63,11 +63,10 @@ export class PDF extends Markup {
   }
 
   static override __module__ = "panel.models.markup"
-  // TODO: example
   static {
     this.prototype.default_view = PDFView
     this.define<PDF.Props>(({Int, Bool}) => ({
-      embed: [Bool, true],
+      embed: [Bool, false],
       start_page: [Int, 1],
     }))
   }

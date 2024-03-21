@@ -31,6 +31,6 @@ class JSON(Markup):
 
 class PDF(Markup):
 
-    embed = Bool(True, help="Whether to embed the file")
+    embed = Bool(False, help="Whether to embed the file")
 
     start_page = Int(default=1, help="Start page of the pdf, by default the first page.")
