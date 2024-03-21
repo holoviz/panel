@@ -8,11 +8,8 @@ export class PDFView extends PanelMarkupView {
 
   override connect_signals(): void {
     super.connect_signals()
-    const p = this.model.properties
-    const {text, width, height, embed, start_page} = p
-    this.on_change([text, width, height, embed, start_page], () => {
-      this.update()
-    })
+    const {text, width, height, embed, start_page} = this.model.properties
+    this.on_change([text, width, height, embed, start_page], () => { this.update() })
   }
 
   override render(): void {
@@ -24,9 +21,7 @@ export class PDFView extends PanelMarkupView {
     if (this.model.embed) {
       const blob = this.convert_base64_to_blob()
       const url = URL.createObjectURL(blob)
-      const w = this.model.width || "100%"
-      const h = this.model.height || "100%"
-      this.container.innerHTML = `<embed src="${url}#page=${this.model.start_page}" type="application/pdf" width="${w}" height="${h}"></embed>`
+      this.container.innerHTML = `<embed src="${url}#page=${this.model.start_page}" type="application/pdf" width="100%" height="100%"></embed>`
     } else {
       const html = htmlDecode(this.model.text)
       this.container.innerHTML = html || ""
@@ -34,18 +29,18 @@ export class PDFView extends PanelMarkupView {
   }
 
   protected convert_base64_to_blob(): Blob {
-    const byteCharacters = atob(this.model.text)
-    const sliceSize = 512
-    const byteArrays = []
-    for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
-      const slice = byteCharacters.slice(offset, offset + sliceSize)
-      const byteNumbers = new Uint8Array(slice.length)
+    const byte_characters = atob(this.model.text)
+    const slice_size = 512
+    const byte_arrays = []
+    for (let offset = 0; offset < byte_characters.length; offset += slice_size) {
+      const slice = byte_characters.slice(offset, offset + slice_size)
+      const byte_numbers = new Uint8Array(slice.length)
       for (let i = 0; i < slice.length; i++) {
-        byteNumbers[i] = slice.charCodeAt(i)
+        byte_numbers[i] = slice.charCodeAt(i)
       }
-      byteArrays.push(byteNumbers)
+      byte_arrays.push(byte_numbers)
     }
-    return new Blob(byteArrays, {type: "application/pdf"})
+    return new Blob(byte_arrays, {type: "application/pdf"})
   }
 }
 
@@ -68,12 +63,11 @@ export class PDF extends Markup {
   }
 
   static override __module__ = "panel.models.markup"
-
   static {
     this.prototype.default_view = PDFView
-    this.define<PDF.Props>(({Float, Bool}) => ({
-      embed: [Bool, true],
-      start_page: [Float, 1],
+    this.define<PDF.Props>(({Int, Bool}) => ({
+      embed: [Bool, false],
+      start_page: [Int, 1],
     }))
   }
 }
