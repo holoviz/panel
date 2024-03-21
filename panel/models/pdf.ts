@@ -21,9 +21,7 @@ export class PDFView extends PanelMarkupView {
     if (this.model.embed) {
       const blob = this.convert_base64_to_blob()
       const url = URL.createObjectURL(blob)
-      const w = this.model.width || "100%"
-      const h = this.model.height || "100%"
-      this.container.innerHTML = `<embed src="${url}#page=${this.model.start_page}" type="application/pdf" width="${w}" height="${h}"></embed>`
+      this.container.innerHTML = `<embed src="${url}#page=${this.model.start_page}" type="application/pdf" width="100%" height="100%"></embed>`
     } else {
       const html = htmlDecode(this.model.text)
       this.container.innerHTML = html || ""
