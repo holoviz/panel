@@ -178,7 +178,7 @@ def capture_code_cell(cell):
 
     # Capture cell outputs
     cell_id = cell['id']
-    code.append(f"""
+    code.append(f"""\
 _pn__state._cell_outputs[{cell_id!r}].append(({cell_out}))
 for _cell__out in _CELL__DISPLAY:
     _pn__state._cell_outputs[{cell_id!r}].append(_cell__out)
@@ -249,6 +249,88 @@ def run_app(handler, module, doc, post_run=None):
         state._launching.remove(doc)
         if old_doc is not None:
             bk_set_curdoc(old_doc)
+
+def parse_notebook(filename: str | os.PathLike | IO, preamble: list[str] | None = None):
+    """
+    Parses a notebook on disk and returns a script.
+
+    Arguments
+    ---------
+    filename: str | os.PathLike
+      The notebook file to parse.
+    preamble: list[str]
+      Any lines of code to prepend to the parsed code output.
+
+    Returns
+    -------
+    nb: nbformat.NotebookNode
+      nbformat dictionary-like representation of the notebook
+    code: str
+      The parsed and converted script
+    cell_layouts: dict
+      Dictionary containing the layout and positioning of cells.
+    """
+    nbconvert = import_required('nbconvert', 'The Panel notebook application handler requires nbconvert to be installed.')
+    nbformat = import_required('nbformat', 'The Panel notebook application handler requires Jupyter Notebook to be installed.')
+
+    class StripMagicsProcessor(nbconvert.preprocessors.Preprocessor):
+        """
+        Preprocessor to convert notebooks to Python source while stripping
+        out all magics (i.e IPython specific syntax).
+        """
+
+        _magic_pattern = re.compile(r'^\s*(?P<magic>%%\w\w+)($|(\s+))')
+
+        def strip_magics(self, source: str) -> str:
+            """
+            Given the source of a cell, filter out all cell and line magics.
+            """
+            filtered: list[str] = []
+            for line in source.splitlines():
+                match = self._magic_pattern.match(line)
+                if match is None:
+                    filtered.append(line)
+                else:
+                    msg = 'Stripping out IPython magic {magic} in code cell {cell}'
+                    message = msg.format(cell=self._cell_counter, magic=match.group('magic'))
+                    log.warning(message)
+            return '\n'.join(filtered)
+
+        def preprocess_cell(self, cell, resources, index):
+            if cell['cell_type'] == 'code':
+                self._cell_counter += 1
+                cell['source'] = self.strip_magics(cell['source'])
+            return cell, resources
+
+        def __call__(self, nb, resources):
+            self._cell_counter = 0
+            return self.preprocess(nb,resources)
+
+    preprocessors = [StripMagicsProcessor()]
+
+    nb = nbformat.read(filename, nbformat.NO_CONVERT)
+    exporter = nbconvert.NotebookExporter()
+
+    for preprocessor in preprocessors:
+        exporter.register_preprocessor(preprocessor)
+
+    nb_string, _ = exporter.from_notebook_node(nb)
+    nb = nbformat.reads(nb_string, 4)
+    nb = nbformat.v4.upgrade(nb)
+
+    cell_layouts = {}
+    code = list(preamble or [])
+    for cell in nb['cells']:
+        cell_id = cell['id']
+        cell_layouts[cell_id] = cell['metadata'].get('panel-layout', {})
+        if cell['cell_type'] == 'code':
+            cell_code = capture_code_cell(cell)
+            code += cell_code
+        elif cell['cell_type'] == 'markdown':
+            md = ''.join(cell['source']).replace('"', r'\"')
+            code.append(f'_pn__state._cell_outputs[{cell_id!r}].append("""{md}""")')
+    code = '\n'.join(code)
+    return nb, code, cell_layouts
 
 #---------------------------------------------------------------------
 # Handler classes
@@ -407,69 +489,10 @@ class NotebookHandler(PanelCodeHandler):
         self._stale = False
 
     def _parse(self, filename):
-        nbformat = import_required('nbformat', 'The Bokeh notebook application handler requires Jupyter Notebook to be installed.')
-        nbconvert = import_required('nbconvert', 'The Bokeh notebook application handler requires Jupyter Notebook to be installed.')
-
-        class StripMagicsProcessor(nbconvert.preprocessors.Preprocessor):
-            """
-            Preprocessor to convert notebooks to Python source while stripping
-            out all magics (i.e IPython specific syntax).
-            """
-
-            _magic_pattern = re.compile(r'^\s*(?P<magic>%%\w\w+)($|(\s+))')
-
-            def strip_magics(self, source: str) -> str:
-                """
-                Given the source of a cell, filter out all cell and line magics.
-                """
-                filtered: list[str] = []
-                for line in source.splitlines():
-                    match = self._magic_pattern.match(line)
-                    if match is None:
-                        filtered.append(line)
-                    else:
-                        msg = 'Stripping out IPython magic {magic} in code cell {cell}'
-                        message = msg.format(cell=self._cell_counter, magic=match.group('magic'))
-                        log.warning(message)
-                return '\n'.join(filtered)
-
-            def preprocess_cell(self, cell, resources, index):
-                if cell['cell_type'] == 'code':
-                    self._cell_counter += 1
-                    cell['source'] = self.strip_magics(cell['source'])
-                return cell, resources
-
-            def __call__(self, nb, resources):
-                self._cell_counter = 0
-                return self.preprocess(nb,resources)
-
-        preprocessors = [StripMagicsProcessor()]
-
-        nb = nbformat.read(filename, nbformat.NO_CONVERT)
-        exporter = nbconvert.NotebookExporter()
-
-        for preprocessor in preprocessors:
-            exporter.register_preprocessor(preprocessor)
-
-        nb_string, _ = exporter.from_notebook_node(nb)
-        nb = nbformat.reads(nb_string, 4)
-        nb = nbformat.v4.upgrade(nb)
-
-        code = list(self._imports)
-        for cell in nb['cells']:
-            cell_id = cell['id']
-            state._cell_layouts[self][cell_id] = cell['metadata'].get('panel-layout', {})
-            if cell['cell_type'] == 'code':
-                cell_code = capture_code_cell(cell)
-                code += cell_code
-            elif cell['cell_type'] == 'markdown':
-                md = ''.join(cell['source'])
-                code.append(f'_pn__state._cell_outputs[{cell_id!r}].append("""{md}""")')
-        code = '\n'.join(code)
-
+        nb, code, cell_layouts = parse_notebook(filename, preamble=self._imports)
+        state._cell_layouts[self] = cell_layouts
         for cell_id, layout in self._layout.get('cells', {}).items():
             state._cell_layouts[self][cell_id] = layout
-
         self._nb = nb
         return code
 
