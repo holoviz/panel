@@ -529,7 +529,7 @@ class NotebookHandler(PanelCodeHandler):
         editable = 'editable' in state.session_args
         if not (editable or persist):
             state.template.editable = False
-        state.template.title = os.path.basename(path)
+        state.template.title = os.path.splitext(os.path.basename(path))[0].title()
 
         layouts, outputs, cells = {}, {}, {}
         for cell_id, out in state._cell_outputs.items():
