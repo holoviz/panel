@@ -50,58 +50,33 @@ Once you're comfortable, it's time to dive deeper. Through a series of lessons w
 
 ### 1. Display Content
 
-[`pn.panel`](pn_panel.md)
-: Learn to display Python objects easily with `pn.panel`
-
-[Panes](panes.md)
-: Learn to display content by creating Panes.
-
-[Indicators](indicators_performance.md)
-: Visualize key metrics with simple indicators
+- **[`pn.panel`](pn_panel.md):** Learn to display Python objects easily with `pn.panel`
+- **[Panes](panes.md):** Learn to display content by creating Panes.
+- **[Indicators](indicators_performance.md):** Visualize key metrics with simple indicators
 
 ### 2. Organize Content
 
-[Layouts](layouts.md)
-: Arrange output on the page using layouts.
-
-[Control the Size](size.md)
-: Learn to control the sizing of your components.
-
-[Align Content](align.md)
-: Discover how to align content on the page.
+- **[Layouts](layouts.md):** Arrange output on the page using layouts.
+- **[Control the Size](size.md):** Learn to control the sizing of your components.
+- **[Align Content](align.md):** Discover how to align content on the page.
 
 ### 3. Handle User Input
 
-[Widgets](widgets.md)
-: Learn about handling user input with widgets.
-
-[React to User Input](pn_bind.md)
-: Learn about reacting to user input by binding it to interactive components.
-
-[Reactive Expressions](pn_rx.md)
-: Learn about handling state and writing entire reactive expressions.
+- **[Widgets](widgets.md):** Learn about handling user input with widgets.
+- **[React to User Input](pn_bind.md):** Learn about reacting to user input by binding it to interactive components.
+- **[Reactive Expressions](pn_rx.md):** Learn about handling state and writing entire reactive expressions.
 
 ### 4. Improve the Look
 
-[Templates](templates.md)
-: Learn to structure your app with pre-built templates.
-
-[Designs](design.md)
-: Style your apps using pre-built *designs*
-
-[Styles](style.md)
-: Further customize the look and feel by adding CSS styling.
+- **[Templates](templates.md):** Learn to structure your app with pre-built templates.
+- **[Designs](design.md):** Style your apps using pre-built *designs*
+- **[Styles](style.md):** Further customize the look and feel by adding CSS styling.
 
 ### 5. Improve the Feel
 
-[Caching](caching.md)
-: Leverage caching to enhance the speed and efficiency of your app.
-
-[Activity Indicators](indicators_activity.md)
-: Indicate progress and add notifications to improve the user experience.
-
-[Progressive Updates](progressive_layouts.md)
-: Efficiently and effortlessly update the content in your app with progressive updates.
+- **[Caching](caching.md):** Leverage caching to enhance the speed and efficiency of your app.
+- **[Activity Indicators](indicators_activity.md):** Indicate progress and add notifications to improve the user experience.
+- **[Progressive Updates](progressive_layouts.md):** Efficiently and effortlessly update the content in your app with progressive updates.
 
 ## Share Your Creations
 
