@@ -80,7 +80,8 @@ def _on_widget_constructed(widget, doc=None):
         'buffers': buffers,
         'metadata': {
             'version': __protocol_version__
-        }
+        },
+        'kernel': kernel
     }
     if widget._model_id is not None:
         args['comm_id'] = widget._model_id
@@ -213,7 +214,6 @@ class PanelKernel(Kernel):
         comm = widget.comm
         comm.kernel = self
         self.comm_manager.register_comm(comm)
-        comm.open()
 
     def _wrap_handler(self, msg_type, handler):
         doc = self.session._document
