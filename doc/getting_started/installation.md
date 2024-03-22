@@ -61,9 +61,14 @@ conda install panel watchfiles
 
 :::::
 
-```{tip}
+:::{tip}
 We recommend also installing [`watchfiles`](https://watchfiles.helpmanual.io) while developing. This will provide a significantly better experience when using Panel's `--autoreload` feature. It's not needed for production.
-```
+:::
+
+:::{tip}
+
+To incorporate highlighted code sections into your app, you'll need to install [`pygments`](https://pygments.org/), a powerful syntax highlighting library.
+:::
 
 :::{important}
 Make sure Panel is installed in the same environment as JupyterLab/Jupyter Notebook (`pip install panel` or `conda install panel`) to ensure all features work correctly.
