@@ -251,27 +251,26 @@ The gluoNNet aviation tracking application visualizes airplane positioning (ADS-
 
 ::::
 
-
 ```{toctree}
 :titlesonly:
 :hidden:
 :maxdepth: 1
 
+altair_brushing
+deckgl_game_of_life
+gapminders
+glaciers
+hvplot_explorer
+iris_kmeans
+nyc_deckgl
+penguin_crossfilter
+penguin_kmeans
+portfolio_analyzer
 portfolio_optimizer
 streaming_videostream
-windturbines
-portfolio_analyzer
-glaciers
-vtk_slicer
-nyc_deckgl
-gapminders
 vtk_interactive
-penguin_crossfilter
-deckgl_game_of_life
-hvplot_explorer
-xgboost_classifier
-altair_brushing
+vtk_slicer
 vtk_warp
-iris_kmeans
-penguin_kmeans
+windturbines
+xgboost_classifier
 ```
