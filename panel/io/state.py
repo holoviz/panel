@@ -135,7 +135,7 @@ class _state(param.Parameterized):
 
     # Jupyter communication
     _comm_manager: ClassVar[Type[_CommManager]] = _CommManager
-    _jupyter_kernel_context: ClassVar[bool] = False
+    _jupyter_kernel_context: ClassVar[BokehSessionContext | None] = None
     _kernels = {}
     _ipykernels: ClassVar[WeakKeyDictionary[Document, Any]] = WeakKeyDictionary()
 
