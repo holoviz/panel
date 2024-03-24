@@ -16,7 +16,7 @@ from packaging.version import Version
 from panel.depends import bind
 from panel.io.state import set_curdoc
 from panel.models.tabulator import CellClickEvent, TableEditEvent
-from panel.tests.util import serve_and_request, wait_until
+from panel.tests.util import mpl_available, serve_and_request, wait_until
 from panel.util import BOKEH_JS_NAT
 from panel.widgets import Button, TextInput
 from panel.widgets.tables import DataFrame, Tabulator
@@ -2084,6 +2084,7 @@ def test_tabulator_styling_empty_dataframe(document, comm):
         }
     }
 
+@mpl_available
 def test_tabulator_style_background_gradient(document, comm):
     df = pd.DataFrame(np.random.rand(3, 5), columns=list("ABCDE"))
     table = Tabulator(df)
@@ -2095,6 +2096,7 @@ def test_tabulator_style_background_gradient(document, comm):
 
     assert list(model.cell_styles['data'][0]) == [2, 4, 5]
 
+@mpl_available
 def test_tabulator_styled_df_with_background_gradient(document, comm):
     df = pd.DataFrame(np.random.rand(3, 5), columns=list("ABCDE")).style.background_gradient(
         cmap="RdYlGn_r", vmin=0, vmax=0.5, subset=["A", "C", "D"]
