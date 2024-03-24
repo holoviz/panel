@@ -14,7 +14,7 @@ from bokeh.events import ButtonClick
 
 from panel.config import config
 from panel.io import state
-from panel.io.resources import DIST_DIR
+from panel.io.resources import DIST_DIR, JS_VERSION
 from panel.io.server import INDEX_HTML, get_server, set_curdoc
 from panel.layout import Row
 from panel.models import HTML as BkHTML
@@ -103,7 +103,7 @@ def test_server_template_static_resources_with_prefix_relative_url():
 
     r = serve_and_request({'template': template}, prefix='/prefix', suffix="/prefix/template")
 
-    assert 'href="static/extensions/panel/bundled/bootstraptemplate/bootstrap.css"' in r.content.decode('utf-8')
+    assert f'href="static/extensions/panel/bundled/bootstraptemplate/bootstrap.css?v={JS_VERSION}"' in r.content.decode('utf-8')
 
 
 def test_server_template_static_resources_with_subpath_and_prefix_relative_url():
@@ -111,7 +111,7 @@ def test_server_template_static_resources_with_subpath_and_prefix_relative_url()
 
     r = serve_and_request({'/subpath/template': template}, prefix='/prefix', suffix="/prefix/subpath/template")
 
-    assert 'href="../static/extensions/panel/bundled/bootstraptemplate/bootstrap.css"' in r.content.decode('utf-8')
+    assert f'href="../static/extensions/panel/bundled/bootstraptemplate/bootstrap.css?v={JS_VERSION}"' in r.content.decode('utf-8')
 
 
 def test_server_extensions_on_root():
@@ -875,7 +875,7 @@ def test_server_component_custom_resources_with_prefix_relative_url(port):
 
     r = serve_and_request({'component': component}, prefix='/prefix', suffix='/prefix/component')
 
-    assert 'href="components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css"' in r.content.decode('utf-8')
+    assert f'href="components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css?v={JS_VERSION}"' in r.content.decode('utf-8')
 
 
 def test_server_component_custom_resources_with_subpath_and_prefix_relative_url(port):
@@ -883,7 +883,7 @@ def test_server_component_custom_resources_with_subpath_and_prefix_relative_url(
 
     r = serve_and_request({'/subpath/component': component}, prefix='/prefix', suffix='/prefix/subpath/component')
 
-    assert 'href="../components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css"' in r.content.decode('utf-8')
+    assert f'href="../components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css?v={JS_VERSION}"' in r.content.decode('utf-8')
 
 
 def test_server_component_css_with_prefix_relative_url(port):
