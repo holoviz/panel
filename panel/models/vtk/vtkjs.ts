@@ -43,7 +43,7 @@ export class VTKJSPlotView extends AbstractVTKView {
     } else {
       bytes_promise = async () => { this.model.data }
     }
-    bytes_promise.then((zipContent) => {
+    bytes_promise.then((zipContent: ArrayBuffer) => {
       const dataAccessHelper = vtkns.DataAccessHelper.get("zip", {
 	zipContent: zipContent,
 	callback: (_zip: unknown) => {
