@@ -127,12 +127,12 @@ align
 widgets
 pn_bind
 pn_rx
-caching
-indicators_activity
-progressive_layouts
 templates
 design
 style
+caching
+indicators_activity
+progressive_layouts
 build_dashboard
 deploy
 build_report
