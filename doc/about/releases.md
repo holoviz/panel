@@ -61,17 +61,19 @@ This minor release packs a punch both in terms of features, the number of enhanc
 
 ### Compatibility & Version Updates
 
-- Bump `Perspective` version to 2.8.0 ([#5722](https://github.com/holoviz/panel/pull/5722))
-- Support for Bokeh 3.4 ([#6072](https://github.com/holoviz/panel/pull/6072))
+- Bump `Perspective` version to 2.9.0 ([#5722](https://github.com/holoviz/panel/pull/5722))
+- Upgrade to Bokeh 3.4.x ([#6072](https://github.com/holoviz/panel/pull/6072))
 - Upgrade `Vizzu` to 0.9.3 ([#6476](https://github.com/holoviz/panel/pull/6476))
 - Bump `JSONEditor` version to 10.0.1 ([#6477](https://github.com/holoviz/panel/pull/6477))
 - Upgrade to PyScript Next and Pyodide 0.25.0 in `panel convert` ([#6490](https://github.com/holoviz/panel/pull/6490))
+- Bump vtk.js version to 30.1.0 ([#6559](https://github.com/holoviz/panel/pull/6559))
 
 ### Bug fixes
 
 - Add resize handler for `FloatPanel` ([#6201](https://github.com/holoviz/panel/pull/6201))
 - Fix serving of global template in notebook ([#6210](https://github.com/holoviz/panel/pull/6210))
 - Ensure `Tabulator` renders in collapsed `Card` ([#6223](https://github.com/holoviz/panel/pull/6223))
+- Fix issues with `VTK`, `VTKVolume` and `VTKJS` due to webgpu renderer ([#6244](https://github.com/holoviz/panel/issues/6244))
 - Ensure `ChatInterface` respect supplied default user ([#6290](https://github.com/holoviz/panel/pull/6290))
 - Ensure `HTML` and other markup panes can be emptied ([#6303](https://github.com/holoviz/panel/pull/6303))
 - Ensure `ChatMessage` internals correctly respect `Design` ([#6304](https://github.com/holoviz/panel/pull/6304))
