@@ -135,7 +135,7 @@ class _state(param.Parameterized):
 
     # Jupyter communication
     _comm_manager: ClassVar[Type[_CommManager]] = _CommManager
-    _jupyter_kernel_context: ClassVar[bool] = False
+    _jupyter_kernel_context: ClassVar[BokehSessionContext | None] = None
     _kernels = {}
     _ipykernels: ClassVar[WeakKeyDictionary[Document, Any]] = WeakKeyDictionary()
 
@@ -209,13 +209,18 @@ class _state(param.Parameterized):
     _sessions = {}
     _session_key_funcs = {}
 
+    # Layout editor
+    _cell_outputs = defaultdict(list)
+    _cell_layouts = defaultdict(dict)
+    _session_outputs: ClassVar[WeakKeyDictionary[Document, Dict[str, Any]]] = WeakKeyDictionary()
+
     # Override user info
     _oauth_user_overrides = {}
     _active_users = Counter()
 
     def __repr__(self) -> str:
         server_info = []
-        for server, panel, docs in self._servers.values():
+        for server, panel, _docs in self._servers.values():
             server_info.append(
                 "{}:{:d} - {!r}".format(server.address or "localhost", server.port, panel)
             )
@@ -240,9 +245,7 @@ class _state(param.Parameterized):
 
     @property
     def _current_thread(self) -> str | None:
-        thread = threading.current_thread()
-        thread_id = thread.ident if thread else None
-        return thread_id
+        return threading.get_ident()
 
     @property
     def _is_launching(self) -> bool:
@@ -265,7 +268,20 @@ class _state(param.Parameterized):
             self._thread_id_[self.curdoc] = thread_id
 
     def _unblocked(self, doc: Document) -> bool:
-        return doc is self.curdoc and self._thread_id in (self._current_thread, None)
+        """
+        Indicates whether Document events can be dispatched or have
+        to scheduled on the event loop. Events can only be safely
+        dispatched if:
+
+        1. The Document to be modified is the same one that the server
+           is currently processing.
+        2. We are on the same thread that the Document was created on.
+        3. The application has fully loaded and the Websocket is open.
+        """
+        return (
+            doc is self.curdoc and self._thread_id in (self._current_thread, None) and
+            (not doc or not doc.session_context or self._loaded.get(doc))
+        )
 
     @param.depends('_busy_counter', watch=True)
     def _update_busy_counter(self):
@@ -641,18 +657,16 @@ class _state(param.Parameterized):
         """
         Stop all servers and clear them from the current state.
         """
-        for thread in self._threads.values():
-            try:
-                thread.stop()
-            except Exception:
-                pass
-        self._threads = {}
         for server_id in self._servers:
-            try:
-                self._servers[server_id][0].stop()
-            except AssertionError:  # can't stop a server twice
-                pass
-        self._servers = {}
+            if server_id in self._threads:
+                self._threads[server_id].stop()
+            else:
+                try:
+                    self._servers[server_id][0].stop()
+                except AssertionError:  # can't stop a server twice
+                    pass
+        self._servers.clear()
+        self._threads.clear()
 
     def log(self, msg: str, level: str = 'info') -> None:
         """
@@ -684,8 +698,7 @@ class _state(param.Parameterized):
         """
         if self.curdoc is None or self._is_pyodide or self.loaded:
             if self._thread_pool:
-                future = self._thread_pool.submit(partial(self.execute, callback, schedule=False))
-                future.add_done_callback(self._handle_future_exception)
+                self.execute(callback, schedule='threaded')
             else:
                 self.execute(callback, schedule=False)
             return
@@ -757,6 +770,7 @@ class _state(param.Parameterized):
         """
         self.kill_all_servers()
         self._indicators.clear()
+        self._location = None
         self._locations.clear()
         self._templates.clear()
         self._views.clear()
@@ -962,15 +976,16 @@ class _state(param.Parameterized):
         """
         Returns the Document that is currently being executed.
         """
+        curdoc = self._curdoc.get()
+        if curdoc:
+            return curdoc
         try:
             doc = curdoc_locked()
             pyodide_session = self._is_pyodide and 'pyodide_kernel' not in sys.modules
             if doc and (doc.session_context or pyodide_session):
                 return doc
-        finally:
-            curdoc = self._curdoc.get()
-            if curdoc:
-                return curdoc
+        except Exception:
+            return None
 
     @curdoc.setter
     def curdoc(self, doc: Document) -> None:

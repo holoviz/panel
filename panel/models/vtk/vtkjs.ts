@@ -1,25 +1,26 @@
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 
 import {AbstractVTKView, AbstractVTKPlot} from "./vtklayout"
 import {vtkns} from "./util"
 
 export class VTKJSPlotView extends AbstractVTKView {
-  model: VTKJSPlot
+  declare model: VTKJSPlot
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.data.change, () => {
+    const {data} = this.model.properties
+    this.on_change(data, () => {
       this.invalidate_render()
     })
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     this._create_orientation_widget()
     this._set_axes()
   }
 
-  invalidate_render(): void {
+  override invalidate_render(): void {
     this._vtk_renwin = null
     super.invalidate_render()
   }
@@ -46,12 +47,14 @@ export class VTKJSPlotView extends AbstractVTKView {
         const fn = (window as any).vtk.macro.debounce(
           () => {
             setTimeout(() => {
-              if (this._axes == null && this.model.axes) this._set_axes()
+              if (this._axes == null && this.model.axes) {
+                this._set_axes()
+              }
               this._set_camera_state()
               this._get_camera_state()
-	      this._vtk_renwin.getRenderWindow().render()
+              this._vtk_renwin.getRenderWindow().render()
             }, 100)
-	  }, 100
+          }, 100,
         )
         sceneImporter.setUrl("index.json")
         sceneImporter.onReady(fn)
@@ -68,7 +71,7 @@ export namespace VTKJSPlot {
 export interface VTKJSPlot extends VTKJSPlot.Attrs {}
 
 export class VTKJSPlot extends AbstractVTKPlot {
-  properties: VTKJSPlot.Props
+  declare properties: VTKJSPlot.Props
 
   static {
     this.prototype.default_view = VTKJSPlotView

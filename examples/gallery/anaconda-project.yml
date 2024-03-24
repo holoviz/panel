@@ -2,14 +2,16 @@ name: panel_gallery
 description: An environment to serve all Panel gallery examples
 
 commands:
-  default:
-    description: Serve the Panel gallery
-    unix: sudo yum install -y http://mirror.centos.org/centos/7/os/x86_64/Packages/libxkbfile-1.0.9-3.el7.x86_64.rpm http://mirror.centos.org/centos/7/os/x86_64/Packages/xorg-x11-xkb-utils-7.7-14.el7.x86_64.rpm http://mirror.centos.org/centos/7/updates/x86_64/Packages/xorg-x11-server-common-1.20.4-23.el7_9.x86_64.rpm http://mirror.centos.org/centos/7/os/x86_64/Packages/libXdmcp-1.1.2-6.el7.x86_64.rpm http://mirror.centos.org/centos/7/os/x86_64/Packages/libXfont2-2.0.3-1.el7.x86_64.rpm http://mirror.centos.org/centos/7/updates/x86_64/Packages/xorg-x11-server-Xvfb-1.20.4-23.el7_9.x86_64.rpm http://mirror.centos.org/centos/7/os/x86_64/Packages/mesa-libglapi-18.3.4-10.el7.x86_64.rpm http://mirror.centos.org/centos/7/os/x86_64/Packages/mesa-libGL-18.3.4-10.el7.x86_64.rpm http://mirror.centos.org/centos/7/updates/x86_64/Packages/mesa-dri-drivers-18.3.4-12.el7_9.x86_64.rpm http://mirror.centos.org/centos/7/os/x86_64/Packages/llvm-private-7.0.1-1.el7.x86_64.rpm http://mirror.centos.org/centos/7/updates/x86_64/Packages/mesa-filesystem-18.3.4-12.el7_9.x86_64.rpm && Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 & bokeh sampledata && sleep 60 && panel serve *.ipynb --static-dirs thumbnails=thumbnails --reuse-sessions --global-loading-spinner --liveness --num-procs 8
+  prod:
+    description: Serve the prod Panel gallery
+    unix: bokeh sampledata && sleep 60 && panel serve *.ipynb --static-dirs thumbnails=thumbnails --reuse-sessions --global-loading-spinner --liveness --num-procs 8
     supports_http_options: true
-
-channels:
-  - pyviz/label/dev
-  - conda-forge
+    env_spec: prod
+  dev:
+    description: Serve the dev Panel gallery
+    unix: bokeh sampledata && sleep 60 && panel serve *.ipynb --static-dirs thumbnails=thumbnails --reuse-sessions --global-loading-spinner --liveness --num-procs 8
+    supports_http_options: true
+    env_spec: dev
 
 variables:
   PANEL_AE5_CDN: 1
@@ -18,34 +20,46 @@ variables:
   MESA_GL_VERSION_OVERRIDE: 3.2
   PYVISTA_OFF_SCREEN: "true"
 
-packages:
-  - panel
-  - holoviews
-  - pandas
-  - scikit-learn
-  - scikit-image
-  - fastparquet
-  - hvplot
-  - datashader
-  - graphviz
-  - networkx
-  - ipywidgets
-  - pygraphviz
-  - plotly
-  - altair
-  - pydeck
-  - pyvista
-  - seaborn
-  - xgboost
-  - vtk=9.2.6=osmesa_py310h7f736e2_103
-  - pyvista
-  - mesalib
-  - numpy<1.24
-  - numba::llvmlite
+packages: &pkgs
+  - python >=3.10.13
+  - panel >=1.3.8
+  - holoviews >=1.18.2
+  - pandas >=2.2.0
+  - dask <2024.3.0
+  - pillow <10
+  - spatialpandas >=0.4.10
+  - scikit-learn >=1.4.0
+  - scikit-image >=0.22.0
+  - fastparquet >=2023.10.1
+  - hvplot >=0.9.2
+  - datashader >=0.16.0
+  - graphviz >=8.1.0
+  - networkx >=3.2.1
+  - ipywidgets >=8.1.1
+  - pygraphviz >=1.11
+  - plotly >=5.18.0
+  - altair >=5.2.0
+  - pydeck >=0.8.0
+  - pyvista >=0.43.2
+  - seaborn >=0.13.2
+  - xgboost >=2.0.3
+  - vtk =9.2.6
+  - pyvista >=0.43.2
+  - mesalib >=24.0.0
+  - numpy >=1.23.5,<1.24
+  - numba::llvmlite >=0.42.0
   - pip:
     - ipyvolume
     - folium
     - vega_datasets
 
 env_specs:
-  default: {}
+  prod:
+    packages: *pkgs
+    channels:
+      - conda-forge
+  dev:
+    packages: *pkgs
+    channels:
+      - pyviz/label/dev
+      - conda-forge

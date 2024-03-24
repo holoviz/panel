@@ -47,7 +47,7 @@ def write_bundled_files(name, files, explicit_dir=None, ext=None):
             except Exception as e:
                 raise ConnectionError(
                     f"Failed to fetch {name} dependency: {bundle_file}. Errored with {e}."
-                )
+                ) from e
         try:
             map_file = f'{bundle_file}.map'
             map_response = requests.get(map_file)
@@ -66,7 +66,7 @@ def write_bundled_files(name, files, explicit_dir=None, ext=None):
         filename = str(filename)
         if ext and not str(filename).endswith(ext):
             filename += f'.{ext}'
-        if filename.endswith('.ttf'):
+        if filename.endswith(('.ttf', '.wasm')):
             with open(filename, 'wb') as f:
                 f.write(response.content)
         else:
@@ -250,11 +250,17 @@ def bundle_models(verbose=False, external=True):
             continue
         if verbose:
             print(f'Collecting {name} resources')
-        prev_jsfiles = getattr(model, '__javascript_raw__', None)
+        prev_jsfiles = (
+            getattr(model, '__javascript_raw__', []) +
+            getattr(model, '__javascript_modules_raw__', [])
+        ) or None
         prev_jsbundle = getattr(model, '__tarball__', None)
         prev_cls = model
         for cls in model.__mro__[1:]:
-            jsfiles = getattr(cls, '__javascript_raw__', None)
+            jsfiles = (
+                getattr(cls, '__javascript_raw__', []) +
+                getattr(cls, '__javascript_modules_raw__', [])
+            ) or None
             if ((jsfiles is None and prev_jsfiles is not None) or
                 (jsfiles is not None and jsfiles != prev_jsfiles)):
                 if prev_jsbundle:

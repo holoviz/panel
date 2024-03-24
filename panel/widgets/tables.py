@@ -1051,9 +1051,12 @@ class Tabulator(BaseTable):
         List of client-side filters declared as dictionaries containing
         'field', 'type' and 'value' keys.""")
 
-    frozen_columns = param.List(default=[], nested_refs=True, doc="""
-        List indicating the columns to freeze. The column(s) may be
-        selected by name or index.""")
+    frozen_columns = param.ClassSelector(class_=(list, dict), default=[], nested_refs=True, doc="""
+        One of:
+        - List indicating the columns to freeze. The column(s) may be
+        selected by name or index.
+        - Dict indicating columns to freeze as keys and their freeze location
+        as values, freeze location is either 'right' or 'left'.""")
 
     frozen_rows = param.List(default=[], nested_refs=True, doc="""
         List indicating the rows to freeze. If set, the
@@ -1771,23 +1774,31 @@ class Tabulator(BaseTable):
                 "frozen": True,
                 "width": 40,
             })
-
-        ordered = []
-        for col in self.frozen_columns:
-            if isinstance(col, int):
-                ordered.append(column_objs.pop(col))
-            else:
-                cols = [c for c in column_objs if c.field == col]
-                if cols:
-                    ordered.append(cols[0])
-                    column_objs.remove(cols[0])
-        ordered += column_objs
+        if isinstance(self.frozen_columns, dict):
+            left_frozen_columns = [col for col in column_objs if
+                                   self.frozen_columns.get(col.field, self.frozen_columns.get(column_objs.index(col))) == "left"]
+            right_frozen_columns = [col for col in column_objs if
+                                    self.frozen_columns.get(col.field, self.frozen_columns.get(column_objs.index(col))) == "right"]
+            non_frozen_columns = [col for col in column_objs if
+                                  col.field not in self.frozen_columns and column_objs.index(col) not in self.frozen_columns]
+            ordered_columns = left_frozen_columns + non_frozen_columns + right_frozen_columns
+        else:
+            ordered_columns = []
+            for col in self.frozen_columns:
+                if isinstance(col, int):
+                    ordered_columns.append(column_objs.pop(col))
+                else:
+                    cols = [c for c in column_objs if c.field == col]
+                    if cols:
+                        ordered_columns.append(cols[0])
+                        column_objs.remove(cols[0])
+            ordered_columns += column_objs
 
         grouping = {
             group: [str(gc) for gc in group_cols]
             for group, group_cols in self.groups.items()
         }
-        for i, column in enumerate(ordered):
+        for i, column in enumerate(ordered_columns):
             field = column.field
             matching_groups = [
                 group for group, group_cols in grouping.items()
@@ -1814,10 +1825,10 @@ class Tabulator(BaseTable):
                 col_dict['formatter'] = formatter.pop('type')
                 col_dict['formatterParams'] = formatter
             title_formatter = self.title_formatters.get(field)
-            if title_formatter:
+            if isinstance(title_formatter, str):
                 col_dict['titleFormatter'] = title_formatter
             elif isinstance(title_formatter, dict):
-                formatter = dict(title_formatter)
+                title_formatter = dict(title_formatter)
                 col_dict['titleFormatter'] = title_formatter.pop('type')
                 col_dict['titleFormatterParams'] = title_formatter
             col_name = self._renamed_cols[field]
@@ -1851,7 +1862,7 @@ class Tabulator(BaseTable):
                 col_dict['editor'] = 'list'
                 if col_dict.get('editorParams', {}).get('values', False) is True:
                     del col_dict['editorParams']['values']
-                    col_dict['editorParams']['valuesLookup']
+                    col_dict['editorParams']['valuesLookup'] = True
             if field in self.frozen_columns or i in self.frozen_columns:
                 col_dict['frozen'] = True
             if isinstance(self.widths, dict) and isinstance(self.widths.get(field), str):

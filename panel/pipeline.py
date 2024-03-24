@@ -171,7 +171,7 @@ class Pipeline(Viewer):
         try:
             import holoviews as hv
         except Exception:
-            raise ImportError('Pipeline requires holoviews to be installed')
+            raise ImportError('Pipeline requires holoviews to be installed') from None
 
         super().__init__(**params)
 

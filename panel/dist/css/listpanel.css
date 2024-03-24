@@ -10,6 +10,18 @@
   overflow-x: auto;
 }
 
+:host(.scroll) {
+  overflow: scroll;
+}
+
+:host(.scroll-vertical) {
+  overflow-y: scroll;
+}
+
+:host(.scroll-horizontal) {
+  overflow-x: scroll;
+}
+
 .scroll-button {
   /* For location */
   position: sticky;

@@ -3,7 +3,7 @@
 The Panel How-to guides provide step by step recipes for solving essential problems and tasks that arise during your work. They assume that you've completed the Getting Started material and therefore already have some knowledge of how Panel works. There is no order to the guides, other than any potential prerequisites listed at the top of a page. Jump to the topic that is relevant to you now.
 
 
-## Prepare to develop
+## Develop Efficiently
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -143,6 +143,13 @@ How to profile and debug your application using the admin dashboard and other to
 :link-type: doc
 
 How to set up unit tests, UI tests and load testing to ensure your applications are (and stay) robust and scalable.
+:::
+
+:::{grid-item-card} {octicon}`pencil;2.5em;sd-mr-1 sd-animate-grow50` Configure Logging
+:link: configure_logging
+:link-type: doc
+
+How to configure the logging level and format
 :::
 
 ::::

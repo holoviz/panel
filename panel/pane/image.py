@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import struct
 
 from io import BytesIO
 from pathlib import PurePath
@@ -21,6 +22,8 @@ from .markup import HTMLBasePane, escape
 
 if TYPE_CHECKING:
     from bokeh.model import Model
+
+_tasks = set()
 
 class FileBase(HTMLBasePane):
 
@@ -109,7 +112,9 @@ class FileBase(HTMLBasePane):
                 from pyodide.http import pyfetch
                 async def replace_content():
                     self.object = await (await pyfetch(obj)).bytes()
-                asyncio.create_task(replace_content())
+                task = asyncio.create_task(replace_content())
+                _tasks.add(task)
+                task.add_done_callback(_tasks.discard)
         else:
             import requests
             r = requests.request(url=obj, method='GET')
@@ -134,6 +139,9 @@ class ImageBase(FileBase):
         alt text to add to the image tag. The alt text is shown when a
         user cannot load or display the image.""")
 
+    caption = param.String(default=None, doc="""
+        Optional caption for the image.""")
+
     fixed_aspect = param.Boolean(default=True, doc="""
         Whether the aspect ratio of the image should be forced to be
         equal.""")
@@ -143,11 +151,11 @@ class ImageBase(FileBase):
         website.""")
 
     _rerender_params: ClassVar[List[str]] = [
-        'alt_text', 'link_url', 'embed', 'object', 'styles', 'width', 'height'
+        'alt_text', 'caption', 'link_url', 'embed', 'object', 'styles', 'width', 'height'
     ]
 
     _rename: ClassVar[Mapping[str, str | None ]] = {
-        'alt_text': None, 'fixed_aspect': None, 'link_url': None
+        'alt_text': None, 'fixed_aspect': None, 'link_url': None, 'caption': None,
     }
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
@@ -171,6 +179,8 @@ class ImageBase(FileBase):
         html = f'<img src="{src}" {alt} style="max-width: 100%; max-height: 100%; object-fit: {object_fit};{width}{height}"></img>'
         if self.link_url:
             html = f'<a href="{self.link_url}" target="_blank">{html}</a>'
+        if self.caption:
+            html = f'<figure>{html}<figcaption>{self.caption}</figcaption></figure>'
         return escape(html)
 
     def _img_dims(self, width, height):
@@ -491,3 +501,50 @@ class PDF(FileBase):
         page = f'#page={self.start_page}' if getattr(self, 'start_page', None) else ''
         html = f'<embed src="{obj}{page}" width={w!r} height={h!r} type="application/pdf">'
         return dict(text=escape(html))
+
+class WebP(ImageBase):
+    """
+    The `WebP` pane embeds a .webp image file in a panel if
+    provided a local path, or will link to a remote image if provided
+    a URL.
+
+    Reference: https://developers.google.com/speed/webp/docs/riff_container
+
+    :Example:
+
+    >>> WebP(
+    ...     'https://assets.holoviz.org/panel/samples/webp_sample.webp',
+    ...     alt_text='A nice tree',
+    ...     link_url='https://en.wikipedia.org/wiki/WebP',
+    ...     width=500,
+    ...     caption='A nice tree'
+    ... )
+    """
+
+    filetype: ClassVar[str] = 'webp'
+
+    _extensions: ClassVar[Tuple[str, ...]] = ('webp',)
+
+    @classmethod
+    def _imgshape(cls, data):
+        with BytesIO(data) as b:
+            b.read(12)  # Skip RIFF header
+            chunk_header = b.read(4).decode('utf-8')
+            if chunk_header[:3] != 'VP8':
+                raise ValueError("Invalid WebP file")
+            wptype = chunk_header[3]
+            b.read(4)
+            if wptype == 'X':
+                b.read(4)
+                w = int.from_bytes(b.read(3), 'little') + 1
+                h = int.from_bytes(b.read(3), 'little') + 1
+            elif wptype == 'L':
+                b.read(1)
+                bits = struct.unpack("<I", b.read(4))[0]
+                w = (bits & 0x3FFF) + 1
+                h = ((bits >> 14) & 0x3FFF) + 1
+            elif wptype == ' ':
+                b.read(6)
+                w = int.from_bytes(b.read(2), 'little') + 1
+                h = int.from_bytes(b.read(2), 'little') + 1
+        return int(w), int(h)

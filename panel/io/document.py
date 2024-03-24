@@ -3,10 +3,14 @@ from __future__ import annotations
 import asyncio
 import dataclasses
 import datetime as dt
+import gc
 import inspect
 import json
 import logging
+import sys
 import threading
+import time
+import weakref
 
 from contextlib import contextmanager
 from functools import partial, wraps
@@ -15,6 +19,7 @@ from typing import (
 )
 
 from bokeh.application.application import SessionContext
+from bokeh.core.serialization import Serializable
 from bokeh.document.document import Document
 from bokeh.document.events import (
     ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
@@ -42,6 +47,11 @@ DISPATCH_EVENTS = (
     ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
     ModelChangedEvent
 )
+GC_DEBOUNCE = 5
+WRITE_LOCK = asyncio.Lock()
+
+_panel_last_cleanup = None
+_write_tasks = []
 
 @dataclasses.dataclass
 class Request:
@@ -67,6 +77,9 @@ class MockSessionContext(SessionContext):
     def request(self):
         return Request(headers={}, cookies={}, arguments={})
 
+def _cleanup_task(task):
+    if task in _write_tasks:
+        _write_tasks.remove(task)
 
 def _dispatch_events(doc: Document, events: List[DocumentChangedEvent]) -> None:
     """
@@ -119,6 +132,110 @@ def _cleanup_doc(doc, destroy=True):
     # Destroy document
     doc.destroy(None)
 
+async def _run_write_futures(futures):
+    """
+    Ensure that all write_message calls are awaited and handled.
+    """
+    from tornado.websocket import WebSocketClosedError
+    async with WRITE_LOCK:
+        for future in futures:
+            try:
+                await future
+            except WebSocketClosedError:
+                logger.warning("Failed sending message as connection was closed")
+            except Exception as e:
+                logger.warning(f"Failed sending message due to following error: {e}")
+
+def _dispatch_write_task(doc, func, *args, **kwargs):
+    """
+    Schedules tasks that write messages to the socket.
+    """
+    try:
+        task = asyncio.ensure_future(func(*args, **kwargs))
+        _write_tasks.append(task)
+        task.add_done_callback(_cleanup_task)
+    except RuntimeError:
+        doc.add_next_tick_callback(partial(func, *args, **kwargs))
+
+async def _dispatch_msgs(doc, msgs):
+    """
+    Writes messages to a socket, ensuring that the write_lock is not
+    set, otherwise re-schedules the write task on the event loop.
+    """
+    from tornado.websocket import WebSocketHandler
+    remaining = {}
+    for conn, msg in msgs.items():
+        socket = conn._socket
+        if hasattr(socket, 'write_lock') and socket.write_lock._block._value == 0:
+            remaining[conn] = msg
+            continue
+        if isinstance(conn._socket, WebSocketHandler):
+            futures = dispatch_tornado(conn, msg=msg)
+        else:
+            futures = dispatch_django(conn, msg=msg)
+        await _run_write_futures(futures)
+    if not remaining:
+        return
+    await asyncio.sleep(0.01)
+    _dispatch_write_task(doc, _dispatch_msgs, doc, remaining)
+
+def _garbage_collect():
+    if (new_time:= time.monotonic()-_panel_last_cleanup) < GC_DEBOUNCE:
+        at = dt.datetime.now() + dt.timedelta(seconds=new_time)
+        state.schedule_task('gc.collect', _garbage_collect, at=at)
+        return
+    gc.collect()
+
+def _destroy_document(self, session):
+    """
+    Override for Document.destroy() without calling gc.collect directly.
+    The gc.collect() call is scheduled as a task, ensuring that when
+    multiple documents are destroyed in quick succession we do not
+    schedule excessive garbage collection.
+    """
+    if session is not None:
+        self.remove_on_change(session)
+
+    del self._roots
+    del self._theme
+    del self._template
+    self._session_context = None
+
+    self.callbacks.destroy()
+    self.models.destroy()
+
+    # Module cleanup without trawling through referrers (as self.modules.destroy() does)
+    for module in self.modules._modules:
+        # remove the reference from sys.modules
+        if module.__name__ in sys.modules:
+            del sys.modules[module.__name__]
+
+        # explicitly clear the module contents and the module here itself
+        module.__dict__.clear()
+        del module
+    self.modules._modules = []
+
+    # Clear periodic callbacks
+    for cb in state._periodic.get(self, []):
+        cb.stop()
+
+    # Clean up pn.state to avoid tasks getting executed on dead session
+    for attr in dir(state):
+        # _param_watchers is deprecated in Param 2.0 and will raise a warning
+        if not attr.startswith('_') or attr == "_param_watchers":
+            continue
+        state_obj = getattr(state, attr)
+        if isinstance(state_obj, weakref.WeakKeyDictionary) and self in state_obj:
+            del state_obj[self]
+
+    # Schedule GC
+    global _panel_last_cleanup
+    _panel_last_cleanup = time.monotonic()
+    at = dt.datetime.now() + dt.timedelta(seconds=GC_DEBOUNCE)
+    state.schedule_task('gc.collect', _garbage_collect, at=at)
+
+    del self.destroy
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
@@ -136,9 +253,9 @@ def init_doc(doc: Optional[Document]) -> Document:
     if not curdoc.session_context:
         return curdoc
 
-    thread = threading.current_thread()
-    if thread:
-        state._thread_id_[curdoc] = thread.ident
+    thread_id = threading.get_ident()
+    if thread_id:
+        state._thread_id_[curdoc] = thread_id
 
     if config.global_loading_spinner:
         curdoc.js_on_event(
@@ -185,13 +302,14 @@ def with_lock(func: Callable) -> Callable:
     wrapper.lock = True # type: ignore
     return wrapper
 
-def dispatch_tornado(conn, events):
+def dispatch_tornado(conn, events=None, msg=None):
     from tornado.websocket import WebSocketHandler
     socket = conn._socket
     ws_conn = getattr(socket, 'ws_connection', False)
     if not ws_conn or ws_conn.is_closing(): # type: ignore
         return []
-    msg = conn.protocol.create('PATCH-DOC', events)
+    if msg is None:
+        msg = conn.protocol.create('PATCH-DOC', events)
     futures = [
         WebSocketHandler.write_message(socket, msg.header_json),
         WebSocketHandler.write_message(socket, msg.metadata_json),
@@ -206,9 +324,10 @@ def dispatch_tornado(conn, events):
         ])
     return futures
 
-def dispatch_django(conn, events):
+def dispatch_django(conn, events=None, msg=None):
     socket = conn._socket
-    msg = conn.protocol.create('PATCH-DOC', events)
+    if msg is None:
+        msg = conn.protocol.create('PATCH-DOC', events)
     futures = [
         socket.send(text_data=msg.header_json),
         socket.send(text_data=msg.metadata_json),
@@ -233,7 +352,16 @@ def unlocked() -> Iterator:
     curdoc = state.curdoc
     session_context = getattr(curdoc, 'session_context', None)
     session = getattr(session_context, 'session', None)
-    if curdoc is None or session_context is None or session is None or state._jupyter_kernel_context:
+    if state._current_thread != state._thread_id and state.loaded and session:
+        logger.error(
+            "Using the unlocked decorator when running inside a thread "
+            "is not safe! Ensure you check that pn.state._current_thread "
+            "matches the current thread id."
+        )
+        yield
+        return
+    elif (curdoc is None or session is None or not state.loaded or
+          state._jupyter_kernel_context):
         yield
         return
     elif curdoc.callbacks.hold_value:
@@ -241,13 +369,14 @@ def unlocked() -> Iterator:
         monkeypatch_events(curdoc.callbacks._held_events)
         return
 
-    from tornado.websocket import WebSocketClosedError, WebSocketHandler
+    from tornado.websocket import WebSocketHandler
     connections = session._subscribed_connections
 
     curdoc.hold()
+    events = None
+    remaining_events, dispatch_events = [], []
     try:
         yield
-
         locked = False
         for conn in connections:
             socket = conn._socket
@@ -256,8 +385,8 @@ def unlocked() -> Iterator:
                 break
 
         events = curdoc.callbacks._held_events
+        curdoc.callbacks._held_events = []
         monkeypatch_events(events)
-        remaining_events, dispatch_events = [], []
         for event in events:
             if isinstance(event, DISPATCH_EVENTS) and not locked:
                 dispatch_events.append(event)
@@ -273,32 +402,42 @@ def unlocked() -> Iterator:
             else:
                 futures += dispatch_django(conn, dispatch_events)
 
-        # Ensure that all write_message calls are awaited and handled
-        async def handle_write_errors():
-            for future in futures:
-                try:
-                    await future
-                except WebSocketClosedError:
-                    logger.warning("Failed sending message as connection was closed")
-                except Exception as e:
-                    logger.warning(f"Failed sending message due to following error: {e}")
-
         if futures:
             if state._unblocked(curdoc):
-                try:
-                    asyncio.ensure_future(handle_write_errors())
-                except RuntimeError:
-                    curdoc.add_next_tick_callback(handle_write_errors)
+                _dispatch_write_task(curdoc, _run_write_futures, futures)
             else:
-                curdoc.add_next_tick_callback(handle_write_errors)
-
-        curdoc.callbacks._held_events = remaining_events
+                curdoc.add_next_tick_callback(partial(_run_write_futures, futures))
+    except Exception as e:
+        # If we error out during the yield, there won't be any events
+        # captured so we end up simply calling curdoc.unhold() and
+        # raising the exception. If instead we error during event
+        # dispatch we restore the events in the order they were created
+        # and then let the finally section create a protocol message
+        # to dispatch the events, ensuring that the events which were
+        # marked for immediate dispatch are not lost.
+        if events is not None:
+            remaining_events = events
+        raise e
     finally:
-        try:
-            curdoc.unhold()
-        except RuntimeError:
-            if remaining_events:
-                curdoc.add_next_tick_callback(partial(_dispatch_events, curdoc, remaining_events))
+        # If for whatever reasons there are still events that couldn't
+        # be dispatched we create a protocol message for these immediately
+        # and then schedule a task to write the message to the websocket
+        # on the next iteration of the event loop.
+        if remaining_events:
+            # Separate serializable and non-serializable events
+            leftover_events = [e for e in remaining_events if not isinstance(e, Serializable)]
+            remaining_events = [e for e in remaining_events if isinstance(e, Serializable)]
+
+            # Create messages for remaining events
+            msgs = {}
+            for conn in connections:
+                if not remaining_events:
+                    continue
+                # Create a protocol message for any events that cannot be immediately dispatched
+                msgs[conn] = conn.protocol.create('PATCH-DOC', remaining_events)
+            _dispatch_write_task(curdoc, _dispatch_msgs, curdoc, msgs)
+            curdoc.callbacks._held_events += leftover_events
+        curdoc.unhold()
 
 @contextmanager
 def immediate_dispatch(doc: Document | None = None):
@@ -315,7 +454,7 @@ def immediate_dispatch(doc: Document | None = None):
     doc = doc or state.curdoc
 
     # Skip if not in a server context
-    if not doc or not doc._session_context:
+    if not doc or not doc._session_context or not state._unblocked(doc):
         yield
         return
 

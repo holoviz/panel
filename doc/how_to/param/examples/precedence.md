@@ -44,9 +44,9 @@ class Precedence(param.Parameterized):
             self.param,
             parameters=["x", "y", "z"],
             widgets={
-                "x": {"background": "#fac400"},
-                "y": {"background": "#07d900"},
-                "z": {"background": "#00c0d9"},
+                "x": {"styles": {"background": "#fac400"}},
+                "y": {"styles": {"background": "#07d900"}},
+                "z": {"styles": {"background": "#00c0d9"}},
             },
             show_name=False
         )

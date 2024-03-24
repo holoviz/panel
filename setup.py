@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import json
 import os
+import shutil
 import sys
 
 from setuptools import find_packages, setup
@@ -47,12 +48,23 @@ def _build_paneljs():
         fcntl.fcntl(sys.stdout, fcntl.F_SETFL, flags&~os.O_NONBLOCK)
 
 
+def _install_jupyter_server_extension():
+    # data_files are not copied for editable installs returning
+    files = setup_args['data_files']
+    for dst, (src,) in files:
+        dst = os.path.join(sys.prefix, dst)
+        os.makedirs(dst, exist_ok=True)
+        shutil.copy2(src, dst)
+        print(f"Copied {src} to {dst}")
+
+
 class CustomDevelopCommand(develop):
     """Custom installation for development mode."""
 
     def run(self):
         if not PANEL_LITE_BUILD:
             _build_paneljs()
+            _install_jupyter_server_extension()
         develop.run(self)
 
 
@@ -100,7 +112,7 @@ except Exception:
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=3.2.0,<3.4.0',
+    'bokeh >=3.4.0,<3.5.0',
     'param >=2.0.0,<3.0',
     'pyviz_comms >=2.0.0',
     'xyzservices >=2021.09.1', # Bokeh dependency, but pyodide 23.0.0 does not always pick it up
@@ -145,6 +157,8 @@ _tests_core = [
     'pandas >=1.3',
     'ipython >=7.0',
     'scipy',
+    'textual',
+    'watchfiles'
 ]
 
 _tests = _tests_core + [
@@ -160,7 +174,8 @@ _tests = _tests_core + [
 _ui = [
     'jupyter-server',
     'playwright',
-    'pytest-playwright'
+    'pytest-playwright',
+    'tomli',
 ]
 
 _examples = [
@@ -198,7 +213,9 @@ _examples = [
     'ipyvuetify',
     'reacton',
     'scikit-image',
-    'fastparquet'
+    'fastparquet',
+    'textual',
+    'dask-expr'
 ]
 
 # Anything only installable via conda
@@ -213,8 +230,7 @@ extras_require = {
     'tests': _tests,
     'recommended': _recommended,
     'doc': _recommended + [
-        'nbsite >=0.8.2',
-        'myst-nb >=0.17,<1',
+        'nbsite >=0.8.4',
         'lxml',
         'pandas <2.1.0' # Avoid deprecation warnings
     ],
@@ -234,7 +250,7 @@ extras_require['build'] = [
     'setuptools >=42',
     'requests',
     'packaging',
-    'bokeh >=3.3.0,<3.4.0',
+    'bokeh >=3.4.0,<3.5.0',
     'pyviz_comms >=2.0.0',
     'bleach',
     'markdown',

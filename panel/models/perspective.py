@@ -1,5 +1,5 @@
 from bokeh.core.properties import (
-    Any, Bool, Dict, Either, Enum, Instance, List, Null, Nullable, String,
+    Any, Bool, Dict, Either, Enum, Instance, List, Null, String,
 )
 from bokeh.events import ModelEvent
 from bokeh.models import ColumnDataSource
@@ -10,10 +10,11 @@ from ..util import classproperty
 from .layout import HTMLBox
 
 PERSPECTIVE_THEMES = [
-    'material', 'material-dark', 'monokai', 'solarized', 'solarized-dark', 'vaporwave'
+    'monokai', 'solarized', 'solarized-dark', 'vaporwave', 'dracula',
+    'pro', 'pro-dark', 'gruvbox', 'gruvbox-dark',
 ]
 
-PERSPECTIVE_VERSION = '1.9.3'
+PERSPECTIVE_VERSION = '2.8.0'
 
 THEME_PATH = f"@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/css/"
 THEME_URL = f"{config.npm_cdn}/{THEME_PATH}"
@@ -51,7 +52,7 @@ class Perspective(HTMLBox):
 
     columns = Either(List(Either(String, Null)), Null())
 
-    expressions = Nullable(List(String))
+    expressions = Either(Dict(String, Any), Null())
 
     editable = Bool(default=True)
 
@@ -65,6 +66,8 @@ class Perspective(HTMLBox):
 
     selectable = Bool(default=True)
 
+    settings = Bool(default=True)
+
     schema = Dict(String, String)
 
     sort = Either(List(List(String)), Null())
@@ -73,26 +76,36 @@ class Perspective(HTMLBox):
 
     toggle_config = Bool(True)
 
-    theme = Enum(*PERSPECTIVE_THEMES, default="material")
+    theme = Enum(*PERSPECTIVE_THEMES, default="pro")
 
-    # pylint: disable=line-too-long
-    __javascript__ = [
-        f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/umd/perspective.js",
-        f"{config.npm_cdn}/@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/umd/perspective-viewer.js",
-        f"{config.npm_cdn}/@finos/perspective-viewer-datagrid@{PERSPECTIVE_VERSION}/dist/umd/perspective-viewer-datagrid.js",
-        f"{config.npm_cdn}/@finos/perspective-viewer-d3fc@{PERSPECTIVE_VERSION}/dist/umd/perspective-viewer-d3fc.js",
+    title = Either(String(), Null())
+
+    __javascript_module_exports__ = ['perspective']
+
+    __javascript_modules_raw__ = [
+        f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/cdn/perspective.js",
+        f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/cdn/perspective.worker.js",
+        f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/cdn/perspective.cpp.wasm",
+        f"{config.npm_cdn}/@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer.js",
+        f"{config.npm_cdn}/@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/cdn/perspective_bg.wasm",
+        f"{config.npm_cdn}/@finos/perspective-viewer-datagrid@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer-datagrid.js",
+        f"{config.npm_cdn}/@finos/perspective-viewer-d3fc@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer-d3fc.js",
     ]
 
+    @classproperty
+    def __javascript_modules__(cls):
+        return [js for js in bundled_files(cls, 'javascript_modules') if 'wasm' not in js and 'worker' not in js]
+
     __js_skip__ = {
-        "perspective": __javascript__,
+        "perspective": __javascript_modules__,
     }
 
     __js_require__ = {
         "paths": {
-            "perspective": f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/umd/perspective",
-            "perspective-viewer": f"{config.npm_cdn}/@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/umd/perspective-viewer",
-            "perspective-viewer-datagrid": f"{config.npm_cdn}/@finos/perspective-viewer-datagrid@{PERSPECTIVE_VERSION}/dist/umd/perspective-viewer-datagrid",
-            "perspective-viewer-d3fc": f"{config.npm_cdn}/@finos/perspective-viewer-d3fc@{PERSPECTIVE_VERSION}/dist/umd/perspective-viewer-d3fc",
+            "perspective": f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/cdn/perspective",
+            "perspective-viewer": f"{config.npm_cdn}/@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer",
+            "perspective-viewer-datagrid": f"{config.npm_cdn}/@finos/perspective-viewer-datagrid@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer-datagrid",
+            "perspective-viewer-d3fc": f"{config.npm_cdn}/@finos/perspective-viewer-d3fc@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer-d3fc",
         },
         "exports": {
             "perspective": "perspective",

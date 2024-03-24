@@ -25,7 +25,6 @@ class Column(BkColumn):
         0 will scroll to the top."""
     )
 
-
     auto_scroll_limit = Int(
         default=0,
         help="""

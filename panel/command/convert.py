@@ -82,7 +82,7 @@ class Convert(Subcommand):
         )),
     )
 
-    _targets = ('pyscript', 'pyodide', 'pyodide-worker')
+    _targets = ('pyscript', 'pyodide', 'pyodide-worker', 'pyscript-worker')
 
     def invoke(self, args: argparse.Namespace) -> None:
         runtime = args.to.lower()

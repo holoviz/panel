@@ -22,8 +22,9 @@ from ..viewable import Viewable
 from ..widgets.base import Widget
 from ..widgets.button import Button
 from ..widgets.input import FileInput, TextInput
-from .feed import ChatFeed
-from .message import _FileInputMessage
+from .feed import CallbackState, ChatFeed
+from .input import ChatAreaInput
+from .message import ChatMessage, _FileInputMessage
 
 
 @dataclass
@@ -87,6 +88,10 @@ class ChatInterface(ChatFeed):
     show_send = param.Boolean(default=True, doc="""
         Whether to show the send button.""")
 
+    show_stop = param.Boolean(default=True, doc="""
+        Whether to show the stop button temporarily replacing the send button during
+        callback; has no effect if `callback` is not async.""")
+
     show_rerun = param.Boolean(default=True, doc="""
         Whether to show the rerun button.""")
 
@@ -135,12 +140,15 @@ class ChatInterface(ChatFeed):
     _button_data = param.Dict(default={}, doc="""
         Metadata and data related to the buttons.""")
 
+    _buttons = param.Dict(default={}, doc="""
+        The rendered buttons.""")
+
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_interface.css"]
 
     def __init__(self, *objects, **params):
         widgets = params.get("widgets")
         if widgets is None:
-            params["widgets"] = [TextInput(placeholder="Send a message")]
+            params["widgets"] = [ChatAreaInput(placeholder="Send a message")]
         elif not isinstance(widgets, list):
             params["widgets"] = [widgets]
         active = params.pop("active", None)
@@ -157,7 +165,6 @@ class ChatInterface(ChatFeed):
         self._card.param.update(
             objects=self._card.objects + [self._input_container],
             css_classes=["chat-interface"],
-            stylesheets=self._stylesheets,
         )
 
     def _link_disabled_loading(self, obj: Viewable):
@@ -188,6 +195,7 @@ class ChatInterface(ChatFeed):
         """
         default_button_properties = {
             "send": {"icon": "send", "_default_callback": self._click_send},
+            "stop": {"icon": "player-stop", "_default_callback": self._click_stop},
             "rerun": {"icon": "repeat", "_default_callback": self._click_rerun},
             "undo": {"icon": "arrow-back", "_default_callback": self._click_undo},
             "clear": {"icon": "trash", "_default_callback": self._click_clear},
@@ -260,7 +268,7 @@ class ChatInterface(ChatFeed):
             # TextAreaInput will trigger auto send!
             auto_send = (
                 isinstance(widget, tuple(self.auto_send_types)) or
-                type(widget) is TextInput
+                type(widget) in (TextInput, ChatAreaInput)
             )
             if auto_send and widget in new_widgets:
                 callback = partial(self._button_data["send"].callback, self)
@@ -269,12 +277,14 @@ class ChatInterface(ChatFeed):
                 sizing_mode="stretch_width",
                 css_classes=["chat-interface-input-widget"]
             )
+            if isinstance(widget, ChatAreaInput):
+                self.link(widget, disabled="disabled_enter")
 
-            buttons = []
+            self._buttons = {}
             for button_data in self._button_data.values():
                 action = button_data.name
                 try:
-                    visible = self.param[f'show_{action}']
+                    visible = self.param[f'show_{action}'] if action != "stop" else False
                 except KeyError:
                     visible = True
                 show_expr = self.param.show_button_name.rx()
@@ -284,19 +294,20 @@ class ChatInterface(ChatFeed):
                     sizing_mode="stretch_width",
                     max_width=show_expr.rx.where(90, 45),
                     max_height=50,
-                    margin=(5, 5, 5, 0),
-                    align="start",
+                    margin=(0, 5, 0, 0),
+                    align="center",
                     visible=visible
                 )
-                self._link_disabled_loading(button)
+                if action != "stop":
+                    self._link_disabled_loading(button)
                 callback = partial(button_data.callback, self)
                 button.on_click(callback)
-                buttons.append(button)
+                self._buttons[action] = button
                 button_data.buttons.append(button)
 
             message_row = Row(
                 widget,
-                *buttons,
+                *list(self._buttons.values()),
                 sizing_mode="stretch_width",
                 css_classes=["chat-interface-input-row"],
                 stylesheets=self._stylesheets,
@@ -358,7 +369,12 @@ class ChatInterface(ChatFeed):
             return
 
         active_widget = self.active_widget
+        # value_input for ChatAreaInput because value is unsynced until "Enter",
+        # value for TextInput and others
         value = active_widget.value
+        if not value and hasattr(active_widget, "value_input"):
+            value = active_widget.value_input
+
         if value:
             if isinstance(active_widget, FileInput):
                 value = _FileInputMessage(
@@ -372,13 +388,24 @@ class ChatInterface(ChatFeed):
                 if hasattr(active_widget, "value_input"):
                     updates["value_input"] = ""
                 try:
-                    active_widget.param.update(updates)
+                    with param.discard_events(self):
+                        active_widget.param.update(updates)
                 except ValueError:
                     pass
         else:
             return  # no message entered
         self._reset_button_data()
         self.send(value=value, user=self.user, avatar=self.avatar, respond=True)
+
+    def _click_stop(
+        self,
+        event: param.parameterized.Event | None = None,
+        instance: "ChatInterface" | None = None
+    ) -> bool:
+        """
+        Cancel the callback when the user presses the Stop button.
+        """
+        return self.stop()
 
     def _get_last_user_entry_index(self) -> int:
         """
@@ -524,6 +551,7 @@ class ChatInterface(ChatFeed):
 
     def _serialize_for_transformers(
         self,
+        messages: List[ChatMessage],
         role_names: Dict[str, str | List[str]] | None = None,
         default_role: str | None = "assistant",
         custom_serializer: Callable = None
@@ -533,6 +561,8 @@ class ChatInterface(ChatFeed):
 
         Arguments
         ---------
+        messages : list(ChatMessage)
+            A list of ChatMessage objects to serialize.
         role_names : dict(str, str | list(str)) | None
             A dictionary mapping the role to the ChatMessage's user name.
             Defaults to `{"user": [self.user], "assistant": [self.callback_user]}`
@@ -544,8 +574,8 @@ class ChatInterface(ChatFeed):
             If this is set to None, raises a ValueError if the user name is not found.
         custom_serializer : callable
             A custom function to format the ChatMessage's object. The function must
-            accept one positional argument and return a string. If not provided,
-            uses the serialize method on ChatMessage.
+            accept one positional argument, the ChatMessage object, and return a string.
+            If not provided, uses the serialize method on ChatMessage.
 
         Returns
         -------
@@ -556,4 +586,103 @@ class ChatInterface(ChatFeed):
                 "user": [self.user],
                 "assistant": [self.callback_user],
             }
-        return super()._serialize_for_transformers(role_names, default_role, custom_serializer)
+        return super()._serialize_for_transformers(messages, role_names, default_role, custom_serializer)
+
+    @param.depends("_callback_state", watch=True)
+    async def _update_input_disabled(self):
+        busy_states = (CallbackState.RUNNING, CallbackState.GENERATING)
+        if not self.show_stop or self._callback_state not in busy_states or self._callback_future is None:
+            with param.parameterized.batch_call_watchers(self):
+                self._buttons["send"].visible = True
+                self._buttons["stop"].visible = False
+        else:
+            with param.parameterized.batch_call_watchers(self):
+                self._buttons["send"].visible = False
+                self._buttons["stop"].visible = True
+
+    async def _cleanup_response(self):
+        """
+        Events to always execute after the callback is done.
+        """
+        await super()._cleanup_response()
+        await self._update_input_disabled()
+
+
+    def send(
+        self,
+        value: ChatMessage | dict | Any,
+        user: str | None = None,
+        avatar: str | bytes | BytesIO | None = None,
+        respond: bool = True,
+    ) -> ChatMessage | None:
+        """
+        Sends a value and creates a new message in the chat log.
+
+        If `respond` is `True`, additionally executes the callback, if provided.
+
+        Arguments
+        ---------
+        value : ChatMessage | dict | Any
+            The message contents to send.
+        user : str | None
+            The user to send as; overrides the message message's user if provided.
+            Will default to the user parameter.
+        avatar : str | bytes | BytesIO | None
+            The avatar to use; overrides the message message's avatar if provided.
+            Will default to the avatar parameter.
+        respond : bool
+            Whether to execute the callback.
+
+        Returns
+        -------
+        The message that was created.
+        """
+        if not isinstance(value, ChatMessage):
+            if user is None:
+                user = self.user
+            if avatar is None:
+                avatar = self.avatar
+        return super().send(value, user=user, avatar=avatar, respond=respond)
+
+    def stream(
+        self,
+        value: str | dict | ChatMessage,
+        user: str | None = None,
+        avatar: str | bytes | BytesIO | None = None,
+        message: ChatMessage | None = None,
+        replace: bool = False,
+    ) -> ChatMessage | None:
+        """
+        Streams a token and updates the provided message, if provided.
+        Otherwise creates a new message in the chat log, so be sure the
+        returned message is passed back into the method, e.g.
+        `message = chat.stream(token, message=message)`.
+
+        This method is primarily for outputs that are not generators--
+        notably LangChain. For most cases, use the send method instead.
+
+        Arguments
+        ---------
+        value : str | dict | ChatMessage
+            The new token value to stream.
+        user : str | None
+            The user to stream as; overrides the message's user if provided.
+            Will default to the user parameter.
+        avatar : str | bytes | BytesIO | None
+            The avatar to use; overrides the message's avatar if provided.
+            Will default to the avatar parameter.
+        message : ChatMessage | None
+            The message to update.
+        replace : bool
+            Whether to replace the existing text when streaming a string or dict.
+
+        Returns
+        -------
+        The message that was updated.
+        """
+        if not isinstance(value, ChatMessage):
+            # ChatMessage cannot set user or avatar when explicitly streaming
+            # so only set to the default when not a ChatMessage
+            user = user or self.user
+            avatar = avatar or self.avatar
+        return super().stream(value, user=user, avatar=avatar, message=message, replace=replace)

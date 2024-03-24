@@ -6,7 +6,7 @@ This guide addresses how to construct Pane objects for displaying visible compon
 
 There are two main ways to construct a pane - explicitly or automatically.
 
-To explicitly construct a pane, use one of the pane types listed in the [component gallery](../../reference/index.md#panes). For example, you can create a Markdown pane as follows:
+To explicitly construct a pane, use one of the pane types listed in the [component gallery](https://panel.holoviz.org/reference/index.md#panes). For example, you can create a Markdown pane as follows:
 
 ```{pyodide}
 import panel as pn

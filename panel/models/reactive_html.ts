@@ -1,81 +1,85 @@
-import {render} from 'preact';
-import {useCallback} from 'preact/hooks';
-import {html} from 'htm/preact';
+import {render} from "preact"
+import {useCallback} from "preact/hooks"
+import {html} from "htm/preact"
 
 import {div} from "@bokehjs/core/dom"
-import {isArray} from "@bokehjs/core/util/types"
-import * as p from "@bokehjs/core/properties"
-import {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
+import {isArray, isString} from "@bokehjs/core/util/types"
+import type * as p from "@bokehjs/core/properties"
+import type {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
 
 import {dict_to_records} from "./data"
 import {serializeEvent} from "./event-to-object"
 import {DOMEvent, htmlDecode} from "./html"
 import {HTMLBox, HTMLBoxView} from "./layout"
 
-
 function serialize_attrs(attrs: any): any {
   const serialized: any = {}
   for (const attr in attrs) {
     let value = attrs[attr]
-    if (typeof value !== "string")
-      value = value
-    else if (value !== "" && (value === "NaN" || !isNaN(Number(value))))
+    if (!isString(value)) {
+    } else if (value !== "" && (value === "NaN" || !isNaN(Number(value)))) {
       value = Number(value)
-    else if (value === 'false' || value === 'true')
-      value = value === 'true' ? true : false
+    } else if (value === "false" || value === "true") {
+      value = value === "true" ? true : false
+    }
     serialized[attr] = value
   }
   return serialized
 }
 
 function escapeRegex(string: string) {
-    return string.replace(/[-\/\\^$*+?.()|[\]]/g, '\\$&');
+  return string.replace(/[-\/\\^$*+?.()|[\]]/g, "\\$&")
 }
 
 function extractToken(template: string, str: string, tokens: string[]) {
   const tokenMapping: any = {}
-  for (const match of tokens)
+  for (const match of tokens) {
     tokenMapping[`{${match}}`] = "(.*)"
+  }
 
   const tokenList = []
-  let regexpTemplate = "^" + escapeRegex(template) + "$";
+  let regexpTemplate = `^${escapeRegex(template)}$`
 
   // Find the order of the tokens
-  let i, tokenIndex, tokenEntry;
+  let i, tokenIndex, tokenEntry
   for (const m in tokenMapping) {
-    tokenIndex = template.indexOf(m);
+    tokenIndex = template.indexOf(m)
 
     // Token found
     if (tokenIndex > -1) {
-      regexpTemplate = regexpTemplate.replace(m, tokenMapping[m]);
+      regexpTemplate = regexpTemplate.replace(m, tokenMapping[m])
       tokenEntry = {
         index: tokenIndex,
-        token: m
-      };
+        token: m,
+      }
 
-      for (i = 0; i < tokenList.length && tokenList[i].index < tokenIndex; i++);
+      for (i = 0; i < tokenList.length && tokenList[i].index < tokenIndex; i++) {
+        ;
+      }
 
       // Insert it at index i
-      if (i < tokenList.length)
+      if (i < tokenList.length) {
         tokenList.splice(i, 0, tokenEntry)
-      else
+      } else {
         tokenList.push(tokenEntry)
+      }
     }
   }
 
-  regexpTemplate = regexpTemplate.replace(/\{[^{}]+\}/g, '.*');
+  regexpTemplate = regexpTemplate.replace(/\{[^{}]+\}/g, ".*")
 
-  var match = new RegExp(regexpTemplate).exec(str)
-  let result: any = null;
+  const match = new RegExp(regexpTemplate).exec(str)
+  let result: any = null
 
   if (match) {
-    result = {};
+    result = {}
     // Find your token entry
-    for (i = 0; i < tokenList.length; i++)
+    for (i = 0; i < tokenList.length; i++) {
       result[tokenList[i].token.slice(1, -1)] = match[i + 1]
+    }
   }
 
-  return result;
+  return result
 }
 
 function element_lookup(root: ShadowRoot, el_id: string): HTMLElement | null {
@@ -86,9 +90,9 @@ function element_lookup(root: ShadowRoot, el_id: string): HTMLElement | null {
   return el
 }
 
-
 export class ReactiveHTMLView extends HTMLBoxView {
-  model: ReactiveHTML
+  declare model: ReactiveHTML
+
   html: string
   container: HTMLDivElement
   _parent: any = null
@@ -98,7 +102,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
   _script_fns: any = {}
   _state: any = {}
 
-  initialize(): void {
+  override initialize(): void {
     super.initialize()
     this.html = htmlDecode(this.model.html) || this.model.html
   }
@@ -106,22 +110,26 @@ export class ReactiveHTMLView extends HTMLBoxView {
   _recursive_connect(model: any, update_children: boolean, path: string): void {
     for (const prop in model.properties) {
       let subpath: string
-      if (path.length)
+      if (path.length) {
         subpath = `${path}.${prop}`
-      else
+      } else {
         subpath = prop
+      }
       const obj = model[prop]
-      if (obj == null)
+      if (obj == null) {
         continue
-      if (obj.properties != null)
+      }
+      if (obj.properties != null) {
         this._recursive_connect(obj, true, subpath)
-      this.connect(model.properties[prop].change, () => {
+      }
+      this.on_change(model.properties[prop], () => {
         if (update_children) {
           for (const node in this.model.children) {
             if (this.model.children[node] == prop) {
               let children = model[prop]
-              if (!isArray(children))
+              if (!isArray(children)) {
                 children = [children]
+              }
               this._render_node(node, children)
               return
             }
@@ -134,14 +142,17 @@ export class ReactiveHTMLView extends HTMLBoxView {
     }
   }
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.children.change, async () => {
+
+    const {children, events} = this.model.properties
+    this.on_change(children, async () => {
       this.html = htmlDecode(this.model.html) || this.model.html
-      await this.rebuild()
+      await this.build_child_views()
+      this.invalidate_render()
     })
-    this._recursive_connect(this.model.data, true, '')
-    this.connect(this.model.properties.events.change, () => {
+    this._recursive_connect(this.model.data, true, "")
+    this.on_change(events, () => {
       this._remove_event_listeners()
       this._setup_event_listeners()
     })
@@ -150,15 +161,16 @@ export class ReactiveHTMLView extends HTMLBoxView {
 
   connect_scripts(): void {
     const id = this.model.data.id
-    for (let prop in this.model.scripts) {
+    for (const prop in this.model.scripts) {
       const scripts = this.model.scripts[prop]
       let data_model = this.model.data
       let attr: string
-      if (prop.indexOf('.') >= 0) {
-        const path = prop.split('.')
+      if (prop.indexOf(".") >= 0) {
+        const path = prop.split(".")
         attr = path[path.length-1]
-        for (const p of path.slice(0, -1))
+        for (const p of path.slice(0, -1)) {
           data_model = data_model[p]
+        }
       } else {
         attr = prop
       }
@@ -167,11 +179,17 @@ export class ReactiveHTMLView extends HTMLBoxView {
         const script_fn = this._render_script(decoded_script, id)
         this._script_fns[prop] = script_fn
         const property = data_model.properties[attr]
-        if (property == null)
+        if (property == null) {
           continue
-        this.connect(property.change, () => {
-          if (!this._changing)
+        }
+        const is_event_param = this.model.event_params.includes(prop)
+        this.on_change(property, () => {
+          if (!this._changing && !(is_event_param && !data_model[prop])) {
             this.run_script(prop)
+            if (is_event_param) {
+              data_model.setv({[prop]: false})
+            }
+          }
         })
       }
     }
@@ -180,22 +198,24 @@ export class ReactiveHTMLView extends HTMLBoxView {
   run_script(property: string, silent: boolean=false): void {
     const script_fn = this._script_fns[property]
     if (script_fn === undefined) {
-      if (!silent)
+      if (!silent) {
         console.log(`Script '${property}' could not be found.`)
+      }
       return
     }
     const this_obj: any = {
-      get_records: (property: string, index: boolean) => this.get_records(property, index)
+      get_records: (property: string, index: boolean) => this.get_records(property, index),
     }
-    for (const name in this._script_fns)
+    for (const name in this._script_fns) {
       this_obj[name] = () => this.run_script(name)
+    }
     return script_fn(
       this.model,
       this.model.data,
       this._state,
       this,
       (s: any) => this.run_script(s),
-      this_obj
+      this_obj,
     )
   }
 
@@ -203,32 +223,34 @@ export class ReactiveHTMLView extends HTMLBoxView {
     return dict_to_records(this.model.data[property], index)
   }
 
-  disconnect_signals(): void {
+  override disconnect_signals(): void {
     super.disconnect_signals()
     this._remove_event_listeners()
     this._remove_mutation_observers()
   }
 
   override remove(): void {
-    this.run_script('remove', true)
+    this.run_script("remove", true)
     super.remove()
   }
 
-  get child_models(): LayoutDOM[] {
+  override get child_models(): LayoutDOM[] {
     const models = []
     for (const parent in this.model.children) {
-      for (const model of this.model.children[parent])
-        if (typeof model !== 'string')
+      for (const model of this.model.children[parent]) {
+        if (!isString(model)) {
           models.push(model)
+        }
+      }
     }
     return models
   }
 
-  _after_layout(): void {
-    this.run_script('after_layout', true)
+  override _after_layout(): void {
+    this.run_script("after_layout", true)
   }
 
-  render(): void {
+  override render(): void {
     this.empty()
     this._update_stylesheets()
     this._update_css_classes()
@@ -241,24 +263,25 @@ export class ReactiveHTMLView extends HTMLBoxView {
     this._render_children()
     this._setup_mutation_observers()
     this._setup_event_listeners()
-    this.run_script('render', true)
+    this.run_script("render", true)
   }
 
   private _send_event(elname: string, attr: string, event: any) {
-    let serialized = serializeEvent(event)
+    const serialized = serializeEvent(event)
     serialized.type = attr
     for (const key in serialized) {
-      if (serialized[key] === undefined)
+      if (serialized[key] === undefined) {
         delete serialized[key]
+      }
     }
     this.model.trigger_event(new DOMEvent(elname, serialized))
   }
 
   private _render_child(model: any, el: Element): void {
     const view: any = this._child_views.get(model)
-    if (view == null)
+    if (view == null) {
       el.innerHTML = htmlDecode(model) || model
-    else {
+    } else {
       el.appendChild(view.el)
       view.render()
       view.after_render()
@@ -270,7 +293,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
     if (this.model.looped.indexOf(node) > -1) {
       for (let i = 0; i < children.length; i++) {
         const el: any = element_lookup(this.shadow_el, `${node}-${i}-${id}`)
-	if (el == null) {
+        if (el == null) {
           console.warn(`DOM node '${node}-${i}-${id}' could not be found. Cannot render children.`)
           continue
         }
@@ -282,38 +305,40 @@ export class ReactiveHTMLView extends HTMLBoxView {
         console.warn(`DOM node '${node}-${id}' could not be found. Cannot render children.`)
         return
       }
-      for (const child of children)
+      for (const child of children) {
         this._render_child(child, el)
+      }
     }
   }
 
   private _render_children(): void {
     for (const node in this.model.children) {
       let children = this.model.children[node]
-      if (typeof children == "string") {
+      if (isString(children)) {
         children = this.model.data[children]
-        if (!isArray(children))
+        if (!isArray(children)) {
           children = [children]
+        }
       }
       this._render_node(node, children)
     }
   }
 
   private _render_html(literal: any, state: any={}): any {
-    let htm = literal.replace(/[`]/g, '\\$&');
-    let callbacks = ''
+    let htm = literal.replace(/[`]/g, "\\$&")
+    let callbacks = ""
     const methods: string[] = []
     for (const elname in this.model.callbacks) {
       for (const callback of this.model.callbacks[elname]) {
-        const [cb, method] = callback;
+        const [cb, method] = callback
         let definition: string
-        htm = htm.replaceAll('${'+method+'}', '$--{'+method+'}')
-        if (method.startsWith('script(')) {
+        htm = htm.replaceAll(`\${${method}}`, `$--{${method}}`)
+        if (method.startsWith("script(")) {
           const meth = (
             method
               .replace("('", "_").replace("')", "")
               .replace('("', "_").replace('")', "")
-              .replace('-', '_')
+              .replace("-", "_")
           )
           const script_name = meth.replaceAll("script_", "")
           htm = htm.replaceAll(method, meth)
@@ -341,30 +366,32 @@ export class ReactiveHTMLView extends HTMLBoxView {
           }
           `
         }
-        if (methods.indexOf(method) > -1)
+        if (methods.indexOf(method) > -1) {
           continue
+        }
         methods.push(method)
         callbacks = callbacks + definition
       }
     }
     htm = (
       htm
-        .replaceAll('${model.', '$-{model.')
-        .replaceAll('${', '${data.')
-        .replaceAll('$-{model.', '${model.')
-        .replaceAll('$--{', '${')
+        .replaceAll("${model.", "$-{model.")
+        .replaceAll("${", "${data.")
+        .replaceAll("$-{model.", "${model.")
+        .replaceAll("$--{", "${")
     )
-    return new Function("view, model, data, state, html, useCallback", callbacks+"return html`"+htm+"`;")(
-      this, this.model, this.model.data, state, html, useCallback
+    return new Function("view, model, data, state, html, useCallback", `${callbacks}return html\`${htm}\`;`)(
+      this, this.model, this.model.data, state, html, useCallback,
     )
   }
 
   private _render_script(literal: any, id: string) {
     const scripts = []
     for (const elname of this.model.nodes) {
-      const elvar = elname.replace('-', '_')
-      if (literal.indexOf(elvar) === -1)
+      const elvar = elname.replace("-", "_")
+      if (literal.indexOf(elvar) === -1) {
         continue
+      }
       const script = `
       let ${elvar} = view.shadow_el.getElementById('${elname}-${id}')
       if (${elvar} == null)
@@ -384,12 +411,13 @@ export class ReactiveHTMLView extends HTMLBoxView {
     `
     scripts.push(event)
     scripts.push(literal)
-    return new Function("model, data, state, view, script, self", scripts.join('\n'))
+    return new Function("model, data, state, view, script, self", scripts.join("\n"))
   }
 
   private _remove_mutation_observers(): void {
-    for (const observer of this._mutation_observers)
+    for (const observer of this._mutation_observers) {
       observer.disconnect()
+    }
     this._mutation_observers = []
   }
 
@@ -404,7 +432,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
       const observer = new MutationObserver(() => {
         this._update_model(el, name)
       })
-      observer.observe(el, {attributes: true});
+      observer.observe(el, {attributes: true})
       this._mutation_observers.push(observer)
     }
   }
@@ -413,8 +441,9 @@ export class ReactiveHTMLView extends HTMLBoxView {
     const id = this.model.data.id
     for (const node in this._event_listeners) {
       const el: any = element_lookup(this.shadow_el, `${node}-${id}`)
-      if (el == null)
+      if (el == null) {
         continue
+      }
       for (const event_name in this._event_listeners[node]) {
         const event_callback = this._event_listeners[node][event_name]
         el.removeEventListener(event_name, event_callback)
@@ -435,12 +464,14 @@ export class ReactiveHTMLView extends HTMLBoxView {
       for (const event_name in node_events) {
         const event_callback = (event: any) => {
           this._send_event(node, event_name, event)
-          if (node in this.model.attrs && node_events[event_name])
+          if (node in this.model.attrs && node_events[event_name]) {
             this._update_model(el, node)
+          }
         }
         el.addEventListener(event_name, event_callback)
-        if (!(node in this._event_listeners))
+        if (!(node in this._event_listeners)) {
           this._event_listeners[node] = {}
+        }
         this._event_listeners[node][event_name] = event_callback
       }
     }
@@ -449,8 +480,9 @@ export class ReactiveHTMLView extends HTMLBoxView {
   private _update(property: string | null = null): void {
     if (property == null || (this.html.indexOf(`\${${property}}`) > -1)) {
       const rendered = this._render_html(this.html)
-      if (rendered == null)
-	return
+      if (rendered == null) {
+        return
+      }
       try {
         this._changing = true
         render(rendered, this.container)
@@ -461,24 +493,26 @@ export class ReactiveHTMLView extends HTMLBoxView {
   }
 
   private _update_model(el: any, name: string): void {
-    if (this._changing)
+    if (this._changing) {
       return
+    }
     const attrs: any = {}
     for (const attr_info of this.model.attrs[name]) {
       const [attr, tokens, template] = attr_info
-      let value = attr === 'children' ? el.innerHTML : el[attr]
-      if (tokens.length === 1 && (`{${tokens[0]}}` === template))
+      let value = attr === "children" ? el.innerHTML : el[attr]
+      if (tokens.length === 1 && (`{${tokens[0]}}` === template)) {
         attrs[tokens[0]] = value
-      else if (typeof value === 'string') {
+      } else if (isString(value)) {
         value = extractToken(template, value, tokens)
-        if (value == null)
+        if (value == null) {
           console.warn(`Could not resolve parameters in ${name} element ${attr} attribute value ${value}.`)
-        else {
+        } else {
           for (const param in value) {
-            if (value[param] === undefined)
+            if (value[param] === undefined) {
               console.warn(`Could not resolve ${param} in ${name} element ${attr} attribute value ${value}.`)
-            else
+            } else {
               attrs[param] = value[param]
+            }
           }
         }
       }
@@ -488,7 +522,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
       this._changing = true
       this.model.data.setv(serialize_attrs(attrs))
     } catch {
-      console.log('Could not serialize', attrs)
+      console.log("Could not serialize", attrs)
     } finally {
       this._changing = false
     }
@@ -503,6 +537,7 @@ export namespace ReactiveHTML {
     callbacks: p.Property<any>
     children: p.Property<any>
     data: p.Property<any>
+    event_params: p.Property<string[]>
     events: p.Property<any>
     html: p.Property<string>
     looped: p.Property<string[]>
@@ -514,25 +549,26 @@ export namespace ReactiveHTML {
 export interface ReactiveHTML extends ReactiveHTML.Attrs {}
 
 export class ReactiveHTML extends HTMLBox {
-  properties: ReactiveHTML.Props
+  declare properties: ReactiveHTML.Props
 
   constructor(attrs?: Partial<ReactiveHTML.Attrs>) {
     super(attrs)
   }
 
-  static __module__ = "panel.models.reactive_html"
+  static override __module__ = "panel.models.reactive_html"
 
   static {
     this.prototype.default_view = ReactiveHTMLView
-    this.define<ReactiveHTML.Props>(({Array, Any, String}) => ({
+    this.define<ReactiveHTML.Props>(({List, Any, Str}) => ({
       attrs:     [ Any,    {} ],
       callbacks: [ Any,    {} ],
       children:  [ Any,    {} ],
-      data:      [ Any,       ],
+      data:      [ Any       ],
+      event_params: [ List(Str), [] ],
       events:    [ Any,    {} ],
-      html:      [ String, "" ],
-      looped:    [ Array(String), [] ],
-      nodes:     [ Array(String), [] ],
+      html:      [ Str, "" ],
+      looped:    [ List(Str), [] ],
+      nodes:     [ List(Str), [] ],
       scripts:   [ Any,    {} ],
     }))
   }

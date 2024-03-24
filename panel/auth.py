@@ -198,8 +198,11 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         if code:
             params['code'] = code
         if refresh_token:
+            refreshing = True
             params['refresh_token'] = refresh_token
             params['grant_type'] = 'refresh_token'
+        else:
+            refreshing = False
         if client_secret:
             params['client_secret'] = client_secret
         elif username:
@@ -232,11 +235,15 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
                 return None, None, None
             self._raise_error(response, body, status=401)
 
-        access_token, refresh_token = body['access_token'], body.get('refresh_token')
         expires_in = body.get('expires_in')
         if expires_in:
             expires_in = int(expires_in)
-        if id_token:= body.get('id_token'):
+
+        access_token, refresh_token = body['access_token'], body.get('refresh_token')
+        if refreshing:
+            # When refreshing the tokens we do not need to re-fetch the id_token or user info
+            return None, access_token, refresh_token, expires_in
+        elif id_token:= body.get('id_token'):
             try:
                 user = self._on_auth(id_token, access_token, refresh_token, expires_in)
             except HTTPError:
@@ -246,23 +253,29 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
                 return user, access_token, refresh_token, expires_in
 
         user_headers = dict(self._API_BASE_HEADERS)
-        if self._access_token_header:
-            user_url = self._OAUTH_USER_URL
-            user_headers['Authorization'] = self._access_token_header.format(
-                body['access_token']
-            )
-        else:
-            user_url = '{}{}'.format(self._OAUTH_USER_URL, body['access_token'])
+        if self._OAUTH_USER_URL:
+            if self._access_token_header:
+                user_url = self._OAUTH_USER_URL
+                user_headers['Authorization'] = self._access_token_header.format(
+                    body['access_token']
+                )
+            else:
+                user_url = '{}{}'.format(self._OAUTH_USER_URL, body['access_token'])
 
-        log.debug("%s requesting OpenID userinfo.", type(self).__name__)
-        try:
-            user_response = await http.fetch(user_url, headers=user_headers)
-            id_token = decode_response_body(user_response)
-        except HTTPClientError:
-            id_token = None
+            log.debug("%s requesting OpenID userinfo.", type(self).__name__)
+            try:
+                user_response = await http.fetch(user_url, headers=user_headers)
+                id_token = decode_response_body(user_response)
+            except HTTPClientError:
+                id_token = None
 
         if not id_token:
-            log.debug("%s could not obtain userinfo or id_token, falling back to decoding access_token.", type(self).__name__)
+            log.debug(
+                "%s could not fetch user information, the token endpoint did not "
+                "return an id_token and no OpenID user info endpoint was provided. "
+                "Attempting to code access_token to resolve user information.",
+                type(self).__name__
+            )
             try:
                 id_token = decode_token(body['access_token'])
             except Exception:
@@ -1068,7 +1081,7 @@ class OAuthProvider(BasicAuthProvider):
         expiry_date = dt.datetime.now() + dt.timedelta(seconds=expiry_seconds) # schedule_task is in local TZ
         refresh_cb = partial(self._scheduled_refresh, user, refresh_token, application, request)
         if expiry_seconds <= 0:
-            refresh_cb()
+            state.execute(refresh_cb)
             return
         task = f'{user}-refresh-access-tokens'
         try:
@@ -1089,9 +1102,15 @@ class OAuthProvider(BasicAuthProvider):
         self._schedule_refresh(expiry, user, refresh_token, application, request)
 
     async def _refresh_access_token(self, user, refresh_token, application, request):
-        log.debug("%s refreshing token", type(self).__name__)
         if user in state._oauth_user_overrides:
-            refresh_token = state._oauth_user_overrides[user]['refresh_token']
+            if not state._oauth_user_overrides[user]:
+                # Token is already being refreshed await it
+                while not state._oauth_user_overrides[user]:
+                    await asyncio.sleep(0.1)
+                return
+            else:
+                refresh_token = state._oauth_user_overrides[user]['refresh_token']
+        log.debug("%s refreshing token", type(self).__name__)
         state._oauth_user_overrides[user] = {}
         auth_handler = self.login_handler(application=application, request=request)
         _, access_token, refresh_token, expires_in = await auth_handler._fetch_access_token(

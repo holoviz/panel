@@ -23,7 +23,6 @@ from html import escape  # noqa
 from importlib import import_module
 from typing import Any, AnyStr
 
-import bleach
 import bokeh
 import numpy as np
 import param
@@ -43,15 +42,28 @@ from .parameters import (  # noqa
 
 log = logging.getLogger('panel.util')
 
-bokeh_version = Version(bokeh.__version__)
+bokeh_version = Version(Version(bokeh.__version__).base_version)
 
-# Bokeh serializes NaT as this value
-# Discussion on why https://github.com/bokeh/bokeh/pull/10449/files#r479988469
-BOKEH_JS_NAT = -9223372036854776.0
-
+BOKEH_JS_NAT = np.nan
 PARAM_NAME_PATTERN = re.compile(r'^.*\d{5}$')
 
-HTML_SANITIZER = bleach.sanitizer.Cleaner(strip=True)
+class LazyHTMLSanitizer:
+    """
+    Wraps bleach.sanitizer.Cleaner lazily importing it on the first
+    call to the clean method.
+    """
+
+    def __init__(self, **kwargs):
+        self._cleaner = None
+        self._kwargs = kwargs
+
+    def clean(self, text):
+        if self._cleaner is None:
+            import bleach
+            self._cleaner = bleach.sanitizer.Cleaner(**self._kwargs)
+        return self._cleaner.clean(text)
+
+HTML_SANITIZER = LazyHTMLSanitizer(strip=True)
 
 
 def hashable(x):
@@ -85,8 +97,6 @@ def param_name(name: str) -> str:
     """
     match = re.findall(r'\D+(\d{5,})', name)
     return name[:name.index(match[0])] if match else name
-
-
 
 
 def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
@@ -466,3 +476,9 @@ def styler_update(styler, new_df):
         todo = tuple(ops)
         todos.append(todo)
     return todos
+
+
+def try_datetime64_to_datetime(value):
+    if isinstance(value, np.datetime64):
+        value = value.astype('datetime64[ms]').astype(datetime)
+    return value

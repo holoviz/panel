@@ -4,12 +4,11 @@ import {InputWidget, InputWidgetView} from "@bokehjs/models/widgets/input_widget
 import type {StyleSheetLike} from "@bokehjs/core/dom"
 import {bounding_box, input} from "@bokehjs/core/dom"
 import {CalendarPosition} from "@bokehjs/core/enums"
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 import {isString} from "@bokehjs/core/util/types"
 
 import * as inputs from "@bokehjs/styles/widgets/inputs.css"
 import flatpickr_css from "@bokehjs/styles/widgets/flatpickr.css"
-
 
 type DateStr = string
 type DatesList = (DateStr | [DateStr, DateStr])[]
@@ -17,9 +16,9 @@ type DatesList = (DateStr | [DateStr, DateStr])[]
 function _convert_date_list(value: DatesList): flatpickr.Options.DateLimit[] {
   const result: flatpickr.Options.DateLimit[] = []
   for (const item of value) {
-    if (isString(item))
+    if (isString(item)) {
       result.push(item)
-    else {
+    } else {
       const [from, to] = item
       result.push({from, to})
     }
@@ -28,23 +27,26 @@ function _convert_date_list(value: DatesList): flatpickr.Options.DateLimit[] {
 }
 
 export class DatetimePickerView extends InputWidgetView {
-  model: DatetimePicker
+  declare model: DatetimePicker
 
   private _picker?: flatpickr.Instance
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
 
-    const {value, min_date, max_date, disabled_dates, enabled_dates, inline,
-      enable_time, enable_seconds, military_time, date_format, mode} = this.model.properties
-    this.connect(value.change, () => this.model.value ? this._picker?.setDate(this.model.value) : this._clear())
-    this.connect(min_date.change, () => this._picker?.set("minDate", this.model.min_date))
-    this.connect(max_date.change, () => this._picker?.set("maxDate", this.model.max_date))
-    this.connect(disabled_dates.change, () => {
+    const {
+      value, min_date, max_date, disabled_dates, enabled_dates, inline,
+      enable_time, enable_seconds, military_time, date_format, mode,
+    } = this.model.properties
+
+    this.on_change(value, () => this.model.value ? this._picker?.setDate(this.model.value) : this._clear())
+    this.on_change(min_date, () => this._picker?.set("minDate", this.model.min_date))
+    this.on_change(max_date, () => this._picker?.set("maxDate", this.model.max_date))
+    this.on_change(disabled_dates, () => {
       const {disabled_dates} = this.model
       this._picker?.set("disable", disabled_dates != null ? _convert_date_list(disabled_dates) : [])
     })
-    this.connect(enabled_dates.change, () => {
+    this.on_change(enabled_dates, () => {
       const {enabled_dates} = this.model
       if (enabled_dates != null) {
         this._picker?.set("enable", _convert_date_list(enabled_dates))
@@ -57,15 +59,15 @@ export class DatetimePickerView extends InputWidgetView {
         }
       }
     })
-    this.connect(inline.change, () => this._picker?.set("inline", this.model.inline))
-    this.connect(enable_time.change, () => this._picker?.set("enableTime", this.model.enable_time))
-    this.connect(enable_seconds.change, () => this._picker?.set("enableSeconds", this.model.enable_seconds))
-    this.connect(military_time.change, () => this._picker?.set("time_24hr", this.model.military_time))
-    this.connect(mode.change, () => this._picker?.set("mode", this.model.mode))
-    this.connect(date_format.change, () => this._picker?.set("dateFormat", this.model.date_format))
+    this.on_change(inline, () => this._picker?.set("inline", this.model.inline))
+    this.on_change(enable_time, () => this._picker?.set("enableTime", this.model.enable_time))
+    this.on_change(enable_seconds, () => this._picker?.set("enableSeconds", this.model.enable_seconds))
+    this.on_change(military_time, () => this._picker?.set("time_24hr", this.model.military_time))
+    this.on_change(mode, () => this._picker?.set("mode", this.model.mode))
+    this.on_change(date_format, () => this._picker?.set("dateFormat", this.model.date_format))
   }
 
-  remove(): void {
+  override remove(): void {
     this._picker?.destroy()
     super.remove()
   }
@@ -74,14 +76,16 @@ export class DatetimePickerView extends InputWidgetView {
     return [...super.stylesheets(), flatpickr_css]
   }
 
-  render(): void {
-    if (this._picker != null)
+  _render_input(): HTMLElement {
+    return this.input_el = input({type: "text", class: inputs.input, disabled: this.model.disabled})
+  }
+
+  override render(): void {
+    if (this._picker != null) {
       return
+    }
 
     super.render()
-
-    this.input_el = input({type: "text", class: inputs.input, disabled: this.model.disabled})
-    this.group_el.appendChild(this.input_el)
 
     const options: flatpickr.Options.Options = {
       appendTo: this.group_el,
@@ -98,14 +102,18 @@ export class DatetimePickerView extends InputWidgetView {
     }
 
     const {min_date, max_date, disabled_dates, enabled_dates} = this.model
-    if (min_date != null)
+    if (min_date != null) {
       options.minDate = min_date
-    if (max_date != null)
+    }
+    if (max_date != null) {
       options.maxDate = max_date
-    if (disabled_dates != null)
+    }
+    if (disabled_dates != null) {
       options.disable = _convert_date_list(disabled_dates)
-    if (enabled_dates != null)
+    }
+    if (enabled_dates != null) {
       options.enable = _convert_date_list(enabled_dates)
+    }
 
     this._picker = flatpickr(this.input_el, options)
     this._picker.maxDateHasTime = true
@@ -118,8 +126,9 @@ export class DatetimePickerView extends InputWidgetView {
   }
 
   protected _on_close(_selected_dates: Date[], date_string: string, _instance: flatpickr.Instance): void {
-    if (this.model.mode == "range" && !date_string.includes("to"))
+    if (this.model.mode == "range" && !date_string.includes("to")) {
       return
+    }
     this.model.value = date_string
     this.change_input()
   }
@@ -162,7 +171,9 @@ export class DatetimePickerView extends InputWidgetView {
     self.calendarContainer.classList.toggle("arrowTop", !showOnTop)
     self.calendarContainer.classList.toggle("arrowBottom", showOnTop)
 
-    if (self.config.inline) return
+    if (self.config.inline) {
+      return
+    }
 
     let left = window.scrollX + inputBounds.left
     let isCenter = false
@@ -188,7 +199,9 @@ export class DatetimePickerView extends InputWidgetView {
 
     self.calendarContainer.classList.toggle("rightMost", rightMost)
 
-    if (self.config.static) return
+    if (self.config.static) {
+      return
+    }
 
     self.calendarContainer.style.top = `${top}px`
 
@@ -237,34 +250,34 @@ export namespace DatetimePicker {
 export interface DatetimePicker extends DatetimePicker.Attrs {}
 
 export class DatetimePicker extends InputWidget {
-  properties: DatetimePicker.Props
-  __view_type__: DatetimePickerView
+  declare properties: DatetimePicker.Props
+  declare __view_type__: DatetimePickerView
 
   constructor(attrs?: Partial<DatetimePicker.Attrs>) {
     super(attrs)
   }
 
-  static __module__ = "panel.models.datetime_picker"
+  static override __module__ = "panel.models.datetime_picker"
 
   static {
     this.prototype.default_view = DatetimePickerView
 
-    this.define<DatetimePicker.Props>(({Boolean, String, Array, Tuple, Or, Nullable}) => {
-      const DateStr = String
-      const DatesList = Array(Or(DateStr, Tuple(DateStr, DateStr)))
+    this.define<DatetimePicker.Props>(({Bool, Str, List, Tuple, Or, Nullable}) => {
+      const DateStr = Str
+      const DatesList = List(Or(DateStr, Tuple(DateStr, DateStr)))
       return {
-        value:          [ Nullable(String), null ],
-        min_date:       [ Nullable(String), null ],
-        max_date:       [ Nullable(String), null ],
+        value:          [ Nullable(Str), null ],
+        min_date:       [ Nullable(Str), null ],
+        max_date:       [ Nullable(Str), null ],
         disabled_dates: [ Nullable(DatesList), null ],
         enabled_dates:  [ Nullable(DatesList), null ],
         position:       [ CalendarPosition, "auto" ],
-        inline:         [ Boolean, false ],
-        enable_time:    [ Boolean, true ],
-        enable_seconds: [ Boolean, true ],
-        military_time:  [ Boolean, true ],
-        date_format:    [ String, "Y-m-d H:i:S" ],
-        mode:           [ String, "single" ],
+        inline:         [ Bool, false ],
+        enable_time:    [ Bool, true ],
+        enable_seconds: [ Bool, true ],
+        military_time:  [ Bool, true ],
+        date_format:    [ Str, "Y-m-d H:i:S" ],
+        mode:           [ Str, "single" ],
       }
     })
   }

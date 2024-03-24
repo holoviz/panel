@@ -8,6 +8,19 @@ on:
     branches:
     - '*'
   workflow_dispatch:
+    inputs:
+      target:
+        description: "How much of the test suite to run"
+        type: choice
+        default: default
+        options:
+          - default
+          - full
+          - downstream
+      cache:
+        description: "Use cache"
+        type: boolean
+        default: true
   schedule:
     - cron: '0 19 * * SUN'
 
@@ -21,16 +34,90 @@ jobs:
     runs-on: 'ubuntu-latest'
     steps:
       - uses: holoviz-dev/holoviz_tasks/pre-commit@v0.1a19
+      - uses: pre-commit/action@v3.0.0
+        with:
+          extra_args: -a --hook-stage manual oxipng || true --
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "Optimize PNG images (lossless)"
+          file_pattern: "*.png"
+  setup:
+    name: Setup workflow
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      code_change: ${{ steps.filter.outputs.code }}
+      doc_change: ${{ steps.filter.outputs.doc }}
+      matrix: ${{ env.MATRIX }}
+    steps:
+      - uses: actions/checkout@v3
+        if: github.event_name != 'pull_request'
+      - name: Check for code changes
+        uses: dorny/paths-filter@v2.11.1
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'panel/**'
+              - 'examples/**'
+              - 'setup.py'
+              - 'pyproject.toml'
+              - 'tox.ini'
+              - '.github/workflows/test.yaml'
+            doc:
+              - 'doc/getting_started/**'
+              - 'doc/how_to/**'
+              - 'scripts/**'
+              - 'lite/**'
+      - name: Set matrix option
+        run: |
+          if [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then
+            OPTION=${{ github.event.inputs.target }}
+          elif [[ '${{ github.event_name }}' == 'schedule' ]]; then
+            OPTION="full"
+          elif [[ '${{ github.event_name }}' == 'push' && '${{ github.ref_type }}' == 'tag' ]]; then
+            OPTION="full"
+          else
+            OPTION="default"
+          fi
+          echo "MATRIX_OPTION=$OPTION" >> $GITHUB_ENV
+      - name: Set test matrix with 'default' option
+        if: env.MATRIX_OPTION == 'default'
+        run: |
+          MATRIX=$(jq -nsc '{
+              "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
+              "python-version": ["3.9", "3.11"],
+              "include": [
+                  {"os": "ubuntu-latest", "python-version": "3.10"}
+              ]
+          }')
+          echo "MATRIX=$MATRIX" >> $GITHUB_ENV
+      - name: Set test matrix with 'full' option
+        if: env.MATRIX_OPTION == 'full'
+        run: |
+          MATRIX=$(jq -nsc '{
+              "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
+              "python-version": ["3.9", "3.10", "3.11"]
+          }')
+          echo "MATRIX=$MATRIX" >> $GITHUB_ENV
+      - name: Set test matrix with 'downstream' option
+        if: env.MATRIX_OPTION == 'downstream'
+        run: |
+          MATRIX=$(jq -nsc '{
+              "os": ["ubuntu-latest"],
+              "python-version": ["3.11"]
+          }')
+          echo "MATRIX=$MATRIX" >> $GITHUB_ENV
+
   unit_test_suite:
     name: Unit tests on ${{ matrix.os }} with Python ${{ matrix.python-version }}
-    needs: [pre_commit]
+    needs: [pre_commit, setup]
     runs-on: ${{ matrix.os }}
+    if: needs.setup.outputs.code_change == 'true'
     strategy:
       fail-fast: false
-      matrix:
-        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-        # Run on the full set on schedule, workflow_dispatch and push&tags events, otherwise on a subset.
-        python-version: ${{ ( github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || ( github.event_name == 'push' && github.ref_type == 'tag' ) ) && fromJSON('["3.9", "3.10", "3.11"]') || fromJSON('["3.9", "3.11"]') }}
+      matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
     timeout-minutes: 90
     defaults:
       run:
@@ -52,11 +139,11 @@ jobs:
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
-          channels: pyviz/label/dev,numba,bokeh,conda-forge,nodefaults
+          channels: pyviz/label/dev,numba,bokeh/label/dev,conda-forge,nodefaults
           conda-update: true
           nodejs: true
           envs: -o examples -o recommended -o tests -o build
-          cache: true
+          cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           opengl: true
         id: install
       - name: doit develop_install
@@ -98,13 +185,14 @@ jobs:
           fail_ci_if_error: false # optional (default = false)
   ui_test_suite:
     name: UI tests on ${{ matrix.os }} with Python 3.9
-    needs: [pre_commit]
+    needs: [pre_commit, setup]
     runs-on: ${{ matrix.os }}
+    if: needs.setup.outputs.code_change == 'true' || needs.setup.outputs.doc_change == 'true'
     strategy:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-    timeout-minutes: 60
+    timeout-minutes: 120
     defaults:
       run:
         shell: bash -el {0}
@@ -142,20 +230,12 @@ jobs:
         with:
           name: ui_test_suite
           python-version: 3.9
-          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
+          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
           envs: "-o recommended -o tests -o build"
-          cache: true
+          cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           nodejs: true
           playwright: true
         id: install
-      - name: doit develop_install
-        run: |
-          conda activate test-environment
-          pip install --pre ipywidgets_bokeh
-      - name: build pyodide wheels
-        run: |
-          conda activate test-environment
-          python scripts/build_pyodide_wheels.py
       - name: launch jupyter
         run: |
           conda activate test-environment
@@ -195,8 +275,9 @@ jobs:
           fail_ci_if_error: false # optional (default = false)
   core_test_suite:
     name: Core tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
-    needs: [pre_commit]
+    needs: [pre_commit, setup]
     runs-on: ${{ matrix.os }}
+    if: needs.setup.outputs.code_change == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -211,15 +292,14 @@ jobs:
       PYTHON_VERSION: ${{ matrix.python-version }}
       SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
     steps:
-      # Add back when this works on Python 3.12
-      # - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
+    # - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
       #   with:
       #     name: core_test_suite
       #     python-version: ${{ matrix.python-version }}
       #     # channel-priority: strict
       #     channels: pyviz/label/dev,conda-forge,nodefaults
       #     envs: "-o tests_core -o tests_ci"
-      #     cache: true
+      #     cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
       #     conda-update: true
       #     id: install
       - uses: actions/checkout@v3
@@ -242,4 +322,4 @@ jobs:
       - name: doit test_unit
         run: |
           # conda activate test-environment
-          pytest panel
+          pytest panel -n logical --dist loadgroup

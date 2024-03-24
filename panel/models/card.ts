@@ -1,26 +1,27 @@
 import {Column, ColumnView} from "./column"
 import * as DOM from "@bokehjs/core/dom"
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 
 export class CardView extends ColumnView {
-  model: Card
+  declare model: Card
+
   button_el: HTMLButtonElement
   header_el: HTMLElement
 
   readonly collapsed_style = new DOM.InlineStyleSheet()
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
 
-    const {active_header_background, children, collapsed, header_background, header_color, hide_header} = this.model.properties
-    this.on_change(children, () => this.render())
+    const {active_header_background, collapsed, header_background, header_color, hide_header} = this.model.properties
     this.on_change(collapsed, () => this._collapse())
     this.on_change([header_color, hide_header], () => this.render())
 
     this.on_change([active_header_background, collapsed, header_background], () => {
       const header_background = this.header_background
-      if (header_background == null)
-	return
+      if (header_background == null) {
+        return
+      }
       this.child_views[0].el.style.backgroundColor = header_background
       this.header_el.style.backgroundColor = header_background
     })
@@ -33,19 +34,21 @@ export class CardView extends ColumnView {
 
   get header_background(): string | null {
     let header_background = this.model.header_background
-    if (!this.model.collapsed && this.model.active_header_background)
+    if (!this.model.collapsed && this.model.active_header_background) {
       header_background = this.model.active_header_background
+    }
     return header_background
   }
 
-  render(): void {
+  override render(): void {
     this.empty()
 
-    if (this.model.collapsed)
+    if (this.model.collapsed) {
       this.collapsed_style.replace(":host", {
-	"height": "fit-content",
-	"flex": "none"
+        height: "fit-content",
+        flex: "none",
       })
+    }
 
     this._update_stylesheets()
     this._update_css_classes()
@@ -85,8 +88,9 @@ export class CardView extends ColumnView {
       header.after_render()
     }
 
-    if (this.model.collapsed)
+    if (this.model.collapsed) {
       return
+    }
 
     for (const child_view of this.child_views.slice(1)) {
       this.shadow_el.appendChild(child_view.el)
@@ -95,7 +99,7 @@ export class CardView extends ColumnView {
     }
   }
 
-  async update_children(): Promise<void> {
+  override async update_children(): Promise<void> {
     await this.build_child_views()
     this.render()
     this.invalidate_layout()
@@ -109,26 +113,27 @@ export class CardView extends ColumnView {
     for (const child_view of this.child_views.slice(1)) {
       if (this.model.collapsed) {
         this.shadow_el.removeChild(child_view.el)
-	child_view.model.visible = false
+        child_view.model.visible = false
       } else {
-	child_view.render()
-	child_view.after_render()
+        child_view.render()
+        child_view.after_render()
         this.shadow_el.appendChild(child_view.el)
-	child_view.model.visible = true
+        child_view.model.visible = true
       }
     }
     if (this.model.collapsed) {
       this.collapsed_style.replace(":host", {
-	"height": "fit-content",
-	'flex': "none"
+        height: "fit-content",
+        flex: "none",
       })
-    } else
+    } else {
       this.collapsed_style.clear()
+    }
     this.button_el.children[0].innerHTML = this.model.collapsed ? "\u25ba" : "\u25bc"
     this.invalidate_layout()
   }
 
-  protected _createElement(): HTMLElement {
+  protected override _createElement(): HTMLElement {
     return DOM.createElement((this.model.tag as any), {class: this.css_classes()})
   }
 }
@@ -153,28 +158,28 @@ export namespace Card {
 export interface Card extends Card.Attrs {}
 
 export class Card extends Column {
-  properties: Card.Props
+  declare properties: Card.Props
 
   constructor(attrs?: Partial<Card.Attrs>) {
     super(attrs)
   }
 
-  static __module__ = "panel.models.layout"
+  static override __module__ = "panel.models.layout"
 
   static {
     this.prototype.default_view = CardView
 
-    this.define<Card.Props>(({Array, Boolean, Nullable, String}) => ({
-      active_header_background: [ Nullable(String), null ],
-      button_css_classes:       [ Array(String),      [] ],
-      collapsed:                [ Boolean,          true ],
-      collapsible:              [ Boolean,          true ],
-      header_background:        [ Nullable(String), null ],
-      header_color:             [ Nullable(String), null ],
-      header_css_classes:       [ Array(String),      [] ],
-      header_tag:               [ String,          "div" ],
-      hide_header:              [ Boolean,         false ],
-      tag:                      [ String,          "div" ],
+    this.define<Card.Props>(({List, Bool, Nullable, Str}) => ({
+      active_header_background: [ Nullable(Str), null ],
+      button_css_classes:       [ List(Str),      [] ],
+      collapsed:                [ Bool,          true ],
+      collapsible:              [ Bool,          true ],
+      header_background:        [ Nullable(Str), null ],
+      header_color:             [ Nullable(Str), null ],
+      header_css_classes:       [ List(Str),      [] ],
+      header_tag:               [ Str,          "div" ],
+      hide_header:              [ Bool,         false ],
+      tag:                      [ Str,          "div" ],
     }))
   }
 }

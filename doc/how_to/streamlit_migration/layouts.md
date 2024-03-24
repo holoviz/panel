@@ -1,6 +1,6 @@
-# Organize Components with Layouts
+# Layout Objects
 
-*Layouts* helps you organize your Panel *components*, i.e. *panes*, *widgets* and *layouts*.
+*Layouts* helps you organize your *objects* including Panel *components*.
 
 Panel provides layouts similar to the ones you know from Streamlit and many unique ones too.
 

@@ -4,15 +4,15 @@ Both Streamlit and Panel provides special components to help you build conversat
 
 | Streamlit            | Panel               | Description                            |
 | -------------------- | ------------------- | -------------------------------------- |
-| [`chat_message`](https://docs.streamlit.io/library/api-reference/chat/st.chat_message)    | [`ChatMessage`](../../../examples/reference/chat/ChatMessage.ipynb) | Display a chat message  |
+| [`chat_message`](https://docs.streamlit.io/library/api-reference/chat/st.chat_message)    | [`ChatMessage`](../../reference/chat/ChatMessage.md) | Display a chat message  |
 | [`chat_input`](https://docs.streamlit.io/library/api-reference/chat/st.chat_input) |  [`ChatInput` example](https://holoviz-topics.github.io/panel-chat-examples/components/#chat_input) | Input a chat message |
 | [`status`](https://docs.streamlit.io/library/api-reference/status/st.status) | [`Status` example](https://holoviz-topics.github.io/panel-chat-examples/components/#status) | Display the output of long-running tasks in a container |
-|                      | [`ChatFeed`](../../../examples/reference/chat/ChatFeed.ipynb)  | Display multiple chat messages         |
-|                      | [`ChatInterface`](../../../examples/reference/chat/ChatInterface.ipynb)  | High-level, easy to use chat interface |
-| [`StreamlitCallbackHandler`](https://python.langchain.com/docs/integrations/callbacks/streamlit) | [`PanelCallbackHandler`](../../../examples/reference/chat/PanelCallbackHandler.ipynb) | Display the thoughts and actions of a [LangChain](https://python.langchain.com/docs/get_started/introduction) agent |
+|                      | [`ChatFeed`](../../reference/chat/ChatFeed.md)  | Display multiple chat messages         |
+|                      | [`ChatInterface`](../../reference/chat/ChatInterface.md)  | High-level, easy to use chat interface |
+| [`StreamlitCallbackHandler`](https://python.langchain.com/docs/integrations/callbacks/streamlit) | [`PanelCallbackHandler`](../../reference/chat/PanelCallbackHandler.md) | Display the thoughts and actions of a [LangChain](https://python.langchain.com/docs/get_started/introduction) agent |
 | [`StreamlitChatMessageHistory`](https://python.langchain.com/docs/integrations/memory/streamlit_chat_message_history) |  | Persist the memory of a [LangChain](https://python.langchain.com/docs/get_started/introduction) agent |
 
-The starting point for most Panel users is the *high-level* [`ChatInterface`](../../../examples/reference/chat/ChatInterface.ipyn) or [`PanelCallbackHandler`](../../../examples/reference/chat/PanelCallbackHandler.ipynb), not the *low-level* [`ChatMessage`](../../../examples/reference/chat/ChatMessage.ipynb) and [`ChatFeed`](../../../examples/reference/chat/ChatFeed.ipynb) components.
+The starting point for most Panel users is the *high-level* [`ChatInterface`](../../reference/chat/ChatInterface.md) or [`PanelCallbackHandler`](../../reference/chat/PanelCallbackHandler.md), not the *low-level* [`ChatMessage`](../../reference/chat/ChatMessage.md) and [`ChatFeed`](../../reference/chat/ChatFeed.md) components.
 
 ## Chat Message
 

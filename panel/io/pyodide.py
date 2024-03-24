@@ -8,6 +8,7 @@ import json
 import os
 import pathlib
 import sys
+import uuid
 
 from typing import (
     Any, Callable, List, Tuple,
@@ -20,7 +21,7 @@ import param
 import pyodide # isort: split
 
 from bokeh import __version__
-from bokeh.core.serialization import Buffer, Serializer
+from bokeh.core.serialization import Buffer, Serialized, Serializer
 from bokeh.document import Document
 from bokeh.document.json import PatchJson
 from bokeh.embed.elements import script_for_render_items
@@ -48,19 +49,31 @@ os.environ['BOKEH_RESOURCES'] = 'cdn'
 
 try:
     from js import document as js_document  # noqa
-    _IN_WORKER = False
-    _IN_PYSCRIPT_WORKER = False
+    try:
+        # PyScript Next Worker now patches js.document by default
+        from pyscript import RUNNING_IN_WORKER as _IN_PYSCRIPT_WORKER
+        if _IN_PYSCRIPT_WORKER:
+            from pyscript import window
+            js.window = window
+        _IN_WORKER = True
+    except Exception:
+        _IN_PYSCRIPT_WORKER = False
+        _IN_WORKER = False
 except Exception:
     try:
-        # PyScript Next Worker support
+        # Initial version of PyScript Next Worker support did not patch js.document
         from pyscript import RUNNING_IN_WORKER as _IN_PYSCRIPT_WORKER
         if _IN_PYSCRIPT_WORKER:
             from pyscript import document, window
             js.document = document
-            js.Bokeh = window.Bokeh
+            js.window = window
     except Exception:
         _IN_PYSCRIPT_WORKER = False
     _IN_WORKER = True
+
+# Ensure we don't try to load MPL WASM backend in worker
+if _IN_WORKER:
+    os.environ['MPLBACKEND'] = 'agg'
 
 try:
     import pyodide_http
@@ -110,10 +123,14 @@ if pyodide_http is None:
         return _read_json_original(*args, **kwargs)
     pandas.read_json = _read_json
 
+_tasks = set()
+
 def async_execute(func: Any):
     event_loop = asyncio.get_running_loop()
     if event_loop.is_running():
-        asyncio.create_task(func())
+        task = asyncio.create_task(func())
+        _tasks.add(task)
+        task.add_done_callback(_tasks.discard)
     else:
         event_loop.run_until_complete(func())
     return
@@ -245,6 +262,27 @@ _dict_converter = pyodide.code.run_js("""
 })
 """)
 
+_current_buffers = []
+_patching = False
+
+def _bytes_converter(value, converter, other):
+    if not hasattr(value, 'buffer'):
+        return value
+    value = dict(value.object_entries())
+    uid = uuid.uuid4().hex
+    _current_buffers.append(
+        Buffer(id=uid, data=value['buffer'].to_bytes())
+    )
+    return {'id': uid}
+
+def _convert_json_patch(json_patch):
+    try:
+        patch = json_patch.to_py(default_converter=_bytes_converter)
+        serialized = Serialized(content=patch, buffers=list(_current_buffers))
+    finally:
+        _current_buffers.clear()
+    return serialized
+
 def _link_docs(pydoc: Document, jsdoc: Any) -> None:
     """
     Links Python and JS documents in Pyodide ensuring that messages
@@ -257,23 +295,30 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
     jsdoc: Javascript Document
         The Javascript Bokeh Document instance to sync.
     """
+
     def jssync(event):
         setter_id = getattr(event, 'setter_id', None)
-        if (setter_id is not None and setter_id == 'python'):
+        if (setter_id is not None and setter_id == 'python') or _patching:
             return
         json_patch = jsdoc.create_json_patch(pyodide.ffi.to_js([event]))
-        pydoc.apply_json_patch(json_patch.to_py(), setter='js')
+        patch = _convert_json_patch(json_patch)
+        pydoc.apply_json_patch(patch, setter='js')
 
     jsdoc.on_change(pyodide.ffi.create_proxy(jssync), pyodide.ffi.to_js(False))
 
     def pysync(event):
+        global _patching
         setter = getattr(event, 'setter', None)
         if setter is not None and setter == 'js':
             return
         json_patch, buffer_map = _process_document_events(pydoc, [event])
         json_patch = pyodide.ffi.to_js(json_patch, dict_converter=_dict_converter)
         buffer_map = pyodide.ffi.to_js(buffer_map)
-        jsdoc.apply_json_patch(json_patch, buffer_map)
+        _patching = True
+        try:
+            jsdoc.apply_json_patch(json_patch, buffer_map)
+        finally:
+            _patching = False
 
     pydoc.on_change(pysync)
 
@@ -323,12 +368,12 @@ async def _link_model(ref: str, doc: Document) -> None:
     doc: bokeh.document.Document
         The bokeh Document to sync the rendered Model with.
     """
-    rendered = js.Bokeh.index.object_keys()
+    rendered = js.window.Bokeh.index.object_keys()
     if ref not in rendered:
         await asyncio.sleep(0.1)
         await _link_model(ref, doc)
         return
-    views = js.Bokeh.index.object_values()
+    views = js.window.Bokeh.index.object_values()
     view = views[rendered.indexOf(ref)]
     _link_docs(doc, view.model.document)
 
@@ -406,7 +451,9 @@ def render_script(obj: Any, target: str) -> str:
         render_item.roots._roots[root] = target
     document.getElementById(target).classList.add('bk-root')
     script = script_for_render_items(docs_json, [render_item])
-    asyncio.create_task(_link_model(doc.roots[0].ref['id'], doc))
+    task = asyncio.create_task(_link_model(doc.roots[0].ref['id'], doc))
+    _tasks.add(task)
+    task.add_done_callback(_tasks.discard)
     return wrap_in_script_tag(script)
 
 def serve(*args, **kwargs):
@@ -456,7 +503,7 @@ async def write(target: str, obj: Any) -> None:
 
     obj = as_panel(obj)
     pydoc, model_json = _model_json(obj, target)
-    views = await js.Bokeh.embed.embed_item(JSON.parse(model_json))
+    views = await js.window.Bokeh.embed.embed_item(JSON.parse(model_json))
     jsdoc = list(views.roots)[0].model.document
     _link_docs(pydoc, jsdoc)
     pydoc.unhold()
@@ -476,8 +523,10 @@ def sync_location():
     """
     if not state.location:
         return
-    from js import window
-    loc_string = JSON.stringify(window.location)
+    try:
+        loc_string = JSON.stringify(js.window.location)
+    except Exception:
+        return
     loc_data = json.loads(loc_string)
     with edit_readonly(state.location):
         state.location.param.update({
@@ -521,7 +570,7 @@ async def write_doc(doc: Document | None = None) -> Tuple[str, str, str]:
 
     # If we have DOM access render and sync the document
     if root_els is not None:
-        views = await js.Bokeh.embed.embed_items(JSON.parse(docs_json), JSON.parse(render_items))
+        views = await js.window.Bokeh.embed.embed_items(JSON.parse(docs_json), JSON.parse(render_items))
         jsdoc = list(views[0].roots)[0].model.document
         _link_docs(pydoc, jsdoc)
         sync_location()
@@ -554,7 +603,9 @@ def pyrender(
     Returns an JS Map containing the content, mime_type, stdout and stderr.
     """
     from ..pane import HoloViews, Interactive, panel as as_panel
+    from ..param import ReactiveExpr
     from ..viewable import Viewable, Viewer
+    PANES = (HoloViews, Interactive, ReactiveExpr)
     kwargs = {}
     if stdout_callback:
         kwargs['stdout'] = WriteCallbackStream(stdout_callback)
@@ -562,7 +613,7 @@ def pyrender(
         kwargs['stderr'] = WriteCallbackStream(stderr_callback)
     out = exec_with_return(code, **kwargs)
     ret = {}
-    if isinstance(out, (Model, Viewable, Viewer)) or HoloViews.applies(out) or Interactive.applies(out):
+    if isinstance(out, (Model, Viewable, Viewer)) or any(pane.applies(out) for pane in PANES):
         doc, model_json = _model_json(as_panel(out), target)
         state.cache[target] = doc
         ret['content'], ret['mime_type'] = model_json, 'application/bokeh'

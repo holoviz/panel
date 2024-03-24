@@ -8,13 +8,13 @@ pytest.importorskip("playwright")
 from playwright.sync_api import expect
 
 from panel.tests.util import (
-    run_panel_serve, unix_only, wait_for_port, write_file,
+    linux_only, run_panel_serve, wait_for_port, write_file,
 )
 
 pytestmark = pytest.mark.ui
 
 
-@unix_only
+@linux_only
 def test_autoreload_app(py_file, port, page):
     app = "import panel as pn; pn.Row('Example 1').servable()"
     app2 = "import panel as pn; pn.Row('Example 2').servable()"
