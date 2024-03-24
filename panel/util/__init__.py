@@ -466,11 +466,14 @@ def styler_update(styler, new_df):
                 continue
             op_fn = str(op[0])
             if ('_background_gradient' in op_fn or '_bar' in op_fn) and op[1] in (0, 1):
-                applies = np.array([
-                    new_df[col].dtype.kind in 'uif' for col in new_df.columns
-                ])
-                if len(op[2]) == len(applies):
-                    applies = np.logical_and(applies, op[2])
+                if isinstance(op[2], list):
+                    applies = op[2]
+                else:
+                    applies = np.array([
+                        new_df[col].dtype.kind in 'uif' for col in new_df.columns
+                    ])
+                    if len(op[2]) == len(applies):
+                        applies = np.logical_and(applies, op[2])
                 op = (op[0], op[1], applies)
             ops.append(op)
         todo = tuple(ops)

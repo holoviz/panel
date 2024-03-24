@@ -2084,6 +2084,27 @@ def test_tabulator_styling_empty_dataframe(document, comm):
         }
     }
 
+def test_tabulator_style_background_gradient(document, comm):
+    df = pd.DataFrame(np.random.rand(3, 5), columns=list("ABCDE"))
+    table = Tabulator(df)
+    table.style.background_gradient(
+        cmap="RdYlGn_r", vmin=0, vmax=0.5, subset=["A", "C", "D"]
+    )
+
+    model = table.get_root(document, comm)
+
+    assert list(model.cell_styles['data'][0]) == [2, 4, 5]
+
+def test_tabulator_styled_df_with_background_gradient(document, comm):
+    df = pd.DataFrame(np.random.rand(3, 5), columns=list("ABCDE")).style.background_gradient(
+        cmap="RdYlGn_r", vmin=0, vmax=0.5, subset=["A", "C", "D"]
+    )
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    assert list(model.cell_styles['data'][0]) == [2, 4, 5]
+
 def test_tabulator_editor_property_change(dataframe, document, comm):
     editor = SelectEditor(options=['A', 'B', 'C'])
     table = Tabulator(dataframe, editors={'str': editor})
