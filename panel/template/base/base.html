@@ -41,14 +41,15 @@
     {% for css in template_resources['css'].values() %}
     <link rel="stylesheet" href="{{ css }}">
     {% endfor %}
+
+    {% block custom_css %}
+    {% endblock %}
+
     {% for raw_css in template_resources['raw_css'] %}
     <style type="text/css">
     {{ raw_css }}
     </style>
     {% endfor %}
-
-    {% block custom_css %}
-    {% endblock %}
 
     <!-- Template JS -->
     {% for src in template_resources['js'].values() %}
