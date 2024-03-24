@@ -305,7 +305,7 @@ def require_components():
 
     skip_import = {}
     for model in js_requires:
-        if issubclass(model, ReactiveHTML) and not model._loaded():
+        if not isinstance(model, dict) and issubclass(model, ReactiveHTML) and not model._loaded():
             continue
 
         if hasattr(model, '__js_skip__'):
