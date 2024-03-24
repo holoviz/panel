@@ -51,10 +51,10 @@ GC_DEBOUNCE = 5
 _WRITE_LOCK = None
 
 def WRITE_LOCK():
-    global WRITE_LOCK
-    if WRITE_LOCK is None:
-        WRITE_LOCK = asyncio.Lock()
-    return WRITE_LOCK
+    global _WRITE_LOCK
+    if _WRITE_LOCK is None:
+        _WRITE_LOCK = asyncio.Lock()
+    return _WRITE_LOCK
 
 _panel_last_cleanup = None
 _write_tasks = []
