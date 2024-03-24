@@ -28,7 +28,7 @@ export class VTKJSPlotView extends AbstractVTKView {
   init_vtk_renwin(): void {
     this._vtk_renwin = vtkns.FullScreenRenderWindow.newInstance({
       rootContainer: this._vtk_container,
-      container: this._vtk_container
+      container: this._vtk_container,
     })
   }
 
@@ -39,13 +39,13 @@ export class VTKJSPlotView extends AbstractVTKView {
     }
     let bytes_promise: any
     if (this.model.data_url) {
-      bytes_promise = vtkns.DataAccessHelper.get('http').fetchBinary(this.model.data_url)
+      bytes_promise = vtkns.DataAccessHelper.get("http").fetchBinary(this.model.data_url)
     } else {
       bytes_promise = async () => { this.model.data }
     }
     bytes_promise.then((zipContent: ArrayBuffer) => {
       const dataAccessHelper = vtkns.DataAccessHelper.get("zip", {
-        zipContent: zipContent,
+        zipContent,
         callback: (_zip: unknown) => {
           const sceneImporter = vtkns.HttpSceneLoader.newInstance({
             renderer: this._vtk_renwin.getRenderer(),
