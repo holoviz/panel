@@ -1188,11 +1188,7 @@ def test_tabulator_theming(page, df_mixed, df_mixed_as_string, theme):
     theme = _TABULATOR_THEMES_MAPPING.get(theme, theme)
     for response in responses:
         base = response.url.split('/')[-1]
-        if base == f'tabulator_{theme}.min.css':
-            found = True
-            break
-        # default theme
-        elif base == 'tabulator.min.css':
+        if base.startswith(('tabulator.min.css', f'tabulator_{theme}.min.css')):
             found = True
             break
     assert found
