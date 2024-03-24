@@ -1,3 +1,4 @@
+import type {StyleSheetLike} from "@bokehjs/core/dom"
 import {div} from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
 import {isPlainObject} from "@bokehjs/core/util/types"
@@ -9,6 +10,8 @@ import {debounce} from  "debounce"
 import {deepCopy, get, reshape, throttle} from "./util"
 
 import {HTMLBox, HTMLBoxView, set_size} from "./layout"
+
+import plotly_css from "styles/models/plotly.css"
 
 interface PlotlyHTMLElement extends HTMLDivElement {
   _fullLayout: any
@@ -179,6 +182,10 @@ export class PlotlyPlotView extends HTMLBoxView {
     this.on_change(viewport, () => {
       this._updateViewportFromProperty()
     })
+  }
+
+  override stylesheets(): StyleSheetLike[] {
+    return [...super.stylesheets(), plotly_css]
   }
 
   override remove(): void {
