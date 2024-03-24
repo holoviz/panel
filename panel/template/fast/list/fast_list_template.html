@@ -22,15 +22,17 @@
     --neutral-fill-hover: var(--header-background);
     --neutral-fill-rest: var(--header-background);
     --neutral-foreground-rest: var(--header-color);
+    --design-background-text-color: var(--header-color);
+    --design-background-color: var(--header-background);
     background: var(--header-background);
     color: var(--header-color);
   }
   #sidebar {
     min-width: var(--sidebar-width);
     max-width: var(--sidebar-width);
-	{% if not main_layout %}
-	background-color: var(--panel-surface-color);
-	{% endif %}
+    {% if not main_layout %}
+    background-color: var(--panel-surface-color);
+    {% endif %}
   }
 </style>
 {% endblock %}

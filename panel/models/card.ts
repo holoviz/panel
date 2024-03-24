@@ -1,6 +1,9 @@
 import {Column, ColumnView} from "./column"
+import type {StyleSheetLike} from "@bokehjs/core/dom"
 import * as DOM from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
+
+import card_css from "styles/models/card.css"
 
 export class CardView extends ColumnView {
   declare model: Card
@@ -25,6 +28,10 @@ export class CardView extends ColumnView {
       this.child_views[0].el.style.backgroundColor = header_background
       this.header_el.style.backgroundColor = header_background
     })
+  }
+
+  override stylesheets(): StyleSheetLike[] {
+    return [...super.stylesheets(), card_css]
   }
 
   protected override *_stylesheets(): Iterable<DOM.StyleSheet> {

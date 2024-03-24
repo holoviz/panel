@@ -28,9 +28,11 @@
 	--header-color: {{ header_color or "var(--design-primary-text-color, var(--panel-on-primary-color))" }};
 	--sidebar-width: {{ sidebar_width }}px;
       }
-      #header {
+      #header, #header :host {
 	--bs-body-bg: var(--header-background);
 	--bs-body-color: var(--header-color);
+	--design-background-text-color: var(--header-color);
+	--design-background-color: var(--header-background);
 	background-color: var(--header-background);
 	color: var(--header-color);
       }

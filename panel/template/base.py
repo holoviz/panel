@@ -29,8 +29,9 @@ from ..io.model import add_to_doc
 from ..io.notebook import render_template
 from ..io.notifications import NotificationArea
 from ..io.resources import (
-    BUNDLE_DIR, CDN_DIST, ResourceComponent, _env, component_resource_path,
-    get_dist_path, loading_css, parse_template, resolve_custom_path, use_cdn,
+    BUNDLE_DIR, CDN_DIST, JS_VERSION, ResourceComponent, _env,
+    component_resource_path, get_dist_path, loading_css, parse_template,
+    resolve_custom_path, use_cdn,
 )
 from ..io.save import save
 from ..io.state import curdoc_locked, state
@@ -344,8 +345,9 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         name = clsname.lower()
         cdn = use_cdn() if cdn == 'auto' else cdn
         dist_path = get_dist_path(cdn=cdn)
+        version_suffix = f'?v={JS_VERSION}'
 
-        resource_types['css']['loading'] = f'{dist_path}css/loading.css'
+        css_files['loading'] = f'{dist_path}css/loading.css{version_suffix}'
         raw_css.extend(list(self.config.raw_css) + [loading_css(
             config.loading_spinner, config.loading_color, config.loading_max_height
         )])
@@ -356,6 +358,15 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                 resource_types[rname] += [
                     r for r in res if res not in resource_types[rname]
                 ]
+
+        for obj, _ in self._render_items.values():
+            if not isinstance(obj, Viewable):
+                continue
+            for o in obj.select(lambda c: hasattr(c, '_stylesheets')):
+                for sts in o._stylesheets:
+                    if not cdn:
+                        sts = sts.replace(CDN_DIST, dist_path)
+                    css_files[os.path.basename(sts)] = sts + version_suffix
 
         for rname, js in self.config.js_files.items():
             if '//' not in js and state.rel_path:
@@ -387,7 +398,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
 
             css_file = os.path.basename(css)
             if (BUNDLE_DIR / tmpl_name / css_file).is_file():
-                css_files[f'base_{css_file}'] = dist_path + f'bundled/{tmpl_name}/{css_file}'
+                css_files[f'base_{css_file}'] = f'{dist_path}bundled/{tmpl_name}/{css_file}{version_suffix}'
             elif isurl(css):
                 css_files[f'base_{css_file}'] = css
             elif resolve_custom_path(self, css):

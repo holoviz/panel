@@ -6,7 +6,6 @@ from typing import (
 
 import param
 
-from ..io.resources import CDN_DIST
 from ..models import Card as BkCard
 from .base import Column, Row
 
@@ -74,10 +73,6 @@ class Card(Column):
     _rename: ClassVar[Mapping[str, str | None]] = {
         'title': None, 'header': None, 'title_css_classes': None
     }
-
-    _stylesheets: ClassVar[List[str]] = [
-        f'{CDN_DIST}css/card.css'
-    ]
 
     def __init__(self, *objects, **params):
         self._header_layout = Row(css_classes=['card-header-row'], sizing_mode='stretch_width')

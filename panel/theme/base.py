@@ -15,7 +15,7 @@ from bokeh.themes import Theme as _BkTheme, _dark_minimal, built_in_themes
 
 from ..config import config
 from ..io.resources import (
-    ResourceComponent, component_resource_path, get_dist_path,
+    JS_VERSION, ResourceComponent, component_resource_path, get_dist_path,
     resolve_custom_path,
 )
 from ..util import relative_to
@@ -370,6 +370,7 @@ class Design(param.Parameterized, ResourceComponent):
         if not include_theme:
             return resource_types
         dist_path = get_dist_path(cdn=cdn)
+        version_suffix = f'?v={JS_VERSION}'
         css_files = resource_types['css']
         theme = self.theme
         for attr in ('base_css', 'css'):
@@ -379,7 +380,7 @@ class Design(param.Parameterized, ResourceComponent):
             basename = os.path.basename(css)
             key = 'theme_base' if 'base' in attr else 'theme'
             if relative_to(css, THEME_CSS):
-                css_files[key] = dist_path + f'bundled/theme/{basename}'
+                css_files[key] = dist_path + f'bundled/theme/{basename}{version_suffix}'
             elif resolve_custom_path(theme, css):
                 owner = type(theme).param[attr].owner
                 css_files[key] = component_resource_path(owner, attr, css)

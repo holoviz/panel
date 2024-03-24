@@ -5,7 +5,7 @@ bokeh model.
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, List, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
 )
 
 import numpy as np
@@ -14,7 +14,6 @@ import param
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
-from ..io.resources import CDN_DIST
 from ..util import isdatetime, lazy_load
 from ..viewable import Layoutable
 from .base import ModelPane
@@ -83,10 +82,6 @@ class Plotly(ModelPane):
         Number of renders, increment to trigger re-render""")
 
     priority: ClassVar[float | bool | None] = 0.8
-
-    _stylesheets: ClassVar[List[str]] = [
-        f'{CDN_DIST}css/plotly.css'
-    ]
 
     _updates: ClassVar[bool] = True
 

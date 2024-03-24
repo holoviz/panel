@@ -8,7 +8,7 @@ from packaging.version import Version
 
 from panel.config import config, panel_extension as extension
 from panel.io.resources import (
-    CDN_DIST, DIST_DIR, PANEL_DIR, Resources, resolve_custom_path,
+    CDN_DIST, DIST_DIR, JS_VERSION, PANEL_DIR, Resources, resolve_custom_path,
     resolve_stylesheet, set_resource_mode,
 )
 from panel.io.state import set_curdoc
@@ -88,7 +88,7 @@ def test_resources_model_server(document):
                 'static/extensions/panel/bundled/datatabulator/luxon/build/global/luxon.min.js',
             ]
             assert resources.css_files == [
-                'static/extensions/panel/bundled/datatabulator/tabulator-tables@5.5.0/dist/css/tabulator_simple.min.css'
+                f'static/extensions/panel/bundled/datatabulator/tabulator-tables@5.5.0/dist/css/tabulator_simple.min.css?v={JS_VERSION}'
             ]
 
 def test_resources_model_cdn(document):
@@ -101,7 +101,7 @@ def test_resources_model_cdn(document):
                 f'{CDN_DIST}bundled/datatabulator/luxon/build/global/luxon.min.js',
             ]
             assert resources.css_files == [
-                f'{CDN_DIST}bundled/datatabulator/tabulator-tables@5.5.0/dist/css/tabulator_simple.min.css'
+                f'{CDN_DIST}bundled/datatabulator/tabulator-tables@5.5.0/dist/css/tabulator_simple.min.css?v={JS_VERSION}'
             ]
 
 def test_resources_model_inline(document):
@@ -126,8 +126,8 @@ def test_resources_reactive_html_server(document):
                 'static/extensions/panel/bundled/gridstack/gridstack@7.2.3/dist/gridstack-all.js'
             ]
             assert resources.css_files == [
-                'static/extensions/panel/bundled/gridstack/gridstack@7.2.3/dist/gridstack.min.css',
-                'static/extensions/panel/bundled/gridstack/gridstack@7.2.3/dist/gridstack-extra.min.css'
+                f'static/extensions/panel/bundled/gridstack/gridstack@7.2.3/dist/gridstack.min.css?v={JS_VERSION}',
+                f'static/extensions/panel/bundled/gridstack/gridstack@7.2.3/dist/gridstack-extra.min.css?v={JS_VERSION}'
             ]
 
 def test_resources_reactive_html_cdn(document):
@@ -139,8 +139,8 @@ def test_resources_reactive_html_cdn(document):
                 f'{CDN_DIST}bundled/gridstack/gridstack@7.2.3/dist/gridstack-all.js'
             ]
             assert resources.css_files == [
-                f'{CDN_DIST}bundled/gridstack/gridstack@7.2.3/dist/gridstack.min.css',
-                f'{CDN_DIST}bundled/gridstack/gridstack@7.2.3/dist/gridstack-extra.min.css'
+                f'{CDN_DIST}bundled/gridstack/gridstack@7.2.3/dist/gridstack.min.css?v={JS_VERSION}',
+                f'{CDN_DIST}bundled/gridstack/gridstack@7.2.3/dist/gridstack-extra.min.css?v={JS_VERSION}'
             ]
 
 def test_resources_reactive_html_inline(document):

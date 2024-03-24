@@ -614,6 +614,7 @@ class Resources(BkResources):
         Computes relative and absolute paths for resources.
         """
         new_resources = []
+        version_suffix = f'?v={JS_VERSION}'
         cdn_base = f'{config.npm_cdn}/@holoviz/panel@{JS_VERSION}/dist/'
         for resource in resources:
             if not isinstance(resource, str):
@@ -630,6 +631,8 @@ class Resources(BkResources):
                     resource = f'{state.rel_path}/{resource}'
                 elif self.absolute and self.mode == 'server':
                     resource = f'{self.root_url}{resource}'
+            if resource.endswith('.css'):
+                resource += version_suffix
             new_resources.append(resource)
         return new_resources
 

@@ -14,7 +14,7 @@ PERSPECTIVE_THEMES = [
     'pro', 'pro-dark', 'gruvbox', 'gruvbox-dark',
 ]
 
-PERSPECTIVE_VERSION = '2.8.0'
+PERSPECTIVE_VERSION = '2.9.0'
 
 THEME_PATH = f"@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/css/"
 THEME_URL = f"{config.npm_cdn}/{THEME_PATH}"
@@ -23,7 +23,7 @@ PANEL_CDN = f"{config.npm_cdn}/@holoviz/panel@{JS_VERSION}/dist/bundled/perspect
 CSS_URLS = [
     f"{THEME_URL}fonts.css",
     f"{THEME_URL}themes.css",
-    f"{THEME_URL}variables.css"
+    f"{THEME_URL}variables.css",
 ]
 for theme in PERSPECTIVE_THEMES:
     CSS_URLS.append(f'{THEME_URL}{theme}.css')
