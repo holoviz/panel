@@ -841,33 +841,35 @@ class VTKJS(AbstractVTK):
         """
         VTKJSPlot = lazy_load('panel.models.vtk', 'VTKJSPlot', isinstance(comm, JupyterComm), root)
         props = self._get_properties(doc)
-        vtkjs = self._get_vtkjs()
-        if vtkjs is not None:
-            props['data'] = base64encode(vtkjs)
+        props['data_url'], props['data'] = self._get_vtkjs()
         model = VTKJSPlot(**props)
         root = root or model
         self._link_props(model, ['camera', 'enable_keybindings', 'orientation_widget'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _get_vtkjs(self):
+    def _get_vtkjs(self, fetch=True):
+        data_path, data_url = None, None
+        if isinstance(self.object, str) and self.object.endswith('.vtkjs'):
+            data_path = data_path
+            if not isfile(self.object):
+                data_url = self.object
         if self._vtkjs is None and self.object is not None:
-            if isinstance(self.object, str) and self.object.endswith('.vtkjs'):
-                if isfile(self.object):
-                    with open(self.object, 'rb') as f:
-                        vtkjs = f.read()
-                else:
-                    data_url = urlopen(self.object)
-                    vtkjs = data_url.read()
+            vtkjs = None
+            if data_url and fetch:
+                vtkjs = urlopen(data_url).read() if fetch else data_url
+            elif data_path:
+                with open(self.object, 'rb') as f:
+                    vtkjs = f.read()
             elif hasattr(self.object, 'read'):
                 vtkjs = self.object.read()
             self._vtkjs = vtkjs
-        return self._vtkjs
+        return data_url, self._vtkjs
 
     def _update(self, ref: str, model: Model) -> None:
         self._vtkjs = None
-        vtkjs = self._get_vtkjs()
-        model.data = base64encode(vtkjs) if vtkjs is not None else vtkjs
+        data_url, vtkjs = self._get_vtkjs()
+        model.update(data_url=data_url, data=vtkjs)
 
     def export_vtkjs(self, filename: str | IO ='vtk_panel.vtkjs'):
         """
@@ -877,8 +879,9 @@ class VTKJS(AbstractVTK):
         ---------
         filename: str | IO
         """
+        _, vtkjs = self._get_vtkjs()
         if hasattr(filename, 'write'):
-            filename.write(self._get_vtkjs())
+            filename.write(vtkjs)
         else:
             with open(filename, 'wb') as f:
-                f.write(self._get_vtkjs())
+                f.write(vtkjs)

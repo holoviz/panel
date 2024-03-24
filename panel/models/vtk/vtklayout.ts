@@ -197,13 +197,6 @@ export abstract class AbstractVTKView extends HTMLBoxView {
   override render(): void {
     super.render()
     this._rendered = false
-    if (this._vtk_renwin && this._vtk_container) {
-      // warning if _vtk_renwin contain controllers or other elements
-      // we must attach them to the new el
-      this.shadow_el.appendChild(this._vtk_container)
-      this.shadow_el.appendChild(this._annotations_container)
-      return
-    }
     this._orientationWidget = null
     this._axes = null
     this._vtk_container = div()

@@ -14,7 +14,8 @@ from ..io.resources import bundled_files
 from ..util import classproperty
 from .layout import HTMLBox
 
-vtk_cdn = f"{config.npm_cdn}/vtk.js@20.0.1/vtk.js"
+vtk_cdn = f"{config.npm_cdn}/vtk.js@30.1.0/vtk.js"
+
 
 class VTKAxes(Model):
     """
@@ -105,7 +106,9 @@ class VTKJSPlot(AbstractVTKPlot):
     Bokeh model for plotting a 3D scene saved in the `.vtk-js` format
     """
 
-    data = Nullable(String, help="""The serialized vtk.js data""")
+    data = Nullable(Bytes, help="""The serialized vtk.js data""")
+
+    data_url = Nullable(String, help="The data URL")
 
     enable_keybindings = Bool(default=False)
 
