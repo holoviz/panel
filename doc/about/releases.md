@@ -45,15 +45,19 @@ This minor release packs a punch both in terms of features, the number of enhanc
 - Add `Param<Ref|Method|Function>` and `ReactiveExpr` to panes module ([#6432](https://github.com/holoviz/panel/pull/6432))
 - Set up `param.rx` display accessor on import ([#6470](https://github.com/holoviz/panel/pull/6470))
 - Allow using Carto tiles in `DeckGL` ([#6531](https://github.com/holoviz/panel/pull/6531))
+- Improve `VTKJS` binary serialization ([#6559](https://github.com/holoviz/panel/pull/6559))
+- Ensure component CSS is pre-loaded if possible, avoiding flicker on load ([#6563](https://github.com/holoviz/panel/pull/6563))
 
 #### Styling
 
 - Ensure navbar toggle icon is correct color in `BootstrapTemplate` ([#6111](https://github.com/holoviz/panel/pull/6111))
+- Change `loading` background filters to work better in dark themes ([#6112](https://github.com/holoviz/panel/pull/6112))
 - Improve styling of `FileInput` widget ([#6479](https://github.com/holoviz/panel/pull/6479))
 - Improve Jupyter Preview error handling and error template ([#6496](https://github.com/holoviz/panel/pull/6496))
 - Add scale animation to icons on hover and click ([#6376](https://github.com/holoviz/panel/pull/6376))
 - Redesign index pages ([#6497](https://github.com/holoviz/panel/pull/6497))
 - Improve `Tabulator` editor text color in `Fast` design ([#6512](https://github.com/holoviz/panel/pull/6512))
+- Ensure `BootstrapTemplate` hamburger icon is white ([#6562](https://github.com/holoviz/panel/pull/6562))
 
 ### Compatibility & Version Updates
 
@@ -99,6 +103,12 @@ This minor release packs a punch both in terms of features, the number of enhanc
 - Ensure `Markdown` parsing does not choke on partial links ([#6535](https://github.com/holoviz/panel/pull/6535))
 - Fixes to ensure larger `PDF`s can be rendered ([#6538](https://github.com/holoviz/panel/pull/6538))
 - Ensure `IPywidget` comms are only opened once ([#6542](https://github.com/holoviz/panel/pull/6542))
+- Fixes for message handling in Jupyter Preview context ([#6547](https://github.com/holoviz/panel/pull/6547))
+- Fix unnecessary loading of `ReactiveHTML` resources ([#6552](https://github.com/holoviz/panel/pull/6552))
+- Ensure `Template.raw_css` has higher precedence than default template CSS ([#6554](https://github.com/holoviz/panel/pull/6554))
+- Avoid asyncio event loop startup issues in some contexts ([#6555](https://github.com/holoviz/panel/pull/6555))
+- Ensure column subset is retained on `Tabulator.style` ([#6560](https://github.com/holoviz/panel/pull/6560))
+- Ensure bokeh mathjax bundle when mathjax extension is loaded in notebook ([#6564](https://github.com/holoviz/panel/pull/6564))
 
 #### Chat Components
 
@@ -2275,6 +2285,7 @@ This release focuses primarily on solidifying existing functionality, significan
 - Added `Param` reference notebook ([#944](https://github.com/holoviz/panel/issues/944))
 - Added `Divider` reference notebook
 
+
 ## Version 0.7.0
 
 Date: 2019-11-18T21:22:16Z
@@ -2325,11 +2336,6 @@ Documentation:
 - Add Comparisons section ([#643](https://github.com/holoviz/panel/issues/643))
 - Docs fixes and improvements ([#635](https://github.com/holoviz/panel/issues/635), [#670](https://github.com/holoviz/panel/issues/670), [#705](https://github.com/holoviz/panel/issues/705), [#708](https://github.com/holoviz/panel/issues/708), [#709](https://github.com/holoviz/panel/issues/709), [#740](https://github.com/holoviz/panel/issues/740), [#747](https://github.com/holoviz/panel/issues/747), [#752](https://github.com/holoviz/panel/issues/752))
 
-## Version 0.6.2
-
-Date: 2019-08-08T15:13:31Z
-
-Minor bugfix release patching issues with 0.6.1, primarily in the CI setup. Also removed the not-yet-supported definition_order parameter of pn.CrossSelector.
 
 ## Version 0.6.4
 
@@ -2377,13 +2383,23 @@ Documentation:
 - Improve `panel serve` documentation ([#611](https://github.com/holoviz/panel/issues/611), [#614](https://github.com/holoviz/panel/issues/614))
 - Add server deployment guide ([#642](https://github.com/holoviz/panel/issues/642))
 
+
+## Version 0.6.2
+
+Date: 2019-08-08T15:13:31Z
+
+Minor bugfix release patching issues with 0.6.1, primarily in the CI setup. Also removed the not-yet-supported definition_order parameter of pn.CrossSelector.
+
+
 ## Version 0.6.1
 
 Date: 2019-08-01T14:54:20Z
 
+
 ## Version 0.6.0
 
 Date: 2019-06-02T17:56:26Z
+
 
 ## Version 0.5.1
 
@@ -2448,11 +2464,34 @@ Changes potentially affecting backwards compatibility:
 - Renamed pane precedence to priority to avoid confusion with Param precedence ([#235](https://github.com/holoviz/panel/issues/235))
 
 
+## Version 0.4.0
+
+Date: 2019-01-28T18:02:57Z
+
+Thanks to @xavArtley for several contributions, and to @lebedov for bugfixes.
+
+New features:
+
+- Now Python2 compatible ([#225](https://github.com/holoviz/panel/issues/225))
+- Audio player widget ([#215](https://github.com/holoviz/panel/issues/215),[#221](https://github.com/holoviz/panel/issues/221))
+- FileInput widget ([#207](https://github.com/holoviz/panel/issues/207))
+- General support for linking Panel objects, even in static exports ([#199](https://github.com/holoviz/panel/issues/199))
+- New user-guide notebooks: Introduction ([#178](https://github.com/holoviz/panel/issues/178)), Links ([#195](https://github.com/holoviz/panel/issues/195)).
+
+Enhancements:
+- Improved Pipeline ([#220](https://github.com/holoviz/panel/issues/220), [#222](https://github.com/holoviz/panel/issues/222))
+
+Bug fixes:
+- Windows-specific issues ([#204](https://github.com/holoviz/panel/issues/204), [#209](https://github.com/holoviz/panel/issues/209), etc.)
+- Various bugfixes ([#188](https://github.com/holoviz/panel/issues/188), [#189](https://github.com/holoviz/panel/issues/189), [#190](https://github.com/holoviz/panel/issues/190), [#203](https://github.com/holoviz/panel/issues/203))
+
+
 ## Version 0.3.1
 
 Date: 2018-12-05T22:49:23Z
 
 Minor release fixing packaging issues.
+
 
 ## Version 0.3.0
 
@@ -2477,28 +2516,6 @@ Bugfixes:
 
 Compatibility changes
 - Renamed Param expand options ([#127](https://github.com/holoviz/panel/issues/127))
-
-
-## Version 0.4.0
-
-Date: 2019-01-28T18:02:57Z
-
-Thanks to @xavArtley for several contributions, and to @lebedov for bugfixes.
-
-New features:
-
-- Now Python2 compatible ([#225](https://github.com/holoviz/panel/issues/225))
-- Audio player widget ([#215](https://github.com/holoviz/panel/issues/215),[#221](https://github.com/holoviz/panel/issues/221))
-- FileInput widget ([#207](https://github.com/holoviz/panel/issues/207))
-- General support for linking Panel objects, even in static exports ([#199](https://github.com/holoviz/panel/issues/199))
-- New user-guide notebooks: Introduction ([#178](https://github.com/holoviz/panel/issues/178)), Links ([#195](https://github.com/holoviz/panel/issues/195)).
-
-Enhancements:
-- Improved Pipeline ([#220](https://github.com/holoviz/panel/issues/220), [#222](https://github.com/holoviz/panel/issues/222))
-
-Bug fixes:
-- Windows-specific issues ([#204](https://github.com/holoviz/panel/issues/204), [#209](https://github.com/holoviz/panel/issues/209), etc.)
-- Various bugfixes ([#188](https://github.com/holoviz/panel/issues/188), [#189](https://github.com/holoviz/panel/issues/189), [#190](https://github.com/holoviz/panel/issues/190), [#203](https://github.com/holoviz/panel/issues/203))
 
 
 ## Version 0.1.3
