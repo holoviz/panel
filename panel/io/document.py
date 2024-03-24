@@ -48,7 +48,13 @@ DISPATCH_EVENTS = (
     ModelChangedEvent
 )
 GC_DEBOUNCE = 5
-WRITE_LOCK = asyncio.Lock()
+_WRITE_LOCK = None
+
+def WRITE_LOCK():
+    global WRITE_LOCK
+    if WRITE_LOCK is None:
+        WRITE_LOCK = asyncio.Lock()
+    return WRITE_LOCK
 
 _panel_last_cleanup = None
 _write_tasks = []
@@ -137,7 +143,7 @@ async def _run_write_futures(futures):
     Ensure that all write_message calls are awaited and handled.
     """
     from tornado.websocket import WebSocketClosedError
-    async with WRITE_LOCK:
+    async with WRITE_LOCK():
         for future in futures:
             try:
                 await future
