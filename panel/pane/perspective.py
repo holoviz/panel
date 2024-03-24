@@ -15,7 +15,6 @@ import param
 from bokeh.models import ColumnDataSource, ImportedStyleSheet
 from pyviz_comms import JupyterComm
 
-from ..io.resources import CDN_DIST
 from ..io.state import state
 from ..reactive import ReactiveData
 from ..util import datetime_types, lazy_load
@@ -332,10 +331,6 @@ class Perspective(ModelPane, ReactiveData):
 
     _updates: ClassVar[bool] = True
 
-    _stylesheets: ClassVar[List[str]] = [
-        f'{CDN_DIST}css/perspective-datatable.css'
-    ]
-
     @classmethod
     def applies(cls, object):
         if isinstance(object, dict) and all(isinstance(v, (list, np.ndarray)) for v in object.values()):
@@ -430,7 +425,7 @@ class Perspective(ModelPane, ReactiveData):
         from ..models.perspective import THEME_URL
         theme_url = f'{THEME_URL}{theme}.css'
         if self._bokeh_model is not None:
-            self._bokeh_model.__css_raw__ = self._bokeh_model.__css_raw__[:3] + [theme_url]
+            self._bokeh_model.__css_raw__ = self._bokeh_model.__css_raw__[:5] + [theme_url]
         return theme_url
 
     def _process_param_change(self, params):
