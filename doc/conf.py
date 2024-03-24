@@ -75,6 +75,7 @@ html_theme_options = {
         "panelitelink",
         "page-toc",
     ],
+    "announcement": "Panel 1.4 has just been released! Checkout the <a href='https://panel.holoviz.org/about/releases.html#version-1-4-0'>release notes</a> and support Panel by giving it a 🌟 on <a href='https://github.com/holoviz/panel'>Github</a>.",
 }
 
 extensions += [
