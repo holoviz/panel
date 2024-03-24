@@ -41,7 +41,7 @@ jobs:
         with:
           name: doc_build
           python-version: "3.11"
-          channels: pyviz/label/dev,conda-forge,nodefaults
+          channels: pyviz/label/dev,conda-forge,bokeh,nodefaults
           conda-update: 'true'
           nodejs: true
           nodejs-version: 20
