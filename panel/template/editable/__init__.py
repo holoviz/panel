@@ -113,7 +113,7 @@ class EditableTemplate(VanillaTemplate):
         title: Optional[str] = None, notebook: bool = False,
         location: bool | Location=True
     ):
-        ret = super()._init_doc(doc, comm, title, notebook, location)
+        doc = super()._init_doc(doc, comm, title, notebook, location)
         doc.js_on_event('document_ready', CustomJS(code="""
           window.muuriGrid.getItems().map(item => scroll(item.getElement()));
           for (const root of roots) {
@@ -127,7 +127,7 @@ class EditableTemplate(VanillaTemplate):
           window.muuriGrid.refreshItems();
           window.muuriGrid.layout();
         """, args={'roots': [root for root in doc.roots if 'main' in root.tags]}))
-        return ret
+        return doc
 
     @param.depends('editable', watch=True, on_init=True)
     def _add_editor(self) -> None:
