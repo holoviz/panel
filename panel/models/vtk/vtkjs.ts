@@ -45,8 +45,8 @@ export class VTKJSPlotView extends AbstractVTKView {
     }
     bytes_promise.then((zipContent: ArrayBuffer) => {
       const dataAccessHelper = vtkns.DataAccessHelper.get("zip", {
-	zipContent: zipContent,
-	callback: (_zip: unknown) => {
+        zipContent: zipContent,
+        callback: (_zip: unknown) => {
           const sceneImporter = vtkns.HttpSceneLoader.newInstance({
             renderer: this._vtk_renwin.getRenderer(),
             dataAccessHelper,
@@ -54,18 +54,18 @@ export class VTKJSPlotView extends AbstractVTKView {
           const fn = (window as any).vtk.macro.debounce(
             () => {
               setTimeout(() => {
-		if (this._axes == null && this.model.axes) {
+                if (this._axes == null && this.model.axes) {
                   this._set_axes()
-		}
-		this._set_camera_state()
-		this._get_camera_state()
-		this._vtk_renwin.getRenderWindow().render()
+                }
+                this._set_camera_state()
+                this._get_camera_state()
+                this._vtk_renwin.getRenderWindow().render()
               }, 100)
             }, 100,
           )
           sceneImporter.setUrl("index.json")
           sceneImporter.onReady(fn)
-	},
+        },
       })
     })
   }
