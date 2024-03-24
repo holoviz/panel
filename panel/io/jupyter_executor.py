@@ -7,7 +7,7 @@ import weakref
 
 from dataclasses import dataclass
 from typing import (
-    TYPING, Any, Dict, List, Union,
+    TYPE_CHECKING, Any, Dict, List, Union,
 )
 
 import tornado
@@ -31,7 +31,7 @@ from .resources import Resources
 from .server import server_html_page_for_session
 from .state import set_curdoc, state
 
-if TYPING:
+if TYPE_CHECKING:
     from bokeh.document.events import DocumentPatchedEvent
 
 
