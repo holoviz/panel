@@ -76,7 +76,7 @@ jobs:
         run: |
           echo "TAG=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
           echo "CONDA_FILE=$(ls dist/*.tar.bz2)" >> $GITHUB_ENV
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           miniconda-version: "latest"
       - name: conda setup
@@ -172,7 +172,7 @@ jobs:
           python -m pip install -ve .
       - name: npm build
         run: |
-          cd ./panel
+          cd ${{ env.PACKAGE }}
           TARBALL=$(npm pack .)
           echo "TARBALL=$TARBALL" >> $GITHUB_ENV
           npm publish --dry-run $TARBALL
@@ -182,7 +182,7 @@ jobs:
         with:
           name: npm
           if-no-files-found: error
-          path: ./panel/${{ env.TARBALL }}
+          path: ./${{ env.PACKAGE }}/${{ env.TARBALL }}
 
   npm_publish:
     name: Publish NPM
