@@ -2084,6 +2084,31 @@ def test_tabulator_styling_empty_dataframe(document, comm):
         }
     }
 
+
+@mpl_available
+def test_tabulator_style_background_gradient_with_frozen_columns(document, comm):
+    df = pd.DataFrame(np.random.rand(3, 5), columns=list("ABCDE"))
+    table = Tabulator(df, frozen_columns=['A'])
+    table.style.background_gradient(
+        cmap="RdYlGn_r", vmin=0, vmax=0.5, subset=["A", "C", "D"]
+    )
+
+    model = table.get_root(document, comm)
+
+    assert list(model.cell_styles['data'][0]) == [1, 4, 5]
+
+@mpl_available
+def test_tabulator_style_background_gradient_with_frozen_columns_left_and_right(document, comm):
+    df = pd.DataFrame(np.random.rand(3, 5), columns=list("ABCDE"))
+    table = Tabulator(df, frozen_columns={'A': 'left', 'C': 'right'})
+    table.style.background_gradient(
+        cmap="RdYlGn_r", vmin=0, vmax=0.5, subset=["A", "C", "D"]
+    )
+
+    model = table.get_root(document, comm)
+
+    assert list(model.cell_styles['data'][0]) == [1, 6, 4]
+
 @mpl_available
 def test_tabulator_style_background_gradient(document, comm):
     df = pd.DataFrame(np.random.rand(3, 5), columns=list("ABCDE"))
