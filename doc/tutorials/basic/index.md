@@ -90,12 +90,12 @@ Share your awesome apps with the world!
 Now that you've got the basics down, it's time to put your skills to the test:
 
 - **[Build a Report](build_report.md)**
-- **[Build a Monitoring Dashboard](build_monitoring_dashboard.md)**
 - **[Build an Animation](build_animation.md)**
-- **[Build a Todo App](build_todo.md)**
 - **[Build an Image Classifier](build_image_classifier.md)**
+- **[Build a Monitoring Dashboard](build_monitoring_dashboard.md)**
 - **[Build a Streaming Dashboard](build_streaming_dashboard.md)**
 - **[Build a Chat Bot](build_chatbot.md)**
+- **[Build a Todo App](build_todo.md)**
 
 Let's start building some amazing wind turbine apps! 🌬️🌀
 
@@ -136,10 +136,10 @@ progressive_layouts
 build_dashboard
 deploy
 build_report
-build_monitoring_dashboard
 build_animation
-build_todo
 build_image_classifier
+build_monitoring_dashboard
 build_streaming_dashboard
 build_chatbot
+build_todo
 ```
