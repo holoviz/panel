@@ -457,7 +457,6 @@ class ResourceComponent:
 
     @classmethod
     def _resolve_resource(cls, resource_type: str, resource: str, cdn: bool = False):
-        version_suffix = f'?v={JS_VERSION}'
         dist_path = get_dist_path(cdn=cdn)
         if resource.startswith(CDN_DIST):
             resource_path = resource.replace(f'{CDN_DIST}bundled/', '')
@@ -480,13 +479,13 @@ class ResourceComponent:
         except Exception:
             is_file = False
         if is_file:
-            return f'{prefixed_dist}bundled/{resource_path}{version_suffix}'
+            return f'{prefixed_dist}bundled/{resource_path}'
         elif isurl(resource):
             return resource
         elif resolve_custom_path(cls, resource):
             return component_resource_path(
                 cls, f'_resources/{resource_type}', resource
-            ) + {version_suffix}
+            )
 
     def resolve_resources(
         self,
