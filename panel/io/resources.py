@@ -715,7 +715,7 @@ class Resources(BkResources):
         # Inline local dist resources
         css_files = self._collect_external_resources("__css__")
         self.extra_resources(css_files, '__css__')
-        if self.mode.lower() != 'cdn':
+        if self.mode.lower() not in ('server', 'cdn'):
             raw += [
                 (DIST_DIR / css.replace(CDN_DIST, '')).read_text(encoding='utf-8')
                 for css in css_files if is_cdn_url(css)
