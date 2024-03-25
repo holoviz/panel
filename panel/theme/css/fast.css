@@ -16,7 +16,6 @@
   --switch-size: 12px;
   --container-background: var(--panel-surface-color);
   color: var(--neutral-foreground-rest);
-
   --panel-primary-color: var(--accent-foreground-rest);
   --panel-on-primary-color: var(--foreground-on-accent-rest);
 }
@@ -532,7 +531,7 @@ input[type='file']:active {
 :host(.solid) .bk-btn.bk-btn-default:active,
 :host(.solid) .bk-btn.bk-btn-default.bk-active {
   background-color: var(--neutral-fill-active);
-  color: var(--neutral-foreground-active);
+  color: var(--neutral-foreground-rest);
 }
 
 :host(.outline) .bk-btn.bk-btn-default {

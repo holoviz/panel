@@ -143,7 +143,9 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         self._design = self.design(theme=self.theme)
 
     def _update_vars(self, *args) -> None:
-        self._render_variables['template_resources'] = self.resolve_resources()
+        """
+        Updates the render variables before the template is rendered.
+        """
 
     def _build_layout(self) -> Column:
         str_repr = Str(repr(self))
@@ -211,7 +213,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
 
         # Add all render items to the document
         objs, models = [], []
-        sizing_modes = {}
+        stylesheets, sizing_modes = {}, {}
         tracked_models = set()
         for name, (obj, tags) in self._render_items.items():
 
@@ -229,6 +231,11 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                 # pre-processor correctly operates on fake root
                 for sub in obj.select(Viewable):
                     submodel = sub._models.get(mref)
+                    for stylesheet in getattr(sub, '_stylesheets', []):
+                        if not stylesheet.endswith('.css'):
+                            continue
+                        sts_name = f'extra_{os.path.basename(stylesheet)}'
+                        stylesheets[sts_name] = stylesheet
                     if submodel is None:
                         continue
                     sub._models[ref] = submodel
@@ -265,6 +272,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
             document.template = self.template
 
         self._update_vars()
+        resources = self.resolve_resources(extras={'css': stylesheets})
+        document._template_variables['template_resources'] = resources
         document._template_variables['sizing_modes'] = sizing_modes
         document._template_variables.update(self._render_variables)
         return document
@@ -319,7 +328,11 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
     # Public API
     #----------------------------------------------------------------
 
-    def resolve_resources(self, cdn: bool | Literal['auto'] = 'auto') -> ResourcesType:
+    def resolve_resources(
+        self,
+        cdn: bool | Literal['auto'] = 'auto',
+        extras: dict[str, dict[str, str]] | None = None
+    ) -> ResourcesType:
         """
         Resolves the resources required for this template component.
 
@@ -329,13 +342,16 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
             Whether to load resources from CDN or local server. If set
             to 'auto' value will be automatically determine based on
             global settings.
+        extras: dict[str, dict[str, str]] | None
+            Additional resources to add to the bundle. Valid resource
+            types include js, js_modules and css.
 
         Returns
         -------
         Dictionary containing JS and CSS resources.
         """
         cls = type(self)
-        resource_types = super().resolve_resources(cdn=cdn)
+        resource_types = super().resolve_resources(cdn=cdn, extras=extras)
         js_files = resource_types['js']
         js_modules = resource_types['js_modules']
         css_files = resource_types['css']
@@ -358,15 +374,6 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                 resource_types[rname] += [
                     r for r in res if res not in resource_types[rname]
                 ]
-
-        for obj, _ in self._render_items.values():
-            if not isinstance(obj, Viewable):
-                continue
-            for o in obj.select(lambda c: hasattr(c, '_stylesheets')):
-                for sts in o._stylesheets:
-                    if not cdn:
-                        sts = sts.replace(CDN_DIST, dist_path)
-                    css_files[os.path.basename(sts)] = sts + version_suffix
 
         for rname, js in self.config.js_files.items():
             if '//' not in js and state.rel_path:

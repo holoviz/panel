@@ -487,7 +487,11 @@ class ResourceComponent:
                 cls, f'_resources/{resource_type}', resource
             )
 
-    def resolve_resources(self, cdn: bool | Literal['auto'] = 'auto') -> ResourcesType:
+    def resolve_resources(
+        self,
+        cdn: bool | Literal['auto'] = 'auto',
+        extras: dict[str, dict[str, str]] | None = None
+    ) -> ResourcesType:
         """
         Resolves the resources required for this component.
 
@@ -497,6 +501,9 @@ class ResourceComponent:
             Whether to load resources from CDN or local server. If set
             to 'auto' value will be automatically determine based on
             global settings.
+        extras: dict[str, dict[str, str]] | None
+            Additional resources to add to the bundle. Valid resource
+            types include js, js_modules and css.
 
         Returns
         -------
@@ -518,7 +525,6 @@ class ResourceComponent:
             else:
                 resources[rt] = res
 
-        cdn = use_cdn() if cdn == 'auto' else cdn
         resource_types: ResourcesType = {
             'js': {},
             'js_modules': {},
@@ -526,6 +532,7 @@ class ResourceComponent:
             'raw_css': []
         }
 
+        cdn = use_cdn() if cdn == 'auto' else cdn
         for resource_type in resource_types:
             if resource_type not in resources or resource_type == 'raw_css':
                 continue
@@ -536,6 +543,18 @@ class ResourceComponent:
                 )
                 if resolved_resource:
                     resource_files[rname] = resolved_resource
+
+        version_suffix = f'?v={JS_VERSION}'
+        dist_path = get_dist_path(cdn=cdn)
+        for resource_type, extra_resources in (extras or {}).items():
+            resource_files = resource_types[resource_type]
+            for name, res in extra_resources.items():
+                if not cdn:
+                    res = res.replace(CDN_DIST, dist_path)
+                    if not res.endswith(version_suffix):
+                        res += version_suffix
+                resource_files[name] = res
+
         return resource_types
 
 
@@ -695,7 +714,7 @@ class Resources(BkResources):
         # Inline local dist resources
         css_files = self._collect_external_resources("__css__")
         self.extra_resources(css_files, '__css__')
-        if self.mode.lower() != 'cdn':
+        if self.mode.lower() not in ('server', 'cdn'):
             raw += [
                 (DIST_DIR / css.replace(CDN_DIST, '')).read_text(encoding='utf-8')
                 for css in css_files if is_cdn_url(css)
