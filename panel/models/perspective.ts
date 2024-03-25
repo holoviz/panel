@@ -279,6 +279,7 @@ export namespace Perspective {
     aggregates: p.Property<any>
     split_by: p.Property<any[] | null>
     columns: p.Property<any[]>
+    columns_config: p.Property<any>
     expressions: p.Property<any>
     editable: p.Property<boolean | null>
     filters: p.Property<any[] | null>
@@ -313,6 +314,7 @@ export class Perspective extends HTMLBox {
     this.define<Perspective.Props>(({Any, List, Bool, Ref, Nullable, Str}) => ({
       aggregates:       [ Any,                         {} ],
       columns:          [ List(Nullable(Str)),         [] ],
+      columns_config:   [ Any,                         {} ],
       expressions:      [ Any,                         {} ],
       split_by:         [ Nullable(List(Str)),       null ],
       editable:         [ Bool,                      true ],

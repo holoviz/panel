@@ -271,7 +271,11 @@ class Perspective(ModelPane, ReactiveData):
       How to aggregate. For example {"x": "distinct count"}""")
 
     columns = param.List(default=None, nested_refs=True, doc="""
-        A list of source columns to show as columns. For example ["x", "y"]""")
+      A list of source columns to show as columns. For example ["x", "y"]""")
+
+    columns_config = param.Dict(default=None, nested_refs=True, doc="""
+      Columns configuration allowing specification of formatters, coloring
+      and a variety of other attributes.""")
 
     editable = param.Boolean(default=True, allow_None=True, doc="""
       Whether items are editable.""")
