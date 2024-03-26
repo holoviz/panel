@@ -6,6 +6,7 @@ export class ColumnView extends BkColumnView {
   declare model: Column
 
   scroll_down_button_el: HTMLElement
+  _scroll_position: number
 
   override connect_signals(): void {
     super.connect_signals()
@@ -22,6 +23,7 @@ export class ColumnView extends BkColumnView {
   }
 
   scroll_to_position(): void {
+    console.log(this.model.scroll_position)
     requestAnimationFrame(() => {
       this.el.scrollTo({top: this.model.scroll_position, behavior: "instant"})
     })
@@ -44,10 +46,6 @@ export class ColumnView extends BkColumnView {
     this.scroll_to_latest()
   }
 
-  record_scroll_position(): void {
-    this.model.scroll_position = Math.round(this.el.scrollTop)
-  }
-
   toggle_scroll_button(): void {
     const threshold = this.model.scroll_button_threshold
     const exceeds_threshold = this.distance_from_latest >= threshold
@@ -63,8 +61,7 @@ export class ColumnView extends BkColumnView {
     this.scroll_down_button_el = DOM.createElement("div", {class: "scroll-button"})
     this.shadow_el.appendChild(this.scroll_down_button_el)
     this.el.addEventListener("scroll", () => {
-      this.record_scroll_position()
-      this.toggle_scroll_button()
+        this.toggle_scroll_button()
     })
     this.scroll_down_button_el.addEventListener("click", () => {
       this.scroll_to_latest()
