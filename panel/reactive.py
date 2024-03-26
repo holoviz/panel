@@ -110,6 +110,9 @@ class Syncable(Renderable):
     # panel/dist directory
     _stylesheets: ClassVar[List[str]] = []
 
+    # Property changes that should not trigger busy indicator
+    _busy__ignore = []
+
     __abstract = True
 
     def __init__(self, **params):
@@ -374,8 +377,9 @@ class Syncable(Renderable):
 
     def _process_events(self, events: Dict[str, Any]) -> None:
         self._log('received events %s', events)
-        with edit_readonly(state):
-            state._busy_counter += 1
+        if any(e for e in events if e not in self._busy__ignore):
+            with edit_readonly(state):
+                state._busy_counter += 1
         events = self._process_property_change(events)
         try:
             with edit_readonly(self):
@@ -403,8 +407,9 @@ class Syncable(Renderable):
             raise
         finally:
             self._log('finished processing events %s', events)
-            with edit_readonly(state):
-                state._busy_counter -= 1
+            if any(e for e in events if e not in self._busy__ignore):
+                with edit_readonly(state):
+                    state._busy_counter -= 1
 
     def _process_bokeh_event(self, doc: Document, event: Event) -> None:
         self._log('received bokeh event %s', event)
