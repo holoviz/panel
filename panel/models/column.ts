@@ -59,7 +59,7 @@ export class ColumnView extends BkColumnView {
     this.scroll_down_button_el = DOM.createElement("div", {class: "scroll-button"})
     this.shadow_el.appendChild(this.scroll_down_button_el)
     this.el.addEventListener("scroll", () => {
-        this.toggle_scroll_button()
+      this.toggle_scroll_button()
     })
     this.scroll_down_button_el.addEventListener("click", () => {
       this.scroll_to_latest()
