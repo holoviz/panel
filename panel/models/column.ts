@@ -23,7 +23,6 @@ export class ColumnView extends BkColumnView {
   }
 
   scroll_to_position(): void {
-    console.log(this.model.scroll_position)
     requestAnimationFrame(() => {
       this.el.scrollTo({top: this.model.scroll_position, behavior: "instant"})
     })
