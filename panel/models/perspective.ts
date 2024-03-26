@@ -184,11 +184,12 @@ export class PerspectiveView extends HTMLBoxView {
       this.perspective_element.restore({
         aggregates: this.model.aggregates,
         columns: this.model.columns,
+        columns_config: this.model.columns_config,
         expressions: this.model.expressions,
         filter: this.model.filters,
         split_by: this.model.split_by,
         group_by: this.model.group_by,
-        plugin: PLUGINS[this.model.plugin ],
+        plugin: PLUGINS[this.model.plugin],
         plugin_config,
         settings: this.model.settings,
         sort: this.model.sort,
@@ -279,6 +280,7 @@ export namespace Perspective {
     aggregates: p.Property<any>
     split_by: p.Property<any[] | null>
     columns: p.Property<any[]>
+    columns_config: p.Property<any>
     expressions: p.Property<any>
     editable: p.Property<boolean | null>
     filters: p.Property<any[] | null>
@@ -313,6 +315,7 @@ export class Perspective extends HTMLBox {
     this.define<Perspective.Props>(({Any, List, Bool, Ref, Nullable, Str}) => ({
       aggregates:       [ Any,                         {} ],
       columns:          [ List(Nullable(Str)),         [] ],
+      columns_config:   [ Any,                         {} ],
       expressions:      [ Any,                         {} ],
       split_by:         [ Nullable(List(Str)),       null ],
       editable:         [ Bool,                      true ],

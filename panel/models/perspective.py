@@ -52,6 +52,8 @@ class Perspective(HTMLBox):
 
     columns = Either(List(Either(String, Null)), Null())
 
+    columns_config = Either(Dict(String, Any), Null())
+
     expressions = Either(Dict(String, Any), Null())
 
     editable = Bool(default=True)
