@@ -204,22 +204,6 @@ def test_column_scroll_position_init(page):
     expect(column).to_have_js_property('scrollTop', 100)
 
 
-def test_column_scroll_position_recorded(page):
-    col = Column(
-        Spacer(styles=dict(background='red'), width=200, height=200),
-        Spacer(styles=dict(background='green'), width=200, height=200),
-        Spacer(styles=dict(background='blue'), width=200, height=200),
-        scroll=True, height=420
-    )
-
-    serve_component(page, col)
-
-    column = page.locator(".bk-panel-models-layout-Column")
-
-    column.evaluate('(el) => el.scrollTop = 150')
-    expect(column).to_have_js_property('scrollTop', 150)
-
-
 def test_column_scroll_position_param_updated(page):
     col = Column(
         Spacer(styles=dict(background='red'), width=200, height=200),

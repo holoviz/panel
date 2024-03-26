@@ -950,9 +950,9 @@ class Column(ListPanel):
         disables the scroll button.""")
 
     scroll_position = param.Integer(default=0, doc="""
-        Current scroll position of the Column. Setting this value
-        will update the scroll position of the Column. Setting to
-        0 will scroll to the top.""")
+        Setting this value will update the scroll position of the Column;
+        set to 0 to scroll to the top. This does NOT get the current
+        scroll position.""")
 
     view_latest = param.Boolean(default=False, doc="""
         Whether to scroll to the latest object on init. If not
