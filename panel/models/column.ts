@@ -6,7 +6,6 @@ export class ColumnView extends BkColumnView {
   declare model: Column
 
   scroll_down_button_el: HTMLElement
-  _scroll_position: number
 
   override connect_signals(): void {
     super.connect_signals()
