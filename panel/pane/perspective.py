@@ -274,8 +274,8 @@ class Perspective(ModelPane, ReactiveData):
       A list of source columns to show as columns. For example ["x", "y"]""")
 
     columns_config = param.Dict(default=None, nested_refs=True, doc="""
-      Columns configuration allowing specification of formatters, coloring
-      and a variety of other attributes.""")
+      Column configuration allowing specification of formatters, coloring
+      and a variety of other attributes for each column.""")
 
     editable = param.Boolean(default=True, allow_None=True, doc="""
       Whether items are editable.""")

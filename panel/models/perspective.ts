@@ -184,11 +184,12 @@ export class PerspectiveView extends HTMLBoxView {
       this.perspective_element.restore({
         aggregates: this.model.aggregates,
         columns: this.model.columns,
+        columns_config: this.model.columns_config,
         expressions: this.model.expressions,
         filter: this.model.filters,
         split_by: this.model.split_by,
         group_by: this.model.group_by,
-        plugin: PLUGINS[this.model.plugin ],
+        plugin: PLUGINS[this.model.plugin],
         plugin_config,
         settings: this.model.settings,
         sort: this.model.sort,
