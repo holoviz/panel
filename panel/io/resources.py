@@ -190,6 +190,7 @@ def loading_css(loading_spinner, color, max_height):
     :host(.pn-loading):before, .pn-loading:before {{
       background-color: {color};
       mask-size: auto calc(min(50%, {max_height}px));
+      -webkit-mask-size: auto calc(min(50%, {max_height}px));
     }}""")
 
 def resolve_custom_path(
