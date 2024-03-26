@@ -960,8 +960,6 @@ class Column(ListPanel):
 
     _bokeh_model: ClassVar[Type[Model]] = PnColumn
 
-    _busy__ignore = ['scroll_position']
-
     _direction = 'vertical'
 
     _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/listpanel.css']
