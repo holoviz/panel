@@ -939,11 +939,6 @@ class Column(ListPanel):
     >>> pn.Column(some_widget, some_pane, some_python_object)
     """
 
-    scroll_position = param.Integer(default=0, doc="""
-        Current scroll position of the Column. Setting this value
-        will update the scroll position of the Column. Setting to
-        0 will scroll to the top.""")
-
     auto_scroll_limit = param.Integer(bounds=(0, None), doc="""
         Max pixel distance from the latest object in the Column to
         activate automatic scrolling upon update. Setting to 0
@@ -954,11 +949,18 @@ class Column(ListPanel):
         display the scroll button. Setting to 0
         disables the scroll button.""")
 
+    scroll_position = param.Integer(default=0, doc="""
+        Current scroll position of the Column. Setting this value
+        will update the scroll position of the Column. Setting to
+        0 will scroll to the top.""")
+
     view_latest = param.Boolean(default=False, doc="""
         Whether to scroll to the latest object on init. If not
         enabled the view will be on the first object.""")
 
     _bokeh_model: ClassVar[Type[Model]] = PnColumn
+
+    _busy__ignore = ['scroll_position']
 
     _direction = 'vertical'
 
