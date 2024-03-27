@@ -140,8 +140,7 @@ jobs:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
           channels: pyviz/label/dev,numba,bokeh/label/dev,conda-forge,nodefaults
-          # conda-update: true
-          conda-version: 24.1.2
+          conda-update: true
           nodejs: true
           envs: -o examples -o recommended -o tests -o build
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
@@ -236,7 +235,6 @@ jobs:
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           nodejs: true
           playwright: true
-          conda-version: 24.1.2
         id: install
       - name: launch jupyter
         run: |
