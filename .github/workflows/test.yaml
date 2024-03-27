@@ -160,10 +160,6 @@ jobs:
         run: |
           conda activate test-environment
           bokeh sampledata
-      - name: doit env_capture
-        run: |
-          conda activate test-environment
-          doit env_capture
       - name: doit test_unit
         run: |
           conda activate test-environment
