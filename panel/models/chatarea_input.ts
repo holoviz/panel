@@ -3,6 +3,7 @@ import type * as p from "@bokehjs/core/properties"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import type {Attrs} from "@bokehjs/core/types"
 
+
 export class ChatMessageEvent extends ModelEvent {
   constructor(readonly value: string) {
     super()
@@ -31,9 +32,18 @@ export class ChatAreaInputView extends PnTextAreaInputView {
     super.render()
 
     this.el.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" && !event.shiftKey) {
+      console.log( "DBG: keydown event" )
+      if (event.key === "Enter" && (  (!event.shiftKey && !this.model.shift_enter_sends)
+                                   || ( event.shiftKey &&  this.model.shift_enter_sends))
+      ) {
+        console.log( "DBG: ENTER event" )
+        console.log( ".  ", event.shiftKey )
+        console.log( ".  ", this.model.shift_enter_sends )
+        console.log( ".  ", !event.shiftKey && !this.model.shift_enter_sends)
+        console.log( ".  ",  event.shiftKey &&  this.model.shift_enter_sends)
+
         if (!this.model.disabled_enter) {
-          this.model.trigger_event(new ChatMessageEvent(this.model.value_input))
+          this.model.trigger_event(new ChatMessageEvent( this.model.value_input))
           this.model.value_input = ""
         }
         event.preventDefault()
@@ -45,7 +55,8 @@ export class ChatAreaInputView extends PnTextAreaInputView {
 export namespace ChatAreaInput {
   export type Attrs = p.AttrsOf<Props>
   export type Props = PnTextAreaInput.Props & {
-    disabled_enter: p.Property<boolean>
+    disabled_enter: p.Property<boolean>,
+    shift_enter_sends: p.Property<boolean>,
   }
 }
 
@@ -65,6 +76,7 @@ export class ChatAreaInput extends PnTextAreaInput {
     this.define<ChatAreaInput.Props>(({Bool}) => {
       return {
         disabled_enter: [ Bool, false ],
+        shift_enter_sends: [ Bool, false ],
       }
     })
   }

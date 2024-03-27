@@ -44,7 +44,12 @@ class ChatAreaInput(_PnTextAreaInput):
 
     disabled_enter = param.Boolean(
         default=False,
-        doc="If True, the enter key will not submit the message (clear the value).",
+        doc="If True, disables sending the message by pressing the enter or the shift_enter key (clear the value).",
+    )
+
+    shift_enter_sends = param.Boolean(
+        default=False,
+        doc="If True, the shift-enter key will send the message rather than the enter key.",
     )
 
     rows = param.Integer(default=1, doc="""
