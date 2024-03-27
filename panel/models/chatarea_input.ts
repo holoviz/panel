@@ -53,7 +53,7 @@ export namespace ChatAreaInput {
   export type Attrs = p.AttrsOf<Props>
   export type Props = PnTextAreaInput.Props & {
     disabled_enter: p.Property<boolean>,
-    shift_enter_sends: p.Property<boolean>,
+    enter_sends: p.Property<boolean>,
   }
 }
 
@@ -73,7 +73,7 @@ export class ChatAreaInput extends PnTextAreaInput {
     this.define<ChatAreaInput.Props>(({Bool}) => {
       return {
         disabled_enter: [ Bool, false ],
-        shift_enter_sends: [ Bool, false ],
+        enter_sends: [ Bool, false ],
       }
     })
   }
