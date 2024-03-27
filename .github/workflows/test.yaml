@@ -33,7 +33,7 @@ jobs:
     name: Run pre-commit
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pre-commit@v0.1a19
+      - uses: holoviz-dev/holoviz_tasks/pre-commit@fix_install_ci
       - uses: pre-commit/action@v3.0.0
         with:
           extra_args: -a --hook-stage manual oxipng || true --
@@ -51,10 +51,10 @@ jobs:
       doc_change: ${{ steps.filter.outputs.doc }}
       matrix: ${{ env.MATRIX }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         if: github.event_name != 'pull_request'
       - name: Check for code changes
-        uses: dorny/paths-filter@v2.11.1
+        uses: dorny/paths-filter@v3
         id: filter
         with:
           filters: |
