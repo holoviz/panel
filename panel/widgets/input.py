@@ -23,7 +23,7 @@ from bokeh.models.widgets import (
     DatePicker as _BkDatePicker, DateRangePicker as _BkDateRangePicker,
     Div as _BkDiv, FileInput as _BkFileInput, NumericInput as _BkNumericInput,
     PasswordInput as _BkPasswordInput, Spinner as _BkSpinner,
-    Switch as _BkSwitch, TextInput as _BkTextInput,
+    Switch as _BkSwitch,
 )
 
 from ..config import config
@@ -31,6 +31,7 @@ from ..io.resources import CDN_DIST
 from ..layout import Column, Panel
 from ..models import (
     DatetimePicker as _bkDatetimePicker, TextAreaInput as _bkTextAreaInput,
+    TextInput as _BkTextInput,
 )
 from ..util import param_reprs, try_datetime64_to_datetime
 from .base import CompositeWidget, Widget
@@ -56,6 +57,9 @@ class TextInput(Widget):
 
     description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
+
+    enter_pressed = param.Integer(default=0, readonly=True, doc="""
+        Number of times the enter key has been pressed.""")
 
     max_length = param.Integer(default=5000, doc="""
         Max count of characters in the input field.""")

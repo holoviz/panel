@@ -11,7 +11,7 @@ from bokeh.models.ui.icons import Icon
 from bokeh.models.widgets import (
     Button as bkButton, CheckboxButtonGroup as bkCheckboxButtonGroup,
     InputWidget, RadioButtonGroup as bkRadioButtonGroup, Select,
-    TextAreaInput as BkTextAreaInput, Widget,
+    TextAreaInput as bkTextAreaInput, TextInput as bkTextInput, Widget,
 )
 
 from .layout import HTMLBox
@@ -201,7 +201,7 @@ class TooltipIcon(Widget):
     )
 
 
-class TextAreaInput(BkTextAreaInput):
+class TextAreaInput(bkTextAreaInput):
 
     auto_grow = Bool(
         default=False,
@@ -252,4 +252,10 @@ class RadioButtonGroup(bkRadioButtonGroup):
     tooltip_delay = Int(500, help="""
     Delay (in milliseconds) to display the tooltip after the cursor has
     hovered over the Button, default is 500ms.
+    """)
+
+
+class TextInput(bkTextInput):
+    enter_pressed = Int(0, help="""
+    A property that is incremented whenever the Enter key is pressed.
     """)
