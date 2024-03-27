@@ -16,7 +16,7 @@ class ChatMessageEvent(ModelEvent):
 class ChatAreaInput(TextAreaInput):
 
     disabled_enter = Bool(default=False, help="""
-        If True, disables sending the message by pressing the enter or the shift_enter key (clear the value).""")
+        If True, disables sending the message by pressing the Enter or the Ctrl-Enter key (clear the value).""")
 
     enter_sends = Bool(default=True, help="""
-        If False, the shift_enter key will send the message rather than the enter key.""")
+        If True, pressing the Enter key sends the message, if False it is sent by pressing the Ctrl-Enter""")
