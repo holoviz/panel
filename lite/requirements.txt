@@ -4,7 +4,7 @@ ipywidgets
 jupyter_bokeh
 jupyterlab
 jupyterlab-open-url-parameter
-jupyterlite-core
+jupyterlite-core <0.3.0
 jupyterlite-pyodide-kernel
 nbformat
 pkginfo

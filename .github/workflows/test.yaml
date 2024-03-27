@@ -240,7 +240,7 @@ jobs:
       - name: build jupyterlite
         run: |
           conda activate test-environment
-          pip install jupyterlite-core jupyterlite-pyodide-kernel
+          python -m pip install -r ./lite/requirements.txt
           python ./scripts/build_pyodide_wheels.py lite/pypi
           python ./scripts/panelite/generate_panelite_content.py
           jupyter lite build --lite-dir lite --output-dir lite/dist
