@@ -967,7 +967,6 @@ class Column(ListPanel):
     _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/listpanel.css']
 
     @param.depends(
-        "scroll_position",
         "auto_scroll_limit",
         "scroll_button_threshold",
         "view_latest",
