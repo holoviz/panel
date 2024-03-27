@@ -24,6 +24,7 @@ export class ChatAreaInputView extends PnTextAreaInputView {
     super.connect_signals()
 
     const {value_input} = this.model.properties
+
     this.on_change(value_input, () => this.update_rows())
   }
 
@@ -31,9 +32,9 @@ export class ChatAreaInputView extends PnTextAreaInputView {
     super.render()
 
     this.el.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" && ((!event.ctrlKey &&  this.model.enter_sends)   // Enter      sends message
-                                   ||(event.ctrlKey && !this.model.enter_sends))  // Ctrl-Enter sends message
-      ) {
+      if (event.key === "Enter" && (event.ctrlKey != this.model.enter_sends)) {
+        // i.e., (event.key === "Enter" && ((!event.ctrlKey &&  this.model.enter_sends)   // Enter      sends message
+        //                                 ||(event.ctrlKey && !this.model.enter_sends))  // Ctrl-Enter sends message
         if (!this.model.disabled_enter) {
           this.model.trigger_event(new ChatMessageEvent(this.model.value_input))
           this.model.value_input = ""
