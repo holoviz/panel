@@ -294,7 +294,7 @@ def script_to_html(
         if css_resources == 'auto':
             css_resources = []
         env_spec = ', '.join([repr(req) for req in reqs])
-        code = code.replace('`', '\`').replace('\\n', r'\\n')
+        code = code.encode("unicode_escape").decode("utf-8").replace('`', '\`')
         if runtime == 'pyodide-worker':
             if js_resources == 'auto':
                 js_resources = []
