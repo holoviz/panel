@@ -1,0 +1,11 @@
+<map id="inheritanced55d0f4fb1" name="inheritanced55d0f4fb1">
+<area shape="rect" id="node1" title="Base class for all class types that have Bokeh properties." alt="" coords="187,85,301,99"/>
+<area shape="rect" id="node3" title="Base class for all objects stored in Bokeh |Document| instances." alt="" coords="362,44,456,58"/>
+<area shape="rect" id="node2" title="A mixin for making a type serializable." alt="" coords="3,85,127,99"/>
+<area shape="rect" id="node9" title="Base class for user interface elements." alt="" coords="481,44,616,58"/>
+<area shape="rect" id="node5" title="A mixin class to provide an interface for registering and" alt="" coords="152,30,336,45"/>
+<area shape="rect" id="node6" title="A mixin class to provide an interface for registering and" alt="" coords="157,58,332,72"/>
+<area shape="rect" id="node7" title="The base class for layoutable components." alt="" coords="770,44,890,58"/>
+<area shape="rect" id="node8" title="A UI element that can hold other DOM&#45;based UI elements." alt="" coords="642,44,744,58"/>
+<area shape="rect" id="node11" href="#panel.models.quill.QuillInput" target="_top" title="WYSIWYG text editor based on Quill.js" alt="" coords="1050,44,1149,58"/>
+</map>

@@ -1,0 +1,7 @@
+<map id="inheritance68b59c7795" name="inheritance68b59c7795">
+<area shape="rect" id="node2" title="The Resources class encapsulates information relating to loading or" alt="" coords="40,107,225,133"/>
+<area shape="rect" id="node6" href="#panel.io.resources.Resources" target="_top" title="panel.io.resources.Resources" alt="" coords="311,107,506,133"/>
+<area shape="rect" id="node3" title="Extensible JSON &lt;https://json.org&gt; encoder for Python data structures." alt="" coords="41,56,224,83"/>
+<area shape="rect" id="node7" href="#panel.io.resources.json_dumps" target="_top" title="panel.io.resources.json_dumps" alt="" coords="308,56,509,83"/>
+<area shape="rect" id="node5" href="#panel.io.resources.ResourceComponent" target="_top" title="Mix&#45;in class for components that define a set of resources" alt="" coords="5,5,260,32"/>
+</map>

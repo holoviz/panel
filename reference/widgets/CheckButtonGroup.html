@@ -1,0 +1,1112 @@
+
+<!DOCTYPE html>
+
+<html data-theme="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="Docutils 0.19: https://docutils.sourceforge.io/" name="generator"/>
+<link href="../../site.webmanifest" rel="manifest"/>
+<title>CheckButtonGroup — Panel v1.4.0</title>
+<script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+<!-- Loaded before other Sphinx assets -->
+<link href="../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet"/>
+<link href="../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet"/>
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet"/>
+<link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet"/>
+<link as="font" crossorigin="" href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" rel="preload" type="font/woff2"/>
+<link as="font" crossorigin="" href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" rel="preload" type="font/woff2"/>
+<link as="font" crossorigin="" href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" rel="preload" type="font/woff2"/>
+<link href="../../_static/pygments.css" rel="stylesheet" type="text/css"/>
+<link href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" rel="stylesheet" type="text/css"/>
+<link href="../../_static/graphviz.css" rel="stylesheet" type="text/css"/>
+<link href="../../_static/copybutton.css" rel="stylesheet" type="text/css"/>
+<link href="../../_static/runbutton.css" rel="stylesheet" type="text/css"/>
+<link href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" rel="stylesheet" type="text/css"/>
+<link href="../../_static/nbsite.css" rel="stylesheet" type="text/css"/>
+<link href="../../_static/notebook.css" rel="stylesheet" type="text/css"/>
+<link href="../../_static/gallery.css" rel="stylesheet" type="text/css"/>
+<link href="../../_static/alert.css" rel="stylesheet" type="text/css"/>
+<link href="../../_static/dataframe.css" rel="stylesheet" type="text/css"/>
+<link href="../../_static/scroller.css" rel="stylesheet" type="text/css"/>
+<link href="../../_static/css/custom.css" rel="stylesheet" type="text/css"/>
+<!-- Pre-loaded scripts that we'll load fully later -->
+<link as="script" href="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" rel="preload"/>
+<link as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" rel="preload"/>
+<script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+<script src="../../_static/jquery.js"></script>
+<script src="../../_static/underscore.js"></script>
+<script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+<script src="../../_static/doctools.js"></script>
+<script src="../../_static/sphinx_highlight.js"></script>
+<script src="../../_static/clipboard.min.js"></script>
+<script src="../../_static/copybutton.js"></script>
+<script src="../../_static/run_cell.js"></script>
+<script src="../../_static/WorkerHandler.js"></script>
+<script src="../../_static/design-tabs.js"></script>
+<script src="../../_static/ServiceHandler.js"></script>
+<script src="https://cdn.bokeh.org/bokeh/release/bokeh-3.4.0.min.js"></script>
+<script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.4.0.min.js"></script>
+<script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.4.0.min.js"></script>
+<script src="https://cdn.holoviz.org/panel/1.4.0/dist/panel.min.js"></script>
+<script>
+    window.goatcounter = {
+        path: function(p) { return location.host + p }
+    }
+</script>
+<script async="async" data-goatcounter="https://holoviz.goatcounter.com/count" src="../../_static/js/goatcounter.js"></script>
+<script async="async" src="https://www.googletagmanager.com/gtag/js?id=G-L0C8PGT2LM"></script>
+<script>
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){ dataLayer.push(arguments); }
+                gtag('js', new Date());
+                gtag('config', 'G-L0C8PGT2LM');
+            </script>
+<script>DOCUMENTATION_OPTIONS.pagename = 'reference/widgets/CheckButtonGroup';</script>
+<link href="../../_static/favicon.ico" rel="shortcut icon"/>
+<link href="../../genindex.html" rel="index" title="Index"/>
+<link href="../../search.html" rel="search" title="Search"/>
+<link href="Checkbox.html" rel="next" title="Checkbox"/>
+<link href="CheckBoxGroup.html" rel="prev" title="CheckBoxGroup"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="en" name="docsearch:language"/>
+</head>
+<body data-bs-root-margin="0px 0px -60%" data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-default-mode="light" data-offset="180">
+<a class="skip-link" href="#main-content">Skip to main content</a>
+<input class="sidebar-toggle" id="__primary" name="__primary" type="checkbox"/>
+<label class="overlay overlay-primary" for="__primary"></label>
+<input class="sidebar-toggle" id="__secondary" name="__secondary" type="checkbox"/>
+<label class="overlay overlay-secondary" for="__secondary"></label>
+<div class="search-button__wrapper">
+<div class="search-button__overlay"></div>
+<div class="search-button__search-container">
+<form action="../../search.html" class="bd-search d-flex align-items-center" method="get">
+<i class="fa-solid fa-magnifying-glass"></i>
+<input aria-label="Search the docs ..." autocapitalize="off" autocomplete="off" autocorrect="off" class="form-control" id="search-input" name="q" placeholder="Search the docs ..." spellcheck="false" type="search"/>
+<span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+</div>
+<div class="bd-header-announcement container-fluid bd-header-announcement">
+<div class="bd-header-announcement__content">Panel 1.4 has just been released! Checkout the <a href="https://panel.holoviz.org/about/releases.html#version-1-4-0">release notes</a> and support Panel by giving it a 🌟 on <a href="https://github.com/holoviz/panel">Github</a>.</div>
+</div>
+<nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+<label class="sidebar-toggle primary-toggle" for="__primary">
+<span class="fa-solid fa-bars"></span>
+</label>
+<div class="navbar-header-items__start">
+<div class="navbar-item">
+<a class="navbar-brand logo" href="../../index.html">
+<img alt="Logo image" class="logo__image only-light" src="../../_static/logo_horizontal_light_theme.png"/>
+<script>document.write(`<img src="../../_static/logo_horizontal_dark_theme.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+</a></div>
+</div>
+<div class="col-lg-9 navbar-header-items">
+<div class="me-auto navbar-header-items__center">
+<div class="navbar-item"><nav class="navbar-nav">
+<p aria-label="Site Navigation" aria-level="1" class="sidebar-header-items__title" role="heading">
+    Site Navigation
+  </p>
+<ul class="bd-navbar-elements navbar-nav">
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../../getting_started/index.html">
+                        Getting Started
+                      </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../../tutorials/index.html">
+                        Tutorials
+                      </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../../explanation/index.html">
+                        Explanation
+                      </a>
+</li>
+<li class="nav-item current active">
+<a class="nav-link nav-internal" href="../index.html">
+                        Component Gallery
+                      </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../../how_to/index.html">
+                        How-to
+                      </a>
+</li>
+<div class="nav-item dropdown">
+<button aria-expanded="false" aria-haspopup="true" class="btn dropdown-toggle nav-item" data-bs-toggle="dropdown" type="button">
+                    More
+                </button>
+<div class="dropdown-menu">
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../../gallery/index.html">
+                        App Gallery
+                      </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../../api/index.html">
+                        API Reference
+                      </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../../community.html">
+                        Community
+                      </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../../upgrade.html">
+                        Upgrade Guide
+                      </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../../FAQ.html">
+                        FAQ
+                      </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../../about/index.html">
+                        About
+                      </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../../developer_guide/index.html">
+                        Developer Guide
+                      </a>
+</li>
+</div>
+</div>
+</ul>
+</nav></div>
+</div>
+<div class="navbar-header-items__end">
+<div class="navbar-item navbar-persistent--container">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+</div>
+<div class="navbar-item">
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script></div>
+<div class="navbar-item"><ul aria-label="Icon Links" class="navbar-icon-links navbar-nav">
+<li class="nav-item">
+<a class="nav-link" data-bs-placement="bottom" data-bs-toggle="tooltip" href="https://github.com/holoviz/panel" rel="noopener" target="_blank" title="GitHub"><span><i class="fa-brands fa-square-github"></i></span>
+<label class="sr-only">GitHub</label></a>
+</li>
+<li class="nav-item">
+<a class="nav-link" data-bs-placement="bottom" data-bs-toggle="tooltip" href="https://twitter.com/Panel_Org" rel="noopener" target="_blank" title="Twitter"><span><i class="fa-brands fa-twitter-square"></i></span>
+<label class="sr-only">Twitter</label></a>
+</li>
+<li class="nav-item">
+<a class="nav-link" data-bs-placement="bottom" data-bs-toggle="tooltip" href="https://discourse.holoviz.org/c/panel/5" rel="noopener" target="_blank" title="Discourse"><span><i class="fa-brands fa-discourse"></i></span>
+<label class="sr-only">Discourse</label></a>
+</li>
+<li class="nav-item">
+<a class="nav-link" data-bs-placement="bottom" data-bs-toggle="tooltip" href="https://discord.gg/UXdtYyGVQX" rel="noopener" target="_blank" title="Discord"><span><i class="fa-brands fa-discord"></i></span>
+<label class="sr-only">Discord</label></a>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="navbar-persistent--mobile">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+</div>
+<label class="sidebar-toggle secondary-toggle" for="__secondary">
+<span class="fa-solid fa-outdent"></span>
+</label>
+</div>
+</nav>
+<div class="bd-container">
+<div class="bd-container__inner bd-page-width">
+<div class="bd-sidebar-primary bd-sidebar">
+<div class="sidebar-header-items sidebar-primary__section">
+<div class="sidebar-header-items__center">
+<div class="navbar-item"><nav class="navbar-nav">
+<p aria-label="Site Navigation" aria-level="1" class="sidebar-header-items__title" role="heading">
+    Site Navigation
+  </p>
+<ul class="bd-navbar-elements navbar-nav">
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../../getting_started/index.html">
+                        Getting Started
+                      </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../../tutorials/index.html">
+                        Tutorials
+                      </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../../explanation/index.html">
+                        Explanation
+                      </a>
+</li>
+<li class="nav-item current active">
+<a class="nav-link nav-internal" href="../index.html">
+                        Component Gallery
+                      </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../../how_to/index.html">
+                        How-to
+                      </a>
+</li>
+<div class="nav-item dropdown">
+<button aria-expanded="false" aria-haspopup="true" class="btn dropdown-toggle nav-item" data-bs-toggle="dropdown" type="button">
+                    More
+                </button>
+<div class="dropdown-menu">
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../../gallery/index.html">
+                        App Gallery
+                      </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../../api/index.html">
+                        API Reference
+                      </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../../community.html">
+                        Community
+                      </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../../upgrade.html">
+                        Upgrade Guide
+                      </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../../FAQ.html">
+                        FAQ
+                      </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../../about/index.html">
+                        About
+                      </a>
+</li>
+<li class="nav-item">
+<a class="nav-link nav-internal" href="../../developer_guide/index.html">
+                        Developer Guide
+                      </a>
+</li>
+</div>
+</div>
+</ul>
+</nav></div>
+</div>
+<div class="sidebar-header-items__end">
+<div class="navbar-item">
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script></div>
+<div class="navbar-item"><ul aria-label="Icon Links" class="navbar-icon-links navbar-nav">
+<li class="nav-item">
+<a class="nav-link" data-bs-placement="bottom" data-bs-toggle="tooltip" href="https://github.com/holoviz/panel" rel="noopener" target="_blank" title="GitHub"><span><i class="fa-brands fa-square-github"></i></span>
+<label class="sr-only">GitHub</label></a>
+</li>
+<li class="nav-item">
+<a class="nav-link" data-bs-placement="bottom" data-bs-toggle="tooltip" href="https://twitter.com/Panel_Org" rel="noopener" target="_blank" title="Twitter"><span><i class="fa-brands fa-twitter-square"></i></span>
+<label class="sr-only">Twitter</label></a>
+</li>
+<li class="nav-item">
+<a class="nav-link" data-bs-placement="bottom" data-bs-toggle="tooltip" href="https://discourse.holoviz.org/c/panel/5" rel="noopener" target="_blank" title="Discourse"><span><i class="fa-brands fa-discourse"></i></span>
+<label class="sr-only">Discourse</label></a>
+</li>
+<li class="nav-item">
+<a class="nav-link" data-bs-placement="bottom" data-bs-toggle="tooltip" href="https://discord.gg/UXdtYyGVQX" rel="noopener" target="_blank" title="Discord"><span><i class="fa-brands fa-discord"></i></span>
+<label class="sr-only">Discord</label></a>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sidebar-primary-items__start sidebar-primary__section">
+<div class="sidebar-primary-item"><nav aria-label="Section Navigation" class="bd-docs-nav bd-links">
+<div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">FOR USERS</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../getting_started/index.html">Getting Started</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../getting_started/installation.html"><svg aria-hidden="true" class="sd-octicon sd-octicon-desktop-download sd-mr-1" height="2.0em" version="1.1" viewbox="0 0 24 24" width="2.0em"><path d="M11.25 9.331V.75a.75.75 0 011.5 0v8.58l1.949-2.11A.75.75 0 1115.8 8.237l-3.25 3.52a.75.75 0 01-1.102 0l-3.25-3.52A.75.75 0 119.3 7.22l1.949 2.111z"></path><path d="M2.5 3.75a.25.25 0 01.25-.25h5.5a.75.75 0 100-1.5h-5.5A1.75 1.75 0 001 3.75v11.5c0 .966.784 1.75 1.75 1.75h6.204c-.171 1.375-.805 2.652-1.77 3.757A.75.75 0 007.75 22h8.5a.75.75 0 00.565-1.243c-.964-1.105-1.598-2.382-1.769-3.757h6.204A1.75 1.75 0 0023 15.25V3.75A1.75 1.75 0 0021.25 2h-5.5a.75.75 0 000 1.5h5.5a.25.25 0 01.25.25v11.5a.25.25 0 01-.25.25H2.75a.25.25 0 01-.25-.25V3.75zM10.463 17c-.126 1.266-.564 2.445-1.223 3.5h5.52c-.66-1.055-1.098-2.234-1.223-3.5h-3.074z" fill-rule="evenodd"></path></svg> Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../getting_started/build_app.html"><svg aria-hidden="true" class="sd-octicon sd-octicon-mortar-board sd-mr-1" height="2.0em" version="1.1" viewbox="0 0 24 24" width="2.0em"><path d="M12.292 2.06a.75.75 0 00-.584 0L.458 6.81a.75.75 0 000 1.38L4.25 9.793v3.803a2.901 2.901 0 00-1.327.757c-.579.58-.923 1.41-.923 2.43v4.5c0 .248.128.486.335.624.06.04.117.073.22.124.124.062.297.138.52.213.448.149 1.09.288 1.925.288s1.477-.14 1.925-.288c.223-.075.396-.15.52-.213a2.11 2.11 0 00.21-.117A.762.762 0 008 21.28v-4.5c0-1.018-.344-1.85-.923-2.428a2.9 2.9 0 00-1.327-.758v-3.17l5.958 2.516a.75.75 0 00.584 0l5.208-2.2v4.003a2.552 2.552 0 01-.079.085 4.057 4.057 0 01-.849.65c-.826.488-2.255 1.021-4.572 1.021-.612 0-1.162-.037-1.654-.1a.75.75 0 00-.192 1.487c.56.072 1.173.113 1.846.113 2.558 0 4.254-.592 5.334-1.23.538-.316.914-.64 1.163-.896a2.84 2.84 0 00.392-.482h.001A.75.75 0 0019 15v-4.892l4.542-1.917a.75.75 0 000-1.382l-11.25-4.75zM5 15c-.377 0-.745.141-1.017.413-.265.265-.483.7-.483 1.368v4.022c.299.105.797.228 1.5.228s1.201-.123 1.5-.228V16.78c0-.669-.218-1.103-.483-1.368A1.431 1.431 0 005 15zm7-3.564L2.678 7.5 12 3.564 21.322 7.5 12 11.436z" fill-rule="evenodd"></path></svg> Build an App</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../getting_started/core_concepts.html"><svg aria-hidden="true" class="sd-octicon sd-octicon-telescope sd-mr-1" height="2.0em" version="1.1" viewbox="0 0 24 24" width="2.0em"><path d="M.408 15.13a2 2 0 01.59-2.642L17.038 1.33a2 2 0 012.85.602l2.828 4.644a2 2 0 01-.851 2.847l-17.762 8.43a2 2 0 01-2.59-.807L.408 15.13zm5.263-4.066l7.842-5.455 2.857 4.76-8.712 4.135-1.987-3.44zm-1.235.86L1.854 13.72a.5.5 0 00-.147.66l1.105 1.915a.5.5 0 00.648.201l2.838-1.347-1.862-3.225zm13.295-2.2L14.747 4.75l3.148-2.19a.5.5 0 01.713.151l2.826 4.644a.5.5 0 01-.212.712l-3.49 1.656z" fill-rule="evenodd"></path><path d="M17.155 22.87a.75.75 0 00.226-1.036l-4-6.239a.75.75 0 00-.941-.278l-2.75 1.25a.75.75 0 00-.318.274l-3.25 4.989a.75.75 0 001.256.819l3.131-4.806.51-.232v5.64a.75.75 0 101.5 0v-6.22l3.6 5.613a.75.75 0 001.036.226z"></path></svg> Core Concepts</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../tutorials/basic/index.html">Basic Tutorials</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-3"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/serve.html">Build Hello World App</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/develop_notebook.html">Develop in a Notebook</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/develop_editor.html">Develop in an Editor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/pn_panel.html">Display Content with <code class="docutils literal notranslate"><span class="pre">pn.panel</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/panes.html">Display Content with Panes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/indicators_performance.html">Display Performance with Indicators</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/layouts.html">Layouts Content</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/size.html">Control the Size</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/align.html">Aligning Content</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/widgets.html">Accept Inputs with Widgets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/pn_bind.html">React to User Input</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/pn_rx.html">Reactive Expressions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/templates.html">Utilize Templates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/design.html">Apply a Design</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/style.html">Enhance the Style</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/caching.html">Optimize Performance with Caching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/indicators_activity.html">Display Activity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/progressive_layouts.html">Update Progressively</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/build_dashboard.html">Build a Dashboard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/deploy.html">Deploy a Dashboard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/build_report.html">Build a Report</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/build_animation.html">Build Animation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/build_image_classifier.html">Build an Image Classifier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/build_monitoring_dashboard.html">Build a Monitoring Dashboard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/build_streaming_dashboard.html">Build Streaming Dashboard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/build_chatbot.html">Build a Chat Bot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/basic/build_todo.html">Build a Todo App</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../tutorials/intermediate/index.html">Intermediate Tutorials</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-4"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/intermediate/parameters.html">Reactive Parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/intermediate/reusable_components.html">Reusable Components</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/intermediate/interactivity.html">Interactivity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/intermediate/structure_data_store.html">Structure with a DataStore</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/intermediate/develop_editor.html">Develop in an Editor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/intermediate/serve.html">Serve Apps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/intermediate/size.html">Control the Size</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/intermediate/build_todo.html">Build a Todo App</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/intermediate/test_todo.html">Testing the Todo App</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/expert/index.html">Expert Tutorials</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../explanation/index.html">Explanation</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-5"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../explanation/apis.html">APIs</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-6"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../explanation/api/index.html">API context</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-7"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../explanation/api/param.html">Param in Panel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../explanation/api/reactivity.html">Reactivity in Panel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../explanation/api/functions_vs_classes.html">Functions vs. Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../explanation/api/reactive.html">Reactive API</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../explanation/api/parameterized.html">Declarative API</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../explanation/api/callbacks.html">Callbacks</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../explanation/components.html">Components</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-8"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../explanation/components/components_overview.html">Components overview</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../explanation/linking.html">Linking</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-9"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../explanation/comms/comms.html">Panel and JS communications</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../explanation/dependencies.html">Dependencies</a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-10"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../explanation/dependencies/param.html">Panel and Param</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../explanation/dependencies/bokeh.html">Panel and Bokeh</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../explanation/comparisons.html">Technology comparisons</a><input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-11"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../explanation/comparisons/compare_dash.html">Panel vs Dash</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../explanation/comparisons/compare_ipywidgets.html">Panel vs ipywidgets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../explanation/comparisons/compare_voila.html">Panel vs Voila</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../explanation/comparisons/compare_streamlit.html">Panel vs Streamlit</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../explanation/comparisons/compare_js.html">Panel vs JavaScript</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../explanation/comparisons/compare_bokeh.html">Panel vs Bokeh</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../index.html">Component Gallery</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-12"><i class="fa-solid fa-chevron-down"></i></label><ul class="current">
+<li class="toctree-l2 has-children"><a class="reference internal" href="../panes/index.html">Panes</a><input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-13"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../panes/Alert.html">Alert</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/Audio.html">Audio</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/Bokeh.html">Bokeh</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/DataFrame.html">DataFrame</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/DeckGL.html">DeckGL</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/ECharts.html">ECharts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/Folium.html">Folium</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/GIF.html">GIF</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/HTML.html">HTML</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/HoloViews.html">HoloViews</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/IPyWidget.html">IPyWidget</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/Image.html">Image</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/JPG.html">JPG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/JSON.html">JSON</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/LaTeX.html">LaTeX</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/Markdown.html">Markdown</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/Matplotlib.html">Matplotlib</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/PDF.html">PDF</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/PNG.html">PNG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/Param.html">Param</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/Perspective.html">Perspective</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/Plotly.html">Plotly</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/ReactiveExpr.html">ReactiveExpr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/Reacton.html">Reacton</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/SVG.html">SVG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/Str.html">Str</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/Streamz.html">Streamz</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/Textual.html">Textual</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/VTK.html">VTK</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/VTKJS.html">VTKJS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/VTKVolume.html">VTKVolume</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/Vega.html">Vega</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/Video.html">Video</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/Vizzu.html">Vizzu</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../panes/WebP.html">WebP</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current active has-children"><a class="reference internal" href="index.html">Widgets</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-14"><i class="fa-solid fa-chevron-down"></i></label><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="ArrayInput.html">ArrayInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="AutocompleteInput.html">AutocompleteInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Button.html">Button</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ButtonIcon.html">ButtonIcon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="CheckBoxGroup.html">CheckBoxGroup</a></li>
+<li class="toctree-l3 current active"><a class="current reference internal" href="#">CheckButtonGroup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Checkbox.html">Checkbox</a></li>
+<li class="toctree-l3"><a class="reference internal" href="CodeEditor.html">CodeEditor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ColorMap.html">ColorMap</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ColorPicker.html">ColorPicker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="CrossSelector.html">CrossSelector</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataFrame.html">DataFrame</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DatePicker.html">DatePicker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DateRangePicker.html">DateRangePicker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DateRangeSlider.html">DateRangeSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DateSlider.html">DateSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DatetimeInput.html">DatetimeInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DatetimePicker.html">DatetimePicker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DatetimeRangeInput.html">DatetimeRangeInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DatetimeRangePicker.html">DatetimeRangePicker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DatetimeRangeSlider.html">DatetimeRangeSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Debugger.html">Debugger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DiscretePlayer.html">DiscretePlayer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DiscreteSlider.html">DiscreteSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EditableFloatSlider.html">EditableFloatSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EditableIntSlider.html">EditableIntSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EditableRangeSlider.html">EditableRangeSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="FileDownload.html">FileDownload</a></li>
+<li class="toctree-l3"><a class="reference internal" href="FileInput.html">FileInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="FileSelector.html">FileSelector</a></li>
+<li class="toctree-l3"><a class="reference internal" href="FloatInput.html">FloatInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="FloatSlider.html">FloatSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="IntInput.html">IntInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="IntRangeSlider.html">IntRangeSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="IntSlider.html">IntSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="JSONEditor.html">JSONEditor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="LiteralInput.html">LiteralInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MenuButton.html">MenuButton</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MultiChoice.html">MultiChoice</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MultiSelect.html">MultiSelect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="NestedSelect.html">NestedSelect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="PasswordInput.html">PasswordInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Player.html">Player</a></li>
+<li class="toctree-l3"><a class="reference internal" href="RadioBoxGroup.html">RadioBoxGroup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="RadioButtonGroup.html">RadioButtonGroup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="RangeSlider.html">RangeSlider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Select.html">Select</a></li>
+<li class="toctree-l3"><a class="reference internal" href="SpeechToText.html">SpeechToText</a></li>
+<li class="toctree-l3"><a class="reference internal" href="StaticText.html">StaticText</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Switch.html">Switch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Tabulator.html">Tabulator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Terminal.html">Terminal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="TextAreaInput.html">TextAreaInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="TextEditor.html">TextEditor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="TextInput.html">TextInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="TextToSpeech.html">TextToSpeech</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Toggle.html">Toggle</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ToggleGroup.html">ToggleGroup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ToggleIcon.html">ToggleIcon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="VideoStream.html">VideoStream</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../layouts/index.html">Layouts</a><input class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-15"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../layouts/Accordion.html">Accordion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../layouts/Card.html">Card</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../layouts/Column.html">Column</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../layouts/Divider.html">Divider</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../layouts/Feed.html">Feed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../layouts/FlexBox.html">FlexBox</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../layouts/FloatPanel.html">FloatPanel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../layouts/GridBox.html">GridBox</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../layouts/GridSpec.html">GridSpec</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../layouts/GridStack.html">GridStack</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../layouts/Row.html">Row</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../layouts/Swipe.html">Swipe</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../layouts/Tabs.html">Tabs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../layouts/WidgetBox.html">WidgetBox</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../chat/index.html">Chat</a><input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-16"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../chat/ChatAreaInput.html">ChatAreaInput</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../chat/ChatFeed.html">ChatFeed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../chat/ChatInterface.html">ChatInterface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../chat/ChatMessage.html">ChatMessage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../chat/PanelCallbackHandler.html">PanelCallbackHandler</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../global/index.html">Global</a><input class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-17"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../global/Notifications.html">Notifications</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../indicators/index.html">Indicators</a><input class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-18"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../indicators/BooleanStatus.html">BooleanStatus</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../indicators/Dial.html">Dial</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../indicators/Gauge.html">Gauge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../indicators/LinearGauge.html">LinearGauge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../indicators/LoadingSpinner.html">LoadingSpinner</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../indicators/Number.html">Number</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../indicators/Progress.html">Progress</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../indicators/TooltipIcon.html">TooltipIcon</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../indicators/Tqdm.html">Tqdm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../indicators/Trend.html">Trend</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../templates/index.html">Templates</a><input class="toctree-checkbox" id="toctree-checkbox-19" name="toctree-checkbox-19" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-19"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../templates/Bootstrap.html">Bootstrap</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../templates/EditableTemplate.html">EditableTemplate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../templates/FastGridTemplate.html">FastGridTemplate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../templates/FastListTemplate.html">FastListTemplate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../templates/GoldenLayout.html">GoldenLayout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../templates/Material.html">Material</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../templates/React.html">React</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../templates/Slides.html">Slides</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../templates/Vanilla.html">Vanilla</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../how_to/index.html">How-to</a><input class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-20"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../how_to/prepare_to_develop.html">Prepare to develop</a><input class="toctree-checkbox" id="toctree-checkbox-21" name="toctree-checkbox-21" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-21"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../how_to/notebook/index.html">Develop in a notebook</a><input class="toctree-checkbox" id="toctree-checkbox-22" name="toctree-checkbox-22" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-22"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/notebook/notebook.html">Display Output in Notebooks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/notebook/jupyterlabpreview.html">Preview Apps in JupyterLab</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/notebook/layout_builder.html">Publish a Notebook as a Dashboard using the Layout Builder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/notebook/other_nb.html">Develop in other notebook environments</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../how_to/editor/index.html">Develop in an editor</a><input class="toctree-checkbox" id="toctree-checkbox-23" name="toctree-checkbox-23" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-23"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/editor/vscode_configure.html">Configure VS Code</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/editor/pycharm_configure.html">Configure PyCharm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/editor/markdown.html">Write apps in Markdown</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../how_to/build_apps.html">Build apps</a><input class="toctree-checkbox" id="toctree-checkbox-24" name="toctree-checkbox-24" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-24"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../how_to/components/index.html">Construct individual components</a><input class="toctree-checkbox" id="toctree-checkbox-25" name="toctree-checkbox-25" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-25"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/components/construct_panes.html">Construct Panes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/components/pane_type.html">Access Pane Type</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/components/widget_values.html">Access and Set Widget Values</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/components/add_remove.html">Add or Remove Components from Panels</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../how_to/styling/index.html">Styling components</a><input class="toctree-checkbox" id="toctree-checkbox-26" name="toctree-checkbox-26" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-26"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/styling/design.html">Apply a Design</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/styling/themes.html">Toggling themes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/styling/apply_css.html">Apply CSS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/styling/load_icon.html">Customize Loading Icon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/styling/visibility.html">Control Visibility</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/styling/altair.html">Style Altair Plots</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/styling/echarts.html">Style Echarts Plots</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/styling/matplotlib.html">Style Matplotlib Plots</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/styling/plotly.html">Style Plotly Plots</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/styling/vega.html">Style Vega Plots</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../how_to/interactivity/index.html">Interactivity</a><input class="toctree-checkbox" id="toctree-checkbox-27" name="toctree-checkbox-27" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-27"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/interactivity/bind_function.html">Add interactivity to a function</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/interactivity/bind_generators.html">Add interactivity with generators</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/interactivity/bind_component.html">Add reactivity to components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/interactivity/hvplot_interactive.html">Make interactive data workflows</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../how_to/layout/index.html">Arranging components</a><input class="toctree-checkbox" id="toctree-checkbox-28" name="toctree-checkbox-28" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-28"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/layout/spacing.html">Customize Spacing</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/layout/align.html">Align Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/layout/size.html">Control Size</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../how_to/use_specialized_uis.html">Use specialized UIs and APIs</a><input class="toctree-checkbox" id="toctree-checkbox-29" name="toctree-checkbox-29" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-29"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../how_to/pipeline/index.html">Build a sequential UI</a><input class="toctree-checkbox" id="toctree-checkbox-30" name="toctree-checkbox-30" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-30"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/pipeline/simple_pipeline.html">Create a <code class="docutils literal notranslate"><span class="pre">Pipeline</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/pipeline/pipeline_layout.html">Customize <code class="docutils literal notranslate"><span class="pre">Pipeline</span></code> Layout</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/pipeline/control_flow.html">Control <code class="docutils literal notranslate"><span class="pre">Pipeline</span></code> Flow</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../how_to/custom_components/index.html">Build custom components</a><input class="toctree-checkbox" id="toctree-checkbox-31" name="toctree-checkbox-31" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-31"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/custom_components/custom_viewer.html">Combine Existing Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/custom_components/reactive_html/reactive_html_layout.html">Create Layouts With ReactiveHTML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/custom_components/reactive_html/reactive_html_styling.html">Style your ReactiveHTML template</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/custom_components/reactive_html/reactive_html_panes.html">Create Panes with ReactiveHTML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/custom_components/reactive_html/reactive_html_indicators.html">Create Indicators With ReactiveHTML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/custom_components/reactive_html/reactive_html_callbacks.html">ReactiveHTML component with callback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/custom_components/reactive_html/reactive_html_widgets.html">Widgets with ReactiveHTML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/custom_components/reactive_html/reactive_html_dataframe.html">DataFrames and ReactiveHTML</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/custom_components/examples/plot_viewer.html">Plot Viewer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/custom_components/examples/table_viewer.html">Reactive Tables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/custom_components/examples/canvas_draw.html">Build a Custom Canvas Component</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/custom_components/examples/leaflet.html">Build a Custom Leaflet Component</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/custom_components/examples/material_ui.html">Wrapping Material UI components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/custom_components/examples/vue.html">Wrap a Vue component</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../how_to/links/index.html">Explicitly link parameters (Callbacks API)</a><input class="toctree-checkbox" id="toctree-checkbox-32" name="toctree-checkbox-32" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-32"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/links/links.html">Create High-Level Python Links with <code class="docutils literal notranslate"><span class="pre">.link</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/links/watchers.html">Create Low-Level Python Links Using <code class="docutils literal notranslate"><span class="pre">.watch</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/links/jslinks.html">Link Two Objects in Javascript</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/links/link_plots.html">Link Plot Parameters in Javascript</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/links/jscallbacks.html">Link Many Objects in Javascript</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../how_to/param/index.html">Generate UIs from declared parameters (Declarative API)</a><input class="toctree-checkbox" id="toctree-checkbox-33" name="toctree-checkbox-33" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-33"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/param/uis.html">Generate Widgets from <code class="docutils literal notranslate"><span class="pre">Parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/param/custom.html">Declare Custom Widgets</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/param/dependencies.html">Declare parameter dependencies</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/param/subobjects.html">Create nested UIs</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../how_to/manage_session_tasks.html">Manage session tasks</a><input class="toctree-checkbox" id="toctree-checkbox-34" name="toctree-checkbox-34" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-34"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../how_to/callbacks/index.html">Register Session Callbacks</a><input class="toctree-checkbox" id="toctree-checkbox-35" name="toctree-checkbox-35" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-35"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/callbacks/async.html">Use Asynchronous Callbacks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/callbacks/defer_load.html">Defer Bound Functions to Improve the User Experience</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/callbacks/load.html">Defer Long Running Tasks to Improve the User Experience</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/callbacks/session.html">Run Tasks at Session Start or End</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/callbacks/periodic.html">Periodically Run Callbacks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/callbacks/schedule.html">Schedule Global Tasks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/callbacks/server.html">Modify Bokeh Models</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../how_to/state/index.html">Access Session State</a><input class="toctree-checkbox" id="toctree-checkbox-36" name="toctree-checkbox-36" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-36"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/state/url.html">Access and Manipulate the URL</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/state/request.html">Access HTTP Request State</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/state/busy.html">Access Busyness state</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../how_to/test_and_debug.html">Test and debug</a><input class="toctree-checkbox" id="toctree-checkbox-37" name="toctree-checkbox-37" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-37"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../how_to/profiling/index.html">Enable profiling and debugging</a><input class="toctree-checkbox" id="toctree-checkbox-38" name="toctree-checkbox-38" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-38"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/profiling/admin.html">Enable the admin panel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/profiling/profile.html">Profile your Application</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/profiling/logs.html">View application logs</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../how_to/test/index.html">Set up testing for an application</a><input class="toctree-checkbox" id="toctree-checkbox-39" name="toctree-checkbox-39" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-39"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/test/pytest.html">Test functionality and performance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/test/uitests.html">Test UI rendering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/test/loadtests.html">Test operating capacity</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../how_to/prepare_to_share.html">Prepare to share</a><input class="toctree-checkbox" id="toctree-checkbox-40" name="toctree-checkbox-40" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-40"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../how_to/templates/index.html">Apply Templates</a><input class="toctree-checkbox" id="toctree-checkbox-41" name="toctree-checkbox-41" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-41"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/templates/template_set.html">Set a Template</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/templates/template_arrange.html">Arrange Components in a Template</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/templates/template_modal.html">Toggle Modal</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/templates/template_theme.html">Customize Template Theme</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/templates/template_custom.html">Build a Custom Template</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../how_to/performance/index.html">Improve Performance</a><input class="toctree-checkbox" id="toctree-checkbox-42" name="toctree-checkbox-42" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-42"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/performance/reuse_sessions.html">Reuse sessions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/performance/throttling.html">Enable Throttling</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../how_to/caching/index.html">Cache Data</a><input class="toctree-checkbox" id="toctree-checkbox-43" name="toctree-checkbox-43" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-43"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/caching/manual.html">Manually Cache</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/caching/memoization.html">Automatically Cache</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../how_to/concurrency/index.html">Improve Scalability</a><input class="toctree-checkbox" id="toctree-checkbox-44" name="toctree-checkbox-44" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-44"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/concurrency/load_balancing.html">Load balancing</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/concurrency/processes.html">Launch multiple processes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/concurrency/threading.html">Enable Automatic Threading</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/concurrency/manual_threading.html">Set up Manual Threading</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/callbacks/async.html">Use Asynchronous Callbacks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/concurrency/sync_to_async.html">Run synchronous functions asynchronously</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/concurrency/dask.html">Scaling with Dask</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../how_to/authentication/index.html">Add Authentication</a><input class="toctree-checkbox" id="toctree-checkbox-45" name="toctree-checkbox-45" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-45"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/authentication/basic.html">Configuring Basic Authentication</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/authentication/configuration.html">Configuring OAuth</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/authentication/providers.html">OAuth Providers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/authentication/user_info.html">Accessing User information</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/authentication/authorization.html">Authorization callbacks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/authentication/guest_users.html">Allowing Guest Users</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../how_to/share_your_work.html">Share your work</a><input class="toctree-checkbox" id="toctree-checkbox-46" name="toctree-checkbox-46" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-46"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../how_to/server/index.html">Configure the server</a><input class="toctree-checkbox" id="toctree-checkbox-47" name="toctree-checkbox-47" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-47"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/server/commandline.html">Launch a server on the command line</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/server/programmatic.html">Launching a server dynamically</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/server/multiple.html">Serving multiple applications</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/server/ssh.html">Connect to a remote server via SSH</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/server/proxy.html">Configuring a reverse proxy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/server/static_files.html">Serving static files</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../how_to/integrations/index.html">Integrate with other servers</a><input class="toctree-checkbox" id="toctree-checkbox-48" name="toctree-checkbox-48" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-48"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/integrations/flask.html">Integrating Panel with Flask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/integrations/FastAPI.html">Integrating Panel with FastAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/integrations/Django.html">Running Panel apps inside Django</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../how_to/deployment/index.html">Deploy applications</a><input class="toctree-checkbox" id="toctree-checkbox-49" name="toctree-checkbox-49" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-49"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/deployment/azure.html">Microsoft Azure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/deployment/binder.html">MyBinder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/deployment/gcp.html">Google Cloud Platform (GCP)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/deployment/heroku.html">Heroku</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/deployment/huggingface.html">Hugging Face</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/deployment/ploomber.html">Ploomber Cloud</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../how_to/export/index.html">Export apps</a><input class="toctree-checkbox" id="toctree-checkbox-50" name="toctree-checkbox-50" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-50"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/export/embedding.html">Embedding state</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/export/saving.html">Save App to File</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/export/bokeh.html">Access the Bokeh Model</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../how_to/wasm/index.html">Run panel in WebAssembly</a><input class="toctree-checkbox" id="toctree-checkbox-51" name="toctree-checkbox-51" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-51"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/wasm/convert.html">Converting Panel applications</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/wasm/standalone.html">Using Panel in Pyodide &amp; PyScript</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/wasm/sphinx.html">Embedding in Sphinx documentation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/wasm/jupyterlite.html">Setting up JupyterLite</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../how_to/migrate_to_panel.html">Migrate to Panel</a><input class="toctree-checkbox" id="toctree-checkbox-52" name="toctree-checkbox-52" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-52"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../how_to/streamlit_migration/index.html">Migrate from Streamlit</a><input class="toctree-checkbox" id="toctree-checkbox-53" name="toctree-checkbox-53" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-53"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/streamlit_migration/get_started.html">Serve Apps</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/streamlit_migration/panes.html">Display Objects with Panes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/streamlit_migration/layouts.html">Layout Objects</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/streamlit_migration/widgets.html">Accepting User Inputs with Widgets</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/streamlit_migration/templates.html">Organize and Style with Templates</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/streamlit_migration/activity.html">Show Activity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/streamlit_migration/interactivity.html">Add Interactivity with <code class="docutils literal notranslate"><span class="pre">pn.bind</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/streamlit_migration/caching.html">Improve the performance with Caching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/streamlit_migration/session_state.html">Session State</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../how_to/streamlit_migration/multipage_apps.html">Multi Page Apps</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../gallery/index.html">App Gallery</a><input class="toctree-checkbox" id="toctree-checkbox-54" name="toctree-checkbox-54" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-54"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/altair_brushing.html">Altair Brushing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/deckgl_game_of_life.html">Deckgl Game Of Life</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/gapminders.html">Gapminders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/glaciers.html">Glaciers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/hvplot_explorer.html">Hvplot Explorer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/iris_kmeans.html">Iris Kmeans</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/nyc_deckgl.html">Nyc Deckgl</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/penguin_crossfilter.html">Penguin Crossfilter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/penguin_kmeans.html">Penguin Kmeans</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/portfolio_analyzer.html">Portfolio Analyzer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/portfolio_optimizer.html">Portfolio Optimizer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/streaming_videostream.html">Streaming Videostream</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/vtk_interactive.html">Vtk Interactive</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/vtk_slicer.html">Vtk Slicer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/vtk_warp.html">Vtk Warp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/windturbines.html">Windturbines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/xgboost_classifier.html">Xgboost Classifier</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../api/index.html">API Reference</a><input class="toctree-checkbox" id="toctree-checkbox-55" name="toctree-checkbox-55" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-55"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../api/cheatsheet.html">Cheat Sheet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/config.html">Config</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/state.html">State</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/panel.io.html">panel.io Package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/panel.layout.html">panel.layout Package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../api/panel.pane.html">panel.pane Package</a><input class="toctree-checkbox" id="toctree-checkbox-56" name="toctree-checkbox-56" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-56"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../api/panel.pane.vtk.html">panel.vtk Package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/panel.param.html">param Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/panel.pipeline.html">pipeline Module</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../api/panel.template.html">panel.template Package</a><input class="toctree-checkbox" id="toctree-checkbox-57" name="toctree-checkbox-57" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-57"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../api/panel.template.bootstrap.html">panel.bootstrap Package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../api/panel.template.editable.html">panel.editable Package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../api/panel.template.fast.html">panel.fast Package</a><input class="toctree-checkbox" id="toctree-checkbox-58" name="toctree-checkbox-58" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-58"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../api/panel.template.fast.grid.html">panel.grid Package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/panel.template.fast.list.html">panel.list Package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../api/panel.template.golden.html">panel.golden Package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../api/panel.template.material.html">panel.material Package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../api/panel.template.react.html">panel.react Package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../api/panel.template.slides.html">panel.slides Package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../api/panel.template.vanilla.html">panel.vanilla Package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/panel.util.html">panel.util Package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/panel.viewable.html">viewable Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/panel.widgets.html">panel.widgets Package</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../community.html">Community</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../upgrade.html">Upgrade Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html">FAQ</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../about/index.html">About</a><input class="toctree-checkbox" id="toctree-checkbox-59" name="toctree-checkbox-59" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-59"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../about/releases.html">Releases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../about/roadmap.html">Roadmap</a></li>
+</ul>
+</li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">FOR DEVELOPERS</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../developer_guide/index.html">Developer Guide</a><input class="toctree-checkbox" id="toctree-checkbox-60" name="toctree-checkbox-60" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-60"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/extensions.html">Extensions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/testing.html">Testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/wasm.html">WASM</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</nav></div>
+</div>
+<div class="sidebar-primary-items__end sidebar-primary__section">
+</div>
+<div id="rtd-footer-container"></div>
+</div>
+<main class="bd-main" id="main-content">
+<div class="bd-content">
+<div class="bd-article-container">
+<div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+<div class="header-article-items__start">
+<div class="header-article-item">
+<nav aria-label="Breadcrumbs">
+<ul aria-label="Breadcrumb" class="bd-breadcrumbs" role="navigation">
+<li class="breadcrumb-item breadcrumb-home">
+<a aria-label="Home" class="nav-link" href="../../index.html">
+<i class="fa-solid fa-home"></i>
+</a>
+</li>
+<li class="breadcrumb-item"><a class="nav-link" href="../index.html">Component Gallery</a></li>
+<li class="breadcrumb-item"><a class="nav-link" href="index.html">Widgets</a></li>
+<li aria-current="page" class="breadcrumb-item active">CheckButtonGroup</li>
+</ul>
+</nav>
+</div>
+</div>
+</div>
+</div>
+<div id="searchbox"></div>
+<article class="bd-article" role="main">
+<section id="checkbuttongroup">
+<h1>CheckButtonGroup<a class="headerlink" href="#checkbuttongroup" title="Permalink to this heading">#</a></h1>
+<p><a class="reference external" href="https://panelite.holoviz.org?path=/reference/widgets/CheckButtonGroup.ipynb">Open this notebook in Jupyterlite</a> | <a class="reference external" href="https://raw.githubusercontent.com/holoviz/panel/main/examples/reference/widgets/CheckButtonGroup.ipynb">Download this notebook from GitHub (right-click to download).</a></p>
+<hr class="docutils"/>
+<div class="pyodide highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">panel</span> <span class="k">as</span> <span class="nn">pn</span>
+<span class="n">pn</span><span class="o">.</span><span class="n">extension</span><span class="p">()</span>
+</pre></div>
+</div>
+<pre class="pyodide-stdout" id="stdout-codecell0-py"></pre><pre class="pyodide-stderr" id="stderr-codecell0-py"></pre><p>The <code class="docutils literal notranslate"><span class="pre">CheckButtonGroup</span></code> widget allows selecting between a list of options by toggling the corresponding buttons. It falls into the broad category of multi-option selection widgets that provide a compatible API and include the <a class="reference internal" href="MultiSelect.html"><span class="doc std std-doc"><code class="docutils literal notranslate"><span class="pre">MultiSelect</span></code></span></a>, <a class="reference internal" href="CrossSelector.html"><span class="doc std std-doc"><code class="docutils literal notranslate"><span class="pre">CrossSelector</span></code></span></a> and <a class="reference internal" href="#"><span class="doc std std-doc"><code class="docutils literal notranslate"><span class="pre">CheckBoxGroup</span></code></span></a> widgets.</p>
+<p>Discover more on using widgets to add interactivity to your applications in the <span class="xref myst">how-to guides on interactivity</span>. Alternatively, learn <a class="reference internal" href="../../how_to/links/index.html"><span class="doc std std-doc">how to set up callbacks and (JS-)links between parameters</span></a> or <span class="xref myst">how to use them as part of declarative UIs with Param</span>.</p>
+<section id="parameters">
+<h2>Parameters:<a class="headerlink" href="#parameters" title="Permalink to this heading">#</a></h2>
+<p>For details on other options for customizing the component see the <a class="reference internal" href="../../how_to/layout/index.html"><span class="doc std std-doc">layout</span></a> and <a class="reference internal" href="../../how_to/styling/index.html"><span class="doc std std-doc">styling</span></a> how-to guides.</p>
+<section id="core">
+<h3>Core<a class="headerlink" href="#core" title="Permalink to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">options</span></code></strong> (list or dict): List or dictionary of options</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">value</span></code></strong> (boolean): Currently selected options</p></li>
+</ul>
+</section>
+<section id="display">
+<h3>Display<a class="headerlink" href="#display" title="Permalink to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">button_type</span></code></strong> (str): A button theme should be one of <code class="docutils literal notranslate"><span class="pre">'default'</span></code> (white), <code class="docutils literal notranslate"><span class="pre">'primary'</span></code> (blue), <code class="docutils literal notranslate"><span class="pre">'success'</span></code> (green), <code class="docutils literal notranslate"><span class="pre">'info'</span></code> (yellow), or <code class="docutils literal notranslate"><span class="pre">'danger'</span></code> (red)</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">description</span></code></strong> (str | Bokeh Tooltip | pn.widgets.TooltipIcon): A description which is shown when the widget is hovered.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">disabled</span></code></strong> (boolean): Whether the widget is editable</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">name</span></code></strong> (str): The title of the widget</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">orientation</span></code></strong> (str, default=’horizontal’): Button group orientation, either ‘horizontal’ or ‘vertical’</p></li>
+</ul>
+<hr class="docutils"/>
+<div class="pyodide highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">checkbutton_group</span> <span class="o">=</span> <span class="n">pn</span><span class="o">.</span><span class="n">widgets</span><span class="o">.</span><span class="n">CheckButtonGroup</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'Check Button Group'</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="p">[</span><span class="s1">'Apple'</span><span class="p">,</span> <span class="s1">'Pear'</span><span class="p">],</span> <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s1">'Apple'</span><span class="p">,</span> <span class="s1">'Banana'</span><span class="p">,</span> <span class="s1">'Pear'</span><span class="p">,</span> <span class="s1">'Strawberry'</span><span class="p">])</span>
+
+<span class="n">checkbutton_group</span>
+</pre></div>
+</div>
+<pre class="pyodide-stdout" id="stdout-codecell1-py"></pre><pre class="pyodide-stderr" id="stderr-codecell1-py"></pre><div class="pyodide-output embedded" id="output-codecell1-py"></div>
+<script>
+              async function embed_bokeh_2 () {
+                if (window.Bokeh && window.Bokeh.Panel) {
+                  await Bokeh.embed.embed_item({"target_id": "output-codecell1-py", "root_id": "p1006", "doc": {"version": "3.4.0", "title": "Panel Application", "roots": [{"type": "object", "name": "panel.models.widgets.CheckboxButtonGroup", "id": "p1006", "attributes": {"css_classes": ["solid"], "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"type": "object", "name": "ImportedStyleSheet", "id": "p1004", "attributes": {"url": "https://cdn.holoviz.org/panel/1.4.0/dist/css/loading.css"}}, {"type": "object", "name": "ImportedStyleSheet", "id": "p1005", "attributes": {"url": "https://cdn.holoviz.org/panel/1.4.0/dist/css/button.css"}}, {"type": "object", "name": "ImportedStyleSheet", "id": "p1002", "attributes": {"url": "https://cdn.holoviz.org/panel/1.4.0/dist/bundled/theme/default.css"}}, {"type": "object", "name": "ImportedStyleSheet", "id": "p1003", "attributes": {"url": "https://cdn.holoviz.org/panel/1.4.0/dist/bundled/theme/native.css"}}], "margin": [5, 10], "align": "start", "labels": ["Apple", "Banana", "Pear", "Strawberry"], "active": [0, 2]}}, {"type": "object", "name": "panel.models.location.Location", "id": "p1007", "attributes": {"name": "location", "reload": false}}], "defs": [{"type": "model", "name": "ReactiveHTML1"}, {"type": "model", "name": "FlexBox1", "properties": [{"name": "align_content", "kind": "Any", "default": "flex-start"}, {"name": "align_items", "kind": "Any", "default": "flex-start"}, {"name": "flex_direction", "kind": "Any", "default": "row"}, {"name": "flex_wrap", "kind": "Any", "default": "wrap"}, {"name": "justify_content", "kind": "Any", "default": "flex-start"}, {"name": "gap", "kind": "Any", "default": ""}]}, {"type": "model", "name": "FloatPanel1", "properties": [{"name": "config", "kind": "Any", "default": {"type": "map"}}, {"name": "contained", "kind": "Any", "default": true}, {"name": "position", "kind": "Any", "default": "right-top"}, {"name": "offsetx", "kind": "Any", "default": null}, {"name": "offsety", "kind": "Any", "default": null}, {"name": "theme", "kind": "Any", "default": "primary"}, {"name": "status", "kind": "Any", "default": "normalized"}]}, {"type": "model", "name": "GridStack1", "properties": [{"name": "mode", "kind": "Any", "default": "warn"}, {"name": "ncols", "kind": "Any", "default": null}, {"name": "nrows", "kind": "Any", "default": null}, {"name": "allow_resize", "kind": "Any", "default": true}, {"name": "allow_drag", "kind": "Any", "default": true}, {"name": "state", "kind": "Any", "default": []}]}, {"type": "model", "name": "drag1", "properties": [{"name": "slider_width", "kind": "Any", "default": 5}, {"name": "slider_color", "kind": "Any", "default": "black"}, {"name": "value", "kind": "Any", "default": 50}]}, {"type": "model", "name": "click1", "properties": [{"name": "terminal_output", "kind": "Any", "default": ""}, {"name": "debug_name", "kind": "Any", "default": ""}, {"name": "clears", "kind": "Any", "default": 0}]}, {"type": "model", "name": "FastWrapper1", "properties": [{"name": "object", "kind": "Any", "default": null}, {"name": "style", "kind": "Any", "default": null}]}, {"type": "model", "name": "NotificationAreaBase1", "properties": [{"name": "js_events", "kind": "Any", "default": {"type": "map"}}, {"name": "position", "kind": "Any", "default": "bottom-right"}, {"name": "_clear", "kind": "Any", "default": 0}]}, {"type": "model", "name": "NotificationArea1", "properties": [{"name": "js_events", "kind": "Any", "default": {"type": "map"}}, {"name": "notifications", "kind": "Any", "default": []}, {"name": "position", "kind": "Any", "default": "bottom-right"}, {"name": "_clear", "kind": "Any", "default": 0}, {"name": "types", "kind": "Any", "default": [{"type": "map", "entries": [["type", "warning"], ["background", "#ffc107"], ["icon", {"type": "map", "entries": [["className", "fas fa-exclamation-triangle"], ["tagName", "i"], ["color", "white"]]}]]}, {"type": "map", "entries": [["type", "info"], ["background", "#007bff"], ["icon", {"type": "map", "entries": [["className", "fas fa-info-circle"], ["tagName", "i"], ["color", "white"]]}]]}]}]}, {"type": "model", "name": "Notification", "properties": [{"name": "background", "kind": "Any", "default": null}, {"name": "duration", "kind": "Any", "default": 3000}, {"name": "icon", "kind": "Any", "default": null}, {"name": "message", "kind": "Any", "default": ""}, {"name": "notification_type", "kind": "Any", "default": null}, {"name": "_destroyed", "kind": "Any", "default": false}]}, {"type": "model", "name": "TemplateActions1", "properties": [{"name": "open_modal", "kind": "Any", "default": 0}, {"name": "close_modal", "kind": "Any", "default": 0}]}, {"type": "model", "name": "BootstrapTemplateActions1", "properties": [{"name": "open_modal", "kind": "Any", "default": 0}, {"name": "close_modal", "kind": "Any", "default": 0}]}, {"type": "model", "name": "TemplateEditor1", "properties": [{"name": "layout", "kind": "Any", "default": []}]}, {"type": "model", "name": "MaterialTemplateActions1", "properties": [{"name": "open_modal", "kind": "Any", "default": 0}, {"name": "close_modal", "kind": "Any", "default": 0}]}, {"type": "model", "name": "copy_to_clipboard1", "properties": [{"name": "fill", "kind": "Any", "default": "none"}, {"name": "value", "kind": "Any", "default": null}]}]}, "version": "3.4.0"})
+                } else {
+                   setTimeout(embed_bokeh_2, 200)
+                }
+              };
+              embed_bokeh_2()
+            </script>
+<p><code class="docutils literal notranslate"><span class="pre">CheckButtonGroup.value</span></code> returns a list of the currently selected options:</p>
+<div class="pyodide highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">checkbutton_group</span><span class="o">.</span><span class="n">value</span>
+</pre></div>
+</div>
+<pre class="pyodide-stdout" id="stdout-codecell2-py"></pre><pre class="pyodide-stderr" id="stderr-codecell2-py"></pre><div class="pyodide-output embedded" id="output-codecell2-py"><pre>['Apple', 'Pear']</pre></div>
+</section>
+</section>
+<section id="styles">
+<h2>Styles<a class="headerlink" href="#styles" title="Permalink to this heading">#</a></h2>
+<p>The color of the button can be set by selecting one of the available <code class="docutils literal notranslate"><span class="pre">button_type</span></code> values and the <code class="docutils literal notranslate"><span class="pre">button_style</span></code> can be <code class="docutils literal notranslate"><span class="pre">'solid'</span></code> or <code class="docutils literal notranslate"><span class="pre">'outline'</span></code>:</p>
+<div class="pyodide highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pn</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">(</span><span class="n">pn</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="o">*</span><span class="p">(</span>
+        <span class="n">pn</span><span class="o">.</span><span class="n">widgets</span><span class="o">.</span><span class="n">CheckButtonGroup</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">p</span><span class="p">,</span> <span class="n">button_type</span><span class="o">=</span><span class="n">p</span><span class="p">,</span> <span class="n">button_style</span><span class="o">=</span><span class="n">bs</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s1">'Foo'</span><span class="p">,</span> <span class="s1">'Bar'</span><span class="p">,</span> <span class="s1">'Baz'</span><span class="p">],</span> <span class="n">value</span><span class="o">=</span><span class="p">[</span><span class="s1">'Bar'</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pn</span><span class="o">.</span><span class="n">widgets</span><span class="o">.</span><span class="n">Button</span><span class="o">.</span><span class="n">param</span><span class="o">.</span><span class="n">button_type</span><span class="o">.</span><span class="n">objects</span>
+    <span class="p">))</span>
+    <span class="k">for</span> <span class="n">bs</span> <span class="ow">in</span> <span class="n">pn</span><span class="o">.</span><span class="n">widgets</span><span class="o">.</span><span class="n">Button</span><span class="o">.</span><span class="n">param</span><span class="o">.</span><span class="n">button_style</span><span class="o">.</span><span class="n">objects</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<pre class="pyodide-stdout" id="stdout-codecell3-py"></pre><pre class="pyodide-stderr" id="stderr-codecell3-py"></pre><div class="pyodide-output embedded" id="output-codecell3-py"></div>
+<script>
+              async function embed_bokeh_4 () {
+                if (window.Bokeh && window.Bokeh.Panel) {
+                  await Bokeh.embed.embed_item({"target_id": "output-codecell3-py", "root_id": "p1008", "doc": {"version": "3.4.0", "title": "Panel Application", "roots": [{"type": "object", "name": "Row", "id": "p1008", "attributes": {"name": "Row00130", "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"type": "object", "name": "ImportedStyleSheet", "id": "p1012", "attributes": {"url": "https://cdn.holoviz.org/panel/1.4.0/dist/css/loading.css"}}, {"type": "object", "name": "ImportedStyleSheet", "id": "p1031", "attributes": {"url": "https://cdn.holoviz.org/panel/1.4.0/dist/css/listpanel.css"}}, {"type": "object", "name": "ImportedStyleSheet", "id": "p1010", "attributes": {"url": "https://cdn.holoviz.org/panel/1.4.0/dist/bundled/theme/default.css"}}, {"type": "object", "name": "ImportedStyleSheet", "id": "p1011", "attributes": {"url": "https://cdn.holoviz.org/panel/1.4.0/dist/bundled/theme/native.css"}}], "margin": 0, "align": "start", "children": [{"type": "object", "name": "panel.models.layout.Column", "id": "p1009", "attributes": {"name": "Column00122", "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1012"}, {"id": "p1031"}, {"id": "p1010"}, {"id": "p1011"}], "margin": 0, "align": "start", "children": [{"type": "object", "name": "panel.models.widgets.CheckboxButtonGroup", "id": "p1014", "attributes": {"css_classes": ["solid"], "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1012"}, {"type": "object", "name": "ImportedStyleSheet", "id": "p1013", "attributes": {"url": "https://cdn.holoviz.org/panel/1.4.0/dist/css/button.css"}}, {"id": "p1010"}, {"id": "p1011"}], "margin": [5, 10], "align": "start", "labels": ["Foo", "Bar", "Baz"], "active": [1]}}, {"type": "object", "name": "panel.models.widgets.CheckboxButtonGroup", "id": "p1017", "attributes": {"button_type": "primary", "css_classes": ["solid"], "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1012"}, {"id": "p1013"}, {"id": "p1010"}, {"id": "p1011"}], "margin": [5, 10], "align": "start", "labels": ["Foo", "Bar", "Baz"], "active": [1]}}, {"type": "object", "name": "panel.models.widgets.CheckboxButtonGroup", "id": "p1020", "attributes": {"button_type": "success", "css_classes": ["solid"], "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1012"}, {"id": "p1013"}, {"id": "p1010"}, {"id": "p1011"}], "margin": [5, 10], "align": "start", "labels": ["Foo", "Bar", "Baz"], "active": [1]}}, {"type": "object", "name": "panel.models.widgets.CheckboxButtonGroup", "id": "p1023", "attributes": {"button_type": "warning", "css_classes": ["solid"], "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1012"}, {"id": "p1013"}, {"id": "p1010"}, {"id": "p1011"}], "margin": [5, 10], "align": "start", "labels": ["Foo", "Bar", "Baz"], "active": [1]}}, {"type": "object", "name": "panel.models.widgets.CheckboxButtonGroup", "id": "p1026", "attributes": {"button_type": "danger", "css_classes": ["solid"], "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1012"}, {"id": "p1013"}, {"id": "p1010"}, {"id": "p1011"}], "margin": [5, 10], "align": "start", "labels": ["Foo", "Bar", "Baz"], "active": [1]}}, {"type": "object", "name": "panel.models.widgets.CheckboxButtonGroup", "id": "p1029", "attributes": {"button_type": "light", "css_classes": ["solid"], "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1012"}, {"id": "p1013"}, {"id": "p1010"}, {"id": "p1011"}], "margin": [5, 10], "align": "start", "labels": ["Foo", "Bar", "Baz"], "active": [1]}}]}}, {"type": "object", "name": "panel.models.layout.Column", "id": "p1032", "attributes": {"name": "Column00129", "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1012"}, {"id": "p1031"}, {"id": "p1010"}, {"id": "p1011"}], "margin": 0, "align": "start", "children": [{"type": "object", "name": "panel.models.widgets.CheckboxButtonGroup", "id": "p1035", "attributes": {"css_classes": ["outline"], "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1012"}, {"id": "p1013"}, {"id": "p1010"}, {"id": "p1011"}], "margin": [5, 10], "align": "start", "labels": ["Foo", "Bar", "Baz"], "active": [1]}}, {"type": "object", "name": "panel.models.widgets.CheckboxButtonGroup", "id": "p1038", "attributes": {"button_type": "primary", "css_classes": ["outline"], "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1012"}, {"id": "p1013"}, {"id": "p1010"}, {"id": "p1011"}], "margin": [5, 10], "align": "start", "labels": ["Foo", "Bar", "Baz"], "active": [1]}}, {"type": "object", "name": "panel.models.widgets.CheckboxButtonGroup", "id": "p1041", "attributes": {"button_type": "success", "css_classes": ["outline"], "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1012"}, {"id": "p1013"}, {"id": "p1010"}, {"id": "p1011"}], "margin": [5, 10], "align": "start", "labels": ["Foo", "Bar", "Baz"], "active": [1]}}, {"type": "object", "name": "panel.models.widgets.CheckboxButtonGroup", "id": "p1044", "attributes": {"button_type": "warning", "css_classes": ["outline"], "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1012"}, {"id": "p1013"}, {"id": "p1010"}, {"id": "p1011"}], "margin": [5, 10], "align": "start", "labels": ["Foo", "Bar", "Baz"], "active": [1]}}, {"type": "object", "name": "panel.models.widgets.CheckboxButtonGroup", "id": "p1047", "attributes": {"button_type": "danger", "css_classes": ["outline"], "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1012"}, {"id": "p1013"}, {"id": "p1010"}, {"id": "p1011"}], "margin": [5, 10], "align": "start", "labels": ["Foo", "Bar", "Baz"], "active": [1]}}, {"type": "object", "name": "panel.models.widgets.CheckboxButtonGroup", "id": "p1050", "attributes": {"button_type": "light", "css_classes": ["outline"], "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1012"}, {"id": "p1013"}, {"id": "p1010"}, {"id": "p1011"}], "margin": [5, 10], "align": "start", "labels": ["Foo", "Bar", "Baz"], "active": [1]}}]}}]}}, {"type": "object", "name": "panel.models.location.Location", "id": "p1055", "attributes": {"name": "location", "reload": false}}], "defs": [{"type": "model", "name": "ReactiveHTML1"}, {"type": "model", "name": "FlexBox1", "properties": [{"name": "align_content", "kind": "Any", "default": "flex-start"}, {"name": "align_items", "kind": "Any", "default": "flex-start"}, {"name": "flex_direction", "kind": "Any", "default": "row"}, {"name": "flex_wrap", "kind": "Any", "default": "wrap"}, {"name": "justify_content", "kind": "Any", "default": "flex-start"}, {"name": "gap", "kind": "Any", "default": ""}]}, {"type": "model", "name": "FloatPanel1", "properties": [{"name": "config", "kind": "Any", "default": {"type": "map"}}, {"name": "contained", "kind": "Any", "default": true}, {"name": "position", "kind": "Any", "default": "right-top"}, {"name": "offsetx", "kind": "Any", "default": null}, {"name": "offsety", "kind": "Any", "default": null}, {"name": "theme", "kind": "Any", "default": "primary"}, {"name": "status", "kind": "Any", "default": "normalized"}]}, {"type": "model", "name": "GridStack1", "properties": [{"name": "mode", "kind": "Any", "default": "warn"}, {"name": "ncols", "kind": "Any", "default": null}, {"name": "nrows", "kind": "Any", "default": null}, {"name": "allow_resize", "kind": "Any", "default": true}, {"name": "allow_drag", "kind": "Any", "default": true}, {"name": "state", "kind": "Any", "default": []}]}, {"type": "model", "name": "drag1", "properties": [{"name": "slider_width", "kind": "Any", "default": 5}, {"name": "slider_color", "kind": "Any", "default": "black"}, {"name": "value", "kind": "Any", "default": 50}]}, {"type": "model", "name": "click1", "properties": [{"name": "terminal_output", "kind": "Any", "default": ""}, {"name": "debug_name", "kind": "Any", "default": ""}, {"name": "clears", "kind": "Any", "default": 0}]}, {"type": "model", "name": "FastWrapper1", "properties": [{"name": "object", "kind": "Any", "default": null}, {"name": "style", "kind": "Any", "default": null}]}, {"type": "model", "name": "NotificationAreaBase1", "properties": [{"name": "js_events", "kind": "Any", "default": {"type": "map"}}, {"name": "position", "kind": "Any", "default": "bottom-right"}, {"name": "_clear", "kind": "Any", "default": 0}]}, {"type": "model", "name": "NotificationArea1", "properties": [{"name": "js_events", "kind": "Any", "default": {"type": "map"}}, {"name": "notifications", "kind": "Any", "default": []}, {"name": "position", "kind": "Any", "default": "bottom-right"}, {"name": "_clear", "kind": "Any", "default": 0}, {"name": "types", "kind": "Any", "default": [{"type": "map", "entries": [["type", "warning"], ["background", "#ffc107"], ["icon", {"type": "map", "entries": [["className", "fas fa-exclamation-triangle"], ["tagName", "i"], ["color", "white"]]}]]}, {"type": "map", "entries": [["type", "info"], ["background", "#007bff"], ["icon", {"type": "map", "entries": [["className", "fas fa-info-circle"], ["tagName", "i"], ["color", "white"]]}]]}]}]}, {"type": "model", "name": "Notification", "properties": [{"name": "background", "kind": "Any", "default": null}, {"name": "duration", "kind": "Any", "default": 3000}, {"name": "icon", "kind": "Any", "default": null}, {"name": "message", "kind": "Any", "default": ""}, {"name": "notification_type", "kind": "Any", "default": null}, {"name": "_destroyed", "kind": "Any", "default": false}]}, {"type": "model", "name": "TemplateActions1", "properties": [{"name": "open_modal", "kind": "Any", "default": 0}, {"name": "close_modal", "kind": "Any", "default": 0}]}, {"type": "model", "name": "BootstrapTemplateActions1", "properties": [{"name": "open_modal", "kind": "Any", "default": 0}, {"name": "close_modal", "kind": "Any", "default": 0}]}, {"type": "model", "name": "TemplateEditor1", "properties": [{"name": "layout", "kind": "Any", "default": []}]}, {"type": "model", "name": "MaterialTemplateActions1", "properties": [{"name": "open_modal", "kind": "Any", "default": 0}, {"name": "close_modal", "kind": "Any", "default": 0}]}, {"type": "model", "name": "copy_to_clipboard1", "properties": [{"name": "fill", "kind": "Any", "default": "none"}, {"name": "value", "kind": "Any", "default": null}]}]}, "version": "3.4.0"})
+                } else {
+                   setTimeout(embed_bokeh_4, 200)
+                }
+              };
+              embed_bokeh_4()
+            </script>
+</section>
+<section id="controls">
+<h2>Controls<a class="headerlink" href="#controls" title="Permalink to this heading">#</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">CheckButtonGroup</span></code> widget exposes a number of options which can be changed from both Python and Javascript. Try out the effect of these parameters interactively:</p>
+<div class="pyodide highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pn</span><span class="o">.</span><span class="n">Row</span><span class="p">(</span><span class="n">checkbutton_group</span><span class="o">.</span><span class="n">controls</span><span class="p">(</span><span class="n">jslink</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">checkbutton_group</span><span class="p">)</span>
+</pre></div>
+</div>
+<pre class="pyodide-stdout" id="stdout-codecell4-py"></pre><pre class="pyodide-stderr" id="stderr-codecell4-py"></pre><div class="pyodide-output embedded" id="output-codecell4-py"></div>
+<script>
+              async function embed_bokeh_5 () {
+                if (window.Bokeh && window.Bokeh.Panel) {
+                  await Bokeh.embed.embed_item({"target_id": "output-codecell4-py", "root_id": "p1056", "doc": {"version": "3.4.0", "title": "Panel Application", "roots": [{"type": "object", "name": "Row", "id": "p1056", "attributes": {"name": "Row00224", "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"type": "object", "name": "ImportedStyleSheet", "id": "p1061", "attributes": {"url": "https://cdn.holoviz.org/panel/1.4.0/dist/css/loading.css"}}, {"type": "object", "name": "ImportedStyleSheet", "id": "p1085", "attributes": {"url": "https://cdn.holoviz.org/panel/1.4.0/dist/css/listpanel.css"}}, {"type": "object", "name": "ImportedStyleSheet", "id": "p1059", "attributes": {"url": "https://cdn.holoviz.org/panel/1.4.0/dist/bundled/theme/default.css"}}, {"type": "object", "name": "ImportedStyleSheet", "id": "p1060", "attributes": {"url": "https://cdn.holoviz.org/panel/1.4.0/dist/bundled/theme/native.css"}}], "margin": 0, "align": "start", "children": [{"type": "object", "name": "panel.models.tabs.Tabs", "id": "p1057", "attributes": {"stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"id": "p1059"}, {"id": "p1060"}], "margin": 0, "align": "start", "tabs": [{"type": "object", "name": "TabPanel", "id": "p1086", "attributes": {"name": "Controls", "title": "Controls", "child": {"type": "object", "name": "panel.models.layout.Column", "id": "p1058", "attributes": {"name": "Controls", "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"type": "object", "name": "ImportedStyleSheet", "id": "p1084", "attributes": {"url": "https://cdn.holoviz.org/panel/1.4.0/dist/css/widgetbox.css"}}, {"id": "p1085"}, {"id": "p1059"}, {"id": "p1060"}], "margin": [5, 10], "align": "start", "children": [{"type": "object", "name": "Div", "id": "p1062", "attributes": {"stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"id": "p1059"}, {"id": "p1060"}], "margin": [5, 10], "align": "start", "text": "<b>Controls</b>"}}, {"type": "object", "name": "Checkbox", "id": "p1064", "attributes": {"js_property_callbacks": {"type": "map", "entries": [["change:active", [{"type": "object", "name": "CustomJS", "id": "p1165", "attributes": {"tags": [[4600951376, [null, "active"], [null, "disabled"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "disabled"]]}], ["source", {"id": "p1064"}], ["target", {"type": "object", "name": "panel.models.widgets.CheckboxButtonGroup", "id": "p1162", "attributes": {"js_property_callbacks": {"type": "map", "entries": [["change:disabled", [{"type": "object", "name": "CustomJS", "id": "p1166", "attributes": {"tags": [[4600951376, [null, "active"], [null, "disabled"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "disabled"]]}], ["source", {"id": "p1162"}], ["target", {"id": "p1064"}]]}, "code": "\n    var value = source['disabled'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['active'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set active on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['active'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]], ["change:tooltip_delay", [{"type": "object", "name": "CustomJS", "id": "p1168", "attributes": {"tags": [[4599989072, [null, "value"], [null, "tooltip_delay"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "description_delay"]]}], ["source", {"id": "p1162"}], ["target", {"type": "object", "name": "Spinner", "id": "p1068", "attributes": {"js_property_callbacks": {"type": "map", "entries": [["change:value", [{"type": "object", "name": "CustomJS", "id": "p1167", "attributes": {"tags": [[4599989072, [null, "value"], [null, "tooltip_delay"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "description_delay"]]}], ["source", {"id": "p1068"}], ["target", {"id": "p1162"}]]}, "code": "\n    var value = source['value'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['tooltip_delay'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set tooltip_delay on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['tooltip_delay'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]}, "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"id": "p1059"}, {"id": "p1060"}], "width": 300, "min_width": 300, "margin": [5, 10], "align": "start", "title": "Description delay", "description": {"type": "object", "name": "Tooltip", "id": "p1067", "attributes": {"syncable": false, "stylesheets": [":host { white-space: initial; max-width: 300px; }"], "position": "right", "content": {"type": "object", "name": "bokeh.models.dom.HTML", "id": "p1066", "attributes": {"html": ["<p>Delay (in milliseconds) to display the tooltip after the cursor has<br />\nhovered over the Button, default is 500ms.</p>\n"]}}}}, "value": 500, "placeholder": "0", "mode": "int"}}]]}, "code": "\n    var value = source['tooltip_delay'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]], ["change:button_type", [{"type": "object", "name": "CustomJS", "id": "p1170", "attributes": {"tags": [[4600949392, [null, "value"], [null, "button_type"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "button_type"]]}], ["source", {"id": "p1162"}], ["target", {"type": "object", "name": "panel.models.widgets.CustomSelect", "id": "p1073", "attributes": {"js_property_callbacks": {"type": "map", "entries": [["change:value", [{"type": "object", "name": "CustomJS", "id": "p1169", "attributes": {"tags": [[4600949392, [null, "value"], [null, "button_type"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "button_type"]]}], ["source", {"id": "p1073"}], ["target", {"id": "p1162"}]]}, "code": "\n    var value = source['value'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['button_type'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set button_type on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['button_type'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]}, "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"type": "object", "name": "ImportedStyleSheet", "id": "p1070", "attributes": {"url": "https://cdn.holoviz.org/panel/1.4.0/dist/css/select.css"}}, {"id": "p1059"}, {"id": "p1060"}], "width": 300, "min_width": 300, "margin": [5, 10], "align": "start", "title": "Button type", "description": {"type": "object", "name": "Tooltip", "id": "p1072", "attributes": {"syncable": false, "stylesheets": [":host { white-space: initial; max-width: 300px; }"], "position": "right", "content": {"type": "object", "name": "bokeh.models.dom.HTML", "id": "p1071", "attributes": {"html": ["<p>A button theme; should be one of 'default' (white), 'primary'<br />\n(blue), 'success' (green), 'info' (yellow), 'light' (light),<br />\nor 'danger' (red).</p>\n"]}}}}, "options": [["default", "default"], ["primary", "primary"], ["success", "success"], ["warning", "warning"], ["danger", "danger"], ["light", "light"]], "value": "default"}}]]}, "code": "\n    var value = source['button_type'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]], ["change:labels", [{"type": "object", "name": "CustomJS", "id": "p1172", "attributes": {"tags": [[4601164944, [null, "value"], [null, "labels"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "options"]]}], ["source", {"id": "p1162"}], ["target", {"type": "object", "name": "TextInput", "id": "p1075", "attributes": {"js_property_callbacks": {"type": "map", "entries": [["change:value", [{"type": "object", "name": "CustomJS", "id": "p1171", "attributes": {"tags": [[4601164944, [null, "value"], [null, "labels"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "options"]]}], ["source", {"id": "p1075"}], ["target", {"id": "p1162"}]]}, "code": "\n    var value = source['value'];\n    value = JSON.parse(value.replace(/'/g, '\"'));\n    value = value;\n    try {\n      var property = target.properties['labels'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set labels on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['labels'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]}, "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"id": "p1059"}, {"id": "p1060"}], "width": 300, "min_width": 300, "margin": [5, 10], "align": "start", "title": "Options", "value": "[\"Apple\", \"Banana\", \"Pear\", \"Strawberry\"]"}}]]}, "code": "\n    var value = source['labels'];\n    value = value;\n    value = JSON.stringify(value).replace(/,/g, \",\").replace(/:/g, \": \");\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]], ["change:active", [{"type": "object", "name": "CustomJS", "id": "p1174", "attributes": {"tags": [[4601471760, [null, "value"], [null, "active"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "value"]]}], ["source", {"id": "p1162"}], ["target", {"type": "object", "name": "TextInput", "id": "p1077", "attributes": {"js_property_callbacks": {"type": "map", "entries": [["change:value", [{"type": "object", "name": "CustomJS", "id": "p1173", "attributes": {"tags": [[4601471760, [null, "value"], [null, "active"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "value"]]}], ["source", {"id": "p1077"}], ["target", {"id": "p1162"}]]}, "code": "\n    var value = source['value'];\n    value = JSON.parse(value.replace(/'/g, '\"'));\n    value = value.map((label) => target.labels.indexOf(label));\n    try {\n      var property = target.properties['active'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set active on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['active'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]}, "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"id": "p1059"}, {"id": "p1060"}], "width": 300, "min_width": 300, "margin": [5, 10], "align": "start", "title": "Value", "value": "[\"Apple\", \"Pear\"]"}}]]}, "code": "\n    var value = source['active'];\n    value = value.map((index) => source.labels[index]);\n    value = JSON.stringify(value).replace(/,/g, \",\").replace(/:/g, \": \");\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]], ["change:orientation", [{"type": "object", "name": "CustomJS", "id": "p1176", "attributes": {"tags": [[4601473808, [null, "value"], [null, "orientation"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "orientation"]]}], ["source", {"id": "p1162"}], ["target", {"type": "object", "name": "panel.models.widgets.CustomSelect", "id": "p1082", "attributes": {"js_property_callbacks": {"type": "map", "entries": [["change:value", [{"type": "object", "name": "CustomJS", "id": "p1175", "attributes": {"tags": [[4601473808, [null, "value"], [null, "orientation"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "orientation"]]}], ["source", {"id": "p1082"}], ["target", {"id": "p1162"}]]}, "code": "\n    var value = source['value'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['orientation'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set orientation on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['orientation'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]}, "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"id": "p1070"}, {"id": "p1059"}, {"id": "p1060"}], "width": 300, "min_width": 300, "margin": [5, 10], "align": "start", "title": "Orientation", "description": {"type": "object", "name": "Tooltip", "id": "p1081", "attributes": {"syncable": false, "stylesheets": [":host { white-space: initial; max-width: 300px; }"], "position": "right", "content": {"type": "object", "name": "bokeh.models.dom.HTML", "id": "p1080", "attributes": {"html": ["<p>Button group orientation, either 'horizontal' (default) or 'vertical'.</p>\n"]}}}}, "options": [["horizontal", "horizontal"], ["vertical", "vertical"]], "value": "horizontal"}}]]}, "code": "\n    var value = source['orientation'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]], ["change:align", [{"type": "object", "name": "CustomJS", "id": "p1178", "attributes": {"tags": [[4601474000, [null, "value"], [null, "align"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "align"]]}], ["source", {"id": "p1162"}], ["target", {"type": "object", "name": "TextInput", "id": "p1093", "attributes": {"js_property_callbacks": {"type": "map", "entries": [["change:value", [{"type": "object", "name": "CustomJS", "id": "p1177", "attributes": {"tags": [[4601474000, [null, "value"], [null, "align"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "align"]]}], ["source", {"id": "p1093"}], ["target", {"id": "p1162"}]]}, "code": "\n    var value = source['value'];\n    value = JSON.parse(value.replace(/'/g, '\"'));\n    value = value;\n    try {\n      var property = target.properties['align'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set align on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['align'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]}, "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"id": "p1059"}, {"id": "p1060"}], "width": 300, "min_width": 300, "margin": [5, 10], "align": "start", "title": "Align", "description": {"type": "object", "name": "Tooltip", "id": "p1092", "attributes": {"syncable": false, "stylesheets": [":host { white-space: initial; max-width: 300px; }"], "position": "right", "content": {"type": "object", "name": "bokeh.models.dom.HTML", "id": "p1091", "attributes": {"html": ["<p>Whether the object should be aligned with the start, end or<br />\ncenter of its container. If set as a tuple it will declare<br />\n(vertical, horizontal) alignment.</p>\n"]}}}}, "value": "'start'"}}]]}, "code": "\n    var value = source['align'];\n    value = value;\n    value = JSON.stringify(value).replace(/,/g, \",\").replace(/:/g, \": \");\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]], ["change:aspect_ratio", [{"type": "object", "name": "CustomJS", "id": "p1180", "attributes": {"tags": [[4601475152, [null, "value"], [null, "aspect_ratio"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "aspect_ratio"]]}], ["source", {"id": "p1162"}], ["target", {"type": "object", "name": "TextInput", "id": "p1097", "attributes": {"js_property_callbacks": {"type": "map", "entries": [["change:value", [{"type": "object", "name": "CustomJS", "id": "p1179", "attributes": {"tags": [[4601475152, [null, "value"], [null, "aspect_ratio"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "aspect_ratio"]]}], ["source", {"id": "p1097"}], ["target", {"id": "p1162"}]]}, "code": "\n    var value = source['value'];\n    value = JSON.parse(value.replace(/'/g, '\"'));\n    value = value;\n    try {\n      var property = target.properties['aspect_ratio'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set aspect_ratio on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['aspect_ratio'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]}, "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"id": "p1059"}, {"id": "p1060"}], "width": 300, "min_width": 300, "margin": [5, 10], "align": "start", "title": "Aspect ratio", "description": {"type": "object", "name": "Tooltip", "id": "p1096", "attributes": {"syncable": false, "stylesheets": [":host { white-space: initial; max-width: 300px; }"], "position": "right", "content": {"type": "object", "name": "bokeh.models.dom.HTML", "id": "p1095", "attributes": {"html": ["<p>Describes the proportional relationship between component's<br />\nwidth and height.  This works if any of component's dimensions<br />\nare flexible in size. If set to a number, <code>width / height = aspect_ratio</code> relationship will be maintained.  Otherwise, if<br />\nset to <code>&quot;auto&quot;</code>, component's preferred width and height will<br />\nbe used to determine the aspect (if not set, no aspect will be<br />\npreserved).</p>\n"]}}}}}}]]}, "code": "\n    var value = source['aspect_ratio'];\n    value = value;\n    value = JSON.stringify(value).replace(/,/g, \",\").replace(/:/g, \": \");\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]], ["change:css_classes", [{"type": "object", "name": "CustomJS", "id": "p1182", "attributes": {"tags": [[4601476944, [null, "value"], [null, "css_classes"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "css_classes"]]}], ["source", {"id": "p1162"}], ["target", {"type": "object", "name": "TextInput", "id": "p1101", "attributes": {"js_property_callbacks": {"type": "map", "entries": [["change:value", [{"type": "object", "name": "CustomJS", "id": "p1181", "attributes": {"tags": [[4601476944, [null, "value"], [null, "css_classes"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "css_classes"]]}], ["source", {"id": "p1101"}], ["target", {"id": "p1162"}]]}, "code": "\n    var value = source['value'];\n    value = JSON.parse(value.replace(/'/g, '\"'));\n    value = value;\n    try {\n      var property = target.properties['css_classes'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set css_classes on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['css_classes'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]}, "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"id": "p1059"}, {"id": "p1060"}], "width": 300, "min_width": 300, "margin": [5, 10], "align": "start", "title": "Css classes", "description": {"type": "object", "name": "Tooltip", "id": "p1100", "attributes": {"syncable": false, "stylesheets": [":host { white-space: initial; max-width: 300px; }"], "position": "right", "content": {"type": "object", "name": "bokeh.models.dom.HTML", "id": "p1099", "attributes": {"html": ["<p>CSS classes to apply to the layout.</p>\n"]}}}}, "value": "[]"}}]]}, "code": "\n    var value = source['css_classes'];\n    value = value;\n    value = JSON.stringify(value).replace(/,/g, \",\").replace(/:/g, \": \");\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]], ["change:height", [{"type": "object", "name": "CustomJS", "id": "p1184", "attributes": {"tags": [[4601478032, [null, "value"], [null, "height"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "height"]]}], ["source", {"id": "p1162"}], ["target", {"type": "object", "name": "Spinner", "id": "p1105", "attributes": {"js_property_callbacks": {"type": "map", "entries": [["change:value", [{"type": "object", "name": "CustomJS", "id": "p1183", "attributes": {"tags": [[4601478032, [null, "value"], [null, "height"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "height"]]}], ["source", {"id": "p1105"}], ["target", {"id": "p1162"}]]}, "code": "\n    var value = source['value'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['height'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set height on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['height'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]}, "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"id": "p1059"}, {"id": "p1060"}], "width": 300, "min_width": 300, "margin": [5, 10], "align": "start", "title": "Height", "description": {"type": "object", "name": "Tooltip", "id": "p1104", "attributes": {"syncable": false, "stylesheets": [":host { white-space: initial; max-width: 300px; }"], "position": "right", "content": {"type": "object", "name": "bokeh.models.dom.HTML", "id": "p1103", "attributes": {"html": ["<p>The height of the component (in pixels).  This can be either<br />\nfixed or preferred height, depending on height sizing policy.</p>\n"]}}}}, "low": 0, "placeholder": "0", "mode": "int"}}]]}, "code": "\n    var value = source['height'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]], ["change:min_width", [{"type": "object", "name": "CustomJS", "id": "p1186", "attributes": {"tags": [[4601479056, [null, "value"], [null, "min_width"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "min_width"]]}], ["source", {"id": "p1162"}], ["target", {"type": "object", "name": "Spinner", "id": "p1109", "attributes": {"js_property_callbacks": {"type": "map", "entries": [["change:value", [{"type": "object", "name": "CustomJS", "id": "p1185", "attributes": {"tags": [[4601479056, [null, "value"], [null, "min_width"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "min_width"]]}], ["source", {"id": "p1109"}], ["target", {"id": "p1162"}]]}, "code": "\n    var value = source['value'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['min_width'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set min_width on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['min_width'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]}, "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"id": "p1059"}, {"id": "p1060"}], "width": 300, "min_width": 300, "margin": [5, 10], "align": "start", "title": "Min width", "description": {"type": "object", "name": "Tooltip", "id": "p1108", "attributes": {"syncable": false, "stylesheets": [":host { white-space: initial; max-width: 300px; }"], "position": "right", "content": {"type": "object", "name": "bokeh.models.dom.HTML", "id": "p1107", "attributes": {"html": ["<p>Minimal width of the component (in pixels) if width is adjustable.</p>\n"]}}}}, "low": 0, "placeholder": "0", "mode": "int"}}]]}, "code": "\n    var value = source['min_width'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]], ["change:min_height", [{"type": "object", "name": "CustomJS", "id": "p1188", "attributes": {"tags": [[4601478224, [null, "value"], [null, "min_height"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "min_height"]]}], ["source", {"id": "p1162"}], ["target", {"type": "object", "name": "Spinner", "id": "p1113", "attributes": {"js_property_callbacks": {"type": "map", "entries": [["change:value", [{"type": "object", "name": "CustomJS", "id": "p1187", "attributes": {"tags": [[4601478224, [null, "value"], [null, "min_height"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "min_height"]]}], ["source", {"id": "p1113"}], ["target", {"id": "p1162"}]]}, "code": "\n    var value = source['value'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['min_height'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set min_height on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['min_height'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]}, "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"id": "p1059"}, {"id": "p1060"}], "width": 300, "min_width": 300, "margin": [5, 10], "align": "start", "title": "Min height", "description": {"type": "object", "name": "Tooltip", "id": "p1112", "attributes": {"syncable": false, "stylesheets": [":host { white-space: initial; max-width: 300px; }"], "position": "right", "content": {"type": "object", "name": "bokeh.models.dom.HTML", "id": "p1111", "attributes": {"html": ["<p>Minimal height of the component (in pixels) if height is adjustable.</p>\n"]}}}}, "low": 0, "placeholder": "0", "mode": "int"}}]]}, "code": "\n    var value = source['min_height'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]], ["change:max_width", [{"type": "object", "name": "CustomJS", "id": "p1190", "attributes": {"tags": [[4601512528, [null, "value"], [null, "max_width"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "max_width"]]}], ["source", {"id": "p1162"}], ["target", {"type": "object", "name": "Spinner", "id": "p1117", "attributes": {"js_property_callbacks": {"type": "map", "entries": [["change:value", [{"type": "object", "name": "CustomJS", "id": "p1189", "attributes": {"tags": [[4601512528, [null, "value"], [null, "max_width"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "max_width"]]}], ["source", {"id": "p1117"}], ["target", {"id": "p1162"}]]}, "code": "\n    var value = source['value'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['max_width'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set max_width on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['max_width'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]}, "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"id": "p1059"}, {"id": "p1060"}], "width": 300, "min_width": 300, "margin": [5, 10], "align": "start", "title": "Max width", "description": {"type": "object", "name": "Tooltip", "id": "p1116", "attributes": {"syncable": false, "stylesheets": [":host { white-space: initial; max-width: 300px; }"], "position": "right", "content": {"type": "object", "name": "bokeh.models.dom.HTML", "id": "p1115", "attributes": {"html": ["<p>Minimal width of the component (in pixels) if width is adjustable.</p>\n"]}}}}, "low": 0, "placeholder": "0", "mode": "int"}}]]}, "code": "\n    var value = source['max_width'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]], ["change:max_height", [{"type": "object", "name": "CustomJS", "id": "p1192", "attributes": {"tags": [[4601513424, [null, "value"], [null, "max_height"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "max_height"]]}], ["source", {"id": "p1162"}], ["target", {"type": "object", "name": "Spinner", "id": "p1121", "attributes": {"js_property_callbacks": {"type": "map", "entries": [["change:value", [{"type": "object", "name": "CustomJS", "id": "p1191", "attributes": {"tags": [[4601513424, [null, "value"], [null, "max_height"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "max_height"]]}], ["source", {"id": "p1121"}], ["target", {"id": "p1162"}]]}, "code": "\n    var value = source['value'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['max_height'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set max_height on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['max_height'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]}, "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"id": "p1059"}, {"id": "p1060"}], "width": 300, "min_width": 300, "margin": [5, 10], "align": "start", "title": "Max height", "description": {"type": "object", "name": "Tooltip", "id": "p1120", "attributes": {"syncable": false, "stylesheets": [":host { white-space: initial; max-width: 300px; }"], "position": "right", "content": {"type": "object", "name": "bokeh.models.dom.HTML", "id": "p1119", "attributes": {"html": ["<p>Minimal height of the component (in pixels) if height is adjustable.</p>\n"]}}}}, "low": 0, "placeholder": "0", "mode": "int"}}]]}, "code": "\n    var value = source['max_height'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]], ["change:margin", [{"type": "object", "name": "CustomJS", "id": "p1194", "attributes": {"tags": [[4601514320, [null, "value"], [null, "margin"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "margin"]]}], ["source", {"id": "p1162"}], ["target", {"type": "object", "name": "TextInput", "id": "p1125", "attributes": {"js_property_callbacks": {"type": "map", "entries": [["change:value", [{"type": "object", "name": "CustomJS", "id": "p1193", "attributes": {"tags": [[4601514320, [null, "value"], [null, "margin"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "margin"]]}], ["source", {"id": "p1125"}], ["target", {"id": "p1162"}]]}, "code": "\n    var value = source['value'];\n    value = JSON.parse(value.replace(/'/g, '\"'));\n    value = value;\n    try {\n      var property = target.properties['margin'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set margin on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['margin'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]}, "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"id": "p1059"}, {"id": "p1060"}], "width": 300, "min_width": 300, "margin": [5, 10], "align": "start", "title": "Margin", "description": {"type": "object", "name": "Tooltip", "id": "p1124", "attributes": {"syncable": false, "stylesheets": [":host { white-space: initial; max-width: 300px; }"], "position": "right", "content": {"type": "object", "name": "bokeh.models.dom.HTML", "id": "p1123", "attributes": {"html": ["<p>Allows to create additional space around the component. May<br />\nbe specified as a two-tuple of the form (vertical, horizontal)<br />\nor a four-tuple (top, right, bottom, left).</p>\n"]}}}}, "value": "[5, 10]"}}]]}, "code": "\n    var value = source['margin'];\n    value = value;\n    value = JSON.stringify(value).replace(/,/g, \",\").replace(/:/g, \": \");\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]], ["change:styles", [{"type": "object", "name": "CustomJS", "id": "p1196", "attributes": {"tags": [[4601515792, [null, "value"], [null, "styles"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "styles"]]}], ["source", {"id": "p1162"}], ["target", {"type": "object", "name": "TextInput", "id": "p1129", "attributes": {"js_property_callbacks": {"type": "map", "entries": [["change:value", [{"type": "object", "name": "CustomJS", "id": "p1195", "attributes": {"tags": [[4601515792, [null, "value"], [null, "styles"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "styles"]]}], ["source", {"id": "p1129"}], ["target", {"id": "p1162"}]]}, "code": "\n    var value = source['value'];\n    value = JSON.parse(value.replace(/'/g, '\"'));\n    value = value;\n    try {\n      var property = target.properties['styles'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set styles on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['styles'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]}, "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"id": "p1059"}, {"id": "p1060"}], "width": 300, "min_width": 300, "margin": [5, 10], "align": "start", "title": "Styles", "description": {"type": "object", "name": "Tooltip", "id": "p1128", "attributes": {"syncable": false, "stylesheets": [":host { white-space: initial; max-width: 300px; }"], "position": "right", "content": {"type": "object", "name": "bokeh.models.dom.HTML", "id": "p1127", "attributes": {"html": ["<p>Dictionary of CSS rules to apply to DOM node wrapping the<br />\ncomponent.</p>\n"]}}}}, "value": "{}"}}]]}, "code": "\n    var value = source['styles'];\n    value = value;\n    value = JSON.stringify(value).replace(/,/g, \",\").replace(/:/g, \": \");\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]], ["change:tags", [{"type": "object", "name": "CustomJS", "id": "p1198", "attributes": {"tags": [[4601517520, [null, "value"], [null, "tags"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "tags"]]}], ["source", {"id": "p1162"}], ["target", {"type": "object", "name": "TextInput", "id": "p1133", "attributes": {"js_property_callbacks": {"type": "map", "entries": [["change:value", [{"type": "object", "name": "CustomJS", "id": "p1197", "attributes": {"tags": [[4601517520, [null, "value"], [null, "tags"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "tags"]]}], ["source", {"id": "p1133"}], ["target", {"id": "p1162"}]]}, "code": "\n    var value = source['value'];\n    value = JSON.parse(value.replace(/'/g, '\"'));\n    value = value;\n    try {\n      var property = target.properties['tags'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set tags on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['tags'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]}, "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"id": "p1059"}, {"id": "p1060"}], "width": 300, "min_width": 300, "margin": [5, 10], "align": "start", "title": "Tags", "description": {"type": "object", "name": "Tooltip", "id": "p1132", "attributes": {"syncable": false, "stylesheets": [":host { white-space: initial; max-width: 300px; }"], "position": "right", "content": {"type": "object", "name": "bokeh.models.dom.HTML", "id": "p1131", "attributes": {"html": ["<p>List of arbitrary tags to add to the component.<br />\nCan be useful for templating or for storing metadata on<br />\nthe model.</p>\n"]}}}}, "value": "[]"}}]]}, "code": "\n    var value = source['tags'];\n    value = value;\n    value = JSON.stringify(value).replace(/,/g, \",\").replace(/:/g, \": \");\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]], ["change:width", [{"type": "object", "name": "CustomJS", "id": "p1200", "attributes": {"tags": [[4601518608, [null, "value"], [null, "width"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "width"]]}], ["source", {"id": "p1162"}], ["target", {"type": "object", "name": "Spinner", "id": "p1137", "attributes": {"js_property_callbacks": {"type": "map", "entries": [["change:value", [{"type": "object", "name": "CustomJS", "id": "p1199", "attributes": {"tags": [[4601518608, [null, "value"], [null, "width"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "width"]]}], ["source", {"id": "p1137"}], ["target", {"id": "p1162"}]]}, "code": "\n    var value = source['value'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['width'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set width on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['width'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]}, "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"id": "p1059"}, {"id": "p1060"}], "width": 300, "min_width": 300, "margin": [5, 10], "align": "start", "title": "Width", "description": {"type": "object", "name": "Tooltip", "id": "p1136", "attributes": {"syncable": false, "stylesheets": [":host { white-space: initial; max-width: 300px; }"], "position": "right", "content": {"type": "object", "name": "bokeh.models.dom.HTML", "id": "p1135", "attributes": {"html": ["<p>The width of the component (in pixels). This can be either<br />\nfixed or preferred width, depending on width sizing policy.</p>\n"]}}}}, "low": 0, "placeholder": "0", "mode": "int"}}]]}, "code": "\n    var value = source['width'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]], ["change:width_policy", [{"type": "object", "name": "CustomJS", "id": "p1202", "attributes": {"tags": [[4601519632, [null, "value"], [null, "width_policy"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "width_policy"]]}], ["source", {"id": "p1162"}], ["target", {"type": "object", "name": "panel.models.widgets.CustomSelect", "id": "p1142", "attributes": {"js_property_callbacks": {"type": "map", "entries": [["change:value", [{"type": "object", "name": "CustomJS", "id": "p1201", "attributes": {"tags": [[4601519632, [null, "value"], [null, "width_policy"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "width_policy"]]}], ["source", {"id": "p1142"}], ["target", {"id": "p1162"}]]}, "code": "\n    var value = source['value'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['width_policy'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set width_policy on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['width_policy'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]}, "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"id": "p1070"}, {"id": "p1059"}, {"id": "p1060"}], "width": 300, "min_width": 300, "margin": [5, 10], "align": "start", "title": "Width policy", "description": {"type": "object", "name": "Tooltip", "id": "p1141", "attributes": {"syncable": false, "stylesheets": [":host { white-space: initial; max-width: 300px; }"], "position": "right", "content": {"type": "object", "name": "bokeh.models.dom.HTML", "id": "p1140", "attributes": {"html": ["<p>Describes how the component should maintain its width.</p>\n<p><code>&quot;auto&quot;</code><br />\nUse component's preferred sizing policy.</p>\n<p><code>&quot;fixed&quot;</code><br />\nUse exactly <code>width</code> pixels. Component will overflow if<br />\nit can't fit in the available horizontal space.</p>\n<p><code>&quot;fit&quot;</code><br />\nUse component's preferred width (if set) and allow it to<br />\nfit into the available horizontal space within the minimum<br />\nand maximum width bounds (if set). Component's width<br />\nneither will be aggressively minimized nor maximized.</p>\n<p><code>&quot;min&quot;</code><br />\nUse as little horizontal space as possible, not less than<br />\nthe minimum width (if set).  The starting point is the<br />\npreferred width (if set). The width of the component may<br />\nshrink or grow depending on the parent layout, aspect<br />\nmanagement and other factors.</p>\n<p><code>&quot;max&quot;</code><br />\nUse as much horizontal space as possible, not more than<br />\nthe maximum width (if set).  The starting point is the<br />\npreferred width (if set). The width of the component may<br />\nshrink or grow depending on the parent layout, aspect<br />\nmanagement and other factors.</p>\n"]}}}}, "options": [["auto", "auto"], ["fixed", "fixed"], ["fit", "fit"], ["min", "min"], ["max", "max"]], "value": "auto"}}]]}, "code": "\n    var value = source['width_policy'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]], ["change:height_policy", [{"type": "object", "name": "CustomJS", "id": "p1204", "attributes": {"tags": [[4601518800, [null, "value"], [null, "height_policy"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "height_policy"]]}], ["source", {"id": "p1162"}], ["target", {"type": "object", "name": "panel.models.widgets.CustomSelect", "id": "p1147", "attributes": {"js_property_callbacks": {"type": "map", "entries": [["change:value", [{"type": "object", "name": "CustomJS", "id": "p1203", "attributes": {"tags": [[4601518800, [null, "value"], [null, "height_policy"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "height_policy"]]}], ["source", {"id": "p1147"}], ["target", {"id": "p1162"}]]}, "code": "\n    var value = source['value'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['height_policy'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set height_policy on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['height_policy'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]}, "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"id": "p1070"}, {"id": "p1059"}, {"id": "p1060"}], "width": 300, "min_width": 300, "margin": [5, 10], "align": "start", "title": "Height policy", "description": {"type": "object", "name": "Tooltip", "id": "p1146", "attributes": {"syncable": false, "stylesheets": [":host { white-space: initial; max-width: 300px; }"], "position": "right", "content": {"type": "object", "name": "bokeh.models.dom.HTML", "id": "p1145", "attributes": {"html": ["<p>Describes how the component should maintain its height.</p>\n<p><code>&quot;auto&quot;</code><br />\nUse component's preferred sizing policy.</p>\n<p><code>&quot;fixed&quot;</code><br />\nUse exactly <code>height</code> pixels. Component will overflow if<br />\nit can't fit in the available vertical space.</p>\n<p><code>&quot;fit&quot;</code><br />\nUse component's preferred height (if set) and allow to fit<br />\ninto the available vertical space within the minimum and<br />\nmaximum height bounds (if set). Component's height neither<br />\nwill be aggressively minimized nor maximized.</p>\n<p><code>&quot;min&quot;</code><br />\nUse as little vertical space as possible, not less than<br />\nthe minimum height (if set).  The starting point is the<br />\npreferred height (if set). The height of the component may<br />\nshrink or grow depending on the parent layout, aspect<br />\nmanagement and other factors.</p>\n<p><code>&quot;max&quot;</code><br />\nUse as much vertical space as possible, not more than the<br />\nmaximum height (if set).  The starting point is the<br />\npreferred height (if set). The height of the component may<br />\nshrink or grow depending on the parent layout, aspect<br />\nmanagement and other factors.</p>\n"]}}}}, "options": [["auto", "auto"], ["fixed", "fixed"], ["fit", "fit"], ["min", "min"], ["max", "max"]], "value": "auto"}}]]}, "code": "\n    var value = source['height_policy'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]], ["change:sizing_mode", [{"type": "object", "name": "CustomJS", "id": "p1206", "attributes": {"tags": [[4601520272, [null, "value"], [null, "sizing_mode"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "sizing_mode"]]}], ["source", {"id": "p1162"}], ["target", {"type": "object", "name": "panel.models.widgets.CustomSelect", "id": "p1152", "attributes": {"js_property_callbacks": {"type": "map", "entries": [["change:value", [{"type": "object", "name": "CustomJS", "id": "p1205", "attributes": {"tags": [[4601520272, [null, "value"], [null, "sizing_mode"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "sizing_mode"]]}], ["source", {"id": "p1152"}], ["target", {"id": "p1162"}]]}, "code": "\n    var value = source['value'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['sizing_mode'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set sizing_mode on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['sizing_mode'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]}, "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"id": "p1070"}, {"id": "p1059"}, {"id": "p1060"}], "width": 300, "min_width": 300, "margin": [5, 10], "align": "start", "title": "Sizing mode", "description": {"type": "object", "name": "Tooltip", "id": "p1151", "attributes": {"syncable": false, "stylesheets": [":host { white-space: initial; max-width: 300px; }"], "position": "right", "content": {"type": "object", "name": "bokeh.models.dom.HTML", "id": "p1150", "attributes": {"html": ["<p>How the component should size itself.</p>\n<p>This is a high-level setting for maintaining width and height<br />\nof the component. To gain more fine grained control over<br />\nsizing, use <code>width_policy</code>, <code>height_policy</code> and<br />\n<code>aspect_ratio</code> instead (those take precedence over<br />\n<code>sizing_mode</code>).</p>\n<p><code>&quot;fixed&quot;</code><br />\nComponent is not responsive. It will retain its original<br />\nwidth and height regardless of any subsequent browser<br />\nwindow resize events.</p>\n<p><code>&quot;stretch_width&quot;</code><br />\nComponent will responsively resize to stretch to the<br />\navailable width, without maintaining any aspect ratio. The<br />\nheight of the component depends on the type of the<br />\ncomponent and may be fixed or fit to component's contents.</p>\n<p><code>&quot;stretch_height&quot;</code><br />\nComponent will responsively resize to stretch to the<br />\navailable height, without maintaining any aspect<br />\nratio. The width of the component depends on the type of<br />\nthe component and may be fixed or fit to component's<br />\ncontents.</p>\n<p><code>&quot;stretch_both&quot;</code><br />\nComponent is completely responsive, independently in width<br />\nand height, and will occupy all the available horizontal<br />\nand vertical space, even if this changes the aspect ratio<br />\nof the component.</p>\n<p><code>&quot;scale_width&quot;</code><br />\nComponent will responsively resize to stretch to the<br />\navailable width, while maintaining the original or<br />\nprovided aspect ratio.</p>\n<p><code>&quot;scale_height&quot;</code><br />\nComponent will responsively resize to stretch to the<br />\navailable height, while maintaining the original or<br />\nprovided aspect ratio.</p>\n<p><code>&quot;scale_both&quot;</code><br />\nComponent will responsively resize to both the available<br />\nwidth and height, while maintaining the original or<br />\nprovided aspect ratio.</p>\n"]}}}}, "options": [["fixed", "fixed"], ["stretch_width", "stretch_width"], ["stretch_height", "stretch_height"], ["stretch_both", "stretch_both"], ["scale_width", "scale_width"], ["scale_height", "scale_height"], ["scale_both", "scale_both"], ["None", "None"]]}}]]}, "code": "\n    var value = source['sizing_mode'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['value'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set value on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['value'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]], ["change:visible", [{"type": "object", "name": "CustomJS", "id": "p1208", "attributes": {"tags": [[4601521168, [null, "active"], [null, "visible"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "visible"]]}], ["source", {"id": "p1162"}], ["target", {"type": "object", "name": "Checkbox", "id": "p1154", "attributes": {"js_property_callbacks": {"type": "map", "entries": [["change:active", [{"type": "object", "name": "CustomJS", "id": "p1207", "attributes": {"tags": [[4601521168, [null, "active"], [null, "visible"]]], "args": {"type": "map", "entries": [["bidirectional", true], ["properties", {"type": "map", "entries": [["value", "visible"]]}], ["source", {"id": "p1154"}], ["target", {"id": "p1162"}]]}, "code": "\n    var value = source['active'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['visible'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set visible on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['visible'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]}, "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"id": "p1059"}, {"id": "p1060"}], "margin": [5, 10], "align": "start", "active": true, "label": "Visible"}}]]}, "code": "\n    var value = source['visible'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['active'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set active on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['active'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]}, "css_classes": ["solid"], "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"type": "object", "name": "ImportedStyleSheet", "id": "p1161", "attributes": {"url": "https://cdn.holoviz.org/panel/1.4.0/dist/css/button.css"}}, {"id": "p1059"}, {"id": "p1060"}], "margin": [5, 10], "align": "start", "labels": ["Apple", "Banana", "Pear", "Strawberry"], "active": [0, 2]}}]]}, "code": "\n    var value = source['active'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['disabled'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set disabled on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['disabled'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]}, "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"id": "p1059"}, {"id": "p1060"}], "margin": [5, 10], "align": "start", "label": "Disabled"}}, {"id": "p1068"}, {"id": "p1073"}, {"id": "p1075"}, {"id": "p1077"}, {"id": "p1082"}]}}}}, {"type": "object", "name": "TabPanel", "id": "p1158", "attributes": {"name": "Layout", "title": "Layout", "child": {"type": "object", "name": "panel.models.layout.Column", "id": "p1087", "attributes": {"name": "Layout", "stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"id": "p1084"}, {"id": "p1085"}, {"id": "p1059"}, {"id": "p1060"}], "margin": [5, 10], "align": "start", "children": [{"type": "object", "name": "Div", "id": "p1089", "attributes": {"stylesheets": ["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}", {"id": "p1061"}, {"id": "p1059"}, {"id": "p1060"}], "margin": [5, 10], "align": "start", "text": "<b>Layout</b>"}}, {"id": "p1093"}, {"id": "p1097"}, {"id": "p1101"}, {"id": "p1105"}, {"id": "p1109"}, {"id": "p1113"}, {"id": "p1117"}, {"id": "p1121"}, {"id": "p1125"}, {"id": "p1129"}, {"id": "p1133"}, {"id": "p1137"}, {"id": "p1142"}, {"id": "p1147"}, {"id": "p1152"}, {"id": "p1154"}]}}}}]}}, {"id": "p1162"}]}}, {"type": "object", "name": "panel.models.location.Location", "id": "p1209", "attributes": {"name": "location", "reload": false}}], "defs": [{"type": "model", "name": "ReactiveHTML1"}, {"type": "model", "name": "FlexBox1", "properties": [{"name": "align_content", "kind": "Any", "default": "flex-start"}, {"name": "align_items", "kind": "Any", "default": "flex-start"}, {"name": "flex_direction", "kind": "Any", "default": "row"}, {"name": "flex_wrap", "kind": "Any", "default": "wrap"}, {"name": "justify_content", "kind": "Any", "default": "flex-start"}, {"name": "gap", "kind": "Any", "default": ""}]}, {"type": "model", "name": "FloatPanel1", "properties": [{"name": "config", "kind": "Any", "default": {"type": "map"}}, {"name": "contained", "kind": "Any", "default": true}, {"name": "position", "kind": "Any", "default": "right-top"}, {"name": "offsetx", "kind": "Any", "default": null}, {"name": "offsety", "kind": "Any", "default": null}, {"name": "theme", "kind": "Any", "default": "primary"}, {"name": "status", "kind": "Any", "default": "normalized"}]}, {"type": "model", "name": "GridStack1", "properties": [{"name": "mode", "kind": "Any", "default": "warn"}, {"name": "ncols", "kind": "Any", "default": null}, {"name": "nrows", "kind": "Any", "default": null}, {"name": "allow_resize", "kind": "Any", "default": true}, {"name": "allow_drag", "kind": "Any", "default": true}, {"name": "state", "kind": "Any", "default": []}]}, {"type": "model", "name": "drag1", "properties": [{"name": "slider_width", "kind": "Any", "default": 5}, {"name": "slider_color", "kind": "Any", "default": "black"}, {"name": "value", "kind": "Any", "default": 50}]}, {"type": "model", "name": "click1", "properties": [{"name": "terminal_output", "kind": "Any", "default": ""}, {"name": "debug_name", "kind": "Any", "default": ""}, {"name": "clears", "kind": "Any", "default": 0}]}, {"type": "model", "name": "FastWrapper1", "properties": [{"name": "object", "kind": "Any", "default": null}, {"name": "style", "kind": "Any", "default": null}]}, {"type": "model", "name": "NotificationAreaBase1", "properties": [{"name": "js_events", "kind": "Any", "default": {"type": "map"}}, {"name": "position", "kind": "Any", "default": "bottom-right"}, {"name": "_clear", "kind": "Any", "default": 0}]}, {"type": "model", "name": "NotificationArea1", "properties": [{"name": "js_events", "kind": "Any", "default": {"type": "map"}}, {"name": "notifications", "kind": "Any", "default": []}, {"name": "position", "kind": "Any", "default": "bottom-right"}, {"name": "_clear", "kind": "Any", "default": 0}, {"name": "types", "kind": "Any", "default": [{"type": "map", "entries": [["type", "warning"], ["background", "#ffc107"], ["icon", {"type": "map", "entries": [["className", "fas fa-exclamation-triangle"], ["tagName", "i"], ["color", "white"]]}]]}, {"type": "map", "entries": [["type", "info"], ["background", "#007bff"], ["icon", {"type": "map", "entries": [["className", "fas fa-info-circle"], ["tagName", "i"], ["color", "white"]]}]]}]}]}, {"type": "model", "name": "Notification", "properties": [{"name": "background", "kind": "Any", "default": null}, {"name": "duration", "kind": "Any", "default": 3000}, {"name": "icon", "kind": "Any", "default": null}, {"name": "message", "kind": "Any", "default": ""}, {"name": "notification_type", "kind": "Any", "default": null}, {"name": "_destroyed", "kind": "Any", "default": false}]}, {"type": "model", "name": "TemplateActions1", "properties": [{"name": "open_modal", "kind": "Any", "default": 0}, {"name": "close_modal", "kind": "Any", "default": 0}]}, {"type": "model", "name": "BootstrapTemplateActions1", "properties": [{"name": "open_modal", "kind": "Any", "default": 0}, {"name": "close_modal", "kind": "Any", "default": 0}]}, {"type": "model", "name": "TemplateEditor1", "properties": [{"name": "layout", "kind": "Any", "default": []}]}, {"type": "model", "name": "MaterialTemplateActions1", "properties": [{"name": "open_modal", "kind": "Any", "default": 0}, {"name": "close_modal", "kind": "Any", "default": 0}]}, {"type": "model", "name": "copy_to_clipboard1", "properties": [{"name": "fill", "kind": "Any", "default": "none"}, {"name": "value", "kind": "Any", "default": null}]}]}, "version": "3.4.0"})
+                } else {
+                   setTimeout(embed_bokeh_5, 200)
+                }
+              };
+              embed_bokeh_5()
+            </script>
+<hr class="docutils"/>
+<p><a class="reference external" href="https://panelite.holoviz.org?path=/reference/widgets/CheckButtonGroup.ipynb">Open this notebook in Jupyterlite</a> | <a class="reference external" href="https://raw.githubusercontent.com/holoviz/panel/main/examples/reference/widgets/CheckButtonGroup.ipynb">Download this notebook from GitHub (right-click to download).</a></p>
+</section>
+</section>
+</article>
+<footer class="bd-footer-article">
+<div class="footer-article-items footer-article__inner">
+<div class="footer-article-item"><!-- Previous / next buttons -->
+<div class="prev-next-area">
+<a class="left-prev" href="CheckBoxGroup.html" title="previous page">
+<i class="fa-solid fa-angle-left"></i>
+<div class="prev-next-info">
+<p class="prev-next-subtitle">previous</p>
+<p class="prev-next-title">CheckBoxGroup</p>
+</div>
+</a>
+<a class="right-next" href="Checkbox.html" title="next page">
+<div class="prev-next-info">
+<p class="prev-next-subtitle">next</p>
+<p class="prev-next-title">Checkbox</p>
+</div>
+<i class="fa-solid fa-angle-right"></i>
+</a>
+</div></div>
+</div>
+</footer>
+</div>
+<div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+<div class="sidebar-secondary-item"><div class="github-star-badge">
+<a href="https://github.com/holoviz/panel">
+<img alt="Support us with a star on GitHub" src="https://img.shields.io/github/stars/holoviz/panel?style=social&amp;label=Star%20on%20%20GitHub%E2%AD%90"/>
+</a>
+</div></div>
+<div class="sidebar-secondary-item">
+<div class="tocsection">
+<a href="https://panelite.holoviz.org/lab?path=reference/widgets/CheckButtonGroup.ipynb" target="”_blank”">
+<img alt="launch jupyterlite" src="../../_static/jupyterlite.svg"/>
+</a>
+</div></div>
+<div class="sidebar-secondary-item">
+<div class="page-toc tocsection onthispage">
+<i class="fa-solid fa-list"></i> On this page
+  </div>
+<nav class="bd-toc-nav page-toc">
+<ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#parameters">Parameters:</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#core">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#display">Display</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#styles">Styles</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#controls">Controls</a></li>
+</ul>
+</nav></div>
+</div></div>
+</div>
+<footer class="bd-footer-content">
+</footer>
+</main>
+</div>
+</div>
+<!-- Scripts loaded after <body> so the DOM is not blocked -->
+<script src="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+<footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+<div class="footer-items__start">
+<div class="footer-item">
+<p class="copyright">
+    
+      © Copyright 2019-2024 Holoviz contributors.
+      <br/>
+</p>
+</div>
+<div class="footer-item">
+<p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.3.0.
+    <br/>
+</p>
+</div>
+</div>
+<div class="footer-items__end">
+<div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.3.
+</p></div>
+</div>
+</div>
+</footer>
+</body>
+</html>

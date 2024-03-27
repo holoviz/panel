@@ -1,0 +1,13 @@
+<map id="inheritance6a84d54d48" name="inheritance6a84d54d48">
+<area shape="rect" id="node1" title="Base class for all class types that have Bokeh properties." alt="" coords="154,70,248,82"/>
+<area shape="rect" id="node3" title="Base class for all objects stored in Bokeh |Document| instances." alt="" coords="298,36,376,48"/>
+<area shape="rect" id="node2" title="A mixin for making a type serializable." alt="" coords="2,70,104,82"/>
+<area shape="rect" id="node9" title="Base class for user interface elements." alt="" coords="397,36,508,48"/>
+<area shape="rect" id="node5" title="A mixin class to provide an interface for registering and" alt="" coords="126,25,277,37"/>
+<area shape="rect" id="node6" title="A mixin class to provide an interface for registering and" alt="" coords="129,47,274,59"/>
+<area shape="rect" id="node7" title="The base class for layoutable components." alt="" coords="635,36,734,48"/>
+<area shape="rect" id="node11" title="A base class for all interactive widget types." alt="" coords="755,36,861,48"/>
+<area shape="rect" id="node8" title="A UI element that can hold other DOM&#45;based UI elements." alt="" coords="529,36,613,48"/>
+<area shape="rect" id="node10" title="Abstract base class for input widgets." alt="" coords="882,36,1000,48"/>
+<area shape="rect" id="node12" href="#panel.models.datetime_picker.DatetimePicker" target="_top" title="Calendar&#45;based date picker widget." alt="" coords="1021,36,1150,48"/>
+</map>

@@ -1,0 +1,14 @@
+<map id="inheritance2a2e702f25" name="inheritance2a2e702f25">
+<area shape="rect" id="node1" href="#panel.layout.spacer.Divider" target="_top" title="A `Divider` draws a horizontal rule (a `&lt;hr&gt;` tag in HTML) to separate" alt="" coords="796,4,947,27"/>
+<area shape="rect" id="node2" href="panel.reactive.html#panel.reactive.Reactive" target="_top" title="Reactive is a Viewable object that also supports syncing between" alt="" coords="622,26,756,48"/>
+<area shape="rect" id="node4" href="#panel.layout.spacer.Spacer" target="_top" title="The `Spacer` layout is a very versatile component which makes it easy to" alt="" coords="796,47,947,70"/>
+<area shape="rect" id="node3" href="#panel.layout.spacer.HSpacer" target="_top" title="The `HSpacer` layout provides responsive horizontal spacing." alt="" coords="988,26,1148,48"/>
+<area shape="rect" id="node5" href="#panel.layout.spacer.VSpacer" target="_top" title="The `VSpacer` layout provides responsive vertical spacing." alt="" coords="988,69,1147,91"/>
+<area shape="rect" id="node6" title="Syncable is an extension of the Renderable object which can not" alt="" coords="445,4,580,27"/>
+<area shape="rect" id="node7" href="panel.viewable.html#panel.viewable.Viewable" target="_top" title="Viewable is the baseclass all visual components in the panel" alt="" coords="443,47,582,70"/>
+<area shape="rect" id="node8" title="Baseclass for objects which can be rendered to a Bokeh model." alt="" coords="247,4,396,27"/>
+<area shape="rect" id="node9" href="panel.viewable.html#panel.viewable.Layoutable" target="_top" title="Layoutable defines shared style and layout related parameters" alt="" coords="248,47,395,70"/>
+<area shape="rect" id="node10" title="Base class for named objects that support Parameters and message" alt="" coords="4,47,199,70"/>
+<area shape="rect" id="node11" title="Mixin class to allow rendering and syncing objects in notebook" alt="" coords="11,4,193,27"/>
+<area shape="rect" id="node12" title="Mixin to define methods shared by objects which can served." alt="" coords="240,90,403,112"/>
+</map>

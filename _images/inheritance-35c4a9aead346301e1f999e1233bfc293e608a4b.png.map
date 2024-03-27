@@ -1,0 +1,23 @@
+<map id="inheritanceecdf410245" name="inheritanceecdf410245">
+<area shape="rect" id="node1" href="#panel.pane.base.ModelPane" target="_top" title="ModelPane provides a baseclass that allows quickly wrapping a" alt="" coords="582,91,674,104"/>
+<area shape="rect" id="node5" href="#panel.pane.markup.HTMLBasePane" target="_top" title="Baseclass for Panes which render HTML inside a Bokeh Div." alt="" coords="698,91,812,104"/>
+<area shape="rect" id="node2" href="#panel.pane.base.PaneBase" target="_top" title="PaneBase is the abstract baseclass for all atomic displayable units" alt="" coords="469,91,558,104"/>
+<area shape="rect" id="node3" href="panel.reactive.html#panel.reactive.Reactive" target="_top" title="Reactive is a Viewable object that also supports syncing between" alt="" coords="366,91,445,104"/>
+<area shape="rect" id="node4" href="#panel.pane.image.FileBase" target="_top" title="panel.pane.image.FileBase" alt="" coords="836,91,925,104"/>
+<area shape="rect" id="node7" href="#panel.pane.image.ImageBase" target="_top" title="Encodes an image as base64 and wraps it in a Bokeh Div model." alt="" coords="949,78,1045,91"/>
+<area shape="rect" id="node11" href="#panel.pane.image.PDF" target="_top" title="The `PDF` pane embeds a .pdf image file in a panel if provided a" alt="" coords="958,103,1035,116"/>
+<area shape="rect" id="node6" href="#panel.pane.image.GIF" target="_top" title="The `GIF` pane embeds a .gif image file in a panel if provided a local" alt="" coords="1072,3,1146,16"/>
+<area shape="rect" id="node8" href="#panel.pane.image.ICO" target="_top" title="The `ICO` pane embeds an .ico image file in a panel if provided a local" alt="" coords="1071,28,1146,41"/>
+<area shape="rect" id="node9" href="#panel.pane.image.Image" target="_top" title="The `Image` pane embeds any known image format in a panel if" alt="" coords="1068,53,1149,66"/>
+<area shape="rect" id="node10" href="#panel.pane.image.JPG" target="_top" title="The `JPG` pane embeds a .jpg or .jpeg image file in a panel if" alt="" coords="1071,78,1147,91"/>
+<area shape="rect" id="node12" href="#panel.pane.image.PNG" target="_top" title="The `PNG` pane embeds a .png image file in a panel if provided a local" alt="" coords="1070,103,1148,116"/>
+<area shape="rect" id="node13" href="#panel.pane.image.SVG" target="_top" title="The `SVG` pane embeds a .svg image file in a panel if provided a" alt="" coords="1070,128,1147,142"/>
+<area shape="rect" id="node14" href="#panel.pane.image.WebP" target="_top" title="The `WebP` pane embeds a .webp image file in a panel if" alt="" coords="1069,153,1149,167"/>
+<area shape="rect" id="node15" title="Syncable is an extension of the Renderable object which can not" alt="" coords="262,78,341,91"/>
+<area shape="rect" id="node16" href="panel.viewable.html#panel.viewable.Viewable" target="_top" title="Viewable is the baseclass all visual components in the panel" alt="" coords="261,103,342,116"/>
+<area shape="rect" id="node17" title="Baseclass for objects which can be rendered to a Bokeh model." alt="" coords="145,78,233,91"/>
+<area shape="rect" id="node18" href="panel.viewable.html#panel.viewable.Layoutable" target="_top" title="Layoutable defines shared style and layout related parameters" alt="" coords="146,103,232,116"/>
+<area shape="rect" id="node19" title="Base class for named objects that support Parameters and message" alt="" coords="3,103,117,116"/>
+<area shape="rect" id="node20" title="Mixin class to allow rendering and syncing objects in notebook" alt="" coords="6,78,114,91"/>
+<area shape="rect" id="node21" title="Mixin to define methods shared by objects which can served." alt="" coords="141,128,237,142"/>
+</map>

@@ -1,0 +1,15 @@
+<map id="inheritanceeb8ca38325" name="inheritanceeb8ca38325">
+<area shape="rect" id="node1" title="Base class for all class types that have Bokeh properties." alt="" coords="158,72,254,84"/>
+<area shape="rect" id="node3" title="Base class for all objects stored in Bokeh |Document| instances." alt="" coords="305,48,384,61"/>
+<area shape="rect" id="node12" title="Shared properties for button&#45;like widgets." alt="" coords="406,72,526,84"/>
+<area shape="rect" id="node2" title="A mixin for making a type serializable." alt="" coords="2,72,107,84"/>
+<area shape="rect" id="node9" title="Base class for user interface elements." alt="" coords="409,48,522,61"/>
+<area shape="rect" id="node5" title="A mixin class to provide an interface for registering and" alt="" coords="128,25,283,38"/>
+<area shape="rect" id="node6" title="A mixin class to provide an interface for registering and" alt="" coords="132,48,280,61"/>
+<area shape="rect" id="node7" title="The base class for layoutable components." alt="" coords="655,48,756,61"/>
+<area shape="rect" id="node11" title="A base class for all interactive widget types." alt="" coords="778,48,887,61"/>
+<area shape="rect" id="node8" title="A UI element that can hold other DOM&#45;based UI elements." alt="" coords="548,48,634,61"/>
+<area shape="rect" id="node10" title="A base class that defines common properties for all button types." alt="" coords="908,60,1040,72"/>
+<area shape="rect" id="node13" href="#panel.models.icon.ButtonIcon" target="_top" title="A ButtonIcon is a clickable icon that toggles between an active" alt="" coords="1062,60,1150,72"/>
+<area shape="rect" id="node14" href="#panel.models.icon.ToggleIcon" target="_top" title="A ToggleIcon is a clickable icon that toggles between an active" alt="" coords="11,48,98,61"/>
+</map>

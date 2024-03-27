@@ -1,0 +1,13 @@
+<map id="inheritanceac8c720c41" name="inheritanceac8c720c41">
+<area shape="rect" id="node1" href="panel.reactive.html#panel.reactive.Reactive" target="_top" title="Reactive is a Viewable object that also supports syncing between" alt="" coords="645,24,770,45"/>
+<area shape="rect" id="node9" href="#panel.widgets.base.Widget" target="_top" title="Widgets allow syncing changes in bokeh widget models with the" alt="" coords="808,24,949,45"/>
+<area shape="rect" id="node2" title="Syncable is an extension of the Renderable object which can not" alt="" coords="480,4,606,25"/>
+<area shape="rect" id="node3" href="panel.viewable.html#panel.viewable.Viewable" target="_top" title="Viewable is the baseclass all visual components in the panel" alt="" coords="478,44,608,65"/>
+<area shape="rect" id="node4" title="Baseclass for objects which can be rendered to a Bokeh model." alt="" coords="262,4,402,25"/>
+<area shape="rect" id="node5" href="panel.viewable.html#panel.viewable.Layoutable" target="_top" title="Layoutable defines shared style and layout related parameters" alt="" coords="264,44,401,65"/>
+<area shape="rect" id="node6" title="Base class for named objects that support Parameters and message" alt="" coords="4,44,187,65"/>
+<area shape="rect" id="node11" href="#panel.widgets.terminal.TerminalSubprocess" target="_top" title="The TerminalSubProcess is a utility class that makes running" alt="" coords="225,84,440,105"/>
+<area shape="rect" id="node7" title="Mixin class to allow rendering and syncing objects in notebook" alt="" coords="10,4,181,25"/>
+<area shape="rect" id="node8" title="Mixin to define methods shared by objects which can served." alt="" coords="256,124,409,145"/>
+<area shape="rect" id="node10" href="#panel.widgets.terminal.Terminal" target="_top" title="The `Terminal` widget renders a live terminal in the browser using" alt="" coords="987,24,1148,45"/>
+</map>

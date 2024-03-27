@@ -1,0 +1,17 @@
+<map id="inheritance4aa331a017" name="inheritance4aa331a017">
+<area shape="rect" id="node1" href="panel.reactive.html#panel.reactive.Reactive" target="_top" title="Reactive is a Viewable object that also supports syncing between" alt="" coords="645,57,757,76"/>
+<area shape="rect" id="node9" href="#panel.widgets.base.Widget" target="_top" title="Widgets allow syncing changes in bokeh widget models with the" alt="" coords="791,57,916,76"/>
+<area shape="rect" id="node2" title="Syncable is an extension of the Renderable object which can not" alt="" coords="497,39,610,58"/>
+<area shape="rect" id="node3" href="panel.viewable.html#panel.viewable.Viewable" target="_top" title="Viewable is the baseclass all visual components in the panel" alt="" coords="496,75,612,94"/>
+<area shape="rect" id="node4" title="Baseclass for objects which can be rendered to a Bokeh model." alt="" coords="284,39,408,58"/>
+<area shape="rect" id="node5" href="panel.viewable.html#panel.viewable.Layoutable" target="_top" title="Layoutable defines shared style and layout related parameters" alt="" coords="285,75,407,94"/>
+<area shape="rect" id="node6" title="Base class for named objects that support Parameters and message" alt="" coords="19,129,181,147"/>
+<area shape="rect" id="node10" href="#panel.widgets.speech_to_text.Grammar" target="_top" title="A set of words or patterns of words that we want the speech recognition service to recognize" alt="" coords="257,111,435,130"/>
+<area shape="rect" id="node12" href="#panel.widgets.speech_to_text.Language" target="_top" title="panel.widgets.speech_to_text.Language" alt="" coords="256,146,436,165"/>
+<area shape="rect" id="node13" href="#panel.widgets.speech_to_text.RecognitionAlternative" target="_top" title="The RecognitionAlternative represents a word or" alt="" coords="230,182,462,201"/>
+<area shape="rect" id="node14" href="#panel.widgets.speech_to_text.RecognitionResult" target="_top" title="The Result represents a single recognition match, which may contain" alt="" coords="239,218,454,237"/>
+<area shape="rect" id="node7" title="Mixin class to allow rendering and syncing objects in notebook" alt="" coords="24,39,176,58"/>
+<area shape="rect" id="node8" title="Mixin to define methods shared by objects which can served." alt="" coords="278,254,414,272"/>
+<area shape="rect" id="node15" href="#panel.widgets.speech_to_text.SpeechToText" target="_top" title="The SpeechToText widget controls the speech recognition service of" alt="" coords="950,57,1148,76"/>
+<area shape="rect" id="node11" href="#panel.widgets.speech_to_text.GrammarList" target="_top" title="A list of Grammar objects containing words or patterns of words that we want the" alt="" coords="4,4,196,23"/>
+</map>

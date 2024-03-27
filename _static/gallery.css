@@ -1,0 +1,32 @@
+ul.tab {
+  list-style-type: none;
+  padding: 0;
+  overflow: hidden;
+}
+
+ul.tab li {
+  float: left;
+  padding: 0;
+}
+
+ul.tab li label {
+  background: white;
+  padding: 6px;
+  border: 1px solid #ccc;
+  display: inline-block;
+}
+
+ul.tab li input[type="radio"] {
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+ul.tab li input[type="radio"]:checked ~ label {
+  background: var(--pst-color-primary);
+  color: white;
+}
+
+dl.dl-horizontal {
+  padding-left: 50px;
+}

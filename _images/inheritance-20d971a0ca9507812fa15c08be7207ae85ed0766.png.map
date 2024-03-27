@@ -1,0 +1,31 @@
+<map id="inheritance1bbae5e53c" name="inheritance1bbae5e53c">
+<area shape="rect" id="node1" title="Base class for all class types that have Bokeh properties." alt="" coords="119,140,191,149"/>
+<area shape="rect" id="node3" title="Base class for all objects stored in Bokeh |Document| instances." alt="" coords="229,106,289,115"/>
+<area shape="rect" id="node12" title="Shared properties for button&#45;like widgets." alt="" coords="580,140,670,149"/>
+<area shape="rect" id="node2" title="A mixin for making a type serializable." alt="" coords="2,140,80,149"/>
+<area shape="rect" id="node9" title="Base class for user interface elements." alt="" coords="305,106,390,115"/>
+<area shape="rect" id="node5" title="A mixin class to provide an interface for registering and" alt="" coords="97,106,213,115"/>
+<area shape="rect" id="node6" title="A mixin class to provide an interface for registering and" alt="" coords="99,123,210,132"/>
+<area shape="rect" id="node7" title="The base class for layoutable components." alt="" coords="488,106,564,115"/>
+<area shape="rect" id="node11" title="A base class for all interactive widget types." alt="" coords="584,106,666,115"/>
+<area shape="rect" id="node8" title="A UI element that can hold other DOM&#45;based UI elements." alt="" coords="407,106,471,115"/>
+<area shape="rect" id="node10" title="A base class that defines common properties for all button types." alt="" coords="687,140,786,149"/>
+<area shape="rect" id="node13" title="A click button." alt="" coords="814,154,896,163"/>
+<area shape="rect" id="node14" title="Abstract base class for all kinds of groups." alt="" coords="688,106,784,115"/>
+<area shape="rect" id="node18" title="Abstract base class for input widgets." alt="" coords="691,88,781,97"/>
+<area shape="rect" id="node28" href="#panel.models.widgets.Player" target="_top" title="The Player widget provides controls to play through a number of frames." alt="" coords="704,123,768,132"/>
+<area shape="rect" id="node33" href="#panel.models.widgets.TooltipIcon" target="_top" title="panel.models.widgets.TooltipIcon" alt="" coords="700,71,773,80"/>
+<area shape="rect" id="node16" title="Abstract base class for groups with items rendered as buttons." alt="" coords="802,128,908,137"/>
+<area shape="rect" id="node24" href="#panel.models.widgets.Button" target="_top" title="panel.models.widgets.Button" alt="" coords="948,158,1013,167"/>
+<area shape="rect" id="node15" title="A group of check boxes rendered as toggle buttons." alt="" coords="924,123,1037,132"/>
+<area shape="rect" id="node25" href="#panel.models.widgets.CheckboxButtonGroup" target="_top" title="panel.models.widgets.CheckboxButtonGroup" alt="" coords="1053,123,1150,132"/>
+<area shape="rect" id="node17" title="A group of radio boxes rendered as toggle buttons." alt="" coords="928,140,1033,149"/>
+<area shape="rect" id="node30" href="#panel.models.widgets.RadioButtonGroup" target="_top" title="panel.models.widgets.RadioButtonGroup" alt="" coords="1058,140,1146,149"/>
+<area shape="rect" id="node19" title="Single&#45;select widget." alt="" coords="815,88,894,97"/>
+<area shape="rect" id="node21" title="Base class for text&#45;like input widgets." alt="" coords="808,106,901,115"/>
+<area shape="rect" id="node27" href="#panel.models.widgets.FileDownload" target="_top" title="panel.models.widgets.FileDownload" alt="" coords="815,54,894,63"/>
+<area shape="rect" id="node31" href="#panel.models.widgets.SingleSelect" target="_top" title="Single&#45;select widget." alt="" coords="817,71,893,80"/>
+<area shape="rect" id="node26" href="#panel.models.widgets.CustomSelect" target="_top" title="Custom widget that extends the base Bokeh Select" alt="" coords="940,88,1021,97"/>
+<area shape="rect" id="node20" title="Multi&#45;line input widget." alt="" coords="933,106,1028,115"/>
+<area shape="rect" id="node32" href="#panel.models.widgets.TextAreaInput" target="_top" title="panel.models.widgets.TextAreaInput" alt="" coords="1062,106,1141,115"/>
+</map>

@@ -1,0 +1,10 @@
+<map id="inheritance185d59972e" name="inheritance185d59972e">
+<area shape="rect" id="node1" title="Run source code which modifies a Document" alt="" coords="357,52,626,77"/>
+<area shape="rect" id="node5" href="#panel.io.handlers.PanelCodeHandler" target="_top" title="Modify Bokeh documents by creating Dashboard from code." alt="" coords="671,52,888,77"/>
+<area shape="rect" id="node2" title="Provide a mechanism for Bokeh applications to build up new Bokeh" alt="" coords="32,52,285,77"/>
+<area shape="rect" id="node3" title="Compile and run Python source code." alt="" coords="5,5,312,30"/>
+<area shape="rect" id="node7" href="#panel.io.handlers.PanelCodeRunner" target="_top" title="panel.io.handlers.PanelCodeRunner" alt="" coords="384,5,598,30"/>
+<area shape="rect" id="node4" href="#panel.io.handlers.MarkdownHandler" target="_top" title="Modify Bokeh documents by creating Dashboard from a Markdown file." alt="" coords="933,5,1147,30"/>
+<area shape="rect" id="node6" href="#panel.io.handlers.NotebookHandler" target="_top" title="Modify Bokeh documents by creating Dashboard from a notebook file." alt="" coords="935,52,1145,77"/>
+<area shape="rect" id="node8" href="#panel.io.handlers.ScriptHandler" target="_top" title="Modify Bokeh documents by creating Dashboard from a Python script." alt="" coords="945,100,1135,125"/>
+</map>

@@ -1,0 +1,12 @@
+<map id="inheritance17fe534dbe" name="inheritance17fe534dbe">
+<area shape="rect" id="node1" href="#panel.chat.message.ChatMessage" target="_top" title="A widget for displaying chat messages with support for various content types." alt="" coords="964,25,1148,47"/>
+<area shape="rect" id="node2" href="panel.pane.html#panel.pane.base.PaneBase" target="_top" title="PaneBase is the abstract baseclass for all atomic displayable units" alt="" coords="776,25,925,47"/>
+<area shape="rect" id="node3" href="panel.reactive.html#panel.reactive.Reactive" target="_top" title="Reactive is a Viewable object that also supports syncing between" alt="" coords="607,25,737,47"/>
+<area shape="rect" id="node4" title="Syncable is an extension of the Renderable object which can not" alt="" coords="434,4,566,26"/>
+<area shape="rect" id="node5" href="panel.viewable.html#panel.viewable.Viewable" target="_top" title="Viewable is the baseclass all visual components in the panel" alt="" coords="432,46,567,68"/>
+<area shape="rect" id="node6" title="Baseclass for objects which can be rendered to a Bokeh model." alt="" coords="241,4,386,26"/>
+<area shape="rect" id="node7" href="panel.viewable.html#panel.viewable.Layoutable" target="_top" title="Layoutable defines shared style and layout related parameters" alt="" coords="242,46,385,68"/>
+<area shape="rect" id="node8" title="Base class for named objects that support Parameters and message" alt="" coords="4,46,195,68"/>
+<area shape="rect" id="node9" title="Mixin class to allow rendering and syncing objects in notebook" alt="" coords="11,4,188,26"/>
+<area shape="rect" id="node10" title="Mixin to define methods shared by objects which can served." alt="" coords="234,88,393,110"/>
+</map>

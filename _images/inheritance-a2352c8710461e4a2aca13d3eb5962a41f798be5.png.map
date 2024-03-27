@@ -1,0 +1,16 @@
+<map id="inheritance1dcb01ffdd" name="inheritance1dcb01ffdd">
+<area shape="rect" id="node1" title="A mixin for making a type serializable." alt="" coords="23,105,139,119"/>
+<area shape="rect" id="node3" title="A Base class for events that represent updating Bokeh Models and" alt="" coords="184,118,339,132"/>
+<area shape="rect" id="node2" title="Base class for all internal events representing a change to a" alt="" coords="3,131,160,144"/>
+<area shape="rect" id="node12" href="#panel.io.ipywidget.MessageSentEventPatched" target="_top" title="Patches MessageSentEvent with fix that ensures MessageSent event" alt="" coords="531,118,678,132"/>
+<area shape="rect" id="node5" title="Class for communicating between a Frontend and a Kernel" alt="" coords="29,80,133,93"/>
+<area shape="rect" id="node16" href="#panel.io.ipywidget.TempComm" target="_top" title="panel.io.ipywidget.TempComm" alt="" coords="211,80,312,93"/>
+<area shape="rect" id="node6" title="The base kernel class." alt="" coords="909,67,1001,80"/>
+<area shape="rect" id="node13" href="#panel.io.ipywidget.PanelKernel" target="_top" title="panel.io.ipywidget.PanelKernel" alt="" coords="1048,67,1149,80"/>
+<area shape="rect" id="node7" title="A configurable that only allows one instance." alt="" coords="705,67,861,80"/>
+<area shape="rect" id="node14" href="#panel.io.ipywidget.PanelSessionWebsocket" target="_top" title="panel.io.ipywidget.PanelSessionWebsocket" alt="" coords="885,41,1024,55"/>
+<area shape="rect" id="node9" title="Object for handling serialization and sending of messages." alt="" coords="554,41,655,55"/>
+<area shape="rect" id="node18" title="A parent class for Configurables that log." alt="" coords="529,67,680,80"/>
+<area shape="rect" id="node11" href="#panel.io.ipywidget.MessageSentBuffers" target="_top" title="panel.io.ipywidget.MessageSentBuffers" alt="" coords="18,28,145,42"/>
+<area shape="rect" id="node19" title="The base class for all classes that have descriptors." alt="" coords="29,54,134,68"/>
+</map>

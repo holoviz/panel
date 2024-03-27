@@ -1,0 +1,4 @@
+<map id="inheritanceb6e1290fbd" name="inheritanceb6e1290fbd">
+<area shape="rect" id="node1" title="Abstract base class for subcommands" alt="" coords="5,5,289,32"/>
+<area shape="rect" id="node2" href="#panel.command.convert.Convert" target="_top" title="Subcommand to convert Panel application to some build target, e.g. pyodide or pyscript." alt="" coords="337,5,547,32"/>
+</map>

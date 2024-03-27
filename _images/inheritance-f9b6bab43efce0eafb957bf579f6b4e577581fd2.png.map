@@ -1,0 +1,13 @@
+<map id="inheritance8c09794fb3" name="inheritance8c09794fb3">
+<area shape="rect" id="node1" href="#panel.layout.base.ListLike" target="_top" title="panel.layout.base.ListLike" alt="" coords="618,4,763,27"/>
+<area shape="rect" id="node3" href="#panel.layout.swipe.Swipe" target="_top" title="The Swipe layout enables you to quickly compare two panels laid" alt="" coords="1006,41,1148,64"/>
+<area shape="rect" id="node2" title="Base class for named objects that support Parameters and message" alt="" coords="4,41,198,64"/>
+<area shape="rect" id="node8" title="Baseclass for objects which can be rendered to a Bokeh model." alt="" coords="245,126,394,149"/>
+<area shape="rect" id="node9" href="panel.viewable.html#panel.viewable.Layoutable" target="_top" title="Layoutable defines shared style and layout related parameters" alt="" coords="246,41,392,64"/>
+<area shape="rect" id="node4" href="panel.reactive.html#panel.reactive.ReactiveHTML" target="_top" title="The ReactiveHTML class enables you to create custom Panel components using HTML, CSS and/ or" alt="" coords="803,63,966,85"/>
+<area shape="rect" id="node5" href="panel.reactive.html#panel.reactive.Reactive" target="_top" title="Reactive is a Viewable object that also supports syncing between" alt="" coords="624,84,757,106"/>
+<area shape="rect" id="node6" title="Syncable is an extension of the Renderable object which can not" alt="" coords="442,126,576,149"/>
+<area shape="rect" id="node7" href="panel.viewable.html#panel.viewable.Viewable" target="_top" title="Viewable is the baseclass all visual components in the panel" alt="" coords="440,84,578,106"/>
+<area shape="rect" id="node10" title="Mixin class to allow rendering and syncing objects in notebook" alt="" coords="11,126,192,149"/>
+<area shape="rect" id="node11" title="Mixin to define methods shared by objects which can served." alt="" coords="238,84,400,106"/>
+</map>

@@ -1,0 +1,19 @@
+<map id="inheritanced684b55be2" name="inheritanced684b55be2">
+<area shape="rect" id="node1" href="panel.pane.html#panel.pane.base.PaneBase" target="_top" title="PaneBase is the abstract baseclass for all atomic displayable units" alt="" coords="522,59,621,74"/>
+<area shape="rect" id="node3" href="#panel.pane.vtk.vtk.AbstractVTK" target="_top" title="panel.pane.vtk.vtk.AbstractVTK" alt="" coords="648,59,763,74"/>
+<area shape="rect" id="node2" href="panel.reactive.html#panel.reactive.Reactive" target="_top" title="Reactive is a Viewable object that also supports syncing between" alt="" coords="408,59,495,74"/>
+<area shape="rect" id="node4" href="#panel.pane.vtk.vtk.BaseVTKRenderWindow" target="_top" title="panel.pane.vtk.vtk.BaseVTKRenderWindow" alt="" coords="789,31,942,46"/>
+<area shape="rect" id="node7" href="#panel.pane.vtk.vtk.VTKJS" target="_top" title="The VTKJS pane allow rendering a vtk scene stored in a vtkjs." alt="" coords="818,59,914,74"/>
+<area shape="rect" id="node10" href="#panel.pane.vtk.vtk.VTKVolume" target="_top" title="The `VTKVolume` pane renders 3d volumetric data defined on regular grids." alt="" coords="810,87,921,102"/>
+<area shape="rect" id="node8" href="#panel.pane.vtk.vtk.VTKRenderWindow" target="_top" title="VTK panes allow rendering vtkRenderWindow objects." alt="" coords="991,31,1127,46"/>
+<area shape="rect" id="node9" href="#panel.pane.vtk.vtk.VTKRenderWindowSynchronized" target="_top" title="VTK panes allow rendering VTK objects." alt="" coords="969,3,1149,18"/>
+<area shape="rect" id="node5" href="#panel.pane.vtk.vtk.SyncHelpers" target="_top" title="Class containing helpers functions to update vtkRenderingWindow" alt="" coords="808,3,923,18"/>
+<area shape="rect" id="node6" href="#panel.pane.vtk.vtk.VTK" target="_top" title="The VTK pane renders a VTK scene inside a panel, making it possible to" alt="" coords="23,17,111,32"/>
+<area shape="rect" id="node11" title="Syncable is an extension of the Renderable object which can not" alt="" coords="292,45,380,60"/>
+<area shape="rect" id="node12" href="panel.viewable.html#panel.viewable.Viewable" target="_top" title="Viewable is the baseclass all visual components in the panel" alt="" coords="291,73,381,88"/>
+<area shape="rect" id="node13" title="Baseclass for objects which can be rendered to a Bokeh model." alt="" coords="162,45,260,60"/>
+<area shape="rect" id="node14" href="panel.viewable.html#panel.viewable.Layoutable" target="_top" title="Layoutable defines shared style and layout related parameters" alt="" coords="163,73,259,88"/>
+<area shape="rect" id="node15" title="Base class for named objects that support Parameters and message" alt="" coords="3,73,131,88"/>
+<area shape="rect" id="node16" title="Mixin class to allow rendering and syncing objects in notebook" alt="" coords="7,45,127,60"/>
+<area shape="rect" id="node17" title="Mixin to define methods shared by objects which can served." alt="" coords="157,101,264,116"/>
+</map>

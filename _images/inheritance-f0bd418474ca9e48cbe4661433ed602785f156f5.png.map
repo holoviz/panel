@@ -1,0 +1,13 @@
+<map id="inheritance0c1558e0ff" name="inheritance0c1558e0ff">
+<area shape="rect" id="node1" href="#panel.pane.base.ModelPane" target="_top" title="ModelPane provides a baseclass that allows quickly wrapping a" alt="" coords="850,22,984,42"/>
+<area shape="rect" id="node4" href="#panel.pane.deckgl.DeckGL" target="_top" title="The `DeckGL` pane renders the Deck.gl" alt="" coords="1019,22,1148,42"/>
+<area shape="rect" id="node2" href="#panel.pane.base.PaneBase" target="_top" title="PaneBase is the abstract baseclass for all atomic displayable units" alt="" coords="684,22,815,42"/>
+<area shape="rect" id="node3" href="panel.reactive.html#panel.reactive.Reactive" target="_top" title="Reactive is a Viewable object that also supports syncing between" alt="" coords="535,22,650,42"/>
+<area shape="rect" id="node5" title="Syncable is an extension of the Renderable object which can not" alt="" coords="383,4,499,23"/>
+<area shape="rect" id="node6" href="panel.viewable.html#panel.viewable.Viewable" target="_top" title="Viewable is the baseclass all visual components in the panel" alt="" coords="381,41,500,60"/>
+<area shape="rect" id="node7" title="Baseclass for objects which can be rendered to a Bokeh model." alt="" coords="212,4,341,23"/>
+<area shape="rect" id="node8" href="panel.viewable.html#panel.viewable.Layoutable" target="_top" title="Layoutable defines shared style and layout related parameters" alt="" coords="213,41,339,60"/>
+<area shape="rect" id="node9" title="Base class for named objects that support Parameters and message" alt="" coords="4,41,171,60"/>
+<area shape="rect" id="node10" title="Mixin class to allow rendering and syncing objects in notebook" alt="" coords="9,4,166,23"/>
+<area shape="rect" id="node11" title="Mixin to define methods shared by objects which can served." alt="" coords="206,77,346,97"/>
+</map>

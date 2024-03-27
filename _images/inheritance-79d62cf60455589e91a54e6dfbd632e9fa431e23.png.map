@@ -1,0 +1,11 @@
+<map id="inheritance224aeec106" name="inheritance224aeec106">
+<area shape="rect" id="node1" href="panel.io.html#panel.io.resources.ResourceComponent" target="_top" title="Mix&#45;in class for components that define a set of resources" alt="" coords="5,5,260,32"/>
+<area shape="rect" id="node5" href="#panel.theme.base.Design" target="_top" title="panel.theme.base.Design" alt="" coords="308,5,477,32"/>
+<area shape="rect" id="node2" href="#panel.theme.base.DarkTheme" target="_top" title="Baseclass for dark themes." alt="" coords="532,56,728,83"/>
+<area shape="rect" id="node8" href="#panel.theme.bootstrap.BootstrapDarkTheme" target="_top" title="The BootstrapDarkTheme is a Dark Theme in the style of Bootstrap" alt="" coords="790,56,1069,83"/>
+<area shape="rect" id="node3" href="#panel.theme.base.Theme" target="_top" title="Theme objects declare the styles to switch between different color" alt="" coords="308,56,477,83"/>
+<area shape="rect" id="node4" href="#panel.theme.base.DefaultTheme" target="_top" title="Baseclass for default or light themes." alt="" coords="525,107,735,133"/>
+<area shape="rect" id="node9" href="#panel.theme.bootstrap.BootstrapDefaultTheme" target="_top" title="The BootstrapDefaultTheme is a light theme." alt="" coords="783,107,1076,133"/>
+<area shape="rect" id="node7" href="#panel.theme.bootstrap.Bootstrap" target="_top" title="panel.theme.bootstrap.Bootstrap" alt="" coords="525,5,735,32"/>
+<area shape="rect" id="node6" title="Base class for named objects that support Parameters and message" alt="" coords="17,56,248,83"/>
+</map>

@@ -1,0 +1,4 @@
+<map id="inheritance660117f680" name="inheritance660117f680">
+<area shape="rect" id="node1" title="An Application is a factory for Document instances." alt="" coords="5,5,262,32"/>
+<area shape="rect" id="node2" href="#panel.io.application.Application" target="_top" title="Extends Bokeh Application with ability to add global session" alt="" coords="310,5,510,32"/>
+</map>

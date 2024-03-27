@@ -1,0 +1,18 @@
+<map id="inheritance86031f71be" name="inheritance86031f71be">
+<area shape="rect" id="node1" href="#panel.pane.base.ModelPane" target="_top" title="ModelPane provides a baseclass that allows quickly wrapping a" alt="" coords="633,44,733,58"/>
+<area shape="rect" id="node6" href="#panel.pane.markup.HTMLBasePane" target="_top" title="Baseclass for Panes which render HTML inside a Bokeh Div." alt="" coords="759,44,884,58"/>
+<area shape="rect" id="node2" href="#panel.pane.base.PaneBase" target="_top" title="PaneBase is the abstract baseclass for all atomic displayable units" alt="" coords="510,44,607,58"/>
+<area shape="rect" id="node3" href="panel.reactive.html#panel.reactive.Reactive" target="_top" title="Reactive is a Viewable object that also supports syncing between" alt="" coords="398,44,484,58"/>
+<area shape="rect" id="node4" href="#panel.pane.markup.DataFrame" target="_top" title="The `DataFrame` pane renders pandas, dask and streamz DataFrame types using" alt="" coords="1041,3,1149,17"/>
+<area shape="rect" id="node5" href="#panel.pane.markup.HTML" target="_top" title="`HTML` panes renders HTML strings and objects with a `_repr_html_` method." alt="" coords="916,3,1009,17"/>
+<area shape="rect" id="node7" href="#panel.pane.markup.JSON" target="_top" title="The `JSON` pane allows rendering arbitrary JSON strings, dicts and other" alt="" coords="916,30,1009,45"/>
+<area shape="rect" id="node8" href="#panel.pane.markup.Markdown" target="_top" title="The `Markdown` pane allows rendering arbitrary markdown strings in a panel." alt="" coords="910,58,1015,72"/>
+<area shape="rect" id="node9" href="#panel.pane.markup.Str" target="_top" title="The `Str` pane allows rendering arbitrary text and objects in a panel." alt="" coords="921,85,1004,99"/>
+<area shape="rect" id="node10" title="Syncable is an extension of the Renderable object which can not" alt="" coords="285,30,371,45"/>
+<area shape="rect" id="node11" href="panel.viewable.html#panel.viewable.Viewable" target="_top" title="Viewable is the baseclass all visual components in the panel" alt="" coords="284,58,373,72"/>
+<area shape="rect" id="node12" title="Baseclass for objects which can be rendered to a Bokeh model." alt="" coords="158,30,254,45"/>
+<area shape="rect" id="node13" href="panel.viewable.html#panel.viewable.Layoutable" target="_top" title="Layoutable defines shared style and layout related parameters" alt="" coords="159,58,253,72"/>
+<area shape="rect" id="node14" title="Base class for named objects that support Parameters and message" alt="" coords="3,58,128,72"/>
+<area shape="rect" id="node15" title="Mixin class to allow rendering and syncing objects in notebook" alt="" coords="7,30,124,45"/>
+<area shape="rect" id="node16" title="Mixin to define methods shared by objects which can served." alt="" coords="154,85,258,99"/>
+</map>

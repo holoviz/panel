@@ -1,0 +1,7 @@
+<map id="inheritanceeea9dc4c03" name="inheritanceeea9dc4c03">
+<area shape="rect" id="node1" href="#panel.io.location.Location" target="_top" title="The Location component can be made available in a server context" alt="" coords="718,31,887,57"/>
+<area shape="rect" id="node2" title="Syncable is an extension of the Renderable object which can not" alt="" coords="510,31,670,57"/>
+<area shape="rect" id="node3" title="Baseclass for objects which can be rendered to a Bokeh model." alt="" coords="285,31,462,57"/>
+<area shape="rect" id="node4" title="Mixin class to allow rendering and syncing objects in notebook" alt="" coords="13,5,229,32"/>
+<area shape="rect" id="node5" title="Base class for named objects that support Parameters and message" alt="" coords="5,56,237,83"/>
+</map>

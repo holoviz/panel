@@ -1,0 +1,10 @@
+<map id="inheritance4bc88ad349" name="inheritance4bc88ad349">
+<area shape="rect" id="node1" href="panel.io.html#panel.io.resources.ResourceComponent" target="_top" title="Mix&#45;in class for components that define a set of resources" alt="" coords="4,4,207,26"/>
+<area shape="rect" id="node2" href="panel.template.html#panel.template.base.BaseTemplate" target="_top" title="panel.template.base.BaseTemplate" alt="" coords="245,65,425,86"/>
+<area shape="rect" id="node6" href="panel.template.html#panel.template.base.BasicTemplate" target="_top" title="BasicTemplate provides a baseclass for templates with a basic" alt="" coords="463,65,645,86"/>
+<area shape="rect" id="node3" title="Base class for named objects that support Parameters and message" alt="" coords="13,45,198,66"/>
+<area shape="rect" id="node4" title="Mixin class to allow rendering and syncing objects in notebook" alt="" coords="19,85,192,106"/>
+<area shape="rect" id="node5" title="Mixin to define methods shared by objects which can served." alt="" coords="29,125,183,147"/>
+<area shape="rect" id="node7" href="panel.template.fast.html#panel.template.fast.base.FastBaseTemplate" target="_top" title="panel.template.fast.base.FastBaseTemplate" alt="" coords="683,65,904,86"/>
+<area shape="rect" id="node8" href="#panel.template.fast.list.FastListTemplate" target="_top" title="The `FastListTemplate` is a list based Template with a header, sidebar and main area. It is" alt="" coords="943,65,1148,86"/>
+</map>

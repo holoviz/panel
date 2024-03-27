@@ -1,0 +1,14 @@
+<map id="inheritance240d11d5cd" name="inheritance240d11d5cd">
+<area shape="rect" id="node1" title="Base class for all class types that have Bokeh properties." alt="" coords="207,124,332,140"/>
+<area shape="rect" id="node5" title="Base class for all objects stored in Bokeh |Document| instances." alt="" coords="408,79,512,94"/>
+<area shape="rect" id="node2" title="A mixin for making a type serializable." alt="" coords="3,124,140,140"/>
+<area shape="rect" id="node3" title="Base class for all Bokeh events." alt="" coords="31,3,112,19"/>
+<area shape="rect" id="node4" title="Base class for all Bokeh Model events." alt="" coords="218,3,321,19"/>
+<area shape="rect" id="node13" href="#panel.models.vizzu.VizzuEvent" target="_top" title="panel.models.vizzu.VizzuEvent" alt="" coords="399,3,521,19"/>
+<area shape="rect" id="node11" title="Base class for user interface elements." alt="" coords="549,79,698,94"/>
+<area shape="rect" id="node7" title="A mixin class to provide an interface for registering and" alt="" coords="168,63,371,79"/>
+<area shape="rect" id="node8" title="A mixin class to provide an interface for registering and" alt="" coords="173,94,366,109"/>
+<area shape="rect" id="node9" title="The base class for layoutable components." alt="" coords="868,79,1000,94"/>
+<area shape="rect" id="node12" href="#panel.models.vizzu.VizzuChart" target="_top" title="A Bokeh model that wraps around a Vizzu chart and renders it" alt="" coords="1028,79,1149,94"/>
+<area shape="rect" id="node10" title="A UI element that can hold other DOM&#45;based UI elements." alt="" coords="726,79,839,94"/>
+</map>

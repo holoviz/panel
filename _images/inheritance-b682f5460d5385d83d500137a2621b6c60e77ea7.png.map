@@ -1,0 +1,14 @@
+<map id="inheritanceed454282a2" name="inheritanceed454282a2">
+<area shape="rect" id="node1" title="Base class for all class types that have Bokeh properties." alt="" coords="180,108,289,122"/>
+<area shape="rect" id="node5" title="Base class for all objects stored in Bokeh |Document| instances." alt="" coords="366,68,456,82"/>
+<area shape="rect" id="node2" title="A mixin for making a type serializable." alt="" coords="3,108,122,122"/>
+<area shape="rect" id="node3" title="Base class for all Bokeh events." alt="" coords="27,3,98,17"/>
+<area shape="rect" id="node4" title="Base class for all Bokeh Model events." alt="" coords="190,3,279,17"/>
+<area shape="rect" id="node13" href="#panel.models.terminal.KeystrokeEvent" target="_top" title="panel.models.terminal.KeystrokeEvent" alt="" coords="348,3,475,17"/>
+<area shape="rect" id="node11" title="Base class for user interface elements." alt="" coords="499,68,629,82"/>
+<area shape="rect" id="node7" title="A mixin class to provide an interface for registering and" alt="" coords="146,55,323,69"/>
+<area shape="rect" id="node8" title="A mixin class to provide an interface for registering and" alt="" coords="150,81,319,95"/>
+<area shape="rect" id="node9" title="The base class for layoutable components." alt="" coords="776,68,891,82"/>
+<area shape="rect" id="node10" title="A UI element that can hold other DOM&#45;based UI elements." alt="" coords="653,68,751,82"/>
+<area shape="rect" id="node14" href="#panel.models.terminal.Terminal" target="_top" title="Custom Terminal Model" alt="" coords="1045,68,1149,82"/>
+</map>

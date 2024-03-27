@@ -1,0 +1,28 @@
+/* CSS for side-scrolling admonition */
+#scroller-right {
+  position: fixed;
+  top: 80%;
+  right: 1%;
+  max-width: 10%;
+  background: #ffffff;
+  padding: 0.8%;
+  transform: translate(0%, -50%);
+  border: 1px solid gray;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+  font-size: smaller;
+  z-index: 1;
+}
+
+#scroller-right {
+  max-width: 14%;
+}
+
+@media (max-width: 1200px) {
+  #scroller-right {
+    position: relative !important;
+    right: unset !important;
+    top: unset !important;
+    max-width: 100% !important;
+    transform: unset !important;
+  }
+}

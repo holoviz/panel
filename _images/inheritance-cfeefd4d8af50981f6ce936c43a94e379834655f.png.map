@@ -1,0 +1,15 @@
+<map id="inheritancedb2e03bc0b" name="inheritancedb2e03bc0b">
+<area shape="rect" id="node1" href="#panel.chat.icon.ChatCopyIcon" target="_top" title="panel.chat.icon.ChatCopyIcon" alt="" coords="816,4,949,22"/>
+<area shape="rect" id="node2" href="panel.reactive.html#panel.reactive.ReactiveHTML" target="_top" title="The ReactiveHTML class enables you to create custom Panel components using HTML, CSS and/ or" alt="" coords="638,4,769,22"/>
+<area shape="rect" id="node3" href="#panel.chat.icon.ChatReactionIcons" target="_top" title="A widget to display reaction icons that can be clicked on." alt="" coords="996,38,1148,56"/>
+<area shape="rect" id="node4" href="panel.widgets.html#panel.widgets.base.CompositeWidget" target="_top" title="A baseclass for widgets which are made up of two or more other" alt="" coords="801,38,964,56"/>
+<area shape="rect" id="node5" href="panel.reactive.html#panel.reactive.Reactive" target="_top" title="Reactive is a Viewable object that also supports syncing between" alt="" coords="498,21,605,39"/>
+<area shape="rect" id="node13" href="panel.widgets.html#panel.widgets.base.Widget" target="_top" title="Widgets allow syncing changes in bokeh widget models with the" alt="" coords="643,38,763,56"/>
+<area shape="rect" id="node6" title="Syncable is an extension of the Renderable object which can not" alt="" coords="356,4,465,22"/>
+<area shape="rect" id="node7" href="panel.viewable.html#panel.viewable.Viewable" target="_top" title="Viewable is the baseclass all visual components in the panel" alt="" coords="355,38,466,56"/>
+<area shape="rect" id="node8" title="Baseclass for objects which can be rendered to a Bokeh model." alt="" coords="198,4,317,22"/>
+<area shape="rect" id="node9" href="panel.viewable.html#panel.viewable.Layoutable" target="_top" title="Layoutable defines shared style and layout related parameters" alt="" coords="199,38,316,56"/>
+<area shape="rect" id="node10" title="Base class for named objects that support Parameters and message" alt="" coords="4,38,160,56"/>
+<area shape="rect" id="node11" title="Mixin class to allow rendering and syncing objects in notebook" alt="" coords="9,4,155,22"/>
+<area shape="rect" id="node12" title="Mixin to define methods shared by objects which can served." alt="" coords="192,72,323,90"/>
+</map>

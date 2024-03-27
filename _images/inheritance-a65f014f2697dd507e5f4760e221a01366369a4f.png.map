@@ -1,0 +1,6 @@
+<map id="inheritance2dd52d540c" name="inheritance2dd52d540c">
+<area shape="rect" id="node1" href="#panel.widgets.widget.fixed" target="_top" title="A pseudo&#45;widget whose value is fixed and never synced to the client." alt="" coords="338,5,513,32"/>
+<area shape="rect" id="node2" title="Base class for named objects that support Parameters and message" alt="" coords="5,31,237,57"/>
+<area shape="rect" id="node4" title="Acts like a Python function, but with arguments that are Parameters." alt="" coords="285,56,566,83"/>
+<area shape="rect" id="node3" href="#panel.widgets.widget.widget" target="_top" title="Attempts to find a widget appropriate for a given value." alt="" coords="614,56,799,83"/>
+</map>

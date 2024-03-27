@@ -1,0 +1,19 @@
+<map id="inheritanceed5d62d9e6" name="inheritanceed5d62d9e6">
+<area shape="rect" id="node1" title="Base class for all class types that have Bokeh properties." alt="" coords="110,66,177,74"/>
+<area shape="rect" id="node5" title="Base class for all objects stored in Bokeh |Document| instances." alt="" coords="234,42,289,50"/>
+<area shape="rect" id="node2" title="A mixin for making a type serializable." alt="" coords="2,66,74,74"/>
+<area shape="rect" id="node3" title="Base class for all Bokeh events." alt="" coords="16,2,60,10"/>
+<area shape="rect" id="node4" title="Base class for all Bokeh Model events." alt="" coords="116,2,171,10"/>
+<area shape="rect" id="node18" href="#panel.models.chatarea_input.ChatMessageEvent" target="_top" title="panel.models.chatarea_input.ChatMessageEvent" alt="" coords="213,2,310,10"/>
+<area shape="rect" id="node11" title="Base class for user interface elements." alt="" coords="325,42,404,50"/>
+<area shape="rect" id="node7" title="A mixin class to provide an interface for registering and" alt="" coords="90,34,198,42"/>
+<area shape="rect" id="node8" title="A mixin class to provide an interface for registering and" alt="" coords="92,50,195,58"/>
+<area shape="rect" id="node9" title="The base class for layoutable components." alt="" coords="495,42,565,50"/>
+<area shape="rect" id="node13" title="A base class for all interactive widget types." alt="" coords="580,42,656,50"/>
+<area shape="rect" id="node10" title="A UI element that can hold other DOM&#45;based UI elements." alt="" coords="419,42,479,50"/>
+<area shape="rect" id="node12" title="Abstract base class for input widgets." alt="" coords="671,42,755,50"/>
+<area shape="rect" id="node15" title="Base class for text&#45;like input widgets." alt="" coords="770,42,856,50"/>
+<area shape="rect" id="node14" title="Multi&#45;line input widget." alt="" coords="872,42,959,50"/>
+<area shape="rect" id="node17" href="#panel.models.widgets.TextAreaInput" target="_top" title="panel.models.widgets.TextAreaInput" alt="" coords="974,42,1048,50"/>
+<area shape="rect" id="node16" href="#panel.models.chatarea_input.ChatAreaInput" target="_top" title="panel.models.chatarea_input.ChatAreaInput" alt="" coords="1063,42,1150,50"/>
+</map>

@@ -1,0 +1,11 @@
+<map id="inheritance785cd50406" name="inheritance785cd50406">
+<area shape="rect" id="node1" href="#panel.io.notebook.JupyterCommJSBinary" target="_top" title="Extends pyviz_comms.JupyterCommJS with support for repacking" alt="" coords="937,86,1148,107"/>
+<area shape="rect" id="node2" title="JupyterCommJS provides a comms channel for the Jupyter notebook," alt="" coords="735,86,899,107"/>
+<area shape="rect" id="node3" href="#panel.io.notebook.JupyterCommManagerBinary" target="_top" title="panel.io.notebook.JupyterCommManagerBinary" alt="" coords="458,45,696,66"/>
+<area shape="rect" id="node4" title="The JupyterCommManager is used to establishing websocket comms on" alt="" coords="228,45,420,66"/>
+<area shape="rect" id="node5" href="#panel.io.notebook.Mimebundle" target="_top" title="Wraps a generated mimebundle." alt="" coords="18,4,176,26"/>
+<area shape="rect" id="node6" title="Base class for named objects that support Parameters and message" alt="" coords="4,86,190,107"/>
+<area shape="rect" id="node7" title="Comm encompasses any uni&#45; or bi&#45;directional connection between" alt="" coords="266,86,382,107"/>
+<area shape="rect" id="node9" title="JupyterComm provides a Comm for the notebook which is initialized" alt="" coords="502,86,653,107"/>
+<area shape="rect" id="node8" title="The CommManager is an abstract baseclass for establishing" alt="" coords="19,45,176,66"/>
+</map>

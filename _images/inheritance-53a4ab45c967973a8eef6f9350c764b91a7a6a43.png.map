@@ -1,0 +1,17 @@
+<map id="inheritancebd35eb3849" name="inheritancebd35eb3849">
+<area shape="rect" id="node1" title="Base class for all class types that have Bokeh properties." alt="" coords="151,90,243,102"/>
+<area shape="rect" id="node5" title="Base class for all objects stored in Bokeh |Document| instances." alt="" coords="305,57,380,69"/>
+<area shape="rect" id="node2" title="A mixin for making a type serializable." alt="" coords="2,90,102,102"/>
+<area shape="rect" id="node3" title="Base class for all Bokeh events." alt="" coords="22,2,82,14"/>
+<area shape="rect" id="node4" title="Base class for all Bokeh Model events." alt="" coords="159,2,234,14"/>
+<area shape="rect" id="node16" href="#panel.models.feed.ScrollButtonClick" target="_top" title="panel.models.feed.ScrollButtonClick" alt="" coords="292,2,393,14"/>
+<area shape="rect" id="node13" title="Base class for user interface elements." alt="" coords="414,57,522,69"/>
+<area shape="rect" id="node7" title="A mixin class to provide an interface for registering and" alt="" coords="123,46,271,58"/>
+<area shape="rect" id="node8" title="A mixin class to provide an interface for registering and" alt="" coords="126,68,268,80"/>
+<area shape="rect" id="node9" title="Lay out child components in a single vertical row." alt="" coords="871,57,957,69"/>
+<area shape="rect" id="node15" href="#panel.models.layout.Column" target="_top" title="panel.models.layout.Column" alt="" coords="978,57,1059,69"/>
+<area shape="rect" id="node10" title="Abstract base class for Row and Column. Do not use directly." alt="" coords="764,57,851,69"/>
+<area shape="rect" id="node11" title="The base class for layoutable components." alt="" coords="646,57,743,69"/>
+<area shape="rect" id="node12" title="A UI element that can hold other DOM&#45;based UI elements." alt="" coords="543,57,625,69"/>
+<area shape="rect" id="node14" href="#panel.models.feed.Feed" target="_top" title="panel.models.feed.Feed" alt="" coords="1080,57,1150,69"/>
+</map>

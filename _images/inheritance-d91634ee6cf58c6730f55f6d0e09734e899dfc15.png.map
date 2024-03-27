@@ -1,0 +1,11 @@
+<map id="inheritanceff0e72d8c6" name="inheritanceff0e72d8c6">
+<area shape="rect" id="node1" href="panel.io.html#panel.io.resources.ResourceComponent" target="_top" title="Mix&#45;in class for components that define a set of resources" alt="" coords="4,4,201,25"/>
+<area shape="rect" id="node2" href="panel.template.html#panel.template.base.BaseTemplate" target="_top" title="panel.template.base.BaseTemplate" alt="" coords="238,63,412,84"/>
+<area shape="rect" id="node6" href="panel.template.html#panel.template.base.BasicTemplate" target="_top" title="BasicTemplate provides a baseclass for templates with a basic" alt="" coords="449,63,626,84"/>
+<area shape="rect" id="node3" title="Base class for named objects that support Parameters and message" alt="" coords="13,43,192,64"/>
+<area shape="rect" id="node4" title="Mixin class to allow rendering and syncing objects in notebook" alt="" coords="19,83,186,103"/>
+<area shape="rect" id="node5" title="Mixin to define methods shared by objects which can served." alt="" coords="28,122,177,142"/>
+<area shape="rect" id="node7" href="#panel.template.fast.base.FastBaseTemplate" target="_top" title="panel.template.fast.base.FastBaseTemplate" alt="" coords="663,43,878,64"/>
+<area shape="rect" id="node9" href="panel.template.react.html#panel.template.react.ReactTemplate" target="_top" title="ReactTemplate is built on top of React Grid Layout web components." alt="" coords="681,83,860,103"/>
+<area shape="rect" id="node8" href="#panel.template.fast.base.FastGridBaseTemplate" target="_top" title="Combines the FastTemplate and the React template." alt="" coords="915,63,1148,84"/>
+</map>

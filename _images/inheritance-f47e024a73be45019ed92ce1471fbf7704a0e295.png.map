@@ -1,0 +1,9 @@
+<map id="inheritance6d74883cd4" name="inheritance6d74883cd4">
+<area shape="rect" id="node1" href="panel.io.html#panel.io.resources.ResourceComponent" target="_top" title="Mix&#45;in class for components that define a set of resources" alt="" coords="5,56,260,83"/>
+<area shape="rect" id="node5" href="#panel.theme.base.Design" target="_top" title="panel.theme.base.Design" alt="" coords="308,56,477,83"/>
+<area shape="rect" id="node2" href="#panel.theme.base.DarkTheme" target="_top" title="Baseclass for dark themes." alt="" coords="532,81,728,108"/>
+<area shape="rect" id="node3" href="#panel.theme.base.Theme" target="_top" title="Theme objects declare the styles to switch between different color" alt="" coords="308,107,477,133"/>
+<area shape="rect" id="node4" href="#panel.theme.base.DefaultTheme" target="_top" title="Baseclass for default or light themes." alt="" coords="525,132,735,159"/>
+<area shape="rect" id="node6" title="Base class for named objects that support Parameters and message" alt="" coords="17,107,248,133"/>
+<area shape="rect" id="node7" href="#panel.theme.base.Inherit" target="_top" title="Singleton object to declare stylesheet inheritance." alt="" coords="50,5,215,32"/>
+</map>

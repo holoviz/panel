@@ -1,0 +1,13 @@
+<map id="inheritance9a8e7135fe" name="inheritance9a8e7135fe">
+<area shape="rect" id="node1" href="#panel.pane.base.ModelPane" target="_top" title="ModelPane provides a baseclass that allows quickly wrapping a" alt="" coords="862,23,999,42"/>
+<area shape="rect" id="node4" href="#panel.pane.plotly.Plotly" target="_top" title="The `Plotly` pane renders Plotly plots inside a panel." alt="" coords="1034,23,1148,42"/>
+<area shape="rect" id="node2" href="#panel.pane.base.PaneBase" target="_top" title="PaneBase is the abstract baseclass for all atomic displayable units" alt="" coords="694,23,827,42"/>
+<area shape="rect" id="node3" href="panel.reactive.html#panel.reactive.Reactive" target="_top" title="Reactive is a Viewable object that also supports syncing between" alt="" coords="543,23,659,42"/>
+<area shape="rect" id="node5" title="Syncable is an extension of the Renderable object which can not" alt="" coords="388,4,506,24"/>
+<area shape="rect" id="node6" href="panel.viewable.html#panel.viewable.Viewable" target="_top" title="Viewable is the baseclass all visual components in the panel" alt="" coords="387,41,508,61"/>
+<area shape="rect" id="node7" title="Baseclass for objects which can be rendered to a Bokeh model." alt="" coords="215,4,346,24"/>
+<area shape="rect" id="node8" href="panel.viewable.html#panel.viewable.Layoutable" target="_top" title="Layoutable defines shared style and layout related parameters" alt="" coords="216,41,344,61"/>
+<area shape="rect" id="node9" title="Base class for named objects that support Parameters and message" alt="" coords="4,41,174,61"/>
+<area shape="rect" id="node10" title="Mixin class to allow rendering and syncing objects in notebook" alt="" coords="9,4,168,24"/>
+<area shape="rect" id="node11" title="Mixin to define methods shared by objects which can served." alt="" coords="209,78,351,98"/>
+</map>

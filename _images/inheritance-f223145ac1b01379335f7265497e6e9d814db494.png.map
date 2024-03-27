@@ -1,0 +1,16 @@
+<map id="inheritance09f2d43942" name="inheritance09f2d43942">
+<area shape="rect" id="node1" href="panel.reactive.html#panel.reactive.Reactive" target="_top" title="Reactive is a Viewable object that also supports syncing between" alt="" coords="514,21,624,40"/>
+<area shape="rect" id="node10" href="#panel.widgets.base.Widget" target="_top" title="Widgets allow syncing changes in bokeh widget models with the" alt="" coords="657,21,781,40"/>
+<area shape="rect" id="node2" title="Syncable is an extension of the Renderable object which can not" alt="" coords="367,4,479,22"/>
+<area shape="rect" id="node3" href="panel.viewable.html#panel.viewable.Viewable" target="_top" title="Viewable is the baseclass all visual components in the panel" alt="" coords="366,39,480,58"/>
+<area shape="rect" id="node4" title="Baseclass for objects which can be rendered to a Bokeh model." alt="" coords="204,4,327,22"/>
+<area shape="rect" id="node5" href="panel.viewable.html#panel.viewable.Layoutable" target="_top" title="Layoutable defines shared style and layout related parameters" alt="" coords="205,39,326,58"/>
+<area shape="rect" id="node6" title="Base class for named objects that support Parameters and message" alt="" coords="4,39,165,58"/>
+<area shape="rect" id="node7" title="Mixin class to allow rendering and syncing objects in notebook" alt="" coords="9,4,159,22"/>
+<area shape="rect" id="node8" title="Mixin to define methods shared by objects which can served." alt="" coords="198,74,333,93"/>
+<area shape="rect" id="node9" href="#panel.widgets._mixin.TooltipMixin" target="_top" title="panel.widgets._mixin.TooltipMixin" alt="" coords="815,4,965,22"/>
+<area shape="rect" id="node11" href="#panel.widgets.button.Button" target="_top" title="The `Button` widget allows triggering events when the button is" alt="" coords="1010,4,1137,22"/>
+<area shape="rect" id="node12" href="#panel.widgets.button.IconMixin" target="_top" title="panel.widgets.button.IconMixin" alt="" coords="820,39,960,58"/>
+<area shape="rect" id="node13" href="#panel.widgets.button.MenuButton" target="_top" title="The `MenuButton` widget allows specifying a list of menu items to" alt="" coords="998,39,1148,58"/>
+<area shape="rect" id="node14" href="#panel.widgets.button.Toggle" target="_top" title="The `Toggle` widget allows toggling a single condition between `True`/`False` states." alt="" coords="1010,74,1137,93"/>
+</map>

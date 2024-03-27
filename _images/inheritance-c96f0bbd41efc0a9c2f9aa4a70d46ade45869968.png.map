@@ -1,0 +1,16 @@
+<map id="inheritance9a6da73fe0" name="inheritance9a6da73fe0">
+<area shape="rect" id="node1" href="panel.io.html#panel.io.resources.ResourceComponent" target="_top" title="Mix&#45;in class for components that define a set of resources" alt="" coords="4,23,193,43"/>
+<area shape="rect" id="node7" href="#panel.template.base.BaseTemplate" target="_top" title="panel.template.base.BaseTemplate" alt="" coords="229,42,396,61"/>
+<area shape="rect" id="node2" href="panel.reactive.html#panel.reactive.Reactive" target="_top" title="Reactive is a Viewable object that also supports syncing between" alt="" coords="637,98,755,118"/>
+<area shape="rect" id="node5" href="panel.reactive.html#panel.reactive.ReactiveHTML" target="_top" title="The ReactiveHTML class enables you to create custom Panel components using HTML, CSS and/ or" alt="" coords="790,98,935,118"/>
+<area shape="rect" id="node3" title="Syncable is an extension of the Renderable object which can not" alt="" coords="457,79,576,99"/>
+<area shape="rect" id="node4" href="panel.viewable.html#panel.viewable.Viewable" target="_top" title="Viewable is the baseclass all visual components in the panel" alt="" coords="455,117,577,137"/>
+<area shape="rect" id="node13" href="#panel.template.base.TemplateActions" target="_top" title="A component added to templates that allows triggering events such" alt="" coords="970,98,1148,118"/>
+<area shape="rect" id="node6" title="Baseclass for objects which can be rendered to a Bokeh model." alt="" coords="246,79,378,99"/>
+<area shape="rect" id="node11" href="#panel.template.base.BasicTemplate" target="_top" title="BasicTemplate provides a baseclass for templates with a basic" alt="" coords="432,4,601,24"/>
+<area shape="rect" id="node12" href="#panel.template.base.Template" target="_top" title="A Template is a high&#45;level component to render multiple Panel" alt="" coords="444,42,589,61"/>
+<area shape="rect" id="node8" title="Base class for named objects that support Parameters and message" alt="" coords="13,98,184,118"/>
+<area shape="rect" id="node14" href="panel.viewable.html#panel.viewable.Layoutable" target="_top" title="Layoutable defines shared style and layout related parameters" alt="" coords="248,117,377,137"/>
+<area shape="rect" id="node9" title="Mixin class to allow rendering and syncing objects in notebook" alt="" coords="18,60,179,80"/>
+<area shape="rect" id="node10" title="Mixin to define methods shared by objects which can served." alt="" coords="27,155,170,174"/>
+</map>

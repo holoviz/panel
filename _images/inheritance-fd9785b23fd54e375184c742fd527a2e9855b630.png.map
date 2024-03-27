@@ -1,0 +1,20 @@
+<map id="inheritancedcf9264c51" name="inheritancedcf9264c51">
+<area shape="rect" id="node1" title="Explicitly coordinate the level Tornado components required to run a" alt="" coords="4,174,144,192"/>
+<area shape="rect" id="node2" title="A high level convenience class to run a Bokeh server." alt="" coords="246,174,366,192"/>
+<area shape="rect" id="node17" href="#panel.io.server.Server" target="_top" title="panel.io.server.Server" alt="" coords="529,174,629,192"/>
+<area shape="rect" id="node3" title="This mixin adds the expected Tornado authorization hooks:" alt="" coords="176,72,436,90"/>
+<area shape="rect" id="node6" title="Implements a custom Tornado handler for document display page" alt="" coords="468,72,689,90"/>
+<area shape="rect" id="node8" title="Implements a custom Tornado handler to display the available applications" alt="" coords="482,38,675,56"/>
+<area shape="rect" id="node4" title="Base class for HTTP request handlers." alt="" coords="10,106,138,124"/>
+<area shape="rect" id="node12" title="A simple handler that can serve static content from a directory." alt="" coords="240,106,372,124"/>
+<area shape="rect" id="node15" href="#panel.io.server.ProxyFallbackHandler" target="_top" title="A `RequestHandler` that wraps another HTTP server callback and" alt="" coords="226,140,386,158"/>
+<area shape="rect" id="node5" title="Implements a custom Tornado handler for the autoload JS chunk" alt="" coords="721,140,968,158"/>
+<area shape="rect" id="node9" href="#panel.io.server.AutoloadJsHandler" target="_top" title="Implements a custom Tornado handler for the autoload JS chunk" alt="" coords="1000,123,1148,141"/>
+<area shape="rect" id="node7" title="Implements a custom Tornado handler for document display page" alt="" coords="750,72,939,90"/>
+<area shape="rect" id="node13" href="#panel.io.server.DocHandler" target="_top" title="panel.io.server.DocHandler" alt="" coords="1014,72,1135,90"/>
+<area shape="rect" id="node16" href="#panel.io.server.RootHandler" target="_top" title="Custom RootHandler that provides the CDN_DIST directory as a" alt="" coords="783,38,906,56"/>
+<area shape="rect" id="node11" href="#panel.io.server.ComponentResourceHandler" target="_top" title="A handler that serves local resources relative to a Python module." alt="" coords="485,106,672,124"/>
+<area shape="rect" id="node14" href="#panel.io.server.LoginUrlMixin" target="_top" title="Overrides the AuthRequestHandler.get_login_url implementation to" alt="" coords="515,4,642,22"/>
+<area shape="rect" id="node18" href="#panel.io.server.StoppableThread" target="_top" title="Thread class with a stop() method." alt="" coords="236,38,376,56"/>
+<area shape="rect" id="node19" title="A class that represents a thread of control." alt="" coords="34,38,113,56"/>
+</map>

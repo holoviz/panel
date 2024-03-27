@@ -1,0 +1,6 @@
+<map id="inheritanceb34f5afe70" name="inheritanceb34f5afe70">
+<area shape="rect" id="node1" href="#panel.pane.media.Audio" target="_top" title="The `Audio` pane displays an audio player given a local or remote audio" alt="" coords="35,157,195,184"/>
+<area shape="rect" id="node2" href="#panel.pane.media.TensorLike" target="_top" title="A class similar to torch.Tensor. We don&#39;t want to make PyTorch a dependency of this project" alt="" coords="20,107,210,133"/>
+<area shape="rect" id="node3" href="#panel.pane.media.TensorLikeMeta" target="_top" title="See https://blog.finxter.com/python&#45;__instancecheck__&#45;magic&#45;method/" alt="" coords="5,56,225,83"/>
+<area shape="rect" id="node4" href="#panel.pane.media.Video" target="_top" title="The `Video` Pane displays a video player given a local or remote video" alt="" coords="35,5,195,32"/>
+</map>

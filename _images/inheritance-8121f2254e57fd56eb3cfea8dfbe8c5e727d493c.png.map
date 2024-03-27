@@ -1,0 +1,4 @@
+<map id="inheritance10b99cc11b" name="inheritance10b99cc11b">
+<area shape="rect" id="node1" title="Hosts an application &quot;instance&quot; (an instantiated Document) for one or more connections." alt="" coords="5,5,240,32"/>
+<area shape="rect" id="node2" href="#panel.io.session.ServerSessionStub" target="_top" title="Stubs out ServerSession methods since the session is only used for" alt="" coords="288,5,519,32"/>
+</map>

@@ -1,0 +1,4 @@
+<map id="inheritance2574a1f85b" name="inheritance2574a1f85b">
+<area shape="rect" id="node1" href="#panel.util.warnings.PanelDeprecationWarning" target="_top" title="A Panel&#45;specific ``DeprecationWarning`` subclass." alt="" coords="5,56,289,83"/>
+<area shape="rect" id="node2" href="#panel.util.warnings.PanelUserWarning" target="_top" title="A Panel&#45;specific ``UserWarning`` subclass." alt="" coords="26,5,268,32"/>
+</map>

@@ -1,0 +1,13 @@
+<map id="inheritance548a500a04" name="inheritance548a500a04">
+<area shape="rect" id="node1" href="#panel.pane.base.PaneBase" target="_top" title="PaneBase is the abstract baseclass for all atomic displayable units" alt="" coords="782,25,931,47"/>
+<area shape="rect" id="node3" href="#panel.pane.holoviews.HoloViews" target="_top" title="`HoloViews` panes render any `HoloViews` object using the" alt="" coords="971,4,1148,26"/>
+<area shape="rect" id="node4" href="#panel.pane.holoviews.Interactive" target="_top" title="panel.pane.holoviews.Interactive" alt="" coords="972,46,1147,68"/>
+<area shape="rect" id="node2" href="panel.reactive.html#panel.reactive.Reactive" target="_top" title="Reactive is a Viewable object that also supports syncing between" alt="" coords="611,25,742,47"/>
+<area shape="rect" id="node5" title="Syncable is an extension of the Renderable object which can not" alt="" coords="437,4,570,26"/>
+<area shape="rect" id="node6" href="panel.viewable.html#panel.viewable.Viewable" target="_top" title="Viewable is the baseclass all visual components in the panel" alt="" coords="435,46,571,68"/>
+<area shape="rect" id="node7" title="Baseclass for objects which can be rendered to a Bokeh model." alt="" coords="242,4,389,26"/>
+<area shape="rect" id="node8" href="panel.viewable.html#panel.viewable.Layoutable" target="_top" title="Layoutable defines shared style and layout related parameters" alt="" coords="244,46,388,68"/>
+<area shape="rect" id="node9" title="Base class for named objects that support Parameters and message" alt="" coords="4,46,196,68"/>
+<area shape="rect" id="node10" title="Mixin class to allow rendering and syncing objects in notebook" alt="" coords="11,4,190,26"/>
+<area shape="rect" id="node11" title="Mixin to define methods shared by objects which can served." alt="" coords="236,88,396,110"/>
+</map>

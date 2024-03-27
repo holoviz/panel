@@ -1,0 +1,14 @@
+<map id="inheritancee65a9a9a3e" name="inheritancee65a9a9a3e">
+<area shape="rect" id="node1" title="Base class for all class types that have Bokeh properties." alt="" coords="177,106,284,119"/>
+<area shape="rect" id="node5" title="Base class for all objects stored in Bokeh |Document| instances." alt="" coords="362,67,450,81"/>
+<area shape="rect" id="node2" title="A mixin for making a type serializable." alt="" coords="3,106,119,119"/>
+<area shape="rect" id="node3" title="Base class for all Bokeh events." alt="" coords="26,3,96,16"/>
+<area shape="rect" id="node4" title="Base class for all Bokeh Model events." alt="" coords="186,3,274,16"/>
+<area shape="rect" id="node12" href="#panel.models.jsoneditor.JSONEditEvent" target="_top" title="panel.models.jsoneditor.JSONEditEvent" alt="" coords="341,3,471,16"/>
+<area shape="rect" id="node11" title="Base class for user interface elements." alt="" coords="495,67,622,81"/>
+<area shape="rect" id="node7" title="A mixin class to provide an interface for registering and" alt="" coords="144,54,317,68"/>
+<area shape="rect" id="node8" title="A mixin class to provide an interface for registering and" alt="" coords="148,80,313,94"/>
+<area shape="rect" id="node9" title="The base class for layoutable components." alt="" coords="767,67,880,81"/>
+<area shape="rect" id="node10" title="A UI element that can hold other DOM&#45;based UI elements." alt="" coords="647,67,743,81"/>
+<area shape="rect" id="node13" href="#panel.models.jsoneditor.JSONEditor" target="_top" title="A bokeh model that allows editing JSON." alt="" coords="1031,67,1149,81"/>
+</map>

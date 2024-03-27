@@ -1,0 +1,5 @@
+<map id="inheritance2b302ff48b" name="inheritance2b302ff48b">
+<area shape="rect" id="node1" title="A harness for server&#45;specific information and tasks related to" alt="" coords="5,56,291,83"/>
+<area shape="rect" id="node2" href="#panel.io.convert.MockSessionContext" target="_top" title="panel.io.convert.MockSessionContext" alt="" coords="339,56,581,83"/>
+<area shape="rect" id="node3" href="#panel.io.convert.Request" target="_top" title="Request(headers: &#39;dict&#39;, cookies: &#39;dict&#39;, arguments: &#39;dict&#39;)" alt="" coords="65,5,231,32"/>
+</map>

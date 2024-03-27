@@ -1,0 +1,15 @@
+<map id="inheritance72126ed4a1" name="inheritance72126ed4a1">
+<area shape="rect" id="node1" title="Base class for all class types that have Bokeh properties." alt="" coords="162,73,260,86"/>
+<area shape="rect" id="node3" title="Base class for all objects stored in Bokeh |Document| instances." alt="" coords="312,38,393,50"/>
+<area shape="rect" id="node2" title="A mixin for making a type serializable." alt="" coords="2,73,109,86"/>
+<area shape="rect" id="node9" title="Base class for user interface elements." alt="" coords="415,38,531,50"/>
+<area shape="rect" id="node5" title="A mixin class to provide an interface for registering and" alt="" coords="132,26,290,38"/>
+<area shape="rect" id="node6" title="A mixin class to provide an interface for registering and" alt="" coords="135,50,287,62"/>
+<area shape="rect" id="node7" title="The base class for layoutable components." alt="" coords="664,38,768,50"/>
+<area shape="rect" id="node11" title="A base class for all interactive widget types." alt="" coords="790,38,901,50"/>
+<area shape="rect" id="node8" title="A UI element that can hold other DOM&#45;based UI elements." alt="" coords="554,38,642,50"/>
+<area shape="rect" id="node10" title="Base class for Bokeh models that represent HTML markup elements." alt="" coords="923,38,1041,50"/>
+<area shape="rect" id="node12" href="#panel.models.markup.HTML" target="_top" title="A bokeh model to render HTML markup including embedded script tags." alt="" coords="1063,14,1150,27"/>
+<area shape="rect" id="node13" href="#panel.models.markup.JSON" target="_top" title="A bokeh model that renders JSON as tree." alt="" coords="1063,38,1150,50"/>
+<area shape="rect" id="node14" href="#panel.models.markup.PDF" target="_top" title="panel.models.markup.PDF" alt="" coords="1065,61,1147,74"/>
+</map>

@@ -1,0 +1,15 @@
+<map id="inheritanceb87ecf3b04" name="inheritanceb87ecf3b04">
+<area shape="rect" id="node1" title="Base class for all class types that have Bokeh properties." alt="" coords="162,73,260,86"/>
+<area shape="rect" id="node3" title="Base class for all objects stored in Bokeh |Document| instances." alt="" coords="312,38,393,50"/>
+<area shape="rect" id="node2" title="A mixin for making a type serializable." alt="" coords="2,73,109,86"/>
+<area shape="rect" id="node9" title="Base class for user interface elements." alt="" coords="416,26,532,38"/>
+<area shape="rect" id="node12" href="#panel.models.vtk.VTKAxes" target="_top" title="A Bokeh model for axes" alt="" coords="432,50,516,62"/>
+<area shape="rect" id="node5" title="A mixin class to provide an interface for registering and" alt="" coords="132,26,290,38"/>
+<area shape="rect" id="node6" title="A mixin class to provide an interface for registering and" alt="" coords="135,50,287,62"/>
+<area shape="rect" id="node7" title="The base class for layoutable components." alt="" coords="665,26,768,38"/>
+<area shape="rect" id="node8" title="A UI element that can hold other DOM&#45;based UI elements." alt="" coords="554,26,642,38"/>
+<area shape="rect" id="node11" href="#panel.models.vtk.AbstractVTKPlot" target="_top" title="Abstract Bokeh model for vtk plots that wraps around a vtk&#45;js library and" alt="" coords="906,26,1010,38"/>
+<area shape="rect" id="node13" href="#panel.models.vtk.VTKJSPlot" target="_top" title="Bokeh model for plotting a 3D scene saved in the `.vtk&#45;js` format" alt="" coords="1047,2,1135,15"/>
+<area shape="rect" id="node14" href="#panel.models.vtk.VTKSynchronizedPlot" target="_top" title="Bokeh model for plotting a VTK render window" alt="" coords="1032,26,1150,38"/>
+<area shape="rect" id="node15" href="#panel.models.vtk.VTKVolumePlot" target="_top" title="Bokeh model dedicated to plot a volumetric object with the help of vtk&#45;js" alt="" coords="1040,50,1141,62"/>
+</map>

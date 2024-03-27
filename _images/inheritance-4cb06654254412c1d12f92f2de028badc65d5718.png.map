@@ -1,0 +1,16 @@
+<map id="inheritance7cf7f918b7" name="inheritance7cf7f918b7">
+<area shape="rect" id="node1" title="Base class for all class types that have Bokeh properties." alt="" coords="177,132,285,145"/>
+<area shape="rect" id="node5" title="Base class for all objects stored in Bokeh |Document| instances." alt="" coords="360,93,449,107"/>
+<area shape="rect" id="node2" title="A mixin for making a type serializable." alt="" coords="3,132,120,145"/>
+<area shape="rect" id="node3" title="Base class for all Bokeh events." alt="" coords="26,29,96,42"/>
+<area shape="rect" id="node4" title="Base class for all Bokeh Model events." alt="" coords="187,29,275,42"/>
+<area shape="rect" id="node13" href="#panel.models.tabulator.CellClickEvent" target="_top" title="panel.models.tabulator.CellClickEvent" alt="" coords="342,3,466,16"/>
+<area shape="rect" id="node15" href="#panel.models.tabulator.SelectionEvent" target="_top" title="panel.models.tabulator.SelectionEvent" alt="" coords="342,29,467,42"/>
+<area shape="rect" id="node16" href="#panel.models.tabulator.TableEditEvent" target="_top" title="panel.models.tabulator.TableEditEvent" alt="" coords="342,54,467,68"/>
+<area shape="rect" id="node11" title="Base class for user interface elements." alt="" coords="491,93,618,107"/>
+<area shape="rect" id="node7" title="A mixin class to provide an interface for registering and" alt="" coords="144,80,318,94"/>
+<area shape="rect" id="node8" title="A mixin class to provide an interface for registering and" alt="" coords="148,106,314,120"/>
+<area shape="rect" id="node9" title="The base class for layoutable components." alt="" coords="764,93,877,107"/>
+<area shape="rect" id="node10" title="A UI element that can hold other DOM&#45;based UI elements." alt="" coords="643,93,739,107"/>
+<area shape="rect" id="node14" href="#panel.models.tabulator.DataTabulator" target="_top" title="A Bokeh Model that enables easy use of Tabulator tables" alt="" coords="1028,93,1149,107"/>
+</map>

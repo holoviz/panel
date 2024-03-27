@@ -1,0 +1,12 @@
+<map id="inheritance28f8168324" name="inheritance28f8168324">
+<area shape="rect" id="node1" href="panel.io.html#panel.io.resources.ResourceComponent" target="_top" title="Mix&#45;in class for components that define a set of resources" alt="" coords="5,5,260,32"/>
+<area shape="rect" id="node5" href="#panel.theme.base.Design" target="_top" title="panel.theme.base.Design" alt="" coords="308,5,477,32"/>
+<area shape="rect" id="node2" href="#panel.theme.base.DarkTheme" target="_top" title="Baseclass for dark themes." alt="" coords="559,107,755,133"/>
+<area shape="rect" id="node8" href="#panel.theme.material.MaterialDarkTheme" target="_top" title="The MaterialDarkTheme is a Dark Theme in the style of Material Design" alt="" coords="843,69,1104,96"/>
+<area shape="rect" id="node3" href="#panel.theme.base.Theme" target="_top" title="Theme objects declare the styles to switch between different color" alt="" coords="308,107,477,133"/>
+<area shape="rect" id="node4" href="#panel.theme.base.DefaultTheme" target="_top" title="Baseclass for default or light themes." alt="" coords="552,157,762,184"/>
+<area shape="rect" id="node10" href="#panel.theme.material.MaterialDefaultTheme" target="_top" title="The MaterialDefaultTheme is a light theme." alt="" coords="836,132,1111,159"/>
+<area shape="rect" id="node7" href="#panel.theme.material.Material" target="_top" title="panel.theme.material.Material" alt="" coords="561,5,753,32"/>
+<area shape="rect" id="node6" title="Base class for named objects that support Parameters and message" alt="" coords="17,56,248,83"/>
+<area shape="rect" id="node9" href="#panel.theme.material.MaterialThemeMixin" target="_top" title="panel.theme.material.MaterialThemeMixin" alt="" coords="525,56,788,83"/>
+</map>
