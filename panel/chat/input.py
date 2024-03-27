@@ -49,7 +49,7 @@ class ChatAreaInput(_PnTextAreaInput):
 
     shift_enter_sends = param.Boolean(
         default=False,
-        doc="If True, the shift-enter key will send the message rather than the enter key.",
+        doc="If True, the shift_enter key will send the message rather than the enter key.",
     )
 
     rows = param.Integer(default=1, doc="""

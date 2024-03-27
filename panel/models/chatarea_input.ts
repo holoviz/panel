@@ -37,10 +37,10 @@ export class ChatAreaInputView extends PnTextAreaInputView {
                                    || ( event.shiftKey &&  this.model.shift_enter_sends))
       ) {
         console.log( "DBG: ENTER event" )
-        console.log( ".  ", event.shiftKey )
-        console.log( ".  ", this.model.shift_enter_sends )
-        console.log( ".  ", !event.shiftKey && !this.model.shift_enter_sends)
-        console.log( ".  ",  event.shiftKey &&  this.model.shift_enter_sends)
+        console.log( ".  shift:", event.shiftKey )
+        console.log( ".  shift_enter_sends", this.model.shift_enter_sends )
+        console.log( ".  cond_1", !event.shiftKey && !this.model.shift_enter_sends)
+        console.log( ".  cond_2",  event.shiftKey &&  this.model.shift_enter_sends)
 
         if (!this.model.disabled_enter) {
           this.model.trigger_event(new ChatMessageEvent( this.model.value_input))
