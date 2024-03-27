@@ -253,10 +253,6 @@ jobs:
         with:
           resource: http-get://localhost:8887/lab
           timeout: 180000
-      - name: doit env_capture
-        run: |
-          conda activate test-environment
-          doit env_capture
       - name: doit test_ui
         run: |
           conda activate test-environment
