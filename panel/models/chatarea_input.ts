@@ -3,7 +3,6 @@ import type * as p from "@bokehjs/core/properties"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import type {Attrs} from "@bokehjs/core/types"
 
-
 export class ChatMessageEvent extends ModelEvent {
   constructor(readonly value: string) {
     super()
@@ -32,11 +31,11 @@ export class ChatAreaInputView extends PnTextAreaInputView {
     super.render()
 
     this.el.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" && (  (!event.ctrlKey &&  this.model.enter_sends)   // Enter      sends message
-                                   || ( event.ctrlKey && !this.model.enter_sends))  // Ctrl-Enter sends message
+      if (event.key === "Enter" && ((!event.ctrlKey &&  this.model.enter_sends)   // Enter      sends message
+                                   ||(event.ctrlKey && !this.model.enter_sends))  // Ctrl-Enter sends message
       ) {
         if (!this.model.disabled_enter) {
-          this.model.trigger_event(new ChatMessageEvent( this.model.value_input))
+          this.model.trigger_event(new ChatMessageEvent(this.model.value_input))
           this.model.value_input = ""
         }
         event.preventDefault()
@@ -49,7 +48,7 @@ export namespace ChatAreaInput {
   export type Attrs = p.AttrsOf<Props>
   export type Props = PnTextAreaInput.Props & {
     disabled_enter: p.Property<boolean>,
-    enter_sends: p.Property<boolean>,
+    enter_sends: p.Property<boolean>
   }
 }
 
