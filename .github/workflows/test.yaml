@@ -34,7 +34,7 @@ jobs:
     runs-on: 'ubuntu-latest'
     steps:
       - uses: holoviz-dev/holoviz_tasks/pre-commit@fix_install_ci
-      - uses: pre-commit/action@v3.0.0
+      - uses: pre-commit/action@v3.0.1
         with:
           extra_args: -a --hook-stage manual oxipng || true --
       - uses: stefanzweifel/git-auto-commit-action@v4
