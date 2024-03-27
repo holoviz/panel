@@ -33,12 +33,10 @@ export class ChatAreaInputView extends PnTextAreaInputView {
 
     this.el.addEventListener("keydown", (event) => {
       console.log( "DBG: keydown event", event.key )
-      if (event.key === "Enter" && (  (!event.shiftKey && !this.model.shift_enter_sends)
-                                   || ( event.shiftKey &&  this.model.shift_enter_sends))
+      if (event.key === "Enter" && (  (!event.shiftKey &&  this.model.enter_sends)
+                                   || ( event.shiftKey && !this.model.enter_sends))
       ) {
-        console.log( ".  shift_enter:     ", event.shiftKey && this.model.shift_enter_sends )
-        console.log( ".  shift_enter_sends", this.model.shift_enter_sends )
-        console.log( ".  value_input", this.model.value_input )
+        console.log( ".  enter_sends:     ", event.shiftKey && !this.model.enter_sends )
 
         if (!this.model.disabled_enter) {
           console.log( ".  .  FIRE: ", this.model.value_input )

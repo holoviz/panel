@@ -18,5 +18,5 @@ class ChatAreaInput(TextAreaInput):
     disabled_enter = Bool(default=False, help="""
         If True, disables sending the message by pressing the enter or the shift_enter key (clear the value).""")
 
-    shift_enter_sends = Bool(default=False, help="""
-        If True, the shift_enter key will send the message rather than the enter key.""")
+    enter_sends = Bool(default=True, help="""
+        If False, the shift_enter key will send the message rather than the enter key.""")
