@@ -101,6 +101,14 @@ class TextInput(Widget):
         params['onkeyup'] = onkeyup
         return super().from_param(parameter, **params)
 
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
+        model = super()._get_model(doc, root, parent, comm)
+        self._register_events('enter-pressed', model=model, doc=doc, comm=comm)
+        return model
+
 
 class PasswordInput(TextInput):
     """

@@ -6,6 +6,7 @@ from bokeh.core.properties import (
     Any, Bool, Either, Enum, Float, Instance, Int, List, Nullable, Override,
     String, Tuple,
 )
+from bokeh.events import ModelEvent
 from bokeh.models.ui import Tooltip
 from bokeh.models.ui.icons import Icon
 from bokeh.models.widgets import (
@@ -254,6 +255,19 @@ class RadioButtonGroup(bkRadioButtonGroup):
     hovered over the Button, default is 500ms.
     """)
 
+
+class EnterEvent(ModelEvent):
+
+    event_name = 'enter-pressed'
+
+    def __init__(self, model, value_input):
+        self.value_input = value_input
+        super().__init__(model=model)
+
+    def __repr__(self):
+        return (
+            f'{type(self).__name__}(value_input={self.value_input})'
+        )
 
 class TextInput(bkTextInput):
     enter_pressed = Int(0, help="""
