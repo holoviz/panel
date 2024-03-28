@@ -264,6 +264,16 @@ class Vega(ModelPane):
         data = props['data']
         if data is not None:
             sources = self._get_sources(data, sources)
+        if self.sizing_mode:
+            if 'both' in self.sizing_mode:
+                if 'width' in data:
+                    data['width'] = 'container'
+                if 'height' in data:
+                    data['height'] = 'container'
+            elif 'width' in self.sizing_mode and 'width' in data:
+                data['width'] = 'container'
+            elif 'height' in self.sizing_mode and 'height' in data:
+                data['height'] = 'container'
         dimensions = _get_dimensions(data, props) if data else {}
         props['data'] = data
         props['data_sources'] = sources
