@@ -3,9 +3,7 @@
 This guide will show you how to transform your notebooks into interactive dashboards using Panel's intuitive layout builder. With a simple drag-and-drop interface, creating dashboards from your notebooks has never been easier.
 
 :::{note}
-
-Ensure you have `panel >= 1.4.0` and `pyviz_comms >= 3.1.0` installed to use the layout builder.
-
+Ensure you have `panel >= 1.4.0` and `pyviz_comms >= 3.0.2` installed. Note if you are running JupyterLab in a separate environment from your notebook kernel, ensure these packages are installed in both.
 :::
 
 ---
