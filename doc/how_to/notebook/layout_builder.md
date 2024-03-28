@@ -120,6 +120,8 @@ You might want to reorder the cards for a more logical flow. To do this, drag th
 
 If you're not satisfied with the changes, you can start over by clicking the reset button at the top right.
 
+![Builder Reset Layout](../../_static/images/builder_reset_layout.png.png)
+
 ## Saving and Persistence
 
 Panel's layout builder supports two levels of persistence:
@@ -129,6 +131,8 @@ Panel's layout builder supports two levels of persistence:
 - **Notebook Metadata Persistence**: When you save your notebook, Panel syncs the layout data back into the notebook's metadata. This feature allows you to share or deploy the notebook with the layout intact.
 
 Outside JupyterLab, when serving the application, you can further customize the layout by adding `?editable=true` to the URL, allowing for on-the-fly edits which can be saved to local browser storage.  You can persist your local edits to local browser storage by hitting the save button at the top right.
+
+![Builder Save Layout](../../_static/images/builder_save_layout.png.png)
 
 :::{notes}
 
