@@ -83,6 +83,9 @@ class EditableTemplate(VanillaTemplate):
       The layout definition of the template indexed by the id of
       each component in the main area.""")
 
+    local_save = param.Boolean(default=True, doc="""
+      Whether to enable saving to local storage.""")
+
     _css = [
         pathlib.Path(__file__).parent.parent / 'vanilla' / "vanilla.css",
         pathlib.Path(__file__).parent / 'editable.css'
@@ -106,6 +109,7 @@ class EditableTemplate(VanillaTemplate):
         }
         self._render_variables['muuri_layout'] = list(layout.values())
         self._render_variables['editable'] = self.editable
+        self._render_variables['local_save'] = self.local_save
         super()._update_vars()
 
     def _init_doc(
