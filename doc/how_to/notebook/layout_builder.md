@@ -120,7 +120,7 @@ You might want to reorder the cards for a more logical flow. To do this, drag th
 
 If you're not satisfied with the changes, you can start over by clicking the reset button at the top right.
 
-![Builder Reset Layout](../../_static/images/builder_reset_layout.png.png)
+![Builder Reset Layout](../../_static/images/builder_reset_layout.png)
 
 ## Saving and Persistence
 
@@ -132,7 +132,7 @@ Panel's layout builder supports two levels of persistence:
 
 Outside JupyterLab, when serving the application, you can further customize the layout by adding `?editable=true` to the URL, allowing for on-the-fly edits which can be saved to local browser storage.  You can persist your local edits to local browser storage by hitting the save button at the top right.
 
-![Builder Save Layout](../../_static/images/builder_save_layout.png.png)
+![Builder Save Layout](../../_static/images/builder_save_layout.png)
 
 :::{notes}
 
