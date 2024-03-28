@@ -228,11 +228,13 @@
     }
   }
 
+  {% if local_save %}
   const save_button = document.getElementById("grid-save")
   save_button.addEventListener("click", function() {
     const layout = export_layout()
     saveToLS('grid-layout', layout)
   })
+  {% endif %}
 
   window.resizeableGrid = interact('.muuri-grid-item')
   .resizable({
@@ -247,11 +249,14 @@
 	const height = event.rect.height-top-bottom;
 	event.target.style.zIndex = 100;
 	resize_item(event.target, width, height, false);
+	grid.refreshItems()
+	grid.layout()
       },
       end (event) {
 	event.target.style.removeProperty('z-index')
 	grid.refreshItems()
 	grid.layout()
+	window.dispatchEvent(new Event('resize'));
       }
     },
     modifiers: [
