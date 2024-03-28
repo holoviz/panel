@@ -3,10 +3,10 @@
 {% block header_end %}
 {% if editable %}
 <div id="header-indicators">
-  <div id="grid-reset" class="header-icon"></div>
-  <div id="grid-save" class="header-icon"></div>
+  <div id="grid-reset" class="header-icon" title="Click to reset the layout"></div>
+  <div id="grid-save" class="header-icon" title="Click to save the layout"></div>
   {% if busy %}
-  <div class="pn-busy-container">
+  <div class="pn-busy-container" title="Busy Indicator">
     {{ embed(roots.busy_indicator) | indent(6) }}
   </div>
   {% endif %}

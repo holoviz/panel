@@ -1,34 +1,40 @@
 # Publish a Notebook as a Dashboard Using the Layout Builder
 
-This guide demonstrates how to utilize the Panel layout builder to transform notebooks into dashboards. By leveraging a drag-and-drop layout builder, you can seamlessly create dashboards directly from your notebook.
+This guide will show you how to transform your notebooks into interactive dashboards using Panel's intuitive layout builder. With a simple drag-and-drop interface, creating dashboards from your notebooks has never been easier.
+
+:::{note}
+
+Ensure you have `panel >= 1.4.0` and `pyviz_comms >= 3.1.0` installed to use the layout builder.
+
+:::
 
 ---
 
-**Notebooks can be turned into dashboards using one of two distinct approaches:**
+**Transforming notebooks into dashboards can be done in one of two ways:**
 
-1. **Explicitly Import Panel and Use `.servable()`**
+1. **Directly Import Panel and Apply `.servable()`**
 
-    - In this approach, you first explicitly import the Panel library into your notebook.
-    - Then, mark specific Panel components that you want to include in your dashboard with the `.servable()` method.
-    - This method allows for fine-grained control over which elements of your notebook are exposed as part of the dashboard.
+    - Begin by importing the Panel library into your notebook.
+    - Next, tag Panel components you wish to include in your dashboard with the `.servable()` method.
+    - This method offers detailed control, allowing you to selectively expose notebook elements in your dashboard.
 
-2. **Publish an Entire Notebook and Use the Drag and Drop Layout Builder**
+2. **Publish the Entire Notebook and Utilize the Drag and Drop Layout Builder**
 
-    - Alternatively, you can publish your entire notebook as is.
-    - After publishing, utilize the drag and drop layout builder to design and construct your dashboard visually.
-    - This approach is more holistic and less selective about notebook contents, offering a straightforward way to design the dashboard layout post-publication.
+    - Alternatively, publish your notebook as is.
+    - Then, use the drag and drop layout builder to visually design your dashboard.
+    - This method provides a more general approach, conveniently allowing for dashboard design after publication.
 
 **Focusing on the Layout Builder Approach:**
 
-For the purposes of this guide, we will concentrate on **using the layout builder to convert a regular notebook into a dashboard**.
+We will focus on **how to use the layout builder to convert your standard notebook into a dashboard**.
 
-By following this guide, you will learn how to efficiently transform your analytical notebooks into interactive, user-friendly dashboards using HoloViz Panel's powerful layout builder.
+This guide will help you easily turn your analytical notebooks into engaging, user-friendly dashboards using the powerful features of Panel's layout builder.
 
-## Initial Preview
+## Getting Started
 
-Let us assume we have a simple notebook containing some Markdown cells, some code and a plot.
+Imagine we have a notebook containing Markdown cells, code, and a plot.
 
-:::{dropdown} Code
+:::{dropdown} Example Code
 
 ```markdown
 # Matplotlib Plot
@@ -40,8 +46,6 @@ A cell with text and a code snippet
 ```python
 import matplotlib
 import matplotlib.pyplot as plt
-
-matplotlib.use("agg")
 
 fig, ax = plt.subplots()
 
@@ -68,8 +72,6 @@ plt.show()
 import matplotlib
 import matplotlib.pyplot as plt
 
-matplotlib.use("agg")
-
 fig, ax = plt.subplots()
 
 fruits = ["apple", "blueberry", "cherry", "orange"]
@@ -88,48 +90,60 @@ plt.show()
 
 :::
 
-The Jupyter Panel Preview will detect that you have not marked any specific component as `.servable()` and therefore fall back to the layout builder. The initial view will simply lay out all Markdown cells and outputs vertically. This will look something like this.
+Initially, the Jupyter Panel Preview will present all Markdown cells and outputs vertically, assuming no component has been marked as `.servable()`. This initial layout will look something like this:
 
 ![Builder Initial View](../../_static/images/builder_initial.png)
 
-## Actions
+## Customizing Your Dashboard
 
-The initial view will rarely reflect exactly how we want want our dashboard to look, so we can now perform a number of actions to re-arrange the dashboard in any way we desire.
+The initial layout might not fully match your vision, so let's explore how to tailor your dashboard.
 
-### Hiding
+### Removing Unwanted Elements
 
-We may have a number of outputs or Markdown cells that we don't want to include in the dashboard. As a first step we can delete these cells by hovering at the top right of each card and click the delete icon:
+You might find some outputs or Markdown cells unnecessary for your dashboard. To remove these, hover over the top right of the card and click the delete icon:
 
 ![Builder Delete View](../../_static/images/builder_delete.png)
 
-### Resizing
+### Resizing for Better Layout
 
-Next, we probably want to re-arrange the cards so that they are not simply stacked on top of each other. To resize a card simply hover on the bottom right corner of the card and then drag to resize.
+To better utilize space, you can resize any card. Simply hover over the bottom right corner and drag to adjust the card's size.
 
 ![Builder Resize View](../../_static/images/builder_resize.png)
 
-### Rearrange
+### Reordering for Clarity
 
-We may also want to re-arrange the cards on the page. To re-arrange the order of the cards hover at the top left of the card and then drag the card to a different position on the page.
+You might want to reorder the cards for a more logical flow. To do this, drag the card from the top left corner to your desired location.
 
-![Builder Rerrange View](../../_static/images/builder_rearrange.png)
+![Builder Rearrange View](../../_static/images/builder_rearrange.png)
 
-### Reset
+### Resetting Layout
 
-If for whatever reason you are unhappy with the layout you have generated you can reset it with the reset button at the top-right.
+If you're not satisfied with the changes, you can start over by clicking the reset button at the top right.
 
 ## Saving and Persistence
 
-The layout builder has multiple layers of persistence built in. Whenever you perform any of the above actions, Panel will save the resulting layout specification into a sidecar file alongside the notebook, e.g. if you have a notebook called `Example.ipynb` the layout will be saved into a file called `.Example.ipynb.layout`. This file is sufficient to restore the layout and will take precedence over layout data that is embedded in the notebook. The second layer of persistence is metadata embedded in the notebook. As long as you have `pyviz_comms >= 3.1.0` installed saving the notebook will request the layout data from Panel and then persist that layout data inside the notebook metadata itself. This means that you can send someone the notebook or deploy it yourself and the layout will be restored from the notebook metadata.
+Panel's layout builder supports two levels of persistence:
 
-Once you work outside the JupyterLab environment and serve the application you can override the embedded layout with a local persistence layer. Specifically you can append a `?editable=true` URL argument to the application URL and then edit the layout. Finally you can persist your local edits to local browser storage by hitting the save button at the top right.
+- **Immediate Persistence**: Any changes you make are automatically saved in a sidecar file (e.g., `.Example.ipynb.layout`) alongside your notebook. This file ensures your layout is preserved and prioritized over embedded layout data.
 
-## Sharing the dashboard
+- **Notebook Metadata Persistence**: When you save your notebook, Panel syncs the layout data back into the notebook's metadata. This feature allows you to share or deploy the notebook with the layout intact.
 
-Once you have constructed the dashboard layout you want you can share and deploy the notebook like you would any other Panel application, specifically you can serve it with:
+Outside JupyterLab, when serving the application, you can further customize the layout by adding `?editable=true` to the URL, allowing for on-the-fly edits which can be saved to local browser storage.  You can persist your local edits to local browser storage by hitting the save button at the top right.
+
+:::{notes}
+
+- **Deleting a Notebook**: Remember to manually remove the `.NameOfNotebook.ipynb.layout` file.
+
+- **Renaming a Notebook**: If you rename your notebook, also rename or delete the corresponding `.NameOfNotebook.ipynb.layout` file.
+
+:::
+
+## Sharing Your Dashboard
+
+After crafting your desired dashboard layout, you can share or deploy it as any Panel application. Simply serve your notebook with:
 
 ```bash
 panel serve notebook.ipynb
 ```
 
-and it will automatically restore the layout data persisted in the notebook.
+This command will automatically restore the persisted layout data from the notebook.
