@@ -134,7 +134,7 @@ Outside JupyterLab, when serving the application, you can further customize the 
 
 - **Deleting a Notebook**: Remember to manually remove the `.NameOfNotebook.ipynb.layout` file.
 
-- **Renaming a Notebook**: If you rename your notebook, also rename or delete the corresponding `.NameOfNotebook.ipynb.layout` file.
+- **Renaming a Notebook**: If you rename your notebook, also rename or delete the corresponding `.NameOfNotebook.ipynb.layout` file. You will also have to close and (re-)open the Jupyter Panel Preview.
 
 :::
 
