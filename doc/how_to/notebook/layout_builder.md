@@ -1,14 +1,94 @@
-# Publish a Notebook as a Dashboard using the Layout Builder
+# Publish a Notebook as a Dashboard Using the Layout Builder
 
-This guide addresses how to leverage the Panel layout builder to build dashboards from a notebook using a drag and drop layout builder.
+This guide demonstrates how to utilize the Panel layout builder to transform notebooks into dashboards. By leveraging a drag-and-drop layout builder, you can seamlessly create dashboards directly from your notebook.
 
 ---
 
-Notebooks can be turned into dashboards using one of two approaches, either you explicitly import Panel and mark specific components as `.servable()` or you publish an entire notebook and then use the drag and drop layout builder to construct your dashboard. Here we will focus on using the layout builder to turn a regular notebook into a dashboard.
+**Notebooks can be turned into dashboards using one of two distinct approaches:**
+
+1. **Explicitly Import Panel and Use `.servable()`**
+
+    - In this approach, you first explicitly import the Panel library into your notebook.
+    - Then, mark specific Panel components that you want to include in your dashboard with the `.servable()` method.
+    - This method allows for fine-grained control over which elements of your notebook are exposed as part of the dashboard.
+
+2. **Publish an Entire Notebook and Use the Drag and Drop Layout Builder**
+
+    - Alternatively, you can publish your entire notebook as is.
+    - After publishing, utilize the drag and drop layout builder to design and construct your dashboard visually.
+    - This approach is more holistic and less selective about notebook contents, offering a straightforward way to design the dashboard layout post-publication.
+
+**Focusing on the Layout Builder Approach:**
+
+For the purposes of this guide, we will concentrate on **using the layout builder to convert a regular notebook into a dashboard**.
+
+By following this guide, you will learn how to efficiently transform your analytical notebooks into interactive, user-friendly dashboards using HoloViz Panel's powerful layout builder.
 
 ## Initial Preview
 
-Let us assume we have a simple notebook containing some Markdown cells, some code and a plot. The preview will detect that you have not marked any specific component as servable and therefore fall back to the layout builder. The initial view will simply lay out all Markdown cells and outputs vertically. This will look something like this.
+Let us assume we have a simple notebook containing some Markdown cells, some code and a plot.
+
+:::{dropdown} Code
+
+```markdown
+# Matplotlib Plot
+```
+
+````markdown
+A cell with text and a code snippet
+
+```python
+import matplotlib
+import matplotlib.pyplot as plt
+
+matplotlib.use("agg")
+
+fig, ax = plt.subplots()
+
+fruits = ["apple", "blueberry", "cherry", "orange"]
+counts = [40, 100, 30, 55]
+bar_labels = ["red", "blue", "_red", "orange"]
+bar_colors = ["tab:red", "tab:blue", "tab:red", "tab:orange"]
+
+ax.bar(fruits, counts, label=bar_labels, color=bar_colors)
+
+ax.set_ylabel("fruit supply")
+ax.set_title("Fruit supply by kind and color")
+ax.legend(title="Fruit colors")
+
+plt.show()
+```
+````
+
+```markdown
+## TODO: Document this properly
+```
+
+```python
+import matplotlib
+import matplotlib.pyplot as plt
+
+matplotlib.use("agg")
+
+fig, ax = plt.subplots()
+
+fruits = ["apple", "blueberry", "cherry", "orange"]
+counts = [40, 100, 30, 55]
+bar_labels = ["red", "blue", "_red", "orange"]
+bar_colors = ["tab:red", "tab:blue", "tab:red", "tab:orange"]
+
+ax.bar(fruits, counts, label=bar_labels, color=bar_colors)
+
+ax.set_ylabel("fruit supply")
+ax.set_title("Fruit supply by kind and color")
+ax.legend(title="Fruit colors")
+
+plt.show()
+```
+
+:::
+
+The Jupyter Panel Preview will detect that you have not marked any specific component as `.servable()` and therefore fall back to the layout builder. The initial view will simply lay out all Markdown cells and outputs vertically. This will look something like this.
 
 ![Builder Initial View](../../_static/images/builder_initial.png)
 
