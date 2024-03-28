@@ -533,7 +533,10 @@ class NotebookHandler(PanelCodeHandler):
 
         layouts, outputs, cells = {}, {}, {}
         for cell_id, out in state._cell_outputs.items():
-            spec = state._cell_layouts[self].get(cell_id, {})
+            if cell_id in self._layout.get('cells', {}):
+                spec = self._layout['cells'][cell_id]
+            else:
+                spec = state._cell_layouts[self].get(cell_id, {})
             if 'width' in spec and 'height' in spec:
                 sizing_mode = 'stretch_both'
             else:
@@ -545,15 +548,19 @@ class NotebookHandler(PanelCodeHandler):
             for po in pout:
                 po.sizing_mode = sizing_mode
             outputs[cell_id] = pout
-            layouts[id(pout)] = state._cell_layouts[self][cell_id]
+            layouts[id(pout)] = spec
             cells[cell_id] = id(pout)
             pout.servable()
 
         # Reorder outputs based on notebook metadata
         import nbformat
         nb = nbformat.read(self._runner._path, nbformat.NO_CONVERT)
+        if 'order' in self._layout:
+            cell_order = self._layout['order']
+        else:
+            cell_order = nb['metadata'].get('panel-cell-order', [])
         ordered = {}
-        for cell_id in nb['metadata'].get('panel-cell-order', []):
+        for cell_id in cell_order:
             if cell_id not in cells:
                 continue
             obj_id = cells[cell_id]
