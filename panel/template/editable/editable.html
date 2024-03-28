@@ -195,7 +195,7 @@
       const el = item.getElement();
       const margin = item.getMargin();
       const height = item.isVisible() ? item.getHeight() : 100;
-      resize_item(el, 100, height-margin.top, false);
+      resize_item(el, 100, Math.max(height-margin.top, 50), false);
     }
     grid.refreshItems();
     grid.show(items, {layout: false});
