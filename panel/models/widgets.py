@@ -269,7 +269,4 @@ class EnterEvent(ModelEvent):
             f'{type(self).__name__}(value_input={self.value_input})'
         )
 
-class TextInput(bkTextInput):
-    enter_pressed = Int(0, help="""
-    A property that is incremented whenever the Enter key is pressed.
-    """)
+class TextInput(bkTextInput): ...

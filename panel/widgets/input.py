@@ -58,8 +58,8 @@ class TextInput(Widget):
     description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
 
-    enter_pressed = param.Integer(default=0, readonly=True, doc="""
-        Number of times the enter key has been pressed.""")
+    enter_pressed = param.Event(doc="""
+        Event when the enter key has been pressed.""")
 
     max_length = param.Integer(default=5000, doc="""
         Max count of characters in the input field.""")
@@ -78,6 +78,8 @@ class TextInput(Widget):
       or scale mode this will merely be used as a suggestion.""")
 
     _widget_type: ClassVar[Type[Model]] = _BkTextInput
+
+    _rename = {'enter_pressed': None}
 
     @classmethod
     def from_param(cls, parameter: param.Parameter, onkeyup=False, **params) -> Viewable:
@@ -108,6 +110,12 @@ class TextInput(Widget):
         model = super()._get_model(doc, root, parent, comm)
         self._register_events('enter-pressed', model=model, doc=doc, comm=comm)
         return model
+
+    def _process_event(self, event) -> None:
+        if event.event_name == 'enter-pressed':
+            self.value = event.value_input
+            self.value_input = event.value_input
+            self.enter_pressed = True
 
 
 class PasswordInput(TextInput):

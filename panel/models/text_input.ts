@@ -31,9 +31,7 @@ export class TextInputView extends BkTextInputView {
 
 export namespace TextInput {
   export type Attrs = p.AttrsOf<Props>
-  export type Props = BkTextInput.Props & {
-    enter_pressed: p.Property<number>
-  }
+  export type Props = BkTextInput.Props
 }
 
 export interface TextInput extends TextInput.Attrs { }
@@ -50,8 +48,6 @@ export class TextInput extends BkTextInput {
   static {
     this.prototype.default_view = TextInputView
 
-    this.define<TextInput.Props>(({Int}) => ({
-      enter_pressed: [ Int,       0 ],
-    }))
+    this.define<TextInput.Props>(({}) => ({ }))
   }
 }
