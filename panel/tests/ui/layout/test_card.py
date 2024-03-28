@@ -102,13 +102,13 @@ def test_card_objects(page, card_components):
     card_header = card_elements.nth(0)
     w2_object = card_elements.nth(1)
     expect(card_header).to_have_class('card-header')
-    expect(w2_object).to_have_class('bk-TextInput class_w2')
+    expect(w2_object).to_have_class('bk-panel-models-widgets-TextInput class_w2 ')
 
     w3 = TextInput(name='Text:', css_classes=['class_w3'])
     card.append(w3)
 
     expect(card_elements).to_have_count(3)
-    expect(card_elements.nth(2)).to_have_class('bk-TextInput class_w3')
+    expect(card_elements.nth(2)).to_have_class('bk-panel-models-widgets-TextInput class_w3')
 
 
 def test_card_title(page, card_components):
