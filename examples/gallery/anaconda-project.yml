@@ -9,7 +9,7 @@ commands:
     env_spec: prod
   dev:
     description: Serve the dev Panel gallery
-    unix: bokeh sampledata && sleep 60 && panel serve *.ipynb --static-dirs thumbnails=thumbnails --reuse-sessions --global-loading-spinner --liveness --num-procs 8
+    unix: bokeh sampledata && sleep 60 && panel serve *.ipynb --static-dirs thumbnails=thumbnails --reuse-sessions --global-loading-spinner --liveness --num-procs 2
     supports_http_options: true
     env_spec: dev
 
@@ -24,9 +24,11 @@ packages: &pkgs
   - python >=3.10.13
   - panel >=1.3.8
   - holoviews >=1.18.2
+  - nbconvert
   - pandas >=2.2.0
-  - dask <2024.3.0
-  - pillow <10
+  - dask >=2024.3.1
+  - dask-expr >=1.0.5
+  - pillow >=10
   - spatialpandas >=0.4.10
   - scikit-learn >=1.4.0
   - scikit-image >=0.22.0
@@ -58,8 +60,10 @@ env_specs:
     packages: *pkgs
     channels:
       - conda-forge
+      - nodefaults
   dev:
     packages: *pkgs
     channels:
       - pyviz/label/dev
       - conda-forge
+      - nodefaults
