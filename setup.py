@@ -125,6 +125,7 @@ install_requires = [
     'bleach',
     'typing_extensions',
     'pandas >=1.2',
+    's3fs>=2023.12.1'
 ]
 
 _recommended = [
