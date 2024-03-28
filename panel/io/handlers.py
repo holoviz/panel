@@ -575,7 +575,10 @@ class NotebookHandler(PanelCodeHandler):
                     ordered[obj_id] = spec
 
         # Set up state
-        state.template.layout = ordered
+        state.template.param.update(
+            layout=ordered,
+            local_save=not bool(state._jupyter_kernel_context)
+        )
         if persist:
             state.template.param.watch(self._update_position_metadata, 'layout')
         state._session_outputs[doc] = outputs
