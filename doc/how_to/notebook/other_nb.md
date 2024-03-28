@@ -8,7 +8,7 @@ This guide addresses how to develop apps in Google Colab, VSCode, nteract, and o
 
 :::{tip}
 
-Before using a [Colab notebook](https://colab.google/) you should make sure you are running on the latest version of Panel and that the latest version of [`jupyter_bokeh`](https://github.com/bokeh/jupyter_bokeh) is installed.
+Before using a new [Colab notebook](https://colab.google/) you should make sure you are running on the latest version of Panel and that the latest version of [`jupyter_bokeh`](https://github.com/bokeh/jupyter_bokeh) is installed.
 
 You can update Panel and `jupyter_bokeh` with
 
@@ -26,8 +26,8 @@ In the Google Colaboratory notebook, first make sure to load the `pn.extension()
 Please note that in Colab rendering for each notebook cell is isolated, which means that every cell must reload the Panel extension code separately. This will result in somewhat slower and larger notebook than with other notebook technologies.
 :::
 
-:::{note}
-Please note that the IpyWidgets pane does not work in Google Colab. Thus you cannot use IpyWidgets with Panel in Colab.
+:::{warning}
+The [IpyWidgets](../../reference/panes/IpyWidget.ipynb) pane does not work in Google Colab. Thus you cannot use IpyWidgets with Panel in Colab.
 :::
 
 ## PyCharm Notebook
