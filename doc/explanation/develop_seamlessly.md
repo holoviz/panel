@@ -143,7 +143,7 @@ template.main.append(p_hearts)
 template.servable()
 ```
 
-From the VS Code terminal run the following command.
+From the terminal run the following command.
 
 ```bash
 panel serve app.py --show --autoreload
@@ -163,5 +163,6 @@ The `--show` flag will open a browser tab with the live app and the `--autoreloa
 
 ### How-to
 
+- [Configure PyCharm](../how_to/editor/pycharm_configure.md)
 - [Configure VS Code](../how_to/editor/vscode_configure.md)
 - [Write apps in Markdown](../how_to/editor/markdown.md)
