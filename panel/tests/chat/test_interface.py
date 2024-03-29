@@ -67,7 +67,7 @@ class TestChatInterface:
 
     def test_active_widget(self, chat_interface):
         active_widget = chat_interface.active_widget
-        assert isinstance(active_widget, TextInput)
+        assert isinstance(active_widget, ChatAreaInput)
 
     def test_active(self):
         widget = TextInput(name="input")
