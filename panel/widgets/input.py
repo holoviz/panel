@@ -10,8 +10,8 @@ import json
 from base64 import b64decode
 from datetime import date, datetime
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Iterable, List, Mapping, Optional,
-    Tuple, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, Iterable, Mapping, Optional, Tuple,
+    Type,
 )
 
 import numpy as np
@@ -27,7 +27,6 @@ from bokeh.models.widgets import (
 )
 
 from ..config import config
-from ..io.resources import CDN_DIST
 from ..layout import Column, Panel
 from ..models import (
     DatetimePicker as _bkDatetimePicker, TextAreaInput as _bkTextAreaInput,
@@ -195,8 +194,6 @@ class FileInput(Widget):
     }
 
     _widget_type: ClassVar[Type[Model]] = _BkFileInput
-
-    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/button.css']
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
