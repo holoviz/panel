@@ -89,7 +89,7 @@ print(layout)
 layout.servable()
 ```
 
-Serving this code will print information about the `component` object, revealing its structure and attributes.
+Serving this code will print information about the `layout` object, revealing its structure and attributes.
 
 Serve the app by running the below command in a terminal.
 
