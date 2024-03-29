@@ -44,22 +44,10 @@ if TYPE_CHECKING:
     from ..viewable import Viewable
 
 
-class TextInput(Widget):
-    """
-    The `TextInput` widget allows entering any string using a text input box.
-
-    Reference: https://panel.holoviz.org/reference/widgets/TextInput.html
-
-    :Example:
-
-    >>> TextInput(name='Name', placeholder='Enter your name here ...')
-    """
+class _TextInputBase(Widget):
 
     description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
-
-    enter_pressed = param.Event(doc="""
-        Event when the enter key has been pressed.""")
 
     max_length = param.Integer(default=5000, doc="""
         Max count of characters in the input field.""")
@@ -77,9 +65,6 @@ class TextInput(Widget):
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
-    _widget_type: ClassVar[Type[Model]] = _BkTextInput
-
-    _rename = {'enter_pressed': None}
 
     @classmethod
     def from_param(cls, parameter: param.Parameter, onkeyup=False, **params) -> Viewable:
@@ -103,6 +88,26 @@ class TextInput(Widget):
         params['onkeyup'] = onkeyup
         return super().from_param(parameter, **params)
 
+
+class TextInput(_TextInputBase):
+
+    """
+    The `TextInput` widget allows entering any string using a text input box.
+
+    Reference: https://panel.holoviz.org/reference/widgets/TextInput.html
+
+    :Example:
+
+    >>> TextInput(name='Name', placeholder='Enter your name here ...')
+    """
+
+    enter_pressed = param.Event(doc="""
+        Event when the enter key has been pressed.""")
+
+    _widget_type: ClassVar[Type[Model]] = _BkTextInput
+
+    _rename = {'enter_pressed': None}
+
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
@@ -118,7 +123,7 @@ class TextInput(Widget):
             self.enter_pressed = True
 
 
-class PasswordInput(TextInput):
+class PasswordInput(_TextInputBase):
     """
     The `PasswordInput` allows entering any string using an obfuscated text
     input box.
@@ -135,7 +140,7 @@ class PasswordInput(TextInput):
     _widget_type: ClassVar[Type[Model]] = _BkPasswordInput
 
 
-class TextAreaInput(TextInput):
+class TextAreaInput(_TextInputBase):
     """
     The `TextAreaInput` allows entering any multiline string using a text input
     box.
