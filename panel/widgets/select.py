@@ -713,6 +713,33 @@ class NestedSelect(CompositeWidget):
         params["levels"]=params.get("levels", columns)
         return NestedSelect(options=options, **params)
 
+    @classmethod
+    def filter_dataframe(cls, data: pd.DataFrame, value: Dict, columns: List|None=None, **params)->pd.DataFrame:
+        """Returns the subset of the data corresponding to the filter given by the value
+
+        Args:
+            data (pd.DataFrame): The original data to filter
+            value (Dict): A dictionary of key, value filter options
+            columns (List | None, optional): An optional list of column names to use if the keys of
+                the value do not correspond to the column names. Defaults to None.
+
+        Returns:
+            pd.DataFrame: The filtered subset
+        """
+        if data.empty or not value:
+            return data
+
+        if columns:
+            value = {new_key: value for new_key, value in zip(columns, value.values())}
+
+        import pandas as pd
+        mask = pd.Series(True, index=data.index)  # Start with all True
+        for column, filter_value in value.items():
+            mask = mask & (data[column] == filter_value)
+
+        filtered_data = data.loc[mask]
+        return filtered_data
+
 
 class ColorMap(SingleSelectBase):
     """

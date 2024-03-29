@@ -1142,3 +1142,45 @@ def test_nested_select_create_with_columns_and_levels():
 
     assert select.options =={"Japan": ["Asia"], "France": ["Europe"]}
     assert select.levels == levels
+
+@pytest.fixture
+def sample_data():
+    return pd.DataFrame({
+        'origin': ['Asia', 'Europe', 'Asia', 'USA'],
+        'mfr': ['datsun', 'volvo', 'datsun', 'chevrolet'],
+        'name': ['datsun 1200', 'volvo 240', 'datsun 510', 'chevy nova'],
+        'year': [1971, 1982, 1973, 1976]
+    })
+
+def test_filter_dataframe(sample_data):
+    value = {'origin': 'Asia', 'mfr': 'datsun', 'name': 'datsun 1200'}
+    subset = NestedSelect.filter_dataframe(sample_data, value)
+    expected = pd.DataFrame({
+        'origin': ['Asia'],
+        'mfr': ['datsun'],
+        'name': ['datsun 1200'],
+        'year': [1971]
+    })
+    pd.testing.assert_frame_equal(subset, expected)
+
+def test_filter_dataframe_empty_value(sample_data):
+    subset = NestedSelect.filter_dataframe(sample_data, {})
+    pd.testing.assert_frame_equal(subset, sample_data)
+
+def test_filter_dataframe_empty_data():
+    data = pd.DataFrame()
+    value = {'origin': 'Asia', 'mfr': 'datsun', 'name': 'datsun 1200'}
+    subset = NestedSelect.filter_dataframe(data, value)
+    expected = pd.DataFrame()
+    pd.testing.assert_frame_equal(subset, expected)
+
+def test_filter_dataframe_with_columns(sample_data):
+    value = {'Origin': 'Asia', 'Manufacturer': 'datsun', 'Name': 'datsun 1200'}
+    subset = NestedSelect.filter_dataframe(sample_data, value, columns=["origin", "mfr", "name"])
+    expected = pd.DataFrame({
+        'origin': ['Asia'],
+        'mfr': ['datsun'],
+        'name': ['datsun 1200'],
+        'year': [1971]
+    })
+    pd.testing.assert_frame_equal(subset, expected)
