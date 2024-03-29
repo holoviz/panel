@@ -1,6 +1,7 @@
 from collections import OrderedDict
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from panel.layout import GridBox, Row
@@ -1080,3 +1081,64 @@ def test_colormap_mpl_cmap(document, comm):
             'rgba(153, 153, 153, 1)'
         ])
     ]
+
+@pytest.mark.parametrize("input_data,expected_output", [
+    (pd.DataFrame(), []),
+    (pd.DataFrame({"Country": []}), []),
+    (pd.DataFrame({"Country": ["France"]}), ["France"]),
+    (pd.DataFrame({"Country": ["France"]*2}), ["France"]),
+    (pd.DataFrame({"Region": ["Europe"], "Country": ["France"]}), {"Europe": ["France"]}),
+    (pd.DataFrame({"Region": ["Europe"]*2, "Country": ["France"]*2}), {"Europe": ["France"]}),
+    (pd.DataFrame({"Region": ["Europe", "Asia"], "Country": ["France", "Japan"]}), {"Europe": ["France"], "Asia": ["Japan"]}),
+    (pd.DataFrame({"Region": ["Europe", "Europe"], "Country": ["France", "Germany"]}), {"Europe": ["France", "Germany"]}),
+])
+def test_nested_select_create_options_from_dataframe(input_data, expected_output):
+    assert NestedSelect.create_options_from_dataframe(input_data) == expected_output
+
+
+@pytest.mark.parametrize("input_data,columns,expected_output", [
+    (pd.DataFrame({"Region": ["Europe", "Asia"], "Country": ["France", "Japan"]}), [], []),
+    (pd.DataFrame({"Region": ["Europe", "Asia"], "Country": ["France", "Japan"]}), ["Region"], ["Asia", "Europe"]),
+    (pd.DataFrame({"Region": ["Europe", "Asia"], "Country": ["France", "Japan"]}), ["Country"], ["France", "Japan"]),
+    (pd.DataFrame({"Region": ["Europe", "Asia"], "Country": ["France", "Japan"]}), ["Country", "Region"], {"Japan": ["Asia"], "France": ["Europe"]}),
+    (pd.DataFrame({"Region": ["Europe", "Asia"], "Country": ["France", "Japan"]}), ["Region", "Country"], {"Asia": ["Japan"], "Europe": ["France"]}),
+])
+def test_nested_select_create_options_with_columns(input_data, columns, expected_output):
+    assert NestedSelect.create_options_from_dataframe(input_data, columns=columns) == expected_output
+
+
+def test_nested_select_create():
+    data = pd.DataFrame({"Region": ["Europe", "Asia"], "Country": ["France", "Japan"]})
+
+    select = NestedSelect.create_from_dataframe(data)
+
+    assert select.options == {'Asia': ['Japan'], 'Europe': ['France']}
+    assert select.levels == ["Region", "Country"]
+
+def test_nested_select_create_with_columns():
+    data = pd.DataFrame({"Region": ["Europe", "Asia"], "Country": ["France", "Japan"]})
+    columns=["Country", "Region"]
+
+    select = NestedSelect.create_from_dataframe(data, columns)
+
+    assert select.options == {"Japan": ["Asia"], "France": ["Europe"]}
+    assert select.levels == ["Country", "Region"]
+
+def test_nested_select_create_with_levels():
+    data = pd.DataFrame({"Region": ["Europe", "Asia"], "Country": ["France", "Japan"]})
+    levels = ["R", "C"]
+
+    select = NestedSelect.create_from_dataframe(data, levels=levels)
+
+    assert select.options == {'Asia': ['Japan'], 'Europe': ['France']}
+    assert select.levels == levels
+
+def test_nested_select_create_with_columns_and_levels():
+    data = pd.DataFrame({"Region": ["Europe", "Asia"], "Country": ["France", "Japan"]})
+    columns=["Country", "Region"]
+    levels = ["R", "C"]
+
+    select = NestedSelect.create_from_dataframe(data, columns, levels=levels)
+
+    assert select.options =={"Japan": ["Asia"], "France": ["Europe"]}
+    assert select.levels == levels
