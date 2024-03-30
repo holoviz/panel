@@ -26,8 +26,8 @@ async def create_result():
 pn.Column(widget.rx() + 1, create_result).servable()
 ```
 
-<video controls="" poster="../../_static/images/asyncify.png">
-    <source src="https://assets.holoviz.org/panel/how_to/concurrency/asyncify.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
+<video controls="" poster="../../_static/images/asyncify.png" style="max-height: 400px; max-width: 100%;">
+    <source src="https://assets.holoviz.org/panel/how_to/concurrency/asyncify.mp4" type="video/mp4">
     Your browser does not support the video tag.
 </video>
 

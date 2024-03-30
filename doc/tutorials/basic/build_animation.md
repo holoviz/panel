@@ -279,8 +279,8 @@ Press the *play* button.
 
 It should resemble
 
-<video controls="" poster="https://assets.holoviz.org/panel/tutorials/bar_chart_race.png">
-    <source src="https://assets.holoviz.org/panel/tutorials/bar_chart_race.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
+<video controls="" poster="https://assets.holoviz.org/panel/tutorials/bar_chart_race.png" style="max-height: 400px; max-width: 100%;">
+    <source src="https://assets.holoviz.org/panel/tutorials/bar_chart_race.mp4" type="video/mp4">
     Your browser does not support the video tag.
 </video>
 
