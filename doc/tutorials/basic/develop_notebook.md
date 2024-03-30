@@ -62,22 +62,6 @@ The video shows how a larger app could be developed.
     <source src="https://assets.holoviz.org/panel/tutorials/jupyter_panel_preview_in_action.mp4">
 </video>
 
-<video muted controls loop poster="../../_static/images/jupyter_panel_preview_in_action.png" style="max-height: 400px; max-width: 100%;">
-    <source src="https://assets.holoviz.org/panel/tutorials/jupyter_panel_preview_in_action.mp4">
-</video>
-
-<video muted controls loop poster="../../_static/images/jupyter_panel_preview_in_action.png" style="max-height: 400px; max-width: 100%;">
-    <source src="https://assets.holoviz.org/panel/tutorials/jupyter_panel_preview_in_action.mp4#t=0.001">
-</video>
-
-<video muted controls loop src="https://assets.holoviz.org/panel/tutorials/jupyter_panel_preview_in_action.mp4#t=0.001" style="max-height: 400px; max-width: 100%;"></video>
-
-<video muted controls loop src="https://assets.holoviz.org/panel/tutorials/jupyter_panel_preview_in_action.mp4#t=0.001" style="max-height: 400px; max-width: 100%;"></video>
-
-<video muted controls loop src="https://assets.holoviz.org/panel/tutorials/jupyter_panel_preview_in_action.mp4_#t=0.001" style="max-height: 400px; max-width: 100%;"></video>
-
-<video muted controls loop src="https://s3.eu-west-1.amazonaws.com/assets.holoviz.org/panel/tutorials/jupyter_panel_preview_in_action_2.mp4#t=0.001" style="max-height: 400px; max-width: 100%;"></video>
-
 ## Serve Your App with Autoreload
 
 Alternatively, you can serve your notebook externally with autoreload using the following command:
