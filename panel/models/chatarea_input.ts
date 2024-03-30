@@ -47,7 +47,7 @@ export class ChatAreaInputView extends PnTextAreaInputView {
 export namespace ChatAreaInput {
   export type Attrs = p.AttrsOf<Props>
   export type Props = PnTextAreaInput.Props & {
-    disabled_enter: p.Property<boolean>,
+    disabled_enter: p.Property<boolean>
     enter_sends: p.Property<boolean>
   }
 }
