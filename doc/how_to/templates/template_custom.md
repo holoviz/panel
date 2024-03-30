@@ -231,4 +231,4 @@ tmpl.servable()
 
 - See [How-to > Apply Templates > Customize Template Theme](./template_theme.md) to just use a custom theme.
 - See [How-to > Apply Templates > Set a Template](./template_set.md) for alternate approaches to set a template.
-- Read [Explanation > Templates](../../explanation/templates/templates_overview.md) for explanation.
+- Read [Explanation > Templates](../../explanation/styling/templates_overview.md) for explanation.
