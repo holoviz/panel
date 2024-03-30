@@ -44,7 +44,8 @@ from ..util import escape
 from .embed import embed_state
 from .model import add_to_doc, diff
 from .resources import (
-    PANEL_DIR, Resources, _env, bundle_resources, patch_model_css,
+    CDN_DIST, DIST_DIR, PANEL_DIR, Resources, _env, bundle_resources,
+    patch_model_css,
 )
 from .state import state
 
@@ -184,6 +185,33 @@ def render_template(
     )
     return ({'text/html': html, EXEC_MIME: ''}, {EXEC_MIME: {'id': ref}})
 
+
+def _visit_json_data(data, parent=None, key=None):
+    if parent is not None:
+        yield data, parent, key
+    typ = type(data)
+    if typ is dict:
+        for k, v in data.items():
+            yield from _visit_json_data(v, data, k)
+    elif typ in {list, tuple, set}:
+        for i, v in enumerate(data):
+            yield from _visit_json_data(v, data, i)
+
+
+def patch_inline_css(doc_data):
+    for data, _, _ in _visit_json_data(doc_data):
+        typ = type(data)
+        if typ is dict:
+            if 'type' in data and 'name' in data and data['name'] == 'ImportedStyleSheet' and data['type'] == 'object':
+                url = data['attributes']['url']
+                if url.startswith(CDN_DIST):
+                    path = DIST_DIR / url.replace(CDN_DIST, '')
+                    if path.exists():
+                        css = path.read_text(encoding='utf-8')
+                        data['name'] = 'InlineStyleSheet'
+                        data['attributes']['css'] = css
+                        del data['attributes']['url']
+
 def render_model(
     model: 'Model', comm: Optional['Comm'] = None, resources: str = 'cdn'
 ) -> Tuple[Dict[str, str], Dict[str, Dict[str, str]]]:
@@ -200,6 +228,10 @@ def render_model(
         model.document._template_variables['dist_url'] = dist_url
 
     (docs_json, [render_item]) = standalone_docs_json_and_render_items([model], suppress_callback_warning=True)
+
+    if resources == 'inline':
+        patch_inline_css(docs_json)
+
     div = div_for_render_item(render_item)
     render_json = render_item.to_json()
     requirements = [pnext._globals[ext] for ext in pnext._loaded_extensions
@@ -239,12 +271,15 @@ def render_mimebundle(
     model: 'Model', doc: 'Document', comm: 'Comm',
     manager: Optional['CommManager'] = None,
     location: Optional['Location'] = None,
-    resources: str = 'cdn'
+    resources: str = None
 ) -> Tuple[Dict[str, str], Dict[str, Dict[str, str]]]:
     """
     Displays bokeh output inside a notebook using the PyViz display
     and comms machinery.
     """
+    if resources is None:
+        from ..config import config
+        resources = 'inline' if config.inline else 'cdn'
     # WARNING: Patches the client comm created by some external library
     #          e.g. HoloViews, with an on_open handler that will initialize
     #          the server comm.

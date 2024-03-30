@@ -816,8 +816,60 @@ class Resources(BkResources):
         # Inline local dist resources
         js_files = self._collect_external_resources("__javascript__")
         self.extra_resources(js_files, '__javascript__')
+        skip_import_map = None
+        inlined_requires = {}
+        def get_inlined_js(url):
+            nonlocal skip_import_map
+            if skip_import_map is None:
+                from .notebook import require_components
+                _, _, exports, skip_imports = require_components()
+                export_to_module_map = {v:k for k,v in exports.items()}
+                skip_import_map = {}
+                for k, js_files in skip_imports.items():
+                    for js_file in js_files:
+                        skip_import_map[js_file] = k, export_to_module_map.get(k, k)
+            path = DIST_DIR / url.replace(CDN_DIST, '')
+            js = path.read_text(encoding='utf-8')
+            if url in skip_import_map:
+                export, modname = skip_import_map[url]
+                inlined_requires[modname] = export
+                js = '''
+                    //console.log('in inlined script');
+                    let define_orig = this.define;
+                    this.define_orig = define_orig;
+                    const fnthis = this;
+                    const fndefines = [];
+                    this.define = function define(...args){
+                        //console.log('define args:', args)
+                        if (typeof args[0] == "string" ) {
+                            return define_orig.apply(fnthis, args);
+                        } else {
+                            fndefines.push(%(modname)r);
+                            //console.log('defining %(modname)s');
+                            return define_orig.apply(fnthis, [%(modname)r].concat(args));
+                        }
+                    };
+                    this.define.amd = define_orig && define_orig.amd;
+                    try {
+                        //console.log('loading ', %(modname)r, this, this.define);
+                        %(js)s;
+                    } finally {
+                        fnthis.define = define_orig;
+                        //console.log('fndefines:', fndefines);
+                        for (var mod of fndefines) {
+                            require([mod], function(exp){
+                                if (mod == %(modname)r) {
+                                    fnthis[%(export)r] = exp;
+                                }
+                            })
+                        }
+                    }
+                    ''' % dict(js=js, export=export, modname=modname)
+            return js
+
         raw_js += [
-            (DIST_DIR / js.replace(CDN_DIST, '')).read_text(encoding='utf-8')
+            get_inlined_js(js)
+            # (DIST_DIR / js.replace(CDN_DIST, '')).read_text(encoding='utf-8')
             for js in js_files if is_cdn_url(js)
         ]
 
