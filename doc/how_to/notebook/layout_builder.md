@@ -128,10 +128,6 @@ Panel's layout builder supports two levels of persistence:
 
 - **Notebook Metadata Persistence**: When you save your notebook, Panel syncs the layout data back into the notebook's metadata. This feature allows you to share or deploy the notebook with the layout intact.
 
-Outside JupyterLab, when serving the application, you can further customize the layout by adding `?editable=true` to the URL, allowing for on-the-fly edits which can be saved to local browser storage.  You can persist your local edits to local browser storage by hitting the save button at the top right.
-
-![Builder Save Layout](../../_static/images/builder_save_layout.png)
-
 :::{notes}
 
 - **Deleting a Notebook**: Remember to manually remove the `.NameOfNotebook.ipynb.layout` file.
@@ -149,3 +145,9 @@ panel serve notebook.ipynb
 ```
 
 This command will automatically restore the persisted layout data from the notebook.
+
+## References
+
+### Component Gallery
+
+- [EditableTemplate](../../reference/templates/EditableTemplate.ipynb)
