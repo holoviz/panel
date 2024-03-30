@@ -1,0 +1,23 @@
+/* inherit from chat_message */
+
+:host(.card) {
+  outline: 0;
+  box-shadow:
+    color-mix(in srgb, var(--panel-shadow-color) 30%, transparent) 0px 1px 2px
+      0px,
+    color-mix(in srgb, var(--panel-shadow-color) 15%, transparent) 0px 1px 3px
+      1px;
+}
+
+:host(.card) .card-header {
+  border-bottom: 0;
+  background-color: var(--panel-surface-color, #f1f1f1);
+}
+
+.steps-title {
+  font-size: 1.25em;
+}
+
+.steps-message {
+  font-size: 1em;
+}

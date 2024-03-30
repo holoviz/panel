@@ -5,7 +5,6 @@ The message module provides a low-level API for rendering chat messages.
 from __future__ import annotations
 
 import datetime
-import re
 
 from contextlib import ExitStack
 from dataclasses import dataclass
@@ -35,6 +34,7 @@ from ..param import ParamFunction
 from ..viewable import Viewable
 from ..widgets.base import Widget
 from .icon import ChatCopyIcon, ChatReactionIcons
+from .utils import avatar_lookup, stream_to
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -423,31 +423,6 @@ class ChatMessage(PaneBase):
         self._models[ref] = (model, parent)
         return model
 
-    @staticmethod
-    def _to_alpha_numeric(user: str) -> str:
-        """
-        Convert the user name to an alpha numeric string,
-        removing all non-alphanumeric characters.
-        """
-        return re.sub(r"\W+", "", user).lower()
-
-    def _avatar_lookup(self, user: str) -> Avatar:
-        """
-        Lookup the avatar for the user.
-        """
-        alpha_numeric_key = self._to_alpha_numeric(user)
-        # always use the default first
-        updated_avatars = DEFAULT_AVATARS.copy()
-        # update with the user input
-        updated_avatars.update(self.default_avatars)
-        # correct the keys to be alpha numeric
-        updated_avatars = {
-            self._to_alpha_numeric(key): value for key, value in updated_avatars.items()
-        }
-
-        # now lookup the avatar
-        return updated_avatars.get(alpha_numeric_key, self.avatar).format(dist_path=CDN_DIST)
-
     def _select_renderer(
         self,
         contents: Any,
@@ -666,7 +641,12 @@ class ChatMessage(PaneBase):
         if self.avatar_lookup:
             self.avatar = self.avatar_lookup(self.user)
         else:
-            self.avatar = self._avatar_lookup(self.user)
+            self.avatar = avatar_lookup(
+                self.user,
+                self.avatar,
+                self.default_avatars,
+                DEFAULT_AVATARS,
+            )
 
     def _update_chat_copy_icon(self):
         object_panel = self._object_panel
@@ -703,33 +683,7 @@ class ChatMessage(PaneBase):
         replace: bool (default=False)
             Whether to replace the existing text.
         """
-        i = -1
-        parent_panel = None
-        object_panel = self
-        attr = "object"
-        obj = self.object
-        if obj is None:
-            obj = ""
-
-        while not isinstance(obj, str) or isinstance(object_panel, ImageBase):
-            object_panel = obj
-            if hasattr(obj, "objects"):
-                parent_panel = obj
-                attr = "objects"
-                obj = obj.objects[i]
-                i = -1
-            elif hasattr(obj, "object"):
-                attr = "object"
-                obj = obj.object
-            elif hasattr(obj, "value"):
-                attr = "value"
-                obj = obj.value
-            elif parent_panel is not None:
-                obj = parent_panel
-                parent_panel = None
-                i -= 1
-        contents = token if replace else obj + token
-        setattr(object_panel, attr, contents)
+        stream_to(obj=self.object, token=token, replace=replace)
 
     def update(
         self,
