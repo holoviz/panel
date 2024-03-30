@@ -68,7 +68,7 @@ export class ChatAreaInput extends PnTextAreaInput {
     this.define<ChatAreaInput.Props>(({Bool}) => {
       return {
         disabled_enter: [ Bool, false ],
-        enter_sends: [ Bool, true ]
+        enter_sends: [ Bool, true ],
       }
     })
   }
