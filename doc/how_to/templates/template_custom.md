@@ -206,7 +206,7 @@ tmpl.add_panel('B', hv.Curve([1, 2, 3]))
 tmpl.servable()
 ```
 
-Serve your app with `panel serve app.py` or in a notebook to see your custom template in action:
+Serve your app with `panel serve app.py` or use the code in a notebook to see your custom template in action:
 
 ![Custom Template in server app and notebook](../../_static/images/custom_template.png)
 
