@@ -58,38 +58,25 @@ You can enhance your workflow by enabling *auto-reload* with the *Render on Save
 
 The video shows how a larger app could be developed.
 
-** original **
-
-<video muted controls loop poster="../../_static/images/jupyter_panel_preview_in_action.png" style="max-height: 400px; max-width: 100%;">
-    <source src="https://assets.holoviz.org/panel/tutorials/jupyter_panel_preview_in_action.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-</video>
-
-** no "type" **
-
 <video muted controls loop poster="../../_static/images/jupyter_panel_preview_in_action.png" style="max-height: 400px; max-width: 100%;">
     <source src="https://assets.holoviz.org/panel/tutorials/jupyter_panel_preview_in_action.mp4">
-    Your browser does not support the video tag.
 </video>
-
-** no "type" and no "support" text **
 
 <video muted controls loop poster="../../_static/images/jupyter_panel_preview_in_action.png" style="max-height: 400px; max-width: 100%;">
     <source src="https://assets.holoviz.org/panel/tutorials/jupyter_panel_preview_in_action.mp4">
 </video>
 
-** no "type", no "support" text and direct link to s3 **
-
 <video muted controls loop poster="../../_static/images/jupyter_panel_preview_in_action.png" style="max-height: 400px; max-width: 100%;">
-    <source src="https://s3.eu-west-1.amazonaws.com/assets.holoviz.org/panel/tutorials/jupyter_panel_preview_in_action.mp4">
+    <source src="https://assets.holoviz.org/panel/tutorials/jupyter_panel_preview_in_action.mp4#t=0.001">
 </video>
 
-** direct link to s3 **
+<video muted controls loop src="https://assets.holoviz.org/panel/tutorials/jupyter_panel_preview_in_action.mp4#t=0.001" style="max-height: 400px; max-width: 100%;"></video>
 
-<video muted controls loop poster="../../_static/images/jupyter_panel_preview_in_action.png" style="max-height: 400px; max-width: 100%;">
-    <source src="https://assets.holoviz.org/panel/tutorials/jupyter_panel_preview_in_action.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-</video>
+<video muted controls loop src="https://assets.holoviz.org/panel/tutorials/jupyter_panel_preview_in_action.mp4#t=0.001" style="max-height: 400px; max-width: 100%;"></video>
+
+<video muted controls loop src="https://assets.holoviz.org/panel/tutorials/jupyter_panel_preview_in_action.mp4_#t=0.001" style="max-height: 400px; max-width: 100%;"></video>
+
+<video muted controls loop src="https://s3.eu-west-1.amazonaws.com/assets.holoviz.org/panel/tutorials/jupyter_panel_preview_in_action_2.mp4#t=0.001" style="max-height: 400px; max-width: 100%;"></video>
 
 ## Serve Your App with Autoreload
 
