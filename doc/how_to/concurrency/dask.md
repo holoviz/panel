@@ -142,7 +142,7 @@ pn.Column(
 
 You can now run `panel serve app.py` and the app will look like
 
-<video controls="" poster="../../_static/images/dask_fibonacci_queue.png" style="max-height: 400px; max-width: 100%;">
+<video muted controls loop poster="../../_static/images/dask_fibonacci_queue.png" style="max-height: 400px; max-width: 100%;">
     <source src="https://assets.holoviz.org/panel/how_to/concurrency/dask-fibonacci-queue.mp4" type="video/mp4">
     Your browser does not support the video tag.
 </video>

@@ -52,7 +52,7 @@ Open the app in your browser and refresh it a few times.
 
 It should look like
 
-<video controls="" poster="https://assets.holoviz.org/panel/tutorials/page_load_end.png" style="max-height: 400px; max-width: 100%;">
+<video muted controls loop poster="https://assets.holoviz.org/panel/tutorials/page_load_end.png" style="max-height: 400px; max-width: 100%;">
     <source src="https://assets.holoviz.org/panel/tutorials/page_load.mp4" type="video/mp4">
     Your browser does not support the video tag.
 </video>
