@@ -24,7 +24,6 @@ export class ChatAreaInputView extends PnTextAreaInputView {
     super.connect_signals()
 
     const {value_input} = this.model.properties
-
     this.on_change(value_input, () => this.update_rows())
   }
 
@@ -69,7 +68,7 @@ export class ChatAreaInput extends PnTextAreaInput {
     this.define<ChatAreaInput.Props>(({Bool}) => {
       return {
         disabled_enter: [ Bool, false ],
-        enter_sends: [ Bool, true ],
+        enter_sends: [ Bool, true ]
       }
     })
   }
