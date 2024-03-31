@@ -302,9 +302,6 @@ class Matplotlib(Image, IPyWidget):
     def filetype(self):
         return self._img_type.filetype
 
-    def _transform_object(self, obj: Any) -> Dict[str, Any]:
-        return self._img_type._transform_object(self, obj)
-
     def _imgshape(self, data):
         try:
             return self._img_type._imgshape(data)
