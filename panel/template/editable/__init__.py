@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from bokeh.document import Document
     from pyviz_comms import Comm
 
-    from ..io.location import Location
+    from ...io.location import Location
 
 
 class TemplateEditor(ReactiveHTML):
@@ -115,7 +115,7 @@ class EditableTemplate(VanillaTemplate):
     def _init_doc(
         self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
         title: Optional[str] = None, notebook: bool = False,
-        location: bool | Location=True
+        location: bool | Location = True
     ):
         doc = super()._init_doc(doc, comm, title, notebook, location)
         doc.js_on_event('document_ready', CustomJS(code="""
