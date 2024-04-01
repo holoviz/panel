@@ -265,13 +265,11 @@ class PanelJupyterHandler(PanelBaseHandler):
 
         kernel_env = {**os.environ}
         kernel_id = await ensure_async(
-            (
                 self.kernel_manager.start_kernel(
                     kernel_name=requested_kernel,
                     path=cwd,
                     env=kernel_env,
                 )
-            )
         )
         kernel_future = self.kernel_manager.get_kernel(kernel_id)
         km = await ensure_async(kernel_future)

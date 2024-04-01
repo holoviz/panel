@@ -552,7 +552,7 @@ def convert_apps(
     }
 
     if state._is_pyodide:
-        files = dict((convert_app(app, dest_path, **kwargs) for app in apps))
+        files = dict(convert_app(app, dest_path, **kwargs) for app in apps)
     else:
         files = _convert_process_pool(
             apps, dest_path, max_workers=max_workers, **kwargs
