@@ -130,6 +130,7 @@ How to style a Vega Lite plot
 design
 themes
 apply_css
+design_variables
 load_icon
 visibility
 altair

@@ -71,9 +71,20 @@ class TemplateEditor(ReactiveHTML):
 
 class EditableTemplate(VanillaTemplate):
     """
-    The EditableTemplate builds on top of Muuri and interact.js to
-    allow interactively dragging, resizing and hiding components on a
-    grid.
+    The `EditableTemplate` is a list based template with a header, sidebar, main and modal area.
+    The template allow interactively dragging, resizing and hiding components on a grid.
+
+    The template builds on top of Muuri and interact.js.
+
+    Reference: https://panel.holoviz.org/reference/templates/EditableTemplate.html
+
+    :Example:
+
+    >>> pn.template.EditableTemplate(
+    ...     site="Panel", title="EditableTemplate",
+    ...     sidebar=[pn.pane.Markdown("## Settings"), some_slider],
+    ...     main=[some_python_object]
+    ... ).servable()
     """
 
     editable = param.Boolean(default=True, doc="""

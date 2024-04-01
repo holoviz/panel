@@ -331,12 +331,12 @@ class NestedSelect(CompositeWidget):
     :Example:
 
     >>> NestedSelect(
-            options={
-                "gfs": {"tmp": [1000, 500], "pcp": [1000]},
-                "name": {"tmp": [1000, 925, 850, 700, 500], "pcp": [1000]},
-            },
-            levels=["model", "var", "level"],
-        )
+    ...     options={
+    ...         "gfs": {"tmp": [1000, 500], "pcp": [1000]},
+    ...         "name": {"tmp": [1000, 925, 850, 700, 500], "pcp": [1000]},
+    ...     },
+    ...     levels=["model", "var", "level"],
+    ... )
     """
 
     value = param.Dict(doc="""
