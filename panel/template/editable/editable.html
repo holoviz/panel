@@ -5,7 +5,7 @@
 <div id="header-indicators">
   <div id="grid-reset" class="header-icon" title="Reset the Layout"></div>
   {% if local_save %}
-  <div id="grid-save" class="header-icon" title="Save the Layout to Local Storage"></div>
+  <div id="grid-save" class="header-icon disabled-button" title="Save the Layout to Local Storage"></div>
   {% endif %}
   {% if busy %}
   <div class="pn-busy-container" title="Busy Indicator">
@@ -135,6 +135,9 @@
       grid.layout()
     }
     scroll(item)
+    {% if local_save and editable %}
+    document.getElementById('grid-save').classList.remove('disabled-button')
+    {% endif %}
   }
 
   function getFromLS(key) {
@@ -193,7 +196,6 @@
 
   // Set up reset, hide and resize actions
   {% if editable %}
-
   const reset_button = document.getElementById("grid-reset")
   reset_button.addEventListener("click", function() {
     if (window.localStorage) {
@@ -210,6 +212,9 @@
   for (const handle of document.querySelectorAll('.muuri-handle.delete')) {
     handle.addEventListener("click", (event) => {
       grid.hide([grid.getItem(event.target.parentElement)], {instant: true});
+      {% if local_save %}
+      document.getElementById('grid-save').classList.remove('disabled-button')
+      {% endif %}
     })
   }
 
@@ -227,8 +232,11 @@
   {% if local_save %}
   const save_button = document.getElementById("grid-save")
   save_button.addEventListener("click", function() {
-    const layout = export_layout()
-    saveToLS('grid-layout', layout)
+    if (!save_button.classList.contains('disabled-button')) {
+      const layout = export_layout()
+      saveToLS('grid-layout', layout)
+      save_button.classList.add('disabled-button')
+    }
   })
   {% endif %}
 
@@ -253,6 +261,9 @@
         grid.refreshItems()
         grid.layout()
         window.dispatchEvent(new Event('resize'));
+        {% if local_save %}
+        save_button.classList.remove('disabled-button')
+        {% endif %}
       }
     },
     modifiers: [
