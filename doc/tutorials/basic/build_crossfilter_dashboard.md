@@ -4,6 +4,11 @@
 
 In this tutorial, we'll guide you through constructing a dashboard with crossfiltering capabilities using [HoloViews](https://holoviews.org/) and [Panel](https://panel.holoviz.org/). This approach will showcase how to link multiple data visualizations so that interactions with one plot automatically update others. We'll be working with a dataset on wind turbines to illustrate how crossfiltering can unveil patterns and trends that might not be immediately apparent, enhancing your data exploration and analysis capabilities.
 
+<video muted controls loop poster="../../_static/images/panel_crossfilter_dashboard.png" style="max-height: 400px; max-width: 100%;">
+    <source src="https://assets.holoviz.org/panel/tutorials/panel_crossfilter_dashboard.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+</video>
+
 :::::{dropdown} Dependencies
 
 ```bash
@@ -223,8 +228,21 @@ pn.template.FastListTemplate(
 
 The [`FastListTemplate`](https://panel.holoviz.org/reference/templates/FastListTemplate.html) is a pre-built Panel template that provides a clean and modern layout for our dashboard. It takes our crossfiltering plot and other configurations as input, creating a cohesive and interactive web application.
 
-Now serve the app with `panel serve app.py --autoreload`.
+Now serve the app with `panel serve app.py --autoreload`. It should look like
+
+<video muted controls loop poster="../../_static/images/panel_crossfilter_dashboard.png" style="max-height: 400px; max-width: 100%;">
+    <source src="https://assets.holoviz.org/panel/tutorials/panel_crossfilter_dashboard.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+</video>
 
 ## References
+
+### App Gallery
+
+- [Glaciers Dashboard](https://panel.holoviz.org/gallery/glaciers.html)
+- [Penguin Dashboard](https://panel.holoviz.org/gallery/penguin_crossfilter.html)
+- [Windturbines Dashboard](https://panel.holoviz.org/gallery/windturbines.html)
+
+### External
 
 - [HoloViews Linked Brushing](https://holoviews.org/user_guide/Linked_Brushing.html)
