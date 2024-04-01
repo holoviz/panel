@@ -34,6 +34,14 @@ pn.panel("Hello Again")
 
 Run the cells and save the notebook as `app.ipynb`.
 
+:::{note}
+
+The Jupyter Panel Preview feature described below works exclusively within the JupyterLab interface. It does not support the Classic Jupyter Notebook interface.
+
+To use this preview feature, please ensure you are working within a JupyterLab environment.
+
+:::
+
 You can now preview the app by clicking the *Jupyter Panel Preview* icon. This icon can be found above the notebook.
 
 ![Jupyter Panel Preview](../../_static/images/develop_notebook_simple_example_open_preview.png)
@@ -50,9 +58,8 @@ You can enhance your workflow by enabling *auto-reload* with the *Render on Save
 
 The video shows how a larger app could be developed.
 
-<video controls="" poster="../../_static/images/jupyter_panel_preview_in_action.png">
-    <source src="https://assets.holoviz.org/panel/tutorials/jupyter_panel_preview_in_action.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
-    Your browser does not support the video tag.
+<video muted controls loop poster="../../_static/images/jupyter_panel_preview_in_action.png" style="max-height: 400px; max-width: 100%;">
+    <source src="https://assets.holoviz.org/panel/tutorials/jupyter_panel_preview_in_action.mp4">
 </video>
 
 ## Serve Your App with Autoreload
@@ -65,8 +72,8 @@ panel serve app.ipynb --autoreload
 
 This method provides a faster alternative to the *Jupyter Panel Preview*. Check out the video for inspiration.
 
-<video controls="" poster="../../_static/images/develop_notebook_panel_serve_after.png">
-    <source src="https://assets.holoviz.org/panel/tutorials/develop_notebook_panel_serve.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
+<video muted controls loop poster="../../_static/images/develop_notebook_panel_serve_after.png" style="max-height: 400px; max-width: 100%;">
+    <source src="https://assets.holoviz.org/panel/tutorials/develop_notebook_panel_serve.mp4" type="video/mp4">
     Your browser does not support the video tag.
 </video>
 
