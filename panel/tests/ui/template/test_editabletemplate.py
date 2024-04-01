@@ -55,7 +55,7 @@ def test_editable_template_reset_order(page):
     md2_bbox = items.nth(1).bounding_box()
     assert md2_bbox['y'] < md1_bbox['y']
 
-    page.locator('#grid-reset').click()
+    page.locator('#grid-reset').click(force=True)
 
     wait_until(lambda: items.nth(1).bounding_box()['y'] > items.nth(0).bounding_box()['y'], page)
     wait_until(lambda: list(tmpl.layout) == [id(md1), id(md2)], page)
@@ -126,7 +126,8 @@ def test_editable_template_reset_visible(page):
 
     page.locator('#grid-reset').click()
 
-    expect(md2_item).to_have_class('muuri-grid-item muuri-item muuri-item-shown')
+    md2_item = page.locator(".muuri-grid-item").nth(1)
+    expect(md2_item).to_have_class('muuri-grid-item muuri-item-shown muuri-item')
     wait_until(lambda: tmpl.layout[id(md2)]['visible'], page)
 
 

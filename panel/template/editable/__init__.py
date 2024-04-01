@@ -121,6 +121,7 @@ class EditableTemplate(VanillaTemplate):
         self._render_variables['muuri_layout'] = list(layout.values())
         self._render_variables['editable'] = self.editable
         self._render_variables['local_save'] = self.local_save
+        self._render_variables['loading_spinner'] = config.loading_spinner
         super()._update_vars()
 
     def _init_doc(
