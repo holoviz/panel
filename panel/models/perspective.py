@@ -98,9 +98,11 @@ class Perspective(HTMLBox):
     def __javascript_modules__(cls):
         return [js for js in bundled_files(cls, 'javascript_modules') if 'wasm' not in js and 'worker' not in js]
 
-    __js_skip__ = {
-        "perspective": __javascript_modules__,
-    }
+    @classproperty
+    def __js_skip__(cls):
+        return {
+            "perspective": cls.__javascript_modules__
+        }
 
     __js_require__ = {
         "paths": {
