@@ -141,7 +141,7 @@ Deepen your understanding about custom `ReactiveHTML` components
 :gutter: 1 1 1 2
 
 :::{grid-item-card} {octicon}`arrow-both;2.5em;sd-mr-1 sd-animate-grow50` Panel Communications
-:link: comms/comms
+:link: comms
 :link-type: doc
 
 Deepen your understanding about how Panel communicates between Python and Javascript in different contexts.
@@ -289,9 +289,11 @@ Learn about why and how Panel utilizes the Bokeh library.
 :hidden:
 :maxdepth: 2
 
+develop_seamlessly
 apis
 components
 linking
+comms
 styling
 dependencies
 comparisons

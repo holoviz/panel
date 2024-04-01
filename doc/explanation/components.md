@@ -11,5 +11,5 @@
 :maxdepth: 1
 
 Components overview <components/components_overview>
-Custom components <components/components_custom.md>
+Custom components <components/reactive_html_components>
 ```

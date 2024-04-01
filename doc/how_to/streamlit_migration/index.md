@@ -116,5 +116,6 @@ activity
 interactivity
 caching
 session_state
+chat
 multipage_apps
 ```

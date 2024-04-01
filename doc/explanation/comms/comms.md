@@ -1,3 +1,0 @@
-# Panel Communications
-
-WIP
