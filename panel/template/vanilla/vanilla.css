@@ -108,7 +108,7 @@ img.app-logo {
 #content {
   color: var(--text-color);
   display: flex;
-  height: 100%;
+  flex-grow: 1;
   margin: 0px;
   overflow: hidden;
   width: 100vw;
