@@ -76,10 +76,17 @@ export class CardView extends ColumnView {
       icon.innerHTML = this.model.collapsed ? "\u25ba" : "\u25bc"
       this.button_el.appendChild(icon)
       this.button_el.style.backgroundColor = header_background != null ? header_background : ""
+      this.button_el.style.cursor = "pointer";
       header.el.style.backgroundColor = header_background != null ? header_background : ""
       this.button_el.appendChild(header.el)
 
       this.button_el.onclick = () => this._toggle_button()
+      this.button_el.onmouseover = () => {
+        this.button_el.style.filter = "contrast(0.5)";
+      };
+      this.button_el.onmouseout = () => {
+        this.button_el.style.filter = "contrast(1)";
+      };
       header_el = this.button_el
     } else {
       header_el = DOM.createElement((header_tag as any), {class: header_css_classes})
