@@ -114,4 +114,5 @@ session
 periodic
 schedule
 server
+notifications
 ```

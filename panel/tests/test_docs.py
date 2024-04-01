@@ -81,8 +81,10 @@ def find_indexed(index):
         elif not toctree:
             continue
         elif line.startswith('```'):
-            break
+            toctree = False
         elif line and not line.startswith(':'):
+            if '<' in line:
+                line = line[line.index('<')+1:].rstrip('>')
             indexed.append(line)
     return indexed
 
@@ -95,9 +97,14 @@ def test_markdown_indexed(doc_file):
     if str(doc_file).endswith('index.md') or doc_file.parent.name == 'examples':
         return
     index_page = doc_file.parent / 'index.md'
-    assert index_page.is_file()
-    indexed = find_indexed(index_page)
-    assert doc_file.name[:-3] in indexed
+    filename = doc_file.name[:-3]
+    if index_page.is_file():
+        indexed = find_indexed(index_page)
+        assert filename in indexed
+    else:
+        index_page = doc_file.parent.parent / 'index.md'
+        indexed = find_indexed(index_page)
+        assert f'{doc_file.parent.name}/{filename}' in indexed
 
 @doc_available
 @pytest.mark.parametrize(
