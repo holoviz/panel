@@ -7,11 +7,11 @@ import card_css from "styles/models/card.css"
 
 const CHEVRON_RIGHT = `
 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-right"><path stroke="none" d="M0 0h12v12H0z" fill="none"/><path d="M9 6l6 6l-6 6" /></svg>
-`;
+`
 
 const CHEVRON_DOWN = `
 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-down"><path stroke="none" d="M0 0h12v12H0z" fill="none"/><path d="M6 9l6 6l6 -6" /></svg>
-`;
+`
 
 export class CardView extends ColumnView {
   declare model: Card
