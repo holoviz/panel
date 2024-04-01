@@ -122,7 +122,7 @@ indicators = pn.FlexBox(
     ),
     pn.indicators.Number(
         value=avg_capacity/1e3,
-        name="Avg. Capacity (GW)",
+        name="Avg. Capacity (MW)",
         format="{value:,.1f}",
         styles=styles,
     ),
