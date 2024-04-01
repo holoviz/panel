@@ -43,9 +43,9 @@
 .muuri-grid-item {
   background-color: var(--panel-background-color, white);
   box-shadow:
-    color-mix(in srgb, var(--panel-shadow-color, 'black') 30%, transparent) 0px
+    color-mix(in srgb, var(--panel-shadow-color, black) 30%, transparent) 0px
       1px 2px 0px,
-    color-mix(in srgb, var(--panel-shadow-color, 'black') 15%, transparent) 0px
+    color-mix(in srgb, var(--panel-shadow-color, black) 15%, transparent) 0px
       1px 3px 1px;
   display: block;
   margin: 10px;
