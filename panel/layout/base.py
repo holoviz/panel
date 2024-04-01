@@ -358,8 +358,7 @@ class ListLike(param.Parameterized):
         return len(self.objects)
 
     def __iter__(self) -> Iterator[Viewable]:
-        for obj in self.objects:
-            yield obj
+        yield from self.objects
 
     def __iadd__(self, other: Iterable[Any]) -> 'ListLike':
         self.extend(other)
@@ -612,8 +611,7 @@ class NamedListLike(param.Parameterized):
         return len(self.objects)
 
     def __iter__(self) -> Iterator[Viewable]:
-        for obj in self.objects:
-            yield obj
+        yield from self.objects
 
     def __iadd__(self, other: Iterable[Any]) -> 'NamedListLike':
         self.extend(other)

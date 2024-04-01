@@ -451,8 +451,7 @@ class GridSpec(Panel):
         return type(self)(**p)
 
     def __iter__(self):
-        for obj in self.objects.values():
-            yield obj
+        yield from self.objects.values()
 
     def __delitem__(self, index):
         if isinstance(index, tuple):
