@@ -60,7 +60,7 @@ Embark on a deeper exploration of supplementary topics to further hone your Pane
 
 - **[Efficient Development in Editors](develop_editor.md):** Streamline the debugging process within your preferred editor environment.
 - **[Serving Panel Apps](serve.md):** Serve multi-page apps effortlessly while customizing the Panel server to suit your needs.
-- **[Advanced Layouts](size.md):** Attain responsive sizing with ease using FlexBox and media queries.
+- **[Advanced Layouts](advanced_layouts.md):** Attain responsive sizing with ease using FlexBox and media queries.
 
 ## Projects
 
@@ -83,7 +83,7 @@ interactivity
 structure_data_store
 develop_editor
 serve
-size
+advanced_layouts
 build_todo
 test_todo
 ```
