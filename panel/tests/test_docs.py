@@ -72,6 +72,33 @@ def test_panes_are_in_reference_gallery():
     assert panes - exceptions - docs == set()
 
 
+def find_indexed(index):
+    indexed = []
+    toctree = False
+    for line in index.read_text().split('\n'):
+        if line == '```{toctree}':
+            toctree = True
+        elif not toctree:
+            continue
+        elif line.startswith('```'):
+            break
+        elif line and not line.startswith(':'):
+            indexed.append(line)
+    return indexed
+
+@doc_available
+@pytest.mark.parametrize(
+    "doc_file", doc_files, ids=[str(f.relative_to(DOC_PATH)) for f in doc_files]
+)
+def test_markdown_indexed(doc_file):
+    # Check all non-index and example files are indexed
+    if str(doc_file).endswith('index.md') or doc_file.parent.name == 'examples':
+        return
+    index_page = doc_file.parent / 'index.md'
+    assert index_page.is_file()
+    indexed = find_indexed(index_page)
+    assert doc_file.name[:-3] in indexed
+
 @doc_available
 @pytest.mark.parametrize(
     "file", doc_files, ids=[str(f.relative_to(DOC_PATH)) for f in doc_files]
