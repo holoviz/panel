@@ -57,8 +57,8 @@ Now change the
 
 It should look like
 
-<video controls="" poster="../../_static/images/develop_editor_panel_serve_after.png">
-    <source src="https://assets.holoviz.org/panel/tutorials/develop_editor_serve_app.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
+<video muted controls loop poster="../../_static/images/develop_editor_panel_serve_after.png" style="max-height: 400px; max-width: 100%;">
+    <source src="https://assets.holoviz.org/panel/tutorials/develop_editor_serve_app.mp4" type="video/mp4">
     Your browser does not support the video tag.
 </video>
 
@@ -89,7 +89,7 @@ print(layout)
 layout.servable()
 ```
 
-Serving this code will print information about the `component` object, revealing its structure and attributes.
+Serving this code will print information about the `layout` object, revealing its structure and attributes.
 
 Serve the app by running the below command in a terminal.
 

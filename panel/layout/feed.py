@@ -20,6 +20,22 @@ if TYPE_CHECKING:
 
 
 class Feed(Column):
+    """
+    The `Feed` class inherits from the `Column` layout, thereby enabling the arrangement of
+    multiple panel objects within a vertical container. However, it restrictively manages the number
+    of objects displayed at any moment. This layout is particularly useful for efficiently
+    rendering a substantial number of objects.
+
+    Similar to `Column`, the `Feed` provides a list-like API, including methods such as `append`,
+    `extend`, `clear`, `insert`, `pop`, `remove`, and `__setitem__`. These methods facilitate
+    interactive updates and modifications to the layout.
+
+    Reference: https://panel.holoviz.org/reference/layouts/Feed.html
+
+    :Example:
+
+    >>> pn.Feed(some_widget, some_pane, some_python_object, ..., python_object_1002)
+    """
 
     load_buffer = param.Integer(default=50, bounds=(0, None), doc="""
         The number of objects loaded on each side of the visible objects.

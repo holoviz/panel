@@ -146,7 +146,7 @@ How to set up unit tests, UI tests and load testing to ensure your applications 
 :::
 
 :::{grid-item-card} {octicon}`pencil;2.5em;sd-mr-1 sd-animate-grow50` Configure Logging
-:link: configure_logging
+:link: logging/index
 :link-type: doc
 
 How to configure the logging level and format

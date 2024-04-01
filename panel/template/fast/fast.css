@@ -371,3 +371,9 @@ fast-card {
   display: block;
   overflow-x: auto;
 }
+
+textarea.xterm-helper-textarea,
+span.xterm-char-measure-element {
+  pointer-events: none;
+  opacity: 0;
+}
