@@ -156,7 +156,7 @@ def linspace(start, stop, num):
 # -----------------------------------------------------------------------------
 
 
-class SynchronizationContext():
+class SynchronizationContext:
 
     def __init__(self, id_root=None, serialize_all_data_arrays=False, debug=False):
         self.serializeAllDataArrays = serialize_all_data_arrays
