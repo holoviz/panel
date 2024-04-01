@@ -15,7 +15,7 @@ import re
 import sys
 import urllib.parse as urlparse
 
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 from collections.abc import MutableMapping, MutableSequence
 from datetime import datetime
 from functools import partial
@@ -124,8 +124,6 @@ def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
         end_char = ''
         if isinstance(value, list):
             end_char = ']'
-        elif isinstance(value, OrderedDict):
-            end_char = '])'
         elif isinstance(value, (dict, set)):
             end_char = '}'
         return vrepr[:max_length+1] + '...' + end_char
