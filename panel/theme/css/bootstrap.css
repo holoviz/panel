@@ -600,8 +600,8 @@ input[type='file'].bk-input {
 }
 
 input[type='file']::file-selector-button {
-  background: var(--surface-color);
-  color: var(--surface-text-color);
+  background: var(--bs-surface-bg);
+  color: var(--bs-surface-color);
 }
 
 .bk-menu {
