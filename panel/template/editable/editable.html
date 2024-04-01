@@ -201,12 +201,10 @@
     if (window.localStorage) {
       window.localStorage.removeItem(window.location.origin + window.location.pathname)
     }
-    {% if not local_save %}
     document.getElementById('content').classList.add('pn-loading', 'pn-{{ loading_spinner }}')
     const queryParams = new URLSearchParams(window.location.search);
     queryParams.set('reset', 1);
     window.location.search = queryParams.toString();
-    {% endif %}
   })
 
   for (const handle of document.querySelectorAll('.muuri-handle.delete')) {
