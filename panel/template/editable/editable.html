@@ -5,7 +5,7 @@
 <div id="header-indicators">
   <div id="grid-reset" class="header-icon" title="Reset the Layout"></div>
   {% if local_save %}
-  <div id="grid-save" class="header-icon" title="Save the Layout to Local Storage"></div>
+  <div id="grid-save" class="header-icon disabled-button" title="Save the Layout to Local Storage"></div>
   {% endif %}
   {% if busy %}
   <div class="pn-busy-container" title="Busy Indicator">
@@ -135,6 +135,9 @@
       grid.layout()
     }
     scroll(item)
+    {% if local_save and editable %}
+    document.getElementById('grid-save').classList.remove('disabled-button')
+    {% endif %}
   }
 
   function getFromLS(key) {
@@ -193,27 +196,23 @@
 
   // Set up reset, hide and resize actions
   {% if editable %}
-
   const reset_button = document.getElementById("grid-reset")
   reset_button.addEventListener("click", function() {
-    const items = grid.getItems();
-    for (const item of items) {
-      const el = item.getElement();
-      const margin = item.getMargin();
-      const height = item.isVisible() ? item.getHeight() : 100;
-      resize_item(el, 100, Math.max(height-margin.top, 50), false);
+    if (window.localStorage) {
+      window.localStorage.removeItem(window.location.origin + window.location.pathname)
     }
-    grid.refreshItems();
-    grid.show(items, {layout: false});
-    const order = [...document.getElementsByClassName('muuri-grid-item')];
-    grid.sort(order.map(el => grid.getItem(el)), {layout: false});
-    grid.layout();
-    order.map(scroll);
+    document.getElementById('content').classList.add('pn-loading', 'pn-{{ loading_spinner }}')
+    const queryParams = new URLSearchParams(window.location.search);
+    queryParams.set('reset', 1);
+    window.location.search = queryParams.toString();
   })
 
   for (const handle of document.querySelectorAll('.muuri-handle.delete')) {
     handle.addEventListener("click", (event) => {
       grid.hide([grid.getItem(event.target.parentElement)], {instant: true});
+      {% if local_save %}
+      document.getElementById('grid-save').classList.remove('disabled-button')
+      {% endif %}
     })
   }
 
@@ -231,8 +230,11 @@
   {% if local_save %}
   const save_button = document.getElementById("grid-save")
   save_button.addEventListener("click", function() {
-    const layout = export_layout()
-    saveToLS('grid-layout', layout)
+    if (!save_button.classList.contains('disabled-button')) {
+      const layout = export_layout()
+      saveToLS('grid-layout', layout)
+      save_button.classList.add('disabled-button')
+    }
   })
   {% endif %}
 
@@ -242,21 +244,24 @@
     edges: { right: '.muuri-handle.resize', bottom: '.muuri-handle.resize' },
     listeners: {
       move (event) {
-	const item = grid.getItem(event.target);
-	const {top, bottom} = item.getMargin();
-	const screen_width = grid.getElement().clientWidth;
-	const width = (event.rect.width/screen_width)*100
-	const height = event.rect.height-top-bottom;
-	event.target.style.zIndex = 100;
-	resize_item(event.target, width, height, false);
-	grid.refreshItems()
-	grid.layout()
+        const item = grid.getItem(event.target);
+        const {top, bottom} = item.getMargin();
+        const screen_width = grid.getElement().clientWidth;
+        const width = (event.rect.width/screen_width)*100
+        const height = event.rect.height-top-bottom;
+        event.target.style.zIndex = 100;
+        resize_item(event.target, width, height, false);
+        grid.refreshItems()
+        grid.layout()
       },
       end (event) {
-	event.target.style.removeProperty('z-index')
-	grid.refreshItems()
-	grid.layout()
-	window.dispatchEvent(new Event('resize'));
+        event.target.style.removeProperty('z-index')
+        grid.refreshItems()
+        grid.layout()
+        window.dispatchEvent(new Event('resize'));
+        {% if local_save %}
+        save_button.classList.remove('disabled-button')
+        {% endif %}
       }
     },
     modifiers: [
@@ -264,33 +269,33 @@
         min: { width: 100, height: 50 }
       }),
       interact.modifiers.snapEdges({
-	offset: 'parent',
-	targets: [
-	  // Snap to other items or right edge if within 25 pixels
-	  function (x, y, interaction) {
-	    const target = {range: 25}
-	    const grid_bbox = grid.getElement().getBoundingClientRect()
-	    for (const item of grid.getItems()) {
-	      if (item === interaction.element) {
-		continue
-	      }
-	      const {top, left} = item.getPosition();
-	      const margin = item.getMargin()
-	      const bottom = (top + item.getHeight()) + margin.top + margin.bottom;
-	      const right = (left + item.getWidth()) + margin.left + margin.right;
-	      if (Math.abs(right - x) < target.range) {
-		target.x = right + margin.right
-	      }
-	      if (Math.abs(bottom - y) < target.range) {
-		target.y = bottom
-	      }
-	    }
-	    if ((grid_bbox.width - x) < target.range) {
-	      target.x = grid_bbox.width+10
-	    }
-	    return target
-	  }
-	]
+        offset: 'parent',
+        targets: [
+          // Snap to other items or right edge if within 25 pixels
+          function (x, y, interaction) {
+            const target = {range: 25}
+            const grid_bbox = grid.getElement().getBoundingClientRect()
+            for (const item of grid.getItems()) {
+              if (item === interaction.element) {
+                continue
+              }
+              const {top, left} = item.getPosition();
+              const margin = item.getMargin()
+              const bottom = (top + item.getHeight()) + margin.top + margin.bottom;
+              const right = (left + item.getWidth()) + margin.left + margin.right;
+              if (Math.abs(right - x) < target.range) {
+                target.x = right + margin.right
+              }
+              if (Math.abs(bottom - y) < target.range) {
+                target.y = bottom
+              }
+            }
+            if ((grid_bbox.width - x) < target.range) {
+              target.x = grid_bbox.width+10
+            }
+            return target
+          }
+        ]
       })
     ]
   })

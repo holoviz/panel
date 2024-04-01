@@ -39,8 +39,8 @@ _state_logger = logging.getLogger('panel.state')
 if TYPE_CHECKING:
     from concurrent.futures import Future
 
-    from bokeh.document.models import ImportedStyleSheet
     from bokeh.model import Model
+    from bokeh.models import ImportedStyleSheet
     from bokeh.server.contexts import BokehSessionContext
     from bokeh.server.server import Server
     from IPython.display import DisplayHandle

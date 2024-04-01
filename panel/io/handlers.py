@@ -9,6 +9,7 @@ import pathlib
 import re
 import sys
 import traceback
+import urllib.parse as urlparse
 
 from contextlib import contextmanager
 from types import ModuleType
@@ -527,13 +528,16 @@ class NotebookHandler(PanelCodeHandler):
         config.template = 'editable'
         persist = state._jupyter_kernel_context
         editable = 'editable' in state.session_args
+        reset = 'reset' in state.session_args
         if not (editable or persist):
             state.template.editable = False
         state.template.title = os.path.splitext(os.path.basename(path))[0].title()
 
         layouts, outputs, cells = {}, {}, {}
         for cell_id, out in state._cell_outputs.items():
-            if cell_id in self._layout.get('cells', {}):
+            if reset:
+                spec = {}
+            elif cell_id in self._layout.get('cells', {}):
                 spec = self._layout['cells'][cell_id]
             else:
                 spec = state._cell_layouts[self].get(cell_id, {})
@@ -561,7 +565,7 @@ class NotebookHandler(PanelCodeHandler):
             cell_order = nb['metadata'].get('panel-cell-order', [])
         ordered = {}
         for cell_id in cell_order:
-            if cell_id not in cells:
+            if cell_id not in cells or reset:
                 continue
             obj_id = cells[cell_id]
             ordered[obj_id] = layouts[obj_id]
@@ -579,6 +583,13 @@ class NotebookHandler(PanelCodeHandler):
             layout=ordered,
             local_save=not bool(state._jupyter_kernel_context)
         )
+        if reset:
+            def unset_reset():
+                query = state.location.query_params
+                query.pop('reset', None)
+                search = urlparse.urlencode(query)
+                state.location.search = f'?{search}' if search else ''
+            state.onload(unset_reset)
         if persist:
             state.template.param.watch(self._update_position_metadata, 'layout')
         state._session_outputs[doc] = outputs
