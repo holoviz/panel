@@ -348,7 +348,7 @@ class MenuButton(_ButtonBase, _ClickButton, IconMixin):
         self._register_events('button_click', model=model, doc=doc, comm=comm)
         return model
 
-    def _process_event(self, event: ButtonClick):
+    def _process_event(self, event: ButtonClick | MenuItemClick):
         if isinstance(event, MenuItemClick):
             item = event.item
         elif isinstance(event, ButtonClick):

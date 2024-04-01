@@ -84,8 +84,6 @@ class Widget(Reactive):
         ----------
         parameter: param.Parameter
           A parameter to create the widget from.
-        params: dict
-          Keyword arguments to be passed to the widget constructor
 
         Returns
         -------
