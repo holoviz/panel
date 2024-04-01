@@ -7,7 +7,7 @@ import json
 import urllib.parse as urlparse
 
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
+    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional,
 )
 
 import param
@@ -176,7 +176,7 @@ class Location(Syncable):
                     on_error(mapped)
 
     def _update_query(
-        self, *events: param.parameterized.Event, query: Optional[Dict[str, Any]] = None
+        self, *events: param.parameterized.Event, query: Optional[dict[str, Any]] = None
     ) -> None:
         if self._syncing:
             return
@@ -200,7 +200,7 @@ class Location(Syncable):
             self._syncing = False
 
     @property
-    def query_params(self) -> Dict[str, Any]:
+    def query_params(self) -> dict[str, Any]:
         return parse_query(self.search)
 
     def update_query(self, **kwargs: Mapping[str, Any]) -> None:
@@ -209,8 +209,8 @@ class Location(Syncable):
         self.search = '?' + urlparse.urlencode(query)
 
     def sync(
-        self, parameterized: param.Parameterized, parameters: Optional[List[str] | Dict[str, str]] = None,
-        on_error: Optional[Callable[[Dict[str, Any]], None]] = None
+        self, parameterized: param.Parameterized, parameters: Optional[list[str] | dict[str, str]] = None,
+        on_error: Optional[Callable[[dict[str, Any]], None]] = None
     ) -> None:
         """
         Syncs the parameters of a Parameterized object with the query
@@ -251,7 +251,7 @@ class Location(Syncable):
             query[name] = v
         self._update_query(query=query)
 
-    def unsync(self, parameterized: param.Parameterized, parameters: Optional[List[str]] = None) -> None:
+    def unsync(self, parameterized: param.Parameterized, parameters: Optional[list[str]] = None) -> None:
         """
         Unsyncs the parameters of the Parameterized with the query
         params in the URL. If no parameters are supplied all

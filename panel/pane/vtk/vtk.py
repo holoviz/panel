@@ -10,7 +10,7 @@ import zipfile
 
 from abc import abstractmethod
 from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional,
+    IO, TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
 )
 from urllib.request import urlopen
 
@@ -82,7 +82,7 @@ class AbstractVTK(PaneBase):
         return msg
 
     def _update_model(
-        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
         root: Model, model: Model, doc: Document, comm: Optional[Comm]
     ) -> None:
         if 'axes' in msg and msg['axes'] is not None:

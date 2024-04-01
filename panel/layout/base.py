@@ -6,8 +6,7 @@ from __future__ import annotations
 
 from collections import defaultdict, namedtuple
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Iterable, Iterator, List, Mapping,
-    Optional, Tuple, Type,
+    TYPE_CHECKING, Any, ClassVar, Iterable, Iterator, Mapping, Optional,
 )
 
 import param
@@ -52,13 +51,13 @@ class Panel(Reactive):
     _batch_update: ClassVar[bool] = False
 
     # Bokeh model used to render this Panel
-    _bokeh_model: ClassVar[Type[Model]]
+    _bokeh_model: ClassVar[type[Model]]
 
     # Direction the layout flows in
     _direction: ClassVar[str | None] = None
 
     # Parameters which require the preprocessors to be re-run
-    _preprocess_params: ClassVar[List[str]] = []
+    _preprocess_params: ClassVar[list[str]] = []
 
     # Parameter -> Bokeh property renaming
     _rename: ClassVar[Mapping[str, str | None]] = {'objects': 'children'}
@@ -89,7 +88,7 @@ class Panel(Reactive):
     #----------------------------------------------------------------
 
     def _update_model(
-        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
         root: Model, model: Model, doc: Document, comm: Optional[Comm]
     ) -> None:
         msg = dict(msg)
@@ -140,7 +139,7 @@ class Panel(Reactive):
     #----------------------------------------------------------------
 
     def _get_objects(
-        self, model: Model, old_objects: List[Viewable], doc: Document,
+        self, model: Model, old_objects: list[Viewable], doc: Document,
         root: Model, comm: Optional[Comm] = None
     ):
         """
@@ -349,9 +348,9 @@ class ListLike(param.Parameterized):
     objects = param.List(default=[], doc="""
         The list of child objects that make up the layout.""")
 
-    _preprocess_params: ClassVar[List[str]] = ['objects']
+    _preprocess_params: ClassVar[list[str]] = ['objects']
 
-    def __getitem__(self, index: int | slice) -> Viewable | List[Viewable]:
+    def __getitem__(self, index: int | slice) -> Viewable | list[Viewable]:
         return self.objects[index]
 
     def __len__(self) -> int:
@@ -456,7 +455,7 @@ class ListLike(param.Parameterized):
         new_objects.append(panel(obj))
         self.objects = new_objects
 
-    def clear(self) -> List[Viewable]:
+    def clear(self) -> list[Viewable]:
         """
         Clears the objects on this layout.
 
@@ -548,9 +547,9 @@ class NamedListLike(param.Parameterized):
     objects = param.List(default=[], doc="""
         The list of child objects that make up the layout.""")
 
-    _preprocess_params: ClassVar[List[str]] = ['objects']
+    _preprocess_params: ClassVar[list[str]] = ['objects']
 
-    def __init__(self, *items: List[Any | Tuple[str, Any]], **params: Any):
+    def __init__(self, *items: list[Any | tuple[str, Any]], **params: Any):
         if 'objects' in params:
             if items:
                 raise ValueError('%s objects should be supplied either '
@@ -603,7 +602,7 @@ class NamedListLike(param.Parameterized):
     # Public API
     #----------------------------------------------------------------
 
-    def __getitem__(self, index) -> Viewable | List[Viewable]:
+    def __getitem__(self, index) -> Viewable | list[Viewable]:
         return self.objects[index]
 
     def __len__(self) -> int:
@@ -832,7 +831,7 @@ class ListPanel(ListLike, Panel):
             if p not in ListPanel.param and self._property_mapping.get(p, p) is not None
         )
 
-    def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
         if (scroll := params.get('scroll')):
             css_classes = params.get('css_classes', self.css_classes)
             if scroll in _SCROLL_MAPPING:
@@ -876,7 +875,7 @@ class NamedListPanel(NamedListLike, Panel):
 
     __abstract = True
 
-    def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
         if (scroll := params.get('scroll')):
             css_classes = params.get('css_classes', self.css_classes)
             if scroll in _SCROLL_MAPPING:
@@ -912,7 +911,7 @@ class Row(ListPanel):
     >>> pn.Row(some_widget, some_pane, some_python_object)
     """
 
-    _bokeh_model: ClassVar[Type[Model]] = BkRow
+    _bokeh_model: ClassVar[type[Model]] = BkRow
 
     _direction = 'horizontal'
 
@@ -954,7 +953,7 @@ class Column(ListPanel):
         Whether to scroll to the latest object on init. If not
         enabled the view will be on the first object.""")
 
-    _bokeh_model: ClassVar[Type[Model]] = PnColumn
+    _bokeh_model: ClassVar[type[Model]] = PnColumn
 
     _busy__ignore = ['scroll_position']
 
@@ -1021,7 +1020,7 @@ class WidgetBox(ListPanel):
     ]
 
     @property
-    def _bokeh_model(self) -> Type[Model]: # type: ignore
+    def _bokeh_model(self) -> type[Model]: # type: ignore
         return BkRow if self.horizontal else PnColumn
 
     @property

@@ -18,9 +18,7 @@ from collections import OrderedDict
 from contextlib import contextmanager
 from functools import lru_cache
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING, Dict, List, Literal, TypedDict,
-)
+from typing import TYPE_CHECKING, Literal, TypedDict
 
 import param
 
@@ -44,10 +42,10 @@ if TYPE_CHECKING:
     from bokeh.resources import Urls
 
     class ResourcesType(TypedDict):
-        css: Dict[str, str]
-        js:  Dict[str, str]
-        js_modules: Dict[str, str]
-        raw_css: List[str]
+        css: dict[str, str]
+        js:  dict[str, str]
+        js_modules: dict[str, str]
+        raw_css: list[str]
 
 logger = logging.getLogger(__name__)
 

@@ -14,8 +14,7 @@ from io import BytesIO
 from tempfile import NamedTemporaryFile
 from textwrap import indent
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Dict, Iterable, List, Optional,
-    Union,
+    TYPE_CHECKING, Any, Callable, ClassVar, Iterable, Optional, Union,
 )
 from zoneinfo import ZoneInfo
 
@@ -43,7 +42,7 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
 
 Avatar = Union[str, BytesIO, bytes, ImageBase]
-AvatarDict = Dict[str, Avatar]
+AvatarDict = dict[str, Avatar]
 
 USER_LOGO = "🧑"
 ASSISTANT_LOGO = "🤖"
@@ -230,7 +229,7 @@ class ChatMessage(PaneBase):
     user = param.Parameter(default="User", doc="""
         Name of the user who sent the message.""")
 
-    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_message.css"]
+    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_message.css"]
 
     # Declares whether Pane supports updates to the Bokeh model
     _updates: ClassVar[bool] = True
@@ -410,7 +409,7 @@ class ChatMessage(PaneBase):
         return self.serialize()
 
     @property
-    def _synced_params(self) -> List[str]:
+    def _synced_params(self) -> list[str]:
         return []
 
     def _get_model(
@@ -758,7 +757,7 @@ class ChatMessage(PaneBase):
 
     def select(
         self, selector: Optional[type | Callable[[Viewable], bool]] = None
-    ) -> List[Viewable]:
+    ) -> list[Viewable]:
         return super().select(selector) + self._composite.select(selector)
 
     def serialize(

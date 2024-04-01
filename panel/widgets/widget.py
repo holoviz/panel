@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from inspect import Parameter
 from numbers import Integral, Number, Real
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 
 empty = Parameter.empty
 
@@ -38,7 +38,7 @@ class fixed(param.Parameterized):
 
 def _get_min_max_value(
     min: Number, max: Number, value: Optional[Number] = None, step: Optional[Number] = None
-) -> Tuple[Number, Number, Number]:
+) -> tuple[Number, Number, Number]:
     """Return min, max, value given input values with possible None."""
     # Either min and max need to be given, or value needs to be given
     if value is None:

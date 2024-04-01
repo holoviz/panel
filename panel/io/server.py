@@ -21,7 +21,7 @@ from functools import partial, wraps
 from html import escape
 from types import FunctionType, MethodType
 from typing import (
-    TYPE_CHECKING, Any, Callable, Dict, Mapping, Optional, Union,
+    TYPE_CHECKING, Any, Callable, Mapping, Optional, Union,
 )
 from urllib.parse import urljoin, urlparse
 
@@ -277,7 +277,7 @@ def server_html_page_for_session(
     title: str,
     token: str | None = None,
     template: str | Template = BASE_TEMPLATE,
-    template_variables: Optional[Dict[str, Any]] = None,
+    template_variables: Optional[dict[str, Any]] = None,
 ) -> str:
 
     # ALERT: Replace with better approach before Bokeh 3.x compatible release

@@ -4,7 +4,7 @@ import datetime as dt
 import sys
 
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Optional,
+    TYPE_CHECKING, Any, Callable, ClassVar, Optional,
 )
 
 import numpy as np
@@ -60,13 +60,13 @@ class Vizzu(ModelPane, SyncableData):
     tooltip = param.Boolean(default=False, doc="""
         Whether to enable tooltips on the chart.""")
 
-    _data_params: ClassVar[List[str]] = ['object']
+    _data_params: ClassVar[list[str]] = ['object']
 
-    _rename: ClassVar[Dict[str, str | None]] = {
+    _rename: ClassVar[dict[str, str | None]] = {
         'click': None, 'column_types': None, 'object': None
     }
 
-    _rerender_params: ClassVar[List[str]] = []
+    _rerender_params: ClassVar[list[str]] = []
 
     _updates: ClassVar[bool] = True
 
@@ -168,7 +168,7 @@ class Vizzu(ModelPane, SyncableData):
         pass
 
     def animate(
-        self, anim: Dict[str, Any], options: int | Dict[str, Any] | None = None
+        self, anim: dict[str, Any], options: int | dict[str, Any] | None = None
     ) -> None:
         """
         Updates the chart with a new configuration.
@@ -192,7 +192,7 @@ class Vizzu(ModelPane, SyncableData):
 
     # Public API
 
-    def on_click(self, callback: Callable[[Dict], None]):
+    def on_click(self, callback: Callable[[dict], None]):
         """
         Register a callback to be executed when any element in the
         chart is clicked on.

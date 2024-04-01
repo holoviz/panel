@@ -6,8 +6,7 @@ import uuid
 from functools import partial
 from types import FunctionType, MethodType
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
-    Tuple, Type,
+    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional,
 )
 
 import numpy as np
@@ -99,9 +98,9 @@ class BaseTable(ReactiveData, Widget):
 
     value = param.Parameter(default=None)
 
-    _data_params: ClassVar[List[str]] = ['value']
+    _data_params: ClassVar[list[str]] = ['value']
 
-    _manual_params: ClassVar[List[str]] = [
+    _manual_params: ClassVar[list[str]] = [
         'formatters', 'editors', 'widths', 'titles', 'value', 'show_index'
     ]
 
@@ -142,7 +141,7 @@ class BaseTable(ReactiveData, Widget):
             raise ValueError('Cannot display a pandas.DataFrame with '
                              'duplicate column names.')
 
-    def _get_fields(self) -> List[str]:
+    def _get_fields(self) -> list[str]:
         indexes = self.indexes
         col_names = list(self.value.columns)
         if not self.hierarchical or len(indexes) == 1:
@@ -151,7 +150,7 @@ class BaseTable(ReactiveData, Widget):
             col_names = indexes[-1:] + col_names
         return col_names
 
-    def _get_columns(self) -> List[TableColumn]:
+    def _get_columns(self) -> list[TableColumn]:
         if self.value is None:
             return []
 
@@ -160,7 +159,7 @@ class BaseTable(ReactiveData, Widget):
         df = self.value.reset_index() if len(indexes) > 1 else self.value
         return self._get_column_definitions(fields, df)
 
-    def _get_column_definitions(self, col_names: List[str], df: pd.DataFrame) -> List[TableColumn]:
+    def _get_column_definitions(self, col_names: list[str], df: pd.DataFrame) -> list[TableColumn]:
         import pandas as pd
         indexes = self.indexes
         columns = []
@@ -322,7 +321,7 @@ class BaseTable(ReactiveData, Widget):
         params = super()._process_param_change(params)
         return params
 
-    def _get_properties(self, doc: Document) -> Dict[str, Any]:
+    def _get_properties(self, doc: Document) -> dict[str, Any]:
         properties = super()._get_properties(doc)
         properties['columns'] = self._get_columns()
         properties['source']  = cds = ColumnDataSource(data=self._data)
@@ -349,7 +348,7 @@ class BaseTable(ReactiveData, Widget):
         model.columns = self._get_columns()
 
     def _manual_update(
-        self, events: Tuple[param.parameterized.Event, ...], model: Model, doc: Document,
+        self, events: tuple[param.parameterized.Event, ...], model: Model, doc: Document,
         root: Model, parent: Optional[Model], comm: Optional[Comm]
     ) -> None:
         for event in events:
@@ -597,10 +596,10 @@ class BaseTable(ReactiveData, Widget):
             return values.tolist()
         return values
 
-    def _get_data(self) -> Tuple[pd.DataFrame, DataDict]:
+    def _get_data(self) -> tuple[pd.DataFrame, DataDict]:
         return self._process_df_and_convert_to_cds(self.value)
 
-    def _process_df_and_convert_to_cds(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, DataDict]:
+    def _process_df_and_convert_to_cds(self, df: pd.DataFrame) -> tuple[pd.DataFrame, DataDict]:
         import pandas as pd
         df = self._filter_dataframe(df)
         if df is None:
@@ -951,7 +950,7 @@ class DataFrame(BaseTable):
         return to natural order. Use Shift + click to sort multiple
         columns simultaneously.""")
 
-    _manual_params: ClassVar[List[str]] = BaseTable._manual_params + ['aggregators']
+    _manual_params: ClassVar[list[str]] = BaseTable._manual_params + ['aggregators']
 
     _aggregators = {
         'sum': SumAggregator, 'max': MaxAggregator,
@@ -965,7 +964,7 @@ class DataFrame(BaseTable):
     }
 
     @property
-    def _widget_type(self) -> Type[Model]:
+    def _widget_type(self) -> type[Model]:
         return DataCube if self.hierarchical else DataTable
 
     def _get_columns(self):
@@ -1009,7 +1008,7 @@ class DataFrame(BaseTable):
                     expanded_aggs.append(agg(field_=str(col)))
         return expanded_aggs
 
-    def _get_properties(self, doc: Document) -> Dict[str, Any]:
+    def _get_properties(self, doc: Document) -> dict[str, Any]:
         properties = super()._get_properties(doc)
         if self.hierarchical:
             properties['target'] = ColumnDataSource(data=dict(row_indices=[], labels=[]))
@@ -1145,19 +1144,19 @@ class Tabulator(BaseTable):
        Tabulator formatter specification to use for a particular column
        header title.""")
 
-    _data_params: ClassVar[List[str]] = [
+    _data_params: ClassVar[list[str]] = [
         'value', 'page', 'page_size', 'pagination', 'sorters', 'filters'
     ]
 
-    _config_params: ClassVar[List[str]] = [
+    _config_params: ClassVar[list[str]] = [
         'frozen_columns', 'groups', 'selectable', 'hierarchical', 'sortable'
     ]
 
-    _content_params: ClassVar[List[str]] = _data_params + ['expanded', 'row_content', 'embed_content']
+    _content_params: ClassVar[list[str]] = _data_params + ['expanded', 'row_content', 'embed_content']
 
-    _manual_params: ClassVar[List[str]] = BaseTable._manual_params + _config_params
+    _manual_params: ClassVar[list[str]] = BaseTable._manual_params + _config_params
 
-    _priority_changes: ClassVar[List[str]] = ['data']
+    _priority_changes: ClassVar[list[str]] = ['data']
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'selection': None, 'row_content': None, 'row_height': None,
@@ -1168,7 +1167,7 @@ class Tabulator(BaseTable):
 
     # Determines the maximum size limits beyond which (local, remote)
     # pagination is enabled
-    _MAX_ROW_LIMITS: ClassVar[Tuple[int, int]] = (200, 10000)
+    _MAX_ROW_LIMITS: ClassVar[tuple[int, int]] = (200, 10000)
 
     _stylesheets = [CSS_URLS['font-awesome']]
 
@@ -1633,7 +1632,7 @@ class Tabulator(BaseTable):
         with pd.option_context('mode.chained_assignment', None):
             self._processed.loc[index, column] = array
 
-    def _update_selection(self, indices: List[int] | SelectionEvent):
+    def _update_selection(self, indices: list[int] | SelectionEvent):
         if self.pagination != 'remote':
             self.selection = indices
             return
@@ -1663,7 +1662,7 @@ class Tabulator(BaseTable):
             ilocs = ilocs[len(ilocs) - self.selectable:]
         self.selection = ilocs
 
-    def _get_properties(self, doc: Document) -> Dict[str, Any]:
+    def _get_properties(self, doc: Document) -> dict[str, Any]:
         properties = super()._get_properties(doc)
         properties['configuration'] = self._get_configuration(properties['columns'])
         properties['cell_styles'] = self._get_style_data()
@@ -1716,7 +1715,7 @@ class Tabulator(BaseTable):
         self._register_events('cell-click', 'table-edit', 'selection-change', model=model, doc=doc, comm=comm)
         return model
 
-    def _get_filter_spec(self, column: TableColumn) -> Dict[str, Any]:
+    def _get_filter_spec(self, column: TableColumn) -> dict[str, Any]:
         fspec = {}
         if not self.header_filters or (isinstance(self.header_filters, dict) and
                                        column.field not in self.header_filters):
@@ -1781,7 +1780,7 @@ class Tabulator(BaseTable):
             fspec['headerFilterPlaceholder'] = filter_placeholder
         return fspec
 
-    def _config_columns(self, column_objs: List[TableColumn]) -> List[Dict[str, Any]]:
+    def _config_columns(self, column_objs: list[TableColumn]) -> list[dict[str, Any]]:
         column_objs = list(column_objs)
         groups = {}
         columns = []
@@ -1909,7 +1908,7 @@ class Tabulator(BaseTable):
                 columns.append(col_dict)
         return columns
 
-    def _get_configuration(self, columns: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _get_configuration(self, columns: list[dict[str, Any]]) -> dict[str, Any]:
         """
         Returns the Tabulator configuration.
         """

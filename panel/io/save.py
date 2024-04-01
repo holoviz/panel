@@ -7,7 +7,7 @@ import io
 import os
 
 from typing import (
-    IO, TYPE_CHECKING, Any, Dict, Iterable, List, Optional,
+    IO, TYPE_CHECKING, Any, Iterable, Optional,
 )
 
 import bokeh
@@ -140,9 +140,9 @@ def _title_from_models(models: Iterable[Model], title: str) -> str:
     return DEFAULT_TITLE
 
 def file_html(
-    models: Model | Document | List[Model], resources: Resources | None,
+    models: Model | Document | list[Model], resources: Resources | None,
     title: Optional[str] = None, template: Template | str = BASE_TEMPLATE,
-    template_variables: Dict[str, Any] = {}, theme: ThemeLike = None,
+    template_variables: dict[str, Any] = {}, theme: ThemeLike = None,
     _always_new: bool = False
 ):
     models_seq = []
@@ -173,7 +173,7 @@ def file_html(
 def save(
     panel: Viewable, filename: str | os.PathLike | IO, title: Optional[str]=None,
     resources: BkResources | None = None, template: Template | str | None = None,
-    template_variables: Dict[str, Any] = None, embed: bool = False,
+    template_variables: dict[str, Any] = None, embed: bool = False,
     max_states: int = 1000, max_opts: int = 3, embed_json: bool = False,
     json_prefix: str = '', save_path: str = './', load_path: Optional[str] = None,
     progress: bool = True, embed_states={}, as_png=None,

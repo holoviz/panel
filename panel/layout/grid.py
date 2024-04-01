@@ -8,7 +8,7 @@ import math
 from collections import OrderedDict, namedtuple
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, Tuple,
+    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
 )
 
 import numpy as np
@@ -56,7 +56,7 @@ class GridBox(ListPanel):
 
     _bokeh_model: ClassVar[Model] = BkGridBox
 
-    _linked_properties: ClassVar[Tuple[str,...]] = ()
+    _linked_properties: ClassVar[tuple[str,...]] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'objects': 'children'
@@ -66,7 +66,7 @@ class GridBox(ListPanel):
         'scroll': None, 'objects': None
     }
 
-    _stylesheets: ClassVar[List[str]] = [
+    _stylesheets: ClassVar[list[str]] = [
         f'{CDN_DIST}css/gridbox.css'
     ]
 
@@ -195,7 +195,7 @@ class GridBox(ListPanel):
         return model
 
     def _update_model(
-        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
         root: Model, model: Model, doc: Document, comm: Optional[Comm]
     ) -> None:
         from ..io import state
@@ -271,7 +271,7 @@ class GridSpec(Panel):
 
     _bokeh_model: ClassVar[Model] = BkGridBox
 
-    _linked_properties: ClassVar[Tuple[str]] = ()
+    _linked_properties: ClassVar[tuple[str]] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'objects': 'children', 'mode': None, 'ncols': None, 'nrows': None
@@ -281,9 +281,9 @@ class GridSpec(Panel):
         'objects': None, 'mode': None
     }
 
-    _preprocess_params: ClassVar[List[str]] = ['objects']
+    _preprocess_params: ClassVar[list[str]] = ['objects']
 
-    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/gridspec.css']
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/gridspec.css']
 
     def __init__(self, **params):
         if 'objects' not in params:

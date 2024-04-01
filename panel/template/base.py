@@ -11,8 +11,7 @@ import uuid
 from functools import partial
 from pathlib import Path, PurePath
 from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar, Dict, List, Literal, Optional, Tuple,
-    Type,
+    IO, TYPE_CHECKING, Any, ClassVar, Literal, Optional,
 )
 
 import jinja2
@@ -91,20 +90,20 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                                 constant=True, is_instance=False, instantiate=False)
 
     # Dictionary of property overrides by Viewable type
-    modifiers: ClassVar[Dict[Type[Viewable], Dict[str, Any]]] = {}
+    modifiers: ClassVar[dict[type[Viewable], dict[str, Any]]] = {}
 
     #############
     # Resources #
     #############
 
     # pathlib.Path pointing to local CSS file(s)
-    _css: ClassVar[Path | str | List[Path | str] | None] = None
+    _css: ClassVar[Path | str | list[Path | str] | None] = None
 
     # pathlib.Path pointing to local JS file(s)
-    _js: ClassVar[Path | str | List[Path | str] | None] = None
+    _js: ClassVar[Path | str | list[Path | str] | None] = None
 
     # External resources
-    _resources: ClassVar[Dict[str, Dict[str, str]]] = {
+    _resources: ClassVar[dict[str, dict[str, str]]] = {
         'css': {}, 'js': {}, 'js_modules': {}, 'tarball': {}
     }
 
@@ -117,8 +116,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         config_params = {
             p: v for p, v in params.items() if p in _base_config.param
         }
-        self._render_items: Dict[str, Tuple[Renderable, List[str]]]  = {}
-        self._render_variables: Dict[str, Any] = {}
+        self._render_items: dict[str, tuple[Renderable, list[str]]]  = {}
+        self._render_variables: dict[str, Any] = {}
         super().__init__(**{
             p: v for p, v in params.items() if p not in _base_config.param or p == 'name'
         })
@@ -133,7 +132,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
             self.nb_template = _env.from_string(nb_template)
         else:
             self.nb_template = nb_template or self.template
-        self._documents: List[Document] = []
+        self._documents: list[Document] = []
         self._server = None
         self._layout = self._build_layout()
         self._setup_design()
@@ -173,7 +172,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         ])
         return f'{type(self).__name__}{spacer}{objs}'
 
-    def _apply_root(self, name: str, model: Model, tags: List[str]) -> None:
+    def _apply_root(self, name: str, model: Model, tags: list[str]) -> None:
         pass
 
     def _server_destroy(self, session_context: BokehSessionContext):
@@ -280,7 +279,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
 
     def _repr_mimebundle_(
         self, include=None, exclude=None
-    ) -> Tuple[Dict[str, str], Dict[str, Dict[str, str]]] | None:
+    ) -> tuple[dict[str, str], dict[str, dict[str, str]]] | None:
         loaded = panel_extension._loaded
         if not loaded and 'holoviews' in sys.modules:
             import holoviews as hv
@@ -572,7 +571,7 @@ class TemplateActions(ReactiveHTML):
 
     _template: ClassVar[str] = ""
 
-    _scripts: ClassVar[Dict[str, List[str] | str]] = {
+    _scripts: ClassVar[dict[str, list[str] | str]] = {
         'open_modal': ["""
           document.getElementById('pn-Modal').style.display = 'block'
           window.dispatchEvent(new Event('resize'));
@@ -939,7 +938,7 @@ class Template(BaseTemplate):
 
     def __init__(
         self, template: str | _Template, nb_template: str | _Template | None = None,
-        items: Optional[Dict[str, Any]] = None, **params
+        items: Optional[dict[str, Any]] = None, **params
     ):
         super().__init__(template=template, nb_template=nb_template, items=items, **params)
         items = {} if items is None else items
@@ -950,7 +949,7 @@ class Template(BaseTemplate):
     # Public API
     #----------------------------------------------------------------
 
-    def add_panel(self, name: str, panel: Viewable, tags: List[str] = []) -> None:
+    def add_panel(self, name: str, panel: Viewable, tags: list[str] = []) -> None:
         """
         Add panels to the Template, which may then be referenced by
         the given name using the jinja2 embed macro.

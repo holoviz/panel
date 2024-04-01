@@ -7,7 +7,7 @@ import textwrap
 
 from contextlib import contextmanager
 from typing import (
-    TYPE_CHECKING, Any, Iterable, List, Optional, Set,
+    TYPE_CHECKING, Any, Iterable, Optional,
 )
 
 import numpy as np
@@ -45,7 +45,7 @@ class comparable_array(np.ndarray):
     def __ne__(self, other: Any) -> bool:
         return not np.array_equal(self, other, equal_nan=True)
 
-def monkeypatch_events(events: List[DocumentChangedEvent]) -> None:
+def monkeypatch_events(events: list[DocumentChangedEvent]) -> None:
     """
     Patch events applies patches to events that are to be dispatched
     avoiding various issues in Bokeh.
@@ -66,7 +66,7 @@ def monkeypatch_events(events: List[DocumentChangedEvent]) -> None:
 #---------------------------------------------------------------------
 
 def diff(
-    doc: Document, binary: bool = True, events: Optional[List[DocumentChangedEvent]] = None
+    doc: Document, binary: bool = True, events: Optional[list[DocumentChangedEvent]] = None
 ) -> Message[Any] | None:
     """
     Returns a json diff required to update an existing plot with
@@ -92,7 +92,7 @@ def diff(
             msg.add_buffer(buffer)
     return msg
 
-def remove_root(obj: Model, replace: Document | None = None, skip: Set[Model] | None = None) -> None:
+def remove_root(obj: Model, replace: Document | None = None, skip: set[Model] | None = None) -> None:
     """
     Removes the document from any previously displayed bokeh object
     """
@@ -109,7 +109,7 @@ def remove_root(obj: Model, replace: Document | None = None, skip: Set[Model] | 
         models.add(model)
     return models
 
-def add_to_doc(obj: Model, doc: Document, hold: bool = False, skip: Set[Model] | None = None):
+def add_to_doc(obj: Model, doc: Document, hold: bool = False, skip: set[Model] | None = None):
     """
     Adds a model to the supplied Document removing it from any existing Documents.
     """

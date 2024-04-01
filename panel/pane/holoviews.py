@@ -10,7 +10,7 @@ import sys
 from collections import OrderedDict, defaultdict
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional, Tuple, Type,
+    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
 )
 
 import param
@@ -112,7 +112,7 @@ class HoloViews(PaneBase):
         'right_bottom': (Row, 'end', False)
     }
 
-    _panes: ClassVar[Mapping[str, Type[PaneBase]]] = {
+    _panes: ClassVar[Mapping[str, type[PaneBase]]] = {
         'bokeh': Bokeh, 'matplotlib': Matplotlib, 'plotly': Plotly
     }
 
@@ -701,7 +701,7 @@ class Interactive(PaneBase):
         Bokeh model.""")
 
     priority: ClassVar[float | bool | None] = None
-    _ignored_refs: ClassVar[Tuple[str, ...]] = ('object',)
+    _ignored_refs: ClassVar[tuple[str, ...]] = ('object',)
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)

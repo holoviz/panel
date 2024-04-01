@@ -5,9 +5,7 @@ from __future__ import annotations
 
 from base64 import b64encode
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING, ClassVar, List, Mapping, Type,
-)
+from typing import TYPE_CHECKING, ClassVar, Mapping
 
 import param
 
@@ -54,7 +52,7 @@ class VideoStream(Widget):
     value = param.String(default='', doc="""
         A base64 representation of the video stream snapshot.""")
 
-    _widget_type: ClassVar[Type[Model]] = _BkVideoStream
+    _widget_type: ClassVar[type[Model]] = _BkVideoStream
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
 
@@ -149,9 +147,9 @@ class FileDownload(IconMixin):
         'callback': None, 'button_style': None, 'file': None, '_clicks': 'clicks'
     }
 
-    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/button.css']
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/button.css']
 
-    _widget_type: ClassVar[Type[Model]] = _BkFileDownload
+    _widget_type: ClassVar[type[Model]] = _BkFileDownload
 
     def __init__(self, file=None, **params):
         self._default_label = 'label' not in params

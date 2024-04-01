@@ -18,8 +18,7 @@ from collections.abc import Callable
 from contextlib import contextmanager
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Generator, List, Mapping, Optional, Tuple,
-    Type,
+    TYPE_CHECKING, Any, ClassVar, Generator, Mapping, Optional,
 )
 
 import param
@@ -74,7 +73,7 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
 
 
-def SingleFileSelector(pobj: param.Parameter) -> Type[Widget]:
+def SingleFileSelector(pobj: param.Parameter) -> type[Widget]:
     """
     Determines whether to use a TextInput or Select widget for FileSelector
     """
@@ -84,7 +83,7 @@ def SingleFileSelector(pobj: param.Parameter) -> Type[Widget]:
         return TextInput
 
 
-def LiteralInputTyped(pobj: param.Parameter) -> Type[Widget]:
+def LiteralInputTyped(pobj: param.Parameter) -> type[Widget]:
     if isinstance(pobj, param.Tuple):
         return type(str('TupleInput'), (LiteralInput,), {'type': tuple})
     elif isinstance(pobj, param.Number):
@@ -96,7 +95,7 @@ def LiteralInputTyped(pobj: param.Parameter) -> Type[Widget]:
     return LiteralInput
 
 
-def DataFrameWidget(pobj: param.DataFrame) -> Type[Widget]:
+def DataFrameWidget(pobj: param.DataFrame) -> type[Widget]:
     if 'panel.models.tabulator' in sys.modules:
         return Tabulator
     else:
@@ -228,11 +227,11 @@ class Param(PaneBase):
     if hasattr(param, 'Event'):
         mapping[param.Event] = Button
 
-    _ignored_refs: ClassVar[Tuple[str,...]] = ('object',)
+    _ignored_refs: ClassVar[tuple[str,...]] = ('object',)
 
-    _linkable_properties: ClassVar[Tuple[str,...]] = ()
+    _linkable_properties: ClassVar[tuple[str,...]] = ()
 
-    _rerender_params: ClassVar[List[str]] = []
+    _rerender_params: ClassVar[list[str]] = []
 
     _unpack: ClassVar[bool] = True
 

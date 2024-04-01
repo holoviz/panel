@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional, Type,
+    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
 )
 
 import param
@@ -67,14 +67,14 @@ class ChatAreaInput(_PnTextAreaInput):
         Can only be set during initialization.""",
     )
 
-    _widget_type: ClassVar[Type[Model]] = _bkChatAreaInput
+    _widget_type: ClassVar[type[Model]] = _bkChatAreaInput
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         "value": None,
         **_PnTextAreaInput._rename,
     }
 
-    def _get_properties(self, doc: Document) -> Dict[str, Any]:
+    def _get_properties(self, doc: Document) -> dict[str, Any]:
         props = super()._get_properties(doc)
         props.update({"value_input": self.value, "value": self.value})
         return props

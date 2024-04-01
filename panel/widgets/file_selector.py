@@ -8,9 +8,7 @@ import os
 
 from collections import OrderedDict
 from fnmatch import fnmatch
-from typing import (
-    AnyStr, ClassVar, List, Optional, Tuple, Type,
-)
+from typing import AnyStr, ClassVar, Optional
 
 import param
 
@@ -26,7 +24,7 @@ from .input import TextInput
 from .select import CrossSelector
 
 
-def _scan_path(path: str, file_pattern='*') -> Tuple[List[str], List[str]]:
+def _scan_path(path: str, file_pattern='*') -> tuple[list[str], list[str]]:
     """
     Scans the supplied path for files and directories and optionally
     filters the files with the file keyword, returning a list of sorted
@@ -100,7 +98,7 @@ class FileSelector(CompositeWidget):
     value = param.List(default=[], doc="""
         List of selected files.""")
 
-    _composite_type: ClassVar[Type[ListPanel]] = Column
+    _composite_type: ClassVar[type[ListPanel]] = Column
 
     def __init__(self, directory: AnyStr | os.PathLike | None = None, **params):
         from ..pane import Markdown

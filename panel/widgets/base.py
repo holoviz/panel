@@ -8,8 +8,7 @@ from __future__ import annotations
 import math
 
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
-    Tuple, Type, TypeVar,
+    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional, TypeVar,
 )
 
 import param  # type: ignore
@@ -59,7 +58,7 @@ class Widget(Reactive):
     _supports_embed: ClassVar[bool] = False
 
     # Declares the Bokeh model type of the widget
-    _widget_type: ClassVar[Type[Model] | None] = None
+    _widget_type: ClassVar[type[Model] | None] = None
 
     __abstract = True
 
@@ -75,7 +74,7 @@ class Widget(Reactive):
         super().__init__(**params)
 
     @classmethod
-    def from_param(cls: Type[T], parameter: param.Parameter, **params) -> T:
+    def from_param(cls: type[T], parameter: param.Parameter, **params) -> T:
         """
         Construct a widget from a Parameter and link the two
         bi-directionally.
@@ -99,7 +98,7 @@ class Widget(Reactive):
         return layout[0]
 
     @property
-    def _linked_properties(self) -> Tuple[str]:
+    def _linked_properties(self) -> tuple[str]:
         props = list(super()._linked_properties)
         if 'description' in props:
             props.remove('description')
@@ -109,7 +108,7 @@ class Widget(Reactive):
     def rx(self):
         return self.param.value.rx
 
-    def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
         params = super()._process_param_change(params)
         if self._widget_type is not None and 'stylesheets' in params:
             css = getattr(self._widget_type, '__css__', [])
@@ -143,8 +142,8 @@ class Widget(Reactive):
         return model
 
     def _get_embed_state(
-        self, root: 'Model', values: Optional[List[Any]] = None, max_opts: int = 3
-    ) -> Tuple['Widget', 'Model', List[Any], Callable[['Model'], Any], str, str]:
+        self, root: 'Model', values: Optional[list[Any]] = None, max_opts: int = 3
+    ) -> tuple['Widget', 'Model', list[Any], Callable[['Model'], Any], str, str]:
         """
         Returns the bokeh model and a discrete set of value states
         for the widget.
@@ -181,9 +180,9 @@ class CompositeWidget(Widget):
     widgets
     """
 
-    _composite_type: ClassVar[Type[ListPanel]] = Row
+    _composite_type: ClassVar[type[ListPanel]] = Row
 
-    _linked_properties: ClassVar[Tuple[str]] = ()
+    _linked_properties: ClassVar[tuple[str]] = ()
 
     __abstract = True
 
@@ -210,7 +209,7 @@ class CompositeWidget(Widget):
 
     def select(
         self, selector: Optional[type | Callable[['Viewable'], bool]] = None
-    ) -> List[Viewable]:
+    ) -> list[Viewable]:
         """
         Iterates over the Viewable and any potential children in the
         applying the Selector.
@@ -247,7 +246,7 @@ class CompositeWidget(Widget):
         return object in self._composite.objects
 
     @property
-    def _synced_params(self) -> List[str]:
+    def _synced_params(self) -> list[str]:
         return []
 
 

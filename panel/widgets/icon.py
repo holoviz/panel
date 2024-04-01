@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import (
-    Callable, ClassVar, List, Mapping,
-)
+from typing import Callable, ClassVar, Mapping
 
 import param
 
@@ -42,7 +40,7 @@ class _ClickableIcon(Widget):
         'description': None,
     }
 
-    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/icon.css']
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/icon.css']
 
     def __init__(self, **params):
         super().__init__(**params)
