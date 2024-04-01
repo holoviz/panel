@@ -199,7 +199,7 @@ class FileDownload(IconMixin):
                 except TypeError:
                     raise ValueError('Must provide filename if file-like '
                                      'object is provided.') from None
-                label = '%s %s' % (label, filename)
+                label = f'{label} {filename}'
             self.label = label
             self._default_label = True
 
@@ -240,9 +240,9 @@ class FileDownload(IconMixin):
         if stype is None:
             mime = 'application/octet-stream'
         else:
-            mime = '{type}/{subtype}'.format(type=mtype, subtype=stype)
+            mime = f'{mtype}/{stype}'
 
-        data = "data:{mime};base64,{b64}".format(mime=mime, b64=b64)
+        data = f"data:{mime};base64,{b64}"
         self._synced = True
         self.param.update(data=data, filename=filename)
         self._update_label()

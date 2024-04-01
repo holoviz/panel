@@ -401,7 +401,7 @@ class Pipeline(Viewer):
             traceback = msg or "Undefined error, enable debug mode."
         button = Button(name='Error', button_type='danger', width=100,
                         align='center', margin=(0, 0, 0, 5))
-        button.js_on_click(code="alert(`{tb}`)".format(tb=traceback))
+        button.js_on_click(code=f"alert(`{traceback}`)")
         return button
 
     @param.depends('next', watch=True)

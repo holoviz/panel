@@ -923,9 +923,8 @@ class LiteralInput(Widget):
             if event:
                 self.value = event.old
             types = repr(self.type) if isinstance(self.type, tuple) else self.type.__name__
-            raise ValueError('LiteralInput expected %s type but value %s '
-                             'is of type %s.' %
-                             (types, new, type(new).__name__))
+            raise ValueError(f'LiteralInput expected {types} type but value {new} '
+                             f'is of type {type(new).__name__}.')
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
@@ -1103,9 +1102,8 @@ class DatetimeInput(LiteralInput):
             end = datetime.strftime(self.end, self.format)
             if event:
                 self.value = event.old
-            raise ValueError('DatetimeInput value must be between {start} and {end}, '
-                             'supplied value is {value}'.format(start=start, end=end,
-                                                                value=value))
+            raise ValueError(f'DatetimeInput value must be between {start} and {end}, '
+                             f'supplied value is {value}')
 
     def _process_property_change(self, msg):
         msg = Widget._process_property_change(self, msg)

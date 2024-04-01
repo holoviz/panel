@@ -355,11 +355,9 @@ class BaseVTKRenderWindow(AbstractVTK):
     def _rgb2hex(r, g, b):
         int_type = (int, np.integer)
         if isinstance(r, int_type) and isinstance(g, int_type) is isinstance(b, int_type):
-            return "#{0:02x}{1:02x}{2:02x}".format(r, g, b)
+            return f"#{r:02x}{g:02x}{b:02x}"
         else:
-            return "#{0:02x}{1:02x}{2:02x}".format(
-                int(255 * r), int(255 * g), int(255 * b)
-            )
+            return f"#{int(255 * r):02x}{int(255 * g):02x}{int(255 * b):02x}"
 
 
 class VTKRenderWindow(BaseVTKRenderWindow):

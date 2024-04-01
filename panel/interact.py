@@ -202,7 +202,7 @@ class interactive(PaneBase):
         for parameter in sig.parameters.values():
             for name, value, default in _yield_abbreviations_for_parameter(parameter, kwargs):
                 if value is empty:
-                    raise ValueError('cannot find widget or abbreviation for argument: {!r}'.format(name))
+                    raise ValueError(f'cannot find widget or abbreviation for argument: {name!r}')
                 new_kwargs.append((name, value, default))
         return new_kwargs
 
@@ -218,7 +218,7 @@ class interactive(PaneBase):
                 if widget_obj is None:
                     continue
                 else:
-                    raise TypeError("{!r} is not a ValueWidget".format(widget))
+                    raise TypeError(f"{widget!r} is not a ValueWidget")
             result.append((name, widget_obj))
         return result
 
@@ -364,7 +364,7 @@ class _InteractFactory:
         opts = dict(self.opts)
         for k in kwds:
             if k not in opts:
-                raise ValueError("invalid option {!r}".format(k))
+                raise ValueError(f"invalid option {k!r}")
             opts[k] = kwds[k]
         return type(self)(self.cls, opts, self.kwargs)
 

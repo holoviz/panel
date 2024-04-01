@@ -216,7 +216,7 @@ def render_model(
         ipywidget=ipywidget
     )
     bokeh_script, bokeh_div = script, div
-    html = "<div id='{id}'>{html}</div>".format(id=target, html=bokeh_div)
+    html = f"<div id='{target}'>{bokeh_div}</div>"
 
     data = {'text/html': html, 'application/javascript': bokeh_script}
     return ({'text/html': mimebundle_to_html(data), EXEC_MIME: ''},
@@ -274,7 +274,7 @@ def mimebundle_to_html(bundle: Dict[str, Any]) -> str:
     html = data.get('text/html', '')
     if 'application/javascript' in data:
         js = data['application/javascript']
-        html += '\n<script type="application/javascript">{js}</script>'.format(js=js)
+        html += f'\n<script type="application/javascript">{js}</script>'
     return html
 
 

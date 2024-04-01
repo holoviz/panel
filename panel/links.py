@@ -490,7 +490,7 @@ class CallbackGenerator:
         if code is None:
             code = self._get_code(link, source, src_spec[1], target, tgt_spec[1])
         else:
-            code = "try {{ {code} }} catch(err) {{ console.log(err) }}".format(code=code)
+            code = f"try {{ {code} }} catch(err) {{ console.log(err) }}"
 
         src_cb = CustomJS(args=references, code=code, tags=[link_id])
         changes, events = self._get_triggers(link, src_spec)

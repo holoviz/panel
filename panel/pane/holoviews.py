@@ -650,9 +650,8 @@ class HoloViews(PaneBase):
                     widget_type = widget
                 else:
                     raise ValueError('Explicit widget definitions expected '
-                                     'to be a widget instance or type, %s '
-                                     'dimension widget declared as %s.' %
-                                     (dim, widget))
+                                     f'to be a widget instance or type, {dim} '
+                                     f'dimension widget declared as {widget}.')
             widget_kwargs.update(kwargs)
 
             if vals:

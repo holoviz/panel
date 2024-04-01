@@ -209,8 +209,7 @@ class PaneBase(Reactive):
         self.layout.param.update({k: v for k, v in kwargs.items() if v != old_values[k]})
 
     def _type_error(self, object):
-        raise ValueError("%s pane does not support objects of type '%s'." %
-                         (type(self).__name__, type(object).__name__))
+        raise ValueError(f"{type(self).__name__} pane does not support objects of type '{type(object).__name__}'.")
 
     def __repr__(self, depth: int = 0) -> str:
         cls = type(self).__name__

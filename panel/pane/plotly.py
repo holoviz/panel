@@ -127,7 +127,7 @@ class Plotly(ModelPane):
     @staticmethod
     def _get_sources_for_trace(json, data, parent_path=''):
         for key, value in list(json.items()):
-            full_path = key if not parent_path else "{}.{}".format(parent_path, key)
+            full_path = key if not parent_path else f"{parent_path}.{key}"
             if isinstance(value, np.ndarray):
                 # Extract numpy array
                 data[full_path] = [json.pop(key)]

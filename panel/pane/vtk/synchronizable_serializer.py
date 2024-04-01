@@ -293,8 +293,7 @@ def serializeInstance(parent, instance, instanceId, context, depth):
         return serializer(parent, instance, instanceId, context, depth)
 
     if context.debugSerializers:
-        print('%s!!!No serializer for %s with id %s' %
-              (pad(depth), instanceType, instanceId))
+        print(f'{pad(depth)}!!!No serializer for {instanceType} with id {instanceId}')
 
 # -----------------------------------------------------------------------------
 
@@ -405,7 +404,7 @@ def getReferenceId(ref):
             return ref.__this__[1:17]
         except Exception:
             idStr = str(ref)[-12:-1]
-            print('====> fallback ID %s for %s' % (idStr, ref))
+            print(f'====> fallback ID {idStr} for {ref}')
             return idStr
     return '0x0'
 

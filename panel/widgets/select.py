@@ -1148,11 +1148,9 @@ class ToggleGroup(SingleSelectBase):
     def __new__(cls, widget_type='button', behavior='check', **params):
 
         if widget_type not in ToggleGroup._widgets_type:
-            raise ValueError('widget_type {} is not valid. Valid options are {}'
-                             .format(widget_type, ToggleGroup._widgets_type))
+            raise ValueError(f'widget_type {widget_type} is not valid. Valid options are {ToggleGroup._widgets_type}')
         if behavior not in ToggleGroup._behaviors:
-            raise ValueError('behavior {} is not valid. Valid options are {}'
-                             .format(widget_type, ToggleGroup._behaviors))
+            raise ValueError(f'behavior {widget_type} is not valid. Valid options are {ToggleGroup._behaviors}')
 
         if behavior == 'check':
             if widget_type == 'button':

@@ -74,7 +74,7 @@ def _get_fqn(obj):
     the_type = type(obj)
     module = the_type.__module__
     name = the_type.__qualname__
-    return "%s.%s" % (module, name)
+    return f"{module}.{name}"
 
 def _int_to_bytes(i):
     num_bytes = (i.bit_length() + 8) // 8

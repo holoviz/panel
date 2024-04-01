@@ -397,9 +397,8 @@ class ListLike(param.Parameterized):
             if index.start is None and index.stop is None:
                 if not isinstance(panes, list):
                     raise IndexError('Expected a list of objects to '
-                                     'replace the objects in the %s, '
-                                     'got a %s type.' %
-                                     (type(self).__name__, type(panes).__name__))
+                                     f'replace the objects in the {type(self).__name__}, '
+                                     f'got a {type(panes).__name__} type.')
                 expected = len(panes)
                 new_objects = [None]*expected # type: ignore
                 end = expected
@@ -652,9 +651,8 @@ class NamedListLike(param.Parameterized):
             if index.start is None and index.stop is None:
                 if not isinstance(panes, list):
                     raise IndexError('Expected a list of objects to '
-                                     'replace the objects in the %s, '
-                                     'got a %s type.' %
-                                     (type(self).__name__, type(panes).__name__))
+                                     f'replace the objects in the {type(self).__name__}, '
+                                     f'got a {type(panes).__name__} type.')
                 expected = len(panes)
                 new_objects = [None]*expected # type: ignore
                 self._names = [None]*len(panes)

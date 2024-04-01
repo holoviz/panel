@@ -227,7 +227,7 @@ def run_app(handler, module, doc, post_run=None):
 
         # script is supposed to edit the doc not replace it
         if newdoc is not doc:
-            raise RuntimeError("%s at '%s' replaced the output document" % (handler._origin, handler._runner.path))
+            raise RuntimeError(f"{handler._origin} at '{handler._runner.path}' replaced the output document")
 
     try:
         state._launching.append(doc)

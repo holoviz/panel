@@ -156,7 +156,7 @@ def deconstruct_pandas(data, kwargs=None):
         new_names = list(data.index.names)
         for j, val in enumerate(data.index.names):
             if val is None:
-                new_names[j] = "index" if i == 0 else "index-{}".format(i)
+                new_names[j] = "index" if i == 0 else f"index-{i}"
                 i += 1
                 # kwargs['group_by'].append(str(new_names[j]))
             else:
@@ -201,7 +201,7 @@ def deconstruct_pandas(data, kwargs=None):
         new_names = list(data.index.names)
         for j, val in enumerate(data.index.names):
             if val is None:
-                new_names[j] = "index" if i == 0 else "index-{}".format(i)
+                new_names[j] = "index" if i == 0 else f"index-{i}"
                 i += 1
                 if push_row_pivot:
                     kwargs["group_by"].append(str(new_names[j]))

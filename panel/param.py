@@ -292,9 +292,9 @@ class Param(PaneBase):
             elif p == 'object' or (p == 'name' and v.startswith((obj_cls, cls))): continue
             elif p == 'parameters' and v == parameters: continue
             try:
-                params.append('%s=%s' % (p, abbreviated_repr(v)))
+                params.append(f'{p}={abbreviated_repr(v)}')
             except RuntimeError:
-                params.append('%s=%s' % (p, '...'))
+                params.append('{}={}'.format(p, '...'))
         obj = 'None' if self.object is None else '%s' % type(self.object).__name__
         template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
         return template.format(cls=cls, params=', '.join(params), obj=obj)
@@ -708,7 +708,7 @@ class Param(PaneBase):
         if self.expand_layout is Tabs:
             widgets = []
         elif self.show_name:
-            widgets = [('_title', StaticText(value='<b>{0}</b>'.format(self.name)))]
+            widgets = [('_title', StaticText(value=f'<b>{self.name}</b>'))]
         else:
             widgets = []
         widgets += [(pname, self.widget(pname)) for pname in self._ordered_params]
