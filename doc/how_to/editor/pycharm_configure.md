@@ -45,7 +45,7 @@ With the configuration in place, you can now easily `debug` Panel apps via the `
 
 PyCharm Professional offers support for [Jupyter Notebooks](https://www.jetbrains.com/help/pycharm/ipython-notebook-support.html) and [ipywidgets](https://www.jetbrains.com/help/pycharm/interactive-js-widgets.html), enhancing interactive Python development.
 
-To integrate Panel effectively, ensure the installation of `jupyter_bokeh` by executing `pip install jupyter_bokeh` or `conda install -c bokeh jupyter_bokeh`. Subsequently, activate the extension using `pn.extension()`.
+To integrate Panel effectively, ensure the installation of `jupyter_bokeh` by executing `pip install jupyter jupyter_bokeh` or `conda install jupyter jupyter_bokeh`. Subsequently, activate the extension using `pn.extension()`.
 
 Below, observe the implementation of a notebook within the PyCharm Notebook Environment.
 

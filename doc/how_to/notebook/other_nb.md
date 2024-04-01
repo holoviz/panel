@@ -32,7 +32,7 @@ The [IpyWidgets](../../reference/panes/IpyWidget.ipynb) pane does not work in Go
 
 ## PyCharm Notebook
 
-PyCharm Professional offers support for [notebooks](https://www.jetbrains.com/help/pycharm/ipython-notebook-support.html) and [ipywidgets](https://www.jetbrains.com/help/pycharm/interactive-js-widgets.html). Thanks to the [`jupyter_bokeh`](https://github.com/bokeh/jupyter_bokeh) integration, Panel objects can be utilized as ipywidgets, allowing for interactive use of Panel components within PyCharm Professional. To ensure full functionality, install `jupyter_bokeh` using `pip install jupyter_bokeh` or `conda install -c bokeh jupyter_bokeh`, followed by activating the extension with `pn.extension()`.
+PyCharm Professional offers support for [notebooks](https://www.jetbrains.com/help/pycharm/ipython-notebook-support.html) and [ipywidgets](https://www.jetbrains.com/help/pycharm/interactive-js-widgets.html). Thanks to the [`jupyter_bokeh`](https://github.com/bokeh/jupyter_bokeh) integration, Panel objects can be utilized as ipywidgets, allowing for interactive use of Panel components within PyCharm Professional. To ensure full functionality, install `jupyter_bokeh` using `pip install jupyter jupyter_bokeh` or `conda install jupyter jupyter_bokeh`, followed by activating the extension with `pn.extension()`.
 
 For additional guidance, refer to the [How-To Configure PyCharm Guide](../editor/pycharm_configure.md).
 

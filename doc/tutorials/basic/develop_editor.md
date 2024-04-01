@@ -159,8 +159,8 @@ For more advanced techniques and configuration options, check out the resources 
 
 ### How-to
 
-- [Configure PyCharm](../../how_to/editor/vscode_configure.md)
-- [Configure VS Code](../../how_to/editor/pycharm_configure.md)
+- [Configure VS Code](../../how_to/editor/vscode_configure.md)
+- [Configure PyCharm](../../how_to/editor/pycharm_configure.md)
 - [Write Apps in Markdown](../../how_to/editor/markdown.md)
 
 Happy coding! 🚀
