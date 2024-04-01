@@ -289,6 +289,7 @@ Learn about why and how Panel utilizes the Bokeh library.
 :hidden:
 :maxdepth: 2
 
+develop_seamlessly
 apis
 components
 linking
