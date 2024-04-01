@@ -337,7 +337,7 @@ class Link(Callback):
 
 
 
-class CallbackGenerator(object):
+class CallbackGenerator:
 
     error = True
 

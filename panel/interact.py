@@ -233,7 +233,7 @@ class interactive(PaneBase):
         return _InteractFactory(cls, options)
 
 
-class _InteractFactory(object):
+class _InteractFactory:
     """
     Factory for instances of :class:`interactive`.
 

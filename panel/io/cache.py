@@ -55,7 +55,7 @@ if sys.platform == 'win32':
 else:
     _TIME_FN = time.monotonic
 
-class _Stack(object):
+class _Stack:
 
     def __init__(self):
         self._stack = {}
