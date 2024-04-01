@@ -116,7 +116,7 @@ indicators = pn.FlexBox(
     ),
     pn.indicators.Number(
         value=total_capacity / 1e6,
-        name="Total Capacity (TW)",
+        name="Total Capacity (GW)",
         format="{value:,.1f}",
         styles=styles,
     ),
