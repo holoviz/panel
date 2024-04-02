@@ -30,6 +30,7 @@ exclude = [
 ]
 line-length = 165
 fix = true
+target-version = "py39"
 
 [tool.ruff.lint]
 ignore = [
@@ -49,6 +50,15 @@ select = [
     "PIE",
     "T20",
     "RUF006",
+    "UP004",
+    "UP006",
+    "UP020",
+    "UP028",
+    "UP030",
+    "UP031",
+    "UP032",
+    "UP034",
+    "UP036",
 ]
 
 [tool.ruff.lint.per-file-ignores]
