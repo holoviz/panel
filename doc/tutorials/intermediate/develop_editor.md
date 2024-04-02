@@ -105,6 +105,7 @@ You have learned to
 
 ### How-to
 
+- [Configure PyCharm](../../how_to/editor/pycharm_configure.md)
 - [Configure VS Code](../../how_to/editor/vscode_configure.md)
 
 ## Explanation
