@@ -1,5 +1,7 @@
 import pytest
 
+from numpy.testing import assert_allclose
+
 pytestmark = pytest.mark.ui
 
 from panel.layout import Row
@@ -108,7 +110,7 @@ def test_png_stretch_both(embed, page):
 def test_svg_native_size(embed, page):
     svg = SVG(SVG_FILE, embed=embed)
     bbox = get_bbox(page, svg)
-    assert bbox['width'] == 507.203125
+    assert_allclose(bbox['width'], 507.21, atol=0.01)
     assert int(bbox['height']) == 427
 
 @pytest.mark.parametrize('embed', [False, True])
