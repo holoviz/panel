@@ -217,6 +217,15 @@ A large selection of chat applications showcasing Panels chat components.
 A great selection of applications and other resources showcasing various features of Panel.
 :::
 
+:::{grid-item-card} Panel Chat Examples
+:img-top: https://raw.githubusercontent.com/holoviz-topics/panel-chat-examples/main/assets/images/panel-chat-examples-index-page.png
+:link: https://holoviz-topics.github.io/panel-chat-examples/
+:link-type: url
+
+Examples using Panel and its Chat Components; Panels chat components are multi modal and supports LangChain, OpenAI, Mistral, Llama, etc.
+:::
+
+
 :::{grid-item-card} cuxfilter
 :img-top: https://assets.holoviz.org/panel/gallery/community/cuxfilter.png
 :link: https://github.com/rapidsai/cuxfilter
