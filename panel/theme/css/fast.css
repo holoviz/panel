@@ -185,7 +185,6 @@ img {
 
 .card-button {
   display: block;
-  margin-left: 0.5em;
 }
 
 :host(.card-title) h1,
