@@ -55,10 +55,6 @@
   padding: 0px 6px;
 }
 
-.card-header > .card-header-row {
-  margin-left: 15px;
-}
-
 button.mdc-button.mdc-card-button {
   color: transparent;
   height: 50px;
