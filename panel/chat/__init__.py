@@ -36,7 +36,7 @@ from .icon import ChatReactionIcons  # noqa
 from .input import ChatAreaInput  # noqa
 from .interface import ChatInterface  # noqa
 from .message import ChatMessage  # noqa
-from .steps import ChatSteps  # noqa
+from .step import ChatStep, ChatSteps  # noqa
 
 
 def __getattr__(name):
@@ -54,6 +54,7 @@ __all__ = (
     "ChatInterface",
     "ChatMessage",
     "ChatReactionIcons",
+    "ChatStep",
     "ChatSteps",
     "langchain",
 )

@@ -1,4 +1,3 @@
-from contextlib import contextmanager
 from io import BytesIO
 from typing import ClassVar, List, Mapping
 
@@ -10,26 +9,20 @@ from ..pane import Markdown
 from ..pane.image import Image
 from ..pane.markup import HTML
 from ..viewable import Viewable
-from .feed import ChatFeed
-from .interface import ChatInterface
 from .utils import avatar_lookup, stream_to
 
 DEFAULT_STATUS_AVATARS = {
     "pending": "⏳",
+    "running": "🏃",
     "completed": "✅",
     "failed": "❌",
 }
 
 
-class ChatSteps(Card):
+class _ChatStepBase(Card):
 
     status = param.Selector(
-        default="pending", objects=["pending", "completed", "failed"]
-    )
-
-    pending_title = param.String(
-        default="Loading...",
-        doc="Title to display when status is pending",
+        default="pending", objects=["pending", "running", "completed", "failed"]
     )
 
     completed_title = param.String(
@@ -49,33 +42,33 @@ class ChatSteps(Card):
         or a four-tuple (top, right, bottom, left).""",
     )
 
-    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_steps.css"]
-
     _rename: ClassVar[Mapping[str, str | None]] = {
         "default_avatars": None,
-        "pending_title": None,
         "completed_title": None,
         "status": None,
         **Card._rename,
     }
 
     def __init__(self, **params):
+        self._instance = None
         self._avatar_container = Row(
-            align="center"
+            align="center", css_classes=["step-avatar-container"]
         )  # placeholder for avatar; weird alignment issue without
         super().__init__(**params)
-
+        self._render_avatar()
+        self._title_pane = HTML(
+            self.param.title,
+            margin=0,
+            css_classes=["step-title"],
+        )
         self.header = Row(
             self._avatar_container,
-            HTML(
-                self.param.title,
-                margin=0,
-                css_classes=["steps-title"],
-            ),
+            self._title_pane,
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
+            css_classes=["step-header"],
         )
 
-    @param.depends("status", watch=True, on_init=True)
+    @param.depends("status", watch=True)
     def _render_avatar(self):
         """
         Render the avatar pane as some HTML text or Image pane.
@@ -91,7 +84,7 @@ class ChatSteps(Card):
             avatar = self.user[0]
 
         avatar_params = {
-            "css_classes": ["status-avatar"],
+            "css_classes": ["step-avatar"],
             "margin": (0, 5, 0, 0),
             "width": 15,
             "height": 15,
@@ -113,17 +106,6 @@ class ChatSteps(Card):
                 avatar_pane = HTML(avatar, **avatar_params)
         self._avatar_container.objects = [avatar_pane]
 
-    @contextmanager
-    def pending(self, instance: ChatFeed | ChatInterface):
-        instance.stream(self)
-        self.title = self.pending_title
-        yield self
-        self.status = "completed"
-        self.title = (
-            self.completed_title if self.completed_title or not self.objects
-            else self.objects[-1].object
-        )
-
     def stream_title(self, token, replace=False):
         if replace:
             self.title = token
@@ -131,10 +113,68 @@ class ChatSteps(Card):
             self.title += token
         return self.title
 
+    def __enter__(self):
+        self.status = "running"
+        if not self.title:
+            self.title = "Running..."
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.status = "completed"
+        if self.completed_title:
+            self.title = self.completed_title
+        elif self.objects:
+            obj = self.objects[-1]
+            for _ in range(100):
+                if hasattr(obj, "objects"):
+                    obj = obj.objects[-1]
+                else:
+                    break
+
+            if hasattr(obj, "object"):
+                obj = obj.object
+
+            if isinstance(obj, str):
+                self.title = obj
+        else:
+            self.title = "Completed!"
+
+
+class ChatSteps(_ChatStepBase):
+
+    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_steps.css"]
+
+    def step(self, **kwargs):
+        step_ = ChatStep(margin=0, **kwargs)
+        self.append(step_)
+        return step_
+
+    def serialize(self):
+        ...
+
+
+class ChatStep(_ChatStepBase):
+
+    completed_title = param.String(
+        default="Completed!",
+        doc="Title to display when status is completed; if not provided, uses the last object.",
+    )
+
+    collapsed = param.Boolean(
+        default=True,
+        doc="""
+        Whether the contents of the Card are collapsed.""",
+    )
+
+    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_step.css"]
+
     def stream(self, token, replace=False, message=None):
         if message is None:
-            message = Markdown(token, margin=(0, 0), css_classes=["steps-message"])
+            message = Markdown(token, css_classes=["step-message"])
             self.append(message)
         else:
             message = stream_to(message, token, replace=replace)
         return message
+
+    def serialize(self):
+        ...

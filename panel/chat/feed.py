@@ -28,6 +28,7 @@ from ..layout.spacer import VSpacer
 from ..pane.image import SVG
 from .icon import ChatReactionIcons
 from .message import ChatMessage
+from .step import ChatStep, ChatSteps
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -891,3 +892,13 @@ class ChatFeed(ListPanel):
             (callable(selector) and not isinstance(selector, type) and selector(self))):
             selected.append(self)
         return selected + self._card.select(selector)
+
+    def step(self, **kwargs):
+        chat_step = ChatStep(**kwargs)
+        self.stream(chat_step)
+        return chat_step
+
+    def steps(self, **kwargs):
+        chat_steps = ChatSteps(**kwargs)
+        self.stream(chat_steps)
+        return chat_steps

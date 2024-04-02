@@ -1,27 +1,15 @@
-/* inherit from chat_message */
-
-:host(.card) {
-  outline: 0;
-  box-shadow:
-    color-mix(in srgb, var(--panel-shadow-color) 30%, transparent) 0px 1px 2px
-      0px,
-    color-mix(in srgb, var(--panel-shadow-color) 15%, transparent) 0px 1px 3px
-      1px;
-  background-color: var(--panel-surface-color, #f1f1f1);
-  margin-top: 0px;
-}
+@import url('chat_step.css');
 
 :host(.card) .card-header {
-  border-bottom: 0;
+  border-bottom: 1px solid var(--panel-border-color, #e0e0e0);
   padding-block: 15px;
 }
 
-.steps-title {
+.step-title {
   font-size: 1.25em;
 }
 
-.steps-message {
+.step-message {
   width: 100%;
   font-size: 1.25em;
-  border-bottom: 1px solid var(--panel-border-color, #e0e0e0);
 }
