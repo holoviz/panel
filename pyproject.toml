@@ -68,9 +68,6 @@ norecursedirs = "doc .git dist build _build .ipynb_checkpoints panel/examples"
 asyncio_mode = "auto"
 xfail_strict = true
 filterwarnings = [
-    # 2023-11: ChatBox and ChatRow are deprecated
-    "ignore:'pn.widgets.ChatBox' is deprecated and will be removed in version 1.4",
-    "ignore:'pn.widgets.ChatRow' is deprecated and will be removed in version 1.4",
     # 2023-11: `pkg_resources` is deprecated
     "ignore:Deprecated call to `pkg_resources.+?'zope:DeprecationWarning",  # https://github.com/zopefoundation/meta/issues/194
     "ignore: pkg_resources is deprecated as an API:DeprecationWarning:streamz.plugins", # https://github.com/python-streamz/streamz/issues/460
