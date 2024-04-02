@@ -508,7 +508,7 @@ class WebP(ImageBase):
     provided a local path, or will link to a remote image if provided
     a URL.
 
-    Reference: https://developers.google.com/speed/webp/docs/riff_container
+    Reference: https://panel.holoviz.org/reference/panes/WebP.html
 
     :Example:
 

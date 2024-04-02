@@ -33,11 +33,11 @@ fix = true
 
 [tool.ruff.lint]
 ignore = [
-    "E402",
-    "E712",
-    "E731",
-    "E741",
-    "W605",
+    "E402", # Module level import not at top of file
+    "E712", # Avoid equality comparisons to True; use if {cond}: for truth checks
+    "E731", # Do not assign a lambda expression, use a def
+    "E741", # Ambiguous variable name
+    "W605", # Invalid escape sequence
     "E701", # Multiple statements on one line
     "B006", # Do not use mutable data structures for argument defaults
 ]

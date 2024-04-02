@@ -39,7 +39,8 @@ Enjoying Panel? Show your support with a [Github star](https://github.com/holovi
 </tr>
 <tr>
 <td>Docs</td>
-<td><a href="https://github.com/holoviz/panel/tree/gh-pages"><img src="https://img.shields.io/github/last-commit/holoviz/panel/gh-pages.svg" alt="gh-pages"></a> <a href="https://panel.holoviz.org"><img src="https://img.shields.io/website-up-down-green-red/https/panel.holoviz.org.svg" alt="site"></a></td>
+<td><a href="https://github.com/holoviz/panel/tree/gh-pages"><img src="https://img.shields.io/github/last-commit/holoviz/panel/gh-pages.svg" alt="gh-pages"></a> <a href="https://panel.holoviz.org"><img src="https://img.shields.io/website-up-down-green-red/https/panel.holoviz.org.svg" alt="site"></a> <a href="https://holoviz.goatcounter.com/?filter=%2Fpanel.holoviz.org"><img src="https://img.shields.io/badge/GoatCounter-analytics-blue" alt="site"></a>
+</td>
 </tr>
 <tr>
 <td>Notebooks</td>

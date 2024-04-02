@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from bokeh.document import Document
     from pyviz_comms import Comm
 
-    from ..io.location import Location
+    from ...io.location import Location
 
 
 class TemplateEditor(ReactiveHTML):
@@ -71,9 +71,20 @@ class TemplateEditor(ReactiveHTML):
 
 class EditableTemplate(VanillaTemplate):
     """
-    The EditableTemplate builds on top of Muuri and interact.js to
-    allow interactively dragging, resizing and hiding components on a
-    grid.
+    The `EditableTemplate` is a list based template with a header, sidebar, main and modal area.
+    The template allow interactively dragging, resizing and hiding components on a grid.
+
+    The template builds on top of Muuri and interact.js.
+
+    Reference: https://panel.holoviz.org/reference/templates/EditableTemplate.html
+
+    :Example:
+
+    >>> pn.template.EditableTemplate(
+    ...     site="Panel", title="EditableTemplate",
+    ...     sidebar=[pn.pane.Markdown("## Settings"), some_slider],
+    ...     main=[some_python_object]
+    ... ).servable()
     """
 
     editable = param.Boolean(default=True, doc="""
@@ -82,6 +93,9 @@ class EditableTemplate(VanillaTemplate):
     layout = param.Dict(default={}, allow_refs=True, doc="""
       The layout definition of the template indexed by the id of
       each component in the main area.""")
+
+    local_save = param.Boolean(default=True, doc="""
+      Whether to enable saving to local storage.""")
 
     _css = [
         pathlib.Path(__file__).parent.parent / 'vanilla' / "vanilla.css",
@@ -106,12 +120,14 @@ class EditableTemplate(VanillaTemplate):
         }
         self._render_variables['muuri_layout'] = list(layout.values())
         self._render_variables['editable'] = self.editable
+        self._render_variables['local_save'] = self.local_save
+        self._render_variables['loading_spinner'] = config.loading_spinner
         super()._update_vars()
 
     def _init_doc(
         self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
         title: Optional[str] = None, notebook: bool = False,
-        location: bool | Location=True
+        location: bool | Location = True
     ):
         doc = super()._init_doc(doc, comm, title, notebook, location)
         doc.js_on_event('document_ready', CustomJS(code="""

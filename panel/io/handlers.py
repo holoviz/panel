@@ -9,6 +9,7 @@ import pathlib
 import re
 import sys
 import traceback
+import urllib.parse as urlparse
 
 from contextlib import contextmanager
 from types import ModuleType
@@ -527,13 +528,19 @@ class NotebookHandler(PanelCodeHandler):
         config.template = 'editable'
         persist = state._jupyter_kernel_context
         editable = 'editable' in state.session_args
+        reset = 'reset' in state.session_args
         if not (editable or persist):
             state.template.editable = False
         state.template.title = os.path.splitext(os.path.basename(path))[0].title()
 
         layouts, outputs, cells = {}, {}, {}
         for cell_id, out in state._cell_outputs.items():
-            spec = state._cell_layouts[self].get(cell_id, {})
+            if reset:
+                spec = {}
+            elif cell_id in self._layout.get('cells', {}):
+                spec = self._layout['cells'][cell_id]
+            else:
+                spec = state._cell_layouts[self].get(cell_id, {})
             if 'width' in spec and 'height' in spec:
                 sizing_mode = 'stretch_both'
             else:
@@ -545,16 +552,20 @@ class NotebookHandler(PanelCodeHandler):
             for po in pout:
                 po.sizing_mode = sizing_mode
             outputs[cell_id] = pout
-            layouts[id(pout)] = state._cell_layouts[self][cell_id]
+            layouts[id(pout)] = spec
             cells[cell_id] = id(pout)
             pout.servable()
 
         # Reorder outputs based on notebook metadata
         import nbformat
         nb = nbformat.read(self._runner._path, nbformat.NO_CONVERT)
+        if 'order' in self._layout:
+            cell_order = self._layout['order']
+        else:
+            cell_order = nb['metadata'].get('panel-cell-order', [])
         ordered = {}
-        for cell_id in nb['metadata'].get('panel-cell-order', []):
-            if cell_id not in cells:
+        for cell_id in cell_order:
+            if cell_id not in cells or reset:
                 continue
             obj_id = cells[cell_id]
             ordered[obj_id] = layouts[obj_id]
@@ -568,7 +579,17 @@ class NotebookHandler(PanelCodeHandler):
                     ordered[obj_id] = spec
 
         # Set up state
-        state.template.layout = ordered
+        state.template.param.update(
+            layout=ordered,
+            local_save=not bool(state._jupyter_kernel_context)
+        )
+        if reset:
+            def unset_reset():
+                query = state.location.query_params
+                query.pop('reset', None)
+                search = urlparse.urlencode(query)
+                state.location.search = f'?{search}' if search else ''
+            state.onload(unset_reset)
         if persist:
             state.template.param.watch(self._update_position_metadata, 'layout')
         state._session_outputs[doc] = outputs

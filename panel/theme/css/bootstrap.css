@@ -595,6 +595,15 @@ textarea.bk-input {
   --bs-btn-disabled-border-color: #212529;
 }
 
+input[type='file'].bk-input {
+  padding-left: 10px;
+}
+
+input[type='file']::file-selector-button {
+  background: var(--bs-surface-bg);
+  color: var(--bs-surface-color);
+}
+
 .bk-menu {
   background-color: var(--bs-form-control-bg);
   color: var(--bs-form-control-color);
