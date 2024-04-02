@@ -5,9 +5,7 @@
   box-shadow: none;
   background-color: var(--panel-surface-color, #f1f1f1);
   margin-top: 0px;
-  width: fit-content;
-  max-width: fit-content;
-  min-width: 200px;
+  width: 100%;
 }
 
 :host(.card) .card-header {

@@ -9,13 +9,14 @@ from ..pane import Markdown
 from ..pane.image import Image
 from ..pane.markup import HTML
 from ..viewable import Viewable
+from ..widgets.indicators import BooleanStatus, LoadingSpinner
 from .utils import avatar_lookup, stream_to
 
 DEFAULT_STATUS_AVATARS = {
-    "pending": "⏳",
-    "running": "🏃",
-    "completed": "✅",
-    "failed": "❌",
+    "pending": BooleanStatus(value=False, margin=0, color="warning"),
+    "running": LoadingSpinner(value=True, margin=0),
+    "completed":BooleanStatus(value=True, margin=0, color="success"),
+    "failed": BooleanStatus(value=False, margin=0, color="danger")
 }
 
 
@@ -138,19 +139,7 @@ class _ChatStepBase(Card):
                 self.title = obj
         else:
             self.title = "Completed!"
-
-
-class ChatSteps(_ChatStepBase):
-
-    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_steps.css"]
-
-    def step(self, **kwargs):
-        step_ = ChatStep(margin=0, **kwargs)
-        self.append(step_)
-        return step_
-
-    def serialize(self):
-        ...
+        self.collapsed = True
 
 
 class ChatStep(_ChatStepBase):
@@ -175,6 +164,22 @@ class ChatStep(_ChatStepBase):
         else:
             message = stream_to(message, token, replace=replace)
         return message
+
+    def serialize(self):
+        ...
+
+
+class ChatSteps(_ChatStepBase):
+
+    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_steps.css"]
+
+    def step(self, chat_step: ChatStep | None = None, **kwargs):
+        if chat_step is None:
+            chat_step = ChatStep(margin=0, **kwargs)
+        for kwarg in kwargs:
+            setattr(chat_step, kwarg, kwargs[kwarg])
+        self.append(chat_step)
+        return chat_step
 
     def serialize(self):
         ...
