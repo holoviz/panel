@@ -327,7 +327,7 @@ def initializeSerializers():
         'vtkOpenGLGlyph3DMapper', glyph3DMapperSerializer)
 
     # LookupTables/TransferFunctions
-    registerInstanceSerializer('vtkLookupTable', lookupTableSerializer)
+    registerInstanceSerializer('vtkLookupTable', lookupTableSerializer2)
     registerInstanceSerializer(
         'vtkPVDiscretizableColorTransferFunction', colorTransferFunctionSerializer)
     registerInstanceSerializer(
