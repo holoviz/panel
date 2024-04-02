@@ -1359,12 +1359,12 @@ class CrossSelector(CompositeWidget, MultiSelect):
         """
         selected = event.obj is self._buttons[True]
 
-        new = {(k, self._items[k]) for k in self._selections[not selected]}
+        new = {k: self._items[k] for k in self._selections[not selected]}
         old = self._lists[selected].options
         other = self._lists[not selected].options
 
-        merged ={(k, k) for k in list(old)+list(new)}
-        leftovers = {(k, k) for k in other if k not in new}
+        merged = {k: k for k in list(old)+list(new)}
+        leftovers = {k: k for k in other if k not in new}
         self._lists[selected].options = merged if merged else {}
         self._lists[not selected].options = leftovers if leftovers else {}
         if len(self._lists[True].options):
