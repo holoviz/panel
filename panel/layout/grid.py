@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import math
 
-from collections import OrderedDict, namedtuple
+from collections import namedtuple
 from functools import partial
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, Tuple,
@@ -287,7 +287,7 @@ class GridSpec(Panel):
 
     def __init__(self, **params):
         if 'objects' not in params:
-            params['objects'] = OrderedDict()
+            params['objects'] = {}
         super().__init__(**params)
         self._updating = False
         self._update_nrows()
@@ -462,7 +462,7 @@ class GridSpec(Panel):
 
         subgrid = self._object_grid[yidx, xidx]
         if isinstance(subgrid, np.ndarray):
-            deleted = OrderedDict([list(o)[0] for o in subgrid.flatten()])
+            deleted = dict([list(o)[0] for o in subgrid.flatten()])
         else:
             deleted = [list(subgrid)[0][0]]
         for key in deleted:
@@ -477,7 +477,7 @@ class GridSpec(Panel):
 
         subgrid = self._object_grid[yidx, xidx]
         if isinstance(subgrid, np.ndarray):
-            objects = OrderedDict([list(o)[0] for o in subgrid.flatten()])
+            objects = dict([list(o)[0] for o in subgrid.flatten()])
             gspec = self.clone(objects=objects)
             xoff, yoff = gspec._xoffset, gspec._yoffset
             adjusted = []
@@ -488,7 +488,7 @@ class GridSpec(Panel):
                 if x1 is not None: x1 -= xoff
                 if ((y0, x0, y1, x1), obj) not in adjusted:
                     adjusted.append(((y0, x0, y1, x1), obj))
-            gspec.objects = OrderedDict(adjusted)
+            gspec.objects = dict(adjusted)
             width_scale = gspec.ncols/float(self.ncols)
             height_scale = gspec.nrows/float(self.nrows)
             if gspec.width:
@@ -535,7 +535,7 @@ class GridSpec(Panel):
 
         key = (y0, x0, y1, x1)
         overlap = key in self.objects
-        clone = self.clone(objects=OrderedDict(self.objects), mode='override')
+        clone = self.clone(objects=dict(self.objects), mode='override')
         if not overlap:
             clone.objects[key] = panel(obj)
             clone._update_grid_size()
@@ -545,7 +545,7 @@ class GridSpec(Panel):
             grid[t:b, l:r] += 1
 
         overlap_grid = grid > 1
-        new_objects = OrderedDict(self.objects)
+        new_objects = dict(self.objects)
         if overlap_grid.any():
             overlapping = ''
             objects = []
