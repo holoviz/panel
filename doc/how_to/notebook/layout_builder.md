@@ -149,3 +149,9 @@ panel serve notebook.ipynb
 ```
 
 This command will automatically restore the persisted layout data from the notebook.
+
+## References
+
+### Component Gallery
+
+- [EditableTemplate](../../reference/templates/EditableTemplate.ipynb)
