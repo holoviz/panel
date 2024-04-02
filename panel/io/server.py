@@ -15,7 +15,6 @@ import sys
 import threading
 import uuid
 
-from collections import OrderedDict
 from contextlib import contextmanager
 from functools import partial, wraps
 from html import escape
@@ -192,7 +191,7 @@ def _initialize_session_info(session_context: 'BokehSessionContext'):
     state.session_info['total'] += 1
     if history > 0 and len(sessions) >= history:
         old_history = list(sessions.items())
-        sessions = OrderedDict(old_history[-(history-1):])
+        sessions = dict(old_history[-(history-1):])
         state.session_info['sessions'] = sessions
     sessions[session_id] = {
         'launched': dt.datetime.now().timestamp(),

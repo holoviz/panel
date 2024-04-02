@@ -10,7 +10,6 @@ import sys
 import uuid
 import warnings
 
-from collections import OrderedDict
 from contextlib import contextmanager
 from functools import partial
 from typing import (
@@ -176,7 +175,7 @@ def render_template(
     # the custom template may not reference it
     if manager:
         item = render_items[0]
-        item.roots._roots = OrderedDict(list(item.roots._roots.items())[:-1])
+        item.roots._roots = dict(list(item.roots._roots.items())[:-1])
 
     html = html_for_render_items(
         docs_json, render_items, template=document.template,
