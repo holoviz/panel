@@ -24,7 +24,7 @@ packaging==20.0
 pandas==0.25.3
 panel==0.9.3
 param==1.9.3
-Pillow==10.2.0
+Pillow==10.3.0
 pyasn1==0.4.8
 pyasn1-modules==0.2.7
 pycparser==2.19
