@@ -32,8 +32,6 @@ export class ChatAreaInputView extends PnTextAreaInputView {
 
     this.el.addEventListener("keydown", (event) => {
       if (event.key === "Enter" && (event.ctrlKey != this.model.enter_sends)) {
-        // i.e., (event.key === "Enter" && ((!event.ctrlKey &&  this.model.enter_sends)   // Enter      sends message
-        //                                 ||(event.ctrlKey && !this.model.enter_sends))  // Ctrl-Enter sends message
         if (!this.model.disabled_enter) {
           this.model.trigger_event(new ChatMessageEvent(this.model.value_input))
           this.model.value_input = ""
