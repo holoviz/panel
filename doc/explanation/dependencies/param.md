@@ -99,7 +99,7 @@ class P(param.Parameterized):
 The class `B` below is created with 4 *Parameters*:
 
 - `t` is a `Number` *Parameter* that only accepts Python `int` and `float` values.
-- `i` is an `Integer` *Parameter* that only accepts Python `int` values and that must be within the interval `[5, 10]`
+- `i` is an `Integer` *Parameter* that only accepts Python `int` values and that must be within the interval `[5, 15]`
 - `s` is a `String` *Parameter* that only accepts Python `str` values and is documented with `doc`.
 - `option` is a `Selector` *Parameter* that only accepts one of the values listed in `objects`.
 
