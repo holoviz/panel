@@ -143,7 +143,7 @@ If you also want to run the UI tests you'll need to install pytest-playwright wi
 conda install pytest-playwright -c microsoft -c conda-forge
 ```
 
-or with `pip`:
+or with `pip` (if you prefer it, or if there's no conda package found for your platform):
 
 ``` bash
 pip install pytest-playwright

@@ -5,6 +5,14 @@ import type * as p from "@bokehjs/core/properties"
 
 import card_css from "styles/models/card.css"
 
+const CHEVRON_RIGHT = `
+<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-right"><path stroke="none" d="M0 0h12v12H0z" fill="none"/><path d="M9 6l6 6l-6 6" /></svg>
+`
+
+const CHEVRON_DOWN = `
+<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-down"><path stroke="none" d="M0 0h12v12H0z" fill="none"/><path d="M6 9l6 6l6 -6" /></svg>
+`
+
 export class CardView extends ColumnView {
   declare model: Card
 
@@ -73,7 +81,7 @@ export class CardView extends ColumnView {
     if (this.model.collapsible) {
       this.button_el = DOM.createElement("button", {type: "button", class: header_css_classes})
       const icon = DOM.createElement("div", {class: button_css_classes})
-      icon.innerHTML = this.model.collapsed ? "\u25ba" : "\u25bc"
+      icon.innerHTML = this.model.collapsed ? CHEVRON_RIGHT : CHEVRON_DOWN
       this.button_el.appendChild(icon)
       this.button_el.style.backgroundColor = header_background != null ? header_background : ""
       header.el.style.backgroundColor = header_background != null ? header_background : ""
@@ -136,7 +144,7 @@ export class CardView extends ColumnView {
     } else {
       this.collapsed_style.clear()
     }
-    this.button_el.children[0].innerHTML = this.model.collapsed ? "\u25ba" : "\u25bc"
+    this.button_el.children[0].innerHTML = this.model.collapsed ? CHEVRON_RIGHT : CHEVRON_DOWN
     this.invalidate_layout()
   }
 

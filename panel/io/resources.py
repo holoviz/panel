@@ -14,7 +14,6 @@ import pathlib
 import re
 import textwrap
 
-from collections import OrderedDict
 from contextlib import contextmanager
 from functools import lru_cache
 from pathlib import Path
@@ -67,7 +66,7 @@ def get_env():
     ]))
 
 def conffilter(value):
-    return json.dumps(OrderedDict(value)).replace('"', '\'')
+    return json.dumps(dict(value)).replace('"', '\'')
 
 class json_dumps(json.JSONEncoder):
     def default(self, obj):

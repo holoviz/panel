@@ -20,13 +20,13 @@ def accordion_components():
 
 
 def is_collapsed(card_object, card_content):
-    expect(card_object).to_contain_text("\u25ba")
+    expect(card_object.locator('svg')).to_have_class("icon icon-tabler icons-tabler-outline icon-tabler-chevron-right")
     expect(card_object).not_to_contain_text(card_content)
     return True
 
 
 def is_expanded(card_object, card_content):
-    expect(card_object).to_contain_text("\u25bc")
+    expect(card_object.locator('svg')).to_have_class("icon icon-tabler icons-tabler-outline icon-tabler-chevron-down")
     expect(card_object).to_contain_text(card_content)
     return True
 

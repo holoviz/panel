@@ -9,6 +9,7 @@ import pathlib
 import re
 import sys
 import traceback
+import urllib.parse as urlparse
 
 from contextlib import contextmanager
 from types import ModuleType
@@ -25,6 +26,7 @@ from bokeh.io.doc import curdoc, patch_curdoc, set_curdoc as bk_set_curdoc
 from bokeh.util.dependencies import import_required
 
 from ..config import config
+from .mime_render import MIME_RENDERERS
 from .profile import profile_ctx
 from .reload import record_modules
 from .state import state
@@ -33,6 +35,20 @@ log = logging.getLogger('panel.io.handlers')
 
 CELL_DISPLAY = []
 
+
+@contextmanager
+def _patch_ipython_display():
+    try:
+        import IPython
+        _orig_display = IPython.display
+        IPython.display.display = display
+    except Exception:
+        pass
+    yield
+    try:
+        IPython.display.display = _orig_display
+    except Exception:
+        pass
 
 @contextmanager
 def _monkeypatch_io(loggers: dict[str, Callable[..., None]]) -> dict[str, Any]:
@@ -65,7 +81,17 @@ def get_figure():
         return fig
 
 def display(*args, **kwargs):
-    CELL_DISPLAY.extend(args)
+    if kwargs.get('raw'):
+        for arg in args:
+            for mime_type in arg:
+                if mime_type in MIME_RENDERERS:
+                    out = MIME_RENDERERS[mime_type](arg[mime_type], {}, mime_type)
+                    CELL_DISPLAY.append(out)
+                    break
+            else:
+                CELL_DISPLAY.append(arg)
+    else:
+        CELL_DISPLAY.extend(args)
 
 def extract_code(
     filehandle: IO, supported_syntax: tuple[str, ...] = ('{pyodide}', 'python')
@@ -506,6 +532,17 @@ class NotebookHandler(PanelCodeHandler):
             self._layout = {}
         return self._layout
 
+    def _compute_layout(self, spec, panels):
+        from ..pane import Plotly
+        params = {}
+        if 'width' in spec and 'height' in spec:
+            params['sizing_mode'] = 'stretch_both'
+        else:
+            params['sizing_mode'] = 'stretch_width'
+            if len(panels) == 1 and isinstance(panels[0], Plotly):
+                params['min_height'] = 300
+        return params
+
     def _render_template(self, doc, path):
         """Renders template containing cell outputs.
 
@@ -522,31 +559,29 @@ class NotebookHandler(PanelCodeHandler):
         """
         from ..config import config
         from ..layout import Column
+        from ..pane import panel
         from .state import state
 
         config.template = 'editable'
         persist = state._jupyter_kernel_context
         editable = 'editable' in state.session_args
+        reset = 'reset' in state.session_args
         if not (editable or persist):
             state.template.editable = False
         state.template.title = os.path.splitext(os.path.basename(path))[0].title()
 
         layouts, outputs, cells = {}, {}, {}
-        for cell_id, out in state._cell_outputs.items():
-            if cell_id in self._layout.get('cells', {}):
+        for cell_id, objects in state._cell_outputs.items():
+            if reset:
+                spec = {}
+            elif cell_id in self._layout.get('cells', {}):
                 spec = self._layout['cells'][cell_id]
             else:
                 spec = state._cell_layouts[self].get(cell_id, {})
-            if 'width' in spec and 'height' in spec:
-                sizing_mode = 'stretch_both'
-            else:
-                sizing_mode = 'stretch_width'
-            pout = Column(
-                *(o for o in out if o is not None),
-                sizing_mode=sizing_mode
-            )
+            panels = [panel(obj) for obj in objects if obj is not None]
+            pout = Column(*panels, **self._compute_layout(spec, panels))
             for po in pout:
-                po.sizing_mode = sizing_mode
+                po.sizing_mode = pout.sizing_mode
             outputs[cell_id] = pout
             layouts[id(pout)] = spec
             cells[cell_id] = id(pout)
@@ -561,7 +596,7 @@ class NotebookHandler(PanelCodeHandler):
             cell_order = nb['metadata'].get('panel-cell-order', [])
         ordered = {}
         for cell_id in cell_order:
-            if cell_id not in cells:
+            if cell_id not in cells or reset:
                 continue
             obj_id = cells[cell_id]
             ordered[obj_id] = layouts[obj_id]
@@ -579,6 +614,13 @@ class NotebookHandler(PanelCodeHandler):
             layout=ordered,
             local_save=not bool(state._jupyter_kernel_context)
         )
+        if reset:
+            def unset_reset():
+                query = state.location.query_params
+                query.pop('reset', None)
+                search = urlparse.urlencode(query)
+                state.location.search = f'?{search}' if search else ''
+            state.onload(unset_reset)
         if persist:
             state.template.param.watch(self._update_position_metadata, 'layout')
         state._session_outputs[doc] = outputs
@@ -616,8 +658,9 @@ class NotebookHandler(PanelCodeHandler):
                 self._render_template(doc, path)
             state._cell_outputs.clear()
 
-        with set_env_vars(MPLBACKEND='agg'):
-            run_app(self, module, doc, post_run)
+        with _patch_ipython_display():
+            with set_env_vars(MPLBACKEND='agg'):
+                run_app(self, module, doc, post_run)
 
     def _update_position_metadata(self, event):
         """

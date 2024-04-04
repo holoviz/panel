@@ -75,7 +75,7 @@ def test_panes_are_in_reference_gallery():
 def find_indexed(index):
     indexed = []
     toctree = False
-    for line in index.read_text().split('\n'):
+    for line in index.read_text(encoding="utf-8").split('\n'):
         if line == '```{toctree}':
             toctree = True
         elif not toctree:

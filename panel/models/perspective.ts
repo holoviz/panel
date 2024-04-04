@@ -1,9 +1,12 @@
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
+import type {StyleSheetLike} from "@bokehjs/core/dom"
 import {div} from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 import type {Attrs} from "@bokehjs/core/types"
+
+import perspective_css from "styles/models/perspective.css"
 
 const THEMES: any = {
   "pro-dark": "Pro Dark",
@@ -150,6 +153,10 @@ export class PerspectiveView extends HTMLBoxView {
   override remove(): void {
     this.perspective_element.delete(() => this.worker.terminate())
     super.remove()
+  }
+
+  override stylesheets(): StyleSheetLike[] {
+    return [...super.stylesheets(), perspective_css]
   }
 
   override render(): void {

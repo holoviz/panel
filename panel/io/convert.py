@@ -13,10 +13,10 @@ from typing import (
 
 import bokeh
 
-from bokeh.application.application import Application, SessionContext
+from bokeh.application.application import SessionContext
 from bokeh.application.handlers.code import CodeHandler
 from bokeh.core.json_encoder import serialize_json
-from bokeh.core.templates import MACROS, get_env
+from bokeh.core.templates import FILE, MACROS, get_env
 from bokeh.document import Document
 from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import RenderItem, standalone_docs_json_and_render_items
@@ -25,7 +25,7 @@ from bokeh.util.serialization import make_id
 
 from .. import __version__, config
 from ..util import base_version, escape
-from .application import build_single_handler_application
+from .application import Application, build_single_handler_application
 from .loading import LOADING_INDICATOR_CSS_CLASS
 from .mime_render import find_requirements
 from .resources import (
@@ -332,8 +332,23 @@ def script_to_html(
         )
         render_items = [render_item]
 
+    # Prepare template
+    template = document.template
+    if template is None:
+        template = BASE_TEMPLATE
+    elif isinstance(template, str):
+        template = get_env().from_string("{% extends base %}\n" + template)
+
     # Collect resources
     resources = Resources(mode='inline' if inline else 'cdn')
+    if template in (BASE_TEMPLATE, FILE):
+        # Add loading.css if not served from Panel template
+        if inline:
+            loading_base = (DIST_DIR / "css" / "loading.css").read_text(encoding='utf-8')
+            loading_style = f'<style type="text/css">\n{loading_base}\n</style>'
+        else:
+            loading_style = f'<link rel="stylesheet" href="{CDN_DIST}css/loading.css" type="text/css" />'
+    css_resources.append(loading_style)
     spinner_css = loading_css(
         config.loading_spinner, config.loading_color, config.loading_max_height
     )
@@ -347,7 +362,6 @@ def script_to_html(
     bokeh_css = '\n'.join([bokeh_css]+css_resources)
 
     # Configure template
-    template = document.template
     template_variables = document._template_variables
     context = template_variables.copy()
     context.update(dict(
@@ -365,10 +379,6 @@ def script_to_html(
     ))
 
     # Render
-    if template is None:
-        template = BASE_TEMPLATE
-    elif isinstance(template, str):
-        template = get_env().from_string("{% extends base %}\n" + template)
     html = template.render(context)
     html = (html
         .replace('<body>', f'<body class="{LOADING_INDICATOR_CSS_CLASS} pn-{config.loading_spinner}">')

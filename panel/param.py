@@ -13,7 +13,7 @@ import sys
 import textwrap
 import types
 
-from collections import OrderedDict, defaultdict, namedtuple
+from collections import defaultdict, namedtuple
 from collections.abc import Callable
 from contextlib import contextmanager
 from functools import partial
@@ -712,7 +712,7 @@ class Param(PaneBase):
         else:
             widgets = []
         widgets += [(pname, self.widget(pname)) for pname in self._ordered_params]
-        return OrderedDict(widgets)
+        return dict(widgets)
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,

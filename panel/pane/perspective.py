@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
-    from ..model.perspective import PerspectiveClickEvent
+    from ..models.perspective import PerspectiveClickEvent
 
 DEFAULT_THEME = "pro"
 

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import sys
 
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 from functools import partial
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Mapping, Optional, Tuple, Type,
@@ -606,7 +606,7 @@ class HoloViews(PaneBase):
 
         nframes = 1
         values = {} if dynamic else dict(zip(dims, zip(*keys)))
-        dim_values = OrderedDict()
+        dim_values = {}
         widgets = []
         dims = [d for d in dims if values.get(d) is not None or
                 d.values or d.range != (None, None)]
@@ -659,7 +659,7 @@ class HoloViews(PaneBase):
                 if all(isnumeric(v) or isinstance(v, datetime_types) for v in vals) and len(vals) > 1:
                     vals = sorted(vals)
                     labels = [str(dim.pprint_value(v)) for v in vals]
-                    options = OrderedDict(zip(labels, vals))
+                    options = dict(zip(labels, vals))
                     widget_type = widget_type or DiscreteSlider
                 else:
                     options = list(vals)

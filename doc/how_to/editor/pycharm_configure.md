@@ -40,3 +40,13 @@ With the configuration in place, you can now easily `run` Panel apps via the `pa
 With the configuration in place, you can now easily `debug` Panel apps via the `panel serve` configuration. The picture below shows debugging in action, where a breakpoint is hit when the Button is clicked.
 
 ![Debug Panel App in PyCharm](../../_static/images/pycharm-debug-panel.png)
+
+## Notebook Environment
+
+PyCharm Professional offers support for [Jupyter Notebooks](https://www.jetbrains.com/help/pycharm/ipython-notebook-support.html) and [ipywidgets](https://www.jetbrains.com/help/pycharm/interactive-js-widgets.html), enhancing interactive Python development.
+
+To integrate Panel effectively, ensure the installation of `jupyter_bokeh` by executing `pip install jupyter jupyter_bokeh` or `conda install jupyter jupyter_bokeh`. Subsequently, activate the extension using `pn.extension()`.
+
+Below, observe the implementation of a notebook within the PyCharm Notebook Environment.
+
+![Panel in PyCharm Notebook Environment](../../_static/images/pycharm-notebook.png)
