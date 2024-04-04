@@ -19,7 +19,6 @@ from typing import (
 )
 
 from bokeh.application.application import SessionContext
-from bokeh.core.serialization import Serializable
 from bokeh.document.document import Document
 from bokeh.document.events import (
     ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
@@ -49,6 +48,7 @@ DISPATCH_EVENTS = (
 )
 GC_DEBOUNCE = 5
 _WRITE_LOCK = None
+_WRITE_FUTURES = weakref.WeakKeyDictionary()
 
 def WRITE_LOCK():
     global _WRITE_LOCK
@@ -138,19 +138,29 @@ def _cleanup_doc(doc, destroy=True):
     # Destroy document
     doc.destroy(None)
 
-async def _run_write_futures(futures):
+async def _run_write_futures(doc):
     """
     Ensure that all write_message calls are awaited and handled.
     """
     from tornado.websocket import WebSocketClosedError
+    remaining = {}
     async with WRITE_LOCK():
-        for future in futures:
-            try:
-                await future
-            except WebSocketClosedError:
-                logger.warning("Failed sending message as connection was closed")
-            except Exception as e:
-                logger.warning(f"Failed sending message due to following error: {e}")
+        for conn, futures in _WRITE_FUTURES.pop(doc, {}).items():
+            socket = conn._socket
+            if hasattr(socket, 'write_lock') and socket.write_lock._block._value == 0:
+                remaining[conn] = futures
+                continue
+            for future in futures:
+                try:
+                    await future
+                except WebSocketClosedError:
+                    logger.warning("Failed sending message as connection was closed")
+                except Exception as e:
+                    logger.warning(f"Failed sending message due to following error: {e}")
+    if remaining:
+        _WRITE_FUTURES[doc] = remaining
+        await asyncio.sleep(0.01)
+        await _run_write_futures(doc)
 
 def _dispatch_write_task(doc, func, *args, **kwargs):
     """
@@ -162,28 +172,6 @@ def _dispatch_write_task(doc, func, *args, **kwargs):
         task.add_done_callback(_cleanup_task)
     except RuntimeError:
         doc.add_next_tick_callback(partial(func, *args, **kwargs))
-
-async def _dispatch_msgs(doc, msgs):
-    """
-    Writes messages to a socket, ensuring that the write_lock is not
-    set, otherwise re-schedules the write task on the event loop.
-    """
-    from tornado.websocket import WebSocketHandler
-    remaining = {}
-    for conn, msg in msgs.items():
-        socket = conn._socket
-        if hasattr(socket, 'write_lock') and socket.write_lock._block._value == 0:
-            remaining[conn] = msg
-            continue
-        if isinstance(conn._socket, WebSocketHandler):
-            futures = dispatch_tornado(conn, msg=msg)
-        else:
-            futures = dispatch_django(conn, msg=msg)
-        await _run_write_futures(futures)
-    if not remaining:
-        return
-    await asyncio.sleep(0.01)
-    _dispatch_write_task(doc, _dispatch_msgs, doc, remaining)
 
 def _garbage_collect():
     if (new_time:= time.monotonic()-_panel_last_cleanup) < GC_DEBOUNCE:
@@ -383,36 +371,34 @@ def unlocked() -> Iterator:
     remaining_events, dispatch_events = [], []
     try:
         yield
-        locked = False
-        for conn in connections:
-            socket = conn._socket
-            if hasattr(socket, 'write_lock') and socket.write_lock._block._value == 0:
-                locked = True
-                break
-
         events = curdoc.callbacks._held_events
         curdoc.callbacks._held_events = []
         monkeypatch_events(events)
         for event in events:
-            if isinstance(event, DISPATCH_EVENTS) and not locked:
+            if isinstance(event, DISPATCH_EVENTS):
                 dispatch_events.append(event)
             else:
                 remaining_events.append(event)
 
-        futures = []
+        send = False
         for conn in connections:
             if not dispatch_events:
                 continue
             elif isinstance(conn._socket, WebSocketHandler):
-                futures += dispatch_tornado(conn, dispatch_events)
+                futures = dispatch_tornado(conn, dispatch_events)
             else:
-                futures += dispatch_django(conn, dispatch_events)
+                futures = dispatch_django(conn, dispatch_events)
+            send |= bool(futures)
+            if curdoc in _WRITE_FUTURES:
+                _WRITE_FUTURES[curdoc][conn].extend(futures)
+            else:
+                _WRITE_FUTURES[curdoc] = {conn: futures}
 
-        if futures:
+        if send:
             if state._unblocked(curdoc):
-                _dispatch_write_task(curdoc, _run_write_futures, futures)
+                _dispatch_write_task(curdoc, _run_write_futures, curdoc)
             else:
-                curdoc.add_next_tick_callback(partial(_run_write_futures, futures))
+                curdoc.add_next_tick_callback(partial(_run_write_futures, curdoc))
     except Exception as e:
         # If we error out during the yield, there won't be any events
         # captured so we end up simply calling curdoc.unhold() and
@@ -425,24 +411,7 @@ def unlocked() -> Iterator:
             remaining_events = events
         raise e
     finally:
-        # If for whatever reasons there are still events that couldn't
-        # be dispatched we create a protocol message for these immediately
-        # and then schedule a task to write the message to the websocket
-        # on the next iteration of the event loop.
-        if remaining_events:
-            # Separate serializable and non-serializable events
-            leftover_events = [e for e in remaining_events if not isinstance(e, Serializable)]
-            remaining_events = [e for e in remaining_events if isinstance(e, Serializable)]
-
-            # Create messages for remaining events
-            msgs = {}
-            for conn in connections:
-                if not remaining_events:
-                    continue
-                # Create a protocol message for any events that cannot be immediately dispatched
-                msgs[conn] = conn.protocol.create('PATCH-DOC', remaining_events)
-            _dispatch_write_task(curdoc, _dispatch_msgs, curdoc, msgs)
-            curdoc.callbacks._held_events += leftover_events
+        curdoc.callbacks._held_events += remaining_events
         curdoc.unhold()
 
 @contextmanager
