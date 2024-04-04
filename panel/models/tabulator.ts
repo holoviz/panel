@@ -853,7 +853,7 @@ export class DataTabulatorView extends HTMLBoxView {
           tab_column.formatter = "tickCross"
         } else {
           tab_column.formatter = (cell: any) => {
-	    const row = cell.getRow()
+            const row = cell.getRow()
             const formatted = column.formatter.doFormat(cell.getRow(), cell, cell.getValue(), null, row.getData())
             if (column.formatter.type === "HTMLTemplateFormatter") {
               return formatted
