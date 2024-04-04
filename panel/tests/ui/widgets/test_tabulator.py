@@ -383,6 +383,23 @@ def test_tabulator_formatters_bokeh_string(page, df_mixed):
     )
 
 
+def test_tabulator_formatters_bokeh_html_multiple_columns(page, df_mixed):
+    htmlfmt = HTMLTemplateFormatter(
+        template='<p class="html-format"><%= str %> <%= bool %></p>'
+    )
+    widget = Tabulator(df_mixed, formatters={'str': htmlfmt})
+
+    serve_component(page, widget)
+
+    # The BooleanFormatter renders with svg icons.
+    cells = page.locator(".tabulator-cell .html-format")
+    expect(cells).to_have_count(len(df_mixed))
+
+    for i, (_, row) in enumerate(df_mixed.iterrows()):
+
+        expect(cells.nth(i)).to_have_text(f"{row['str']} {str(row['bool']).lower()}")
+
+
 def test_tabulator_formatters_bokeh_html(page, df_mixed):
     widget = Tabulator(
         df_mixed,
