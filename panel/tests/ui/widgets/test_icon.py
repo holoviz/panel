@@ -363,3 +363,16 @@ def test_button_icon_name_dynamically(page):
     button.size = "2em"
     # check size
     assert page.locator(".bk-IconLabel").bounding_box()["width"] >= 40
+
+
+def test_button_icon_description_dynamically(page):
+    button = ButtonIcon(description="Like")
+    serve_component(page, button)
+
+    assert button.description == "Like"
+    page.locator(".bk-TablerIcon").click()
+    assert page.locator(".bk-tooltip-content").text_content() == "Like"
+
+    button.description = "Dislike"
+    page.locator(".bk-TablerIcon").click()
+    assert page.locator(".bk-tooltip-content").text_content() == "Dislike"
