@@ -48,7 +48,7 @@ DISPATCH_EVENTS = (
 )
 GC_DEBOUNCE = 5
 _WRITE_LOCK = None
-_WRITE_FUTURES = weakref.WeakKeyDictionary()
+_pending_writes = weakref.WeakKeyDictionary()
 
 def WRITE_LOCK():
     global _WRITE_LOCK
@@ -145,7 +145,7 @@ async def _run_write_futures(doc):
     from tornado.websocket import WebSocketClosedError
     remaining = {}
     async with WRITE_LOCK():
-        for conn, futures in _WRITE_FUTURES.pop(doc, {}).items():
+        for conn, futures in _pending_writes.pop(doc, {}).items():
             socket = conn._socket
             if hasattr(socket, 'write_lock') and socket.write_lock._block._value == 0:
                 remaining[conn] = futures
@@ -158,7 +158,7 @@ async def _run_write_futures(doc):
                 except Exception as e:
                     logger.warning(f"Failed sending message due to following error: {e}")
     if remaining:
-        _WRITE_FUTURES[doc] = remaining
+        _pending_writes[doc] = remaining
         await asyncio.sleep(0.01)
         await _run_write_futures(doc)
 
@@ -389,10 +389,13 @@ def unlocked() -> Iterator:
             else:
                 futures = dispatch_django(conn, dispatch_events)
             send |= bool(futures)
-            if curdoc in _WRITE_FUTURES:
-                _WRITE_FUTURES[curdoc][conn].extend(futures)
+            if curdoc in _pending_writes:
+                if conn in _pending_writes[curdoc]:
+                    _pending_writes[curdoc][conn].extend(futures)
+                else:
+                    _pending_writes[curdoc][conn] = futures
             else:
-                _WRITE_FUTURES[curdoc] = {conn: futures}
+                _pending_writes[curdoc] = {conn: futures}
 
         if send:
             if state._unblocked(curdoc):
