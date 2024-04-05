@@ -403,7 +403,7 @@ When developing an app, someone (possibly you!) will require at some point to ma
 
 These four areas behave very similarly to layouts that have list-like semantics. This means we can easily append new components into these areas. Unlike other layout components however, the contents of the areas is fixed once rendered. If you need a dynamic layout you should therefore insert a regular layout (e.g. a `Column` or `Row`) and modify it in place once added to one of the content areas.
 
-<img src="../_static/images/template_areas.png" style="margin-left: auto; margin-right: auto; display: block;"></img>
+<img src="../../_static/images/template_areas.png" style="margin-left: auto; margin-right: auto; display: block;"></img>
 
 :::{warning}
 The templates provided by Panel should not be rendered in a notebook, as their CSS styling usually doesn't play well with the CSS styling of the notebook itself.
