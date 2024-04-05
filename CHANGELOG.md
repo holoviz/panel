@@ -19,7 +19,6 @@ This micro-release fixes a number of regressions and other bugs introduced in re
 - Allow `Tabulator` `HTMLTemplateFormatter` to reference multiple columns ([#6663](https://github.com/holoviz/panel/pull/6663))
 - Fix loading spinner in converted app without template ([#6665](https://github.com/holoviz/panel/pull/6665))
 - Avoid unnecessary rescroll on Column ([#6666](https://github.com/holoviz/panel/pull/6666))
-- Ensure Websocket writes are always dispatched sequentially ([#6667](https://github.com/holoviz/panel/pull/6667))
 - Fix dynamically updating description tooltips ([#6676](https://github.com/holoviz/panel/pull/6676))
 
 ### Styling
