@@ -56,11 +56,22 @@ export class ClickableIconView extends ControlView {
 
   override connect_signals(): void {
     super.connect_signals()
-    const {icon, active_icon, disabled, value, size} = this.model.properties
+    const {icon, active_icon, disabled, value, size, tooltip} = this.model.properties
     this.on_change([active_icon, icon, value], () => this.update_icon())
     this.on_change(this.model.properties.title, () => this.update_label())
     this.on_change(disabled, () => this.update_cursor())
     this.on_change(size, () => this.update_size())
+    this.on_change(tooltip, () => this.update_tooltip())
+  }
+
+  async update_tooltip(): Promise<void> {
+    if (this.tooltip != null) {
+      this.tooltip.remove()
+    }
+    const {tooltip} = this.model
+    if (tooltip != null) {
+      this.tooltip = await build_view(tooltip, {parent: this})
+    }
   }
 
   override render(): void {
