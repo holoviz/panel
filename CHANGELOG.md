@@ -1,5 +1,45 @@
 # Releases
 
+## Version 1.4.1
+
+Date: 2024-04-05
+
+This micro-release fixes a number of regressions and other bugs introduced in recent releases and further improves the dashboard builder UI. Additionally it includes some tweaks and polish for the new tutorial material. Many thanks to our new contributor @jrycw, our returning contributors @cdeil and @TheoMathurin and our maintainers @ahuang11, @MarcSkovMadsen, @Hoxbro and @philippjfr for their contributions to this release.
+
+### Enhancements
+
+- Allow rendering raw `IPython.display` output in dashboard builder ([#6657](https://github.com/holoviz/panel/pull/6657))
+
+### Bug Fixes
+
+- Fix layout persistence issues in dashboard builder ([#6602](https://github.com/holoviz/panel/pull/6602))
+- Ensure `Perspective` loads in notebooks and docs ([#6626](https://github.com/holoviz/panel/pull/6626))
+- Allow full reset of dashboard builder layout ([#6625](https://github.com/holoviz/panel/pull/6625))
+- Fix issues with `VTK` colormap serialization ([#6651](https://github.com/holoviz/panel/pull/6651))
+- Allow `Tabulator` `HTMLTemplateFormatter` to reference multiple columns ([#6663](https://github.com/holoviz/panel/pull/6663))
+- Fix loading spinner in converted app without template ([#6665](https://github.com/holoviz/panel/pull/6665))
+- Avoid unnecessary rescroll on Column ([#6666](https://github.com/holoviz/panel/pull/6666))
+- Ensure Websocket writes are always dispatched sequentially ([#6667](https://github.com/holoviz/panel/pull/6667))
+- Fix dynamically updating description tooltips ([#6676](https://github.com/holoviz/panel/pull/6676))
+
+### Styling
+
+- Only apply styling to Bootstrap buttons ([#6610](https://github.com/holoviz/panel/pull/6610))
+- Change into a slicker `Card` button icon ([#6638](https://github.com/holoviz/panel/pull/6638))
+- Fix card header margins ([#6639](https://github.com/holoviz/panel/pull/6639))
+- Ensure `Perspective` renders correctly in all browsers ([#6664](https://github.com/holoviz/panel/pull/6664))
+
+### Documentation
+
+- Improve layout builder docs ([#6601](https://github.com/holoviz/panel/pull/6601))
+- Various Tutorial fixes ([#6614](https://github.com/holoviz/panel/pull/6614), [#6669](https://github.com/holoviz/panel/pull/6669), [#6670](https://github.com/holoviz/panel/pull/6670), [#6679](https://github.com/holoviz/panel/pull/6679))
+- Ensure all docs pages are indexed ([#6615](https://github.com/holoviz/panel/pull/6615))
+- Document `Flexbox.gap` parameter ([#6616](https://github.com/holoviz/panel/pull/6616))
+- Improve custom template documentation ([#6618](https://github.com/holoviz/panel/pull/6618))
+- Improve Layout Builder Docs ([#6619](https://github.com/holoviz/panel/pull/6619))
+- Improve PyCharm and Colab notebook documentation ([#6599](https://github.com/holoviz/panel/pull/6599))
+- Update gallery endpoint in docs ([#6645](https://github.com/holoviz/panel/pull/6645))
+
 ## Version 1.4.0
 
 Date: 2024-03-25
@@ -72,9 +112,7 @@ This minor release packs a punch both in terms of features, the number of enhanc
 - Fix serving of global template in notebook ([#6210](https://github.com/holoviz/panel/pull/6210))
 - Ensure `Tabulator` renders in collapsed `Card` ([#6223](https://github.com/holoviz/panel/pull/6223))
 - Fix issues with `VTK`, `VTKVolume` and `VTKJS` due to webgpu renderer ([#6244](https://github.com/holoviz/panel/issues/6244))
-- Ensure `ChatInterface` respect supplied default user ([#6290](https://github.com/holoviz/panel/pull/6290))
 - Ensure `HTML` and other markup panes can be emptied ([#6303](https://github.com/holoviz/panel/pull/6303))
-- Ensure `ChatMessage` internals correctly respect `Design` ([#6304](https://github.com/holoviz/panel/pull/6304))
 - Ensure collapsed `Card` does not cause stretching ([#6305](https://github.com/holoviz/panel/pull/6305))
 - Ensure notebook preview always uses server resources ([#6317](https://github.com/holoviz/panel/pull/6317))
 - Remove animation from loading spinner without spin ([#6324](https://github.com/holoviz/panel/pull/6324))
@@ -87,12 +125,10 @@ This minor release packs a punch both in terms of features, the number of enhanc
 - Ensure `HTML` model is redrawn if `stylesheets` is emptied ([#6365](https://github.com/holoviz/panel/pull/6365))
 - Allow providing custom template ([#6383](https://github.com/holoviz/panel/pull/6383))
 - Ensure `Debugger` renders without error ([#6423](https://github.com/holoviz/panel/pull/6423))
-- Ensure `ChatMessage` `header` updates dynamically  ([#6441](https://github.com/holoviz/panel/pull/6441))
 - Ensure pending writes are dispatched in order and only from correct thread ([#6443](https://github.com/holoviz/panel/pull/6443))
 - Ensure layout reuses model if available ([#6446](https://github.com/holoviz/panel/pull/6446))
 - Improved exception handler in unlocked message dispatch ([#6447](https://github.com/holoviz/panel/pull/6447))
 - Fix display of interactive `Matplotlib` ([#6450](https://github.com/holoviz/panel/pull/6450))
-- Ensure streaming `ChatMessage` on `ChatInterface` and mention `serialize` ([#6452](https://github.com/holoviz/panel/pull/6452))
 - Ensure `Plotly` pane renders and hides correctly in `Card` ([#6468](https://github.com/holoviz/panel/pull/6468))
 - Fix issues rendering widget components with `Fast` design ([#6474](https://github.com/holoviz/panel/pull/6474))
 - Fix binary serialization from JS -> Pyodide ([#6490](https://github.com/holoviz/panel/pull/6490))
@@ -112,8 +148,12 @@ This minor release packs a punch both in terms of features, the number of enhanc
 
 #### Chat Components
 
+- Ensure `ChatInterface` respect supplied default user ([#6290](https://github.com/holoviz/panel/pull/6290))
+- Ensure `ChatMessage` internals correctly respect `Design` ([#6304](https://github.com/holoviz/panel/pull/6304))
 - Fix `ChatInterface` `stop` button for synchronous functions ([#6312](https://github.com/holoviz/panel/pull/6312))
 - Include `stylesheets` downstream, including layouts in ChatMessage ([#6405](https://github.com/holoviz/panel/pull/6405))
+- Ensure `ChatMessage` `header` updates dynamically  ([#6441](https://github.com/holoviz/panel/pull/6441))
+- Ensure streaming `ChatMessage` on `ChatInterface` and mention `serialize` ([#6452](https://github.com/holoviz/panel/pull/6452))
 - Ensure ChatInterface supports chat input without `value_input` parameter  ([#6505](https://github.com/holoviz/panel/pull/6505))
 - Ensure word breaks to avoid overflow in `ChatMessage` ([#6187](https://github.com/holoviz/panel/pull/6187), [#6509](https://github.com/holoviz/panel/pull/6509))
 - Ensure nested disabled state stays disabled on `ChatFeed` ([#6507](https://github.com/holoviz/panel/pull/6507))

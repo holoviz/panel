@@ -2,6 +2,46 @@
 
 See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual summary of the major features added in each release.
 
+## Version 1.4.1
+
+Date: 2024-04-05
+
+This micro-release fixes a number of regressions and other bugs introduced in recent releases and further improves the dashboard builder UI. Additionally it includes some tweaks and polish for the new tutorial material. Many thanks to our new contributor @jrycw, our returning contributors @cdeil and @TheoMathurin and our maintainers @ahuang11, @MarcSkovMadsen, @Hoxbro and @philippjfr for their contributions to this release.
+
+### Enhancements
+
+- Allow rendering raw `IPython.display` output in dashboard builder ([#6657](https://github.com/holoviz/panel/pull/6657))
+
+### Bug Fixes
+
+- Fix layout persistence issues in dashboard builder ([#6602](https://github.com/holoviz/panel/pull/6602))
+- Ensure `Perspective` loads in notebooks and docs ([#6626](https://github.com/holoviz/panel/pull/6626))
+- Allow full reset of dashboard builder layout ([#6625](https://github.com/holoviz/panel/pull/6625))
+- Fix issues with `VTK` colormap serialization ([#6651](https://github.com/holoviz/panel/pull/6651))
+- Allow `Tabulator` `HTMLTemplateFormatter` to reference multiple columns ([#6663](https://github.com/holoviz/panel/pull/6663))
+- Fix loading spinner in converted app without template ([#6665](https://github.com/holoviz/panel/pull/6665))
+- Avoid unnecessary rescroll on Column ([#6666](https://github.com/holoviz/panel/pull/6666))
+- Ensure Websocket writes are always dispatched sequentially ([#6667](https://github.com/holoviz/panel/pull/6667))
+- Fix dynamically updating description tooltips ([#6676](https://github.com/holoviz/panel/pull/6676))
+
+### Styling
+
+- Only apply styling to Bootstrap buttons ([#6610](https://github.com/holoviz/panel/pull/6610))
+- Change into a slicker `Card` button icon ([#6638](https://github.com/holoviz/panel/pull/6638))
+- Fix card header margins ([#6639](https://github.com/holoviz/panel/pull/6639))
+- Ensure `Perspective` renders correctly in all browsers ([#6664](https://github.com/holoviz/panel/pull/6664))
+
+### Documentation
+
+- Improve layout builder docs ([#6601](https://github.com/holoviz/panel/pull/6601))
+- Various Tutorial fixes ([#6614](https://github.com/holoviz/panel/pull/6614), [#6669](https://github.com/holoviz/panel/pull/6669), [#6670](https://github.com/holoviz/panel/pull/6670), [#6679](https://github.com/holoviz/panel/pull/6679))
+- Ensure all docs pages are indexed ([#6615](https://github.com/holoviz/panel/pull/6615))
+- Document `Flexbox.gap` parameter ([#6616](https://github.com/holoviz/panel/pull/6616))
+- Improve custom template documentation ([#6618](https://github.com/holoviz/panel/pull/6618))
+- Improve Layout Builder Docs ([#6619](https://github.com/holoviz/panel/pull/6619))
+- Improve PyCharm and Colab notebook documentation ([#6599](https://github.com/holoviz/panel/pull/6599))
+- Update gallery endpoint in docs ([#6645](https://github.com/holoviz/panel/pull/6645))
+
 ## Version 1.4.0
 
 Date: 2024-03-25
