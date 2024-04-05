@@ -158,7 +158,13 @@ async def _run_write_futures(doc):
                 except Exception as e:
                     logger.warning(f"Failed sending message due to following error: {e}")
     if remaining:
-        _pending_writes[doc] = remaining
+        if doc in _pending_writes:
+            _pending_writes[doc] = {
+                conn: writes + _pending_writes[doc].get(conn, [])
+                for conn, writes in remaining.items()
+            }
+        else:
+            _pending_writes[doc] = remaining
         await asyncio.sleep(0.01)
         await _run_write_futures(doc)
 
