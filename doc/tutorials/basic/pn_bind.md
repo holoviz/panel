@@ -165,7 +165,7 @@ calculate_power_bnd = pn.bind(
     calculate_power, wind_speed=wind_speed.param.value_throttled, efficiency=efficiency
 )
 
-power_md = pn.pane.Markdown(power)
+power_md = pn.pane.Markdown(calculate_power_bnd)
 
 pn.Column(wind_speed, power_md).servable()
 ```
@@ -181,7 +181,7 @@ import panel as pn
 
 pn.extension()
 
-def calculate_power(wind_speed, efficiency):
+def power_generation(wind_speed, efficiency):
     return wind_speed * efficiency
 
 def format_power_gen(wind_speed, efficiency, power):
@@ -197,7 +197,7 @@ wind_speed = pn.widgets.FloatSlider(
 
 efficiency = 0.3
 
-power = pn.bind(calculate_power, wind_speed, efficiency)
+power = pn.bind(power_generation, wind_speed, efficiency)
 
 power_text = pn.bind(format_power_gen, wind_speed, efficiency, power)
 
