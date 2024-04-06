@@ -38,7 +38,7 @@ export class ChatAreaInputView extends PnTextAreaInputView {
             this.model.value_input = ""
           }
           event.preventDefault()
-        } else if (event.ctrlKey && this.model.enter_sends ) {
+        } else if (event.ctrlKey && this.model.enter_sends) {
           this.model.value_input += "\n"
           event.preventDefault()
         }
