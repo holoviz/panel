@@ -31,12 +31,14 @@ export class ChatAreaInputView extends PnTextAreaInputView {
     super.render()
 
     this.el.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" && (event.ctrlKey != this.model.enter_sends)) {
-        if (!this.model.disabled_enter) {
-          this.model.trigger_event(new ChatMessageEvent(this.model.value_input))
-          this.model.value_input = ""
+      if (event.key === "Enter") {
+        if ( !event.shiftKey && (event.ctrlKey != this.model.enter_sends) ) {
+          if (!this.model.disabled_enter) {
+            this.model.trigger_event(new ChatMessageEvent(this.model.value_input))
+            this.model.value_input = ""
+          }
+          event.preventDefault()
         }
-        event.preventDefault()
       }
     })
   }
