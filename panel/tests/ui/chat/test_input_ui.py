@@ -86,10 +86,10 @@ def test_chat_area_enter_sends(page):
     wait_until(lambda: chat_area_input.value_input == "enter_sends: True", page)
     textbox.press("Shift+Enter")
     wait_until(lambda: chat_area_input.value_input == "enter_sends: True\n", page)
-    textbox.press("Control+Enter") # does nothing?
-    wait_until(lambda: chat_area_input.value_input == "enter_sends: True\n", page)
+    textbox.press("Control+Enter")
+    wait_until(lambda: chat_area_input.value_input == "enter_sends: True\n\n", page)
     textbox_rows = textbox.evaluate("el => el.rows")
-    assert textbox_rows == 2
+    assert textbox_rows == 3
 
     textbox.press("Enter")
     wait_until(lambda: chat_area_input.value_input == "", page)
