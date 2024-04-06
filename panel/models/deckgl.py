@@ -80,6 +80,8 @@ class DeckGLPlot(HTMLBox):
 
     tooltip = Either(Bool, Dict(Any, Any), default=True)
 
+    configuration = String()
+
     clickState = Dict(String, Any)
 
     hoverState = Dict(String, Any)

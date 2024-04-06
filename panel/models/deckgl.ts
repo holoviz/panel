@@ -32,8 +32,8 @@ export class DeckGLPlotView extends LayoutDOMView {
 
   override connect_signals(): void {
     super.connect_signals()
-    const {data, mapbox_api_key, tooltip, layers, initialViewState, data_sources} = this.model.properties
-    this.on_change([mapbox_api_key, tooltip], () => this.render())
+    const {data, mapbox_api_key, tooltip, configuration, layers, initialViewState, data_sources} = this.model.properties
+    this.on_change([mapbox_api_key, tooltip, configuration], () => this.render())
     this.on_change([data, initialViewState], () => this.updateDeck())
     this.on_change([layers], () => this._update_layers())
     this.on_change([data_sources], () => this._connect_sources(true))
@@ -183,7 +183,11 @@ export class DeckGLPlotView extends LayoutDOMView {
   createDeck({mapboxApiKey, container, jsonInput, tooltip}: any): void {
     let deckgl
     try {
+      const configuration = eval('(' + this.model.configuration + ')')
+      console.log(configuration)
+      this.jsonConverter.mergeConfiguration(configuration)
       const props = this.jsonConverter.convert(jsonInput)
+      console.log(props)
       const getTooltip = makeTooltip(tooltip, props.layers)
       deckgl = new (window as any).deck.DeckGL({
         ...props,
@@ -241,6 +245,7 @@ export namespace DeckGLPlot {
     layers: p.Property<any[]>
     mapbox_api_key: p.Property<string>
     tooltip: p.Property<any>
+    configuration: p.Property<string>
     clickState: p.Property<any>
     hoverState: p.Property<any>
     throttle: p.Property<any>
@@ -272,6 +277,7 @@ export class DeckGLPlot extends LayoutDOM {
       mapbox_api_key:   [ Str,                       "" ],
       throttle:         [ Any,                          {} ],
       tooltip:          [ Any,                        true ],
+      configuration:          [ Str,                        "" ],
       viewState:        [ Any,                          {} ],
     }))
 
