@@ -874,7 +874,7 @@ class BaseTable(ReactiveData, Widget):
         """
         if not self.selection:
             return self.current_view.iloc[:0]
-        return self.current_view.iloc[self.selection]
+        return self._processed.iloc[self.selection]
 
 
 class DataFrame(BaseTable):
