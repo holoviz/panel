@@ -145,6 +145,24 @@ def test_editable_template_delete_item(page):
     wait_until(lambda: tmpl.layout.get(id(md2), {}).get('visible') == False, page)
 
 
+def test_editable_template_undo_delete_item(page):
+    tmpl = EditableTemplate()
+    md1 = Markdown('1')
+    md2 = Markdown('2')
+
+    tmpl.main[:] = [md1, md2]
+
+    serve_component(page, tmpl)
+
+    page.locator(".muuri-handle.delete").nth(1).click()
+
+    wait_until(lambda: tmpl.layout.get(id(md2), {}).get('visible') == False, page)
+
+    page.locator('#grid-undo').click()
+
+    wait_until(lambda: tmpl.layout.get(id(md2), {}).get('visible') == True, page)
+
+
 def test_editable_template_drag_item(page):
     tmpl = EditableTemplate()
     md1 = Markdown('1')
@@ -160,6 +178,24 @@ def test_editable_template_drag_item(page):
 
     wait_until(lambda: list(tmpl.layout) == [id(md2), id(md1)], page)
 
+def test_editable_template_undo_drag_item(page):
+    tmpl = EditableTemplate()
+    md1 = Markdown('1')
+    md2 = Markdown('2')
+
+    tmpl.main[:] = [md1, md2]
+
+    serve_component(page, tmpl)
+
+    md2_handle = page.locator(".muuri-handle.drag").nth(1)
+
+    md2_handle.drag_to(md2_handle, target_position={'x': 0, 'y': -50}, force=True)
+
+    wait_until(lambda: list(tmpl.layout) == [id(md2), id(md1)], page)
+
+    page.locator('#grid-undo').click()
+
+    wait_until(lambda: list(tmpl.layout) == [id(md1), id(md2)], page)
 
 def test_editable_template_resize_item(page):
     md1 = Markdown('1')
@@ -177,3 +213,24 @@ def test_editable_template_resize_item(page):
     md2_handle.drag_to(md2_handle, target_position={'x': -50, 'y': -30}, force=True)
 
     wait_until(lambda: tmpl.layout.get(id(md2), {}).get('width') < 45, page)
+
+def test_editable_template_undo_resize_item(page):
+    md1 = Markdown('1')
+    md2 = Markdown('2')
+
+    tmpl = EditableTemplate(layout={id(md2): {'width': 50, 'height': 80}})
+
+    tmpl.main[:] = [md1, md2]
+
+    serve_component(page, tmpl)
+
+    md2_handle = page.locator(".muuri-handle.resize").nth(1)
+
+    md2_handle.hover()
+    md2_handle.drag_to(md2_handle, target_position={'x': -50, 'y': -30}, force=True)
+
+    wait_until(lambda: tmpl.layout.get(id(md2), {}).get('width') < 45, page)
+
+    page.locator('#grid-undo').click()
+
+    wait_until(lambda: tmpl.layout.get(id(md2), {}).get('width') == 50, page)

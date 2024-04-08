@@ -568,7 +568,7 @@ class NotebookHandler(PanelCodeHandler):
         reset = 'reset' in state.session_args
         if not (editable or persist):
             state.template.editable = False
-        state.template.title = os.path.splitext(os.path.basename(path))[0].title()
+        state.template.title = os.path.splitext(os.path.basename(path))[0].replace('_', ' ').title()
 
         layouts, outputs, cells = {}, {}, {}
         for cell_id, objects in state._cell_outputs.items():
