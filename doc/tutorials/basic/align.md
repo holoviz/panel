@@ -147,10 +147,12 @@ image = pn.pane.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png
 
 card1 = pn.Card(image, title='Turbine 1', height=150, width=200, align="center")
 card2 = pn.Card(image, title='Turbine 2', height=150, width=200, align="center")
-spacer = pn.Spacer(height=33)
+spacer1 = pn.Spacer(height=33)
+spacer2 = pn.Spacer(height=33)
+spacer3 = pn.Spacer(height=33)
 
 pn.Column(
-    spacer, card1, spacer, card2,
+    spacer1, card1, spacer2, card2, spacer3,
     sizing_mode="fixed", width=400, height=400, styles={"border": "1px solid black"}
 ).servable()
 ```
