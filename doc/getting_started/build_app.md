@@ -37,7 +37,7 @@ Next, we'll import the Panel JavaScript dependencies using `pn.extension(...)`. 
 pn.extension(design="material", sizing_mode="stretch_width")
 ```
 
-Now, let's load the [UCI ML dataset](http://archive.ics.uci.edu/ml/datasets/Occupancy+Detection+) that measured the environment in a meeting room. We'll speed up our application by caching (`@pn.cache`) the data across users:
+Now, let's load the [UCI ML dataset](http://archive.ics.uci.edu/dataset/357/occupancy+detection) that measured the environment in a meeting room. We'll speed up our application by caching (`@pn.cache`) the data across users:
 
 ```{pyodide}
 @pn.cache
