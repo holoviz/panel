@@ -11,6 +11,7 @@ This micro-release fixes a number of regressions and other bugs introduced in re
 ### Enhancements
 
 - Allow rendering raw `IPython.display` output in dashboard builder ([#6657](https://github.com/holoviz/panel/pull/6657))
+- Improve snapping behavior and add undo functionality in dashboard builder UI ([#6687](https://github.com/holoviz/panel/pull/6687)))
 
 ### Bug Fixes
 
@@ -22,6 +23,7 @@ This micro-release fixes a number of regressions and other bugs introduced in re
 - Fix loading spinner in converted app without template ([#6665](https://github.com/holoviz/panel/pull/6665))
 - Avoid unnecessary rescroll on Column ([#6666](https://github.com/holoviz/panel/pull/6666))
 - Fix dynamically updating description tooltips ([#6676](https://github.com/holoviz/panel/pull/6676))
+- Ensure Perspective is fully loaded before attempting render ([#6689](https://github.com/holoviz/panel/pull/6689)))
 
 ### Styling
 
@@ -40,6 +42,7 @@ This micro-release fixes a number of regressions and other bugs introduced in re
 - Improve Layout Builder Docs ([#6619](https://github.com/holoviz/panel/pull/6619))
 - Improve PyCharm and Colab notebook documentation ([#6599](https://github.com/holoviz/panel/pull/6599))
 - Update gallery endpoint in docs ([#6645](https://github.com/holoviz/panel/pull/6645))
+- Various smaller documentation fixes and improvements ([#6682](https://github.com/holoviz/panel/pull/6682), [#6690](https://github.com/holoviz/panel/pull/6690))
 
 ## Version 1.4.0
 
