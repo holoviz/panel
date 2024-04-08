@@ -276,13 +276,14 @@
             const target = {range: 25}
             const grid_bbox = grid.getElement().getBoundingClientRect()
             for (const item of grid.getItems()) {
-              if (item === interaction.element) {
+              if ((item.getElement() === interaction.element) && item.isVisible()) {
                 continue
               }
               const {top, left} = item.getPosition();
               const margin = item.getMargin()
               const bottom = (top + item.getHeight()) + margin.top + margin.bottom;
               const right = (left + item.getWidth()) + margin.left + margin.right;
+
               if (Math.abs(right - x) < target.range) {
                 target.x = right + margin.right
               }
