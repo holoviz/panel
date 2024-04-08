@@ -128,8 +128,6 @@ def classify(image):
     return random.choice(OPTIONS)
 
 # Reactive expressions
-has_result = result.rx.pipe(bool)
-
 def _show_submit_message(result, is_running):
     return not result and not is_running
 

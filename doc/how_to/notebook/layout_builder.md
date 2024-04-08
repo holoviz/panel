@@ -114,6 +114,12 @@ You might want to reorder the cards for a more logical flow. To do this, drag th
 
 ![Builder Rearrange View](../../_static/images/builder_rearrange.png)
 
+### Undo
+
+You might want to undo previous remove, resize and reorder actions:
+
+![Builder Rearrange View](../../_static/images/builder_undo.png)
+
 ### Resetting Layout
 
 If you're not satisfied with the changes, you can start over by clicking the reset button at the top right.
