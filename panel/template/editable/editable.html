@@ -171,16 +171,21 @@
     dragEnabled: {{ editable|json }},
     dragHandle: '.muuri-handle.drag',
     layout: {fillGaps: true}
-  })
-  grid.on('move', function () {
-    const items = grid.getItems()
-    positions = new Map()
-    for (const item of items) {
-      positions.set(item, item.getPosition())
+  }).on('dragInit', function () {
+    undo_stack.push({action: "drag", items: grid.getItems()})
+  }).on('dragEnd', function () {
+    const last_event = undo_stack.pop()
+    if (last_event.action == "move") {
+      undo_stack.push(last_event)
     }
-    undo_stack.push({action: "move", positions})
-    document.getElementById('grid-undo').classList.remove('disabled-button')
-  });
+  }).on('move', function () {
+    const last_event = undo_stack.pop()
+    if (last_event.action === "drag") {
+      const event = {...last_event, action: "move"}
+      undo_stack.push(event)
+      document.getElementById('grid-undo').classList.remove('disabled-button')
+    }
+  })
   for (const spec of layout) {
     const el = document.querySelector(`[data-id="${spec.id}"]`);
     if (el && spec.width && spec.height) {
@@ -224,10 +229,7 @@
         grid.refreshItems()
         grid.layout()
       case "move":
-        for (const [item, position] of action.positions) {
-          item.getElement().style.transform = `translateX(${position.left}px) translateY(${position.top}px)`;
-        }
-        grid.refreshItems()
+        grid.sort(action.items)
     }
   })
 
