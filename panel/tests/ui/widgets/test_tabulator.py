@@ -2948,7 +2948,6 @@ def test_tabulator_click_event_selection_integrations(page, sorter, python_filte
     assert widget.selected_dataframe.equals(expected_selected)
 
 
-@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3664')
 def test_tabulator_selection_sorters_on_init(page, df_mixed):
     widget = Tabulator(df_mixed, sorters=[{'field': 'int', 'dir': 'desc'}])
 
