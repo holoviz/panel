@@ -382,8 +382,6 @@ class ChatFeed(ListPanel):
         user = self.callback_user
         avatar = self.callback_avatar
 
-        assert avatar == "👨"
-
         if isinstance(value, dict):
             user = value.get("user", user)
             avatar = value.get("avatar")

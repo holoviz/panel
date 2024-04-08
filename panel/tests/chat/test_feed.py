@@ -378,6 +378,7 @@ class TestChatFeed:
 
         chat_feed.callback = callback
         chat_feed.callback_user = "System"
+        assert chat_feed.callback_avatar == "👨"
         chat_feed.send("Message", respond=True)
         wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].user == "System"
