@@ -683,7 +683,7 @@ class panel_extension(_pyviz_extension):
         'gridstack': ['GridStack'],
         'katex': ['katex'],
         'mathjax': ['MathJax'],
-        'perspective': ['perspective.worker'],
+        'perspective': ["customElements.get('perspective-viewer')"],
         'plotly': ['Plotly'],
         'tabulator': ['Tabulator'],
         'terminal': ['Terminal', 'xtermjs'],
