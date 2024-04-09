@@ -32,7 +32,11 @@ from .util import param_watchers
 __version__ = str(param.version.Version(
     fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
 
-_LOCAL_DEV_VERSION = any(v in __version__ for v in ('post', 'dirty')) and not state._is_pyodide
+_LOCAL_DEV_VERSION = (
+    any(v in __version__ for v in ('post', 'dirty'))
+    and not state._is_pyodide
+    and 'PANEL_DOC_BUILD' not in os.environ
+)
 
 #---------------------------------------------------------------------
 # Public API
