@@ -54,6 +54,7 @@ def test_chat_area_input_resets_to_row(page):
     # find chat area input and type a message
     textbox = page.locator(".bk-input")
     textbox.fill("Hello World!")
+
     # click shift_enter 3 times
     textbox.press("Shift+Enter")
     textbox.press("Shift+Enter")
@@ -69,3 +70,41 @@ def test_chat_area_input_resets_to_row(page):
     assert chat_area_input.value == ""
     textbox_rows = textbox.evaluate("el => el.rows")
     assert textbox_rows == 2
+
+
+def test_chat_area_enter_sends(page):
+
+    chat_area_input = ChatAreaInput()
+    serve_component(page, chat_area_input)
+
+    # find chat area input
+    textbox = page.locator(".bk-input")
+
+    # Case enter_sends is True
+    chat_area_input.enter_sends = True
+    textbox.fill("enter_sends: True")
+    wait_until(lambda: chat_area_input.value_input == "enter_sends: True", page)
+    textbox.press("Shift+Enter")
+    wait_until(lambda: chat_area_input.value_input == "enter_sends: True\n", page)
+    textbox.press("Control+Enter")
+    wait_until(lambda: chat_area_input.value_input == "enter_sends: True\n\n", page)
+    textbox_rows = textbox.evaluate("el => el.rows")
+    assert textbox_rows == 3
+
+    textbox.press("Enter")
+    wait_until(lambda: chat_area_input.value_input == "", page)
+    assert chat_area_input.value == ""
+
+    # Case enter_sends is False
+    chat_area_input.enter_sends = False
+    textbox.fill("enter_sends: False")
+    wait_until(lambda: chat_area_input.value_input == "enter_sends: False", page)
+    textbox.press("Enter")
+    wait_until(lambda: chat_area_input.value_input == "enter_sends: False\n", page)
+    textbox.press("Shift+Enter")
+    wait_until(lambda: chat_area_input.value_input == "enter_sends: False\n\n", page)
+    textbox_rows = textbox.evaluate("el => el.rows")
+    assert textbox_rows == 3
+    textbox.press("Control+Enter")
+    wait_until(lambda: chat_area_input.value_input == "", page)
+    assert chat_area_input.value == ""

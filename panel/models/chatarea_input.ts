@@ -31,12 +31,17 @@ export class ChatAreaInputView extends PnTextAreaInputView {
     super.render()
 
     this.el.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" && !event.shiftKey) {
-        if (!this.model.disabled_enter) {
-          this.model.trigger_event(new ChatMessageEvent(this.model.value_input))
-          this.model.value_input = ""
+      if (event.key === "Enter") {
+        if (!event.shiftKey && (event.ctrlKey != this.model.enter_sends)) {
+          if (!this.model.disabled_enter) {
+            this.model.trigger_event(new ChatMessageEvent(this.model.value_input))
+            this.model.value_input = ""
+          }
+          event.preventDefault()
+        } else if (event.ctrlKey && this.model.enter_sends) {
+          this.model.value_input += "\n"
+          event.preventDefault()
         }
-        event.preventDefault()
       }
     })
   }
@@ -46,6 +51,7 @@ export namespace ChatAreaInput {
   export type Attrs = p.AttrsOf<Props>
   export type Props = PnTextAreaInput.Props & {
     disabled_enter: p.Property<boolean>
+    enter_sends: p.Property<boolean>
   }
 }
 
@@ -65,6 +71,7 @@ export class ChatAreaInput extends PnTextAreaInput {
     this.define<ChatAreaInput.Props>(({Bool}) => {
       return {
         disabled_enter: [ Bool, false ],
+        enter_sends: [ Bool, true ],
       }
     })
   }
