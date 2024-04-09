@@ -386,7 +386,7 @@ class Syncable(Renderable):
                 self_params = {k: v for k, v in params.items() if '.' not in k}
                 with _syncing(self, list(self_params)):
                     self.param.update(**self_params)
-            for k, v in self_params.items():
+            for k, v in params.items():
                 if '.' not in k:
                     continue
                 *subpath, p = k.split('.')
