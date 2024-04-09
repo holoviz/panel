@@ -1,10 +1,10 @@
 # Make interactive data workflows
 
-This guide addresses how to bind interactive data pipelines to a component using `hvplot.interactive`. This is done by combining Panels widgets with [hvplot](https://hvplot.holoviz.org/).
+This guide addresses how to bind interactive data pipelines to a component using the [Reactive Expressions of Param](https://param.holoviz.org/user_guide/Reactive_Expressions.html).
 
 ---
 
-`hvplot.interactive` is a tool to get better control over your data pipelines. This is done by replacing the constant parameters in your pipeline with widgets (e.g., a number slider) that will automatically get displayed next to your pipeline output and trigger an output update on changes. With this approach, all your pipeline parameters are available in one place, and you get complete interactive control over the pipeline. For more information, check out the [hvPlot documentation](https://panel.holoviz.org/how_to/interactivity/hvplot_interactive.html).
+The `Param rx` object allows you to treat any object as a reactive expression. This is done by replacing the constant parameters in your pipeline with widgets (e.g., a number slider) that will trigger an output update on changes. With this approach, all your pipeline parameters are available in one place, and you get complete interactive control over the pipeline. For convenience, we could use `pn.rx` instead of `param.rx` when you `import panel as pn`.
 
 Let's start by fetching some data:
 
@@ -26,52 +26,65 @@ species_widget = pn.widgets.Select(name="species", options=["Adelie", "Gentoo", 
 year_widget = pn.widgets.IntSlider(name="year", start=2007, end=2009)
 ```
 
-Let's then use these to filter the data. We can do this by using `hvplot.interactive` and passing the `species_widget` as the `species` parameter and the `year_widget` as the `year` parameter. In our case, we want the year always to be greater than or equal to the widget's value.
+Let's then use these to filter the data. We first wrap the `df` in `pn.rx` as `df_rx` and pass the `species_widget` as the `species` parameter and the `year_widget` as the `year` parameter. In our case, we want the year always to be greater than or equal to the widget's value.
 
 ```{pyodide}
 import hvplot.pandas  # Enable interactive
 
-idf = df.interactive()
-idf = idf[(idf["species"] == species_widget) & (idf["year"] >= year_widget)]
+df_rx = pn.rx(df)
+df_rx = df_rx[(df_rx["species"] == species_widget) & (df_rx["year"] >= year_widget)]
 
-idf.head()
+df_rx.head()
 ```
 Similarly we can use other pandas features in the same way.
 
 ```{pyodide}
-head_widget = pn.widgets.IntSlider(name="Head", start=1, end=10)\
+head_widget = pn.widgets.IntSlider(name="Head", start=1, end=10)
 
-idf.head(head_widget)
+df_rx.head(head_widget)
 ```
 
-Because we are already using `hvplot`, we can use the other powerful API of plotting the data with `hvplot`:
+Because we've imported `hvplot.pandas`, we can utilize `.hvplot()` to render the widgets and plot the data easily:
 
 ```{pyodide}
 idf.hvplot(kind="scatter", x="bill_length_mm", y="bill_depth_mm", by="sex")
 ```
 
-The default is to include both the widgets and the interactive panel (graph or table) when we display the interactive
-dataframe.  If we wish to display them separately we can access the widgets and the panel as .widgets and .panel()
-respectively.
+We can leverage [`panel.ReactiveExpr`](https://panel.holoviz.org/reference/panes/ReactiveExpr.html) to assist in rendering `df_rx`. This allows us to include all widgets related to `df_rx`, while also offering the flexibility to customize the appearance of the widgets. For instance, we can specify `pn.Column` as the `widget_layout` parameter and `top` as the `widget_location` parameter, as shown below:
 
 ```{pyodide}
+pn.ReactiveExpr(
+    df_rx.head(),  # only show a few rows to save some space
+    widget_layout=pn.Column,
+    widget_location="top",
+)
+```
+
+While `panel.ReactiveExpr` offers convenience, it's also common practice to bind the interactive pipeline we've constructed to a Panel component, such as a `Tabulator` widget:
+
+```{pyodide}
+table = pn.widgets.Tabulator(df_rx, page_size=10, pagination="remote") 
+pn.Column(pn.Column(species_widget, year_widget), table)
+```
+
+Notably, with this approach, we need to handle the layout of widgets ourselves.
+
+For complex expressions involving many widgets, the `panel.ReactiveExpr` pane offers a `.widgets` attribute, returning a `ListPanel`, which helps us retrieve all the related widgets. Once we have access to the widgets, it becomes possible to reposition them or add custom widgets in the final layout.
+
+```{pyodide}
+widgets = pn.ReactiveExpr(df_rx).widgets
+
 pn.Column(
-    idf.widgets(),
+    pn.WidgetBox(*reversed(widgets)),
     pn.Spacer(height=30),
-    "Selected penguins",
-    idf.head().panel(),
+    table,
 )
 ```
 
-However we can also use bind the interactive pipeline we have built to a Panel component, e.g. a `Tabulator` widget:
-
-```{pyodide}
-pn.Row(
-    idf.widgets(),
-    pn.widgets.Tabulator(idf, page_size=10, pagination='remote'),
-)
-```
+Finally, if performance is critical, you might want to consider using [Reactive expressions as references](https://panel.holoviz.org/reference/panes/ReactiveExpr.html#reactive-expressions-as-references). For instance, you can try replacing `df_rx` with `df_rx.rx()` in this tutorial.
 
 ## Related Resources
 
-* [hvplot.interact documentation](https://hvplot.holoviz.org/user_guide/Interactive.html)
+* [Reactive Functions and Expressions of Param](https://param.holoviz.org/user_guide/Reactive_Expressions.html)
+* [Reactive Expressions of Panel](https://panel.holoviz.org/tutorials/basic/pn_rx.html#)
+* [panel.ReactiveExpr documentation](https://panel.holoviz.org/reference/panes/ReactiveExpr.html#reactiveexpr)
