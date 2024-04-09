@@ -380,13 +380,13 @@ class Syncable(Renderable):
         if any(e for e in events if e not in self._busy__ignore):
             with edit_readonly(state):
                 state._busy_counter += 1
-        events = self._process_property_change(events)
+        params = self._process_property_change(dict(events))
         try:
             with edit_readonly(self):
-                self_events = {k: v for k, v in events.items() if '.' not in k}
-                with _syncing(self, list(self_events)):
-                    self.param.update(**self_events)
-            for k, v in self_events.items():
+                self_params = {k: v for k, v in params.items() if '.' not in k}
+                with _syncing(self, list(self_params)):
+                    self.param.update(**self_params)
+            for k, v in self_params.items():
                 if '.' not in k:
                     continue
                 *subpath, p = k.split('.')
@@ -397,13 +397,13 @@ class Syncable(Renderable):
                     with _syncing(obj, [p]):
                         obj.param.update(**{p: v})
         except Exception:
-            if len(events)>1:
-                msg_end = f" changing properties {pformat(events)} \n"
-            elif len(events)==1:
-                msg_end = f" changing property {pformat(events)} \n"
+            if len(params) > 1:
+                msg_end = f"changing properties {pformat(params)} \n"
+            elif len(params) == 1:
+                msg_end = f"changing property {pformat(params)} \n"
             else:
                 msg_end = "\n"
-            log.exception(f'Callback failed for object named "{self.name}"{msg_end}')
+            log.exception(f'Callback failed for object named {self.name!r} {msg_end}')
             raise
         finally:
             self._log('finished processing events %s', events)
