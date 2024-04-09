@@ -45,7 +45,7 @@ class ChatAreaInput(_PnTextAreaInput):
 
     disabled_enter = param.Boolean(
         default=False,
-        doc="If True, disables sending the message by pressing the Enter or the Ctrl-Enter key (clear the value).",
+        doc="If True, disables sending the message by pressing the `enter_sends` key.",
     )
 
     enter_sends = param.Boolean(
