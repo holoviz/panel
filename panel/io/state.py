@@ -250,7 +250,7 @@ class _state(param.Parameterized):
     @property
     def _is_launching(self) -> bool:
         curdoc = self.curdoc
-        if not curdoc or not curdoc.session_context:
+        if not curdoc or not curdoc.session_context or not curdoc.session_context.server_context:
             return False
         return not bool(curdoc.session_context.server_context.sessions)
 
