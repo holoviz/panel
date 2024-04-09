@@ -63,8 +63,8 @@ pn.ReactiveExpr(
 While `panel.ReactiveExpr` offers convenience, it's also common practice to bind the interactive pipeline we've constructed to a Panel component, such as a `Tabulator` widget:
 
 ```{pyodide}
-table = pn.widgets.Tabulator(df_rx, page_size=10, pagination="remote") 
-pn.Column(pn.Column(species_widget, year_widget), table)
+table = pn.widgets.Tabulator(df_rx, page_size=10, pagination="remote")
+pn.Column(species_widget, year_widget, table)
 ```
 
 Notably, with this approach, we need to handle the layout of widgets ourselves.
