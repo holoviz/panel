@@ -50,7 +50,7 @@ class ChatAreaInput(_PnTextAreaInput):
 
     enter_sends = param.Boolean(
         default=True,
-        doc="If True, pressing the Enter key sends the message, if False it is sent by pressing the Ctrl-Enter.",
+        doc="If True, pressing the Enter key sends the message, if False it is sent by pressing the Ctrl+Enter.",
     )
 
     rows = param.Integer(default=1, doc="""
