@@ -45,6 +45,12 @@ class _ChatButtonData:
         The objects to display.
     buttons : List
         The buttons to display.
+    callback : Callable
+        The callback to execute when the button is clicked.
+    js_on_click : str | None
+        The JavaScript to execute when the button is clicked.
+    js_args : Dict[str, Any] | None
+        The JavaScript arguments to pass when the button is clicked.
     """
 
     index: int
@@ -53,6 +59,8 @@ class _ChatButtonData:
     objects: List
     buttons: List
     callback: Callable
+    js_on_click: str | None = None
+    js_args: Dict[str, Any] | None = None
 
 
 class ChatInterface(ChatFeed):
@@ -114,16 +122,25 @@ class ChatInterface(ChatFeed):
     button_properties = param.Dict(default={}, doc="""
         Allows addition of functionality or customization of buttons
         by supplying a mapping from the button name to a dictionary
-        containing the `icon`, `callback`, and/or `post_callback` keys.
+        containing the `icon`, `callback`, `post_callback`, and/or `js_on_click` keys.
+
         If the button names correspond to default buttons
         (send, rerun, undo, clear), the default icon can be
         updated and if a `callback` key value pair is provided,
         the specified callback functionality runs before the existing one.
+
         For button names that don't match existing ones,
-        new buttons are created and must include a `callback` or `post_callback` key.
+        new buttons are created and must include a
+        `callback`, `post_callback`, and/or `js_on_click` key.
+
         The provided callbacks should have a signature that accepts
         two positional arguments: instance (the ChatInterface instance)
         and event (the button click event).
+
+        The `js_on_click` key should be a string of JavaScript code
+        to execute when the button is clicked. The `js_args` key
+        should be a dictionary of arguments to pass to the JavaScript
+        code.
         """)
 
     _widgets = param.Dict(default={}, allow_refs=False, doc="""
@@ -207,6 +224,7 @@ class ChatInterface(ChatFeed):
             name = name.lower()
             callback = properties.get("callback")
             post_callback = properties.get("post_callback")
+            js_on_click = properties.get("js_on_click")
             default_properties = default_button_properties.get(name) or {}
             if default_properties:
                 default_callback = default_properties["_default_callback"]
@@ -222,7 +240,7 @@ class ChatInterface(ChatFeed):
                 callback = self._wrap_callbacks(post_callback=post_callback)(callback)
             elif callback is None and post_callback is not None:
                 callback = post_callback
-            elif callback is None and post_callback is None:
+            elif callback is None and post_callback is None and not js_on_click:
                 raise ValueError(f"A 'callback' key is required for the {name!r} button")
             icon = properties.get("icon") or default_properties.get("icon")
             self._button_data[name] = _ChatButtonData(
@@ -232,6 +250,8 @@ class ChatInterface(ChatFeed):
                 objects=[],
                 buttons=[],
                 callback=callback,
+                js_on_click=js_on_click,
+                js_args=properties.get("js_args"),
             )
 
         widgets = self.widgets
@@ -300,8 +320,14 @@ class ChatInterface(ChatFeed):
                 )
                 if action != "stop":
                     self._link_disabled_loading(button)
-                callback = partial(button_data.callback, self)
-                button.on_click(callback)
+                if button_data.callback:
+                    callback = partial(button_data.callback, self)
+                    button.on_click(callback)
+                if button_data.js_on_click:
+                    button.js_on_click(
+                        args=(button_data.js_args or {}),
+                        code=button_data.js_on_click
+                    )
                 self._buttons[action] = button
                 button_data.buttons.append(button)
 
