@@ -22,15 +22,15 @@ You may return either a boolean `True`/`False` value OR a string, which will be 
 ```python
 def authorize(user_info, page):
     user = user_info['user']
-	if page == '/':
+    if page == "/":
         if user in ADMINS:
-	        return '/admin'
-	    else:
-		    return '/user'
+            return '/admin'
+        else:
+            return '/user'
     elif user in ADMINS:
-	    return True
-	else:
-	    return page.startswith('/user')
+        return True
+    else:
+        return page.startswith('/user')
 ```
 
 The callback above would direct users visiting the root (`/`) to the appropriate endpoint depending on whether they are in the list of `ADMINS`. If the user is an admin they are granted access to both the `/user` and `/admin` endpoints while non-admin users will only be granted access to the `/user` endpoint.
@@ -60,13 +60,10 @@ authorized_user_paths = {
 }
 
 def authorize(user_info, request_path):
-    current_user = user_info['username']
-    current_path = parse.urlparse(request_path).path
-    if current_user not in authorized_user_paths:
-        return False
-    current_user_paths = authorized_user_paths[current_user]
-    if current_path in current_user_paths:
-        return True
+    if current_user := authorized_user_paths.get(user_info['username']):
+        current_path = parse.urlparse(request_path).path
+        current_user_paths = authorized_user_paths[current_user]
+        return current_path in current_user_paths
     return False
 
 pn.config.authorize_callback = authorize
