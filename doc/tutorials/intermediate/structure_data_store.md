@@ -181,12 +181,6 @@ class Indicators(View):
                 format="{value:,.2f}",
                 **style
             ),
-            pn.indicators.Number(
-                value=self.data_store.avg_rotor_diameter,
-                name="Avg. Rotor Diameter (m)",
-                format="{value:,.2f}",
-                **style
-            ),
         )
 ```
 
