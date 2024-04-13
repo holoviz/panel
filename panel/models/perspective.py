@@ -76,8 +76,6 @@ class Perspective(HTMLBox):
 
     source = Instance(ColumnDataSource)
 
-    toggle_config = Bool(True)
-
     theme = Enum(*PERSPECTIVE_THEMES, default="pro")
 
     title = Either(String(), Null())
