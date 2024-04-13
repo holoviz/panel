@@ -119,7 +119,7 @@ calls it with the rendered model.
     }
 
     {%- for lib, urls in skip_imports.items() %}
-    if (((window['{{ lib }}'] !== undefined) && (!(window['{{ lib }}'] instanceof HTMLElement))) || window.requirejs) {
+    if (((window.{{ lib }} !== undefined) && (!(window.{{ lib }} instanceof HTMLElement))) || window.requirejs) {
       var urls = {{ urls }};
       for (var i = 0; i < urls.length; i++) {
         skip.push(urls[i])

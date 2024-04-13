@@ -22,6 +22,7 @@ This micro-release fixes a number of regressions and other bugs introduced in re
 - Avoid unnecessary rescroll on Column ([#6666](https://github.com/holoviz/panel/pull/6666))
 - Fix dynamically updating description tooltips ([#6676](https://github.com/holoviz/panel/pull/6676))
 - Ensure Perspective is fully loaded before attempting render ([#6689](https://github.com/holoviz/panel/pull/6689)))
+- Ensure busy indicators are always reset ([#6698](https://github.com/holoviz/panel/pull/6698))
 
 ### Styling
 

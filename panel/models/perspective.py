@@ -99,12 +99,13 @@ class Perspective(HTMLBox):
     @classproperty
     def __js_skip__(cls):
         return {
-            "perspective": cls.__javascript_modules__
+            "customElements.get('perspective-viewer')": cls.__javascript_modules__
         }
 
     __js_require__ = {
         "paths": {
             "perspective": f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/cdn/perspective",
+            "perspective-worker": f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/cdn/perspective.worker",
             "perspective-viewer": f"{config.npm_cdn}/@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer",
             "perspective-viewer-datagrid": f"{config.npm_cdn}/@finos/perspective-viewer-datagrid@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer-datagrid",
             "perspective-viewer-d3fc": f"{config.npm_cdn}/@finos/perspective-viewer-d3fc@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer-d3fc",
