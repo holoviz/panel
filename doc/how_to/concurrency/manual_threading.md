@@ -5,6 +5,9 @@ Enabling threading in Panel like we saw in the [automatic threading guide](threa
 ```python
 import time
 import threading
+import panel as pn
+
+pn.extension()
 
 c = threading.Condition()
 
