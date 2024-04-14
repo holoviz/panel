@@ -168,9 +168,9 @@ export class PerspectiveView extends HTMLBoxView {
     container.innerHTML = "<perspective-viewer style='height:100%; width:100%;'></perspective-viewer>"
     this.perspective_element = container.children[0]
 
-    const themesArray = Object.values(THEMES);
-    const filteredThemes = themesArray.filter(t => t !== this.model.theme);
-    const orderedThemes = [this.model.theme, ...filteredThemes];
+    const themesArray = Object.values(THEMES)
+    const filteredThemes = themesArray.filter(t => t !== this.model.theme)
+    const orderedThemes = [this.model.theme, ...filteredThemes]
     this.perspective_element.resetThemes(orderedThemes).catch(() => {})
 
     set_size(container, this.model)
