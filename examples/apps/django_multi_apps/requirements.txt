@@ -38,7 +38,7 @@ pyviz-comms==0.7.4
 PyYAML==5.4
 service-identity==18.1.0
 six==1.13.0
-sqlparse==0.4.4
+sqlparse==0.5.0
 tornado==6.3.3
 Twisted==23.10.0
 txaio==20.4.1
