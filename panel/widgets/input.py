@@ -176,6 +176,9 @@ class FileInput(Widget):
     description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
 
+    directory = param.Boolean(default=False, doc="""
+        Selecting directories instead of files. Will not work with accept""")
+
     filename = param.ClassSelector(
         default=None, class_=(str, list), is_instance=True)
 

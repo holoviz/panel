@@ -15,14 +15,14 @@ export class FileInputView extends InputWidgetView {
   }
 
   protected _render_input(): HTMLElement {
-    const {multiple, disabled} = this.model
+    const {multiple, disabled, directory} = this.model
 
     const accept = (() => {
       const {accept} = this.model
       return isString(accept) ? accept : accept.join(",")
     })()
 
-    return this.input_el = input({type: "file", class: inputs.input, multiple, accept, disabled})
+    return this.input_el = input({type: "file", class: inputs.input, multiple, accept, disabled, webkitdirectory: directory})
   }
 
   override render(): void {
@@ -40,18 +40,23 @@ export class FileInputView extends InputWidgetView {
     const values: string[] = []
     const filenames: string[] = []
     const mime_types: string[] = []
+    const {directory, multiple} = this.model
 
     for (const file of files) {
       const data_url = await this._read_file(file)
       const [, mime_type="",, value=""] = data_url.split(/[:;,]/, 4)
 
       values.push(value)
-      filenames.push(file.name)
       mime_types.push(mime_type)
+      if (directory) {
+        filenames.push(file.webkitRelativePath)
+      } else {
+        filenames.push(file.name)
+      }
     }
 
     const [value, filename, mime_type] = (() =>{
-      if (this.model.multiple) {
+      if (directory || multiple) {
         return [values, filenames, mime_types]
       } else if (files.length != 0) {
         return [values[0], filenames[0], mime_types[0]]
@@ -87,6 +92,7 @@ export namespace FileInput {
     filename: p.Property<string | string[]>
     accept: p.Property<string | string[]>
     multiple: p.Property<boolean>
+    directory: p.Property<boolean>
   }
 }
 
@@ -111,6 +117,7 @@ export class FileInput extends InputWidget {
       filename:  [ Or(Str, List(Str)), p.unset, {readonly: true} ],
       accept:    [ Or(Str, List(Str)), "" ],
       multiple:  [ Bool, false ],
+      directory: [ Bool, false ],
     }))
   }
 }

@@ -256,4 +256,6 @@ class RadioButtonGroup(bkRadioButtonGroup):
     """)
 
 class FileInput(bkFileInput):
-    ...
+    directory = Bool(False, help="""
+    Whether to allow selection of directories.
+    """)
