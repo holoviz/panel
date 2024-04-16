@@ -165,6 +165,8 @@ def capture_code_cell(cell):
     parses = False
     while not parses:
         try:
+            if not cell_out.strip():
+                raise SyntaxError
             ast.parse(cell_out)
             parses = True
         except SyntaxError:
@@ -185,7 +187,7 @@ def capture_code_cell(cell):
         return code
 
     # Remove code comments
-    if '#' in cell_out:
+    if '#' in cell_out and not cell_out.count('\n'):
         try:
             # To not remove "#000000"
             cell_tmp = cell_out[:cell_out.index('#')].rstrip()
