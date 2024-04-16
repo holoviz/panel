@@ -313,20 +313,13 @@ class ChatFeed(ListPanel):
         if placeholder, otherwise simply append the message.
         Replacing helps lessen the chat log jumping around.
         """
-        index = None
-        if self.placeholder_threshold > 0:
-            try:
-                index = self.index(self._placeholder)
-            except ValueError:
-                pass
-
-        if index is not None:
-            if message is not None:
-                self._chat_log.objects[index] = message
-            elif message is None:
-                self.remove(self._placeholder)
-        elif message is not None:
+        if message is not None:
             self.append(message)
+
+        try:
+            self.remove(self._placeholder)
+        except ValueError:
+            pass
 
     def _build_message(
         self,
