@@ -313,13 +313,14 @@ class ChatFeed(ListPanel):
         if placeholder, otherwise simply append the message.
         Replacing helps lessen the chat log jumping around.
         """
-        if message is not None:
-            self.append(message)
+        with param.parameterized.batch_call_watchers(self):
+            if message is not None:
+                self.append(message)
 
-        try:
-            self.remove(self._placeholder)
-        except ValueError:
-            pass
+            try:
+                self.remove(self._placeholder)
+            except ValueError:
+                pass
 
     def _build_message(
         self,
