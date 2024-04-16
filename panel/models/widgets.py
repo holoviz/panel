@@ -10,7 +10,8 @@ from bokeh.models.ui import Tooltip
 from bokeh.models.ui.icons import Icon
 from bokeh.models.widgets import (
     Button as bkButton, CheckboxButtonGroup as bkCheckboxButtonGroup,
-    InputWidget, RadioButtonGroup as bkRadioButtonGroup, Select,
+    FileInput as bkFileInput, InputWidget,
+    RadioButtonGroup as bkRadioButtonGroup, Select,
     TextAreaInput as BkTextAreaInput, Widget,
 )
 
@@ -253,3 +254,6 @@ class RadioButtonGroup(bkRadioButtonGroup):
     Delay (in milliseconds) to display the tooltip after the cursor has
     hovered over the Button, default is 500ms.
     """)
+
+class FileInput(bkFileInput):
+    ...

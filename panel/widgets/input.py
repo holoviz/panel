@@ -21,7 +21,7 @@ from bokeh.models.formatters import TickFormatter
 from bokeh.models.widgets import (
     Checkbox as _BkCheckbox, ColorPicker as _BkColorPicker,
     DatePicker as _BkDatePicker, DateRangePicker as _BkDateRangePicker,
-    Div as _BkDiv, FileInput as _BkFileInput, NumericInput as _BkNumericInput,
+    Div as _BkDiv, NumericInput as _BkNumericInput,
     PasswordInput as _BkPasswordInput, Spinner as _BkSpinner,
     Switch as _BkSwitch, TextInput as _BkTextInput,
 )
@@ -29,7 +29,8 @@ from bokeh.models.widgets import (
 from ..config import config
 from ..layout import Column, Panel
 from ..models import (
-    DatetimePicker as _bkDatetimePicker, TextAreaInput as _bkTextAreaInput,
+    DatetimePicker as _bkDatetimePicker, FileInput as _BkFileInput,
+    TextAreaInput as _bkTextAreaInput,
 )
 from ..util import param_reprs, try_datetime64_to_datetime
 from .base import CompositeWidget, Widget
