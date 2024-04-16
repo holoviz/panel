@@ -693,7 +693,7 @@ class ChatFeed(ListPanel):
             return []
         messages = self._chat_log.objects
         undone_entries = messages[-count:]
-        self._chat_log.objects[:] = messages[:-count]
+        self._chat_log.objects = messages[:-count]
         return undone_entries
 
     def clear(self) -> List[Any]:
