@@ -112,6 +112,10 @@ def _pandas_hash(obj):
     if len(obj) >= _PANDAS_ROWS_LARGE:
         obj = obj.sample(n=_PANDAS_SAMPLE_SIZE, random_state=0)
     try:
+        if isinstance(obj, pd.DataFrame):
+            return ((b"%s" % pd.util.hash_pandas_object(obj).sum())
+                + (b"%s" % pd.util.hash_pandas_object(obj.columns).sum())
+            )
         return b"%s" % pd.util.hash_pandas_object(obj).sum()
     except TypeError:
         # Use pickle if pandas cannot hash the object for example if
@@ -463,3 +467,10 @@ def cache(
         pass
 
     return wrapped_func
+
+def is_equal(value, other)->bool:
+    """Returns True if value and other are equal
+
+    Supports complex values like DataFrames
+    """
+    return value is other or _generate_hash(value)==_generate_hash(other)

@@ -17,7 +17,9 @@ except Exception:
     diskcache = None
 diskcache_available = pytest.mark.skipif(diskcache is None, reason="requires diskcache")
 
-from panel.io.cache import _find_hash_func, cache
+from panel.io.cache import (
+    _find_hash_func, _generate_hash, cache, is_equal,
+)
 from panel.io.state import set_curdoc, state
 from panel.tests.util import serve_and_wait
 
@@ -339,3 +341,20 @@ def test_cache_on_undecorated_parameterized_method():
     assert model.expensive_calculation(2) == 4
 
     assert model.executions == 2
+
+DF1 = pd.DataFrame({"x": [1]})
+DF2 = pd.DataFrame({"y": [1]})
+
+def test_hash_on_simple_dataframes():
+    assert _generate_hash(DF1)!=_generate_hash(DF2)
+
+@pytest.mark.parametrize(["value", "other", "expected"], [
+    (None, None, True),
+    (True, False, False), (False, True, False), (False, False, True), (True, True, True),
+    (None, 1, False), (1, None, False), (1, 1, True), (1,2,False),
+    (None, "a", False), ("a", None, False), ("a", "a", True), ("a","b",False),
+    (1,"1", False),
+    (None, DF1, False), (DF1, None, False), (DF1, DF1, True), (DF1, DF1.copy(), True), (DF1,DF2,False),
+])
+def test_is_equal(value, other, expected):
+    assert is_equal(value, other)==expected
