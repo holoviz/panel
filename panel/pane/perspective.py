@@ -438,6 +438,10 @@ class Perspective(ModelPane, ReactiveData):
         for p in ('columns', 'group_by', 'split_by'):
             if props.get(p):
                 props[p] = [None if col is None else str(col) for col in props[p]]
+        if props.get('settings'):
+            props['height'] = self.height or 300
+        else:
+            props['height'] = self.height or 150
         if props.get('sort'):
             props['sort'] = [[str(col), *args] for col, *args in props['sort']]
         if props.get('filters'):
