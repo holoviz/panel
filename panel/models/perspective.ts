@@ -77,7 +77,7 @@ export class PerspectiveView extends HTMLBoxView {
     this.connect(this.model.source.patching, () => this.patch())
 
     const {
-      schema, toggle_config, columns, expressions, split_by, group_by,
+      schema, columns, expressions, split_by, group_by,
       aggregates, filters, sort, plugin, selectable, editable, theme,
       title, settings,
     } = this.model.properties
@@ -97,9 +97,6 @@ export class PerspectiveView extends HTMLBoxView {
         this.table.update(this.data)
         this.perspective_element.load(this.table)
       })
-    })
-    this.on_change(toggle_config, () => {
-      this.perspective_element.toggleConfig()
     })
     this.on_change(columns, not_updating(() => {
       this.perspective_element.restore({columns: this.model.columns})
@@ -170,10 +167,12 @@ export class PerspectiveView extends HTMLBoxView {
     })
     container.innerHTML = "<perspective-viewer style='height:100%; width:100%;'></perspective-viewer>"
     this.perspective_element = container.children[0]
-    this.perspective_element.resetThemes([...Object.values(THEMES)]).catch(() => {})
-    if (this.model.toggle_config) {
-      this.perspective_element.toggleConfig()
-    }
+
+    const themesArray = Object.values(THEMES)
+    const filteredThemes = themesArray.filter(t => t !== this.model.theme)
+    const orderedThemes = [this.model.theme, ...filteredThemes]
+    this.perspective_element.resetThemes(orderedThemes).catch(() => {})
+
     set_size(container, this.model)
     this.shadow_el.appendChild(container)
 
@@ -295,7 +294,6 @@ export namespace Perspective {
     plugin: p.Property<any>
     plugin_config: p.Property<any>
     selectable: p.Property<boolean | null>
-    toggle_config: p.Property<boolean>
     schema: p.Property<any>
     settings: p.Property<boolean>
     sort: p.Property<any[] | null>
@@ -333,7 +331,6 @@ export class Perspective extends HTMLBox {
       selectable:       [ Bool,                      true ],
       settings:         [ Bool,                      true ],
       schema:           [ Any,                         {} ],
-      toggle_config:    [ Bool,                      true ],
       sort:             [ Nullable(List(List(Str))), null ],
       source:           [ Ref(ColumnDataSource)           ],
       theme:            [ Str,                      "pro" ],

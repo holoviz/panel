@@ -314,9 +314,6 @@ class Perspective(ModelPane, ReactiveData):
     settings = param.Boolean(default=True, doc="""
       Whether to show the settings menu.""")
 
-    toggle_config = param.Boolean(default=True, doc="""
-      Whether to show the config menu.""")
-
     theme = param.ObjectSelector(default='pro', objects=THEMES, doc="""
       The style of the PerspectiveViewer. For example pro-dark""")
 
@@ -382,10 +379,6 @@ class Perspective(ModelPane, ReactiveData):
         if 'theme' in props and 'material' in props['theme']:
             props['theme'] = props['theme'].replace('material', 'pro')
         del props['object']
-        if props.get('toggle_config'):
-            props['height'] = self.height or 300
-        else:
-            props['height'] = self.height or 150
         if source is None:
             source = ColumnDataSource(data=self._data)
         else:
