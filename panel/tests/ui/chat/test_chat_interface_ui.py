@@ -39,3 +39,23 @@ def test_chat_interface_custom_js(page):
         msg = msg_info.value
 
     assert msg.args[0].json_value() == "Typed: 'Hello'"
+
+
+def test_chat_interface_custom_js_string(page):
+    chat_interface = ChatInterface()
+    chat_interface.button_properties={
+        "help": {
+            "icon": "help",
+            "js_on_click": "console.log(`Clicked`)",
+        },
+    }
+    serve_component(page, chat_interface)
+
+    chat_input = page.locator(".bk-input")
+    chat_input.fill("Hello")
+
+    with page.expect_console_message() as msg_info:
+        page.locator("button", has_text="help").click()
+        msg = msg_info.value
+
+    assert msg.args[0].json_value() == "Clicked"
