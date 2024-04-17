@@ -313,20 +313,14 @@ class ChatFeed(ListPanel):
         if placeholder, otherwise simply append the message.
         Replacing helps lessen the chat log jumping around.
         """
-        index = None
-        if self.placeholder_threshold > 0:
+        with param.parameterized.batch_call_watchers(self):
+            if message is not None:
+                self.append(message)
+
             try:
-                index = self.index(self._placeholder)
+                self.remove(self._placeholder)
             except ValueError:
                 pass
-
-        if index is not None:
-            if message is not None:
-                self[index] = message
-            elif message is None:
-                self.remove(self._placeholder)
-        elif message is not None:
-            self.append(message)
 
     def _build_message(
         self,
@@ -699,7 +693,7 @@ class ChatFeed(ListPanel):
             return []
         messages = self._chat_log.objects
         undone_entries = messages[-count:]
-        self[:] = messages[:-count]
+        self._chat_log.objects = messages[:-count]
         return undone_entries
 
     def clear(self) -> List[Any]:
@@ -812,9 +806,11 @@ class ChatFeed(ListPanel):
             exclude_users = ["help"]
         else:
             exclude_users = [user.lower() for user in exclude_users]
+
         messages = [
             message for message in self._chat_log.objects
             if message.user.lower() not in exclude_users
+            and message is not self._placeholder
         ]
 
         if filter_by is not None:

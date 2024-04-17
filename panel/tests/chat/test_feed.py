@@ -820,6 +820,21 @@ class TestChatFeedCallback:
         time.sleep(1)
         assert chat_feed.objects[-1].object == "A"
 
+    def test_callback_short_time(self, chat_feed):
+        def callback(contents, user, instance):
+            time.sleep(1)
+            message = None
+            string = ""
+            for c in "helloooo":
+                string += c
+                time.sleep(0.001)
+                message = instance.stream(string, message=message, replace=True)
+
+        feed = ChatFeed(callback=callback)
+        feed.send("Message", respond=True)
+        assert feed.objects[-1].object == "helloooo"
+        assert chat_feed._placeholder not in chat_feed._chat_log
+
 
 @pytest.mark.xdist_group("chat")
 class TestChatFeedSerializeForTransformers:
@@ -947,6 +962,21 @@ class TestChatFeedSerializeForTransformers:
             {"role": "user", "content": "Hello there!"},
         ]
 
+    def test_serialize_exclude_placeholder(self):
+        def say_hi(contents, user, instance):
+            assert len(instance.serialize()) == 1
+            return f"Hi {user}!"
+
+        chat_feed = ChatFeed(
+            help_text="This chat feed will respond by saying hi!",
+            callback=say_hi
+        )
+
+        chat_feed.send("Hello there!")
+        assert chat_feed.serialize() == [
+            {"role": "user", "content": "Hello there!"},
+            {"role": "assistant", "content": "Hi User!"}
+        ]
 
 @pytest.mark.xdist_group("chat")
 class TestChatFeedSerializeBase:
