@@ -24,6 +24,24 @@ if TYPE_CHECKING:
     from bokeh.server.contexts import BokehSessionContext
     from pyviz_comms import Comm
 
+def _default_is_equal(value, other):
+    return value==other
+
+def _dataframe_is_equal(value, other):
+    if hasattr(value, "equals"):
+        return value.equals(other)
+    if value is None and other is None:
+        return True
+    return False
+
+_PARAMETER_IS_EQUAL_MAP = {
+    param.DataFrame: _dataframe_is_equal
+}
+
+def _is_equal(value, other, parameter_type):
+    is_equal = _PARAMETER_IS_EQUAL_MAP.get(parameter_type, _default_is_equal)
+    return is_equal(value, other)
+
 
 class Location(Syncable):
     """
@@ -164,9 +182,10 @@ class Location(Syncable):
                 except Exception:
                     pass
                 try:
-                    equal = v == getattr(p, pname)
+                    equal = _is_equal(v, getattr(p, pname), type(p.param[pname]))
                 except Exception:
                     equal = False
+
                 if not equal:
                     mapped[pname] = v
             try:
