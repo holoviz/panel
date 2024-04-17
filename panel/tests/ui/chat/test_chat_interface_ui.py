@@ -23,8 +23,10 @@ def test_chat_interface_custom_js(page):
     chat_interface.button_properties={
         "help": {
             "icon": "help",
-            "js_on_click": "console.log(`Typed: '${chat_input.value}'`)",
-            "js_args": {"chat_input": chat_interface.active_widget},
+            "js_on_click": {
+                "code": "console.log(`Typed: '${chat_input.value}'`)",
+                "args": {"chat_input": chat_interface.active_widget},
+            },
         },
     }
     serve_component(page, chat_interface)
