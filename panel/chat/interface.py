@@ -47,10 +47,8 @@ class _ChatButtonData:
         The buttons to display.
     callback : Callable
         The callback to execute when the button is clicked.
-    js_on_click : str | None
-        The JavaScript to execute when the button is clicked.
-    js_args : Dict[str, Any] | None
-        The JavaScript arguments to pass when the button is clicked.
+    js_on_click : dict | None
+        The JavaScript `code` and `args` to execute when the button is clicked.
     """
 
     index: int
@@ -59,8 +57,7 @@ class _ChatButtonData:
     objects: List
     buttons: List
     callback: Callable
-    js_on_click: str | None = None
-    js_args: Dict[str, Any] | None = None
+    js_on_click: dict | None = None
 
 
 class ChatInterface(ChatFeed):
@@ -137,9 +134,10 @@ class ChatInterface(ChatFeed):
         two positional arguments: instance (the ChatInterface instance)
         and event (the button click event).
 
-        The `js_on_click` key should be a string of JavaScript code
-        to execute when the button is clicked. The `js_args` key
-        should be a dictionary of arguments to pass to the JavaScript
+        The `js_on_click` key should be a dict, with a
+        `code` key, containing the JavaScript code
+        to execute when the button is clicked, and `args` key,
+        containing dictionary of arguments to pass to the JavaScript
         code.
         """)
 
@@ -251,7 +249,6 @@ class ChatInterface(ChatFeed):
                 buttons=[],
                 callback=callback,
                 js_on_click=js_on_click,
-                js_args=properties.get("js_args"),
             )
 
         widgets = self.widgets
@@ -324,9 +321,19 @@ class ChatInterface(ChatFeed):
                     callback = partial(button_data.callback, self)
                     button.on_click(callback)
                 if button_data.js_on_click:
+                    if not isinstance(button_data.js_on_click, dict):
+                        raise ValueError(
+                            f"The 'js_on_click' key for the {action!r} button must be a dict "
+                            f"containing 'code' and 'args' keys, but got {button_data.js_on_click!r}"
+                        )
+                    elif "code" not in button_data.js_on_click:
+                        raise ValueError(
+                            f"A 'code' key is required for the {action!r} button's "
+                            "'js_on_click' key"
+                        )
                     button.js_on_click(
-                        args=(button_data.js_args or {}),
-                        code=button_data.js_on_click
+                        args=(button_data.js_on_click.get("args") or {}),
+                        code=button_data.js_on_click["code"],
                     )
                 self._buttons[action] = button
                 button_data.buttons.append(button)
