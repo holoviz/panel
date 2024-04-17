@@ -300,11 +300,13 @@ class ChatMessage(PaneBase):
             visible=self.param.show_user, stylesheets=self._stylesheets,
         )
 
+        header_objects = (
+            [self._user_html] +
+            self.param.header_objects.rx() +
+            [self.chat_copy_icon, self._activity_dot]
+        )
         header_row = Row(
-            self._user_html,
-            *self.param.header_objects.rx(),
-            self.chat_copy_icon,
-            self._activity_dot,
+            objects=header_objects,
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
             sizing_mode="stretch_width",
             css_classes=["header"]
@@ -317,11 +319,10 @@ class ChatMessage(PaneBase):
         )
 
         footer_col = Column(
-            *self.param.footer_objects.rx(),
-            self._timestamp_html,
+            objects=self.param.footer_objects.rx() + [self._timestamp_html],
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
             sizing_mode="stretch_width",
-            css_classes=["footer"]
+            css_classes=["footer"],
         )
 
         self._right_col = right_col = Column(
