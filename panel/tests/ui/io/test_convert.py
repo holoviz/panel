@@ -41,6 +41,13 @@ button = pn.widgets.Button()
 pn.Row(button, pn.bind(lambda c: c, button.param.clicks)).servable();
 """
 
+template_button_app = """
+import panel as pn
+pn.extension(template='bootstrap')
+button = pn.widgets.Button()
+pn.Row(button, pn.bind(lambda c: c, button.param.clicks)).servable();
+"""
+
 slider_app = """
 import panel as pn
 slider = pn.widgets.FloatSlider()
@@ -169,6 +176,19 @@ def test_pyodide_test_error_handling_worker(http_serve, page):
 
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
 def test_pyodide_test_convert_button_app(http_serve, page, runtime):
+    msgs = wait_for_app(http_serve, button_app, page, runtime)
+
+    expect(page.locator('pre:not([class])')).to_have_text('0')
+
+    page.click('.bk-btn')
+
+    expect(page.locator('pre:not([class])')).to_have_text('1')
+
+    assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
+
+
+@pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
+def test_pyodide_test_convert_template_button_app(http_serve, page, runtime):
     msgs = wait_for_app(http_serve, button_app, page, runtime)
 
     expect(page.locator('pre:not([class])')).to_have_text('0')
