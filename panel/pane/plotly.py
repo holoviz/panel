@@ -48,7 +48,8 @@ class Plotly(ModelPane):
 
     clickannotation_data = param.Dict(doc="Clickannotation callback data")
 
-    config = param.Dict(nested_refs=True, doc="Config data")
+    config = param.Dict(nested_refs=True, doc="""
+        Plotly configuration options. See https://plotly.com/javascript/configuration-options/""")
 
     hover_data = param.Dict(doc="Hover callback data")
 
@@ -62,7 +63,7 @@ class Plotly(ModelPane):
 
     selected_data = param.Dict(nested_refs=True, doc="Selected callback data")
 
-    viewport = param.Dict(nested_refs=True, doc="Current viewport state")
+    viewport = param.Dict(nested_refs=True, doc="Current viewport state, i.e. the x- and y-axis limits of the displayed plot.")
 
     viewport_update_policy = param.Selector(default="mouseup", doc="""
         Policy by which the viewport parameter is updated during user interactions.
