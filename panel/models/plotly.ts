@@ -302,8 +302,7 @@ export class PlotlyPlotView extends HTMLBoxView {
     //  - plotly_click
     this.container.on("plotly_click", (eventData: any) => {
       const data = filterEventData(this.container, eventData, "click")
-      console.trace('click', data)
-      this.model.trigger_event(new PlotlyEvent({type: 'click', data}))
+      this.model.trigger_event(new PlotlyEvent({type: "click", data}))
     })
 
     //  - plotly_hover
@@ -311,6 +310,7 @@ export class PlotlyPlotView extends HTMLBoxView {
       const data = filterEventData(this.container, eventData, "hover")
       this.model.trigger_event(new PlotlyEvent({type: "hover", data}))
       // Override hoverdata to ensure click event has context
+      // see https://github.com/holoviz/panel/pull/6753
       this._hoverdata = this.container._hoverdata = eventData.points
     })
 
