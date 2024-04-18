@@ -86,7 +86,8 @@ class Plotly(ModelPane):
     _updates: ClassVar[bool] = True
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'link_figure': None, 'object': None
+        'link_figure': None, 'object': None, 'click_data': None, 'clickannotation_data': None,
+        'hover_data': None, 'selected_data': None
     }
 
     @classmethod
@@ -310,7 +311,17 @@ class Plotly(ModelPane):
             self._bokeh_model = lazy_load(
                 'panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm), root
             )
-        return super()._get_model(doc, root, parent, comm)
+        model = super()._get_model(doc, root, parent, comm)
+        self._register_events('plotly_event', model=model, doc=doc, comm=comm)
+        return model
+
+    def _process_event(self, event):
+        etype = event.data['type']
+        pname = f'{etype}_data'
+        if getattr(self, pname) == event.data['data']:
+            self.param.trigger(pname)
+        else:
+            self.param.update(**{pname: event.data['data']})
 
     def _update(self, ref: str, model: Model) -> None:
         if self.object is None:
