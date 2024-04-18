@@ -4,10 +4,20 @@ Defines a custom PlotlyPlot bokeh model to render Plotly plots.
 from bokeh.core.properties import (
     Any, Dict, Either, Enum, Instance, Int, List, Null, Nullable, String,
 )
+from bokeh.events import ModelEvent
 from bokeh.models import ColumnDataSource, LayoutDOM
 
 from ..io.resources import JS_URLS, bundled_files
 from ..util import classproperty
+
+
+class PlotlyEvent(ModelEvent):
+
+    event_name = 'plotly_event'
+
+    def __init__(self, model, data=None):
+        self.data = data
+        super().__init__(model=model)
 
 
 class PlotlyPlot(LayoutDOM):
@@ -53,10 +63,6 @@ class PlotlyPlot(LayoutDOM):
     # Callback properties
     relayout_data = Dict(String, Any)
     restyle_data = List(Any)
-    click_data = Either(Dict(String, Any), Null)
-    hover_data = Either(Dict(String, Any), Null)
-    clickannotation_data = Either(Dict(String, Any), Null)
-    selected_data = Either(Dict(String, Any), Null)
     viewport = Either(Dict(String, Any), Null)
     viewport_update_policy = Enum( "mouseup", "continuous", "throttle")
     viewport_update_throttle = Int()
