@@ -348,7 +348,7 @@ def script_to_html(
             loading_style = f'<style type="text/css">\n{loading_base}\n</style>'
         else:
             loading_style = f'<link rel="stylesheet" href="{CDN_DIST}css/loading.css" type="text/css" />'
-    css_resources.append(loading_style)
+        css_resources.append(loading_style)
     spinner_css = loading_css(
         config.loading_spinner, config.loading_color, config.loading_max_height
     )
