@@ -892,7 +892,7 @@ def lookupTableSerializer(parent, lookupTable, lookupTableId, context, depth):
             'hueRange': lookupTableHueRange,
             # 'alphaRange': lutAlphaRange,  # Causes weird rendering artifacts on client
             'saturationRange': lutSatRange,
-            'nanColor': lookupTable.GetNanColorRGBA(),
+            'nanColor': lookupTable.GetNanColor(),
             'belowRangeColor': lookupTable.GetBelowRangeColor(),
             'aboveRangeColor': lookupTable.GetAboveRangeColor(),
             'useAboveRangeColor': True if lookupTable.GetUseAboveRangeColor() else False,
