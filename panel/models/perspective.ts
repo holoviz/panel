@@ -67,7 +67,9 @@ export class PerspectiveView extends HTMLBoxView {
   _updating: boolean = false
   _config_listener: any = null
   _current_config: any = null
+  _current_plugin: string | null = null
   _loaded: boolean = false
+  _plugin_configs: any = new Map()
 
   override connect_signals(): void {
     super.connect_signals()
@@ -126,7 +128,7 @@ export class PerspectiveView extends HTMLBoxView {
       this.perspective_element.restore({sort: this.model.sort})
     }))
     this.on_change(plugin, not_updating(() => {
-      this.perspective_element.restore({plugin: PLUGINS[this.model.plugin]})
+      this.perspective_element.restore({plugin: PLUGINS[this.model.plugin], ...settings})
     }))
     this.on_change(selectable, not_updating(() => {
       this.perspective_element.restore({plugin_config: {...this._current_config, selectable: this.model.selectable}})
@@ -165,6 +167,7 @@ export class PerspectiveView extends HTMLBoxView {
         zIndex: 0,
       },
     })
+    this._current_plugin = this.model.plugin
     container.innerHTML = "<perspective-viewer style='height:100%; width:100%;'></perspective-viewer>"
     this.perspective_element = container.children[0]
 
@@ -220,7 +223,20 @@ export class PerspectiveView extends HTMLBoxView {
       return true
     }
     this.perspective_element.save().then((config: any) => {
+      if (config.plugin !== this._current_plugin) {
+	this._plugin_configs.set(this._current_plugin, {
+	  columns: this._current_config.columns,
+	  columns_config: this._current_config.columns_config,
+	  plugin_config: this._current_config.plugin_config
+	})
+	if (this._plugin_configs.has(config.plugin)) {
+	  const overrides = this._plugin_configs.get(config.plugin)
+	  this.perspective_element.restore(overrides)
+	  config = {...config, ...overrides}
+	}
+      }
       this._current_config = config
+      this._current_plugin = config.plugin
       const props: any =  {}
       for (let option in config) {
         let value = config[option]
