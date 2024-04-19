@@ -224,16 +224,16 @@ export class PerspectiveView extends HTMLBoxView {
     }
     this.perspective_element.save().then((config: any) => {
       if (config.plugin !== this._current_plugin) {
-	this._plugin_configs.set(this._current_plugin, {
-	  columns: this._current_config.columns,
-	  columns_config: this._current_config.columns_config,
-	  plugin_config: this._current_config.plugin_config
-	})
-	if (this._plugin_configs.has(config.plugin)) {
-	  const overrides = this._plugin_configs.get(config.plugin)
-	  this.perspective_element.restore(overrides)
-	  config = {...config, ...overrides}
-	}
+        this._plugin_configs.set(this._current_plugin, {
+          columns: this._current_config.columns,
+          columns_config: this._current_config.columns_config,
+          plugin_config: this._current_config.plugin_config,
+        })
+        if (this._plugin_configs.has(config.plugin)) {
+          const overrides = this._plugin_configs.get(config.plugin)
+          this.perspective_element.restore(overrides)
+          config = {...config, ...overrides}
+        }
       }
       this._current_config = config
       this._current_plugin = config.plugin
