@@ -420,6 +420,7 @@ class Perspective(ModelPane, ReactiveData):
 
     def _get_theme(self, theme, resources=None):
         from ..models.perspective import THEME_URL
+        theme = theme.replace('material', 'pro')
         theme_url = f'{THEME_URL}{theme}.css'
         if self._bokeh_model is not None:
             self._bokeh_model.__css_raw__ = self._bokeh_model.__css_raw__[:5] + [theme_url]
