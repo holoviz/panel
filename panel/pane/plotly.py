@@ -44,26 +44,27 @@ class Plotly(ModelPane):
     >>> Plotly(some_plotly_figure, width=500, height=500)
     """
 
-    click_data = param.Dict(doc="Click callback data")
+    click_data = param.Dict(doc="Click event data from `plotly_click` event.")
 
-    clickannotation_data = param.Dict(doc="Clickannotation callback data")
+    clickannotation_data = param.Dict(doc="Clickannotation event data from `plotly_clickannotation` event.")
 
     config = param.Dict(nested_refs=True, doc="""
         Plotly configuration options. See https://plotly.com/javascript/configuration-options/""")
 
-    hover_data = param.Dict(doc="Hover callback data")
+    hover_data = param.Dict(doc="Hover event data from `plotly_hover` and `plotly_unhover` events.")
 
     link_figure = param.Boolean(default=True, doc="""
        Attach callbacks to the Plotly figure to update output when it
        is modified in place.""")
 
-    relayout_data = param.Dict(nested_refs=True, doc="Relayout callback data")
+    relayout_data = param.Dict(nested_refs=True, doc="Relayout event data from `plotly_relayout` event")
 
-    restyle_data = param.List(nested_refs=True, doc="Restyle callback data")
+    restyle_data = param.List(nested_refs=True, doc="Restyle event data from `plotly_restyle` event")
 
-    selected_data = param.Dict(nested_refs=True, doc="Selected callback data")
+    selected_data = param.Dict(nested_refs=True, doc="Selected event data from `plotly_selected` and `plotly_deselect` events.")
 
-    viewport = param.Dict(nested_refs=True, doc="Current viewport state, i.e. the x- and y-axis limits of the displayed plot.")
+    viewport = param.Dict(nested_refs=True, doc="""Current viewport state, i.e. the x- and y-axis limits of the displayed plot.
+                          Updated on `plotly_relayout`, `plotly_relayouting` and `plotly_restyle` events.""")
 
     viewport_update_policy = param.Selector(default="mouseup", doc="""
         Policy by which the viewport parameter is updated during user interactions.
