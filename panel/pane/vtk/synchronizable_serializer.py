@@ -918,6 +918,11 @@ def lookupTableToColorTransferFunction(lookupTable):
         points = linspace(*tableRange, num=len(table))
         for x, rgba in zip(points, table):
             ctf.AddRGBPoint(x, *[x/255 for x in rgba[:3]])
+        ctf.SetAboveRangeColor(lookupTable.GetAboveRangeColor()[:3])
+        ctf.SetBelowRangeColor(lookupTable.GetBelowRangeColor()[:3])
+        ctf.SetUseAboveRangeColor(lookupTable.GetUseAboveRangeColor())
+        ctf.SetUseBelowRangeColor(lookupTable.GetUseBelowRangeColor())
+        ctf.SetNanColorRGBA(lookupTable.GetNanColor())
         return ctf
 
 # -----------------------------------------------------------------------------
@@ -1173,11 +1178,11 @@ def colorTransferFunctionSerializer(parent, instance, objId, context, depth):
             'clamping': 1 if instance.GetClamping() else 0,
             'colorSpace': instance.GetColorSpace(),
             'hSVWrap': 1 if instance.GetHSVWrap() else 0,
-            # 'nanColor': instance.GetNanColor(),                  # Breaks client
-            # 'belowRangeColor': instance.GetBelowRangeColor(),    # Breaks client
-            # 'aboveRangeColor': instance.GetAboveRangeColor(),    # Breaks client
-            # 'useAboveRangeColor': 1 if instance.GetUseAboveRangeColor() else 0,
-            # 'useBelowRangeColor': 1 if instance.GetUseBelowRangeColor() else 0,
+            'nanColor': instance.GetNanColor() + (instance.GetNanOpacity(),),
+            'belowRangeColor': instance.GetBelowRangeColor() + (1,),
+            'aboveRangeColor': instance.GetAboveRangeColor() + (1,),
+            'useAboveRangeColor': 1 if instance.GetUseAboveRangeColor() else 0,
+            'useBelowRangeColor': 1 if instance.GetUseBelowRangeColor() else 0,
             'allowDuplicateScalars': 1 if instance.GetAllowDuplicateScalars() else 0,
             'alpha': instance.GetAlpha(),
             'vectorComponent': instance.GetVectorComponent(),
