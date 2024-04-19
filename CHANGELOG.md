@@ -2,6 +2,36 @@
 
 ## Version 1.4.1
 
+Date: 2024-04-19
+
+This micro-release fixes a number of smaller regressions and bugs including parsing of notebooks. Many thanks to our new contributor @bkreider, our returning contributors, @jrycw and @ea42gh, and our dedicated team of maintainers including @ahuang11, @MarcSkovMadsen and @philippjfr.
+
+### Enhancements
+
+- Allow toggling CTRL+Enter vs Enter to send `ChatAreaInput` ([#6592](https://github.com/holoviz/panel/pull/6592))
+- Allow adding JS callbacks in `ChatInterface.button_properties` ([#6706](https://github.com/holoviz/panel/pull/6706))
+
+### Bug fixes
+
+- Fix regression in parsing notebooks served as apps ([#6736](https://github.com/holoviz/panel/pull/6736))
+- Do not include placeholder in `ChatInterface.serialize` and properly replace placeholder for streams ([#6734](https://github.com/holoviz/panel/pull/6734))
+- Remove `Perspective.toggle_config` which was erroneously reintroduced in 1.4.1 ([#6721](https://github.com/holoviz/panel/pull/6721))
+- Fix dynamically setting `ChatMessage` `footer_objects`/`header_objects` ([#6705](https://github.com/holoviz/panel/pull/6705))
+- Allow `Location.sync` of DataFrame parameters ([#6745](https://github.com/holoviz/panel/pull/6745))
+- Fix and improve Plotly event handling ([#6753](https://github.com/holoviz/panel/pull/6753))
+- Fix issue when converting templated apps to Pyodide/PyScript ([#6756](https://github.com/holoviz/panel/pull/6756))
+- Fix styling of loading indicator in Fast design ([#6761](https://github.com/holoviz/panel/pull/6761))
+- Ensure `VTK` nan, above and below colors are serialized ([#6763](https://github.com/holoviz/panel/pull/6763))
+- Fix issues with `Perspective` theme and persist config when switching plugins ([#6764](https://github.com/holoviz/panel/pull/6764))
+
+### Documentation
+
+- Various fixes and cleanup of documentation ([#6704](https://github.com/holoviz/panel/pull/6704), [#6707](https://github.com/holoviz/panel/pull/6707), [#6710](https://github.com/holoviz/panel/pull/6710), [#6755](https://github.com/holoviz/panel/pull/6755),)
+- Document how display full html document in iframe ([#6740](https://github.com/holoviz/panel/pull/6740))
+- Improve Plotly reference documentation ([#6751](https://github.com/holoviz/panel/pull/6751), [#6760](https://github.com/holoviz/panel/pull/6760))
+
+## Version 1.4.1
+
 Date: 2024-04-05
 
 This micro-release fixes a number of regressions and other bugs introduced in recent releases and further improves the dashboard builder UI. Additionally it includes some tweaks and polish for the new tutorial material. Many thanks to our new contributor @jrycw, our returning contributors @cdeil and @TheoMathurin and our maintainers @ahuang11, @MarcSkovMadsen, @Hoxbro and @philippjfr for their contributions to this release.
