@@ -38,6 +38,8 @@ holoviews = ">=1.16.0"
 matplotlib = "*"
 pillow = "*"
 plotly = ">=4.0"
+packaging = "*"
+watchfiles = "*"
 
 [feature.py39.dependencies]
 python = "3.9.*"
@@ -101,7 +103,6 @@ psutil = "*"
 altair = "*"
 anywidget = "*"
 diskcache = "*"
-watchfiles = "*"
 
 [feature.test.dependencies]
 folium = "*"
@@ -111,7 +112,6 @@ ipympl = "*"
 ipyvuetify = "*"
 ipywidgets_bokeh = "*"
 reacton = "*"
-twine = "*"
 numba = "*"
 
 [feature.test-unit-task.tasks] # So it not showing up for UI tests
@@ -132,7 +132,6 @@ channels = ["conda-forge", "pyviz/label/dev", "microsoft"]
 playwright = "*"
 pytest-playwright = "*"
 jupyter_server = "*"
-tomli = "*"
 
 [feature.test-ui.tasks]
 install-ui = 'playwright install chromium'
@@ -149,13 +148,15 @@ nbsite = ">=0.8.4"
 lxml = "*"
 pandas = "<2.1.0" # Avoid deprecation warnings
 
-# [feature.doc.tasks]
-# docs-generate-rst = 'nbsite generate-rst --org holoviz --project-name panel'
-# docs-refmanual = 'python ./doc/generate_modules.py panel -d ./doc/reference_manual -n panel -e tests'
-# docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name panel'
+[feature.doc.tasks]
+docs-refmanual = 'python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests'
+docs-convert-gallery = 'python scripts/gallery/convert_gallery.py'
+docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name panel'
+docs-copy-panel-dist = 'cp -r ./panel/dist ./builtdocs/panel_dist'
+docs-pyodide = 'panel convert examples/gallery/*.ipynb doc/how_to/*/examples/*.md --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index --requirements doc/pyodide_dependencies.json'
 
-# [feature.doc.tasks.docs-build]
-# depends_on = ['docs-generate-rst', 'docs-refmanual', 'docs-generate']
+[feature.doc.tasks.docs-build]
+depends_on = ['docs-refmanual', 'docs-convert-gallery', 'docs-generate', 'docs-copy-panel-dist', 'docs-pyodide']
 
 # =============================================
 # ================== BUILD ====================
@@ -167,6 +168,7 @@ conda-build = "*"
 # [feature.build.tasks]
 # build-conda = 'bash scripts/conda/build.sh'
 # build-pip = 'python -m build .'
+# build-pyodide = 'python scripts/build_pyodide_wheels.py'
 
 # =============================================
 # =================== LINT ====================
