@@ -85,6 +85,9 @@ fastparquet = "*"
 textual = "*"
 dask-expr = "*"
 
+# [feature.example.pypi-dependencies]
+# pyecharts = "*"
+
 # =============================================
 # =================== TESTS ===================
 # =============================================
@@ -117,7 +120,7 @@ test-subprocess = 'pytest panel/tests --subprocess'
 
 [feature.test-example.tasks]
 test-docs = 'pytest panel/tests --docs'
-test-example = 'pytest -n logical --dist loadscope --nbval-lax example'
+test-example = 'pytest -n logical --dist loadscope --nbval-lax examples'
 
 [feature.test-example.dependencies]
 nbval = "*"
@@ -171,6 +174,6 @@ conda-build = "*"
 [feature.lint.dependencies]
 pre-commit = "*"
 
-# [feature.lint.tasks]
-# lint = 'pre-commit run --all-files'
-# lint-install = 'pre-commit install'
+[feature.lint.tasks]
+lint = 'pre-commit run --all-files'
+lint-install = 'pre-commit install'
