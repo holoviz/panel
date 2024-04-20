@@ -78,8 +78,21 @@ recommended = [
     'pillow',
     'plotly',
 ]
+
 [project.scripts]
 panel = "panel.util.command:main"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.targets.wheel]
+include = ["panel"]
+
+[tool.hatch.build.targets.sdist]
+include = ["panel"]
+
+[tool.hatch.build.hooks.vcs]
+version-file = "panel/_version.py"
 
 [tool.ruff]
 exclude = [

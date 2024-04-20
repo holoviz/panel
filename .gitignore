@@ -159,3 +159,4 @@ app_streamlit.py
 # pixi
 .pixi
 pixi.lock
+panel/_version.py
