@@ -25,6 +25,16 @@ from .theme import Design
 BASE_DIR = pathlib.Path(__file__).parent
 BUNDLE_DIR = pathlib.Path(__file__).parent / 'dist' / 'bundled'
 
+def _download(url):
+    try:
+        response, error = requests.get(url, timeout=10), None
+    except Exception:
+        try:
+            response, error = requests.get(url, verify=False, timeout=10), None
+        except Exception as e:
+            response, error = None, e
+    return response, error
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
@@ -39,23 +49,14 @@ def write_bundled_files(name, files, explicit_dir=None, ext=None):
             continue
 
         bundle_file = bundle_file.split('?')[0]
-        try:
-            response = requests.get(bundle_file)
-        except Exception:
-            try:
-                response = requests.get(bundle_file, verify=False)
-            except Exception as e:
-                raise ConnectionError(
-                    f"Failed to fetch {name} dependency: {bundle_file}. Errored with {e}."
-                ) from e
-        try:
-            map_file = f'{bundle_file}.map'
-            map_response = requests.get(map_file)
-        except Exception:
-            try:
-                map_response = requests.get(map_file, verify=False)
-            except Exception:
-                map_response = None
+        response, error = _download(bundle_file)
+        if error:
+            msg =  f"Failed to fetch {name} dependency: {bundle_file}. Errored with {error}."
+            raise ConnectionError(msg) from error
+
+        map_file = f'{bundle_file}.map'
+        map_response, _ = _download(map_file)
+
         if bundle_file.startswith(config.npm_cdn):
             bundle_path = os.path.join(*bundle_file.replace(config.npm_cdn, '').split('/'))
         else:
@@ -79,10 +80,9 @@ def write_bundled_files(name, files, explicit_dir=None, ext=None):
 
 def write_bundled_tarball(tarball, name=None, module=False):
     model_name = name.split('.')[-1].lower() if name else ''
-    try:
-        response = requests.get(tarball['tar'])
-    except Exception:
-        response = requests.get(tarball['tar'], verify=False)
+    response, error = _download(tarball['tar'])
+    if error:
+        raise error
     f = io.BytesIO()
     f.write(response.content)
     f.seek(0)
@@ -118,10 +118,10 @@ def write_bundled_tarball(tarball, name=None, module=False):
     tar_obj.close()
 
 def write_bundled_zip(name, resource):
-    try:
-        response = requests.get(resource['zip'])
-    except Exception:
-        response = requests.get(resource['zip'], verify=False)
+    response, error = _download(resource['zip'])
+    if error:
+        raise error
+
     f = io.BytesIO()
     f.write(response.content)
     f.seek(0)
