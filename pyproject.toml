@@ -1,16 +1,85 @@
 [build-system]
 requires = [
+    "hatchling",
+    "hatch-vcs",
     "param >=2.0.0",
-    "pyct >=0.4.4",
-    "setuptools >=42",
     "bokeh >=3.4.0,<3.5.0",
     "pyviz_comms >=0.7.4",
     "requests",
     "packaging",
     "tqdm >=4.48.0",
     "markdown",
-    "wheel"
 ]
+build-backend = "hatchling.build"
+
+[project]
+name = "panel"
+dynamic = ["version"]
+description = 'The powerful data exploration & web app framework for Python.'
+readme = "README.md"
+license = { text = "BSD" }
+requires-python = ">=3.9"
+authors = [{ name = "HoloViz developers", email = "developers@holoviz.org" }]
+maintainers = [
+    { name = "HoloViz developers", email = "developers@holoviz.org" },
+]
+classifiers = [
+    "License :: OSI Approved :: BSD License",
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Healthcare Industry",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Legal Industry",
+    "Intended Audience :: Other Audience",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Office/Business",
+    "Topic :: Office/Business :: Financial",
+    "Topic :: Software Development :: Libraries",
+]
+
+dependencies = [
+    'bokeh >=3.4.0,<3.5.0',
+    'param >=2.0.0,<3.0',
+    'pyviz_comms >=2.0.0',
+    'xyzservices >=2021.09.1', # Bokeh dependency, but pyodide 23.0.0 does not always pick it up
+    'markdown',
+    'markdown-it-py',
+    'linkify-it-py',
+    'mdit-py-plugins',
+    'requests',
+    'tqdm >=4.48.0',
+    'bleach',
+    'typing_extensions',
+    'pandas >=1.2',
+]
+
+[project.urls]
+Homepage = "https://panel.holoviz.org"
+Source = "http://github.com/holoviz/panel"
+HoloViz = "https://holoviz.org/"
+
+[project.optional-dependencies]
+recommended = [
+    'jupyterlab',
+    'holoviews >=1.16.0',
+    'matplotlib',
+    'pillow',
+    'plotly',
+]
+[project.scripts]
+panel = "panel.util.command:main"
 
 [tool.ruff]
 exclude = [
