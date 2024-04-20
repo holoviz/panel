@@ -22,7 +22,6 @@ lint = ["py311", "lint"]
 bokeh = ">=3.4.0,<3.5.0"
 param = ">=2.0.0,<3.0"
 pyviz_comms = ">=2.0.0"
-xyzservices = ">=2021.09.1" # Bokeh dependency, but pyodide 23.0.0 does not always pick it up
 markdown = "*"
 markdown-it-py = "*"
 linkify-it-py = "*"
@@ -96,9 +95,10 @@ dask-expr = "*"
 [feature.test-core.dependencies]
 pytest = "*"
 pytest-rerunfailures = "*"
-pytest-asyncio = "<0.22"
+pytest-asyncio = "*"
 pytest-xdist = "*"
 pytest-cov = "*"
+pytest-github-actions-annotate-failures = "*"
 psutil = "*"
 altair = "*"
 anywidget = "*"
@@ -114,7 +114,7 @@ ipywidgets_bokeh = "*"
 reacton = "*"
 numba = "*"
 
-[feature.test-unit-task.tasks] # So it not showing up for UI tests
+[feature.test-unit-task.tasks] # So it is not showing up in the test-ui environment
 test-unit = 'pytest panel/tests -n logical --dist loadgroup'
 test-subprocess = 'pytest panel/tests --subprocess'
 

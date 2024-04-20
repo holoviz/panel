@@ -1,5 +1,7 @@
 import datetime as dt
 
+from importlib.util import find_spec
+
 import pytest
 
 try:
@@ -211,6 +213,7 @@ def test_clean_relayout_data():
     }
 
 
+@pytest.mark.skipif(not find_spec("scipy"), reason="requires scipy")
 @plotly_available
 def test_plotly_swap_traces(document, comm):
     data_bar = pd.DataFrame({'Count': [1, 2, 3, 4], 'Category': ["A", "B", "C", "D"]})
