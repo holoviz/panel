@@ -94,6 +94,9 @@ include = ["panel"]
 [tool.hatch.build.hooks.vcs]
 version-file = "panel/_version.py"
 
+[tool.hatch.build.hooks.custom]
+path = "scripts/hatch_build.py"
+
 [tool.ruff]
 exclude = [
     ".git",
@@ -138,6 +141,7 @@ select = [
 "panel/compiler.py" = ["T201"]
 "panel/io/convert.py" = ["T201"]
 "panel/pane/vtk/synchronizable_*.py" = ["T201"]
+"scripts/hatch_build.py" = ["T201"]
 
 [tool.codespell]
 ignore-words-list = "nd,doubleclick,ser"
