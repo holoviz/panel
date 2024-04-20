@@ -34,7 +34,7 @@ typing_extensions = "*"
 pandas = ">=1.2"
 # Recommended
 jupyterlab = "*"
-panel = ">=1.16.0"
+holoviews = ">=1.16.0"
 matplotlib = "*"
 pillow = "*"
 plotly = ">=4.0"
@@ -88,7 +88,7 @@ dask-expr = "*"
 # =============================================
 # =================== TESTS ===================
 # =============================================
-[feature.test_core.dependencies]
+[feature.test-core.dependencies]
 pytest = "*"
 pytest-rerunfailures = "*"
 pytest-asyncio = "<0.22"
@@ -109,7 +109,7 @@ ipyvuetify = "*"
 ipywidgets_bokeh = "*"
 reacton = "*"
 twine = "*"
-numba = "<0.58" # Temporary pins
+numba = "*"
 
 [feature.test-unit-task.tasks] # So it not showing up for UI tests
 test-unit = 'pytest panel/tests -n logical --dist loadgroup'
@@ -128,7 +128,7 @@ channels = ["conda-forge", "pyviz/label/dev", "microsoft"]
 [feature.test-ui.dependencies]
 playwright = "*"
 pytest-playwright = "*"
-jupyter-server = "*"
+jupyter_server = "*"
 tomli = "*"
 
 [feature.test-ui.tasks]
