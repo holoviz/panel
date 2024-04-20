@@ -80,7 +80,7 @@ recommended = [
 ]
 
 [project.scripts]
-panel = "panel.util.command:main"
+panel = "panel.command:main"
 
 [tool.hatch.version]
 source = "vcs"

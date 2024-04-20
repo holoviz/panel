@@ -19,6 +19,7 @@ build = ["py311", "build"]
 lint = ["py311", "lint"]
 
 [dependencies]
+nodejs= ">=20"
 bokeh = ">=3.4.0,<3.5.0"
 param = ">=2.0.0,<3.0"
 pyviz_comms = ">=2.0.0"
