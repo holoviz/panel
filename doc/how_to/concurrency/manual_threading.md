@@ -128,3 +128,146 @@ To use threading efficiently:
 - We employ the `Event.wait` method for efficient task-waiting, which is more resource-efficient compared to repeatedly sleeping and checking for new tasks using `time.sleep`.
 
 :::
+
+## Global Thread
+
+When we need to share data periodically across all sessions, it is often inefficient to fetch and process this data separately for each session.
+
+Instead, we can utilize a single thread. When initiating global threads, it's crucial to avoid starting them multiple times, especially in sessions or modules subject to `--autoreload`. To circumvent this issue, we can globally share a worker or thread through the Panel cache (`pn.state.cache`).
+
+Let's create a `GlobalTaskRunner` that accepts a function (`worker`) and executes it repeatedly, pausing for `sleep` seconds between each execution.
+
+This worker can be used to ingest data from a database, the web, or any server resource.
+
+```python
+import datetime
+import threading
+import time
+
+from typing import Callable
+
+import param
+
+import panel as pn
+
+pn.extension()
+
+class GlobalTaskRunner(pn.viewable.Viewer):
+    """The GlobalTaskRunner creates a singleton instance for each key."""
+    value = param.Parameter(doc="The most recent result", label="Last Result", constant=True)
+    exception: Exception = param.ClassSelector(
+        class_=Exception,
+        allow_None=True,
+        doc="The most recent exception, if any",
+        label="Last Exception",
+        constant=True,
+    )
+    worker: Callable = param.Callable(
+        allow_None=False, doc="Function that generates a result"
+    )
+    seconds: float = param.Number(
+        default=1.0, doc="Interval between worker calls", bounds=(0.001, None)
+    )
+    key: str = param.String(allow_None=False, constant=True)
+
+    _global_task_runner_key = "__global_task_runners__"
+
+    def __init__(self, key: str, **params):
+        super().__init__(key=key, **params)
+
+        self._stop_thread = False
+        self._thread = threading.Thread(target=self._task_runner, daemon=True)
+        self._thread.start()
+        self._log("Created")
+
+    def __new__(cls, key, **kwargs):
+        task_runners = pn.state.cache[cls._global_task_runner_key] = pn.state.cache.get(
+            cls._global_task_runner_key, {}
+        )
+        task_runner = task_runners.get(key, None)
+
+        if not task_runner:
+            task_runner = super(GlobalTaskRunner, cls).__new__(cls)
+            task_runners[key] = task_runner
+
+        return task_runner
+
+    def _log(self, message):
+        print(f"{id(self)} - {message}")
+
+    def _task_runner(self):
+        while not self._stop_thread:
+            try:
+                result = self.worker()
+                with param.edit_constant(self):
+                    self.value = result
+                    self.exception = None
+            except Exception as ex:
+                with param.edit_constant(self):
+                    self.exception = ex
+            if not self._stop_thread:
+                self._log("Sleeping")
+                time.sleep(self.seconds)
+
+        self._log("Task Runner Finished")
+
+    def remove(self):
+        """Securely stops and removes the GlobalThreadWorker."""
+        self._log("Removing")
+        self._stop_thread = True
+        self._thread.join()
+
+        cache = pn.state.cache.get(self._global_task_runner_key, {})
+        if self.key in cache:
+            del cache[self.key]
+        self._log("Removed")
+
+    @classmethod
+    def remove_all(cls):
+        """Securely stops and removes all GlobalThreadWorkers."""
+        for gtw in list(pn.state.cache.get(cls._global_task_runner_key, {}).values()):
+            gtw.remove()
+        pn.state.cache[cls._global_task_runner_key] = {}
+
+    def __panel__(self):
+        return pn.Column(
+            f"## TaskRunner {id(self)}",
+            self.param.seconds,
+            pn.pane.Str(pn.rx("Last Result: {value}").format(value=self.param.value)),
+            pn.pane.Str(
+                pn.rx("Last Exception: {value}").format(value=self.param.exception)
+            ),
+        )
+```
+
+Let's test this with a simple example worker that generates timestamps every 0.33 seconds.
+
+```python
+def example_worker():
+    time.sleep(1)
+    return datetime.datetime.now()
+
+task_runner = GlobalTaskRunner(
+    key="example-worker", worker=example_worker, seconds=0.33
+)
+
+results = []
+
+@pn.depends(task_runner.param.value)
+def result_view(value):
+    results.append(value)
+    return f"{len(results)} results produced during this session"
+
+pn.Column(
+    task_runner, result_view,
+).servable()
+```
+
+:::{note}
+
+For efficient use of global threading:
+
+- We employ the *singleton* principle (`__new__`) to create only one instance and thread per key.
+- We use daemon threads (`daemon=True`) to ensure the server can be halted using CTRL+C.
+
+:::
