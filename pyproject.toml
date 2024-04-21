@@ -138,6 +138,10 @@ select = [
     "T20",
     "RUF006",
 ]
+unfixable = [
+    "F401", # Unused imports
+    "F841", # Unused variables
+]
 
 [tool.ruff.lint.per-file-ignores]
 "panel/tests/ui/jupyter_server_test_config.py" = ["F821"]
