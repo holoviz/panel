@@ -12,7 +12,7 @@ import tarfile
 import zipfile
 
 from concurrent.futures import ThreadPoolExecutor
-from functools import partial
+from functools import cache, partial
 
 import param
 import requests
@@ -28,12 +28,27 @@ from .theme import Design
 BASE_DIR = pathlib.Path(__file__).parent
 BUNDLE_DIR = pathlib.Path(__file__).parent / 'dist' / 'bundled'
 
+
+@cache
+def _session():
+    try:
+        import platformdirs
+
+        from cachecontrol import CacheControl
+        from cachecontrol.caches import SeparateBodyFileCache
+        cache_dir = platformdirs.user_cache_path() / 'holoviz' / 'panel.compiler'
+
+        return CacheControl(requests.Session(), cache=SeparateBodyFileCache(cache_dir))
+    except ImportError:
+        return requests.Session()
+
+
 def _download(url):
     try:
-        response, error = requests.get(url, timeout=10), None
+        response, error = _session().get(url, timeout=10), None
     except Exception:
         try:
-            response, error = requests.get(url, verify=False, timeout=10), None
+            response, error = _session().get(url, verify=False, timeout=10), None
         except Exception as e:
             response, error = None, e
     return response, error
