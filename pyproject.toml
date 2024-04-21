@@ -78,6 +78,7 @@ recommended = [
     'matplotlib',
     'pillow',
     'plotly',
+    'watchfiles',
 ]
 
 [project.scripts]
@@ -142,7 +143,7 @@ select = [
 "panel/compiler.py" = ["T201"]
 "panel/io/convert.py" = ["T201"]
 "panel/pane/vtk/synchronizable_*.py" = ["T201"]
-"scripts/hatch_build.py" = ["T201"]
+"scripts/*.py" = ["T201"]
 
 [tool.codespell]
 ignore-words-list = "nd,doubleclick,ser"
