@@ -25,12 +25,10 @@ from pyviz_comms import (
     JupyterCommManager as _JupyterCommManager, extension as _pyviz_extension,
 )
 
+from .__version import __version__
 from .io.logging import panel_log_handler
 from .io.state import state
 from .util import param_watchers
-
-__version__ = str(param.version.Version(
-    fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
 
 _LOCAL_DEV_VERSION = (
     any(v in __version__ for v in ('post', 'dirty'))
