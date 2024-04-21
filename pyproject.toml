@@ -63,6 +63,7 @@ dependencies = [
     'bleach',
     'typing_extensions',
     'pandas >=1.2',
+    'packaging',
 ]
 
 [project.urls]
