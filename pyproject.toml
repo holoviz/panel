@@ -150,6 +150,13 @@ unfixable = [
 "panel/pane/vtk/synchronizable_*.py" = ["T201"]
 "scripts/*.py" = ["T201"]
 
+[tool.isort]
+force_grid_wrap = 4
+multi_line_output = 5
+combine_as_imports = true
+lines_between_types = 1
+include_trailing_comma = true
+
 [tool.codespell]
 ignore-words-list = "nd,doubleclick,ser"
 skip = "doc/generate_modules.py,examples/reference/templates/FastGridTemplate.ipynb,panel/.eslintrc.js,panel/package-lock.json,panel/package.json"
