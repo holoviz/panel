@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-import shutil
 import sys
 import typing as t
 
@@ -26,16 +25,6 @@ def build_paneljs():
 
         flags = fcntl.fcntl(sys.stdout, fcntl.F_GETFL)
         fcntl.fcntl(sys.stdout, fcntl.F_SETFL, flags & ~os.O_NONBLOCK)
-
-
-def install_jupyter_server_extension():
-    # data_files are not copied for editable installs returning
-    files = setup_args["data_files"]
-    for dst, (src,) in files:
-        dst = os.path.join(sys.prefix, dst)
-        os.makedirs(dst, exist_ok=True)
-        shutil.copy2(src, dst)
-        print(f"Copied {src} to {dst}")
 
 
 def clean_js_version(version):
@@ -69,10 +58,6 @@ class BuildHook(BuildHookInterface):
             return
 
         validate_js_version(self.metadata.version)
-
-        if version == "editable":
-            ...
-            # install_jupyter_server_extension()
 
     def finalize(self, version: str, build_data: dict[str, t.Any], artifact_path: str) -> None:
         """Finalize the plugin."""
