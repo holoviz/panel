@@ -165,9 +165,9 @@ depends_on = ['docs-refmanual', 'docs-convert-gallery', 'docs-generate', 'docs-c
 build = "*"
 conda-build = "*"
 
-# [feature.build.tasks]
+[feature.build.tasks]
 # build-conda = 'bash scripts/conda/build.sh'
-# build-pip = 'python -m build .'
+build-pip = 'python -m build .'
 # build-pyodide = 'python scripts/build_pyodide_wheels.py'
 
 # =============================================
