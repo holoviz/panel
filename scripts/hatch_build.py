@@ -58,11 +58,7 @@ class BuildHook(BuildHookInterface):
             return
 
         validate_js_version(self.metadata.version)
-
-    def finalize(self, version: str, build_data: dict[str, t.Any], artifact_path: str) -> None:
-        """Finalize the plugin."""
-        if self.target_name not in ["wheel", "sdist"]:
-            return
+        build_paneljs()
 
         sys.path.insert(0, str(BASE_DIR))
         from panel.compiler import bundle_resources
