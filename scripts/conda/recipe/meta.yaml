@@ -1,17 +1,18 @@
-{% set sdata = load_setup_py_data(setup_file="../setup.py", from_recipe_dir=True) %}
+{% set pyproject = load_file_data('../../../pyproject.toml', from_recipe_dir=True) %}
+{% set project = pyproject['project'] %}
 
 package:
-  name: {{ sdata['name'] }}
+  name: {{ project["name"] }}
   version: {{ VERSION }}
 
 source:
-  url: ../dist/{{ sdata['name'] }}-{{ VERSION }}-py3-none-any.whl
+  url: ../../../dist/{{ project["name"] }}-{{ VERSION }}-py3-none-any.whl
 
 build:
   noarch: python
-  script: {{ PYTHON }} -m pip install -vv {{ sdata['name'] }}-{{ VERSION }}-py3-none-any.whl
+  script: {{ PYTHON }} -m pip install -vv {{ project["name"] }}-{{ VERSION }}-py3-none-any.whl
   entry_points:
-    {% for group,epoints in sdata.get("entry_points",{}).items() %}
+    {% for group,epoints in project.get("entry_points",{}).items() %}
     {% for entry_point in epoints %}
     - {{ entry_point }}
     {% endfor %}
@@ -19,17 +20,18 @@ build:
 
 requirements:
   build:
-    - python {{ sdata['python_requires'] }}
-    {% for dep in sdata['extras_require']['build'] %}
+    - python {{ project['requires-python'] }}
+    {% for dep in pyproject['build-system']['requires'] %}
     - {{ dep }}
     {% endfor %}
   run:
-    - python {{ sdata['python_requires'] }}
-    {% for dep in sdata.get('install_requires',{}) %}
+    - python {{ project['requires-python'] }}
+    {% for dep in project.get('dependencies', []) %}
     - {{ dep }}
     {% endfor %}
-  run_constrained:
-    - holoviews >=1.13.2
+    {% for dep in project['optional-dependencies']['recommended'] %}
+    - {{ dep }}
+    {% endfor %}
 
 test:
   imports:
@@ -45,6 +47,6 @@ test:
     - pytest --pyargs panel.tests -n logical --dist loadgroup
 
 about:
-  home: {{ sdata['url'] }}
-  summary: {{ sdata['description'] }}
-  license: {{ sdata['license'] }}
+  home: {{ project['urls']['Homepage'] }}
+  summary: {{ project['description'] }}
+  license: {{ project['license']['text'] }}

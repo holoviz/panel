@@ -12,7 +12,7 @@ for file in dist/*.whl dist/*.tar.bz2; do
 done
 
 git diff --exit-code
-python -m build . # Can add -w when this is solved: https://github.com/pypa/hatch/issues/1305
+python -m build -w .
 
 VERSION=$(find dist -name "*.whl" -exec basename {} \; | cut -d- -f2)
 export VERSION
