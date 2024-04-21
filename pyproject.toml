@@ -61,6 +61,7 @@ dependencies = [
     'typing_extensions',
     'pandas >=1.2',
     'packaging',
+    'tqdm',  # TODO: Make this optional
 ]
 
 [project.urls]
@@ -87,12 +88,18 @@ source = "vcs"
 [tool.hatch.build.targets.wheel]
 include = ["panel"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"panel/dist" = "panel/dist"
+
 [tool.hatch.build.targets.wheel.shared-data]
 "scripts/jupyter-config/notebook.json" = "etc/jupyter/jupyter_notebook_config.d/panel-client-jupyter.json"
 "scripts/jupyter-config/server.json" = "etc/jupyter/jupyter_server_config.d/panel-client-jupyter.json"
 
 [tool.hatch.build.targets.sdist]
 include = ["panel", "scripts"]
+
+[tool.hatch.build.targets.sdist.force-include]
+"panel/dist" = "panel/dist"
 
 [tool.hatch.build.hooks.vcs]
 version-file = "panel/_version.py"
