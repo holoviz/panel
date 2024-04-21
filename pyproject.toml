@@ -7,8 +7,6 @@ requires = [
     "pyviz_comms >=0.7.4",
     "requests",
     "packaging",
-    "tqdm >=4.48.0",
-    "markdown",
 ]
 build-backend = "hatchling.build"
 
@@ -59,7 +57,6 @@ dependencies = [
     'linkify-it-py',
     'mdit-py-plugins',
     'requests',
-    'tqdm >=4.48.0',
     'bleach',
     'typing_extensions',
     'pandas >=1.2',
