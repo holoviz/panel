@@ -160,3 +160,4 @@ app_streamlit.py
 .pixi
 pixi.lock
 panel/_version.py
+.uicoveragerc
