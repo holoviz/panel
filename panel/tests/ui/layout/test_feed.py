@@ -72,7 +72,7 @@ def test_feed_dynamic_objects(page):
     serve_component(page, feed)
 
     feed.objects = list(range(1000))
-    wait_until(lambda: page.locator('pre').count() > 0, page)
+    wait_until(lambda: page.locator('pre'), page)
 
     expect(page.locator('pre').nth(0)).to_have_text('0')
     wait_until(lambda: page.locator('pre').count() > 10, page)
