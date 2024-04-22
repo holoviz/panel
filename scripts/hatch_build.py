@@ -10,14 +10,15 @@ from pathlib import Path
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
 BASE_DIR = Path(__file__).parents[1]
+GREEN, RED, RESET = "\033[92m", "\033[91m", "\033[0m"
 
 
-def build_paneljs():
+def build_models():
     from bokeh.ext import build
 
-    print("Building custom models:")
+    print(f"{GREEN}[PANEL]{RESET} Starting building custom models", flush=True)
     panel_dir = BASE_DIR / "panel"
-    build(panel_dir)
+    success = build(panel_dir)
     if sys.platform != "win32":
         # npm can cause non-blocking stdout; so reset it just in case
         import fcntl
@@ -25,14 +26,23 @@ def build_paneljs():
         flags = fcntl.fcntl(sys.stdout, fcntl.F_GETFL)
         fcntl.fcntl(sys.stdout, fcntl.F_SETFL, flags & ~os.O_NONBLOCK)
 
+    if success:
+        print(f"{GREEN}[PANEL]{RESET} Finished building custom models", flush=True)
+    else:
+        print(f"{RED}[PANEL]{RESET} Failed building custom models", flush=True)
+        sys.exit(1)
 
 def bundle_resources():
     sys.path.insert(0, str(BASE_DIR))
     from panel.compiler import bundle_resources
 
-    print("Bundling custom model resources:")
-    bundle_resources(verbose=True)
-
+    print(f"{GREEN}[PANEL]{RESET} Starting bundling custom model resources", flush=True)
+    try:
+        bundle_resources()
+        print(f"{GREEN}[PANEL]{RESET} Finished bundling custom model resources", flush=True)
+    except Exception as e:
+        print(f"{GREEN}[PANEL]{RESET} Failed bundling custom model resources", flush=True)
+        raise e
 
 def clean_js_version(version):
     version = version.replace("-", "")
@@ -67,5 +77,5 @@ class BuildHook(BuildHookInterface):
         validate_js_version(self.metadata.version)
 
         if "PANEL_LITE" not in os.environ:
-            build_paneljs()
+            build_models()
             bundle_resources()
