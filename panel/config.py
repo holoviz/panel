@@ -379,7 +379,9 @@ class _config(_base_config):
         try:
             yield
         finally:
-            self.param.update(**dict(values))
+            new = self.param.values()
+            restore = {k: v for k, v in values if v is not new.get(k)}
+            self.param.update(**restore)
             for k, v in overrides:
                 setattr(self, k+'_', v)
 
