@@ -217,6 +217,9 @@ jobs:
           pixi run -e ${{ matrix.environment }} test-docs $COV
       - name: Test UI
         run: |
+          # Read the .uicoveragerc file to set the concurrency library to greenlet
+          # when the test suite relies on playwright, see
+          # https://github.com/microsoft/playwright-python/issues/313
           FAIL="--screenshot only-on-failure --full-page-screenshot --output ui_screenshots"
           pixi run -e ${{ matrix.environment }} test-ui --jupyter $COV --cov-config=.uicoveragerc $FAIL
       - uses: actions/upload-artifact@v3
