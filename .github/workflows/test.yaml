@@ -167,10 +167,10 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        environment: ["test-ui"]
     timeout-minutes: 120
     env:
       PANEL_LOG_LEVEL: info
-      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
       OAUTH_COOKIE_SECRET: ${{ secrets.OAUTH_COOKIE_SECRET }}
       OAUTH_ENCRYPTION_KEY: ${{ secrets.OAUTH_ENCRYPTION_KEY }}
       AUTH0_PORT: "5701"
@@ -191,24 +191,18 @@ jobs:
       OKTA_OAUTH_USER: ${{ secrets.OKTA_OAUTH_USER }}
       OKTA_OAUTH_PASSWORD: ${{ secrets.OKTA_OAUTH_PASSWORD }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         with:
-          name: ui_test_suite
-          python-version: 3.9
-          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
-          envs: "-o recommended -o tests -o build"
-          cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
-          nodejs: true
-          playwright: true
+          environments: ${{ matrix.environment }}
         id: install
       - name: launch jupyter
         run: |
-          conda activate test-environment
-          jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
+          # jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
+          pixi shell -e ${{ matrix.environment }}
           (jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887 > /tmp/jupyterlab_server.log 2>&1) &
       - name: build jupyterlite
         run: |
-          conda activate test-environment
+          pixi shell -e ${{ matrix.environment }}
           python -m pip install -r ./lite/requirements.txt
           python ./scripts/build_pyodide_wheels.py lite/pypi
           python ./scripts/panelite/generate_panelite_content.py
@@ -218,22 +212,20 @@ jobs:
         with:
           resource: http-get://localhost:8887/lab
           timeout: 180000
-      - name: doit test_ui
+      - name: Test UI
         run: |
-          conda activate test-environment
-          doit test_ui
+          COV="--cov=./panel --cov-report=xml --cov-config=.uicoveragerc"
+          FAIL="--screenshot only-on-failure --full-page-screenshot --output ui_screenshots"
+          pixi run -e ${{ matrix.environment }} test-ui --jupyter $COV $FAIL
       - uses: actions/upload-artifact@v3
         if: always()
         with:
           name: ui_screenshots
           path: ./ui_screenshots
           if-no-files-found: ignore
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         with:
-          files: ./coverage.xml
-          flags: ui-tests
-          fail_ci_if_error: false # optional (default = false)
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   core_test_suite:
     name: core:${{ matrix.environment }}:${{ matrix.os }}
