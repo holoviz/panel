@@ -236,37 +236,12 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest"]
-        python-version: ["3.12"]
+        environment: ["test-core"]
     timeout-minutes: 120
     steps:
-      # - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
-      #   with:
-      #     name: core_test_suite
-      #     environment: ${{ matrix.environment }}
-      #     # channel-priority: strict
-      #     channels: pyviz/label/dev,conda-forge,nodefaults
-      #     envs: "-o tests_core -o tests_ci"
-      #     cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
-      #     conda-update: true
-      #     id: install
-      - uses: actions/checkout@v3
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         with:
-          fetch-depth: "100"
-      - name: Fetch unshallow
-        run: git fetch --prune --tags --unshallow -f
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18.x
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.12"
-      - run: |
-          python -m pip install -ve '.[tests_core, recommended]'
-      - name: bokeh sampledata
+          environments: ${{ matrix.environment }}
+      - name: Test Unit
         run: |
-          # conda activate test-environment
-          bokeh sampledata
-      - name: doit test_unit
-        run: |
-          # conda activate test-environment
-          pytest panel -n logical --dist loadgroup
+          pixi run -e ${{ matrix.environment }} test-unit
