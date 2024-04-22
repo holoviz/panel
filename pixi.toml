@@ -168,7 +168,7 @@ conda-build = "*"
 [feature.build.tasks]
 build-conda = 'bash scripts/conda/build.sh'
 build-pip = 'python -m build .'
-# build-pyodide = 'python scripts/build_pyodide_wheels.py'
+build-pyodide = 'python scripts/build_pyodide_wheels.py'
 
 # =============================================
 # =================== LINT ====================
