@@ -3,10 +3,9 @@ on:
   push:
     branches:
       - main
-      - branch-1.0
   pull_request:
     branches:
-    - '*'
+      - "*"
   workflow_dispatch:
     inputs:
       target:
@@ -22,7 +21,7 @@ on:
         type: boolean
         default: true
   schedule:
-    - cron: '0 19 * * SUN'
+    - cron: "0 19 * * SUN"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -31,7 +30,7 @@ concurrency:
 jobs:
   pre_commit:
     name: Run pre-commit
-    runs-on: 'ubuntu-latest'
+    runs-on: "ubuntu-latest"
     steps:
       - uses: holoviz-dev/holoviz_tasks/pre-commit@v0
       - uses: pre-commit/action@v3.0.1
@@ -41,6 +40,7 @@ jobs:
         with:
           commit_message: "Optimize PNG images (lossless)"
           file_pattern: "*.png"
+
   setup:
     name: Setup workflow
     runs-on: ubuntu-latest
@@ -179,6 +179,7 @@ jobs:
           files: ./coverage.xml
           flags: unitexamples-tests
           fail_ci_if_error: false # optional (default = false)
+
   ui_test_suite:
     name: UI tests on ${{ matrix.os }} with Python 3.9
     needs: [pre_commit, setup]
@@ -187,7 +188,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
+        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
     timeout-minutes: 120
     defaults:
       run:
@@ -265,6 +266,7 @@ jobs:
           files: ./coverage.xml
           flags: ui-tests
           fail_ci_if_error: false # optional (default = false)
+
   core_test_suite:
     name: Core tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
     needs: [pre_commit, setup]
@@ -273,8 +275,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ['ubuntu-latest']
-        python-version: ['3.12']
+        os: ["ubuntu-latest"]
+        python-version: ["3.12"]
     timeout-minutes: 120
     defaults:
       run:
@@ -284,7 +286,7 @@ jobs:
       PYTHON_VERSION: ${{ matrix.python-version }}
       SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
     steps:
-    # - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
+      # - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
       #   with:
       #     name: core_test_suite
       #     python-version: ${{ matrix.python-version }}
