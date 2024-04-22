@@ -134,6 +134,11 @@ jobs:
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
     timeout-minutes: 90
     steps:
+      - if: contains(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get install libglu1-mesa
+          /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x24
+          sleep 3
       - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         if: needs.setup.outputs.code_change == 'true'
         with:
@@ -200,7 +205,7 @@ jobs:
         id: install
       - name: launch jupyter
         run: |
-          # jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
+          pixi run -e ${{ matrix.environment }} jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
           (pixi run -e ${{ matrix.environment }} jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887 > /tmp/jupyterlab_server.log 2>&1) &
       - name: build jupyterlite
         run: |
