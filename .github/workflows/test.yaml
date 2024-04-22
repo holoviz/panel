@@ -134,21 +134,11 @@ jobs:
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
     timeout-minutes: 90
     steps:
-      - if: contains(matrix.os, 'ubuntu')
-        run: |
-          sudo apt-get install libglu1-mesa
-          /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x24
-          sleep 3
       - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         if: needs.setup.outputs.code_change == 'true'
         with:
           environments: ${{ matrix.environment }}
-      #     opengl: true
-      # - name: override-vtk-osmesa
-      #   if: contains(matrix.os, 'ubuntu')
-      #   run: |
-      #     conda activate test-environment
-      #     conda install -c conda-forge vtk=9.2.6=osmesa* vtk-base=9.2.6=osmesa* vtk-io-ffmpeg=9.2.6=osmesa* --no-deps
+          opengl: true
       - name: Test unit
         run: |
           pixi run -e ${{ matrix.environment }} test-unit $COV
