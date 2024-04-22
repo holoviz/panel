@@ -35,7 +35,6 @@ env:
   DISPLAY: ":99.0"
   PYTHONIOENCODING: "utf-8"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  PYTHONIOENCODING: "utf-8"
 
 jobs:
   pre_commit:
@@ -212,6 +211,9 @@ jobs:
         with:
           resource: http-get://localhost:8887/lab
           timeout: 180000
+      - name: Test docs
+        run: |
+          pixi run -e ${{ matrix.environment }} test-docs --cov=./panel --cov-report=xml
       - name: Test UI
         run: |
           COV="--cov=./panel --cov-report=xml --cov-config=.uicoveragerc"
