@@ -18,13 +18,20 @@ def build_paneljs():
     print("Building custom models:")
     panel_dir = BASE_DIR / "panel"
     build(panel_dir)
-    print("Bundling custom model resources:")
     if sys.platform != "win32":
         # npm can cause non-blocking stdout; so reset it just in case
         import fcntl
 
         flags = fcntl.fcntl(sys.stdout, fcntl.F_GETFL)
         fcntl.fcntl(sys.stdout, fcntl.F_SETFL, flags & ~os.O_NONBLOCK)
+
+
+def bundle_resources():
+    sys.path.insert(0, str(BASE_DIR))
+    from panel.compiler import bundle_resources
+
+    print("Bundling custom model resources:")
+    bundle_resources(verbose=True)
 
 
 def clean_js_version(version):
@@ -48,7 +55,7 @@ def validate_js_version(version):
 
 
 class BuildHook(BuildHookInterface):
-    """The hatch jupyter builder build hook."""
+    """The hatch build hook."""
 
     PLUGIN_NAME = "install"
 
@@ -58,9 +65,7 @@ class BuildHook(BuildHookInterface):
             return
 
         validate_js_version(self.metadata.version)
-        build_paneljs()
 
-        sys.path.insert(0, str(BASE_DIR))
-        from panel.compiler import bundle_resources
-
-        bundle_resources(verbose=True)
+        if "PANEL_LITE" not in os.environ:
+            build_paneljs()
+            bundle_resources()
