@@ -162,7 +162,7 @@ depends_on = ['docs-refmanual', 'docs-convert-gallery', 'docs-generate', 'docs-c
 # ================== BUILD ====================
 # =============================================
 [feature.build.dependencies]
-build = "*"
+python-build = "*"
 conda-build = "*"
 
 [feature.build.tasks]
