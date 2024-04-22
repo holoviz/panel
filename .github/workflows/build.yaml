@@ -20,7 +20,6 @@ env:
   PYTHON_VERSION: "3.11"
   NODE_VERSION: "20"
   MPLBACKEND: "Agg"
-  SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
 
 jobs:
   waiting_room:
@@ -33,33 +32,28 @@ jobs:
     steps:
       - run: echo "All builds have finished, have been approved, and ready to publish"
 
+  pixi_lock:
+    name: Pixi lock
+    runs-on: ubuntu-latest
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi_lock@pixi
+
   conda_build:
     name: Build Conda
+    needs: [pixi_lock]
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v4
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         with:
-          fetch-depth: "100"
-      - name: Fetch unshallow
-        run: git fetch --prune --tags --unshallow -f
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          miniconda-version: "latest"
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: conda setup
-        run: |
-          conda install -y conda-build build
+          environments: "build"
+          download-data: false
       - name: conda build
-        run: |
-          source ./scripts/build_conda.sh
-          echo "CONDA_FILE="$CONDA_PREFIX/conda-bld/noarch/$PACKAGE-$VERSION-py_0.tar.bz2"" >> $GITHUB_ENV
+        run: pixi run -e build build-conda
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: conda
-          path: ${{ env.CONDA_FILE }}
+          path: dist/*tar.bz2
           if-no-files-found: error
 
   conda_publish:
@@ -93,24 +87,15 @@ jobs:
 
   pip_build:
     name: Build PyPI
+    needs: [pixi_lock]
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v4
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         with:
-          fetch-depth: "100"
-      - name: Fetch unshallow
-        run: git fetch --prune --tags --unshallow -f
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Install build
-        run: |
-          python -m pip install build
+          environments: "build"
+          download-data: false
       - name: Build package
-        run: python -m build .
+        run: pixi run -e build build-pip
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -154,6 +139,7 @@ jobs:
 
   npm_build:
     name: Build NPM
+    needs: [pixi_lock]
     runs-on: "ubuntu-latest"
     steps:
       - uses: actions/checkout@v4
@@ -216,6 +202,7 @@ jobs:
 
   cdn_build:
     name: Build CDN
+    needs: [pixi_lock]
     runs-on: "ubuntu-latest"
     steps:
       - uses: actions/checkout@v4
