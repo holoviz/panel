@@ -151,6 +151,9 @@ jobs:
         if: contains(matrix.os, 'ubuntu')
         run: |
           pixi run -e ${{ matrix.environment }} test-subprocess $COV
+      - name: Test docs
+        run: |
+          pixi run -e ${{ matrix.environment }} test-docs $COV
       - name: Test Examples
         run: |
           pixi run -e ${{ matrix.environment }} test-example
@@ -211,9 +214,6 @@ jobs:
         with:
           resource: http-get://localhost:8887/lab
           timeout: 180000
-      - name: Test docs
-        run: |
-          pixi run -e ${{ matrix.environment }} test-docs $COV
       - name: Test UI
         run: |
           # Create a .uicoveragerc file to set the concurrency library to greenlet
