@@ -2286,6 +2286,7 @@ def test_tabulator_patching_and_styling(page, df_mixed):
     widget.patch({'int': [(0, 100)]}, as_index=False)
 
     max_int = df_mixed['int'].max()
+    wait_until(lambda: page.locator('.tabulator-cell', has=page.locator(f'text="{max_int}"')) is not None, page)
     max_cell = page.locator('.tabulator-cell', has=page.locator(f'text="{max_int}"'))
     expect(max_cell).to_have_count(1)
     expect(max_cell).to_have_css('background-color', _color_mapping['yellow'])
