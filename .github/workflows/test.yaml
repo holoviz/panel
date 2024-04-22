@@ -134,50 +134,29 @@ jobs:
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
     timeout-minutes: 90
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
+        if: needs.setup.outputs.code_change == 'true'
         with:
-          name: unit_test_suite
-          python-version: ${{ matrix.python-version }}
-          channels: pyviz/label/dev,numba,bokeh/label/dev,conda-forge,nodefaults
-          conda-update: true
-          nodejs: true
-          envs: -o examples -o recommended -o tests -o build
-          cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
-          opengl: true
-        id: install
-      - name: doit develop_install
+          environments: ${{ matrix.environment }}
+      #     opengl: true
+      # - name: override-vtk-osmesa
+      #   if: contains(matrix.os, 'ubuntu')
+      #   run: |
+      #     conda activate test-environment
+      #     conda install -c conda-forge vtk=9.2.6=osmesa* vtk-base=9.2.6=osmesa* vtk-io-ffmpeg=9.2.6=osmesa* --no-deps
+      - name: Test unit
         run: |
-          conda activate test-environment
-          pip install pyecharts
-          panel build panel
-      - name: override-vtk-osmesa
+          pixi run -e ${{ matrix.environment }} test-unit --cov=./panel --cov-report=xml
+      - name: Test subprocess
         if: contains(matrix.os, 'ubuntu')
         run: |
-          conda activate test-environment
-          conda install -c conda-forge vtk=9.2.6=osmesa* vtk-base=9.2.6=osmesa* vtk-io-ffmpeg=9.2.6=osmesa* --no-deps
-      - name: bokeh_sampledata
+          pixi run -e ${{ matrix.environment }} test-subprocess --cov=./panel --cov-report=xml
+      - name: Test Examples
         run: |
-          conda activate test-environment
-          bokeh sampledata
-      - name: doit test_unit
-        run: |
-          conda activate test-environment
-          doit test_unit
-      - name: doit test_unit-subprocess
-        if: contains(matrix.os, 'ubuntu')
-        run: |
-          conda activate test-environment
-          doit test_subprocess
-      - name: test examples
-        run: |
-          conda activate test-environment
-          doit test_examples
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+          pixi run -e ${{ matrix.environment }} test-example
+      - uses: codecov/codecov-action@v4
         with:
-          files: ./coverage.xml
-          flags: unitexamples-tests
-          fail_ci_if_error: false # optional (default = false)
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   ui_test_suite:
     name: ui:${{ matrix.environment }}:${{ matrix.os }}
