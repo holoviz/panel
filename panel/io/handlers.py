@@ -226,7 +226,10 @@ def autoreload_handle_exception(handler, module, e):
 
     # Clean up module
     del sys.modules[module.__name__]
-    state.curdoc.modules._modules.remove(module)
+    try:
+        state.curdoc.modules._modules.remove(module)
+    except ValueError:
+        pass
 
     # Serve error
     e_msg = str(e).replace('\033[1m', '<b>').replace('\033[0m', '</b>')
