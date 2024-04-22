@@ -344,7 +344,7 @@ def test_button_icon_name(page):
     serve_component(page, button)
 
     assert button.name == "Like"
-    wait_until(page.locator(".bk-IconLabel").text_content() == "Like", page)
+    wait_until(lambda: page.locator(".bk-IconLabel").text_content() == "Like", page)
 
 
 def test_button_icon_name_dynamically(page):
@@ -370,7 +370,7 @@ def test_button_icon_description_dynamically(page):
     serve_component(page, button)
 
     assert button.description == "Like"
-    wait_until(lambda: page.locator(".bk-TablerIcon"), page)
+    wait_until(lambda: page.locator(".bk-TablerIcon") is not None, page)
     page.locator(".bk-TablerIcon").click()
     assert page.locator(".bk-tooltip-content").text_content() == "Like"
 
