@@ -27,6 +27,16 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    shell: bash -el {0}
+
+env:
+  DISPLAY: ":99.0"
+  PYTHONIOENCODING: "utf-8"
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  PYTHONIOENCODING: "utf-8"
+
 jobs:
   pre_commit:
     name: Run pre-commit
@@ -61,9 +71,8 @@ jobs:
             code:
               - 'panel/**'
               - 'examples/**'
-              - 'setup.py'
+              - 'pixi.toml'
               - 'pyproject.toml'
-              - 'tox.ini'
               - '.github/workflows/test.yaml'
             doc:
               - 'doc/getting_started/**'
@@ -86,19 +95,16 @@ jobs:
         if: env.MATRIX_OPTION == 'default'
         run: |
           MATRIX=$(jq -nsc '{
-              "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "python-version": ["3.9", "3.11"],
-              "include": [
-                  {"os": "ubuntu-latest", "python-version": "3.10"}
-              ]
+              "os": ["ubuntu-latest", "macos-14", "windows-latest"],
+              "environment": ["test-39", "test-312"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'full' option
         if: env.MATRIX_OPTION == 'full'
         run: |
           MATRIX=$(jq -nsc '{
-              "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "python-version": ["3.9", "3.10", "3.11"]
+              "os": ["ubuntu-latest", "macos-14", "windows-latest"],
+              "environment": ["test-39", "test-310", "test-311", "test-312"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'downstream' option
@@ -106,34 +112,27 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest"],
-              "python-version": ["3.11"]
+              "environment": ["test-312"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
 
+  pixi_lock:
+    name: Pixi lock
+    runs-on: ubuntu-latest
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi_lock@pixi
+        with:
+          cache: ${{ github.event.inputs.cache == 'true' || github.event.inputs.cache == '' }}
+
   unit_test_suite:
-    name: Unit tests on ${{ matrix.os }} with Python ${{ matrix.python-version }}
-    needs: [pre_commit, setup]
+    name: unit:${{ matrix.environment }}:${{ matrix.os }}
+    needs: [pre_commit, setup, pixi_lock]
     runs-on: ${{ matrix.os }}
     if: needs.setup.outputs.code_change == 'true'
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
     timeout-minutes: 90
-    defaults:
-      run:
-        shell: bash -l {0}
-    env:
-      DESC: "Python ${{ matrix.python-version }} tests"
-      PYTHON_VERSION: ${{ matrix.python-version }}
-      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
-      DISPLAY: ":99.0"
-      PYTHONIOENCODING: "utf-8"
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # Without this env var `doit env_create ...` uses by default
-      # the `pyviz` channel, except that we don't want to configure
-      # it as one of the sources.
-      PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
-      OMP_NUM_THREADS: 1
     steps:
       - uses: holoviz-dev/holoviz_tasks/install@v0
         with:
@@ -181,8 +180,8 @@ jobs:
           fail_ci_if_error: false # optional (default = false)
 
   ui_test_suite:
-    name: UI tests on ${{ matrix.os }} with Python 3.9
-    needs: [pre_commit, setup]
+    name: ui:${{ matrix.environment }}:${{ matrix.os }}
+    needs: [pre_commit, setup, pixi_lock]
     runs-on: ${{ matrix.os }}
     if: needs.setup.outputs.code_change == 'true' || needs.setup.outputs.doc_change == 'true'
     strategy:
@@ -190,14 +189,8 @@ jobs:
       matrix:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
     timeout-minutes: 120
-    defaults:
-      run:
-        shell: bash -el {0}
     env:
-      DESC: "Python ${{ matrix.python-version }} tests"
-      PYTHONIOENCODING: "utf-8"
       PANEL_LOG_LEVEL: info
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
       OAUTH_COOKIE_SECRET: ${{ secrets.OAUTH_COOKIE_SECRET }}
       OAUTH_ENCRYPTION_KEY: ${{ secrets.OAUTH_ENCRYPTION_KEY }}
@@ -218,10 +211,6 @@ jobs:
       OKTA_OAUTH_EXTRA_PARAMS: ${{ secrets.OKTA_OAUTH_EXTRA_PARAMS }}
       OKTA_OAUTH_USER: ${{ secrets.OKTA_OAUTH_USER }}
       OKTA_OAUTH_PASSWORD: ${{ secrets.OKTA_OAUTH_PASSWORD }}
-      # Without this env var `doit env_create ...` uses by default
-      # the `pyviz` channel, except that we don't want to configure
-      # it as one of the sources.
-      PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
       - uses: holoviz-dev/holoviz_tasks/install@v0
         with:
@@ -268,8 +257,8 @@ jobs:
           fail_ci_if_error: false # optional (default = false)
 
   core_test_suite:
-    name: Core tests on Python ${{ matrix.python-version }}, ${{ matrix.os }}
-    needs: [pre_commit, setup]
+    name: core:${{ matrix.environment }}:${{ matrix.os }}
+    needs: [pre_commit, setup, pixi_lock]
     runs-on: ${{ matrix.os }}
     if: needs.setup.outputs.code_change == 'true'
     strategy:
@@ -278,18 +267,11 @@ jobs:
         os: ["ubuntu-latest"]
         python-version: ["3.12"]
     timeout-minutes: 120
-    defaults:
-      run:
-        shell: bash -el {0}
-    env:
-      DESC: "Python ${{ matrix.python-version }}, ${{ matrix.os }} core tests"
-      PYTHON_VERSION: ${{ matrix.python-version }}
-      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
     steps:
       # - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
       #   with:
       #     name: core_test_suite
-      #     python-version: ${{ matrix.python-version }}
+      #     environment: ${{ matrix.environment }}
       #     # channel-priority: strict
       #     channels: pyviz/label/dev,conda-forge,nodefaults
       #     envs: "-o tests_core -o tests_ci"
