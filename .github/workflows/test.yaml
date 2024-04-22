@@ -35,6 +35,7 @@ env:
   DISPLAY: ":99.0"
   PYTHONIOENCODING: "utf-8"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  COV: "--cov=./panel --cov-report=xml"
 
 jobs:
   pre_commit:
@@ -145,11 +146,11 @@ jobs:
       #     conda install -c conda-forge vtk=9.2.6=osmesa* vtk-base=9.2.6=osmesa* vtk-io-ffmpeg=9.2.6=osmesa* --no-deps
       - name: Test unit
         run: |
-          pixi run -e ${{ matrix.environment }} test-unit --cov=./panel --cov-report=xml
+          pixi run -e ${{ matrix.environment }} test-unit $COV
       - name: Test subprocess
         if: contains(matrix.os, 'ubuntu')
         run: |
-          pixi run -e ${{ matrix.environment }} test-subprocess --cov=./panel --cov-report=xml
+          pixi run -e ${{ matrix.environment }} test-subprocess $COV
       - name: Test Examples
         run: |
           pixi run -e ${{ matrix.environment }} test-example
@@ -213,12 +214,11 @@ jobs:
           timeout: 180000
       - name: Test docs
         run: |
-          pixi run -e ${{ matrix.environment }} test-docs --cov=./panel --cov-report=xml
+          pixi run -e ${{ matrix.environment }} test-docs $COV
       - name: Test UI
         run: |
-          COV="--cov=./panel --cov-report=xml --cov-config=.uicoveragerc"
           FAIL="--screenshot only-on-failure --full-page-screenshot --output ui_screenshots"
-          pixi run -e ${{ matrix.environment }} test-ui --jupyter $COV $FAIL
+          pixi run -e ${{ matrix.environment }} test-ui --jupyter $COV --cov-config=.uicoveragerc $FAIL
       - uses: actions/upload-artifact@v3
         if: always()
         with:
