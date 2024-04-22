@@ -46,6 +46,7 @@ jobs:
       - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         with:
           environments: "build"
+          install: false
           download-data: false
       - name: conda build
         run: pixi run -e build build-conda
@@ -93,6 +94,7 @@ jobs:
       - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         with:
           environments: "build"
+          install: false
           download-data: false
       - name: Build package
         run: pixi run -e build build-pip
@@ -142,20 +144,10 @@ jobs:
     needs: [pixi_lock]
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v4
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         with:
-          fetch-depth: "100"
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Fetch unshallow
-        run: git fetch --prune --tags --unshallow -f
-      - name: package install
-        run: |
-          python -m pip install -ve .
+          environments: "build"
+          download-data: false
       - name: npm build
         run: |
           cd ${{ env.PACKAGE }}
@@ -205,17 +197,11 @@ jobs:
     needs: [pixi_lock]
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v4
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         with:
-          fetch-depth: "100"
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Fetch unshallow
-        run: git fetch --prune --tags --unshallow -f
+          environments: "build"
+          install: false
+          download-data: false
       - name: build pyodide wheels
         run: |
           python -m pip install packaging
