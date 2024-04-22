@@ -104,6 +104,9 @@ include = ["panel", "scripts"]
 [tool.hatch.build.hooks.vcs]
 version-file = "panel/_version.py"
 
+[tool.hatch.version.raw-options]
+version_scheme = "no-guess-dev"
+
 [tool.hatch.build.hooks.custom]
 path = "scripts/hatch_build.py"
 

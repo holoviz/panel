@@ -53,7 +53,7 @@ def clean_js_version(version):
 
 def validate_js_version(version):
     # TODO: Double check the logic in this function
-    version = version.split(".dev")[0]
+    version = version.split(".post")[0]
     with open("./panel/package.json") as f:
         package_json = json.load(f)
     js_version = package_json["version"]
@@ -74,7 +74,7 @@ class BuildHook(BuildHookInterface):
         if self.target_name not in ["wheel", "sdist"]:
             return
 
-        # validate_js_version(self.metadata.version)
+        validate_js_version(self.metadata.version)
 
         if "PANEL_LITE" not in os.environ:
             build_models()
