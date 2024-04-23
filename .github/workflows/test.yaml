@@ -198,12 +198,12 @@ jobs:
         with:
           environments: ${{ matrix.environment }}
         id: install
-      - name: launch jupyter
+      - name: Launch JupyterLab
         shell: pixi run -e test-ui bash -el {0}
         run: |
           jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
           (jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887 > /tmp/jupyterlab_server.log 2>&1) &
-      - name: build jupyterlite
+      - name: Build JupyterLite
         shell: pixi run -e test-ui bash -el {0}
         run: |
           # TODO: Make this a pixi feature/environment
@@ -229,11 +229,11 @@ jobs:
           name: ui_screenshots
           path: ./ui_screenshots
           if-no-files-found: ignore
-      - name: Kill Jupyter Lab
+      - name: Stop JupyterLab
         if: always()
+        shell: pixi run -e test-ui bash -el {0}
         run: |
-          kill $(lsof -ti :8887) || true
-          sleep 5
+          jupyter lab stop 8887 || true
       - uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
