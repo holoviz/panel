@@ -229,6 +229,11 @@ jobs:
           name: ui_screenshots
           path: ./ui_screenshots
           if-no-files-found: ignore
+      - name: Kill Jupyter Lab
+        if: always()
+        run: |
+          kill $(lsof -ti :8887) || true
+          sleep 5
       - uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
