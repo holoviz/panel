@@ -50,14 +50,14 @@ jobs:
         with:
           name: docs
           if-no-files-found: error
-          path: builddocs
+          path: builtdocs
       - name: Set output
         id: vars
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: TEST
         run: |
           echo ${{ steps.vars.outputs.tag }}
-          ls -la builddocs
+          ls -la builtdocs
 
   docs_publish:
     name: Publish CDN
@@ -67,14 +67,14 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: docs
-          path: builddocs/
+          path: builtdocs/
       - name: Set output
         id: vars
         run: echo "tag=${{ needs.docs_build.outputs.tag }}" >> $GITHUB_OUTPUT
       - name: TEST
         run: |
           echo ${{ steps.vars.outputs.tag }}
-          ls -la builddocs
+          ls -la builtdocs
       # - name: Deploy dev
       #   uses: peaceiris/actions-gh-pages@v3
       #   if: |
