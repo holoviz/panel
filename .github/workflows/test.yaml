@@ -193,16 +193,18 @@ jobs:
           environments: ${{ matrix.environment }}
         id: install
       - name: launch jupyter
+        shell: pixi run -e test-ui bash -el {0}
         run: |
-          pixi run -e ${{ matrix.environment }} jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
-          (pixi run -e ${{ matrix.environment }} jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887 > /tmp/jupyterlab_server.log 2>&1) &
+          jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
+          (jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887 > /tmp/jupyterlab_server.log 2>&1) &
       - name: build jupyterlite
+        shell: pixi run -e test-ui bash -el {0}
         run: |
           # TODO: Make this a pixi feature/environment
-          pixi run -e ${{ matrix.environment }} python -m pip install -r ./lite/requirements.txt
-          pixi run -e ${{ matrix.environment }} python ./scripts/build_pyodide_wheels.py lite/pypi
-          pixi run -e ${{ matrix.environment }} python ./scripts/panelite/generate_panelite_content.py
-          pixi run -e ${{ matrix.environment }} jupyter lite build --lite-dir lite --output-dir lite/dist
+          python -m pip install -r ./lite/requirements.txt
+          python ./scripts/build_pyodide_wheels.py lite/pypi
+          python ./scripts/panelite/generate_panelite_content.py
+          jupyter lite build --lite-dir lite --output-dir lite/dist
       - name: Wait for JupyterLab
         uses: ifaxity/wait-on-action@v1.1.0
         with:

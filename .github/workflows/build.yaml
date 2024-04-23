@@ -149,6 +149,7 @@ jobs:
           environments: "build"
           download-data: false
       - name: npm build
+        shell: pixi run -e build bash -el {0}
         run: |
           cd ${{ env.PACKAGE }}
           TARBALL=$(npm pack .)
@@ -203,8 +204,8 @@ jobs:
           install: false
           download-data: false
       - name: build pyodide wheels
+        shell: pixi run -e build bash -el {0}
         run: |
-          python -m pip install packaging
           python ./scripts/build_pyodide_wheels.py --verify-clean
       - name: build CDN
         run: |
