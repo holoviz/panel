@@ -4,7 +4,7 @@ See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual su
 
 ## Version 1.4.2
 
-Date: 2024-04-19
+Date: 2024-04-23
 
 This micro-release fixes a number of smaller regressions and bugs including parsing of notebooks. Many thanks to our new contributor @bkreider, our returning contributors, @jrycw and @ea42gh, and our dedicated team of maintainers including @ahuang11, @MarcSkovMadsen and @philippjfr.
 
@@ -25,6 +25,9 @@ This micro-release fixes a number of smaller regressions and bugs including pars
 - Fix styling of loading indicator in Fast design ([#6761](https://github.com/holoviz/panel/pull/6761))
 - Ensure `VTK` nan, above and below colors are serialized ([#6763](https://github.com/holoviz/panel/pull/6763))
 - Fix issues with `Perspective` theme and persist config when switching plugins ([#6764](https://github.com/holoviz/panel/pull/6764))
+- Do not restore unmodified parameters in `config.set` triggering undesirable side-effects ([#6772 ([#6771](https://github.com/holoviz/panel/pull/6772))
+- Make autoreload module cleanup more robust ([#6771](https://github.com/holoviz/panel/pull/6771))
+- Ensure that cache `.clear()` clears the correct function  ([#6771](https://github.com/holoviz/panel/pull/6781))
 
 ### Documentation
 

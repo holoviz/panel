@@ -358,3 +358,27 @@ def test_hash_on_simple_dataframes():
 ])
 def test_is_equal(value, other, expected):
     assert is_equal(value, other)==expected
+
+def test_cache_clear_two_funcs():
+    # see https://github.com/holoviz/panel/issues/6777
+    @cache()
+    def get_data_1(a=[0]):
+        v = a[0]
+        a[0] = v+1
+        return v
+
+    @cache()
+    def get_data_2(b=[0]):
+        v = b[0]
+        b[0] = v+1
+        return v
+
+    assert get_data_1() == 0
+    assert get_data_2() == 0
+
+    get_data_1.clear()
+
+    assert get_data_1() == 1
+    assert get_data_2() == 0
+    assert get_data_1() == 1
+    assert get_data_2() == 0
