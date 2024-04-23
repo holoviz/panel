@@ -1,6 +1,6 @@
 # Releases
 
-## Version 1.4.1
+## Version 1.4.2
 
 Date: 2024-04-23
 
