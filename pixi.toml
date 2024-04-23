@@ -93,9 +93,6 @@ xgboost = "*"
 # =================== TESTS ===================
 # =============================================
 [feature.test-core.dependencies]
-altair = "*"
-anywidget = "*"
-diskcache = "*"
 psutil = "*"
 pytest = "*"
 pytest-asyncio = "*"
@@ -105,6 +102,9 @@ pytest-rerunfailures = "*"
 pytest-xdist = "*"
 
 [feature.test.dependencies]
+altair = "*"
+anywidget = "*"
+diskcache = "*"
 folium = "*"
 ipympl = "*"
 ipyvuetify = "*"
