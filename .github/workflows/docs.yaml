@@ -30,57 +30,20 @@ jobs:
       run:
         shell: bash -el {0}
     env:
-      DESC: "Documentation build"
       MPLBACKEND: "Agg"
-      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
       MOZ_HEADLESS: 1
       DISPLAY: ":99.0"
       PANEL_IPYWIDGET: 1
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         with:
-          name: doc_build
-          python-version: "3.11"
-          channels: pyviz/label/dev,conda-forge,bokeh,nodefaults
-          conda-update: "true"
-          nodejs: true
-          nodejs-version: 20
-          # Remove when all examples tools can be installed on 3.10
-          envs: -o examples -o doc -o build
-          cache: true
+          environments: docs
           opengl: true
-      - name: doit develop_install
-        if: steps.install.outputs.cache-hit != 'true'
-        run: |
-          conda activate test-environment
-          pip install --use-deprecated=legacy-resolver pyecharts ipywidgets_bokeh==1.5.0
-      - name: bokeh sampledata
-        run: |
-          conda activate test-environment
-          bokeh sampledata
-      - name: refmanual
-        run: |
-          conda activate test-environment
-          python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests
-      - name: build docs
-        run: |
-          conda activate test-environment
-          python scripts/gallery/convert_gallery.py
-          nbsite build --what=html --output=builtdocs --org holoviz --project-name panel
-          cp -r ./panel/dist ./builtdocs/panel_dist
-      - name: convert gallery
-        run: |
-          conda activate test-environment
-          panel convert examples/gallery/*.ipynb doc/how_to/*/examples/*.md --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index --requirements doc/pyodide_dependencies.json
-      - name: git status and git diff
-        run: |
-          git status
-          git diff
-      - name: Set and echo git ref
+      - name: Build documentation
+        run: pixi run -e docs docs-build
+      - name: Set output
         id: vars
-        run: |
-          echo "Deploying from ref ${GITHUB_REF#refs/*/}"
-          echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: Deploy dev
         uses: peaceiris/actions-gh-pages@v3
         if: |
