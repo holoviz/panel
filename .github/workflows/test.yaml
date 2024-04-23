@@ -31,13 +31,16 @@ concurrency:
 jobs:
   pre_commit:
     name: Run pre-commit
+    needs: [setup]
     runs-on: 'ubuntu-latest'
     steps:
       - uses: holoviz-dev/holoviz_tasks/pre-commit@v0
       - uses: pre-commit/action@v3.0.1
+        if: needs.setup.outputs.img_change == 'true'
         with:
           extra_args: -a --hook-stage manual oxipng || true --
       - uses: stefanzweifel/git-auto-commit-action@v4
+        if: needs.setup.outputs.img_change == 'true'
         with:
           commit_message: "Optimize PNG images (lossless)"
           file_pattern: "*.png"
@@ -49,6 +52,7 @@ jobs:
     outputs:
       code_change: ${{ steps.filter.outputs.code }}
       doc_change: ${{ steps.filter.outputs.doc }}
+      img_change: ${{ steps.filter.outputs.img }}
       matrix: ${{ env.MATRIX }}
     steps:
       - uses: actions/checkout@v4
@@ -70,6 +74,8 @@ jobs:
               - 'doc/how_to/**'
               - 'scripts/**'
               - 'lite/**'
+            img:
+              - '**/*.png'
       - name: Set matrix option
         run: |
           if [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then
