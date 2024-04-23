@@ -21,19 +21,23 @@ on:
   schedule:
     - cron: "0 19 * * SUN"
 
+defaults:
+  run:
+    shell: bash -el {0}
+
+env:
+  MPLBACKEND: "Agg"
+  MOZ_HEADLESS: 1
+  DISPLAY: ":99.0"
+  PANEL_IPYWIDGET: 1
+
 jobs:
-  build_docs:
+  docs_build:
     name: Documentation
     runs-on: "macos-14"
     timeout-minutes: 180
-    defaults:
-      run:
-        shell: bash -el {0}
-    env:
-      MPLBACKEND: "Agg"
-      MOZ_HEADLESS: 1
-      DISPLAY: ":99.0"
-      PANEL_IPYWIDGET: 1
+    outputs:
+      tag: ${{ steps.vars.outputs.tag }}
     steps:
       - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         with:
@@ -41,26 +45,53 @@ jobs:
           opengl: true
       - name: Build documentation
         run: pixi run -e docs docs-build
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: docs
+          if-no-files-found: error
+          path: builddocs
       - name: Set output
         id: vars
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-      - name: Deploy dev
-        uses: peaceiris/actions-gh-pages@v3
-        if: |
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
-          (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+      - name: TEST
+        run: |
+          echo ${{ steps.vars.outputs.tag }}
+          ls -la builddocs
+
+  docs_publish:
+    name: Publish CDN
+    runs-on: "ubuntu-latest"
+    needs: [docs_build]
+    steps:
+      - uses: actions/download-artifact@v4
         with:
-          personal_token: ${{ secrets.ACCESS_TOKEN }}
-          external_repository: holoviz-dev/panel
-          publish_dir: ./builtdocs
-          force_orphan: true
-      - name: Deploy main
-        if: |
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
-          (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./builtdocs
-          cname: panel.holoviz.org
-          force_orphan: true
+          name: docs
+          path: builddocs/
+      - name: Set output
+        id: vars
+        run: echo "tag=${{ needs.docs_build.outputs.tag }}" >> $GITHUB_OUTPUT
+      - name: TEST
+        run: |
+          echo ${{ steps.vars.outputs.tag }}
+          ls -la builddocs
+      # - name: Deploy dev
+      #   uses: peaceiris/actions-gh-pages@v3
+      #   if: |
+      #     (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
+      #     (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+      #   with:
+      #     personal_token: ${{ secrets.ACCESS_TOKEN }}
+      #     external_repository: holoviz-dev/panel
+      #     publish_dir: ./builtdocs
+      #     force_orphan: true
+      # - name: Deploy main
+      #   if: |
+      #     (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
+      #     (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+      #   uses: peaceiris/actions-gh-pages@v3
+      #   with:
+      #     github_token: ${{ secrets.GITHUB_TOKEN }}
+      #     publish_dir: ./builtdocs
+      #     cname: panel.holoviz.org
+      #     force_orphan: true
