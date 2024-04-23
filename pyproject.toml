@@ -66,7 +66,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://panel.holoviz.org"
-Source = "http://github.com/holoviz/panel"
+Source = "https://github.com/holoviz/panel"
 HoloViz = "https://holoviz.org/"
 
 [project.optional-dependencies]
@@ -84,6 +84,7 @@ panel = "panel.command:main"
 
 [tool.hatch.version]
 source = "vcs"
+raw-options = { version_scheme = "no-guess-dev" }
 
 [tool.hatch.build.targets.wheel]
 include = ["panel"]
@@ -103,9 +104,6 @@ include = ["panel", "scripts"]
 
 [tool.hatch.build.hooks.vcs]
 version-file = "panel/_version.py"
-
-[tool.hatch.version.raw-options]
-version_scheme = "no-guess-dev"
 
 [tool.hatch.build.hooks.custom]
 path = "scripts/hatch_build.py"

@@ -10,7 +10,7 @@ source:
 
 build:
   noarch: python
-  script: {{ PYTHON }} -m pip install -vv {{ project["name"] }}-{{ VERSION }}-py3-none-any.whl
+  script: {{ PYTHON }} -m pip install --no-deps -vv {{ project["name"] }}-{{ VERSION }}-py3-none-any.whl
   entry_points:
     {% for group,epoints in project.get("entry_points",{}).items() %}
     {% for entry_point in epoints %}
