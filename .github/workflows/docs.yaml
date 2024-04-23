@@ -3,32 +3,32 @@ name: docs
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+a[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+b[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+rc[0-9]+'
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+a[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+b[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+rc[0-9]+"
   workflow_dispatch:
     inputs:
       target:
-        description: 'Site to build and deploy'
+        description: "Site to build and deploy"
         type: choice
         options:
-        - dev
-        - main
-        - dryrun
+          - dev
+          - main
+          - dryrun
         required: true
         default: dryrun
   schedule:
-    - cron: '0 19 * * SUN'
+    - cron: "0 19 * * SUN"
 
 jobs:
   build_docs:
     name: Documentation
-    runs-on: 'macos-14'
+    runs-on: "macos-14"
     timeout-minutes: 180
     defaults:
       run:
-        shell: bash -l {0}
+        shell: bash -el {0}
     env:
       DESC: "Documentation build"
       MPLBACKEND: "Agg"
@@ -37,12 +37,12 @@ jobs:
       DISPLAY: ":99.0"
       PANEL_IPYWIDGET: 1
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0
+      - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
         with:
           name: doc_build
           python-version: "3.11"
           channels: pyviz/label/dev,conda-forge,bokeh,nodefaults
-          conda-update: 'true'
+          conda-update: "true"
           nodejs: true
           nodejs-version: 20
           # Remove when all examples tools can be installed on 3.10
