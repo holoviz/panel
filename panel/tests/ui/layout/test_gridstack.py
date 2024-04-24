@@ -6,7 +6,7 @@ from playwright.sync_api import expect
 
 from panel import Column, Spacer
 from panel.layout.gridstack import GridStack
-from panel.tests.util import serve_component
+from panel.tests.util import serve_component, wait_until
 
 pytestmark = pytest.mark.ui
 
@@ -26,6 +26,7 @@ def test_gridstack(page):
 
     expect(children).to_have_count(5)
 
+    wait_until(lambda: page.locator(".grid-stack").bounding_box() is not None, page)
     bbox = page.locator(".grid-stack").bounding_box()
 
     assert bbox['width'] == 800
