@@ -44,6 +44,7 @@ from .markup import (  # noqa
 )
 from .media import Audio, Video  # noqa
 from .perspective import Perspective  # noqa
+from .placeholder import Placeholder  # noqa
 from .plot import (  # noqa
     YT, Bokeh, Matplotlib, RGGPlot,
 )
@@ -84,6 +85,7 @@ __all__ = (
     "panel",
     "PDF",
     "Perspective",
+    "Placeholder",
     "Plotly",
     "PNG",
     "ReactiveExpr",
