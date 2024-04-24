@@ -135,11 +135,11 @@ pytest-playwright = "*"
 jupyter_server = "*"
 
 [feature.test-ui.tasks]
-install-ui = 'playwright install chromium'
+x-install-ui = 'playwright install chromium'
 
 [feature.test-ui.tasks.test-ui]
 cmd = 'pytest panel/tests/ui --ui --browser chromium -n logical --dist loadgroup --reruns 3 --reruns-delay 10'
-depends_on = ["install-ui"]
+depends_on = ["x-install-ui"]
 
 # =============================================
 # =================== DOCS ====================
@@ -150,15 +150,15 @@ nbsite = ">=0.8.4"
 pandas = "<2.1.0" # Avoid deprecation warnings
 
 [feature.doc.tasks]
-docs-refmanual = 'python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests'
-docs-convert-gallery = 'python scripts/gallery/convert_gallery.py'
-docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name panel'
-docs-copy-panel-dist = 'cp -r ./panel/dist ./builtdocs/panel_dist'
-docs-pyodide = 'panel convert examples/gallery/*.ipynb doc/how_to/*/examples/*.md --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index --requirements doc/pyodide_dependencies.json'
+x-docs-refmanual = 'python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests'
+x-docs-convert-gallery = 'python scripts/gallery/convert_gallery.py'
+x-docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name panel'
+x-docs-copy-panel-dist = 'cp -r ./panel/dist ./builtdocs/panel_dist'
+x-docs-pyodide = 'panel convert examples/gallery/*.ipynb doc/how_to/*/examples/*.md --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index --requirements doc/pyodide_dependencies.json'
 docs-server = 'python -m http.server 5500 --directory ./builtdocs'
 
 [feature.doc.tasks.docs-build]
-depends_on = ['docs-refmanual', 'docs-convert-gallery', 'docs-generate', 'docs-copy-panel-dist', 'docs-pyodide']
+depends_on = ['x-docs-refmanual', 'x-docs-convert-gallery', 'x-docs-generate', 'x-docs-copy-panel-dist', 'x-docs-pyodide']
 
 # =============================================
 # ================== BUILD ====================
