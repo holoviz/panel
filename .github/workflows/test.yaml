@@ -212,7 +212,7 @@ jobs:
           python ./scripts/panelite/generate_panelite_content.py
           jupyter lite build --lite-dir lite --output-dir lite/dist
       - name: Wait for JupyterLab
-        uses: ifaxity/wait-on-action@v1.1.0
+        uses: ifaxity/wait-on-action@v1.2.0
         with:
           resource: http-get://localhost:8887/lab
           timeout: 180000
@@ -221,13 +221,13 @@ jobs:
           # Create a .uicoveragerc file to set the concurrency library to greenlet
           # https://github.com/microsoft/playwright-python/issues/313
           echo "[run]\nconcurrency = greenlet" > .uicoveragerc
-          FAIL="--screenshot only-on-failure --full-page-screenshot --output ui_screenshots --tracing retain-on-failure"
+          FAIL="--screenshot only-on-failure --full-page-screenshot --output ui_screenshots_${{ matrix.os }} --tracing retain-on-failure"
           pixi run -e ${{ matrix.environment }} test-ui --jupyter $COV --cov-config=.uicoveragerc $FAIL
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: ui_screenshots
-          path: ./ui_screenshots
+          path: ./ui_screenshots_${{ matrix.os }}
           if-no-files-found: ignore
       - name: Stop JupyterLab
         if: always()
