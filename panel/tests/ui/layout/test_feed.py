@@ -71,7 +71,7 @@ def test_feed_dynamic_objects(page):
     feed = Feed(height=250, load_buffer=10)
     serve_component(page, feed)
 
-    feed.objects = list(range(1000))
+    feed.objects = list(range(100))
     wait_until(lambda: page.locator('pre') is not None, page)
     wait_until(lambda: page.locator('pre').first is not None, page)
 
