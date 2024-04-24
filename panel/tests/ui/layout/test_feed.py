@@ -75,5 +75,5 @@ def test_feed_dynamic_objects(page):
     wait_until(lambda: page.locator('pre') is not None, page)
     wait_until(lambda: page.locator('pre').first is not None, page)
 
-    expect(page.locator('pre').first).to_have_text('0')
+    wait_until(lambda: expect(page.locator('pre').first).to_have_text('0'))
     wait_until(lambda: page.locator('pre').count() > 10, page)
