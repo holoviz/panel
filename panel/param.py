@@ -633,7 +633,7 @@ class Param(PaneBase):
             watchers.append(self.object.param.watch(link, p_name, 'step'))
         watchers.append(self.object.param.watch(link, p_name))
 
-        options = kwargs.get('options', [])
+        options = resolve_value(kwargs.get('options', []), recursive=False)
         if isinstance(options, dict):
             options = options.values()
         if ((is_parameterized(value) or any(is_parameterized(o) for o in options))
