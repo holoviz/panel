@@ -212,7 +212,7 @@ jobs:
           python ./scripts/panelite/generate_panelite_content.py
           jupyter lite build --lite-dir lite --output-dir lite/dist
       - name: Wait for JupyterLab
-        uses: ifaxity/wait-on-action@v1.2.0
+        uses: ifaxity/wait-on-action@v1.1.0
         with:
           resource: http-get://localhost:8887/lab
           timeout: 180000
