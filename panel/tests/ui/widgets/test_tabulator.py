@@ -23,7 +23,9 @@ from panel.depends import bind
 from panel.io.state import state
 from panel.layout.base import Column
 from panel.models.tabulator import _TABULATOR_THEMES_MAPPING
-from panel.tests.util import get_ctrl_modifier, serve_component, wait_until
+from panel.tests.util import (
+    get_ctrl_modifier, serve_component, wait_locator, wait_until,
+)
 from panel.widgets import Select, Tabulator
 
 pytestmark = pytest.mark.ui
@@ -2401,7 +2403,7 @@ def test_tabulator_sorters_set_after_init(page, df_mixed):
 
     widget.sorters = [{'field': 'int', 'dir': 'desc'}]
 
-    sheader = page.locator('[aria-sort="descending"]:visible')
+    sheader = wait_locator('[aria-sort="descending"]:visible', page)
     expect(sheader).to_have_count(1)
     assert sheader.get_attribute('tabulator-field') == 'int'
 

@@ -48,7 +48,7 @@ def test_feed_view_latest(page):
     # Assert scroll is not at 0 (view_latest)
     assert feed_el.evaluate('(el) => el.scrollTop') > 0
 
-    wait_until(lambda: int(page.locator('pre').last.inner_text()) > 950, page)
+    wait_until(lambda: int(page.locator('pre').last.inner_text()) > ITEMS * 0.95, page)
 
 def test_feed_view_scroll_button(page):
     feed = Feed(*list(range(ITEMS)), height=250, scroll_button_threshold=50)

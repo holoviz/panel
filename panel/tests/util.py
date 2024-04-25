@@ -257,6 +257,11 @@ async def async_wait_until(fn, page=None, timeout=5000, interval=100):
             await asyncio.sleep(interval / 1000)
 
 
+def wait_locator(selector, page, timeout=None, interval=None):
+    wait_until(lambda: page.locator(selector) is not None, page, timeout, interval)
+    return page.locator(selector)
+
+
 def get_ctrl_modifier():
     """
     Get the CTRL modifier on the current platform.
