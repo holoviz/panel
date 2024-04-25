@@ -145,9 +145,7 @@ depends_on = ["x-install-ui"]
 # =================== DOCS ====================
 # =============================================
 [feature.doc.dependencies]
-lxml = "*"
 nbsite = ">=0.8.4"
-pandas = "<2.1.0" # Avoid deprecation warnings
 
 [feature.doc.tasks]
 x-docs-refmanual = 'python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests'
