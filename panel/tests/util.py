@@ -280,7 +280,7 @@ def serve_and_wait(app, page=None, prefix=None, port=None, **kwargs):
     wait_until(lambda: server_id in state._servers, page)
     server = state._servers[server_id][0]
     port = server.port
-    wait_for_server(port, prefix=prefix, page=page)
+    wait_for_server(port, prefix=prefix)
     return port
 
 
@@ -302,7 +302,7 @@ def serve_and_request(app, suffix="", n=1, port=None, **kwargs):
     return reqs[0] if len(reqs) == 1 else reqs
 
 
-def wait_for_server(port, prefix=None, timeout=3, page=None):
+def wait_for_server(port, prefix=None, timeout=3):
     start = time.time()
     prefix = prefix or ""
     url = f"http://localhost:{port}{prefix}/liveness"
@@ -312,10 +312,7 @@ def wait_for_server(port, prefix=None, timeout=3, page=None):
                 return
         except Exception:
             pass
-        if page:
-            page.wait_for_timeout(50)
-        else:
-            time.sleep(0.05)
+        time.sleep(0.05)
         if (time.time()-start) > timeout:
             raise RuntimeError(f'{url} did not respond before timeout.')
 
