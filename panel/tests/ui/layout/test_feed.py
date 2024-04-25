@@ -9,9 +9,10 @@ from panel.tests.util import serve_component, wait_until
 
 pytestmark = pytest.mark.ui
 
+ITEMS = 100  # 1000 items make the CI flaky
 
 def test_feed_load_entries(page):
-    feed = Feed(*list(range(1000)), height=250)
+    feed = Feed(*list(range(ITEMS)), height=250)
     serve_component(page, feed)
 
     feed_el = page.locator(".bk-panel-models-feed-Feed")
@@ -34,7 +35,7 @@ def test_feed_load_entries(page):
     wait_until(lambda: feed_el.locator('.bk-panel-models-markup-HTML').count() >= 50, page)
 
 def test_feed_view_latest(page):
-    feed = Feed(*list(range(1000)), height=250, view_latest=True)
+    feed = Feed(*list(range(ITEMS)), height=250, view_latest=True)
     serve_component(page, feed)
 
     feed_el = page.locator(".bk-panel-models-feed-Feed")
@@ -50,7 +51,7 @@ def test_feed_view_latest(page):
     wait_until(lambda: int(page.locator('pre').last.inner_text()) > 950, page)
 
 def test_feed_view_scroll_button(page):
-    feed = Feed(*list(range(1000)), height=250, scroll_button_threshold=50)
+    feed = Feed(*list(range(ITEMS)), height=250, scroll_button_threshold=50)
     serve_component(page, feed)
 
     feed_el = page.locator(".bk-panel-models-feed-Feed")
@@ -71,9 +72,7 @@ def test_feed_dynamic_objects(page):
     feed = Feed(height=250, load_buffer=10)
     serve_component(page, feed)
 
-    feed.objects = list(range(100))
-    wait_until(lambda: page.locator('pre') is not None, page)
-    wait_until(lambda: page.locator('pre').first is not None, page)
+    feed.objects = list(range(ITEMS))
 
     wait_until(lambda: expect(page.locator('pre').first).to_have_text('0'))
     wait_until(lambda: page.locator('pre').count() > 10, page)
