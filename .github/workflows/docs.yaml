@@ -41,7 +41,7 @@ jobs:
   docs_build:
     name: Build Documentation
     needs: [pixi_lock]
-    runs-on: "macos-14"
+    runs-on: "macos-latest"
     timeout-minutes: 180
     outputs:
       tag: ${{ steps.vars.outputs.tag }}
