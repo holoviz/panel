@@ -176,6 +176,8 @@ addopts = "--pyargs --doctest-ignore-import-errors --color=yes"
 norecursedirs = "doc .git dist build _build .ipynb_checkpoints panel/examples"
 asyncio_mode = "auto"
 xfail_strict = true
+minversion = "7"
+log_cli_level = "INFO"
 filterwarnings = [
     # 2023-11: `pkg_resources` is deprecated
     "ignore:Deprecated call to `pkg_resources.+?'zope:DeprecationWarning",  # https://github.com/zopefoundation/meta/issues/194
