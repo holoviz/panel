@@ -1,5 +1,3 @@
-from collections import OrderedDict
-
 import numpy as np
 import pytest
 
@@ -182,7 +180,7 @@ def test_select_non_hashable_options(document, comm):
 
 
 def test_select_mutables(document, comm):
-    opts = OrderedDict([('A', [1,2,3]), ('B', [2,4,6]), ('C', dict(a=1,b=2))])
+    opts = {'A': [1,2,3], 'B': [2,4,6], 'C': dict(a=1,b=2)}
     select = Select(options=opts, value=opts['B'], name='Select')
 
     widget = select.get_root(document, comm=comm)
@@ -205,12 +203,12 @@ def test_select_mutables(document, comm):
 
 
 def test_select_change_options_on_watch(document, comm):
-    select = Select(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
-                         value='A', name='Select')
+    select = Select(options={'A': 'A', '1': 1, 'C': object},
+                    value='A', name='Select')
 
     def set_options(event):
         if event.new == 1:
-            select.options = OrderedDict([('D', 2), ('E', 'a')])
+            select.options = {'D': 2, 'E': 'a'}
     select.param.watch(set_options, 'value')
 
     model = select.get_root(document, comm=comm)
@@ -811,7 +809,7 @@ def test_select_disabled_options_set_value_and_disabled_options(options, size, d
 
 
 def test_multi_select(document, comm):
-    select = MultiSelect(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+    select = MultiSelect(options={'A': 'A', '1': 1, 'C': object},
                          value=[object, 1], name='Select')
 
     widget = select.get_root(document, comm=comm)
@@ -834,7 +832,7 @@ def test_multi_select(document, comm):
 
 
 def test_multi_choice(document, comm):
-    choice = MultiChoice(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+    choice = MultiChoice(options={'A': 'A', '1': 1, 'C': object},
                          value=[object, 1], name='MultiChoice')
 
     widget = choice.get_root(document, comm=comm)
@@ -857,12 +855,12 @@ def test_multi_choice(document, comm):
 
 
 def test_multi_select_change_options(document, comm):
-    select = MultiSelect(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+    select = MultiSelect(options={'A': 'A', '1': 1, 'C': object},
                          value=[object, 1], name='Select')
 
     def set_options(event):
         if event.new == [1]:
-            select.options = OrderedDict([('D', 2), ('E', 'a')])
+            select.options = {'D': 2, 'E': 'a'}
     select.param.watch(set_options, 'value')
 
     model = select.get_root(document, comm=comm)
@@ -874,22 +872,22 @@ def test_multi_select_change_options(document, comm):
 
 def test_toggle_group_error_init(document, comm):
     with pytest.raises(ValueError):
-        ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+        ToggleGroup(options={'A': 'A', '1': 1, 'C': object},
                     value=1, name='RadioButtonGroup',
                     widget_type='button', behavior='check')
 
     with pytest.raises(ValueError):
-        ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+        ToggleGroup(options={'A': 'A', '1': 1, 'C': object},
                     value=[1, object], name='RadioButtonGroup',
                     widget_type='button', behavior='radio')
 
     with pytest.raises(ValueError):
-        ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+        ToggleGroup(options={'A': 'A', '1': 1, 'C': object},
                     value=[1, object], name='RadioButtonGroup',
                     widget_type='buttons')
 
     with pytest.raises(ValueError):
-        ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+        ToggleGroup(options={'A': 'A', '1': 1, 'C': object},
                     value=[1, object], name='RadioButtonGroup',
                     behavior='checks')
 
@@ -897,9 +895,9 @@ def test_toggle_group_error_init(document, comm):
 def test_toggle_group_check(document, comm):
 
     for widget_type in ToggleGroup._widgets_type:
-        select = ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
-                               value=[1, object], name='CheckButtonGroup',
-                               widget_type=widget_type, behavior='check')
+        select = ToggleGroup(options={'A': 'A', '1': 1, 'C': object},
+                             value=[1, object], name='CheckButtonGroup',
+                             widget_type=widget_type, behavior='check')
 
         widget = select.get_root(document, comm=comm)
 
@@ -931,9 +929,9 @@ def test_toggle_group_check(document, comm):
 def test_toggle_group_radio(document, comm):
 
     for widget_type in ToggleGroup._widgets_type:
-        select = ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
-                               value=1, name='RadioButtonGroup',
-                               widget_type=widget_type, behavior='radio')
+        select = ToggleGroup(options={'A': 'A', '1': 1, 'C': object},
+                             value=1, name='RadioButtonGroup',
+                             widget_type=widget_type, behavior='radio')
 
         widget = select.get_root(document, comm=comm)
 

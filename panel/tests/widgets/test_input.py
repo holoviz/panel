@@ -58,6 +58,16 @@ def test_date_picker(document, comm):
     assert widget.value == '2018-09-04'
 
 
+def test_date_picker_options(document, comm):
+    options = [date(2018, 9, 1), date(2018, 9, 2), date(2018, 9, 3)]
+    datetime_picker = DatePicker(
+        name='DatetimePicker', value=date(2018, 9, 2),
+        options=options
+    )
+    assert datetime_picker.value == date(2018, 9, 2)
+    assert datetime_picker.enabled_dates == options
+
+
 def test_daterange_picker(document, comm):
     date_range_picker = DateRangePicker(name='DateRangePicker',
                                         value=(date(2018, 9, 2), date(2018, 9, 3)),
@@ -128,6 +138,16 @@ def test_datetime_picker(document, comm):
     # Check end value
     with pytest.raises(ValueError):
         datetime_picker._process_events({'value': '2018-09-10 00:00:01'})
+
+
+def test_datetime_picker_options(document, comm):
+    options = [datetime(2018, 9, 1), datetime(2018, 9, 2), datetime(2018, 9, 3)]
+    datetime_picker = DatetimePicker(
+        name='DatetimePicker', value=datetime(2018, 9, 2, 1, 5),
+        options=options
+    )
+    assert datetime_picker.value == datetime(2018, 9, 2, 1, 5)
+    assert datetime_picker.enabled_dates == options
 
 
 def test_datetime_range_picker(document, comm):

@@ -37,8 +37,7 @@ def test_card_default(page, card_components):
 
     # icon display in card button in expanded mode
     card_button = page.locator('.card-button')
-    button_name = card_button.inner_text()
-    assert button_name == "\u25bc"
+    expect(card_button.locator('svg')).to_have_class("icon icon-tabler icons-tabler-outline icon-tabler-chevron-down")
 
 
 def test_card_collapsed(page, card_components):
@@ -52,7 +51,7 @@ def test_card_collapsed(page, card_components):
     # collapse the card
     card_button.wait_for()
     card_button.click()
-    assert card_button.inner_text() == "\u25ba"
+    expect(card_button.locator('svg')).to_have_class("icon icon-tabler icons-tabler-outline icon-tabler-chevron-right")
     # only show the card header, other elements are hidden
     expect(card_elements).to_have_count(1)
 
@@ -60,7 +59,7 @@ def test_card_collapsed(page, card_components):
     card_button.wait_for()
     card_button.click()
     expect(card_elements).to_have_count(len(card) + 1)
-    assert card_button.inner_text() == "\u25bc"
+    expect(card_button.locator('svg')).to_have_class("icon icon-tabler icons-tabler-outline icon-tabler-chevron-down")
 
 
 def test_card_not_collapsible(page, card_components):
@@ -124,17 +123,6 @@ def test_card_background(page, card_components):
     w1, w2 = card_components
     background = 'rgb(128, 128, 128)'
     card = Card(w1, w2, styles=dict(background=background))
-
-    serve_component(page, card)
-
-    card_widget = page.locator('.card')
-    expect(card_widget).to_have_css('background-color', background)
-
-
-def test_card_background_legacy(page, card_components):
-    w1, w2 = card_components
-    background = 'rgb(128, 128, 128)'
-    card = Card(w1, w2, background=background)
 
     serve_component(page, card)
 

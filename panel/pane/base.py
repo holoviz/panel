@@ -152,7 +152,7 @@ class PaneBase(Reactive):
     # List of parameters that trigger a rerender of the Bokeh model
     _rerender_params: ClassVar[List[str]] = ['object']
 
-    _skip_layoutable = ('background', 'css_classes', 'margin', 'name')
+    _skip_layoutable = ('css_classes', 'margin', 'name')
 
     __abstract = True
 
@@ -242,7 +242,9 @@ class PaneBase(Reactive):
 
     @property
     def _synced_params(self) -> List[str]:
-        ignored_params = ['name', 'default_layout', 'loading', 'background', 'stylesheets']+self._rerender_params
+        ignored_params = [
+            'name', 'default_layout', 'loading', 'stylesheets'
+        ] + self._rerender_params
         return [p for p in self.param if p not in ignored_params and not p.startswith('_')]
 
     def _param_change(self, *events: param.parameterized.Event) -> None:
@@ -677,7 +679,8 @@ class ReplacementPane(PaneBase):
                     cls._recursive_update(old, new)
             elif isinstance(object, Reactive):
                 cls._recursive_update(old_object, object)
-            else:
+            elif old_object.object is not object:
+                # See https://github.com/holoviz/param/pull/901
                 old_object.object = object
         else:
             # Replace pane entirely

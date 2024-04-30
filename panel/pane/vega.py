@@ -40,7 +40,7 @@ def ds_as_cds(dataset):
 
 _containers = ['hconcat', 'vconcat', 'layer']
 
-SCHEMA_REGEX = re.compile('^v(\d+)\.\d+\.\d+.json')
+SCHEMA_REGEX = re.compile(r'^v(\d+)\.\d+\.\d+.json')
 
 def _isin(obj, attr):
     if isinstance(obj, dict):
@@ -264,6 +264,16 @@ class Vega(ModelPane):
         data = props['data']
         if data is not None:
             sources = self._get_sources(data, sources)
+        if self.sizing_mode:
+            if 'both' in self.sizing_mode:
+                if 'width' in data:
+                    data['width'] = 'container'
+                if 'height' in data:
+                    data['height'] = 'container'
+            elif 'width' in self.sizing_mode and 'width' in data:
+                data['width'] = 'container'
+            elif 'height' in self.sizing_mode and 'height' in data:
+                data['height'] = 'container'
         dimensions = _get_dimensions(data, props) if data else {}
         props['data'] = data
         props['data_sources'] = sources

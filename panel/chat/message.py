@@ -14,13 +14,14 @@ from io import BytesIO
 from tempfile import NamedTemporaryFile
 from textwrap import indent
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Iterable, List, Union,
+    TYPE_CHECKING, Any, Callable, ClassVar, Dict, Iterable, List, Optional,
+    Union,
 )
 from zoneinfo import ZoneInfo
 
 import param
 
-from ..io.resources import CDN_DIST
+from ..io.resources import CDN_DIST, get_dist_path
 from ..io.state import state
 from ..layout import Column, Row
 from ..pane.base import PaneBase, ReplacementPane, panel as _panel
@@ -48,9 +49,14 @@ USER_LOGO = "🧑"
 ASSISTANT_LOGO = "🤖"
 SYSTEM_LOGO = "⚙️"
 ERROR_LOGO = "❌"
-GPT_3_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_logo.svg/1024px-ChatGPT_logo.svg.png?20230318122128"
-GPT_4_LOGO = "https://upload.wikimedia.org/wikipedia/commons/a/a4/GPT-4.png"
-WOLFRAM_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/WolframCorporateLogo.svg/1920px-WolframCorporateLogo.svg.png"
+HELP_LOGO = "❓"
+GPT_3_LOGO = "{dist_path}assets/logo/gpt-3.svg"
+GPT_4_LOGO = "{dist_path}assets/logo/gpt-4.svg"
+WOLFRAM_LOGO = "{dist_path}assets/logo/wolfram.svg"
+LUMEN_LOGO = "{dist_path}assets/logo/lumen.svg"
+HOLOVIEWS_LOGO = "{dist_path}assets/logo/holoviews.svg"
+HVPLOT_LOGO = "{dist_path}assets/logo/hvplot.svg"
+PANEL_LOGO = "{dist_path}images/icon-vector.svg"
 
 DEFAULT_AVATARS = {
     # User
@@ -72,6 +78,7 @@ DEFAULT_AVATARS = {
     "system": SYSTEM_LOGO,
     "exception": ERROR_LOGO,
     "error": ERROR_LOGO,
+    "help": HELP_LOGO,
     # Human
     "adult": "🧑",
     "baby": "👶",
@@ -97,6 +104,12 @@ DEFAULT_AVATARS = {
     # Llama
     "llama": "🦙",
     "llama2": "🐪",
+    # Plotting
+    "plot": "📊",
+    "lumen": LUMEN_LOGO,
+    "holoviews": HOLOVIEWS_LOGO,
+    "hvplot": HVPLOT_LOGO,
+    "panel": PANEL_LOGO,
 }
 
 
@@ -158,6 +171,12 @@ class ChatMessage(PaneBase):
         to use when the user is specified but the avatar is. You can
         modify, but not replace the dictionary.""")
 
+    footer_objects = param.List(doc="""
+        A list of objects to display in the column of the footer of the message.""")
+
+    header_objects = param.List(doc="""
+        A list of objects to display in the row of the header of the message.""")
+
     max_width = param.Integer(default=1200, bounds=(0, None))
 
     object = param.Parameter(allow_refs=False, doc="""
@@ -197,6 +216,9 @@ class ChatMessage(PaneBase):
     show_copy_icon = param.Boolean(default=True, doc="""
         Whether to display the copy icon.""")
 
+    show_activity_dot = param.Boolean(default=False, doc="""
+        Whether to show the activity dot.""")
+
     renderers = param.HookList(doc="""
         A callable or list of callables that accept the object and return a
         Panel object to render the object. If a list is provided, will
@@ -233,6 +255,11 @@ class ChatMessage(PaneBase):
             )
         self._internal = True
         super().__init__(object=object, **params)
+        self.chat_copy_icon = ChatCopyIcon(
+            visible=False, width=15, height=15, css_classes=["copy-icon"],
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
+        )
+        self.reaction_icons.stylesheets = self._stylesheets + self.param.stylesheets.rx()
         self.reaction_icons.link(self, value="reactions", bidirectional=True)
         self.reaction_icons.visible = self.param.show_reaction_icons
         if not self.avatar:
@@ -240,12 +267,18 @@ class ChatMessage(PaneBase):
         self._build_layout()
 
     def _build_layout(self):
+        self._activity_dot = HTML(
+            "●",
+            css_classes=["activity-dot"],
+            visible=self.param.show_activity_dot,
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
+        )
         self._left_col = left_col = Column(
             self._render_avatar(),
             max_width=60,
             height=100,
             css_classes=["left"],
-            stylesheets=self._stylesheets,
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
             visible=self.param.show_avatar,
             sizing_mode=None,
         )
@@ -257,7 +290,7 @@ class ChatMessage(PaneBase):
             self._object_panel,
             self.reaction_icons,
             css_classes=["center"],
-            stylesheets=self._stylesheets,
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
             sizing_mode=None
         )
         self.param.watch(self._update_object_pane, "object")
@@ -266,23 +299,38 @@ class ChatMessage(PaneBase):
             self.param.user, height=20, css_classes=["name"],
             visible=self.param.show_user, stylesheets=self._stylesheets,
         )
+
+        header_objects = (
+            [self._user_html] +
+            self.param.header_objects.rx() +
+            [self.chat_copy_icon, self._activity_dot]
+        )
+        header_row = Row(
+            objects=header_objects,
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
+            sizing_mode="stretch_width",
+            css_classes=["header"]
+        )
+
         self._timestamp_html = HTML(
             self.param.timestamp.rx().strftime(self.param.timestamp_format),
             css_classes=["timestamp"],
             visible=self.param.show_timestamp
         )
+
+        footer_col = Column(
+            objects=self.param.footer_objects.rx() + [self._timestamp_html],
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
+            sizing_mode="stretch_width",
+            css_classes=["footer"],
+        )
+
         self._right_col = right_col = Column(
-            Row(
-                self._user_html,
-                self.chat_copy_icon,
-                stylesheets=self._stylesheets,
-                sizing_mode="stretch_width",
-                css_classes=["header"]
-            ),
+            header_row,
             self._center_row,
-            self._timestamp_html,
+            footer_col,
             css_classes=["right"],
-            stylesheets=self._stylesheets,
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
             sizing_mode=None
         )
         viewable_params = {
@@ -371,6 +419,11 @@ class ChatMessage(PaneBase):
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = self._composite._get_model(doc, root, parent, comm)
+        if not comm:
+            # If not in a notebook environment we potentially need to
+            # replace path to avatar with server URL
+            avatar = model.children[0].children[0]
+            avatar.text = avatar.text.replace(CDN_DIST, get_dist_path())
         ref = (root or model).ref['id']
         self._models[ref] = (model, parent)
         return model
@@ -396,8 +449,9 @@ class ChatMessage(PaneBase):
         updated_avatars = {
             self._to_alpha_numeric(key): value for key, value in updated_avatars.items()
         }
+
         # now lookup the avatar
-        return updated_avatars.get(alpha_numeric_key, self.avatar)
+        return updated_avatars.get(alpha_numeric_key, self.avatar).format(dist_path=CDN_DIST)
 
     def _select_renderer(
         self,
@@ -436,25 +490,43 @@ class ChatMessage(PaneBase):
                 contents = contents.decode("utf-8")
         return contents, renderer
 
+    def _include_stylesheets_inplace(self, obj):
+        if hasattr(obj, "objects"):
+            obj.objects[:] = [
+                self._include_stylesheets_inplace(o) for o in obj.objects
+            ]
+        else:
+            obj = _panel(obj)
+        obj.stylesheets = [
+            stylesheet for stylesheet in self._stylesheets + self.stylesheets
+            if stylesheet not in obj.stylesheets
+        ] + obj.stylesheets
+        return obj
+
+    def _include_message_css_class_inplace(self, obj):
+        if hasattr(obj, "objects"):
+            obj.objects[:] = [
+                self._include_message_css_class_inplace(o)
+                for o in obj.objects
+            ]
+        else:
+            obj = _panel(obj)
+        is_markup = isinstance(obj, HTMLBasePane) and not isinstance(obj, FileBase)
+        if obj.css_classes or not is_markup:
+            return obj
+        if len(str(obj.object)) > 0:  # only show a background if there is content
+            obj.css_classes = [*(css for css in obj.css_classes if css != "message"), "message"]
+        obj.sizing_mode = None
+        return obj
+
     def _set_params(self, obj, **params):
         """
         Set the sizing mode and height of the object.
         """
-        if hasattr(obj, "objects"):
-            params['css_classes'] = (
-                [css for css in obj.stylesheets if css not in self._stylesheets] +
-                self._stylesheets
-            )
-            for subobj in obj.objects:
-                self._set_params(subobj)
-            obj.param.update(params)
-            return
-
+        self._include_stylesheets_inplace(obj)
         is_markup = isinstance(obj, HTMLBasePane) and not isinstance(obj, FileBase)
         if is_markup:
-            if len(str(obj.object)) > 0:  # only show a background if there is content
-                params['css_classes'] = [*(css for css in obj.css_classes if css != "message"), "message"]
-            params['sizing_mode'] = None
+            self._include_message_css_class_inplace(obj)
         else:
             if obj.sizing_mode is None and not obj.width:
                 params['sizing_mode'] = "stretch_width"
@@ -473,6 +545,8 @@ class ChatMessage(PaneBase):
         """
         if isinstance(value, Viewable):
             self._internal = False
+            self._include_stylesheets_inplace(value)
+            self._include_message_css_class_inplace(value)
             return value
 
         renderer = None
@@ -604,7 +678,7 @@ class ChatMessage(PaneBase):
         self._composite._cleanup(root)
         return super()._cleanup(root)
 
-    def stream(self, token: str):
+    def stream(self, token: str, replace: bool = False):
         """
         Updates the message with the new token traversing the object to
         allow updating nested objects. When traversing a nested Panel
@@ -616,12 +690,17 @@ class ChatMessage(PaneBase):
         ---------
         token: str
           The token to stream to the text pane.
+        replace: bool (default=False)
+            Whether to replace the existing text.
         """
         i = -1
         parent_panel = None
         object_panel = self
         attr = "object"
         obj = self.object
+        if obj is None:
+            obj = ""
+
         while not isinstance(obj, str) or isinstance(object_panel, ImageBase):
             object_panel = obj
             if hasattr(obj, "objects"):
@@ -639,7 +718,8 @@ class ChatMessage(PaneBase):
                 obj = parent_panel
                 parent_panel = None
                 i -= 1
-        setattr(object_panel, attr, obj + token)
+        contents = token if replace else obj + token
+        setattr(object_panel, attr, contents)
 
     def update(
         self,
@@ -676,6 +756,11 @@ class ChatMessage(PaneBase):
         else:
             updates["object"] = value
         self.param.update(**updates)
+
+    def select(
+        self, selector: Optional[type | Callable[[Viewable], bool]] = None
+    ) -> List[Viewable]:
+        return super().select(selector) + self._composite.select(selector)
 
     def serialize(
         self,

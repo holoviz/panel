@@ -231,6 +231,8 @@ class ReactiveHTML(HTMLBox):
 
     events = bp.Dict(bp.String, bp.Dict(bp.String, bp.Bool))
 
+    event_params = bp.List(bp.String)
+
     html = bp.String()
 
     looped = bp.List(bp.String)

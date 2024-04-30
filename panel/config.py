@@ -21,9 +21,6 @@ from bokeh.core.has_props import _default_resolver
 from bokeh.document import Document
 from bokeh.model import Model
 from bokeh.settings import settings as bk_settings
-from param.display import (
-    register_display_accessor, unregister_display_accessor,
-)
 from pyviz_comms import (
     JupyterCommManager as _JupyterCommManager, extension as _pyviz_extension,
 )
@@ -35,7 +32,11 @@ from .util import param_watchers
 __version__ = str(param.version.Version(
     fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
 
-_LOCAL_DEV_VERSION = any(v in __version__ for v in ('post', 'dirty')) and not state._is_pyodide
+_LOCAL_DEV_VERSION = (
+    any(v in __version__ for v in ('post', 'dirty'))
+    and not state._is_pyodide
+    and 'PANEL_DOC_BUILD' not in os.environ
+)
 
 #---------------------------------------------------------------------
 # Public API
@@ -378,7 +379,9 @@ class _config(_base_config):
         try:
             yield
         finally:
-            self.param.update(**dict(values))
+            new = self.param.values()
+            restore = {k: v for k, v in values if v is not new.get(k)}
+            self.param.update(**restore)
             for k, v in overrides:
                 setattr(self, k+'_', v)
 
@@ -686,7 +689,7 @@ class panel_extension(_pyviz_extension):
         'gridstack': ['GridStack'],
         'katex': ['katex'],
         'mathjax': ['MathJax'],
-        'perspective': ['perspective'],
+        'perspective': ["customElements.get('perspective-viewer')"],
         'plotly': ['Plotly'],
         'tabulator': ['Tabulator'],
         'terminal': ['Terminal', 'xtermjs'],
@@ -798,7 +801,7 @@ class panel_extension(_pyviz_extension):
                 backend = hv.Store.current_backend
             else:
                 backend = 'bokeh'
-            if hasattr(hv.Store, 'set_current_backend'):
+            if not loaded or (loaded and backend != hv.Store.current_backend) and hasattr(hv.Store, 'set_current_backend'):
                 hv.Store.set_current_backend(backend)
             else:
                 hv.Store.current_backend = backend
@@ -812,17 +815,7 @@ class panel_extension(_pyviz_extension):
         except Exception:
             return
 
-        from .io.notebook import load_notebook, mime_renderer
-
-        try:
-            unregister_display_accessor('_ipython_display_')
-        except KeyError:
-            pass
-
-        try:
-            register_display_accessor('_repr_mimebundle_', mime_renderer)
-        except Exception:
-            pass
+        from .io.notebook import load_notebook
 
         self._detect_comms(params)
 
@@ -884,11 +877,30 @@ class panel_extension(_pyviz_extension):
 
         # Try to detect environment so that we can enable comms
         if "google.colab" in sys.modules:
-            config.comms = "colab"
+            try:
+                import jupyter_bokeh  # noqa
+                config.comms = "colab"
+            except Exception:
+                warnings.warn(
+                    'Using Panel interactively in Colab notebooks requires '
+                    'the jupyter_bokeh package to be installed. '
+                    'Install it with:\n\n    !pip install jupyter_bokeh'
+                    '\n\nand try again.', stacklevel=5
+                )
             return
 
         if "VSCODE_CWD" in os.environ or "VSCODE_PID" in os.environ:
-            config.comms = "vscode"
+            try:
+                import jupyter_bokeh  # noqa
+                config.comms = "vscode"
+            except Exception:
+                warnings.warn(
+                    'Using Panel interactively in VSCode notebooks requires '
+                    'the jupyter_bokeh package to be installed. '
+                    'You can install it with:\n\n   pip install jupyter_bokeh'
+                    '\n\nor:\n    conda install jupyter_bokeh\n\nand try again.',
+                    stacklevel=5
+                )
             self._ignore_bokeh_warnings()
             return
 

@@ -1,6 +1,6 @@
-# Get Started migrating from Streamlit to Panel
+# Serve Apps
 
-This guide addresses the basics of migrating from Streamlit to Panel.
+This guide will show you how-to migrate and serve a *Hello World* application.
 
 ---
 

@@ -17,7 +17,6 @@ import param  # type: ignore
 from ..io.resources import CDN_DIST
 from ..models import HTML as _BkHTML, JSON as _BkJSON
 from ..util import HTML_SANITIZER, escape
-from ..util.warnings import deprecated
 from .base import ModelPane
 
 if TYPE_CHECKING:
@@ -39,13 +38,6 @@ class HTMLBasePane(ModelPane):
     _updates: ClassVar[bool] = True
 
     __abstract = True
-
-    def __init__(self, object=None, **params):
-        if "style" in params:
-            # In Bokeh 3 'style' was changed to 'styles'.
-            params["styles"] = params.pop("style")
-            deprecated("1.4", "style",  "styles")
-        super().__init__(object=object, **params)
 
 
 class HTML(HTMLBasePane):
@@ -448,9 +440,16 @@ class Markdown(HTMLBasePane):
                 **self.renderer_options
             )
         else:
-            html = self._get_parser(
+            parser = self._get_parser(
                 self.renderer, tuple(self.plugins), **self.renderer_options
-            ).render(obj)
+            )
+            try:
+                html = parser.render(obj)
+            except IndexError:
+                # Likely markdown-it mdurl parser error
+                with parser.reset_rules():
+                    parser.disable('link')
+                    html = parser.render(obj)
         return dict(object=escape(html))
 
     def _process_param_change(self, params):

@@ -31,9 +31,19 @@ concurrency:
 jobs:
   pre_commit:
     name: Run pre-commit
+    needs: [setup]
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pre-commit@v0.1a19
+      - uses: holoviz-dev/holoviz_tasks/pre-commit@v0
+      - uses: pre-commit/action@v3.0.1
+        if: needs.setup.outputs.img_change == 'true'
+        with:
+          extra_args: -a --hook-stage manual oxipng || true --
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        if: needs.setup.outputs.img_change == 'true'
+        with:
+          commit_message: "Optimize PNG images (lossless)"
+          file_pattern: "*.png"
   setup:
     name: Setup workflow
     runs-on: ubuntu-latest
@@ -42,12 +52,13 @@ jobs:
     outputs:
       code_change: ${{ steps.filter.outputs.code }}
       doc_change: ${{ steps.filter.outputs.doc }}
+      img_change: ${{ steps.filter.outputs.img }}
       matrix: ${{ env.MATRIX }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         if: github.event_name != 'pull_request'
       - name: Check for code changes
-        uses: dorny/paths-filter@v2.11.1
+        uses: dorny/paths-filter@v3
         id: filter
         with:
           filters: |
@@ -62,6 +73,9 @@ jobs:
               - 'doc/getting_started/**'
               - 'doc/how_to/**'
               - 'scripts/**'
+              - 'lite/**'
+            img:
+              - '**/*.png'
       - name: Set matrix option
         run: |
           if [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then
@@ -127,11 +141,11 @@ jobs:
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
       OMP_NUM_THREADS: 1
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
+      - uses: holoviz-dev/holoviz_tasks/install@v0
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
-          channels: pyviz/label/dev,numba,bokeh,conda-forge,nodefaults
+          channels: pyviz/label/dev,numba,bokeh/label/dev,conda-forge,nodefaults
           conda-update: true
           nodejs: true
           envs: -o examples -o recommended -o tests -o build
@@ -152,10 +166,6 @@ jobs:
         run: |
           conda activate test-environment
           bokeh sampledata
-      - name: doit env_capture
-        run: |
-          conda activate test-environment
-          doit env_capture
       - name: doit test_unit
         run: |
           conda activate test-environment
@@ -184,7 +194,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-    timeout-minutes: 60
+    timeout-minutes: 120
     defaults:
       run:
         shell: bash -el {0}
@@ -218,24 +228,16 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
+      - uses: holoviz-dev/holoviz_tasks/install@v0
         with:
           name: ui_test_suite
           python-version: 3.9
-          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
+          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
           envs: "-o recommended -o tests -o build"
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           nodejs: true
           playwright: true
         id: install
-      - name: doit develop_install
-        run: |
-          conda activate test-environment
-          pip install --pre ipywidgets_bokeh
-      - name: build pyodide wheels
-        run: |
-          conda activate test-environment
-          python scripts/build_pyodide_wheels.py
       - name: launch jupyter
         run: |
           conda activate test-environment
@@ -244,7 +246,7 @@ jobs:
       - name: build jupyterlite
         run: |
           conda activate test-environment
-          pip install jupyterlite-core jupyterlite-pyodide-kernel
+          python -m pip install -r ./lite/requirements.txt
           python ./scripts/build_pyodide_wheels.py lite/pypi
           python ./scripts/panelite/generate_panelite_content.py
           jupyter lite build --lite-dir lite --output-dir lite/dist
@@ -253,14 +255,6 @@ jobs:
         with:
           resource: http-get://localhost:8887/lab
           timeout: 180000
-      - name: doit env_capture
-        run: |
-          conda activate test-environment
-          doit env_capture
-      - name: Check if auth should run
-        if: '!github.event.pull_request.head.repo.fork'
-        run: |
-          echo "PANEL_TEST_AUTH=1" >> $GITHUB_ENV
       - name: doit test_ui
         run: |
           conda activate test-environment
@@ -296,8 +290,7 @@ jobs:
       PYTHON_VERSION: ${{ matrix.python-version }}
       SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
     steps:
-      # Add back when this works on Python 3.12
-      # - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
+    # - uses: holoviz-dev/holoviz_tasks/install@v0.1a19
       #   with:
       #     name: core_test_suite
       #     python-version: ${{ matrix.python-version }}
@@ -327,4 +320,4 @@ jobs:
       - name: doit test_unit
         run: |
           # conda activate test-environment
-          pytest panel
+          pytest panel -n logical --dist loadgroup

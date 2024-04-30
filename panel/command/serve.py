@@ -369,7 +369,7 @@ class Serve(_BkServe):
             argvs = {f: args.args for f in files}
             applications = build_single_handler_applications(files, argvs)
             if args.autoreload:
-                with record_modules():
+                with record_modules(list(applications.values())):
                     self.warm_applications(
                         applications, args.reuse_sessions
                     )

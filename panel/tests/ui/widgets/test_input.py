@@ -1,5 +1,6 @@
 import datetime
 
+import numpy as np
 import pytest
 
 pytest.importorskip("playwright")
@@ -601,6 +602,34 @@ def test_datetimepicker_remove_value(page, datetime_start_end):
     datetime_picker.press("Escape")
 
     wait_until(lambda: datetime_picker_widget.value is None, page)
+
+
+def test_datetime_picker_start_end_datetime64(page):
+    datetime_picker_widget = DatetimePicker(
+        value=datetime.datetime(2021, 3, 2),
+        start=np.datetime64("2021-03-02"),
+        end=np.datetime64("2021-03-03")
+    )
+
+    serve_component(page, datetime_picker_widget)
+
+    datetime_picker = page.locator('.flatpickr-input')
+    datetime_picker.dblclick()
+
+    # locate by aria label March 1, 2021
+    prev_month_day = page.locator('[aria-label="March 1, 2021"]')
+    # assert class "flatpickr-day flatpickr-disabled"
+    assert "flatpickr-disabled" in prev_month_day.get_attribute("class"), "The date should be disabled"
+
+    # locate by aria label March 3, 2021
+    next_month_day = page.locator('[aria-label="March 3, 2021"]')
+    # assert not class "flatpickr-day flatpickr-disabled"
+    assert "flatpickr-disabled" not in next_month_day.get_attribute("class"), "The date should be enabled"
+
+    # locate by aria label March 4, 2021
+    next_next_month_day = page.locator('[aria-label="March 4, 2021"]')
+    # assert class "flatpickr-day flatpickr-disabled"
+    assert "flatpickr-disabled" in next_next_month_day.get_attribute("class"), "The date should be disabled"
 
 
 def test_text_area_auto_grow_init(page):

@@ -7,7 +7,6 @@ from __future__ import annotations
 import itertools
 import re
 
-from collections import OrderedDict
 from types import FunctionType
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Type,
@@ -16,6 +15,7 @@ from typing import (
 import numpy as np
 import param
 
+from bokeh.models import PaletteSelect
 from bokeh.models.widgets import (
     AutocompleteInput as _BkAutocompleteInput,
     CheckboxGroup as _BkCheckboxGroup, MultiChoice as _BkMultiChoice,
@@ -63,8 +63,7 @@ class SelectBase(Widget):
 
     @property
     def _items(self):
-        return OrderedDict(zip(self.labels, self.values))
-
+        return dict(zip(self.labels, self.values))
 
 
 class SingleSelectBase(SelectBase):
@@ -330,12 +329,12 @@ class NestedSelect(CompositeWidget):
     :Example:
 
     >>> NestedSelect(
-            options={
-                "gfs": {"tmp": [1000, 500], "pcp": [1000]},
-                "name": {"tmp": [1000, 925, 850, 700, 500], "pcp": [1000]},
-            },
-            levels=["model", "var", "level"],
-        )
+    ...     options={
+    ...         "gfs": {"tmp": [1000, 500], "pcp": [1000]},
+    ...         "name": {"tmp": [1000, 925, 850, 700, 500], "pcp": [1000]},
+    ...     },
+    ...     levels=["model", "var", "level"],
+    ... )
     """
 
     value = param.Dict(doc="""
@@ -685,13 +684,7 @@ class ColorMap(SingleSelectBase):
 
     _rename = {'options': 'items', 'value_name': None}
 
-    @property
-    def _widget_type(self) -> Type[Model]:
-        try:
-            from bokeh.models import ColorMap
-        except Exception:
-            raise ImportError('ColorMap widget requires bokeh version >= 3.3.0.') from None
-        return ColorMap
+    _widget_type: ClassVar[Type[Model]] = PaletteSelect
 
     @param.depends('value_name', watch=True, on_init=True)
     def _sync_value_name(self):
@@ -1224,8 +1217,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
         ]
         unselected = [k for k in labels if k not in selected]
         layout = dict(
-            sizing_mode='stretch_both', margin=0,
-            styles=dict(background=self.background),
+            sizing_mode='stretch_both', margin=0
         )
         self._lists = {
             False: MultiSelect(options=unselected, size=self.size, **layout),
@@ -1367,12 +1359,12 @@ class CrossSelector(CompositeWidget, MultiSelect):
         """
         selected = event.obj is self._buttons[True]
 
-        new = OrderedDict([(k, self._items[k]) for k in self._selections[not selected]])
+        new = {k: self._items[k] for k in self._selections[not selected]}
         old = self._lists[selected].options
         other = self._lists[not selected].options
 
-        merged = OrderedDict([(k, k) for k in list(old)+list(new)])
-        leftovers = OrderedDict([(k, k) for k in other if k not in new])
+        merged = {k: k for k in list(old)+list(new)}
+        leftovers = {k: k for k in other if k not in new}
         self._lists[selected].options = merged if merged else {}
         self._lists[not selected].options = leftovers if leftovers else {}
         if len(self._lists[True].options):

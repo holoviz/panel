@@ -7,7 +7,8 @@ files.
 
 from .browser import BrowserInfo  # noqa
 from .datetime_picker import DatetimePicker  # noqa
-from .icon import ToggleIcon  # noqa
+from .feed import Feed  # noqa
+from .icon import ButtonIcon, ToggleIcon, _ClickableIcon  # noqa
 from .ipywidget import IPyWidget  # noqa
 from .layout import Card, Column  # noqa
 from .location import Location  # noqa

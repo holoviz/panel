@@ -16,7 +16,6 @@
   --switch-size: 12px;
   --container-background: var(--panel-surface-color);
   color: var(--neutral-foreground-rest);
-
   --panel-primary-color: var(--accent-foreground-rest);
   --panel-on-primary-color: var(--foreground-on-accent-rest);
 }
@@ -64,27 +63,6 @@ hr {
   background: var(--neutral-stroke-divider-rest);
   border-style: solid;
   border-radius: calc(var(--corner-radius) * 1px);
-}
-
-/* Loading */
-
-.pn-loading:before {
-  position: absolute;
-  height: 100%;
-  width: 100%;
-  content: '';
-  z-index: 1000;
-  background-color: rgb(255, 255, 255, 0.5);
-  border-color: lightgray;
-  background-image: url('https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/e6cb56375bb1c436975e09739a231fb31e628a63/spinners/default.svg');
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: auto 50%;
-  border-width: 1px;
-}
-
-.pn-loading:hover:before {
-  cursor: progress;
 }
 
 /* Bokeh */
@@ -532,7 +510,7 @@ input[type='file']:active {
 :host(.solid) .bk-btn.bk-btn-default:active,
 :host(.solid) .bk-btn.bk-btn-default.bk-active {
   background-color: var(--neutral-fill-active);
-  color: var(--neutral-foreground-active);
+  color: var(--neutral-foreground-rest);
 }
 
 :host(.outline) .bk-btn.bk-btn-default {

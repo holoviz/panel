@@ -2,6 +2,8 @@ from pathlib import Path
 
 import param
 
+from param.parameterized import iscoroutinefunction, resolve_ref
+
 from ..reactive import ReactiveHTML
 from .base import ListLike
 
@@ -49,6 +51,9 @@ class FlexBox(ListLike, ReactiveHTML):
         'nowrap', 'wrap', 'wrap-reverse'], doc="""
         Whether and how to wrap items in the flex container.""")
 
+    gap = param.String(default='', doc="""
+        Defines the spacing between flex items, supporting various units (px, em, rem, %, vw/vh).""")
+
     justify_content = param.Selector(default='flex-start', objects=[
         'flex-start', 'flex-end', 'center', 'space-between', 'space-around',
         'space-evenly', 'start', 'end', 'left', 'right'], doc="""
@@ -57,13 +62,24 @@ class FlexBox(ListLike, ReactiveHTML):
     _template = (Path(__file__).parent / 'flexbox.html').read_text('utf-8')
 
     def __init__(self, *objects, **params):
+        from ..pane.base import panel
         if 'sizing_mode' not in params:
             direction = params.get('flex_direction', self.flex_direction)
             if direction.startswith('row'):
                 params['sizing_mode'] = 'stretch_width'
             else:
                 params['sizing_mode'] = 'stretch_height'
-        super().__init__(objects=list(objects), **params)
+        if objects:
+            if 'objects' in params:
+                raise ValueError("A %s's objects should be supplied either "
+                                 "as positional arguments or as a keyword, "
+                                 "not both." % type(self).__name__)
+            params['objects'] = [panel(pane) for pane in objects]
+        elif 'objects' in params:
+            objects = params['objects']
+            if not resolve_ref(objects) or iscoroutinefunction(objects):
+                params['objects'] = [panel(pane) for pane in objects]
+        super().__init__(**params)
 
     def select(self, selector=None):
         """

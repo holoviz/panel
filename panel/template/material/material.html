@@ -1,78 +1,27 @@
-{% extends base %}
+{% extends "base/base.html" %}
 
-<!-- goes in body -->
-{% block preamble %}
-    {%- if app_favicon %}
-    <link rel="icon" href="{{ app_favicon }}" type="{{favicon_type}}">
-    {% endif -%}
-    {%- if manifest %}
-    <link rel="manifest" href="{{ manifest }}">
-    {% endif -%}
-    {%- if meta_name %}
-    <meta name="name" content="{{ meta_name }}">
-    {% endif -%}
-    {%- if meta_description %}
-    <meta name="description" content="{{ meta_description }}">
-    {% endif -%}
-    {%- if meta_keywords %}
-    <meta name="keywords" content="{{ meta_keywords }}">
-    {% endif -%}
-    {%- if meta_author %}
-    <meta name="author" content="{{ meta_author }}">
-    {% endif -%}
-    {%- if meta_refresh %}
-    <meta http-equiv="refresh" content="{{ meta_refresh }}">
-    {% endif -%}
-    {%- if meta_viewport %}
-    <meta name="viewport" content="{{ meta_viewport }}">
-    {% endif -%}
-    {%- if base_url and base_target %}
-    <base href="{{ base_url }}" target="{{ base_target }}">
-    {%- endif %}
-    {%- if manifest %}
-    <link rel="manifest" href="{{ manifest_url }}">
-    {% endif -%}
-{% endblock %}
-
-{% block postamble %}
-
-    <!-- Template CSS -->
-    {% for css in template_resources['css'].values() %}
-    <link rel="stylesheet" href="{{ css }}">
-    {% endfor %}
-    {% for raw_css in template_resources['raw_css'] %}
-    <style type="text/css">
-    {{ raw_css }}
-    </style>
-    {% endfor %}
-
-    <style>
-      :root {
-	  --header-background: {{ header_background or "var(--design-primary-color, var(--panel-primary-color))" }};
-	  --header-color: {{ header_color or "var(--design-primary-text-color, var(--panel-on-primary-color))" }};
-	  --sidebar-width: {{ sidebar_width }}px;
-      }
-      #header {
-          --mdc-theme-background: var(--header-background);
-          --mdc-theme-on-background: var(--header-color);
-	  background-color: var(--header-background);
-	  color: var(--header-color);
-      }
-      .mdc-drawer {
-	  width: var(--sidebar-width) !important;
-      }
-      .mdc-drawer.mdc-drawer--open:not(.mdc-drawer--closing)+.mdc-drawer-app-content {
-	  margin-left: var(--sidebar-width) !important;
-      }
-    </style>
-
-    <!-- Template JS -->
-    {% for src in template_resources['js'].values() %}
-    <script src="{{ src }}"></script>
-    {% endfor %}
-    {% for src in template_resources['js_modules'].values() %}
-    <script src="{{ src }}" type="module"></script>
-    {% endfor %}
+{% block custom_css %}
+<style>
+:root {
+  --header-background: {{ header_background or "var(--design-primary-color, var(--panel-primary-color))" }};
+  --header-color: {{ header_color or "var(--design-primary-text-color, var(--panel-on-primary-color))" }};
+  --sidebar-width: {{ sidebar_width }}px;
+}
+#header {
+  --mdc-theme-background: var(--header-background);
+  --mdc-theme-on-background: var(--header-color);
+  --design-background-text-color: var(--header-color);
+  --design-background-color: var(--header-background);
+  background-color: var(--header-background);
+  color: var(--header-color);
+}
+.mdc-drawer {
+  width: var(--sidebar-width) !important;
+}
+.mdc-drawer.mdc-drawer--open:not(.mdc-drawer--closing)+.mdc-drawer-app-content {
+  margin-left: var(--sidebar-width) !important;
+}
+</style>
 {% endblock %}
 
 <!-- goes in body -->
@@ -180,14 +129,8 @@
     }
   </script>
 
-  {{ embed(roots.js_area) }}
-  {{ embed(roots.actions) }}
-  {{ embed(roots.location) }}
-  {% if notifications %}
-  {{ embed(roots.notifications) }}
-  {% endif %}
-  {% if browser_info %}
-  {{ embed(roots.browser_info) }}
-  {% endif %}
+  {% block state_roots %}
+  {{ super() }}
+  {% endblock %}
 </div>
 {% endblock %}

@@ -3,10 +3,13 @@ import io
 import pathlib
 import time
 
+from collections import Counter
+
 import numpy as np
 import pandas as pd
 import param
 import pytest
+import requests
 
 try:
     import diskcache
@@ -14,8 +17,11 @@ except Exception:
     diskcache = None
 diskcache_available = pytest.mark.skipif(diskcache is None, reason="requires diskcache")
 
-from panel.io.cache import _find_hash_func, cache
-from panel.io.state import set_curdoc
+from panel.io.cache import (
+    _find_hash_func, _generate_hash, cache, is_equal,
+)
+from panel.io.state import set_curdoc, state
+from panel.tests.util import serve_and_wait
 
 ################
 # Test hashing #
@@ -127,13 +133,19 @@ def test_ndarray_hash():
     )
 
 def test_dataframe_hash():
-    df1, df2 = pd._testing.makeMixedDataFrame(), pd._testing.makeMixedDataFrame()
+    data = {
+        "A": [0.0, 1.0, 2.0, 3.0, 4.0],
+        "B": [0.0, 1.0, 0.0, 1.0, 0.0],
+        "C": ["foo1", "foo2", "foo3", "foo4", "foo5"],
+        "D": pd.bdate_range("1/1/2009", periods=5),
+    }
+    df1, df2 = pd.DataFrame(data), pd.DataFrame(data)
     assert hashes_equal(df1, df2)
     df2['A'] = df2['A'].values[::-1]
     assert not hashes_equal(df1, df2)
 
 def test_series_hash():
-    series1 = pd._testing.makeStringSeries()
+    series1 = pd.Series([0.0, 1.0, 2.0, 3.0, 4.0])
     series2 = series1.copy()
     assert hashes_equal(series1, series2)
     series2.iloc[0] = 3.14
@@ -218,6 +230,26 @@ def test_per_session_cache(document):
     with set_curdoc(document):
         assert fn(a=0, b=0) == 0
     assert fn(a=0, b=0) == 1
+
+def test_per_session_cache_server(port):
+    counts = Counter()
+
+    @cache(per_session=True)
+    def get_data():
+        counts[state.curdoc] += 1
+        return "Some data"
+
+    def app():
+        get_data()
+        get_data()
+        return
+
+    serve_and_wait(app, port=port)
+
+    requests.get(f"http://localhost:{port}/")
+    requests.get(f"http://localhost:{port}/")
+
+    assert list(counts.values()) == [1, 1]
 
 @pytest.mark.xdist_group("cache")
 @diskcache_available
@@ -309,3 +341,44 @@ def test_cache_on_undecorated_parameterized_method():
     assert model.expensive_calculation(2) == 4
 
     assert model.executions == 2
+
+DF1 = pd.DataFrame({"x": [1]})
+DF2 = pd.DataFrame({"y": [1]})
+
+def test_hash_on_simple_dataframes():
+    assert _generate_hash(DF1)!=_generate_hash(DF2)
+
+@pytest.mark.parametrize(["value", "other", "expected"], [
+    (None, None, True),
+    (True, False, False), (False, True, False), (False, False, True), (True, True, True),
+    (None, 1, False), (1, None, False), (1, 1, True), (1,2,False),
+    (None, "a", False), ("a", None, False), ("a", "a", True), ("a","b",False),
+    (1,"1", False),
+    (None, DF1, False), (DF1, None, False), (DF1, DF1, True), (DF1, DF1.copy(), True), (DF1,DF2,False),
+])
+def test_is_equal(value, other, expected):
+    assert is_equal(value, other)==expected
+
+def test_cache_clear_two_funcs():
+    # see https://github.com/holoviz/panel/issues/6777
+    @cache()
+    def get_data_1(a=[0]):
+        v = a[0]
+        a[0] = v+1
+        return v
+
+    @cache()
+    def get_data_2(b=[0]):
+        v = b[0]
+        b[0] = v+1
+        return v
+
+    assert get_data_1() == 0
+    assert get_data_2() == 0
+
+    get_data_1.clear()
+
+    assert get_data_1() == 1
+    assert get_data_2() == 0
+    assert get_data_1() == 1
+    assert get_data_2() == 0

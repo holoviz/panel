@@ -8,9 +8,10 @@ import json
 import os
 import sys
 import uuid
+import warnings
 
-from collections import OrderedDict
 from contextlib import contextmanager
+from functools import partial
 from typing import (
     TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Optional, Tuple,
 )
@@ -30,6 +31,9 @@ from bokeh.models import Model
 from bokeh.resources import CDN, INLINE
 from bokeh.settings import _Unset, settings
 from bokeh.util.serialization import make_id
+from param.display import (
+    register_display_accessor, unregister_display_accessor,
+)
 from pyviz_comms import (
     PYVIZ_PROXY, Comm, JupyterCommJS,
     JupyterCommManager as _JupyterCommManager, nb_mime_js,
@@ -52,6 +56,7 @@ if TYPE_CHECKING:
     from ..widgets.base import Widget
     from .location import Location
 
+
 #---------------------------------------------------------------------
 # Private API
 #---------------------------------------------------------------------
@@ -63,13 +68,31 @@ HTML_MIME: str = 'text/html'
 def _jupyter_server_extension_paths() -> List[Dict[str, str]]:
     return [{"module": "panel.io.jupyter_server_extension"}]
 
-def push(doc: 'Document', comm: 'Comm', binary: bool = True) -> None:
+def push(doc: Document, comm: Comm, binary: bool = True, msg: any = None) -> None:
     """
     Pushes events stored on the document across the provided comm.
     """
-    msg = diff(doc, binary=binary)
+    if msg is None:
+        msg = diff(doc, binary=binary)
     if msg is None:
         return
+    elif not comm._comm:
+        try:
+            from tornado.ioloop import IOLoop
+            IOLoop.current().call_later(0.1, partial(push, doc, comm, binary, msg=msg))
+        except Exception:
+            warnings.warn(
+                'Attempted to send message over Jupyter Comm but it was not '
+                'yet open and also could not be rescheduled to a later time. '
+                'The update will not be sent.', UserWarning, stacklevel=0
+            )
+    else:
+        send(comm, msg)
+
+def send(comm: Comm, msg: any):
+    """
+    Sends a bokeh message across a pyviz_comms.Comm.
+    """
     # WARNING: CommManager model assumes that either JSON content OR a buffer
     #          is sent. Therefore we must NEVER(!!!) send both at once.
     comm.send(msg.header_json)
@@ -152,7 +175,7 @@ def render_template(
     # the custom template may not reference it
     if manager:
         item = render_items[0]
-        item.roots._roots = OrderedDict(list(item.roots._roots.items())[:-1])
+        item.roots._roots = dict(list(item.roots._roots.items())[:-1])
 
     html = html_for_render_items(
         docs_json, render_items, template=document.template,
@@ -221,6 +244,13 @@ def render_mimebundle(
     Displays bokeh output inside a notebook using the PyViz display
     and comms machinery.
     """
+    # WARNING: Patches the client comm created by some external library
+    #          e.g. HoloViews, with an on_open handler that will initialize
+    #          the server comm.
+    if manager and manager.client_comm_id in _JupyterCommManager._comms:
+        client_comm = _JupyterCommManager._comms[manager.client_comm_id]
+        if not client_comm._on_open:
+            client_comm._on_open = lambda _: comm.init()
     if not isinstance(model, Model):
         raise ValueError('Can only render bokeh LayoutDOM models')
     add_to_doc(model, doc, True)
@@ -274,6 +304,9 @@ def require_components():
 
     skip_import = {}
     for model in js_requires:
+        if not isinstance(model, dict) and issubclass(model, ReactiveHTML) and not model._loaded():
+            continue
+
         if hasattr(model, '__js_skip__'):
             skip_import.update(model.__js_skip__)
 
@@ -548,3 +581,14 @@ def ipywidget(obj: Any, doc=None, **kwargs: Any):
                 current[:] = [new_model]
         widget.observe(view_count_changed, '_view_count')
     return widget
+
+
+try:
+    unregister_display_accessor('_ipython_display_')
+except KeyError:
+    pass
+
+try:
+    register_display_accessor('_repr_mimebundle_', mime_renderer)
+except Exception:
+    pass
