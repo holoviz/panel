@@ -245,7 +245,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
             return None, access_token, refresh_token, expires_in
         elif id_token:= body.get('id_token'):
             try:
-                user = OAuthLoginHandler._on_auth(self, id_token, access_token, refresh_token, expires_in)
+                user = OAuthLoginHandler.set_auth_cookies(self, id_token, access_token, refresh_token, expires_in)
             except HTTPError:
                 pass
             else:
@@ -283,7 +283,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
                 self._raise_error(response, body, status=401)
 
         log.debug("%s successfully obtained access_token and userinfo.", type(self).__name__)
-        user = OAuthLoginHandler._on_auth(self, id_token, access_token, refresh_token, expires_in)
+        user = OAuthLoginHandler.set_auth_cookies(self, id_token, access_token, refresh_token, expires_in)
         return user, access_token, refresh_token, expires_in
 
     def get_state_cookie(self):
@@ -401,7 +401,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
             await self.get_authenticated_user(**params)
 
     @staticmethod
-    def _on_auth(handler, id_token, access_token, refresh_token=None, expires_in=None):
+    def set_auth_cookies(handler, id_token, access_token, refresh_token=None, expires_in=None):
         if id_token:
             if isinstance(id_token, str):
                 decoded = decode_token(id_token)
@@ -1027,10 +1027,12 @@ class OAuthProvider(BasicAuthProvider):
                     refresh_token = None
 
             if expiry > now_ts and refresh_token:
-                log.debug("Fully authenticated and access_token still valid.")
+                log.debug("Fully authenticated and tokens still valid.")
                 self._schedule_refresh(expiry, user, refresh_token, handler.application, handler.request)
                 expires_in = expiry - now_ts
-                OAuthLoginHandler._on_auth(handler, None, access_token, refresh_token, expires_in)
+                OAuthLoginHandler.set_auth_cookies(
+                    handler, None, access_token, refresh_token, expires_in
+                )
                 return user
 
             if refresh_token:
@@ -1046,12 +1048,14 @@ class OAuthProvider(BasicAuthProvider):
                 log.debug("%s access_token is expired and refresh_token not available, forcing user to reauthenticate.", type(self).__name__)
                 return
 
-            log.debug("%s refreshing token", type(self).__name__)
+            log.debug("access_token has expired, %s using refresh_token to obtain new tokens.", type(self).__name__)
             access_token, refresh_token, expiry = await self._scheduled_refresh(
                 user, refresh_token, handler.application, handler.request
             )
             expires_in = expiry - now_ts
-            OAuthLoginHandler._on_auth(handler, None, access_token, refresh_token, expires_in)
+            OAuthLoginHandler.set_auth_cookies(
+                handler, None, access_token, refresh_token, expires_in
+            )
             return user
         return get_user
 
@@ -1093,7 +1097,7 @@ class OAuthProvider(BasicAuthProvider):
         expiry_date = dt.datetime.now() + dt.timedelta(seconds=expiry_seconds) # schedule_task is in local TZ
         refresh_cb = partial(self._scheduled_refresh, user, refresh_token, application, request)
         if expiry_seconds <= 0:
-            log.debug("%s token expired unexpectedly, refreshing immediately.", type(self).__name__, expiry_seconds)
+            log.debug("%s token expired unexpectedly, refreshing immediately.", type(self).__name__)
             state.execute(refresh_cb)
             return
         log.debug("%s scheduling token refresh in %d seconds", type(self).__name__, expiry_seconds)
