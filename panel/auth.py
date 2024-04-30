@@ -1016,12 +1016,12 @@ class OAuthProvider(BasicAuthProvider):
                 refresh_cookie = handler.get_secure_cookie('refresh_token', max_age_days=config.oauth_expiry)
                 if refresh_cookie:
                     refresh_token = state._decrypt_cookie(refresh_cookie)
-                    self._schedule_refresh(access_json['exp'], user, refresh_token, handler.application, handler.request)
                 else:
                     refresh_token = None
 
-            if expiry > now_ts:
+            if expiry > now_ts and refresh_token:
                 log.debug("Fully authenticated and access_token still valid.")
+                self._schedule_refresh(expiry, user, refresh_token, handler.application, handler.request)
                 return user
 
             if refresh_token:
@@ -1038,7 +1038,7 @@ class OAuthProvider(BasicAuthProvider):
                 return
 
             log.debug("%s refreshing token", type(self).__name__)
-            await self._refresh_access_token(user, refresh_token, handler.application, handler.request)
+            await self._scheduled_refresh(user, refresh_token, handler.application, handler.request)
             return user
         return get_user
 
@@ -1076,13 +1076,14 @@ class OAuthProvider(BasicAuthProvider):
         if not state._active_users.get(user):
             return
         now_ts = dt.datetime.now(dt.timezone.utc).timestamp()
-        expiry_seconds = expiry_ts - now_ts - 10
-        log.debug("%s scheduling token refresh in %d seconds", type(self).__name__, expiry_seconds)
+        expiry_seconds = expiry_ts - now_ts - 60
         expiry_date = dt.datetime.now() + dt.timedelta(seconds=expiry_seconds) # schedule_task is in local TZ
         refresh_cb = partial(self._scheduled_refresh, user, refresh_token, application, request)
         if expiry_seconds <= 0:
+            log.debug("%s token expired unexpectedly, refreshing immediately.", type(self).__name__, expiry_seconds)
             state.execute(refresh_cb)
             return
+        log.debug("%s scheduling token refresh in %d seconds", type(self).__name__, expiry_seconds)
         task = f'{user}-refresh-access-tokens'
         try:
             state.cancel_task(task)
