@@ -142,7 +142,7 @@ _tests_core = [
     'pytest',
     'nbval',
     'pytest-rerunfailures',
-    'pytest-asyncio <0.22',
+    'pytest-asyncio',
     'pytest-xdist',
     'pytest-cov',
     'pre-commit',
