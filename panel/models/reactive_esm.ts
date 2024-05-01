@@ -23,7 +23,7 @@ async function ensureImportShimLoaded() {
 }
 
 export class ReactiveESMView extends HTMLBoxView {
-  model: ReactiveESM
+  declare model: ReactiveESM
   container: HTMLDivElement
   modelState: typeof Proxy
   rendered: string | null = null
@@ -32,7 +32,7 @@ export class ReactiveESMView extends HTMLBoxView {
   _child_callbacks: {[key: string]: () => void} = {}
   _parent_nodes: any = {}
 
-  initialize(): void {
+  override initialize(): void {
     super.initialize();
     this.model.data.watch = (callback: any, prop: string) => {
       const watcher = this.model.data.properties[prop].change.connect(() => {
@@ -44,7 +44,7 @@ export class ReactiveESMView extends HTMLBoxView {
     }
   }
 
-  async lazy_initialize(): Promise<void> {
+  override async lazy_initialize(): Promise<void> {
     // @ts-ignore
     const esmsInitOptions = {
       shimMode: true,
@@ -54,7 +54,7 @@ export class ReactiveESMView extends HTMLBoxView {
     super.lazy_initialize()
   }
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.esm.change, () => {
       this.invalidate_render()
@@ -66,13 +66,13 @@ export class ReactiveESMView extends HTMLBoxView {
   }
 
 
-  disconnect_signals(): void {
+  override disconnect_signals(): void {
     super.disconnect_signals()
     this._child_callbacks = {}
     this._watchers = {}
   }
 
-  get child_models(): LayoutDOM[] {
+  override get child_models(): LayoutDOM[] {
     const children = []
     for (const child of this.model.children) {
       const model = this.model.data[child]
@@ -82,7 +82,7 @@ export class ReactiveESMView extends HTMLBoxView {
     return children
   }
 
-  render(): void {
+  override render(): void {
     this.empty()
     this._update_stylesheets()
     this._update_css_classes()
@@ -95,6 +95,7 @@ export class ReactiveESMView extends HTMLBoxView {
     this.container = div({style: "display: contents;"})
     this.shadow_el.append(this.container)
     this.rendered = transform(this.model.esm, {transforms: ["jsx", "typescript"], filePath: "render.tsx"}).code;
+    console.log(this.rendered)
     if (this.rendered.includes('React')) {
       this._render_esm_react()
     } else {
@@ -113,9 +114,7 @@ export class ReactiveESMView extends HTMLBoxView {
     }
 
     const code = `
-const root = Bokeh.index['${this.root.model.id}']
-const views = [...root.owner.query((view) => view.model.id == '${this.model.id}')]
-const view = views[0]
+const view = Bokeh.index.find_one_by_id('${this.model.id}')
 
 const children = {}
 for (const child of view.model.children) {
@@ -149,7 +148,7 @@ view.render_children();
     }
   }
 
-  async update_children(): Promise<void> {
+  override async update_children(): Promise<void> {
     const created_children = new Set(await this.build_child_views())
 
     if (created_children.size != 0) {
@@ -206,9 +205,7 @@ view.render_children();
 import { createRoot } from 'react-dom/client';
 import * as React from "react";
 
-const root = Bokeh.index['${this.root.model.id}']
-const views = [...root.owner.query((view) => view.model.id == '${this.model.id}')]
-const view = views[0]
+const view = Bokeh.index.find_one_by_id('${this.model.id}')
 
 function useState_getter(target, name) {
   if (!Reflect.has(target, name))
@@ -295,13 +292,13 @@ export namespace ReactiveESM {
 export interface ReactiveESM extends ReactiveESM.Attrs {}
 
 export class ReactiveESM extends HTMLBox {
-  properties: ReactiveESM.Props
+  declare properties: ReactiveESM.Props
 
   constructor(attrs?: Partial<ReactiveESM.Attrs>) {
     super(attrs)
   }
 
-  static __module__ = "panel.models.reactive_html"
+  static override __module__ = "panel.models.reactive_html"
 
   static {
     this.prototype.default_view = ReactiveESMView
