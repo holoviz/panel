@@ -169,6 +169,7 @@ conda-build = "*"
 build-conda = 'bash scripts/conda/build.sh'
 build-pip = 'python -m build .'
 build-pyodide = 'python scripts/build_pyodide_wheels.py'
+build-npm = { cmd = "npm pack .", cwd = "panel" }
 
 # =============================================
 # =================== LINT ====================

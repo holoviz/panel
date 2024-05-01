@@ -151,11 +151,9 @@ jobs:
       - name: npm build
         shell: pixi run -e build bash -el {0}
         run: |
-          cd ${{ env.PACKAGE }}
-          TARBALL=$(npm pack .)
+          TARBALL=$(pixi run build-npm)
           echo "TARBALL=$TARBALL" >> $GITHUB_ENV
-          npm publish --dry-run $TARBALL
-          cd ..
+          npm publish --dry-run $PACKAGE/$TARBALL
       - uses: actions/upload-artifact@v4
         if: always()
         with:
