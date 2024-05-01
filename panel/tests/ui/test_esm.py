@@ -24,7 +24,7 @@ def test_esm_update(page):
           data.watch(() => {
             h1.textContent = data.text;
           }, 'text')
-          el.appendChild(h1)
+          return h1
         }
         """
 
@@ -45,14 +45,14 @@ def test_esm_gather_input(page):
         text = param.String()
 
         _esm = """
-        export function render({ data, el }) {
+        export function render({ data }) {
           const inp = document.createElement('input')
           inp.id = 'input'
           inp.value = data.text
           inp.addEventListener('change', (event) => {
             data.text = event.target.value;
           })
-          el.appendChild(inp)
+          return inp
         }
         """
 
@@ -72,6 +72,31 @@ def test_esm_gather_input(page):
 
     wait_until(lambda: example.text == 'Foo!', page)
 
+
+def test_esm_button_event(page):
+    class ButtonExample(ReactiveESM):
+
+        clicks = param.Integer(default=0)
+
+        _esm = """
+        export function render({ data }) {
+          const button = document.createElement('button')
+          button.id = 'button'
+          button.onclick = (event) => data.send_event('click', event)
+          return button
+        }
+        """
+
+        def on_click(self, event):
+            self.clicks += 1
+
+    button = ButtonExample()
+
+    serve_component(page, button)
+
+    page.locator('#button').click()
+
+    wait_until(lambda: button.clicks, page)
 
 
 def test_esm_react_update(page):

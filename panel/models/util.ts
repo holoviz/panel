@@ -1,4 +1,5 @@
 import {concat} from "@bokehjs/core/util/array"
+import {isPlainObject, isArray} from "@bokehjs/core/util/types"
 
 export const get = (obj: any, path: string, defaultValue: any = undefined) => {
   const travel = (regexp: RegExp) =>
@@ -91,4 +92,21 @@ export async function loadScript(type: string, src: string) {
       reject()
     }
   })
+}
+
+export function convertUndefined(obj: any): any {
+  if (isArray(obj)) {
+    return obj.map(convertUndefined)
+  } else if (isPlainObject(obj)) {
+    Object
+      .entries(obj)
+      .forEach(([key, value]) => {
+        if (isPlainObject(value) || isArray(value)) {
+          convertUndefined(value)
+        } else if (value === undefined) {
+          obj[key] = null
+        }
+      })
+  }
+  return obj
 }

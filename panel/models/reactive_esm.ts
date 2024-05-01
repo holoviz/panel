@@ -3,8 +3,11 @@ import { transform } from 'sucrase';
 import {div, remove} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
 import {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
+
+import {serializeEvent} from "./event-to-object"
+import {DOMEvent} from "./html"
 import {HTMLBox, HTMLBoxView} from "./layout"
-import {loadScript} from "./util"
+import {convertUndefined, loadScript} from "./util"
 
 function loadESMSOptions(options: any) {
   const script = document.createElement("script")
@@ -41,6 +44,10 @@ export class ReactiveESMView extends HTMLBoxView {
       if (!(prop in this._watchers))
 	this._watchers[prop] = []
       this._watchers[prop].push(watcher)
+    }
+    this.model.data.send_event = (name: string, event: Event) => {
+      const serialized = convertUndefined(serializeEvent(event))
+      this.model.trigger_event(new DOMEvent(name, serialized))
     }
   }
 
@@ -123,7 +130,12 @@ for (const child of view.model.children) {
 
 ${this.rendered}
 
-render({view: view, model: view.model, data: view.model.data, el: view.container, children});
+const output = render({view: view, model: view.model, data: view.model.data, el: view.container, children});
+
+if (output) {
+  view.container.appendChild(output)
+}
+
 view.render_children();
 `
 

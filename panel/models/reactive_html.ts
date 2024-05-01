@@ -11,6 +11,7 @@ import {dict_to_records} from "./data"
 import {serializeEvent} from "./event-to-object"
 import {DOMEvent, htmlDecode} from "./html"
 import {HTMLBox, HTMLBoxView} from "./layout"
+import {convertUndefined} from "./util"
 
 function serialize_attrs(attrs: any): any {
   const serialized: any = {}
@@ -267,13 +268,8 @@ export class ReactiveHTMLView extends HTMLBoxView {
   }
 
   private _send_event(elname: string, attr: string, event: any) {
-    const serialized = serializeEvent(event)
+    const serialized = convertUndefined(serializeEvent(event))
     serialized.type = attr
-    for (const key in serialized) {
-      if (serialized[key] === undefined) {
-        delete serialized[key]
-      }
-    }
     this.model.trigger_event(new DOMEvent(elname, serialized))
   }
 
