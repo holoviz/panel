@@ -25,7 +25,7 @@ linkify-it-py = "*"
 markdown = "*"
 markdown-it-py = "*"
 mdit-py-plugins = "*"
-nodejs= "20.9.*"  # 20.12.2 breaks bokeh build on Windows: https://github.com/bokeh/bokeh/pull/13851
+nodejs = "20.9.*" # 20.12.2 breaks bokeh build on Windows: https://github.com/bokeh/bokeh/pull/13851
 packaging = "*"
 pandas = ">=1.2"
 param = ">=2.1.0,<3.0"
@@ -156,7 +156,13 @@ _docs-pyodide = 'panel convert examples/gallery/*.ipynb doc/how_to/*/examples/*.
 docs-server = 'python -m http.server 5500 --directory ./builtdocs'
 
 [feature.doc.tasks.docs-build]
-depends_on = ['_docs-refmanual', '_docs-convert-gallery', '_docs-generate', '_docs-copy-panel-dist', '_docs-pyodide']
+depends_on = [
+    '_docs-refmanual',
+    '_docs-convert-gallery',
+    '_docs-generate',
+    '_docs-copy-panel-dist',
+    '_docs-pyodide',
+]
 
 # =============================================
 # ================== BUILD ====================
