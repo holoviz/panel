@@ -78,6 +78,11 @@ class ChatFeed(ListPanel):
     >>> chat_feed.send("Hello World!", user="New User", avatar="😊")
     """
 
+    append_callback = param.Callable(allow_refs=False, doc="""
+        Callback to execute when a new message is added to the chat feed;
+        useful for logging or other side effects. Ignores the placeholder.
+        The signature must include the `instance` and `message` arguments.""")
+
     auto_scroll_limit = param.Integer(default=200, bounds=(0, None), doc="""
         Max pixel distance from the latest object in the Column to
         activate automatic scrolling upon update. Setting to 0
@@ -182,6 +187,8 @@ class ChatFeed(ListPanel):
 
     _callback_trigger = param.Event(doc="Triggers the callback to respond.")
 
+    _append_callback_trigger = param.Event(doc="Triggers the append callback.")
+
     _disabled_stack = param.List(doc="""
         The previous disabled state of the feed.""")
 
@@ -262,6 +269,7 @@ class ChatFeed(ListPanel):
 
         # handle async callbacks using this trick
         self.param.watch(self._prepare_response, '_callback_trigger')
+        self.param.watch(self._prepare_after_append, '_append_callback_trigger')
 
     def _get_model(
         self, doc: Document, root: Model | None = None,
@@ -510,6 +518,7 @@ class ChatFeed(ListPanel):
             await asyncio.gather(
                 self._schedule_placeholder(future, num_entries), future,
             )
+            self.param.trigger("_append_callback_trigger")
         except StopCallback:
             # callback was stopped by user
             self._callback_state = CallbackState.STOPPED
@@ -580,6 +589,7 @@ class ChatFeed(ListPanel):
                 value = {"object": value}
             message = self._build_message(value, user=user, avatar=avatar)
         self.append(message)
+        self.param.trigger("_append_callback_trigger")
         if respond:
             self.respond()
         return message
@@ -644,6 +654,7 @@ class ChatFeed(ListPanel):
                 value = {"object": value}
             message = self._build_message(value, user=user, avatar=avatar)
         self._replace_placeholder(message)
+        self.param.trigger("_append_callback_trigger")
         return message
 
     def respond(self):
@@ -757,6 +768,19 @@ class ChatFeed(ListPanel):
 
             serialized_messages.append({"role": role, "content": content})
         return serialized_messages
+
+    async def _prepare_after_append(self):
+        """
+        Trigger the append callback after a message is added to the chat feed.
+        """
+        if self.append_callback is None:
+            return
+
+        message = self._chat_log[-1]
+        if iscoroutinefunction(self.append_callback):
+            await self.append_callback(message)
+        else:
+            self.append_callback(message)
 
     def serialize(
         self,
