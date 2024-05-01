@@ -3,6 +3,8 @@ import { transform } from 'sucrase';
 import {div, remove} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
 import {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
+import {render} from "preact"
+import {html} from "htm/preact"
 
 import {serializeEvent} from "./event-to-object"
 import {DOMEvent} from "./html"
@@ -34,6 +36,8 @@ export class ReactiveESMView extends HTMLBoxView {
   _watchers: any = {}
   _child_callbacks: {[key: string]: () => void} = {}
   _parent_nodes: any = {}
+  _htm = html
+  _render_htm = render
 
   override initialize(): void {
     super.initialize();
@@ -102,7 +106,6 @@ export class ReactiveESMView extends HTMLBoxView {
     this.container = div({style: "display: contents;"})
     this.shadow_el.append(this.container)
     this.rendered = transform(this.model.esm, {transforms: ["jsx", "typescript"], filePath: "render.tsx"}).code;
-    console.log(this.rendered)
     if (this.rendered.includes('React')) {
       this._render_esm_react()
     } else {
@@ -127,13 +130,14 @@ const children = {}
 for (const child of view.model.children) {
   children[child] = view._child_views.get(view.model.data[child])
 }
-
 ${this.rendered}
 
-const output = render({view: view, model: view.model, data: view.model.data, el: view.container, children});
+const output = render({view: view, model: view.model, data: view.model.data, el: view.container, children, html: view._htm});
 
-if (output) {
+if (output instanceof Element) {
   view.container.appendChild(output)
+} else if (output) {
+  view._render_htm(output, view.container)
 }
 
 view.render_children();

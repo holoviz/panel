@@ -11,13 +11,31 @@ from panel.tests.util import serve_component, wait_until
 pytestmark = pytest.mark.ui
 
 
+def test_esm_html_helper(page):
+    class Example(ReactiveESM):
+
+        text = param.String()
+
+        _esm = """
+        export function render({ data, html }) {
+          return html`<h1 id="header">${data.text}</h1>`
+        }
+        """
+
+    example = Example(text='Hello World!')
+
+    serve_component(page, example)
+
+    expect(page.locator('#header')).to_have_text('Hello World!')
+
+
 def test_esm_update(page):
     class Example(ReactiveESM):
 
         text = param.String()
 
         _esm = """
-        export function render({ data, el }) {
+        export function render({ data }) {
           const h1 = document.createElement('h1')
           h1.id = 'header'
           h1.textContent = data.text
