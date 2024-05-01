@@ -3,6 +3,7 @@ import { transform } from 'sucrase';
 import {div, remove} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
 import {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
+import {isArray} from "@bokehjs/core/util/types"
 import {render} from "preact"
 import {html} from "htm/preact"
 
@@ -16,6 +17,19 @@ function loadESMSOptions(options: any) {
   script.type = "esms-options"
   script.innerHTML = JSON.stringify(options)
   document.head.appendChild(script)
+}
+
+function extractDataAttributes(text: string) {
+  const regex = /\bdata\.([a-zA-Z_][a-zA-Z0-9_]*)\b/g;
+  const ignored = ['send_event', 'watch']
+  let matches = [];
+  let match, attr;
+
+  while ((match = regex.exec(text)) !== null && (attr = match[0].slice(5)) !== null && !ignored.includes(attr)) {
+    matches.push(attr);
+  }
+
+  return matches;
 }
 
 let importShimLoaded : any = null;
@@ -38,21 +52,38 @@ export class ReactiveESMView extends HTMLBoxView {
   _parent_nodes: any = {}
   _htm = html
   _render_htm = render
+  _rerender_vars: string[] = []
 
   override initialize(): void {
     super.initialize();
-    this.model.data.watch = (callback: any, prop: string) => {
-      const watcher = this.model.data.properties[prop].change.connect(() => {
-        callback(prop, null, this.model.data[prop])
-      });
-      if (!(prop in this._watchers))
-	this._watchers[prop] = []
-      this._watchers[prop].push(watcher)
+    this.model.data.watch = (callback: any, prop: string | string[]) => {
+      const props = isArray(prop) ? prop : [prop]
+      for (const p of props) {
+	const cb = () => {
+          callback(prop, null, this.model.data[p])
+        }
+        this.model.data.properties[p].change.connect(cb);
+        if (p in this._watchers) {
+          this._watchers[p].push(cb)
+        } else {
+          this._watchers[p] = [cb]
+        }
+      }
     }
     this.model.data.send_event = (name: string, event: Event) => {
       const serialized = convertUndefined(serializeEvent(event))
       this.model.trigger_event(new DOMEvent(name, serialized))
     }
+  }
+
+  disconnect_watchers(): void {
+    for (const p in this._watchers) {
+      const prop = this.model.data.properties[p]
+      for (const cb of this._watchers[p]) {
+	prop.change.disconnect(cb)
+      }
+    }
+    this._watchers = {}
   }
 
   override async lazy_initialize(): Promise<void> {
@@ -76,7 +107,6 @@ export class ReactiveESMView extends HTMLBoxView {
     })
   }
 
-
   override disconnect_signals(): void {
     super.disconnect_signals()
     this._child_callbacks = {}
@@ -88,7 +118,7 @@ export class ReactiveESMView extends HTMLBoxView {
     for (const child of this.model.children) {
       const model = this.model.data[child]
       if (model != null)
-	children.push(model)
+        children.push(model)
     }
     return children
   }
@@ -106,6 +136,7 @@ export class ReactiveESMView extends HTMLBoxView {
     this.container = div({style: "display: contents;"})
     this.shadow_el.append(this.container)
     this.rendered = transform(this.model.esm, {transforms: ["jsx", "typescript"], filePath: "render.tsx"}).code;
+    this._rerender_vars = extractDataAttributes(this.rendered)
     if (this.rendered.includes('React')) {
       this._render_esm_react()
     } else {
@@ -114,6 +145,7 @@ export class ReactiveESMView extends HTMLBoxView {
   }
 
   private _render_esm(): void {
+    this.disconnect_watchers()
     if (this.model.importmap) {
       const importMap = {
         "imports": this.model.importmap["imports"],
@@ -138,6 +170,7 @@ if (output instanceof Element) {
   view.container.appendChild(output)
 } else if (output) {
   view._render_htm(output, view.container)
+  view.model.data.watch(() => view._render_esm(), view._rerender_vars)
 }
 
 view.render_children();
@@ -154,12 +187,12 @@ view.render_children();
     for (const child of this.model.children) {
       const view = this._child_views.get(this.model.data[child])
       if (view && this.container.contains(view.el)) {
-	const parent = view.el.parentNode
-	if (parent) {
-	  this._parent_nodes[child] = [parent, Array.from(parent.children).indexOf(view.el)]
-	  view.render()
-	  view.after_render()
-	}
+        const parent = view.el.parentNode
+        if (parent) {
+          this._parent_nodes[child] = [parent, Array.from(parent.children).indexOf(view.el)]
+          view.render()
+          view.after_render()
+        }
       }
     }
   }
@@ -169,11 +202,11 @@ view.render_children();
 
     if (created_children.size != 0) {
       for (const child_view of this.child_views) {
-	remove(child_view.el)
+        remove(child_view.el)
       }
 
       for (const child in this._child_callbacks) {
-	this._child_callbacks[child]()
+        this._child_callbacks[child]()
       }
     }
 
@@ -181,14 +214,14 @@ view.render_children();
       const [parent, index] = this._parent_nodes[child]
       const view = this._child_views.get(this.model.data[child])
       if (view) {
-	const next_child = parent.children[index]
-	if (next_child) {
-	  parent.insertBefore(view.el, next_child)
-	} else {
-	  parent.append(view.el)
-	}
-	view.render()
-	view.after_render()
+        const next_child = parent.children[index]
+        if (next_child) {
+          parent.insertBefore(view.el, next_child)
+        } else {
+          parent.append(view.el)
+        }
+        view.render()
+        view.after_render()
       }
     }
     this._update_children()
@@ -204,6 +237,7 @@ view.render_children();
   }
 
   private _render_esm_react(): void {
+    this.disconnect_watchers()
     if (this.model.importmap) {
       const importMap = {
         "imports": {
@@ -227,9 +261,9 @@ function useState_getter(target, name) {
   if (!Reflect.has(target, name))
     return undefined
   const [value, setValue] = React.useState(target.attributes[name]);
-  (target).properties[name].change.connect(() => {
+  view.model.data.watch(() => {
     setValue(target.attributes[name])
-  });
+  }, name);
   React.useEffect(() => {
     const state = {}
     state[name] = value

@@ -11,7 +11,7 @@ from panel.tests.util import serve_component, wait_until
 pytestmark = pytest.mark.ui
 
 
-def test_esm_html_helper(page):
+def test_esm_htm_update(page):
     class Example(ReactiveESM):
 
         text = param.String()
@@ -28,8 +28,12 @@ def test_esm_html_helper(page):
 
     expect(page.locator('#header')).to_have_text('Hello World!')
 
+    example.text = "Foo!"
 
-def test_esm_update(page):
+    expect(page.locator('#header')).to_have_text('Foo!')
+
+
+def test_esm_callback_update(page):
     class Example(ReactiveESM):
 
         text = param.String()
