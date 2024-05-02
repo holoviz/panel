@@ -269,7 +269,7 @@ class ChatFeed(ListPanel):
 
         # handle async callbacks using this trick
         self.param.watch(self._prepare_response, '_callback_trigger')
-        self.param.watch(self._prepare_after_append, '_append_callback_trigger')
+        self.param.watch(self._after_append_completed, '_append_callback_trigger')
 
     def _get_model(
         self, doc: Document, root: Model | None = None,
@@ -438,6 +438,7 @@ class ChatFeed(ListPanel):
                 response_message = self._upsert_message(await response, response_message)
             else:
                 response_message = self._upsert_message(response, response_message)
+            self.param.trigger("_append_callback_trigger")
         finally:
             if response_message:
                 response_message.show_activity_dot = False
@@ -492,6 +493,7 @@ class ChatFeed(ListPanel):
         else:
             response = await asyncio.to_thread(self.callback, *callback_args)
         await self._serialize_response(response)
+        return response
 
     async def _prepare_response(self, *_) -> None:
         """
@@ -518,7 +520,6 @@ class ChatFeed(ListPanel):
             await asyncio.gather(
                 self._schedule_placeholder(future, num_entries), future,
             )
-            self.param.trigger("_append_callback_trigger")
         except StopCallback:
             # callback was stopped by user
             self._callback_state = CallbackState.STOPPED
@@ -654,6 +655,7 @@ class ChatFeed(ListPanel):
                 value = {"object": value}
             message = self._build_message(value, user=user, avatar=avatar)
         self._replace_placeholder(message)
+
         self.param.trigger("_append_callback_trigger")
         return message
 
@@ -769,14 +771,14 @@ class ChatFeed(ListPanel):
             serialized_messages.append({"role": role, "content": content})
         return serialized_messages
 
-    async def _prepare_after_append(self, event):
+    async def _after_append_completed(self, message):
         """
         Trigger the append callback after a message is added to the chat feed.
         """
         if self.append_callback is None:
             return
 
-        message = self._chat_log[-1]
+        message = self._chat_log.objects[-1]
         if iscoroutinefunction(self.append_callback):
             await self.append_callback(message, self)
         else:
