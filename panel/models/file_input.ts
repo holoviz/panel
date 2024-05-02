@@ -1,7 +1,7 @@
 import {InputWidget, InputWidgetView} from "@bokehjs/models/widgets/input_widget"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
 import {input} from "@bokehjs/core/dom"
-import {isString} from "@bokehjs/core/util/types"
+import {isString, is_nullish} from "@bokehjs/core/util/types"
 import * as p from "@bokehjs/core/properties"
 import * as inputs from "@bokehjs/styles/widgets/inputs.css"
 import buttons_css from "@bokehjs/styles/buttons.css"
@@ -15,14 +15,9 @@ export class FileInputView extends InputWidgetView {
   }
 
   protected _render_input(): HTMLElement {
-    const {multiple, disabled, directory} = this.model
-
-    const accept = (() => {
-      const {accept} = this.model
-      return isString(accept) ? accept : accept.join(",")
-    })()
-
-    return this.input_el = input({type: "file", class: inputs.input, multiple, accept, disabled, webkitdirectory: directory})
+    const {multiple, disabled, directory, accept} = this.model
+    const accept_str = isString(accept) ? accept : accept.join(",")
+    return this.input_el = input({type: "file", class: inputs.input, multiple, accept: accept_str, disabled, webkitdirectory: directory})
   }
 
   override connect_signals(): void {
@@ -46,18 +41,23 @@ export class FileInputView extends InputWidgetView {
     const values: string[] = []
     const filenames: string[] = []
     const mime_types: string[] = []
-    const {directory, multiple} = this.model
+    const {directory, multiple, accept} = this.model
 
     for (const file of files) {
       const data_url = await this._read_file(file)
       const [, mime_type="",, value=""] = data_url.split(/[:;,]/, 4)
 
-      values.push(value)
-      mime_types.push(mime_type)
       if (directory) {
-        filenames.push(file.webkitRelativePath)
+        const ext = file.name.split(".").pop()
+        if ((!is_nullish(accept) && isString(ext)) ? accept.includes(`.${ext}`) : true) {
+          filenames.push(file.webkitRelativePath)
+          values.push(value)
+          mime_types.push(mime_type)
+        }
       } else {
         filenames.push(file.name)
+        values.push(value)
+        mime_types.push(mime_type)
       }
     }
 
