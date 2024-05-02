@@ -79,14 +79,14 @@ class ChatFeed(ListPanel):
     """
 
     append_callback = param.Callable(allow_refs=False, doc="""
-        Callback to execute when a new message is added to the chat feed;
-        useful for logging or other side effects. Ignores the placeholder.
-        The signature must include the `instance` and `message` arguments.""")
+        The callback to execute when a new message is *completely* added,
+        i.e. generator exhausted, but the `stream` method will trigger this callback
+        on every call. The signature must include the  `message` and `instance` arguments.""")
 
     auto_scroll_limit = param.Integer(default=200, bounds=(0, None), doc="""
         Max pixel distance from the latest object in the Column to
         activate automatic scrolling upon update. Setting to 0
-        disables auto-scrolling.""",)
+        disables auto-scrolling.""")
 
     callback = param.Callable(allow_refs=False, doc="""
         Callback to execute when a user sends a message or
@@ -769,7 +769,7 @@ class ChatFeed(ListPanel):
             serialized_messages.append({"role": role, "content": content})
         return serialized_messages
 
-    async def _prepare_after_append(self):
+    async def _prepare_after_append(self, event):
         """
         Trigger the append callback after a message is added to the chat feed.
         """
@@ -778,9 +778,9 @@ class ChatFeed(ListPanel):
 
         message = self._chat_log[-1]
         if iscoroutinefunction(self.append_callback):
-            await self.append_callback(message)
+            await self.append_callback(message, self)
         else:
-            self.append_callback(message)
+            self.append_callback(message, self)
 
     def serialize(
         self,
