@@ -8,6 +8,7 @@ jobs:
   pixi_lock:
     name: Pixi lock
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: holoviz-dev/holoviz_tasks/pixi_lock@pixi
 
