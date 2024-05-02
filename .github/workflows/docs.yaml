@@ -54,6 +54,7 @@ jobs:
         run: |
           conda activate test-environment
           pip install --use-deprecated=legacy-resolver pyecharts ipywidgets_bokeh==1.5.0
+          pip install git+https://github.com/holoviz-dev/nbsite.git@upgrade_theme_myst -U
       - name: bokeh sampledata
         run: |
           conda activate test-environment
