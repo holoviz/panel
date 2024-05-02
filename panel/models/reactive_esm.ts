@@ -10,14 +10,7 @@ import {html} from "htm/preact"
 import {serializeEvent} from "./event-to-object"
 import {DOMEvent} from "./html"
 import {HTMLBox, HTMLBoxView} from "./layout"
-import {convertUndefined, loadScript} from "./util"
-
-function loadESMSOptions(options: any) {
-  const script = document.createElement("script")
-  script.type = "esms-options"
-  script.innerHTML = JSON.stringify(options)
-  document.head.appendChild(script)
-}
+import {convertUndefined} from "./util"
 
 function extractDataAttributes(text: string) {
   const regex = /\bdata\.([a-zA-Z_][a-zA-Z0-9_]*)\b/g;
@@ -30,15 +23,6 @@ function extractDataAttributes(text: string) {
   }
 
   return matches;
-}
-
-let importShimLoaded : any = null;
-
-async function ensureImportShimLoaded() {
-  if(importShimLoaded == null) {
-    importShimLoaded = loadScript("module", "https://ga.jspm.io/npm:es-module-shims@1.7.0/dist/es-module-shims.js")
-  }
-  return await importShimLoaded;
 }
 
 export class ReactiveESMView extends HTMLBoxView {
@@ -84,16 +68,6 @@ export class ReactiveESMView extends HTMLBoxView {
       }
     }
     this._watchers = {}
-  }
-
-  override async lazy_initialize(): Promise<void> {
-    // @ts-ignore
-    const esmsInitOptions = {
-      shimMode: true,
-    }
-    loadESMSOptions(esmsInitOptions)
-    await ensureImportShimLoaded()
-    super.lazy_initialize()
   }
 
   override connect_signals(): void {
@@ -355,8 +329,8 @@ export class ReactiveESM extends HTMLBox {
     this.define<ReactiveESM.Props>(({Any, Array, String}) => ({
       children:  [ Array(String),       [] ],
       data:      [ Any,                    ],
-      importmap: [ Any,                 {} ],
       esm:       [ String,              "" ],
+      importmap: [ Any,                 {} ],
     }))
   }
 }
