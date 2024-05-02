@@ -21,6 +21,7 @@ from typing import (
     TYPE_CHECKING, Dict, List, Literal, TypedDict,
 )
 
+import bokeh.embed.wrappers
 import param
 
 from bokeh.embed.bundle import (
@@ -146,6 +147,16 @@ JS_URLS = {
 }
 
 extension_dirs['panel'] = str(DIST_DIR)
+
+bokeh.embed.wrappers._ONLOAD = """\
+(function() {
+  const fn = function() {
+%(code)s
+  };
+  if (document.readyState != "loading") fn();
+else document.addEventListener("DOMContentLoaded", fn, {once: true});
+})();\
+"""
 
 mimetypes.add_type("application/javascript", ".js")
 
