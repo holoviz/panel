@@ -25,6 +25,12 @@ export class FileInputView extends InputWidgetView {
     return this.input_el = input({type: "file", class: inputs.input, multiple, accept, disabled, webkitdirectory: directory})
   }
 
+  override connect_signals(): void {
+    super.connect_signals()
+    const {_clear_input} = this.model.properties
+    this.on_change(_clear_input, this.clear_input)
+  }
+
   override render(): void {
     super.render()
 
@@ -82,6 +88,11 @@ export class FileInputView extends InputWidgetView {
       reader.readAsDataURL(file)
     })
   }
+  protected clear_input(): void {
+    this.input_el.value = ""
+    this.model.setv({value: "", filename: "", mime_type: ""})
+  }
+
 }
 
 export namespace FileInput {
@@ -93,6 +104,7 @@ export namespace FileInput {
     accept: p.Property<string | string[]>
     multiple: p.Property<boolean>
     directory: p.Property<boolean>
+    _clear_input: p.Property<number>
   }
 }
 
@@ -111,13 +123,14 @@ export class FileInput extends InputWidget {
   static {
     this.prototype.default_view = FileInputView
 
-    this.define<FileInput.Props>(({Bool, Str, List, Or}) => ({
+    this.define<FileInput.Props>(({Bool, Str, List, Or, Int}) => ({
       value:     [ Or(Str, List(Str)), p.unset, {readonly: true} ],
       mime_type: [ Or(Str, List(Str)), p.unset, {readonly: true} ],
       filename:  [ Or(Str, List(Str)), p.unset, {readonly: true} ],
       accept:    [ Or(Str, List(Str)), "" ],
       multiple:  [ Bool, false ],
       directory: [ Bool, false ],
+      _clear_input: [ Int, 0],
     }))
   }
 }

@@ -189,6 +189,8 @@ class FileInput(Widget):
 
     value = param.Parameter(default=None)
 
+    _clear_input = param.Integer(default=0, constant=True)
+
     _rename: ClassVar[Mapping[str, str | None]] = {
         'filename': None, 'name': None
     }
@@ -216,9 +218,13 @@ class FileInput(Widget):
         msg = super()._process_property_change(msg)
         if 'value' in msg:
             if isinstance(msg['value'], str):
-                msg['value'] = b64decode(msg['value'])
+                msg['value'] = b64decode(msg['value']) if msg['value'] else None
             else:
                 msg['value'] = [b64decode(content) for content in msg['value']]
+        if 'filename' in msg and len(msg['filename']) == 0:
+            msg['filename'] = None
+        if 'mime_type' in msg and len(msg['mime_type']) == 0:
+            msg['mime_type'] = None
         return msg
 
     def save(self, filename):
@@ -254,6 +260,10 @@ class FileInput(Widget):
                     f.write(val)
             else:
                 fn.write(val)
+
+    def clear_input(self):
+        with param.edit_constant(self):
+            self._clear_input += 1
 
 
 class StaticText(Widget):

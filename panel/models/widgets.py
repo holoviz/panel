@@ -259,3 +259,7 @@ class FileInput(bkFileInput):
     directory = Bool(False, help="""
     Whether to allow selection of directories.
     """)
+
+    _clear_input = Int(0, help="""
+    A private property to clear the file input.
+    """)
