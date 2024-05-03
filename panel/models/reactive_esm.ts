@@ -212,22 +212,61 @@ view.render_children();
 
   private _render_esm_react(): void {
     this.disconnect_watchers()
-    if (this.model.importmap) {
-      const importMap = {
-        "imports": {
-          "react": "https://esm.sh/react@18.2.0",
-          "react-dom/": "https://esm.sh/react-dom@18.2.0/",
-          ...this.model.importmap['imports']
-        },
-        "scopes": this.model.importmap["scopes"]
-      };
+    const imports = this.model.importmap?.imports
+    const scopes = this.model.importmap?.scopes
+    const importMap = {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/": "https://esm.sh/react-dom@18.2.0/",
+        ...imports
+      },
+      "scopes": scopes || {}
+    };
+    let import_code = `
+import * as React from "react";
+import { createRoot } from 'react-dom/client';`
+    let render_code = `
+if (rendered) {
+  view._changing = true;
+  const root = createRoot(view.container);
+  root.render(rendered);
+  view._changing = false;
+}`
+    if (Object.keys(importMap.imports).some(k => k.startsWith('@mui'))) {
+      importMap.imports = {
+	...importMap.imports,
+	"@emotion/cache": "https://esm.sh/@emotion/cache",
+	"@emotion/react": "https://esm.sh/@emotion/react",
+      }
+      import_code = `
+${import_code}
+import createCache from "@emotion/cache";
+import { CacheProvider } from '@emotion/react';
+`
+      render_code = `
+const headElement = document.createElement("head");
+view.shadow_el.insertBefore(headElement, view.container);
+
+const cache = createCache({
+  key: 'css',
+  prepend: true,
+  container: headElement,
+});
+
+if (rendered) {
+  view._changing = true;
+  const root = createRoot(view.container);
+  root.render(
+    React.createElement(CacheProvider, {value: cache}, rendered)
+  );
+  view._changing = false;
+}`
       // @ts-ignore
       importShim.addImportMap(importMap);
     }
 
     const code = `
-import { createRoot } from 'react-dom/client';
-import * as React from "react";
+${import_code}
 
 const view = Bokeh.index.find_one_by_id('${this.model.id}')
 
@@ -287,12 +326,7 @@ ${this.rendered}
 
 const rendered = render({view: view, model: view.model, data: view.model.data, el: view.container, state: modelState, children: children});
 
-if (rendered) {
-  view._changing = true;
-  const root = createRoot(view.container);
-  root.render(rendered);
-  view._changing = false;
-}`;
+${render_code}`;
 
     const url = URL.createObjectURL(
       new Blob([code], { type: "text/javascript" }),
