@@ -51,7 +51,7 @@ class TestChatMessage:
         assert isinstance(object_pane, Markdown)
         assert object_pane.object == "ABC"
 
-        icons = center_row[1]
+        icons = center_row[1][0][0].object()
         assert isinstance(icons, ChatReactionIcons)
 
         footer_col = columns[1][2]
