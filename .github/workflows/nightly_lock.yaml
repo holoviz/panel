@@ -11,5 +11,12 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: holoviz-dev/holoviz_tasks/pixi_lock@pixi
-
-  # TODO: Upload the lock-file
+      - name: Upload lock-file to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "eu-west-1"
+          PACKAGE: "panel"
+        run: |
+          cp pixi.lock $(date +%Y-%m-%d)-pixi.lock
+          aws s3 cp ./$(date +%Y-%m-%d)-pixi.lock s3://assets.holoviz.org/lock/$PACKAGE/
