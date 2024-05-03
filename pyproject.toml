@@ -61,7 +61,7 @@ dependencies = [
     'typing_extensions',
     'pandas >=1.2',
     'packaging',
-    'tqdm',  # TODO: Make this optional
+    'tqdm',  # TODO: Should this be optional?
 ]
 
 [project.urls]
@@ -76,7 +76,16 @@ recommended = [
     'matplotlib',
     'pillow',
     'plotly',
+]
+standard = [
     'watchfiles',
+]
+tests = [
+    'psutil' ,
+    'pytest',
+    'pytest-asyncio',
+    'pytest-rerunfailures',
+    'pytest-xdist',
 ]
 
 [project.scripts]

@@ -40,6 +40,7 @@ jupyterlab = "*"
 matplotlib = "*"
 pillow = "*"
 plotly = ">=4.0"
+# Standard
 watchfiles = "*"
 
 [feature.py39.dependencies]
