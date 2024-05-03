@@ -10,7 +10,6 @@ from typing import (
     Optional, Tuple, Type,
 )
 
-import jinja2
 import param
 
 from param.parameterized import ParameterizedMetaclass
@@ -62,8 +61,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         else:
             esm = self._esm
         esm = textwrap.dedent(esm)
-        template = jinja2.Template(esm)
-        return template.render({})
+        return esm
 
     async def _watch_esm(self):
         import watchfiles
