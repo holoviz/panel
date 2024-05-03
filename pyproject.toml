@@ -106,7 +106,7 @@ include = ["panel"]
 "scripts/jupyter-config/server.json" = "etc/jupyter/jupyter_server_config.d/panel-client-jupyter.json"
 
 [tool.hatch.build.targets.sdist]
-include = ["panel", "scripts"]
+include = ["panel", "scripts", "examples"]
 
 [tool.hatch.build.targets.sdist.force-include]
 "panel/dist" = "panel/dist"
