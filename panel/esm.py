@@ -43,6 +43,39 @@ class ReactiveESMMetaclass(ReactiveMetaBase):
 
 
 class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
+    '''
+    The `ReactiveESM` class enables you to create custom Panel components using HTML, CSS and/ or
+    Javascript and without the complexities of Javascript build tools.
+
+    A `ReactiveESM` subclass provides bi-directional syncing of its parameters with arbitrary HTML
+    elements, attributes and properties. The key part of the subclass is the `_esm`
+    variable. Use this to define a `render` function as shown in the example below.
+
+    import panel as pn
+    import param
+
+    pn.extension()
+
+    class CounterButton(pn.ReactiveESM):
+
+        clicks = param.Integer()
+
+        _esm = """
+        export function render({ data }) {
+            let btn = document.createElement("button");
+            btn.innerHTML = `count is ${data.clicks}`;
+            btn.addEventListener("click", () => {
+                data.clicks+=1
+            });
+            data.watch(() => {
+                btn.innerHTML = `count is ${data.clicks}`;
+            }, 'clicks')
+            return btn
+        }
+        """
+
+    CounterButton().servable()
+    '''
 
     _esm: ClassVar[str | os.PathLike] = ""
 
