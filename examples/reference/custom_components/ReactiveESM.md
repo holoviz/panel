@@ -62,9 +62,9 @@ The `render` function should return the html element to display.
 
 The `render` function is run for each independent instance of the component. Besided the `render` function you can also export
 
--
-- After Layout: DO WE STILL NEED SOMETHING LIKE THAT TO RESIZE OR REDRAW?
-- TEARDOWN: DO WE NEED SOME EVENT TO CLEAN UP?
+- `initialize`: Is executed once per widget instance, during model initialization. It has access to model to setup non-view event handlers or state to share across views. ANYWIDGET NEEDS THIS.
+- `after_layout`: DO WE STILL NEED SOMETHING LIKE THAT TO RESIZE OR REDRAW?
+- `teardown`: DO WE NEED SOME EVENT TO CLEAN UP?
 
 ## Usage
 
@@ -246,9 +246,9 @@ Serve the app with `pane serve counter_button.py --autoreload`.
 
 Now you can edit the JavaScript file and the changes will be automatically reloaded. Try changing the `innerHTML` to `Count is ${data.value}` and see how it updates.
 
-## React
+## React with JSX
 
-If you want to use React instead of plain JavaScript as above this is also possible.
+If you want to use [React](https://react.dev/) with [JSX](https://react.dev/learn/writing-markup-with-jsx) instead of plain JavaScript as above this is also possible.
 
 ```python
 import panel as pn
