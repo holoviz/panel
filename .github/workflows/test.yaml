@@ -148,6 +148,7 @@ jobs:
           channels: pyviz/label/dev,numba,bokeh/label/dev,conda-forge,nodefaults
           conda-update: true
           nodejs: true
+          nodejs-version: "20.9"  #  https://github.com/bokeh/bokeh/pull/13851
           envs: -o examples -o recommended -o tests -o build
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           opengl: true
@@ -236,6 +237,7 @@ jobs:
           envs: "-o recommended -o tests -o build"
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           nodejs: true
+          nodejs-version: "20.9"  #  https://github.com/bokeh/bokeh/pull/13851
           playwright: true
         id: install
       - name: launch jupyter

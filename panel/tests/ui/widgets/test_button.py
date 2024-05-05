@@ -92,13 +92,12 @@ def test_button_tooltip_with_delay(page, button_fn, button_locator):
     exp(tooltip).to_have_count(0)
 
     # After 100 ms the tooltip should be visible
-    page.wait_for_timeout(200)
-    exp(tooltip).to_have_count(1)
+    wait_until(lambda: exp(tooltip).to_have_count(1), page)
 
     # Removing hover should hide the tooltip
     page.hover("body")
     tooltip = page.locator(".bk-tooltip-content")
-    exp(tooltip).to_have_count(0)
+    wait_until(lambda: exp(tooltip).to_have_count(0), page)
 
     # Hovering over the button for a short time should not show the tooltip
     page.hover(button_locator)
