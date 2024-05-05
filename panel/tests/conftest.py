@@ -32,7 +32,7 @@ from panel.io.reload import (
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
 
-CUSTOM_MARKS = ('ui', 'jupyter', 'subprocess')
+CUSTOM_MARKS = ('ui', 'jupyter', 'subprocess', 'docs')
 
 config.apply_signatures = False
 
@@ -87,7 +87,7 @@ def jupyter_preview(request):
 atexit.register(cleanup_jupyter)
 optional_markers = {
     "ui": {
-        "help": "<Command line help text for flag1...>",
+        "help": "Runs UI related tests",
         "marker-descr": "UI test marker",
         "skip-reason": "Test only runs with the --ui option."
     },
