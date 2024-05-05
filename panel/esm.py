@@ -186,8 +186,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     def _process_event(self, event: 'Event') -> None:
         if not isinstance(event, DOMEvent):
             return
-        if hasattr(self, f'on_{event.node}'):
-            getattr(self, f'on_{event.node}')(event)
+        if hasattr(self, f'_handle_{event.node}'):
+            getattr(self, f'_handle_{event.node}')(event)
         for cb in self._event_callbacks.get(event.node, []):
             cb(event)
 

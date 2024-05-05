@@ -137,7 +137,7 @@ class ButtonEventExample(pn.ReactiveESM):
     }
     """
 
-    def on_click(self, event):
+    def _handle_click(self, event):
         self.value = str(event.__dict__)
 
 button = ButtonEventExample()

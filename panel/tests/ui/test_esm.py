@@ -109,7 +109,7 @@ def test_esm_button_event(page):
         }
         """
 
-        def on_click(self, event):
+        def _handle_click(self, event):
             self.clicks += 1
 
     button = ButtonExample()
