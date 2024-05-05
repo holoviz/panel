@@ -47,15 +47,19 @@ CounterButton().servable()
 
 #### `render` Function
 
-The `render` function should return the HTML element to be displayed. It accepts the following parameters:
+It accepts the following parameters:
 
 - **`data`**: Represents the Python Parameters of the component and provides methods to `.watch` for changes and `.send_event` back to Python.
 - **`model`**: Corresponds to the Bokeh model.
 - **`view`**: Corresponds to the Bokeh view.
+- **`el`**: The parent HTML element to append child elements to. PLEASE EXPLAIN WHY ITS NEEDED.
+- **`children`**: PLEASE EXPLAIN WHAT THIS IS AND WHY ITS NEEDED.
 
-When using React and JSX, the function supports:
+When using React and JSX, the function also supports:
 
 - **`state`**: Manages state similar to React's [`useState`](https://www.w3schools.com/react/react_usestate.asp) hook.
+
+Any HTML element returned from the `render` function will be appended to the parent HTML element (`el`) of the component.
 
 #### Other Lifecycle Methods
 
@@ -214,8 +218,10 @@ import panel as pn
 pn.extension()
 
 class ConfettiButton(pn.ReactiveESM):
-    _import_map = {
-        "canvas-confetti": "https://esm.sh/canvas-confetti@1.6.0",
+    _importmap = {
+        "imports": {
+            "canvas-confetti": "https://esm.sh/canvas-confetti@1.6.0",
+        }
     }
 
     _esm = """

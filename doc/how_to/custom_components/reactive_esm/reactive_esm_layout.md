@@ -12,16 +12,16 @@ import param
 
 pn.extension()
 
-class LayoutSingleObject(pn.reactiveESM):
-    object = param.Parameter(allow_refs=False)
+class LayoutSingleObject(pn.ReactiveESM):
+    object = param.ClassSelector(class_=pn.viewable.Viewable, allow_refs=None)
 
-    _template = """
-    <div>
-        <h1>Temperature</h1>
-        <h2>A measurement from the sensor</h2>
-        <div id="object">${object}</div>
-    </div>
-"""
+    _esm = """
+    export function render({ data }) {
+        let div = document.createElement("div");
+        div.innerHTML = `Hello`;
+        return div
+    }
+    """
 
 dial = pn.widgets.Dial(
     name="°C",
