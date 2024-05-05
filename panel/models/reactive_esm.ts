@@ -91,8 +91,13 @@ export class ReactiveESMView extends HTMLBoxView {
     const children = []
     for (const child of this.model.children) {
       const model = this.model.data[child]
-      if (model != null)
+      if (isArray(model)) {
+	for (const subchild of model) {
+	  children.push(subchild)
+	}
+      } else if (model != null) {
         children.push(model)
+      }
     }
     return children
   }
@@ -134,7 +139,15 @@ const view = Bokeh.index.find_one_by_id('${this.model.id}')
 
 const children = {}
 for (const child of view.model.children) {
-  children[child] = view._child_views.get(view.model.data[child])
+  const child_model = view.model.data[child]
+  if (Array.isArray(child_model)) {
+    const subchildren = children[child] = []
+    for (const subchild of child_model) {
+      subchildren.push(view._child_views.get(subchild).el)
+    }
+  } else {
+    children[child] = view._child_views.get(child_model).el
+  }
 }
 ${this.rendered}
 
@@ -147,8 +160,7 @@ if (output instanceof Element) {
   view.model.data.watch(() => view._render_esm(), view._rerender_vars)
 }
 
-view.render_children();
-`
+view.render_children();`
 
     const url = URL.createObjectURL(
       new Blob([code], { type: "text/javascript" }),
@@ -159,14 +171,20 @@ view.render_children();
 
   render_children() {
     for (const child of this.model.children) {
-      const view = this._child_views.get(this.model.data[child])
-      if (view && this.container.contains(view.el)) {
-        const parent = view.el.parentNode
-        if (parent) {
-          this._parent_nodes[child] = [parent, Array.from(parent.children).indexOf(view.el)]
-          view.render()
-          view.after_render()
-        }
+      const child_model = this.model.data[child]
+      const children = isArray(child_model) ? child_model : [child_model]
+      const nodes = []
+      for (const subchild of children) {
+	const view = this._child_views.get(subchild)
+	if (view && this.container.contains(view.el)) {
+          const parent = view.el.parentNode
+          if (parent) {
+            nodes.push([parent, Array.from(parent.children).indexOf(view.el)])
+            view.render()
+            view.after_render()
+          }
+	}
+	this._parent_nodes[child] = nodes
       }
     }
   }
@@ -185,9 +203,12 @@ view.render_children();
     }
 
     for (const child in this._parent_nodes) {
-      const [parent, index] = this._parent_nodes[child]
-      const view = this._child_views.get(this.model.data[child])
-      if (view) {
+      for (const subchild of this._parent_nodes[child]) {
+	const [parent, index] = subchild
+	const view = this._child_views.get(this.model.data[child])
+	if (!view) {
+	  continue
+	}
         const next_child = parent.children[index]
         if (next_child) {
           parent.insertBefore(view.el, next_child)
@@ -291,35 +312,42 @@ const modelState = new Proxy(view.model.data, {
 
 const children = {}
 for (const child of view.model.children) {
-  class Child extends React.Component {
-    child_name = child
-    parent = view
-    view = view._child_views.get(view.model.data[child])
-    node = view._child_views.get(view.model.data[child]).el
+  const child_model = view.model.data[child]
+  const multiple = Array.isArray(child_model)
+  const models = multiple ? child_model : [child_model]
+  const components = []
+  for (const model of models) {
+    class Child extends React.Component {
+      child_name = child
+      parent = view
+      view = view._child_views.get(model)
+      node = view._child_views.get(model).el
 
-    componentDidMount() {
-      this.parent.on_child_render(this.child_name, () => this.rerender())
-      this.view.render()
-      this.view.after_render()
-    }
+      componentDidMount() {
+        this.parent.on_child_render(this.child_name, () => this.rerender())
+        this.view.render()
+        this.view.after_render()
+      }
 
-    componentDidUnmount() {
-      this.parent.remove_on_child_render(this.child_name)
-    }
+      componentDidUnmount() {
+        this.parent.remove_on_child_render(this.child_name)
+      }
 
-    rerender() {
-      this.view = this.parent._child_views.get(view.model.data[child])
-      this.node = this.view.el
-      this.forceUpdate()
-      this.view.render()
-      this.view.after_render()
-    }
+      rerender() {
+        this.view = this.parent._child_views.get(view.model.data[child])
+        this.node = this.view.el
+        this.forceUpdate()
+        this.view.render()
+        this.view.after_render()
+      }
 
-    render() {
-      return React.createElement('div', {className: "child-wrapper", ref: (ref) => ref && ref.appendChild(this.node)})
+      render() {
+        return React.createElement('div', {className: "child-wrapper", ref: (ref) => ref && ref.appendChild(this.node)})
+      }
     }
+    components.push(React.createElement(Child))
   }
-  children[child] = React.createElement(Child)
+  children[child] = multiple ? components: components[0]
 }
 
 ${this.rendered}

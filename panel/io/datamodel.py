@@ -66,9 +66,14 @@ def color_param_to_ppt(p, kwargs):
 
 
 def list_param_to_ppt(p, kwargs):
-    if isinstance(p.item_type, type) and issubclass(p.item_type, pm.Parameterized):
+    item_type = bp.Any
+    if not isinstance(p.item_type, type):
+        pass
+    elif issubclass(p.item_type, Viewable):
+        item_type = bp.Instance(Model)
+    elif issubclass(p.item_type, pm.Parameterized):
         return bp.List(bp.Instance(DataModel)), [(ParameterizedList, lambda ps: [create_linked_datamodel(p) for p in ps])]
-    return bp.List(bp.Any, **kwargs)
+    return bp.List(item_type, **kwargs)
 
 def class_selector_to_model(p, kwargs):
     if isinstance(p.class_, type) and issubclass(p.class_, Viewable):

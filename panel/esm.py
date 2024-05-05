@@ -132,13 +132,15 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         for k, v in self.param.values().items():
             if (
                 (k in ignored and k != 'name') or
-                ((self.param[k].precedence or 0) < 0) or
-                (isinstance(v, Viewable) and isinstance(self.param[k], param.ClassSelector))
+                (((p:= self.param[k]).precedence or 0) < 0) or
+                (isinstance(v, Viewable) and isinstance(p, param.ClassSelector)) or
+                (isinstance(p, param.List) and p.item_type and issubclass(p.item_type, Viewable))
             ):
                 continue
             data_params[k] = v
+        data_props = self._process_param_change(data_params)
         params.update({
-            'data': self._data_model(**self._process_param_change(data_params)),
+            'data': self._data_model(**data_props),
             'esm': self._render_esm(),
             'importmap': getattr(self, '_importmap', {}),
         })
@@ -149,10 +151,18 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         ref = root.ref['id']
         for k, v in self.param.values().items():
             p = self.param[k]
-            if not (isinstance(p, param.ClassSelector) and issubclass(p.class_, Viewable)):
+            if not (
+                (isinstance(p, param.ClassSelector) and issubclass(p.class_, Viewable)) or
+                (isinstance(p, param.List) and p.item_type and issubclass(p.item_type, Viewable))
+            ):
                 continue
             if v is None:
                 children[k] = None
+            elif isinstance(v, list):
+                children[k] = [
+                    sv._models[ref] if ref in sv._models else sv._get_model(doc, root, parent, comm)
+                    for sv in v
+                ]
             elif ref in v._models:
                 children[k] = v._models[ref]
             else:
@@ -199,10 +209,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         for prop, v in list(msg.items()):
             if prop in list(Reactive.param)+['esm', 'importmap']:
                 model_msg[prop] = v
-            elif ((prop in self.param) and (
-                    ((self.param[prop].precedence or 0) < 0) or
-                    (isinstance(v, Viewable) and not isinstance(self.param[prop], param.ClassSelector))
-            )):
+            elif prop in model.children:
                 continue
             else:
                 data_msg[prop] = v
