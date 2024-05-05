@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import pathlib
 import textwrap
@@ -19,6 +20,7 @@ from .io.state import state
 from .models import ReactiveESM as _BkReactiveESM
 from .models.reactive_html import DOMEvent
 from .reactive import Reactive, ReactiveCustomBase, ReactiveMetaBase
+from .util.checks import import_available
 from .viewable import Layoutable, Viewable
 
 if TYPE_CHECKING:
@@ -96,9 +98,15 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         esm = textwrap.dedent(esm)
         return esm
 
+    def _cleanup(self, root: Model | None) -> None:
+        super()._cleanup(root)
+        if not self._models:
+            self._watching_esm.set()
+            self._watching_esm = False
+
     async def _watch_esm(self):
         import watchfiles
-        async for _ in watchfiles.awatch(self._esm):
+        async for _ in watchfiles.awatch(self._esm, stop_event=self._watching_esm):
             for ref, (model, _) in self._models.items():
                 self._apply_update({}, {'esm': self._render_esm()}, model, ref)
 
@@ -143,6 +151,15 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                 children[k] = v._get_model(doc, root, parent, comm)
         return children
 
+    def _setup_autoreload(self):
+        from .config import config
+        if not (config.autoreload and import_available('watchfiles')):
+            return
+        super()._setup_autoreload()
+        if isinstance(self._esm, pathlib.PurePath) and not self._watching_esm:
+            self._watching_esm = asyncio.Event()
+            state.execute(self._watch_esm)
+
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
@@ -152,11 +169,9 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         children = self._get_children(model.data, doc, root, model, comm)
         model.data.update(**children)
         model.children = list(children)
-        if isinstance(self._esm, pathlib.PurePath) and not self._watching_esm:
-            state.execute(self._watch_esm)
-            self._watching_esm = True
         self._models[root.ref['id']] = (model, parent)
         self._link_props(model.data, self._linked_properties, doc, root, comm)
+        self._setup_autoreload()
         self._register_events('dom_event', model=model, doc=doc, comm=comm)
         return model
 

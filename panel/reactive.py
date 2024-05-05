@@ -5,10 +5,12 @@ models rendered on the frontend.
 """
 from __future__ import annotations
 
+import asyncio
 import datetime as dt
 import difflib
 import inspect
 import logging
+import pathlib
 import re
 import sys
 import textwrap
@@ -48,6 +50,7 @@ from .models.reactive_html import (
 from .util import (
     HTML_SANITIZER, classproperty, edit_readonly, escape, updating,
 )
+from .util.checks import import_available
 from .viewable import Layoutable, Renderable, Viewable
 
 if TYPE_CHECKING:
@@ -133,6 +136,9 @@ class Syncable(Renderable):
 
         # A dictionary of bokeh property changes being processed
         self._changing = {}
+
+        # Whether the component is watching the stylesheets
+        self._watching_stylesheets = False
 
         # Sets up watchers to process manual updates to models
         if self._manual_params:
@@ -350,6 +356,9 @@ class Syncable(Renderable):
             model, _ = self._models.pop(ref, None)
             model._callbacks = {}
             model._event_callbacks = {}
+        if not self._models and self._watching_stylesheets:
+            self._watching_stylesheets.set()
+            self._watching_stylesheets = False
         comm, client_comm = self._comms.pop(ref, (None, None))
         if comm:
             try:
@@ -367,6 +376,20 @@ class Syncable(Renderable):
     ) -> Dict[str, Any]:
         changes = {event.name: event.new for event in events}
         return self._process_param_change(changes)
+
+    def _setup_autoreload(self):
+        from .config import config
+        paths = [sts for sts in self._stylesheets if isinstance(sts, pathlib.PurePath)]
+        if (self._watching_stylesheets or not (config.autoreload and paths and import_available('watchfiles'))):
+            return
+        self._watching_stylesheets = asyncio.Event()
+        state.execute(self._watch_stylesheets)
+
+    async def _watch_stylesheets(self):
+        import watchfiles
+        paths = [sts for sts in self._stylesheets if isinstance(sts, pathlib.PurePath)]
+        async for _ in watchfiles.awatch(*paths, stop_event=self._watching_stylesheets):
+            self.param.trigger('stylesheets')
 
     def _param_change(self, *events: param.parameterized.Event) -> None:
         named_events = {event.name: event for event in events}
