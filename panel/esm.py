@@ -60,18 +60,18 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     class CounterButton(pn.ReactiveESM):
 
-        clicks = param.Integer()
+        value = param.Integer()
 
         _esm = """
         export function render({ data }) {
             let btn = document.createElement("button");
-            btn.innerHTML = `count is ${data.clicks}`;
+            btn.innerHTML = `count is ${data.value}`;
             btn.addEventListener("click", () => {
-                data.clicks+=1
+                data.value += 1
             });
             data.watch(() => {
-                btn.innerHTML = `count is ${data.clicks}`;
-            }, 'clicks')
+                btn.innerHTML = `count is ${data.value}`;
+            }, 'value')
             return btn
         }
         """
