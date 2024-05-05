@@ -211,7 +211,7 @@ class Syncable(Renderable):
             stylesheets += properties['stylesheets']
             wrapped = []
             for stylesheet in stylesheets:
-                if isinstance(stylesheet, str) and stylesheet.endswith('.css'):
+                if isinstance(stylesheet, str) and stylesheet.split('?')[0].endswith('.css'):
                     stylesheet = ImportedStyleSheet(url=stylesheet)
                 wrapped.append(stylesheet)
             properties['stylesheets'] = wrapped
@@ -387,7 +387,14 @@ class Syncable(Renderable):
 
     async def _watch_stylesheets(self):
         import watchfiles
-        paths = [sts for sts in self._stylesheets if isinstance(sts, pathlib.PurePath)]
+        base_dir = pathlib.Path(inspect.getfile(type(self))).parent
+        paths = []
+        for sts in self._stylesheets:
+            if isinstance(sts, pathlib.PurePath):
+                if not sts.absolute().is_file():
+                    sts = base_dir / sts
+                if sts.is_file():
+                    paths.append(sts)
         async for _ in watchfiles.awatch(*paths, stop_event=self._watching_stylesheets):
             self.param.trigger('stylesheets')
 
