@@ -261,9 +261,9 @@ if (rendered) {
   );
   view._changing = false;
 }`
-      // @ts-ignore
-      importShim.addImportMap(importMap);
     }
+    // @ts-ignore
+    importShim.addImportMap(importMap);
 
     const code = `
 ${import_code}
