@@ -120,7 +120,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     @property
     def _linked_properties(self) -> List[str]:
-        return tuple(self._data_model.properties())
+        return [p for p in self._data_model.properties() if p not in ('js_property_callbacks',)]
 
     def _init_params(self) -> Dict[str, Any]:
         ignored = list(Reactive.param)

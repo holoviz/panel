@@ -18,7 +18,7 @@ from bokeh.models import CustomJS, LayoutDOM, Model as BkModel
 
 from .io.datamodel import create_linked_datamodel
 from .io.loading import LOADING_INDICATOR_CSS_CLASS
-from .models import ReactiveHTML
+from .models import ReactiveESM, ReactiveHTML
 from .reactive import Reactive
 from .util.warnings import warn
 from .viewable import Viewable
@@ -476,11 +476,11 @@ class CallbackGenerator(object):
                         references[k] = v
 
         # Handle links with ReactiveHTML DataModel
-        if isinstance(src_model, ReactiveHTML):
+        if isinstance(src_model, (ReactiveESM, ReactiveHTML)):
             if src_spec[1] in src_model.data.properties(): # type: ignore
                 references['source'] = src_model = src_model.data # type: ignore
 
-        if isinstance(tgt_model, ReactiveHTML):
+        if isinstance(tgt_model, (ReactiveESM, ReactiveHTML)):
             if tgt_spec[1] in tgt_model.data.properties(): # type: ignore
                 references['target'] = tgt_model = tgt_model.data # type: ignore
 
