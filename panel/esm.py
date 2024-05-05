@@ -100,7 +100,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     def _cleanup(self, root: Model | None) -> None:
         super()._cleanup(root)
-        if not self._models:
+        if not self._models and self._watching_esm:
             self._watching_esm.set()
             self._watching_esm = False
 
