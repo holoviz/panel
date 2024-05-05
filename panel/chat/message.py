@@ -288,7 +288,7 @@ class ChatMessage(PaneBase):
         self._update_chat_copy_icon()
         self._center_row = Row(
             self._object_panel,
-            self.reaction_icons,
+            self.param.reaction_icons.rx(),
             css_classes=["center"],
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
             sizing_mode=None
