@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import os
 import pathlib
 import textwrap
@@ -91,10 +92,17 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         self._event_callbacks = defaultdict(list)
 
     def _render_esm(self):
-        if isinstance(self._esm, pathlib.PurePath):
-            esm = self._esm.read_text()
-        else:
-            esm = self._esm
+        esm = self._esm
+        if isinstance(esm, pathlib.PurePath):
+            esm = esm.read_text(encoding='utf-8')
+        elif esm.endswith(('.js', '.jsx', '.ts', '.tsx')):
+            try:
+                # Safely check if ESM is a path relative to class definition
+                esm_path = pathlib.Path(inspect.getfile(type(self))).parent / esm
+                if esm_path.is_file():
+                    esm = esm_path.read_text(encoding='utf-8')
+            except (OSError, TypeError, ValueError):
+                pass
         esm = textwrap.dedent(esm)
         return esm
 
