@@ -12,6 +12,76 @@ class CounterButton(pn.ReactiveESM):
 
     value = param.Integer()
 
+    _esm = """
+    export function render({ data }) {
+        let btn = document.createElement("button");
+        btn.innerHTML = `count is ${data.value}`;
+        btn.addEventListener("click", () => {
+            data.value+=1
+        });
+        data.watch(() => {
+            btn.innerHTML = `count is ${data.value}`;
+          }, 'value')
+        return btn
+    }
+    """
+
+CounterButton().servable()
+```
+
+:::{note}
+
+`ReactiveESM` was introduced June 2024 to be the successor of `ReactiveHTML`.
+
+`ReactiveESM` is very similar to [`AnyWidget`](https://anywidget.dev/), but `ReactiveESM` is optimized for usage with Panel.
+
+:::
+
+## Api
+
+### ReactiveESM Attributes
+
+* **`_esm`** (str | PurePath): An [ECMAScript module](https://nodejs.org/api/esm.html#modules-ecmascript-modules) string or a path pointing to a [ECMAScript module](https://nodejs.org/api/esm.html#modules-ecmascript-modules). If you are developing in a notebook or with `--autoreload` the file will automatically be reloaded when saved. The ECMAScript module should export a `render` function.
+* **`_import_map`** (dict): An [import map](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap) allows you to control how module specifiers are resolved.
+* **`_stylesheets`** (optional list of strings): An Optional  list of CSS strings.
+
+#### `render` Function
+
+The `render` function can accept the following arguments:
+
+- **`children`**: DON'T KNOW HOW TO EXPLAIN
+- **`data`**: The `data` element corresponds to the custom components Python Parameters and provides methods to `.watch` for parameter changes and `.send_event` back to Python.
+- **`el`**: The main html element of the component. Append elements to this element to display them. IS THIS OBSOLETE AS YOU SHOULD BE RETURNING THE ELEMENT TO RENDER?
+- **`html`**: The `html` function enables JSX-like syntax in plain JavaScript without a transpiler. See [`htm`](https://github.com/developit/htm). IS THIS OBSOLETE?
+- **`model`**: The Bokeh model. DON'T KNOW HOW TO EXPLAIN
+- **`view`**: The Bokeh view. DON'T KNOW HOW TO EXPLAIN
+
+The `render` function should return the html element to display.
+
+#### Lifecycle Methods
+
+The `render` function is run for each independent instance of the component. Besided the `render` function you can also export
+
+-
+- After Layout: DO WE STILL NEED SOMETHING LIKE THAT TO RESIZE OR REDRAW?
+- TEARDOWN: DO WE NEED SOME EVENT TO CLEAN UP?
+
+## Usage
+
+### CSS
+
+You can include CSS in the `_stylesheets` attribute. The CSS will be injected into the component.
+
+```python
+import panel as pn
+import param
+
+pn.extension()
+
+class StyledCounterButton(pn.ReactiveESM):
+
+    value = param.Integer()
+
     _stylesheets = [
         """
         button {
@@ -40,38 +110,40 @@ class CounterButton(pn.ReactiveESM):
     }
     """
 
-CounterButton().servable()
+StyledCounterButton().servable()
 ```
 
-:::{note}
+## Send Events from Javascript to Python
 
-`ReactiveESM` was introduced June 2024 as the expected successor of `ReactiveHTML`.
+You can send events from JavaScript to Python using the `data.send_event` method. You can handle the event in Python by defining an `on_<event_name>` method.
 
-`ReactiveESM` is very similar to [`AnyWidget`](https://anywidget.dev/), but `ReactiveESM` is optimized for usage with Panel.
+```python
+import panel as pn
+import param
 
-:::
+pn.extension()
 
-## Api
+class ButtonEventExample(pn.ReactiveESM):
 
-### Attributes
+    value = param.Parameter()
 
-* **`_esm`** (str | PurePath): An [ECMAScript module](https://nodejs.org/api/esm.html#modules-ecmascript-modules) string or a path pointing to a [ECMAScript module](https://nodejs.org/api/esm.html#modules-ecmascript-modules). If you are developing in a notebook or with `--autoreload` the file will automatically be reloaded when saved. The ECMAScript module should define a `render` function.
-* **`_import_map`** (dict): An [import map](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap) allows you to control how module specifiers are resolved.
-* **`_stylesheets`** (optional list of strings): An Optional  list of CSS strings.
+    _esm = """
+    export function render({ data }) {
+        const btn = document.createElement('button')
+        btn.innerHTML = `Click Me`;
+        btn.onclick = (event) => data.send_event('click', event)
+        return btn
+    }
+    """
 
+    def on_click(self, event):
+        self.value=str(event.__dict__)
 
-### Render Function
-
-The `render` function can accept the following arguments:
-
-- **`children`**: DON'T KNOW HOW TO EXPLAIN
-- **`data`**: The data element corresponds to the custom component Python Parameters and provides methods to `.watch` for parameter changes and `send_event`.
-- **`el`**: The element to render into
-- **`html`**: The `html` function enables JSX-like syntax in plain JavaScript without a transpiler. See [`htm`](https://github.com/developit/htm).
-- **`model`**: The Bokeh model. DON'T KNOW HOW TO EXPLAIN
-- **`view`**: The Bokeh view. DON'T KNOW HOW TO EXPLAIN
-
-The `render` function should return the html element to display.
+button = ButtonEventExample()
+pn.Column(
+    button, pn.widgets.TextAreaInput(value=button.param.value, height=200),
+).servable()
+```
 
 ## Dependency Imports
 
@@ -128,6 +200,52 @@ class ConfettiButton(pn.ReactiveESM):
 ConfettiButton()
 ```
 
+## External Files
+
+You can also load the JavaScript from an external file by providing a path to the `_esm` attribute.
+
+Create the file **counter_button.py**.
+
+```python
+from pathlib import Path
+
+import param
+
+import panel as pn
+
+pn.extension()
+
+
+class CounterButton(pn.ReactiveESM):
+
+    value = param.Integer()
+
+    _esm = Path("counter_button.js")
+
+
+CounterButton().servable()
+```
+
+Now create the file **counter_button.js**.
+
+```javascript
+export function render({ data }) {
+    let btn = document.createElement("button");
+    btn.innerHTML = `count is ${data.value}`;
+    btn.addEventListener("click", () => {
+        data.value+=1
+    });
+    data.watch(() => {
+        btn.innerHTML = `count is ${data.value}`;
+      }, 'value')
+    return btn
+}
+```
+
+Serve the app with `pane serve counter_button.py --autoreload`.
+
+Now you can edit the JavaScript file and the changes will be automatically reloaded. Try changing the `innerHTML` to `Count is ${data.value}` and see how it updates.
+
 ## React
 
 If you want to use React instead of plain JavaScript as above this is also possible.
@@ -140,17 +258,17 @@ pn.extension()
 
 class ReactInputExample(pn.ReactiveESM):
 
-    text = param.String()
+    value = param.String()
 
     _esm = """
     function App(props) {
-        const [text, setText ] = props.state.text
+        const [value, setValue ] = props.state.value
         return (
         <div>
             <input
             id="input"
-            value={text}
-            onChange={e => setText(e.target.value)}
+            value={value}
+            onChange={e => setValue(e.target.value)}
             />
         </div>
         );
@@ -161,5 +279,5 @@ class ReactInputExample(pn.ReactiveESM):
     }
     """
 
-ReactInputExample().servable()
+ReactInputExample(value="Hello World").servable()
 ```
