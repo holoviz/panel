@@ -18,8 +18,7 @@ from collections.abc import Callable
 from contextlib import contextmanager
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Generator, List, Mapping, Optional, Tuple,
-    Type,
+    TYPE_CHECKING, Any, ClassVar, Generator, Mapping, Optional,
 )
 
 import param
@@ -74,7 +73,7 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
 
 
-def SingleFileSelector(pobj: param.Parameter) -> Type[Widget]:
+def SingleFileSelector(pobj: param.Parameter) -> type[Widget]:
     """
     Determines whether to use a TextInput or Select widget for FileSelector
     """
@@ -84,7 +83,7 @@ def SingleFileSelector(pobj: param.Parameter) -> Type[Widget]:
         return TextInput
 
 
-def LiteralInputTyped(pobj: param.Parameter) -> Type[Widget]:
+def LiteralInputTyped(pobj: param.Parameter) -> type[Widget]:
     if isinstance(pobj, param.Tuple):
         return type(str('TupleInput'), (LiteralInput,), {'type': tuple})
     elif isinstance(pobj, param.Number):
@@ -96,7 +95,7 @@ def LiteralInputTyped(pobj: param.Parameter) -> Type[Widget]:
     return LiteralInput
 
 
-def DataFrameWidget(pobj: param.DataFrame) -> Type[Widget]:
+def DataFrameWidget(pobj: param.DataFrame) -> type[Widget]:
     if 'panel.models.tabulator' in sys.modules:
         return Tabulator
     else:
@@ -228,11 +227,11 @@ class Param(PaneBase):
     if hasattr(param, 'Event'):
         mapping[param.Event] = Button
 
-    _ignored_refs: ClassVar[Tuple[str,...]] = ('object',)
+    _ignored_refs: ClassVar[tuple[str,...]] = ('object',)
 
-    _linkable_properties: ClassVar[Tuple[str,...]] = ()
+    _linkable_properties: ClassVar[tuple[str,...]] = ()
 
-    _rerender_params: ClassVar[List[str]] = []
+    _rerender_params: ClassVar[list[str]] = []
 
     _unpack: ClassVar[bool] = True
 
@@ -292,9 +291,9 @@ class Param(PaneBase):
             elif p == 'object' or (p == 'name' and v.startswith((obj_cls, cls))): continue
             elif p == 'parameters' and v == parameters: continue
             try:
-                params.append('%s=%s' % (p, abbreviated_repr(v)))
+                params.append(f'{p}={abbreviated_repr(v)}')
             except RuntimeError:
-                params.append('%s=%s' % (p, '...'))
+                params.append('{}={}'.format(p, '...'))
         obj = 'None' if self.object is None else '%s' % type(self.object).__name__
         template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
         return template.format(cls=cls, params=', '.join(params), obj=obj)
@@ -708,7 +707,7 @@ class Param(PaneBase):
         if self.expand_layout is Tabs:
             widgets = []
         elif self.show_name:
-            widgets = [('_title', StaticText(value='<b>{0}</b>'.format(self.name)))]
+            widgets = [('_title', StaticText(value=f'<b>{self.name}</b>'))]
         else:
             widgets = []
         widgets += [(pname, self.widget(pname)) for pname in self._ordered_params]

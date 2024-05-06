@@ -10,7 +10,7 @@ from contextlib import contextmanager
 from functools import partial
 from io import BytesIO
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
 )
 
 import param
@@ -313,7 +313,7 @@ class Matplotlib(Image, IPyWidget):
     ):
         return self._img_type._format_html(self, src, width, height)
 
-    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
         if self.interactive:
             return {}
         return self._img_type._transform_object(self, obj)
@@ -454,7 +454,7 @@ class Folium(HTML):
         return (getattr(obj, '__module__', '').startswith('folium.') and
                 hasattr(obj, "_repr_html_"))
 
-    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
         text = '' if obj is None else obj
         if hasattr(text, '_repr_html_'):
             text = text._repr_html_().replace(FOLIUM_BEFORE, FOLIUM_AFTER)

@@ -343,10 +343,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         if config.oauth_redirect_uri:
             redirect_uri = config.oauth_redirect_uri
         else:
-            redirect_uri = "{0}://{1}".format(
-                self.request.protocol,
-                self.request.host
-            )
+            redirect_uri = f"{self.request.protocol}://{self.request.host}"
         params = {
             'redirect_uri': redirect_uri,
             'client_id':    config.oauth_key,

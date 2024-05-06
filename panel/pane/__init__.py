@@ -54,7 +54,7 @@ from .vega import Vega  # noqa
 from .vizzu import Vizzu  # noqa
 from .vtk import VTK, VTKVolume  # noqa
 
-from ..param import (  # noqa, isort: skip
+from ..param import (  # noqa  # isort: skip
     ParamFunction, ParamMethod, ParamRef, ReactiveExpr,
 )
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import pathlib
 
-from typing import ClassVar, Dict, List
+from typing import ClassVar
 
 import param
 
@@ -18,7 +18,7 @@ _ROOT = pathlib.Path(__file__).parent
 
 class BootstrapTemplateActions(TemplateActions):
 
-    _scripts: ClassVar[Dict[str, List[str] | str]] = {
+    _scripts: ClassVar[dict[str, list[str] | str]] = {
         'render': "state.modal = new bootstrap.Modal(document.getElementById('pn-Modal'))",
         'open_modal': "state.modal.show()",
         'close_modal': "state.modal.hide()",

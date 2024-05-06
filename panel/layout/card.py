@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, Callable, ClassVar, List, Mapping, Type,
+    TYPE_CHECKING, Callable, ClassVar, Mapping,
 )
 
 import param
@@ -68,7 +68,7 @@ class Card(Column):
         A title to be displayed in the Card header, will be overridden
         by the header if defined.""")
 
-    _bokeh_model: ClassVar[Type[Model]] = BkCard
+    _bokeh_model: ClassVar[type[Model]] = BkCard
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'title': None, 'header': None, 'title_css_classes': None
@@ -83,7 +83,7 @@ class Card(Column):
 
     def select(
         self, selector: type | Callable[[Viewable], bool] | None = None
-    ) -> List[Viewable]:
+    ) -> list[Viewable]:
         return self._header_layout.select(selector) + super().select(selector)
 
     def _cleanup(self, root: Model | None = None) -> None:

@@ -9,7 +9,7 @@ import sys
 
 from collections import defaultdict
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
 )
 
 import numpy as np
@@ -229,7 +229,7 @@ class DeckGL(ModelPane):
 
         return data, tooltip, mapbox_api_key
 
-    def _transform_object(self, obj) -> Dict[str, Any]:
+    def _transform_object(self, obj) -> dict[str, Any]:
         if self.object is None:
             data, mapbox_api_key, tooltip = {}, self.mapbox_api_key, self.tooltips
         elif isinstance(self.object, (str, dict)):
