@@ -1044,7 +1044,7 @@ enum GLEnum {
   MAX_DUAL_SOURCE_DRAW_BUFFERS_WEBGL = 0x88fc,
 
   /** EXT_texture_mirror_clamp_to_edge https://registry.khronos.org/webgl/extensions/EXT_texture_mirror_clamp_to_edge/ */
-  MIRROR_CLAMP_TO_EDGE_EXT = 0x8743
+  MIRROR_CLAMP_TO_EDGE_EXT = 0x8743,
 }
 
-export {GLEnum as GL};
+export {GLEnum as GL}

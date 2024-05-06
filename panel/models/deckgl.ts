@@ -10,7 +10,6 @@ import {transform_cds_to_records} from "./data"
 import {GL} from "./lumagl"
 import {makeTooltip} from "./tooltips"
 
-
 function extractClasses() {
   // Get classes for registration from standalone deck.gl
   const classesDict: any = {}

@@ -1,11 +1,11 @@
-import { transform } from 'sucrase';
+import {html} from "htm/preact"
+import {render} from "preact"
+import {transform} from "sucrase"
 
 import {div, remove} from "@bokehjs/core/dom"
-import * as p from "@bokehjs/core/properties"
-import {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
+import type * as p from "@bokehjs/core/properties"
+import type {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
 import {isArray} from "@bokehjs/core/util/types"
-import {render} from "preact"
-import {html} from "htm/preact"
 
 import {serializeEvent} from "./event-to-object"
 import {DOMEvent} from "./html"
@@ -13,16 +13,16 @@ import {HTMLBox, HTMLBoxView} from "./layout"
 import {convertUndefined} from "./util"
 
 function extractDataAttributes(text: string) {
-  const regex = /\bdata\.([a-zA-Z_][a-zA-Z0-9_]*)\b/g;
-  const ignored = ['send_event', 'watch']
-  let matches = [];
-  let match, attr;
+  const regex = /\bdata\.([a-zA-Z_][a-zA-Z0-9_]*)\b/g
+  const ignored = ["send_event", "watch"]
+  const matches = []
+  let match, attr
 
   while ((match = regex.exec(text)) !== null && (attr = match[0].slice(5)) !== null && !ignored.includes(attr)) {
-    matches.push(attr);
+    matches.push(attr)
   }
 
-  return matches;
+  return matches
 }
 
 export class ReactiveESMView extends HTMLBoxView {
@@ -39,14 +39,14 @@ export class ReactiveESMView extends HTMLBoxView {
   _rerender_vars: string[] = []
 
   override initialize(): void {
-    super.initialize();
+    super.initialize()
     this.model.data.watch = (callback: any, prop: string | string[]) => {
       const props = isArray(prop) ? prop : [prop]
       for (const p of props) {
-	const cb = () => {
+        const cb = () => {
           callback(prop, null, this.model.data[p])
         }
-        this.model.data.properties[p].change.connect(cb);
+        this.model.data.properties[p].change.connect(cb)
         if (p in this._watchers) {
           this._watchers[p].push(cb)
         } else {
@@ -64,7 +64,7 @@ export class ReactiveESMView extends HTMLBoxView {
     for (const p in this._watchers) {
       const prop = this.model.data.properties[p]
       for (const cb of this._watchers[p]) {
-	prop.change.disconnect(cb)
+        prop.change.disconnect(cb)
       }
     }
     this._watchers = {}
@@ -92,9 +92,9 @@ export class ReactiveESMView extends HTMLBoxView {
     for (const child of this.model.children) {
       const model = this.model.data[child]
       if (isArray(model)) {
-	for (const subchild of model) {
-	  children.push(subchild)
-	}
+        for (const subchild of model) {
+          children.push(subchild)
+        }
       } else if (model != null) {
         children.push(model)
       }
@@ -114,9 +114,9 @@ export class ReactiveESMView extends HTMLBoxView {
 
     this.container = div({style: "display: contents;"})
     this.shadow_el.append(this.container)
-    this.rendered = transform(this.model.esm, {transforms: ["jsx", "typescript"], filePath: "render.tsx"}).code;
+    this.rendered = transform(this.model.esm, {transforms: ["jsx", "typescript"], filePath: "render.tsx"}).code
     this._rerender_vars = extractDataAttributes(this.rendered)
-    if (this.rendered.includes('React')) {
+    if (this.rendered.includes("React")) {
       this._render_esm_react()
     } else {
       this._render_esm()
@@ -126,12 +126,9 @@ export class ReactiveESMView extends HTMLBoxView {
   private _render_esm(): void {
     this.disconnect_watchers()
     if (this.model.importmap) {
-      const importMap = {
-        "imports": this.model.importmap["imports"],
-        "scopes": this.model.importmap["scopes"]
-      };
+      const importMap = {...this.model.importmap}
       // @ts-ignore
-      importShim.addImportMap(importMap);
+      importShim.addImportMap(importMap)
     }
 
     const code = `
@@ -151,7 +148,7 @@ for (const child of view.model.children) {
 }
 ${this.rendered}
 
-const output = render({view: view, model: view.model, data: view.model.data, el: view.container, children, html: view._htm});
+const output = render({view: view, model: view.model, data: view.model.data, el: view.container, children, html: view._htm})
 
 if (output instanceof Element) {
   view.container.appendChild(output)
@@ -163,10 +160,10 @@ if (output instanceof Element) {
 view.render_children();`
 
     const url = URL.createObjectURL(
-      new Blob([code], { type: "text/javascript" }),
-    );
+      new Blob([code], {type: "text/javascript"}),
+    )
     // @ts-ignore
-    importShim(url);
+    importShim(url)
   }
 
   render_children() {
@@ -175,16 +172,16 @@ view.render_children();`
       const children = isArray(child_model) ? child_model : [child_model]
       const nodes = []
       for (const subchild of children) {
-	const view = this._child_views.get(subchild)
-	if (view && this.container.contains(view.el)) {
+        const view = this._child_views.get(subchild)
+        if (view && this.container.contains(view.el)) {
           const parent = view.el.parentNode
           if (parent) {
             nodes.push([parent, Array.from(parent.children).indexOf(view.el)])
             view.render()
             view.after_render()
           }
-	}
-	this._parent_nodes[child] = nodes
+        }
+        this._parent_nodes[child] = nodes
       }
     }
   }
@@ -204,11 +201,11 @@ view.render_children();`
 
     for (const child in this._parent_nodes) {
       for (const subchild of this._parent_nodes[child]) {
-	const [parent, index] = subchild
-	const view = this._child_views.get(this.model.data[child])
-	if (!view) {
-	  continue
-	}
+        const [parent, index] = subchild
+        const view = this._child_views.get(this.model.data[child])
+        if (!view) {
+          continue
+        }
         const next_child = parent.children[index]
         if (next_child) {
           parent.insertBefore(view.el, next_child)
@@ -236,55 +233,55 @@ view.render_children();`
     const imports = this.model.importmap?.imports
     const scopes = this.model.importmap?.scopes
     const importMap = {
-      "imports": {
-        "react": "https://esm.sh/react@18.2.0",
+      imports: {
+        react: "https://esm.sh/react@18.2.0",
         "react-dom/": "https://esm.sh/react-dom@18.2.0/",
-        ...imports
+        ...imports,
       },
-      "scopes": scopes || {}
-    };
+      scopes: scopes || {},
+    }
     let import_code = `
-import * as React from "react";
-import { createRoot } from 'react-dom/client';`
+import * as React from "react"
+import { createRoot } from 'react-dom/client'`
     let render_code = `
 if (rendered) {
-  view._changing = true;
-  const root = createRoot(view.container);
-  root.render(rendered);
-  view._changing = false;
+  view._changing = true
+  const root = createRoot(view.container)
+  root.render(rendered)
+  view._changing = false
 }`
-    if (Object.keys(importMap.imports).some(k => k.startsWith('@mui'))) {
+    if (Object.keys(importMap.imports).some(k => k.startsWith("@mui"))) {
       importMap.imports = {
-	...importMap.imports,
-	"@emotion/cache": "https://esm.sh/@emotion/cache",
-	"@emotion/react": "https://esm.sh/@emotion/react",
+        ...importMap.imports,
+        "@emotion/cache": "https://esm.sh/@emotion/cache",
+        "@emotion/react": "https://esm.sh/@emotion/react",
       }
       import_code = `
 ${import_code}
-import createCache from "@emotion/cache";
-import { CacheProvider } from '@emotion/react';
+import createCache from "@emotion/cache"
+import { CacheProvider } from '@emotion/react'
 `
       render_code = `
-const headElement = document.createElement("head");
-view.shadow_el.insertBefore(headElement, view.container);
+const headElement = document.createElement("head")
+view.shadow_el.insertBefore(headElement, view.container)
 
 const cache = createCache({
   key: 'css',
   prepend: true,
   container: headElement,
-});
+})
 
 if (rendered) {
-  view._changing = true;
-  const root = createRoot(view.container);
+  view._changing = true
+  const root = createRoot(view.container)
   root.render(
     React.createElement(CacheProvider, {value: cache}, rendered)
-  );
+  )
   view._changing = false;
 }`
     }
     // @ts-ignore
-    importShim.addImportMap(importMap);
+    importShim.addImportMap(importMap)
 
     const code = `
 ${import_code}
@@ -297,12 +294,12 @@ function useState_getter(target, name) {
   const [value, setValue] = React.useState(target.attributes[name]);
   view.model.data.watch(() => {
     setValue(target.attributes[name])
-  }, name);
+  }, name)
   React.useEffect(() => {
     const state = {}
     state[name] = value
     target.setv(state)
-  }, [value]);
+  }, [value])
   return [value, setValue]
 }
 
@@ -352,15 +349,15 @@ for (const child of view.model.children) {
 
 ${this.rendered}
 
-const rendered = render({view: view, model: view.model, data: view.model.data, el: view.container, state: modelState, children: children});
+const rendered = render({view: view, model: view.model, data: view.model.data, el: view.container, state: modelState, children: children})
 
-${render_code}`;
+${render_code}`
 
     const url = URL.createObjectURL(
-      new Blob([code], { type: "text/javascript" }),
-    );
+      new Blob([code], {type: "text/javascript"}),
+    )
     // @ts-ignore
-    importShim(url);
+    importShim(url)
   }
 }
 
@@ -390,7 +387,7 @@ export class ReactiveESM extends HTMLBox {
     this.prototype.default_view = ReactiveESMView
     this.define<ReactiveESM.Props>(({Any, Array, String}) => ({
       children:  [ Array(String),       [] ],
-      data:      [ Any,                    ],
+      data:      [ Any                     ],
       esm:       [ String,              "" ],
       importmap: [ Any,                 {} ],
     }))
