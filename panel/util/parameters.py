@@ -3,7 +3,7 @@ from __future__ import annotations
 import inspect
 
 from contextlib import contextmanager
-from typing import Any, Dict, Iterator
+from typing import Any, Iterator
 
 import param
 
@@ -17,7 +17,7 @@ def should_inherit(parameterized: param.Parameterized, p: str, v: Any) -> Any:
     return v is not pobj.default and not pobj.readonly and (v is not None or pobj.allow_None)
 
 
-def get_params_to_inherit(parameterized: param.Parameterized) -> Dict:
+def get_params_to_inherit(parameterized: param.Parameterized) -> dict:
     return {
         p: v for p, v in parameterized.param.values().items()
         if should_inherit(parameterized, p, v)

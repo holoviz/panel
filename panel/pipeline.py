@@ -4,7 +4,7 @@ import sys
 import traceback as tb
 
 from collections import defaultdict
-from typing import ClassVar, Tuple
+from typing import ClassVar
 
 import param
 
@@ -165,7 +165,7 @@ class Pipeline(Viewer):
 
     previous = param.Action(default=lambda x: x.param.trigger('previous'))
 
-    _ignored_refs: ClassVar[Tuple[str, ...]] = ('next_parameter', 'ready_parameter')
+    _ignored_refs: ClassVar[tuple[str, ...]] = ('next_parameter', 'ready_parameter')
 
     def __init__(self, stages=[], graph={}, **params):
         try:
@@ -401,7 +401,7 @@ class Pipeline(Viewer):
             traceback = msg or "Undefined error, enable debug mode."
         button = Button(name='Error', button_type='danger', width=100,
                         align='center', margin=(0, 0, 0, 5))
-        button.js_on_click(code="alert(`{tb}`)".format(tb=traceback))
+        button.js_on_click(code=f"alert(`{traceback}`)")
         return button
 
     @param.depends('next', watch=True)

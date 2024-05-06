@@ -3,7 +3,7 @@ Spacer components to add horizontal or vertical space to a layout.
 """
 from __future__ import annotations
 
-from typing import ClassVar, List
+from typing import ClassVar
 
 import param
 
@@ -105,7 +105,7 @@ class Divider(Reactive):
 
     _bokeh_model = BkDiv
 
-    _stylesheets: ClassVar[List[str]] = [
+    _stylesheets: ClassVar[list[str]] = [
         f'{CDN_DIST}css/divider.css'
     ]
 

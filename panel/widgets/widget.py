@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from inspect import Parameter
 from numbers import Integral, Number, Real
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 
 empty = Parameter.empty
 
@@ -38,12 +38,12 @@ class fixed(param.Parameterized):
 
 def _get_min_max_value(
     min: Number, max: Number, value: Optional[Number] = None, step: Optional[Number] = None
-) -> Tuple[Number, Number, Number]:
+) -> tuple[Number, Number, Number]:
     """Return min, max, value given input values with possible None."""
     # Either min and max need to be given, or value needs to be given
     if value is None:
         if min is None or max is None:
-            raise ValueError('unable to infer range, value from: ({0}, {1}, {2})'.format(min, max, value))
+            raise ValueError(f'unable to infer range, value from: ({min}, {max}, {value})')
         diff = max - min
         value = min + (diff / 2)
         # Ensure that value has the same type as diff
@@ -69,7 +69,7 @@ def _get_min_max_value(
         tick = int((value - min) / step)
         value = min + tick * step
     if not min <= value <= max:
-        raise ValueError('value must be between min and max (min={0}, value={1}, max={2})'.format(min, value, max))
+        raise ValueError(f'value must be between min and max (min={min}, value={value}, max={max})')
     return min, max, value
 
 

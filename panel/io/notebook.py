@@ -13,7 +13,7 @@ import warnings
 from contextlib import contextmanager
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Optional, Tuple,
+    TYPE_CHECKING, Any, Iterator, Literal, Optional,
 )
 
 import bokeh
@@ -65,7 +65,7 @@ LOAD_MIME: str = 'application/vnd.holoviews_load.v0+json'
 EXEC_MIME: str = 'application/vnd.holoviews_exec.v0+json'
 HTML_MIME: str = 'text/html'
 
-def _jupyter_server_extension_paths() -> List[Dict[str, str]]:
+def _jupyter_server_extension_paths() -> list[dict[str, str]]:
     return [{"module": "panel.io.jupyter_server_extension"}]
 
 def push(doc: Document, comm: Comm, binary: bool = True, msg: any = None) -> None:
@@ -167,7 +167,7 @@ def html_for_render_items(docs_json, render_items, template=None, template_varia
 
 def render_template(
     document: 'Document', comm: Optional['Comm'] = None, manager: Optional['CommManager'] = None
-) -> Tuple[Dict[str, str], Dict[str, Dict[str, str]]]:
+) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
     ref = document.roots[0].ref['id']
     (docs_json, render_items) = standalone_docs_json_and_render_items(document, suppress_callback_warning=True)
 
@@ -185,7 +185,7 @@ def render_template(
 
 def render_model(
     model: 'Model', comm: Optional['Comm'] = None, resources: str = 'cdn'
-) -> Tuple[Dict[str, str], Dict[str, Dict[str, str]]]:
+) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
     if not isinstance(model, Model):
         raise ValueError("notebook_content expects a single Model instance")
     from ..config import panel_extension as pnext
@@ -215,7 +215,7 @@ def render_model(
         ipywidget=ipywidget
     )
     bokeh_script, bokeh_div = script, div
-    html = "<div id='{id}'>{html}</div>".format(id=target, html=bokeh_div)
+    html = f"<div id='{target}'>{bokeh_div}</div>"
 
     data = {'text/html': html, 'application/javascript': bokeh_script}
     return ({'text/html': mimebundle_to_html(data), EXEC_MIME: ''},
@@ -239,7 +239,7 @@ def render_mimebundle(
     manager: Optional['CommManager'] = None,
     location: Optional['Location'] = None,
     resources: str = 'cdn'
-) -> Tuple[Dict[str, str], Dict[str, Dict[str, str]]]:
+) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
     """
     Displays bokeh output inside a notebook using the PyViz display
     and comms machinery.
@@ -262,7 +262,7 @@ def render_mimebundle(
     return render_model(model, comm, resources)
 
 
-def mimebundle_to_html(bundle: Dict[str, Any]) -> str:
+def mimebundle_to_html(bundle: dict[str, Any]) -> str:
     """
     Converts a MIME bundle into HTML.
     """
@@ -273,7 +273,7 @@ def mimebundle_to_html(bundle: Dict[str, Any]) -> str:
     html = data.get('text/html', '')
     if 'application/javascript' in data:
         js = data['application/javascript']
-        html += '\n<script type="application/javascript">{js}</script>'.format(js=js)
+        html += f'\n<script type="application/javascript">{js}</script>'
     return html
 
 
@@ -492,7 +492,7 @@ def show_server(panel: Any, notebook_url: str, port: int = 0) -> 'Server':
 def render_embed(
     panel, max_states: int = 1000, max_opts: int = 3, json: bool = False,
     json_prefix: str = '', save_path: str = './', load_path: Optional[str] = None,
-    progress: bool = True, states: Dict[Widget, List[Any]] = {}
+    progress: bool = True, states: dict[Widget, list[Any]] = {}
 ) -> None:
     """
     Renders a static version of a panel in a notebook by evaluating
