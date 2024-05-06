@@ -7,7 +7,6 @@ from __future__ import annotations
 import itertools
 import re
 
-from collections import OrderedDict
 from types import FunctionType
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Mapping,
@@ -64,8 +63,7 @@ class SelectBase(Widget):
 
     @property
     def _items(self):
-        return OrderedDict(zip(self.labels, self.values))
-
+        return dict(zip(self.labels, self.values))
 
 
 class SingleSelectBase(SelectBase):
@@ -1359,12 +1357,12 @@ class CrossSelector(CompositeWidget, MultiSelect):
         """
         selected = event.obj is self._buttons[True]
 
-        new = OrderedDict([(k, self._items[k]) for k in self._selections[not selected]])
+        new = {k: self._items[k] for k in self._selections[not selected]}
         old = self._lists[selected].options
         other = self._lists[not selected].options
 
-        merged = OrderedDict([(k, k) for k in list(old)+list(new)])
-        leftovers = OrderedDict([(k, k) for k in other if k not in new])
+        merged = {k: k for k in list(old)+list(new)}
+        leftovers = {k: k for k in other if k not in new}
         self._lists[selected].options = merged if merged else {}
         self._lists[not selected].options = leftovers if leftovers else {}
         if len(self._lists[True].options):

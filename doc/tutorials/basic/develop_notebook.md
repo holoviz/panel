@@ -249,7 +249,9 @@ For more detailed instructions and explanations, check out the resources below:
 - [Develop in Other Notebook Environments](../../how_to/notebook/notebook.md)
 - [Display Output in Notebooks](../../how_to/notebook/notebook.md)
 - [Preview Apps in JupyterLab](../../how_to/notebook/jupyterlabpreview.md)
+- [Publish a Notebook as a Dashboard using the Layout Builder](../../how_to/notebook/layout_builder.md)
 - [Serve an App from a Notebook File](serve.md)
-- [Use VS Code Notebook and Interactive Environment](https://panel.holoviz.org//how_to/editor/vscode_configure.html#notebook-and-interactive-environment)
+- [Use PyCharm Notebook Environment](https://panel.holoviz.org/how_to/editor/pycharm_configure.html#notebook-environment)
+- [Use VS Code Notebook Environment](https://panel.holoviz.org/how_to/editor/vscode_configure.html#notebook-and-interactive-environment)
 
 Happy developing! 🚀

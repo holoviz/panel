@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import os
 
-from collections import OrderedDict
 from fnmatch import fnmatch
 from typing import AnyStr, ClassVar, Optional
 
@@ -223,7 +222,7 @@ class FileSelector(CompositeWidget):
         paths = [p for p in sorted(dirs)+sorted(files)
                  if self.show_hidden or not os.path.basename(p).startswith('.')]
         abbreviated = [('📁' if f in dirs else '')+os.path.relpath(f, self._cwd) for f in paths]
-        options = OrderedDict(zip(abbreviated, paths))
+        options = dict(zip(abbreviated, paths))
         self._selector.options = options
         self._selector.value = selected
 
@@ -236,7 +235,7 @@ class FileSelector(CompositeWidget):
         dirs, files = _scan_path(self._cwd, self.file_pattern)
         paths = [('📁' if p in dirs else '')+os.path.relpath(p, self._cwd) for p in dirs+files]
         denylist = self._selector._lists[False]
-        options = OrderedDict(self._selector._items)
+        options = dict(self._selector._items)
         self._selector.options.clear()
         self._selector.options.update([
             (k, v) for k, v in options.items() if k in paths or v in self.value

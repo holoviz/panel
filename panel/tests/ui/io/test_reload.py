@@ -12,7 +12,7 @@ except ImportError:
     pytestmark = pytest.mark.skip("playwright not available")
 
 from panel.io.state import state
-from panel.tests.util import serve_component
+from panel.tests.util import serve_component, wait_until
 
 CURPATH = pathlib.Path(__file__).parent
 
@@ -77,4 +77,4 @@ def test_reload_app_on_local_module_change(page, autoreload, py_files):
     pathlib.Path(module.name).touch()
     time.sleep(0.1)
 
-    expect(page.locator('.markdown')).to_have_text('bar')
+    wait_until(lambda: expect(page.locator('.markdown')).to_have_text('bar'), page)

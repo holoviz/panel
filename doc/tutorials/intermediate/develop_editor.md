@@ -2,6 +2,7 @@
 
 In this section you will learn more advances techniques to develop efficiently in an editor:
 
+- Resetting the cache with `pn.state.clear_caches()` or `some_cached_func.clear()`.
 - Debug with [Pdb](https://docs.python.org/3/library/pdb.html) by inserting a `breakpoint()`
 
 :::{note}
@@ -11,6 +12,38 @@ This guide builds upon the [Develop in an Editor (beginner)](../basic/develop_ed
 :::{note}
 Some of the features demonstrated in this guide might require special configuration of your editor. For configuration we refer you to the [Resources](#resources) section below and general resources on the web.
 :::
+
+## Resetting the Cache
+
+When developing with the `--autoreload` option and utilizing caching, you may need to reset the cache. You have the option to clear either the entire cache or just the cache for a specific function.
+
+Execute the code below:
+
+```python
+import panel as pn
+from datetime import datetime
+
+pn.extension()
+
+# To clear the entire cache, uncomment the following line:
+# pn.state.clear_caches()
+
+@pn.cache
+def get_data():
+    return datetime.now()
+
+# To clear the cache for this specific function, uncomment:
+# get_data.clear()
+
+pn.panel(get_data).servable()
+```
+
+To reset the cache, uncomment and use either `pn.state.clear_caches()` for the entire cache or `get_data.clear()` for the specific function's cache. Below is a video demonstrating this process:
+
+<video muted controls loop poster="../../_static/images/clear-cache-with-autoreload.png" style="max-height: 400px; max-width: 100%;">
+    <source src="https://assets.holoviz.org/panel/tutorials/clear-cache-with-autoreload.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+</video>
 
 ## Debug your App with Pdb
 
@@ -95,6 +128,7 @@ For *integrated debugging* in your editor, please refer to the [Resources](#reso
 
 You have learned to
 
+- Reset the cache with `pn.state.clear_caches()` or `some_cached_func.clear()`.
 - Debug with [Pdb](https://docs.python.org/3/library/pdb.html) by inserting a `breakpoint()`
 
 ## Resources
@@ -103,10 +137,11 @@ You have learned to
 
 - [Develop in an Editor (Beginner)](../basic/develop_editor.md)
 
-### How-to
-
-- [Configure VS Code](../../how_to/editor/vscode_configure.md)
-
 ## Explanation
 
 - [Develop Seamlessly](../../explanation/develop_seamlessly.md)
+
+### How-to
+
+- [Configure PyCharm](../../how_to/editor/pycharm_configure.md)
+- [Configure VS Code](../../how_to/editor/vscode_configure.md)

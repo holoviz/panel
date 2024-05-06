@@ -1646,6 +1646,24 @@ def test_param_editablerangeslider_with_bounds():
     assert w.value == (1, 2)
 
 
+def test_from_param_with_ref_as_option():
+    class Test(param.Parameterized):
+        s = param.String(default='A')
+
+        @param.depends('s')
+        def ref(self):
+            return [self.s] + ['B']
+
+    t = Test()
+    w = AutocompleteInput.from_param(t.param.s, options=t.ref)
+
+    assert w.options == ['A', 'B']
+
+    t.s = 'C'
+
+    assert w.options == ['C', 'B']
+
+
 def test_paramfunction_bare_emits_warning(caplog):
 
     def foo():

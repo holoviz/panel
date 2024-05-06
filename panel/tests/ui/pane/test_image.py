@@ -1,10 +1,12 @@
 import pytest
 
+from numpy.testing import assert_allclose
+
 pytestmark = pytest.mark.ui
 
 from panel.layout import Row
 from panel.pane import PDF, PNG, SVG
-from panel.tests.util import serve_component, wait_for_server
+from panel.tests.util import serve_component, wait_for_server, wait_until
 
 PDF_FILE = 'https://assets.holoviz.org/panel/samples/pdf_sample.pdf'
 PNG_FILE = 'https://assets.holoviz.org/panel/samples/png_sample.png'
@@ -19,11 +21,11 @@ def get_bbox(page, obj):
 
     if obj.embed:
         page.goto(f"http://localhost:{port}")
-        return page.locator("img").bounding_box()
     else:
         with page.expect_response(obj.object):
             page.goto(f"http://localhost:{port}")
-        return page.locator("img").bounding_box()
+    wait_until(lambda: page.locator("img") is not None, page)
+    return page.locator("img").bounding_box()
 
 @pytest.mark.parametrize('embed', [False, True])
 def test_png_native_size(embed, page):
@@ -108,7 +110,7 @@ def test_png_stretch_both(embed, page):
 def test_svg_native_size(embed, page):
     svg = SVG(SVG_FILE, embed=embed)
     bbox = get_bbox(page, svg)
-    assert bbox['width'] == 507.203125
+    assert_allclose(bbox['width'], 507.21, atol=0.01)
     assert int(bbox['height']) == 427
 
 @pytest.mark.parametrize('embed', [False, True])

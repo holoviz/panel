@@ -113,7 +113,7 @@ except Exception:
 
 install_requires = [
     'bokeh >=3.4.0,<3.5.0',
-    'param >=2.0.0,<3.0',
+    'param >=2.1.0,<3.0',
     'pyviz_comms >=2.0.0',
     'xyzservices >=2021.09.1', # Bokeh dependency, but pyodide 23.0.0 does not always pick it up
     'markdown',
@@ -142,7 +142,7 @@ _tests_core = [
     'pytest',
     'nbval',
     'pytest-rerunfailures',
-    'pytest-asyncio <0.22',
+    'pytest-asyncio',
     'pytest-xdist',
     'pytest-cov',
     'pre-commit',

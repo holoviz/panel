@@ -382,6 +382,18 @@ class TestChatInterface:
         assert chat_interface.objects[1].object == "2"
         assert chat_interface.objects[2].object == "3"
 
+    def test_custom_js_no_code(self):
+        chat_interface = ChatInterface()
+        with pytest.raises(ValueError, match="A 'code' key is required for"):
+            chat_interface.button_properties={
+                "help": {
+                    "icon": "help",
+                    "js_on_click": {
+                        "args": {"chat_input": chat_interface.active_widget},
+                    },
+                },
+            }
+
     def test_manual_user(self):
         chat_interface = ChatInterface(user="New User")
         assert chat_interface.user == "New User"

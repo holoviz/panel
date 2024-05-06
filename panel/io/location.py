@@ -15,6 +15,7 @@ import param
 from ..models.location import Location as _BkLocation
 from ..reactive import Syncable
 from ..util import edit_readonly, parse_query
+from .cache import is_equal
 from .document import create_doc_if_none_exists
 from .state import state
 
@@ -23,7 +24,6 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from bokeh.server.contexts import BokehSessionContext
     from pyviz_comms import Comm
-
 
 class Location(Syncable):
     """
@@ -164,9 +164,10 @@ class Location(Syncable):
                 except Exception:
                     pass
                 try:
-                    equal = v == getattr(p, pname)
+                    equal = is_equal(v, getattr(p, pname))
                 except Exception:
                     equal = False
+
                 if not equal:
                     mapped[pname] = v
             try:

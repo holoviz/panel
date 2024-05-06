@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 import traceback as tb
 
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 from typing import ClassVar
 
 import param
@@ -177,7 +177,7 @@ class Pipeline(Viewer):
 
         # Initialize internal state
         self._stage = None
-        self._stages = OrderedDict()
+        self._stages = {}
         self._states = {}
         self._state = None
         self._linear = True

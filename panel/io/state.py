@@ -12,7 +12,7 @@ import sys
 import threading
 import time
 
-from collections import Counter, OrderedDict, defaultdict
+from collections import Counter, defaultdict
 from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -107,7 +107,7 @@ class _state(param.Parameterized):
        this will instead reflect an absolute path.""")
 
     session_info = param.Dict(default={'total': 0, 'live': 0,
-                                       'sessions': OrderedDict()}, doc="""
+                                       'sessions': {}}, doc="""
        Tracks information and statistics about user sessions.""")
 
     webdriver = param.Parameter(default=None, doc="""
@@ -249,7 +249,7 @@ class _state(param.Parameterized):
     @property
     def _is_launching(self) -> bool:
         curdoc = self.curdoc
-        if not curdoc or not curdoc.session_context:
+        if not curdoc or not curdoc.session_context or not curdoc.session_context.server_context:
             return False
         return not bool(curdoc.session_context.server_context.sessions)
 
