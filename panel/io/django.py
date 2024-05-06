@@ -61,7 +61,7 @@ async def autoload_handle(self, body):
         absolute_url = self.get_argument("bokeh-absolute-url", default=None)
 
         if absolute_url:
-            server_url = '{uri.scheme}://{uri.netloc}/'.format(uri=urlparse(absolute_url))
+            server_url = f'{urlparse(absolute_url).scheme}://{urlparse(absolute_url).netloc}/'
         else:
             server_url = None
 
