@@ -30,7 +30,6 @@ exclude = [
 ]
 line-length = 165
 fix = true
-target-version = "py39"
 
 [tool.ruff.lint]
 ignore = [
