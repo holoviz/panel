@@ -29,9 +29,6 @@ other layouts, then Panel will automatically wrap it in the right pane.
 For more detail see the Getting Started Guide
 https://panel.holoviz.org/getting_started/index.html
 """
-from ..param import (  # noqa
-    ParamFunction, ParamMethod, ParamRef, ReactiveExpr,
-)
 from .alert import Alert  # noqa
 from .base import PaneBase, panel  # noqa
 from .deckgl import DeckGL  # noqa
@@ -56,6 +53,10 @@ from .textual import Textual  # noqa
 from .vega import Vega  # noqa
 from .vizzu import Vizzu  # noqa
 from .vtk import VTK, VTKVolume  # noqa
+
+from ..param import (  # noqa  # isort: skip
+    ParamFunction, ParamMethod, ParamRef, ReactiveExpr,
+)
 
 __all__ = (
     "Alert",
