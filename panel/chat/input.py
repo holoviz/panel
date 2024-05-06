@@ -21,15 +21,16 @@ from bokeh.model import Model
 class ChatAreaInput(_PnTextAreaInput):
     """
     The `ChatAreaInput` allows entering any multiline string using a text input
-    box, with the ability to click enter to submit the message.
+    box, with the ability to press enter to submit the message.
 
     Unlike TextAreaInput, the `ChatAreaInput` defaults to auto_grow=True and
     max_rows=10, and the value is not synced to the server until the enter key
-    is pressed so key on `value_input` if you need to access the existing value.
+    is pressed so bind on `value_input` if you need to access the existing value.
 
-    Lines are joined with the newline character `\n`.
+    Lines are joined with the newline character `\\n`.
 
-    Reference: https://panel.holoviz.org/reference/widgets/ChatAreaInput.html
+    Reference: https://panel.holoviz.org/reference/chat/ChatAreaInput.html
+
     :Example:
 
     >>> ChatAreaInput(max_rows=10)
@@ -44,7 +45,12 @@ class ChatAreaInput(_PnTextAreaInput):
 
     disabled_enter = param.Boolean(
         default=False,
-        doc="If True, the enter key will not submit the message (clear the value).",
+        doc="If True, disables sending the message by pressing the `enter_sends` key.",
+    )
+
+    enter_sends = param.Boolean(
+        default=True,
+        doc="If True, pressing the Enter key sends the message, if False it is sent by pressing the Ctrl+Enter.",
     )
 
     rows = param.Integer(default=1, doc="""

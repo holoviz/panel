@@ -1,3 +1,5 @@
+import time
+
 import pytest
 
 pytest.importorskip("playwright")
@@ -21,7 +23,6 @@ def plotly_2d_plot():
     trace = go.Scatter(x=[0, 1], y=[2, 3], uid='Test')
     plot_2d = Plotly({'data': [trace], 'layout': {'width': 350}})
     return plot_2d
-
 
 @pytest.fixture
 def plotly_3d_plot():
@@ -157,19 +158,23 @@ def test_plotly_click_data(page, plotly_2d_plot):
     plotly_plot = page.locator('.js-plotly-plot .plot-container.plotly')
     expect(plotly_plot).to_have_count(1)
 
-    # Select and click on first point
-    point = page.locator('.js-plotly-plot .plot-container.plotly path.point').nth(0)
-    point.click(force=True)
+    # Select and click on points
+    for i in range(2):
+        point = page.locator('.js-plotly-plot .plot-container.plotly path.point').nth(i)
+        point.click(force=True)
 
-    wait_until(lambda: plotly_2d_plot.click_data == {
-        'points': [{
-            'curveNumber': 0,
-            'pointIndex': 0,
-            'pointNumber': 0,
-            'x': 0,
-            'y': 2
-        }]
-    }, page)
+        def check_click(i=i):
+            return plotly_2d_plot.click_data == {
+                'points': [{
+                    'curveNumber': 0,
+                    'pointIndex': i,
+                    'pointNumber': i,
+                    'x': 0+i,
+                    'y': 2+i
+                }]
+            }
+        wait_until(check_click, page)
+        time.sleep(0.2)
 
 
 def test_plotly_select_data(page, plotly_2d_plot):

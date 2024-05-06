@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
-    from ..model.perspective import PerspectiveClickEvent
+    from ..models.perspective import PerspectiveClickEvent
 
 DEFAULT_THEME = "pro"
 
@@ -314,9 +314,6 @@ class Perspective(ModelPane, ReactiveData):
     settings = param.Boolean(default=True, doc="""
       Whether to show the settings menu.""")
 
-    toggle_config = param.Boolean(default=True, doc="""
-      Whether to show the config menu.""")
-
     theme = param.ObjectSelector(default='pro', objects=THEMES, doc="""
       The style of the PerspectiveViewer. For example pro-dark""")
 
@@ -382,10 +379,6 @@ class Perspective(ModelPane, ReactiveData):
         if 'theme' in props and 'material' in props['theme']:
             props['theme'] = props['theme'].replace('material', 'pro')
         del props['object']
-        if props.get('toggle_config'):
-            props['height'] = self.height or 300
-        else:
-            props['height'] = self.height or 150
         if source is None:
             source = ColumnDataSource(data=self._data)
         else:
@@ -427,6 +420,7 @@ class Perspective(ModelPane, ReactiveData):
 
     def _get_theme(self, theme, resources=None):
         from ..models.perspective import THEME_URL
+        theme = theme.replace('material', 'pro')
         theme_url = f'{THEME_URL}{theme}.css'
         if self._bokeh_model is not None:
             self._bokeh_model.__css_raw__ = self._bokeh_model.__css_raw__[:5] + [theme_url]
@@ -445,6 +439,10 @@ class Perspective(ModelPane, ReactiveData):
         for p in ('columns', 'group_by', 'split_by'):
             if props.get(p):
                 props[p] = [None if col is None else str(col) for col in props[p]]
+        if props.get('settings'):
+            props['height'] = self.height or 300
+        else:
+            props['height'] = self.height or 150
         if props.get('sort'):
             props['sort'] = [[str(col), *args] for col, *args in props['sort']]
         if props.get('filters'):

@@ -60,11 +60,51 @@ class _ClickableIcon(Widget):
 
 
 class ToggleIcon(_ClickableIcon, TooltipMixin):
+    """
+    The `ToggleIcon` widget allows toggling a single condition between True/False states. This
+    widget is interchangeable with the `Checkbox` and `Toggle` widget.
+
+    This widget incorporates a `value` attribute, which alternates between `False` and `True`.
+
+    Reference: https://panel.holoviz.org/reference/widgets/ToggleIcon.html
+
+    :Example:
+
+    >>> pn.widgets.ToggleIcon(
+    ...     icon="thumb-up", active_icon="thumb-down", size="4em", description="Like"
+    ... )
+    """
 
     _widget_type = _PnToggleIcon
 
 
 class ButtonIcon(_ClickableIcon, _ClickButton, TooltipMixin):
+    """
+    The `ButtonIcon` widget facilitates event triggering upon button clicks.
+
+    This widget displays a default `icon` initially. Upon being clicked, an `active_icon` appears
+    for a specified `toggle_duration`.
+
+    For instance, the `ButtonIcon` can be effectively utilized to implement a feature akin to
+    ChatGPT's copy-to-clipboard button.
+
+    The button incorporates a `value` attribute, which alternates between `False` and `True` as the
+    click event is processed.
+
+    Furthermore, it includes an `clicks` attribute, enabling subscription to click events for
+    further actions or monitoring.
+
+    Reference: https://panel.holoviz.org/reference/widgets/ButtonIcon.html
+
+    :Example:
+
+    >>> button_icon = pn.widgets.ButtonIcon(
+    ...     icon='clipboard',
+    ...     active_icon='check',
+    ...     description='Copy',
+    ...     toggle_duration=2000
+    ... )
+    """
 
     clicks = param.Integer(default=0, doc="""
         The number of times the button has been clicked.""")

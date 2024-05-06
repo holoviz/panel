@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import types
 
-from collections import OrderedDict
 from collections.abc import Iterable, Mapping
 from inspect import (
     Parameter, getcallargs, getfullargspec as check_argspec, signature,
@@ -99,7 +98,7 @@ class interactive(PaneBase):
         widgets = self.widgets_from_abbreviations(new_kwargs)
         if self.manual_update:
             widgets.append(('manual', Button(name=self.manual_name)))
-        self._widgets = OrderedDict(widgets)
+        self._widgets = dict(widgets)
         pane = self.object(**self.kwargs)
         if isinstance(pane, Viewable):
             self._pane = pane

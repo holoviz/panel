@@ -76,8 +76,6 @@ class Perspective(HTMLBox):
 
     source = Instance(ColumnDataSource)
 
-    toggle_config = Bool(True)
-
     theme = Enum(*PERSPECTIVE_THEMES, default="pro")
 
     title = Either(String(), Null())
@@ -98,13 +96,16 @@ class Perspective(HTMLBox):
     def __javascript_modules__(cls):
         return [js for js in bundled_files(cls, 'javascript_modules') if 'wasm' not in js and 'worker' not in js]
 
-    __js_skip__ = {
-        "perspective": __javascript_modules__,
-    }
+    @classproperty
+    def __js_skip__(cls):
+        return {
+            "customElements.get('perspective-viewer')": cls.__javascript_modules__
+        }
 
     __js_require__ = {
         "paths": {
             "perspective": f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/cdn/perspective",
+            "perspective-worker": f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/cdn/perspective.worker",
             "perspective-viewer": f"{config.npm_cdn}/@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer",
             "perspective-viewer-datagrid": f"{config.npm_cdn}/@finos/perspective-viewer-datagrid@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer-datagrid",
             "perspective-viewer-d3fc": f"{config.npm_cdn}/@finos/perspective-viewer-d3fc@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer-d3fc",

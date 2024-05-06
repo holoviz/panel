@@ -92,6 +92,7 @@
   "reference/panes/Plotly.ipynb": ["plotly"],
   "reference/panes/Reacton.ipynb": ["reacton", "pandas", "jupyter_bokeh"],
   "reference/panes/Streamz.ipynb": ["streamz", "altair", "pandas"],
+  "reference/panes/Textual.ipynb": null,
   "reference/panes/Vega.ipynb": ["altair", "vega_datasets"],
   "reference/panes/VTK.ipynb": ["vtk", "pyvista"],
   "reference/panes/VTKJS.ipynb": ["pyodide-http"],

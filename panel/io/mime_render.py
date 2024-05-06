@@ -238,6 +238,12 @@ def render_pdf(value, meta, mime):
     src = f"data:application/pdf;base64,{base64_pdf}"
     return f'<embed src="{src}" width="100%" height="100%" type="application/pdf">', 'text/html'
 
+def render_plotly(value, meta, mime):
+    from ..pane import Plotly
+
+    config = value.pop('config', {})
+    return Plotly(value, config=config)
+
 def identity(value, meta, mime):
     return value, mime
 
@@ -251,6 +257,7 @@ MIME_RENDERERS = {
     "text/html": identity,
     "text/markdown": render_markdown,
     "text/plain": identity,
+    "application/vnd.plotly.v1+json": render_plotly
 }
 
 def eval_formatter(obj, print_method):

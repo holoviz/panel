@@ -68,13 +68,11 @@ from .texteditor import TextEditor  # noqa
 from .widget import widget  # noqa
 
 __all__ = (
-    "Ace",
     "ArrayInput",
     "AutocompleteInput",
     "BooleanStatus",
     "Button",
     "ButtonIcon",
-    "ChatBox",
     "Checkbox",
     "CheckBoxGroup",
     "CheckButtonGroup",

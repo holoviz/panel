@@ -12,7 +12,7 @@ import sys
 import threading
 import time
 
-from collections import Counter, OrderedDict, defaultdict
+from collections import Counter, defaultdict
 from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -40,8 +40,8 @@ _state_logger = logging.getLogger('panel.state')
 if TYPE_CHECKING:
     from concurrent.futures import Future
 
-    from bokeh.document.models import ImportedStyleSheet
     from bokeh.model import Model
+    from bokeh.models import ImportedStyleSheet
     from bokeh.server.contexts import BokehSessionContext
     from bokeh.server.server import Server
     from IPython.display import DisplayHandle
@@ -108,7 +108,7 @@ class _state(param.Parameterized):
        this will instead reflect an absolute path.""")
 
     session_info = param.Dict(default={'total': 0, 'live': 0,
-                                       'sessions': OrderedDict()}, doc="""
+                                       'sessions': {}}, doc="""
        Tracks information and statistics about user sessions.""")
 
     webdriver = param.Parameter(default=None, doc="""
@@ -250,7 +250,7 @@ class _state(param.Parameterized):
     @property
     def _is_launching(self) -> bool:
         curdoc = self.curdoc
-        if not curdoc or not curdoc.session_context:
+        if not curdoc or not curdoc.session_context or not curdoc.session_context.server_context:
             return False
         return not bool(curdoc.session_context.server_context.sessions)
 

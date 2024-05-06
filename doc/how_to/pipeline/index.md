@@ -41,6 +41,7 @@ How to programmatically control the Pipeline UI flow.
 :maxdepth: 2
 
 simple_pipeline
+complex_pipeline
 pipeline_layout
 control_flow
 ```

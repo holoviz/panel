@@ -2,8 +2,8 @@
 
 In this tutorial, we will create a *bar chart race* using the [Altair](https://altair-viz.github.io) plotting library and the [`Player`](../../reference/widgets/Player.ipynb) widget.
 
-<video controls="" poster="https://assets.holoviz.org/panel/tutorials/bar_chart_race.png">
-    <source src="https://assets.holoviz.org/panel/tutorials/bar_chart_race.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
+<video muted controls loop poster="https://assets.holoviz.org/panel/tutorials/bar_chart_race.png" style="max-height: 400px; max-width: 100%;">
+    <source src="https://assets.holoviz.org/panel/tutorials/bar_chart_race.mp4" type="video/mp4">
     Your browser does not support the video tag.
 </video>
 
@@ -279,8 +279,8 @@ Press the *play* button.
 
 It should resemble
 
-<video controls="" poster="https://assets.holoviz.org/panel/tutorials/bar_chart_race.png">
-    <source src="https://assets.holoviz.org/panel/tutorials/bar_chart_race.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
+<video muted controls loop poster="https://assets.holoviz.org/panel/tutorials/bar_chart_race.png" style="max-height: 400px; max-width: 100%;">
+    <source src="https://assets.holoviz.org/panel/tutorials/bar_chart_race.mp4" type="video/mp4">
     Your browser does not support the video tag.
 </video>
 

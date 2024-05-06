@@ -154,8 +154,8 @@ pn.Row(fig, md, height=500, sizing_mode="stretch_width").servable()
 
 Test your solution by changing the window size of your browser. It should look like below.
 
-<video controls="" poster="https://assets.holoviz.org/panel/tutorials/exercise_configure_sizing_mode.png">
-    <source src="https://assets.holoviz.org/panel/tutorials/exercise_configure_sizing_mode.mp4" type="video/mp4" style="max-height: 400px; max-width: 100%;">
+<video muted controls loop poster="https://assets.holoviz.org/panel/tutorials/exercise_configure_sizing_mode.png" style="max-height: 400px; max-width: 100%;">
+    <source src="https://assets.holoviz.org/panel/tutorials/exercise_configure_sizing_mode.mp4" type="video/mp4">
     Your browser does not support the video tag.
 </video>
 

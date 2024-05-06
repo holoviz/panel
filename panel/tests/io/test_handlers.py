@@ -72,6 +72,17 @@ pd.read_csv(
     'test.csv'
 )"""
 
+code_function = """
+def foo():
+    # Comment
+    return 1+1
+"""
+
+code_expr_multi_line_with_comment = """
+(
+  1 + 1 # Comment
+)
+"""
 
 def test_extract_panel_block():
     f = StringIO(md1)
@@ -102,6 +113,26 @@ def test_capture_code_cell_expression():
     assert capture_code_cell({'id': 'foo', 'source': code_expr}) == [
         '', """\
 _pn__state._cell_outputs['foo'].append((1+1))
+for _cell__out in _CELL__DISPLAY:
+    _pn__state._cell_outputs['foo'].append(_cell__out)
+_CELL__DISPLAY.clear()
+_fig__out = _get__figure()
+if _fig__out:
+    _pn__state._cell_outputs['foo'].append(_fig__out)
+"""]
+
+def test_capture_code_cell_function():
+    assert capture_code_cell({'id': 'foo', 'source': code_function}) == [
+        '', 'def foo():\n    # Comment\n    return 1+1\n'
+   ]
+
+def test_capture_code_expression_multi_line_with_comment():
+    assert capture_code_cell({'id': 'foo', 'source': code_expr_multi_line_with_comment}) == [
+        '', """\
+_pn__state._cell_outputs['foo'].append(((
+  1 + 1 # Comment
+)
+))
 for _cell__out in _CELL__DISPLAY:
     _pn__state._cell_outputs['foo'].append(_cell__out)
 _CELL__DISPLAY.clear()

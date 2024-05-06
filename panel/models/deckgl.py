@@ -9,8 +9,6 @@ And now DeckGL provides Python bindings. See
 - [PyDeck Repo](https://github.com/uber/deck.gl/tree/master/bindings/pydeck)
 """
 
-from collections import OrderedDict
-
 from bokeh.core.properties import (
     Any, Bool, Dict, Either, Instance, Int, List, Override, String,
 )
@@ -49,20 +47,20 @@ class DeckGLPlot(HTMLBox):
     def __js_skip__(cls):
         return {
             'deck': cls.__javascript__[:-1],
-            'mapboxgl': cls.__javascript__[-1:]
+            'mapboxgl': cls.__javascript__[-1:],
         }
 
     __js_require__ = {
-        'paths': OrderedDict([
-            ("h3", f"{config.npm_cdn}/h3-js@3.7.2/dist/h3-js.umd"),
-            ("deck-gl", f"{config.npm_cdn}/deck.gl@8.6.7/dist.min"),
-            ("deck-json", f"{config.npm_cdn}/@deck.gl/json@8.6.7/dist.min"),
-            ("loader-csv", f"{config.npm_cdn}/@loaders.gl/csv@3.1.7/dist/dist.min"),
-            ("loader-json", f"{config.npm_cdn}/@loaders.gl/json@3.1.7/dist/dist.min"),
-            ("loader-tiles", f"{config.npm_cdn}/@loaders.gl/3d-tiles@3.1.7/dist/dist.min"),
-            ("mapbox-gl", "https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl"),
-            ("carto", "{config.npm_cdn}/@deck.gl/carto@^8.7.0/dist.min.js"),
-        ]),
+        'paths': {
+            "h3": f"{config.npm_cdn}/h3-js@3.7.2/dist/h3-js.umd",
+            "deck-gl": f"{config.npm_cdn}/deck.gl@8.6.7/dist.min",
+            "deck-json": f"{config.npm_cdn}/@deck.gl/json@8.6.7/dist.min",
+            "loader-csv": f"{config.npm_cdn}/@loaders.gl/csv@3.1.7/dist/dist.min",
+            "loader-json": f"{config.npm_cdn}/@loaders.gl/json@3.1.7/dist/dist.min",
+            "loader-tiles": f"{config.npm_cdn}/@loaders.gl/3d-tiles@3.1.7/dist/dist.min",
+            "mapbox-gl": "https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl",
+            "carto": f"{config.npm_cdn}/@deck.gl/carto@^8.7.0/dist.min.js",
+    },
         'exports': {"deck-gl": "deck", "mapbox-gl": "mapboxgl", "h3": "h3"},
         'shim': {
             'deck-json': {'deps': ["deck-gl"]},

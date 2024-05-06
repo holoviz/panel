@@ -255,7 +255,7 @@ This class defines the model of a task. It has two attributes: `value` (descript
 class TaskList(param.Parameterized):
     """Provides methods to add and remove tasks as well as calculate summary statistics"""
 
-    value: List[Task] = param.List(class_=Task, doc="A list of Tasks")
+    value: List[Task] = param.List(item_type=Task, doc="A list of Tasks")
 
     total_tasks = param.Integer(doc="The number of Tasks")
     has_tasks = param.Boolean(doc="Whether or not the TaskList contains Tasks")

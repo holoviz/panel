@@ -149,14 +149,6 @@ button.accordion-header {
   border-radius: 0;
 }
 
-:host(.card-header-row) .card-title {
-  margin: 0;
-}
-
-.card-header > .card-header-row {
-  margin-left: 15px;
-}
-
 :host(.card-title) h1,
 :host(.card-title) h2,
 :host(.card-title) h3,
@@ -593,6 +585,15 @@ textarea.bk-input {
   --bs-btn-disabled-color: #fff;
   --bs-btn-disabled-bg: #212529;
   --bs-btn-disabled-border-color: #212529;
+}
+
+input[type='file'].bk-input {
+  padding-left: 10px;
+}
+
+input[type='file']::file-selector-button {
+  background: var(--bs-surface-bg);
+  color: var(--bs-surface-color);
 }
 
 .bk-menu {
