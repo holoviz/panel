@@ -25,7 +25,17 @@
   outline: unset;
   position: sticky;
   width: 100%;
+  margin-right: 0.5em;
   padding-inline: 0.5em;
+  cursor: pointer;
+}
+
+.card-header:hover {
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
+}
+
+.card-header:not(:hover) {
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.0);
 }
 
 .accordion-header {
@@ -38,12 +48,15 @@
   justify-content: start;
   position: sticky;
   width: 100%;
+  cursor: pointer;
 }
 
 .card-button {
   background-color: transparent;
   margin-left: 0em;
   margin-right: 0.25em;
+  height: 12px;
+  width: 12px;
 }
 
 .card-header-row {

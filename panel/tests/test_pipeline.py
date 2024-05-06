@@ -26,7 +26,7 @@ class Stage1(param.Parameterized):
 
     @param.depends('a', 'b')
     def view(self):
-        return '%s * %s = %s' % (self.a, self.b, self.output())
+        return f'{self.a} * {self.b} = {self.output()}'
 
     def panel(self):
         return Row(self.param, self.view)
@@ -40,7 +40,7 @@ class Stage2(param.Parameterized):
 
     @param.depends('c', 'exp')
     def view(self):
-        return '%s^%s=%.3f' % (self.c, self.exp, self.c**self.exp)
+        return f'{self.c}^{self.exp}={self.c**self.exp:.3f}'
 
     def panel(self):
         return Row(self.param, self.view)
@@ -54,7 +54,7 @@ class Stage2b(param.Parameterized):
 
     @param.depends('c', 'root')
     def view(self):
-        return '%s^-%s=%.3f' % (self.c, self.root, self.c**(-self.root))
+        return f'{self.c}^-{self.root}={self.c**(-self.root):.3f}'
 
     def panel(self):
         return Row(self.param, self.view)

@@ -6,8 +6,7 @@ from __future__ import annotations
 
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
-    Tuple, Type, TypeVar,
+    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional, TypeVar,
 )
 
 import numpy as np
@@ -150,7 +149,7 @@ class PaneBase(Reactive):
     }
 
     # List of parameters that trigger a rerender of the Bokeh model
-    _rerender_params: ClassVar[List[str]] = ['object']
+    _rerender_params: ClassVar[list[str]] = ['object']
 
     _skip_layoutable = ('css_classes', 'margin', 'name')
 
@@ -209,8 +208,7 @@ class PaneBase(Reactive):
         self.layout.param.update({k: v for k, v in kwargs.items() if v != old_values[k]})
 
     def _type_error(self, object):
-        raise ValueError("%s pane does not support objects of type '%s'." %
-                         (type(self).__name__, type(object).__name__))
+        raise ValueError(f"{type(self).__name__} pane does not support objects of type '{type(object).__name__}'.")
 
     def __repr__(self, depth: int = 0) -> str:
         cls = type(self).__name__
@@ -230,18 +228,18 @@ class PaneBase(Reactive):
     #----------------------------------------------------------------
 
     @property
-    def _linked_properties(self) -> Tuple[str]:
+    def _linked_properties(self) -> tuple[str]:
         return tuple(
             self._property_mapping.get(p, p) for p in self.param
             if p not in PaneBase.param and self._property_mapping.get(p, p) is not None
         )
 
     @property
-    def _linkable_params(self) -> List[str]:
+    def _linkable_params(self) -> list[str]:
         return [p for p in self._synced_params if self._property_mapping.get(p, False) is not None]
 
     @property
-    def _synced_params(self) -> List[str]:
+    def _synced_params(self) -> list[str]:
         ignored_params = [
             'name', 'default_layout', 'loading', 'stylesheets'
         ] + self._rerender_params
@@ -343,7 +341,7 @@ class PaneBase(Reactive):
     def _get_root_model(
         self, doc: Optional[Document] = None, comm: Comm | None = None,
         preprocess: bool = True
-    ) -> Tuple[Viewable, Model]:
+    ) -> tuple[Viewable, Model]:
         if self._updates:
             root = self._get_model(doc, comm=comm)
             root_view = self
@@ -425,7 +423,7 @@ class PaneBase(Reactive):
         return root
 
     @classmethod
-    def get_pane_type(cls, obj: Any, **kwargs) -> Type['PaneBase']:
+    def get_pane_type(cls, obj: Any, **kwargs) -> type['PaneBase']:
         """
         Returns the applicable Pane type given an object by resolving
         the precedence of all types whose applies method declares that
@@ -512,7 +510,7 @@ class ModelPane(PaneBase):
         params['object'] = self.object
         return params
 
-    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
         return dict(object=obj)
 
     def _process_param_change(self, params):
@@ -546,9 +544,9 @@ class ReplacementPane(PaneBase):
 
     _pane = param.ClassSelector(class_=Viewable, allow_refs=False)
 
-    _ignored_refs: ClassVar[Tuple[str,...]] = ('object',)
+    _ignored_refs: ClassVar[tuple[str,...]] = ('object',)
 
-    _linked_properties: ClassVar[Tuple[str,...]] = ()
+    _linked_properties: ClassVar[tuple[str,...]] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {'_pane': None, 'inplace': None}
 
@@ -719,7 +717,7 @@ class ReplacementPane(PaneBase):
     # Public API
     #----------------------------------------------------------------
 
-    def select(self, selector: type | Callable | None = None) -> List[Viewable]:
+    def select(self, selector: type | Callable | None = None) -> list[Viewable]:
         """
         Iterates over the Viewable and any potential children in the
         applying the Selector.

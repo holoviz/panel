@@ -6,7 +6,7 @@ import sys
 from enum import Enum
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Callable, ClassVar, List, Mapping, Optional, Type,
+    TYPE_CHECKING, Callable, ClassVar, Mapping, Optional,
 )
 
 import numpy as np
@@ -156,7 +156,7 @@ def deconstruct_pandas(data, kwargs=None):
         new_names = list(data.index.names)
         for j, val in enumerate(data.index.names):
             if val is None:
-                new_names[j] = "index" if i == 0 else "index-{}".format(i)
+                new_names[j] = "index" if i == 0 else f"index-{i}"
                 i += 1
                 # kwargs['group_by'].append(str(new_names[j]))
             else:
@@ -201,7 +201,7 @@ def deconstruct_pandas(data, kwargs=None):
         new_names = list(data.index.names)
         for j, val in enumerate(data.index.names):
             if val is None:
-                new_names[j] = "index" if i == 0 else "index-{}".format(i)
+                new_names[j] = "index" if i == 0 else f"index-{i}"
                 i += 1
                 if push_row_pivot:
                     kwargs["group_by"].append(str(new_names[j]))
@@ -322,9 +322,9 @@ class Perspective(ModelPane, ReactiveData):
 
     priority: ClassVar[float | bool | None] = None
 
-    _bokeh_model: ClassVar[Type[Model] | None] = None
+    _bokeh_model: ClassVar[type[Model] | None] = None
 
-    _data_params: ClassVar[List[str]] = ['object']
+    _data_params: ClassVar[list[str]] = ['object']
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'selection': None

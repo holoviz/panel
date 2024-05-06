@@ -6,9 +6,7 @@ import os
 import weakref
 
 from dataclasses import dataclass
-from typing import (
-    TYPE_CHECKING, Any, Dict, List, Union,
-)
+from typing import TYPE_CHECKING, Any, Union
 
 import tornado
 
@@ -38,9 +36,9 @@ if TYPE_CHECKING:
 @dataclass
 class _RequestProxy:
 
-    arguments: Dict[str, List[bytes]]
-    cookies: Dict[str, str]
-    headers: Dict[str, str | List[str]]
+    arguments: dict[str, list[bytes]]
+    cookies: dict[str, str]
+    headers: dict[str, str | list[str]]
 
 class Mimebundle:
 
@@ -101,7 +99,7 @@ class PanelExecutor(WSHandler):
             self.exception = e
             self.session = None
 
-    def _get_payload(self, token: str) -> Dict[str, Any]:
+    def _get_payload(self, token: str) -> dict[str, Any]:
         payload = get_token_payload(token)
         if ('cookies' in payload and 'headers' in payload
             and 'Cookie' not in payload['headers']):
@@ -181,7 +179,7 @@ class PanelExecutor(WSHandler):
         return session, runner.error_detail
 
     async def write_message(
-        self, message: Union[bytes, str, Dict[str, Any]],
+        self, message: Union[bytes, str, dict[str, Any]],
         binary: bool = False, locked: bool = True
     ) -> None:
         metadata = {'binary': binary}

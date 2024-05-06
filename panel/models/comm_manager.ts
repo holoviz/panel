@@ -5,6 +5,8 @@ import {Model} from "@bokehjs/model"
 import {Message} from "@bokehjs/protocol/message"
 import {Receiver} from "@bokehjs/protocol/receiver"
 import type {Patch, DocumentChangedEvent} from "@bokehjs/document"
+import {isArray, isPlainObject} from "@bokehjs/core/util/types"
+import {values, size} from "@bokehjs/core/util/object"
 
 export const comm_settings: any = {
   debounce: true,
@@ -101,28 +103,24 @@ export class CommManager extends Model {
     }
   }
 
-  protected _extract_buffers(value: any, buffers: ArrayBuffer[]): any {
-    let extracted: any
-    if (value instanceof Array) {
-      extracted = []
+  protected _extract_buffers(value: unknown, buffers: ArrayBuffer[]): void {
+    if (isArray(value)) {
       for (const val of value) {
-        extracted.push(this._extract_buffers(val, buffers))
+        this._extract_buffers(val, buffers)
       }
-    } else if (value instanceof Object) {
-      extracted = {}
-      for (const key in value) {
-        if (key === "buffer" && value[key] instanceof ArrayBuffer) {
-          const id = Object.keys(buffers).length
-          extracted = {id}
-          buffers.push(value[key])
-          break
+    } else if (isPlainObject(value)) {
+      if (size(value) == 1 && value.buffer instanceof ArrayBuffer) {
+        const {buffer} = value
+        delete value.buffer
+        const id = buffers.length
+        value.id = id
+        buffers.push(buffer)
+      } else {
+        for (const val of values(value)) {
+          this._extract_buffers(val, buffers)
         }
-        extracted[key] = this._extract_buffers(value[key], buffers)
       }
-    } else {
-      extracted = value
     }
-    return extracted
   }
 
   process_events() {
@@ -133,7 +131,7 @@ export class CommManager extends Model {
     this._event_buffer = []
     const message = {...Message.create("PATCH-DOC", {}, patch)}
     const buffers: ArrayBuffer[] = []
-    message.content = this._extract_buffers(message.content, buffers)
+    this._extract_buffers(message.content, buffers)
     this._client_comm.send(message, {}, buffers)
     for (const view of this.ns.shared_views.get(this.plot_id)) {
       if (view !== this && view.document != null) {

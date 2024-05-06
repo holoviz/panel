@@ -20,8 +20,7 @@ import traceback
 import uuid
 
 from typing import (
-    IO, TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
-    Type,
+    IO, TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional,
 )
 
 import param  # type: ignore
@@ -693,7 +692,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         Whether or not the Viewable is loading. If True a loading spinner
         is shown on top of the Viewable.""")
 
-    _preprocessing_hooks: ClassVar[List[Callable[['Viewable', 'Model'], None]]] = []
+    _preprocessing_hooks: ClassVar[list[Callable[['Viewable', 'Model'], None]]] = []
 
     def __init__(self, **params):
         hooks = params.pop('hooks', [])
@@ -710,7 +709,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
     @staticmethod
     @functools.cache
-    def _instantiate_design(design: Type[Design], theme: str) -> Design:
+    def _instantiate_design(design: type[Design], theme: str) -> Design:
         return design(theme=theme)
 
     def _update_design(self, *_):
@@ -854,7 +853,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
     def select(
         self, selector: Optional[type | Callable[['Viewable'], bool]] = None
-    ) -> List['Viewable']:
+    ) -> list['Viewable']:
         """
         Iterates over the Viewable and any potential children in the
         applying the Selector.
@@ -914,10 +913,10 @@ class Viewable(Renderable, Layoutable, ServableMixin):
     def save(
         self, filename: str | os.PathLike | IO, title: Optional[str] = None,
         resources: Resources | None = None, template: str | Template | None = None,
-        template_variables: Dict[str, Any] = {}, embed: bool = False,
+        template_variables: dict[str, Any] = {}, embed: bool = False,
         max_states: int = 1000, max_opts: int = 3, embed_json: bool = False,
         json_prefix: str='', save_path: str='./', load_path: Optional[str] = None,
-        progress: bool = True, embed_states: Dict[Any, Any] = {},
+        progress: bool = True, embed_states: dict[Any, Any] = {},
         as_png: bool | None = None, **kwargs
     ) -> None:
         """

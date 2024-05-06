@@ -7,9 +7,7 @@ import os
 import pathlib
 import uuid
 
-from typing import (
-    IO, Any, Dict, List, Literal,
-)
+from typing import IO, Any, Literal
 
 import bokeh
 
@@ -174,9 +172,9 @@ def build_pwa_manifest(files, title=None, **kwargs):
 
 def script_to_html(
     filename: str | os.PathLike | IO,
-    requirements: Literal['auto'] | List[str] = 'auto',
-    js_resources: Literal['auto'] | List[str] = 'auto',
-    css_resources: Literal['auto'] | List[str] | None = 'auto',
+    requirements: Literal['auto'] | list[str] = 'auto',
+    js_resources: Literal['auto'] | list[str] = 'auto',
+    css_resources: Literal['auto'] | list[str] | None = 'auto',
     runtime: Runtimes = 'pyodide',
     prerender: bool = True,
     panel_version: Literal['auto', 'local'] | str = 'auto',
@@ -396,7 +394,7 @@ def script_to_html(
 def convert_app(
     app: str | os.PathLike,
     dest_path: str | os.PathLike | None = None,
-    requirements: List[str] | Literal['auto'] | os.PathLike = 'auto',
+    requirements: list[str] | Literal['auto'] | os.PathLike = 'auto',
     runtime: Runtimes = 'pyodide-worker',
     prerender: bool = True,
     manifest: str | None = None,
@@ -441,10 +439,10 @@ def convert_app(
 
 
 def _convert_process_pool(
-    apps: List[str],
+    apps: list[str],
     dest_path: str | None = None,
     max_workers: int = 4,
-    requirements: List[str] | Literal['auto'] | os.PathLike = 'auto',
+    requirements: list[str] | Literal['auto'] | os.PathLike = 'auto',
     **kwargs
 ):
     import multiprocessing as mp
@@ -475,15 +473,15 @@ def _convert_process_pool(
     return files
 
 def convert_apps(
-    apps: str | os.PathLike | List[str | os.PathLike],
+    apps: str | os.PathLike | list[str | os.PathLike],
     dest_path: str | os.PathLike | None = None,
     title: str | None = None,
     runtime: Runtimes = 'pyodide-worker',
-    requirements: List[str] | Literal['auto'] | os.PathLike = 'auto',
+    requirements: list[str] | Literal['auto'] | os.PathLike = 'auto',
     prerender: bool = True,
     build_index: bool = True,
     build_pwa: bool = True,
-    pwa_config: Dict[Any, Any] = {},
+    pwa_config: dict[Any, Any] = {},
     max_workers: int = 4,
     panel_version: Literal['auto', 'local'] | str = 'auto',
     http_patch: bool = True,
@@ -562,7 +560,7 @@ def convert_apps(
     }
 
     if state._is_pyodide:
-        files = dict((convert_app(app, dest_path, **kwargs) for app in apps))
+        files = dict(convert_app(app, dest_path, **kwargs) for app in apps)
     else:
         files = _convert_process_pool(
             apps, dest_path, max_workers=max_workers, **kwargs

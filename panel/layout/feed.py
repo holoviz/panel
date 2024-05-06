@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, ClassVar, List, Mapping, Optional, Type,
+    TYPE_CHECKING, ClassVar, Mapping, Optional,
 )
 
 import param
@@ -59,7 +59,7 @@ class Feed(Column):
         Read-only upper and lower bounds of the currently visible feed objects.
         This list is automatically updated based on scrolling.""")
 
-    _bokeh_model: ClassVar[Type[Model]] = PnFeed
+    _bokeh_model: ClassVar[type[Model]] = PnFeed
 
     _direction = 'vertical'
 
@@ -146,7 +146,7 @@ class Feed(Column):
         return super()._process_param_change(msg)
 
     def _get_objects(
-        self, model: Model, old_objects: List[Viewable], doc: Document,
+        self, model: Model, old_objects: list[Viewable], doc: Document,
         root: Model, comm: Optional[Comm] = None
     ):
         from ..pane.base import RerenderError, panel

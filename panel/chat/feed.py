@@ -15,7 +15,7 @@ from inspect import (
 )
 from io import BytesIO
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Literal,
+    TYPE_CHECKING, Any, Callable, ClassVar, Literal,
 )
 
 import param
@@ -185,7 +185,7 @@ class ChatFeed(ListPanel):
     _disabled_stack = param.List(doc="""
         The previous disabled state of the feed.""")
 
-    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_feed.css"]
+    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_feed.css"]
 
     def __init__(self, *objects, **params):
         self._callback_future = None
@@ -273,7 +273,7 @@ class ChatFeed(ListPanel):
         return model
 
     def _update_model(
-        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
         root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         return
@@ -676,7 +676,7 @@ class ChatFeed(ListPanel):
             self._replace_placeholder(None)
         return cancelled
 
-    def undo(self, count: int = 1) -> List[Any]:
+    def undo(self, count: int = 1) -> list[Any]:
         """
         Removes the last `count` of messages from the chat log and returns them.
 
@@ -696,7 +696,7 @@ class ChatFeed(ListPanel):
         self._chat_log.objects = messages[:-count]
         return undone_entries
 
-    def clear(self) -> List[Any]:
+    def clear(self) -> list[Any]:
         """
         Clears the chat log and returns the messages that were cleared.
 
@@ -710,11 +710,11 @@ class ChatFeed(ListPanel):
 
     def _serialize_for_transformers(
         self,
-        messages: List[ChatMessage],
-        role_names: Dict[str, str | List[str]] | None = None,
+        messages: list[ChatMessage],
+        role_names: dict[str, str | list[str]] | None = None,
         default_role: str | None = "assistant",
         custom_serializer: Callable = None
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Exports the chat log for use with transformers.
         """
@@ -760,7 +760,7 @@ class ChatFeed(ListPanel):
 
     def serialize(
         self,
-        exclude_users: List[str] | None = None,
+        exclude_users: list[str] | None = None,
         filter_by: Callable | None = None,
         format: Literal["transformers"] = "transformers",
         custom_serializer: Callable | None = None,
