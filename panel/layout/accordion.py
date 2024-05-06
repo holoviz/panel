@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, Callable, ClassVar, List, Mapping,
+    TYPE_CHECKING, Callable, ClassVar, Mapping,
 )
 
 import param
@@ -218,7 +218,7 @@ class Accordion(NamedListPanel):
 
     def select(
         self, selector: type | Callable[[Viewable], bool] | None = None
-    ) -> List[Viewable]:
+    ) -> list[Viewable]:
         selected = Reactive.select(self, selector)
         if self._panels:
             for card in self._panels.values():

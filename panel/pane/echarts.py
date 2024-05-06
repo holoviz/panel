@@ -5,7 +5,7 @@ import sys
 
 from collections import defaultdict
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, List, Mapping, Optional,
+    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional,
 )
 
 import param
@@ -54,7 +54,7 @@ class ECharts(ModelPane):
 
     _rename: ClassVar[Mapping[str, str | None]] = {"object": "data"}
 
-    _rerender_params: ClassVar[List[str]] = []
+    _rerender_params: ClassVar[list[str]] = []
 
     _updates: ClassVar[bool] = True
 

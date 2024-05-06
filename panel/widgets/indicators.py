@@ -25,7 +25,7 @@ import time
 
 from math import pi
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, Tuple, Type,
+    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
 )
 
 import numpy as np
@@ -68,7 +68,7 @@ class Indicator(Widget):
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 
-    _linked_properties: ClassVar[Tuple[str,...]] = ()
+    _linked_properties: ClassVar[tuple[str,...]] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
 
@@ -132,7 +132,7 @@ class BooleanIndicator(Indicator):
         return throttled_events
 
     def _update_model(
-        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
         root: Model, model: Model, doc: Document, comm: Optional[Comm]
     ) -> None:
         events = self._throttle_events(events)
@@ -172,9 +172,9 @@ class BooleanStatus(BooleanIndicator):
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'value': None, 'color': None}
 
-    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/booleanstatus.css']
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/booleanstatus.css']
 
-    _widget_type: ClassVar[Type[Model]] = HTML
+    _widget_type: ClassVar[type[Model]] = HTML
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
@@ -219,9 +219,9 @@ class LoadingSpinner(BooleanIndicator):
         'value': None, 'color': None, 'bgcolor': None, 'size': None
     }
 
-    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/loadingspinner.css']
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/loadingspinner.css']
 
-    _widget_type: ClassVar[Type[Model]] = HTML
+    _widget_type: ClassVar[type[Model]] = HTML
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
@@ -299,9 +299,9 @@ class Progress(ValueIndicator):
 
     width = param.Integer(default=300)
 
-    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/progress.css']
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/progress.css']
 
-    _widget_type: ClassVar[Type[Model]] = _BkProgress
+    _widget_type: ClassVar[type[Model]] = _BkProgress
 
     @param.depends('max', watch=True)
     def _update_value_bounds(self):
@@ -351,7 +351,7 @@ class Number(ValueIndicator):
         'title_size': None
     }
 
-    _widget_type: ClassVar[Type[Model]] = HTML
+    _widget_type: ClassVar[type[Model]] = HTML
 
     def __init__(self, **params):
         if "sizing_mode" not in params:
@@ -407,7 +407,7 @@ class String(ValueIndicator):
         'value': None, 'default_color': None, 'font_size': None, 'title_size': None
     }
 
-    _widget_type: ClassVar[Type[Model]] = HTML
+    _widget_type: ClassVar[type[Model]] = HTML
 
     def __init__(self, **params):
         if "sizing_mode" not in params:
@@ -626,7 +626,7 @@ class Dial(ValueIndicator):
 
     width = param.Integer(default=250, bounds=(1, None))
 
-    _manual_params: ClassVar[List[str]] = [
+    _manual_params: ClassVar[list[str]] = [
         'value', 'start_angle', 'end_angle', 'bounds',
         'annulus_width', 'format', 'background', 'needle_width',
         'tick_size', 'title_size', 'value_size', 'colors',
@@ -634,7 +634,7 @@ class Dial(ValueIndicator):
         'width', 'nan_format', 'needle_color', 'label_color'
     ]
 
-    _data_params: ClassVar[List[str]] = _manual_params
+    _data_params: ClassVar[list[str]] = _manual_params
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'background': 'background_fill_color'
@@ -1135,15 +1135,15 @@ class Trend(SyncableData, Indicator):
     value_change = param.Parameter(default='auto', doc="""
       A secondary value. For example the change in percent.""")
 
-    _data_params: ClassVar[List[str]] = ['data']
+    _data_params: ClassVar[list[str]] = ['data']
 
-    _manual_params: ClassVar[List[str]] = ['data']
+    _manual_params: ClassVar[list[str]] = ['data']
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'data': None, 'name': 'title', 'selection': None
     }
 
-    _widget_type: ClassVar[Type[Model]] = _BkTrendIndicator
+    _widget_type: ClassVar[type[Model]] = _BkTrendIndicator
 
     def _get_data(self):
         if self.data is None:
@@ -1282,7 +1282,7 @@ class Tqdm(Indicator):
     write_to_console = param.Boolean(default=False, doc="""
         Whether or not to also write to the console.""")
 
-    _layouts: ClassVar[Dict[Type[Panel], str]] = {Row: 'row', Column: 'column'}
+    _layouts: ClassVar[dict[type[Panel], str]] = {Row: 'row', Column: 'column'}
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'value': None, 'min': None, 'max': None, 'text': None, 'name': 'name'

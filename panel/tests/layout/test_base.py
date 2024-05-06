@@ -21,7 +21,7 @@ all_panels = [w for w in param.concrete_descendents(ListPanel).values()
 def test_layout_signature(panel):
     from inspect import signature
     parameters = signature(panel).parameters
-    assert len(parameters) == 2, 'Found following parameters %r on %s' % (parameters, panel)
+    assert len(parameters) == 2, f'Found following parameters {parameters!r} on {panel}'
     assert 'objects' in parameters
 
 

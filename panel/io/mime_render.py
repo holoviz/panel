@@ -25,7 +25,7 @@ import traceback
 from contextlib import redirect_stderr, redirect_stdout
 from html import escape
 from textwrap import dedent
-from typing import Any, Dict, List
+from typing import Any
 
 import markdown
 
@@ -52,7 +52,7 @@ _PACKAGE_MAP = {
 _IGNORED_PKGS = ['js', 'pyodide']
 _PANDAS_AUTODETECT = ['bokeh.sampledata', 'as_frame']
 
-def find_requirements(code: str) -> List[str]:
+def find_requirements(code: str) -> list[str]:
     """
     Finds the packages required in a string of code.
 
@@ -138,7 +138,7 @@ def _display(*objs, **kwargs):
 
 def exec_with_return(
     code: str,
-    global_context: Dict[str, Any] = None,
+    global_context: dict[str, Any] = None,
     stdout: Any = None,
     stderr: Any = None
 ) -> Any:

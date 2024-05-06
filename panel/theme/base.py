@@ -5,7 +5,7 @@ import os
 import pathlib
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, List, Literal, Tuple, Type,
+    TYPE_CHECKING, Any, ClassVar, Literal,
 )
 
 import param
@@ -56,7 +56,7 @@ class Theme(param.Parameterized):
        A stylesheet that overrides variables specifically for the
        Theme subclass. In most cases, this is not necessary.""")
 
-    modifiers: ClassVar[Dict[Viewable, Dict[str, Any]]] = {}
+    modifiers: ClassVar[dict[Viewable, dict[str, Any]]] = {}
 
 
 BOKEH_DARK = dict(_dark_minimal.json)
@@ -96,13 +96,13 @@ class Design(param.Parameterized, ResourceComponent):
     theme = param.ClassSelector(class_=Theme, constant=True)
 
     # Defines parameter overrides to apply to each model
-    modifiers: ClassVar[Dict[Viewable, Dict[str, Any]]] = {}
+    modifiers: ClassVar[dict[Viewable, dict[str, Any]]] = {}
 
     # Defines the resources required to render this theme
-    _resources: ClassVar[Dict[str, Dict[str, str]]] = {}
+    _resources: ClassVar[dict[str, dict[str, str]]] = {}
 
     # Declares valid themes for this Design
-    _themes: ClassVar[Dict[str, Type[Theme]]] = {
+    _themes: ClassVar[dict[str, type[Theme]]] = {
         'default': DefaultTheme,
         'dark': DarkTheme
     }
@@ -116,7 +116,7 @@ class Design(param.Parameterized, ResourceComponent):
         super().__init__(theme=theme, **params)
 
     def _reapply(
-        self, viewable: Viewable, root: Model, old_models: List[Model] = None,
+        self, viewable: Viewable, root: Model, old_models: list[Model] = None,
         isolated: bool=True, cache=None, document=None
     ) -> None:
         ref = root.ref['id']
@@ -394,7 +394,7 @@ class Design(param.Parameterized, ResourceComponent):
 
     def params(
         self, viewable: Viewable, doc: Document | None = None
-    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
         """
         Provides parameter values to apply the provided Viewable.
 

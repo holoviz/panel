@@ -98,7 +98,7 @@ def build_tranquilize_application(files):
 
             source = NotebookHandler(filename)
         else:
-            raise UnsupportedFileType('{} is not a script (.py) or notebook (.ipynb)'.format(filename))
+            raise UnsupportedFileType(f'{filename} is not a script (.py) or notebook (.ipynb)')
         functions.extend(source.tranquilized_functions)
     return make_app(functions, 'Panel REST API', prefix='rest/')
 
@@ -165,7 +165,7 @@ def param_rest_provider(files, endpoint):
                 except Exception:
                     param.main.param.warning("Could not run app notebook on REST server startup.")
         else:
-            raise ValueError('{} is not a script (.py) or notebook (.ipynb)'.format(filename))
+            raise ValueError(f'{filename} is not a script (.py) or notebook (.ipynb)')
 
     if endpoint and not endpoint.endswith('/'):
         endpoint += '/'

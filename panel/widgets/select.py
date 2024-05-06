@@ -9,7 +9,7 @@ import re
 
 from types import FunctionType
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Type,
+    TYPE_CHECKING, Any, ClassVar, Mapping,
 )
 
 import numpy as np
@@ -190,7 +190,7 @@ class Select(SingleSelectBase):
         'size': None, 'groups': None
     }
 
-    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/select.css']
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/select.css']
 
     @property
     def _widget_type(self):
@@ -257,7 +257,7 @@ class Select(SingleSelectBase):
                 ' `groups` parameter, use `options` instead.'
             )
 
-    def _process_param_change(self, msg: Dict[str, Any]) -> Dict[str, Any]:
+    def _process_param_change(self, msg: dict[str, Any]) -> dict[str, Any]:
         groups_provided = 'groups' in msg
         msg = super()._process_param_change(msg)
         if groups_provided or 'options' in msg and self.groups:
@@ -684,7 +684,7 @@ class ColorMap(SingleSelectBase):
 
     _rename = {'options': 'items', 'value_name': None}
 
-    _widget_type: ClassVar[Type[Model]] = PaletteSelect
+    _widget_type: ClassVar[type[Model]] = PaletteSelect
 
     @param.depends('value_name', watch=True, on_init=True)
     def _sync_value_name(self):
@@ -781,9 +781,9 @@ class MultiSelect(_MultiSelectBase):
         The number of items displayed at once (i.e. determines the
         widget height).""")
 
-    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/select.css']
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/select.css']
 
-    _widget_type: ClassVar[Type[Model]] = _BkMultiSelect
+    _widget_type: ClassVar[type[Model]] = _BkMultiSelect
 
 
 class MultiChoice(_MultiSelectBase):
@@ -831,7 +831,7 @@ class MultiChoice(_MultiSelectBase):
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
-    _widget_type: ClassVar[Type[Model]] = _BkMultiChoice
+    _widget_type: ClassVar[type[Model]] = _BkMultiChoice
 
 
 class AutocompleteInput(Widget):
@@ -896,7 +896,7 @@ class AutocompleteInput(Widget):
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'options': 'completions'}
 
-    _widget_type: ClassVar[Type[Model]] = _BkAutocompleteInput
+    _widget_type: ClassVar[type[Model]] = _BkAutocompleteInput
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
@@ -992,7 +992,7 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase, TooltipMixin):
 
     _supports_embed: ClassVar[bool] = True
 
-    _widget_type: ClassVar[Type[Model]] = _BkRadioButtonGroup
+    _widget_type: ClassVar[type[Model]] = _BkRadioButtonGroup
 
 
 
@@ -1020,7 +1020,7 @@ class RadioBoxGroup(_RadioGroupBase):
 
     _supports_embed: ClassVar[bool] = True
 
-    _widget_type: ClassVar[Type[Model]] = _BkRadioBoxGroup
+    _widget_type: ClassVar[type[Model]] = _BkRadioBoxGroup
 
 
 
@@ -1092,7 +1092,7 @@ class CheckButtonGroup(_CheckGroupBase, _ButtonBase, TooltipMixin):
         'description': None
     }
 
-    _widget_type: ClassVar[Type[Model]] = _BkCheckboxButtonGroup
+    _widget_type: ClassVar[type[Model]] = _BkCheckboxButtonGroup
 
 
 class CheckBoxGroup(_CheckGroupBase):
@@ -1118,7 +1118,7 @@ class CheckBoxGroup(_CheckGroupBase):
         Whether the items be arrange vertically (``False``) or
         horizontally in-line (``True``).""")
 
-    _widget_type: ClassVar[Type[Model]] = _BkCheckboxGroup
+    _widget_type: ClassVar[type[Model]] = _BkCheckboxGroup
 
 
 
@@ -1146,11 +1146,9 @@ class ToggleGroup(SingleSelectBase):
     def __new__(cls, widget_type='button', behavior='check', **params):
 
         if widget_type not in ToggleGroup._widgets_type:
-            raise ValueError('widget_type {} is not valid. Valid options are {}'
-                             .format(widget_type, ToggleGroup._widgets_type))
+            raise ValueError(f'widget_type {widget_type} is not valid. Valid options are {ToggleGroup._widgets_type}')
         if behavior not in ToggleGroup._behaviors:
-            raise ValueError('behavior {} is not valid. Valid options are {}'
-                             .format(widget_type, ToggleGroup._behaviors))
+            raise ValueError(f'behavior {widget_type} is not valid. Valid options are {ToggleGroup._behaviors}')
 
         if behavior == 'check':
             if widget_type == 'button':

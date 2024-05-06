@@ -15,7 +15,7 @@ import weakref
 from contextlib import contextmanager
 from functools import partial, wraps
 from typing import (
-    TYPE_CHECKING, Any, Callable, Dict, Iterator, List, Optional,
+    TYPE_CHECKING, Any, Callable, Iterator, Optional,
 )
 
 from bokeh.application.application import SessionContext
@@ -87,7 +87,7 @@ def _cleanup_task(task):
     if task in _write_tasks:
         _write_tasks.remove(task)
 
-def _dispatch_events(doc: Document, events: List[DocumentChangedEvent]) -> None:
+def _dispatch_events(doc: Document, events: list[DocumentChangedEvent]) -> None:
     """
     Handles dispatch of events which could not be processed in
     unlocked decorator.
@@ -474,7 +474,7 @@ def immediate_dispatch(doc: Document | None = None):
     doc.callbacks._held_events = old_events
 
 @contextmanager
-def freeze_doc(doc: Document, model: HasProps, properties: Dict[str, Any], force: bool = False):
+def freeze_doc(doc: Document, model: HasProps, properties: dict[str, Any], force: bool = False):
     """
     Freezes the document model references if any of the properties
     are themselves a model.

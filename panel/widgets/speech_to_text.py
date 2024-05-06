@@ -20,9 +20,7 @@ case is up to you to evaluate.
 
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING, ClassVar, Mapping, Type,
-)
+from typing import TYPE_CHECKING, ClassVar, Mapping
 
 import param
 
@@ -397,7 +395,7 @@ class SpeechToText(Widget):
         'grammars': None, '_grammars': 'grammars', 'name': None, 'value': None,
     }
 
-    _widget_type: ClassVar[Type[Model]] = _BkSpeechToText
+    _widget_type: ClassVar[type[Model]] = _BkSpeechToText
 
     def __init__(self, **params):
         super().__init__(**params)
