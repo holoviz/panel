@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import pytest
 
 from panel.layout import GridBox, Row
@@ -1078,3 +1079,106 @@ def test_colormap_mpl_cmap(document, comm):
             'rgba(153, 153, 153, 1)'
         ])
     ]
+
+@pytest.mark.parametrize("input_data,expected_output", [
+    (pd.DataFrame(), []),
+    (pd.DataFrame({"Country": []}), []),
+    (pd.DataFrame({"Country": ["France"]}), ["France"]),
+    (pd.DataFrame({"Country": ["France"]*2}), ["France"]),
+    (pd.DataFrame({"Region": ["Europe"], "Country": ["France"]}), {"Europe": ["France"]}),
+    (pd.DataFrame({"Region": ["Europe"]*2, "Country": ["France"]*2}), {"Europe": ["France"]}),
+    (pd.DataFrame({"Region": ["Europe", "Asia"], "Country": ["France", "Japan"]}), {"Europe": ["France"], "Asia": ["Japan"]}),
+    (pd.DataFrame({"Region": ["Europe", "Europe"], "Country": ["France", "Germany"]}), {"Europe": ["France", "Germany"]}),
+])
+def test_nested_select_create_options_from_dataframe(input_data, expected_output):
+    assert NestedSelect.create_options_from_dataframe(input_data) == expected_output
+
+
+@pytest.mark.parametrize("input_data,columns,expected_output", [
+    (pd.DataFrame({"Region": ["Europe", "Asia"], "Country": ["France", "Japan"]}), [], []),
+    (pd.DataFrame({"Region": ["Europe", "Asia"], "Country": ["France", "Japan"]}), ["Region"], ["Asia", "Europe"]),
+    (pd.DataFrame({"Region": ["Europe", "Asia"], "Country": ["France", "Japan"]}), ["Country"], ["France", "Japan"]),
+    (pd.DataFrame({"Region": ["Europe", "Asia"], "Country": ["France", "Japan"]}), ["Country", "Region"], {"Japan": ["Asia"], "France": ["Europe"]}),
+    (pd.DataFrame({"Region": ["Europe", "Asia"], "Country": ["France", "Japan"]}), ["Region", "Country"], {"Asia": ["Japan"], "Europe": ["France"]}),
+])
+def test_nested_select_create_options_with_columns(input_data, columns, expected_output):
+    assert NestedSelect.create_options_from_dataframe(input_data, columns=columns) == expected_output
+
+
+def test_nested_select_create():
+    data = pd.DataFrame({"Region": ["Europe", "Asia"], "Country": ["France", "Japan"]})
+
+    select = NestedSelect.create_from_dataframe(data)
+
+    assert select.options == {'Asia': ['Japan'], 'Europe': ['France']}
+    assert select.levels == ["Region", "Country"]
+
+def test_nested_select_create_with_columns():
+    data = pd.DataFrame({"Region": ["Europe", "Asia"], "Country": ["France", "Japan"]})
+    columns=["Country", "Region"]
+
+    select = NestedSelect.create_from_dataframe(data, columns)
+
+    assert select.options == {"Japan": ["Asia"], "France": ["Europe"]}
+    assert select.levels == ["Country", "Region"]
+
+def test_nested_select_create_with_levels():
+    data = pd.DataFrame({"Region": ["Europe", "Asia"], "Country": ["France", "Japan"]})
+    levels = ["R", "C"]
+
+    select = NestedSelect.create_from_dataframe(data, levels=levels)
+
+    assert select.options == {'Asia': ['Japan'], 'Europe': ['France']}
+    assert select.levels == levels
+
+def test_nested_select_create_with_columns_and_levels():
+    data = pd.DataFrame({"Region": ["Europe", "Asia"], "Country": ["France", "Japan"]})
+    columns=["Country", "Region"]
+    levels = ["R", "C"]
+
+    select = NestedSelect.create_from_dataframe(data, columns, levels=levels)
+
+    assert select.options =={"Japan": ["Asia"], "France": ["Europe"]}
+    assert select.levels == levels
+
+@pytest.fixture
+def sample_data():
+    return pd.DataFrame({
+        'origin': ['Asia', 'Europe', 'Asia', 'USA'],
+        'mfr': ['datsun', 'volvo', 'datsun', 'chevrolet'],
+        'name': ['datsun 1200', 'volvo 240', 'datsun 510', 'chevy nova'],
+        'year': [1971, 1982, 1973, 1976]
+    })
+
+def test_filter_dataframe(sample_data):
+    value = {'origin': 'Asia', 'mfr': 'datsun', 'name': 'datsun 1200'}
+    subset = NestedSelect.filter_dataframe(sample_data, value)
+    expected = pd.DataFrame({
+        'origin': ['Asia'],
+        'mfr': ['datsun'],
+        'name': ['datsun 1200'],
+        'year': [1971]
+    })
+    pd.testing.assert_frame_equal(subset, expected)
+
+def test_filter_dataframe_empty_value(sample_data):
+    subset = NestedSelect.filter_dataframe(sample_data, {})
+    pd.testing.assert_frame_equal(subset, sample_data)
+
+def test_filter_dataframe_empty_data():
+    data = pd.DataFrame()
+    value = {'origin': 'Asia', 'mfr': 'datsun', 'name': 'datsun 1200'}
+    subset = NestedSelect.filter_dataframe(data, value)
+    expected = pd.DataFrame()
+    pd.testing.assert_frame_equal(subset, expected)
+
+def test_filter_dataframe_with_columns(sample_data):
+    value = {'Origin': 'Asia', 'Manufacturer': 'datsun', 'Name': 'datsun 1200'}
+    subset = NestedSelect.filter_dataframe(sample_data, value, columns=["origin", "mfr", "name"])
+    expected = pd.DataFrame({
+        'origin': ['Asia'],
+        'mfr': ['datsun'],
+        'name': ['datsun 1200'],
+        'year': [1971]
+    })
+    pd.testing.assert_frame_equal(subset, expected)

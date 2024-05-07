@@ -35,6 +35,8 @@ from .button import Button, _ButtonBase
 from .input import TextAreaInput, TextInput
 
 if TYPE_CHECKING:
+    import pandas as pd
+
     from bokeh.model import Model
 
 
@@ -318,6 +320,23 @@ class Select(SingleSelectBase):
             else:
                 return list(itertools.chain(*self.groups.values()))
 
+def _build_nested_dict(data: pd.DataFrame, depth: int=0, max_depth: int|None=None)->Dict|List:
+    if data.empty:
+        return []
+
+    if max_depth is None:
+        max_depth = len(data.columns)
+
+    # Base case: if depth reaches the last column before values
+    if depth == max_depth - 1:
+        return data[data.columns[depth]].tolist()
+
+    # Recursive case: build dictionary at current depth
+    nested_dict = {}
+    for value in data[data.columns[depth]].unique():
+        filtered_df = data[data[data.columns[depth]] == value]
+        nested_dict[value] = _build_nested_dict(filtered_df, depth + 1, max_depth)
+    return nested_dict
 
 class NestedSelect(CompositeWidget):
     """
@@ -651,6 +670,73 @@ class NestedSelect(CompositeWidget):
                 # so it's not in a limbo state
                 self.value = original_values
                 raise
+
+    @classmethod
+    def create_options_from_dataframe(cls, data: pd.DataFrame, columns: List|None=None)->Dict|List:
+        """Returns the options to use with a NestedSelect
+
+        Args:
+            data (pd.DataFrame): A DataFrame to create options from.
+            columns (List | None, optional): The columns to create options from. If None then all
+                columns are used. Defaults to None.
+
+        Returns:
+            Dict|List: A dictionary (or list) of options. The options are sorted ascending.
+        """
+        if columns is None:
+            columns = list(data.columns)
+
+        data = data[columns].drop_duplicates().sort_values(columns).reset_index(drop=True)
+        options = _build_nested_dict(data)
+        return options
+
+    @classmethod
+    def create_from_dataframe(cls, data: pd.DataFrame, columns: List|None=None, **params)->'NestedSelect':
+        """Returns a NestedSelect with options from the data and columns specified
+
+        Args:
+            data (pd.DataFrame): A DataFrame to create options from.
+            columns (List | None, optional): The columns to create options from. If None then all
+                columns are used. Defaults to None. If level is not provided the columns are used as
+                levels.
+            params: Any parameters (besides options) that the NestedSelect accepts
+
+        Returns:
+            NestedSelect: A NestedSelect with options from the data and columns specified
+        """
+        if not columns:
+            columns = list(data.columns)
+
+        options = cls.create_options_from_dataframe(data, columns)
+        params["levels"]=params.get("levels", columns)
+        return NestedSelect(options=options, **params)
+
+    @classmethod
+    def filter_dataframe(cls, data: pd.DataFrame, value: Dict, columns: List|None=None, **params)->pd.DataFrame:
+        """Returns the subset of the data corresponding to the filter given by the value
+
+        Args:
+            data (pd.DataFrame): The original data to filter
+            value (Dict): A dictionary of key, value filter options
+            columns (List | None, optional): An optional list of column names to use if the keys of
+                the value do not correspond to the column names. Defaults to None.
+
+        Returns:
+            pd.DataFrame: The filtered subset
+        """
+        if data.empty or not value:
+            return data
+
+        if columns:
+            value = {new_key: value for new_key, value in zip(columns, value.values())}
+
+        import pandas as pd
+        mask = pd.Series(True, index=data.index)  # Start with all True
+        for column, filter_value in value.items():
+            mask = mask & (data[column] == filter_value)
+
+        filtered_data = data.loc[mask]
+        return filtered_data
 
 
 class ColorMap(SingleSelectBase):
