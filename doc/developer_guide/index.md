@@ -202,29 +202,13 @@ GitHub Actions provides free build workers for open-source projects. A few consi
 - Group commits to meaningful chunks of work before pushing to GitHub (i.e., don't push on every commit).
 
 
-----
-
-#### Developing custom models
-
-Panel ships with a number of custom Bokeh models, which have both Python and Javascript components. When developing Panel these custom models have to be compiled. This happens automatically with `SETUPTOOLS_ENABLE_FEATURES=legacy-editable pip install -e .` or `python setup.py develop`, however when running actively developing you can rebuild the extension with `panel build panel`. The `build` command is just an alias for `bokeh build`; see
-the [Bokeh developer guide](https://docs.bokeh.org/en/latest/docs/dev_guide/setup.html) for more information about developing bokeh models.
-
-Just like any other Javascript (or Typescript) library Panel defines a `package.json` and `package-lock.json` files. When adding, updating or removing a dependency in the package.json file ensure you commit the changes to the `package-lock.json` after running `npm install`.
-
-#### Bundling resources
-
-Panel bundles external resources required for custom models and templates into the `panel/dist` directory. The bundled resources have to be collected whenever they change, so rerun `SETUPTOOLS_ENABLE_FEATURES=legacy-editable pip install -e .` or `python setup.py develop` whenever you change one of the following:
-
-* A new model is added with a `__javascript_raw__` declaration or an existing model is updated
-* A new template with a `_resources` declaration is added or an existing template is updated
-* A CSS file in one of template directories (`panel/template/*/`) is added or modified
-
-#### Next Steps
+## Next Steps
 
 You will likely want to check out the
 
 - [Extensions Guide](extensions.md)
 - [WASM Guide](wasm.md)
+- [Developing custom models](custom_models.md)
 
 ## Useful Links
 
@@ -242,5 +226,5 @@ You will likely want to check out the
 
 extensions
 wasm
-Developing custom models <Developing_Custom_Models>
+Developing custom models <custom_models>
 ```
