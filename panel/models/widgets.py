@@ -6,12 +6,13 @@ from bokeh.core.properties import (
     Any, Bool, Either, Enum, Float, Instance, Int, List, Nullable, Override,
     String, Tuple,
 )
+from bokeh.events import ModelEvent
 from bokeh.models.ui import Tooltip
 from bokeh.models.ui.icons import Icon
 from bokeh.models.widgets import (
     Button as bkButton, CheckboxButtonGroup as bkCheckboxButtonGroup,
     InputWidget, RadioButtonGroup as bkRadioButtonGroup, Select,
-    TextAreaInput as BkTextAreaInput, Widget,
+    TextAreaInput as bkTextAreaInput, TextInput as bkTextInput, Widget,
 )
 
 from .layout import HTMLBox
@@ -201,7 +202,7 @@ class TooltipIcon(Widget):
     )
 
 
-class TextAreaInput(BkTextAreaInput):
+class TextAreaInput(bkTextAreaInput):
 
     auto_grow = Bool(
         default=False,
@@ -253,3 +254,19 @@ class RadioButtonGroup(bkRadioButtonGroup):
     Delay (in milliseconds) to display the tooltip after the cursor has
     hovered over the Button, default is 500ms.
     """)
+
+
+class EnterEvent(ModelEvent):
+
+    event_name = 'enter-pressed'
+
+    def __init__(self, model, value_input):
+        self.value_input = value_input
+        super().__init__(model=model)
+
+    def __repr__(self):
+        return (
+            f'{type(self).__name__}(value_input={self.value_input})'
+        )
+
+class TextInput(bkTextInput): ...

@@ -55,7 +55,7 @@ if sys.platform == 'win32':
 else:
     _TIME_FN = time.monotonic
 
-class _Stack(object):
+class _Stack:
 
     def __init__(self):
         self._stack = {}
@@ -74,7 +74,7 @@ def _get_fqn(obj):
     the_type = type(obj)
     module = the_type.__module__
     name = the_type.__qualname__
-    return "%s.%s" % (module, name)
+    return f"{module}.{name}"
 
 def _int_to_bytes(i):
     num_bytes = (i.bit_length() + 8) // 8

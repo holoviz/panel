@@ -1,4 +1,3 @@
-import sys
 
 from unittest.mock import MagicMock, patch
 
@@ -27,8 +26,6 @@ def test_panel_callback_handler(streaming, instance_type):
     llm_kwargs = dict(
         responses=responses, callbacks=[callback_handler], streaming=streaming
     )
-    if sys.version_info < (3, 9):
-        llm_kwargs.pop("streaming")
     llm = FakeListLLM(**llm_kwargs)
     agent = initialize_agent(
         tools,

@@ -9,9 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import partial
 from io import BytesIO
-from typing import (
-    Any, Callable, ClassVar, Dict, List,
-)
+from typing import Any, Callable, ClassVar
 
 import param
 
@@ -54,8 +52,8 @@ class _ChatButtonData:
     index: int
     name: str
     icon: str
-    objects: List
-    buttons: List
+    objects: list
+    buttons: list
     callback: Callable
     js_on_click: dict | str | None = None
 
@@ -159,7 +157,7 @@ class ChatInterface(ChatFeed):
     _buttons = param.Dict(default={}, doc="""
         The rendered buttons.""")
 
-    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_interface.css"]
+    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_interface.css"]
 
     def __init__(self, *objects, **params):
         widgets = params.get("widgets")
@@ -415,8 +413,7 @@ class ChatInterface(ChatFeed):
                     mime_type=active_widget.mime_type,
                     file_name=active_widget.filename,
                 )
-            # don't use isinstance here; TextAreaInput subclasses TextInput
-            if type(active_widget) is TextInput or self.reset_on_send:
+            if isinstance(value, TextInput) or self.reset_on_send:
                 updates = {"value": ""}
                 if hasattr(active_widget, "value_input"):
                     updates["value_input"] = ""
@@ -584,11 +581,11 @@ class ChatInterface(ChatFeed):
 
     def _serialize_for_transformers(
         self,
-        messages: List[ChatMessage],
-        role_names: Dict[str, str | List[str]] | None = None,
+        messages: list[ChatMessage],
+        role_names: dict[str, str | list[str]] | None = None,
         default_role: str | None = "assistant",
         custom_serializer: Callable = None
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Exports the chat log for use with transformers.
 

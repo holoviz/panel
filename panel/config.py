@@ -767,9 +767,8 @@ class panel_extension(_pyviz_extension):
                 setattr(config, k, designs[v])
             elif k in ('css_files', 'raw_css', 'global_css'):
                 if not isinstance(v, list):
-                    raise ValueError('%s should be supplied as a list, '
-                                     'not as a %s type.' %
-                                     (k, type(v).__name__))
+                    raise ValueError(f'{k} should be supplied as a list, '
+                                     f'not as a {type(v).__name__} type.')
                 existing = getattr(config, k)
                 existing.extend([new for new in v if new not in existing])
             elif k == 'js_files':

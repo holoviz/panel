@@ -111,7 +111,7 @@ optional_markers = {
 
 def pytest_addoption(parser):
     for marker, info in optional_markers.items():
-        parser.addoption("--{}".format(marker), action="store_true",
+        parser.addoption(f"--{marker}", action="store_true",
                          default=False, help=info['help'])
 
 
@@ -286,7 +286,7 @@ def html_server_session():
     server = serve(html, port=port, show=False, start=False)
     session = pull_session(
         session_id='Test',
-        url="http://localhost:{:d}/".format(server.port),
+        url=f"http://localhost:{server.port:d}/",
         io_loop=server.io_loop
     )
     yield html, server, session, port
@@ -303,7 +303,7 @@ def markdown_server_session():
     server = serve(html, port=port, show=False, start=False)
     session = pull_session(
         session_id='Test',
-        url="http://localhost:{:d}/".format(server.port),
+        url=f"http://localhost:{server.port:d}/",
         io_loop=server.io_loop
     )
     yield html, server, session, port

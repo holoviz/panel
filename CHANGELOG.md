@@ -1,5 +1,12 @@
 # Releases
 
+## Version 1.5.0
+
+### Breaking Changes
+
+- `PasswordInput` and `TextAreaInput` no longer inherit directly from `TextInput` ([#6593](https://github.com/holoviz/panel/pull/6593))
+
+
 ## Version 1.4.2
 
 Date: 2024-04-23

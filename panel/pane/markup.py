@@ -9,7 +9,7 @@ import json
 import textwrap
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Type,
+    TYPE_CHECKING, Any, ClassVar, Mapping,
 )
 
 import param  # type: ignore
@@ -74,7 +74,7 @@ class HTML(HTMLBasePane):
         'sanitize_html': None, 'sanitize_hook': None
     }
 
-    _rerender_params: ClassVar[List[str]] = [
+    _rerender_params: ClassVar[list[str]] = [
         'object', 'sanitize_html', 'sanitize_hook'
     ]
 
@@ -89,7 +89,7 @@ class HTML(HTMLBasePane):
         else:
             return False
 
-    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
         text = '' if obj is None else obj
         if hasattr(text, '_repr_html_'):
             text = text._repr_html_()
@@ -178,9 +178,9 @@ class DataFrame(HTML):
 
     _object = param.Parameter(default=None, doc="""Hidden parameter.""")
 
-    _dask_params: ClassVar[List[str]] = ['max_rows']
+    _dask_params: ClassVar[list[str]] = ['max_rows']
 
-    _rerender_params: ClassVar[List[str]] = [
+    _rerender_params: ClassVar[list[str]] = [
         'object', '_object', 'bold_rows', 'border', 'classes',
         'col_space', 'decimal', 'escape', 'float_format', 'formatters',
         'header', 'index', 'index_names', 'justify', 'max_rows',
@@ -192,7 +192,7 @@ class DataFrame(HTML):
         rp: None for rp in _rerender_params[1:-1]
     }
 
-    _stylesheets: ClassVar[List[str]] = [
+    _stylesheets: ClassVar[list[str]] = [
         f'{CDN_DIST}css/dataframe.css'
     ]
 
@@ -238,7 +238,7 @@ class DataFrame(HTML):
             self._stream.destroy()
             self._stream = None
 
-    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
         if hasattr(obj, 'to_frame'):
             obj = obj.to_frame()
 
@@ -257,7 +257,7 @@ class DataFrame(HTML):
             html = ''
         return dict(object=escape(html))
 
-    def _init_params(self) -> Dict[str, Any]:
+    def _init_params(self) -> dict[str, Any]:
         params = HTMLBasePane._init_params(self)
 
         if self._stream:
@@ -288,7 +288,7 @@ class Str(HTMLBasePane):
 
     priority: ClassVar[float | bool | None] = 0
 
-    _bokeh_model: ClassVar[Type[Model]] = _BkHTML
+    _bokeh_model: ClassVar[type[Model]] = _BkHTML
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
         'object': """JSON.stringify(value).replace(/,/g, ", ").replace(/:/g, ": ")"""
@@ -298,7 +298,7 @@ class Str(HTMLBasePane):
     def applies(cls, obj: Any) -> bool:
         return True
 
-    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
         if obj is None or (isinstance(obj, str) and obj == ''):
             text = '<pre> </pre>'
         else:
@@ -350,7 +350,7 @@ class Markdown(HTMLBasePane):
         'plugins': None, 'renderer': None, 'renderer_options': None
     }
 
-    _rerender_params: ClassVar[List[str]] = [
+    _rerender_params: ClassVar[list[str]] = [
         'object', 'dedent', 'extensions', 'css_classes', 'plugins',
     ]
 
@@ -358,7 +358,7 @@ class Markdown(HTMLBasePane):
         'object': None
     }
 
-    _stylesheets: ClassVar[List[str]] = [
+    _stylesheets: ClassVar[list[str]] = [
         f'{CDN_DIST}css/markdown.css'
     ]
 
@@ -423,7 +423,7 @@ class Markdown(HTMLBasePane):
         parser.options['highlight'] = hilite
         return parser
 
-    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
         import markdown
         if obj is None:
             obj = ''
@@ -493,11 +493,11 @@ class JSON(HTMLBasePane):
         "object": "text", "encoder": None, "style": "styles"
     }
 
-    _rerender_params: ClassVar[List[str]] = [
+    _rerender_params: ClassVar[list[str]] = [
         'object', 'depth', 'encoder', 'hover_preview', 'theme'
     ]
 
-    _stylesheets: ClassVar[List[str]] = [
+    _stylesheets: ClassVar[list[str]] = [
         f'{CDN_DIST}css/json.css'
     ]
 
@@ -515,7 +515,7 @@ class JSON(HTMLBasePane):
         else:
             return None
 
-    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
         try:
             data = json.loads(obj)
         except Exception:
@@ -523,13 +523,13 @@ class JSON(HTMLBasePane):
         text = json.dumps(data or {}, cls=self.encoder)
         return dict(object=text)
 
-    def _process_property_change(self, properties: Dict[str, Any]) -> Dict[str, Any]:
+    def _process_property_change(self, properties: dict[str, Any]) -> dict[str, Any]:
         properties = super()._process_property_change(properties)
         if 'depth' in properties:
             properties['depth'] = -1 if properties['depth'] is None else properties['depth']
         return properties
 
-    def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any] :
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any] :
         params = super()._process_param_change(params)
         if 'depth' in params:
             params['depth'] = None if params['depth'] < 0 else params['depth']

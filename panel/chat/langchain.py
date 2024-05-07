@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from typing import (
-    Any, Dict, List, Union,
-)
+from typing import Any, Union
 
 try:
     from langchain.callbacks.base import BaseCallbackHandler
@@ -94,7 +92,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
             )
         return self._message
 
-    def on_llm_start(self, serialized: Dict[str, Any], *args, **kwargs):
+    def on_llm_start(self, serialized: dict[str, Any], *args, **kwargs):
         self._on_start(serialized, kwargs)
         return super().on_llm_start(serialized, *args, **kwargs)
 
@@ -120,7 +118,7 @@ class PanelCallbackHandler(BaseCallbackHandler):
         return super().on_agent_finish(finish, *args, **kwargs)
 
     def on_tool_start(
-        self, serialized: Dict[str, Any], input_str: str, *args, **kwargs
+        self, serialized: dict[str, Any], input_str: str, *args, **kwargs
     ):
         self._update_active(DEFAULT_AVATARS["tool"], serialized["name"])
         self._stream(f"Tool input: {input_str}")
@@ -137,13 +135,13 @@ class PanelCallbackHandler(BaseCallbackHandler):
         return super().on_tool_error(error, *args, **kwargs)
 
     def on_chain_start(
-        self, serialized: Dict[str, Any], inputs: Dict[str, Any], *args, **kwargs
+        self, serialized: dict[str, Any], inputs: dict[str, Any], *args, **kwargs
     ):
         self._disabled_state = self.instance.disabled
         self.instance.disabled = True
         return super().on_chain_start(serialized, inputs, *args, **kwargs)
 
-    def on_chain_end(self, outputs: Dict[str, Any], *args, **kwargs):
+    def on_chain_end(self, outputs: dict[str, Any], *args, **kwargs):
         self.instance.disabled = self._disabled_state
         return super().on_chain_end(outputs, *args, **kwargs)
 
@@ -171,8 +169,8 @@ class PanelCallbackHandler(BaseCallbackHandler):
 
     def on_chat_model_start(
         self,
-        serialized: Dict[str, Any],
-        messages: List,
+        serialized: dict[str, Any],
+        messages: list,
         **kwargs: Any
     ) -> None:
         """
