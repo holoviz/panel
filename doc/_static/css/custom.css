@@ -9,7 +9,7 @@
   --pst-color-secondary: var(--holoviz-main-color);
   --pst-color-inline-code: var(--holoviz-main-color);
   --pst-color-secondary-highlight: var(--holoviz-main-color);
-  --pst-color-secondary-bg: #d9ebf0;
+  --pst-color-secondary-bg: #d9ebf0; /* Announcement banner */
 }
 
 /* Fix breadcrumb overlap https://github.com/holoviz/panel/issues/5199 */
