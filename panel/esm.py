@@ -8,8 +8,7 @@ import textwrap
 
 from collections import defaultdict
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Literal, Mapping,
-    Optional, Tuple, Type,
+    TYPE_CHECKING, Any, Callable, ClassVar, Literal, Mapping, Optional,
 )
 
 import param
@@ -33,7 +32,7 @@ if TYPE_CHECKING:
 
 class ReactiveESMMetaclass(ReactiveMetaBase):
 
-    def __init__(mcs, name: str, bases: Tuple[Type, ...], dict_: Mapping[str, Any]):
+    def __init__(mcs, name: str, bases: tuple[type, ...], dict_: Mapping[str, Any]):
         mcs.__original_doc__ = mcs.__doc__
         ParameterizedMetaclass.__init__(mcs, name, bases, dict_)
 
@@ -82,7 +81,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     _esm: ClassVar[str | os.PathLike] = ""
 
-    _import_map: ClassVar[Dict[str, Dict[Literal['imports', 'scopes'], str]]] = {}
+    _import_map: ClassVar[dict[str, dict[Literal['imports', 'scopes'], str]]] = {}
 
     __abstract = True
 
@@ -119,10 +118,10 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                 self._apply_update({}, {'esm': self._render_esm()}, model, ref)
 
     @property
-    def _linked_properties(self) -> List[str]:
+    def _linked_properties(self) -> list[str]:
         return [p for p in self._data_model.properties() if p not in ('js_property_callbacks',)]
 
-    def _init_params(self) -> Dict[str, Any]:
+    def _init_params(self) -> dict[str, Any]:
         ignored = list(Reactive.param)
         params = {
             p : getattr(self, p) for p in list(Layoutable.param)
@@ -202,7 +201,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             cb(event)
 
     def _update_model(
-        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
         root: Model, model: Model, doc: Document, comm: Optional[Comm]
     ) -> None:
         model_msg, data_msg  = {}, {}
