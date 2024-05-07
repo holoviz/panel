@@ -4,6 +4,11 @@
   --pst-color-link: #0072b5;
   --pst-color-inline-code: #0072b5;
   --sd-color-card-border-hover: #0072b5;
+  --pst-color-link-hover: #0072b5;
+  --pst-color-secondary: #0072b5;
+  --pst-color-inline-code: #0072b5;
+  --pst-color-secondary-highlight: #0072b5;
+  --pst-color-secondary-bg: #adc9ff;
 }
 
 /* Fix breadcrumb overlap https://github.com/holoviz/panel/issues/5199 */
