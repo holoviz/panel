@@ -237,5 +237,5 @@ about/index
 :maxdepth: 2
 :caption: FOR DEVELOPERS
 
-developer_guide/index
+Developer Guide <developer_guide/index>
 ```
