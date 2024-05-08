@@ -26,6 +26,7 @@ from ..layout import Feed, ListPanel
 from ..layout.card import Card
 from ..layout.spacer import VSpacer
 from ..pane.image import SVG
+from .icon import ChatReactionIcons
 from .message import ChatMessage
 
 if TYPE_CHECKING:
@@ -291,6 +292,15 @@ class ChatFeed(ListPanel):
         self._card._cleanup(root)
         super()._cleanup(root)
 
+    @param.depends("message_params", watch=True, on_init=True)
+    def _validate_message_params(self):
+        reaction_icons = self.message_params.get("reaction_icons")
+        if isinstance(reaction_icons, ChatReactionIcons):
+            raise ValueError(
+                "Cannot pass a ChatReactionIcons instance to message_params; "
+                "use a dict of the options instead."
+            )
+
     @param.depends("load_buffer", "auto_scroll_limit", "scroll_button_threshold", watch=True)
     def _update_chat_log_params(self):
         self._chat_log.load_buffer = self.load_buffer
@@ -350,11 +360,6 @@ class ChatFeed(ListPanel):
                 f"e.g. {{'object': 'Hello World'}}; got {value!r}"
             )
         message_params = dict(value, renderers=self.renderers, **self.message_params)
-        for param_key, param_value in message_params.items():
-            if hasattr(param_value, "clone"):
-                # fixes chat reaction icons being linked across all messages
-                message_params[param_key] = param_value.clone()
-
         if user:
             message_params["user"] = user
         if avatar:

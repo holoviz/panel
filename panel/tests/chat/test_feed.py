@@ -443,14 +443,10 @@ class TestChatFeed:
         assert chat_message.reactions == ["like"]
         assert chat_message.reaction_icons.options == {"like": "thumb-up"}
 
-    def test_message_params_cloned(self, chat_feed):
-        chat_feed.reaction_icons = ChatReactionIcons(options={"like": "thumb-up", "dislike": "thumb-down"})
-        msg1 = chat_feed.send("Hello")
-        msg2 = chat_feed.send("Hey")
-
-        msg1.reactions = ["like"]
-        assert msg1.reactions == ["like"]
-        assert msg2.reactions == []
+    def test_message_params_no_chat_reaction_icons_instance(self, chat_feed):
+        with pytest.raises(ValueError, match="Cannot pass"):
+            chat_feed.message_params = {"reaction_icons": ChatReactionIcons(
+                options={"like": "thumb-up", "dislike": "thumb-down"})}
 
     def test_update_chat_log_params(self, chat_feed):
         chat_feed = ChatFeed(load_buffer=5, scroll_button_threshold=5, auto_scroll_limit=5)
