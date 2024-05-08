@@ -4,6 +4,7 @@ import time
 import pytest
 
 from panel.chat.feed import ChatFeed
+from panel.chat.icon import ChatReactionIcons
 from panel.chat.message import ChatMessage
 from panel.layout import Column, Row
 from panel.pane.image import Image
@@ -441,6 +442,11 @@ class TestChatFeed:
         assert chat_message.object == "Hey!"
         assert chat_message.reactions == ["like"]
         assert chat_message.reaction_icons.options == {"like": "thumb-up"}
+
+    def test_message_params_no_chat_reaction_icons_instance(self, chat_feed):
+        with pytest.raises(ValueError, match="Cannot pass"):
+            chat_feed.message_params = {"reaction_icons": ChatReactionIcons(
+                options={"like": "thumb-up", "dislike": "thumb-down"})}
 
     def test_update_chat_log_params(self, chat_feed):
         chat_feed = ChatFeed(load_buffer=5, scroll_button_threshold=5, auto_scroll_limit=5)

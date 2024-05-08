@@ -26,6 +26,7 @@ from ..layout import Feed, ListPanel
 from ..layout.card import Card
 from ..layout.spacer import VSpacer
 from ..pane.image import SVG
+from .icon import ChatReactionIcons
 from .message import ChatMessage
 
 if TYPE_CHECKING:
@@ -213,7 +214,7 @@ class ChatFeed(ListPanel):
         super().__init__(*objects, **params)
 
         if self.help_text:
-            self.objects = [ChatMessage(self.help_text, user="Help"), *self.objects]
+            self.objects = [ChatMessage(self.help_text, user="Help", **message_params), *self.objects]
 
         # instantiate the card's column
         linked_params = dict(
@@ -290,6 +291,15 @@ class ChatFeed(ListPanel):
     def _cleanup(self, root: Model | None = None) -> None:
         self._card._cleanup(root)
         super()._cleanup(root)
+
+    @param.depends("message_params", watch=True, on_init=True)
+    def _validate_message_params(self):
+        reaction_icons = self.message_params.get("reaction_icons")
+        if isinstance(reaction_icons, ChatReactionIcons):
+            raise ValueError(
+                "Cannot pass a ChatReactionIcons instance to message_params; "
+                "use a dict of the options instead."
+            )
 
     @param.depends("load_buffer", "auto_scroll_limit", "scroll_button_threshold", watch=True)
     def _update_chat_log_params(self):
