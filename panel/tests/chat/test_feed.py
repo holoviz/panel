@@ -997,3 +997,85 @@ class TestChatFeedSerializeBase:
             chat_feed = ChatFeed()
             chat_feed.send("I'm a user", user="user")
             chat_feed.serialize(format="atransform")
+
+
+@pytest.mark.xdist_group("chat")
+class TestChatFeedPostHook:
+
+    def test_return_string(self, chat_feed):
+        def callback(contents, user, instance):
+            yield f"Echo: {contents}"
+
+        def append_callback(message, instance):
+            logs.append(message.object)
+
+        logs = []
+        chat_feed.callback = callback
+        chat_feed.post_hook = append_callback
+        chat_feed.send("Hello World!")
+        wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
+        assert logs == ["Hello World!", "Echo: Hello World!"]
+
+    def test_yield_string(self, chat_feed):
+        def callback(contents, user, instance):
+            yield f"Echo: {contents}"
+
+        def append_callback(message, instance):
+            logs.append(message.object)
+
+        logs = []
+        chat_feed.callback = callback
+        chat_feed.post_hook = append_callback
+        chat_feed.send("Hello World!")
+        wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
+        assert logs == ["Hello World!", "Echo: Hello World!"]
+
+    def test_generator(self, chat_feed):
+        def callback(contents, user, instance):
+            message = "Echo: "
+            for char in contents:
+                message += char
+                yield message
+
+        def append_callback(message, instance):
+            logs.append(message.object)
+
+        logs = []
+        chat_feed.callback = callback
+        chat_feed.post_hook = append_callback
+        chat_feed.send("Hello World!")
+        wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
+        assert logs == ["Hello World!", "Echo: Hello World!"]
+
+    def test_async_generator(self, chat_feed):
+        async def callback(contents, user, instance):
+            message = "Echo: "
+            for char in contents:
+                message += char
+                yield message
+
+        async def append_callback(message, instance):
+            logs.append(message.object)
+
+        logs = []
+        chat_feed.callback = callback
+        chat_feed.post_hook = append_callback
+        chat_feed.send("Hello World!")
+        wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
+        assert logs == ["Hello World!", "Echo: Hello World!"]
+
+    def test_stream(self, chat_feed):
+        def callback(contents, user, instance):
+            message = instance.stream("Echo: ")
+            for char in contents:
+                message = instance.stream(char, message=message)
+
+        def append_callback(message, instance):
+            logs.append(message.object)
+
+        logs = []
+        chat_feed.callback = callback
+        chat_feed.post_hook = append_callback
+        chat_feed.send("AB")
+        wait_until(lambda: chat_feed.objects[-1].object == "Echo: AB")
+        assert logs == ["AB", "Echo: ", "Echo: AB"]
