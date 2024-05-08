@@ -1006,12 +1006,12 @@ class TestChatFeedAppendCallback:
         def callback(contents, user, instance):
             yield f"Echo: {contents}"
 
-        def append_callback(message, instance):
+        def post_hook(message, instance):
             logs.append(message.object)
 
         logs = []
         chat_feed.callback = callback
-        chat_feed.append_callback = append_callback
+        chat_feed.post_hook = post_hook
         chat_feed.send("Hello World!")
         wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
         assert logs == ["Hello World!", "Echo: Hello World!"]
@@ -1020,12 +1020,12 @@ class TestChatFeedAppendCallback:
         def callback(contents, user, instance):
             yield f"Echo: {contents}"
 
-        def append_callback(message, instance):
+        def post_hook(message, instance):
             logs.append(message.object)
 
         logs = []
         chat_feed.callback = callback
-        chat_feed.append_callback = append_callback
+        chat_feed.post_hook = post_hook
         chat_feed.send("Hello World!")
         wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
         assert logs == ["Hello World!", "Echo: Hello World!"]
@@ -1037,12 +1037,12 @@ class TestChatFeedAppendCallback:
                 message += char
                 yield message
 
-        def append_callback(message, instance):
+        def post_hook(message, instance):
             logs.append(message.object)
 
         logs = []
         chat_feed.callback = callback
-        chat_feed.append_callback = append_callback
+        chat_feed.post_hook = post_hook
         chat_feed.send("Hello World!")
         wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
         assert logs == ["Hello World!", "Echo: Hello World!"]
@@ -1054,12 +1054,12 @@ class TestChatFeedAppendCallback:
                 message += char
                 yield message
 
-        async def append_callback(message, instance):
+        async def post_hook(message, instance):
             logs.append(message.object)
 
         logs = []
         chat_feed.callback = callback
-        chat_feed.append_callback = append_callback
+        chat_feed.post_hook = post_hook
         chat_feed.send("Hello World!")
         wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
         assert logs == ["Hello World!", "Echo: Hello World!"]
@@ -1070,12 +1070,12 @@ class TestChatFeedAppendCallback:
             for char in contents:
                 message = instance.stream(char, message=message)
 
-        def append_callback(message, instance):
+        def post_hook(message, instance):
             logs.append(message.object)
 
         logs = []
         chat_feed.callback = callback
-        chat_feed.append_callback = append_callback
+        chat_feed.post_hook = post_hook
         chat_feed.send("AB")
         wait_until(lambda: chat_feed.objects[-1].object == "Echo: AB")
         assert logs == ["AB", "Echo: ", "Echo: AB"]

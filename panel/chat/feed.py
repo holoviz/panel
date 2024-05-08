@@ -78,7 +78,7 @@ class ChatFeed(ListPanel):
     >>> chat_feed.send("Hello World!", user="New User", avatar="😊")
     """
 
-    append_callback = param.Callable(allow_refs=False, doc="""
+    post_hook = param.Callable(allow_refs=False, doc="""
         The callback to execute when a new message is *completely* added,
         i.e. generator exhausted, but the `stream` method will trigger this callback
         on every call. The signature must include the  `message` and `instance` arguments.""")
@@ -187,7 +187,7 @@ class ChatFeed(ListPanel):
 
     _callback_trigger = param.Event(doc="Triggers the callback to respond.")
 
-    _append_callback_trigger = param.Event(doc="Triggers the append callback.")
+    _post_hook_trigger = param.Event(doc="Triggers the post hook.")
 
     _disabled_stack = param.List(doc="""
         The previous disabled state of the feed.""")
@@ -269,7 +269,7 @@ class ChatFeed(ListPanel):
 
         # handle async callbacks using this trick
         self.param.watch(self._prepare_response, '_callback_trigger')
-        self.param.watch(self._after_append_completed, '_append_callback_trigger')
+        self.param.watch(self._after_post, '_post_hook_trigger')
 
     def _get_model(
         self, doc: Document, root: Model | None = None,
@@ -438,7 +438,7 @@ class ChatFeed(ListPanel):
                 response_message = self._upsert_message(await response, response_message)
             else:
                 response_message = self._upsert_message(response, response_message)
-            self.param.trigger("_append_callback_trigger")
+            self.param.trigger("_post_hook_trigger")
         finally:
             if response_message:
                 response_message.show_activity_dot = False
@@ -590,7 +590,7 @@ class ChatFeed(ListPanel):
                 value = {"object": value}
             message = self._build_message(value, user=user, avatar=avatar)
         self.append(message)
-        self.param.trigger("_append_callback_trigger")
+        self.param.trigger("_post_hook_trigger")
         if respond:
             self.respond()
         return message
@@ -656,7 +656,7 @@ class ChatFeed(ListPanel):
             message = self._build_message(value, user=user, avatar=avatar)
         self._replace_placeholder(message)
 
-        self.param.trigger("_append_callback_trigger")
+        self.param.trigger("_post_hook_trigger")
         return message
 
     def respond(self):
@@ -771,18 +771,18 @@ class ChatFeed(ListPanel):
             serialized_messages.append({"role": role, "content": content})
         return serialized_messages
 
-    async def _after_append_completed(self, message):
+    async def _after_post(self, message):
         """
-        Trigger the append callback after a message is added to the chat feed.
+        Trigger the post hook after a message is added to the chat feed.
         """
-        if self.append_callback is None:
+        if self.post_hook is None:
             return
 
         message = self._chat_log.objects[-1]
-        if iscoroutinefunction(self.append_callback):
-            await self.append_callback(message, self)
+        if iscoroutinefunction(self.post_hook):
+            await self.post_hook(message, self)
         else:
-            self.append_callback(message, self)
+            self.post_hook(message, self)
 
     def serialize(
         self,
