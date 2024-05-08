@@ -213,7 +213,7 @@ class ChatFeed(ListPanel):
         super().__init__(*objects, **params)
 
         if self.help_text:
-            self.objects = [ChatMessage(self.help_text, user="Help"), *self.objects]
+            self.objects = [ChatMessage(self.help_text, user="Help", **message_params), *self.objects]
 
         # instantiate the card's column
         linked_params = dict(
@@ -350,6 +350,11 @@ class ChatFeed(ListPanel):
                 f"e.g. {{'object': 'Hello World'}}; got {value!r}"
             )
         message_params = dict(value, renderers=self.renderers, **self.message_params)
+        for param_key, param_value in message_params.items():
+            if hasattr(param_value, "clone"):
+                # fixes chat reaction icons being linked across all messages
+                message_params[param_key] = param_value.clone()
+
         if user:
             message_params["user"] = user
         if avatar:
