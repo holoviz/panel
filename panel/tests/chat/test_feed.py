@@ -1000,7 +1000,7 @@ class TestChatFeedSerializeBase:
 
 
 @pytest.mark.xdist_group("chat")
-class TestChatFeedAppendCallback:
+class TestChatFeedPostHook:
 
     def test_return_string(self, chat_feed):
         def callback(contents, user, instance):
@@ -1011,7 +1011,7 @@ class TestChatFeedAppendCallback:
 
         logs = []
         chat_feed.callback = callback
-        chat_feed.append_callback = append_callback
+        chat_feed.post_hook = append_callback
         chat_feed.send("Hello World!")
         wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
         assert logs == ["Hello World!", "Echo: Hello World!"]
@@ -1025,7 +1025,7 @@ class TestChatFeedAppendCallback:
 
         logs = []
         chat_feed.callback = callback
-        chat_feed.append_callback = append_callback
+        chat_feed.post_hook = append_callback
         chat_feed.send("Hello World!")
         wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
         assert logs == ["Hello World!", "Echo: Hello World!"]
@@ -1042,7 +1042,7 @@ class TestChatFeedAppendCallback:
 
         logs = []
         chat_feed.callback = callback
-        chat_feed.append_callback = append_callback
+        chat_feed.post_hook = append_callback
         chat_feed.send("Hello World!")
         wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
         assert logs == ["Hello World!", "Echo: Hello World!"]
@@ -1059,7 +1059,7 @@ class TestChatFeedAppendCallback:
 
         logs = []
         chat_feed.callback = callback
-        chat_feed.append_callback = append_callback
+        chat_feed.post_hook = append_callback
         chat_feed.send("Hello World!")
         wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
         assert logs == ["Hello World!", "Echo: Hello World!"]
@@ -1075,7 +1075,7 @@ class TestChatFeedAppendCallback:
 
         logs = []
         chat_feed.callback = callback
-        chat_feed.append_callback = append_callback
+        chat_feed.post_hook = append_callback
         chat_feed.send("AB")
         wait_until(lambda: chat_feed.objects[-1].object == "Echo: AB")
         assert logs == ["AB", "Echo: ", "Echo: AB"]
