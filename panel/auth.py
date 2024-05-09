@@ -994,7 +994,11 @@ class OAuthProvider(BasicAuthProvider):
                 _, token = protocol_header.split(', ')
                 payload = get_token_payload(token)
                 if 'user_data' in payload:
-                    state._oauth_user_overrides[user] = payload['user_data']
+                    user_data = payload['user_data']
+                    if state.encryption:
+                        user_data = state.encryption.decrypt(user_data).decode('utf-8')
+                    user_data = json.loads(user_data)
+                    state._oauth_user_overrides[user] = user_data
 
             now_ts = dt.datetime.now(dt.timezone.utc).timestamp()
             expiry = None

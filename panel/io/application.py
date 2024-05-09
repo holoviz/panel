@@ -3,6 +3,7 @@ Extensions for Bokeh application handling.
 """
 from __future__ import annotations
 
+import json
 import logging
 import os
 
@@ -101,7 +102,10 @@ class Application(BkApplication):
             from tornado.web import decode_signed_value
             user = decode_signed_value(config.cookie_secret, 'user', user.value).decode('utf-8')
             if user in state._oauth_user_overrides:
-                request_data['user_data'] = state._oauth_user_overrides[user]
+                user_data = json.dumps(state._oauth_user_overrides[user])
+                if state.encryption:
+                    user_data = state.encryption.encrypt(user_data.encode('utf-8'))
+                request_data['user_data'] = user_data
         return request_data
 
 bokeh.command.util.Application = Application # type: ignore
