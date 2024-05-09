@@ -4,6 +4,7 @@ import {View} from "@bokehjs/core/view"
 import {Model} from "@bokehjs/model"
 import {Message} from "@bokehjs/protocol/message"
 import {Receiver} from "@bokehjs/protocol/receiver"
+import {Buffer} from "@bokehjs/core/serialization/buffer"
 import type {Patch, DocumentChangedEvent} from "@bokehjs/document"
 import {isArray, isPlainObject} from "@bokehjs/core/util/types"
 import {values, size} from "@bokehjs/core/util/object"
@@ -108,17 +109,20 @@ export class CommManager extends Model {
       for (const val of value) {
         this._extract_buffers(val, buffers)
       }
+    } else if (value instanceof Map) {
+      for (const key of value.keys()) {
+	const v = value.get(key)
+	this._extract_buffers(v, buffers)
+      }
+    } else if (value instanceof Buffer) {
+      const {buffer} = value
+      delete value.buffer
+      const id = buffers.length
+      value.id = id
+      buffers.push(buffer)
     } else if (isPlainObject(value)) {
-      if (size(value) == 1 && value.buffer instanceof ArrayBuffer) {
-        const {buffer} = value
-        delete value.buffer
-        const id = buffers.length
-        value.id = id
-        buffers.push(buffer)
-      } else {
-        for (const val of values(value)) {
-          this._extract_buffers(val, buffers)
-        }
+      for (const val of values(value)) {
+        this._extract_buffers(val, buffers)
       }
     }
   }
