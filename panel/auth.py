@@ -414,7 +414,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
                           type(handler).__name__, user_key)
                 raise HTTPError(401, "OAuth token payload missing user information")
             handler.clear_cookie('is_guest')
-            handler.set_secure_cookie('user', user, expires_days=config.oauth_expiry)
+            handler.set_secure_cookie('user', user, expires_days=config.oauth_expiry, httponly=True)
         else:
             user = None
 
@@ -424,14 +424,14 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
                 id_token = state.encryption.encrypt(id_token.encode('utf-8'))
             if refresh_token:
                 refresh_token = state.encryption.encrypt(refresh_token.encode('utf-8'))
-        handler.set_secure_cookie('access_token', access_token, expires_days=config.oauth_expiry)
+        handler.set_secure_cookie('access_token', access_token, expires_days=config.oauth_expiry, httponly=True)
         if id_token:
-            handler.set_secure_cookie('id_token', id_token, expires_days=config.oauth_expiry)
+            handler.set_secure_cookie('id_token', id_token, expires_days=config.oauth_expiry, httponly=True)
         if expires_in:
             now_ts = dt.datetime.now(dt.timezone.utc).timestamp()
-            handler.set_secure_cookie('oauth_expiry', str(int(now_ts + expires_in)), expires_days=config.oauth_expiry)
+            handler.set_secure_cookie('oauth_expiry', str(int(now_ts + expires_in)), expires_days=config.oauth_expiry, httponly=True)
         if refresh_token:
-            handler.set_secure_cookie('refresh_token', refresh_token, expires_days=config.oauth_expiry)
+            handler.set_secure_cookie('refresh_token', refresh_token, expires_days=config.oauth_expiry, httponly=True)
         if user and user in state._oauth_user_overrides:
             state._oauth_user_overrides.pop(user, None)
         return user
@@ -849,11 +849,11 @@ class BasicLoginHandler(RequestHandler):
             self.clear_cookie("user")
             return
         self.clear_cookie("is_guest")
-        self.set_secure_cookie("user", user, expires_days=config.oauth_expiry)
+        self.set_secure_cookie("user", user, expires_days=config.oauth_expiry, httponly=True)
         id_token = base64url_encode(json.dumps({'user': user}))
         if state.encryption:
             id_token = state.encryption.encrypt(id_token.encode('utf-8'))
-        self.set_secure_cookie('id_token', id_token, expires_days=config.oauth_expiry)
+        self.set_secure_cookie('id_token', id_token, expires_days=config.oauth_expiry, httponly=True)
 
 
 class LogoutHandler(tornado.web.RequestHandler):
