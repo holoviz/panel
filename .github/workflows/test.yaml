@@ -145,7 +145,7 @@ jobs:
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
-          channels: pyviz/label/dev,numba,bokeh/label/dev,conda-forge,nodefaults
+          channels: pyviz/label/dev,numba,conda-forge,nodefaults
           conda-update: true
           nodejs: true
           nodejs-version: "20.9"  #  https://github.com/bokeh/bokeh/pull/13851
