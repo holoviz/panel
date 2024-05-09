@@ -57,7 +57,7 @@ The `_esm` attribute most export the `render` function. It accepts the following
 
 When not using React and JSX, the `render` function also supports:
 
-- **`html`**: A function that enables you to write JSX-like syntax in plain JavaScript. See [`htm`](https://github.com/developit/htm).
+- **`html`**: The Preact `html` function which enables you to write JSX-like syntax in plain JavaScript. See [`htm`](https://github.com/developit/htm).
 
 When using React and JSX, the `render` function also supports:
 
