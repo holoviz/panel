@@ -118,13 +118,13 @@ export class CommManager extends Model {
       const {buffer} = value
       const id = buffers.length
       buffers.push(buffer)
-      return {id: id}
+      return {id}
     } else if (isPlainObject(value)) {
       for (const key of keys(value)) {
         const replaced = this._extract_buffers(value[key], buffers)
-	if (replaced != null) {
-	  value[key] = replaced
-	}
+        if (replaced != null) {
+          value[key] = replaced
+        }
       }
     }
   }
