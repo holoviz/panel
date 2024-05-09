@@ -7,7 +7,7 @@ import {Receiver} from "@bokehjs/protocol/receiver"
 import {Buffer} from "@bokehjs/core/serialization/buffer"
 import type {Patch, DocumentChangedEvent} from "@bokehjs/document"
 import {isArray, isPlainObject} from "@bokehjs/core/util/types"
-import {values, size} from "@bokehjs/core/util/object"
+import {keys} from "@bokehjs/core/util/object"
 
 export const comm_settings: any = {
   debounce: true,
