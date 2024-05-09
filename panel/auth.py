@@ -988,6 +988,8 @@ class OAuthProvider(BasicAuthProvider):
             if not config.oauth_refresh_tokens or user is None:
                 return user
 
+            # Try to obtain user oauth overrides from WS headers
+            # in case the HTTP handler refreshed tokens
             is_ws = isinstance(handler, WebSocketHandler)
             if is_ws and 'Sec-Websocket-Protocol' in handler.request.headers:
                 protocol_header = handler.request.headers['Sec-Websocket-Protocol']
@@ -1016,16 +1018,20 @@ class OAuthProvider(BasicAuthProvider):
                     return
                 access_token = state._decrypt_cookie(access_cookie)
 
+            # Try to get expiry directly from the token since that is
+            # the real source of truth
+            try:
+                access_json = decode_token(access_token)
+                expiry = access_json['exp']
+            except Exception:
+                pass
+
             if expiry is None:
-                try:
-                    access_json = decode_token(access_token)
-                    expiry = access_json['exp']
-                except Exception:
-                    expiry = handler.get_secure_cookie('oauth_expiry', max_age_days=config.oauth_expiry)
-                    if expiry is None:
-                        # Token does not have content and therefore does not expire
-                        log.debug("access_token is not a valid JWT token. Expiry cannot be determined.")
-                        return user
+                expiry = handler.get_secure_cookie('oauth_expiry', max_age_days=config.oauth_expiry)
+                if expiry is None:
+                    # Token does not have content and therefore does not expire
+                    log.debug("access_token is not a valid JWT token. Expiry cannot be determined.")
+                    return user
 
             if user in state._oauth_user_overrides:
                 refresh_token = state._oauth_user_overrides[user]['refresh_token']
@@ -1064,6 +1070,10 @@ class OAuthProvider(BasicAuthProvider):
                 user, refresh_token, handler.application, handler.request,
                 reschedule=is_ws
             )
+            # If user not in overrides refresh failed and we need to
+            # fully reauthenticate
+            if user not in state._oauth_user_overrides:
+                return
             expires_in = expiry - now_ts
             OAuthLoginHandler.set_auth_cookies(
                 handler, None, access_token, refresh_token, expires_in
@@ -1123,6 +1133,8 @@ class OAuthProvider(BasicAuthProvider):
 
     async def _scheduled_refresh(self, user, refresh_token, application, request, reschedule=True):
         await self._refresh_access_token(user, refresh_token, application, request)
+        if user not in state._oauth_user_overrides:
+            return None, None, None
         user_state = state._oauth_user_overrides[user]
         access_token, refresh_token = user_state['access_token'], user_state['refresh_token']
         if user_state['expiry']:
