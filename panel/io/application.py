@@ -7,7 +7,7 @@ import logging
 import os
 
 from functools import partial
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import bokeh.command.util
 
@@ -83,6 +83,26 @@ class Application(BkApplication):
         doc.destroy = partial(_destroy_document, doc) # type: ignore
         doc.on_event('document_ready', partial(state._schedule_on_load, doc))
         doc.on_session_destroyed(_log_session_destroyed)
+
+    def process_request(self, request) -> dict[str, Any]:
+        ''' Processes incoming HTTP request returning a dictionary of
+        additional data to add to the session_context.
+
+        Args:
+            request: HTTP request
+
+        Returns:
+            A dictionary of JSON serializable data to be included on
+            the session context.
+        '''
+        request_data = super().process_request(request)
+        user = request.cookies.get('user')
+        if user:
+            from tornado.web import decode_signed_value
+            user = decode_signed_value(config.cookie_secret, 'user', user.value).decode('utf-8')
+            if user in state._oauth_user_overrides:
+                request_data['user_data'] = state._oauth_user_overrides[user]
+        return request_data
 
 bokeh.command.util.Application = Application # type: ignore
 
