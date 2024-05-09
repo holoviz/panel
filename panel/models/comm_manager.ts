@@ -104,7 +104,7 @@ export class CommManager extends Model {
     }
   }
 
-  protected _extract_buffers(value: unknown, buffers: ArrayBuffer[]): void {
+  protected _extract_buffers(value: unknown, buffers: ArrayBuffer[]): any {
     if (isArray(value)) {
       for (const val of value) {
         this._extract_buffers(val, buffers)
@@ -116,13 +116,15 @@ export class CommManager extends Model {
       }
     } else if (value instanceof Buffer) {
       const {buffer} = value
-      delete value.buffer
       const id = buffers.length
-      value.id = id
       buffers.push(buffer)
+      return {id: id}
     } else if (isPlainObject(value)) {
-      for (const val of values(value)) {
-        this._extract_buffers(val, buffers)
+      for (const key of keys(value)) {
+        const replaced = this._extract_buffers(value[key], buffers)
+	if (replaced != null) {
+	  value[key] = replaced
+	}
       }
     }
   }
