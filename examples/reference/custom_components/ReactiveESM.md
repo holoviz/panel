@@ -47,21 +47,27 @@ CounterButton().servable()
 
 #### `render` Function
 
-It accepts the following parameters:
+The `_esm` attribute most export the `render` function. It accepts the following parameters:
 
-- **`data`**: Represents the Python Parameters of the component and provides methods to `.watch` for changes and `.send_event` back to Python.
+- **`data`**: Represents the non-Viewable Parameters of the component and provides methods to `.watch` for changes and `.send_event` back to Python.
+- **`children`**: Represents the Viewable Parameters of the component and provides methods to `.watch` for changes.
 - **`model`**: Corresponds to the Bokeh model.
 - **`view`**: Corresponds to the Bokeh view.
-- **`el`**: The parent HTML element to append child elements to. PLEASE EXPLAIN WHY ITS NEEDED.
-- **`children`**: PLEASE EXPLAIN WHAT THIS IS AND WHY ITS NEEDED.
+- **`el`**: The parent HTML element to append child elements to.
 
-When using React and JSX, the function also supports:
+When not using React and JSX, the `render` function also supports:
+
+- **`html`**: A function that enables you to write JSX-like syntax in plain JavaScript. See [`htm`](https://github.com/developit/htm).
+
+When using React and JSX, the `render` function also supports:
 
 - **`state`**: Manages state similar to React's [`useState`](https://www.w3schools.com/react/react_usestate.asp) hook.
 
 Any HTML element returned from the `render` function will be appended to the parent HTML element (`el`) of the component.
 
 #### Other Lifecycle Methods
+
+DUMMY CONTENT. PLEASE HELP ME DESCRIBE THIS.
 
 - `initialize`: Runs once per widget instance at model initialization, facilitating setup for event handlers or state.
 - `teardown`: Cleans up resources or processes when a widget instance is being removed.
@@ -302,6 +308,106 @@ You can now edit the JavaScript or CSS file, and the changes will be automatical
 - Try changing the `innerHTML` from `count is ${data.value}` to `Count is ${data.value}` and observe the update.
 - Try changing the background color from `#0072B5` to `#008080`.
 
+## Displaying A Single Panel Component
+
+You can display Panel components by defining `ClassSelector` parameters with the `class_` set to subtype of `_Viewable` or tuple of subtypes of `_Viewable`s.
+
+Lets start with the simplest example
+
+```python
+import param
+import panel as pn
+from panel import ReactiveESM
+
+class Example(ReactiveESM):
+
+    child = param.ClassSelector(class_=pn.viewable.Viewable)
+
+    _esm = """
+    export function render({ children }) {
+      const button = document.createElement("button");
+      button.appendChild(children.child)
+      return button
+    }"""
+
+Example(child=pn.panel("A **Markdown** pane!")).servable()
+```
+
+If you want to allow a certain type of Panel components only you can specify the specific type in the `_class` argument.
+
+```python
+import param
+import panel as pn
+from panel import ReactiveESM
+
+class Example(ReactiveESM):
+
+    child = param.ClassSelector(class_=pn.pane.Markdown)
+
+    _esm = """
+    export function render({ children }) {
+      const button = document.createElement("button");
+      button.appendChild(children.child)
+      return button
+    }"""
+
+Example(child=pn.panel("A **Markdown** pane!")).servable()
+```
+
+The `class_` argument also supports a tuple of types
+
+```python
+import param
+import panel as pn
+from panel import ReactiveESM
+
+class Example(ReactiveESM):
+
+    child = param.ClassSelector(class_=(pn.pane.Markdown, pn.pane.HTML))
+
+    _esm = """
+    export function render({ children }) {
+      const button = document.createElement("button");
+      button.appendChild(children.child)
+      return button
+    }"""
+
+Example(child=pn.panel("A **Markdown** pane!")).servable()
+```
+
+## Displaying a List of Panel Components
+
+You can also use display a `List` of `Viewable` `objects`.
+
+```python
+import param
+import panel as pn
+from panel import ReactiveESM
+
+class Example(ReactiveESM):
+
+    objects = param.List(item_type=pn.viewable.Viewable)
+
+    _esm = """
+    export function render({ children }) {
+      const div = document.createElement('div')
+      div.append(...children.objects)
+      return div
+    }"""
+
+
+Example(
+    objects=[pn.panel("A **Markdown** pane!"), pn.widgets.Button(name="Click me!")]
+).servable()
+```
+
+:::note
+
+You can change the `item_type` to a specific subtype of `Viewable` or a tuple of
+`Viewable` subtypes.
+
+:::
+
 ## React with JSX
 
 To use [React](https://react.dev/) with [JSX](https://react.dev/learn/writing-markup-with-jsx) instead of plain JavaScript, follow this approach:
@@ -337,6 +443,49 @@ class ReactTextInput(pn.ReactiveESM):
     """
 
 text_input = ReactTextInput(value="Hello World")
+
+pn.Column(text_input, text_input.param.value).servable()
+```
+
+## JSX-like syntax with `html`
+
+If you prefer to not use React but would still like to have an easy way to create a nested DOM element easily you can use the `html` argument of the `render` function.
+
+THE BELOW DOES NOT WORK. PLEASE HELP ME.
+
+```python
+import panel as pn
+import param
+
+pn.extension()
+
+class JSTextInput(pn.ReactiveESM):
+
+    value = param.String()
+
+    _esm = """
+    function update(div, data, html){
+        const child = html`
+            <div>
+                <input
+                    id="input"
+                    value=${data.value}
+                    onChange=${e => data.value=e.target.value}
+                    style=${{margin: "10px"}}
+                />
+            </div>
+        `;
+        div.appendChild(child)
+    }
+    export function render({data, html}) {
+        const div = document.createElement("div")
+
+        update(div, data, html)
+        data.watch(update, 'value')
+    }
+    """
+
+text_input = JSTextInput(value="Hello World")
 
 pn.Column(text_input, text_input.param.value).servable()
 ```
