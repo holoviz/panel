@@ -111,8 +111,8 @@ export class CommManager extends Model {
       }
     } else if (value instanceof Map) {
       for (const key of value.keys()) {
-	const v = value.get(key)
-	this._extract_buffers(v, buffers)
+        const v = value.get(key)
+        this._extract_buffers(v, buffers)
       }
     } else if (value instanceof Buffer) {
       const {buffer} = value
