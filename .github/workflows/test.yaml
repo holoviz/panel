@@ -141,7 +141,7 @@ jobs:
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
       OMP_NUM_THREADS: 1
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0
+      - uses: holoviz-dev/holoviz_tasks/install@v0.1.0
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
@@ -229,7 +229,7 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0
+      - uses: holoviz-dev/holoviz_tasks/install@v0.1.0
         with:
           name: ui_test_suite
           python-version: 3.9
