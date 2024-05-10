@@ -59,6 +59,8 @@ def WRITE_LOCK():
 _panel_last_cleanup = None
 _write_tasks = []
 
+extra_socket_handlers = {}
+
 @dataclasses.dataclass
 class Request:
     headers : dict
@@ -177,6 +179,8 @@ async def _dispatch_msgs(doc, msgs):
             continue
         if isinstance(conn._socket, WebSocketHandler):
             futures = dispatch_tornado(conn, msg=msg)
+        elif (socket_type:= type(conn._socket)) in extra_socket_handlers:
+            futures = extra_socket_handlers[socket_type](conn, msg=msg)
         else:
             futures = dispatch_django(conn, msg=msg)
         await _run_write_futures(futures)
@@ -405,6 +409,8 @@ def unlocked() -> Iterator:
                 continue
             elif isinstance(conn._socket, WebSocketHandler):
                 futures += dispatch_tornado(conn, dispatch_events)
+            elif (socket_type:= type(conn._socket)) in extra_socket_handlers:
+                futures += extra_socket_handlers[socket_type](conn, dispatch_events)
             else:
                 futures += dispatch_django(conn, dispatch_events)
 
