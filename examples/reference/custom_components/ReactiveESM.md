@@ -47,13 +47,13 @@ CounterButton().servable()
 
 #### `render` Function
 
-The `_esm` attribute most export the `render` function. It accepts the following parameters:
+The `_esm` attribute must export the `render` function. It accepts the following parameters:
 
 - **`data`**: Represents the non-Viewable Parameters of the component and provides methods to `.watch` for changes and `.send_event` back to Python.
 - **`children`**: Represents the Viewable Parameters of the component and provides methods to `.watch` for changes.
-- **`model`**: Corresponds to the Bokeh model.
-- **`view`**: Corresponds to the Bokeh view.
-- **`el`**: The parent HTML element to append child elements to.
+- **`model`**: The Bokeh model.
+- **`view`**: The Bokeh view.
+- **`el`**: The HTML element that the component will be rendered into.
 
 When not using React and JSX, the `render` function also supports:
 
@@ -63,7 +63,9 @@ When using React and JSX, the `render` function also supports:
 
 - **`state`**: Manages state similar to React's [`useState`](https://www.w3schools.com/react/react_usestate.asp) hook.
 
-Any HTML element returned from the `render` function will be appended to the parent HTML element (`el`) of the component.
+Any HTML element returned from the `render` function will be appended to the HTML element (`el`) of the component.
+
+The `render` function will be rerun when any child on the `children` object changes.
 
 #### Other Lifecycle Methods
 
