@@ -26,6 +26,7 @@ from ..layout import Feed, ListPanel
 from ..layout.card import Card
 from ..layout.spacer import VSpacer
 from ..pane.image import SVG
+from .icon import ChatReactionIcons
 from .message import ChatMessage
 
 if TYPE_CHECKING:
@@ -81,7 +82,7 @@ class ChatFeed(ListPanel):
     auto_scroll_limit = param.Integer(default=200, bounds=(0, None), doc="""
         Max pixel distance from the latest object in the Column to
         activate automatic scrolling upon update. Setting to 0
-        disables auto-scrolling.""",)
+        disables auto-scrolling.""")
 
     callback = param.Callable(allow_refs=False, doc="""
         Callback to execute when a user sends a message or
@@ -133,6 +134,11 @@ class ChatFeed(ListPanel):
         `help` as the user. This is useful for providing instructions,
         and will not be included in the `serialize` method by default.""")
 
+    load_buffer = param.Integer(default=50, bounds=(0, None), doc="""
+        The number of objects loaded on each side of the visible objects.
+        When scrolled halfway into the buffer, the feed will automatically
+        load additional objects while unloading objects on the opposite side.""")
+
     placeholder_text = param.String(default="", doc="""
         The text to display next to the placeholder icon.""")
 
@@ -148,17 +154,18 @@ class ChatFeed(ListPanel):
         Min duration in seconds of buffering before displaying the placeholder.
         If 0, the placeholder will be disabled.""")
 
+    post_hook = param.Callable(allow_refs=False, doc="""
+        A hook to execute after a new message is *completely* added,
+        i.e. the generator is exhausted. The `stream` method will trigger
+        this callback on every call. The signature must include the
+        `message` and `instance` arguments.""")
+
     renderers = param.HookList(doc="""
         A callable or list of callables that accept the value and return a
         Panel object to render the value. If a list is provided, will
         attempt to use the first renderer that does not raise an
         exception. If None, will attempt to infer the renderer
         from the value.""")
-
-    load_buffer = param.Integer(default=50, bounds=(0, None), doc="""
-        The number of objects loaded on each side of the visible objects.
-        When scrolled halfway into the buffer, the feed will automatically
-        load additional objects while unloading objects on the opposite side.""")
 
     scroll_button_threshold = param.Integer(default=100, bounds=(0, None),doc="""
         Min pixel distance from the latest object in the Column to
@@ -181,6 +188,8 @@ class ChatFeed(ListPanel):
         The current state of the callback.""")
 
     _callback_trigger = param.Event(doc="Triggers the callback to respond.")
+
+    _post_hook_trigger = param.Event(doc="Triggers the append callback.")
 
     _disabled_stack = param.List(doc="""
         The previous disabled state of the feed.""")
@@ -205,7 +214,7 @@ class ChatFeed(ListPanel):
         super().__init__(*objects, **params)
 
         if self.help_text:
-            self.objects = [ChatMessage(self.help_text, user="Help"), *self.objects]
+            self.objects = [ChatMessage(self.help_text, user="Help", **message_params), *self.objects]
 
         # instantiate the card's column
         linked_params = dict(
@@ -262,6 +271,7 @@ class ChatFeed(ListPanel):
 
         # handle async callbacks using this trick
         self.param.watch(self._prepare_response, '_callback_trigger')
+        self.param.watch(self._after_append_completed, '_post_hook_trigger')
 
     def _get_model(
         self, doc: Document, root: Model | None = None,
@@ -281,6 +291,15 @@ class ChatFeed(ListPanel):
     def _cleanup(self, root: Model | None = None) -> None:
         self._card._cleanup(root)
         super()._cleanup(root)
+
+    @param.depends("message_params", watch=True, on_init=True)
+    def _validate_message_params(self):
+        reaction_icons = self.message_params.get("reaction_icons")
+        if isinstance(reaction_icons, ChatReactionIcons):
+            raise ValueError(
+                "Cannot pass a ChatReactionIcons instance to message_params; "
+                "use a dict of the options instead."
+            )
 
     @param.depends("load_buffer", "auto_scroll_limit", "scroll_button_threshold", watch=True)
     def _update_chat_log_params(self):
@@ -430,6 +449,7 @@ class ChatFeed(ListPanel):
                 response_message = self._upsert_message(await response, response_message)
             else:
                 response_message = self._upsert_message(response, response_message)
+            self.param.trigger("_post_hook_trigger")
         finally:
             if response_message:
                 response_message.show_activity_dot = False
@@ -484,6 +504,7 @@ class ChatFeed(ListPanel):
         else:
             response = await asyncio.to_thread(self.callback, *callback_args)
         await self._serialize_response(response)
+        return response
 
     async def _prepare_response(self, *_) -> None:
         """
@@ -580,6 +601,7 @@ class ChatFeed(ListPanel):
                 value = {"object": value}
             message = self._build_message(value, user=user, avatar=avatar)
         self.append(message)
+        self.param.trigger("_post_hook_trigger")
         if respond:
             self.respond()
         return message
@@ -644,6 +666,8 @@ class ChatFeed(ListPanel):
                 value = {"object": value}
             message = self._build_message(value, user=user, avatar=avatar)
         self._replace_placeholder(message)
+
+        self.param.trigger("_post_hook_trigger")
         return message
 
     def respond(self):
@@ -757,6 +781,19 @@ class ChatFeed(ListPanel):
 
             serialized_messages.append({"role": role, "content": content})
         return serialized_messages
+
+    async def _after_append_completed(self, message):
+        """
+        Trigger the append callback after a message is added to the chat feed.
+        """
+        if self.post_hook is None:
+            return
+
+        message = self._chat_log.objects[-1]
+        if iscoroutinefunction(self.post_hook):
+            await self.post_hook(message, self)
+        else:
+            self.post_hook(message, self)
 
     def serialize(
         self,
