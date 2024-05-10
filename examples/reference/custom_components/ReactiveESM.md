@@ -451,8 +451,6 @@ pn.Column(text_input, text_input.param.value).servable()
 
 If you prefer to not use React but would still like to have an easy way to create a nested DOM element easily you can use the `html` argument of the `render` function.
 
-THE BELOW DOES NOT WORK. PLEASE HELP ME.
-
 ```python
 import panel as pn
 import param
@@ -464,8 +462,8 @@ class JSTextInput(pn.ReactiveESM):
     value = param.String()
 
     _esm = """
-    function update(div, data, html){
-        const child = html`
+    export function render({data, html}) {
+        return (html`
             <div>
                 <input
                     id="input"
@@ -474,14 +472,7 @@ class JSTextInput(pn.ReactiveESM):
                     style=${{margin: "10px"}}
                 />
             </div>
-        `;
-        div.appendChild(child)
-    }
-    export function render({data, html}) {
-        const div = document.createElement("div")
-
-        update(div, data, html)
-        data.watch(update, 'value')
+        `)
     }
     """
 
@@ -489,3 +480,5 @@ text_input = JSTextInput(value="Hello World")
 
 pn.Column(text_input, text_input.param.value).servable()
 ```
+
+When the `data.value` changes the `html` element will be rerendered.
