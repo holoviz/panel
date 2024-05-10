@@ -197,7 +197,6 @@ jobs:
       - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         with:
           environments: ${{ matrix.environment }}
-          playwright: true
         id: install
       - name: Launch JupyterLab
         shell: pixi run -e test-ui bash -el {0}
