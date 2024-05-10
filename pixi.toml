@@ -134,7 +134,6 @@ channels = ["pyviz/label/dev", "bokeh", "microsoft", "conda-forge"]
 playwright = "*"
 pytest-playwright = "*"
 jupyter_server = "*"
-ipython = "<8.24"
 
 [feature.test-ui.tasks]
 _install-ui = 'playwright install chromium'
