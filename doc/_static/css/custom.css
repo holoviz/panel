@@ -1,9 +1,14 @@
 :root[data-theme='light'],
 :root[data-theme='dark'] {
-  --pst-color-primary: #0072b5;
-  --pst-color-link: #0072b5;
-  --pst-color-inline-code: #0072b5;
-  --sd-color-card-border-hover: #0072b5;
+  --holoviz-main-color: #0072b5;
+  --pst-color-inline-code: var(--holoviz-main-color);
+  --pst-color-link-hover: var(--holoviz-main-color);
+  --pst-color-link: var(--holoviz-main-color);
+  --pst-color-primary: var(--holoviz-main-color);
+  --pst-color-secondary-bg: #d9ebf0; /* Announcement banner */
+  --pst-color-secondary-highlight: var(--holoviz-main-color);
+  --pst-color-secondary: var(--holoviz-main-color);
+  --sd-color-card-border-hover: var(--holoviz-main-color);
 }
 
 /* Fix breadcrumb overlap https://github.com/holoviz/panel/issues/5199 */
