@@ -141,11 +141,11 @@ jobs:
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
       OMP_NUM_THREADS: 1
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1.0
+      - uses: holoviz-dev/holoviz_tasks/install@v0
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
-          channels: pyviz/label/dev,numba,conda-forge,nodefaults
+          channels: pyviz/label/dev,numba,bokeh,conda-forge,nodefaults
           conda-update: true
           nodejs: true
           nodejs-version: "20.9"  #  https://github.com/bokeh/bokeh/pull/13851
@@ -229,11 +229,11 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1.0
+      - uses: holoviz-dev/holoviz_tasks/install@v0
         with:
           name: ui_test_suite
           python-version: 3.9
-          channels: pyviz/label/dev,conda-forge,nodefaults
+          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
           envs: "-o recommended -o tests -o build"
           cache: ${{ github.event.inputs.cache || github.event.inputs.cache == '' }}
           nodejs: true
