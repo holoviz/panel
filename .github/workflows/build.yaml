@@ -149,7 +149,6 @@ jobs:
           environments: "build"
           download-data: false
       - name: npm build
-        shell: pixi run -e build bash -el {0}
         run: |
           TARBALL=$(pixi run build-npm)
           echo "TARBALL=$TARBALL" >> $GITHUB_ENV
