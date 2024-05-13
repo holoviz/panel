@@ -28,8 +28,8 @@ from bokeh.models.widgets import (
 from ..config import config
 from ..layout import Column, Panel
 from ..models import (
-    DatetimePicker as _bkDatetimePicker, TextAreaInput as _bkTextAreaInput,
-    TextInput as _BkTextInput,
+    DatetimePicker as _bkDatetimePicker, FileDropper as _BkFileDropper,
+    TextAreaInput as _bkTextAreaInput, TextInput as _BkTextInput,
 )
 from ..util import param_reprs, try_datetime64_to_datetime
 from .base import CompositeWidget, Widget
@@ -273,6 +273,48 @@ class FileInput(Widget):
                     f.write(val)
             else:
                 fn.write(val)
+
+
+class FileDropper(FileInput):
+
+    chunk_size = param.Integer(default=1000000, doc="""
+        Size in bytes per chunk transferred across the WebSocket.""")
+
+    layout = param.Selector(
+        default="compact", objects=["circle", "compact", "integrated"], doc="""
+        Compact mode will remove padding, integrated mode is used to render
+        FilePond as part of a bigger element. Circle mode adjusts the item
+        position offsets so buttons and progress indicators don't fall outside
+        of the circular shape.""")
+
+    value = param.Dict(default={})
+
+    _rename = {'value': None}
+
+    _widget_type = _BkFileDropper
+
+    def __init__(self, **params):
+        super().__init__(**params)
+        self._file_buffer = {}
+
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
+        model = super()._get_model(doc, root, parent, comm)
+        self._register_events('upload_event', model=model, doc=doc, comm=comm)
+        return model
+
+    def _process_event(self, event):
+        name = event.data['name']
+        if event.data['chunk'] == 1:
+            self._file_buffer[name] = []
+        self._file_buffer[name].append(event.data['data'])
+        if event.data['chunk'] == event.data['total_chunks']:
+            buffers = self._file_buffer[name]
+            self.value[name] = b''.join(buffers)
+            self.param.trigger('value')
+
 
 
 class StaticText(Widget):
