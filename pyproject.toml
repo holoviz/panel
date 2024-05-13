@@ -113,6 +113,9 @@ include = ["panel", "scripts", "examples"]
 [tool.hatch.build.hooks.vcs]
 version-file = "panel/_version.py"
 
+[tool.hatch.build.hooks.custom]
+path = 'hatch_build.py'
+
 [tool.ruff]
 exclude = [
     ".git",
