@@ -320,7 +320,6 @@ export class DataTabulatorView extends HTMLBoxView {
   _building: boolean = false
   _debounced_redraw: any = null
   _restore_scroll: boolean = false
-  _size: (number | null)[] = [null, null]
 
   override connect_signals(): void {
     super.connect_signals()
@@ -484,6 +483,7 @@ export class DataTabulatorView extends HTMLBoxView {
       return
     }
     this.redraw(true, true)
+    this.restore_scroll()
   }
 
   setCSSClasses(el: HTMLDivElement): void {
