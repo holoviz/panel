@@ -16,7 +16,6 @@
 	  const root_el = id_el.children[0]
 	  root_el.id = root_el.id + '-rendered'
 	  for (const child of root_el.children) {
-	    console.log(child)
 	    child.setAttribute('data-lm-suppress-shortcuts', 'true')
 	  }
 	}
