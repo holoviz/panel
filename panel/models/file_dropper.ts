@@ -29,6 +29,7 @@ export class FileDropperView extends FileInputView {
   override initialize(): void {
     super.initialize();
     (window as any).FilePond.registerPlugin((window as any).FilePondPluginImagePreview)
+    (window as any).FilePond.registerPlugin((window as any).FilePondPluginFileValidateSize)
   }
 
   override stylesheets(): StyleSheetLike[] {
@@ -41,16 +42,32 @@ export class FileDropperView extends FileInputView {
     this.input_el.className = "filepond";
     (window as any).FilePond.create(this.input_el, {
       allowMultiple: this.model.multiple,
-      stylePanelLayout: this.model.layout,
+      maxFileSize: this.model.max_file_size,
+      maxTotalFileSize: this.model.max_total_file_size,
       server: {
-        process: (fieldName: string, file: File, metadata, load, error, progress, abort) => this._process_upload(fieldName, file, metadata, load, error, progress, abort),
-        fetch: null,
+        process: (
+	  _: string,
+	  file: File,
+	  __: any,
+	  load: (id: string) => void,
+	  error: (msg: string) => void,
+	  progress: (computable: boolean, loaded: number, total: number) => void,
+	) => {
+	  this._process_upload(file, load, error, progress)
+        },
+	fetch: null,
         revert: null,
       },
+      stylePanelLayout: this.model.layout,
     })
   }
 
-  async private _process_upload(fieldName: string, file: File, metadata, load, error, progress, abort): any {
+  private async _process_upload(
+    file: File,
+    load: (id: string) => void,
+    error: (msg: string) => void,
+    progress: (computable: boolean, loaded: number, total: number) => void,
+  ): Promise<any> {
     const buffer_size = this.model.chunk_size
     const chunks = Math.ceil(file.size / buffer_size)
     let abort_flag = false
@@ -72,7 +89,7 @@ export class FileDropperView extends FileInputView {
       }
       load(file.name)
       resolve(file.name)
-    }).catch(() => error())
+    }).catch(() => error('Upload failed.'))
 
     return {abort: () => {
       abort_flag = true
@@ -87,6 +104,8 @@ export namespace FileDropper {
   export type Props = FileInput.Props & {
     chunk_size: p.Property<number>
     layout: p.Property<typeof DropperLayout["__type__"]>
+    max_file_size: p.Property<string | null>
+    max_total_file_size: p.Property<string | null>
   }
 }
 
@@ -103,9 +122,11 @@ export class FileDropper extends FileInput {
 
   static {
     this.prototype.default_view = FileDropperView
-    this.define<FileDropper.Props>(({Int}) => ({
-      chunk_size: [ Int, 1000000],
-      layout: [DropperLayout, "compact" ],
+    this.define<FileDropper.Props>(({Int, Nullable, Str}) => ({
+      chunk_size:          [ Int,             1000000 ],
+      max_file_size:       [ Nullable(Str),      null ],
+      max_total_file_size: [ Nullable(Str),      null ],
+      layout:              [ DropperLayout, "compact" ],
     }))
   }
 }

@@ -280,6 +280,14 @@ class FileDropper(FileInput):
     chunk_size = param.Integer(default=1000000, doc="""
         Size in bytes per chunk transferred across the WebSocket.""")
 
+    max_file_size = param.String(default=None, doc="""
+        Maximum size of a file as a string with units given in KB or MB,
+        e.g. 5MB or 750KB.""")
+
+    max_total_file_size = param.String(default=None, doc="""
+        Maximum size of all uploaded files, as a string with units given
+        in KB or MB, e.g. 5MB or 750KB.""")
+
     layout = param.Selector(
         default="compact", objects=["circle", "compact", "integrated"], doc="""
         Compact mode will remove padding, integrated mode is used to render

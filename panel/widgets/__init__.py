@@ -45,7 +45,7 @@ from .indicators import (  # noqa
 from .input import (  # noqa
     ArrayInput, Checkbox, ColorPicker, DatePicker, DateRangePicker,
     DatetimeInput, DatetimePicker, DatetimeRangeInput, DatetimeRangePicker,
-    FileDroppr, FileInput, FloatInput, IntInput, LiteralInput, NumberInput,
+    FileDropper, FileInput, FloatInput, IntInput, LiteralInput, NumberInput,
     PasswordInput, Spinner, StaticText, Switch, TextAreaInput, TextInput,
 )
 from .misc import FileDownload, JSONEditor, VideoStream  # noqa
