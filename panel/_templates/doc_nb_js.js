@@ -16,6 +16,8 @@
 	  const root_el = id_el.children[0]
 	  root_el.id = root_el.id + '-rendered'
 	  for (const child of root_el.children) {
+            // Ensure JupyterLab does not capture keyboard shortcuts
+            // see: https://jupyterlab.readthedocs.io/en/4.1.x/extension/notebook.html#keyboard-interaction-model
 	    child.setAttribute('data-lm-suppress-shortcuts', 'true')
 	  }
 	}
