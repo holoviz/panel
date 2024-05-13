@@ -308,6 +308,7 @@ export class DataTabulatorView extends HTMLBoxView {
 
   tabulator: any
   columns: Map<string, any> = new Map()
+  container: HTMLDivElement | null = null
   _tabulator_cell_updating: boolean=false
   _updating_page: boolean = false
   _updating_sort: boolean = false
@@ -317,11 +318,13 @@ export class DataTabulatorView extends HTMLBoxView {
   _lastHorizontalScrollbarLeftPosition: number = 0
   _applied_styles: boolean = false
   _building: boolean = false
+  _debounced_redraw: any = null
   _restore_scroll: boolean = false
 
   override connect_signals(): void {
     super.connect_signals()
 
+    this._debounced_redraw = debounce(() => this._resize_redraw(), 20, false)
     const {
       configuration, layout, columns, groupby, visible, download,
       children, expanded, cell_styles, hidden_columns, page_size,
@@ -467,7 +470,20 @@ export class DataTabulatorView extends HTMLBoxView {
 
   override after_resize(): void {
     super.after_resize()
-    this.redraw(false, true)
+    this._debounced_redraw()
+  }
+
+  _resize_redraw(): void {
+    if (this._initializing || !this.container || this._building) {
+      return
+    }
+    const width = this.container.clientWidth
+    const height = this.container.clientHeight
+    if (!width || !height) {
+      return
+    }
+    this.redraw(true, true)
+    this.restore_scroll()
   }
 
   setCSSClasses(el: HTMLDivElement): void {
@@ -485,6 +501,7 @@ export class DataTabulatorView extends HTMLBoxView {
     this._initializing = true
     const container = div({style: "display: contents;"})
     const el = div({style: "width: 100%; height: 100%; visibility: hidden;"})
+    this.container = el
     this.setCSSClasses(el)
     container.appendChild(el)
     this.shadow_el.appendChild(container)
