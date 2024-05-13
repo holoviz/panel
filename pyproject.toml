@@ -171,6 +171,7 @@ unfixable = [
 "panel/io/convert.py" = ["T201"]
 "panel/pane/vtk/synchronizable_*.py" = ["T201"]
 "scripts/*.py" = ["T201"]
+"hatch_build.py" = ["T201"]
 
 [tool.isort]
 force_grid_wrap = 4

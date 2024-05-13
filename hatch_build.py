@@ -9,7 +9,7 @@ from pathlib import Path
 
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
-BASE_DIR = Path(__file__).parents[1]
+BASE_DIR = Path(__file__).parent
 GREEN, RED, RESET = "\033[92m", "\033[91m", "\033[0m"
 
 
