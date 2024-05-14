@@ -1,8 +1,8 @@
 from bokeh.core.properties import (
-    Enum, Int, Nullable, String,
+    Bool, Dict, Enum, Int, List, Nullable, String,
 )
 from bokeh.events import ModelEvent
-from bokeh.models.widgets import FileInput
+from bokeh.models.widgets import InputWidget
 
 from ..config import config
 from ..io.resources import bundled_files
@@ -17,8 +17,18 @@ class UploadEvent(ModelEvent):
         self.data = data
         super().__init__(model=model)
 
+class DeleteEvent(ModelEvent):
 
-class FileDropper(FileInput):
+    event_name = 'delete_event'
+
+    def __init__(self, model, data=None):
+        self.data = data
+        super().__init__(model=model)
+
+
+class FileDropper(InputWidget):
+
+    accepted_filetypes = List(String)
 
     chunk_size = Int(1000000)
 
@@ -26,11 +36,17 @@ class FileDropper(FileInput):
 
     max_total_file_size = Nullable(String)
 
+    mime_type = Dict(String, String)
+
+    multiple = Bool(True)
+
     layout = Enum("integrated", "compact", "circle", default="compact")
 
     __javascript_raw__ = [
         f"{config.npm_cdn}/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.js",
         f"{config.npm_cdn}/filepond-plugin-file-validate-size/dist/filepond-plugin-file-validate-size.js",
+        f"{config.npm_cdn}/filepond-plugin-file-validate-type/dist/filepond-plugin-file-validate-type.js",
+        f"{config.npm_cdn}/filepond-plugin-pdf-preview/dist/filepond-plugin-pdf-preview.min.js",
         f"{config.npm_cdn}/filepond@^4/dist/filepond.js"
     ]
 

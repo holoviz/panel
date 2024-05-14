@@ -1,10 +1,12 @@
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
+import {input} from "@bokehjs/core/dom"
 import {Enum} from "@bokehjs/core/kinds"
 import type * as p from "@bokehjs/core/properties"
 import type {Attrs} from "@bokehjs/core/types"
-import {FileInput, FileInputView} from "@bokehjs/models/widgets/file_input"
+import {InputWidget, InputWidgetView} from "@bokehjs/models/widgets/input_widget"
 
+import * as inputs from "@bokehjs/styles/widgets/inputs.css"
 import filedropper_css from "styles/models/filedropper.css"
 
 export class UploadEvent extends ModelEvent {
@@ -21,42 +23,92 @@ export class UploadEvent extends ModelEvent {
   }
 }
 
-export class FileDropperView extends FileInputView {
+export class DeleteEvent extends ModelEvent {
+  constructor(readonly data: any) {
+    super()
+  }
+
+  protected override get event_values(): Attrs {
+    return {model: this.origin, data: this.data}
+  }
+
+  static {
+    this.prototype.event_name = "delete_event"
+  }
+}
+
+export class FileDropperView extends InputWidgetView {
   declare model: FileDropper
   declare input_el: HTMLInputElement
+  _file_pond: any | null = null
   _transfer_in_process: string | null = null
 
   override initialize(): void {
     super.initialize();
-    (window as any).FilePond.registerPlugin((window as any).FilePondPluginImagePreview)
+    (window as any).FilePond.registerPlugin((window as any).FilePondPluginImagePreview);
+    (window as any).FilePond.registerPlugin((window as any).FilePondPluginPdfPreview);
     (window as any).FilePond.registerPlugin((window as any).FilePondPluginFileValidateSize)
   }
 
+  override connect_signals(): void {
+    super.connect_signals()
+    const {disabled, layout, max_file_size, max_total_file_size, multiple} = this.model.properties
+    this.on_change([disabled, max_file_size, max_total_file_size, multiple, layout], () => {
+      this._file_pond?.setOptions({
+        acceptedFileTypes: this.model.accepted_filetypes,
+        allowMultiple: this.model.multiple,
+        disabled: this.model.disabled,
+        maxFileSize: this.model.max_file_size,
+        maxTotalFileSize: this.model.max_total_file_size,
+        stylePanelLayout: this.model.layout,
+      })
+    })
+  }
+
+  override remove(): void {
+    if (this._file_pond) {
+      this._file_pond.destroy()
+    }
+    super.remove()
+  }
+
   override stylesheets(): StyleSheetLike[] {
-    return [filedropper_css]
+    return [...super.stylesheets(), filedropper_css]
+  }
+
+  protected _render_input(): HTMLInputElement {
+    const {multiple, disabled} = this.model
+
+    return this.input_el = input({type: "file", class: inputs.input, multiple, disabled})
   }
 
   override render(): void {
     super.render()
 
-    this.input_el.className = "filepond";
-    (window as any).FilePond.create(this.input_el, {
+    this._file_pond = (window as any).FilePond.create(this.input_el, {
+      acceptedFileTypes: this.model.accepted_filetypes,
       allowMultiple: this.model.multiple,
+      credits: false,
+      disabled: this.model.disabled,
       maxFileSize: this.model.max_file_size,
       maxTotalFileSize: this.model.max_total_file_size,
       server: {
         process: (
-	  _: string,
-	  file: File,
-	  __: any,
-	  load: (id: string) => void,
-	  error: (msg: string) => void,
-	  progress: (computable: boolean, loaded: number, total: number) => void,
-	) => {
-	  this._process_upload(file, load, error, progress)
+          _: string,
+          file: File,
+          __: any,
+          load: (id: string) => void,
+          error: (msg: string) => void,
+          progress: (computable: boolean, loaded: number, total: number) => void,
+        ) => {
+          this._process_upload(file, load, error, progress)
         },
-	fetch: null,
-        revert: null,
+        fetch: null,
+        revert: (id: string, load: () => void): void => {
+	  console.log(id)
+	  this.model.trigger_event(new DeleteEvent({name: id}))
+	  load()
+	}
       },
       stylePanelLayout: this.model.layout,
     })
@@ -68,6 +120,7 @@ export class FileDropperView extends FileInputView {
     error: (msg: string) => void,
     progress: (computable: boolean, loaded: number, total: number) => void,
   ): Promise<any> {
+    console.log(file)
     const buffer_size = this.model.chunk_size
     const chunks = Math.ceil(file.size / buffer_size)
     let abort_flag = false
@@ -80,10 +133,11 @@ export class FileDropperView extends FileInputView {
         const start = i*buffer_size
         const end = Math.min(start+buffer_size, file.size)
         this.model.trigger_event(new UploadEvent({
-          name: (file as any)._relativePath || file.name,
           chunk: i+1,
-          total_chunks: chunks,
           data: await file.slice(start, end).arrayBuffer(),
+          name: (file as any)._relativePath || file.name,
+          total_chunks: chunks,
+	  type: file.type,
         }))
         progress(true, end, file.size)
       }
@@ -101,17 +155,20 @@ export const DropperLayout = Enum("integrated", "compact", "circle")
 
 export namespace FileDropper {
   export type Attrs = p.AttrsOf<Props>
-  export type Props = FileInput.Props & {
+  export type Props = InputWidget.Props & {
+    accepted_filetypes: p.Property<string[]>
     chunk_size: p.Property<number>
     layout: p.Property<typeof DropperLayout["__type__"]>
     max_file_size: p.Property<string | null>
     max_total_file_size: p.Property<string | null>
+    mime_type: p.Property<any>
+    multiple: p.Property<boolean>
   }
 }
 
 export interface FileDropper extends FileDropper.Attrs {}
 
-export class FileDropper extends FileInput {
+export class FileDropper extends InputWidget {
   declare properties: FileDropper.Props
 
   static override __module__ = "panel.models.file_dropper"
@@ -122,10 +179,13 @@ export class FileDropper extends FileInput {
 
   static {
     this.prototype.default_view = FileDropperView
-    this.define<FileDropper.Props>(({Int, Nullable, Str}) => ({
+    this.define<FileDropper.Props>(({Any, Array, Bool, Int, Nullable, Str}) => ({
+      accepted_filetypes:  [ Array(Str),           [] ],
       chunk_size:          [ Int,             1000000 ],
       max_file_size:       [ Nullable(Str),      null ],
       max_total_file_size: [ Nullable(Str),      null ],
+      mime_type:           [ Any,                  {} ],
+      multiple:            [ Bool,               true ],
       layout:              [ DropperLayout, "compact" ],
     }))
   }
