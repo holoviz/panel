@@ -56,7 +56,7 @@ jobs:
           (github.event_name == 'workflow_run' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
           conda activate test
-          ae5 login --hostname holoviz.dsp.anaconda.com --username ${{ secrets.AE5_USERNAME }} --password ${{ secrets.AE5_PASSWORD }}
+          ae5 login --hostname holoviz-demo.anaconda.com --username ${{ secrets.AE5_USERNAME }} --password ${{ secrets.AE5_PASSWORD }}
           ae5 deployment stop panel-gallery-dev --yes || :
           ae5 project delete panel-gallery-dev --yes || :
           ae5 project upload examples/gallery --name panel-gallery-dev --tag ${{ steps.vars.outputs.tag || '0.0.1dev' }}
@@ -67,7 +67,7 @@ jobs:
           (github.event_name == 'workflow_run' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')) && contains(steps.vars.outputs.tag, 'v'))
         run: |
           conda activate test
-          ae5 login --hostname holoviz.dsp.anaconda.com --username ${{ secrets.AE5_USERNAME }} --password ${{ secrets.AE5_PASSWORD }}
+          ae5 login --hostname holoviz-demo.anaconda.com --username ${{ secrets.AE5_USERNAME }} --password ${{ secrets.AE5_PASSWORD }}
           ae5 deployment stop panel-gallery --yes || :
           ae5 project delete panel-gallery --yes || :
           ae5 project upload examples/gallery --name panel-gallery --tag ${{ steps.vars.outputs.tag }}
