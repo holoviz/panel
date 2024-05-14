@@ -47,6 +47,7 @@ export class FileDropperView extends InputWidgetView {
     super.initialize();
     (window as any).FilePond.registerPlugin((window as any).FilePondPluginImagePreview);
     (window as any).FilePond.registerPlugin((window as any).FilePondPluginPdfPreview);
+    (window as any).FilePond.registerPlugin((window as any).FilePondPluginFileValidateType);
     (window as any).FilePond.registerPlugin((window as any).FilePondPluginFileValidateSize)
   }
 

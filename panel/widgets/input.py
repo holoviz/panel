@@ -304,9 +304,9 @@ class FileDropper(Widget):
     """
 
     accepted_filetypes = param.List(default=[], doc="""
-        List of accepted file types. Can be mime types or wild cards.
-        For instance ['image/*'] will accept all images.
-        ['image/png', 'image/jpeg'] will only accepts PNGs and JPEGs.""")
+        List of accepted file types. Can be mime types, file extensions
+        or wild cards.For instance ['image/*'] will accept all images.
+        ['.png', 'image/jpeg'] will only accepts PNGs and JPEGs.""")
 
     chunk_size = param.Integer(default=10_000_000, doc="""
         Size in bytes per chunk transferred across the WebSocket.""")
@@ -322,7 +322,7 @@ class FileDropper(Widget):
         Maximum size of a file as a string with units given in KB or MB,
         e.g. 5MB or 750KB.""")
 
-    max_files = param.String(default=None, doc="""
+    max_files = param.Integer(default=None, doc="""
         Maximum number of files that can be uploaded if multiple=True.""")
 
     max_total_file_size = param.String(default=None, doc="""
@@ -334,13 +334,16 @@ class FileDropper(Widget):
         files indexed by their filename.""")
 
     multiple = param.Boolean(default=False, doc="""
-        Whether to allow uploading multiple files. If enabled value
-        parameter will return a list.""")
+        Whether to allow uploading multiple files.""")
 
     value = param.Dict(default={}, doc="""
         A dictionary containing the uploaded file(s) as bytes or string
         objects indexed by the filename. Files that have a text/* mimetype
         will automatically be decoded as utf-8.""")
+
+    width = param.Integer(default=300, allow_None=True, doc="""
+      Width of this component. If sizing_mode is set to stretch
+      or scale mode this will merely be used as a suggestion.""")
 
     _rename = {'value': None}
 
