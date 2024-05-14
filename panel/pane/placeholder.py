@@ -46,3 +46,13 @@ class Placeholder(ReplacementPane):
         finally:
             self._temporary = False
         return False
+
+    def update(self, object):
+        """
+        Updates the object on the Placeholder.
+
+        Arguments
+        ---------
+        object: The object to update the Placeholder with.
+        """
+        self.object = object
