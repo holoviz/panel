@@ -155,3 +155,9 @@ doc/reference/*
 .jupyter/*
 app_panel.py
 app_streamlit.py
+
+# pixi
+.pixi
+pixi.lock
+panel/_version.py
+.uicoveragerc

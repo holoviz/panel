@@ -27,8 +27,6 @@ from html import escape
 from textwrap import dedent
 from typing import Any
 
-import markdown
-
 #---------------------------------------------------------------------
 # Import API
 #---------------------------------------------------------------------
@@ -228,6 +226,7 @@ def render_javascript(value, meta, mime):
     return f'<script>{value}</script>', 'text/html'
 
 def render_markdown(value, meta, mime):
+    import markdown
     return (markdown.markdown(
         value, extensions=["extra", "smarty", "codehilite"], output_format='html5'
     ), 'text/html')

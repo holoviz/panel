@@ -1,16 +1,120 @@
 [build-system]
 requires = [
-    "param >=2.0.0",
-    "pyct >=0.4.4",
-    "setuptools >=42",
+    "hatchling",
+    "hatch-vcs",
+    "param >=2.1.0",
     "bokeh >=3.4.0,<3.5.0",
     "pyviz_comms >=0.7.4",
     "requests",
     "packaging",
-    "tqdm >=4.48.0",
-    "markdown",
-    "wheel"
 ]
+build-backend = "hatchling.build"
+
+[project]
+name = "panel"
+dynamic = ["version"]
+description = 'The powerful data exploration & web app framework for Python.'
+readme = "README.md"
+license = { text = "BSD" }
+requires-python = ">=3.9"
+authors = [{ name = "HoloViz developers", email = "developers@holoviz.org" }]
+maintainers = [
+    { name = "HoloViz developers", email = "developers@holoviz.org" },
+]
+classifiers = [
+    "License :: OSI Approved :: BSD License",
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Healthcare Industry",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Legal Industry",
+    "Intended Audience :: Other Audience",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Office/Business",
+    "Topic :: Office/Business :: Financial",
+    "Topic :: Software Development :: Libraries",
+]
+
+dependencies = [
+    'bokeh >=3.4.0,<3.5.0',
+    'param >=2.1.0,<3.0',
+    'pyviz_comms >=2.0.0',
+    'markdown',
+    'markdown-it-py',
+    'linkify-it-py',
+    'mdit-py-plugins',
+    'requests',
+    'bleach',
+    'typing_extensions',
+    'pandas >=1.2',
+    'packaging',
+    'tqdm',  # TODO: Should this be optional?
+]
+
+[project.urls]
+Homepage = "https://panel.holoviz.org"
+Source = "https://github.com/holoviz/panel"
+HoloViz = "https://holoviz.org/"
+
+[project.optional-dependencies]
+recommended = [
+    'jupyterlab',
+    'holoviews >=1.16.0',
+    'matplotlib',
+    'pillow',
+    'plotly',
+]
+standard = [
+    'watchfiles',
+]
+tests = [
+    'psutil' ,
+    'pytest',
+    'pytest-asyncio',
+    'pytest-rerunfailures',
+    'pytest-xdist',
+]
+
+[project.scripts]
+panel = "panel.command:main"
+
+[tool.hatch.version]
+source = "vcs"
+raw-options = { version_scheme = "no-guess-dev" }
+
+[tool.hatch.build.targets.wheel]
+include = ["panel"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"panel/dist" = "panel/dist"
+
+[tool.hatch.build.targets.wheel.shared-data]
+"scripts/jupyter-config/notebook.json" = "etc/jupyter/jupyter_notebook_config.d/panel-client-jupyter.json"
+"scripts/jupyter-config/server.json" = "etc/jupyter/jupyter_server_config.d/panel-client-jupyter.json"
+
+[tool.hatch.build.targets.sdist]
+include = ["panel", "scripts", "examples"]
+
+[tool.hatch.build.targets.sdist.force-include]
+"panel/dist" = "panel/dist"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "panel/_version.py"
+
+[tool.hatch.build.hooks.custom]
+path = 'hatch_build.py'
 
 [tool.ruff]
 exclude = [
@@ -59,12 +163,25 @@ select = [
     "UP034",
     "UP036",
 ]
+unfixable = [
+    "F401", # Unused imports
+    "F841", # Unused variables
+]
 
 [tool.ruff.lint.per-file-ignores]
 "panel/tests/ui/jupyter_server_test_config.py" = ["F821"]
 "panel/compiler.py" = ["T201"]
 "panel/io/convert.py" = ["T201"]
 "panel/pane/vtk/synchronizable_*.py" = ["T201"]
+"scripts/*.py" = ["T201"]
+"hatch_build.py" = ["T201"]
+
+[tool.isort]
+force_grid_wrap = 4
+multi_line_output = 5
+combine_as_imports = true
+lines_between_types = 1
+include_trailing_comma = true
 
 [tool.codespell]
 ignore-words-list = "nd,doubleclick,ser"
@@ -72,10 +189,13 @@ skip = "doc/generate_modules.py,examples/reference/templates/FastGridTemplate.ip
 write-changes = true
 
 [tool.pytest.ini_options]
-addopts = "-v --pyargs --doctest-ignore-import-errors --color=yes"
+# addopts = "-v --pyargs --doctest-ignore-import-errors --color=yes"
+addopts = "--pyargs --doctest-ignore-import-errors --color=yes"
 norecursedirs = "doc .git dist build _build .ipynb_checkpoints panel/examples"
 asyncio_mode = "auto"
 xfail_strict = true
+minversion = "7"
+log_cli_level = "INFO"
 filterwarnings = [
     # 2023-11: `pkg_resources` is deprecated
     "ignore:Deprecated call to `pkg_resources.+?'zope:DeprecationWarning",  # https://github.com/zopefoundation/meta/issues/194

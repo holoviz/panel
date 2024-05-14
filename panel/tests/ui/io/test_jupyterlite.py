@@ -9,7 +9,7 @@ pytest.importorskip("playwright")
 
 from playwright.sync_api import expect
 
-pytestmark = [pytest.mark.jupyter, pytest.mark.ui]
+pytestmark = pytest.mark.jupyter
 
 
 @pytest.fixture()
