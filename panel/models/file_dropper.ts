@@ -52,12 +52,13 @@ export class FileDropperView extends InputWidgetView {
 
   override connect_signals(): void {
     super.connect_signals()
-    const {disabled, layout, max_file_size, max_total_file_size, multiple} = this.model.properties
-    this.on_change([disabled, max_file_size, max_total_file_size, multiple, layout], () => {
+    const {disabled, layout, max_file_size, max_files, max_total_file_size, multiple} = this.model.properties
+    this.on_change([disabled, max_file_size, max_files, max_total_file_size, multiple, layout], () => {
       this._file_pond?.setOptions({
         acceptedFileTypes: this.model.accepted_filetypes,
         allowMultiple: this.model.multiple,
         disabled: this.model.disabled,
+	maxFiles: this.model.max_files,
         maxFileSize: this.model.max_file_size,
         maxTotalFileSize: this.model.max_total_file_size,
         stylePanelLayout: this.model.layout,
@@ -90,6 +91,7 @@ export class FileDropperView extends InputWidgetView {
       allowMultiple: this.model.multiple,
       credits: false,
       disabled: this.model.disabled,
+      maxFiles: this.model.max_files,
       maxFileSize: this.model.max_file_size,
       maxTotalFileSize: this.model.max_total_file_size,
       server: {
@@ -158,8 +160,9 @@ export namespace FileDropper {
   export type Props = InputWidget.Props & {
     accepted_filetypes: p.Property<string[]>
     chunk_size: p.Property<number>
-    layout: p.Property<typeof DropperLayout["__type__"]>
+    layout: p.Property<typeof DropperLayout["__type__"] | null>
     max_file_size: p.Property<string | null>
+    max_files: p.Property<number | null>
     max_total_file_size: p.Property<string | null>
     mime_type: p.Property<any>
     multiple: p.Property<boolean>
@@ -181,12 +184,13 @@ export class FileDropper extends InputWidget {
     this.prototype.default_view = FileDropperView
     this.define<FileDropper.Props>(({Any, Array, Bool, Int, Nullable, Str}) => ({
       accepted_filetypes:  [ Array(Str),           [] ],
-      chunk_size:          [ Int,             1000000 ],
+      chunk_size:          [ Int,            10000000 ],
       max_file_size:       [ Nullable(Str),      null ],
+      max_files:           [ Nullable(Int),      null ],
       max_total_file_size: [ Nullable(Str),      null ],
       mime_type:           [ Any,                  {} ],
       multiple:            [ Bool,               true ],
-      layout:              [ DropperLayout, "compact" ],
+      layout:              [ Nullable(DropperLayout), null ],
     }))
   }
 }

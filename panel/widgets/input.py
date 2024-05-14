@@ -308,11 +308,11 @@ class FileDropper(Widget):
         For instance ['image/*'] will accept all images.
         ['image/png', 'image/jpeg'] will only accepts PNGs and JPEGs.""")
 
-    chunk_size = param.Integer(default=1000000, doc="""
+    chunk_size = param.Integer(default=10_000_000, doc="""
         Size in bytes per chunk transferred across the WebSocket.""")
 
     layout = param.Selector(
-        default="compact", objects=["circle", "compact", "integrated"], doc="""
+        default=None, objects=["circle", "compact", "integrated"], doc="""
         Compact mode will remove padding, integrated mode is used to render
         FilePond as part of a bigger element. Circle mode adjusts the item
         position offsets so buttons and progress indicators don't fall outside
@@ -321,6 +321,9 @@ class FileDropper(Widget):
     max_file_size = param.String(default=None, doc="""
         Maximum size of a file as a string with units given in KB or MB,
         e.g. 5MB or 750KB.""")
+
+    max_files = param.String(default=None, doc="""
+        Maximum number of files that can be uploaded if multiple=True.""")
 
     max_total_file_size = param.String(default=None, doc="""
         Maximum size of all uploaded files, as a string with units given

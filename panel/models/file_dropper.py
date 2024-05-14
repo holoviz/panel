@@ -30,7 +30,9 @@ class FileDropper(InputWidget):
 
     accepted_filetypes = List(String)
 
-    chunk_size = Int(1000000)
+    chunk_size = Int(10_000_000)
+
+    max_files = Nullable(Int)
 
     max_file_size = Nullable(String)
 
@@ -40,7 +42,7 @@ class FileDropper(InputWidget):
 
     multiple = Bool(True)
 
-    layout = Enum("integrated", "compact", "circle", default="compact")
+    layout = Nullable(Enum("integrated", "compact", "circle", default="compact"))
 
     __javascript_raw__ = [
         f"{config.npm_cdn}/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.js",
@@ -56,7 +58,8 @@ class FileDropper(InputWidget):
 
     __css_raw__ = [
         f"{config.npm_cdn}/filepond@^4/dist/filepond.css",
-        f"{config.npm_cdn}/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css"
+        f"{config.npm_cdn}/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css",
+        f"{config.npm_cdn}/filepond-plugin-pdf-preview/dist/filepond-plugin-pdf-preview.css"
     ]
 
     @classproperty
