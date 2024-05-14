@@ -59,7 +59,7 @@ export class FileDropperView extends InputWidgetView {
         acceptedFileTypes: this.model.accepted_filetypes,
         allowMultiple: this.model.multiple,
         disabled: this.model.disabled,
-	maxFiles: this.model.max_files,
+        maxFiles: this.model.max_files,
         maxFileSize: this.model.max_file_size,
         maxTotalFileSize: this.model.max_total_file_size,
         stylePanelLayout: this.model.layout,
@@ -108,10 +108,9 @@ export class FileDropperView extends InputWidgetView {
         },
         fetch: null,
         revert: (id: string, load: () => void): void => {
-	  console.log(id)
-	  this.model.trigger_event(new DeleteEvent({name: id}))
-	  load()
-	}
+          this.model.trigger_event(new DeleteEvent({name: id}))
+          load()
+        },
       },
       stylePanelLayout: this.model.layout,
     })
@@ -140,13 +139,13 @@ export class FileDropperView extends InputWidgetView {
           data: await file.slice(start, end).arrayBuffer(),
           name: (file as any)._relativePath || file.name,
           total_chunks: chunks,
-	  type: file.type,
+          type: file.type,
         }))
         progress(true, end, file.size)
       }
       load(file.name)
       resolve(file.name)
-    }).catch(() => error('Upload failed.'))
+    }).catch(() => error("Upload failed."))
 
     return {abort: () => {
       abort_flag = true
