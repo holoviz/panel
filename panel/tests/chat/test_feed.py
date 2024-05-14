@@ -68,10 +68,11 @@ class TestChatFeed:
         assert not chat_feed._card.hide_header
 
     def test_send(self, chat_feed):
-        message = chat_feed.send("Message")
+        message = chat_feed.send("Message", footer_objects=[HTML("Footer")])
         wait_until(lambda: len(chat_feed.objects) == 1)
         assert chat_feed.objects[0] is message
         assert chat_feed.objects[0].object == "Message"
+        assert chat_feed.objects[0].footer_objects[0].object == "Footer"
 
     def test_link_chat_log_objects(self, chat_feed):
         chat_feed.send("Message")
@@ -163,21 +164,23 @@ class TestChatFeed:
         chat_feed.respond()  # Should not raise any errors
 
     def test_stream(self, chat_feed):
-        message = chat_feed.stream("Streaming message", user="Person", avatar="P")
+        message = chat_feed.stream("Streaming message", user="Person", avatar="P", footer_objects=[HTML("Footer")])
         assert len(chat_feed.objects) == 1
         assert chat_feed.objects[0] is message
         assert chat_feed.objects[0].object == "Streaming message"
         assert chat_feed.objects[0].user == "Person"
         assert chat_feed.objects[0].avatar == "P"
+        assert chat_feed.objects[0].footer_objects[0].object == "Footer"
 
         updated_entry = chat_feed.stream(
-            " Appended message", user="New Person", message=message, avatar="N"
+            " Appended message", user="New Person", message=message, avatar="N", footer_objects=[HTML("New Footer")]
         )
         wait_until(lambda: len(chat_feed.objects) == 1)
         assert chat_feed.objects[0] is updated_entry
         assert chat_feed.objects[0].object == "Streaming message Appended message"
         assert chat_feed.objects[0].user == "New Person"
         assert chat_feed.objects[0].avatar == "N"
+        assert chat_feed.objects[0].footer_objects[0].object == "New Footer"
 
         new_entry = chat_feed.stream("New message")
         wait_until(lambda: len(chat_feed.objects) == 2)

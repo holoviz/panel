@@ -327,6 +327,7 @@ class ChatFeed(ListPanel):
         value: dict,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
+        **input_message_params
     ) -> ChatMessage | None:
         """
         Builds a ChatMessage from the value.
@@ -347,6 +348,7 @@ class ChatFeed(ListPanel):
             message_params["avatar"] = avatar
         if self.width:
             message_params["width"] = int(self.width - 80)
+        message_params.update(input_message_params)
 
         message = ChatMessage(**message_params)
         return message
@@ -547,6 +549,7 @@ class ChatFeed(ListPanel):
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
         respond: bool = True,
+        **message_params
     ) -> ChatMessage | None:
         """
         Sends a value and creates a new message in the chat log.
@@ -563,6 +566,8 @@ class ChatFeed(ListPanel):
             The avatar to use; overrides the message message's avatar if provided.
         respond : bool
             Whether to execute the callback.
+        message_params : dict
+            Additional parameters to pass to the ChatMessage.
 
         Returns
         -------
@@ -578,7 +583,7 @@ class ChatFeed(ListPanel):
         else:
             if not isinstance(value, dict):
                 value = {"object": value}
-            message = self._build_message(value, user=user, avatar=avatar)
+            message = self._build_message(value, user=user, avatar=avatar, **message_params)
         self.append(message)
         if respond:
             self.respond()
@@ -591,6 +596,7 @@ class ChatFeed(ListPanel):
         avatar: str | bytes | BytesIO | None = None,
         message: ChatMessage | None = None,
         replace: bool = False,
+        **message_params
     ) -> ChatMessage | None:
         """
         Streams a token and updates the provided message, if provided.
@@ -613,6 +619,8 @@ class ChatFeed(ListPanel):
             The message to update.
         replace : bool
             Whether to replace the existing text when streaming a string or dict.
+        message_params : dict
+            Additional parameters to pass to the ChatMessage.
 
         Returns
         -------
@@ -635,6 +643,9 @@ class ChatFeed(ListPanel):
                     message.avatar = avatar
             else:
                 message.update(value, user=user, avatar=avatar)
+
+            if message_params:
+                message.param.update(**message_params)
             return message
 
         if isinstance(value, ChatMessage):
@@ -642,7 +653,7 @@ class ChatFeed(ListPanel):
         else:
             if not isinstance(value, dict):
                 value = {"object": value}
-            message = self._build_message(value, user=user, avatar=avatar)
+            message = self._build_message(value, user=user, avatar=avatar, **message_params)
         self._replace_placeholder(message)
         return message
 
