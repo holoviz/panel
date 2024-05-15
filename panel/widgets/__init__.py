@@ -65,6 +65,7 @@ from .tables import DataFrame, Tabulator  # noqa
 from .terminal import Terminal  # noqa
 from .text_to_speech import TextToSpeech, Utterance, Voice  # noqa
 from .texteditor import TextEditor  # noqa
+from .tree import FileTree  # noqa
 from .widget import widget  # noqa
 
 __all__ = (
@@ -101,6 +102,7 @@ __all__ = (
     "FileDropper",
     "FileInput",
     "FileSelector",
+    "FileTree",
     "FloatInput",
     "FloatSlider",
     "Gauge",
