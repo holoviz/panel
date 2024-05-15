@@ -11,9 +11,8 @@ from dataclasses import dataclass
 from functools import partial
 from io import BytesIO
 from tempfile import NamedTemporaryFile
-from textwrap import indent
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Iterable, Optional, Union,
+    TYPE_CHECKING, Any, Callable, ClassVar, Optional, Union,
 )
 from zoneinfo import ZoneInfo
 
@@ -34,7 +33,7 @@ from ..param import ParamFunction
 from ..viewable import Viewable
 from ..widgets.base import Widget
 from .icon import ChatCopyIcon, ChatReactionIcons
-from .utils import avatar_lookup, stream_to
+from .utils import avatar_lookup, serialize_recursively, stream_to
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -334,70 +333,6 @@ class ChatMessage(PaneBase):
         }
         viewable_params['stylesheets'] = self._stylesheets + self.param.stylesheets.rx()
         self._composite = Row(left_col, right_col, **viewable_params)
-
-    def _get_obj_label(self, obj):
-        """
-        Get the label for the object; defaults to specified object name;
-        if unspecified, defaults to the type name.
-        """
-        label = obj.name
-        type_name = type(obj).__name__
-        # If the name is just type + ID, simply use type
-        # e.g. Column10241 -> Column
-        if label.startswith(type_name) or not label:
-            label = type_name
-        return label
-
-    def _serialize_recursively(
-        self,
-        obj: Any,
-        prefix_with_viewable_label: bool = True,
-        prefix_with_container_label: bool = True
-    ) -> str:
-        """
-        Recursively serialize the object to a string.
-        """
-        if isinstance(obj, Iterable) and not isinstance(obj, str):
-            content = tuple(
-                self._serialize_recursively(
-                    o,
-                    prefix_with_viewable_label=prefix_with_viewable_label,
-                    prefix_with_container_label=prefix_with_container_label
-                ) for o in obj
-            )
-            if prefix_with_container_label:
-                if len(content) == 1:
-                    return f"{self._get_obj_label(obj)}({content[0]})"
-                else:
-                    indented_content = indent(",\n".join(content), prefix=" " * 4)
-                    # outputs like:
-                    # Row(
-                    #   1,
-                    #   "str",
-                    # )
-                    return f"{self._get_obj_label(obj)}(\n{indented_content}\n)"
-            else:
-                # outputs like:
-                # (1, "str")
-                return f"({', '.join(content)})"
-
-        string = obj
-        if hasattr(obj, "value"):
-            string = obj.value
-        elif hasattr(obj, "object"):
-            string = obj.object
-
-        if hasattr(string, "decode") or isinstance(string, BytesIO):
-            self.param.warning(
-                f"Serializing byte-like objects are not supported yet; "
-                f"using the label of the object as a placeholder for {obj}"
-            )
-            return self._get_obj_label(obj)
-
-        if prefix_with_viewable_label and isinstance(obj, Viewable):
-            label = self._get_obj_label(obj)
-            string = f"{label}={string!r}"
-        return string
 
     def __str__(self) -> str:
         """
@@ -736,8 +671,6 @@ class ChatMessage(PaneBase):
 
         Arguments
         ---------
-        obj : Any
-            The object to format.
         prefix_with_viewable_label : bool
             Whether to include the name of the Viewable, or type
             of the viewable if no name is specified.
@@ -750,7 +683,7 @@ class ChatMessage(PaneBase):
         str
             The serialized string.
         """
-        return self._serialize_recursively(
+        return serialize_recursively(
             self.object,
             prefix_with_viewable_label=prefix_with_viewable_label,
             prefix_with_container_label=prefix_with_container_label,

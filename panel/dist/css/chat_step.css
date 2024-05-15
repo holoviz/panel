@@ -21,6 +21,8 @@
 
 .step-message {
   font-size: 1.25em;
+  padding-block: 0px;
+  padding-inline: 7px;
 }
 
 .step-avatar-container {

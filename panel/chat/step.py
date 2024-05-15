@@ -6,11 +6,11 @@ import param
 from ..io.resources import CDN_DIST
 from ..layout import Card, Column, Row
 from ..pane.image import Image
-from ..pane.markup import HTML, Markdown
+from ..pane.markup import HTML, HTMLBasePane, Markdown
 from ..pane.placeholder import Placeholder
 from ..viewable import Viewable
 from ..widgets.indicators import BooleanStatus, LoadingSpinner
-from .utils import avatar_lookup, stream_to
+from .utils import avatar_lookup, serialize_recursively, stream_to
 
 DEFAULT_STATUS_AVATARS = {
     "pending": BooleanStatus(value=False, margin=0, color="warning"),
@@ -61,9 +61,7 @@ class ChatStep(Card):
 
     def __init__(self, **params):
         self._instance = None
-        self._avatar_placeholder = Placeholder(
-            css_classes=["step-avatar-container"]
-        )
+        self._avatar_placeholder = Placeholder(css_classes=["step-avatar-container"])
         super().__init__(**params)
         self._render_avatar()
         self._title_pane = HTML(
@@ -149,15 +147,56 @@ class ChatStep(Card):
             self.title += token
         return self.title
 
-    def stream(self, token, replace=False, message=None):
-        if message is None:
+    def stream(self, token: str, replace=False):
+        """
+        Stream a token to the message pane.
+
+        Arguments
+        ---------
+        token : str
+            The token to stream.
+        replace : bool
+            Whether to replace the existing text.
+
+        Returns
+        -------
+        Viewable
+            The updated message pane.
+        """
+        if len(self.objects) == 0 or not isinstance(self.objects[-1], HTMLBasePane):
             message = Markdown(token, css_classes=["step-message"])
             self.append(message)
         else:
-            message = stream_to(message, token, replace=replace)
+            message = stream_to(self.objects[-1], token, replace=replace)
         return message
 
-    def serialize(self): ...
+    def serialize(
+        self,
+        prefix_with_viewable_label: bool = True,
+        prefix_with_container_label: bool = True,
+    ) -> str:
+        """
+        Format the object to a string.
+
+        Arguments
+        ---------
+        prefix_with_viewable_label : bool
+            Whether to include the name of the Viewable, or type
+            of the viewable if no name is specified.
+        prefix_with_container_label : bool
+            Whether to include the name of the container, or type
+            of the container if no name is specified.
+
+        Returns
+        -------
+        str
+            The serialized string.
+        """
+        return serialize_recursively(
+            self,
+            prefix_with_viewable_label=prefix_with_viewable_label,
+            prefix_with_container_label=prefix_with_container_label,
+        )
 
 
 class ChatSteps(Column):
@@ -169,22 +208,54 @@ class ChatSteps(Column):
         doc="CSS classes to apply to the component.",
     )
 
-    def __init__(self, **params):
-        super().__init__(**params)
+    @param.depends("objects", watch=True, on_init=True)
+    def _validate_steps(self):
+        for step in self.objects:
+            if not isinstance(step, ChatStep):
+                raise ValueError(f"Expected ChatStep, got {step.__class__.__name__}")
 
-    def start_step(
-        self,
-        *,
-        objects: str | list | None = None,
-        title: str | None = None,
-        **params,
-    ):
-        if objects:
-            if isinstance(objects, str):
-                objects = [objects]
-            params["objects"] = objects
-        if title is not None:
-            params["title"] = title
-        step = ChatStep(**params)
+    def create_step(self, **step_params):
+        """
+        Create a new ChatStep and append it to the ChatSteps.
+
+        Arguments
+        ---------
+        **step_params : dict
+            Parameters to pass to the ChatStep constructor.
+
+        Returns
+        -------
+        ChatStep
+            The newly created ChatStep.
+        """
+        step = ChatStep(**step_params)
         self.append(step)
         return step
+
+    def serialize(
+        self,
+        prefix_with_viewable_label: bool = True,
+        prefix_with_container_label: bool = True,
+    ) -> str:
+        """
+        Format the objects to a string.
+
+        Arguments
+        ---------
+        prefix_with_viewable_label : bool
+            Whether to include the name of the Viewable, or type
+            of the viewable if no name is specified.
+        prefix_with_container_label : bool
+            Whether to include the name of the container, or type
+            of the container if no name is specified.
+
+        Returns
+        -------
+        str
+            The serialized string.
+        """
+        return serialize_recursively(
+            self,
+            prefix_with_viewable_label=prefix_with_viewable_label,
+            prefix_with_container_label=prefix_with_container_label,
+        )

@@ -2,14 +2,19 @@ from __future__ import annotations
 
 import re
 
+from collections.abc import Iterable
 from io import BytesIO
-from typing import Any, Dict, Union
+from textwrap import indent
+from typing import Any, Union
+
+import param
 
 from ..io.resources import CDN_DIST
 from ..pane.image import ImageBase
+from ..viewable import Viewable
 
 Avatar = Union[str, BytesIO, bytes, ImageBase]
-AvatarDict = Dict[str, Avatar]
+AvatarDict = dict[str, Avatar]
 
 
 def to_alpha_numeric(user: str) -> str:
@@ -23,8 +28,8 @@ def to_alpha_numeric(user: str) -> str:
 def avatar_lookup(
     user: str,
     avatar: Any,
-    avatars: Dict[str, Any],
-    default_avatars: Dict[str, Any],
+    avatars: dict[str, Any],
+    default_avatars: dict[str, Any],
 ) -> Avatar:
     """
     Lookup the avatar for the user.
@@ -88,3 +93,69 @@ def stream_to(obj, token, replace=False):
     contents = token if replace else obj + token
     setattr(object_panel, attr, contents)
     return object_panel
+
+
+def get_obj_label(obj):
+    """
+    Get the label for the object; defaults to specified object name;
+    if unspecified, defaults to the type name.
+    """
+    label = obj.name
+    type_name = type(obj).__name__
+    # If the name is just type + ID, simply use type
+    # e.g. Column10241 -> Column
+    if label.startswith(type_name) or not label:
+        label = type_name
+    return label
+
+
+def serialize_recursively(
+    obj: Any,
+    prefix_with_viewable_label: bool = True,
+    prefix_with_container_label: bool = True,
+) -> str:
+    """
+    Recursively serialize the object to a string.
+    """
+    if isinstance(obj, Iterable) and not isinstance(obj, str):
+        content = tuple(
+            serialize_recursively(
+                o,
+                prefix_with_viewable_label=prefix_with_viewable_label,
+                prefix_with_container_label=prefix_with_container_label,
+            )
+            for o in obj
+        )
+        if prefix_with_container_label:
+            if len(content) == 1:
+                return f"{get_obj_label(obj)}({content[0]})"
+            else:
+                indented_content = indent(",\n".join(content), prefix=" " * 4)
+                # outputs like:
+                # Row(
+                #   1,
+                #   "str",
+                # )
+                return f"{get_obj_label(obj)}(\n{indented_content}\n)"
+        else:
+            # outputs like:
+            # (1, "str")
+            return f"({', '.join(content)})"
+
+    string = obj
+    if hasattr(obj, "value"):
+        string = obj.value
+    elif hasattr(obj, "object"):
+        string = obj.object
+
+    if hasattr(string, "decode") or isinstance(string, BytesIO):
+        param.warning(
+            f"Serializing byte-like objects are not supported yet; "
+            f"using the label of the object as a placeholder for {obj}"
+        )
+        return get_obj_label(obj)
+
+    if prefix_with_viewable_label and isinstance(obj, Viewable):
+        label = get_obj_label(obj)
+        string = f"{label}={string!r}"
+    return string
