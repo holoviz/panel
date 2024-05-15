@@ -1,14 +1,36 @@
 /* inherit from chat_message */
 
 :host(.card) {
-  outline: 0;
   box-shadow: none;
   background-color: var(--panel-surface-color, #f1f1f1);
-  margin-top: 0px;
-  width: 100%;
 }
 
 :host(.card) .card-header {
   border-bottom: 1px solid var(--panel-border-color, #e0e0e0);
-  padding-block: 5px;
+  background-color: var(--panel-surface-color, #f1f1f1);
+  padding-block: 15px;
+}
+
+:host(.step-header) {
+  width: max-content;
+}
+
+.step-title {
+  font-size: 1.25em;
+}
+
+.step-message {
+  font-size: 1.25em;
+}
+
+.step-avatar-container {
+  width: 15px;
+  height: 15px;
+  margin-inline: 5px;
+  margin-block: 3px;
+}
+
+.step-avatar {
+  width: 15px;
+  height: 15px;
 }

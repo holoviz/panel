@@ -28,7 +28,7 @@ from ..layout.spacer import VSpacer
 from ..pane.image import SVG
 from .icon import ChatReactionIcons
 from .message import ChatMessage
-from .step import ChatStep, ChatSteps
+from .step import ChatSteps
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -198,6 +198,7 @@ class ChatFeed(ListPanel):
     _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_feed.css"]
 
     def __init__(self, *objects, **params):
+        self._steps = None
         self._callback_future = None
 
         if params.get("renderers") and not isinstance(params["renderers"], list):
@@ -893,18 +894,7 @@ class ChatFeed(ListPanel):
             selected.append(self)
         return selected + self._card.select(selector)
 
-    def step(self, chat_step: ChatStep | None = None, **kwargs):
-        if chat_step is None:
-            chat_step = ChatStep(**kwargs)
-        for kwarg in kwargs:
-            setattr(chat_step, kwarg, kwargs[kwarg])
-        self.stream(chat_step)
-        return chat_step
-
-    def steps(self, chat_steps: ChatSteps | None = None, **kwargs):
-        if chat_steps is None:
-            chat_steps = ChatSteps(**kwargs)
-        for kwarg in kwargs:
-            setattr(chat_steps, kwarg, kwargs[kwarg])
-        self.stream(chat_steps)
-        return chat_steps
+    def steps(self):
+        steps = ChatSteps()
+        self.send(steps, respond=False)
+        return steps

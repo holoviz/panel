@@ -1,15 +1,4 @@
-@import url('chat_step.css');
-
-:host(.card) .card-header {
-  border-bottom: 1px solid var(--panel-border-color, #e0e0e0);
-  padding-block: 15px;
-}
-
-.step-title {
-  font-size: 1.25em;
-}
-
-.step-message {
-  width: 100%;
-  font-size: 1.25em;
+.chat-steps {
+  padding-block: 0px;
+  padding-inline: 15px;
 }
