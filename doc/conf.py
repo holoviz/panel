@@ -94,6 +94,19 @@ gallery_url = f'https://{gallery_endpoint}.holoviz-demo.anaconda.com'
 jlite_url = 'https://holoviz-dev.github.io/panelite-dev' if is_dev else 'https://panelite.holoviz.org'
 pyodide_url = 'https://holoviz-dev.github.io/panel/pyodide' if is_dev else 'https://panel.holoviz.org/pyodide'
 
+rediraffe_redirects = {
+    # Removal of the developer testing page
+    'developer_guide/testing': 'developer_guide/index',
+    'user_guide/APIs.html': 'explanation/api/index.html#apis',
+    'user_guide/Pipelines.html': 'how_to/pipeline/index.html',
+    'user_guide/Templates.html': 'how_to/templates/index.html',
+    '_static/images/sazure_deployment.png': '_static/images/azure_deployment.png',
+    'user_guide/Server_Configuration.html': 'how_to/server/index.html',
+
+# Todo
+# https://panel.holoviz.org/user_guide/Customization.html : what page to redirect this to?
+}
+
 nbsite_analytics = {
     'goatcounter_holoviz': True,
 }
