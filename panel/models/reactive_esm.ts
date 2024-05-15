@@ -230,12 +230,13 @@ view.render_children();`
 
   private _render_esm_react(): void {
     this.disconnect_watchers()
+    const react_version = this.model.react_version
     const imports = this.model.importmap?.imports
     const scopes = this.model.importmap?.scopes
     const importMap = {
       imports: {
-        react: "https://esm.sh/react@18.2.0",
-        "react-dom/": "https://esm.sh/react-dom@18.2.0/",
+        react: `https://esm.sh/react@${react_version}`,
+        "react-dom/": `https://esm.sh/react-dom@${react_version}/`,
         ...imports,
       },
       scopes: scopes || {},
@@ -250,7 +251,7 @@ if (rendered) {
   root.render(rendered)
   view._changing = false
 }`
-    if (Object.keys(importMap.imports).some(k => k.startsWith("@mui"))) {
+    if (true) {//Object.keys(importMap.imports).some(k => k.startsWith("@mui"))) {
       importMap.imports = {
         ...importMap.imports,
         "@emotion/cache": "https://esm.sh/@emotion/cache",
@@ -369,6 +370,7 @@ export namespace ReactiveESM {
     data: p.Property<any>
     esm: p.Property<string>
     importmap: p.Property<any>
+    react_version: p.Property<string>
   }
 }
 
@@ -390,6 +392,7 @@ export class ReactiveESM extends HTMLBox {
       data:      [ Any                     ],
       esm:       [ String,              "" ],
       importmap: [ Any,                 {} ],
+      react_version: [ String,    '18.2.0' ]
     }))
   }
 }

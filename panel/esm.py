@@ -83,6 +83,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     _import_map: ClassVar[dict[str, dict[Literal['imports', 'scopes'], str]]] = {}
 
+    _react_version = '18.2.0'
+
     __abstract = True
 
     def __init__(self, **params):
@@ -142,6 +144,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             'data': self._data_model(**data_props),
             'esm': self._render_esm(),
             'importmap': getattr(self, '_importmap', {}),
+            'react_version': self._react_version
         })
         return params
 

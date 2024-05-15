@@ -260,6 +260,8 @@ class ReactiveESM(HTMLBox):
 
     importmap = bp.Dict(bp.String, bp.Dict(bp.String, bp.String))
 
+    react_version = bp.String('18.2.0')
+
     __javascript_modules_raw__ = [
         f"{config.npm_cdn}/es-module-shims@^1.10.0/dist/es-module-shims.min.js"
     ]
