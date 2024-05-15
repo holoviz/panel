@@ -40,7 +40,7 @@ class _TreeBase(Widget):
     """
 
     checkbox = param.Boolean(default=True, doc="""
-        Whether to to use checkboxes as selectables""")
+        Whether to use checkboxes as selectables""")
 
     select_multiple = param.Boolean(default=True, doc="""
         Whether multiple nodes can be selected or not""")
@@ -50,10 +50,16 @@ class _TreeBase(Widget):
         an array of strings, where each element is a plugin name that
         are passed to jsTree.""")
 
-    show_icons = param.Boolean(default=True, doc="Whether to use icons or not")
+    sort = param.Boolean(default=False, doc="""
+        Whether to sort nodes alphabetically.""")
 
-    show_dots = param.Boolean(default=True, doc="""
-        Whether to show dots on the left as part of the tree""")
+    show_icons = param.Boolean(default=True, doc="Whether to use icons or not.")
+
+    show_dots = param.Boolean(default=False, doc="""
+        Whether to show dots on the left as part of the tree.""")
+
+    show_stripes = param.Boolean(default=False, doc="""
+        Whether to show stripes on alternating rows.""")
 
     value = param.List(default=[], doc="""
         List of currently selected leaves and nodes""")
@@ -214,7 +220,7 @@ class BaseFileProvider:
         raise NotImplementedError()
 
     @staticmethod
-    def normalize(path):
+    def normalize(path, root):
         return path
 
 
@@ -276,6 +282,9 @@ class FileTree(_TreeBase):
 
     provider = param.ClassSelector(class_=BaseFileProvider, default=LocalFileProvider(), doc="""
         A FileProvider.""")
+
+    sort = param.Boolean(default=True, doc="""
+        Whether to sort nodes alphabetically.""")
 
     _rename = {'directory': None, 'provider': None}
 

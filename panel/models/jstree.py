@@ -56,7 +56,9 @@ class jsTree(LayoutDOM):
     checkbox = Bool(default=True)
     multiple = Bool(default=True)
     show_icons = Bool(default=True)
-    show_dots = Bool(default=True)
+    show_dots = Bool(default=False)
+    show_stripes = Bool(default=True)
+    sort = Bool(default=True)
     _new_nodes = List(Any)
 
     # Callback properties

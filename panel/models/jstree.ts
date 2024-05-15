@@ -1,10 +1,12 @@
 import * as p from "@bokehjs/core/properties"
+import type {StyleSheetLike} from "@bokehjs/core/dom"
 import { div } from "@bokehjs/core/dom"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import type {Attrs} from "@bokehjs/core/types"
 import {LayoutDOM, LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 
 import {ID} from "./util"
+import jstree_css from "styles/models/jstree.css"
 
 type Node = {
   [key: string]: any;
@@ -54,6 +56,10 @@ export class jsTreeView extends LayoutDOMView {
     return []
   }
 
+  override stylesheets(): StyleSheetLike[] {
+    return [...super.stylesheets(), jstree_css]
+  }
+
   override render(): void {
     super.render()
     this._id = ID()
@@ -68,6 +74,9 @@ export class jsTreeView extends LayoutDOMView {
     if (this.model.checkbox && !this.model.plugins.includes("checkbox")) {
       this.model.plugins.push("checkbox")
     }
+    if (this.model.checkbox && !this.model.plugins.includes("sort")) {
+      this.model.plugins.push("sort")
+    }
 
     this._jstree = jQuery(this._container).jstree({
       "core": {
@@ -76,7 +85,8 @@ export class jsTreeView extends LayoutDOMView {
         "multiple": this.model.multiple,
         "themes": {
           "dots": this.model.show_dots,
-          "icons": this.model.show_icons
+          "icons": this.model.show_icons,
+	  "stripes": this.model.show_stripes,
         }
       },
       "plugins": this.model.plugins,
@@ -165,7 +175,7 @@ export class jsTreeView extends LayoutDOMView {
     this._jstree.jstree(true).settings.core.multiple = this.model.multiple
   }
 
-  _listen_for_node_open({}, data: any): void {
+  _listen_for_node_open(e, data: any): void {
     data.node.children_nodes = []
     for (let child of data.node.children) {
       data.node.children_nodes.push(this._jstree.jstree(true).get_node(child))
@@ -184,6 +194,8 @@ export namespace jsTree {
     nodes: p.Property<any>
     show_icons: p.Property<boolean>
     show_dots: p.Property<boolean>
+    show_stripes: p.Property<boolean>
+    sort: p.Property<boolean>
     value: p.Property<any>
     _new_nodes: p.Property<any>
   }
@@ -211,7 +223,9 @@ export class jsTree extends LayoutDOM {
       plugins:       [ Array(Any), [] ],
       multiple:      [ Boolean,  true ],
       show_icons:    [ Boolean,  true ],
-      show_dots:     [ Boolean,  true ],
+      show_dots:     [ Boolean, false ],
+      show_stripes:  [ Boolean, false ],
+      sort:          [ Boolean,  true ],
       value:         [ Array(Any), [] ],
     }))
   }
