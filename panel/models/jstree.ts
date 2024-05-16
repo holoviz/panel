@@ -33,19 +33,18 @@ export class jsTreeView extends LayoutDOMView {
   protected _container: HTMLDivElement
   protected _id: any
   protected _jstree: any
-  protected _last_selected: string[]
-
-  override initialize(): void {
-    super.initialize()
-    this._last_selected = []
-  }
 
   override connect_signals(): void {
     super.connect_signals()
-    const {nodes, value, _new_nodes, checkbox, show_icons, show_dots, multiple} = this.model.properties
-    this.on_change(nodes, () => this._update_tree_from_nodes())
+    const {nodes, value, checkbox, show_icons, show_dots, multiple} = this.model.properties
+    this.on_change(nodes, () => this._jstree.jstree(true).load_node('#', () => {
+      this._jstree.jstree(true).refresh({
+	"skip_loading": false,
+	"forget_state": true,
+      })
+      this._update_selection_from_value()
+    }))
     this.on_change(value, () => this._update_selection_from_value())
-    this.on_change(_new_nodes, () => this._update_tree_from_new_nodes())
     this.on_change(checkbox, () => this.setCheckboxes())
     this.on_change(show_icons, () => this._setShowIcons())
     this.on_change(show_dots, () => this._setShowDots())
@@ -54,6 +53,21 @@ export class jsTreeView extends LayoutDOMView {
 
   get child_models(): LayoutDOM[] {
     return []
+  }
+
+  get plugins(): string[] {
+    const plugins = [...this.model.plugins]
+    if (this.model.checkbox && !this.model.plugins.includes("checkbox")) {
+      plugins.push("checkbox")
+    }
+    if (this.model.checkbox && !this.model.plugins.includes("sort")) {
+      plugins.push("sort")
+    }
+
+    if (!this.model.plugins.includes("types")) {
+      plugins.push("types")
+    }
+    return plugins
   }
 
   override stylesheets(): StyleSheetLike[] {
@@ -66,21 +80,36 @@ export class jsTreeView extends LayoutDOMView {
     this._container = div({id: this._id, style: "overflow: auto; minHeight: 200px; minWidth: 200px;"},)
     this.shadow_el.appendChild(this._container);
 
-    let kw: {[k: string]: any} = {"checkbox": {
-      "three_state": false,
-      "cascade": "undetermined"
-    }}
-
-    if (this.model.checkbox && !this.model.plugins.includes("checkbox")) {
-      this.model.plugins.push("checkbox")
-    }
-    if (this.model.checkbox && !this.model.plugins.includes("sort")) {
-      this.model.plugins.push("sort")
-    }
-
     this._jstree = jQuery(this._container).jstree({
+      "checkbox": {
+	"three_state": false,
+	"cascade": "undetermined"
+      },
       "core": {
-	"data": this.model.nodes,
+	"data": (obj: Node, callback: (nodes: Node[]) => void) => {
+	  if (obj.id == '#') {
+	    callback(this.model.nodes)
+	  } else {
+	    this.model.trigger_event(new NodeEvent({type: 'open', node: obj}))
+	    new Promise((resolve) => {
+	      const loop = () => {
+		const nodes = this.model._new_nodes
+		if (nodes != null) {
+		  obj.new_nodes = nodes
+		  callback(obj.children_nodes)
+		  for (const node of obj.children_nodes) {
+		    console.log(this._jstree.jstree(true).get_node(node.id))
+		  }
+		  this.model._new_nodes = null
+		  resolve(this.model.nodes)
+		} else {
+		  setTimeout(loop, 10)
+		}
+	      }
+	      loop();
+	    }).catch(() => console.warn('Failed to fetch nodes'))
+	  }
+	},
 	"check_callback": true,
         "multiple": this.model.multiple,
         "themes": {
@@ -89,17 +118,25 @@ export class jsTreeView extends LayoutDOMView {
 	  "stripes": this.model.show_stripes,
         }
       },
-      "plugins": this.model.plugins,
-      ...kw
+      "plugins": this.plugins,
+      "sort": (n1: string, n2: string) => {
+	const n1_folder = n1.endsWith('/')
+	const n2_folder = n2.endsWith('/')
+	if (n1_folder && !n2_folder) {
+	  return -1
+	} else if (!n1_folder && n2_folder) {
+	  return 1
+	}
+	return n1 > n2 ? 1 : -1
+      },
     });
     this.init_callbacks()
   }
 
   init_callbacks(): void {
-    this._jstree.on('refresh.jstree', ({}, {}) => this._update_selection_from_value());
-    //this._jstree.on('model.jstree', ({}, {}) => this.onNewData());
     this._jstree.on('activate_node.jstree', ({}, data: any) => this.selectNodeFromEditor({}, data));
-    this._jstree.on('before_open.jstree', (e: any, data: any) => this._listen_for_node_open(e, data));
+    this._jstree.on('refresh.jstree', ({}, {}) => this._update_selection_from_value());
+    this._jstree.on('before_open.jstree', (_: any, data: any) => this._listen_for_node_open(data));
   }
 
   selectNodeFromEditor({}, data: any): void {
@@ -107,40 +144,8 @@ export class jsTreeView extends LayoutDOMView {
   }
 
   _update_selection_from_value(): void {
-    this._jstree.jstree(true).select_node(this.model.value)
-    // We sometimes have to fire this function more than once per value change because of
-    // calling jstree.refresh, so we check to see if model.value has really changed
-    // by comparing to last_selected
-    if (this.model.value != this._last_selected) {
-      let deselected = this._last_selected.filter(x => !this.model.value.includes(x));
-      this._jstree.jstree(true).deselect_node(deselected)
-    }
-    // We choose get_selected
-    this._last_selected = this.model.value;
-  }
-
-  _update_tree_from_new_nodes(): void {
-    for (let node of this.model._new_nodes){
-      this._jstree.jstree(true).create_node(node["parent"], node, "first")
-    }
-    this._jstree.jstree(true).settings.core.data = this._jstree.jstree(true).get_json(null, {no_li_attr: true, no_a_attr: true, no_data: true})
-    this.model.nodes = this._jstree.jstree(true).settings.core.data
-  }
-
-  _update_tree_from_nodes(): void {
-    this._jstree.jstree(true).settings.core.data = this.model.nodes;
-    // This will redraw the tree if we swap out the data with new data
-    // we set forget_state to true, so the current state is not reapplied
-    // letting whatever state is set in the new data (open or closed, etc)
-    // be the new state
-    this._jstree.jstree(true).refresh({
-      "skip_loading": false,
-      "forget_state": true,
-    })
-
-    // selected state is not preserved correctly right now, so we then
-    // deselect everything because that is better than getting it wrong
-    this._jstree.jstree(true).deselect_all({"supress_event": true})
+    this._jstree.jstree(true).deselect_all(true)
+    this._jstree.jstree(true).select_node(this.model.value, true, true)
   }
 
   _setShowIcons(): void {
@@ -175,12 +180,24 @@ export class jsTreeView extends LayoutDOMView {
     this._jstree.jstree(true).settings.core.multiple = this.model.multiple
   }
 
-  _listen_for_node_open(e, data: any): void {
+  _listen_for_node_open(data: any): void {
     data.node.children_nodes = []
-    for (let child of data.node.children) {
-      data.node.children_nodes.push(this._jstree.jstree(true).get_node(child))
+    let request_load = false
+    for (const child of data.node.children) {
+      const child_node = data.instance.get_node(child)
+      if (child_node.original.type === 'folder' && !child_node.children.length) {
+	request_load = true
+      }
+      data.node.children_nodes.push(child_node)
     }
-    this.model.trigger_event(new NodeEvent({type: 'open', node: data.node}))
+    if (request_load) {
+      data.instance.load_node(data.node.id, (node: Node) => {
+	for (const new_node of node.new_nodes) {
+	  this._jstree.jstree(true).create_node(new_node["parent"], new_node)
+	}
+	delete node.new_nodes
+      })
+    }
   }
 }
 
@@ -197,7 +214,7 @@ export namespace jsTree {
     show_stripes: p.Property<boolean>
     sort: p.Property<boolean>
     value: p.Property<any>
-    _new_nodes: p.Property<any>
+    _new_nodes: p.Property<any[] | null>
   }
 }
 
@@ -215,8 +232,8 @@ export class jsTree extends LayoutDOM {
   static {
     this.prototype.default_view = jsTreeView
 
-    this.define<jsTree.Props>(({Array, Any, Boolean}) => ({
-      _new_nodes:    [ Array(Any), [] ],
+    this.define<jsTree.Props>(({Array, Any, Boolean, Nullable}) => ({
+      _new_nodes:    [ Nullable(Array(Any)), [] ],
       checkbox:      [ Boolean,  true ],
       drag_and_drop: [ Boolean, false ],
       nodes:         [ Array(Any), [] ],
