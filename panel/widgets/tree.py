@@ -214,8 +214,6 @@ class RemoteFileProvider(BaseFileProvider):
         self.fs = fs
 
     def ls(self, path: str, file_pattern: str = "[!.]*"):
-        import time
-        time.sleep(0.1)
         if not path.endswith('/'):
             path += '/'
         raw_ls = self.fs.ls(path, detail=True)
