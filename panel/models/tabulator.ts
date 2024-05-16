@@ -539,7 +539,7 @@ export class DataTabulatorView extends HTMLBoxView {
     this.tabulator.on("tableBuilt", () => this.tableBuilt())
 
     // Rendering callbacks
-    this.tabulator.on("selectableCheck", (row: any) => {
+    this.tabulator.on("selectableRowsCheck", (row: any) => {
       const selectable = this.model.selectable_rows
       return (selectable == null) || selectable.includes(row._row.data._index)
     })
