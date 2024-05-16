@@ -654,13 +654,13 @@ export class DataTabulatorView extends HTMLBoxView {
 
   getConfiguration(): any {
     // Only use selectable mode if explicitly requested otherwise manually handle selections
-    const selectable = this.model.select_mode === "toggle" ? true : NaN
+    const selectableRows = this.model.select_mode === "toggle" ? true : NaN
     const configuration = {
       ...this.model.configuration,
       index: "_index",
       nestedFieldSeparator: false,
       movableColumns: false,
-      selectable,
+      selectableRows,
       columns: this.getColumns(),
       initialSort: this.sorters,
       layout: this.getLayout(),
