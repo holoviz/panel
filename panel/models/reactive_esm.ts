@@ -1,5 +1,3 @@
-import {html} from "htm/preact"
-import {render} from "preact"
 import {transform} from "sucrase"
 
 import {div, remove} from "@bokehjs/core/dom"
@@ -12,19 +10,6 @@ import {DOMEvent} from "./html"
 import {HTMLBox, HTMLBoxView} from "./layout"
 import {convertUndefined} from "./util"
 
-function extractDataAttributes(text: string) {
-  const regex = /\bdata\.([a-zA-Z_][a-zA-Z0-9_]*)\b/g
-  const ignored = ["send_event", "watch"]
-  const matches = []
-  let match, attr
-
-  while ((match = regex.exec(text)) !== null && (attr = match[0].slice(5)) !== null && !ignored.includes(attr)) {
-    matches.push(attr)
-  }
-
-  return matches
-}
-
 export class ReactiveESMView extends HTMLBoxView {
   declare model: ReactiveESM
   container: HTMLDivElement
@@ -34,8 +19,6 @@ export class ReactiveESMView extends HTMLBoxView {
   _watchers: any = {}
   _child_callbacks: {[key: string]: () => void} = {}
   _parent_nodes: any = {}
-  _htm = html
-  _render_htm = render
   _rerender_vars: string[] = []
 
   override initialize(): void {
@@ -115,15 +98,10 @@ export class ReactiveESMView extends HTMLBoxView {
     this.container = div({style: "display: contents;"})
     this.shadow_el.append(this.container)
     this.rendered = transform(this.model.esm, {transforms: ["jsx", "typescript"], filePath: "render.tsx"}).code
-    this._rerender_vars = extractDataAttributes(this.rendered)
-    if (this.rendered.includes("React")) {
-      this._render_esm_react()
-    } else {
-      this._render_esm()
-    }
+    this._render_esm()
   }
 
-  private _render_esm(): void {
+  protected _render_esm(): void {
     this.disconnect_watchers()
     if (this.model.importmap) {
       const importMap = {...this.model.importmap}
@@ -152,9 +130,6 @@ const output = render({view: view, model: view.model, data: view.model.data, el:
 
 if (output instanceof Element) {
   view.container.appendChild(output)
-} else if (output) {
-  view._render_htm(output, view.container)
-  view.model.data.watch(() => view._render_esm(), view._rerender_vars)
 }
 
 view.render_children();`
@@ -173,15 +148,17 @@ view.render_children();`
       const nodes = []
       for (const subchild of children) {
         const view = this._child_views.get(subchild)
-        if (view && this.container.contains(view.el)) {
-          const parent = view.el.parentNode
-          if (parent) {
-            nodes.push([parent, Array.from(parent.children).indexOf(view.el)])
-            view.render()
-            view.after_render()
-          }
-        }
-        this._parent_nodes[child] = nodes
+        if (!view) {
+	  continue
+	}
+        const parent = view.el.parentNode
+	console.log(view, parent)
+	if (parent) {
+          nodes.push([parent, Array.from(parent.children).indexOf(view.el)])
+          view.render()
+          view.after_render()
+          this._parent_nodes[child] = nodes
+	}
       }
     }
   }
@@ -227,139 +204,6 @@ view.render_children();`
   remove_on_child_render(child: string): void {
     delete this._child_callbacks[child]
   }
-
-  private _render_esm_react(): void {
-    this.disconnect_watchers()
-    const react_version = this.model.react_version
-    const imports = this.model.importmap?.imports
-    const scopes = this.model.importmap?.scopes
-    const importMap = {
-      imports: {
-        react: `https://esm.sh/react@${react_version}`,
-        "react-dom/": `https://esm.sh/react-dom@${react_version}/`,
-        ...imports,
-      },
-      scopes: scopes || {},
-    }
-    let import_code = `
-import * as React from "react"
-import { createRoot } from 'react-dom/client'`
-    let render_code = `
-if (rendered) {
-  view._changing = true
-  const root = createRoot(view.container)
-  root.render(rendered)
-  view._changing = false
-}`
-    if (true) {//Object.keys(importMap.imports).some(k => k.startsWith("@mui"))) {
-      importMap.imports = {
-        ...importMap.imports,
-        "@emotion/cache": "https://esm.sh/@emotion/cache",
-        "@emotion/react": "https://esm.sh/@emotion/react",
-      }
-      import_code = `
-${import_code}
-import createCache from "@emotion/cache"
-import { CacheProvider } from '@emotion/react'
-`
-      render_code = `
-const headElement = document.createElement("head")
-view.shadow_el.insertBefore(headElement, view.container)
-
-const cache = createCache({
-  key: 'css',
-  prepend: true,
-  container: headElement,
-})
-
-if (rendered) {
-  view._changing = true
-  const root = createRoot(view.container)
-  root.render(
-    React.createElement(CacheProvider, {value: cache}, rendered)
-  )
-  view._changing = false;
-}`
-    }
-    // @ts-ignore
-    importShim.addImportMap(importMap)
-
-    const code = `
-${import_code}
-
-const view = Bokeh.index.find_one_by_id('${this.model.id}')
-
-function useState_getter(target, name) {
-  if (!Reflect.has(target, name))
-    return undefined
-  const [value, setValue] = React.useState(target.attributes[name]);
-  view.model.data.watch(() => {
-    setValue(target.attributes[name])
-  }, name)
-  React.useEffect(() => {
-    const state = {}
-    state[name] = value
-    target.setv(state)
-  }, [value])
-  return [value, setValue]
-}
-
-const modelState = new Proxy(view.model.data, {
-  get: useState_getter
-})
-
-const children = {}
-for (const child of view.model.children) {
-  const child_model = view.model.data[child]
-  const multiple = Array.isArray(child_model)
-  const models = multiple ? child_model : [child_model]
-  const components = []
-  for (const model of models) {
-    class Child extends React.Component {
-      child_name = child
-      parent = view
-      view = view._child_views.get(model)
-      node = view._child_views.get(model).el
-
-      componentDidMount() {
-        this.parent.on_child_render(this.child_name, () => this.rerender())
-        this.view.render()
-        this.view.after_render()
-      }
-
-      componentDidUnmount() {
-        this.parent.remove_on_child_render(this.child_name)
-      }
-
-      rerender() {
-        this.view = this.parent._child_views.get(view.model.data[child])
-        this.node = this.view.el
-        this.forceUpdate()
-        this.view.render()
-        this.view.after_render()
-      }
-
-      render() {
-        return React.createElement('div', {className: "child-wrapper", ref: (ref) => ref && ref.appendChild(this.node)})
-      }
-    }
-    components.push(React.createElement(Child))
-  }
-  children[child] = multiple ? components: components[0]
-}
-
-${this.rendered}
-
-const rendered = render({view: view, model: view.model, data: view.model.data, el: view.container, state: modelState, children: children})
-
-${render_code}`
-
-    const url = URL.createObjectURL(
-      new Blob([code], {type: "text/javascript"}),
-    )
-    // @ts-ignore
-    importShim(url)
-  }
 }
 
 export namespace ReactiveESM {
@@ -370,7 +214,6 @@ export namespace ReactiveESM {
     data: p.Property<any>
     esm: p.Property<string>
     importmap: p.Property<any>
-    react_version: p.Property<string>
   }
 }
 
@@ -383,7 +226,7 @@ export class ReactiveESM extends HTMLBox {
     super(attrs)
   }
 
-  static override __module__ = "panel.models.reactive_html"
+  static override __module__ = "panel.models.esm"
 
   static {
     this.prototype.default_view = ReactiveESMView
@@ -392,7 +235,6 @@ export class ReactiveESM extends HTMLBox {
       data:      [ Any                     ],
       esm:       [ String,              "" ],
       importmap: [ Any,                 {} ],
-      react_version: [ String,    '18.2.0' ]
     }))
   }
 }

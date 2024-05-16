@@ -17,7 +17,10 @@ from param.parameterized import ParameterizedMetaclass
 
 from .io.datamodel import construct_data_model
 from .io.state import state
-from .models import ReactiveESM as _BkReactiveESM
+from .models import (
+    PreactComponent as _BkPreactComponent, ReactComponent as _BkReactComponent,
+    ReactiveESM as _BkReactiveESM,
+)
 from .models.reactive_html import DOMEvent
 from .reactive import Reactive, ReactiveCustomBase, ReactiveMetaBase
 from .util.checks import import_available
@@ -46,12 +49,15 @@ class ReactiveESMMetaclass(ReactiveMetaBase):
 
 class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     '''
-    The `ReactiveESM` class enables you to create custom Panel components using HTML, CSS and/ or
-    Javascript and without the complexities of Javascript build tools.
+    The `ReactiveESM` classes allow you to create custom Panel
+    components using HTML, CSS and/ or Javascript and without the
+    complexities of Javascript build tools.
 
-    A `ReactiveESM` subclass provides bi-directional syncing of its parameters with arbitrary HTML
-    elements, attributes and properties. The key part of the subclass is the `_esm`
-    variable. Use this to define a `render` function as shown in the example below.
+    A `ReactiveESM` subclass provides bi-directional syncing of its
+    parameters with arbitrary HTML elements, attributes and
+    properties. The key part of the subclass is the `_esm`
+    variable. Use this to define a `render` function as shown in the
+    example below.
 
     import panel as pn
     import param
@@ -79,11 +85,12 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     CounterButton().servable()
     '''
 
+    _bokeh_model = _BkReactiveESM
+
     _esm: ClassVar[str | os.PathLike] = ""
 
     _import_map: ClassVar[dict[str, dict[Literal['imports', 'scopes'], str]]] = {}
 
-    _react_version = '18.2.0'
 
     __abstract = True
 
@@ -144,7 +151,6 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             'data': self._data_model(**data_props),
             'esm': self._render_esm(),
             'importmap': getattr(self, '_importmap', {}),
-            'react_version': self._react_version
         })
         return params
 
@@ -184,7 +190,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        model = _BkReactiveESM(**self._get_properties(doc))
+        model = self._bokeh_model(**self._get_properties(doc))
         root = root or model
         children = self._get_children(model.data, doc, root, model, comm)
         model.data.update(**children)
@@ -238,3 +244,118 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
           A callable which will be given the DOMEvent object.
         """
         self._event_callbacks[event].append(callback)
+
+
+class JSComponent(ReactiveESM):
+    '''
+    The `JSComponent` allows you to create custom Panel components
+    using Javascript and CSS without the complexities of
+    Javascript build tools.
+
+    A `JSComponent` subclass provides bi-directional syncing of its
+    parameters with arbitrary HTML elements, attributes and
+    properties. The key part of the subclass is the `_esm`
+    variable. Use this to define a `render` function as shown in the
+    example below.
+
+    import panel as pn
+    import param
+
+    pn.extension()
+
+    class CounterButton(JSComponent):
+
+        value = param.Integer()
+
+        _esm = """
+        export function render({ data }) {
+            let btn = document.createElement("button");
+            btn.innerHTML = `count is ${data.value}`;
+            btn.addEventListener("click", () => {
+                data.value += 1
+            });
+            data.watch(() => {
+                btn.innerHTML = `count is ${data.value}`;
+            }, 'value')
+            return btn
+        }
+        """
+
+    CounterButton().servable()
+    '''
+
+
+class ReactComponent(ReactiveESM):
+    '''
+    The `ReactComponent` allows you to create custom Panel components
+    using React without the complexities of Javascript build tools.
+
+    A `ReactComponent` subclass provides bi-directional syncing of its
+    parameters with arbitrary HTML elements, attributes and
+    properties. The key part of the subclass is the `_esm`
+    variable. Use this to define a `render` function as shown in the
+    example below.
+
+    import panel as pn
+    import param
+
+    pn.extension()
+
+    class CounterButton(ReactComponent):
+
+        value = param.Integer()
+
+        _esm = """
+        export function render({ data, state }) {
+          return (
+            <>
+              <button onClick={() => { data.value += 1 }}>{state.value}</button>
+            </>
+          )
+        }
+        """
+
+    CounterButton().servable()
+    '''
+
+
+    _bokeh_model = _BkReactComponent
+
+    _react_version = '18.2.0'
+
+    def _init_params(self) -> dict[str, Any]:
+        params = super()._init_params()
+        params['react_version'] = self._react_version
+        return params
+
+
+class PreactComponent(ReactiveESM):
+    '''
+    The `PreactComponent` allows you to create custom Panel components
+    using Preact and htm without the complexities of Javascript build tools.
+
+    A `PreactComponent` subclass provides bi-directional syncing of its
+    parameters with arbitrary HTML elements, attributes and
+    properties. The key part of the subclass is the `_esm`
+    variable. Use this to define a `render` function as shown in the
+    example below.
+
+    import panel as pn
+    import param
+
+    pn.extension()
+
+    class CounterButton(ReactComponent):
+
+        value = param.Integer()
+
+        _esm = """
+        export function render({ data, html }) {
+          return html`<button onClick=${() => { data.value += 1 }}>${state.value}</button>`
+        }
+        """
+
+    CounterButton().servable()
+    '''
+
+    _bokeh_model = _BkPreactComponent

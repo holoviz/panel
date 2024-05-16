@@ -14,9 +14,11 @@ You can layout a single Panel component as follows.
 import param
 import panel as pn
 
+from panel.esm import JSComponent
+
 pn.extension()
 
-class LayoutSingleObject(pn.ReactiveESM):
+class LayoutSingleObject(JSComponent):
     object = param.ClassSelector(class_=pn.viewable.Viewable, allow_refs=False)
 
     _esm = """
@@ -60,10 +62,11 @@ import param
 
 import panel as pn
 
+from panel.esm import PreactComponent
+
 pn.extension()
 
-
-class LayoutSingleObject(pn.ReactiveESM):
+class LayoutSingleObject(PreactComponent):
     object = param.ClassSelector(class_=pn.viewable.Viewable, allow_refs=False)
 
     _esm = """
