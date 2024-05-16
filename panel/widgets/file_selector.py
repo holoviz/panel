@@ -15,6 +15,7 @@ from ..io import PeriodicCallback
 from ..layout import (
     Column, Divider, ListPanel, Row,
 )
+from ..models.widgets import DoubleClickEvent
 from ..util import fullpath
 from ..viewable import Layoutable
 from .base import CompositeWidget
@@ -142,6 +143,7 @@ class FileSelector(CompositeWidget):
         self._update_files(True)
 
         # Set up callback
+        self._selector._lists[False].on_double_click(self._select_and_go)
         self.link(self._directory, directory='value')
         self._selector.param.watch(self._update_value, 'value')
         self._go.on_click(self._update_files)
@@ -156,6 +158,15 @@ class FileSelector(CompositeWidget):
         self.param.watch(self._update_periodic, 'refresh_period')
         if self.refresh_period:
             self._periodic.start()
+
+    def _select_and_go(self, event: DoubleClickEvent):
+        relpath = event.option.replace('📁', '')
+        sel = fullpath(os.path.join(self._cwd, relpath))
+        if os.path.isdir(sel):
+            self._directory.value = sel
+        else:
+            self._directory.value = self._cwd
+        self._update_files()
 
     def _update_periodic(self, event: param.parameterized.Event):
         if event.new:
