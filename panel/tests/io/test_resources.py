@@ -84,8 +84,10 @@ def test_resources_model_server(document):
     with set_resource_mode('server'):
         with set_curdoc(document):
             extension('tabulator')
-            assert resources.js_files[0] == f'static/extensions/panel/bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
-            assert resources.js_files[1] == 'static/extensions/panel/bundled/datatabulator/luxon/build/global/luxon.min.js'
+            assert resources.js_files[:2] == [
+                f'static/extensions/panel/bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js',
+                'static/extensions/panel/bundled/datatabulator/luxon/build/global/luxon.min.js',
+            ]
             assert resources.css_files == [
                 f'static/extensions/panel/bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/css/tabulator_simple.min.css?v={JS_VERSION}'
             ]
@@ -95,8 +97,10 @@ def test_resources_model_cdn(document):
     with set_resource_mode('cdn'):
         with set_curdoc(document):
             extension('tabulator')
-            assert resources.js_files[0] == f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
-            assert resources.js_files[1] == f'{CDN_DIST}bundled/datatabulator/luxon/build/global/luxon.min.js'
+            assert resources.js_files[:2] == [
+                f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js',
+                f'{CDN_DIST}bundled/datatabulator/luxon/build/global/luxon.min.js',
+            ]
             assert resources.css_files == [
                 f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/css/tabulator_simple.min.css?v={JS_VERSION}'
             ]
@@ -109,8 +113,10 @@ def test_resources_model_inline(document):
             tabulator_jsfile = f'bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
             luxon_jsfile = 'bundled/datatabulator/luxon/build/global/luxon.min.js'
             tabulator_cssfile = f'bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/css/tabulator_simple.min.css'
-            assert resources.js_raw[-2] == (DIST_DIR / tabulator_jsfile).read_text(encoding='utf-8')
-            assert resources.js_raw[-1] == (DIST_DIR / luxon_jsfile).read_text(encoding='utf-8')
+            assert resources.js_raw[-2:] == [
+                (DIST_DIR / tabulator_jsfile).read_text(encoding='utf-8'),
+                (DIST_DIR / luxon_jsfile).read_text(encoding='utf-8'),
+            ]
             assert resources.css_raw == [(DIST_DIR / tabulator_cssfile).read_text(encoding='utf-8')]
 
 def test_resources_reactive_html_server(document):
