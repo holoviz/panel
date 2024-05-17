@@ -123,7 +123,7 @@ class FileSelector(CompositeWidget):
         self._back = Button(name='◀', width=40, height=40, margin=(5, 10, 0, 0), disabled=True, align='center')
         self._forward = Button(name='▶', width=40, height=40, margin=(5, 10, 0, 0), disabled=True, align='center')
         self._up = Button(name='⬆', width=40, height=40, margin=(5, 10, 0, 0), disabled=True, align='center')
-        self._directory = TextInput(value=self.directory, margin=(5, 10, 0, 0), width_policy='max')
+        self._directory = TextInput(value=self.directory, margin=(5, 10, 0, 0), width_policy='max', height_policy='max')
         self._go = Button(name='⬇', disabled=True, width=40, height=40, margin=(5, 5, 0, 0), align='center')
         self._reload = Button(name='↻', width=40, height=40, margin=(5, 0, 0, 10), align='center')
         self._nav_bar = Row(
@@ -160,7 +160,9 @@ class FileSelector(CompositeWidget):
             self._periodic.start()
 
     def _select_and_go(self, event: DoubleClickEvent):
-        relpath = event.option.replace('📁', '')
+        relpath = event.option.replace('📁', '').replace('⬆ ', '')
+        if relpath == '..':
+            return self._go_up()
         sel = fullpath(os.path.join(self._cwd, relpath))
         if os.path.isdir(sel):
             self._directory.value = sel
@@ -181,7 +183,7 @@ class FileSelector(CompositeWidget):
         return self.root_directory or self.directory
 
     def _update_value(self, event: param.parameterized.Event):
-        value = [v for v in event.new if not self.only_files or os.path.isfile(v)]
+        value = [v for v in event.new if v != '..' and (not self.only_files or os.path.isfile(v))]
         self._selector.value = value
         self.value = value
 
@@ -230,9 +232,18 @@ class FileSelector(CompositeWidget):
             elif os.path.isfile(check):
                 files.append(s)
 
-        paths = [p for p in sorted(dirs)+sorted(files)
-                 if self.show_hidden or not os.path.basename(p).startswith('.')]
-        abbreviated = [('📁' if f in dirs else '')+os.path.relpath(f, self._cwd) for f in paths]
+        paths = [
+            p for p in sorted(dirs)+sorted(files)
+            if self.show_hidden or not os.path.basename(p).startswith('.')
+        ]
+        abbreviated = [
+            ('📁' if f in dirs else '')+os.path.relpath(f, self._cwd)
+            for f in paths
+        ]
+        if not self._up.disabled:
+            paths.insert(0, '..')
+            abbreviated.insert(0, '⬆ ..')
+
         options = dict(zip(abbreviated, paths))
         self._selector.options = options
         self._selector.value = selected
@@ -248,17 +259,21 @@ class FileSelector(CompositeWidget):
         denylist = self._selector._lists[False]
         options = dict(self._selector._items)
         self._selector.options.clear()
-        self._selector.options.update([
+        prefix = [] if self._up.disabled else [('⬆ ..', '..')]
+        self._selector.options.update(prefix+[
             (k, v) for k, v in options.items() if k in paths or v in self.value
         ])
-        denylist.options = [o for o in denylist.options if o in paths]
+        options = [o for o in denylist.options if o in paths]
+        if not self._up.disabled:
+            options.insert(0, '⬆ ..')
+        denylist.options = options
 
     def _select(self, event: param.parameterized.Event):
         if len(event.new) != 1:
             self._directory.value = self._cwd
             return
 
-        relpath = event.new[0].replace('📁', '')
+        relpath = event.new[0].replace('📁', '').replace('⬆ ', '')
         sel = fullpath(os.path.join(self._cwd, relpath))
         if os.path.isdir(sel):
             self._directory.value = sel
