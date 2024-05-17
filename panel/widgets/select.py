@@ -793,8 +793,9 @@ class MultiSelect(_MultiSelectBase):
     _widget_type: ClassVar[type[Model]] = _BkMultiSelect
 
     def __init__(self, **params):
+        click_handler = params.pop('on_double_click', None)
         super().__init__(**params)
-        self._dbl__click_handlers = []
+        self._dbl__click_handlers = [click_handler] if click_handler else []
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
@@ -805,24 +806,26 @@ class MultiSelect(_MultiSelectBase):
         return model
 
     def _process_event(self, event: DoubleClickEvent) -> None:
-        for handler in self._dbl__click_handlers:
-            state.execute(partial(handler, event))
+        if event.option in self.labels:
+            event.option = self._items[event.option]
+            for handler in self._dbl__click_handlers:
+                state.execute(partial(handler, event))
 
     def on_double_click(
         self, callback: Callable[[param.parameterized.Event], None | Awaitable[None]]
     ) -> param.parameterized.Watcher:
         """
-        Register a callback to be executed when the `Button` is clicked.
+        Register a callback to be executed when a `MultiSelect` option is double-clicked.
 
-        The callback is given an `Event` argument declaring the number of clicks
+        The callback is given an `DoubleClickEvent` argument
 
         Example
         -------
 
-        >>> button = pn.widgets.MultiSelect(name='Click me')
+        >>> select = pn.widgets.MultiSelect(options=["A", "B", "C"])
         >>> def handle_click(event):
-        ...    print("I was clicked!")
-        >>> button.on_double_click(handle_click)
+        ...    print(f"Option {event.option} was double clicked.")
+        >>> select.on_double_click(handle_click)
 
         Arguments
         ---------

@@ -24,7 +24,7 @@ export class CustomMultiSelectView extends MultiSelectView {
     super.render()
     for (const option of this.input_el.children) {
       option.addEventListener("dblclick", (event) => {
-	this.model.trigger_event(new DoubleClickEvent(event.target.value))
+        this.model.trigger_event(new DoubleClickEvent(event.target.value))
       })
 
     }
