@@ -10,7 +10,7 @@ from abc import abstractmethod
 from fnmatch import fnmatch
 from pathlib import Path
 from typing import (
-    TYPE_CHECKING, Any, AnyStr, ClassVar, Optional,
+    TYPE_CHECKING, AnyStr, ClassVar, Optional,
 )
 from urllib.parse import urlparse
 
@@ -30,7 +30,6 @@ from .select import CrossSelector
 from .tree import _TreeBase
 
 if TYPE_CHECKING:
-    from bokeh.document import Document
     from fsspec import AbstractFileSystem
 
 
@@ -387,6 +386,9 @@ class FileTree(_TreeBase):
     FileTree renders a path or directory.
     """
 
+    only_files = param.Boolean(default=False, doc="""
+        Whether to only allow selecting files.""")
+
     paths = param.List(default=[Path.cwd()], doc="""
         The directory paths to explore.""")
 
@@ -396,7 +398,7 @@ class FileTree(_TreeBase):
     sort = param.Boolean(default=True, doc="""
         Whether to sort nodes alphabetically.""")
 
-    _rename = {'paths': None, 'provider': None}
+    _rename = {'paths': None, 'provider': None, 'only_files': 'cascade'}
 
     def __init__(self, paths: list[AnyStr | os.PathLike] | AnyStr | os.PathLike | None = None, **params):
         provider = params.get('provider', self.provider)
@@ -418,10 +420,15 @@ class FileTree(_TreeBase):
             "state": {"opened": True},
             "children": self._get_children(Path(path).name, path, depth=1)
         } for path in self.paths]
+        self._reindex()
 
-    def _get_properties(self, doc: Document) -> dict[str, Any]:
-        props = super()._get_properties(doc)
-        props['nodes'] = self._nodes
+    def _process_property_change(self, msg):
+        props = super()._process_property_change(msg)
+        if 'value' in props and self.only_files:
+            props['value'] = [
+                node_id for node_id in props['value']
+                if self._index.get(node_id, {}).get('type') == 'file'
+            ]
         return props
 
     def _get_children(

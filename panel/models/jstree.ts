@@ -79,11 +79,10 @@ export class jsTreeView extends LayoutDOMView {
     this._id = ID()
     this._container = div({id: this._id, style: "overflow: auto; minHeight: 200px; minWidth: 200px;"},)
     this.shadow_el.appendChild(this._container);
-
     this._jstree = jQuery(this._container).jstree({
       "checkbox": {
-	"three_state": false,
-	"cascade": "undetermined"
+	"three_state": this.model.cascade,
+	"cascade": this.model.cascade ? "undetermined" : "down+undetermined",
       },
       "core": {
 	"data": (obj: Node, callback: (nodes: Node[]) => void) => {
@@ -97,9 +96,6 @@ export class jsTreeView extends LayoutDOMView {
 		if (nodes != null) {
 		  obj.new_nodes = nodes
 		  callback(obj.children_nodes)
-		  for (const node of obj.children_nodes) {
-		    console.log(this._jstree.jstree(true).get_node(node.id))
-		  }
 		  this.model._new_nodes = null
 		  resolve(this.model.nodes)
 		} else {
@@ -204,9 +200,10 @@ export class jsTreeView extends LayoutDOMView {
 export namespace jsTree {
   export type Attrs = p.AttrsOf<Props>
   export type Props = LayoutDOM.Props & {
-    drag_and_drop: p.Property<boolean>
     plugins: p.Property<any>
+    cascade: p.Property<boolean>
     checkbox: p.Property<boolean>
+    drag_and_drop: p.Property<boolean>
     multiple: p.Property<boolean>
     nodes: p.Property<any>
     show_icons: p.Property<boolean>
@@ -234,6 +231,7 @@ export class jsTree extends LayoutDOM {
 
     this.define<jsTree.Props>(({Array, Any, Boolean, Nullable}) => ({
       _new_nodes:    [ Nullable(Array(Any)), [] ],
+      cascade:       [ Boolean,  true ],
       checkbox:      [ Boolean,  true ],
       drag_and_drop: [ Boolean, false ],
       nodes:         [ Array(Any), [] ],

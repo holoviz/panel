@@ -84,6 +84,24 @@ class _TreeBase(Widget):
             jsn["icon"] = "jstree-leaf"
         return jsn
 
+    @classmethod
+    def _traverse(cls, node) -> list:
+        nodes = [node]
+        for subnode in node.get('children', []):
+            nodes += cls._traverse(subnode)
+        return nodes
+
+    def _reindex(self):
+        self._index = {}
+        for node in self._nodes:
+            for subnode in self._traverse(node):
+                self._index[subnode['id']] = subnode
+
+    def _get_properties(self, doc: Document) -> dict[str, Any]:
+        props = super()._get_properties(doc)
+        props['nodes'] = self._nodes
+        return props
+
     def _process_param_change(self, msg: dict[str, Any]) -> dict[str, Any]:
         properties = super()._process_param_change(msg)
         if properties.get("height") and properties["height"] < 100:
@@ -123,8 +141,13 @@ class _TreeBase(Widget):
                 node["id"],
                 **{"children_to_skip": nodes_already_sent, **kwargs}
             )
-            if children:
-                new_nodes.extend(children)
+            new_nodes.extend(children)
+            for child in children:
+                self._index[child['id']] = child
+            parent = self._index[node['id']]
+            if 'children' not in parent:
+                parent['children'] = []
+            parent['children'].extend(children)
         self._new_nodes = new_nodes
 
     @abstractmethod

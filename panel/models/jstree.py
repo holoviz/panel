@@ -53,6 +53,7 @@ class jsTree(LayoutDOM):
         return bundled_files(cls)
 
     plugins = List(Any)
+    cascade = Bool(default=True)
     checkbox = Bool(default=True)
     multiple = Bool(default=True)
     show_icons = Bool(default=True)
