@@ -36,7 +36,7 @@ from .base import CompositeWidget, Widget  # noqa
 from .button import Button, MenuButton, Toggle  # noqa
 from .codeeditor import CodeEditor  # noqa
 from .debugger import Debugger  # noqa
-from .file_selector import FileSelector  # noqa
+from .file_selector import FileSelector, FileTree  # noqa
 from .icon import ButtonIcon, ToggleIcon  # noqa
 from .indicators import (  # noqa
     BooleanStatus, Dial, Gauge, LinearGauge, LoadingSpinner, Number, Progress,
@@ -65,7 +65,6 @@ from .tables import DataFrame, Tabulator  # noqa
 from .terminal import Terminal  # noqa
 from .text_to_speech import TextToSpeech, Utterance, Voice  # noqa
 from .texteditor import TextEditor  # noqa
-from .tree import FileTree  # noqa
 from .widget import widget  # noqa
 
 __all__ = (

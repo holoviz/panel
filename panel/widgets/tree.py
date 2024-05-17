@@ -5,14 +5,11 @@ from a list of options.
 from __future__ import annotations
 
 import logging
-import os
 
 from abc import abstractmethod
-from pathlib import Path
 from typing import (
-    TYPE_CHECKING, Any, AnyStr, ClassVar, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
 )
-from urllib.parse import urlparse
 
 import param
 
@@ -20,12 +17,10 @@ from pyviz_comms import JupyterComm
 
 from ..util import lazy_load
 from .base import Widget
-from .file_selector import _scan_path
 
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
-    from fsspec import AbstractFileSystem
     from pyviz_comms import Comm
 
     from ..models.jstree import NodeEvent
@@ -137,7 +132,6 @@ class _TreeBase(Widget):
         raise NotImplementedError()
 
 
-
 class Tree(_TreeBase):
     """
 
@@ -163,142 +157,3 @@ class Tree(_TreeBase):
     @data.setter
     def data(self, value):
         self._data = value
-
-
-class BaseFileProvider:
-
-    @abstractmethod
-    def ls(self, path):
-        """
-        Concrete classes must implement this method to list the content of a remote filesystem.
-
-        Arguments
-        ---------
-        path: str
-            The path to search
-
-        Returns
-        -------
-        A tuple of two lists: the first one contains the directories, the second one contains the files.
-        Each element of the lists is a string representing the *name* (not the full path) of the directory or file.
-        """
-        raise NotImplementedError()
-
-    @staticmethod
-    def normalize(path, root=None):
-        return path
-
-
-class LocalFileProvider(BaseFileProvider):
-
-    def ls(self, path, file_pattern: str = "[!.]*"):
-        if not os.path.isdir(path):
-            return [], []
-        return _scan_path(path, file_pattern=file_pattern)
-
-    @staticmethod
-    def normalize(path, root=None):
-        path = os.path.expanduser(os.path.normpath(path))
-        path = Path(path)
-        if not path.is_absolute():
-            if root:
-                path = Path(root).parent / path
-            else:
-                path = path.resolve()
-        return str(path)
-
-
-class RemoteFileProvider(BaseFileProvider):
-
-    def __init__(self, fs: AbstractFileSystem):
-        self.fs = fs
-
-    def ls(self, path: str, file_pattern: str = "[!.]*"):
-        if not path.endswith('/'):
-            path += '/'
-        raw_ls = self.fs.ls(path, detail=True)
-        prefix = ''
-        if scheme:= urlparse(path).scheme:
-            prefix = f'{scheme}://'
-        dirs = [f"{prefix}{d['name']}/" for d in raw_ls if d['type'] == 'directory' ]
-        raw_glob = self.fs.glob(path+file_pattern, detail=True)
-        files = [f"{prefix}{d['name']}" for d in raw_glob.values() if d['type'] == 'file' ]
-        return dirs, files
-
-
-class FileTree(_TreeBase):
-    """
-    FileTree renders a path or directory.
-    """
-
-    paths = param.List(default=[Path.cwd()], doc="""
-        The directory paths to explore.""")
-
-    provider = param.ClassSelector(class_=BaseFileProvider, default=LocalFileProvider(), doc="""
-        A FileProvider.""")
-
-    sort = param.Boolean(default=True, doc="""
-        Whether to sort nodes alphabetically.""")
-
-    _rename = {'paths': None, 'provider': None}
-
-    def __init__(self, paths: list[AnyStr | os.PathLike] | AnyStr | os.PathLike | None = None, **params):
-        provider = params.get('provider', self.provider)
-        if isinstance(paths, list):
-            paths = [provider.normalize(p) for p in paths]
-        elif paths is not None:
-            paths = [provider.normalize(paths)]
-        else:
-            paths = []
-        super().__init__(paths=paths, **params)
-
-    @param.depends('paths', watch=True, on_init=True)
-    def _set_data_from_directory(self, *event):
-        self._nodes = [{
-            "id": self.provider.normalize(path),
-            "text": Path(path).name,
-            "icon": "jstree-folder",
-            "type": "folder",
-            "state": {"opened": True},
-            "children": self._get_children(Path(path).name, path, depth=1)
-        } for path in self.paths]
-
-    def _get_properties(self, doc: Document) -> dict[str, Any]:
-        props = super()._get_properties(doc)
-        props['nodes'] = self._nodes
-        return props
-
-    def _get_children(
-        self, text: str, directory: str, depth=0, children_to_skip=(), **kwargs
-    ):
-        parent = str(directory)
-        nodes = []
-        dirs, files = self._get_paths(directory, children_to_skip=children_to_skip)
-        for subdir in dirs:
-            if depth > 0:
-                children = self._get_children(Path(subdir).name, subdir, depth=depth - 1)
-            else:
-                children = None
-            dir_spec = self._to_json(
-                id_=subdir, label=Path(subdir).name, parent=parent,
-                children=children, icon="jstree-folder", type='folder', **kwargs
-            )
-            nodes.append(dir_spec)
-        nodes.extend(
-            self._to_json(
-                id_=subfile, label=Path(subfile).name, parent=parent,
-                icon="jstree-file", type='file', **kwargs
-            )
-            for subfile in files
-        )
-        return nodes
-
-    def _get_paths(self, directory, children_to_skip=()):
-        dirs_, files = self.provider.ls(str(directory))
-        dirs = []
-        for d in dirs_:
-            if Path(d).name.startswith(".") or d in children_to_skip:
-                continue
-            dirs.append(d)
-        files = [f for f in files if f not in children_to_skip]
-        return sorted(dirs), sorted(files)
