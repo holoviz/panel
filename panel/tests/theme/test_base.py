@@ -1,5 +1,7 @@
 import pathlib
 
+import pytest
+
 from bokeh.models import ImportedStyleSheet
 
 from panel.io.resources import CDN_DIST
@@ -8,27 +10,30 @@ from panel.viewable import Viewable
 from panel.widgets import FloatSlider, IntSlider, TextInput
 
 
-class DesignTest(Design):
-
-    modifiers = {
-        IntSlider: {
-            'stylesheets': [Inherit, 'http://example.com/baz.css']
-        },
-        FloatSlider: {
-            'styles': {'color': 'red'},
-            'stylesheets': [Inherit, pathlib.Path(__file__).parent / 'test.css']
-        },
-        TextInput: {
-            'styles': {'color': 'green'},
-            'stylesheets': [Inherit, '../theme/test.css']
-        },
-        Viewable: {
-            'stylesheets': ['foo.css']
+@pytest.fixture
+def DesignTest():
+    class DesignTest(Design):
+        modifiers = {
+            IntSlider: {
+                'stylesheets': [Inherit, 'http://example.com/baz.css']
+            },
+            FloatSlider: {
+                'styles': {'color': 'red'},
+                'stylesheets': [Inherit, pathlib.Path(__file__).parent / 'test.css']
+            },
+            TextInput: {
+                'styles': {'color': 'green'},
+                'stylesheets': [Inherit, '../theme/test.css']
+            },
+            Viewable: {
+                'stylesheets': ['foo.css']
+            }
         }
-    }
+
+    return DesignTest
 
 
-def test_design_params():
+def test_design_params(DesignTest):
     widget = TextInput()
 
     params, _ = DesignTest().params(widget)
@@ -43,7 +48,7 @@ def test_design_params():
 
     assert params.get('styles') == {'color': 'green'}
 
-def test_design_params_server(server_document):
+def test_design_params_server(server_document, DesignTest):
     widget = TextInput()
 
     params, _ = DesignTest().params(widget)
@@ -59,7 +64,7 @@ def test_design_params_server(server_document):
 
     assert params.get('styles') == {'color': 'green'}
 
-def test_design_params_inherited():
+def test_design_params_inherited(DesignTest):
     widget = FloatSlider()
 
     params, _ = DesignTest().params(widget)
@@ -74,7 +79,7 @@ def test_design_params_inherited():
 
     assert params.get('styles') == {'color': 'red'}
 
-def test_design_params_inherited_server(server_document):
+def test_design_params_inherited_server(server_document, DesignTest):
     widget = FloatSlider()
 
     params, _ = DesignTest().params(widget)
@@ -90,7 +95,7 @@ def test_design_params_inherited_server(server_document):
 
     assert params.get('styles') == {'color': 'red'}
 
-def test_design_params_url_inherited():
+def test_design_params_url_inherited(DesignTest):
     widget = IntSlider()
 
     params, _ = DesignTest().params(widget)
@@ -104,7 +109,7 @@ def test_design_params_url_inherited():
     assert isinstance(s3, ImportedStyleSheet)
     assert s3.url == 'http://example.com/baz.css'
 
-def test_design_apply(document, comm):
+def test_design_apply(document, comm, DesignTest):
     widget = TextInput()
     model = widget.get_root(document, comm=comm)
 
@@ -123,7 +128,7 @@ def test_design_apply(document, comm):
     assert s5 == '.bk-input {\n  color: red;\n}\n'
     assert model.styles == {'color': 'green'}
 
-def test_design_apply_not_isolated(document, comm):
+def test_design_apply_not_isolated(document, comm, DesignTest):
     widget = TextInput()
     model = widget.get_root(document, comm=comm)
 
@@ -141,7 +146,7 @@ def test_design_apply_not_isolated(document, comm):
 
     assert model.styles == {'color': 'green'}
 
-def test_design_apply_inherited(document, comm):
+def test_design_apply_inherited(document, comm, DesignTest):
     widget = FloatSlider()
     model = widget.get_root(document, comm=comm)
 
@@ -161,7 +166,7 @@ def test_design_apply_inherited(document, comm):
 
     assert model.styles == {'color': 'red'}
 
-def test_design_apply_url_inherited(document, comm):
+def test_design_apply_url_inherited(document, comm, DesignTest):
     widget = IntSlider()
     model = widget.get_root(document, comm=comm)
 
@@ -180,7 +185,7 @@ def test_design_apply_url_inherited(document, comm):
     assert isinstance(s5, ImportedStyleSheet)
     assert s5.url == 'http://example.com/baz.css'
 
-def test_design_apply_with_dark_theme(document, comm):
+def test_design_apply_with_dark_theme(document, comm, DesignTest):
     widget = TextInput()
     model = widget.get_root(document, comm=comm)
     model.document = document
@@ -201,7 +206,7 @@ def test_design_apply_with_dark_theme(document, comm):
 
     assert document.theme._json == BOKEH_DARK
 
-def test_design_apply_with_dark_theme_not_isolated(document, comm):
+def test_design_apply_with_dark_theme_not_isolated(document, comm, DesignTest):
     widget = TextInput()
     model = widget.get_root(document, comm=comm)
     model.document = document
@@ -220,7 +225,7 @@ def test_design_apply_with_dark_theme_not_isolated(document, comm):
 
     assert document.theme._json == BOKEH_DARK
 
-def test_design_apply_with_dist_url(document, comm):
+def test_design_apply_with_dist_url(document, comm, DesignTest):
     widget = TextInput()
     model = widget.get_root(document, comm=comm)
     model.document = document
@@ -242,7 +247,7 @@ def test_design_apply_with_dist_url(document, comm):
 
     assert model.styles == {'color': 'green'}
 
-def test_design_apply_shared_stylesheet_models(document, comm):
+def test_design_apply_shared_stylesheet_models(document, comm, DesignTest):
     widget1 = TextInput()
     model1 = widget1.get_root(document, comm=comm)
     model1.document = document
