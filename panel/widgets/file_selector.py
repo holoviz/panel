@@ -134,7 +134,38 @@ class RemoteFileProvider(BaseFileProvider):
         return dirs, files
 
 
-class FileSelector(CompositeWidget):
+class BaseFileSelector(param.Parameterized):
+
+    directory = param.String(default=os.getcwd(), doc="""
+        The directory to explore.""")
+
+    file_pattern = param.String(default='*', doc="""
+        A glob-like pattern to filter the files.""")
+
+    only_files = param.Boolean(default=False, doc="""
+        Whether to only allow selecting files.""")
+
+    root_directory = param.String(default=None, doc="""
+        If set, overrides directory parameter as the root directory
+        beyond which users cannot navigate.""")
+
+    provider = param.ClassSelector(class_=BaseFileProvider, default=LocalFileProvider(), doc="""
+        A FileProvider that allows explore local and remote file systems.""")
+
+    value = param.List(default=[], doc="""
+        List of selected files.""")
+
+    def __init__(self, directory: AnyStr | os.PathLike | None = None, **params):
+        provider = params.get('provider', self.provider)
+        if directory is not None:
+            directory = provider.normalize(directory)
+        if 'root_directory' in params:
+            root = params['root_directory']
+            params['root_directory'] = provider.normalize(root)
+        super().__init__(directory=directory, **params)
+
+
+class FileSelector(BaseFileSelector, CompositeWidget):
     """
     The `FileSelector` widget allows browsing the filesystem on the
     server and selecting one or more files in a directory.
@@ -145,15 +176,6 @@ class FileSelector(CompositeWidget):
 
     >>> FileSelector(directory='~', file_pattern='*.png')
     """
-
-    directory = param.String(default=os.getcwd(), doc="""
-        The directory to explore.""")
-
-    file_pattern = param.String(default='*', doc="""
-        A glob-like pattern to filter the files.""")
-
-    only_files = param.Boolean(default=False, doc="""
-        Whether to only allow selecting files.""")
 
     show_hidden = param.Boolean(default=False, doc="""
         Whether to show hidden files and directories (starting with
@@ -167,29 +189,12 @@ class FileSelector(CompositeWidget):
         If set to non-None value indicates how frequently to refresh
         the directory contents in milliseconds.""")
 
-    root_directory = param.String(default=None, doc="""
-        If set, overrides directory parameter as the root directory
-        beyond which users cannot navigate.""")
-
-    provider = param.ClassSelector(class_=BaseFileProvider, default=LocalFileProvider(), doc="""
-        A FileProvider that allows explore local and remote file systems.""")
-
-    value = param.List(default=[], doc="""
-        List of selected files.""")
-
     _composite_type: ClassVar[type[ListPanel]] = Column
 
     def __init__(self, directory: AnyStr | os.PathLike | None = None, **params):
         from ..pane import Markdown
-        provider = params.get('provider', self.provider)
-        if directory is not None:
-            directory = provider.normalize(directory)
-        if 'root_directory' in params:
-            root = params['root_directory']
-            params['root_directory'] = provider.normalize(root)
         if params.get('width') and params.get('height') and 'sizing_mode' not in params:
             params['sizing_mode'] = None
-
         super().__init__(directory=directory, **params)
 
         # Set up layout
@@ -381,45 +386,32 @@ class FileSelector(CompositeWidget):
 
 
 
-class FileTree(_TreeBase):
+class FileTree(BaseFileSelector, _TreeBase):
     """
     FileTree renders a path or directory.
     """
 
-    only_files = param.Boolean(default=False, doc="""
-        Whether to only allow selecting files.""")
-
-    paths = param.List(default=[Path.cwd()], doc="""
-        The directory paths to explore.""")
-
-    provider = param.ClassSelector(class_=BaseFileProvider, default=LocalFileProvider(), doc="""
-        A FileProvider.""")
-
     sort = param.Boolean(default=True, doc="""
         Whether to sort nodes alphabetically.""")
 
-    _rename = {'paths': None, 'provider': None, 'only_files': 'cascade'}
+    _rename = {
+        'directory': None,
+        'file_pattern': None,
+        'root_directory': None,
+        'provider': None,
+        'only_files': 'cascade'
+    }
 
-    def __init__(self, paths: list[AnyStr | os.PathLike] | AnyStr | os.PathLike | None = None, **params):
-        provider = params.get('provider', self.provider)
-        if isinstance(paths, list):
-            paths = [provider.normalize(p) for p in paths]
-        elif paths is not None:
-            paths = [provider.normalize(paths)]
-        else:
-            paths = []
-        super().__init__(paths=paths, **params)
-
-    @param.depends('paths', watch=True, on_init=True)
+    @param.depends('directory', watch=True, on_init=True)
     def _set_data_from_directory(self, *event):
         self._nodes = [{
-            "id": self.provider.normalize(path),
-            "text": Path(path).name,
+            "id": self.provider.normalize(self.directory),
+            "text": Path(self.directory).name,
             "icon": "jstree-folder",
             "type": "folder",
             "state": {"opened": True},
-            "children": self._get_children(Path(path).name, path, depth=1)
-        } for path in self.paths]
+            "children": self._get_children(Path(self.directory).name, self.directory, depth=1)
+        }]
         self._reindex()
 
     def _process_property_change(self, msg):
