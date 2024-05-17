@@ -350,7 +350,7 @@ def bundle_icons(verbose=False, external=True, download_list=None):
 
 def patch_tabulator():
     # https://github.com/olifolkerd/tabulator/issues/4421
-    path = BUNDLE_DIR / "datatabulator" / "tabulator-tables@6.2.1" / 'dist' / 'js' / 'tabulator.min.js'
+    path = BUNDLE_DIR / 'datatabulator' / 'tabulator-tables@6.2.1' / 'dist' / 'js' / 'tabulator.min.js'
     text = path.read_text()
     old = '"focus"!==this.options("editTriggerEvent")&&"click"!==this.options("editTriggerEvent")'
     new = '"click"!==this.options("editTriggerEvent")'
