@@ -1,6 +1,6 @@
-# Create Layouts With ReactiveESM
+# Create Layouts With ESM Components
 
-In this guide we will show you how to build custom layouts using HTML and `ReactiveESM`.
+In this guide we will show you how to build custom layouts `JSComponent`, `ReactComponent` or `PreactComponent`.
 
 ## Layout a single Panel Component
 
@@ -8,17 +8,15 @@ You can layout a single Panel component as follows.
 
 :::::{tab-set}
 
-::::{tab-item} JavaScript
+::::{tab-item} `JSComponent`
 
 ```{pyodide}
 import param
 import panel as pn
 
-from panel.esm import JSComponent
-
 pn.extension()
 
-class LayoutSingleObject(JSComponent):
+class LayoutSingleObject(pn.JSComponent):
     object = param.ClassSelector(class_=pn.viewable.Viewable, allow_refs=False)
 
     _esm = """
@@ -55,52 +53,7 @@ js_layout.servable()
 
 ::::
 
-::::{tab-item} `html`
-
-```{pyodide}
-import param
-
-import panel as pn
-
-from panel.esm import PreactComponent
-
-pn.extension()
-
-class LayoutSingleObject(PreactComponent):
-    object = param.ClassSelector(class_=pn.viewable.Viewable, allow_refs=False)
-
-    _esm = """
-export function render({ children, html }) {
-    return html`
-        <div>
-            <h1>Temperature</h1>
-            <h2>A measurement from the sensor</h2>
-            <div ref=${ref => ref && ref.appendChild(children.object)}>
-            </div>
-        </div>`;
-}
-"""
-
-
-dial = pn.widgets.Dial(
-    name="°C",
-    value=37,
-    format="{value}",
-    colors=[(0.40, "green"), (1, "red")],
-    bounds=(0, 100),
-)
-html_layout = LayoutSingleObject(
-    object=dial,
-    name="Temperature",
-    styles={"border": "2px solid lightgray"},
-    sizing_mode="stretch_width",
-)
-html_layout.servable()
-```
-
-::::
-
-::::{tab-item} React
+::::{tab-item} `ReactComponent`
 
 ```{pyodide}
 import param
@@ -108,7 +61,7 @@ import panel as pn
 
 pn.extension()
 
-class LayoutSingleObject(pn.ReactiveESM):
+class LayoutSingleObject(pn.ReactComponent):
     object = param.ClassSelector(class_=pn.viewable.Viewable, allow_refs=False)
 
     _esm = """
@@ -143,13 +96,56 @@ react_layout.servable()
 
 ::::
 
+::::{tab-item} `PreactComponent`
+
+```{pyodide}
+import param
+
+import panel as pn
+
+pn.extension()
+
+class LayoutSingleObject(pn.PreactComponent):
+    object = param.ClassSelector(class_=pn.viewable.Viewable, allow_refs=False)
+
+    _esm = """
+export function render({ children, html }) {
+    return html`
+        <div>
+            <h1>Temperature</h1>
+            <h2>A measurement from the sensor</h2>
+            <div ref=${ref => ref && ref.appendChild(children.object)}>
+            </div>
+        </div>`;
+}
+"""
+
+
+dial = pn.widgets.Dial(
+    name="°C",
+    value=37,
+    format="{value}",
+    colors=[(0.40, "green"), (1, "red")],
+    bounds=(0, 100),
+)
+preact_layout = LayoutSingleObject(
+    object=dial,
+    name="Temperature",
+    styles={"border": "2px solid lightgray"},
+    sizing_mode="stretch_width",
+)
+preact_layout.servable()
+```
+
+::::
+
 :::::
 
 Lets verify the layout will automatically update when the `object` is changed.
 
 :::::{tab-set}
 
-::::{tab-item} JavaScript
+::::{tab-item} `JSComponent`
 
 ```{pyodide}
 html = pn.pane.Markdown("A **markdown** pane!", name="Markdown")
@@ -172,30 +168,7 @@ radio_button_group.servable()
 
 ::::
 
-::::{tab-item} `html`
-
-```{pyodide}
-html = pn.pane.Markdown("A **markdown** pane!", name="Markdown")
-radio_button_group = pn.widgets.RadioButtonGroup(
-    options=["Dial", "Markdown"],
-    value="Dial",
-    name="Select the object to display",
-    button_type="success", button_style="outline"
-)
-
-@pn.depends(radio_button_group, watch=True)
-def update(value):
-    if value == "Dial":
-        html_layout.object = dial
-    else:
-        html_layout.object = html
-
-radio_button_group.servable()
-```
-
-::::
-
-::::{tab-item} React
+::::{tab-item} `ReactComponent`
 
 ```{pyodide}
 html = pn.pane.Markdown("A **markdown** pane!", name="Markdown")
@@ -212,6 +185,29 @@ def update(value):
         react_layout.object = dial
     else:
         react_layout.object = html
+
+radio_button_group.servable()
+```
+
+::::
+
+::::{tab-item} `PreactComponent`
+
+```{pyodide}
+html = pn.pane.Markdown("A **markdown** pane!", name="Markdown")
+radio_button_group = pn.widgets.RadioButtonGroup(
+    options=["Dial", "Markdown"],
+    value="Dial",
+    name="Select the object to display",
+    button_type="success", button_style="outline"
+)
+
+@pn.depends(radio_button_group, watch=True)
+def update(value):
+    if value == "Dial":
+        preact_layout.object = dial
+    else:
+        preact_layout.object = html
 
 radio_button_group.servable()
 ```

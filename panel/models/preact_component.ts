@@ -30,7 +30,7 @@ export class PreactComponentView extends ReactiveESMView {
       return
     }
     this._rerender_vars = extractDataAttributes(this.rendered)
-    console.log(this._rerender_vars)
+
     this.disconnect_watchers()
     if (this.model.importmap) {
       const importMap = {...this.model.importmap}

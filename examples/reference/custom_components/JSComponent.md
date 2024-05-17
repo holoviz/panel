@@ -1,6 +1,6 @@
-# `ReactiveESM`
+# `JSComponent`
 
-`ReactiveESM` simplifies the creation of custom Panel components using JavaScript.
+`JSComponent` simplifies the creation of custom Panel components using JavaScript.
 
 ```python
 import panel as pn
@@ -8,7 +8,7 @@ import param
 
 pn.extension()
 
-class CounterButton(pn.ReactiveESM):
+class CounterButton(pn.JSComponent):
 
     value = param.Integer()
 
@@ -31,15 +31,15 @@ CounterButton().servable()
 
 :::{note}
 
-`ReactiveESM` was introduced in June 2024 as the successor to `ReactiveHTML`.
+`JSComponent` was introduced in June 2024 as the successor to `ReactiveHTML`.
 
-`ReactiveESM` bears similarities to [`AnyWidget`](https://anywidget.dev/), but it is specifically optimized for use with Panel.
+`JSComponent` bears similarities to [`AnyWidget`](https://anywidget.dev/), but it is specifically optimized for use with Panel.
 
 :::
 
 ## API
 
-### ReactiveESM Attributes
+### JSComponent Attributes
 
 - **`_esm`** (str | PurePath): This attribute accepts either a string or a path that points to an  [ECMAScript module](https://nodejs.org/api/esm.html#modules-ecmascript-modules). The ECMAScript module should export a `render` function which returns the HTML element to display. In a development environment such as a notebook or when using `--autoreload`, the module will automatically reload upon saving changes.
 - **`_import_map`** (dict): This dictionary defines an [import map](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap), allowing you to customize how module specifiers are resolved.
@@ -50,7 +50,7 @@ CounterButton().servable()
 The `_esm` attribute must export the `render` function. It accepts the following parameters:
 
 - **`data`**: Represents the non-Viewable Parameters of the component and provides methods to `.watch` for changes and `.send_event` back to Python.
-- **`children`**: Represents the Viewable Parameters of the component and provides methods to `.watch` for changes.
+- **`children`**: Represents the Viewable Parameters of the component and provides methods to `.watch` for changes. The `render` function is rerun if a child changes.
 - **`model`**: The Bokeh model.
 - **`view`**: The Bokeh view.
 - **`el`**: The HTML element that the component will be rendered into.
@@ -86,7 +86,7 @@ import param
 
 pn.extension()
 
-class StyledCounterButton(pn.ReactiveESM):
+class StyledCounterButton(pn.JSComponent):
 
     value = param.Integer()
 
@@ -132,7 +132,7 @@ import param
 
 pn.extension()
 
-class ButtonEventExample(pn.ReactiveESM):
+class EventExample(pn.JSComponent):
 
     value = param.Parameter()
 
@@ -148,7 +148,7 @@ class ButtonEventExample(pn.ReactiveESM):
     def _handle_click(self, event):
         self.value = str(event.__dict__)
 
-button = ButtonEventExample()
+button = EventExample()
 pn.Column(
     button, pn.widgets.TextAreaInput(value=button.param.value, height=200),
 ).servable()
@@ -163,7 +163,7 @@ import datetime
 
 pn.extension()
 
-class ButtonEventExample(pn.ReactiveESM):
+class CustomEventExample(pn.JSComponent):
 
     value = param.String()
 
@@ -180,12 +180,12 @@ class ButtonEventExample(pn.ReactiveESM):
     }
     """
 
-    def on_click(self, event):
+    def _handle_click(self, event):
         unix_timestamp = event.data["detail"]/1000
         python_datetime = datetime.datetime.fromtimestamp(unix_timestamp)
         self.value = str(python_datetime)
 
-button = ButtonEventExample()
+button = CustomEventExample()
 pn.Column(
     button, button.param.value,
 ).servable()
@@ -200,7 +200,7 @@ import panel as pn
 
 pn.extension()
 
-class ConfettiButton(pn.ReactiveESM):
+class ConfettiButton(pn.JSComponent):
 
     _esm = """
     import confetti from "https://esm.sh/canvas-confetti@1.6.0";
@@ -225,7 +225,7 @@ import panel as pn
 
 pn.extension()
 
-class ConfettiButton(pn.ReactiveESM):
+class ConfettiButton(pn.JSComponent):
     _importmap = {
         "imports": {
             "canvas-confetti": "https://esm.sh/canvas-confetti@1.6.0",
@@ -248,6 +248,8 @@ class ConfettiButton(pn.ReactiveESM):
 ConfettiButton().servable()
 ```
 
+See [import map](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap) for more info.
+
 ## External Files
 
 You can load JavaScript and CSS from files by providing the paths to these files.
@@ -262,7 +264,7 @@ import panel as pn
 
 pn.extension()
 
-class CounterButton(pn.ReactiveESM):
+class CounterButton(pn.JSComponent):
 
     value = param.Integer()
 
@@ -307,7 +309,7 @@ Serve the app with `panel serve counter_button.py --autoreload`.
 
 You can now edit the JavaScript or CSS file, and the changes will be automatically reloaded.
 
-- Try changing the `innerHTML` from `count is ${data.value}` to `Count is ${data.value}` and observe the update.
+- Try changing the `innerHTML` from `count is ${data.value}` to `COUNT IS ${data.value}` and observe the update.
 - Try changing the background color from `#0072B5` to `#008080`.
 
 ## Displaying A Single Panel Component
@@ -319,9 +321,9 @@ Lets start with the simplest example
 ```python
 import param
 import panel as pn
-from panel import ReactiveESM
+from panel import JSComponent
 
-class Example(ReactiveESM):
+class Example(JSComponent):
 
     child = param.ClassSelector(class_=pn.viewable.Viewable)
 
@@ -340,9 +342,9 @@ If you want to allow a certain type of Panel components only you can specify the
 ```python
 import param
 import panel as pn
-from panel import ReactiveESM
+from panel import JSComponent
 
-class Example(ReactiveESM):
+class Example(JSComponent):
 
     child = param.ClassSelector(class_=pn.pane.Markdown)
 
@@ -358,12 +360,14 @@ Example(child=pn.panel("A **Markdown** pane!")).servable()
 
 The `class_` argument also supports a tuple of types
 
+DOES NOT WORK YET! PLEASE FIX.
+
 ```python
 import param
 import panel as pn
-from panel import ReactiveESM
+from panel import JSComponent
 
-class Example(ReactiveESM):
+class Example(JSComponent):
 
     child = param.ClassSelector(class_=(pn.pane.Markdown, pn.pane.HTML))
 
@@ -379,14 +383,13 @@ Example(child=pn.panel("A **Markdown** pane!")).servable()
 
 ## Displaying a List of Panel Components
 
-You can also use display a `List` of `Viewable` `objects`.
+You can also display a `List` of `Viewable` `objects`.
 
 ```python
 import param
 import panel as pn
-from panel import ReactiveESM
 
-class Example(ReactiveESM):
+class Example(pn.JSComponent):
 
     objects = param.List(item_type=pn.viewable.Viewable)
 
@@ -409,78 +412,3 @@ You can change the `item_type` to a specific subtype of `Viewable` or a tuple of
 `Viewable` subtypes.
 
 :::
-
-## React with JSX
-
-To use [React](https://react.dev/) with [JSX](https://react.dev/learn/writing-markup-with-jsx) instead of plain JavaScript, follow this approach:
-
-```python
-import panel as pn
-import param
-
-pn.extension()
-
-class ReactTextInput(pn.ReactiveESM):
-
-    value = param.String()
-
-    _esm = """
-    function App(props) {
-        const [value, setValue] = props.state.value;
-        return (
-            <div>
-                <input
-                id="input"
-                value={value}
-                onChange={e => setValue(e.target.value)}
-                style={{margin: "10px"}}
-                />
-            </div>
-        );
-    }
-
-    export function render({state}) {
-        return <App state={state}/>;
-    }
-    """
-
-text_input = ReactTextInput(value="Hello World")
-
-pn.Column(text_input, text_input.param.value).servable()
-```
-
-## JSX-like syntax with `html`
-
-If you prefer to not use React but would still like to have an easy way to create a nested DOM element easily you can use the `html` argument of the `render` function.
-
-```python
-import panel as pn
-import param
-
-pn.extension()
-
-class JSTextInput(pn.ReactiveESM):
-
-    value = param.String()
-
-    _esm = """
-    export function render({data, html}) {
-        return (html`
-            <div>
-                <input
-                    id="input"
-                    value=${data.value}
-                    onChange=${e => data.value=e.target.value}
-                    style=${{margin: "10px"}}
-                />
-            </div>
-        `)
-    }
-    """
-
-text_input = JSTextInput(value="Hello World")
-
-pn.Column(text_input, text_input.param.value).servable()
-```
-
-When the `data.value` changes the `html` element will be rerendered.

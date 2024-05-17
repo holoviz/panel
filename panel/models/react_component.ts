@@ -148,7 +148,7 @@ export namespace ReactComponent {
   }
 }
 
-export interface ReactComponent extends ReactiveESM.Attrs {}
+export interface ReactComponent extends ReactComponent.Attrs {}
 
 export class ReactComponent extends ReactiveESM {
   declare properties: ReactComponent.Props
