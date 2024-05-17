@@ -150,7 +150,9 @@ export class PerspectiveView extends HTMLBoxView {
   }
 
   override remove(): void {
-    this.perspective_element.delete(() => this.worker.terminate())
+    if (this.perspective_element) {
+      this.perspective_element.delete(() => this.worker.terminate())
+    }
     super.remove()
   }
 
