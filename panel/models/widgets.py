@@ -11,11 +11,20 @@ from bokeh.models.ui import Tooltip
 from bokeh.models.ui.icons import Icon
 from bokeh.models.widgets import (
     Button as bkButton, CheckboxButtonGroup as bkCheckboxButtonGroup,
-    InputWidget, RadioButtonGroup as bkRadioButtonGroup, Select,
+    InputWidget, MultiSelect, RadioButtonGroup as bkRadioButtonGroup, Select,
     TextAreaInput as bkTextAreaInput, TextInput as bkTextInput, Widget,
 )
 
 from .layout import HTMLBox
+
+
+class DoubleClickEvent(ModelEvent):
+
+    event_name = 'dblclick_event'
+
+    def __init__(self, model, option=None):
+        self.option = option
+        super().__init__(model=model)
 
 
 class Player(Widget):
@@ -193,6 +202,11 @@ class CustomSelect(Select):
 
     size = Int(default=1)
 
+
+class CustomMultiSelect(MultiSelect):
+    """
+    MultiSelect widget which allows capturing double tap events.
+    """
 
 class TooltipIcon(Widget):
     description = Instance(
