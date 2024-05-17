@@ -97,11 +97,11 @@ pyodide_url = 'https://holoviz-dev.github.io/panel/pyodide' if is_dev else 'http
 rediraffe_redirects = {
     # Removal of the developer testing page
     'developer_guide/testing': 'developer_guide/index',
-    'user_guide/APIs': 'explanation/api/index.html#apis',
-    'user_guide/Pipelines': 'how_to/pipeline/index',
-    'user_guide/Templates': 'how_to/templates/index',
+    'user_guide/APIs.html': 'explanation/api/index.html#apis',
+    'user_guide/Pipelines.html': 'how_to/pipeline/index.html',
+    'user_guide/Templates.html': 'how_to/templates/index.html',
     '_static/images/sazure_deployment.png': '_static/images/azure_deployment.png',
-    'user_guide/Server_Configuration': 'how_to/server/index',
+    'user_guide/Server_Configuration.html': 'how_to/server/index.html',
 
 # Todo
 # https://panel.holoviz.org/user_guide/Customization.html : what page to redirect this to?
