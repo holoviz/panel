@@ -149,16 +149,16 @@ view.render_children();`
       for (const subchild of children) {
         const view = this._child_views.get(subchild)
         if (!view) {
-	  continue
-	}
+          continue
+        }
         const parent = view.el.parentNode
-	console.log(view, parent)
-	if (parent) {
+        console.log(view, parent)
+        if (parent) {
           nodes.push([parent, Array.from(parent.children).indexOf(view.el)])
           view.render()
           view.after_render()
           this._parent_nodes[child] = nodes
-	}
+        }
       }
     }
   }

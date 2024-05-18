@@ -163,7 +163,7 @@ export class ReactComponent extends ReactiveESM {
     this.prototype.default_view = ReactComponentView
 
     this.define<ReactComponent.Props>(({String}) => ({
-      react_version: [ String,    '18.2.0' ]
+      react_version: [ String,    "18.2.0" ],
     }))
   }
 }
