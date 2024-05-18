@@ -31,4 +31,7 @@ class PySlideshow(JSComponent):
         self.index += 1
 
 
-Slideshow(width=500, height=200).servable()
+pn.Row(
+    JSSlideshow(),
+    PySlideshow()
+).servable()
