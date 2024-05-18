@@ -15,6 +15,7 @@ import param
 
 from param.parameterized import ParameterizedMetaclass
 
+from .config import config
 from .io.datamodel import construct_data_model
 from .io.state import state
 from .models import (
@@ -91,7 +92,6 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     _import_map: ClassVar[dict[str, dict[Literal['imports', 'scopes'], str]]] = {}
 
-
     __abstract = True
 
     def __init__(self, **params):
@@ -123,8 +123,11 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     async def _watch_esm(self):
         import watchfiles
         async for _ in watchfiles.awatch(self._esm, stop_event=self._watching_esm):
+            esm = self._render_esm()
             for ref, (model, _) in self._models.items():
-                self._apply_update({}, {'esm': self._render_esm()}, model, ref)
+                if esm == model.esm:
+                    continue
+                self._apply_update({}, {'compiled': None, 'esm': esm}, model, ref)
 
     @property
     def _linked_properties(self) -> list[str]:
@@ -149,6 +152,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         data_props = self._process_param_change(data_params)
         params.update({
             'data': self._data_model(**data_props),
+            'dev': config.autoreload,
             'esm': self._render_esm(),
             'importmap': getattr(self, '_importmap', {}),
         })
@@ -168,11 +172,11 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                 children[k] = None
             elif isinstance(v, list):
                 children[k] = [
-                    sv._models[ref] if ref in sv._models else sv._get_model(doc, root, parent, comm)
+                    sv._models[ref][0] if ref in sv._models else sv._get_model(doc, root, parent, comm)
                     for sv in v
                 ]
             elif ref in v._models:
-                children[k] = v._models[ref]
+                children[k] = v._models[ref][0]
             else:
                 children[k] = v._get_model(doc, root, parent, comm)
         return children
@@ -197,8 +201,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         model.children = list(children)
         self._models[root.ref['id']] = (model, parent)
         self._link_props(model.data, self._linked_properties, doc, root, comm)
-        self._setup_autoreload()
         self._register_events('dom_event', model=model, doc=doc, comm=comm)
+        self._setup_autoreload()
         return model
 
     def _process_event(self, event: 'Event') -> None:
@@ -215,7 +219,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     ) -> None:
         model_msg, data_msg  = {}, {}
         for prop, v in list(msg.items()):
-            if prop in list(Reactive.param)+['esm', 'importmap']:
+            if prop in list(Reactive.param)+['compiled', 'esm', 'importmap']:
                 model_msg[prop] = v
             elif prop in model.children:
                 continue
@@ -225,9 +229,10 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             if name not in model.children or event.old in (None, event.new):
                 continue
             event.old._cleanup(root)
-        children = self._get_children(model.data, doc, root, model, comm)
-        data_msg.update(children)
-        model_msg['children'] = list(children)
+        if any(e in model.children for e in events):
+            children = self._get_children(model.data, doc, root, model, comm)
+            data_msg.update(children)
+            model_msg['children'] = list(children)
         self._set_on_model(model_msg, root, model)
         self._set_on_model(data_msg, root, model.data)
 

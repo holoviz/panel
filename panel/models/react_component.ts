@@ -1,9 +1,11 @@
 import type * as p from "@bokehjs/core/properties"
+import type {Transform} from "sucrase"
 
 import {ReactiveESM, ReactiveESMView} from "./reactive_esm"
 
 export class ReactComponentView extends ReactiveESMView {
   declare model: ReactComponent
+  override sucrase_transforms: Transform[] = ["typescript", "jsx"]
 
   protected override _render_esm(): void {
     this.disconnect_watchers()

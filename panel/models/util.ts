@@ -110,3 +110,28 @@ export function convertUndefined(obj: any): any {
   }
   return obj
 }
+
+export function formatError(error: SyntaxError, code: string): string {
+  const regex = /\((\d+):(\d+)\)/;
+  let msg = `<span class="msg">${error}</span>`
+  const match = msg.match(regex);
+  if (!match) {
+    return msg
+  }
+  const line_num = parseInt(match[1])
+  const col = parseInt(match[2])
+  const start = Math.max(0, line_num-5)
+  const col_index = line_num-start
+  const lines = code.split(/\r?\n/).slice(start, line_num+5)
+  msg += '<br><br>'
+  for (let i = 0; i < col_index; i++ ) {
+    const cls = (i == (col_index-1)) ? ` class="highlight"` : ""
+    msg += `<pre${cls}>${lines[i]}</pre>`
+  }
+  const indent = ' '.repeat(col-1)
+  msg += `<pre class="highlight">${indent}^</pre>`
+  for (let i = col_index; i < lines.length; i++ ) {
+    msg += `<pre>${lines[i]}</pre>`
+  }
+  return msg
+}

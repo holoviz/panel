@@ -12,7 +12,11 @@ class ReactiveESM(HTMLBox):
 
     children = bp.List(bp.String)
 
+    compiled = bp.Nullable(bp.String)
+
     data = bp.Instance(DataModel)
+
+    dev = bp.Bool(False)
 
     esm = bp.String()
 

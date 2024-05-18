@@ -1,6 +1,8 @@
 import {transform} from "sucrase"
+import type {Transform} from "sucrase"
 
 import {div, remove} from "@bokehjs/core/dom"
+import type {StyleSheetLike} from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
 import type {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
 import {isArray} from "@bokehjs/core/util/types"
@@ -8,10 +10,13 @@ import {isArray} from "@bokehjs/core/util/types"
 import {serializeEvent} from "./event-to-object"
 import {DOMEvent} from "./html"
 import {HTMLBox, HTMLBoxView} from "./layout"
-import {convertUndefined} from "./util"
+import {convertUndefined, formatError} from "./util"
+
+import error_css from "styles/models/esm.css"
 
 export class ReactiveESMView extends HTMLBoxView {
   declare model: ReactiveESM
+  sucrase_transforms: Transform[] = ["typescript"]
   container: HTMLDivElement
   modelState: typeof Proxy
   rendered: string | null = null
@@ -41,6 +46,14 @@ export class ReactiveESMView extends HTMLBoxView {
       const serialized = convertUndefined(serializeEvent(event))
       this.model.trigger_event(new DOMEvent(name, serialized))
     }
+  }
+
+  override stylesheets(): StyleSheetLike[] {
+    const stylesheets = super.stylesheets()
+    if (this.model.dev) {
+      stylesheets.push(error_css)
+    }
+    return stylesheets
   }
 
   disconnect_watchers(): void {
@@ -97,7 +110,27 @@ export class ReactiveESMView extends HTMLBoxView {
 
     this.container = div({style: "display: contents;"})
     this.shadow_el.append(this.container)
-    this.rendered = transform(this.model.esm, {transforms: ["jsx", "typescript"], filePath: "render.tsx"}).code
+    if (this.model.compiled) {
+      this.rendered = this.model.compiled
+    } else {
+      try {
+        this.rendered = transform(
+          this.model.esm, {
+            transforms: this.sucrase_transforms,
+            filePath: "render.tsx"
+          }
+        ).code
+      } catch (e) {
+        if (this.model.dev) {
+          const error = div({class: "error"})
+          error.innerHTML = formatError(e, this.model.esm)
+          this.container.appendChild(error)
+          return
+        } else {
+          throw e
+        }
+      }
+    }
     this._render_esm()
   }
 
@@ -211,7 +244,9 @@ export namespace ReactiveESM {
 
   export type Props = HTMLBox.Props & {
     children: p.Property<any>
+    compiled: p.Property<string | null>
     data: p.Property<any>
+    dev: p.Property<boolean>
     esm: p.Property<string>
     importmap: p.Property<any>
   }
@@ -230,9 +265,11 @@ export class ReactiveESM extends HTMLBox {
 
   static {
     this.prototype.default_view = ReactiveESMView
-    this.define<ReactiveESM.Props>(({Any, Array, String}) => ({
+    this.define<ReactiveESM.Props>(({Any, Array, Bool, Nullable, String}) => ({
       children:  [ Array(String),       [] ],
+      compiled:  [ Nullable(String),  null ],
       data:      [ Any                     ],
+      dev:       [ Bool,             false ],
       esm:       [ String,              "" ],
       importmap: [ Any,                 {} ],
     }))
