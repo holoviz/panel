@@ -2,12 +2,12 @@ import param
 
 import panel as pn
 
-from panel.custom import JSComponent
+from panel.custom import JSComponent, View
 
 
 class Example(JSComponent):
 
-    child = param.ClassSelector(class_=pn.viewable.Viewable)
+    child = View()
 
     _esm = """
     export function render({ children }) {

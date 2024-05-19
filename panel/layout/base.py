@@ -21,6 +21,7 @@ from ..io.state import state
 from ..models import Column as PnColumn
 from ..reactive import Reactive
 from ..util import param_name, param_reprs, param_watchers
+from ..viewable import Views
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -146,11 +147,8 @@ class Panel(Reactive):
         Returns new child models for the layout while reusing unchanged
         models and cleaning up any dropped objects.
         """
-        from ..pane.base import RerenderError, panel
+        from ..pane.base import RerenderError
         new_models, old_models = [], []
-        for i, pane in enumerate(self.objects):
-            pane = panel(pane)
-            self.objects[i] = pane
 
         for obj in old_objects:
             if obj not in self.objects:
@@ -345,7 +343,7 @@ class Panel(Reactive):
 
 class ListLike(param.Parameterized):
 
-    objects = param.List(default=[], doc="""
+    objects = Views(default=[], doc="""
         The list of child objects that make up the layout.""")
 
     _preprocess_params: ClassVar[list[str]] = ['objects']
@@ -381,7 +379,6 @@ class ListLike(param.Parameterized):
         return obj in self.objects
 
     def __setitem__(self, index: int | slice, panes: Iterable[Any]) -> None:
-        from ..pane import panel
         new_objects = list(self)
         if not isinstance(index, slice):
             start, end = index, index+1
@@ -412,7 +409,7 @@ class ListLike(param.Parameterized):
                                  'on the %s to match the supplied slice.' %
                                  (expected, type(self).__name__))
         for i, pane in zip(range(start, end), panes):
-            new_objects[i] = panel(pane)
+            new_objects[i] = pane
 
         self.objects = new_objects
 
@@ -450,9 +447,8 @@ class ListLike(param.Parameterized):
         ---------
         obj (object): Panel component to add to the layout.
         """
-        from ..pane import panel
         new_objects = list(self)
-        new_objects.append(panel(obj))
+        new_objects.append(obj)
         self.objects = new_objects
 
     def clear(self) -> list[Viewable]:
@@ -475,9 +471,8 @@ class ListLike(param.Parameterized):
         ---------
         objects (list): List of panel components to add to the layout.
         """
-        from ..pane import panel
         new_objects = list(self)
-        new_objects.extend(list(map(panel, objects)))
+        new_objects.extend(objects)
         self.objects = new_objects
 
     def index(self, object) -> int:
@@ -503,9 +498,8 @@ class ListLike(param.Parameterized):
         index (int): Index at which to insert the object.
         object (object): Panel components to insert in the layout.
         """
-        from ..pane import panel
         new_objects = list(self)
-        new_objects.insert(index, panel(obj))
+        new_objects.insert(index, obj)
         self.objects = new_objects
 
     def pop(self, index: int) -> Viewable:
@@ -544,7 +538,7 @@ class ListLike(param.Parameterized):
 
 class NamedListLike(param.Parameterized):
 
-    objects = param.List(default=[], doc="""
+    objects = Views(default=[], doc="""
         The list of child objects that make up the layout.""")
 
     _preprocess_params: ClassVar[list[str]] = ['objects']

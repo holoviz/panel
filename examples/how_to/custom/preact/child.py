@@ -2,12 +2,12 @@ import param
 
 import panel as pn
 
-from panel.custom import PreactComponent
+from panel.custom import PreactComponent, View
 
 
 class Example(PreactComponent):
 
-    child = param.ClassSelector(class_=pn.viewable.Viewable)
+    child = View()
 
     _esm = """
     export function render({ html, children }) {

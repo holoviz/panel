@@ -17,6 +17,7 @@ import os
 import sys
 import threading
 import traceback
+import typing
 import uuid
 
 from typing import (
@@ -29,6 +30,8 @@ from bokeh.core.serialization import DeserializationError
 from bokeh.document import Document
 from bokeh.resources import Resources
 from jinja2 import Template
+from param import Undefined
+from param.parameterized import instance_descriptor
 from pyviz_comms import Comm  # type: ignore
 
 from ._param import Align, Aspect, Margin
@@ -1070,6 +1073,77 @@ class Viewer(param.Parameterized):
         return self._create_view()._repr_mimebundle_(include, exclude)
 
 
+class View(param.ClassSelector):
+    """
+    A Parameter type that defines a single ``Viewable`` object. Given
+    a non-Viewable object it will automatically promote it to a ``Viewable``
+    by calling the ``panel`` utility.
+    """
+
+    @typing.overload
+    def __init__(
+        self,
+        default=None, *, is_instance=True, allow_None=False, doc=None,
+        label=None, precedence=None, instantiate=True, constant=False,
+        readonly=False, pickle_default_value=True, per_instance=True,
+        allow_refs=False, nested_refs=False
+    ):
+        ...
+
+    def __init__(self, /, default=Undefined, **params):
+        super().__init__(default=self._transform_value(default), class_=Viewable, **params)
+
+    def _transform_value(self, val):
+        if not isinstance(val, Viewable) and val not in (None, Undefined):
+            from .pane import panel
+            val = panel(val)
+        return val
+
+    @instance_descriptor
+    def __set__(self, obj, val):
+        super().__set__(obj, self._transform_value(val))
+
+
+class Views(param.List):
+    """
+    A Parameter type that defines a list of ``Viewable`` objects. Given
+    a non-Viewable object it will automatically promote it to a ``Viewable``
+    by calling the ``panel`` utility.
+    """
+
+    @typing.overload
+    def __init__(
+        self,
+        default=[], *, instantiate=True, bounds=(0, None),
+        allow_None=False, doc=None, label=None, precedence=None,
+        constant=False, readonly=False, pickle_default_value=True, per_instance=True,
+        allow_refs=False, nested_refs=False
+    ):
+        ...
+
+    def __init__(
+        self, /, default=Undefined, instantiate=Undefined, bounds=Undefined, **params
+    ):
+        super().__init__(
+            default=self._transform_value(default), instantiate=instantiate,
+            item_type=Viewable, **params
+        )
+
+    def _transform_value(self, val):
+        if isinstance(val, list) and val:
+            from .pane import panel
+            val[:] = [
+                v if isinstance(v, Viewable) else panel(v)
+                for v in val
+            ]
+        return val
+
+    @instance_descriptor
+    def __set__(self, obj, val):
+        super().__set__(obj, self._transform_value(val))
+
+
+
 def is_viewable_param(parameter: param.Parameter) -> bool:
     """
     Detects whether the Parameter uniquely identifies a Viewable
@@ -1085,6 +1159,7 @@ def is_viewable_param(parameter: param.Parameter) -> bool:
     """
     p = parameter
     if (
+        isinstance(p, (View, Views)) or
         (isinstance(p, param.ClassSelector) and p.class_ and (
             (isinstance(p.class_, tuple) and
              all(issubclass(cls, Viewable) for cls in p.class_)) or

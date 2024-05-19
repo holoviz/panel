@@ -2,12 +2,12 @@ import param
 
 import panel as pn
 
-from panel.custom import ReactComponent
+from panel.custom import ReactComponent, View
 
 
 class Example(ReactComponent):
 
-    child = param.ClassSelector(class_=pn.viewable.Viewable)
+    child = View()
 
     _esm = """
     export function render({ html, children }) {

@@ -2,12 +2,12 @@ import param
 
 import panel as pn
 
-from panel.custom import JSComponent
+from panel.custom import JSComponent, Views
 
 
 class Example(JSComponent):
 
-    children = param.List(item_type=pn.viewable.Viewable)
+    children = Views()
 
     _esm = """
     export function render({ children }) {

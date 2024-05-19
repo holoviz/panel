@@ -2,12 +2,12 @@ import param
 
 import panel as pn
 
-from panel.custom import ReactComponent
+from panel.custom import ReactComponent, Views
 
 
 class Example(ReactComponent):
 
-    children = param.List(item_type=pn.viewable.Viewable)
+    children = Views()
 
     _esm = """
     export function render({ children }) {

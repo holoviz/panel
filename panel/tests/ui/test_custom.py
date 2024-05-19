@@ -5,19 +5,19 @@ pytest.importorskip("playwright")
 
 from playwright.sync_api import expect
 
-from panel.esm import ReactiveESM
+from panel.custom import JSComponent, PreactComponent, ReactComponent
 from panel.tests.util import serve_component, wait_until
 
 pytestmark = pytest.mark.ui
 
 
 def test_esm_htm_update(page):
-    class Example(ReactiveESM):
+    class Example(PreactComponent):
 
         text = param.String()
 
         _esm = """
-        export function render({ data, html }) {
+        export function render({ data }) {
           return html`<h1 id="header">${data.text}</h1>`
         }
         """
@@ -34,7 +34,7 @@ def test_esm_htm_update(page):
 
 
 def test_esm_callback_update(page):
-    class Example(ReactiveESM):
+    class Example(JSComponent):
 
         text = param.String()
 
@@ -62,7 +62,7 @@ def test_esm_callback_update(page):
 
 
 def test_esm_gather_input(page):
-    class InputExample(ReactiveESM):
+    class InputExample(JSComponent):
 
         text = param.String()
 
@@ -96,7 +96,7 @@ def test_esm_gather_input(page):
 
 
 def test_esm_button_event(page):
-    class ButtonExample(ReactiveESM):
+    class ButtonExample(JSComponent):
 
         clicks = param.Integer(default=0)
 
@@ -122,7 +122,7 @@ def test_esm_button_event(page):
 
 
 def test_esm_react_update(page):
-    class ReactExample(ReactiveESM):
+    class ReactExample(ReactComponent):
 
         text = param.String()
 
@@ -153,7 +153,7 @@ def test_esm_react_update(page):
 
 
 def test_esm_react_gather_input(page):
-    class ReactInputExample(ReactiveESM):
+    class ReactInputExample(ReactComponent):
 
         text = param.String()
 
