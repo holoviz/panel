@@ -138,7 +138,7 @@ class ButtonEventExample(ReactComponent):
     _esm = """
     function App(props) {
         return (
-            <button onClick={e => {props.data.send_event('click', e)}}>
+            <button onClick={e => props.data.send_event('click', e) }>
             Click me
             </button>
         );
@@ -149,8 +149,8 @@ class ButtonEventExample(ReactComponent):
     }
     """
 
-def _handle_click(self, event):
-    self.value = str(event.__dict__)
+    def _handle_click(self, event):
+       self.value = str(event.__dict__)
 
 button = ButtonEventExample()
 pn.Column(
