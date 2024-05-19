@@ -25,7 +25,7 @@ from .models import (
 from .models.reactive_html import DOMEvent
 from .reactive import Reactive, ReactiveCustomBase, ReactiveMetaBase
 from .util.checks import import_available
-from .viewable import Layoutable, is_viewable_param
+from .viewable import Layoutable, Viewable, is_viewable_param
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -115,6 +115,18 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         return esm
 
     def _cleanup(self, root: Model | None) -> None:
+        if root:
+            ref = root.ref['id']
+            if ref in self._models:
+                model, _ = self._models[ref]
+                for child in model.children:
+                    children = getattr(self, child)
+                    if isinstance(children, Viewable):
+                        children = [children]
+                    if isinstance(children, list):
+                        for child in children:
+                            if isinstance(child, Viewable):
+                                child._cleanup(root)
         super()._cleanup(root)
         if not self._models and self._watching_esm:
             self._watching_esm.set()
@@ -222,9 +234,14 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             else:
                 data_msg[prop] = v
         for name, event in events.items():
-            if name not in model.children or event.old in (None, event.new):
+            if name not in model.children:
                 continue
-            event.old._cleanup(root)
+            new = event.new
+            old_objects = event.old if isinstance(event.old, list) else [event.old]
+            for old in old_objects:
+                if old is None or old is new or (isinstance(new, list) and old in new):
+                    continue
+                old._cleanup(root)
         if any(e in model.children for e in events):
             children = self._get_children(model.data, doc, root, model, comm)
             data_msg.update(children)
