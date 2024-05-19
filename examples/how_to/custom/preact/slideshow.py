@@ -2,7 +2,7 @@ import param
 
 import panel as pn
 
-from panel.esm import PreactComponent
+from panel.custom import PreactComponent
 
 pn.extension()
 

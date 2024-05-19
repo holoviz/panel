@@ -2,7 +2,7 @@ import param
 
 import panel as pn
 
-from panel.esm import JSComponent
+from panel.custom import JSComponent
 
 pn.extension()
 

@@ -1,6 +1,6 @@
 import panel as pn
 
-from panel import JSComponent
+from panel.custom import JSComponent
 
 pn.extension()
 

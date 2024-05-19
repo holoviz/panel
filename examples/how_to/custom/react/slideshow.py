@@ -2,7 +2,7 @@ import param
 
 import panel as pn
 
-from panel.esm import ReactComponent
+from panel.custom import ReactComponent
 
 pn.extension()
 

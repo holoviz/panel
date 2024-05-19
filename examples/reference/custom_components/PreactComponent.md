@@ -3,19 +3,19 @@
 `PreactComponent` simplifies the creation of custom Panel components using [Preact](https://preactjs.com/).
 
 ```python
+import panel as pn
 import param
 
-import panel as pn
+from panel.custom import PreactComponent
 
 pn.extension()
 
-
-class CounterButton(pn.PreactComponent):
+class CounterButton(PreactComponent):
 
     value = param.Integer()
 
     _esm = """
-    export function render({ html, data }) {
+    export function render({ data }) {
         return html`
             <button onClick=${() => data.value += 1}>
                 count is ${data.value}
@@ -70,14 +70,14 @@ DUMMY CONTENT. PLEASE HELP ME DESCRIBE THIS.
 Include CSS within the `_stylesheets` attribute to style the component. The CSS is injected directly into the component's HTML.
 
 ```python
+import panel as pn
 import param
 
-import panel as pn
+from panel.custom import PreactComponent
 
 pn.extension()
 
-
-class CounterButton(pn.PreactComponent):
+class CounterButton(PreactComponent):
 
     value = param.Integer()
 
@@ -97,7 +97,7 @@ class CounterButton(pn.PreactComponent):
     ]
 
     _esm = """
-    export function render({ html, data }) {
+    export function render({ data }) {
         return html`
             <button onClick=${() => data.value += 1}>
                 count is ${data.value}
@@ -118,9 +118,11 @@ Events from JavaScript can be sent to Python using the `data.send_event` method.
 import panel as pn
 import param
 
+from panel.custom import PreactComponent
+
 pn.extension()
 
-class EventExample(pn.PreactComponent):
+class EventExample(PreactComponent):
 
     value = param.Parameter()
 
@@ -145,13 +147,14 @@ pn.Column(
 You can also define and send your own custom events:
 
 ```python
+import panel as pn
 import param
 
-import panel as pn
+from panel.custom import PreactComponent
 
 pn.extension()
 
-class CustomEventExample(pn.PreactComponent):
+class CustomEventExample(PreactComponent):
 
     value = param.Parameter()
 
@@ -163,15 +166,15 @@ class CustomEventExample(pn.PreactComponent):
     }
 
     function App(props) {
-        return props.html`
+        return html`
             <button onClick=${() => send_event(props.data)}>
                 Click me
             </button>
         `;
     }
 
-    export function render({ html, data }) {
-        return html`<${App} html=${html} data=${data} />`
+    export function render({ data }) {
+        return html`<App data=${data} />`
     }
     """
 
@@ -191,13 +194,15 @@ JavaScript dependencies can be directly imported via URLs, such as those from [`
 ```python
 import panel as pn
 
+from panel.custom import PreactComponent
+
 pn.extension()
 
-class ConfettiButton(pn.PreactComponent):
+class ConfettiButton(PreactComponent):
     _esm = """
     import confetti from "https://esm.sh/canvas-confetti@1.6.0";
 
-    export function render({html}) {
+    export function render() {
         return html`
             <button onClick=${e => confetti()}>
                 Click Me
@@ -209,14 +214,16 @@ class ConfettiButton(pn.PreactComponent):
 ConfettiButton().servable()
 ```
 
-Use the `_import_map` attribute for more concise module references.
+Use the `_importmap` attribute for more concise module references.
 
 ```python
 import panel as pn
 
+from panel.custom import PreactComponent
+
 pn.extension()
 
-class ConfettiButton(pn.PreactComponent):
+class ConfettiButton(PreactComponent):
     _importmap = {
         "imports": {
             "canvas-confetti": "https://esm.sh/canvas-confetti@1.6.0",
@@ -226,7 +233,7 @@ class ConfettiButton(pn.PreactComponent):
     _esm = """
     import confetti from "canvas-confetti";
 
-    export function render({html}) {
+    export function render() {
         return html`
             <button onClick=${e => confetti()}>
                 Click Me
@@ -267,7 +274,7 @@ CounterButton().servable()
 Now create the file **counter_button.js**.
 
 ```javascript
-export function render({ html, data }) {
+export function render({ data }) {
     return html`
         <button onClick=${() => data.value += 1}>
             count is ${data.value}
@@ -305,15 +312,18 @@ You can display Panel components by defining `ClassSelector` parameters with the
 Lets start with the simplest example
 
 ```python
-import param
 import panel as pn
+import param
 
-class Example(pn.PreactComponent):
+from panel.custom PreactComponent
+
+
+class Example(PreactComponent):
 
     child = param.ClassSelector(class_=pn.viewable.Viewable)
 
     _esm = """
-    export function render({ html, children }) {
+    export function render({ children }) {
       return html`
         <button ref=${ref => ref && ref.appendChild(children.child)}>
         </button>
@@ -326,10 +336,13 @@ Example(child=pn.panel("A **Markdown** pane!")).servable()
 If you want to allow a certain type of Panel components only you can specify the specific type in the `_class` argument.
 
 ```python
-import param
 import panel as pn
+import param
 
-class Example(pn.PreactComponent):
+from panel.custom PreactComponent
+
+
+class Example(PreactComponent):
 
     child = param.ClassSelector(class_=pn.viewable.Markdown)
 
@@ -352,7 +365,10 @@ DOES NOT WORK YET! PLEASE FIX.
 import param
 import panel as pn
 
-class Example(pn.PreactComponent):
+from panel.custom PreactComponent
+
+
+class Example(PreactComponent):
 
     child = param.ClassSelector(class_=(pn.pane.Markdown, pn.pane.HTML))
 
@@ -375,7 +391,10 @@ You can also display a `List` of `Viewable` `objects`.
 import param
 import panel as pn
 
-class Example(pn.PreactComponent):
+from panel.custom PreactComponent
+
+
+class Example(PreactComponent):
 
     objects = param.List(item_type=pn.viewable.Viewable)
 

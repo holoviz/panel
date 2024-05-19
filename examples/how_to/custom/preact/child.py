@@ -2,7 +2,7 @@ import param
 
 import panel as pn
 
-from panel import PreactComponent
+from panel.custom import PreactComponent
 
 
 class Example(PreactComponent):

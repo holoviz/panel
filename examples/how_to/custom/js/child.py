@@ -2,7 +2,7 @@ import param
 
 import panel as pn
 
-from panel import JSComponent
+from panel.custom import JSComponent
 
 
 class Example(JSComponent):

@@ -2,7 +2,7 @@ import param
 
 import panel as pn
 
-from panel import ReactComponent
+from panel.custom import ReactComponent
 
 
 class Example(ReactComponent):

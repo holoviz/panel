@@ -58,7 +58,6 @@ from . import viewable  # noqa
 from . import widgets  # noqa
 from .config import __version__, config, panel_extension as extension  # noqa
 from .depends import bind, depends  # noqa
-from .esm import JSComponent, PreactComponent, ReactComponent  # noqa
 from .interact import interact  # noqa
 from .io import (  # noqa
     _jupyter_server_extension_paths, cache, ipywidget, serve, state,

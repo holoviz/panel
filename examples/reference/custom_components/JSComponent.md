@@ -6,9 +6,11 @@
 import panel as pn
 import param
 
+from panel.custom import JSComponent
+
 pn.extension()
 
-class CounterButton(pn.JSComponent):
+class CounterButton(JSComponent):
 
     value = param.Integer()
 
@@ -84,9 +86,11 @@ Include CSS within the `_stylesheets` attribute to style the component. The CSS 
 import panel as pn
 import param
 
+from panel.custom import JSComponent
+
 pn.extension()
 
-class StyledCounterButton(pn.JSComponent):
+class StyledCounterButton(JSComponent):
 
     value = param.Integer()
 
@@ -130,9 +134,11 @@ Events from JavaScript can be sent to Python using the `data.send_event` method.
 import panel as pn
 import param
 
+from panel.custom import JSComponent
+
 pn.extension()
 
-class EventExample(pn.JSComponent):
+class EventExample(JSComponent):
 
     value = param.Parameter()
 
@@ -157,13 +163,16 @@ pn.Column(
 You can also define and send your own custom events:
 
 ```python
+import datetime
+
 import panel as pn
 import param
-import datetime
+
+from panel.custom import JSComponent
 
 pn.extension()
 
-class CustomEventExample(pn.JSComponent):
+class CustomEventExample(JSComponent):
 
     value = param.String()
 
@@ -223,9 +232,11 @@ Use the `_import_map` attribute for more concise module references.
 ```python
 import panel as pn
 
+from panel.custom import JSComponent
+
 pn.extension()
 
-class ConfettiButton(pn.JSComponent):
+class ConfettiButton(JSComponent):
     _importmap = {
         "imports": {
             "canvas-confetti": "https://esm.sh/canvas-confetti@1.6.0",
@@ -262,9 +273,11 @@ from pathlib import Path
 import param
 import panel as pn
 
+from panel.custom import JSComponent
+
 pn.extension()
 
-class CounterButton(pn.JSComponent):
+class CounterButton(JSComponent):
 
     value = param.Integer()
 
@@ -321,7 +334,8 @@ Lets start with the simplest example
 ```python
 import param
 import panel as pn
-from panel import JSComponent
+
+from panel.custom import JSComponent
 
 class Example(JSComponent):
 
@@ -342,7 +356,8 @@ If you want to allow a certain type of Panel components only you can specify the
 ```python
 import param
 import panel as pn
-from panel import JSComponent
+
+from panel.custom import JSComponent
 
 class Example(JSComponent):
 
@@ -365,7 +380,8 @@ DOES NOT WORK YET! PLEASE FIX.
 ```python
 import param
 import panel as pn
-from panel import JSComponent
+
+from panel.custom import JSComponent
 
 class Example(JSComponent):
 
@@ -389,7 +405,9 @@ You can also display a `List` of `Viewable` `objects`.
 import param
 import panel as pn
 
-class Example(pn.JSComponent):
+from panel.custom import JSComponent
+
+class Example(JSComponent):
 
     objects = param.List(item_type=pn.viewable.Viewable)
 

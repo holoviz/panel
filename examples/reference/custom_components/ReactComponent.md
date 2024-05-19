@@ -3,13 +3,14 @@
 `ReactComponent` simplifies the creation of custom Panel components using [React](https://react.dev/).
 
 ```python
+import panel as pn
 import param
 
-import panel as pn
+from panel.custom import ReactComponent
 
 pn.extension()
 
-class CounterButton(pn.ReactComponent):
+class CounterButton(ReactComponent):
 
     value = param.Integer()
 
@@ -74,13 +75,14 @@ DUMMY CONTENT. PLEASE HELP ME DESCRIBE THIS.
 Include CSS within the `_stylesheets` attribute to style the component. The CSS is injected directly into the component's HTML.
 
 ```python
+import panel as pn
 import param
 
-import panel as pn
+from panel.custom import ReactComponent
 
 pn.extension()
 
-class CounterButton(pn.ReactComponent):
+class CounterButton(ReactComponent):
 
     value = param.Integer()
 
@@ -122,13 +124,14 @@ CounterButton().servable()
 Events from JavaScript can be sent to Python using the `data.send_event` method. Define a handler in Python to manage these events.
 
 ```python
+import panel as pn
 import param
 
-import panel as pn
+from panel.custom import ReactComponent
 
 pn.extension()
 
-class ButtonEventExample(pn.ReactComponent):
+class ButtonEventExample(ReactComponent):
 
     value = param.Parameter()
 
@@ -158,13 +161,14 @@ pn.Column(
 You can also define and send your own custom events:
 
 ```python
+import panel as pn
 import param
 
-import panel as pn
+from panel.custom import ReactComponent
 
 pn.extension()
 
-class CustomEventExample(pn.ReactComponent):
+class CustomEventExample(ReactComponent):
 
     value = param.Parameter()
 
@@ -204,9 +208,11 @@ JavaScript dependencies can be directly imported via URLs, such as those from [`
 ```python
 import panel as pn
 
+from panel.custom import ReactComponent
+
 pn.extension()
 
-class ConfettiButton(pn.ReactComponent):
+class ConfettiButton(ReactComponent):
 
     _esm = """
     import confetti from "https://esm.sh/canvas-confetti@1.6.0";
@@ -228,9 +234,11 @@ Use the `_import_map` attribute for more concise module references.
 ```python
 import panel as pn
 
+from panel.custom import ReactComponent
+
 pn.extension()
 
-class ConfettiButton(pn.ReactComponent):
+class ConfettiButton(ReactComponent):
     _importmap = {
         "imports": {
             "canvas-confetti": "https://esm.sh/canvas-confetti@1.6.0",
@@ -266,9 +274,11 @@ from pathlib import Path
 import param
 import panel as pn
 
+from panel.custom import ReactComponent
+
 pn.extension()
 
-class CounterButton(pn.ReactComponent):
+class CounterButton(ReactComponent):
 
     value = param.Integer()
 
@@ -324,10 +334,12 @@ You can display Panel components by defining `ClassSelector` parameters with the
 Lets start with the simplest example
 
 ```python
-import param
 import panel as pn
+import param
 
-class Example(pn.ReactComponent):
+from panel.custom import ReactComponent
+
+class Example(ReactComponent):
 
     child = param.ClassSelector(class_=pn.pane.Viewable)
 
@@ -346,10 +358,12 @@ Example(child=pn.panel("A **Markdown** pane!")).servable()
 If you want to allow a certain type of Panel components only you can specify the specific type in the `_class` argument.
 
 ```python
-import param
 import panel as pn
+import param
 
-class Example(pn.ReactComponent):
+from panel.custom import ReactComponent
+
+class Example(ReactComponent):
 
     child = param.ClassSelector(class_=pn.pane.Markdown)
 
@@ -373,7 +387,9 @@ DOES NOT WORK YET! PLEASE FIX.
 import param
 import panel as pn
 
-class Example(pn.ReactComponent):
+from panel.custom import ReactComponent
+
+class Example(ReactComponent):
 
     child = param.ClassSelector(class_=(pn.pane.Markdown, pn.pane.HTML))
 
@@ -394,10 +410,12 @@ Example(child=pn.panel("A **Markdown** pane!")).servable()
 You can also display a `List` of `Viewable` `objects`.
 
 ```python
-import param
 import panel as pn
+import param
 
-class Example(pn.ReactComponent):
+from panel.custom import ReactComponent
+
+class Example(ReactComponent):
 
     objects = param.List(item_type=pn.viewable.Viewable)
 
