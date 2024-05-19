@@ -11,7 +11,7 @@ class JSSlideshow(PreactComponent):
     index = param.Integer(default=0)
 
     _esm = """
-	export function render({ html, data }) {
+    export function render({ html, data }) {
       return html`<img id="slideshow" src="https://picsum.photos/800/300?image=${data.index}" onclick=${ (event) => { data.index += 1} }></img>`
     }
 	"""
@@ -22,7 +22,7 @@ class PySlideshow(PreactComponent):
     index = param.Integer(default=0)
 
     _esm = """
-	export function- render({ html, data }) {
+    export function render({ html, data }) {
       return html`<img id="slideshow" src="https://picsum.photos/800/300?image=${data.index}" onclick=${(event) => data.send_event('click', event)}></img>`
     }
 	"""
