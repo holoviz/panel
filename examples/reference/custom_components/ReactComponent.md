@@ -355,7 +355,7 @@ class Example(ReactComponent):
 Example(child=pn.panel("A **Markdown** pane!")).servable()
 ```
 
-If you want to allow a certain type of Panel components only you can specify the specific type in the `_class` argument.
+If you want to allow a certain type of Panel components only you can specify the specific type in the `class_` argument.
 
 ```python
 import panel as pn
@@ -379,9 +379,7 @@ class Example(ReactComponent):
 Example(child=pn.panel("A **Markdown** pane!")).servable()
 ```
 
-The `class_` argument also supports a tuple of types
-
-DOES NOT WORK YET! PLEASE FIX.
+The `class_` argument also supports a tuple of types:
 
 ```python
 import param

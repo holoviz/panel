@@ -357,9 +357,7 @@ class Example(PreactComponent):
 Example(child=pn.panel("A **Markdown** pane!")).servable()
 ```
 
-The `class_` argument also supports a tuple of types
-
-DOES NOT WORK YET! PLEASE FIX.
+The `class_` argument also supports a tuple of types:
 
 ```python
 import param

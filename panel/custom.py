@@ -25,7 +25,7 @@ from .models import (
 from .models.reactive_html import DOMEvent
 from .reactive import Reactive, ReactiveCustomBase, ReactiveMetaBase
 from .util.checks import import_available
-from .viewable import Layoutable, Viewable
+from .viewable import Layoutable, is_viewable_param
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -144,8 +144,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             if (
                 (k in ignored and k != 'name') or
                 (((p:= self.param[k]).precedence or 0) < 0) or
-                (isinstance(v, Viewable) and isinstance(p, param.ClassSelector)) or
-                (isinstance(p, param.List) and p.item_type and issubclass(p.item_type, Viewable))
+                is_viewable_param(p)
             ):
                 continue
             data_params[k] = v
@@ -163,10 +162,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         ref = root.ref['id']
         for k, v in self.param.values().items():
             p = self.param[k]
-            if not (
-                (isinstance(p, param.ClassSelector) and issubclass(p.class_, Viewable)) or
-                (isinstance(p, param.List) and p.item_type and issubclass(p.item_type, Viewable))
-            ):
+            if not is_viewable_param(p):
                 continue
             if v is None:
                 children[k] = None

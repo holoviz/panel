@@ -329,7 +329,7 @@ You can now edit the JavaScript or CSS file, and the changes will be automatical
 
 You can display Panel components by defining `ClassSelector` parameters with the `class_` set to subtype of `_Viewable` or tuple of subtypes of `_Viewable`s.
 
-Lets start with the simplest example
+Lets start with the simplest example:
 
 ```python
 import param
@@ -351,7 +351,7 @@ class Example(JSComponent):
 Example(child=pn.panel("A **Markdown** pane!")).servable()
 ```
 
-If you want to allow a certain type of Panel components only you can specify the specific type in the `_class` argument.
+If you want to allow a certain type of Panel components only you can specify the specific type in the `class_` argument.
 
 ```python
 import param
@@ -373,9 +373,7 @@ class Example(JSComponent):
 Example(child=pn.panel("A **Markdown** pane!")).servable()
 ```
 
-The `class_` argument also supports a tuple of types
-
-DOES NOT WORK YET! PLEASE FIX.
+The `class_` argument also supports a tuple of types:
 
 ```python
 import param

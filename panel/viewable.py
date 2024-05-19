@@ -1070,6 +1070,36 @@ class Viewer(param.Parameterized):
         return self._create_view()._repr_mimebundle_(include, exclude)
 
 
+def is_viewable_param(parameter: param.Parameter) -> bool:
+    """
+    Detects whether the Parameter uniquely identifies a Viewable
+    type.
+
+    Arguments
+    ---------
+    parameter: param.Parameter
+
+    Returns
+    -------
+    Whether the Parameter specieis a Parameter type
+    """
+    p = parameter
+    if (
+        (isinstance(p, param.ClassSelector) and p.class_ and (
+            (isinstance(p.class_, tuple) and
+             all(issubclass(cls, Viewable) for cls in p.class_)) or
+            issubclass(p.class_, Viewable)
+        )) or
+        (isinstance(p, param.List) and p.item_type and (
+            (isinstance(p.item_type, tuple) and
+             all(issubclass(cls, Viewable) for cls in p.item_type)) or
+            issubclass(p.item_type, Viewable)
+        ))
+    ):
+        return True
+    return False
+
+
 __all__ = (
     "Layoutable",
     "Viewable",
