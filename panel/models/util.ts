@@ -122,7 +122,7 @@ export function formatError(error: SyntaxError, code: string): string {
   const col = parseInt(match[2])
   const start = Math.max(0, line_num-5)
   const col_index = line_num-start
-  const lines = code.split(/\r?\n/).slice(start, line_num+5)
+  const lines = code.replace('>', '&lt;').replace('<', '&gt;').split(/\r?\n/).slice(start, line_num+5)
   msg += '<br><br>'
   for (let i = 0; i < col_index; i++ ) {
     const cls = (i == (col_index-1)) ? ` class="highlight"` : ""

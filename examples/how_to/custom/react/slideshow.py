@@ -42,7 +42,7 @@ class PySlideshow(ReactComponent):
       )
     }
 
-	export function render({ state }) {
+	export function render({ data, state }) {
       return <App data={data} state={state}></App>
     }
 	"""

@@ -2,27 +2,27 @@ import param
 
 import panel as pn
 
-from panel.esm import JSComponent
+from panel.esm import PreactComponent
 
 pn.extension()
 
-class JSSlideshow(JSComponent):
+class JSSlideshow(PreactComponent):
 
     index = param.Integer(default=0)
 
     _esm = """
-	export function render({ data, html }) {
-      return html`<img id="slideshow" src="https://picsum.photos/800/300?image=${data.index}" onclick=${ (event) => { data += 1} }></img>`
+	export function render({ html, data }) {
+      return html`<img id="slideshow" src="https://picsum.photos/800/300?image=${data.index}" onclick=${ (event) => { data.index += 1} }></img>`
     }
 	"""
 
 
-class PySlideshow(JSComponent):
+class PySlideshow(PreactComponent):
 
     index = param.Integer(default=0)
 
     _esm = """
-	export function render({ data, html }) {
+	export function- render({ html, data }) {
       return html`<img id="slideshow" src="https://picsum.photos/800/300?image=${data.index}" onclick=${(event) => data.send_event('click', event)}></img>`
     }
 	"""

@@ -121,7 +121,7 @@ export class ReactiveESMView extends HTMLBoxView {
           }
         ).code
       } catch (e) {
-        if (this.model.dev) {
+        if (e instanceof SyntaxError && this.model.dev) {
           const error = div({class: "error"})
           error.innerHTML = formatError(e, this.model.esm)
           this.container.appendChild(error)

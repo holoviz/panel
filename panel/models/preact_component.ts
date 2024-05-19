@@ -40,6 +40,7 @@ export class PreactComponentView extends ReactiveESMView {
 
     const code = `
 const view = Bokeh.index.find_one_by_id('${this.model.id}')
+const html = view._htm
 
 const children = {}
 for (const child of view.model.children) {
