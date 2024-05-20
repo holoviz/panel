@@ -61,7 +61,7 @@ class Child extends Component<ChildProps> {
   }
 
   override render() {
-    return h('div', {className: "child-wrapper", ref: (ref) => ref && this.elements.map(el => ref.appendChild(el))})
+    return h("div", {className: "child-wrapper", ref: (ref) => ref && this.elements.map(el => ref.appendChild(el))})
   }
 }
 

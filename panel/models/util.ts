@@ -125,7 +125,7 @@ export function formatError(error: SyntaxError, code: string): string {
   const lines = code.replace(">", "&lt;").replace("<", "&gt;").split(/\r?\n/).slice(start, line_num+5)
   msg += "<br><br>"
   for (let i = 0; i < col_index; i++) {
-    const cls = (i == (col_index-1)) ? ` class="highlight"` : ""
+    const cls = (i == (col_index-1)) ? " class=\"highlight\"" : ""
     msg += `<pre${cls}>${lines[i]}</pre>`
   }
   const indent = " ".repeat(col-1)
