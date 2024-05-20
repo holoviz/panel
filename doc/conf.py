@@ -100,7 +100,6 @@ rediraffe_redirects = {
     'user_guide/APIs': 'explanation/api/index#apis',
     'user_guide/Pipelines': 'how_to/pipeline/index',
     'user_guide/Templates': 'how_to/templates/index',
-    '_static/images/sazure_deployment.png': '_static/images/azure_deployment.png',
     'user_guide/Server_Configuration': 'how_to/server/index',
 }
 
