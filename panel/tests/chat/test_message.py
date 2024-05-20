@@ -51,7 +51,7 @@ class TestChatMessage:
         assert isinstance(object_pane, Markdown)
         assert object_pane.object == "ABC"
 
-        icons = center_row[1][0][0].object()
+        icons = center_row[1]
         assert isinstance(icons, ChatReactionIcons)
 
         footer_col = columns[1][2]
@@ -62,6 +62,20 @@ class TestChatMessage:
 
         timestamp_pane = footer_col[2]
         assert isinstance(timestamp_pane, HTML)
+
+    def test_reactions_dynamic(self):
+        message = ChatMessage(reactions=["favorite"])
+        assert message.reaction_icons.value == ["favorite"]
+
+        message.reactions = ["thumbs-up"]
+        assert message.reaction_icons.value == ["thumbs-up"]
+
+    def test_reaction_icons_dynamic(self):
+        message = ChatMessage(reaction_icons={"favorite": "heart"})
+        assert message.reaction_icons.options == {"favorite": "heart"}
+
+        message.reaction_icons = ChatReactionIcons(options={"like": "thumb-up"})
+        assert message._center_row[1] == message.reaction_icons
 
     def test_reactions_link(self):
         # on init

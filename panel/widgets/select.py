@@ -7,9 +7,10 @@ from __future__ import annotations
 import itertools
 import re
 
+from functools import partial
 from types import FunctionType
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping,
+    TYPE_CHECKING, Any, Awaitable, Callable, ClassVar, Mapping, Optional,
 )
 
 import numpy as np
@@ -19,13 +20,15 @@ from bokeh.models import PaletteSelect
 from bokeh.models.widgets import (
     AutocompleteInput as _BkAutocompleteInput,
     CheckboxGroup as _BkCheckboxGroup, MultiChoice as _BkMultiChoice,
-    MultiSelect as _BkMultiSelect, RadioGroup as _BkRadioBoxGroup,
+    RadioGroup as _BkRadioBoxGroup,
 )
 
 from ..io.resources import CDN_DIST
+from ..io.state import state
 from ..layout.base import Column, ListPanel, NamedListPanel
 from ..models import (
-    CheckboxButtonGroup as _BkCheckboxButtonGroup, CustomSelect,
+    CheckboxButtonGroup as _BkCheckboxButtonGroup,
+    CustomMultiSelect as _BkMultiSelect, CustomSelect,
     RadioButtonGroup as _BkRadioButtonGroup, SingleSelect as _BkSingleSelect,
 )
 from ..util import PARAM_NAME_PATTERN, indexOf, isIn
@@ -35,7 +38,11 @@ from .button import Button, _ButtonBase
 from .input import TextAreaInput, TextInput
 
 if TYPE_CHECKING:
+    from bokeh.document import Document
     from bokeh.model import Model
+    from pyviz_comms import Comm
+
+    from ..models.widgets import DoubleClickEvent
 
 
 class SelectBase(Widget):
@@ -784,6 +791,50 @@ class MultiSelect(_MultiSelectBase):
     _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/select.css']
 
     _widget_type: ClassVar[type[Model]] = _BkMultiSelect
+
+    def __init__(self, **params):
+        click_handler = params.pop('on_double_click', None)
+        super().__init__(**params)
+        self._dbl__click_handlers = [click_handler] if click_handler else []
+
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
+        model = super()._get_model(doc, root, parent, comm)
+        self._register_events('dblclick_event', model=model, doc=doc, comm=comm)
+        return model
+
+    def _process_event(self, event: DoubleClickEvent) -> None:
+        if event.option in self.labels:
+            event.option = self._items[event.option]
+            for handler in self._dbl__click_handlers:
+                state.execute(partial(handler, event))
+
+    def on_double_click(
+        self, callback: Callable[[param.parameterized.Event], None | Awaitable[None]]
+    ) -> param.parameterized.Watcher:
+        """
+        Register a callback to be executed when a `MultiSelect` option is double-clicked.
+
+        The callback is given an `DoubleClickEvent` argument
+
+        Example
+        -------
+
+        >>> select = pn.widgets.MultiSelect(options=["A", "B", "C"])
+        >>> def handle_click(event):
+        ...    print(f"Option {event.option} was double clicked.")
+        >>> select.on_double_click(handle_click)
+
+        Arguments
+        ---------
+        callback:
+            The function to run on click events. Must accept a positional `Event` argument. Can
+            be a sync or async function
+        """
+        self._dbl__click_handlers.append(callback)
+
 
 
 class MultiChoice(_MultiSelectBase):

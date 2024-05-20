@@ -3,12 +3,16 @@ import datetime
 import numpy as np
 import pytest
 
+import panel as pn
+
 pytest.importorskip("playwright")
 
 from playwright.sync_api import expect
 
 from panel.tests.util import serve_component, wait_until
-from panel.widgets import DatetimePicker, DatetimeRangePicker, TextAreaInput
+from panel.widgets import (
+    DatetimePicker, DatetimeRangePicker, TextAreaInput, TextInput,
+)
 
 pytestmark = pytest.mark.ui
 
@@ -698,3 +702,22 @@ def test_text_area_auto_grow_shrink_back_on_new_value(page):
     text_area.value = ""
 
     expect(page.locator('.bk-input')).to_have_js_property('rows', 2)
+
+def test_textinput_enter(page):
+    text_input = TextInput()
+    clicks = [0]
+
+    @pn.depends(text_input.param.enter_pressed, watch=True)
+    def on_enter(event):
+        clicks[0] += 1
+
+    serve_component(page, text_input)
+    input_area = page.locator('.bk-input').first
+    input_area.click()
+    input_area.press('Enter')
+    wait_until(lambda: clicks[0] == 1)
+
+    input_area.press("H")
+    input_area.press("Enter")
+    wait_until(lambda: clicks[0] == 2)
+    assert text_input.value == "H"

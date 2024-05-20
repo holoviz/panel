@@ -4,6 +4,7 @@ import time
 import pytest
 
 from panel.chat.feed import ChatFeed
+from panel.chat.icon import ChatReactionIcons
 from panel.chat.message import ChatMessage
 from panel.layout import Column, Row
 from panel.pane.image import Image
@@ -68,10 +69,11 @@ class TestChatFeed:
         assert not chat_feed._card.hide_header
 
     def test_send(self, chat_feed):
-        message = chat_feed.send("Message")
+        message = chat_feed.send("Message", footer_objects=[HTML("Footer")])
         wait_until(lambda: len(chat_feed.objects) == 1)
         assert chat_feed.objects[0] is message
         assert chat_feed.objects[0].object == "Message"
+        assert chat_feed.objects[0].footer_objects[0].object == "Footer"
 
     def test_link_chat_log_objects(self, chat_feed):
         chat_feed.send("Message")
@@ -163,21 +165,23 @@ class TestChatFeed:
         chat_feed.respond()  # Should not raise any errors
 
     def test_stream(self, chat_feed):
-        message = chat_feed.stream("Streaming message", user="Person", avatar="P")
+        message = chat_feed.stream("Streaming message", user="Person", avatar="P", footer_objects=[HTML("Footer")])
         assert len(chat_feed.objects) == 1
         assert chat_feed.objects[0] is message
         assert chat_feed.objects[0].object == "Streaming message"
         assert chat_feed.objects[0].user == "Person"
         assert chat_feed.objects[0].avatar == "P"
+        assert chat_feed.objects[0].footer_objects[0].object == "Footer"
 
         updated_entry = chat_feed.stream(
-            " Appended message", user="New Person", message=message, avatar="N"
+            " Appended message", user="New Person", message=message, avatar="N", footer_objects=[HTML("New Footer")]
         )
         wait_until(lambda: len(chat_feed.objects) == 1)
         assert chat_feed.objects[0] is updated_entry
         assert chat_feed.objects[0].object == "Streaming message Appended message"
         assert chat_feed.objects[0].user == "New Person"
         assert chat_feed.objects[0].avatar == "N"
+        assert chat_feed.objects[0].footer_objects[0].object == "New Footer"
 
         new_entry = chat_feed.stream("New message")
         wait_until(lambda: len(chat_feed.objects) == 2)
@@ -441,6 +445,11 @@ class TestChatFeed:
         assert chat_message.object == "Hey!"
         assert chat_message.reactions == ["like"]
         assert chat_message.reaction_icons.options == {"like": "thumb-up"}
+
+    def test_message_params_no_chat_reaction_icons_instance(self, chat_feed):
+        with pytest.raises(ValueError, match="Cannot pass"):
+            chat_feed.message_params = {"reaction_icons": ChatReactionIcons(
+                options={"like": "thumb-up", "dislike": "thumb-down"})}
 
     def test_update_chat_log_params(self, chat_feed):
         chat_feed = ChatFeed(load_buffer=5, scroll_button_threshold=5, auto_scroll_limit=5)
@@ -997,3 +1006,85 @@ class TestChatFeedSerializeBase:
             chat_feed = ChatFeed()
             chat_feed.send("I'm a user", user="user")
             chat_feed.serialize(format="atransform")
+
+
+@pytest.mark.xdist_group("chat")
+class TestChatFeedPostHook:
+
+    def test_return_string(self, chat_feed):
+        def callback(contents, user, instance):
+            yield f"Echo: {contents}"
+
+        def append_callback(message, instance):
+            logs.append(message.object)
+
+        logs = []
+        chat_feed.callback = callback
+        chat_feed.post_hook = append_callback
+        chat_feed.send("Hello World!")
+        wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
+        assert logs == ["Hello World!", "Echo: Hello World!"]
+
+    def test_yield_string(self, chat_feed):
+        def callback(contents, user, instance):
+            yield f"Echo: {contents}"
+
+        def append_callback(message, instance):
+            logs.append(message.object)
+
+        logs = []
+        chat_feed.callback = callback
+        chat_feed.post_hook = append_callback
+        chat_feed.send("Hello World!")
+        wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
+        assert logs == ["Hello World!", "Echo: Hello World!"]
+
+    def test_generator(self, chat_feed):
+        def callback(contents, user, instance):
+            message = "Echo: "
+            for char in contents:
+                message += char
+                yield message
+
+        def append_callback(message, instance):
+            logs.append(message.object)
+
+        logs = []
+        chat_feed.callback = callback
+        chat_feed.post_hook = append_callback
+        chat_feed.send("Hello World!")
+        wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
+        assert logs == ["Hello World!", "Echo: Hello World!"]
+
+    def test_async_generator(self, chat_feed):
+        async def callback(contents, user, instance):
+            message = "Echo: "
+            for char in contents:
+                message += char
+                yield message
+
+        async def append_callback(message, instance):
+            logs.append(message.object)
+
+        logs = []
+        chat_feed.callback = callback
+        chat_feed.post_hook = append_callback
+        chat_feed.send("Hello World!")
+        wait_until(lambda: chat_feed.objects[-1].object == "Echo: Hello World!")
+        assert logs == ["Hello World!", "Echo: Hello World!"]
+
+    def test_stream(self, chat_feed):
+        def callback(contents, user, instance):
+            message = instance.stream("Echo: ")
+            for char in contents:
+                message = instance.stream(char, message=message)
+
+        def append_callback(message, instance):
+            logs.append(message.object)
+
+        logs = []
+        chat_feed.callback = callback
+        chat_feed.post_hook = append_callback
+        chat_feed.send("AB")
+        wait_until(lambda: chat_feed.objects[-1].object == "Echo: AB")
+        assert logs == ["AB", "Echo: ", "Echo: AB"]

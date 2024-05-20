@@ -22,13 +22,14 @@ from bokeh.models.widgets import (
     DatePicker as _BkDatePicker, DateRangePicker as _BkDateRangePicker,
     Div as _BkDiv, FileInput as _BkFileInput, NumericInput as _BkNumericInput,
     PasswordInput as _BkPasswordInput, Spinner as _BkSpinner,
-    Switch as _BkSwitch, TextInput as _BkTextInput,
+    Switch as _BkSwitch,
 )
 
 from ..config import config
 from ..layout import Column, Panel
 from ..models import (
     DatetimePicker as _bkDatetimePicker, TextAreaInput as _bkTextAreaInput,
+    TextInput as _BkTextInput,
 )
 from ..util import param_reprs, try_datetime64_to_datetime
 from .base import CompositeWidget, Widget
@@ -41,16 +42,7 @@ if TYPE_CHECKING:
     from ..viewable import Viewable
 
 
-class TextInput(Widget):
-    """
-    The `TextInput` widget allows entering any string using a text input box.
-
-    Reference: https://panel.holoviz.org/reference/widgets/TextInput.html
-
-    :Example:
-
-    >>> TextInput(name='Name', placeholder='Enter your name here ...')
-    """
+class _TextInputBase(Widget):
 
     description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
@@ -70,8 +62,6 @@ class TextInput(Widget):
     width = param.Integer(default=300, allow_None=True, doc="""
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
-
-    _widget_type: ClassVar[type[Model]] = _BkTextInput
 
     @classmethod
     def from_param(cls, parameter: param.Parameter, onkeyup=False, **params) -> Viewable:
@@ -96,7 +86,41 @@ class TextInput(Widget):
         return super().from_param(parameter, **params)
 
 
-class PasswordInput(TextInput):
+class TextInput(_TextInputBase):
+
+    """
+    The `TextInput` widget allows entering any string using a text input box.
+
+    Reference: https://panel.holoviz.org/reference/widgets/TextInput.html
+
+    :Example:
+
+    >>> TextInput(name='Name', placeholder='Enter your name here ...')
+    """
+
+    enter_pressed = param.Event(doc="""
+        Event when the enter key has been pressed.""")
+
+    _widget_type: ClassVar[type[Model]] = _BkTextInput
+
+    _rename = {'enter_pressed': None}
+
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
+        model = super()._get_model(doc, root, parent, comm)
+        self._register_events('enter-pressed', model=model, doc=doc, comm=comm)
+        return model
+
+    def _process_event(self, event) -> None:
+        if event.event_name == 'enter-pressed':
+            self.value = event.value_input
+            self.value_input = event.value_input
+            self.enter_pressed = True
+
+
+class PasswordInput(_TextInputBase):
     """
     The `PasswordInput` allows entering any string using an obfuscated text
     input box.
@@ -113,7 +137,7 @@ class PasswordInput(TextInput):
     _widget_type: ClassVar[type[Model]] = _BkPasswordInput
 
 
-class TextAreaInput(TextInput):
+class TextAreaInput(_TextInputBase):
     """
     The `TextAreaInput` allows entering any multiline string using a text input
     box.

@@ -146,7 +146,9 @@ class FastWrapper(ReactiveHTML):
     _scripts = {
         'render': """
         let accent, bg, luminance
-        if (window._JUPYTERLAB) {
+        if (!window.fastDesignProvider) {
+          return
+        } else if (window._JUPYTERLAB) {
           accent = getComputedStyle(document.body).getPropertyValue('--jp-brand-color0').trim();
           bg = getComputedStyle(document.body).getPropertyValue('--jp-layout-color0').trim();
           let color = getComputedStyle(document.body).getPropertyValue('--jp-ui-font-color0').trim();

@@ -33,7 +33,6 @@ import param
 
 from bokeh.models import ColumnDataSource, FixedTicker, Tooltip
 from bokeh.plotting import figure
-from tqdm.asyncio import tqdm as _tqdm
 
 from .._param import Align
 from ..io.resources import CDN_DIST
@@ -54,6 +53,10 @@ if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
+try:
+    from tqdm.asyncio import tqdm as _tqdm
+except ImportError:
+    _tqdm = None
 
 RED   = "#d9534f"
 GREEN = "#5cb85c"
@@ -1205,9 +1208,11 @@ MARGIN = {
 
 
 
-class ptqdm(_tqdm):
+class ptqdm(_tqdm or object):
 
     def __init__(self, *args, **kwargs):
+        if _tqdm is None:
+            raise ImportError("tqdm is required for this indicator")
         self._indicator = kwargs.pop('indicator')
         super().__init__(*args, **kwargs)
 

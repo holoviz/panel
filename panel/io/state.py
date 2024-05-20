@@ -278,8 +278,9 @@ class _state(param.Parameterized):
         3. The application has fully loaded and the Websocket is open.
         """
         return (
-            doc is self.curdoc and self._thread_id in (self._current_thread, None) and
-            (not doc or not doc.session_context or self._loaded.get(doc))
+            doc is self.curdoc and
+            self._thread_id in (self._current_thread, None) and
+            (not (doc and doc.session_context and doc.session_context.session) or self._loaded.get(doc))
         )
 
     @param.depends('_busy_counter', watch=True)

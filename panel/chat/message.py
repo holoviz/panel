@@ -246,21 +246,16 @@ class ChatMessage(PaneBase):
             elif state.browser_info and state.browser_info.timezone:
                 tz = ZoneInfo(state.browser_info.timezone)
             params["timestamp"] = datetime.datetime.now(tz=tz)
+
         reaction_icons = params.get("reaction_icons", {"favorite": "heart"})
         if isinstance(reaction_icons, dict):
-            params["reaction_icons"] = ChatReactionIcons(
-                options=reaction_icons, width=15, height=15,
-                value=params.get('reactions', []),
-            )
+            params["reaction_icons"] = ChatReactionIcons(options=reaction_icons)
         self._internal = True
         super().__init__(object=object, **params)
         self.chat_copy_icon = ChatCopyIcon(
             visible=False, width=15, height=15, css_classes=["copy-icon"],
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
         )
-        self.reaction_icons.stylesheets = self._stylesheets + self.param.stylesheets.rx()
-        self.reaction_icons.link(self, value="reactions", bidirectional=True)
-        self.reaction_icons.visible = self.param.show_reaction_icons
         if not self.avatar:
             self._update_avatar()
         self._build_layout()
@@ -287,12 +282,13 @@ class ChatMessage(PaneBase):
         self._update_chat_copy_icon()
         self._center_row = Row(
             self._object_panel,
-            self.param.reaction_icons.rx(),
+            self._render_reaction_icons(),
             css_classes=["center"],
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
             sizing_mode=None
         )
         self.param.watch(self._update_object_pane, "object")
+        self.param.watch(self._update_reaction_icons, "reaction_icons")
 
         self._user_html = HTML(
             self.param.user, height=20, css_classes=["name"],
@@ -629,6 +625,21 @@ class ChatMessage(PaneBase):
             params = new_avatar.param.values()
             del params['name']
             self._left_col[0].param.update(**params)
+
+    def _render_reaction_icons(self):
+        reaction_icons = self.reaction_icons
+        reaction_icons.param.update(
+            width=15,
+            height=15,
+            value=self.param.reactions,
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
+            visible=self.param.show_reaction_icons
+        )
+        reaction_icons.link(self, value="reactions", bidirectional=True)
+        return reaction_icons
+
+    def _update_reaction_icons(self, _):
+        self._center_row[1] = self._render_reaction_icons()
 
     def _update(self, ref, old_models):
         """
