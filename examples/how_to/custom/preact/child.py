@@ -1,17 +1,13 @@
-import param
-
-import panel as pn
-
-from panel.custom import PreactComponent, View
+from panel.custom import Child, PreactComponent
 
 
 class Example(PreactComponent):
 
-    child = View()
+    child = Child()
 
     _esm = """
-    export function render({ html, children }) {
-      return html`<button ref=${ref => ref && ref.appendChild(children.child)}></button>`
+    export function render({ children }) {
+      return html`<button>${children.child}</button>`
     }"""
 
-Example(child=pn.panel('A Markdown pane!')).servable()
+Example(child='A Markdown pane!').servable()

@@ -21,7 +21,7 @@ from ..io.state import state
 from ..models import Column as PnColumn
 from ..reactive import Reactive
 from ..util import param_name, param_reprs, param_watchers
-from ..viewable import Views
+from ..viewable import Children
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -343,7 +343,7 @@ class Panel(Reactive):
 
 class ListLike(param.Parameterized):
 
-    objects = Views(default=[], doc="""
+    objects = Children(default=[], doc="""
         The list of child objects that make up the layout.""")
 
     _preprocess_params: ClassVar[list[str]] = ['objects']
@@ -538,7 +538,7 @@ class ListLike(param.Parameterized):
 
 class NamedListLike(param.Parameterized):
 
-    objects = Views(default=[], doc="""
+    objects = Children(default=[], doc="""
         The list of child objects that make up the layout.""")
 
     _preprocess_params: ClassVar[list[str]] = ['objects']

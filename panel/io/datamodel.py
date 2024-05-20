@@ -10,7 +10,7 @@ from bokeh.model import DataModel, Model
 from bokeh.models import ColumnDataSource
 
 from ..reactive import Syncable
-from ..viewable import View, Viewable, Views
+from ..viewable import Child, Children, Viewable
 from .document import unlocked
 from .notebook import push
 from .state import state
@@ -105,8 +105,8 @@ PARAM_MAPPING = {
     pm.Range: lambda p, kwargs: bp.Tuple(bp.Float, bp.Float, **kwargs),
     pm.String: lambda p, kwargs: bp.String(**kwargs),
     pm.Tuple: lambda p, kwargs: bp.Tuple(*(bp.Any for p in range(p.length)), **kwargs),
-    View: class_selector_to_model,
-    Views: list_param_to_ppt,
+    Child: lambda p, kwargs: bp.Nullable(bp.Instance(Model), **kwargs),
+    Children: lambda p, kwargs: bp.List(bp.Instance(Model), **kwargs),
 }
 
 

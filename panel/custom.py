@@ -25,7 +25,9 @@ from .models import (
 from .models.reactive_html import DOMEvent
 from .reactive import Reactive, ReactiveCustomBase, ReactiveMetaBase
 from .util.checks import import_available
-from .viewable import Layoutable, Viewable, is_viewable_param
+from .viewable import (  # noqa
+    Child, Children, Layoutable, Viewable, is_viewable_param,
+)
 
 if TYPE_CHECKING:
     from bokeh.document import Document

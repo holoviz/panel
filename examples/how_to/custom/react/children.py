@@ -1,24 +1,16 @@
-import param
-
-import panel as pn
-
-from panel.custom import ReactComponent, Views
+from panel.custom import Children, ReactComponent
 
 
 class Example(ReactComponent):
 
-    children = Views()
+    children = Children()
 
     _esm = """
     export function render({ children }) {
-      return (
-        <>
-          <div>{children.children}</div>
-        </>
-      )
+      return <div>{children.children}</div>
     }"""
 
 Example(children=[
-    pn.panel('A Markdown pane!'),
-    pn.panel('Another Markdown pane!')
+    'A Markdown pane!',
+    'Another Markdown pane!'
 ]).servable()

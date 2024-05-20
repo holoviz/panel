@@ -282,7 +282,7 @@ class CounterButton(ReactComponent):
 
     value = param.Integer()
 
-    _esm = Path("counter_button.jsx")
+    _esm = "counter_button.jsx"
     _stylesheets = [Path("counter_button.css")]
 
 CounterButton().servable()
@@ -329,7 +329,7 @@ You can now edit the JSX or CSS file, and the changes will be automatically relo
 
 ## Displaying A Single Panel Component
 
-You can display Panel components by defining `ClassSelector` parameters with the `class_` set to subtype of `_Viewable` or tuple of subtypes of `_Viewable`s.
+You can display Panel components by defining a `Child` parameter.
 
 Lets start with the simplest example
 
@@ -341,7 +341,7 @@ from panel.custom import ReactComponent
 
 class Example(ReactComponent):
 
-    child = param.ClassSelector(class_=pn.pane.Viewable)
+    child = Child()
 
     _esm = """
     export function render({ children }) {
@@ -361,19 +361,16 @@ If you want to allow a certain type of Panel components only you can specify the
 import panel as pn
 import param
 
-from panel.custom import ReactComponent
+from panel.custom import Child, ReactComponent
 
 class Example(ReactComponent):
 
-    child = param.ClassSelector(class_=pn.pane.Markdown)
+    child = Child(class_=pn.pane.Markdown)
 
     _esm = """
     export function render({ children }) {
-      return (
-        <button>
-            {children.child}
-        </button>
-    )}
+      return <button>{children.child}</button>
+    }
     """
 
 Example(child=pn.panel("A **Markdown** pane!")).servable()
@@ -385,19 +382,16 @@ The `class_` argument also supports a tuple of types:
 import param
 import panel as pn
 
-from panel.custom import ReactComponent
+from panel.custom import Child, ReactComponent
 
 class Example(ReactComponent):
 
-    child = param.ClassSelector(class_=(pn.pane.Markdown, pn.pane.HTML))
+    child = Child(class_=(pn.pane.Markdown, pn.pane.HTML))
 
     _esm = """
     export function render({ children }) {
-      return (
-        <button>
-            {children.child}
-        </button>
-    )}
+      return <button>{children.child}</button>
+    }
     """
 
 Example(child=pn.panel("A **Markdown** pane!")).servable()
@@ -405,25 +399,22 @@ Example(child=pn.panel("A **Markdown** pane!")).servable()
 
 ## Displaying a List of Panel Components
 
-You can also display a `List` of `Viewable` `objects`.
+You can also display a `List` of `Viewable` `objects` using the `Children` parameter type.
+
 
 ```python
 import panel as pn
 import param
 
-from panel.custom import ReactComponent
+from panel.custom import Children, ReactComponent
 
 class Example(ReactComponent):
 
-    objects = param.List(item_type=pn.viewable.Viewable)
+    objects = Children()
 
     _esm = """
     export function render({ children }) {
-      return (
-        <div>
-        {children.objects}
-        </div>
-    );
+      return <div>{children.objects}</div>
     }"""
 
 
@@ -433,8 +424,6 @@ Example(
 ```
 
 :::note
-
 You can change the `item_type` to a specific subtype of `Viewable` or a tuple of
 `Viewable` subtypes.
-
 :::

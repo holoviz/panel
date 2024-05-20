@@ -1,11 +1,12 @@
 import {transform} from "sucrase"
 import type {Transform} from "sucrase"
 
-import {div, remove} from "@bokehjs/core/dom"
+import {div} from "@bokehjs/core/dom"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
 import type {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
 import {isArray} from "@bokehjs/core/util/types"
+import type {UIElement, UIElementView} from "@bokehjs/models/ui/ui_element"
 
 import {serializeEvent} from "./event-to-object"
 import {DOMEvent} from "./html"
@@ -22,8 +23,7 @@ export class ReactiveESMView extends HTMLBoxView {
   rendered: string | null = null
   _changing: boolean = false
   _watchers: any = {}
-  _child_callbacks: {[key: string]: () => void} = {}
-  _parent_nodes: any = {}
+  _child_callbacks: Map<string, (new_views: UIElementView[]) => void>
   _rerender_vars: string[] = []
 
   override initialize(): void {
@@ -79,8 +79,12 @@ export class ReactiveESMView extends HTMLBoxView {
 
   override disconnect_signals(): void {
     super.disconnect_signals()
-    this._child_callbacks = {}
+    this._child_callbacks = new Map()
     this._watchers = {}
+  }
+
+  get_child(model: UIElement): UIElementView | undefined {
+    return this._child_views.get(model)
   }
 
   override get child_models(): LayoutDOM[] {
@@ -105,7 +109,7 @@ export class ReactiveESMView extends HTMLBoxView {
     this._apply_styles()
     this._apply_visible()
 
-    this._child_callbacks = {}
+    this._child_callbacks = new Map()
     this._watchers = {}
 
     this.container = div({style: "display: contents;"})
@@ -178,19 +182,15 @@ view.render_children();`
     for (const child of this.model.children) {
       const child_model = this.model.data[child]
       const children = isArray(child_model) ? child_model : [child_model]
-      const nodes = []
       for (const subchild of children) {
         const view = this._child_views.get(subchild)
         if (!view) {
           continue
         }
         const parent = view.el.parentNode
-        console.log(view, parent)
         if (parent) {
-          nodes.push([parent, Array.from(parent.children).indexOf(view.el)])
           view.render()
           view.after_render()
-          this._parent_nodes[child] = nodes
         }
       }
     }
@@ -199,43 +199,47 @@ view.render_children();`
   override async update_children(): Promise<void> {
     const created_children = new Set(await this.build_child_views())
 
-    if (created_children.size != 0) {
-      for (const child_view of this.child_views) {
-        remove(child_view.el)
-      }
+    for (const child_view of this.child_views) {
+      child_view.el.remove()
+    }
 
-      for (const child in this._child_callbacks) {
-        this._child_callbacks[child]()
+    const new_views = new Map()
+    for (const child_view of this.child_views) {
+      if (!created_children.has(child_view)) {
+        continue
+      }
+      for (const child of this.model.children) {
+        let models = this.model.data[child]
+        models = isArray(models) ? models : [models]
+        for (const model of models) {
+          if (model === child_view.model) {
+            if (new_views.has(child)) {
+              new_views.get(child).push(child_view)
+            } else {
+              new_views.set(child, [child_view])
+            }
+          }
+        }
       }
     }
 
-    for (const child in this._parent_nodes) {
-      for (const subchild of this._parent_nodes[child]) {
-        const [parent, index] = subchild
-        const view = this._child_views.get(this.model.data[child])
-        if (!view) {
-          continue
-        }
-        const next_child = parent.children[index]
-        if (next_child) {
-          parent.insertBefore(view.el, next_child)
-        } else {
-          parent.append(view.el)
-        }
-        view.render()
-        view.after_render()
+    for (const child of this.model.children) {
+      if (this._child_callbacks.has(child)) {
+        const new_children = new_views.get(child) || []
+        this._child_callbacks.get(child)(new_children)
       }
     }
+
     this._update_children()
     this.invalidate_layout()
   }
 
-  on_child_render(child: string, callback: () => void): void {
-    this._child_callbacks[child] = callback
+  on_child_render(child: string, callback: (new_views: UIElementView[]) => void): void {
+    this._child_callbacks.set(child, callback)
   }
 
   remove_on_child_render(child: string): void {
-    delete this._child_callbacks[child]
+    this._child_callbacks.delete(child)
   }
 }
 

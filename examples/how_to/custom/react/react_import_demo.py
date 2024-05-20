@@ -1,17 +1,15 @@
-import pathlib
-
 import param
 
 import panel as pn
 
-from panel.custom import ReactComponent
+from panel.custom import Child, ReactComponent
 
 
 class Example(ReactComponent):
 
-    child = param.ClassSelector(class_=pn.viewable.Viewable)
+    child = Child()
 
-    child2 = param.ClassSelector(class_=pn.viewable.Viewable)
+    child2 = Child()
 
     color = param.Color()
 
@@ -19,7 +17,7 @@ class Example(ReactComponent):
 
     celebrate = param.Boolean()
 
-    _esm = pathlib.Path(__file__).parent / 'react_demo.js'
+    _esm = 'react_demo.js'
 
     _importmap = {
         "imports": {
@@ -32,9 +30,9 @@ class Example(ReactComponent):
         }
     }
 
-example = Example(text='Hello World!', child=pn.pane.Markdown('Wow!'))
+example = Example(text='Hello World!', child='Wow!')
 
-button = pn.widgets.Button(on_click=lambda e: example.param.update(child=pn.pane.Markdown('Woo!')), name='Update')
+button = pn.widgets.Button(on_click=lambda e: example.param.update(child='Woo!'), name='Update')
 
 pn.Row(
     pn.Param(example.param, parameters=['color', 'text', 'celebrate']),

@@ -88,44 +88,50 @@ const modelState = new Proxy(view.model.data, {
   get: useState_getter
 })
 
-const children = {}
-for (const child of view.model.children) {
-  const child_model = view.model.data[child]
-  const multiple = Array.isArray(child_model)
-  const models = multiple ? child_model : [child_model]
-  const components = []
-  for (const model of models) {
-    class Child extends React.Component {
-      child_name = child
-      parent = view
-      view = view._child_views.get(model)
-      node = view._child_views.get(model).el
 
-      componentDidMount() {
-        this.parent.on_child_render(this.child_name, () => this.rerender())
-        this.view.render()
-        this.view.after_render()
-      }
+class Child extends React.Component {
 
-      componentDidUnmount() {
-        this.parent.remove_on_child_render(this.child_name)
-      }
-
-      rerender() {
-        this.view = this.parent._child_views.get(view.model.data[child])
-        this.node = this.view.el
-        this.forceUpdate()
-        this.view.render()
-        this.view.after_render()
-      }
-
-      render() {
-        return React.createElement('div', {className: "child-wrapper", ref: (ref) => ref && ref.appendChild(this.node)})
+  get views() {
+    const model = this.props.parent.model.data[this.props.name]
+    const models = Array.isArray(model) ? model : [model]
+    const views = []
+    for (const submodel of models) {
+      const child = this.props.parent.get_child(submodel)
+      if (child) {
+        views.push(child)
       }
     }
-    components.push(React.createElement(Child))
+    return views
   }
-  children[child] = multiple ? components: components[0]
+
+  get elements() {
+    return this.views.map(view => view.el)
+  }
+
+  componentDidMount() {
+    this.views.map((view) => {
+      view.render()
+      view.after_render()
+    })
+    this.props.parent.on_child_render(this.props.name, (new_views) => {
+      this.forceUpdate()
+      this.views.map((view) => {
+        if (new_views.includes(view)) {
+          view.render()
+          view.after_render()
+        }
+      })
+    })
+  }
+
+  render() {
+    return React.createElement('div', {className: "child-wrapper", ref: (ref) => ref && this.elements.map(el => ref.appendChild(el))})
+  }
+}
+
+const children = {}
+for (const child of view.model.children) {
+  children[child] = React.createElement(Child, {parent: view, name: child})
 }
 
 ${this.rendered}

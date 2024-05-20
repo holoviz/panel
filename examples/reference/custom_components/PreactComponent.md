@@ -265,7 +265,7 @@ class CounterButton(pn.PreactComponent):
 
     value = param.Integer()
 
-    _esm = Path("counter_button.js")
+    _esm = "counter_button.js"
     _stylesheets = [Path("counter_button.css")]
 
 CounterButton().servable()
@@ -275,11 +275,11 @@ Now create the file **counter_button.js**.
 
 ```javascript
 export function render({ data }) {
-    return html`
-        <button onClick=${() => data.value += 1}>
-            count is ${data.value}
-        </button>
-    `;
+  return html`
+    <button onClick=${() => data.value += 1}>
+      count is ${data.value}
+    </button>
+  `;
 }
 ```
 
@@ -307,33 +307,30 @@ You can now edit the JavaScript or CSS file, and the changes will be automatical
 
 ## Displaying A Single Panel Component
 
-You can display Panel components by defining `ClassSelector` parameters with the `class_` set to subtype of `_Viewable` or tuple of subtypes of `_Viewable`s.
+You can display Panel components by defining a `Child` parameter.
 
-Lets start with the simplest example
+Lets start with the simplest example:
 
 ```python
 import panel as pn
 import param
 
-from panel.custom PreactComponent
-
+from panel.custom Child, PreactComponent
 
 class Example(PreactComponent):
 
-    child = param.ClassSelector(class_=pn.viewable.Viewable)
+    child = Child()
 
     _esm = """
     export function render({ children }) {
-      return html`
-        <button ref=${ref => ref && ref.appendChild(children.child)}>
-        </button>
-    `}
+      return html`<button>${children.child}</button>`
+    }
     """
 
 Example(child=pn.panel("A **Markdown** pane!")).servable()
 ```
 
-If you want to allow a certain type of Panel components only you can specify the specific type in the `_class` argument.
+If you want to allow a certain type of Panel components only you can specify the specific type in the `class_` argument.
 
 ```python
 import panel as pn
@@ -344,14 +341,12 @@ from panel.custom PreactComponent
 
 class Example(PreactComponent):
 
-    child = param.ClassSelector(class_=pn.viewable.Markdown)
+    child = Child(class_=pn.viewable.Markdown)
 
     _esm = """
     export function render({ html, children }) {
-      return html`
-        <button ref=${ref => ref && ref.appendChild(children.child)}>
-        </button>
-    `}
+      return html`<button>${children.child}></button>`
+    }
     """
 
 Example(child=pn.panel("A **Markdown** pane!")).servable()
@@ -363,19 +358,17 @@ The `class_` argument also supports a tuple of types:
 import param
 import panel as pn
 
-from panel.custom PreactComponent
+from panel.custom Child, PreactComponent
 
 
 class Example(PreactComponent):
 
-    child = param.ClassSelector(class_=(pn.pane.Markdown, pn.pane.HTML))
+    child = Child(class_=(pn.pane.Markdown, pn.pane.HTML))
 
     _esm = """
-    export function render({ html, children }) {
-      return html`
-        <button ref=${ref => ref && ref.appendChild(children.child)}>
-        </button>
-    `}
+    export function render({ children }) {
+      return html`<button>${children.child}></button>`
+    }
     """
 
 Example(child=pn.panel("A **Markdown** pane!")).servable()
@@ -383,26 +376,24 @@ Example(child=pn.panel("A **Markdown** pane!")).servable()
 
 ## Displaying a List of Panel Components
 
-You can also display a `List` of `Viewable` `objects`.
+You can also display a `List` of `Viewable` `objects` using the `Children` parameter type.
 
 ```python
 import param
 import panel as pn
 
-from panel.custom PreactComponent
+from panel.custom Children, PreactComponent
 
 
 class Example(PreactComponent):
 
-    objects = param.List(item_type=pn.viewable.Viewable)
+    objects = Children()
 
     _esm = """
-    export function render({ html, children }) {
-      return html`
-        <div ref=${ref => ref && children.objects.map( (child, index) => ref.appendChild(child))}>
-        </div>
-    `
-    }"""
+    export function render({ children }) {
+      return html`<button>${children.children}></button>`
+    }
+    """
 
 
 Example(
@@ -411,7 +402,6 @@ Example(
 ```
 
 :::note
-
 You can change the `item_type` to a specific subtype of `Viewable` or a tuple of
 `Viewable` subtypes.
 

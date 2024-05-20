@@ -1,13 +1,9 @@
-import param
-
-import panel as pn
-
-from panel.custom import JSComponent, Views
+from panel.custom import Children, JSComponent
 
 
 class Example(JSComponent):
 
-    children = Views()
+    children = Children()
 
     _esm = """
     export function render({ children }) {
@@ -19,6 +15,6 @@ class Example(JSComponent):
     }"""
 
 Example(children=[
-    pn.panel('A Markdown pane!'),
-    pn.panel('Another Markdown pane!')
+    'A Markdown pane!',
+    'Another Markdown pane!'
 ]).servable()

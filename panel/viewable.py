@@ -1073,7 +1073,7 @@ class Viewer(param.Parameterized):
         return self._create_view()._repr_mimebundle_(include, exclude)
 
 
-class View(param.ClassSelector):
+class Child(param.ClassSelector):
     """
     A Parameter type that defines a single ``Viewable`` object. Given
     a non-Viewable object it will automatically promote it to a ``Viewable``
@@ -1090,8 +1090,17 @@ class View(param.ClassSelector):
     ):
         ...
 
-    def __init__(self, /, default=Undefined, **params):
-        super().__init__(default=self._transform_value(default), class_=Viewable, **params)
+    def __init__(self, /, default=Undefined, class_=Viewable, **params):
+        if isinstance(class_, type) and not issubclass(class_, Viewable):
+            raise TypeError(
+                f"Child.class_ must be an instance of Viewable, not {type(class_)}."
+            )
+        elif isinstance(class_, tuple) and not all(issubclass(it, Viewable) for it in class_):
+            invalid = ' or '.join([str(type(it)) for it in class_ if issubclass(it, Viewable)])
+            raise TypeError(
+                f"Child.class_ must be an instance of Viewable, not {invalid}."
+            )
+        super().__init__(default=self._transform_value(default), class_=class_, **params)
 
     def _transform_value(self, val):
         if not isinstance(val, Viewable) and val not in (None, Undefined):
@@ -1104,7 +1113,7 @@ class View(param.ClassSelector):
         super().__set__(obj, self._transform_value(val))
 
 
-class Views(param.List):
+class Children(param.List):
     """
     A Parameter type that defines a list of ``Viewable`` objects. Given
     a non-Viewable object it will automatically promote it to a ``Viewable``
@@ -1122,11 +1131,23 @@ class Views(param.List):
         ...
 
     def __init__(
-        self, /, default=Undefined, instantiate=Undefined, bounds=Undefined, **params
+        self, /, default=Undefined, instantiate=Undefined, bounds=Undefined,
+        item_type=Viewable, **params
     ):
+        if isinstance(item_type, type) and not issubclass(item_type, Viewable):
+            raise TypeError(
+                f"Children.item_type must be an instance of Viewable, not {type(item_type)}."
+            )
+        elif isinstance(item_type, tuple) and not all(issubclass(it, Viewable) for it in item_type):
+            invalid = ' or '.join([str(type(it)) for it in item_type if issubclass(it, Viewable)])
+            raise TypeError(
+                f"Children.item_type must be an instance of Viewable, not {invalid}."
+            )
+        elif 'item_type' in params:
+            raise ValueError("Children does not support item_type, use item_type instead.")
         super().__init__(
             default=self._transform_value(default), instantiate=instantiate,
-            item_type=Viewable, **params
+            item_type=item_type, **params
         )
 
     def _transform_value(self, val):
@@ -1159,7 +1180,7 @@ def is_viewable_param(parameter: param.Parameter) -> bool:
     """
     p = parameter
     if (
-        isinstance(p, (View, Views)) or
+        isinstance(p, (Child, Children)) or
         (isinstance(p, param.ClassSelector) and p.class_ and (
             (isinstance(p.class_, tuple) and
              all(issubclass(cls, Viewable) for cls in p.class_)) or

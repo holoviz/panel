@@ -1,13 +1,9 @@
-import param
-
-import panel as pn
-
-from panel.custom import JSComponent, View
+from panel.custom import Child, JSComponent
 
 
 class Example(JSComponent):
 
-    child = View()
+    child = Child()
 
     _esm = """
     export function render({ children }) {
