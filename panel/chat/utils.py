@@ -9,6 +9,8 @@ from typing import Any, Union
 
 import param
 
+from panel.pane import HTML, Image
+
 from ..io.resources import CDN_DIST
 from ..pane.image import ImageBase
 from ..viewable import Viewable
@@ -49,6 +51,32 @@ def avatar_lookup(
     if isinstance(avatar, str):
         avatar = avatar.format(dist_path=CDN_DIST)
     return avatar
+
+
+def build_avatar_pane(
+    avatar: Any, css_class: str, width: int = 15, height: int = 15
+) -> Image | HTML:
+    avatar_params = {
+        "css_classes": [css_class],
+        "width": width,
+        "height": height,
+    }
+    if isinstance(avatar, Viewable):
+        avatar_pane = avatar
+        avatar_params["css_classes"] = (
+            avatar_params.get("css_classes", []) + avatar_pane.css_classes
+        )
+        avatar_pane.param.update(avatar_params)
+    elif not isinstance(avatar, (BytesIO, bytes)) and len(avatar) == 1:
+        # single character
+        avatar_pane = HTML(avatar, **avatar_params)
+    else:
+        try:
+            avatar_pane = Image(avatar, **avatar_params)
+        except ValueError:
+            # likely an emoji
+            avatar_pane = HTML(avatar, **avatar_params)
+    return avatar_pane
 
 
 def stream_to(obj, token, replace=False):

@@ -33,7 +33,9 @@ from ..param import ParamFunction
 from ..viewable import Viewable
 from ..widgets.base import Widget
 from .icon import ChatCopyIcon, ChatReactionIcons
-from .utils import avatar_lookup, serialize_recursively, stream_to
+from .utils import (
+    avatar_lookup, build_avatar_pane, serialize_recursively, stream_to,
+)
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -503,26 +505,9 @@ class ChatMessage(PaneBase):
         if not avatar and self.user:
             avatar = self.user[0]
 
-        avatar_params = {'css_classes': ["avatar"]}
-        if isinstance(avatar, ImageBase):
-            avatar_pane = avatar
-            avatar_params['css_classes'] = (
-                avatar_params.get('css_classes', []) +
-                avatar_pane.css_classes
-            )
-            avatar_params.update(width=35, height=35)
-            avatar_pane.param.update(avatar_params)
-        elif not isinstance(avatar, (BytesIO, bytes)) and len(avatar) == 1:
-            # single character
-            avatar_pane = HTML(avatar, **avatar_params)
-        else:
-            try:
-                avatar_pane = Image(
-                    avatar, width=35, height=35, **avatar_params
-                )
-            except ValueError:
-                # likely an emoji
-                avatar_pane = HTML(avatar, **avatar_params)
+        avatar_pane = build_avatar_pane(
+            avatar, css_classes=["avatar"], height=35, width=35
+        )
         return avatar_pane
 
     def _update_avatar_pane(self, event=None):

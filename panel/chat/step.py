@@ -1,58 +1,84 @@
-from io import BytesIO
 from typing import ClassVar, Mapping
 
 import param
 
 from ..io.resources import CDN_DIST
 from ..layout import Card, Column, Row
-from ..pane.image import Image
 from ..pane.markup import HTML, HTMLBasePane, Markdown
 from ..pane.placeholder import Placeholder
-from ..viewable import Viewable
-from ..widgets.indicators import BooleanStatus, LoadingSpinner
-from .utils import avatar_lookup, serialize_recursively, stream_to
+from ..widgets.indicators import BooleanStatus
+from .utils import (
+    avatar_lookup, build_avatar_pane, serialize_recursively, stream_to,
+)
 
 DEFAULT_STATUS_AVATARS = {
-    "pending": BooleanStatus(value=False, margin=0, color="warning"),
-    "running": LoadingSpinner(value=True, margin=0),
+    "pending": BooleanStatus(value=False, margin=0, color="primary"),
+    "running": BooleanStatus(value=True, margin=0, color="warning"),
     "completed": BooleanStatus(value=True, margin=0, color="success"),
-    "failed": BooleanStatus(value=False, margin=0, color="danger"),
+    "failed": BooleanStatus(value=True, margin=0, color="danger"),
 }
 
 
 class ChatStep(Card):
-
-    status = param.Selector(
-        default="pending", objects=["pending", "running", "completed", "failed"]
-    )
-
-    completed_title = param.String(
-        default="Completed!",
-        doc="Title to display when status is completed; if not provided, uses the last object.",
-    )
-
     collapsed = param.Boolean(
         default=False,
-        doc="""
-        Whether the contents of the Card are collapsed.""",
-    )
+        doc="Whether the contents of the Card are collapsed.")
+
+    collapse_on_completed = param.Boolean(
+        default=True,
+        doc="Whether to collapse the card on completion.")
+
+    completed_title = param.String(
+        default=None,
+        doc=(
+            "Title to display when status is completed; if not provided and collapse_on_completed"
+            "uses the last object's string.")
+        )
 
     default_avatars = param.Dict(
         default=DEFAULT_STATUS_AVATARS,
-        doc="Mapping from status to default status avatar",
+        doc="Mapping from status to default status avatar")
+
+    default_title = param.String(
+        default="",
+        doc="The default title to display if the other title params are unset."
     )
+
+    failed_title = param.String(
+        default=None,
+        doc="Title to display when status is failed.")
 
     margin = param.Parameter(
-        default=(5, 5, 5, 10),
-        doc="""
+        default=(5, 5, 5, 10), doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""",
+        or a four-tuple (top, right, bottom, left).""")
+
+    pending_title = param.String(
+        default=None,
+        doc="Title to display when status is pending."
     )
 
+    running_title = param.String(
+        default=None,
+        doc="Title to display when status is running."
+    )
+
+    status = param.Selector(
+        default="pending", objects=["pending", "running", "completed", "failed"])
+
+    title = param.String(default="", constant=True, doc="""
+        The title of the chat step. Will redirect to default_title on init.
+        After, it cannot be set directly; instead use the *_title params.""")
+
     _rename: ClassVar[Mapping[str, str | None]] = {
+        "collapse_on_completed": None,
         "default_avatars": None,
+        "default_title": None,
+        "pending_title": None,
+        "running_title": None,
         "completed_title": None,
+        "failed_title": None,
         "status": None,
         **Card._rename,
     }
@@ -62,6 +88,12 @@ class ChatStep(Card):
     def __init__(self, **params):
         self._instance = None
         self._avatar_placeholder = Placeholder(css_classes=["step-avatar-container"])
+
+        if params.get("title"):
+            if params.get("default_title"):
+                raise ValueError("Cannot set both title and default_title.")
+            params["default_title"] = params["title"]
+
         super().__init__(**params)
         self._render_avatar()
         self._title_pane = HTML(
@@ -75,33 +107,18 @@ class ChatStep(Card):
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
             css_classes=["step-header"],
         )
-
     def __enter__(self):
         self.status = "running"
-        if not self.title:
-            self.title = "Running..."
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type is not None:
+            self.status = "failed"
+            if self.failed_title is None:
+                # convert to str to wrap repr in apostrophes
+                self.failed_title = f"Failed due to: {str(exc_value)!r}"
+            raise exc_value
         self.status = "completed"
-        if self.completed_title:
-            self.title = self.completed_title
-        elif self.objects:
-            obj = self.objects[-1]
-            for _ in range(100):
-                if hasattr(obj, "objects"):
-                    obj = obj.objects[-1]
-                else:
-                    break
-
-            if hasattr(obj, "object"):
-                obj = obj.object
-
-            if isinstance(obj, str):
-                self.title = obj
-        else:
-            self.title = "Completed!"
-        self.collapsed = True
 
     @param.depends("status", watch=True)
     def _render_avatar(self):
@@ -114,40 +131,63 @@ class ChatStep(Card):
             self.default_avatars,
             DEFAULT_STATUS_AVATARS,
         )
-
-        if not avatar and self.user:
-            avatar = self.user[0]
-
-        avatar_params = {
-            "css_classes": ["step-avatar"],
-            "width": 15,
-            "height": 15,
-        }
-        if isinstance(avatar, Viewable):
-            avatar_pane = avatar
-            avatar_params["css_classes"] = (
-                avatar_params.get("css_classes", []) + avatar_pane.css_classes
-            )
-            avatar_pane.param.update(avatar_params)
-        elif not isinstance(avatar, (BytesIO, bytes)) and len(avatar) == 1:
-            # single character
-            avatar_pane = HTML(avatar, **avatar_params)
-        else:
-            try:
-                avatar_pane = Image(avatar, **avatar_params)
-            except ValueError:
-                # likely an emoji
-                avatar_pane = HTML(avatar, **avatar_params)
+        avatar_pane = build_avatar_pane(avatar)
         self._avatar_placeholder.update(avatar_pane)
 
-    def stream_title(self, token, replace=False):
+    @param.depends(
+        "status",
+        "default_title",
+        "pending_title",
+        "running_title",
+        "completed_title",
+        "failed_title",
+        watch=True,
+        on_init=True,
+    )
+    def _update_title_on_status(self):
+        with param.edit_constant(self):
+            if self.status == "pending" and self.pending_title is not None:
+                self.title = self.pending_title
+
+            elif self.status == "running" and self.running_title is not None:
+                self.title = self.running_title
+
+            elif self.status == "completed":
+                if self.completed_title:
+                    self.title = self.completed_title
+                elif self.objects and self.collapse_on_completed:
+                    obj = self.objects[-1]
+                    for _ in range(100):
+                        if hasattr(obj, "objects"):
+                            obj = obj.objects[-1]
+                        else:
+                            break
+
+                    if hasattr(obj, "object"):
+                        obj = obj.object
+
+                    if isinstance(obj, str):
+                        self.title = obj
+                else:
+                    self.title = self.default_title
+            elif self.status == "failed" and self.failed_title is not None:
+                self.title = self.failed_title
+
+            else:
+                self.title = self.default_title
+
+    @param.depends("status", "collapse_on_completed", watch=True)
+    def _update_collapsed(self):
+        if self.status == "completed" and self.collapse_on_completed:
+            self.collapsed = True
+
+    def stream_title(self, token: str, replace: bool = False):
         if replace:
             self.title = token
         else:
             self.title += token
-        return self.title
 
-    def stream(self, token: str, replace=False):
+    def stream(self, token: str, replace: bool = False):
         """
         Stream a token to the message pane.
 
@@ -167,8 +207,7 @@ class ChatStep(Card):
             message = Markdown(token, css_classes=["step-message"])
             self.append(message)
         else:
-            message = stream_to(self.objects[-1], token, replace=replace)
-        return message
+            stream_to(self.objects[-1], token, replace=replace)
 
     def serialize(
         self,
@@ -214,7 +253,7 @@ class ChatSteps(Column):
             if not isinstance(step, ChatStep):
                 raise ValueError(f"Expected ChatStep, got {step.__class__.__name__}")
 
-    def create_step(self, **step_params):
+    def append_step(self, **step_params):
         """
         Create a new ChatStep and append it to the ChatSteps.
 

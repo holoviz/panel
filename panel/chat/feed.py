@@ -683,6 +683,23 @@ class ChatFeed(ListPanel):
         self.param.trigger("_post_hook_trigger")
         return message
 
+    def stream_steps(self, **params):
+        """
+        Creates a new ChatSteps component and streams it.
+
+        Arguments
+        ---------
+        message_params : dict
+            Parameters to pass to the ChatSteps.
+
+        Returns
+        -------
+        The ChatSteps that was created.
+        """
+        steps = ChatSteps(**params)
+        self.stream(steps)
+        return steps
+
     def respond(self):
         """
         Executes the callback with the latest message in the chat log.
@@ -893,8 +910,3 @@ class ChatFeed(ListPanel):
             (callable(selector) and not isinstance(selector, type) and selector(self))):
             selected.append(self)
         return selected + self._card.select(selector)
-
-    def steps(self):
-        steps = ChatSteps()
-        self.send(steps, respond=False)
-        return steps
