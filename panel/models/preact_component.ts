@@ -3,6 +3,7 @@ import {Component, h, render} from "preact"
 import type {VNode} from "preact"
 
 import type * as p from "@bokehjs/core/properties"
+import {uniq} from "@bokehjs/core/util/array"
 import type {UIElementView} from "@bokehjs/models/ui/ui_element"
 
 import {ReactiveESM, ReactiveESMView} from "./reactive_esm"
@@ -17,7 +18,7 @@ function extractDataAttributes(text: string) {
     matches.push(attr)
   }
 
-  return matches
+  return uniq(matches)
 }
 
 interface ChildProps {
@@ -76,19 +77,8 @@ export class PreactComponentView extends ReactiveESMView {
     return h(Child, {name: child, parent: this})
   }
 
-  protected override _render_esm(): void {
-    if (this.rendered === null) {
-      return
-    }
-    this._rerender_vars = extractDataAttributes(this.rendered)
-
-    this.disconnect_watchers()
-    if (this.model.importmap) {
-      const importMap = {...this.model.importmap}
-      // @ts-ignore
-      importShim.addImportMap(importMap)
-    }
-
+  protected override _render_code(): string {
+    const rerender_vars = extractDataAttributes(this.rendered)
     const code = `
 const _view = Bokeh.index.find_one_by_id('${this.model.id}')
 const html = _view._htm
@@ -103,13 +93,8 @@ ${this.rendered}
 const output = render({view: _view, model: _view.model, data: _view.model.data, el: _view.container, children: _children, html: html})
 
 _view._render_htm(output, _view.container)
-_view.model.data.watch(() => _view._render_esm(), _view._rerender_vars)`
-
-    const url = URL.createObjectURL(
-      new Blob([code], {type: "text/javascript"}),
-    )
-    // @ts-ignore
-    importShim(url)
+_view.model.data.watch(() => _view.render_esm(), ${JSON.stringify(rerender_vars)})`
+    return code
   }
 }
 

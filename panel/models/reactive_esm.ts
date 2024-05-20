@@ -24,7 +24,6 @@ export class ReactiveESMView extends HTMLBoxView {
   _changing: boolean = false
   _watchers: any = {}
   _child_callbacks: Map<string, (new_views: UIElementView[]) => void>
-  _rerender_vars: string[] = []
 
   override initialize(): void {
     super.initialize()
@@ -56,7 +55,19 @@ export class ReactiveESMView extends HTMLBoxView {
     return stylesheets
   }
 
-  disconnect_watchers(): void {
+  override connect_signals(): void {
+    super.connect_signals()
+    const {esm, importmap} = this.model.properties
+    this.on_change([esm, importmap], () => {
+      this.invalidate_render()
+    })
+    const child_props = this.model.children.map((child: string) => this.model.data.properties[child])
+    this.on_change(child_props, () => {
+      this.update_children()
+    })
+  }
+
+  protected _disconnect_watchers(): void {
     for (const p in this._watchers) {
       const prop = this.model.data.properties[p]
       for (const cb of this._watchers[p]) {
@@ -64,17 +75,6 @@ export class ReactiveESMView extends HTMLBoxView {
       }
     }
     this._watchers = {}
-  }
-
-  override connect_signals(): void {
-    super.connect_signals()
-    this.connect(this.model.properties.esm.change, () => {
-      this.invalidate_render()
-    })
-    const child_props = this.model.children.map((child: string) => this.model.data.properties[child])
-    this.on_change(child_props, () => {
-      this.update_children()
-    })
   }
 
   override disconnect_signals(): void {
@@ -135,18 +135,19 @@ export class ReactiveESMView extends HTMLBoxView {
         }
       }
     }
-    this._render_esm()
+    this.render_esm()
   }
 
-  protected _render_esm(): void {
-    this.disconnect_watchers()
+  protected _declare_importmap(): void {
     if (this.model.importmap) {
       const importMap = {...this.model.importmap}
       // @ts-ignore
       importShim.addImportMap(importMap)
     }
+  }
 
-    const code = `
+  protected _render_code(): string {
+    return `
 const view = Bokeh.index.find_one_by_id('${this.model.id}')
 
 const children = {}
@@ -161,6 +162,7 @@ for (const child of view.model.children) {
     children[child] = view._child_views.get(child_model).el
   }
 }
+
 ${this.rendered}
 
 const output = render({view: view, model: view.model, data: view.model.data, el: view.container, children, html: view._htm})
@@ -170,7 +172,15 @@ if (output instanceof Element) {
 }
 
 view.render_children();`
+  }
 
+  render_esm(): void {
+    if (this.rendered === null) {
+      return
+    }
+    this._disconnect_watchers()
+    this._declare_importmap()
+    const code = this._render_code()
     const url = URL.createObjectURL(
       new Blob([code], {type: "text/javascript"}),
     )

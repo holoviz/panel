@@ -14,11 +14,7 @@ class JSSlideshow(ReactComponent):
     function App(props) {
       const [index, setIndex] = props.state.index
       const img = `https://picsum.photos/800/300?image=${index}`
-      return (
-        <>
-          <img id="slideshow" src={img} onClick={ (event) => { setIndex(1) } }></img>
-        </>
-      )
+      return <img id="slideshow" src={img} onClick={ (event) => { setIndex(index+1) } }></img>
     }
 
 	export function render({ state }) {
@@ -35,11 +31,7 @@ class PySlideshow(ReactComponent):
     function App(props) {
       const [index, setIndex] = props.state.index
       const img = `https://picsum.photos/800/300?image=${index}`
-      return (
-        <>
-          <img id="slideshow" src={img} onClick={ (event) => props.data.send_event('click', event) }></img>
-        </>
-      )
+      return <img id="slideshow" src={img} onClick={ (event) => props.data.send_event('click', event) }></img>
     }
 
 	export function render({ data, state }) {
