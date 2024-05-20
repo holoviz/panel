@@ -84,7 +84,7 @@ class ChatStep(Card):
 
     _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_step.css"]
 
-    def __init__(self, **params):
+    def __init__(self, *objects, **params):
         self._instance = None
         self._avatar_placeholder = Placeholder(css_classes=["step-avatar-container"])
 
@@ -93,7 +93,7 @@ class ChatStep(Card):
                 raise ValueError("Cannot set both title and default_title.")
             params["default_title"] = params["title"]
 
-        super().__init__(**params)
+        super().__init__(*objects, **params)
         self._render_avatar()
         self._title_pane = HTML(
             self.param.title,

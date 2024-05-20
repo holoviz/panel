@@ -176,7 +176,7 @@ def serialize_recursively(
         string = obj.object
 
     if hasattr(string, "decode") or isinstance(string, BytesIO):
-        param.warning(
+        param.main.param.warning(
             f"Serializing byte-like objects are not supported yet; "
             f"using the label of the object as a placeholder for {obj}"
         )
