@@ -198,7 +198,6 @@ class ChatFeed(ListPanel):
     _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_feed.css"]
 
     def __init__(self, *objects, **params):
-        self._steps = None
         self._callback_future = None
 
         if params.get("renderers") and not isinstance(params["renderers"], list):
