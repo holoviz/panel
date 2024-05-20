@@ -224,9 +224,10 @@ view.render_children();`
     }
 
     for (const child of this.model.children) {
-      if (this._child_callbacks.has(child)) {
+      const callback = this._child_callbacks.get(child)
+      if (callback) {
         const new_children = new_views.get(child) || []
-        this._child_callbacks.get(child)(new_children)
+        callback(new_children)
       }
     }
 
