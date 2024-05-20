@@ -112,9 +112,9 @@ export function convertUndefined(obj: any): any {
 }
 
 export function formatError(error: SyntaxError, code: string): string {
-  const regex = /\((\d+):(\d+)\)/;
+  const regex = /\((\d+):(\d+)\)/
   let msg = `<span class="msg">${error}</span>`
-  const match = msg.match(regex);
+  const match = msg.match(regex)
   if (!match) {
     return msg
   }
@@ -122,15 +122,15 @@ export function formatError(error: SyntaxError, code: string): string {
   const col = parseInt(match[2])
   const start = Math.max(0, line_num-5)
   const col_index = line_num-start
-  const lines = code.replace('>', '&lt;').replace('<', '&gt;').split(/\r?\n/).slice(start, line_num+5)
-  msg += '<br><br>'
-  for (let i = 0; i < col_index; i++ ) {
+  const lines = code.replace(">", "&lt;").replace("<", "&gt;").split(/\r?\n/).slice(start, line_num+5)
+  msg += "<br><br>"
+  for (let i = 0; i < col_index; i++) {
     const cls = (i == (col_index-1)) ? ` class="highlight"` : ""
     msg += `<pre${cls}>${lines[i]}</pre>`
   }
-  const indent = ' '.repeat(col-1)
+  const indent = " ".repeat(col-1)
   msg += `<pre class="highlight">${indent}^</pre>`
-  for (let i = col_index; i < lines.length; i++ ) {
+  for (let i = col_index; i < lines.length; i++) {
     msg += `<pre>${lines[i]}</pre>`
   }
   return msg

@@ -121,8 +121,8 @@ export class ReactiveESMView extends HTMLBoxView {
         this.rendered = transform(
           this.model.esm, {
             transforms: this.sucrase_transforms,
-            filePath: "render.tsx"
-          }
+            filePath: "render.tsx",
+          },
         ).code
       } catch (e) {
         if (e instanceof SyntaxError && this.model.dev) {
