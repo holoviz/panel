@@ -603,7 +603,7 @@ class ChatMessage(PaneBase):
         replace: bool (default=False)
             Whether to replace the existing text.
         """
-        stream_to(obj=self.object, token=token, replace=replace)
+        stream_to(obj=self.object, token=token, replace=replace, object_panel=self)
 
     def update(
         self,

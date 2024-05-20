@@ -5,8 +5,9 @@ import pytest
 
 from panel.chat.feed import ChatFeed
 from panel.chat.icon import ChatReactionIcons
-from panel.chat.message import ChatMessage
+from panel.chat.message import DEFAULT_AVATARS, ChatMessage
 from panel.chat.step import ChatStep, ChatSteps
+from panel.chat.utils import avatar_lookup
 from panel.layout import Column, Row
 from panel.pane.image import Image
 from panel.pane.markup import HTML
@@ -393,7 +394,12 @@ class TestChatFeed:
         chat_feed.send("Message", respond=True)
         wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].user == "System"
-        assert chat_feed.objects[1].avatar == ChatMessage()._avatar_lookup("System")
+        assert chat_feed.objects[1].avatar == avatar_lookup(
+            "System",
+            None,
+            {},
+            default_avatars=DEFAULT_AVATARS
+        )
 
     def test_default_avatars_message_params(self, chat_feed):
         chat_feed.message_params["default_avatars"] = {"test1": "1"}
