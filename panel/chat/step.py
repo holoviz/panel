@@ -4,6 +4,7 @@ import param
 
 from ..io.resources import CDN_DIST
 from ..layout import Card, Column, Row
+from ..pane.image import ImageBase
 from ..pane.markup import HTML, HTMLBasePane, Markdown
 from ..pane.placeholder import Placeholder
 from ..widgets.indicators import BooleanStatus
@@ -28,12 +29,9 @@ class ChatStep(Card):
         default=True,
         doc="Whether to collapse the card on completion.")
 
-    completed_title = param.String(
-        default=None,
-        doc=(
-            "Title to display when status is completed; if not provided and collapse_on_completed"
-            "uses the last object's string.")
-        )
+    completed_title = param.String(default=None, doc="""
+        Title to display when status is completed; if not provided and collapse_on_completed
+        uses the last object's string.""")
 
     default_avatars = param.Dict(
         default=DEFAULT_STATUS_AVATARS,
@@ -41,8 +39,7 @@ class ChatStep(Card):
 
     default_title = param.String(
         default="",
-        doc="The default title to display if the other title params are unset."
-    )
+        doc="The default title to display if the other title params are unset.")
 
     failed_title = param.String(
         default=None,
@@ -131,7 +128,7 @@ class ChatStep(Card):
             self.default_avatars,
             DEFAULT_STATUS_AVATARS,
         )
-        avatar_pane = build_avatar_pane(avatar)
+        avatar_pane = build_avatar_pane(avatar, ["step-avatar"])
         self._avatar_placeholder.update(avatar_pane)
 
     @param.depends(
@@ -182,6 +179,16 @@ class ChatStep(Card):
             self.collapsed = True
 
     def stream_title(self, token: str, replace: bool = False):
+        """
+        Stream a token to the title header.
+
+        Arguments:
+        ---------
+        token : str
+            The token to stream.
+        replace : bool
+            Whether to replace the existing text.
+        """
         if replace:
             self.title = token
         else:
@@ -189,7 +196,7 @@ class ChatStep(Card):
 
     def stream(self, token: str, replace: bool = False):
         """
-        Stream a token to the message pane.
+        Stream a token to the last available string-like object.
 
         Arguments
         ---------
@@ -203,7 +210,8 @@ class ChatStep(Card):
         Viewable
             The updated message pane.
         """
-        if len(self.objects) == 0 or not isinstance(self.objects[-1], HTMLBasePane):
+        if (
+            len(self.objects) == 0 or not isinstance(self.objects[-1], HTMLBasePane) or isinstance(self.objects[-1], ImageBase)):
             message = Markdown(token, css_classes=["step-message"])
             self.append(message)
         else:
@@ -237,6 +245,9 @@ class ChatStep(Card):
             prefix_with_container_label=prefix_with_container_label,
         )
 
+    def __str__(self):
+        return self.serialize()
+
 
 class ChatSteps(Column):
 
@@ -253,7 +264,7 @@ class ChatSteps(Column):
             if not isinstance(step, ChatStep):
                 raise ValueError(f"Expected ChatStep, got {step.__class__.__name__}")
 
-    def append_step(self, **step_params):
+    def append_step(self, objects: str | list[str] | None = None, **step_params):
         """
         Create a new ChatStep and append it to the ChatSteps.
 
@@ -267,6 +278,10 @@ class ChatSteps(Column):
         ChatStep
             The newly created ChatStep.
         """
+        if objects is not None:
+            if not isinstance(objects, list):
+                objects = [objects]
+                step_params["objects"] = objects
         step = ChatStep(**step_params)
         self.append(step)
         return step

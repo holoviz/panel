@@ -54,10 +54,10 @@ def avatar_lookup(
 
 
 def build_avatar_pane(
-    avatar: Any, css_class: str, width: int = 15, height: int = 15
+    avatar: Any, css_classes: list[str], width: int = 15, height: int = 15
 ) -> Image | HTML:
     avatar_params = {
-        "css_classes": [css_class],
+        "css_classes": css_classes,
         "width": width,
         "height": height,
     }
