@@ -11,7 +11,7 @@ import type {UIElement, UIElementView} from "@bokehjs/models/ui/ui_element"
 import {serializeEvent} from "./event-to-object"
 import {DOMEvent} from "./html"
 import {HTMLBox, HTMLBoxView} from "./layout"
-import {convertUndefined, formatError} from "./util"
+import {convertUndefined, find_attributes, formatError} from "./util"
 
 import error_css from "styles/models/esm.css"
 
@@ -147,31 +147,35 @@ export class ReactiveESMView extends HTMLBoxView {
   }
 
   protected _render_code(): string {
+    const rerender_vars = find_attributes(
+      this.rendered || "", "children", []
+    )
     return `
-const view = Bokeh.index.find_one_by_id('${this.model.id}')
+const _view = Bokeh.index.find_one_by_id('${this.model.id}')
 
-const children = {}
-for (const child of view.model.children) {
-  const child_model = view.model.data[child]
+const _children = {}
+for (const child of _view.model.children) {
+  const child_model = _view.model.data[child]
   if (Array.isArray(child_model)) {
-    const subchildren = children[child] = []
+    const subchildren = _children[child] = []
     for (const subchild of child_model) {
-      subchildren.push(view._child_views.get(subchild).el)
+      subchildren.push(_view._child_views.get(subchild).el)
     }
   } else {
-    children[child] = view._child_views.get(child_model).el
+    _children[child] = _view._child_views.get(child_model).el
   }
 }
 
 ${this.rendered}
 
-const output = render({view: view, model: view.model, data: view.model.data, el: view.container, children, html: view._htm})
+const _output = render({view: _view, model: _view.model, data: _view.model.data, el: _view.container, children: _children})
 
-if (output instanceof Element) {
-  view.container.appendChild(output)
+if (_output instanceof Element) {
+  _view.container.replaceChildren(_output)
 }
 
-view.render_children();`
+_view.render_children()
+_view.model.data.watch(() => _view.render_esm(), ${JSON.stringify(rerender_vars)})`
   }
 
   render_esm(): void {

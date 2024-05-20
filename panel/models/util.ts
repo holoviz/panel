@@ -1,4 +1,4 @@
-import {concat} from "@bokehjs/core/util/array"
+import {concat, uniq} from "@bokehjs/core/util/array"
 import {isPlainObject, isArray} from "@bokehjs/core/util/types"
 
 export const get = (obj: any, path: string, defaultValue: any = undefined) => {
@@ -134,4 +134,17 @@ export function formatError(error: SyntaxError, code: string): string {
     msg += `<pre>${lines[i]}</pre>`
   }
   return msg
+}
+
+export function find_attributes(text: string, obj: string, ignored: string[]) {
+  const regex = RegExp(`\\b${obj}\\.([a-zA-Z_][a-zA-Z0-9_]*)\\b`, 'g')
+  console.log(regex)
+  const matches = []
+  let match, attr
+
+  while ((match = regex.exec(text)) !== null && (attr = match[0].slice(obj.length+1)) !== null && !ignored.includes(attr)) {
+    matches.push(attr)
+  }
+
+  return uniq(matches)
 }

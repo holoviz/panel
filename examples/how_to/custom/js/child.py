@@ -10,4 +10,4 @@ class Example(JSComponent):
       return children.child
     }"""
 
-Example(child=pn.panel('A Markdown pane!')).servable()
+Example(child='A Markdown pane!').servable()

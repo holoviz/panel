@@ -3,23 +3,10 @@ import {Component, h, render} from "preact"
 import type {VNode} from "preact"
 
 import type * as p from "@bokehjs/core/properties"
-import {uniq} from "@bokehjs/core/util/array"
 import type {UIElementView} from "@bokehjs/models/ui/ui_element"
 
 import {ReactiveESM, ReactiveESMView} from "./reactive_esm"
-
-function extractDataAttributes(text: string) {
-  const regex = /\bdata\.([a-zA-Z_][a-zA-Z0-9_]*)\b/g
-  const ignored = ["send_event", "watch"]
-  const matches = []
-  let match, attr
-
-  while ((match = regex.exec(text)) !== null && (attr = match[0].slice(5)) !== null && !ignored.includes(attr)) {
-    matches.push(attr)
-  }
-
-  return uniq(matches)
-}
+import {find_attributes} from "./util"
 
 interface ChildProps {
   name: string
@@ -78,7 +65,9 @@ export class PreactComponentView extends ReactiveESMView {
   }
 
   protected override _render_code(): string {
-    const rerender_vars = extractDataAttributes(this.rendered)
+    const rerender_vars = find_attributes(
+      this.rendered || "", "data", ["send_event", "watch"]
+    )
     const code = `
 const _view = Bokeh.index.find_one_by_id('${this.model.id}')
 const html = _view._htm
