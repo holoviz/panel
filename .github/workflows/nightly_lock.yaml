@@ -4,6 +4,9 @@ on:
   schedule:
     - cron: "0 0 * * *"
 
+env:
+  PACKAGE: "panel"
+
 jobs:
   pixi_lock:
     name: Pixi lock
@@ -12,11 +15,11 @@ jobs:
     steps:
       - uses: holoviz-dev/holoviz_tasks/pixi_lock@pixi
       - name: Upload lock-file to S3
+        if: '!github.event.pull_request.head.repo.fork'
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: "eu-west-1"
-          PACKAGE: "panel"
         run: |
-          zip $(date +%Y-%m-%d).zip pixi.lock
+          zip $(date +%Y-%m-%d).zip pixi.lock pixi.toml
           aws s3 cp ./$(date +%Y-%m-%d).zip s3://assets.holoviz.org/lock/$PACKAGE/

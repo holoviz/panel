@@ -17,7 +17,7 @@ from .reactive_html import ReactiveHTML  # noqa
 from .state import State  # noqa
 from .trend import TrendIndicator  # noqa
 from .widgets import (  # noqa
-    Audio, Button, CheckboxButtonGroup, CustomSelect, FileDownload, Player,
-    Progress, RadioButtonGroup, SingleSelect, TextAreaInput, TextInput,
-    TooltipIcon, Video, VideoStream,
+    Audio, Button, CheckboxButtonGroup, CustomMultiSelect, CustomSelect,
+    FileDownload, Player, Progress, RadioButtonGroup, SingleSelect,
+    TextAreaInput, TextInput, TooltipIcon, Video, VideoStream,
 )
