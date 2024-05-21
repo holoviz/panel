@@ -104,7 +104,7 @@ export class FileDropperView extends InputWidgetView {
           error: (msg: string) => void,
           progress: (computable: boolean, loaded: number, total: number) => void,
         ) => {
-          this._process_upload(file, load, error, progress)
+          void this._process_upload(file, load, error, progress)
         },
         fetch: null,
         revert: (id: string, load: () => void): void => {
@@ -182,8 +182,8 @@ export class FileDropper extends InputWidget {
 
   static {
     this.prototype.default_view = FileDropperView
-    this.define<FileDropper.Props>(({Any, Array, Bool, Int, Nullable, Str}) => ({
-      accepted_filetypes:  [ Array(Str),           [] ],
+    this.define<FileDropper.Props>(({Any, List, Bool, Int, Nullable, Str}) => ({
+      accepted_filetypes:  [ List(Str),           [] ],
       chunk_size:          [ Int,            10000000 ],
       max_file_size:       [ Nullable(Str),      null ],
       max_files:           [ Nullable(Int),      null ],
