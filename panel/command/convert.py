@@ -28,7 +28,7 @@ class Convert(Subcommand):
         ('--to', dict(
             action  = 'store',
             type    = str,
-            help    = "The format to convert to, one of 'pyodide' (default), 'pyodide-worker' or 'pyscript'",
+            help    = "The format to convert to, one of 'pyodide' (default), 'pyodide-worker', 'pyscript' or 'pyscript-worker'",
             default = 'pyodide'
         )),
         ('--compiled', dict(
@@ -69,6 +69,12 @@ class Convert(Subcommand):
             default = False,
             action  = 'store_false',
             help    = "Whether to disable patching http requests using the pyodide-http library."
+        )),
+        ('--resources', dict(
+            nargs   = '+',
+            help    = (
+                "Files to pack for distribution with the app. Does only support files located in the directory of the main panel app (or in subdirectories below)."
+            )
         )),
         ('--watch', dict(
             action  = 'store_true',
@@ -112,10 +118,10 @@ class Convert(Subcommand):
             try:
                 convert_apps(
                     files, dest_path=args.out, runtime=runtime, requirements=requirements,
-                    prerender=not args.skip_embed, build_index=index, build_pwa=args.pwa,
-                    title=args.title, max_workers=args.num_procs,
-                    http_patch=not args.disable_http_patch, compiled=args.compiled,
-                    verbose=True
+                    resources=args.resources, prerender=not args.skip_embed,
+                    build_index=index, build_pwa=args.pwa, title=args.title,
+                    max_workers=args.num_procs, http_patch=not args.disable_http_patch,
+                    compiled=args.compiled, verbose=True
                 )
             except KeyboardInterrupt:
                 print("Aborted while building docs.")  # noqa: T201
