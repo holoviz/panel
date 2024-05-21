@@ -27,6 +27,7 @@ This patch release is likely the last in the 1.4.x series. The most important fi
 - Suppress keyboard shortcuts in notebook output ([#6825](https://github.com/holoviz/panel/pull/6825))
 - Ensure we don't error out when `FastDesignProvider` is undefined ([#6832](https://github.com/holoviz/panel/pull/6832))
 - Ensure model changes are applied while session is starting ([#6835](https://github.com/holoviz/panel/pull/6835))
+- Ensure `Perspective` does not error if has not been rendered ([#6847](https://github.com/holoviz/panel/pull/6847))
 
 ### Documentation
 
