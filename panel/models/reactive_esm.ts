@@ -210,6 +210,18 @@ _view.model.data.watch(() => _view.render_esm(), ${JSON.stringify(rerender_vars)
     }
   }
 
+  protected _lookup_child(child_view: UIElementView): string | null {
+    for (const child of this.model.children) {
+      let models = this.model.data[child]
+      models = isArray(models) ? models : [models]
+      for (const model of models) {
+        if (model === child_view.model) {
+	  return child
+	}
+      }
+    }
+  }
+
   override async update_children(): Promise<void> {
     const created_children = new Set(await this.build_child_views())
 
@@ -222,18 +234,13 @@ _view.model.data.watch(() => _view.render_esm(), ${JSON.stringify(rerender_vars)
       if (!created_children.has(child_view)) {
         continue
       }
-      for (const child of this.model.children) {
-        let models = this.model.data[child]
-        models = isArray(models) ? models : [models]
-        for (const model of models) {
-          if (model === child_view.model) {
-            if (new_views.has(child)) {
-              new_views.get(child).push(child_view)
-            } else {
-              new_views.set(child, [child_view])
-            }
-          }
-        }
+      const child = this._lookup_child(child_view)
+      if (!child) {
+	continue
+      } else if (new_views.has(child)) {
+        new_views.get(child).push(child_view)
+      } else {
+        new_views.set(child, [child_view])
       }
     }
 
