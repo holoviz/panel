@@ -94,8 +94,6 @@ jlite_url = 'https://holoviz-dev.github.io/panelite-dev' if is_dev else 'https:/
 pyodide_url = 'https://holoviz-dev.github.io/panel/pyodide' if is_dev else 'https://panel.holoviz.org/pyodide'
 
 rediraffe_redirects = {
-    # Removal of the developer testing page
-    'developer_guide/testing': 'developer_guide/index',
     'user_guide/APIs': 'explanation/api/index',
     'user_guide/Pipelines': 'how_to/pipeline/index',
     'user_guide/Templates': 'how_to/templates/index',
