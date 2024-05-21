@@ -9,7 +9,7 @@ The ``panel convert`` command has the following options:
 
     options:
     -h, --help            show this help message and exit
-    --to TO               The format to convert to, one of 'pyodide' (default), 'pyodide-worker' or 'pyscript'
+    --to TO               The format to convert to, one of 'pyodide' (default), 'pyodide-worker', 'pyscript' or 'pyscript-worker'
     --compiled            Whether to use the compiled and faster version of Pyodide.
     --out OUT             The directory to write the file to.
     --title TITLE         A custom title for the application(s).
@@ -17,11 +17,13 @@ The ``panel convert`` command has the following options:
     --index               Whether to create an index if multiple files are served.
     --pwa                 Whether to add files to serve applications as a Progressive Web App.
     --requirements REQUIREMENTS [REQUIREMENTS ...]
-                            Explicit requirements to add to the converted file, a single requirements.txt file or a JSON file containing requirements per app. By default requirements are inferred from the code.
+                          Explicit requirements to add to the converted file, a single requirements.txt file or a JSON file containing requirements per app. By default requirements are inferred from the code.
+    --resources RESOURCES [RESOURCES ...]
+                          Files to pack for distribution with the app. Does only support files located in the directory of the main panel app (or in subdirectories below).
     --disable-http-patch  Whether to disable patching http requests using the pyodide-http library.
     --watch               Watch the files
     --num-procs NUM_PROCS
-                            The number of processes to start in parallel to convert the apps.
+                          The number of processes to start in parallel to convert the apps.
 
 ## Example
 
@@ -89,6 +91,7 @@ Using the `--to` argument on the CLI you can control the format of the file that
 - **`pyodide`** (default): Run application using Pyodide running in the main thread. This option is less performant than pyodide-worker but produces completely standalone HTML files that do not have to be hosted on a static file server (e.g. Github Pages).
 - **`pyodide-worker`**: Generates an HTML file and a JS file containing a Web Worker that runs in a separate thread. This is the most performant option, but files have to be hosted on a static file server.
 - **`pyscript`**: Generates an HTML leveraging PyScript. This produces standalone HTML files containing `<py-env>` and `<py-script>` tags containing the dependencies and the application code. This output is the most readable, and should have equivalent performance to the `pyodide` option.
+- **`pyscript-worker`**: Generates an HTML file and a separate PY file containing the panel app leveraging PyScript. This needs proper setup of Content-Security-Policies on the webserver.
 
 ## Requirements
 
@@ -103,6 +106,8 @@ Alternatively you may also provide a `requirements.txt` file:
 ```bash
 panel convert script.py --to pyodide-worker --out pyodide --requirements requirements.txt
 ```
+
+One also can provide URLs to Python wheels provided at filesystem or online locations. Wheels available in the local filesystem will be packed into a zip-file (which needs to be hosted with the app) which will be unpacked to emscriptens MEMFS for installation.
 
 ## Index
 
