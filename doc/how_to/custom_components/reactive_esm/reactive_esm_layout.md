@@ -11,13 +11,13 @@ You can layout a single Panel component as follows.
 ::::{tab-item} `JSComponent`
 
 ```{pyodide}
-import param
 import panel as pn
+from panel.custom import JSComponent, Child
 
 pn.extension()
 
-class LayoutSingleObject(pn.JSComponent):
-    object = param.ClassSelector(class_=pn.viewable.Viewable, allow_refs=False)
+class LayoutSingleObject(JSComponent):
+    object = Child()
 
     _esm = """
 export function render({ children }) {
@@ -56,13 +56,14 @@ js_layout.servable()
 ::::{tab-item} `ReactComponent`
 
 ```{pyodide}
-import param
 import panel as pn
+
+from panel.custom import Child, ReactComponent
 
 pn.extension()
 
-class LayoutSingleObject(pn.ReactComponent):
-    object = param.ClassSelector(class_=pn.viewable.Viewable, allow_refs=False)
+class LayoutSingleObject(ReactComponent):
+    object = Child()
 
     _esm = """
 export function render({ children }) {
@@ -99,14 +100,14 @@ react_layout.servable()
 ::::{tab-item} `PreactComponent`
 
 ```{pyodide}
-import param
-
 import panel as pn
+
+from panel.custom import Child, PreactComponent
 
 pn.extension()
 
-class LayoutSingleObject(pn.PreactComponent):
-    object = param.ClassSelector(class_=pn.viewable.Viewable, allow_refs=False)
+class LayoutSingleObject(PreactComponent):
+    object = Child()
 
     _esm = """
 export function render({ children, html }) {

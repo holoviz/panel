@@ -1075,9 +1075,10 @@ class Viewer(param.Parameterized):
 
 class Child(param.ClassSelector):
     """
-    A Parameter type that defines a single ``Viewable`` object. Given
-    a non-Viewable object it will automatically promote it to a ``Viewable``
-    by calling the ``panel`` utility.
+    A Parameter type that holds a single `Viewable` object.
+
+    Given a non-`Viewable` object it will automatically promote it to a `Viewable`
+    by calling the `pn.panel` utility.
     """
 
     @typing.overload
