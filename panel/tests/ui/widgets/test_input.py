@@ -733,7 +733,9 @@ def test_filedropper_text_file(page):
     page.set_input_files('input[type="file"]', file)
 
     wait_until(lambda: len(widget.value) == 1, page)
-    assert widget.value == {file.name: file.read_text()}
+    assert widget.value == {
+        file.name: file.read_text().replace("\r\n", "\n"),
+    }
 
 def test_filedropper_multiple_file_error(page):
     widget = pn.widgets.FileDropper()
@@ -754,5 +756,6 @@ def test_filedropper_multiple_files(page):
 
     wait_until(lambda: len(widget.value) == 2)
     assert widget.value == {
-        file1.name: file1.read_text(), file2.name: file2.read_text()
+        file1.name: file1.read_text().replace("\r\n", "\n"),
+        file2.name: file2.read_text().replace("\r\n", "\n"),
     }
