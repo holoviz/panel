@@ -226,19 +226,19 @@ export class jsTree extends LayoutDOM {
   static {
     this.prototype.default_view = jsTreeView
 
-    this.define<jsTree.Props>(({Array, Any, Boolean, Nullable}) => ({
-      _new_nodes:    [ Nullable(Array(Any)), [] ],
-      cascade:       [ Boolean,  true ],
-      checkbox:      [ Boolean,  true ],
-      drag_and_drop: [ Boolean, false ],
-      nodes:         [ Array(Any), [] ],
-      plugins:       [ Array(Any), [] ],
-      multiple:      [ Boolean,  true ],
-      show_icons:    [ Boolean,  true ],
-      show_dots:     [ Boolean, false ],
-      show_stripes:  [ Boolean, false ],
-      sort:          [ Boolean,  true ],
-      value:         [ Array(Any), [] ],
+    this.define<jsTree.Props>(({List, Any, Bool, Nullable}) => ({
+      _new_nodes:    [ Nullable(List(Any)), [] ],
+      cascade:       [ Bool,  true ],
+      checkbox:      [ Bool,  true ],
+      drag_and_drop: [ Bool, false ],
+      nodes:         [ List(Any), [] ],
+      plugins:       [ List(Any), [] ],
+      multiple:      [ Bool,  true ],
+      show_icons:    [ Bool,  true ],
+      show_dots:     [ Bool, false ],
+      show_stripes:  [ Bool, false ],
+      sort:          [ Bool,  true ],
+      value:         [ List(Any), [] ],
     }))
   }
 }
