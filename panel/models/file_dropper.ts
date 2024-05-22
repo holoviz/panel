@@ -122,9 +122,8 @@ export class FileDropperView extends InputWidgetView {
     error: (msg: string) => void,
     progress: (computable: boolean, loaded: number, total: number) => void,
   ): Promise<any> {
-    console.log(file)
     const buffer_size = this.model.chunk_size
-    const chunks = Math.ceil(file.size / buffer_size)
+    const chunks = Math.ceil((file.size + 1)/ buffer_size) // +1 is for empty files
     let abort_flag = false
     new Promise(async (resolve, reject) => {
       for (let i = 0; i < chunks; i++) {
