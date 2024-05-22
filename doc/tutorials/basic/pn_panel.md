@@ -318,7 +318,7 @@ print(component)
 component.servable()
 ```
 
-Please notice that the image of the dice is very tall. To fine-tune the way it is displayed, we can use `pn.panel` with arguments.
+Please notice that the image of the wind turbine is quite large. To fine-tune the way it is displayed, we can use `pn.panel` with arguments.
 
 Run the code below:
 
