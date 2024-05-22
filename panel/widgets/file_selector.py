@@ -158,11 +158,11 @@ class BaseFileSelector(param.Parameterized):
     def __init__(self, directory: AnyStr | os.PathLike | None = None, **params):
         provider = params.get('provider', self.provider)
         if directory is not None:
-            directory = provider.normalize(directory)
+            params["directory"] = provider.normalize(directory)
         if 'root_directory' in params:
             root = params['root_directory']
             params['root_directory'] = provider.normalize(root)
-        super().__init__(directory=directory, **params)
+        super().__init__(**params)
 
 
 class FileSelector(BaseFileSelector, CompositeWidget):
@@ -384,8 +384,6 @@ class FileSelector(BaseFileSelector, CompositeWidget):
         self._update_files(True)
 
 
-
-
 class FileTree(BaseFileSelector, _TreeBase):
     """
     FileTree renders a path or directory.
@@ -399,7 +397,8 @@ class FileTree(BaseFileSelector, _TreeBase):
         'file_pattern': None,
         'root_directory': None,
         'provider': None,
-        'only_files': 'cascade'
+        'only_files': 'cascade',
+        **_TreeBase._rename,
     }
 
     @param.depends('directory', watch=True, on_init=True)

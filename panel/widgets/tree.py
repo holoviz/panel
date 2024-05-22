@@ -99,7 +99,8 @@ class _TreeBase(Widget):
 
     def _get_properties(self, doc: Document) -> dict[str, Any]:
         props = super()._get_properties(doc)
-        props['nodes'] = self._nodes
+        if hasattr(self, '_nodes'):  # TODO: This feels wrong...
+            props['nodes'] = self._nodes
         return props
 
     def _process_param_change(self, msg: dict[str, Any]) -> dict[str, Any]:
@@ -164,6 +165,8 @@ class Tree(_TreeBase):
         Function used to return the list of children.  Given the node
         name and unique node id the function should return a list of
         jsTree node definitions.""")
+
+    _rename = {**_TreeBase._rename, "child_callback": None}
 
     def _get_children(self, node_name, node_id, **kwargs) -> list[dict[str, any]]:
         if self.child_callback:

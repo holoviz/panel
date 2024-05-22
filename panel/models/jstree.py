@@ -4,7 +4,7 @@ Defines custom jsTree bokeh model to render Ace editor.
 from __future__ import absolute_import
 
 from bokeh.core.properties import (
-    Any, Bool, List, Nullable, String,
+    Any, Bool, List, Nullable,
 )
 from bokeh.events import ModelEvent
 from bokeh.models.layouts import LayoutDOM
@@ -65,5 +65,3 @@ class jsTree(LayoutDOM):
     # Callback properties
     value = List(Any)
     nodes = List(Any)
-
-    directory = String()
