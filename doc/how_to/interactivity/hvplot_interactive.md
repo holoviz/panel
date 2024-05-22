@@ -47,7 +47,7 @@ df_rx.head(head_widget)
 Because we've imported `hvplot.pandas`, we can utilize `.hvplot()` to render the widgets and plot the data easily:
 
 ```{pyodide}
-idf.hvplot(kind="scatter", x="bill_length_mm", y="bill_depth_mm", by="sex")
+df_rx.hvplot(kind="scatter", x="bill_length_mm", y="bill_depth_mm", by="sex")
 ```
 
 We can leverage [`panel.ReactiveExpr`](https://panel.holoviz.org/reference/panes/ReactiveExpr.html) to assist in rendering `df_rx`. This allows us to include all widgets related to `df_rx`, while also offering the flexibility to customize the appearance of the widgets. For instance, we can specify `pn.Column` as the `widget_layout` parameter and `top` as the `widget_location` parameter, as shown below:
