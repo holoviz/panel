@@ -1,4 +1,5 @@
 import datetime
+import sys
 
 from pathlib import Path
 
@@ -733,9 +734,10 @@ def test_filedropper_text_file(page):
     page.set_input_files('input[type="file"]', file)
 
     wait_until(lambda: len(widget.value) == 1, page)
-    assert widget.value == {
-        file.name: file.read_text().replace("\r\n", "\n"),
-    }
+    data = file.read_text()
+    if sys.platform == 'win32':
+        data = data.replace("\n", "\r\n")
+    assert widget.value == {file.name: data}
 
 def test_filedropper_multiple_file_error(page):
     widget = pn.widgets.FileDropper()
@@ -753,9 +755,11 @@ def test_filedropper_multiple_files(page):
     file2 = file1.parent / '__init__.py'
 
     page.set_input_files('input[type="file"]', [file1, file2])
+    data1 = file1.read_text()
+    data2 = file2.read_text()
+    if sys.platform == 'win32':
+        data1 = data1.replace("\n", "\r\n")
+        data2 = data2.replace("\n", "\r\n")
 
     wait_until(lambda: len(widget.value) == 2)
-    assert widget.value == {
-        file1.name: file1.read_text().replace("\r\n", "\n"),
-        file2.name: file2.read_text().replace("\r\n", "\n"),
-    }
+    assert widget.value == {file1.name: data1, file2.name: data2}
