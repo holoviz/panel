@@ -10,7 +10,7 @@ from bokeh.events import ModelEvent
 from bokeh.models.layouts import LayoutDOM
 
 from ..config import config
-from ..io.resources import bundled_files
+from ..io.resources import JS_URLS, bundled_files
 from ..util import classproperty
 
 
@@ -44,7 +44,7 @@ class jsTree(LayoutDOM):
         return bundled_files(cls, 'css')
 
     __javascript_raw__ = [
-        "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js", #JS_URLS['jQuery'],
+        JS_URLS['jQuery'],
         f"{config.npm_cdn}/jstree@3.3.16/dist/jstree.min.js"
     ]
 
