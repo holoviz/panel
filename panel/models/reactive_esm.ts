@@ -220,6 +220,7 @@ _view.model.data.watch(() => _view.render_esm(), ${JSON.stringify(rerender_vars)
 	}
       }
     }
+    return null
   }
 
   override async update_children(): Promise<void> {

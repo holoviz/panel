@@ -55,14 +55,8 @@ function useState_getter(target, name) {
     return undefined
   }
   const [value, setValue] = React.useState(target.attributes[name]);
-  view.model.data.watch(() => {
-    setValue(target.attributes[name])
-  }, name)
-  React.useEffect(() => {
-    const state = {}
-    state[name] = value
-    target.setv(state)
-  }, [value])
+  view.model.data.watch(() => setValue(target.attributes[name]), name)
+  React.useEffect(() => target.setv({[name]: value}), [value])
   return [value, setValue]
 }
 
