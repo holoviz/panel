@@ -8,6 +8,7 @@ import os
 
 from abc import abstractmethod
 from fnmatch import fnmatch
+from importlib.util import find_spec
 from pathlib import Path
 from typing import (
     TYPE_CHECKING, AnyStr, ClassVar, Optional,
@@ -68,6 +69,18 @@ def _scan_path(path: str, file_pattern='*') -> tuple[list[str], list[str]]:
 
 
 class BaseFileProvider:
+
+    fs = None
+
+    @classmethod
+    def from_filesystem(cls, fs):
+        if fs is None:
+            return LocalFileProvider()
+        elif find_spec('fsspec'):
+            from fsspec import AbstractFileSystem
+            if isinstance(fs, AbstractFileSystem):
+                return RemoteFileProvider(fs)
+        raise ValueError(f"Unsupported filesystem type: {type(fs)}")
 
     @abstractmethod
     def ls(self, path):
@@ -149,20 +162,26 @@ class BaseFileSelector(param.Parameterized):
         If set, overrides directory parameter as the root directory
         beyond which users cannot navigate.""")
 
-    provider = param.ClassSelector(class_=BaseFileProvider, default=LocalFileProvider(), doc="""
-        A FileProvider that allows explore local and remote file systems.""")
-
     value = param.List(default=[], doc="""
         List of selected files.""")
 
-    def __init__(self, directory: AnyStr | os.PathLike | None = None, **params):
-        provider = params.get('provider', self.provider)
+    def __init__(
+        self,
+        directory: AnyStr | os.PathLike | None = None,
+        fs: AbstractFileSystem | None = None,
+        **params,
+    ):
+        self._provider = BaseFileProvider.from_filesystem(fs)
         if directory is not None:
-            params["directory"] = provider.normalize(directory)
+            params["directory"] = self._provider.normalize(directory)
         if 'root_directory' in params:
             root = params['root_directory']
-            params['root_directory'] = provider.normalize(root)
+            params['root_directory'] = self._provider.normalize(root)
         super().__init__(**params)
+
+    @property
+    def fs(self):
+        return self._provider.fs
 
 
 class FileSelector(BaseFileSelector, CompositeWidget):
@@ -191,11 +210,16 @@ class FileSelector(BaseFileSelector, CompositeWidget):
 
     _composite_type: ClassVar[type[ListPanel]] = Column
 
-    def __init__(self, directory: AnyStr | os.PathLike | None = None, **params):
+    def __init__(
+        self,
+        directory: AnyStr | os.PathLike | None = None,
+        fs: AbstractFileSystem | None = None,
+        **params,
+    ):
         from ..pane import Markdown
         if params.get('width') and params.get('height') and 'sizing_mode' not in params:
             params['sizing_mode'] = None
-        super().__init__(directory=directory, **params)
+        super().__init__(directory=directory, fs=fs, **params)
 
         # Set up layout
         layout = {p: getattr(self, p) for p in Layoutable.param
@@ -249,7 +273,7 @@ class FileSelector(BaseFileSelector, CompositeWidget):
         if relpath == '..':
             return self._go_up()
         sel = fullpath(os.path.join(self._cwd, relpath))
-        if self.provider.isdir(sel):
+        if self._provider.isdir(sel):
             self._directory.value = sel
         else:
             self._directory.value = self._cwd
@@ -287,11 +311,11 @@ class FileSelector(BaseFileSelector, CompositeWidget):
     def _update_files(
         self, event: Optional[param.parameterized.Event] = None, refresh: bool = False
     ):
-        path = self.provider.normalize(self._directory.value)
+        path = self._provider.normalize(self._directory.value)
         refresh = refresh or (event and getattr(event, 'obj', None) is self._reload)
         if refresh:
             path = self._cwd
-        elif not self.provider.isdir(path):
+        elif not self._provider.isdir(path):
             self._selector.options = ['Entered path is not valid']
             self._selector.disabled = True
             return
@@ -309,7 +333,7 @@ class FileSelector(BaseFileSelector, CompositeWidget):
             self._back.disabled = False
 
         selected = self.value
-        dirs, files = self.provider.ls(path, self.file_pattern)
+        dirs, files = self._provider.ls(path, self.file_pattern)
         for s in selected:
             check = os.path.realpath(s) if os.path.islink(s) else s
             if os.path.isdir(check):
@@ -339,7 +363,7 @@ class FileSelector(BaseFileSelector, CompositeWidget):
         is not in the current working directory then it is removed
         from the denylist.
         """
-        dirs, files = self.provider.ls(self._cwd, self.file_pattern)
+        dirs, files = self._provider.ls(self._cwd, self.file_pattern)
         paths = [('📁' if p in dirs else '')+os.path.relpath(p, self._cwd) for p in dirs+files]
         denylist = self._selector._lists[False]
         options = dict(self._selector._items)
@@ -404,7 +428,7 @@ class FileTree(BaseFileSelector, _TreeBase):
     @param.depends('directory', watch=True, on_init=True)
     def _set_data_from_directory(self, *event):
         self._nodes = [{
-            "id": self.provider.normalize(self.directory),
+            "id": self._provider.normalize(self.directory),
             "text": Path(self.directory).name,
             "icon": "jstree-folder",
             "type": "folder",
@@ -448,7 +472,7 @@ class FileTree(BaseFileSelector, _TreeBase):
         return nodes
 
     def _get_paths(self, directory, children_to_skip=()):
-        dirs_, files = self.provider.ls(str(directory))
+        dirs_, files = self._provider.ls(str(directory))
         dirs = []
         for d in dirs_:
             if Path(d).name.startswith(".") or d in children_to_skip:
