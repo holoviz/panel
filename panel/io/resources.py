@@ -339,10 +339,15 @@ def global_css(name):
 
 def bundled_files(model, file_type='javascript'):
     name = model.__name__.lower()
+    raw_files = getattr(model, f"__{file_type}_raw__", [])
+    for cls in model.__mro__[1:]:
+        cls_files = getattr(cls, f"__{file_type}_raw__", [])
+        if raw_files is cls_files:
+            name = cls.__name__.lower()
     bdir = BUNDLE_DIR / name
     shared = list((JS_URLS if file_type == 'javascript' else CSS_URLS).values())
     files = []
-    for url in getattr(model, f"__{file_type}_raw__", []):
+    for url in raw_files:
         if url.startswith(CDN_DIST):
             filepath = url.replace(f'{CDN_DIST}bundled/', '')
         elif url.startswith(config.npm_cdn):
@@ -786,8 +791,11 @@ class Resources(BkResources):
 
         modules = list(config.js_modules.values())
         for model in Model.model_class_reverse_map.values():
-            if hasattr(model, '__javascript_modules__'):
-                modules.extend(model.__javascript_modules__)
+            if not hasattr(model, '__javascript_modules__'):
+                continue
+            for module in model.__javascript_modules__:
+                if module not in modules:
+                    modules.append(module)
 
         self.extra_resources(modules, '__javascript_modules__')
         if config.design:
