@@ -28,7 +28,8 @@ from ..layout.spacer import VSpacer
 from ..pane.image import SVG
 from .icon import ChatReactionIcons
 from .message import ChatMessage
-from .step import ChatSteps
+from .step import ChatStep
+from .steps import ChatSteps
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -682,14 +683,14 @@ class ChatFeed(ListPanel):
         self.param.trigger("_post_hook_trigger")
         return message
 
-    def stream_steps(
+    def create_steps(
         self,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
-        **params
-    ):
+        **steps_params
+    ) -> ChatSteps:
         """
-        Creates a new ChatSteps component and streams it.
+        Creates a new ChatSteps component and streams it to the logs.
 
         Arguments
         ---------
@@ -699,20 +700,21 @@ class ChatFeed(ListPanel):
         avatar : str | bytes | BytesIO | None
             The avatar to use; overrides the message's avatar if provided.
             Will default to the avatar parameter.
-        params : dict
+        steps_params : dict
             Parameters to pass to the ChatSteps.
 
         Returns
         -------
         The ChatSteps that was created.
         """
-        steps = ChatSteps(**params)
+        steps = ChatSteps(**steps_params)
         self.stream(steps, user=user, avatar=avatar)
         return steps
 
-    def stream_step(self, objects: str | list[str] | None = None, **step_params):
+    def attach_step(self, objects: str | list[str] | None = None, **step_params) -> ChatStep:
         """
-        Streams a step to the latest, active ChatSteps component.
+        Attaches a step to the latest, active ChatSteps component.
+        Usually called after `create_steps`.
 
         Arguments
         ---------

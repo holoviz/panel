@@ -6,7 +6,8 @@ import pytest
 from panel.chat.feed import ChatFeed
 from panel.chat.icon import ChatReactionIcons
 from panel.chat.message import DEFAULT_AVATARS, ChatMessage
-from panel.chat.step import ChatStep, ChatSteps
+from panel.chat.step import ChatStep
+from panel.chat.steps import ChatSteps
 from panel.chat.utils import avatar_lookup
 from panel.layout import Column, Row
 from panel.pane.image import Image
@@ -190,12 +191,28 @@ class TestChatFeed:
         assert chat_feed.objects[1] is new_entry
         assert chat_feed.objects[1].object == "New message"
 
-    def test_stream_steps(self, chat_feed):
+    def test_create_steps(self, chat_feed):
         chat_step = ChatStep(title="Testing...")
-        chat_steps = chat_feed.stream_steps(objects=[chat_step])
+        chat_steps = chat_feed.create_steps(objects=[chat_step])
         assert isinstance(chat_steps, ChatSteps)
         assert chat_steps == chat_feed[0].object
         assert chat_steps[0] == chat_step
+
+    def test_attach_step(self, chat_feed):
+        chat_step = ChatStep(title="Testing...")
+        with chat_feed.create_steps(objects=[chat_step]) as chat_steps:
+            chat_feed.attach_step("Hello", title="Step 1")
+            chat_feed.attach_step("Hey", title="Step 2")
+        assert len(chat_steps) == 3
+        assert chat_steps[0].objects == []
+        assert chat_steps[1].objects[0].object == "Hello"
+        assert chat_steps[1].objects[0].css_classes == ["step-message"]
+        assert chat_steps[2].objects[0].object == "Hey"
+        assert chat_steps[2].objects[0].css_classes == ["step-message"]
+
+        assert chat_steps[0].title == "Testing..."
+        assert chat_steps[1].title == "Step 1"
+        assert chat_steps[2].title == "Step 2"
 
     def test_stream_with_user_avatar(self, chat_feed):
         user = "Bob"

@@ -5,7 +5,7 @@ from typing import ClassVar, Mapping
 import param
 
 from ..io.resources import CDN_DIST
-from ..layout import Card, Column, Row
+from ..layout import Card, Row
 from ..pane.image import ImageBase
 from ..pane.markup import HTML, HTMLBasePane, Markdown
 from ..pane.placeholder import Placeholder
@@ -17,7 +17,7 @@ from .utils import (
 DEFAULT_STATUS_AVATARS = {
     "pending": BooleanStatus(value=False, margin=0, color="primary"),
     "running": BooleanStatus(value=True, margin=0, color="warning"),
-    "completed": BooleanStatus(value=True, margin=0, color="success"),
+    "success": BooleanStatus(value=True, margin=0, color="success"),
     "failed": BooleanStatus(value=True, margin=0, color="danger"),
 }
 
@@ -27,12 +27,12 @@ class ChatStep(Card):
         default=False,
         doc="Whether the contents of the Card are collapsed.")
 
-    collapse_on_completed = param.Boolean(
+    collapsed_on_success = param.Boolean(
         default=True,
         doc="Whether to collapse the card on completion.")
 
-    completed_title = param.String(default=None, doc="""
-        Title to display when status is completed; if not provided and collapse_on_completed
+    success_title = param.String(default=None, doc="""
+        Title to display when status is success; if not provided and collapsed_on_success
         uses the last object's string.""")
 
     default_avatars = param.Dict(
@@ -64,19 +64,19 @@ class ChatStep(Card):
     )
 
     status = param.Selector(
-        default="pending", objects=["pending", "running", "completed", "failed"])
+        default="pending", objects=["pending", "running", "success", "failed"])
 
     title = param.String(default="", constant=True, doc="""
         The title of the chat step. Will redirect to default_title on init.
         After, it cannot be set directly; instead use the *_title params.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        "collapse_on_completed": None,
+        "collapsed_on_success": None,
         "default_avatars": None,
         "default_title": None,
         "pending_title": None,
         "running_title": None,
-        "completed_title": None,
+        "success_title": None,
         "failed_title": None,
         "status": None,
         **Card._rename,
@@ -117,7 +117,7 @@ class ChatStep(Card):
                 # convert to str to wrap repr in apostrophes
                 self.failed_title = f"Failed due to: {str(exc_value)!r}"
             raise exc_value
-        self.status = "completed"
+        self.status = "success"
 
     @param.depends("status", watch=True)
     def _render_avatar(self):
@@ -138,46 +138,28 @@ class ChatStep(Card):
         "default_title",
         "pending_title",
         "running_title",
-        "completed_title",
+        "success_title",
         "failed_title",
         watch=True,
         on_init=True,
     )
     def _update_title_on_status(self):
+        if self.status == "pending" and self.pending_title is not None:
+            title = self.pending_title
+        elif self.status == "running" and self.running_title is not None:
+            title = self.running_title
+        elif self.status == "success" and self.success_title is not None:
+            title = self.success_title
+        elif self.status == "failed" and self.failed_title is not None:
+            title = self.failed_title
+        else:
+            title = self.default_title
         with param.edit_constant(self):
-            if self.status == "pending" and self.pending_title is not None:
-                self.title = self.pending_title
+            self.title = title
 
-            elif self.status == "running" and self.running_title is not None:
-                self.title = self.running_title
-
-            elif self.status == "completed":
-                if self.completed_title:
-                    self.title = self.completed_title
-                elif self.objects and self.collapse_on_completed:
-                    obj = self.objects[-1]
-                    for _ in range(100):
-                        if hasattr(obj, "objects"):
-                            obj = obj.objects[-1]
-                        else:
-                            break
-
-                    if hasattr(obj, "object"):
-                        obj = obj.object
-
-                    if isinstance(obj, str):
-                        self.title = obj
-                else:
-                    self.title = self.default_title
-            elif self.status == "failed" and self.failed_title is not None:
-                self.title = self.failed_title
-
-            else:
-                self.title = self.default_title
-
-    @param.depends("status", "collapse_on_completed", watch=True)
+    @param.depends("status", "collapsed_on_success", watch=True)
     def _update_collapsed(self):
-        if self.status == "completed" and self.collapse_on_completed:
+        if self.status == "success" and self.collapsed_on_success:
             self.collapsed = True
 
     def stream_title(self, token: str, replace: bool = False):
@@ -249,94 +231,3 @@ class ChatStep(Card):
 
     def __str__(self):
         return self.serialize()
-
-
-class ChatSteps(Column):
-
-
-    step_params = param.Dict(
-        default={},
-        doc="Parameters to pass to the ChatStep constructor.",
-    )
-
-    active = param.Boolean(
-        default=True,
-        doc="Whether additional steps can be automatically appended to the ChatSteps."
-    )
-
-    css_classes = param.List(
-        default=["chat-steps"],
-        doc="CSS classes to apply to the component.",
-    )
-
-    _rename = {"step_params": None, "active": None, **Column._rename}
-
-    _stylesheets = [f"{CDN_DIST}css/chat_steps.css"]
-
-    @param.depends("objects", watch=True, on_init=True)
-    def _validate_steps(self):
-        for step in self.objects:
-            if not isinstance(step, ChatStep):
-                raise ValueError(f"Expected ChatStep, got {step.__class__.__name__}")
-
-    def create_step(self, objects: str | list[str] | None = None, **step_params):
-        """
-        Create a new ChatStep and append it to the ChatSteps.
-
-        Arguments
-        ---------
-        objects : str | list[str] | None
-            The initial object or objects to append to the ChatStep.
-        **step_params : dict
-            Parameters to pass to the ChatStep constructor.
-
-        Returns
-        -------
-        ChatStep
-            The newly created ChatStep.
-        """
-        merged_step_params = self.step_params.copy()
-        if objects is not None:
-            if not isinstance(objects, list):
-                objects = [objects]
-            objects = [Markdown(obj, css_classes=["step-message"]) if isinstance(obj, str) else obj for obj in objects]
-            step_params["objects"] = objects
-        merged_step_params.update(step_params)
-        step = ChatStep(**merged_step_params)
-        self.append(step)
-        return step
-
-    def serialize(
-        self,
-        prefix_with_viewable_label: bool = True,
-        prefix_with_container_label: bool = True,
-    ) -> str:
-        """
-        Format the objects to a string.
-
-        Arguments
-        ---------
-        prefix_with_viewable_label : bool
-            Whether to include the name of the Viewable, or type
-            of the viewable if no name is specified.
-        prefix_with_container_label : bool
-            Whether to include the name of the container, or type
-            of the container if no name is specified.
-
-        Returns
-        -------
-        str
-            The serialized string.
-        """
-        return serialize_recursively(
-            self,
-            prefix_with_viewable_label=prefix_with_viewable_label,
-            prefix_with_container_label=prefix_with_container_label,
-        )
-
-    def __enter__(self):
-        self.active = True
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.active = False
