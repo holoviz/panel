@@ -32,12 +32,11 @@ class ChatStep(Card):
         doc="Whether to collapse the card on completion.")
 
     success_title = param.String(default=None, doc="""
-        Title to display when status is success; if not provided and collapsed_on_success
-        uses the last object's string.""")
+        Title to display when status is success.""")
 
     default_avatars = param.Dict(
         default=DEFAULT_STATUS_AVATARS,
-        doc="Mapping from status to default status avatar")
+        doc="Mapping from status to default status avatar.")
 
     default_title = param.String(
         default="",
@@ -119,11 +118,18 @@ class ChatStep(Card):
             raise exc_value
         self.status = "success"
 
-    @param.depends("status", watch=True)
+    @param.depends("status", "default_avatars", watch=True)
     def _render_avatar(self):
         """
         Render the avatar pane as some HTML text or Image pane.
         """
+        extra_keys = set(self.default_avatars.keys()) - set(DEFAULT_STATUS_AVATARS.keys())
+        if extra_keys:
+            raise ValueError(
+                f"Invalid status avatars. Must be one of 'pending', 'running', 'success', 'failed'; "
+                f"got {extra_keys}."
+            )
+
         avatar = avatar_lookup(
             self.status,
             None,

@@ -36,7 +36,7 @@ class ChatSteps(Column):
             if not isinstance(step, ChatStep):
                 raise ValueError(f"Expected ChatStep, got {step.__class__.__name__}")
 
-    def create_step(self, objects: str | list[str] | None = None, **step_params):
+    def attach_step(self, objects: str | list[str] | None = None, **step_params):
         """
         Create a new ChatStep and append it to the ChatSteps.
 
@@ -52,6 +52,11 @@ class ChatSteps(Column):
         ChatStep
             The newly created ChatStep.
         """
+        if not self.active:
+            raise ValueError(
+                "Cannot attach a step when the ChatSteps is not active."
+            )
+
         merged_step_params = self.step_params.copy()
         if objects is not None:
             if not isinstance(objects, list):

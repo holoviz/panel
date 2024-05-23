@@ -728,7 +728,7 @@ class ChatFeed(ListPanel):
             if isinstance(obj, ChatSteps):
                 if not obj.active:
                     raise ValueError("Cannot stream a step to an inactive ChatSteps component")
-                return obj.create_step(objects, **step_params)
+                return obj.attach_step(objects, **step_params)
         else:
             raise ValueError("No active ChatSteps component found")
 
