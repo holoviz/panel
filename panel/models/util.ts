@@ -138,7 +138,6 @@ export function formatError(error: SyntaxError, code: string): string {
 
 export function find_attributes(text: string, obj: string, ignored: string[]) {
   const regex = RegExp(`\\b${obj}\\.([a-zA-Z_][a-zA-Z0-9_]*)\\b`, 'g')
-  console.log(regex)
   const matches = []
   let match, attr
 
