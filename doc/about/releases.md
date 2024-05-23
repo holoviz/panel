@@ -4,7 +4,7 @@ See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual su
 
 ## Version 1.4.3
 
-Date: 2024-05-21
+Date: 2024-05-23
 
 This patch release is likely the last in the 1.4.x series. The most important fixes in this release are fixes to ensure keyboard shortcuts do not get triggered inside Panel components for for recent versions of JupyterLab, fixes for OAuth token refreshes, and various documentation fixes. The release also includes a small number of enhancements, including improved UX for the `FileSelector`. Many thanks to the many contributors to this release including @jrycw, @Coderambling, @cdeil, and the maintainers @Hoxbro, @MarcSkovMadsen, @ahuang11, @maximlt and @philippjfr.
 
@@ -38,6 +38,7 @@ This patch release is likely the last in the 1.4.x series. The most important fi
 - Add redirects for old documentation pages ([#6833](https://github.com/holoviz/panel/pull/6833))
 - Remove Google Analytics ([#6836](https://github.com/holoviz/panel/pull/6836))
 - Various documentation fixes ([#6829](https://github.com/holoviz/panel/pull/6829))
+- Fix link in gallery index ([#6858](https://github.com/holoviz/panel/pull/6858))
 
 ## Version 1.4.2
 
