@@ -50,7 +50,9 @@ from .util import (
     HTML_SANITIZER, classproperty, edit_readonly, escape, updating,
 )
 from .util.checks import import_available
-from .viewable import Layoutable, Renderable, Viewable
+from .viewable import (
+    Child, Children, Layoutable, Renderable, Viewable,
+)
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -576,7 +578,8 @@ class Reactive(Syncable, Viewable):
 
     def __init__(self, refs=None, **params):
         for name, pobj in self.param.objects('existing').items():
-            if name not in self._param__private.explicit_no_refs:
+            if (name not in self._param__private.explicit_no_refs and
+                not isinstance(pobj, (Child, Children))):
                 pobj.allow_refs = True
         if refs is not None:
             self._refs = refs
