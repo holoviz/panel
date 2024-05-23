@@ -253,12 +253,25 @@ class ChatStep(Card):
 
 class ChatSteps(Column):
 
-    _stylesheets = [f"{CDN_DIST}css/chat_steps.css"]
+
+    step_params = param.Dict(
+        default={},
+        doc="Parameters to pass to the ChatStep constructor.",
+    )
+
+    active = param.Boolean(
+        default=True,
+        doc="Whether additional steps can be automatically appended to the ChatSteps."
+    )
 
     css_classes = param.List(
         default=["chat-steps"],
         doc="CSS classes to apply to the component.",
     )
+
+    _rename = {"step_params": None, "active": None, **Column._rename}
+
+    _stylesheets = [f"{CDN_DIST}css/chat_steps.css"]
 
     @param.depends("objects", watch=True, on_init=True)
     def _validate_steps(self):
@@ -266,12 +279,14 @@ class ChatSteps(Column):
             if not isinstance(step, ChatStep):
                 raise ValueError(f"Expected ChatStep, got {step.__class__.__name__}")
 
-    def append_step(self, objects: str | list[str] | None = None, **step_params):
+    def create_step(self, objects: str | list[str] | None = None, **step_params):
         """
         Create a new ChatStep and append it to the ChatSteps.
 
         Arguments
         ---------
+        objects : str | list[str] | None
+            The initial object or objects to append to the ChatStep.
         **step_params : dict
             Parameters to pass to the ChatStep constructor.
 
@@ -280,11 +295,14 @@ class ChatSteps(Column):
         ChatStep
             The newly created ChatStep.
         """
+        merged_step_params = self.step_params.copy()
         if objects is not None:
             if not isinstance(objects, list):
                 objects = [objects]
-                step_params["objects"] = objects
-        step = ChatStep(**step_params)
+            objects = [Markdown(obj, css_classes=["step-message"]) if isinstance(obj, str) else obj for obj in objects]
+            step_params["objects"] = objects
+        merged_step_params.update(step_params)
+        step = ChatStep(**merged_step_params)
         self.append(step)
         return step
 
@@ -315,3 +333,10 @@ class ChatSteps(Column):
             prefix_with_viewable_label=prefix_with_viewable_label,
             prefix_with_container_label=prefix_with_container_label,
         )
+
+    def __enter__(self):
+        self.active = True
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.active = False

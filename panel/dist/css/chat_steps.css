@@ -1,4 +1,4 @@
-.chat-steps {
+:host {
   padding-block: 0px;
-  padding-inline: 15px;
+  max-width: calc(100% - 30px);
 }

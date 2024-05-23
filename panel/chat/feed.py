@@ -682,13 +682,24 @@ class ChatFeed(ListPanel):
         self.param.trigger("_post_hook_trigger")
         return message
 
-    def stream_steps(self, **params):
+    def stream_steps(
+        self,
+        user: str | None = None,
+        avatar: str | bytes | BytesIO | None = None,
+        **params
+    ):
         """
         Creates a new ChatSteps component and streams it.
 
         Arguments
         ---------
-        message_params : dict
+        user : str | None
+            The user to stream as; overrides the message's user if provided.
+            Will default to the user parameter.
+        avatar : str | bytes | BytesIO | None
+            The avatar to use; overrides the message's avatar if provided.
+            Will default to the avatar parameter.
+        params : dict
             Parameters to pass to the ChatSteps.
 
         Returns
@@ -696,8 +707,28 @@ class ChatFeed(ListPanel):
         The ChatSteps that was created.
         """
         steps = ChatSteps(**params)
-        self.stream(steps)
+        self.stream(steps, user=user, avatar=avatar)
         return steps
+
+    def stream_step(self, objects: str | list[str] | None = None, **step_params):
+        """
+        Streams a step to the latest, active ChatSteps component.
+
+        Arguments
+        ---------
+        objects : str | list(str) | None
+            The objects to stream to the step.
+        step_params : dict
+            Parameters to pass to the ChatStep.
+        """
+        for message in reversed(self._chat_log.objects):
+            obj = message.object
+            if isinstance(obj, ChatSteps):
+                if not obj.active:
+                    raise ValueError("Cannot stream a step to an inactive ChatSteps component")
+                return obj.create_step(objects, **step_params)
+        else:
+            raise ValueError("No active ChatSteps component found")
 
     def respond(self):
         """
