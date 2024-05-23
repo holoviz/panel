@@ -146,7 +146,7 @@ Game of Life simulation rendered on a 3D plane using Deck.gl.
 
 Use the hvPlot explorer to interactive visualize your dataset.
 +++
-[See source](penguin_crossfilter)
+[See source](hvplot_explorer)
 :::
 
 :::{grid-item-card} Iris KMeans Clustering
