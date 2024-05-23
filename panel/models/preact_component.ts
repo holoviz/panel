@@ -66,7 +66,7 @@ export class PreactComponentView extends ReactiveESMView {
 
   protected override _render_code(): string {
     const rerender_vars = find_attributes(
-      this.rendered || "", "data", ["send_event", "watch"]
+      this.rendered || "", "data", ["send_event", "watch"],
     )
     const code = `
 const _view = Bokeh.index.find_one_by_id('${this.model.id}')

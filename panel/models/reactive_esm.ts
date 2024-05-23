@@ -148,7 +148,7 @@ export class ReactiveESMView extends HTMLBoxView {
 
   protected _render_code(): string {
     const rerender_vars = find_attributes(
-      this.rendered || "", "children", []
+      this.rendered || "", "children", [],
     )
     return `
 const _view = Bokeh.index.find_one_by_id('${this.model.id}')
@@ -216,8 +216,8 @@ _view.model.data.watch(() => _view.render_esm(), ${JSON.stringify(rerender_vars)
       models = isArray(models) ? models : [models]
       for (const model of models) {
         if (model === child_view.model) {
-	  return child
-	}
+          return child
+        }
       }
     }
     return null
@@ -237,7 +237,7 @@ _view.model.data.watch(() => _view.render_esm(), ${JSON.stringify(rerender_vars)
       }
       const child = this._lookup_child(child_view)
       if (!child) {
-	continue
+        continue
       } else if (new_views.has(child)) {
         new_views.get(child).push(child_view)
       } else {
