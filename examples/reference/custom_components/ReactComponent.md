@@ -2,7 +2,7 @@
 
 `ReactComponent` simplifies the creation of custom Panel components using [React](https://react.dev/).
 
-```python
+```pyodide
 import panel as pn
 import param
 
@@ -52,14 +52,16 @@ CounterButton().servable()
 
 The `_esm` attribute must export the `render` function. It accepts the following parameters:
 
-- **`state`**: Manages non-Viewable Parameter state similar to React's [`useState`](https://www.w3schools.com/react/react_usestate.asp) hook. The `render` function is rerun if a Parameter changes.
-- **`data`**: Represents the Viewable Parameters of the component and provides methods to `.watch` for changes and `.send_event` back to Python.
-- **`children`**: Represents the Viewable Parameters of the component. The `render` function is rerun if a child changes.
+- **`state`**: Manages non-`Viewable` Parameter state similar to React's [`useState`](https://www.w3schools.com/react/react_usestate.asp) hook.
+- **`data`**: Represents the non-`Viewable` Parameters of the component and provides methods to `.watch` for changes and `.send_event` back to Python.
+- **`children`**: Represents the `Viewable` Parameters of the component.
 - **`model`**: The Bokeh model.
 - **`view`**: The Bokeh view.
 - **`el`**: The HTML element that the component will be rendered into.
 
 Any HTML element returned from the `render` function will be appended to the HTML element (`el`) of the component.
+
+The `render` function is rerun if a `state` or `children` value changes.
 
 #### Other Lifecycle Methods
 
@@ -74,7 +76,7 @@ DUMMY CONTENT. PLEASE HELP ME DESCRIBE THIS.
 
 Include CSS within the `_stylesheets` attribute to style the component. The CSS is injected directly into the component's HTML.
 
-```python
+```pyodide
 import panel as pn
 import param
 
@@ -121,9 +123,9 @@ CounterButton().servable()
 
 ## Send Events from JavaScript to Python
 
-Events from JavaScript can be sent to Python using the `data.send_event` method. Define a handler in Python to manage these events.
+Events from JavaScript can be sent to Python using the `data.send_event` method. Define a handler in Python to manage these events. A *handler* is a method on the form `_handle_<name-of-event>(self, event)`:
 
-```python
+```pyodide
 import panel as pn
 import param
 
@@ -131,7 +133,7 @@ from panel.custom import ReactComponent
 
 pn.extension()
 
-class ButtonEventExample(ReactComponent):
+class EventExample(ReactComponent):
 
     value = param.Parameter()
 
@@ -152,7 +154,7 @@ class ButtonEventExample(ReactComponent):
     def _handle_click(self, event):
        self.value = str(event.__dict__)
 
-button = ButtonEventExample()
+button = EventExample()
 pn.Column(
     button, pn.widgets.TextAreaInput(value=button.param.value, height=200),
 ).servable()
@@ -160,7 +162,7 @@ pn.Column(
 
 You can also define and send your own custom events:
 
-```python
+```pyodide
 import panel as pn
 import param
 
@@ -168,7 +170,7 @@ from panel.custom import ReactComponent
 
 pn.extension()
 
-class CustomEventExample(ReactComponent):
+class EventExample(ReactComponent):
 
     value = param.Parameter()
 
@@ -181,7 +183,7 @@ class CustomEventExample(ReactComponent):
 
     function App(props) {
         return (
-            <button onClick={e => send_event(props.data)}>
+            <button onClick={e => send_event(props.data) }>
             Click me
             </button>
         );
@@ -192,10 +194,10 @@ class CustomEventExample(ReactComponent):
     }
     """
 
-def _handle_click(self, event):
-    self.value = str(event.__dict__)
+    def _handle_click(self, event):
+       self.value = str(event.__dict__)
 
-button = CustomEventExample()
+button = EventExample()
 pn.Column(
     button, pn.widgets.TextAreaInput(value=button.param.value, height=200),
 ).servable()
@@ -205,7 +207,7 @@ pn.Column(
 
 JavaScript dependencies can be directly imported via URLs, such as those from [`esm.sh`](https://esm.sh/).
 
-```python
+```pyodide
 import panel as pn
 
 from panel.custom import ReactComponent
@@ -231,7 +233,7 @@ ConfettiButton().servable()
 
 Use the `_import_map` attribute for more concise module references.
 
-```python
+```pyodide
 import panel as pn
 
 from panel.custom import ReactComponent
@@ -260,7 +262,7 @@ class ConfettiButton(ReactComponent):
 ConfettiButton().servable()
 ```
 
-See [import map](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap) for more info.
+See [import map](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap) for more info about the import map format.
 
 ## External Files
 
@@ -327,17 +329,16 @@ You can now edit the JSX or CSS file, and the changes will be automatically relo
 - Try changing `count is {value}` to `COUNT IS {value}` and observe the update.
 - Try changing the background color from `#0072B5` to `#008080`.
 
-## Displaying A Single Panel Component
+## Displaying A Single Child
 
-You can display Panel components by defining a `Child` parameter.
+You can display Panel components (`Viewable`s) by defining a `Child` parameter.
 
 Lets start with the simplest example
 
-```python
+```pyodide
 import panel as pn
-import param
 
-from panel.custom import ReactComponent
+from panel.custom import Child, ReactComponent
 
 class Example(ReactComponent):
 
@@ -355,11 +356,16 @@ class Example(ReactComponent):
 Example(child=pn.panel("A **Markdown** pane!")).servable()
 ```
 
+If you provide a non-`Viewable` child it will automatically be converted to a `Viewable` by `pn.panel`:
+
+```pyodide
+Example(child="A **Markdown** pane!").servable()
+```
+
 If you want to allow a certain type of Panel components only you can specify the specific type in the `class_` argument.
 
-```python
+```pyodide
 import panel as pn
-import param
 
 from panel.custom import Child, ReactComponent
 
@@ -378,8 +384,7 @@ Example(child=pn.panel("A **Markdown** pane!")).servable()
 
 The `class_` argument also supports a tuple of types:
 
-```python
-import param
+```pyodide
 import panel as pn
 
 from panel.custom import Child, ReactComponent
@@ -397,14 +402,12 @@ class Example(ReactComponent):
 Example(child=pn.panel("A **Markdown** pane!")).servable()
 ```
 
-## Displaying a List of Panel Components
+## Displaying a List of Children
 
-You can also display a `List` of `Viewable` `objects` using the `Children` parameter type.
+You can also display a `List` of `Viewable` objects using the `Children` parameter type:
 
-
-```python
+```pyodide
 import panel as pn
-import param
 
 from panel.custom import Children, ReactComponent
 
@@ -419,11 +422,13 @@ class Example(ReactComponent):
 
 
 Example(
-    objects=[pn.panel("A **Markdown** pane!"), pn.widgets.Button(name="Click me!")]
+    objects=[pn.panel("A **Markdown** pane!"), pn.widgets.Button(name="Click me!"), {"text": "I'm shown as a JSON Pane"}]
 ).servable()
 ```
 
 :::note
+
 You can change the `item_type` to a specific subtype of `Viewable` or a tuple of
 `Viewable` subtypes.
+
 :::
