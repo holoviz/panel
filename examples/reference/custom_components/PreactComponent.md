@@ -2,7 +2,7 @@
 
 `PreactComponent` simplifies the creation of custom Panel components using [Preact](https://preactjs.com/).
 
-```python
+```pyodide
 import panel as pn
 import param
 
@@ -29,9 +29,9 @@ CounterButton().servable()
 
 :::{note}
 
-`ReactComponent` extends the [`JSComponent`](JSComponent.md) class, which allows you to create custom Panel components using JavaScript.
+`PreactComponent` extends the [`JSComponent`](JSComponent.md) class, which allows you to create custom Panel components using JavaScript.
 
-`PreactComponent` bears similarities to [`AnyWidget`](https://anywidget.dev/), but it is specifically optimized for use with Panel and Preact.
+`PreactComponent` bears similarities to [`AnyWidget`](https://anywidget.dev/), but it is specifically optimized for use with Panel and [Preact](https://preactjs.com/).
 
 :::
 
@@ -40,21 +40,23 @@ CounterButton().servable()
 ### PreactComponent Attributes
 
 - **`_esm`** (str | PurePath): This attribute accepts either a string or a path that points to an  [ECMAScript module](https://nodejs.org/api/esm.html#modules-ecmascript-modules). The ECMAScript module should export a `render` function which returns the HTML element to display. In a development environment such as a notebook or when using `--autoreload`, the module will automatically reload upon saving changes.
-- **`_import_map`** (dict): This dictionary defines an [import map](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap), allowing you to customize how module specifiers are resolved.
-- **`_stylesheets`** (optional list of strings): This optional attribute accepts a list of CSS strings or paths to CSS files. It supports automatic reloading in development environments.
+- **`_import_map`** (dict | None): This optional dictionary defines an [import map](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap), allowing you to customize how module specifiers are resolved.
+- **`_stylesheets`** (List[str | PurePath] | None): This optional attribute accepts a list of CSS strings or paths to CSS files. It supports automatic reloading in development environments.
 
 #### `render` Function
 
 The `_esm` attribute must export the `render` function. It accepts the following parameters:
 
 - **`data`**: Represents the non-Viewable Parameters of the component and provides methods to `.watch` for changes and `.send_event` back to Python.
-- **`children`**: Represents the Viewable Parameters of the component and provides methods to `.watch` for changes. The `render` function is rerun if a child changes.
+- **`children`**: Represents the Viewable Parameters of the component.
 - **`model`**: The Bokeh model.
 - **`view`**: The Bokeh view.
 - **`el`**: The HTML element that the component will be rendered into.
-- **`html`**: The Preact `html` function which enables you to write JSX-like syntax in plain JavaScript. See [`htm`](https://github.com/developit/htm). The `html` function is rerun if any `data` parameter changes.
+- **`html`**: The Preact `html` function which enables you to write JSX-like syntax in plain JavaScript. See [`htm`](https://github.com/developit/htm).
 
 Any HTML element returned from the `render` function will be appended to the HTML element (`el`) of the component.
+
+The `render` function is rerun if a `data` or `children` value changes.
 
 #### Other Lifecycle Methods
 
@@ -69,7 +71,7 @@ DUMMY CONTENT. PLEASE HELP ME DESCRIBE THIS.
 
 Include CSS within the `_stylesheets` attribute to style the component. The CSS is injected directly into the component's HTML.
 
-```python
+```pyodide
 import panel as pn
 import param
 
@@ -114,7 +116,7 @@ CounterButton().servable()
 
 Events from JavaScript can be sent to Python using the `data.send_event` method. Define a handler in Python to manage these events.
 
-```python
+```pyodide
 import panel as pn
 import param
 
@@ -128,10 +130,11 @@ class EventExample(PreactComponent):
 
     _esm = """
     export function render({ data }) {
-        const btn = document.createElement('button')
-        btn.innerHTML = `Click Me`
-        btn.onclick = (event) => data.send_event('click', event)
-        return btn
+        return html`
+            <button onClick=${(e) => data.send_event('click', e)}>
+                Click me
+            </button>
+        `;
     }
     """
 
@@ -146,7 +149,9 @@ pn.Column(
 
 You can also define and send your own custom events:
 
-```python
+```pyodide
+import datetime
+
 import panel as pn
 import param
 
@@ -154,9 +159,9 @@ from panel.custom import PreactComponent
 
 pn.extension()
 
-class CustomEventExample(PreactComponent):
+class EventExample(PreactComponent):
 
-    value = param.Parameter()
+    value = param.String()
 
     _esm = """
     function send_event(data) {
@@ -165,25 +170,23 @@ class CustomEventExample(PreactComponent):
         data.send_event('click', custom_event);
     }
 
-    function App(props) {
+    export function render({ data }) {
         return html`
-            <button onClick=${() => send_event(props.data)}>
-                Click me
+            <button onClick=${() => send_event(data)}>
+                click me
             </button>
         `;
     }
-
-    export function render({ data }) {
-        return html`<App data=${data} />`
-    }
     """
 
-def _handle_click(self, event):
-    self.value = str(event.__dict__)
+    def _handle_click(self, event):
+        unix_timestamp = event.data["detail"]/1000
+        python_datetime = datetime.datetime.fromtimestamp(unix_timestamp)
+        self.value = str(python_datetime)
 
-button = CustomEventExample()
+button = EventExample()
 pn.Column(
-    button, pn.widgets.TextAreaInput(value=button.param.value, height=200),
+    button, button.param.value,
 ).servable()
 ```
 
@@ -191,7 +194,7 @@ pn.Column(
 
 JavaScript dependencies can be directly imported via URLs, such as those from [`esm.sh`](https://esm.sh/).
 
-```python
+```pyodide
 import panel as pn
 
 from panel.custom import PreactComponent
@@ -216,7 +219,7 @@ ConfettiButton().servable()
 
 Use the `_importmap` attribute for more concise module references.
 
-```python
+```pyodide
 import panel as pn
 
 from panel.custom import PreactComponent
@@ -305,17 +308,16 @@ You can now edit the JavaScript or CSS file, and the changes will be automatical
 - Try changing the `innerHTML` from `count is ${data.value}` to `COUNT IS ${data.value}` and observe the update.
 - Try changing the background color from `#0072B5` to `#008080`.
 
-## Displaying A Single Panel Component
+## Displaying A Single Child
 
 You can display Panel components by defining a `Child` parameter.
 
 Lets start with the simplest example:
 
-```python
+```pyodide
 import panel as pn
-import param
 
-from panel.custom Child, PreactComponent
+from panel.custom import Child, PreactComponent
 
 class Example(PreactComponent):
 
@@ -330,22 +332,26 @@ class Example(PreactComponent):
 Example(child=pn.panel("A **Markdown** pane!")).servable()
 ```
 
+If you provide a non-`Viewable` child it will automatically be converted to a `Viewable` by `pn.panel`:
+
+```pyodide
+Example(child="A **Markdown** pane!").servable()
+```
+
 If you want to allow a certain type of Panel components only you can specify the specific type in the `class_` argument.
 
-```python
+```pyodide
 import panel as pn
-import param
 
-from panel.custom PreactComponent
-
+from panel.custom import Child, PreactComponent
 
 class Example(PreactComponent):
 
-    child = Child(class_=pn.viewable.Markdown)
+    child = Child(class_=pn.pane.Markdown)
 
     _esm = """
     export function render({ html, children }) {
-      return html`<button>${children.child}></button>`
+      return html`<button>${children.child}</button>`
     }
     """
 
@@ -354,11 +360,10 @@ Example(child=pn.panel("A **Markdown** pane!")).servable()
 
 The `class_` argument also supports a tuple of types:
 
-```python
-import param
+```pyodide
 import panel as pn
 
-from panel.custom Child, PreactComponent
+from panel.custom import Child, PreactComponent
 
 
 class Example(PreactComponent):
@@ -367,22 +372,21 @@ class Example(PreactComponent):
 
     _esm = """
     export function render({ children }) {
-      return html`<button>${children.child}></button>`
+      return html`<button>${children.child}</button>`
     }
     """
 
 Example(child=pn.panel("A **Markdown** pane!")).servable()
 ```
 
-## Displaying a List of Panel Components
+## Displaying a List of Children
 
-You can also display a `List` of `Viewable` `objects` using the `Children` parameter type.
+You can also display a `List` of `Viewable` objects using the `Children` parameter type:
 
-```python
-import param
+```pyodide
 import panel as pn
 
-from panel.custom Children, PreactComponent
+from panel.custom import Children, PreactComponent
 
 
 class Example(PreactComponent):
@@ -391,17 +395,18 @@ class Example(PreactComponent):
 
     _esm = """
     export function render({ children }) {
-      return html`<button>${children.children}></button>`
+      return html`<button>${children.objects}</button>`
     }
     """
 
 
 Example(
-    objects=[pn.panel("A **Markdown** pane!"), pn.widgets.Button(name="Click me!")]
+    objects=[pn.panel("A **Markdown** pane!"), pn.widgets.Button(name="Click me!"), {"text": "I'm shown as a JSON Pane"}]
 ).servable()
 ```
 
 :::note
+
 You can change the `item_type` to a specific subtype of `Viewable` or a tuple of
 `Viewable` subtypes.
 
