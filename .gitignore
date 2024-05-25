@@ -161,3 +161,4 @@ app_streamlit.py
 pixi.lock
 panel/_version.py
 .uicoveragerc
+mario_button.*

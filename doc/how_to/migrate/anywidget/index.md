@@ -39,7 +39,15 @@ Migrate the functions below:
 | `initialize`| Has access to `model`.<br>Can return *end of life* callback. | NA            | Not Available                                                    |
 | `render`    | Has access to `model` and `el`.<br>Can return *end of life* callback. | `render`     | Has access to `data`, `children`, `model`, `el`, and `view`.<br>Can return an `html` element to be appended to `el`. |
 
-In the `_esm` script, migrate the `default` export required by `AnyWidget` to one or more named exports required by Panel.
+In the `_esm` script, migrate the `default` export required by `AnyWidget` to one or more *named exports* required by Panel.
+
+Please note that the `AnyWidget` `model` is split across Panels `data`, `children` and `model`. Their methods are also different reflecting differences between Traitlets and Panel/ Bokeh JavaScript models:
+
+| AnyWidget | Panel/ Bokeh |
+| --------- | ----- |
+| `model.get('some_value')` | `data.some_value`|
+| `model.save('some_value', 1)`<br>`model.save_changes()` | `data.some_value=1`|
+| `model.on("change:some_value", () => {...})` | `data.watch(() => {...}), 'some_value')` |
 
 ### Migrate React Code
 

@@ -47,6 +47,12 @@ CounterButton().servable()
 - **`_import_map`** (dict | None): This optional dictionary defines an [import map](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap), allowing you to customize how module specifiers are resolved.
 - **`_stylesheets`** (optional list of strings): This optional attribute accepts a list of CSS strings or paths to CSS files. It supports automatic reloading in development environments.
 
+:::note
+
+You may specify a path to a file as a string instead of a PurePath. The path should be specified relative to the file its specified in.
+
+:::
+
 #### `render` Function
 
 The `_esm` attribute must export the `render` function. It accepts the following parameters:
