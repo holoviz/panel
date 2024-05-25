@@ -39,7 +39,7 @@ Migrate the functions below:
 | `initialize`| Has access to `model`.<br>Can return *end of life* callback. | NA            | Not Available                                                    |
 | `render`    | Has access to `model` and `el`.<br>Can return *end of life* callback. | `render`     | Has access to `data`, `children`, `model`, `el`, and `view`.<br>Can return an `html` element to be appended to `el`. |
 
-In the `_esm` script, migrate the `default` export used by `AnyWidget` to one or more named exports.
+In the `_esm` script, migrate the `default` export required by `AnyWidget` to one or more named exports required by Panel.
 
 ### Migrate React Code
 
@@ -66,6 +66,9 @@ import anywidget
 import traitlets
 
 class CounterWidget(anywidget.AnyWidget):
+
+    value = traitlets.Int(0).tag(sync=True)
+
     _esm = """
     function render({ model, el }) {
       let count = () => model.get("value");
@@ -82,7 +85,6 @@ class CounterWidget(anywidget.AnyWidget):
     }
     export default { render };
     """
-    value = traitlets.Int(0).tag(sync=True)
 ```
 
 #### Panel `CounterWidget`
@@ -101,8 +103,9 @@ class CounterButton(JSComponent):
 
     _esm = """
     export function render({ data }) {
+        let count = () => data.value;
         let btn = document.createElement("button");
-        btn.innerHTML = `count is ${data.value}`;
+        btn.innerHTML = `count is ${count()}`;
         btn.addEventListener("click", () => {
             data.value += 1
         });
@@ -116,6 +119,12 @@ class CounterButton(JSComponent):
 # Display the component
 CounterButton().servable()
 ```
+
+:::{note}
+
+With Panel you may replace the lines `export function render({ data })` and `return btn` with the lines `export function render({ data, el })` and `el.appendChild(btn)`, if you want to minimize the number of changes.
+
+:::
 
 ### React Counter Widget
 
