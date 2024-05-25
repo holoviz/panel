@@ -169,3 +169,16 @@ function chime({ gain, duration }) {
 ```
 
 :::
+
+## References
+
+### How-To
+
+- [Build Custom Components](../../how_to/custom_components/reactive_esm/reactive_esm_layout.md) TODO: change to index file
+- [Migrate from `AnyWidget`](../../how_to/migrate/anywidget/index.md)
+
+### Reference
+
+- [`JSComponent`](../../reference/panes/JSComponent.md)
+- [`ReactComponent`](../../reference/panes/ReactComponent.md)
+- [`PreactComponent`](../../reference/panes/PreactComponent.md)
