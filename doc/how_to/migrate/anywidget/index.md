@@ -3,7 +3,7 @@
 This guide addresses how to migrate from [AnyWidget](https://anywidget.dev/) to Panel custom components. You might want to do this to create a Panel-native component that works better with Panel or is further customized to your needs.
 
 :::note
-Note that AnyWidget widgets are [`ipywidgets`](https://ipywidgets.readthedocs.io/en/stable/) and can be used directly in Panel via the [`IpyWidgets`](../../reference/panes/IPyWidget.ipynb) pane.
+Note that AnyWidget widgets are [`ipywidgets`](https://ipywidgets.readthedocs.io/en/stable/) and can be used directly in Panel via the [`IpyWidgets`](../../reference/panes/IPyWidget.ipynb) pane without a migration.
 :::
 
 ## Migration Steps
