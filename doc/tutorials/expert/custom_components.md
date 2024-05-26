@@ -1,22 +1,28 @@
-# Custom Components
+# Creating a `MarioButton` with `JSComponent`
 
-In this example we will build a *Mario style button* with sounds and animations.
+In this tutorial we will build a *[Mario](https://mario.nintendo.com/) style button* with sounds and animations using the [`JSComponent`](../../reference/custom/JSComponent.md) feature in Panel. It aims to help you learn how to push the boundaries of what can be achieved with HoloViz Panel by creating advanced components using modern JavaScript and CSS technologies.
 
-![Mario chime button](https://private-user-images.githubusercontent.com/24403730/311924409-e8befac9-3ce5-4ffc-a9df-3b18479c809a.gif?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MTY2MTg1OTMsIm5iZiI6MTcxNjYxODI5MywicGF0aCI6Ii8yNDQwMzczMC8zMTE5MjQ0MDktZThiZWZhYzktM2NlNS00ZmZjLWE5ZGYtM2IxODQ3OWM4MDlhLmdpZj9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA1MjUlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwNTI1VDA2MjQ1M1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWFjOWEwNWE4YTI1MTAxNzA3ZWIyMWMyMmVhZThhOTE0ZjFjMDI3NWJjNTQ1YzI2YTZhNGM5M2UwMGY1NDBiMmYmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.VPirrIBLCuIi1OYsuGeHbEtIfV6bavkUHNUkyrvj1_Q)
+![Mario chime button](https://assets.holoviz.org/panel/tutorials/ipymario.gif)
 
-:::info
+This tutorial draws heavily on the great [`ipymario` tutorial](https://youtu.be/oZhyilx3gqI?si=dFPFiHua4TuuqCpu) by [Trevor Manzt](https://github.com/manzt).
 
-This example is heavily inspired by the great [video tutorial](https://youtu.be/oZhyilx3gqI?si=dFPFiHua4TuuqCpu) and [code repository](https://github.com/manzt/ipymario) by [Trevor Manzt](https://github.com/manzt), the creator of [AnyWidget](https://anywidget.dev/).
+## Overview
 
-We believe aligning with Trevors example will increase the shared knowledge and enable increased collaboration across the AnyWidget, Jupyter and Panel communities.
+We'll build a `MarioButton` that displays a pixelated Mario icon and plays a chime sound when clicked. The button will also have customizable parameters for gain, duration, size, and animation, showcasing the powerful capabilities of `JSComponent`.
 
-Kudos to Trevor 👍
+### Prerequisites
 
-:::
+Ensure you have HoloViz Panel installed:
 
-You can find the full code by expanding the dropdowns below.
+```sh
+pip install panel watchfiles
+```
 
-:::{dropdown} `mario_button.py`
+## Step 1: Define the `MarioButton` Component
+
+We'll start by defining the Python class for the `MarioButton` component, including its parameters and rendering logic.
+
+Create a file named `mario_button.py`:
 
 ```python
 import numpy as np
@@ -76,9 +82,17 @@ if pn.state.served:
     pn.FlexBox(settings, button).servable()
 ```
 
-:::
+### Explanation - Python
 
-:::{dropdown} `mario_button.js`
+- **`_esm`**: Specifies the path to the JavaScript file for the component.
+- **`_stylesheets`**: Specifies the path to the CSS file for styling the component.
+- **`_box`**: A parameter representing the pixel data for the Mario icon.
+- **`gain`, `duration`, `size`, `animate`**: Parameters for customizing the button's behavior.
+- **`pn.Param`**: Creates a Panel widget to control the parameters.
+
+## Step 2: Define the JavaScript for the `MarioButton`
+
+Create a file named `mario_button.js`:
 
 ```javascript
 /**
@@ -151,9 +165,14 @@ function chime({ gain, duration }) {
   }
 ```
 
-:::
+### Explanation - JavaScript
 
-:::{dropdown} `mario_button.css`
+- **`chime`**: A function that generates the Mario chime sound using the Web Audio API.
+- **`render`**: The main function that renders the button, sets up the canvas, handles click events, and manages parameter changes.
+
+## Step 3: Define the CSS for the `MarioButton`
+
+Create a file named `mario_button.css`:
 
 ```css
 .ipymario > canvas {
@@ -168,16 +187,45 @@ function chime({ gain, duration }) {
 }
 ```
 
-:::
+### Explanation - CSS
+
+- **`.ipymario > canvas`**: Styles the canvas to ensure the Mario icon remains pixelated.
+- **`@keyframes ipymario-bounce`**: Defines the bounce animation for the button when clicked.
+
+## Step 4: Serve the Application
+
+To serve the application, run the following command in your terminal:
+
+```sh
+panel serve mario_button.py --autoreload
+```
+
+This command will start a Panel server and automatically reload changes as you edit the files.
+
+The result should look like this:
+
+<video muted controls loop poster="https://assets.holoviz.org/panel/tutorials/mario_button.png" style="max-height: 400px; max-width: 100%;">
+    <source src="https://assets.holoviz.org/panel/tutorials/mario_button.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+</video>
+
+You'll have to turn on the sound to hear the chime.
+
+## Conclusion
+
+You've now created a custom `MarioButton` component using  [`JSComponent`](../../reference/panes/JSComponent.md) in HoloViz Panel. This button features a pixelated Mario icon, plays a chime sound when clicked, and has customizable parameters for gain, duration, size, and animation.
 
 ## References
 
-### How-To
+### Tutorials
 
-- [Build Custom Components](../../how_to/custom_components/reactive_esm/reactive_esm_layout.md) TODO: change to index file
-- [Migrate from `AnyWidget`](../../how_to/migrate/anywidget/index.md)
+- [Build Custom Components](../../how_to/custom_components/reactive_esm/reactive_esm_layout.md)
 
-### Reference
+### How-To Guides
+
+- [Convert `AnyWidget` widgets](../../how_to/migrate/anywidget/index.md)
+
+### Reference Guides
 
 - [`JSComponent`](../../reference/panes/JSComponent.md)
 - [`ReactComponent`](../../reference/panes/ReactComponent.md)

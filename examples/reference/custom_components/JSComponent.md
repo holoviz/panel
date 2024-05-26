@@ -429,3 +429,19 @@ You can change the `item_type` to a specific subtype of `Viewable` or a tuple of
 `Viewable` subtypes.
 
 :::
+
+## References
+
+### Tutorials
+
+- [Build Custom Components](../../../how_to/custom_components/reactive_esm/reactive_esm_layout.md)
+
+### How-To Guides
+
+- [Convert `AnyWidget` widgets](../../../how_to/migrate/anywidget/index.md)
+
+### Reference Guides
+
+- [`JSComponent`](../../../reference/panes/JSComponent.md)
+- [`ReactComponent`](../../../reference/panes/ReactComponent.md)
+- [`PreactComponent`](../../../reference/panes/PreactComponent.md)
