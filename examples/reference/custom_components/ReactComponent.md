@@ -44,7 +44,7 @@ CounterButton().servable()
 
 ### ReactComponent Attributes
 
-- **`_esm`** (str | PurePath): This attribute accepts either a string or a path that points to an [ECMAScript module](https://nodejs.org/api/esm.html#modules-ecmascript-modules). The ECMAScript module should export a `render` function which returns the HTML element to display. In a development environment such as a notebook or when using `--autoreload`, the module will automatically reload upon saving changes. You can use [`JSX`](https://react.dev/learn/writing-markup-with-jsx) and [`TypeScript`](https://www.typescriptlang.org/). The `_esm` script is transpiled on the fly using [Sucrase](https://sucrase.io/).
+- **`_esm`** (str | PurePath): This attribute accepts either a string or a path that points to an [ECMAScript module](https://nodejs.org/api/esm.html#modules-ecmascript-modules). The ECMAScript module should export a `render` function which returns the HTML element to display. In a development environment such as a notebook or when using `--autoreload`, the module will automatically reload upon saving changes. You can use [`JSX`](https://react.dev/learn/writing-markup-with-jsx) and [`TypeScript`](https://www.typescriptlang.org/). The `_esm` script is transpiled on the fly using [Sucrase](https://sucrase.io/). The global namespace contains a `React` object that provides access to React hooks.
 - **`_import_map`** (dict | None): This optional dictionary defines an [import map](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap), allowing you to customize how module specifiers are resolved.
 - **`_stylesheets`** (List[str | PurePath] | None): This optional attribute accepts a list of CSS strings or paths to CSS files. It supports automatic reloading in development environments.
 
@@ -442,6 +442,40 @@ You can change the `item_type` to a specific subtype of `Viewable` or a tuple of
 `Viewable` subtypes.
 
 :::
+
+## Using React Hooks
+
+The global namespace also contains a `React` object that provides access to React hooks. Here is an example of a simple counter button using the `useState` hook:
+
+```pyodide
+import panel as pn
+
+from panel.custom import ReactComponent
+
+pn.extension()
+
+class CounterButton(ReactComponent):
+
+    _esm = """
+    let { useState } = React;
+    console.log(useState)
+
+    function App(props) {
+        const [value, setValue] = useState(0);
+        return (
+            <button onClick={e => setValue(value+1)}>
+            count is {value}
+            </button>
+        );
+    }
+
+    export function render({state}) {
+        return <App state={state}/>;
+    }
+    """
+
+CounterButton().servable()
+```
 
 ## References
 

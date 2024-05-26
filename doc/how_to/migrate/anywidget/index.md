@@ -65,7 +65,7 @@ The `ReactComponent` `_esm` script works similarly to the `JSComponent` `_esm` s
 
 | `AnyWidget` | Comment                                      | `ReactComponent` | Comment                                      |
 | ----------- | -------------------------------------------- | ------------- | -------------------------------------------- |
-| `render`    | Can use imports from `react` and `@anywidget/react` modules like `useState` and `useModelState` | `render`      | Can use imports from the `react` module like `useState`.<br><br>Has access to `state`. |
+| `render`    | Can use imports from `react` and `@anywidget/react` modules like `useState` and `useModelState` | `render`      | Can use hooks from the `React` object<br><br>Has access to `state`. |
 
 ## Examples
 
