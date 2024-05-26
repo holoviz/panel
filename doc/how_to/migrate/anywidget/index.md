@@ -1,26 +1,30 @@
-# Migrating from AnyWidget to Panel
+# Converting from AnyWidget to Panel
 
-This guide addresses how to migrate from [AnyWidget](https://anywidget.dev/) to Panel custom components. You might want to do this to create a Panel-native component that works better with Panel or is further customized to your needs.
+This guide addresses how to convert [AnyWidget](https://anywidget.dev/) widgets to custom Panel widgets.
 
-:::note
-Note that AnyWidget widgets are [`ipywidgets`](https://ipywidgets.readthedocs.io/en/stable/) and can be used directly in Panel via the [`IpyWidgets`](../../reference/panes/IPyWidget.ipynb) pane without a migration.
-:::
+Please note that AnyWidget widgets are [`ipywidgets`](https://ipywidgets.readthedocs.io/en/stable/) and can be used directly in Panel via the [`IpyWidgets`](../../reference/panes/IPyWidget.ipynb) pane and the `Traitlets` `@observe` API without a conversion. We recommend trying this option first. If it does not work for your use case, please consider contributing to the existing `AnyWidget` before converting it to a Panel widget.
 
-## Migration Steps
+Some reasons you might still want to convert an `AnyWidget` to a custom Panel widget are:
 
-The high-level steps needed for migrating from `AnyWidgets` components to Panel components are described in the section below.
+- Familiar and Optimized API: This enables your and your users to use the familiar `Param` parameter API for which Panel is optimized.
+- Customization: You might want to use the `AnyWidget` as a starting point and customize it to your exact needs.
+- Efficiency: You users avoid loading  `AnyWidget`/`ipywidgets` JavaScript libraries which ANECDOTALLY is not insignificant. Your users also avoid the overhead of converting between `Param/Panel/Bokeh` and `Traitlets`/`AnyWidget`/`ipywidgets` objects: ANECDOTALLY, Panel (i.e., Bokeh) utilizes faster serialization and deserialization methods and formats. IS THIS TRUE, PHILIPP? ALSO, WHEN USING THE ANYWIDGET ON THE BOKEH SERVER? DO WE HAVE NUMBERS FOR THIS?
 
-### Migrate Python Code
+## Conversion Steps
 
-#### Step 1: Base Class Migration
+The high-level steps needed for converting `AnyWidgets` components to Panel components are described in the section below.
 
-Migrate from the `AnyWidget` base class to the Panel [`JSComponent`](../../reference/panes/JSComponent.md) base class. If the `_esm` script is based on React, use the [`ReactComponent`](../../reference/panes/ReactComponent.md). For Preact, use the [`PreactComponent`](../../reference/panes/JSComponent.md).
+### Convert Python Code
 
-#### Step 2: Attribute Migration
+#### Step 1: Base Class Conversion
 
-Migrate from `AnyWidget`'s [Traitlets](https://traitlets.readthedocs.io/en/stable/) based attributes to Panel's [Param](https://param.holoviz.org) based parameters.
+Convert from the `AnyWidget` base class to the Panel [`JSComponent`](../../reference/panes/JSComponent.md) base class. If the `_esm` script is based on [React](https://react.dev/), use the [`ReactComponent`](../../reference/panes/ReactComponent.md). For [Preact](https://preactjs.com/), use the [`PreactComponent`](../../reference/panes/JSComponent.md).
 
-Migrate the attributes below:
+#### Step 2: Attribute Conversion
+
+Convert from `AnyWidget`'s [Traitlets](https://traitlets.readthedocs.io/en/stable/) based attributes to Panel's [Param](https://param.holoviz.org) based parameters.
+
+Convert the attributes below:
 
 | `AnyWidget` | Comment                        | `Panel`        | Comment                                                          |
 | ----------- | ------------------------------ | -------------- | ---------------------------------------------------------------- |
@@ -28,18 +32,18 @@ Migrate the attributes below:
 | `_css`      | CSS string or Path             | `_stylesheets` | List of CSS strings or Paths                                     |
 | NA          | Not Available                  | `_import_map`  | [import map](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap) |
 
-### Migrate JavaScript Code
+### Convert JavaScript Code
 
-#### Step 3: Export Migration
+#### Step 3: Export Conversion
 
-Migrate the functions below:
+Convert the functions below:
 
 | `AnyWidget` | Comment                                              | `JSComponent` | Comment                                                          |
 | ----------- | ---------------------------------------------------- | ------------- | ---------------------------------------------------------------- |
 | `initialize`| Has access to `model`.<br>Can return *end of life* callback. | NA            | Not Available                                                    |
 | `render`    | Has access to `model` and `el`.<br>Can return *end of life* callback. | `render`     | Has access to `data`, `children`, `model`, `el`, and `view`.<br>Can return an `html` element to be appended to `el`. |
 
-In the `_esm` script, migrate the `default` export required by `AnyWidget` to one or more *named exports* required by Panel.
+In the `_esm` script, convert the `default` export required by `AnyWidget` to one or more *named exports* required by Panel.
 
 Please note that the `AnyWidget` `model` is split across Panels `data`, `children` and `model`. Their methods are also different reflecting differences between Traitlets and Panel/ Bokeh JavaScript models:
 
@@ -49,13 +53,13 @@ Please note that the `AnyWidget` `model` is split across Panels `data`, `childre
 | `model.save('some_value', 1)`<br>`model.save_changes()` | `data.some_value=1`|
 | `model.on("change:some_value", () => {...})` | `data.watch(() => {...}), 'some_value')` |
 
-### Migrate React Code
+### Convert React Code
 
 #### Step 4: Drop JavaScript Tooling
 
 Drop the local JavaScript tooling required by `AnyWidget`. Panel replaces this with automatic transpiling in the browser by [Sucrase](https://sucrase.io/).
 
-#### Step 5: Migrate `useModelState` to `state`
+#### Step 5: Convert `useModelState` to `state`
 
 The `ReactComponent` `_esm` script works similarly to the `JSComponent` `_esm` script with the following differences:
 
@@ -173,8 +177,26 @@ class CounterButton(ReactComponent):
 CounterButton().servable()
 ```
 
-### Maria Chime Button
+### Mario Chime Button
 
-Check out our [Custom Components Tutorial](../../../tutorials/expert/custom_components.md) to see a migrated version of the [ipymario](https://github.com/manzt/ipymario) component.
+Check out our [Custom Components Tutorial](../../../tutorials/expert/custom_components.md) to see a converted version of the [ipymario](https://github.com/manzt/ipymario) component.
 
 [![Mario chime button](https://private-user-images.githubusercontent.com/24403730/311924409-e8befac9-3ce5-4ffc-a9df-3b18479c809a.gif?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MTY2MTg1OTMsIm5iZiI6MTcxNjYxODI5MywicGF0aCI6Ii8yNDQwMzczMC8zMTE5MjQ0MDktZThiZWZhYzktM2NlNS00ZmZjLWE5ZGYtM2IxODQ3OWM4MDlhLmdpZj9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA1MjUlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwNTI1VDA2MjQ1M1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWFjOWEwNWE4YTI1MTAxNzA3ZWIyMWMyMmVhZThhOTE0ZjFjMDI3NWJjNTQ1YzI2YTZhNGM5M2UwMGY1NDBiMmYmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.VPirrIBLCuIi1OYsuGeHbEtIfV6bavkUHNUkyrvj1_Q)](../../../tutorials/expert/custom_components.md)
+
+## References
+
+### Tutorials
+
+- [Build Custom Components](../../../how_to/custom_components/reactive_esm/reactive_esm_layout.md)
+
+### How-To Guides
+
+- [Convert `AnyWidget` widgets](../../../how_to/migrate/anywidget/index.md)
+
+### Reference Guides
+
+- [`JSComponent`](../../../reference/panes/JSComponent.md)
+- [`ReactComponent`](../../../reference/panes/ReactComponent.md)
+- [`PreactComponent`](../../../reference/panes/PreactComponent.md)
+
+With these skills, you are now equipped to pioneer and push the boundaries of what can be achieved with Panel. Happy coding!

@@ -254,7 +254,7 @@ How to migrate existing Streamlit applications to Panel.
 :name: AnyWidget
 ```
 
-How to migrate existing AnyWidget components to Panel.
+How to convert AnyWidget widgets to Panel widgets.
 :::
 
 ::::
