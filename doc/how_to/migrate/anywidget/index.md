@@ -177,11 +177,11 @@ class CounterButton(ReactComponent):
 CounterButton().servable()
 ```
 
-### Mario Chime Button
+### Mario Button
 
-Check out our [Custom Components Tutorial](../../../tutorials/expert/custom_components.md) to see a converted version of the [ipymario](https://github.com/manzt/ipymario) component.
+Check out our [Custom Components Tutorial](../../../tutorials/expert/custom_components.md) to see a converted version of the [ipymario](https://github.com/manzt/ipymario) widget.
 
-[![Mario chime button](https://assets.holoviz.org/panel/tutorials/ipymario.gif)](../../../tutorials/expert/custom_components.md)
+[![Mario Button](https://assets.holoviz.org/panel/tutorials/ipymario.gif)](../../../tutorials/expert/custom_components.md)
 
 ## References
 

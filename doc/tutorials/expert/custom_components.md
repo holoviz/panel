@@ -96,73 +96,78 @@ Create a file named `mario_button.js`:
 
 ```javascript
 /**
- * Makes a Mario chime sound using web `AudioContext` API.
- *
+ * Plays a Mario chime sound with the specified gain and duration.
  * @see {@link https://twitter.com/mbostock/status/1765222176641437859}
- *
  */
 function chime({ gain, duration }) {
-    let c = new AudioContext();
-    let g = c.createGain();
-    let o = c.createOscillator();
-    let of = o.frequency;
-    g.connect(c.destination);
-    g.gain.value = gain;
-    g.gain.linearRampToValueAtTime(0, duration);
-    o.connect(g);
-    o.type = "square";
-    of.setValueAtTime(988, 0);
-    of.setValueAtTime(1319, 0.08);
-    o.start();
-    o.stop(duration);
-  }
+  let c = new AudioContext();
+  let g = c.createGain();
+  let o = c.createOscillator();
+  let of = o.frequency;
+  g.connect(c.destination);
+  g.gain.value = gain;
+  g.gain.linearRampToValueAtTime(0, duration);
+  o.connect(g);
+  o.type = "square";
+  of.setValueAtTime(988, 0);
+  of.setValueAtTime(1319, 0.08);
+  o.start();
+  o.stop(duration);
+}
 
-  /**
-   * @typedef Data
-   * @prop {object} _box
-   * @prop {number} size
-   * @prop {number} gain
-   * @prop {number} duration
-   * @prop {boolean} animate
-   */
-  export function render({ data, el }) {
-    let size = () => `${data.size}px`
-    let canvas = document.createElement("canvas");
-    canvas.width = 16;
-    canvas.height = 16;
-    canvas.style.width = size();
-    canvas.style.height = size()
+function createCanvas(data) {
+  let size = () => `${data.size}px`;
+  let canvas = document.createElement("canvas");
+  canvas.width = 16;
+  canvas.height = 16;
+  canvas.style.width = size();
+  canvas.style.height = size();
+  return canvas;
+}
 
-    let pixelData=data._box
-    const flattenedData = pixelData.flat(2);
-    const imageDataArray = new Uint8ClampedArray(flattenedData);
-    const imgData = new ImageData(imageDataArray, 16, 16);
+function drawImageData(canvas, pixelData) {
+  const flattenedData = pixelData.flat(2);
+  const imageDataArray = new Uint8ClampedArray(flattenedData);
+  const imgData = new ImageData(imageDataArray, 16, 16);
 
-    let ctx = canvas.getContext("2d");
-    ctx.imageSmoothingEnabled = false;
-    ctx.putImageData(imgData, 0, 0);
+  let ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+  ctx.putImageData(imgData, 0, 0);
+}
 
-    canvas.addEventListener("click", () => {
+function addClickListener(canvas, data) {
+  canvas.addEventListener("click", () => {
       chime({
-        gain: data.gain,
-        duration: data.duration,
+          gain: data.gain,
+          duration: data.duration,
       });
       if (data.animate) {
-        canvas.style.animation = "none";
-        setTimeout(() => {
-          canvas.style.animation = "ipymario-bounce 0.2s";
-        }, 10);
+          canvas.style.animation = "none";
+          setTimeout(() => {
+              canvas.style.animation = "ipymario-bounce 0.2s";
+          }, 10);
       }
-    });
-    data.watch(() => {
-        canvas.style.width = size();
-        canvas.style.height = size()
-        console.log("resized")
-    }, 'size');
+  });
+}
 
-    el.classList.add("ipymario");
-    return canvas
-  }
+function addResizeWatcher(canvas, data) {
+  data.watch(() => {
+      let size = () => `${data.size}px`;
+      canvas.style.width = size();
+      canvas.style.height = size();
+      console.log("resized");
+  }, 'size');
+}
+
+export function render({ data, el }) {
+  let canvas = createCanvas(data);
+  drawImageData(canvas, data._box);
+  addClickListener(canvas, data);
+  addResizeWatcher(canvas, data);
+
+  el.classList.add("ipymario");
+  return canvas;
+}
 ```
 
 ### Explanation - JavaScript
@@ -210,6 +215,14 @@ The result should look like this:
 </video>
 
 You'll have to turn on the sound to hear the chime.
+
+## Step 4: Develop the Application with Autoreload
+
+When you save your `.py`, `.js` or `.css` file, the Panel server will automatically reload the changes. This feature is called *auto reload* or *hot reload*.
+
+Try changing `"ipymario-bounce 0.2s"` in the `mario_button.js` file to `"ipymario-bounce 2s"` and save the file. The Panel server will automatically reload the changes.
+
+Try clicking the button to see the button bounce more slowly.
 
 ## Conclusion
 
