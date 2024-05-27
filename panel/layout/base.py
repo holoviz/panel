@@ -81,7 +81,7 @@ class Panel(Reactive):
             template = '{cls}({params}){spacer}{objs}'
         return template.format(
             cls=cls, params=', '.join(params),
-            objs=('%s' % spacer).join(objs), spacer=spacer)
+            objs=str(spacer).join(objs), spacer=spacer)
 
     #----------------------------------------------------------------
     # Callback API
