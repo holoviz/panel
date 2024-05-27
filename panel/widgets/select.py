@@ -144,8 +144,7 @@ class SingleSelectBase(SelectBase):
             values = self.values
         elif any(v not in self.values for v in values):
             raise ValueError("Supplied embed states were not found "
-                             "in the %s widgets values list." %
-                             type(self).__name__)
+                             f"in the {type(self).__name__} widgets values list.")
         return (self, self._models[root.ref['id']][0], values,
                 lambda x: x.value, 'value', 'cb_obj.value')
 
@@ -1005,8 +1004,7 @@ class _RadioGroupBase(SingleSelectBase):
             values = self.values
         elif any(v not in self.values for v in values):
             raise ValueError("Supplied embed states were not found in "
-                             "the %s widgets values list." %
-                             type(self).__name__)
+                             f"the {type(self).__name__} widgets values list.")
         return (self, self._models[root.ref['id']][0], values,
                 lambda x: x.active, 'active', 'cb_obj.active')
 
@@ -1209,7 +1207,7 @@ class ToggleGroup(SingleSelectBase):
         else:
             if isinstance(params.get('value'), list):
                 raise ValueError('Radio buttons require a single value, '
-                                 'found: %s' % params['value'])
+                                 'found: {}'.format(params['value']))
             if widget_type == 'button':
                 return RadioButtonGroup(**params)
             else:

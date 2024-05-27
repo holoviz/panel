@@ -425,8 +425,8 @@ class SVG(ImageBase):
 
     def _type_error(self, object):
         if isinstance(object, str):
-            raise ValueError("%s pane cannot parse string that is not a filename, "
-                             "URL or a SVG XML contents." % type(self).__name__)
+            raise ValueError(f"{type(self).__name__} pane cannot parse string that is not a filename, "
+                             "URL or a SVG XML contents.")
         super()._type_error(object)
 
     def _data(self, obj):

@@ -175,7 +175,7 @@ class ReactiveHTMLParser(HTMLParser):
         if match and (match.strip() in self.loop_map or '[' in match) and self._open_for:
             if match.strip() in self.loop_map:
                 loop_match = self.loop_map[match.strip()]
-                matches[matches.index('${%s}' % match)] = '${%s}' % loop_match
+                matches[matches.index(f'${{{match}}}')] = f'${{{loop_match}}}'
                 match = loop_match
             elif '[' in match:
                 match, _ = match.split('[')

@@ -31,7 +31,7 @@ def capitalize(name):
 def fill_array(vtk_arr, state, zf):
     vtk_arr.SetNumberOfComponents(state['numberOfComponents'])
     vtk_arr.SetNumberOfTuples(state['size']//state['numberOfComponents'])
-    data = zf.read('data/%s' % state['hash'])
+    data = zf.read('data/{}'.format(state['hash']))
     dataType = arrayTypesMapping[vtk_arr.GetDataType()]
     elementSize = struct.calcsize(dataType)
     if vtk_arr.GetDataType() == 12:

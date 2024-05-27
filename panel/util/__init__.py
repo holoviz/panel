@@ -88,7 +88,7 @@ def indexOf(obj, objs):
                 return i
         except Exception:
             pass
-    raise ValueError('%s not in list' % obj)
+    raise ValueError(f'{obj} not in list')
 
 
 def param_name(name: str) -> str:

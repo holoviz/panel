@@ -326,7 +326,7 @@ class BaseVTKRenderWindow(AbstractVTK):
         with zipfile.ZipFile(filename, mode='w') as zf:
             zf.writestr('index.json', json.dumps(scene))
             for name, data in arrays.items():
-                zf.writestr('data/%s' % name, data, zipfile.ZIP_DEFLATED)
+                zf.writestr(f'data/{name}', data, zipfile.ZIP_DEFLATED)
             zf.writestr('annotations.json', json.dumps(annotations))
         return filename
 

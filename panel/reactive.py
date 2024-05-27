@@ -1853,7 +1853,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 for i, _ in enumerate(getattr(self, child_name)):
                     html = html.replace('${%s[%d]}' % (child_name, i), '')
             else:
-                html = html.replace('${%s}' % child_name, '')
+                html = html.replace(f'${{{child_name}}}', '')
         return html, parser.nodes, p_attrs
 
     @property
