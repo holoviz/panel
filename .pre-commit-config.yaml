@@ -4,7 +4,7 @@
 default_stages: [commit]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: check-builtin-literals
       - id: check-case-conflict
@@ -17,7 +17,7 @@ repos:
         exclude: \.min\.js$
       - id: trailing-whitespace
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.9
+    rev: v0.4.5
     hooks:
       - id: ruff
         files: panel/
@@ -33,7 +33,7 @@ repos:
         args: [-i, tags]
         exclude: '^lite/files/.*/'
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.6
+    rev: v2.3.0
     hooks:
       - id: codespell
         additional_dependencies:
@@ -50,7 +50,7 @@ repos:
       - id: oxipng
         stages: [manual]
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.56.0
+    rev: v9.3.0
     hooks:
       - id: eslint
         args: ['-c', 'panel/.eslintrc.js', 'panel/*.ts', 'panel/models/**/*.ts']
