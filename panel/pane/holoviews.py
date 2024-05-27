@@ -591,7 +591,7 @@ class HoloViews(PaneBase):
             object = object.hmap
 
         if isinstance(object, DynamicMap) and object.unbounded:
-            dims = ', '.join('%r' % dim for dim in object.unbounded)
+            dims = ', '.join(f'{dim!r}' for dim in object.unbounded)
             msg = ('DynamicMap cannot be displayed without explicit indexing '
                    'as {dims} dimension(s) are unbounded. '
                    '\nSet dimensions bounds with the DynamicMap redim.range '

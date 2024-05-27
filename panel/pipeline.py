@@ -226,7 +226,7 @@ class Pipeline(Viewer):
 
     def _validate(self, stage):
         if any(stage is s for n, (s, kw) in self._stages.items()):
-            raise ValueError('Stage %s is already in pipeline' % stage)
+            raise ValueError(f'Stage {stage} is already in pipeline')
         elif not ((isinstance(stage, type) and issubclass(stage, param.Parameterized))
                   or isinstance(stage, param.Parameterized)):
             raise ValueError('Pipeline stages must be Parameterized classes or instances.')
@@ -550,7 +550,7 @@ class Pipeline(Viewer):
         self._validate(stage)
         for k in kwargs:
             if k not in self.param:
-                raise ValueError("Keyword argument %s is not a valid parameter. " % k)
+                raise ValueError(f"Keyword argument {k} is not a valid parameter.")
 
         if not self._linear and self._graph:
             raise RuntimeError("Cannot add stage after graph has been defined.")
@@ -609,8 +609,7 @@ class Pipeline(Viewer):
 
         root = get_root(graph)
         if not is_traversable(root, graph, stages):
-            raise ValueError('Graph is not fully traversable from stage: %s.'
-                             % root)
+            raise ValueError(f'Graph is not fully traversable from stage: {root}.')
 
         reinit = root is not self._stage
         self._stage = root

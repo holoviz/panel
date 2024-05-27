@@ -243,8 +243,8 @@ def save(
             resources = INLINE
             mode = 'inline'
         else:
-            raise ValueError("Resources %r not recognized, specify one "
-                             "of 'CDN' or 'INLINE'." % resources)
+            raise ValueError(f"Resources {resources!r} not recognized, specify one "
+                             "of 'CDN' or 'INLINE'.")
     elif isinstance(resources, BkResources):
         mode = resources.mode
 

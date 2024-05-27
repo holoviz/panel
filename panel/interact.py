@@ -109,7 +109,7 @@ class interactive(PaneBase):
         self._inner_layout = Row(self._pane)
         widgets = [widget for _, widget in widgets if isinstance(widget, Widget)]
         if 'name' in params:
-            widgets.insert(0, HTML('<h2>%s</h2>' % self.name))
+            widgets.insert(0, HTML(f'<h2>{self.name}</h2>'))
         self.widget_box = Column(*widgets)
         self.layout.objects = [self.widget_box, self._inner_layout]
         self._link_widgets()

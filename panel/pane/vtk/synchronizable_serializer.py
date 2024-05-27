@@ -71,7 +71,7 @@ def getJSArrayType(dataArray):
 def zipCompression(name, data):
     with io.BytesIO() as in_memory:
         with zipfile.ZipFile(in_memory, mode="w") as zf:
-            zf.writestr('data/%s' % name,
+            zf.writestr(f'data/{name}',
                         data, zipfile.ZIP_DEFLATED)
         in_memory.seek(0)
         return in_memory.read()
@@ -393,7 +393,7 @@ def pad(depth):
 
 
 def wrapId(idStr):
-    return 'instance:${%s}' % idStr
+    return f'instance:${{{idStr}}}'
 
 # -----------------------------------------------------------------------------
 
@@ -570,7 +570,7 @@ def extractRequiredFields(extractedFields, parent, dataset, context, requestedFi
 
 def annotationSerializer(parent, prop, propId, context, depth):
     if context.debugSerializers:
-        print('%s!!!Annotations are not handled directly by vtk.js but by bokeh model' % pad(depth))
+        print(f'{pad(depth)}!!!Annotations are not handled directly by vtk.js but by bokeh model')
 
     context.addAnnotation(parent, prop, propId)
 
@@ -1243,8 +1243,7 @@ def rendererSerializer(parent, instance, objId, context, depth):
             dependencies.append(viewPropInstance)
             viewPropIds.append(viewPropId)
 
-    calls += context.buildDependencyCallList('%s-props' %
-                                             objId, viewPropIds, 'addViewProp', 'removeViewProp')
+    calls += context.buildDependencyCallList(f'{objId}-props', viewPropIds, 'addViewProp', 'removeViewProp')
 
     return {
         'parent': context.getReferenceId(parent),

@@ -454,8 +454,8 @@ class PaneBase(Reactive):
                 raise ValueError('If a Pane declares no priority '
                                  'the applies method should return a '
                                  'priority value specific to the '
-                                 'object type or False, but the %s pane '
-                                 'declares no priority.' % p.__name__)
+                                 f'object type or False, but the {p.__name__} pane '
+                                 'declares no priority.')
             elif priority is None or priority is False:
                 continue
             descendents.append((priority, applies, p))
@@ -469,7 +469,7 @@ class PaneBase(Reactive):
             if not applies:
                 continue
             return pane_type
-        raise TypeError('%s type could not be rendered.' % type(obj).__name__)
+        raise TypeError(f'{type(obj).__name__} type could not be rendered.')
 
 
 class ModelPane(PaneBase):
