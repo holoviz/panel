@@ -739,6 +739,17 @@ def test_filedropper_text_file(page):
         data = data.replace("\n", "\r\n")
     assert widget.value == {file.name: data}
 
+def test_filedropper_wrong_filetype_error(page):
+    widget = pn.widgets.FileDropper(accepted_filetypes=["png"])
+    serve_component(page, widget)
+
+    page.set_input_files('input[type="file"]', __file__)
+
+    get_element = lambda: page.query_selector('span.filepond--file-status-main')
+    wait_until(lambda: get_element() is not None, page)
+    element = get_element()
+    wait_until(lambda: element.inner_text() == 'File is of invalid type', page)
+
 def test_filedropper_multiple_file_error(page):
     widget = pn.widgets.FileDropper()
     serve_component(page, widget)
