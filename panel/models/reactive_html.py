@@ -105,17 +105,17 @@ class ReactiveHTMLParser(HTMLParser):
             if match[2:-1] not in self.loop_var_map[var]:
                 self.loop_var_map[var].append(match[2:-1])
             if var.endswith('.index0'):
-                matches.append('${%s }}]}' % var)
+                matches.append('${%s }}]}' % var)  # noqa: UP031
             else:
-                matches.append('${%s}' % var)
+                matches.append('${%s}' % var)  # noqa: UP031
 
         literal_matches = []
         for match in self._literal_re.findall(data):
             match = match[2:-2].strip()
             if match.endswith('.index0'):
-                literal_matches.append('{{%s }}]}' % match)
+                literal_matches.append('{{%s }}]}' % match)  # noqa: UP031
             else:
-                literal_matches.append('{{ %s }}' % match)
+                literal_matches.append('{{ %s }}' % match)  # noqa: UP031
 
         # Detect templating for loops
         list_loop = re.findall(list_iter_re, data)
