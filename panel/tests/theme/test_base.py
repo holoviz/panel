@@ -1,13 +1,19 @@
 import pathlib
 
-from copy import deepcopy
+import pytest
 
 from bokeh.models import ImportedStyleSheet
 
 from panel.io.resources import CDN_DIST
+from panel.io.state import state
 from panel.theme.base import BOKEH_DARK, Design, Inherit
 from panel.viewable import Viewable
 from panel.widgets import FloatSlider, IntSlider, TextInput
+
+
+@pytest.fixture(autouse=True)
+def _clear_state():
+    state._stylesheets.clear()
 
 
 class DesignTest(Design):
@@ -28,10 +34,6 @@ class DesignTest(Design):
             'stylesheets': ['foo.css']
         }
     }
-
-    def __init__(self, **params):
-        self.modifiers = deepcopy(self.modifiers)
-        super().__init__(**params)
 
 
 def test_design_params():
