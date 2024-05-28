@@ -470,6 +470,8 @@ class FileTree(BaseFileSelector, _TreeBase):
                 id_=subdir, label=subdir_p.name, parent=parent,
                 children=children, icon="jstree-folder", type='folder', **kwargs
             )
+            if self._exceed_max_depth(subdir_p):
+                dir_spec["state"] = {"disabled": True}
             nodes.append(dir_spec)
         nodes.extend(
             self._to_json(
