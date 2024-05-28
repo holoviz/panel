@@ -154,7 +154,6 @@ export class jsTreeView extends LayoutDOMView {
   }
 
   _setShowDots(): void {
-    // console.log("setShowDots")
     if (this.model.show_dots) {
       this._jstree.jstree(true).show_dots()
     } else {
