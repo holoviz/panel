@@ -83,6 +83,7 @@ export class jsTreeView extends LayoutDOMView {
       checkbox: {
         three_state: this.model.cascade,
         cascade: this.model.cascade ? "undetermined" : "down+undetermined",
+        cascade_to_disabled: false,
       },
       core: {
         data: (obj: Node, callback: (nodes: Node[]) => void) => {
