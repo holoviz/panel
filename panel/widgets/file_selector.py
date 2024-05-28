@@ -416,6 +416,10 @@ class FileTree(BaseFileSelector, _TreeBase):
     sort = param.Boolean(default=True, doc="""
         Whether to sort nodes alphabetically.""")
 
+    max_depth = param.Integer(default=0, doc="""
+        The maximum depth to display in the tree.
+        If set to 0, all levels are shown.""")
+
     _rename = {
         'directory': None,
         'file_pattern': None,
@@ -439,26 +443,30 @@ class FileTree(BaseFileSelector, _TreeBase):
 
     def _process_property_change(self, msg):
         props = super()._process_property_change(msg)
-        if 'value' in props and self.only_files:
-            props['value'] = [
-                node_id for node_id in props['value']
-                if self._index.get(node_id, {}).get('type') == 'file'
-            ]
+        if "value" in props and self.only_files:
+            props["value"] = [node_id for node_id in props["value"] if self._index.get(node_id, {}).get("type") == "file"]
         return props
 
-    def _get_children(
-        self, text: str, directory: str, depth=0, children_to_skip=(), **kwargs
-    ):
-        parent = str(directory)
+    def _exceed_max_depth(self, path):
+        if not self.max_depth:
+            return False
+        current_depth = len(path.relative_to(self.directory).parents)
+        return current_depth >= self.max_depth
+
+    def _get_children(self, text: str, directory: str, depth=0, children_to_skip=(), **kwargs):
+        if self._exceed_max_depth(Path(directory)):
+            return []
+        parent = str(directory)  # TODO(hoxbro): Either the type hint is wrong or this is not needed
         nodes = []
         dirs, files = self._get_paths(directory, children_to_skip=children_to_skip)
         for subdir in dirs:
+            subdir_p = Path(subdir)
             if depth > 0:
-                children = self._get_children(Path(subdir).name, subdir, depth=depth - 1)
+                children = self._get_children(subdir_p.name, subdir, depth=depth - 1)
             else:
                 children = None
             dir_spec = self._to_json(
-                id_=subdir, label=Path(subdir).name, parent=parent,
+                id_=subdir, label=subdir_p.name, parent=parent,
                 children=children, icon="jstree-folder", type='folder', **kwargs
             )
             nodes.append(dir_spec)
