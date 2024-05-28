@@ -426,6 +426,7 @@ class FileTree(BaseFileSelector, _TreeBase):
         'root_directory': None,
         'provider': None,
         'only_files': 'cascade',
+        'max_depth': None,
         **_TreeBase._rename,
     }
 
