@@ -37,7 +37,7 @@ typing_extensions = "*"
 # Recommended
 holoviews = ">=1.16.0"
 jupyterlab = "*"
-matplotlib = "*"
+matplotlib-base = "*"
 pillow = "*"
 plotly = ">=4.0"
 # Standard
