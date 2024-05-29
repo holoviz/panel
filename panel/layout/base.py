@@ -81,7 +81,7 @@ class Panel(Reactive):
             template = '{cls}({params}){spacer}{objs}'
         return template.format(
             cls=cls, params=', '.join(params),
-            objs=('%s' % spacer).join(objs), spacer=spacer)
+            objs=str(spacer).join(objs), spacer=spacer)
 
     #----------------------------------------------------------------
     # Callback API
@@ -435,9 +435,8 @@ class ListLike(param.Parameterized):
             else:
                 objects = self.objects
         elif 'objects' in params:
-            raise ValueError("A %s's objects should be supplied either "
-                             "as arguments or as a keyword, not both."
-                             % type(self).__name__)
+            raise ValueError(f"A {type(self).__name__}'s objects should be supplied either "
+                             "as arguments or as a keyword, not both.")
         p = dict(self.param.values(), **params)
         del p['objects']
         return type(self)(*objects, **p)
@@ -552,9 +551,9 @@ class NamedListLike(param.Parameterized):
     def __init__(self, *items: list[Any | tuple[str, Any]], **params: Any):
         if 'objects' in params:
             if items:
-                raise ValueError('%s objects should be supplied either '
+                raise ValueError(f'{type(self).__name__} objects should be supplied either '
                                  'as positional arguments or as a keyword, '
-                                 'not both.' % type(self).__name__)
+                                 'not both.')
             items = params.pop('objects')
         params['objects'], self._names = self._to_objects_and_names(items)
         super().__init__(**params)
@@ -814,9 +813,9 @@ class ListPanel(ListLike, Panel):
         from ..pane import panel
         if objects:
             if 'objects' in params:
-                raise ValueError("A %s's objects should be supplied either "
+                raise ValueError(f"A {type(self).__name__}'s objects should be supplied either "
                                  "as positional arguments or as a keyword, "
-                                 "not both." % type(self).__name__)
+                                 "not both.")
             params['objects'] = [panel(pane) for pane in objects]
         elif 'objects' in params:
             objects = params['objects']

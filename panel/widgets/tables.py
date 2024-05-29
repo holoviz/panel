@@ -247,7 +247,7 @@ class BaseTable(ReactiveData, Widget):
 
             title = self.titles.get(col, str(col))
             if col in indexes and len(indexes) > 1 and self.hierarchical:
-                title = 'Index: %s' % ' | '.join(indexes)
+                title = 'Index: {}'.format(' | '.join(indexes))
             elif col in self.indexes and col.startswith('level_'):
                 title = ''
             column = TableColumn(field=str(col), title=title,

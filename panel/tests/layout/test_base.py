@@ -135,7 +135,7 @@ def test_layout_repr(panel):
     layout = panel(div1, div2)
 
     name = panel.__name__
-    assert repr(layout) == '%s\n    [0] Bokeh(Div)\n    [1] Bokeh(Div)' % name
+    assert repr(layout) == f'{name}\n    [0] Bokeh(Div)\n    [1] Bokeh(Div)'
 
 
 @pytest.mark.parametrize('panel', [Card, Column, Row])

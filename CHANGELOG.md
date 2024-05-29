@@ -2,10 +2,45 @@
 
 ## Version 1.5.0
 
-### Breaking Changes
+### Deprecation and API Warnings
 
 - `PasswordInput` and `TextAreaInput` no longer inherit directly from `TextInput` ([#6593](https://github.com/holoviz/panel/pull/6593))
 
+## Version 1.4.3
+
+Date: 2024-05-21
+
+This patch release is likely the last in the 1.4.x series. The most important fixes in this release are fixes to ensure keyboard shortcuts do not get triggered inside Panel components for for recent versions of JupyterLab, fixes for OAuth token refreshes, and various documentation fixes. The release also includes a small number of enhancements, including improved UX for the `FileSelector`. Many thanks to the many contributors to this release including @jrycw, @Coderambling, @cdeil, and the maintainers @Hoxbro, @MarcSkovMadsen, @ahuang11, @maximlt and @philippjfr.
+
+## Enhancements
+
+- Add CSS on mouse interaction with `Card` ([#6636](https://github.com/holoviz/panel/pull/6636))
+- Make `ChatMessage.reaction_icons` reactive ([#6807](https://github.com/holoviz/panel/pull/6807))
+- Allow external library to define additional socket handler ([#6820](https://github.com/holoviz/panel/pull/6820))
+- Allow navigating `FileSelector` with double click ([#6843](https://github.com/holoviz/panel/pull/6843))
+
+### Bug fixes
+
+- Ensure reference is resolved when passing options to `from_param` ([#6762](https://github.com/holoviz/panel/pull/6762))
+- Ensure token refresh is always scheduled ([#6802](https://github.com/holoviz/panel/pull/6802))
+- Fix small memory leak when caching `Design` modifiers ([#4978](https://github.com/holoviz/panel/pull/4978))
+- Ensure refreshed tokens can be accessed across processes ([#6817](https://github.com/holoviz/panel/pull/6817))
+- Ensure binary buffers are correctly extracted in notebook `CommManager` ([#6818](https://github.com/holoviz/panel/pull/6818))
+- Make `Tabulator` resize handling more robust ([#6821](https://github.com/holoviz/panel/pull/6821))
+- Fix links in `panel convert` index ([#6828](https://github.com/holoviz/panel/pull/6828))
+- Suppress keyboard shortcuts in notebook output ([#6825](https://github.com/holoviz/panel/pull/6825))
+- Ensure we don't error out when `FastDesignProvider` is undefined ([#6832](https://github.com/holoviz/panel/pull/6832))
+- Ensure model changes are applied while session is starting ([#6835](https://github.com/holoviz/panel/pull/6835))
+
+### Documentation
+
+- Refactor the `hvplot.interactive` tutorial utilizing `pn.rx` ([#6700](https://github.com/holoviz/panel/pull/6700))
+- Update styling after upgrade to latest pydata-sphinx-theme ([#6823](https://github.com/holoviz/panel/pull/6823))
+- Fix bug in Reset Jupyterlite script ([#6834](https://github.com/holoviz/panel/pull/6834))
+- Fix gallery deployment URL ([#6831](https://github.com/holoviz/panel/pull/6831))
+- Add redirects for old documentation pages ([#6833](https://github.com/holoviz/panel/pull/6833))
+- Remove Google Analytics ([#6836](https://github.com/holoviz/panel/pull/6836))
+- Various documentation fixes ([#6829](https://github.com/holoviz/panel/pull/6829))
 
 ## Version 1.4.2
 

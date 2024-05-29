@@ -746,8 +746,8 @@ class panel_extension(_pyviz_extension):
                     state._extensions.append(arg)
                 ReactiveHTMLMetaclass._loaded_extensions.add(arg)
             else:
-                self.param.warning('%s extension not recognized and '
-                                   'will be skipped.' % arg)
+                self.param.warning(f'{arg} extension not recognized and '
+                                   'will be skipped.')
 
         for k, v in params.items():
             if k == 'design' and isinstance(v, str):

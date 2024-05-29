@@ -138,8 +138,8 @@ class ContinuousSlider(_SliderBase):
                 step = dtype(span/(max_opts-1))
             values = [dtype(v) for v in np.arange(start, end+step, step)]
         elif any(v < start or v > end for v in values):
-            raise ValueError('Supplied embed states for %s widget outside '
-                             'of valid range.' % type(self).__name__)
+            raise ValueError(f'Supplied embed states for {type(self).__name__} widget outside '
+                             'of valid range.')
 
         # Replace model
         layout_opts = {k: v for k, v in self.param.values().items()
@@ -374,10 +374,9 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         if self.value is None and None not in self.values and self.options:
             self.value = self.values[0]
         elif self.value not in self.values and not (self.value is None or self.options):
-            raise ValueError('Value %s not a valid option, '
+            raise ValueError(f'Value {self.value} not a valid option, '
                              'ensure that the supplied value '
-                             'is one of the declared options.'
-                             % self.value)
+                             'is one of the declared options.')
 
         self._text = StaticText(
             margin=(5, 0, 0, 5), styles={'white-space': 'nowrap'}
@@ -512,7 +511,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
             values = self.values
         elif any(v not in self.values for v in values):
             raise ValueError("Supplieed embed states were not found "
-                             "in the %s widgets' values list." % type(self).__name__)
+                             f"in the {type(self).__name__} widgets' values list.")
         return self, model, values, lambda x: x.value, 'value', 'cb_obj.value'
 
     @property
@@ -520,7 +519,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         """The list of labels to display"""
         title = (self.name + ': ' if self.name else '')
         if isinstance(self.options, dict):
-            return [title + ('<b>%s</b>' % o) for o in self.options]
+            return [title + (f'<b>{o}</b>') for o in self.options]
         else:
             return [title + ('<b>%s</b>' % (o if isinstance(o, str) else (self.formatter % o)))
                     for o in self.options]

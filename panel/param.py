@@ -270,8 +270,7 @@ class Param(PaneBase):
             self.layout = self._expand_layout = layout(self._widget_box, **kwargs)
         else:
             raise ValueError('expand_layout expected to be a panel.layout.Panel'
-                             'type or instance, found %s type.' %
-                             type(layout).__name__)
+                             f'type or instance, found {type(layout).__name__} type.')
         self.param.watch(self._update_widgets, [
             'object', 'parameters', 'name', 'display_threshold', 'expand_button',
             'expand', 'expand_layout', 'widgets', 'show_labels', 'show_name',
@@ -294,7 +293,7 @@ class Param(PaneBase):
                 params.append(f'{p}={abbreviated_repr(v)}')
             except RuntimeError:
                 params.append('{}={}'.format(p, '...'))
-        obj = 'None' if self.object is None else '%s' % type(self.object).__name__
+        obj = 'None' if self.object is None else f'{type(self.object).__name__}'
         template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
         return template.format(cls=cls, params=', '.join(params), obj=obj)
 
@@ -1314,7 +1313,7 @@ class JSONInit(param.Parameterized):
                 with open(fullpath(fname), 'r') as f:
                     spec = json.load(f)
             except Exception:
-                warnobj.warning('Could not load JSON file %r' % spec)
+                warnobj.warning(f'Could not load JSON file {spec!r}')
         else:
             spec = json.loads(env_var)
 
