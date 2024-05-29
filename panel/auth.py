@@ -13,7 +13,6 @@ import uuid
 from base64 import urlsafe_b64encode
 from functools import partial
 
-import pamela
 import tornado
 
 from bokeh.server.auth_provider import AuthProvider
@@ -1182,6 +1181,13 @@ class PAMLoginHandler(BasicLoginHandler):
     """
 
     def _validate(self, username, password):
+        try:
+            import pamela
+        except ImportError as e:
+            log.error(
+                "PAM authentication requires the pamela package. Please install it with e.g. 'pip install pamela'"
+            )
+            raise e
         try:
             pamela.authenticate(username, password)
         except pamela.PAMError:
