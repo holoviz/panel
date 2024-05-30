@@ -5,14 +5,17 @@ import {ReactComponent, ReactComponentView} from "./react_component"
 
 class AnyWidgetAdapter {
   declare model: AnyWidgetComponent
+  declare model_changes: any
+  declare data_changes: any
 
   constructor(model: AnyWidgetComponent) {
     this.model = model
+    this.model_changes = {}
+    this.data_changes = {}
   }
 
   get(name: any) {
     let value
-    console.log(this.model)
     if (name in this.model.data.attributes) {
       value = this.model.data.attributes[name]
     } else {
@@ -26,14 +29,17 @@ class AnyWidgetAdapter {
 
   set(name: string, value: any) {
     if (name in this.model.data.attributes) {
-      this.model.data.setv({[name]: value})
+      this.data_changes = {...this.data_changes, [name]: value}
     } else if (name in this.model.attributes) {
-      this.model.setv({[name]: value})
+      this.model_changes = {...this.model_changes, [name]: value}
     }
   }
 
   save_changes() {
-    // no-op, not a thing in panel
+    this.model.setv(this.model_changes)
+    this.model_changes = {}
+    this.model.data.setv(this.data_changes)
+    this.data_changes = {}
   }
 
   on(event: string, cb: () => void) {

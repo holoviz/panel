@@ -11,7 +11,7 @@ import type {UIElement, UIElementView} from "@bokehjs/models/ui/ui_element"
 import {serializeEvent} from "./event-to-object"
 import {DOMEvent} from "./html"
 import {HTMLBox, HTMLBoxView, set_size} from "./layout"
-import {convertUndefined, find_attributes, formatError, hash} from "./util"
+import {convertUndefined, find_attributes, formatError} from "./util"
 
 import error_css from "styles/models/esm.css"
 
