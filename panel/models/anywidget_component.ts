@@ -3,7 +3,7 @@ import type * as p from "@bokehjs/core/properties"
 import {ReactiveESMView} from "./reactive_esm"
 import {ReactComponent, ReactComponentView} from "./react_component"
 
-class PanelModel {
+class AnyWidgetAdapter {
   declare model: AnyWidgetComponent
 
   constructor(model: AnyWidgetComponent) {
@@ -51,11 +51,11 @@ class PanelModel {
 }
 
 export class AnyWidgetComponentView extends ReactComponentView {
-  adapter: PanelModel
+  adapter: AnyWidgetAdapter
 
   override initialize(): void {
     super.initialize()
-    this.adapter = new PanelModel(this.model)
+    this.adapter = new AnyWidgetAdapter(this.model)
   }
 
   override compile(): string | null {

@@ -15,11 +15,35 @@ import {convertUndefined, find_attributes, formatError, hash} from "./util"
 
 import error_css from "styles/models/esm.css"
 
+function model_getter(target: ReactiveESMView, name: string) {
+  const model = target.model
+  if (Reflect.has(model.data, name)) {
+    if (name in model.data.attributes && !target.accessed_properties.includes(name)) {
+      target.accessed_properties.push(name)
+    }
+    return Reflect.get(model.data, name)
+  } else if (Reflect.has(model, name)) {
+    return Reflect.get(model, name)
+  }
+  return undefined
+}
+
+function model_setter(target: ReactiveESMView, name: string, value: any): boolean {
+  const model = target.model
+  if (Reflect.has(model.data, name)) {
+    return Reflect.set(model.data, name, value)
+  } else if (Reflect.has(model, name)) {
+    return Reflect.set(model, name, value)
+  }
+  return false
+}
+
 export class ReactiveESMView extends HTMLBoxView {
   declare model: ReactiveESM
   sucrase_transforms: Transform[] = ["typescript"]
   container: HTMLDivElement
-  modelState: typeof Proxy
+  accessed_properties: string[] = []
+  model_proxy: any
   compiled: string | null = null
   compiled_module: any = null
   compile_error: Error | null = null
@@ -47,6 +71,10 @@ export class ReactiveESMView extends HTMLBoxView {
       const serialized = convertUndefined(serializeEvent(event))
       this.model.trigger_event(new DOMEvent(name, serialized))
     }
+    this.model_proxy = new Proxy(this, {
+      get: model_getter,
+      set: model_setter
+    })
   }
 
   override async lazy_initialize(): Promise<void> {
@@ -230,7 +258,7 @@ for (const child of view.model.children) {
 }
 
 const output = view.render_fn({
-  view: view, model: view.model, data: view.model.data, el: view.container, children: children
+  view: view, model: view.model_proxy, data: view.model.data, el: view.container, children: children
 })
 
 if (output instanceof Element) {
@@ -245,6 +273,7 @@ view.model.data.watch(() => view.render_esm(), ${JSON.stringify(rerender_vars)})
     if (this.compiled === null) {
       return
     }
+    this.accessed_properties = []
     this._disconnect_watchers()
     const code = this._render_code()
     const render_url = URL.createObjectURL(

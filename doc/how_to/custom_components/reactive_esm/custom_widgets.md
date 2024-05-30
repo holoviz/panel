@@ -20,7 +20,7 @@ class ImageButton(JSComponent):
     image = param.String()
 
     _esm = """
-export function render({ data }) {
+export function render({ model }) {
     const button = document.createElement('button');
     button.id = 'button';
     button.className = 'pn-container center-content';
@@ -28,12 +28,12 @@ export function render({ data }) {
     const img = document.createElement('img');
     img.id = 'image';
     img.className = 'image-size';
-    img.src = data.image;
+    img.src = model.image;
 
     button.appendChild(img);
 
     button.addEventListener('click', () => {
-        data.clicks += 1;
+        model.clicks += 1;
     });
     return button
 }

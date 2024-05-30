@@ -6,7 +6,6 @@ import type * as p from "@bokehjs/core/properties"
 import type {UIElementView} from "@bokehjs/models/ui/ui_element"
 
 import {ReactiveESM, ReactiveESMView} from "./reactive_esm"
-import {find_attributes} from "./util"
 
 interface ChildProps {
   name: string
@@ -87,9 +86,6 @@ ${compiled}`
   }
 
   protected override _render_code(): string {
-    const rerender_vars = find_attributes(
-      this.compiled || "", "data", ["send_event", "watch"],
-    )
     const code = `
 const view = Bokeh.index.find_one_by_id('${this.model.id}')
 
@@ -98,10 +94,11 @@ for (const child of view.model.children) {
   children[child] = view.get_child_component(child)
 }
 
-const output = view._h(view.render_fn, {view: view, model: view.model, data: view.model.data, el: view.container, children: children})
+const props = {view: view, model: view.model_proxy, data: view.model.data, el: view.container, children: children}
+const output = view._h(view.render_fn, props)
 
 view.render_component(output)
-view.model.data.watch(() => view.render_esm(), ${JSON.stringify(rerender_vars)})`
+view.model.data.watch(() => view.render_esm(), view.accessed_properties)`
     return code
   }
 }

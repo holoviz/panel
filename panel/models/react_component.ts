@@ -150,8 +150,7 @@ for (const child of view.model.children) {
   children[child] = React.createElement(Child, {parent: view, name: child})
 }
 
-let props = {view, model: view.model, data: view.model.data, el: view.container, children, state: state}
-
+const props = {view, model: view.model_proxy, data: view.model.data, el: view.container, children, state: state}
 const rendered = React.createElement(view.render_fn, props)
 
 ${render_code}`

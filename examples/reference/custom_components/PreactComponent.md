@@ -15,12 +15,11 @@ class CounterButton(PreactComponent):
     value = param.Integer()
 
     _esm = """
-    export function render({ data }) {
-        return html`
-            <button onClick=${() => data.value += 1}>
-                count is ${data.value}
-            </button>
-        `;
+    export function render({ model }) {
+      return html`
+        <button onClick=${() => { model.value += 1 } }>
+          count is ${model.value}
+        </button>`
     }
     """
 
@@ -53,9 +52,8 @@ You may specify a path to a file as a string instead of a PurePath. The path sho
 
 The `_esm` attribute must export the `render` function. It accepts the following parameters:
 
-- **`data`**: Represents the non-Viewable Parameters of the component and provides methods to `.watch` for changes and `.send_event` back to Python.
+- **`model`**: Represents the Parameters of the component and provides methods to `.watch` for changes and `.send_event` back to Python.
 - **`children`**: Represents the Viewable Parameters of the component.
-- **`model`**: The Bokeh model.
 - **`view`**: The Bokeh view.
 - **`el`**: The HTML element that the component will be rendered into.
 - **`html`**: The Preact `html` function which enables you to write JSX-like syntax in plain JavaScript. See [`htm`](https://github.com/developit/htm).
@@ -105,12 +103,11 @@ class CounterButton(PreactComponent):
     ]
 
     _esm = """
-    export function render({ data }) {
-        return html`
-            <button onClick=${() => data.value += 1}>
-                count is ${data.value}
-            </button>
-        `;
+    export function render({ model }) {
+      return html`
+        <button onClick=${() => { model.value += 1 } }>
+          count is ${model.value}
+        </button>`;
     }
     """
 
@@ -120,7 +117,7 @@ CounterButton().servable()
 
 ## Send Events from JavaScript to Python
 
-Events from JavaScript can be sent to Python using the `data.send_event` method. Define a handler in Python to manage these events.
+Events from JavaScript can be sent to Python using the `model.send_event` method. Define a handler in Python to manage these events.
 
 ```pyodide
 import panel as pn
@@ -135,12 +132,11 @@ class EventExample(PreactComponent):
     value = param.Parameter()
 
     _esm = """
-    export function render({ data }) {
-        return html`
-            <button onClick=${(e) => data.send_event('click', e)}>
-                Click me
-            </button>
-        `;
+    export function render({ model }) {
+      return html`
+        <button onClick=${(e) => model.send_event('click', e)}>
+          Click me
+        </button>`;
     }
     """
 
@@ -170,18 +166,17 @@ class EventExample(PreactComponent):
     value = param.String()
 
     _esm = """
-    function send_event(data) {
-        const currentDate = new Date();
-        const custom_event = new CustomEvent("click", { detail: currentDate.getTime() });
-        data.send_event('click', custom_event);
+    function send_event(model) {
+      const currentDate = new Date();
+      const custom_event = new CustomEvent("click", { detail: currentDate.getTime() });
+      model.send_event('click', custom_event);
     }
 
-    export function render({ data }) {
-        return html`
-            <button onClick=${() => send_event(data)}>
-                click me
-            </button>
-        `;
+    export function render({ model }) {
+      return html`
+        <button onClick=${() => send_event(model)}>
+          Click me
+        </button>`;
     }
     """
 
@@ -212,11 +207,10 @@ class ConfettiButton(PreactComponent):
     import confetti from "https://esm.sh/canvas-confetti@1.6.0";
 
     export function render() {
-        return html`
-            <button onClick=${e => confetti()}>
-                Click Me
-            </button>
-        `;
+      return html`
+        <button onClick=${e => confetti()}>
+          Click Me
+        </button>`;
     }
     """
 
@@ -243,11 +237,10 @@ class ConfettiButton(PreactComponent):
     import confetti from "canvas-confetti";
 
     export function render() {
-        return html`
-            <button onClick=${e => confetti()}>
-                Click Me
-            </button>
-        `;
+      return html`
+        <button onClick=${e => confetti()}>
+          Click Me
+        </button>`;
     }
     """
 
@@ -275,7 +268,7 @@ class CounterButton(pn.PreactComponent):
     value = param.Integer()
 
     _esm = "counter_button.js"
-    _stylesheets = [Path("counter_button.css")]
+    _stylesheets = ["counter_button.css"]
 
 CounterButton().servable()
 ```
@@ -283,10 +276,10 @@ CounterButton().servable()
 Now create the file **counter_button.js**.
 
 ```javascript
-export function render({ data }) {
+export function render({ model }) {
   return html`
-    <button onClick=${() => data.value += 1}>
-      count is ${data.value}
+    <button onClick=${() => model.value += 1}>
+      count is ${model.value}
     </button>
   `;
 }
@@ -311,7 +304,7 @@ Serve the app with `panel serve counter_button.py --autoreload`.
 
 You can now edit the JavaScript or CSS file, and the changes will be automatically reloaded.
 
-- Try changing the `innerHTML` from `count is ${data.value}` to `COUNT IS ${data.value}` and observe the update.
+- Try changing the `innerHTML` from `count is ${model.value}` to `COUNT IS ${model.value}` and observe the update.
 - Try changing the background color from `#0072B5` to `#008080`.
 
 ## Displaying A Single Child

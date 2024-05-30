@@ -21,8 +21,8 @@ class PreactUpdate(PreactComponent):
     text = param.String()
 
     _esm = """
-    export function render({ data }) {
-      return html`<h1>${data.text}</h1>`
+    export function render({ model }) {
+      return html`<h1>${model.text}</h1>`
     }
     """
 
@@ -31,11 +31,11 @@ class JSUpdate(JSComponent):
     text = param.String()
 
     _esm = """
-    export function render({ data }) {
+    export function render({ model }) {
       const h1 = document.createElement('h1')
-      h1.textContent = data.text
-      data.watch(() => {
-        h1.textContent = data.text;
+      h1.textContent = model.text
+      model.watch(() => {
+        h1.textContent = model.text;
       }, 'text')
       return h1
     }
@@ -74,12 +74,12 @@ class JSInput(JSComponent):
     text = param.String()
 
     _esm = """
-    export function render({ data }) {
+    export function render({ model }) {
       const inp = document.createElement('input')
       inp.id = 'input'
-      inp.value = data.text
+      inp.value = model.text
       inp.addEventListener('change', (event) => {
-        data.text = event.target.value;
+        model.text = event.target.value;
       })
       return inp
     }
@@ -91,12 +91,12 @@ class PreactInput(PreactComponent):
     text = param.String()
 
     _esm = """
-    export function render({ data }) {
+    export function render({ model }) {
       return html`
         <input
           id="input"
-          value=${data.text}
-          onChange=${e => { data.text = e.target.value }}
+          value=${model.text}
+          onChange=${e => { model.text = e.target.value }}
         />`
     }
     """
@@ -143,10 +143,10 @@ class JSSendEvent(JSComponent):
     clicks = param.Integer(default=0)
 
     _esm = """
-    export function render({ data }) {
+    export function render({ model }) {
       const button = document.createElement('button')
       button.id = 'button'
-      button.onclick = (event) => data.send_event('click', event)
+      button.onclick = (event) => model.send_event('click', event)
       return button
     }
     """
@@ -160,8 +160,8 @@ class PreactSendEvent(PreactComponent):
     clicks = param.Integer(default=0)
 
     _esm = """
-    export function render({ data }) {
-      return html`<button id="button" onClick=${(event) => data.send_event('click', event)}/>`
+    export function render({ model }) {
+      return html`<button id="button" onClick=${(event) => model.send_event('click', event)}/>`
     }
     """
 
@@ -174,8 +174,8 @@ class ReactSendEvent(ReactComponent):
     clicks = param.Integer(default=0)
 
     _esm = """
-    export function render({ data }) {
-      return <button id="button" onClick={(event) => data.send_event('click', event)}/>
+    export function render({ model }) {
+      return <button id="button" onClick={(event) => model.send_event('click', event)}/>
     }
     """
 

@@ -15,16 +15,16 @@ class CounterButton(JSComponent):
     value = param.Integer()
 
     _esm = """
-    export function render({ data }) {
-        let btn = document.createElement("button");
-        btn.innerHTML = `count is ${data.value}`;
-        btn.addEventListener("click", () => {
-            data.value += 1
-        });
-        data.watch(() => {
-            btn.innerHTML = `count is ${data.value}`;
-          }, 'value')
-        return btn
+    export function render({ model }) {
+      let btn = document.createElement("button");
+      btn.innerHTML = `count is ${model.value}`;
+      btn.addEventListener("click", () => {
+        model.value += 1
+      });
+      model.watch(() => {
+        btn.innerHTML = `count is ${model.value}`;
+      }, 'value')
+      return btn
     }
     """
 
@@ -44,7 +44,7 @@ CounterButton().servable()
 ### JSComponent Attributes
 
 - **`_esm`** (str | PurePath): This attribute accepts either a string or a path that points to an  [ECMAScript module](https://nodejs.org/api/esm.html#modules-ecmascript-modules). The ECMAScript module should export a `render` function which returns the HTML element to display. In a development environment such as a notebook or when using `--autoreload`, the module will automatically reload upon saving changes.
-- **`_import_map`** (dict | None): This optional dictionary defines an [import map](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap), allowing you to customize how module specifiers are resolved.
+- **`_importmap`** (dict | None): This optional dictionary defines an [import map](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap), allowing you to customize how module specifiers are resolved.
 - **`_stylesheets`** (optional list of strings): This optional attribute accepts a list of CSS strings or paths to CSS files. It supports automatic reloading in development environments.
 
 :::note
@@ -57,13 +57,12 @@ You may specify a path to a file as a string instead of a PurePath. The path sho
 
 The `_esm` attribute must export the `render` function. It accepts the following parameters:
 
-- **`data`**: Represents the non-Viewable Parameters of the component and provides methods to `.watch` for changes and `.send_event` back to Python.
+- **`model`**: Represents the Parameters of the component and provides methods to `.watch` for changes and `.send_event` back to Python.
 - **`children`**: Represents the Viewable child Parameters of the component and provides methods to `.watch` for changes. The `render` function is rerun if a child changes.
-- **`model`**: The Bokeh model.
 - **`view`**: The Bokeh view.
 - **`el`**: The HTML element that the component will be rendered into.
 
-Any HTML element returned from the `render` function will be appended to the HTML element (`el`) of the component.
+Any HTML element returned from the `render` function will be appended to the HTML element (`el`) of the component but you may also manually append to and manipulate the `el`.
 
 The `render` function will be rerun when any child on the `children` object changes.
 
@@ -108,16 +107,16 @@ class StyledCounterButton(JSComponent):
     ]
 
     _esm = """
-    export function render({ data }) {
-        let btn = document.createElement("button");
-        btn.innerHTML = `count is ${data.value}`;
-        btn.addEventListener("click", () => {
-            data.value += 1
-        });
-        data.watch(() => {
-            btn.innerHTML = `count is ${data.value}`;
-          }, 'value')
-        return btn
+    export function render({ model }) {
+      const btn = document.createElement("button");
+      btn.innerHTML = `count is ${model.value}`;
+      btn.addEventListener("click", () => {
+        model.value += 1
+      });
+      model.watch(() => {
+        btn.innerHTML = `count is ${model.value}`;
+      }, 'value')
+      return btn
     }
     """
 
@@ -126,7 +125,7 @@ StyledCounterButton().servable()
 
 ## Send Events from JavaScript to Python
 
-Events from JavaScript can be sent to Python using the `data.send_event` method. Define a *handler* in Python to manage these events. A *handler* is a method on the form `_handle_<name-of-event>(self, event)`:
+Events from JavaScript can be sent to Python using the `model.send_event` method. Define a *handler* in Python to manage these events. A *handler* is a method on the form `_handle_<name-of-event>(self, event)`:
 
 ```pyodide
 import panel as pn
@@ -141,11 +140,11 @@ class EventExample(JSComponent):
     value = param.Parameter()
 
     _esm = """
-    export function render({ data }) {
-        const btn = document.createElement('button')
-        btn.innerHTML = `Click Me`
-        btn.onclick = (event) => data.send_event('click', event)
-        return btn
+    export function render({ model }) {
+      const btn = document.createElement('button')
+      btn.innerHTML = `Click Me`
+      btn.onclick = (event) => model.send_event('click', event)
+      return btn
     }
     """
 
@@ -175,15 +174,15 @@ class CustomEventExample(JSComponent):
     value = param.String()
 
     _esm = """
-    export function render({ data }) {
-        const btn = document.createElement('button')
-        btn.innerHTML = `Click Me`;
-        btn.onclick = (event) => {
-            const currentDate = new Date();
-            const custom_event = new CustomEvent("click", { detail: currentDate.getTime() });
-            data.send_event('click', custom_event)
-            }
-        return btn
+    export function render({ model }) {
+      const btn = document.createElement('button')
+      btn.innerHTML = `Click Me`;
+      btn.onclick = (event) => {
+        const currentDate = new Date();
+        const custom_event = new CustomEvent("click", { detail: currentDate.getTime() });
+        model.send_event('click', custom_event)
+      }
+      return btn
     }
     """
 
@@ -214,12 +213,12 @@ class ConfettiButton(JSComponent):
     import confetti from "https://esm.sh/canvas-confetti@1.6.0";
 
     export function render() {
-        let btn = document.createElement("button");
-        btn.innerHTML = `Click Me`;
-        btn.addEventListener("click", () => {
-            confetti()
-        });
-        return btn
+      let btn = document.createElement("button");
+      btn.innerHTML = "Click Me";
+      btn.addEventListener("click", () => {
+        confetti()
+      });
+      return btn
     }
     """
 
@@ -246,12 +245,12 @@ class ConfettiButton(JSComponent):
     import confetti from "canvas-confetti";
 
     export function render() {
-        let btn = document.createElement("button");
-        btn.innerHTML = `Click Me`;
-        btn.addEventListener("click", () => {
-            confetti()
-        });
-        return btn
+      let btn = document.createElement("button");
+      btn.innerHTML = `Click Me`;
+      btn.addEventListener("click", () => {
+        confetti()
+	  });
+      return btn
     }
     """
 
@@ -289,16 +288,16 @@ CounterButton().servable()
 Now create the file **counter_button.js**.
 
 ```javascript
-export function render({ data }) {
-    let btn = document.createElement("button");
-    btn.innerHTML = `count is ${data.value}`;
-    btn.addEventListener("click", () => {
-        data.value += 1;
-    });
-    data.watch(() => {
-        btn.innerHTML = `count is ${data.value}`;
-    }, 'value');
-    return btn;
+export function render({ model }) {
+  let btn = document.createElement("button");
+  btn.innerHTML = `count is ${model.value}`;
+  btn.addEventListener("click", () => {
+    model.value += 1;
+  });
+  model.watch(() => {
+    btn.innerHTML = `count is ${model.value}`;
+  }, 'value');
+  return btn;
 }
 ```
 
@@ -321,7 +320,7 @@ Serve the app with `panel serve counter_button.py --autoreload`.
 
 You can now edit the JavaScript or CSS file, and the changes will be automatically reloaded.
 
-- Try changing the `innerHTML` from `count is ${data.value}` to `COUNT IS ${data.value}` and observe the update. Note you must update `innerHTML` in two places.
+- Try changing the `innerHTML` from `count is ${model.value}` to `COUNT IS ${model.value}` and observe the update. Note you must update `innerHTML` in two places.
 - Try changing the background color from `#0072B5` to `#008080`.
 
 ## Displaying A Single Child

@@ -15,17 +15,13 @@ class CounterButton(ReactComponent):
     value = param.Integer()
 
     _esm = """
-    function App(props) {
-        const [value, setValue] = props.state.value;
-        return (
-            <button onClick={e => setValue(value+1)}>
-            count is {value}
-            </button>
-        );
-    }
-
     export function render({state}) {
-        return <App state={state}/>;
+      const [value, setValue] = state.value;
+      return (
+        <button onClick={e => setValue(value+1)}>
+          count is {value}
+        </button>
+      )
     }
     """
 
@@ -59,9 +55,8 @@ You may specify a path to a file as a string instead of a PurePath. The path sho
 The `_esm` attribute must export the `render` function. It accepts the following parameters:
 
 - **`state`**: Manages non-`Viewable` Parameter state similar to React's [`useState`](https://www.w3schools.com/react/react_usestate.asp) hook.
-- **`data`**: Represents the non-`Viewable` Parameters of the component and provides methods to `.watch` for changes and `.send_event` back to Python.
+- **`model`**: Represents the Parameters of the component and provides methods to `.watch` for changes and `.send_event` back to Python.
 - **`children`**: Represents the `Viewable` Parameters of the component.
-- **`model`**: The Bokeh model.
 - **`view`**: The Bokeh view.
 - **`el`**: The HTML element that the component will be rendered into.
 
@@ -110,17 +105,13 @@ class CounterButton(ReactComponent):
     ]
 
     _esm = """
-    function App(props) {
-        const [value, setValue] = props.state.value;
-        return (
-            <button onClick={e => setValue(value+1)}>
-            count is {value}
-            </button>
-        );
-    }
-
     export function render({state}) {
-        return <App state={state}/>;
+      const [value, setValue] = props.state.value;
+      return (
+        <button onClick={e => setValue(value+1)}>
+          count is {value}
+        </button>
+	  );
     }
     """
 
@@ -144,16 +135,12 @@ class EventExample(ReactComponent):
     value = param.Parameter()
 
     _esm = """
-    function App(props) {
-        return (
-            <button onClick={e => props.data.send_event('click', e) }>
-            Click me
-            </button>
-        );
-    }
-
-    export function render({data}) {
-        return <App data={data}/>;
+    export function render({model}) {
+	  return (
+        <button onClick={e => model.send_event('click', e) }>
+          Click me
+        </button>
+	  );
     }
     """
 
@@ -183,22 +170,18 @@ class CustomEventExample(ReactComponent):
     value = param.String()
 
     _esm = """
-    function send_event(data) {
-        const currentDate = new Date();
-        const custom_event = new CustomEvent("click", { detail: currentDate.getTime() });
-        data.send_event('click', custom_event)
+    function send_event(model) {
+      const currentDate = new Date();
+      const custom_event = new CustomEvent("click", { detail: currentDate.getTime() });
+      model.send_event('click', custom_event)
     }
 
-    function App(props) {
-        return (
-            <button onClick={e => send_event(props.data) }>
-            Click me
-            </button>
-        );
-    }
-
-    export function render({data}) {
-        return <App data={data}/>;
+    export function render({model}) {
+	  return (
+        <button onClick={e => send_event(model) }>
+          Click me
+        </button>
+	  );
     }
     """
 
@@ -230,18 +213,18 @@ class ConfettiButton(ReactComponent):
     import confetti from "https://esm.sh/canvas-confetti@1.6.0";
 
     export function render() {
-        return (
-            <button onClick={e => confetti()}>
-            Click Me
-            </button>
-        );
+      return (
+        <button onClick={e => confetti()}>
+          Click Me
+        </button>
+	  );
     }
     """
 
 ConfettiButton().servable()
 ```
 
-Use the `_import_map` attribute for more concise module references.
+Use the `_importmap` attribute for more concise module references.
 
 ```pyodide
 import panel as pn
@@ -261,11 +244,11 @@ class ConfettiButton(ReactComponent):
     import confetti from "canvas-confetti";
 
     export function render() {
-        return (
-            <button onClick={e => confetti()}>
-            Click Me
-            </button>
-        );
+      return (
+        <button onClick={e => confetti()}>
+          Click Me
+        </button>
+      );
     }
     """
 
@@ -303,17 +286,13 @@ CounterButton().servable()
 Now create the file **counter_button.jsx**.
 
 ```javascript
-function App(props) {
-    const [value, setValue] = props.state.value;
-    return (
-        <button onClick={e => setValue(value+1)}>
-        count is {value}
-        </button>
-    );
-}
-
 export function render({state}) {
-    return <App state={state}/>;
+  const [value, setValue] = state.value;
+  return (
+    <button onClick={e => setValue(value+1)}>
+      count is {value}
+    </button>
+  );
 }
 ```
 
@@ -356,10 +335,7 @@ class Example(ReactComponent):
 
     _esm = """
     export function render({ children }) {
-      return (
-        <button>
-            {children.child}
-        </button>
+      return <button>{children.child}</button>
     )}
     """
 
@@ -460,17 +436,13 @@ class CounterButton(ReactComponent):
     let { useState } = React;
     console.log(useState)
 
-    function App(props) {
-        const [value, setValue] = useState(0);
-        return (
-            <button onClick={e => setValue(value+1)}>
-            count is {value}
-            </button>
-        );
-    }
-
     export function render({state}) {
-        return <App state={state}/>;
+      const [value, setValue] = useState(0);
+      return (
+        <button onClick={e => setValue(value+1)}>
+          count is {value}
+        </button>
+      );
     }
     """
 

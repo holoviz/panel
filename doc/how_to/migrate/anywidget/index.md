@@ -30,7 +30,7 @@ Convert the attributes below:
 | ----------- | ------------------------------ | -------------- | ---------------------------------------------------------------- |
 | `_esm`      | JavaScript string or Path      | `_esm`         | JavaScript string or Path                                        |
 | `_css`      | CSS string or Path             | `_stylesheets` | List of CSS strings or Paths                                     |
-| NA          | Not Available                  | `_import_map`  | [import map](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap) |
+| NA          | Not Available                  | `_importmap`  | [import map](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap) |
 
 ### Convert JavaScript Code
 
@@ -41,11 +41,11 @@ Convert the functions below:
 | `AnyWidget` | Comment                                              | `JSComponent` | Comment                                                          |
 | ----------- | ---------------------------------------------------- | ------------- | ---------------------------------------------------------------- |
 | `initialize`| Has access to `model`.<br>Can return *end of life* callback. | NA            | Not Available                                                    |
-| `render`    | Has access to `model` and `el`.<br>Can return *end of life* callback. | `render`     | Has access to `data`, `children`, `model`, `el`, and `view`.<br>Can return an `html` element to be appended to `el`. |
+| `render`    | Has access to `model` and `el`.<br>Can return *end of life* callback. | `render`     | Has access to `model`, `children`, `el`, and `view`.<br>Can return an `html` element to be appended to `el` or append to `el` manually. |
 
-In the `_esm` script, convert the `default` export required by `AnyWidget` to one or more *named exports* required by Panel.
+In the `_esm` script, either use the `default` export or *named exports*.
 
-Please note that the `AnyWidget` `model` is split across Panels `data`, `children` and `model`. Their methods are also different reflecting differences between Traitlets and Panel/ Bokeh JavaScript models:
+Their methods are also different reflecting differences between Traitlets and Panel/ Bokeh JavaScript models:
 
 | AnyWidget | Panel/ Bokeh |
 | --------- | ----- |

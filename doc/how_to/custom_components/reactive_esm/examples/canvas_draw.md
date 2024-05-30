@@ -15,7 +15,7 @@ class Canvas(pn.ReactiveESM):
     uri = param.String()
 
     _esm = """
-export function render({data, model, el}){
+export function render({model, el}){
     // Create canvas
     const canvas = document.createElement('canvas');
     canvas.style.border = '1px solid';
@@ -45,14 +45,14 @@ export function render({data, model, el}){
     clearButton.textContent = 'Clear';
     clearButton.onclick = () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height)
-        data.uri=""
+        model.uri=""
     }
 
     // Create save button
     const saveButton = document.createElement('button');
     saveButton.textContent = 'Save';
     saveButton.onclick = () => {
-        data.uri = canvas.toDataURL();
+        model.uri = canvas.toDataURL();
     };
 
     // Append elements to the parent element

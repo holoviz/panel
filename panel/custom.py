@@ -179,7 +179,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         data_props = self._process_param_change(data_params)
         params.update({
             'data': self._data_model(**{p: v for p, v in data_props.items() if p not in ignored}),
-            'dev': config.autoreload,
+            'dev': config.autoreload or getattr(self, '_debug', False),
             'esm': self._render_esm(),
             'importmap': self._process_importmap(),
         })
@@ -210,7 +210,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     def _setup_autoreload(self):
         from .config import config
-        if not (config.autoreload and import_available('watchfiles')):
+        if not ((config.autoreload or getattr(self, '_debug', False)) and import_available('watchfiles')):
             return
         super()._setup_autoreload()
         if (self._esm_path and not self._watching_esm):
