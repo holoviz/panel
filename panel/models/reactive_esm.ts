@@ -59,6 +59,7 @@ export class ReactiveESMView extends HTMLBoxView {
     super.connect_signals()
     const {esm, importmap} = this.model.properties
     this.on_change([esm, importmap], () => {
+      this.rendered = null
       this.invalidate_render()
     })
     const child_props = this.model.children.map((child: string) => this.model.data.properties[child])
@@ -114,9 +115,7 @@ export class ReactiveESMView extends HTMLBoxView {
 
     this.container = div({style: "display: contents;"})
     this.shadow_el.append(this.container)
-    if (this.model.compiled) {
-      this.rendered = this.model.compiled
-    } else {
+    if (this.rendered === null) {
       try {
         this.rendered = transform(
           this.model.esm, {
@@ -271,7 +270,6 @@ export namespace ReactiveESM {
 
   export type Props = HTMLBox.Props & {
     children: p.Property<any>
-    compiled: p.Property<string | null>
     data: p.Property<any>
     dev: p.Property<boolean>
     esm: p.Property<string>
@@ -292,9 +290,8 @@ export class ReactiveESM extends HTMLBox {
 
   static {
     this.prototype.default_view = ReactiveESMView
-    this.define<ReactiveESM.Props>(({Any, Array, Bool, Nullable, String}) => ({
+    this.define<ReactiveESM.Props>(({Any, Array, Bool, String}) => ({
       children:  [ Array(String),       [] ],
-      compiled:  [ Nullable(String),  null ],
       data:      [ Any                     ],
       dev:       [ Bool,             false ],
       esm:       [ String,              "" ],

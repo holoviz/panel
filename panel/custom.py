@@ -102,18 +102,24 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         self._watching_esm = False
         self._event_callbacks = defaultdict(list)
 
-    def _render_esm(self):
+    @property
+    def _esm_path(self):
         esm = self._esm
         if isinstance(esm, pathlib.PurePath):
-            esm = esm.read_text(encoding='utf-8')
-        elif esm.endswith(('.js', '.jsx', '.ts', '.tsx')):
-            try:
-                # Safely check if ESM is a path relative to class definition
-                esm_path = pathlib.Path(inspect.getfile(type(self))).parent / esm
-                if esm_path.is_file():
-                    esm = esm_path.read_text(encoding='utf-8')
-            except (OSError, TypeError, ValueError):
-                pass
+            return esm
+        try:
+            esm_path = pathlib.Path(inspect.getfile(type(self))).parent / esm
+            if esm_path.is_file():
+                return esm_path
+        except (OSError, TypeError, ValueError):
+            pass
+        return None
+
+    def _render_esm(self):
+        if (esm_path:= self._esm_path):
+            esm = esm_path.read_text(encoding='utf-8')
+        else:
+            esm = self._esm
         esm = textwrap.dedent(esm)
         return esm
 
@@ -137,12 +143,12 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     async def _watch_esm(self):
         import watchfiles
-        async for _ in watchfiles.awatch(self._esm, stop_event=self._watching_esm):
+        async for _ in watchfiles.awatch(self._esm_path, stop_event=self._watching_esm):
             esm = self._render_esm()
             for ref, (model, _) in self._models.items():
                 if esm == model.esm:
                     continue
-                self._apply_update({}, {'compiled': None, 'esm': esm}, model, ref)
+                self._apply_update({}, {'esm': esm}, model, ref)
 
     @property
     def _linked_properties(self) -> list[str]:
@@ -197,7 +203,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         if not (config.autoreload and import_available('watchfiles')):
             return
         super()._setup_autoreload()
-        if isinstance(self._esm, pathlib.PurePath) and not self._watching_esm:
+        if (self._esm_path and not self._watching_esm):
             self._watching_esm = asyncio.Event()
             state.execute(self._watch_esm)
 
@@ -230,7 +236,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     ) -> None:
         model_msg, data_msg  = {}, {}
         for prop, v in list(msg.items()):
-            if prop in list(Reactive.param)+['compiled', 'esm', 'importmap']:
+            if prop in list(Reactive.param)+['esm', 'importmap']:
                 model_msg[prop] = v
             elif prop in model.children:
                 continue
