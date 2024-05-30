@@ -73,7 +73,7 @@ export class ReactiveESMView extends HTMLBoxView {
     }
     this.model_proxy = new Proxy(this, {
       get: model_getter,
-      set: model_setter
+      set: model_setter,
     })
   }
 
