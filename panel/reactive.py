@@ -1228,7 +1228,6 @@ class ReactiveData(SyncableData):
                     # dtype has a timezone, using pandas to convert
                     # from milliseconds timezone aware to utc nanoseconds.
                     converted = (
-                        # pd.to_datetime(values, unit="ms")
                         pd.Series(pd.to_datetime(values, unit="ms"))
                         .dt.tz_localize(dtype.tz)
                         .dt.tz_convert('utc')
