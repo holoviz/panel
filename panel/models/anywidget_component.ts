@@ -7,7 +7,7 @@ class PanelModel {
   declare model: AnyWidgetComponent
 
   constructor(model: AnyWidgetComponent) {
-    this.model = model;
+    this.model = model
   }
 
   get(name: any) {
@@ -63,7 +63,7 @@ export class AnyWidgetComponentView extends ReactComponentView {
   }
 
   protected override _run_initializer(initialize: (props: any) => void): void {
-    const props = {view: this, model: this.model, data: this.adapter}
+    const props = {model: this.model, data: this.adapter}
     initialize(props)
   }
 
