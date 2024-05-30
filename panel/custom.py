@@ -46,8 +46,9 @@ class ReactiveESMMetaclass(ReactiveMetaBase):
         # Create model with unique name
         ReactiveMetaBase._name_counter[name] += 1
         model_name = f'{name}{ReactiveMetaBase._name_counter[name]}'
+        ignored = [p for p in Reactive.param if not issubclass(type(mcs.param[p].owner), ReactiveESMMetaclass)]
         mcs._data_model = construct_data_model(
-            mcs, name=model_name, ignore=list(Reactive.param)
+            mcs, name=model_name, ignore=ignored
         )
 
 
@@ -155,7 +156,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         return [p for p in self._data_model.properties() if p not in ('js_property_callbacks',)]
 
     def _init_params(self) -> dict[str, Any]:
-        ignored = list(Reactive.param)
+        cls = type(self)
+        ignored = [p for p in Reactive.param if not issubclass(cls.param[p].owner, ReactiveESM)]
         params = {
             p : getattr(self, p) for p in list(Layoutable.param)
             if getattr(self, p) is not None and p != 'name'
@@ -168,10 +170,12 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                 is_viewable_param(p)
             ):
                 continue
+            if k in params:
+                params.pop(k)
             data_params[k] = v
         data_props = self._process_param_change(data_params)
         params.update({
-            'data': self._data_model(**data_props),
+            'data': self._data_model(**{p: v for p, v in data_props.items() if p not in ignored}),
             'dev': config.autoreload,
             'esm': self._render_esm(),
             'importmap': getattr(self, '_importmap', {}),

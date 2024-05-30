@@ -11,10 +11,10 @@ class PanelModel {
 
   get(name) {
     let value
-    if (name in this.model.attributes) {
-      value = this.model[name]
-    } else {
+    if (name in this.model.data.attributes) {
       value = this.model.data[name]
+    } else {
+      value = this.model[name]
     }
     if (value instanceof ArrayBuffer) {
       value = new Uint8Array(value)
@@ -37,26 +37,25 @@ class PanelModel {
       console.error("Only change events supported")
     }
   }
+
+  off(event, cb) {
+    // Implement unwatch
+  }
 }
 `
 
 export class AnyWidgetComponentView extends ReactComponentView {
 
-  protected override _render_code(): string {
-    const [prefix, suffix] = this._render_affixes()
-    return `
-${prefix}
+  protected override _render_affixes(): [string, string] {
+    const prefix = `
+const _view = Bokeh.index.find_one_by_id('${this.model.id}')
 
 ${panel_adapter}
 
-const _model = new PanelModel(view.model)
-props = {...props, model: _model}
+const _model = new PanelModel(_view.model)
 
-${this.rendered}
-
-const rendered = render(props)
-
-${suffix}`
+let props = {view: _view, model: _model, data: _view.model.data, el: _view.container}`
+    return [prefix, ""]
   }
 }
 
