@@ -11,7 +11,7 @@ import type {UIElement, UIElementView} from "@bokehjs/models/ui/ui_element"
 import {serializeEvent} from "./event-to-object"
 import {DOMEvent} from "./html"
 import {HTMLBox, HTMLBoxView, set_size} from "./layout"
-import {convertUndefined, find_attributes, formatError} from "./util"
+import {convertUndefined, find_attributes, formatError, hash} from "./util"
 
 import error_css from "styles/models/esm.css"
 
@@ -71,25 +71,25 @@ export class ReactiveESMView extends HTMLBoxView {
       const mod = this.compiled_module = await importShim(url)
       let initialize
       if (mod.initialize) {
-	initialize = this.compiled_module.initialize
+        initialize = this.compiled_module.initialize
       } else if (mod.default && mod.default.initialize) {
-	initialize = mod.default.initialize
+        initialize = mod.default.initialize
       }
       if (initialize) {
-	this._run_initializer(initialize)
+        this._run_initializer(initialize)
       }
     } catch(e: any) {
       this.compiled_module = null
       if (this.model.dev) {
-	this.compile_error = e
+        this.compile_error = e
       } else {
-	throw e
+        throw e
       }
     }
   }
 
   protected _run_initializer(initialize: (props: any) => void): void {
-    const props = {view: this, model: this.model, data: this.model.data}
+    const props = {model: this.model, data: this.model.data}
     initialize(props)
   }
 
