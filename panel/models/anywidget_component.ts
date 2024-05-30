@@ -3,28 +3,20 @@ import type * as p from "@bokehjs/core/properties"
 import {ReactiveESMView} from "./reactive_esm"
 import {ReactComponent, ReactComponentView} from "./react_component"
 
-export class AnyWidgetComponentView extends ReactComponentView {
-
-  override compile(): string | null {
-    return ReactiveESMView.prototype.compile.call(this)
-  }
-
-  protected override _render_code(): string {
-    return `
-const view = Bokeh.index.find_one_by_id('${this.model.id}')
-
 class PanelModel {
+  declare model: AnyWidgetComponent
 
-  constructor(model) {
+  constructor(model: AnyWidgetComponent) {
     this.model = model;
   }
 
-  get(name) {
+  get(name: any) {
     let value
+    console.log(this.model)
     if (name in this.model.data.attributes) {
-      value = this.model.data[name]
+      value = this.model.data.attributes[name]
     } else {
-      value = this.model[name]
+      value = this.model.attributes[name]
     }
     if (value instanceof ArrayBuffer) {
       value = new Uint8Array(value)
@@ -32,15 +24,19 @@ class PanelModel {
     return value
   }
 
-  set(name, value) {
-    return this.data[name] = value;
+  set(name: string, value: any) {
+    if (name in this.model.data.attributes) {
+      this.model.data.setv({[name]: value})
+    } else if (name in this.model.attributes) {
+      this.model.setv({[name]: value})
+    }
   }
 
   save_changes() {
     // no-op, not a thing in panel
   }
 
-  on(event, cb) {
+  on(event: string, cb: () => void) {
     if (event.startsWith("change:")) {
       this.model.data.watch(() => cb(), event.slice("change:".length))
     } else {
@@ -48,22 +44,36 @@ class PanelModel {
     }
   }
 
-  off(event, cb) {
+  // @ts-ignore
+  off(event: string, cb: () => void) {
     // Implement unwatch
   }
 }
 
-const model = new PanelModel(view.model)
-let props = {view, model, data: view.model.data, el: view.container}
+export class AnyWidgetComponentView extends ReactComponentView {
+  adapter: PanelModel
 
-let render;
-if (view.rendered_module.default) {
-  render = view.rendered_module.default.render
-} else {
-  render = view.rendered_module.render
-}
+  override initialize(): void {
+    super.initialize()
+    this.adapter = new PanelModel(this.model)
+  }
 
-render(props)`
+  override compile(): string | null {
+    return ReactiveESMView.prototype.compile.call(this)
+  }
+
+  protected override _run_initializer(initialize: (props: any) => void): void {
+    const props = {view: this, model: this.model, data: this.adapter}
+    initialize(props)
+  }
+
+  protected override _render_code(): string {
+    return `
+const view = Bokeh.index.find_one_by_id('${this.model.id}')
+
+let props = {view, model: view.adapter, data: view.model.data, el: view.container}
+
+view.render_fn(props)`
   }
 }
 

@@ -38,7 +38,7 @@ export class ReactComponentView extends ReactiveESMView {
   }
 
   get usesReact(): boolean {
-    return this.rendered !== null && this.rendered.includes("React")
+    return this.compiled !== null && this.compiled.includes("React")
   }
 
   override compile(): string | null {
@@ -152,14 +152,7 @@ for (const child of view.model.children) {
 
 let props = {view, model: view.model, data: view.model.data, el: view.container, children, state: state}
 
-let render;
-if (view.rendered_module.default) {
-  render = view.rendered_module.default.render
-} else {
-  render = view.rendered_module.render
-}
-
-const rendered = React.createElement(render, props)
+const rendered = React.createElement(view.render_fn, props)
 
 ${render_code}`
   }

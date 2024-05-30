@@ -20,8 +20,9 @@ export class ReactiveESMView extends HTMLBoxView {
   sucrase_transforms: Transform[] = ["typescript"]
   container: HTMLDivElement
   modelState: typeof Proxy
-  rendered: string | null = null
-  rendered_module: any = null
+  compiled: string | null = null
+  compiled_module: any = null
+  compile_error: Error | null = null
   _changing: boolean = false
   _watchers: any = {}
   _child_callbacks: Map<string, (new_views: UIElementView[]) => void>
@@ -48,6 +49,50 @@ export class ReactiveESMView extends HTMLBoxView {
     }
   }
 
+  override async lazy_initialize(): Promise<void> {
+    await super.lazy_initialize()
+    await this.recompile()
+  }
+
+  async recompile(): Promise<void> {
+    this.compile_error = null
+    const compiled = this.compile()
+    if (compiled === null) {
+      this.compiled_module = null
+      return
+    }
+    this.compiled = compiled
+    this._declare_importmap()
+    const url = URL.createObjectURL(
+      new Blob([this.compiled], {type: "text/javascript"}),
+    )
+    try {
+      // @ts-ignore
+      const mod = this.compiled_module = await importShim(url)
+      let initialize
+      if (mod.initialize) {
+	initialize = this.compiled_module.initialize
+      } else if (mod.default && mod.default.initialize) {
+	initialize = mod.default.initialize
+      }
+      if (initialize) {
+	this._run_initializer(initialize)
+      }
+    } catch(e: any) {
+      this.compiled_module = null
+      if (this.model.dev) {
+	this.compile_error = e
+      } else {
+	throw e
+      }
+    }
+  }
+
+  protected _run_initializer(initialize: (props: any) => void): void {
+    const props = {view: this, model: this.model, data: this.model.data}
+    initialize(props)
+  }
+
   override stylesheets(): StyleSheetLike[] {
     const stylesheets = super.stylesheets()
     if (this.model.dev) {
@@ -59,8 +104,8 @@ export class ReactiveESMView extends HTMLBoxView {
   override connect_signals(): void {
     super.connect_signals()
     const {esm, importmap} = this.model.properties
-    this.on_change([esm, importmap], () => {
-      this.rendered = null
+    this.on_change([esm, importmap], async () => {
+      await this.recompile()
       this.invalidate_render()
     })
     const child_props = this.model.children.map((child: string) => this.model.data.properties[child])
@@ -87,6 +132,16 @@ export class ReactiveESMView extends HTMLBoxView {
 
   get_child(model: UIElement): UIElementView | undefined {
     return this._child_views.get(model)
+  }
+
+  get render_fn(): ((props: any) => any) | null {
+    if (this.compiled_module === null) {
+      return null
+    } else if (this.compiled_module.default) {
+      return this.compiled_module.default.render
+    } else {
+      return this.compiled_module.render
+    }
   }
 
   override get child_models(): LayoutDOM[] {
@@ -117,14 +172,13 @@ export class ReactiveESMView extends HTMLBoxView {
     set_size(this.el, this.model)
     this.container = div({style: "display: contents;"})
     this.shadow_el.append(this.container)
-    if (this.rendered === null) {
-      const compiled = this.compile()
-      if (compiled === null) {
-        return
-      }
-      this.rendered = compiled
+    if (this.compile_error) {
+      const error = div({class: "error"})
+      error.innerHTML = formatError(this.compile_error, this.model.esm)
+      this.container.appendChild(error)
+    } else {
+      this.render_esm()
     }
-    this.render_esm()
   }
 
   compile(): string | null {
@@ -138,9 +192,7 @@ export class ReactiveESMView extends HTMLBoxView {
       ).code
     } catch (e) {
       if (e instanceof SyntaxError && this.model.dev) {
-        const error = div({class: "error"})
-        error.innerHTML = formatError(e, this.model.esm)
-        this.container.appendChild(error)
+        this.compile_error = e
         return null
       } else {
         throw e
@@ -159,7 +211,7 @@ export class ReactiveESMView extends HTMLBoxView {
 
   protected _render_code(): string {
     const rerender_vars = find_attributes(
-      this.rendered || "", "children", [],
+      this.compiled || "", "children", [],
     )
     return `
 const view = Bokeh.index.find_one_by_id('${this.model.id}')
@@ -177,14 +229,7 @@ for (const child of view.model.children) {
   }
 }
 
-let render;
-if (view.rendered_module.default) {
-  render = view.rendered_module.default.render
-} else {
-  render = view.rendered_module.render
-}
-
-const output = render({
+const output = view.render_fn({
   view: view, model: view.model, data: view.model.data, el: view.container, children: children
 })
 
@@ -197,24 +242,16 @@ view.model.data.watch(() => view.render_esm(), ${JSON.stringify(rerender_vars)})
   }
 
   render_esm(): void {
-    if (this.rendered === null) {
+    if (this.compiled === null) {
       return
     }
     this._disconnect_watchers()
-    this._declare_importmap()
-    const url = URL.createObjectURL(
-      new Blob([this.rendered], {type: "text/javascript"}),
+    const code = this._render_code()
+    const render_url = URL.createObjectURL(
+      new Blob([code], {type: "text/javascript"}),
     )
     // @ts-ignore
-    importShim(url).then((mod: any) => {
-      this.rendered_module = mod
-      const code = this._render_code()
-      const render_url = URL.createObjectURL(
-        new Blob([code], {type: "text/javascript"}),
-      )
-      // @ts-ignore
-      importShim(render_url)
-    })
+    importShim(render_url)
   }
 
   render_children() {
