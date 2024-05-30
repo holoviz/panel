@@ -10,7 +10,7 @@ import type {UIElement, UIElementView} from "@bokehjs/models/ui/ui_element"
 
 import {serializeEvent} from "./event-to-object"
 import {DOMEvent} from "./html"
-import {HTMLBox, HTMLBoxView} from "./layout"
+import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 import {convertUndefined, find_attributes, formatError} from "./util"
 
 import error_css from "styles/models/esm.css"
@@ -113,6 +113,7 @@ export class ReactiveESMView extends HTMLBoxView {
     this._child_callbacks = new Map()
     this._watchers = {}
 
+    set_size(this.el, this.model)
     this.container = div({style: "display: contents;"})
     this.shadow_el.append(this.container)
     if (this.rendered === null) {
