@@ -137,7 +137,7 @@ export class CommManager extends Model {
     this._event_buffer = []
     const message = {...Message.create("PATCH-DOC", {}, patch)}
     const buffers: ArrayBuffer[] = []
-    message.content = this._extract_buffers(message.content, buffers)
+    this._extract_buffers(message.content, buffers)
     this._client_comm.send(message, {}, buffers)
     for (const view of this.ns.shared_views.get(this.plot_id)) {
       if (view !== this && view.document != null) {
