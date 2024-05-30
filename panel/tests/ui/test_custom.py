@@ -1,3 +1,6 @@
+import pathlib
+import tempfile
+
 import param
 import pytest
 
@@ -19,7 +22,7 @@ class PreactUpdate(PreactComponent):
 
     _esm = """
     export function render({ data }) {
-      return html`<h1 id="header">${data.text}</h1>`
+      return html`<h1>${data.text}</h1>`
     }
     """
 
@@ -30,7 +33,6 @@ class JSUpdate(JSComponent):
     _esm = """
     export function render({ data }) {
       const h1 = document.createElement('h1')
-      h1.id = 'header'
       h1.textContent = data.text
       data.watch(() => {
         h1.textContent = data.text;
@@ -48,23 +50,23 @@ class ReactUpdate(ReactComponent):
       const [text, setText ] = state.text
       return (
         <div>
-          <h1 id="header">{text}</h1>
+          <h1>{text}</h1>
         </div>
       );
     }
     """
 
 @pytest.mark.parametrize('component', [JSUpdate, PreactUpdate, ReactUpdate])
-def test_esm_update(page, component):
+def test_update(page, component):
     example = component(text='Hello World!')
 
     serve_component(page, example)
 
-    expect(page.locator('#header')).to_have_text('Hello World!')
+    expect(page.locator('h1')).to_have_text('Hello World!')
 
     example.text = "Foo!"
 
-    expect(page.locator('#header')).to_have_text('Foo!')
+    expect(page.locator('h1')).to_have_text('Foo!')
 
 
 class JSInput(JSComponent):
@@ -288,3 +290,64 @@ def test_children(page, component):
 
     expect(page.locator('.foo').nth(0)).to_have_text('1')
     expect(page.locator('.foo').nth(1)).to_have_text('2')
+
+JS_CODE_BEFORE = """
+export function render() {
+  const h1 = document.createElement('h1')
+  h1.innerText = "foo"
+  return h1
+}"""
+
+JS_CODE_AFTER = """
+export function render() {
+  const h1 = document.createElement('h1')
+  h1.innerText = "bar"
+  return h1
+}"""
+
+PREACT_CODE_BEFORE = """
+export function render() {
+  return html`<h1>foo</h1>`
+}"""
+
+PREACT_CODE_AFTER = """
+export function render() {
+  return html`<h1>bar</h1>`
+}"""
+
+REACT_CODE_BEFORE = """
+export function render() {
+  return <h1>foo</h1>
+}"""
+
+REACT_CODE_AFTER = """
+export function render() {
+  return <h1>bar</h1>
+}"""
+
+@pytest.mark.parametrize('component,before,after', [
+    (JSComponent, JS_CODE_BEFORE, JS_CODE_AFTER),
+    (PreactComponent, PREACT_CODE_BEFORE, PREACT_CODE_AFTER),
+    (ReactChildren, REACT_CODE_BEFORE, REACT_CODE_AFTER),
+])
+def test_reload(page, component, before, after):
+    with tempfile.NamedTemporaryFile(suffix='.js', mode='w', encoding='utf-8') as tmp:
+
+        tmp.file.write(before)
+        tmp.file.flush()
+        tmp.file.seek(0)
+
+        class CustomReload(component):
+            _esm = pathlib.Path(tmp.name)
+
+        example = CustomReload()
+        serve_component(page, example)
+
+        expect(page.locator('h1')).to_have_text('foo')
+
+        tmp.file.write(after)
+        tmp.file.flush()
+        tmp.file.seek(0)
+        example._update_esm()
+
+        expect(page.locator('h1')).to_have_text('bar')

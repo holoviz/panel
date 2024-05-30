@@ -145,11 +145,14 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     async def _watch_esm(self):
         import watchfiles
         async for _ in watchfiles.awatch(self._esm_path, stop_event=self._watching_esm):
-            esm = self._render_esm()
-            for ref, (model, _) in self._models.items():
-                if esm == model.esm:
-                    continue
-                self._apply_update({}, {'esm': esm}, model, ref)
+            self._update_esm()
+
+    def _update_esm(self):
+        esm = self._render_esm()
+        for ref, (model, _) in self._models.items():
+            if esm == model.esm:
+                continue
+            self._apply_update({}, {'esm': esm}, model, ref)
 
     @property
     def _linked_properties(self) -> list[str]:
