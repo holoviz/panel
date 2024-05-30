@@ -1221,9 +1221,24 @@ class ReactiveData(SyncableData):
         dtype = old_values.dtype
         converted: list | np.ndarray | None = None
         if dtype.kind == 'M':
-            if values.dtype.kind in 'if':# TODO: need to doublecheck if this is still needed
-                NATs = np.isnan(values)
-                converted = np.where(NATs, np.nan, values * 10e5).astype(dtype)
+            if values.dtype.kind in 'if':
+                if getattr(dtype, 'tz', None):
+                    import pandas as pd
+
+                    # dtype has a timezone, using pandas to convert
+                    # from milliseconds timezone aware to utc nanoseconds.
+                    converted = (
+                        # pd.to_datetime(values, unit="ms")
+                        pd.Series(pd.to_datetime(values, unit="ms"))
+                        .dt.tz_localize(dtype.tz)
+                        .dt.tz_convert('utc')
+                        .astype(np.int64)
+                    )
+                    converted = converted.astype('datetime64[ns]')
+                else:
+                    # timestamps converted from milliseconds to nanoseconds,
+                    # and to datetime.
+                    converted = (values * 10e5).astype(dtype)
         elif dtype.kind == 'O':
             if (all(isinstance(ov, dt.date) for ov in old_values) and
                 not all(isinstance(iv, dt.date) for iv in values)):

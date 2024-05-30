@@ -1972,6 +1972,39 @@ def test_server_edit_event():
     assert events[0].value == 3.14
     assert events[0].old == 1
 
+
+def test_edit_with_datetime_aware_column():
+    # https://github.com/holoviz/panel/issues/6673
+
+    # The order of these columns matter, 'B' should be first as it's in fact
+    # processed first when 'A' is edited.
+    data = {
+        "B": pd.date_range(start='2024-01-01', end='2024-01-03', freq='D', tz='utc'),
+        "A": ['a', 'b', 'c'],
+    }
+    df = pd.DataFrame(data)
+
+    table = Tabulator(df)
+
+    serve_and_request(table)
+
+    wait_until(lambda: bool(table._models))
+    ref, (model, _) = list(table._models.items())[0]
+    doc = list(table._documents.keys())[0]
+
+    events = []
+    table.on_edit(lambda e: events.append(e))
+
+    new_data = dict(model.source.data)
+    new_data['A'][1] = 'new'
+
+    table._server_change(doc, ref, None, 'data', model.source.data, new_data)
+    table._server_event(doc, TableEditEvent(model, 'A', 1))
+
+    wait_until(lambda: len(events) == 1)
+    assert events[0].value == 'new'
+    assert events[0].old == 'b'
+
 def test_tabulator_cell_click_event():
     df = makeMixedDataFrame()
     table = Tabulator(df)
