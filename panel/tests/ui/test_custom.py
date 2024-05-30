@@ -44,17 +44,13 @@ class ReactUpdate(ReactComponent):
     text = param.String()
 
     _esm = """
-    function App(props) {
-      const [text, setText ] = props.state.text
+    export function render({ state }) {
+      const [text, setText ] = state.text
       return (
         <div>
           <h1 id="header">{text}</h1>
         </div>
       );
-    }
-
-    export function render({ state }) {
-      return <App state={state}/>;
     }
     """
 
@@ -108,8 +104,8 @@ class ReactInput(ReactComponent):
     text = param.String()
 
     _esm = """
-    function App(props) {
-      const [text, setText ] = props.state.text
+    export function render({ state }) {
+      const [text, setText ] = state.text
       return (
         <div>
           <input
@@ -118,11 +114,7 @@ class ReactInput(ReactComponent):
             onChange={e => setText(e.target.value)}
           />
         </div>
-      );
-    }
-
-    export function render({ state }) {
-      return <App state={state}/>;
+      )
     }
     """
 

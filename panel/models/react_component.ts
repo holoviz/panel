@@ -159,7 +159,7 @@ if (view.rendered_module.default) {
   render = view.rendered_module.render
 }
 
-const rendered = render(props)
+const rendered = React.createElement(render, props)
 
 ${render_code}`
   }

@@ -56,6 +56,8 @@ class Child extends Component<ChildProps> {
 export class PreactComponentView extends ReactiveESMView {
   declare model: PreactComponent
   // @ts-ignore
+  private _h = h
+  // @ts-ignore
   private _htm = html
   // @ts-ignore
   private _render_htm = render
@@ -96,7 +98,7 @@ if (view.rendered_module.default) {
   render = view.rendered_module.render
 }
 
-const output = render({view: view, model: view.model, data: view.model.data, el: view.container, children: children})
+const output = view._h(render, {view: view, model: view.model, data: view.model.data, el: view.container, children: children})
 
 view._render_htm(output, view.container)
 view.model.data.watch(() => view.render_esm(), ${JSON.stringify(rerender_vars)})`
