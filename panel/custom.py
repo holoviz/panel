@@ -19,6 +19,7 @@ from .config import config
 from .io.datamodel import construct_data_model
 from .io.state import state
 from .models import (
+    AnyWidgetComponent as _BkAnyWidgetComponent,
     PreactComponent as _BkPreactComponent, ReactComponent as _BkReactComponent,
     ReactiveESM as _BkReactiveESM,
 )
@@ -347,6 +348,17 @@ class ReactComponent(ReactiveESM):
         params = super()._init_params()
         params['react_version'] = self._react_version
         return params
+
+
+class AnyWidgetComponent(ReactComponent):
+    """
+    The `AnyWidgetComponent` allows you to create custom Panel components
+    in the style of an AnyWidget component. Specifically this component
+    type creates shims that make it possible to reuse AnyWidget ESM code
+    as is, without having to adapt the callbacks to use Bokeh APIs.
+    """
+
+    _bokeh_model = _BkAnyWidgetComponent
 
 
 class PreactComponent(ReactiveESM):

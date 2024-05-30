@@ -43,3 +43,8 @@ class PreactComponent(ReactiveESM):
     """
     Renders htm based output using Preact.
     """
+
+class AnyWidgetComponent(ReactComponent):
+    """
+    Renders AnyWidget esm definitions by adding a compatibility layer.
+    """

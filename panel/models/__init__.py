@@ -6,7 +6,9 @@ files.
 """
 from .browser import BrowserInfo  # noqa
 from .datetime_picker import DatetimePicker  # noqa
-from .esm import PreactComponent, ReactComponent, ReactiveESM  # noqa
+from .esm import (  # noqa
+    AnyWidgetComponent, PreactComponent, ReactComponent, ReactiveESM,
+)
 from .feed import Feed  # noqa
 from .icon import ButtonIcon, ToggleIcon, _ClickableIcon  # noqa
 from .ipywidget import IPyWidget  # noqa

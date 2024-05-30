@@ -98,11 +98,18 @@ export class ReactComponentView extends ReactiveESMView {
     return false
   }
 
-  protected override _render_code(): string {
+  get usesReact(): boolean {
+    return this.rendered !== null && this.rendered.includes('React')
+  }
+
+  protected _render_affixes(): [string, string] {
     let render_code
-    let import_code = `
+    let import_code = ""
+    if (this.usesReact) {
+      import_code = `
 import * as React from "react"
 import { createRoot } from 'react-dom/client'`
+    }
     if (this.usesMui) {
       import_code = `
 ${import_code}
@@ -119,7 +126,7 @@ const cache = createCache({
   container: headElement,
 })
 
-if (rendered) {
+if (rendered && view.usesReact) {
   view._changing = true
   const root = createRoot(view.container)
   root.render(
@@ -129,7 +136,7 @@ if (rendered) {
 }`
     } else {
       render_code = `
-if (rendered) {
+if (rendered && view.usesReact) {
   view._changing = true
   const root = createRoot(view.container)
   root.render(rendered)
@@ -137,20 +144,39 @@ if (rendered) {
 }`
     }
 
-    return `
+    let prefix = `
 ${import_code}
 
 const view = Bokeh.index.find_one_by_id('${this.model.id}')
+
+let props = {view: view, model: view.model, data: view.model.data, el: view.container}
+`
+
+    if (this.usesReact) {
+      prefix = `
+${prefix}
 
 ${state_getter}
 
 ${child_components}
 
+props = {...props, state: modelState, children: children}
+`
+    }
+
+    return [prefix, render_code]
+  }
+
+  protected override _render_code(): string {
+    const [prefix, suffix] = this._render_affixes()
+    return `
+${prefix}
+
 ${this.rendered}
 
-const rendered = render({view: view, model: view.model, data: view.model.data, el: view.container, state: modelState, children: children})
+const rendered = render(props)
 
-${render_code}`
+${suffix}`
   }
 }
 

@@ -83,9 +83,14 @@ def class_selector_to_model(p, kwargs):
     else:
         return bp.Any(**kwargs)
 
+def bytes_param(p, kwargs):
+    kwargs.pop('default')
+    return bp.Bytes(**kwargs)
+
 PARAM_MAPPING = {
     pm.Array: lambda p, kwargs: bp.Array(bp.Any, **kwargs),
     pm.Boolean: lambda p, kwargs: bp.Bool(**kwargs),
+    pm.Bytes: lambda p, kwargs: bytes_param(p, kwargs),
     pm.CalendarDate: lambda p, kwargs: bp.Date(**kwargs),
     pm.CalendarDateRange: lambda p, kwargs: bp.Tuple(bp.Date, bp.Date, **kwargs),
     pm.ClassSelector: class_selector_to_model,
@@ -108,7 +113,6 @@ PARAM_MAPPING = {
     Child: lambda p, kwargs: bp.Nullable(bp.Instance(Model), **kwargs),
     Children: lambda p, kwargs: bp.List(bp.Instance(Model), **kwargs),
 }
-
 
 
 def construct_data_model(parameterized, name=None, ignore=[], types={}):

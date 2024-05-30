@@ -1,4 +1,5 @@
 export {AcePlot} from "./ace"
+export {AnyWidgetComponent} from "./anywidget_component"
 export {Audio} from "./audio"
 export {BrowserInfo} from "./browser"
 export {Button} from "./button"
