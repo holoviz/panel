@@ -336,7 +336,7 @@ def test_tabulator_expanded_content_pagination(document, comm):
     assert len(model.children) == 0
 
 
-def test_tabulator_expanded_content_embed(document, comm):
+def test_tabulator_content_embed(document, comm):
     df = makeMixedDataFrame()
 
     table = Tabulator(df, embed_content=True, row_content=lambda r: r.A)
@@ -356,6 +356,34 @@ def test_tabulator_expanded_content_embed(document, comm):
         assert i in model.children
         row = model.children[i]
         assert row.text  == f"&lt;pre&gt;{r.A+1}&lt;/pre&gt;"
+
+
+def test_tabulator_content_embed_and_expand(document, comm):
+    # https://github.com/holoviz/panel/issues/6200
+    df = makeMixedDataFrame()
+
+    calls = []
+    def row_content(row):
+        calls.append(row)
+        return row.A
+
+    table = Tabulator(df, embed_content=True, row_content=row_content)
+
+    model = table.get_root(document, comm)
+
+    assert len(calls) == len(df)
+
+    assert len(model.children) == len(df)
+
+    for i, r in df.iterrows():
+        assert i in model.children
+        row = model.children[i]
+        assert row.text  == f"&lt;pre&gt;{r.A}&lt;/pre&gt;"
+
+    # Expanding a row should not call row_content again in this context.
+    table.expanded = [1]
+
+    assert len(calls) == len(df)
 
 
 def test_tabulator_selected_and_filtered_dataframe(document, comm):
