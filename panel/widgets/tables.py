@@ -1484,10 +1484,15 @@ class Tabulator(BaseTable):
     def _update_children(self, *events):
         cleanup, reuse = set(), set()
         page_events = ('page', 'page_size', 'pagination')
+        old_panels = self._child_panels
         for event in events:
             if event.name == 'expanded' and len(events) == 1:
-                cleanup = set(event.old) - set(event.new)
-                reuse = set(event.old) & set(event.new)
+                if self.embed_content:
+                    cleanup = set()
+                    reuse = set(old_panels)
+                else:
+                    cleanup = set(event.old) - set(event.new)
+                    reuse = set(event.old) & set(event.new)
             elif (
               (event.name == 'value' and self._indexes_changed(event.old, event.new)) or
               (event.name in page_events and not self._updating) or
@@ -1495,7 +1500,6 @@ class Tabulator(BaseTable):
             ):
                 self.expanded = []
                 return
-        old_panels = self._child_panels
         self._child_panels = child_panels = self._get_children(
             {i: old_panels[i] for i in reuse}
         )
