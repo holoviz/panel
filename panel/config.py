@@ -663,6 +663,7 @@ class panel_extension(_pyviz_extension):
         'codeeditor': 'panel.models.ace',
         'deckgl': 'panel.models.deckgl',
         'echarts': 'panel.models.echarts',
+        'filedropper': 'panel.models.file_dropper',
         'ipywidgets': 'panel.io.ipywidget',
         'jsoneditor': 'panel.models.jsoneditor',
         'katex': 'panel.models.katex',
@@ -683,6 +684,7 @@ class panel_extension(_pyviz_extension):
     _globals = {
         'deckgl': ['deck'],
         'echarts': ['echarts'],
+        'filedropper': ['FilePond'],
         'floatpanel': ['jsPanel'],
         'gridstack': ['GridStack'],
         'katex': ['katex'],

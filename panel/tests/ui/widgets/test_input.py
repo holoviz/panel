@@ -1,4 +1,7 @@
 import datetime
+import sys
+
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -7,7 +10,7 @@ import panel as pn
 
 pytest.importorskip("playwright")
 
-from playwright.sync_api import expect
+from playwright.sync_api import Error, expect
 
 from panel.tests.util import serve_component, wait_until
 from panel.widgets import (
@@ -721,3 +724,53 @@ def test_textinput_enter(page):
     input_area.press("Enter")
     wait_until(lambda: clicks[0] == 2)
     assert text_input.value == "H"
+
+def test_filedropper_text_file(page):
+    widget = pn.widgets.FileDropper()
+    serve_component(page, widget)
+
+    file = Path(__file__)
+
+    page.set_input_files('input[type="file"]', file)
+
+    wait_until(lambda: len(widget.value) == 1, page)
+    data = file.read_text()
+    if sys.platform == 'win32':
+        data = data.replace("\n", "\r\n")
+    assert widget.value == {file.name: data}
+
+def test_filedropper_wrong_filetype_error(page):
+    widget = pn.widgets.FileDropper(accepted_filetypes=["png"])
+    serve_component(page, widget)
+
+    page.set_input_files('input[type="file"]', __file__)
+
+    get_element = lambda: page.query_selector('span.filepond--file-status-main')
+    wait_until(lambda: get_element() is not None, page)
+    element = get_element()
+    wait_until(lambda: element.inner_text() == 'File is of invalid type', page)
+
+def test_filedropper_multiple_file_error(page):
+    widget = pn.widgets.FileDropper()
+    serve_component(page, widget)
+
+    msg = "Non-multiple file input can only accept single file"
+    with pytest.raises(Error, match=msg):
+        page.set_input_files('input[type="file"]', [__file__, __file__])
+
+def test_filedropper_multiple_files(page):
+    widget = pn.widgets.FileDropper(multiple=True)
+    serve_component(page, widget)
+
+    file1 = Path(__file__)
+    file2 = file1.parent / '__init__.py'
+
+    page.set_input_files('input[type="file"]', [file1, file2])
+    data1 = file1.read_text()
+    data2 = file2.read_text()
+    if sys.platform == 'win32':
+        data1 = data1.replace("\n", "\r\n")
+        data2 = data2.replace("\n", "\r\n")
+
+    wait_until(lambda: len(widget.value) == 2)
+    assert widget.value == {file1.name: data1, file2.name: data2}
