@@ -78,7 +78,7 @@ export class ReactiveESMView extends HTMLBoxView {
       if (initialize) {
         this._run_initializer(initialize)
       }
-    } catch(e: any) {
+    } catch (e: any) {
       this.compiled_module = null
       if (this.model.dev) {
         this.compile_error = e
