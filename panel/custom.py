@@ -94,7 +94,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     _esm: ClassVar[str | os.PathLike] = ""
 
-    _import_map: ClassVar[dict[str, dict[Literal['imports', 'scopes'], str]]] = {}
+    _importmap: ClassVar[dict[Literal['imports', 'scopes'], str]] = {}
 
     __abstract = True
 
@@ -178,9 +178,12 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             'data': self._data_model(**{p: v for p, v in data_props.items() if p not in ignored}),
             'dev': config.autoreload,
             'esm': self._render_esm(),
-            'importmap': getattr(self, '_importmap', {}),
+            'importmap': self._process_importmap(),
         })
         return params
+
+    def _process_importmap(self):
+        return self._importmap
 
     def _get_children(self, data_model, doc, root, parent, comm):
         children = {}
@@ -359,6 +362,17 @@ class ReactComponent(ReactiveESM):
         params['react_version'] = self._react_version
         return params
 
+    def _process_importmap(self):
+        imports = self._importmap.get('imports', {})
+        imports_with_deps = {}
+        for k, v in imports.items():
+            if '?' not in v and not v.endswith('/'):
+                v += f'?deps=react@{self._react_version},react-dom@{self._react_version}'
+            imports_with_deps[k] = v
+        return {
+            'imports': imports_with_deps,
+            'scopes': self._importmap.get('scopes', {})
+        }
 
 class AnyWidgetComponent(ReactComponent):
     """

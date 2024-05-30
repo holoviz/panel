@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box?deps=react@18.2.0';
 import Slider from '@mui/material/Slider?deps=react@18.2.0';
 
-export default function DiscreteSlider(props) {
+function DiscreteSlider(props) {
   const [value, setValue] = props.state.value
   const [marks, _] = props.state.marks
   return (

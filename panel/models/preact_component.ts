@@ -64,25 +64,42 @@ export class PreactComponentView extends ReactiveESMView {
     return h(Child, {name: child, parent: this})
   }
 
+  override compile(): string | null {
+    let compiled = super.compile()
+    if (compiled === null) {
+      return compiled
+    }
+    compiled = `
+const _view = Bokeh.index.find_one_by_id('${this.model.id}')
+const html = _view._htm
+
+${compiled}`
+    return compiled
+  }
+
   protected override _render_code(): string {
     const rerender_vars = find_attributes(
       this.rendered || "", "data", ["send_event", "watch"],
     )
     const code = `
-const _view = Bokeh.index.find_one_by_id('${this.model.id}')
-const html = _view._htm
+const view = Bokeh.index.find_one_by_id('${this.model.id}')
 
-const _children = {}
-for (const _child of _view.model.children) {
-  _children[_child] = _view.get_child_component(_child)
+const children = {}
+for (const child of view.model.children) {
+  children[child] = view.get_child_component(child)
 }
 
-${this.rendered}
+let render;
+if (view.rendered_module.default) {
+  render = view.rendered_module.default.render
+} else {
+  render = view.rendered_module.render
+}
 
-const output = render({view: _view, model: _view.model, data: _view.model.data, el: _view.container, children: _children, html: html})
+const output = render({view: view, model: view.model, data: view.model.data, el: view.container, children: children})
 
-_view._render_htm(output, _view.container)
-_view.model.data.watch(() => _view.render_esm(), ${JSON.stringify(rerender_vars)})`
+view._render_htm(output, view.container)
+view.model.data.watch(() => view.render_esm(), ${JSON.stringify(rerender_vars)})`
     return code
   }
 }

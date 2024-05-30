@@ -1,8 +1,18 @@
 import type * as p from "@bokehjs/core/properties"
 
+import {ReactiveESMView} from "./reactive_esm"
 import {ReactComponent, ReactComponentView} from "./react_component"
 
-const panel_adapter = `
+export class AnyWidgetComponentView extends ReactComponentView {
+
+  override compile(): string | null {
+    return ReactiveESMView.prototype.compile.call(this)
+  }
+
+  protected override _render_code(): string {
+    return `
+const view = Bokeh.index.find_one_by_id('${this.model.id}')
+
 class PanelModel {
 
   constructor(model) {
@@ -42,20 +52,18 @@ class PanelModel {
     // Implement unwatch
   }
 }
-`
 
-export class AnyWidgetComponentView extends ReactComponentView {
+const model = new PanelModel(view.model)
+let props = {view, model, data: view.model.data, el: view.container}
 
-  protected override _render_affixes(): [string, string] {
-    const prefix = `
-const _view = Bokeh.index.find_one_by_id('${this.model.id}')
+let render;
+if (view.rendered_module.default) {
+  render = view.rendered_module.default.render
+} else {
+  render = view.rendered_module.render
+}
 
-${panel_adapter}
-
-const _model = new PanelModel(_view.model)
-
-let props = {view: _view, model: _model, data: _view.model.data, el: _view.container}`
-    return [prefix, ""]
+render(props)`
   }
 }
 

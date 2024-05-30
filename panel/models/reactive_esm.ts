@@ -21,6 +21,7 @@ export class ReactiveESMView extends HTMLBoxView {
   container: HTMLDivElement
   modelState: typeof Proxy
   rendered: string | null = null
+  rendered_module: any = null
   _changing: boolean = false
   _watchers: any = {}
   _child_callbacks: Map<string, (new_views: UIElementView[]) => void>
@@ -117,25 +118,35 @@ export class ReactiveESMView extends HTMLBoxView {
     this.container = div({style: "display: contents;"})
     this.shadow_el.append(this.container)
     if (this.rendered === null) {
-      try {
-        this.rendered = transform(
-          this.model.esm, {
-            transforms: this.sucrase_transforms,
-            filePath: "render.tsx",
-          },
-        ).code
-      } catch (e) {
-        if (e instanceof SyntaxError && this.model.dev) {
-          const error = div({class: "error"})
-          error.innerHTML = formatError(e, this.model.esm)
-          this.container.appendChild(error)
-          return
-        } else {
-          throw e
-        }
+      const compiled = this.compile()
+      if (compiled === null) {
+        return
       }
+      this.rendered = compiled
     }
     this.render_esm()
+  }
+
+  compile(): string | null {
+    let compiled
+    try {
+      compiled = transform(
+        this.model.esm, {
+          transforms: this.sucrase_transforms,
+          filePath: "render.tsx",
+        },
+      ).code
+    } catch (e) {
+      if (e instanceof SyntaxError && this.model.dev) {
+        const error = div({class: "error"})
+        error.innerHTML = formatError(e, this.model.esm)
+        this.container.appendChild(error)
+        return null
+      } else {
+        throw e
+      }
+    }
+    return compiled
   }
 
   protected _declare_importmap(): void {
@@ -151,31 +162,38 @@ export class ReactiveESMView extends HTMLBoxView {
       this.rendered || "", "children", [],
     )
     return `
-const _view = Bokeh.index.find_one_by_id('${this.model.id}')
+const view = Bokeh.index.find_one_by_id('${this.model.id}')
 
-const _children = {}
-for (const child of _view.model.children) {
-  const child_model = _view.model.data[child]
+const children = {}
+for (const child of view.model.children) {
+  const child_model = view.model.data[child]
   if (Array.isArray(child_model)) {
-    const subchildren = _children[child] = []
+    const subchildren = children[child] = []
     for (const subchild of child_model) {
-      subchildren.push(_view._child_views.get(subchild).el)
+      subchildren.push(view._child_views.get(subchild).el)
     }
   } else {
-    _children[child] = _view._child_views.get(child_model).el
+    children[child] = view._child_views.get(child_model).el
   }
 }
 
-${this.rendered}
-
-const _output = render({view: _view, model: _view.model, data: _view.model.data, el: _view.container, children: _children})
-
-if (_output instanceof Element) {
-  _view.container.replaceChildren(_output)
+let render;
+if (view.rendered_module.default) {
+  render = view.rendered_module.default.render
+} else {
+  render = view.rendered_module.render
 }
 
-_view.render_children()
-_view.model.data.watch(() => _view.render_esm(), ${JSON.stringify(rerender_vars)})`
+const output = render({
+  view: view, model: view.model, data: view.model.data, el: view.container, children: children
+})
+
+if (output instanceof Element) {
+  view.container.replaceChildren(output)
+}
+
+view.render_children()
+view.model.data.watch(() => view.render_esm(), ${JSON.stringify(rerender_vars)})`
   }
 
   render_esm(): void {
@@ -184,12 +202,19 @@ _view.model.data.watch(() => _view.render_esm(), ${JSON.stringify(rerender_vars)
     }
     this._disconnect_watchers()
     this._declare_importmap()
-    const code = this._render_code()
     const url = URL.createObjectURL(
-      new Blob([code], {type: "text/javascript"}),
+      new Blob([this.rendered], {type: "text/javascript"}),
     )
     // @ts-ignore
-    importShim(url)
+    importShim(url).then((mod: any) => {
+      this.rendered_module = mod
+      const code = this._render_code()
+      const render_url = URL.createObjectURL(
+        new Blob([code], {type: "text/javascript"}),
+      )
+      // @ts-ignore
+      importShim(render_url)
+    })
   }
 
   render_children() {
