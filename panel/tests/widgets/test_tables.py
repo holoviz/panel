@@ -1,6 +1,8 @@
 import asyncio
 import datetime as dt
 
+from zoneinfo import ZoneInfo
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -1976,10 +1978,11 @@ def test_server_edit_event():
 def test_edit_with_datetime_aware_column():
     # https://github.com/holoviz/panel/issues/6673
 
-    # The order of these columns matter, 'B' should be first as it's in fact
+    # The order of these columns matter, 'B' and 'C' should be first as it's in fact
     # processed first when 'A' is edited.
     data = {
         "B": pd.date_range(start='2024-01-01', end='2024-01-03', freq='D', tz='utc'),
+        "C": pd.date_range(start='2024-01-01', end='2024-01-03', freq='D', tz=ZoneInfo('US/Eastern')),
         "A": ['a', 'b', 'c'],
     }
     df = pd.DataFrame(data)
