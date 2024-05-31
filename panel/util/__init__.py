@@ -44,7 +44,6 @@ log = logging.getLogger('panel.util')
 
 bokeh_version = Version(Version(bokeh.__version__).base_version)
 
-BOKEH_JS_NAT = np.nan
 PARAM_NAME_PATTERN = re.compile(r'^.*\d{5}$')
 
 class LazyHTMLSanitizer:
