@@ -1875,11 +1875,11 @@ def test_param_generator_multiple(document, comm):
 
     root = pane.get_root(document, comm)
 
-    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n')
 
     checkbox.value = True
 
-    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+    wait_until(lambda: root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n')
 
 async def test_param_async_generator_multiple(document, comm):
     checkbox = Checkbox(value=False)
