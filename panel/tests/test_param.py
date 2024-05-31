@@ -25,7 +25,7 @@ from panel.param import (
     JSONInit, Param, ParamFunction, ParamMethod, Skip,
 )
 from panel.tests.util import (
-    async_wait_until, mpl_available, mpl_figure, wait_until
+    async_wait_until, mpl_available, mpl_figure, wait_until,
 )
 from panel.widgets import (
     AutocompleteInput, Button, Checkbox, DatePicker, DatetimeInput,
