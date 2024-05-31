@@ -45,8 +45,8 @@ from .indicators import (  # noqa
 from .input import (  # noqa
     ArrayInput, Checkbox, ColorPicker, DatePicker, DateRangePicker,
     DatetimeInput, DatetimePicker, DatetimeRangeInput, DatetimeRangePicker,
-    FileInput, FloatInput, IntInput, LiteralInput, NumberInput, PasswordInput,
-    Spinner, StaticText, Switch, TextAreaInput, TextInput,
+    FileDropper, FileInput, FloatInput, IntInput, LiteralInput, NumberInput,
+    PasswordInput, Spinner, StaticText, Switch, TextAreaInput, TextInput,
 )
 from .misc import FileDownload, JSONEditor, VideoStream  # noqa
 from .player import DiscretePlayer, Player  # noqa
@@ -98,6 +98,7 @@ __all__ = (
     "EditableIntSlider",
     "EditableRangeSlider",
     "FileDownload",
+    "FileDropper",
     "FileInput",
     "FileSelector",
     "FloatInput",

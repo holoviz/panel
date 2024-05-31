@@ -498,7 +498,7 @@ class MimeRenderMixin:
         if ref not in state._handles or config.console_output in [None, 'disable']:
             return
         handle, accumulator = state._handles[ref]
-        formatted = ["%s</br>" % o for o in stdout]
+        formatted = [f"{o}</br>" for o in stdout]
         if config.console_output == 'accumulate':
             accumulator.extend(formatted)
         elif config.console_output == 'replace':

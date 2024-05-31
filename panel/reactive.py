@@ -1255,9 +1255,27 @@ class ReactiveData(SyncableData):
         dtype = old_values.dtype
         converted: list | np.ndarray | None = None
         if dtype.kind == 'M':
-            if values.dtype.kind in 'if':# TODO: need to doublecheck if this is still needed
-                NATs = np.isnan(values)
-                converted = np.where(NATs, np.nan, values * 10e5).astype(dtype)
+            if values.dtype.kind in 'if':
+                if getattr(dtype, 'tz', None):
+                    # dtype has a timezone
+                    if dtype.tz == dt.timezone.utc:
+                        # Milliseconds to nanoseconds, to datetime64.
+                        converted = (values * 1e6).astype('datetime64[ns]')
+                    else:
+                        import pandas as pd
+
+                        # Using pandas to convert from milliseconds
+                        # timezone-aware, to UTC nanoseconds, to datetime64.
+                        converted = (
+                            pd.Series(pd.to_datetime(values, unit="ms"))
+                            .dt.tz_localize(dtype.tz)
+                            .dt.tz_convert('utc')
+                            .dt.tz_localize(None)
+                        )
+                else:
+                    # Timestamps converted from milliseconds to nanoseconds,
+                    # to datetime.
+                    converted = (values * 1e6).astype(dtype)
         elif dtype.kind == 'O':
             if (all(isinstance(ov, dt.date) for ov in old_values) and
                 not all(isinstance(iv, dt.date) for iv in values)):
@@ -1863,11 +1881,11 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
         for parent_var, obj in self._parser.loop_map.items():
             for var in self._parser.loop_var_map[parent_var]:
                 template_string = template_string.replace(
-                    '${%s}' % var, '${%s[{{ loop.index0 }}]}' % obj)
+                    '${%s}' % var, '${%s[{{ loop.index0 }}]}' % obj)  # noqa: UP031
 
         # Add index to templated loop node ids
         for dom_node, _ in self._parser.looped:
-            replacement = 'id="%s-{{ loop.index0 }}"' % dom_node
+            replacement = 'id="%s-{{ loop.index0 }}"' % dom_node  # noqa: UP031
             if f'id="{dom_node}"' in template_string:
                 template_string = template_string.replace(
                     f'id="{dom_node}"', replacement)
@@ -1921,7 +1939,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
                 for i, _ in enumerate(getattr(self, child_name)):
                     html = html.replace('${%s[%d]}' % (child_name, i), '')
             else:
-                html = html.replace('${%s}' % child_name, '')
+                html = html.replace(f'${{{child_name}}}', '')
         return html, parser.nodes, p_attrs
 
     @property
