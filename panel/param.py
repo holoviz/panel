@@ -54,7 +54,7 @@ from .pane.base import PaneBase, ReplacementPane
 from .reactive import Reactive
 from .util import (
     abbreviated_repr, flatten, full_groupby, fullpath, is_parameterized,
-    param_name, recursive_parameterized,
+    param_name, recursive_parameterized, to_async_gen
 )
 from .util.checks import is_dataframe, is_mpl_axes, is_series
 from .viewable import Layoutable, Viewable
@@ -887,19 +887,11 @@ class ParamRef(ReplacementPane):
                         param.DEBUG, 'Skip event was raised, skipping update.'
                     )
                     return
+            if isinstance(new_object, Generator):
+                new_object = to_async_gen(new_object)
             if inspect.isawaitable(new_object) or isinstance(new_object, types.AsyncGeneratorType):
                 param.parameterized.async_executor(partial(self._eval_async, new_object))
                 return
-            elif isinstance(new_object, Generator):
-                append_mode = self.generator_mode == 'append'
-                if append_mode:
-                    self._inner_layout[:] = []
-                for new_obj in new_object:
-                    if append_mode:
-                        self._inner_layout.append(new_obj)
-                        self._pane = self._inner_layout[-1]
-                    else:
-                        self._update_inner(new_obj)
             else:
                 self._update_inner(new_object)
         finally:
