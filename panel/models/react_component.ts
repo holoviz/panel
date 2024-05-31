@@ -5,6 +5,7 @@ import {ReactiveESM, ReactiveESMView} from "./reactive_esm"
 
 export class ReactComponentView extends ReactiveESMView {
   declare model: ReactComponent
+  declare style_cache: HTMLHeadElement
   override sucrase_transforms: Transform[] = ["typescript", "jsx"]
 
   protected override _declare_importmap(): void {
@@ -23,7 +24,7 @@ export class ReactComponentView extends ReactiveESMView {
       importMap.imports = {
         ...importMap.imports,
         "@emotion/cache": "https://esm.sh/@emotion/cache",
-        "@emotion/react": `https://esm.sh/@emotion/react?deps=react@${react_version}`,
+        "@emotion/react": "https://esm.sh/@emotion/react",
       }
     }
     // @ts-ignore
@@ -52,42 +53,43 @@ import * as React from "react"
 ${compiled}`
   }
 
-  protected override _render_code(): string {
-    let render_code
+  override render_esm(): void {
     if (this.usesMui) {
-      render_code = `
-import createCache from "@emotion/cache"
-import { CacheProvider } from '@emotion/react'
+      this.style_cache = document.createElement("head")
+      this.shadow_el.insertBefore(this.style_cache, this.container)
+    }
+    super.render_esm()
+  }
 
-const headElement = document.createElement("head")
-view.shadow_el.insertBefore(headElement, view.container)
-
-const cache = createCache({
-  key: 'css',
-  prepend: true,
-  container: headElement,
-})
-
-if (rendered && view.usesReact) {
-  view._changing = true
-  const root = createRoot(view.container)
-  root.render(
-    React.createElement(CacheProvider, {value: cache}, rendered)
-  )
-  view._changing = false;
-}`
-    } else {
-      render_code = `
+  protected override _render_code(): string {
+    let render_code = `
 if (rendered && view.usesReact) {
   view._changing = true
   const root = createRoot(view.container)
   root.render(rendered)
   view._changing = false
 }`
+    let import_code = `
+import * as React from "react"
+import { createRoot } from 'react-dom/client'`
+    if (this.usesMui) {
+      import_code = `
+${import_code}
+import createCache from "@emotion/cache"
+import { CacheProvider } from "@emotion/react"`
+      render_code = `
+if (rendered) {
+  const cache = createCache({
+    key: 'css',
+    prepend: true,
+    container: view.style_cache,
+  })
+  rendered = React.createElement(CacheProvider, {value: cache}, rendered)
+}
+${render_code}`
     }
     return `
-import * as React from "react"
-import { createRoot } from 'react-dom/client'
+${import_code}
 
 const view = Bokeh.index.find_one_by_id('${this.model.id}')
 
@@ -151,7 +153,7 @@ for (const child of view.model.children) {
 }
 
 const props = {view, model: view.model_proxy, data: view.model.data, el: view.container, children, state: state}
-const rendered = React.createElement(view.render_fn, props)
+let rendered = React.createElement(view.render_fn, props)
 
 ${render_code}`
   }

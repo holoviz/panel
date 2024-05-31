@@ -23,27 +23,9 @@ class Button(MuiComponent):
 
     _esm = 'mui_button.js'
 
-
 class DiscreteSlider(MuiComponent):
 
-    marks = param.List(default=[
-        {
-            'value': 0,
-            'label': '0°C',
-        },
-        {
-            'value': 20,
-            'label': '20°C',
-        },
-        {
-            'value': 37,
-            'label': '37°C',
-        },
-        {
-            'value': 100,
-            'label': '100°C',
-        },
-    ])
+    marks = param.List(default=[])
 
     value = param.Number(default=20)
 
@@ -51,7 +33,24 @@ class DiscreteSlider(MuiComponent):
 
 
 b = Button()
-s = DiscreteSlider()
+s = DiscreteSlider([
+    {
+        'value': 0,
+        'label': '0°C',
+    },
+    {
+        'value': 20,
+        'label': '20°C',
+    },
+    {
+        'value': 37,
+        'label': '37°C',
+    },
+    {
+        'value': 100,
+        'label': '100°C',
+    },
+])
 
 pn.Row(
     pn.Param(b.param, parameters=['label', 'variant']),
