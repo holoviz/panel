@@ -138,7 +138,7 @@ export class VizzuChartView extends HTMLBoxView {
 
   override render(): void {
     super.render()
-    this.container = div({style: "display: contents;"})
+    this.container = div({style: { display: "contents" }})
     this.shadow_el.append(this.container)
     const state = {config: this.config(), data: this.data(), style: this.model.style}
     this.vizzu_view = new (window as any).Vizzu(this.container, state)

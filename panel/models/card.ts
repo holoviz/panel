@@ -79,7 +79,7 @@ export class CardView extends ColumnView {
 
     let header_el
     if (this.model.collapsible) {
-      this.button_el = DOM.create_element("button", {type: "button", class: header_css_classes})
+      this.button_el = DOM.create_element("button", {class: header_css_classes})
       const icon = DOM.create_element("div", {class: button_css_classes})
       icon.innerHTML = this.model.collapsed ? CHEVRON_RIGHT : CHEVRON_DOWN
       this.button_el.appendChild(icon)

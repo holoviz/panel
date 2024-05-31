@@ -499,8 +499,8 @@ export class DataTabulatorView extends HTMLBoxView {
     }
     super.render()
     this._initializing = true
-    const container = div({style: "display: contents;"})
-    const el = div({style: "width: 100%; height: 100%; visibility: hidden;"})
+    const container = div({style: {display: "contents"}})
+    const el = div({style: {width: "100%", height: "100%", visibility: "hidden"}})
     this.container = el
     this.setCSSClasses(el)
     container.appendChild(el)
@@ -736,7 +736,7 @@ export class DataTabulatorView extends HTMLBoxView {
     const style = getComputedStyle(this.tabulator.element.children[1].children[0])
     const bg = style.backgroundColor
     const neg_margin = rowEl.style.paddingLeft ? `-${rowEl.style.paddingLeft}` : "0"
-    const viewEl = div({style: `background-color: ${bg}; margin-left:${neg_margin}; max-width: 100%; overflow-x: hidden;`})
+    const viewEl = div({style: {background_color: bg, margin_left: neg_margin, max_width: "100%", overflow_x: "hidden"}})
     viewEl.appendChild(view.el)
     rowEl.appendChild(viewEl)
     if (!view.has_finished()) {
