@@ -4,7 +4,7 @@ channels = ["pyviz/label/dev", "bokeh/label/dev", "conda-forge"]
 platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 
 [tasks]
-download-data = 'bokeh sampledata'
+# download-data = 'bokeh sampledata'
 install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
 
 [environments]
@@ -41,6 +41,7 @@ pillow = "*"
 plotly = ">=4.0"
 # Standard
 watchfiles = "*"
+bokeh_sampledata = "*"
 
 [feature.py310.dependencies]
 python = "3.10.*"
