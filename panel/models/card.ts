@@ -79,8 +79,8 @@ export class CardView extends ColumnView {
 
     let header_el
     if (this.model.collapsible) {
-      this.button_el = DOM.createElement("button", {type: "button", class: header_css_classes})
-      const icon = DOM.createElement("div", {class: button_css_classes})
+      this.button_el = DOM.create_element("button", {type: "button", class: header_css_classes})
+      const icon = DOM.create_element("div", {class: button_css_classes})
       icon.innerHTML = this.model.collapsed ? CHEVRON_RIGHT : CHEVRON_DOWN
       this.button_el.appendChild(icon)
       this.button_el.style.backgroundColor = header_background != null ? header_background : ""
@@ -90,7 +90,7 @@ export class CardView extends ColumnView {
       this.button_el.onclick = () => this._toggle_button()
       header_el = this.button_el
     } else {
-      header_el = DOM.createElement((header_tag as any), {class: header_css_classes})
+      header_el = DOM.create_element((header_tag as any), {class: header_css_classes})
       header_el.style.backgroundColor = header_background != null ? header_background : ""
       header_el.appendChild(header.el)
     }
@@ -148,8 +148,8 @@ export class CardView extends ColumnView {
     this.invalidate_layout()
   }
 
-  protected override _createElement(): HTMLElement {
-    return DOM.createElement((this.model.tag as any), {class: this.css_classes()})
+  protected override _create_element(): HTMLElement {
+    return DOM.create_element((this.model.tag as any), {class: this.css_classes()})
   }
 }
 
