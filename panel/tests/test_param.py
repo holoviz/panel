@@ -1816,8 +1816,10 @@ def test_param_generator_append(document, comm):
     checkbox.value = True
 
     wait_until(lambda: len(root.children) == 2)
-    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
-    assert root.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n'
+    wait_until(lambda: (
+        (root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n') and
+        (root.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n')
+    ))
 
 async def test_param_async_generator(document, comm):
     checkbox = Checkbox(value=False)
