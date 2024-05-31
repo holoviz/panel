@@ -8,7 +8,6 @@ download-data = 'bokeh sampledata'
 install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
 
 [environments]
-test-39 = ["py39", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-310 = ["py310", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-311 = ["py311", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-task"]
@@ -42,9 +41,6 @@ pillow = "*"
 plotly = ">=4.0"
 # Standard
 watchfiles = "*"
-
-[feature.py39.dependencies]
-python = "3.9.*"
 
 [feature.py310.dependencies]
 python = "3.10.*"

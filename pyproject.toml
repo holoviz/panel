@@ -16,7 +16,7 @@ dynamic = ["version"]
 description = 'The powerful data exploration & web app framework for Python.'
 readme = "README.md"
 license = { text = "BSD" }
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [{ name = "HoloViz developers", email = "developers@holoviz.org" }]
 maintainers = [
     { name = "HoloViz developers", email = "developers@holoviz.org" },
