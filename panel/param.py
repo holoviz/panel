@@ -54,7 +54,7 @@ from .pane.base import PaneBase, ReplacementPane
 from .reactive import Reactive
 from .util import (
     abbreviated_repr, flatten, full_groupby, fullpath, is_parameterized,
-    param_name, recursive_parameterized, to_async_gen
+    param_name, recursive_parameterized, to_async_gen,
 )
 from .util.checks import is_dataframe, is_mpl_axes, is_series
 from .viewable import Layoutable, Viewable
