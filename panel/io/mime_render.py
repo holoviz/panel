@@ -17,8 +17,6 @@ import ast
 import base64
 import copy
 import io
-import pathlib
-import pkgutil
 import sys
 import traceback
 
@@ -32,15 +30,7 @@ from typing import Any
 #---------------------------------------------------------------------
 
 def _stdlibs():
-    if sys.version_info[:2] >= (3, 10):
-        return sys.stdlib_module_names
-    env_dir = str(pathlib.Path(sys.executable).parent.parent)
-    modules = list(sys.builtin_module_names)
-    for m in pkgutil.iter_modules():
-        mpath = getattr(m.module_finder, 'path', '')
-        if mpath.startswith(env_dir) and 'site-packages' not in mpath:
-            modules.append(m.name)
-    return modules
+    return sys.stdlib_module_names
 
 _STDLIBS = _stdlibs()
 _PACKAGE_MAP = {
