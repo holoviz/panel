@@ -13,6 +13,8 @@ This release primarily addresses a critical regression in notebook comm channel 
 - Fix notebook CommManager extraction of buffers ([#6880](https://github.com/holoviz/panel/pull/6880))
 - Fix issue when editing timezone-aware datetime column `Tabulator` ([#6879](https://github.com/holoviz/panel/pull/6879))
 - Ensure `Tabulator` does not rebuild children when using `embed_content` with `row_content` ([#6881](https://github.com/holoviz/panel/pull/6881))
+- Ensure `ParamRef`, `ParamFunction` and `ParamMethod` resolve synchronous generators asynchronously ([#6885](https://github.com/holoviz/panel/pull/6885))
+- Ensure periodic callback cleanup does not error on session warmup ([#6886](https://github.com/holoviz/panel/pull/6886))
 
 ### Documentation
 
