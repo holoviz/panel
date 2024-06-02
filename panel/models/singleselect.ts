@@ -37,7 +37,7 @@ export class SingleSelectView extends InputWidgetView {
 
       const disabled = this.model.disabled_options.includes(value)
 
-      return option({value, disabled}, _label)
+      return option({value, disabled} as any, _label)
     })
 
     this.input_el = select({

@@ -51,7 +51,7 @@ export class AcePlotView extends HTMLBoxView {
         height: "100%",
         zIndex: 0,
       },
-    })
+    } as any)
     this.shadow_el.append(this._container)
     this._container.textContent = this.model.code
     this._editor = ace.edit(this._container)
