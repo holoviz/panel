@@ -36,6 +36,13 @@ CUSTOM_MARKS = ('ui', 'jupyter', 'subprocess', 'docs')
 
 config.apply_signatures = False
 
+# Ensure we have an event loop
+try:
+    asyncio.get_running_loop()
+except RuntimeError:
+    asyncio.set_event_loop(asyncio.new_event_loop())
+
+
 JUPYTER_PORT = 8887
 JUPYTER_TIMEOUT = 15 # s
 JUPYTER_PROCESS = None
