@@ -34,6 +34,22 @@ export function model_getter(target: ReactiveESMView, name: string) {
       }
       return null
     }
+  } else if (name === "send_event") {
+    return (name: string, event: Event) => {
+      const serialized = convertUndefined(serializeEvent(event))
+      model.trigger_event(new DOMEvent(name, serialized))
+    }
+  } else if (name === "watch") {
+    return (callback: any, prop: string | string[]) => {
+      const props = isArray(prop) ? prop : [prop]
+      for (const p of props) {
+        const cb = () => {
+          callback(prop, null, model.data[p])
+        }
+        model.data.properties[p].change.connect(cb)
+        model.add_watcher(target, p, cb)
+      }
+    }
   } else if (Reflect.has(model.data, name)) {
     if (name in model.data.attributes && !target.accessed_properties.includes(name)) {
       target.accessed_properties.push(name)
@@ -71,29 +87,10 @@ export class ReactiveESMView extends HTMLBoxView {
   compiled_module: any = null
   model_proxy: any
   _changing: boolean = false
-  _watchers: any = {}
   _child_callbacks: Map<string, (new_views: UIElementView[]) => void>
 
   override initialize(): void {
     super.initialize()
-    this.model.data.watch = (callback: any, prop: string | string[]) => {
-      const props = isArray(prop) ? prop : [prop]
-      for (const p of props) {
-        const cb = () => {
-          callback(prop, null, this.model.data[p])
-        }
-        this.model.data.properties[p].change.connect(cb)
-        if (p in this._watchers) {
-          this._watchers[p].push(cb)
-        } else {
-          this._watchers[p] = [cb]
-        }
-      }
-    }
-    this.model.data.send_event = (name: string, event: Event) => {
-      const serialized = convertUndefined(serializeEvent(event))
-      this.model.trigger_event(new DOMEvent(name, serialized))
-    }
     this.model_proxy = new Proxy(this, {
       get: model_getter,
       set: model_setter,
@@ -126,20 +123,10 @@ export class ReactiveESMView extends HTMLBoxView {
     })
   }
 
-  protected _disconnect_watchers(): void {
-    for (const p in this._watchers) {
-      const prop = this.model.data.properties[p]
-      for (const cb of this._watchers[p]) {
-        prop.change.disconnect(cb)
-      }
-    }
-    this._watchers = {}
-  }
-
   override disconnect_signals(): void {
     super.disconnect_signals()
     this._child_callbacks = new Map()
-    this._watchers = {}
+    this.model.disconnect_watchers(this)
   }
 
   get_child_view(model: UIElement): UIElementView | undefined {
@@ -179,7 +166,6 @@ export class ReactiveESMView extends HTMLBoxView {
     this._apply_visible()
 
     this._child_callbacks = new Map()
-    this._watchers = {}
 
     set_size(this.el, this.model)
     this.container = div({style: "display: contents;"})
@@ -206,7 +192,7 @@ if (output instanceof Element) {
 }
 
 view.render_children()
-view.model.data.watch(() => view.render_esm(), view.accessed_children)`
+view.model_proxy.watch(() => view.render_esm(), view.accessed_children)`
   }
 
   render_esm(): void {
@@ -214,7 +200,7 @@ view.model.data.watch(() => view.render_esm(), view.accessed_children)`
       return
     }
     this.accessed_properties = []
-    this._disconnect_watchers()
+    this.model.disconnect_watchers(this)
     const code = this._render_code()
     const render_url = URL.createObjectURL(
       new Blob([code], {type: "text/javascript"}),
@@ -317,6 +303,7 @@ export class ReactiveESM extends HTMLBox {
   compiled_module: Promise<any> | null = null
   compile_error: Error | null = null
   sucrase_transforms: Transform[] = ["typescript"]
+  _esm_watchers: any = {}
 
   constructor(attrs?: Partial<ReactiveESM.Attrs>) {
     super(attrs)
@@ -331,6 +318,33 @@ export class ReactiveESM extends HTMLBox {
     super.connect_signals()
     this.connect(this.properties.esm.change, () => this.recompile())
     this.connect(this.properties.importmap.change, () => this.recompile())
+  }
+
+  add_watcher(view: ReactiveESMView, prop: string, cb: any): void {
+    if (prop in this._esm_watchers) {
+      this._esm_watchers[prop].push([view, cb])
+    } else {
+      this._esm_watchers[prop] = [[view, cb]]
+    }
+  }
+
+  disconnect_watchers(view: ReactiveESMView): void {
+    for (const p in this._esm_watchers) {
+      const prop = this.data.properties[p]
+      const remaining = []
+      for (const [wview, cb] of this._esm_watchers[p]) {
+        if (wview === view) {
+          prop.change.disconnect(cb)
+        } else {
+          remaining.push([wview, cb])
+        }
+      }
+      if (remaining.length) {
+        this._esm_watchers[p] = remaining
+      } else {
+        delete this._esm_watchers[p]
+      }
+    }
   }
 
   protected _declare_importmap(): void {

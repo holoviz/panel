@@ -3,7 +3,6 @@ import type * as p from "@bokehjs/core/properties"
 import {ReactiveESM} from "./reactive_esm"
 import {ReactComponent, ReactComponentView} from "./react_component"
 
-
 class AnyWidgetModelAdapter {
   declare model: AnyWidgetComponent
   declare model_changes: any

@@ -1,9 +1,9 @@
 import Box from '@mui/material/Box?deps=react@18.2.0';
 import Slider from '@mui/material/Slider?deps=react@18.2.0';
 
-function DiscreteSlider({ state }) {
-  const [value, setValue] = state.value
-  const [marks, _] = state.marks
+function DiscreteSlider({ model }) {
+  const [value, setValue] = model.useState("value")
+  const [marks] = model.useState("marks")
   return (
     <Box sx={{ width: 300 }}>
       <Slider

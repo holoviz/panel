@@ -21,7 +21,7 @@ export class ReactComponentView extends ReactiveESMView {
 
   protected override _render_code(): string {
     let render_code = `
-if (rendered && view.usesReact) {
+if (rendered && view.model.usesReact) {
   view._changing = true
   const root = createRoot(view.container)
   root.render(rendered)

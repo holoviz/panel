@@ -33,7 +33,7 @@ class DiscreteSlider(MuiComponent):
 
 
 b = Button()
-s = DiscreteSlider([
+s = DiscreteSlider(marks=[
     {
         'value': 0,
         'label': '0°C',
