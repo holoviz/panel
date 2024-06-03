@@ -7,8 +7,10 @@ class AnyWidgetModelAdapter {
   declare model: AnyWidgetComponent
   declare model_changes: any
   declare data_changes: any
+  declare view: AnyWidgetComponentView | null
 
   constructor(model: AnyWidgetComponent) {
+    this.view = null
     this.model = model
     this.model_changes = {}
     this.data_changes = {}
@@ -22,7 +24,7 @@ class AnyWidgetModelAdapter {
       value = this.model.attributes[name]
     }
     if (value instanceof ArrayBuffer) {
-      value = new Uint8Array(value)
+      value = new DataView(value)
     }
     return value
   }
@@ -44,15 +46,18 @@ class AnyWidgetModelAdapter {
 
   on(event: string, cb: () => void) {
     if (event.startsWith("change:")) {
-      this.model.data.watch(() => cb(), event.slice("change:".length))
+      this.model.watch(this.view, event.slice("change:".length), cb)
     } else {
       console.error("Only change events supported")
     }
   }
 
-  // @ts-ignore
   off(event: string, cb: () => void) {
-    // Implement unwatch
+    if (event.startsWith("change:")) {
+      this.model.unwatch(this.view, event.slice("change:".length), cb)
+    } else {
+      console.error("Only change events supported")
+    }
   }
 }
 
@@ -84,10 +89,18 @@ class AnyWidgetAdapter extends AnyWidgetModelAdapter {
 export class AnyWidgetComponentView extends ReactComponentView {
   declare model: AnyWidgetComponent
   adapter: AnyWidgetAdapter
+  destroyer: ((props: any) => void) | null
 
   override initialize(): void {
     super.initialize()
     this.adapter = new AnyWidgetAdapter(this)
+  }
+
+  override remove(): void {
+    super.remove()
+    if (this.destroyer) {
+      this.destroyer({model: this.adapter, el: this.container})
+    }
   }
 
   protected override _render_code(): string {
@@ -96,7 +109,7 @@ const view = Bokeh.index.find_one_by_id('${this.model.id}')
 
 let props = {view, model: view.adapter, data: view.model.data, el: view.container}
 
-view.render_fn(props)
+view.destroyer = view.render_fn(props) || null
 view.render_children()`
   }
 }

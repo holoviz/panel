@@ -39,15 +39,19 @@ export function model_getter(target: ReactiveESMView, name: string) {
       const serialized = convertUndefined(serializeEvent(event))
       model.trigger_event(new DOMEvent(name, serialized))
     }
+
+  } else if (name === "unwatch") {
+    return (callback: any, prop: string | string[]) => {
+      const props = isArray(prop) ? prop : [prop]
+      for (const p of props) {
+        model.unwatch(target, p, callback)
+      }
+    }
   } else if (name === "watch") {
     return (callback: any, prop: string | string[]) => {
       const props = isArray(prop) ? prop : [prop]
       for (const p of props) {
-        const cb = () => {
-          callback(prop, null, model.data[p])
-        }
-        model.data.properties[p].change.connect(cb)
-        model.add_watcher(target, p, cb)
+        model.watch(target, p, callback)
       }
     }
   } else if (Reflect.has(model.data, name)) {
@@ -302,7 +306,9 @@ export class ReactiveESM extends HTMLBox {
   compiled: string | null = null
   compiled_module: Promise<any> | null = null
   compile_error: Error | null = null
+  model_proxy: any
   sucrase_transforms: Transform[] = ["typescript"]
+  _destroyer: any | null = null
   _esm_watchers: any = {}
 
   constructor(attrs?: Partial<ReactiveESM.Attrs>) {
@@ -311,6 +317,7 @@ export class ReactiveESM extends HTMLBox {
 
   override initialize(): void {
     super.initialize()
+    this.model_proxy = new Proxy(this, {get: init_model_getter})
     this.recompile()
   }
 
@@ -320,12 +327,40 @@ export class ReactiveESM extends HTMLBox {
     this.connect(this.properties.importmap.change, () => this.recompile())
   }
 
-  add_watcher(view: ReactiveESMView, prop: string, cb: any): void {
+  watch(view: ReactiveESMView | null, prop: string, cb: any): void {
     if (prop in this._esm_watchers) {
       this._esm_watchers[prop].push([view, cb])
     } else {
       this._esm_watchers[prop] = [[view, cb]]
     }
+    if (prop in this.data.properties) {
+      this.data.property(prop).change.connect(cb)
+    } else if (prop in this.properties) {
+      this.property(prop).change.connect(cb)
+    }
+  }
+
+  unwatch(view: ReactiveESMView | null, prop: string, cb: any): boolean {
+    if (!(prop in this._esm_watchers)) {
+      return false
+    }
+    const remaining = []
+    for (const [wview, wcb] of this._esm_watchers[prop]) {
+      if (wview !== view || wcb !== cb) {
+	remaining.push([wview, cb])
+      }
+    }
+    if (remaining.length) {
+      this._esm_watchers[prop] = remaining
+    } else {
+      delete this._esm_watchers[prop]
+    }
+    if (prop in this.data.properties) {
+      return this.data.property(prop).change.disconnect(cb)
+    } else if (prop in this.properties) {
+      return this.property(prop).change.disconnect(cb)
+    }
+    return false
   }
 
   disconnect_watchers(view: ReactiveESMView): void {
@@ -355,10 +390,16 @@ export class ReactiveESM extends HTMLBox {
     }
   }
 
-  protected _run_initializer(initialize: (props: any) => void): void {
-    const model_proxy = new Proxy(this, {get: init_model_getter})
-    const props = {model: model_proxy}
-    initialize(props)
+  protected _run_initializer(initialize: (props: any) => any): void {
+    const props = {model: this.model_proxy}
+    this._destroyer = initialize(props)
+  }
+
+  override destroy(): void {
+    super.destroy()
+    if (this._destroyer) {
+      this._destroyer(this.model_proxy)
+    }
   }
 
   compile(): string | null {

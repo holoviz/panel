@@ -9,7 +9,7 @@ pytest.importorskip("playwright")
 from playwright.sync_api import expect
 
 from panel.custom import (
-    Child, Children, JSComponent, ReactComponent,
+    AnyWidgetComponent, Child, Children, JSComponent, ReactComponent,
 )
 from panel.tests.util import serve_component, wait_until
 
@@ -42,7 +42,23 @@ class ReactUpdate(ReactComponent):
     }
     """
 
-@pytest.mark.parametrize('component', [JSUpdate, ReactUpdate])
+class AnyWidgetUpdate(AnyWidgetComponent):
+
+    text = param.String()
+
+    _esm = """
+    export function render({ model, el }) {
+      const h1 = document.createElement('h1')
+      h1.textContent = model.get("text")
+      model.on("change:text:, () => {
+        h1.textContent = model.get("text");
+      })
+      el.append(h1)
+    }
+    """
+
+
+@pytest.mark.parametrize('component', [JSUpdate, ReactUpdate, AnyWidgetUpdate])
 def test_update(page, component):
     example = component(text='Hello World!')
 
@@ -53,6 +69,72 @@ def test_update(page, component):
     example.text = "Foo!"
 
     expect(page.locator('h1')).to_have_text('Foo!')
+
+
+class JSUnwatch(JSComponent):
+
+    text = param.String()
+
+    _esm = """
+    export function render({ model, el }) {
+      const h1 = document.createElement('h1')
+      const h2 = document.createElement('h2')
+      h1.textContent = model.text
+      h2.textContent = model.text
+      const cb = () => {
+        h1.textContent = model.text;
+      }
+      const cb2 = () => {
+        h2.textContent = model.text;
+        model.unwatch(cb2, 'text')
+      }
+      model.watch(cb, 'text')
+      model.watch(cb2, 'text')
+      el.append(h1, h2)
+    }
+    """
+
+class AnyWidgetUnwatch(AnyWidgetComponent):
+
+    text = param.String()
+
+    _esm = """
+    export function render({ model, el }) {
+      const h1 = document.createElement('h1')
+      const h2 = document.createElement('h2')
+      h1.textContent = model.get("text")
+      h2.textContent = model.get("text")
+      const cb = () => {
+        h1.textContent = model.get("text");
+      }
+      const cb2 = () => {
+        h2.textContent = model.get("text");
+        model.off("change:text", cb2)
+      }
+      model.on("change:text", cb)
+      model.on("change:text", cb2)
+      el.append(h1, h2)
+    }
+    """
+
+@pytest.mark.parametrize('component', [JSUnwatch, AnyWidgetUnwatch])
+def test_unwatch(page, component):
+    example = component(text='Hello World!')
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_text('Hello World!')
+    expect(page.locator('h1')).to_have_text('Hello World!')
+
+    example.text = "Foo!"
+
+    expect(page.locator('h1')).to_have_text('Foo!')
+    expect(page.locator('h2')).to_have_text('Foo!')
+
+    example.text = "Baz!"
+
+    expect(page.locator('h1')).to_have_text('Baz!')
+    expect(page.locator('h2')).to_have_text('Foo!')
 
 
 class JSInput(JSComponent):
