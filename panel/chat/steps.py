@@ -36,7 +36,7 @@ class ChatSteps(Column):
             if not isinstance(step, ChatStep):
                 raise ValueError(f"Expected ChatStep, got {step.__class__.__name__}")
 
-    def attach_step(self, objects: str | list[str] | None = None, **step_params):
+    def append_step(self, objects: str | list[str] | None = None, **step_params):
         """
         Create a new ChatStep and append it to the ChatSteps.
 

@@ -683,54 +683,45 @@ class ChatFeed(ListPanel):
         self.param.trigger("_post_hook_trigger")
         return message
 
-    def create_steps(
+    def append_step(
         self,
+        objects: str | list[str] | None = None,
+        steps: Literal["new", "append"] | ChatSteps = "new",
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
-        **steps_params
-    ) -> ChatSteps:
+        **step_params
+    ) -> ChatStep:
         """
-        Creates a new ChatSteps component and streams it to the logs.
-
-        Arguments
-        ---------
-        user : str | None
-            The user to stream as; overrides the message's user if provided.
-            Will default to the user parameter.
-        avatar : str | bytes | BytesIO | None
-            The avatar to use; overrides the message's avatar if provided.
-            Will default to the avatar parameter.
-        steps_params : dict
-            Parameters to pass to the ChatSteps.
-
-        Returns
-        -------
-        The ChatSteps that was created.
-        """
-        steps = ChatSteps(**steps_params)
-        self.stream(steps, user=user, avatar=avatar)
-        return steps
-
-    def attach_step(self, objects: str | list[str] | None = None, **step_params) -> ChatStep:
-        """
-        Attaches a step to the latest, active ChatSteps component.
-        Usually called after `create_steps`.
+        Appends a step to a ChatSteps component.
 
         Arguments
         ---------
         objects : str | list(str) | None
             The objects to stream to the step.
+        steps : ChatSteps | None
+            The ChatSteps component to attach the step to.
+            If "new", creates a new ChatSteps component and streams it to the chat.
+            If "append", appends the step to the latest active ChatSteps component in the chat.
+            Else, pass the ChatSteps component directly.
+        user : str | None
+            The user to stream as; overrides the message's user if provided.
+            Will default to the user parameter. Only applicable if steps is "new".
+        avatar : str | bytes | BytesIO | None
+            The avatar to use; overrides the message's avatar if provided.
+            Will default to the avatar parameter. Only applicable if steps is "new".
         step_params : dict
             Parameters to pass to the ChatStep.
         """
-        for message in reversed(self._chat_log.objects):
-            obj = message.object
-            if isinstance(obj, ChatSteps):
-                if not obj.active:
-                    raise ValueError("Cannot stream a step to an inactive ChatSteps component")
-                return obj.attach_step(objects, **step_params)
-        else:
-            raise ValueError("No active ChatSteps component found")
+        if steps == "new":
+            steps = ChatSteps()
+            self.stream(steps, user=user, avatar=avatar)
+        elif steps == "existing":
+            for message in reversed(self._chat_log.objects):
+                obj = message.object
+                if isinstance(obj, ChatSteps) and obj.active:
+                    steps = obj
+                    break
+        return steps.append_step(objects, **step_params)
 
     def respond(self):
         """
