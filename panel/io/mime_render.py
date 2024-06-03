@@ -206,7 +206,7 @@ def render_svg(value, meta, mime):
 
 def render_image(value, meta, mime):
     data = f"data:{mime};charset=utf-8;base64,{value}"
-    attrs = " ".join(['{k}="{v}"' for k, v in meta.items()])
+    attrs = " ".join([f'{k}="{v}"' for k, v in meta.items()])
     return f'<img src="{data}" {attrs}</img>', 'text/html'
 
 def render_javascript(value, meta, mime):
