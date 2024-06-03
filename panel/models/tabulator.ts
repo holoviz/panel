@@ -147,7 +147,7 @@ function group_data(records: any[], columns: any[], indexes: string[], aggregato
 }
 
 const timestampSorter = function(a: any, b: any, _aRow: any, _bRow: any, _column: any, _dir: any, _params: any) {
-  // Bokeh serializes datetime objects as UNIX timestamps.
+  // Bokeh/Panel serializes datetime objects as UNIX timestamps (in milliseconds).
 
   //a, b - the two values being compared
   //aRow, bRow - the row components for the values being compared (useful if you need to access additional fields in the row data for the sort)
@@ -163,14 +163,12 @@ const timestampSorter = function(a: any, b: any, _aRow: any, _bRow: any, _column
 
   const opts = {zone: new (window as any).luxon.IANAZone("UTC")}
 
-  // NaN values are serialized to -9223372036854776 by Bokeh
-
-  if (String(a) == "-9223372036854776") {
+  if (Number.isNaN(a)) {
     a = (window as any).luxon.DateTime.fromISO("invalid")
   } else {
     a = (window as any).luxon.DateTime.fromMillis(a, opts)
   }
-  if (String(b) == "-9223372036854776") {
+  if (Number.isNaN(b)) {
     b = (window as any).luxon.DateTime.fromISO("invalid")
   } else {
     b = (window as any).luxon.DateTime.fromMillis(b, opts)
