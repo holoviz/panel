@@ -75,6 +75,8 @@ recommended = [
     'matplotlib',
     'pillow',
     'plotly',
+]
+standard = [
     'watchfiles',
 ]
 tests = [
