@@ -6,8 +6,8 @@ class Example(JSComponent):
     child = Child()
 
     _esm = """
-    export function render({ children }) {
-      return children.child
+    export function render({ model }) {
+      return model.get_child('child')
     }"""
 
 Example(child='A Markdown pane!').servable()

@@ -57,14 +57,13 @@ You may specify a path to a file as a string instead of a PurePath. The path sho
 
 The `_esm` attribute must export the `render` function. It accepts the following parameters:
 
-- **`model`**: Represents the Parameters of the component and provides methods to `.watch` for changes and `.send_event` back to Python.
-- **`children`**: Represents the Viewable child Parameters of the component and provides methods to `.watch` for changes. The `render` function is rerun if a child changes.
+- **`model`**: Represents the Parameters of the component and provides methods to `.watch` for changes, render child elements using `.get_child`, and `.send_event` back to Python.
 - **`view`**: The Bokeh view.
 - **`el`**: The HTML element that the component will be rendered into.
 
 Any HTML element returned from the `render` function will be appended to the HTML element (`el`) of the component but you may also manually append to and manipulate the `el`.
 
-The `render` function will be rerun when any child on the `children` object changes.
+The `render` function will be rerun when any rendered child is replaced.
 
 #### Other Lifecycle Methods
 
@@ -339,9 +338,9 @@ class Example(JSComponent):
     child = Child()
 
     _esm = """
-    export function render({ children }) {
+    export function render({ model }) {
       const button = document.createElement("button");
-      button.appendChild(children.child)
+      button.append(model.get_child("child"))
       return button
     }"""
 
@@ -368,7 +367,7 @@ class Example(JSComponent):
     _esm = """
     export function render({ children }) {
       const button = document.createElement("button");
-      button.appendChild(children.child)
+      button.append(model.get_child("child"))
       return button
     }"""
 
@@ -389,7 +388,7 @@ class Example(JSComponent):
     _esm = """
     export function render({ children }) {
       const button = document.createElement("button");
-      button.appendChild(children.child)
+      button.append(model.get_child("child"))
       return button
     }"""
 
@@ -412,7 +411,7 @@ class Example(JSComponent):
     _esm = """
     export function render({ children }) {
       const div = document.createElement('div')
-      div.append(...children.objects)
+      div.append(...model.get_child("children")))
       return div
     }"""
 

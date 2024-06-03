@@ -1,6 +1,6 @@
 # `ReactComponent`
 
-`ReactComponent` simplifies the creation of custom Panel components using [React](https://react.dev/).
+`ReactComponent` simplifies the creation of custom Panel components by allowing you to write standard [React](https://react.dev/) code without the need to pre-compile or requiring a deep understanding of Javascript build tooling.
 
 ```pyodide
 import panel as pn
@@ -41,7 +41,7 @@ CounterButton().servable()
 ### ReactComponent Attributes
 
 - **`_esm`** (str | PurePath): This attribute accepts either a string or a path that points to an [ECMAScript module](https://nodejs.org/api/esm.html#modules-ecmascript-modules). The ECMAScript module should export a `render` function which returns the HTML element to display. In a development environment such as a notebook or when using `--autoreload`, the module will automatically reload upon saving changes. You can use [`JSX`](https://react.dev/learn/writing-markup-with-jsx) and [`TypeScript`](https://www.typescriptlang.org/). The `_esm` script is transpiled on the fly using [Sucrase](https://sucrase.io/). The global namespace contains a `React` object that provides access to React hooks.
-- **`_import_map`** (dict | None): This optional dictionary defines an [import map](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap), allowing you to customize how module specifiers are resolved.
+- **`_importmap`** (dict | None): This optional dictionary defines an [import map](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap), allowing you to customize how module specifiers are resolved.
 - **`_stylesheets`** (List[str | PurePath] | None): This optional attribute accepts a list of CSS strings or paths to CSS files. It supports automatic reloading in development environments.
 
 :::note
@@ -54,15 +54,11 @@ You may specify a path to a file as a string instead of a PurePath. The path sho
 
 The `_esm` attribute must export the `render` function. It accepts the following parameters:
 
-- **`state`**: Manages non-`Viewable` Parameter state similar to React's [`useState`](https://www.w3schools.com/react/react_usestate.asp) hook.
-- **`model`**: Represents the Parameters of the component and provides methods to `.watch` for changes and `.send_event` back to Python.
-- **`children`**: Represents the `Viewable` Parameters of the component.
+- **`model`**: Represents the Parameters of the component and provides methods to `.watch` for changes, render child components using `.get_child`, create React `.useState` hooks and `.send_event` back to Python.
 - **`view`**: The Bokeh view.
 - **`el`**: The HTML element that the component will be rendered into.
 
-Any HTML element returned from the `render` function will be appended to the HTML element (`el`) of the component.
-
-The `render` function is rerun if a `state` or `children` value changes.
+Any React component returned from the `render` function will be appended to the HTML element (`el`) of the component.
 
 #### Other Lifecycle Methods
 
@@ -105,8 +101,8 @@ class CounterButton(ReactComponent):
     ]
 
     _esm = """
-    export function render({state}) {
-      const [value, setValue] = props.state.value;
+    export function render({ model }) {
+      const [value, setValue] = model.useState("value");
       return (
         <button onClick={e => setValue(value+1)}>
           count is {value}
@@ -135,7 +131,7 @@ class EventExample(ReactComponent):
     value = param.Parameter()
 
     _esm = """
-    export function render({model}) {
+    export function render({ model }) {
 	  return (
         <button onClick={e => model.send_event('click', e) }>
           Click me
@@ -176,7 +172,7 @@ class CustomEventExample(ReactComponent):
       model.send_event('click', custom_event)
     }
 
-    export function render({model}) {
+    export function render({ model }) {
 	  return (
         <button onClick={e => send_event(model) }>
           Click me
@@ -334,8 +330,8 @@ class Example(ReactComponent):
     child = Child()
 
     _esm = """
-    export function render({ children }) {
-      return <button>{children.child}</button>
+    export function render({ model }) {
+      return <button>{model.get_child("child")}</button>
     )}
     """
 
@@ -360,8 +356,8 @@ class Example(ReactComponent):
     child = Child(class_=pn.pane.Markdown)
 
     _esm = """
-    export function render({ children }) {
-      return <button>{children.child}</button>
+    export function render({ model }) {
+      return <button>{model.get_child("child")}</button>
     }
     """
 
@@ -381,7 +377,7 @@ class Example(ReactComponent):
 
     _esm = """
     export function render({ children }) {
-      return <button>{children.child}</button>
+      return <button>{model.get_child("child")}</button>
     }
     """
 
@@ -403,7 +399,7 @@ class Example(ReactComponent):
 
     _esm = """
     export function render({ children }) {
-      return <div>{children.objects}</div>
+      return <div>{model.get_child("objects")}</div>
     }"""
 
 
@@ -434,9 +430,8 @@ class CounterButton(ReactComponent):
 
     _esm = """
     let { useState } = React;
-    console.log(useState)
 
-    export function render({state}) {
+    export function render() {
       const [value, setValue] = useState(0);
       return (
         <button onClick={e => setValue(value+1)}>

@@ -19,7 +19,7 @@ class Child extends Component<ChildProps> {
     const models = Array.isArray(model) ? model : [model]
     const views = []
     for (const submodel of models) {
-      const child = this.props.parent.get_child(submodel)
+      const child = this.props.parent.get_child_view(submodel)
       if (child) {
         views.push(child)
       }

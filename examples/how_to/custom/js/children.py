@@ -6,11 +6,9 @@ class Example(JSComponent):
     children = Children()
 
     _esm = """
-    export function render({ children }) {
+    export function render({ model }) {
       const div = document.createElement('div')
-      for (const child of children.children) {
-        div.appendChild(child)
-      }
+      div.append(...model.get_child('children'))
       return div
     }"""
 

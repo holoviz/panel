@@ -1,11 +1,15 @@
 import type * as p from "@bokehjs/core/properties"
 import type {Transform} from "sucrase"
 
-import {ReactiveESM, ReactiveESMView} from "./reactive_esm"
+import {
+  ReactiveESM, ReactiveESMView, model_getter, model_setter,
+} from "./reactive_esm"
 
 export class ReactComponentView extends ReactiveESMView {
   declare model: ReactComponent
   declare style_cache: HTMLHeadElement
+  model_getter = model_getter
+  model_setter = model_setter
   override sucrase_transforms: Transform[] = ["typescript", "jsx"]
 
   protected override _declare_importmap(): void {
@@ -93,20 +97,6 @@ ${import_code}
 
 const view = Bokeh.index.find_one_by_id('${this.model.id}')
 
-function useState_getter(target, name) {
-  if (!Reflect.has(target, name)) {
-    return undefined
-  }
-  const [value, setValue] = React.useState(target.attributes[name]);
-  view.model.data.watch(() => setValue(target.attributes[name]), name)
-  React.useEffect(() => target.setv({[name]: value}), [value])
-  return [value, setValue]
-}
-
-const state = new Proxy(view.model.data, {
-  get: useState_getter
-})
-
 class Child extends React.Component {
 
   get views() {
@@ -114,7 +104,7 @@ class Child extends React.Component {
     const models = Array.isArray(model) ? model : [model]
     const views = []
     for (const submodel of models) {
-      const child = this.props.parent.get_child(submodel)
+      const child = this.props.parent.get_child_view(submodel)
       if (child) {
         views.push(child)
       }
@@ -147,12 +137,30 @@ class Child extends React.Component {
   }
 }
 
-const children = {}
-for (const child of view.model.children) {
-  children[child] = React.createElement(Child, {parent: view, name: child})
+function react_getter(target, name) {
+  if (name == "useState") {
+    return (prop) => {
+      const data_model = target.model.data
+      if (Reflect.has(data_model, prop)) {
+        const [value, setValue] = React.useState(data_model.attributes[prop]);
+        react_proxy.watch(() => setValue(data_model.attributes[prop]), prop)
+        React.useEffect(() => data_model.setv({[prop]: value}), [value])
+        return [value, setValue]
+      }
+      return undefined
+    }
+  } else if (name === "get_child") {
+    return (child) => React.createElement(Child, {parent: target, name: child})
+  }
+  return target.model_getter(target, name)
 }
 
-const props = {view, model: view.model_proxy, data: view.model.data, el: view.container, children, state: state}
+const react_proxy = new Proxy(view, {
+  get: react_getter,
+  set: view.model_setter
+})
+
+const props = {view, model: react_proxy, data: view.model.data, el: view.container}
 let rendered = React.createElement(view.render_fn, props)
 
 ${render_code}`

@@ -4,12 +4,14 @@ import {ReactiveESMView} from "./reactive_esm"
 import {ReactComponent, ReactComponentView} from "./react_component"
 
 class AnyWidgetAdapter {
+  declare view: AnyWidgetComponentView
   declare model: AnyWidgetComponent
   declare model_changes: any
   declare data_changes: any
 
-  constructor(model: AnyWidgetComponent) {
-    this.model = model
+  constructor(view: AnyWidgetComponentView) {
+    this.view = view
+    this.model = view.model
     this.model_changes = {}
     this.data_changes = {}
   }
@@ -25,6 +27,22 @@ class AnyWidgetAdapter {
       value = new Uint8Array(value)
     }
     return value
+  }
+
+  get_child(name: any): HTMLElement | HTMLElement[] | undefined {
+    const child_model = this.model.data[name]
+    if (Array.isArray(child_model)) {
+      const subchildren = []
+      for (const subchild of child_model) {
+        const subview = this.view.get_child_view(subchild)
+        if (subview) {
+          subchildren.push(subview.el)
+        }
+      }
+      return subchildren
+    } else {
+      return this.view.get_child_view(child_model)?.el
+    }
   }
 
   set(name: string, value: any) {
@@ -61,7 +79,7 @@ export class AnyWidgetComponentView extends ReactComponentView {
 
   override initialize(): void {
     super.initialize()
-    this.adapter = new AnyWidgetAdapter(this.model)
+    this.adapter = new AnyWidgetAdapter(this)
   }
 
   override compile(): string | null {
@@ -79,7 +97,8 @@ const view = Bokeh.index.find_one_by_id('${this.model.id}')
 
 let props = {view, model: view.adapter, data: view.model.data, el: view.container}
 
-view.render_fn(props)`
+view.render_fn(props)
+view.render_children()`
   }
 }
 

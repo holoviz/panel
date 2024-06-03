@@ -11,13 +11,30 @@ import type {UIElement, UIElementView} from "@bokehjs/models/ui/ui_element"
 import {serializeEvent} from "./event-to-object"
 import {DOMEvent} from "./html"
 import {HTMLBox, HTMLBoxView, set_size} from "./layout"
-import {convertUndefined, find_attributes, formatError} from "./util"
+import {convertUndefined, formatError} from "./util"
 
 import error_css from "styles/models/esm.css"
 
-function model_getter(target: ReactiveESMView, name: string) {
+export function model_getter(target: ReactiveESMView, name: string) {
   const model = target.model
-  if (Reflect.has(model.data, name)) {
+  if (name === "get_child") {
+    return (child: string) => {
+      if (!target.accessed_children.includes(child)) {
+        target.accessed_children.push(child)
+      }
+      const child_model: UIElement | UIElement[] = model.data[child]
+      if (isArray(child_model)) {
+        const children = []
+        for (const subchild of child_model) {
+          children.push(target.get_child_view(subchild)?.el)
+        }
+        return children
+      } else if (model != null) {
+        return target.get_child_view(child_model)?.el
+      }
+      return null
+    }
+  } else if (Reflect.has(model.data, name)) {
     if (name in model.data.attributes && !target.accessed_properties.includes(name)) {
       target.accessed_properties.push(name)
     }
@@ -28,7 +45,7 @@ function model_getter(target: ReactiveESMView, name: string) {
   return undefined
 }
 
-function model_setter(target: ReactiveESMView, name: string, value: any): boolean {
+export function model_setter(target: ReactiveESMView, name: string, value: any): boolean {
   const model = target.model
   if (Reflect.has(model.data, name)) {
     return Reflect.set(model.data, name, value)
@@ -43,6 +60,7 @@ export class ReactiveESMView extends HTMLBoxView {
   sucrase_transforms: Transform[] = ["typescript"]
   container: HTMLDivElement
   accessed_properties: string[] = []
+  accessed_children: string[] = []
   model_proxy: any
   compiled: string | null = null
   compiled_module: any = null
@@ -158,7 +176,7 @@ export class ReactiveESMView extends HTMLBoxView {
     this._watchers = {}
   }
 
-  get_child(model: UIElement): UIElementView | undefined {
+  get_child_view(model: UIElement): UIElementView | undefined {
     return this._child_views.get(model)
   }
 
@@ -238,27 +256,11 @@ export class ReactiveESMView extends HTMLBoxView {
   }
 
   protected _render_code(): string {
-    const rerender_vars = find_attributes(
-      this.compiled || "", "children", [],
-    )
     return `
 const view = Bokeh.index.find_one_by_id('${this.model.id}')
 
-const children = {}
-for (const child of view.model.children) {
-  const child_model = view.model.data[child]
-  if (Array.isArray(child_model)) {
-    const subchildren = children[child] = []
-    for (const subchild of child_model) {
-      subchildren.push(view._child_views.get(subchild).el)
-    }
-  } else {
-    children[child] = view._child_views.get(child_model).el
-  }
-}
-
 const output = view.render_fn({
-  view: view, model: view.model_proxy, data: view.model.data, el: view.container, children: children
+  view: view, model: view.model_proxy, data: view.model.data, el: view.container
 })
 
 if (output instanceof Element) {
@@ -266,7 +268,7 @@ if (output instanceof Element) {
 }
 
 view.render_children()
-view.model.data.watch(() => view.render_esm(), ${JSON.stringify(rerender_vars)})`
+view.model.data.watch(() => view.render_esm(), view.accessed_children)`
   }
 
   render_esm(): void {

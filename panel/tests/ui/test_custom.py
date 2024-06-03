@@ -46,13 +46,9 @@ class ReactUpdate(ReactComponent):
     text = param.String()
 
     _esm = """
-    export function render({ state }) {
-      const [text, setText ] = state.text
-      return (
-        <div>
-          <h1>{text}</h1>
-        </div>
-      );
+    export function render({ model }) {
+      const [text, setText ] = model.useState("text")
+      return <h1>{text}</h1>
     }
     """
 
@@ -106,16 +102,14 @@ class ReactInput(ReactComponent):
     text = param.String()
 
     _esm = """
-    export function render({ state }) {
-      const [text, setText ] = state.text
+    export function render({ model }) {
+      const [text, setText ] = model.useState("text")
       return (
-        <div>
-          <input
-            id="input"
-            value={text}
-            onChange={e => setText(e.target.value)}
-          />
-        </div>
+        <input
+          id="input"
+          value={text}
+          onChange={e => setText(e.target.value)}
+        />
       )
     }
     """
@@ -199,9 +193,9 @@ class JSChild(JSComponent):
     child = Child()
 
     _esm = """
-    export function render({ children }) {
+    export function render({ model }) {
       const button = document.createElement('button')
-      button.appendChild(children.child)
+      button.appendChild(model.get_child('child'))
       return button
     }"""
 
@@ -221,8 +215,8 @@ class ReactChild(ReactComponent):
     child = Child()
 
     _esm = """
-    export function render({ children }) {
-      return <button>{children.child}</button>
+    export function render({ model }) {
+      return <button>{model.get_child('child')}</button>
     }"""
 
 
@@ -244,12 +238,10 @@ class JSChildren(JSComponent):
     children = Children()
 
     _esm = """
-    export function render({ children }) {
+    export function render({ model }) {
       const div = document.createElement('div')
       div.id = "container"
-      for (const child of children.children) {
-        div.appendChild(child)
-      }
+      div.append(...model.get_child('children'))
       return div
     }"""
 
@@ -269,8 +261,8 @@ class ReactChildren(ReactComponent):
     children = Children()
 
     _esm = """
-    export function render({ children }) {
-      return <div id="container">{children.children}</div>
+    export function render({ model }) {
+      return <div id="container">{model.get_child("children")}</div>
     }"""
 
 
