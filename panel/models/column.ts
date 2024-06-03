@@ -1,5 +1,5 @@
 import {Column as BkColumn, ColumnView as BkColumnView} from "@bokehjs/models/layouts/column"
-import * as DOM from "@bokehjs/core/dom"
+import {div} from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
 
 export class ColumnView extends BkColumnView {
@@ -62,7 +62,7 @@ export class ColumnView extends BkColumnView {
 
   override render(): void {
     super.render()
-    this.scroll_down_button_el = DOM.create_element("div", {class: "scroll-button"})
+    this.scroll_down_button_el = div({class: "scroll-button"})
     this.shadow_el.appendChild(this.scroll_down_button_el)
     this.el.addEventListener("scroll", () => {
       this.record_scroll_position()
