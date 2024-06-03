@@ -2264,7 +2264,7 @@ def test_tabulator_styling_init(page, df_mixed):
     df_styled = (
         df_mixed.style
         .apply(highlight_max, subset=['int'])
-        .applymap(color_false, subset=['bool'])
+        .map(color_false, subset=['bool'])
     )
     widget = Tabulator(df_styled)
 
