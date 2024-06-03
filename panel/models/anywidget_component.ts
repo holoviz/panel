@@ -1,17 +1,16 @@
 import type * as p from "@bokehjs/core/properties"
 
-import {ReactiveESMView} from "./reactive_esm"
+import {ReactiveESM} from "./reactive_esm"
 import {ReactComponent, ReactComponentView} from "./react_component"
 
-class AnyWidgetAdapter {
-  declare view: AnyWidgetComponentView
+
+class AnyWidgetModelAdapter {
   declare model: AnyWidgetComponent
   declare model_changes: any
   declare data_changes: any
 
-  constructor(view: AnyWidgetComponentView) {
-    this.view = view
-    this.model = view.model
+  constructor(model: AnyWidgetComponent) {
+    this.model = model
     this.model_changes = {}
     this.data_changes = {}
   }
@@ -27,22 +26,6 @@ class AnyWidgetAdapter {
       value = new Uint8Array(value)
     }
     return value
-  }
-
-  get_child(name: any): HTMLElement | HTMLElement[] | undefined {
-    const child_model = this.model.data[name]
-    if (Array.isArray(child_model)) {
-      const subchildren = []
-      for (const subchild of child_model) {
-        const subview = this.view.get_child_view(subchild)
-        if (subview) {
-          subchildren.push(subview.el)
-        }
-      }
-      return subchildren
-    } else {
-      return this.view.get_child_view(child_model)?.el
-    }
   }
 
   set(name: string, value: any) {
@@ -74,21 +57,38 @@ class AnyWidgetAdapter {
   }
 }
 
+class AnyWidgetAdapter extends AnyWidgetModelAdapter {
+  declare view: AnyWidgetComponentView
+
+  constructor(view: AnyWidgetComponentView) {
+    super(view.model)
+    this.view = view
+  }
+
+  get_child(name: any): HTMLElement | HTMLElement[] | undefined {
+    const child_model = this.model.data[name]
+    if (Array.isArray(child_model)) {
+      const subchildren = []
+      for (const subchild of child_model) {
+        const subview = this.view.get_child_view(subchild)
+        if (subview) {
+          subchildren.push(subview.el)
+        }
+      }
+      return subchildren
+    } else {
+      return this.view.get_child_view(child_model)?.el
+    }
+  }
+}
+
 export class AnyWidgetComponentView extends ReactComponentView {
+  declare model: AnyWidgetComponent
   adapter: AnyWidgetAdapter
 
   override initialize(): void {
     super.initialize()
     this.adapter = new AnyWidgetAdapter(this)
-  }
-
-  override compile(): string | null {
-    return ReactiveESMView.prototype.compile.call(this)
-  }
-
-  protected override _run_initializer(initialize: (props: any) => void): void {
-    const props = {model: this.model, data: this.adapter}
-    initialize(props)
   }
 
   protected override _render_code(): string {
@@ -115,6 +115,15 @@ export class AnyWidgetComponent extends ReactComponent {
 
   constructor(attrs?: Partial<AnyWidgetComponent.Attrs>) {
     super(attrs)
+  }
+
+  protected override _run_initializer(initialize: (props: any) => void): void {
+    const props = {model: new AnyWidgetModelAdapter(this)}
+    initialize(props)
+  }
+
+  override compile(): string | null {
+    return ReactiveESM.prototype.compile.call(this)
   }
 
   static override __module__ = "panel.models.esm"

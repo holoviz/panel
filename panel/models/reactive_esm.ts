@@ -55,16 +55,21 @@ export function model_setter(target: ReactiveESMView, name: string, value: any):
   return false
 }
 
+function init_model_getter(target: ReactiveESM, name: string) {
+  if (Reflect.has(target.data, name)) {
+    return Reflect.get(target.data, name)
+  } else if (Reflect.has(target, name)) {
+    return Reflect.get(target, name)
+  }
+}
+
 export class ReactiveESMView extends HTMLBoxView {
   declare model: ReactiveESM
-  sucrase_transforms: Transform[] = ["typescript"]
   container: HTMLDivElement
   accessed_properties: string[] = []
   accessed_children: string[] = []
-  model_proxy: any
-  compiled: string | null = null
   compiled_module: any = null
-  compile_error: Error | null = null
+  model_proxy: any
   _changing: boolean = false
   _watchers: any = {}
   _child_callbacks: Map<string, (new_views: UIElementView[]) => void>
@@ -97,46 +102,7 @@ export class ReactiveESMView extends HTMLBoxView {
 
   override async lazy_initialize(): Promise<void> {
     await super.lazy_initialize()
-    await this.recompile()
-  }
-
-  async recompile(): Promise<void> {
-    this.compile_error = null
-    const compiled = this.compile()
-    if (compiled === null) {
-      this.compiled_module = null
-      return
-    }
-    this.compiled = compiled
-    this._declare_importmap()
-    const url = URL.createObjectURL(
-      new Blob([this.compiled], {type: "text/javascript"}),
-    )
-    try {
-      // @ts-ignore
-      const mod = this.compiled_module = await importShim(url)
-      let initialize
-      if (mod.initialize) {
-        initialize = this.compiled_module.initialize
-      } else if (mod.default && mod.default.initialize) {
-        initialize = mod.default.initialize
-      }
-      if (initialize) {
-        this._run_initializer(initialize)
-      }
-    } catch (e: any) {
-      this.compiled_module = null
-      if (this.model.dev) {
-        this.compile_error = e
-      } else {
-        throw e
-      }
-    }
-  }
-
-  protected _run_initializer(initialize: (props: any) => void): void {
-    const props = {model: this.model, data: this.model.data}
-    initialize(props)
+    this.compiled_module = await this.model.compiled_module
   }
 
   override stylesheets(): StyleSheetLike[] {
@@ -151,7 +117,7 @@ export class ReactiveESMView extends HTMLBoxView {
     super.connect_signals()
     const {esm, importmap} = this.model.properties
     this.on_change([esm, importmap], async () => {
-      await this.recompile()
+      this.compiled_module = await this.model.compiled_module
       this.invalidate_render()
     })
     const child_props = this.model.children.map((child: string) => this.model.data.properties[child])
@@ -218,40 +184,12 @@ export class ReactiveESMView extends HTMLBoxView {
     set_size(this.el, this.model)
     this.container = div({style: "display: contents;"})
     this.shadow_el.append(this.container)
-    if (this.compile_error) {
+    if (this.model.compile_error) {
       const error = div({class: "error"})
-      error.innerHTML = formatError(this.compile_error, this.model.esm)
+      error.innerHTML = formatError(this.model.compile_error, this.model.esm)
       this.container.appendChild(error)
     } else {
       this.render_esm()
-    }
-  }
-
-  compile(): string | null {
-    let compiled
-    try {
-      compiled = transform(
-        this.model.esm, {
-          transforms: this.sucrase_transforms,
-          filePath: "render.tsx",
-        },
-      ).code
-    } catch (e) {
-      if (e instanceof SyntaxError && this.model.dev) {
-        this.compile_error = e
-        return null
-      } else {
-        throw e
-      }
-    }
-    return compiled
-  }
-
-  protected _declare_importmap(): void {
-    if (this.model.importmap) {
-      const importMap = {...this.model.importmap}
-      // @ts-ignore
-      importShim.addImportMap(importMap)
     }
   }
 
@@ -272,7 +210,7 @@ view.model.data.watch(() => view.render_esm(), view.accessed_children)`
   }
 
   render_esm(): void {
-    if (this.compiled === null) {
+    if (this.model.compiled === null) {
       return
     }
     this.accessed_properties = []
@@ -375,9 +313,93 @@ export interface ReactiveESM extends ReactiveESM.Attrs {}
 
 export class ReactiveESM extends HTMLBox {
   declare properties: ReactiveESM.Props
+  compiled: string | null = null
+  compiled_module: Promise<any> | null = null
+  compile_error: Error | null = null
+  sucrase_transforms: Transform[] = ["typescript"]
 
   constructor(attrs?: Partial<ReactiveESM.Attrs>) {
     super(attrs)
+  }
+
+  override initialize(): void {
+    super.initialize()
+    this.recompile()
+  }
+
+  override connect_signals(): void {
+    super.connect_signals()
+    this.connect(this.properties.esm.change, () => this.recompile())
+    this.connect(this.properties.importmap.change, () => this.recompile())
+  }
+
+  protected _declare_importmap(): void {
+    if (this.importmap) {
+      const importMap = {...this.importmap}
+      // @ts-ignore
+      importShim.addImportMap(importMap)
+    }
+  }
+
+  protected _run_initializer(initialize: (props: any) => void): void {
+    const model_proxy = new Proxy(this, {get: init_model_getter})
+    const props = {model: model_proxy}
+    initialize(props)
+  }
+
+  compile(): string | null {
+    let compiled
+    try {
+      compiled = transform(
+        this.esm, {
+          transforms: this.sucrase_transforms,
+          filePath: "render.tsx",
+        },
+      ).code
+    } catch (e) {
+      if (e instanceof SyntaxError && this.dev) {
+        this.compile_error = e
+        return null
+      } else {
+        throw e
+      }
+    }
+    return compiled
+  }
+
+  async recompile(): Promise<void> {
+    this.compile_error = null
+    const compiled = this.compile()
+    if (compiled === null) {
+      this.compiled_module = null
+      return
+    }
+    this.compiled = compiled
+    this._declare_importmap()
+    const url = URL.createObjectURL(
+      new Blob([this.compiled], {type: "text/javascript"}),
+    )
+    try {
+      // @ts-ignore
+      this.compiled_module = importShim(url)
+      const mod = await this.compiled_module
+      let initialize
+      if (mod.initialize) {
+        initialize = mod.initialize
+      } else if (mod.default && mod.default.initialize) {
+        initialize = mod.default.initialize
+      }
+      if (initialize) {
+        this._run_initializer(initialize)
+      }
+    } catch (e: any) {
+      this.compiled_module = null
+      if (this.dev) {
+        this.compile_error = e
+      } else {
+        throw e
+      }
+    }
   }
 
   static override __module__ = "panel.models.esm"

@@ -73,18 +73,6 @@ export class PreactComponentView extends ReactiveESMView {
     render(component, this.container)
   }
 
-  override compile(): string | null {
-    let compiled = super.compile()
-    if (compiled === null) {
-      return compiled
-    }
-    compiled = `
-const html = Bokeh.htm
-
-${compiled}`
-    return compiled
-  }
-
   protected override _render_code(): string {
     const code = `
 const view = Bokeh.index.find_one_by_id('${this.model.id}')
@@ -115,6 +103,18 @@ export class PreactComponent extends ReactiveESM {
 
   constructor(attrs?: Partial<PreactComponent.Attrs>) {
     super(attrs)
+  }
+
+  override compile(): string | null {
+    let compiled = super.compile()
+    if (compiled === null) {
+      return compiled
+    }
+    compiled = `
+const html = Bokeh.htm
+
+${compiled}`
+    return compiled
   }
 
   static override __module__ = "panel.models.esm"

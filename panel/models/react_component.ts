@@ -10,55 +10,9 @@ export class ReactComponentView extends ReactiveESMView {
   declare style_cache: HTMLHeadElement
   model_getter = model_getter
   model_setter = model_setter
-  override sucrase_transforms: Transform[] = ["typescript", "jsx"]
-
-  protected override _declare_importmap(): void {
-    const react_version = this.model.react_version
-    const imports = this.model.importmap?.imports
-    const scopes = this.model.importmap?.scopes
-    const importMap = {
-      imports: {
-        react: `https://esm.sh/react@${react_version}`,
-        "react-dom/": `https://esm.sh/react-dom@${react_version}/`,
-        ...imports,
-      },
-      scopes: scopes || {},
-    }
-    if (this.usesMui) {
-      importMap.imports = {
-        ...importMap.imports,
-        "@emotion/cache": "https://esm.sh/@emotion/cache",
-        "@emotion/react": "https://esm.sh/@emotion/react",
-      }
-    }
-    // @ts-ignore
-    importShim.addImportMap(importMap)
-  }
-
-  get usesMui(): boolean {
-    if (this.model.importmap?.imports) {
-      return Object.keys(this.model.importmap?.imports).some(k => k.startsWith("@mui"))
-    }
-    return false
-  }
-
-  get usesReact(): boolean {
-    return this.compiled !== null && this.compiled.includes("React")
-  }
-
-  override compile(): string | null {
-    const compiled = super.compile()
-    if (compiled === null || !compiled.includes("React")) {
-      return compiled
-    }
-    return `
-import * as React from "react"
-
-${compiled}`
-  }
 
   override render_esm(): void {
-    if (this.usesMui) {
+    if (this.model.usesMui) {
       this.style_cache = document.createElement("head")
       this.shadow_el.insertBefore(this.style_cache, this.container)
     }
@@ -76,7 +30,7 @@ if (rendered && view.usesReact) {
     let import_code = `
 import * as React from "react"
 import { createRoot } from 'react-dom/client'`
-    if (this.usesMui) {
+    if (this.model.usesMui) {
       import_code = `
 ${import_code}
 import createCache from "@emotion/cache"
@@ -179,9 +133,55 @@ export interface ReactComponent extends ReactComponent.Attrs {}
 
 export class ReactComponent extends ReactiveESM {
   declare properties: ReactComponent.Props
+  override sucrase_transforms: Transform[] = ["typescript", "jsx"]
 
   constructor(attrs?: Partial<ReactComponent.Attrs>) {
     super(attrs)
+  }
+
+  get usesMui(): boolean {
+    if (this.importmap?.imports) {
+      return Object.keys(this.importmap?.imports).some(k => k.startsWith("@mui"))
+    }
+    return false
+  }
+
+  get usesReact(): boolean {
+    return this.compiled !== null && this.compiled.includes("React")
+  }
+
+  protected override _declare_importmap(): void {
+    const react_version = this.react_version
+    const imports = this.importmap?.imports
+    const scopes = this.importmap?.scopes
+    const importMap = {
+      imports: {
+        react: `https://esm.sh/react@${react_version}`,
+        "react-dom/": `https://esm.sh/react-dom@${react_version}/`,
+        ...imports,
+      },
+      scopes: scopes || {},
+    }
+    if (this.usesMui) {
+      importMap.imports = {
+        ...importMap.imports,
+        "@emotion/cache": "https://esm.sh/@emotion/cache",
+        "@emotion/react": "https://esm.sh/@emotion/react",
+      }
+    }
+    // @ts-ignore
+    importShim.addImportMap(importMap)
+  }
+
+  override compile(): string | null {
+    const compiled = super.compile()
+    if (compiled === null || !compiled.includes("React")) {
+      return compiled
+    }
+    return `
+import * as React from "react"
+
+${compiled}`
   }
 
   static override __module__ = "panel.models.esm"
