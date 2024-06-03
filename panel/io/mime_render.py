@@ -29,10 +29,7 @@ from typing import Any
 # Import API
 #---------------------------------------------------------------------
 
-def _stdlibs():
-    return sys.stdlib_module_names
-
-_STDLIBS = _stdlibs()
+_STDLIBS = sys.stdlib_module_names
 _PACKAGE_MAP = {
     'sklearn': 'scikit-learn',
     'transformers_js': 'transformers-js-py',
