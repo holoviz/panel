@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import ClassVar, Mapping
+from typing import ClassVar, Literal, Mapping
 
 import param
 
@@ -9,12 +9,13 @@ from ..layout import Card, Row
 from ..pane.image import ImageBase
 from ..pane.markup import HTML, HTMLBasePane, Markdown
 from ..pane.placeholder import Placeholder
+from ..util import edit_readonly
 from ..widgets.indicators import BooleanStatus
 from .utils import (
     avatar_lookup, build_avatar_pane, serialize_recursively, stream_to,
 )
 
-DEFAULT_STATUS_AVATARS = {
+DEFAULT_STATUS_BADGES = {
     "pending": BooleanStatus(value=False, margin=0, color="primary"),
     "running": BooleanStatus(value=True, margin=0, color="warning"),
     "success": BooleanStatus(value=True, margin=0, color="success"),
@@ -34,9 +35,11 @@ class ChatStep(Card):
     success_title = param.String(default=None, doc="""
         Title to display when status is success.""")
 
-    default_avatars = param.Dict(
-        default=DEFAULT_STATUS_AVATARS,
-        doc="Mapping from status to default status avatar.")
+    default_badges = param.Dict(
+        default=DEFAULT_STATUS_BADGES, doc="""
+        Mapping from status to default status badge; keys must be one of
+        'pending', 'running', 'success', 'failed'.
+        """)
 
     default_title = param.String(
         default="",
@@ -45,6 +48,10 @@ class ChatStep(Card):
     failed_title = param.String(
         default=None,
         doc="Title to display when status is failed.")
+
+    header = param.Parameter(doc="""
+        A Panel component to display in the header bar of the Card.
+        Will override the given title if defined.""", readonly=True)
 
     margin = param.Parameter(
         default=(5, 5, 5, 10), doc="""
@@ -71,7 +78,7 @@ class ChatStep(Card):
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         "collapsed_on_success": None,
-        "default_avatars": None,
+        "default_badges": None,
         "default_title": None,
         "pending_title": None,
         "running_title": None,
@@ -85,6 +92,7 @@ class ChatStep(Card):
 
     def __init__(self, *objects, **params):
         self._instance = None
+        self._failed_title = ""  # for cases when contextmanager is invoked twice
         self._avatar_placeholder = Placeholder(css_classes=["step-avatar-container"])
 
         if params.get("title"):
@@ -99,31 +107,34 @@ class ChatStep(Card):
             margin=0,
             css_classes=["step-title"],
         )
-        self.header = Row(
-            self._avatar_placeholder,
-            self._title_pane,
-            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
-            css_classes=["step-header"],
-        )
+
+        with edit_readonly(self):
+            self.header = Row(
+                self._avatar_placeholder,
+                self._title_pane,
+                stylesheets=self._stylesheets + self.param.stylesheets.rx(),
+                css_classes=["step-header"],
+            )
+
     def __enter__(self):
         self.status = "running"
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type is not None:
-            self.status = "failed"
             if self.failed_title is None:
                 # convert to str to wrap repr in apostrophes
-                self.failed_title = f"Failed due to: {str(exc_value)!r}"
+                self._failed_title = f"Error: {str(exc_value)!r}"
+            self.status = "failed"
             raise exc_value
         self.status = "success"
 
-    @param.depends("status", "default_avatars", watch=True)
+    @param.depends("status", "default_badges", watch=True)
     def _render_avatar(self):
         """
         Render the avatar pane as some HTML text or Image pane.
         """
-        extra_keys = set(self.default_avatars.keys()) - set(DEFAULT_STATUS_AVATARS.keys())
+        extra_keys = set(self.default_badges.keys()) - set(DEFAULT_STATUS_BADGES.keys())
         if extra_keys:
             raise ValueError(
                 f"Invalid status avatars. Must be one of 'pending', 'running', 'success', 'failed'; "
@@ -133,8 +144,8 @@ class ChatStep(Card):
         avatar = avatar_lookup(
             self.status,
             None,
-            self.default_avatars,
-            DEFAULT_STATUS_AVATARS,
+            self.default_badges,
+            DEFAULT_STATUS_BADGES,
         )
         avatar_pane = build_avatar_pane(avatar, ["step-avatar"])
         self._avatar_placeholder.update(avatar_pane)
@@ -158,8 +169,11 @@ class ChatStep(Card):
             title = self.success_title
         elif self.status == "failed" and self.failed_title is not None:
             title = self.failed_title
+        elif self.status == "failed" and self._failed_title:
+            title = self._failed_title
         else:
             title = self.default_title
+
         with param.edit_constant(self):
             self.title = title
 
@@ -168,7 +182,12 @@ class ChatStep(Card):
         if self.status == "success" and self.collapsed_on_success:
             self.collapsed = True
 
-    def stream_title(self, token: str, replace: bool = False):
+    def stream_title(
+        self,
+        token: str,
+        status: Literal["pending", "running", "success", "failed", "default"] = "running",
+        replace: bool = False
+    ):
         """
         Stream a token to the title header.
 
@@ -176,13 +195,16 @@ class ChatStep(Card):
         ---------
         token : str
             The token to stream.
+        status : str
+            The status title to stream to, one of 'pending', 'running', 'success', 'failed', or "default".
         replace : bool
             Whether to replace the existing text.
         """
         if replace:
-            self.title = token
+            setattr(self, f"{status}_title", token)
         else:
-            self.title += token
+            original = getattr(self, f"{status}_title") or ""
+            setattr(self, f"{status}_title", original + token)
 
     def stream(self, token: str, replace: bool = False):
         """

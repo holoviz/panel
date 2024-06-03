@@ -43,12 +43,6 @@ class TestChatStep:
     def test_streaming_updates(self):
         step = ChatStep()
 
-        # Test title streaming
-        step.stream_title("New Title", replace=True)
-        assert step.title == "New Title", "Title should be replaced when streaming new title with replace=True"
-        step.stream_title(" Appended", replace=False)
-        assert step.title == "New Title Appended", "Title should be appended when streaming with replace=False"
-
         # Test content streaming
         step.stream("First message")
         assert len(step.objects) == 1, "First message should be added to objects"
@@ -57,7 +51,42 @@ class TestChatStep:
         assert len(step.objects) == 1
         assert step.objects[0].object == "First messageSecond message", "Messages should be concatenated"
 
+    def test_streaming_title_updates(self):
+        step = ChatStep(running_title="Run")
+        step.stream_title("Pend", status="pending")
+        assert step.pending_title == "Pend", "Pending title should be 'Pend'"
+        assert step.title == "Pend", "Title should be 'Pend' when status is 'pending'"
+
+        step.stream_title("ing", status="pending")
+        assert step.pending_title == "Pending", "Pending title should be 'Pending'"
+        assert step.title == "Pending", "Title should be 'Pending' when status is 'pending'"
+
+        step.stream_title("Starting now...", status="pending", replace=True)
+        assert step.pending_title == "Starting now...", "Pending title should be 'Starting now...'"
+        assert step.title == "Starting now...", "Title should be 'Starting now...' when status is 'pending'"
+
+        step.stream_title("ning")
+        assert step.running_title == "Running"
+        assert step.title == "Starting now...", "Title should be 'Starting now...' when status is 'pending'"
+        step.status = "running"
+        assert step.title == "Running", "Title should be 'Running' when status is 'running'"
+
     def test_serialization(self):
         step = ChatStep()
         serialized = step.serialize()
         assert isinstance(serialized, str), "Serialization should return a string representation"
+
+    def test_repeated_error(self):
+        step = ChatStep()
+        with pytest.raises(ValueError):
+            with step:
+                raise ValueError("Testing")
+        assert step.status == "failed", "Status should be 'failed' after an exception"
+        assert step.title == "Error: 'Testing'", "Title should update to 'Error: 'Testing'' on failure"
+
+        with pytest.raises(RuntimeError):
+            with step:
+                raise RuntimeError("Second Testing")
+
+        assert step.status == "failed", "Status should be 'failed' after an exception"
+        assert step.title == "Error: 'Second Testing'", "Title should update to 'Error: 'Second Testing'' on failure again"
