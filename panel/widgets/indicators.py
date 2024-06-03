@@ -20,6 +20,7 @@ from __future__ import annotations
 import asyncio
 import math
 import os
+import subprocess
 import sys
 import time
 
@@ -1377,8 +1378,7 @@ class Tqdm(Indicator):
     def __call__(self, *args, **kwargs):
         kwargs['indicator'] = self
         if not self.write_to_console:
-            f = open(os.devnull, 'w')
-            kwargs['file'] = f
+            kwargs['file'] = subprocess.DEVNULL
         return ptqdm(*args, **kwargs)
 
     __call__.__doc__ = ptqdm.__doc__
