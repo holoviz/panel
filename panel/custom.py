@@ -20,8 +20,7 @@ from .io.datamodel import construct_data_model
 from .io.state import state
 from .models import (
     AnyWidgetComponent as _BkAnyWidgetComponent,
-    PreactComponent as _BkPreactComponent, ReactComponent as _BkReactComponent,
-    ReactiveESM as _BkReactiveESM,
+    ReactComponent as _BkReactComponent, ReactiveESM as _BkReactiveESM,
 )
 from .models.reactive_html import DOMEvent
 from .reactive import Reactive, ReactiveCustomBase, ReactiveMetaBase
@@ -386,35 +385,3 @@ class AnyWidgetComponent(ReactComponent):
     """
 
     _bokeh_model = _BkAnyWidgetComponent
-
-
-class PreactComponent(ReactiveESM):
-    '''
-    The `PreactComponent` allows you to create custom Panel components
-    using Preact and htm without the complexities of Javascript build tools.
-
-    A `PreactComponent` subclass provides bi-directional syncing of its
-    parameters with arbitrary HTML elements, attributes and
-    properties. The key part of the subclass is the `_esm`
-    variable. Use this to define a `render` function as shown in the
-    example below.
-
-    import panel as pn
-    import param
-
-    pn.extension()
-
-    class CounterButton(ReactComponent):
-
-        value = param.Integer()
-
-        _esm = """
-        export function render({ data, html }) {
-          return html`<button onClick=${() => { data.value += 1 }}>${state.value}</button>`
-        }
-        """
-
-    CounterButton().servable()
-    '''
-
-    _bokeh_model = _BkPreactComponent

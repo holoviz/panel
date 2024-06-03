@@ -37,11 +37,6 @@ class ReactComponent(ReactiveESM):
     react_version = bp.String('18.2.0')
 
 
-class PreactComponent(ReactiveESM):
-    """
-    Renders htm based output using Preact.
-    """
-
 class AnyWidgetComponent(ReactComponent):
     """
     Renders AnyWidget esm definitions by adding a compatibility layer.

@@ -9,22 +9,12 @@ pytest.importorskip("playwright")
 from playwright.sync_api import expect
 
 from panel.custom import (
-    Child, Children, JSComponent, PreactComponent, ReactComponent,
+    Child, Children, JSComponent, ReactComponent,
 )
 from panel.tests.util import serve_component, wait_until
 
 pytestmark = pytest.mark.ui
 
-
-class PreactUpdate(PreactComponent):
-
-    text = param.String()
-
-    _esm = """
-    export function render({ model }) {
-      return html`<h1>${model.text}</h1>`
-    }
-    """
 
 class JSUpdate(JSComponent):
 
@@ -52,7 +42,7 @@ class ReactUpdate(ReactComponent):
     }
     """
 
-@pytest.mark.parametrize('component', [JSUpdate, PreactUpdate, ReactUpdate])
+@pytest.mark.parametrize('component', [JSUpdate, ReactUpdate])
 def test_update(page, component):
     example = component(text='Hello World!')
 
@@ -82,21 +72,6 @@ class JSInput(JSComponent):
     """
 
 
-class PreactInput(PreactComponent):
-
-    text = param.String()
-
-    _esm = """
-    export function render({ model }) {
-      return html`
-        <input
-          id="input"
-          value=${model.text}
-          onChange=${e => { model.text = e.target.value }}
-        />`
-    }
-    """
-
 class ReactInput(ReactComponent):
 
     text = param.String()
@@ -115,7 +90,7 @@ class ReactInput(ReactComponent):
     """
 
 
-@pytest.mark.parametrize('component', [JSInput, PreactInput, ReactInput])
+@pytest.mark.parametrize('component', [JSInput, ReactInput])
 def test_gather_input(page, component):
     example = component(text='Hello World!')
 
@@ -149,20 +124,6 @@ class JSSendEvent(JSComponent):
         self.clicks += 1
 
 
-class PreactSendEvent(PreactComponent):
-
-    clicks = param.Integer(default=0)
-
-    _esm = """
-    export function render({ model }) {
-      return html`<button id="button" onClick=${(event) => model.send_event('click', event)}/>`
-    }
-    """
-
-    def _handle_click(self, event):
-        self.clicks += 1
-
-
 class ReactSendEvent(ReactComponent):
 
     clicks = param.Integer(default=0)
@@ -177,7 +138,7 @@ class ReactSendEvent(ReactComponent):
         self.clicks += 1
 
 
-@pytest.mark.parametrize('component', [JSSendEvent, PreactSendEvent, ReactSendEvent])
+@pytest.mark.parametrize('component', [JSSendEvent, ReactSendEvent])
 def test_send_event(page, component):
     button = component()
 
@@ -200,16 +161,6 @@ class JSChild(JSComponent):
     }"""
 
 
-class PreactChild(PreactComponent):
-
-    child = Child()
-
-    _esm = """
-    export function render({ children }) {
-      return html`<button>${children.child}</button>`
-    }"""
-
-
 class ReactChild(ReactComponent):
 
     child = Child()
@@ -220,7 +171,7 @@ class ReactChild(ReactComponent):
     }"""
 
 
-@pytest.mark.parametrize('component', [JSChild, PreactChild, ReactChild])
+@pytest.mark.parametrize('component', [JSChild, ReactChild])
 def test_child(page, component):
     example = component(child='A Markdown pane!')
 
@@ -246,16 +197,6 @@ class JSChildren(JSComponent):
     }"""
 
 
-class PreactChildren(PreactComponent):
-
-    children = Children()
-
-    _esm = """
-    export function render({ children }) {
-      return html`<div id="container">${children.children}</div>`
-    }"""
-
-
 class ReactChildren(ReactComponent):
 
     children = Children()
@@ -266,7 +207,7 @@ class ReactChildren(ReactComponent):
     }"""
 
 
-@pytest.mark.parametrize('component', [JSChildren, PreactChildren, ReactChildren])
+@pytest.mark.parametrize('component', [JSChildren, ReactChildren])
 def test_children(page, component):
     example = component(children=['A Markdown pane!'])
 
@@ -297,16 +238,6 @@ export function render() {
   return h1
 }"""
 
-PREACT_CODE_BEFORE = """
-export function render() {
-  return html`<h1>foo</h1>`
-}"""
-
-PREACT_CODE_AFTER = """
-export function render() {
-  return html`<h1>bar</h1>`
-}"""
-
 REACT_CODE_BEFORE = """
 export function render() {
   return <h1>foo</h1>
@@ -319,7 +250,6 @@ export function render() {
 
 @pytest.mark.parametrize('component,before,after', [
     (JSComponent, JS_CODE_BEFORE, JS_CODE_AFTER),
-    (PreactComponent, PREACT_CODE_BEFORE, PREACT_CODE_AFTER),
     (ReactChildren, REACT_CODE_BEFORE, REACT_CODE_AFTER),
 ])
 def test_reload(page, component, before, after):
