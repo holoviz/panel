@@ -198,21 +198,41 @@ class TestChatFeed:
         assert chat_steps == chat_feed[0].object
         assert chat_steps[0] == chat_step
 
-    def test_attach_step(self, chat_feed):
-        chat_step = ChatStep(title="Testing...")
-        with chat_feed.create_steps(objects=[chat_step]) as chat_steps:
-            chat_feed.attach_step("Hello", title="Step 1")
-            chat_feed.attach_step("Hey", title="Step 2")
-        assert len(chat_steps) == 3
-        assert chat_steps[0].objects == []
-        assert chat_steps[1].objects[0].object == "Hello"
-        assert chat_steps[1].objects[0].css_classes == ["step-message"]
-        assert chat_steps[2].objects[0].object == "Hey"
-        assert chat_steps[2].objects[0].css_classes == ["step-message"]
+    def test_append_step(self, chat_feed):
+        # new
+        with chat_feed.append_step("Object", title="Title") as step:
+            assert isinstance(step, ChatStep)
+            assert step.title == "Title"
+            assert step.objects[0].object == "Object"
 
-        assert chat_steps[0].title == "Testing..."
-        assert chat_steps[1].title == "Step 1"
-        assert chat_steps[2].title == "Step 2"
+        assert len(chat_feed) == 1
+        message = chat_feed.objects[0]
+        assert isinstance(message, ChatMessage)
+
+        steps = message.object
+        assert isinstance(steps, ChatSteps)
+
+        assert len(steps) == 1
+        assert isinstance(steps[0], ChatStep)
+
+        # existing
+        with chat_feed.append_step("New Object", title="New Title", steps="append") as step:
+            assert isinstance(step, ChatStep)
+            assert step.title == "New Title"
+            assert step.objects[0].object == "New Object"
+        assert len(steps) == 2
+        assert isinstance(steps[0], ChatStep)
+        assert isinstance(steps[1], ChatStep)
+
+        # actual component
+        with chat_feed.append_step("Newest Object", title="Newest Title", steps=steps) as step:
+            assert isinstance(step, ChatStep)
+            assert step.title == "Newest Title"
+            assert step.objects[0].object == "Newest Object"
+        assert len(steps) == 3
+        assert isinstance(steps[0], ChatStep)
+        assert isinstance(steps[1], ChatStep)
+        assert isinstance(steps[2], ChatStep)
 
     def test_stream_with_user_avatar(self, chat_feed):
         user = "Bob"

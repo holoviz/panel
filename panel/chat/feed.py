@@ -715,12 +715,16 @@ class ChatFeed(ListPanel):
         if steps == "new":
             steps = ChatSteps()
             self.stream(steps, user=user, avatar=avatar)
-        elif steps == "existing":
+        elif steps == "append":
             for message in reversed(self._chat_log.objects):
                 obj = message.object
                 if isinstance(obj, ChatSteps) and obj.active:
                     steps = obj
                     break
+            else:
+                raise ValueError("No active ChatSteps component found to append the step to.")
+        elif not isinstance(steps, ChatSteps):
+            raise ValueError(f"The steps argument must be 'new', 'append', or a ChatSteps type, but got {steps}.")
         return steps.append_step(objects, **step_params)
 
     def respond(self):
