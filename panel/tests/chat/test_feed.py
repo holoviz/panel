@@ -191,13 +191,6 @@ class TestChatFeed:
         assert chat_feed.objects[1] is new_entry
         assert chat_feed.objects[1].object == "New message"
 
-    def test_create_steps(self, chat_feed):
-        chat_step = ChatStep(title="Testing...")
-        chat_steps = chat_feed.create_steps(objects=[chat_step])
-        assert isinstance(chat_steps, ChatSteps)
-        assert chat_steps == chat_feed[0].object
-        assert chat_steps[0] == chat_step
-
     def test_append_step(self, chat_feed):
         # new
         with chat_feed.append_step("Object", title="Title") as step:
