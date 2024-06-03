@@ -791,7 +791,7 @@ def test_tabulator_styling(document, comm):
     def high_red(value):
         return 'color: red' if value > 2 else 'color: black'
 
-    table.style.applymap(high_red, subset=['A'])
+    table.style.map(high_red, subset=['A'])
 
     model = table.get_root(document, comm)
 
