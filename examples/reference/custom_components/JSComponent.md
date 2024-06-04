@@ -33,7 +33,7 @@ CounterButton().servable()
 
 :::{note}
 
-`JSComponent` was introduced in June 2024 as the successor to `ReactiveHTML`.
+`JSComponent` was introduced in June 2024 as a successor to `ReactiveHTML`.
 
 `JSComponent` bears similarities to [`AnyWidget`](https://anywidget.dev/), but it is specifically optimized for use with Panel.
 
@@ -440,6 +440,6 @@ You can change the `item_type` to a specific subtype of `Viewable` or a tuple of
 
 ### Reference Guides
 
+- [`AnyWidgetComponent`](../../../reference/panes/AnyWidgetComponent.md)
 - [`JSComponent`](../../../reference/panes/JSComponent.md)
 - [`ReactComponent`](../../../reference/panes/ReactComponent.md)
-- [`PreactComponent`](../../../reference/panes/PreactComponent.md)

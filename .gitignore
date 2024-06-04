@@ -162,3 +162,6 @@ pixi.lock
 panel/_version.py
 .uicoveragerc
 mario_button.*
+counter_button.css
+counter_button.js
+counter_button.py

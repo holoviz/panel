@@ -456,6 +456,6 @@ CounterButton().servable()
 
 ### Reference Guides
 
+- [`AnyWidgetComponent`](../../../reference/panes/AnyWidgetComponent.md)
 - [`JSComponent`](../../../reference/panes/JSComponent.md)
 - [`ReactComponent`](../../../reference/panes/ReactComponent.md)
-- [`PreactComponent`](../../../reference/panes/PreactComponent.md)
