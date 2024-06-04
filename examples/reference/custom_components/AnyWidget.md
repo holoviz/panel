@@ -1,6 +1,6 @@
 # `AnyWidgetComponent`
 
-Panel's `AnyWidgetComponent` class simplifies the creation of custom Panel components using JavaScript and the [`AnyWidget`](https://anywidget.dev/) library.
+Panel's `AnyWidgetComponent` class simplifies the creation of custom Panel components using the [`AnyWidget`](https://anywidget.dev/) JavaScript API.
 
 ```pyodide
 import panel as pn
@@ -289,7 +289,7 @@ CounterButton().servable()
 ```
 
 :::{note}
-You will notice that Panel's `AnyWidgetComponent` can be used with React and JSX without any build tools. Instead of build tools, Panel uses [Sucrase](https://sucrase.io/) to transpile the JSX code to JavaScript on the client side.
+You will notice that Panel's `AnyWidgetComponent` can be used with React and [JSX](https://react.dev/learn/writing-markup-with-jsx) without any build tools. Instead of build tools, Panel uses [Sucrase](https://sucrase.io/) to transpile the JSX code to JavaScript on the client side.
 :::
 
 ## References
