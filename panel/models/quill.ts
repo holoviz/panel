@@ -57,7 +57,7 @@ export class QuillInputView extends HTMLBoxView {
 
   override render(): void {
     super.render()
-    this.container = div({style: "visibility: hidden;"})
+    this.container = div({style: {visibility: "hidden"}})
     this.shadow_el.appendChild(this.container)
     const theme = (this.model.mode === "bubble") ? "bubble" : "snow"
     this.watch_stylesheets()

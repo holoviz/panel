@@ -133,7 +133,7 @@ export class VTKVolumePlotView extends AbstractVTKView {
     this._create_orientation_widget()
     this._set_axes()
     this._vtk_renwin.getRenderer().resetCamera()
-    if (Object.keys(this.model.camera).length) {
+    if (Object.keys(this.model.camera).length > 0) {
       this._set_camera_state()
     }
     this._get_camera_state()
