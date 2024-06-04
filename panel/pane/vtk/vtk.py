@@ -782,7 +782,7 @@ class VTKVolume(AbstractVTK):
         if any([d_f > 1 for d_f in dowsnscale_factor]):
             try:
                 import scipy.ndimage as nd
-                if hasattr("nd", "zoom"):
+                if hasattr(nd, "zoom"):
                     sub_array = nd.zoom(array, zoom=[1 / d_f for d_f in dowsnscale_factor], order=0, mode="nearest")
                 else:  # Slated for removal in 2.0
                     sub_array = nd.interpolation.zoom(array, zoom=[1 / d_f for d_f in dowsnscale_factor], order=0, mode="nearest")
