@@ -19,10 +19,9 @@ from __future__ import annotations
 
 import asyncio
 import math
-import os
-import subprocess
 import sys
 import time
+import types
 
 from math import pi
 from typing import (
@@ -1378,7 +1377,7 @@ class Tqdm(Indicator):
     def __call__(self, *args, **kwargs):
         kwargs['indicator'] = self
         if not self.write_to_console:
-            kwargs['file'] = subprocess.DEVNULL
+            kwargs['file'] = types.SimpleNamespace(write=len)
         return ptqdm(*args, **kwargs)
 
     __call__.__doc__ = ptqdm.__doc__
@@ -1386,8 +1385,7 @@ class Tqdm(Indicator):
     def pandas(self, *args, **kwargs):
         kwargs['indicator'] = self
         if not self.write_to_console and 'file' not in kwargs:
-            f = open(os.devnull, 'w')
-            kwargs['file'] = f
+            kwargs['file'] = types.SimpleNamespace(write=len)
         return ptqdm.pandas(*args, **kwargs)
 
     def reset(self):
