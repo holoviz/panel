@@ -15,8 +15,8 @@ class CounterButton(ReactComponent):
     value = param.Integer()
 
     _esm = """
-    export function render({state}) {
-      const [value, setValue] = state.value;
+    export function render({model}) {
+      const [value, setValue] = model.useState("value");
       return (
         <button onClick={e => setValue(value+1)}>
           count is {value}
@@ -60,13 +60,6 @@ The `_esm` attribute must export the `render` function. It accepts the following
 
 Any React component returned from the `render` function will be appended to the HTML element (`el`) of the component.
 
-#### Other Lifecycle Methods
-
-DUMMY CONTENT. PLEASE HELP ME DESCRIBE THIS.
-
-- `initialize`: Runs once per widget instance at model initialization, facilitating setup for event handlers or state.
-- `teardown`: Cleans up resources or processes when a widget instance is being removed.
-
 ## Usage
 
 ### Styling with CSS
@@ -107,7 +100,7 @@ class CounterButton(ReactComponent):
         <button onClick={e => setValue(value+1)}>
           count is {value}
         </button>
-	  );
+    );
     }
     """
 
@@ -116,7 +109,7 @@ CounterButton().servable()
 
 ## Send Events from JavaScript to Python
 
-Events from JavaScript can be sent to Python using the `data.send_event` method. Define a handler in Python to manage these events. A *handler* is a method on the form `_handle_<name-of-event>(self, event)`:
+Events from JavaScript can be sent to Python using the `model.send_event` method. Define a handler in Python to manage these events. A *handler* is a method on the form `_handle_<name-of-event>(self, event)`:
 
 ```pyodide
 import panel as pn
@@ -132,11 +125,11 @@ class EventExample(ReactComponent):
 
     _esm = """
     export function render({ model }) {
-	  return (
+    return (
         <button onClick={e => model.send_event('click', e) }>
           Click me
         </button>
-	  );
+    );
     }
     """
 
@@ -173,11 +166,11 @@ class CustomEventExample(ReactComponent):
     }
 
     export function render({ model }) {
-	  return (
+    return (
         <button onClick={e => send_event(model) }>
           Click me
         </button>
-	  );
+    );
     }
     """
 
@@ -213,7 +206,7 @@ class ConfettiButton(ReactComponent):
         <button onClick={e => confetti()}>
           Click Me
         </button>
-	  );
+    );
     }
     """
 
@@ -282,8 +275,8 @@ CounterButton().servable()
 Now create the file **counter_button.jsx**.
 
 ```javascript
-export function render({state}) {
-  const [value, setValue] = state.value;
+export function render({ model }) {
+  const [value, setValue] = model.useState("value");
   return (
     <button onClick={e => setValue(value+1)}>
       count is {value}
@@ -332,7 +325,7 @@ class Example(ReactComponent):
     _esm = """
     export function render({ model }) {
       return <button>{model.get_child("child")}</button>
-    )}
+    }
     """
 
 Example(child=pn.panel("A **Markdown** pane!")).servable()
@@ -376,7 +369,7 @@ class Example(ReactComponent):
     child = Child(class_=(pn.pane.Markdown, pn.pane.HTML))
 
     _esm = """
-    export function render({ children }) {
+    export function render({ model }) {
       return <button>{model.get_child("child")}</button>
     }
     """
@@ -398,7 +391,7 @@ class Example(ReactComponent):
     objects = Children()
 
     _esm = """
-    export function render({ children }) {
+    export function render({ model }) {
       return <div>{model.get_child("objects")}</div>
     }"""
 
