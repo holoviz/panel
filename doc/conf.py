@@ -44,7 +44,8 @@ html_theme = "pydata_sphinx_theme"
 html_favicon = "_static/icons/favicon.ico"
 
 current_release = panel.__version__  # Current release version variable
-announcement_text = f"Panel {current_release} has just been released! Checkout the <a href='https://panel.holoviz.org/about/releases.html#version-1-4-0'>release notes</a> and support Panel by giving it a 🌟 on <a href='https://github.com/holoviz/panel'>Github</a>."
+
+announcement_text = f"Panel {current_release} has just been released! Check out the <a href='https://panel.holoviz.org/about/releases.html#version-1-4-0'>release notes</a> and support Panel by giving it a 🌟 on <a href='https://github.com/holoviz/panel'>Github</a>."
 
 
 html_theme_options = {
