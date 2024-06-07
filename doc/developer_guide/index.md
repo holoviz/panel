@@ -77,11 +77,6 @@ pixi install
 ```
 
 The first time you run it, it will create a `pixi.lock` file with information for all available environments. This command will take a minute or so to run.
-When this is finished, it is possible to run the following command to download the data Panel tests and examples depend upon.
-
-```bash
-pixi run download-data
-```
 
 All available tasks can be found by running `pixi task list`, the following sections will give a brief introduction to the most common tasks.
 
