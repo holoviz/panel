@@ -406,14 +406,16 @@ import panel as pn
 
 from panel.custom import Children, JSComponent
 
+pn.extension()
+
 class Example(JSComponent):
 
     objects = Children()
 
     _esm = """
-    export function render({ children }) {
+    export function render({ model }) {
       const div = document.createElement('div')
-      div.append(...model.get_child("children")))
+      div.append(...model.get_child("objects"))
       return div
     }"""
 
