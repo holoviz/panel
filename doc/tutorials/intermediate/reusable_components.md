@@ -251,6 +251,10 @@ We should now be able to write reusable `Parameterized` and `Viewer` classes tha
 
 ## Resources
 
+### Reference Guide
+
+- [`Viewer`](../../reference/custom_components/Viewer.md)
+
 ### How-To
 
 - [Combine Existing Components](../../how_to/custom_components/custom_viewer.ipynb)

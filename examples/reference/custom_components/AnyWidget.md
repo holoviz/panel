@@ -38,6 +38,9 @@ CounterButton().servable()
 Panel's `AnyWidgetComponent` supports using the [`AnyWidget`](https://anywidget.dev/) API on the JavaScript side and the [`param`](https://param.holoviz.org/) parameters API on the Python side.
 
 Compared to Panel's [`JSComponent`](JSComponent.md) and [`ReactComponent`](ReactComponent.md) classes, the `AnyWidgetComponent` does not support creating panes that display a single Panel child object or layouts that display multiple Panel child objects.
+
+If you are looking to create custom components using Python and Panel component only, check out [`Viewer`](Viewer.md).
+
 :::
 
 ## API
