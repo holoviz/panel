@@ -46,7 +46,7 @@ def test_feed_view_latest(page):
     expect(feed_el).to_have_class("bk-panel-models-feed-Feed scroll-vertical")
 
     # Assert scroll is not at 0 (view_latest)
-    assert feed_el.evaluate('(el) => el.scrollTop') > 0
+    wait_until(lambda: feed_el.evaluate('(el) => el.scrollTop') > 0, page)
 
     wait_until(lambda: int(page.locator('pre').last.inner_text()) > 0.9 * ITEMS, page)
 
