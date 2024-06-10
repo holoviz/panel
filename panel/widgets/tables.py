@@ -1191,7 +1191,7 @@ class Tabulator(BaseTable):
         super().__init__(value=value, **params)
         self._configuration = configuration
         self.param.watch(self._update_children, self._content_params)
-        self.param.watch(self._clear_selection_remote_pagination, self.param.value)
+        self.param.watch(self._clear_selection_remote_pagination, 'value')
         if click_handler:
             self.on_click(click_handler)
         if edit_handler:
