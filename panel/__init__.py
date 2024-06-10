@@ -116,5 +116,4 @@ __all__ = (
     "viewable",
     "widgets",
     "widget"
-    "ReactiveESM",
 )
