@@ -1005,7 +1005,7 @@ class OAuthProvider(BasicAuthProvider):
             now_ts = dt.datetime.now(dt.timezone.utc).timestamp()
             expiry = None
             if user in state._oauth_user_overrides:
-                while not state._oauth_user_overrides[user]:
+                while not state._oauth_user_overrides.get(user):
                     await asyncio.sleep(0.1)
                 user_state = state._oauth_user_overrides[user]
                 access_token = user_state['access_token']
@@ -1149,7 +1149,7 @@ class OAuthProvider(BasicAuthProvider):
         if user in state._oauth_user_overrides:
             if not state._oauth_user_overrides[user]:
                 # Token is already being refreshed await it
-                while not state._oauth_user_overrides[user]:
+                while not state._oauth_user_overrides.get(user):
                     await asyncio.sleep(0.1)
                 return
             else:
