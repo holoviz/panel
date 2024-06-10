@@ -537,7 +537,7 @@ export class DataTabulatorView extends HTMLBoxView {
     this.tabulator.on("tableBuilt", () => this.tableBuilt())
 
     // Rendering callbacks
-    this.tabulator.on("selectableCheck", (row: any) => {
+    this.tabulator.on("selectableRowsCheck", (row: any) => {
       const selectable = this.model.selectable_rows
       return (selectable == null) || selectable.includes(row._row.data._index)
     })
@@ -652,13 +652,13 @@ export class DataTabulatorView extends HTMLBoxView {
 
   getConfiguration(): any {
     // Only use selectable mode if explicitly requested otherwise manually handle selections
-    const selectable = this.model.select_mode === "toggle" ? true : NaN
+    const selectableRows = this.model.select_mode === "toggle" ? true : NaN
     const configuration = {
       ...this.model.configuration,
       index: "_index",
       nestedFieldSeparator: false,
       movableColumns: false,
-      selectable,
+      selectableRows,
       columns: this.getColumns(),
       initialSort: this.sorters,
       layout: this.getLayout(),
