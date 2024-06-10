@@ -1,11 +1,11 @@
-# Displaying Content with Panes
+# Display Objects with Panes
 
 In Panel the objects that can display your Python objects are called *panes*. With Panels *panes* you will be able to:
 
 - Get notifications about interactions like click events on your plots and tables and react to them.
 - Use unique data visualization ecosystems like HoloViz, ipywidgets and VTK.
 
-Check out the [Panes Section](../../reference/index#panes) of the [Component Gallery](../../reference/index.md) for the full list of *panes*.
+Check out the [Panes Section](../../reference/index.md#panes) of the [Component Gallery](../../reference/index.md) for the full list of *panes*.
 
 ---
 

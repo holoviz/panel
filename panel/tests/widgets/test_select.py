@@ -1,8 +1,7 @@
-from collections import OrderedDict
-
 import numpy as np
 import pytest
 
+from panel.layout import GridBox, Row
 from panel.pane import panel
 from panel.tests.util import mpl_available
 from panel.widgets import (
@@ -181,7 +180,7 @@ def test_select_non_hashable_options(document, comm):
 
 
 def test_select_mutables(document, comm):
-    opts = OrderedDict([('A', [1,2,3]), ('B', [2,4,6]), ('C', dict(a=1,b=2))])
+    opts = {'A': [1,2,3], 'B': [2,4,6], 'C': dict(a=1,b=2)}
     select = Select(options=opts, value=opts['B'], name='Select')
 
     widget = select.get_root(document, comm=comm)
@@ -204,12 +203,12 @@ def test_select_mutables(document, comm):
 
 
 def test_select_change_options_on_watch(document, comm):
-    select = Select(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
-                         value='A', name='Select')
+    select = Select(options={'A': 'A', '1': 1, 'C': object},
+                    value='A', name='Select')
 
     def set_options(event):
         if event.new == 1:
-            select.options = OrderedDict([('D', 2), ('E', 'a')])
+            select.options = {'D': 2, 'E': 'a'}
     select.param.watch(set_options, 'value')
 
     model = select.get_root(document, comm=comm)
@@ -459,7 +458,7 @@ def test_nested_select_partial_options_set(document, comm):
         },
     }
     select = NestedSelect(options=options)
-    select.options = {"Ben": {}}
+    select.options = {"Ben": []}
     assert select._widgets[0].value == 'Ben'
     assert select._widgets[0].visible
     assert select.value == {0: 'Ben'}
@@ -601,6 +600,63 @@ def test_nested_select_callable_mid_level(document, comm):
     assert select._max_depth == 3
 
 
+def test_nested_select_dynamic_levels(document, comm):
+    select = NestedSelect(
+        options={
+            "Easy": {"Easy_A": {}, "Easy_B": {}},
+            "Medium": {
+                "Medium_A": {},
+                "Medium_B": {"Medium_B_1": []},
+                "Medium_C": {
+                    "Medium_C_1": ["Medium_C_1_1"],
+                    "Medium_C_2": ["Medium_C_2_1", "Medium_C_2_2"],
+                },
+            },
+            "Hard": {}
+        },
+        levels=["A", "B", "C", "D"],
+    )
+    assert select._widgets[0].visible
+    assert select._widgets[1].visible
+    assert not select._widgets[2].visible
+    assert not select._widgets[3].visible
+
+    assert select._widgets[0].options == ["Easy", "Medium", "Hard"]
+    assert select._widgets[1].options == ["Easy_A", "Easy_B"]
+    assert select._widgets[2].options == []
+    assert select._widgets[3].options == []
+
+    assert select.value == {"A": "Easy", "B": "Easy_A", "C": None, "D": None}
+
+    # now update to Medium
+    select.value = {"A": "Medium", "B": "Medium_C"}
+    assert select._widgets[0].visible
+    assert select._widgets[1].visible
+    assert select._widgets[2].visible
+    assert select._widgets[3].visible
+
+    assert select._widgets[0].options == ["Easy", "Medium", "Hard"]
+    assert select._widgets[1].options == ["Medium_A", "Medium_B", "Medium_C"]
+    assert select._widgets[2].options == ["Medium_C_1", "Medium_C_2"]
+    assert select._widgets[3].options == ["Medium_C_1_1"]
+
+    assert select.value == {"A": "Medium", "B": "Medium_C", "C": "Medium_C_1", "D": "Medium_C_1_1"}
+
+    # now update to Hard
+    select.value = {"A": "Hard"}
+    assert select._widgets[0].visible
+    assert not select._widgets[1].visible
+    assert not select._widgets[2].visible
+    assert not select._widgets[3].visible
+
+    assert select._widgets[0].options == ["Easy", "Medium", "Hard"]
+    assert select._widgets[1].options == []
+    assert select._widgets[2].options == []
+    assert select._widgets[3].options == []
+
+    assert select.value == {"A": "Hard", "B": None, "C": None, "D": None}
+
+
 def test_nested_select_callable_must_have_levels(document, comm):
     def list_options(level, value):
         pass
@@ -609,6 +665,65 @@ def test_nested_select_callable_must_have_levels(document, comm):
         NestedSelect(
             options={"Daily": list_options, "Monthly": list_options},
         )
+
+
+def test_nested_select_layout_listlike(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    select = NestedSelect(
+        options=options,
+        layout=Row,
+    )
+    assert isinstance(select._composite, Row)
+
+
+def test_nested_select_layout_dict(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    select = NestedSelect(
+        options=options,
+        layout={"type": GridBox, "ncols": 2},
+    )
+    assert isinstance(select._composite, GridBox)
+    assert select._composite.ncols == 2
+
+
+def test_nested_select_layout_dynamic_update(document, comm):
+    options = {
+        "Andrew": {
+            "temp": [1000, 925, 700, 500, 300],
+            "vorticity": [500, 300],
+        },
+        "Ben": {
+            "temp": [500, 300],
+            "windspeed": [700, 500, 300],
+        },
+    }
+    select = NestedSelect(
+        options=options,
+        layout={"type": GridBox, "ncols": 2},
+    )
+    assert isinstance(select._composite, GridBox)
+    assert select._composite.ncols == 2
+
+    select.layout = Row
+    assert isinstance(select._composite, Row)
 
 
 @pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
@@ -694,7 +809,7 @@ def test_select_disabled_options_set_value_and_disabled_options(options, size, d
 
 
 def test_multi_select(document, comm):
-    select = MultiSelect(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+    select = MultiSelect(options={'A': 'A', '1': 1, 'C': object},
                          value=[object, 1], name='Select')
 
     widget = select.get_root(document, comm=comm)
@@ -717,7 +832,7 @@ def test_multi_select(document, comm):
 
 
 def test_multi_choice(document, comm):
-    choice = MultiChoice(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+    choice = MultiChoice(options={'A': 'A', '1': 1, 'C': object},
                          value=[object, 1], name='MultiChoice')
 
     widget = choice.get_root(document, comm=comm)
@@ -740,12 +855,12 @@ def test_multi_choice(document, comm):
 
 
 def test_multi_select_change_options(document, comm):
-    select = MultiSelect(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+    select = MultiSelect(options={'A': 'A', '1': 1, 'C': object},
                          value=[object, 1], name='Select')
 
     def set_options(event):
         if event.new == [1]:
-            select.options = OrderedDict([('D', 2), ('E', 'a')])
+            select.options = {'D': 2, 'E': 'a'}
     select.param.watch(set_options, 'value')
 
     model = select.get_root(document, comm=comm)
@@ -757,22 +872,22 @@ def test_multi_select_change_options(document, comm):
 
 def test_toggle_group_error_init(document, comm):
     with pytest.raises(ValueError):
-        ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+        ToggleGroup(options={'A': 'A', '1': 1, 'C': object},
                     value=1, name='RadioButtonGroup',
                     widget_type='button', behavior='check')
 
     with pytest.raises(ValueError):
-        ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+        ToggleGroup(options={'A': 'A', '1': 1, 'C': object},
                     value=[1, object], name='RadioButtonGroup',
                     widget_type='button', behavior='radio')
 
     with pytest.raises(ValueError):
-        ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+        ToggleGroup(options={'A': 'A', '1': 1, 'C': object},
                     value=[1, object], name='RadioButtonGroup',
                     widget_type='buttons')
 
     with pytest.raises(ValueError):
-        ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+        ToggleGroup(options={'A': 'A', '1': 1, 'C': object},
                     value=[1, object], name='RadioButtonGroup',
                     behavior='checks')
 
@@ -780,9 +895,9 @@ def test_toggle_group_error_init(document, comm):
 def test_toggle_group_check(document, comm):
 
     for widget_type in ToggleGroup._widgets_type:
-        select = ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
-                               value=[1, object], name='CheckButtonGroup',
-                               widget_type=widget_type, behavior='check')
+        select = ToggleGroup(options={'A': 'A', '1': 1, 'C': object},
+                             value=[1, object], name='CheckButtonGroup',
+                             widget_type=widget_type, behavior='check')
 
         widget = select.get_root(document, comm=comm)
 
@@ -814,9 +929,9 @@ def test_toggle_group_check(document, comm):
 def test_toggle_group_radio(document, comm):
 
     for widget_type in ToggleGroup._widgets_type:
-        select = ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
-                               value=1, name='RadioButtonGroup',
-                               widget_type=widget_type, behavior='radio')
+        select = ToggleGroup(options={'A': 'A', '1': 1, 'C': object},
+                             value=1, name='RadioButtonGroup',
+                             widget_type=widget_type, behavior='radio')
 
         widget = select.get_root(document, comm=comm)
 

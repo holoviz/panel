@@ -1,4 +1,7 @@
+import asyncio
 import datetime as dt
+
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
@@ -11,20 +14,26 @@ from bokeh.models.widgets.tables import (
     SumAggregator,
 )
 from packaging.version import Version
-from pandas._testing import (
-    makeCustomDataframe, makeMixedDataFrame, makeTimeDataFrame,
-)
 
 from panel.depends import bind
 from panel.io.state import set_curdoc
 from panel.models.tabulator import CellClickEvent, TableEditEvent
-from panel.tests.util import serve_and_request, wait_until
-from panel.util import BOKEH_JS_NAT
+from panel.tests.util import mpl_available, serve_and_request, wait_until
 from panel.widgets import Button, TextInput
 from panel.widgets.tables import DataFrame, Tabulator
 
 pd_old = pytest.mark.skipif(Version(pd.__version__) < Version('1.3'),
                             reason="Requires latest pandas")
+
+
+def makeMixedDataFrame():
+    data = {
+        "A": [0.0, 1.0, 2.0, 3.0, 4.0],
+        "B": [0.0, 1.0, 0.0, 1.0, 0.0],
+        "C": ["foo1", "foo2", "foo3", "foo4", "foo5"],
+        "D": pd.bdate_range("1/1/2009", periods=5),
+    }
+    return pd.DataFrame(data)
 
 
 def test_dataframe_widget(dataframe, document, comm):
@@ -74,12 +83,12 @@ def test_dataframe_widget_no_show_index(dataframe, document, comm):
 
 
 def test_dataframe_widget_datetimes(document, comm):
-
-    table = DataFrame(makeTimeDataFrame())
+    df = pd.DataFrame({'int': [1, 2, 3]}, index=pd.date_range('2000-01-01', periods=3))
+    table = DataFrame(df)
 
     model = table.get_root(document, comm)
 
-    dt_col, _, _, _, _ = model.columns
+    dt_col, _ = model.columns
 
     assert dt_col.title == 'index'
     assert isinstance(dt_col.formatter, DateFormatter)
@@ -328,7 +337,7 @@ def test_tabulator_expanded_content_pagination(document, comm):
     assert len(model.children) == 0
 
 
-def test_tabulator_expanded_content_embed(document, comm):
+def test_tabulator_content_embed(document, comm):
     df = makeMixedDataFrame()
 
     table = Tabulator(df, embed_content=True, row_content=lambda r: r.A)
@@ -348,6 +357,34 @@ def test_tabulator_expanded_content_embed(document, comm):
         assert i in model.children
         row = model.children[i]
         assert row.text  == f"&lt;pre&gt;{r.A+1}&lt;/pre&gt;"
+
+
+def test_tabulator_content_embed_and_expand(document, comm):
+    # https://github.com/holoviz/panel/issues/6200
+    df = makeMixedDataFrame()
+
+    calls = []
+    def row_content(row):
+        calls.append(row)
+        return row.A
+
+    table = Tabulator(df, embed_content=True, row_content=row_content)
+
+    model = table.get_root(document, comm)
+
+    assert len(calls) == len(df)
+
+    assert len(model.children) == len(df)
+
+    for i, r in df.iterrows():
+        assert i in model.children
+        row = model.children[i]
+        assert row.text  == f"&lt;pre&gt;{r.A}&lt;/pre&gt;"
+
+    # Expanding a row should not call row_content again in this context.
+    table.expanded = [1]
+
+    assert len(calls) == len(df)
 
 
 def test_tabulator_selected_and_filtered_dataframe(document, comm):
@@ -1319,16 +1356,16 @@ def test_tabulator_patch_with_NaT(document, comm):
     table.patch({'A': [(0, pd.NaT)]})
 
     # We're also checking that the NaT value that was in the original table
-    # at .loc[1, 'A'] is converted in the model as BOKEH_JS_NAT.
+    # at .loc[1, 'A'] is converted in the model as np.nan.
     expected = {
         'index': np.array([0, 1]),
-        'A': np.array([BOKEH_JS_NAT, BOKEH_JS_NAT])
+        'A': np.array([np.nan, np.nan])
     }
     for col, values in model.source.data.items():
         expected_array = expected[col]
         np.testing.assert_array_equal(values, expected_array)
         # Not checking that the data in table.value is the same as expected
-        # In table.value we have NaT values, in expected the BOKEH_JS_NAT constant.
+        # In table.value we have NaT values, in expected np.nan.
 
 
 def test_tabulator_stream_series_paginated_not_follow(document, comm):
@@ -1874,7 +1911,13 @@ def test_tabulator_dataframe_replace_data(document, comm):
 
     model = table.get_root(document, comm)
 
-    table.value = makeCustomDataframe(2, 2)
+    custom_df = pd.DataFrame({
+        'C_l0_g0': {'R_l0_g0': 'R0C0', 'R_l0_g1': 'R1C0'},
+        'C_l0_g1': {'R_l0_g0': 'R0C1', 'R_l0_g1': 'R1C1'}
+    })
+    custom_df.index.name = 'R0'
+    custom_df.columns.name = 'C0'
+    table.value = custom_df
 
     assert len(model.columns) == 3
     c1, c2, c3 = model.columns
@@ -1959,6 +2002,40 @@ def test_server_edit_event():
     assert events[0].value == 3.14
     assert events[0].old == 1
 
+
+def test_edit_with_datetime_aware_column():
+    # https://github.com/holoviz/panel/issues/6673
+
+    # The order of these columns matter, 'B' and 'C' should be first as it's in fact
+    # processed first when 'A' is edited.
+    data = {
+        "B": pd.date_range(start='2024-01-01', end='2024-01-03', freq='D', tz='utc'),
+        "C": pd.date_range(start='2024-01-01', end='2024-01-03', freq='D', tz=ZoneInfo('US/Eastern')),
+        "A": ['a', 'b', 'c'],
+    }
+    df = pd.DataFrame(data)
+
+    table = Tabulator(df)
+
+    serve_and_request(table)
+
+    wait_until(lambda: bool(table._models))
+    ref, (model, _) = list(table._models.items())[0]
+    doc = list(table._documents.keys())[0]
+
+    events = []
+    table.on_edit(lambda e: events.append(e))
+
+    new_data = dict(model.source.data)
+    new_data['A'][1] = 'new'
+
+    table._server_change(doc, ref, None, 'data', model.source.data, new_data)
+    table._server_event(doc, TableEditEvent(model, 'A', 1))
+
+    wait_until(lambda: len(events) == 1)
+    assert events[0].value == 'new'
+    assert events[0].old == 'b'
+
 def test_tabulator_cell_click_event():
     df = makeMixedDataFrame()
     table = Tabulator(df)
@@ -1979,7 +2056,6 @@ def test_server_cell_click_async_event():
 
     counts = []
     async def cb(event, count=[0]):
-        import asyncio
         count[0] += 1
         counts.append(count[0])
         await asyncio.sleep(1)
@@ -2071,6 +2147,54 @@ def test_tabulator_styling_empty_dataframe(document, comm):
         }
     }
 
+
+@mpl_available
+def test_tabulator_style_background_gradient_with_frozen_columns(document, comm):
+    df = pd.DataFrame(np.random.rand(3, 5), columns=list("ABCDE"))
+    table = Tabulator(df, frozen_columns=['A'])
+    table.style.background_gradient(
+        cmap="RdYlGn_r", vmin=0, vmax=0.5, subset=["A", "C", "D"]
+    )
+
+    model = table.get_root(document, comm)
+
+    assert list(model.cell_styles['data'][0]) == [1, 4, 5]
+
+@mpl_available
+def test_tabulator_style_background_gradient_with_frozen_columns_left_and_right(document, comm):
+    df = pd.DataFrame(np.random.rand(3, 5), columns=list("ABCDE"))
+    table = Tabulator(df, frozen_columns={'A': 'left', 'C': 'right'})
+    table.style.background_gradient(
+        cmap="RdYlGn_r", vmin=0, vmax=0.5, subset=["A", "C", "D"]
+    )
+
+    model = table.get_root(document, comm)
+
+    assert list(model.cell_styles['data'][0]) == [1, 6, 4]
+
+@mpl_available
+def test_tabulator_style_background_gradient(document, comm):
+    df = pd.DataFrame(np.random.rand(3, 5), columns=list("ABCDE"))
+    table = Tabulator(df)
+    table.style.background_gradient(
+        cmap="RdYlGn_r", vmin=0, vmax=0.5, subset=["A", "C", "D"]
+    )
+
+    model = table.get_root(document, comm)
+
+    assert list(model.cell_styles['data'][0]) == [2, 4, 5]
+
+@mpl_available
+def test_tabulator_styled_df_with_background_gradient(document, comm):
+    df = pd.DataFrame(np.random.rand(3, 5), columns=list("ABCDE")).style.background_gradient(
+        cmap="RdYlGn_r", vmin=0, vmax=0.5, subset=["A", "C", "D"]
+    )
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    assert list(model.cell_styles['data'][0]) == [2, 4, 5]
+
 def test_tabulator_editor_property_change(dataframe, document, comm):
     editor = SelectEditor(options=['A', 'B', 'C'])
     table = Tabulator(dataframe, editors={'str': editor})
@@ -2148,3 +2272,15 @@ def test_bokeh_formatter_index_with_no_textalign():
     table = Tabulator(df, formatters={"A": index_format})
     serve_and_request(table)
     wait_until(lambda: bool(table._models))
+
+@pytest.mark.parametrize('text_align', [{"A": "center"}, "center"], ids=["dict", "str"])
+def test_bokeh_formatter_column_with_no_textalign_but_text_align_set(document, comm, text_align):
+    df = pd.DataFrame({"A": [1, 2, 3]})
+    table = Tabulator(
+        df,
+        formatters=dict(A=HTMLTemplateFormatter(template='<b><%= value %>"></b>')),
+        text_align=text_align,
+    )
+
+    model = table.get_root(document, comm)
+    assert model.configuration['columns'][1]['hozAlign'] == 'center'

@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from datetime import date, datetime
 
 import pytest
@@ -369,7 +368,7 @@ def test_discrete_slider_disabled(document, comm):
 
 
 def test_discrete_date_slider(document, comm):
-    dates = OrderedDict([('2016-01-0%d' % i, datetime(2016, 1, i)) for i in range(1, 4)])
+    dates = {'2016-01-0%d' % i: datetime(2016, 1, i) for i in range(1, 4)}
     discrete_slider = DiscreteSlider(name='DiscreteSlider', value=dates['2016-01-02'],
                                      options=dates)
 
@@ -408,7 +407,7 @@ def test_discrete_date_slider(document, comm):
 
 
 def test_discrete_slider_options_dict(document, comm):
-    options = OrderedDict([('0.1', 0.1), ('1', 1), ('10', 10), ('100', 100)])
+    options = {'0.1': 0.1, '1': 1, '10': 10, '100': 100}
     discrete_slider = DiscreteSlider(name='DiscreteSlider', value=1,
                                      options=options)
 

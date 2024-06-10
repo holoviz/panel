@@ -6,8 +6,7 @@ from __future__ import annotations
 
 from collections import defaultdict, namedtuple
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Iterable, Iterator, List, Mapping,
-    Optional, Tuple, Type,
+    TYPE_CHECKING, Any, ClassVar, Iterable, Iterator, Mapping, Optional,
 )
 
 import param
@@ -30,6 +29,15 @@ if TYPE_CHECKING:
 
     from ..viewable import Viewable
 
+_SCROLL_MAPPING = {
+    'both-auto': 'scrollable',
+    'x-auto': 'scrollable-horizontal',
+    'y-auto': 'scrollable-vertical',
+    'both': 'scroll',
+    'x': 'scroll-horizontal',
+    'y': 'scroll-vertical',
+}
+
 _row = namedtuple("row", ["children"]) # type: ignore
 _col = namedtuple("col", ["children"]) # type: ignore
 
@@ -43,13 +51,13 @@ class Panel(Reactive):
     _batch_update: ClassVar[bool] = False
 
     # Bokeh model used to render this Panel
-    _bokeh_model: ClassVar[Type[Model]]
+    _bokeh_model: ClassVar[type[Model]]
 
     # Direction the layout flows in
     _direction: ClassVar[str | None] = None
 
     # Parameters which require the preprocessors to be re-run
-    _preprocess_params: ClassVar[List[str]] = []
+    _preprocess_params: ClassVar[list[str]] = []
 
     # Parameter -> Bokeh property renaming
     _rename: ClassVar[Mapping[str, str | None]] = {'objects': 'children'}
@@ -73,14 +81,14 @@ class Panel(Reactive):
             template = '{cls}({params}){spacer}{objs}'
         return template.format(
             cls=cls, params=', '.join(params),
-            objs=('%s' % spacer).join(objs), spacer=spacer)
+            objs=str(spacer).join(objs), spacer=spacer)
 
     #----------------------------------------------------------------
     # Callback API
     #----------------------------------------------------------------
 
     def _update_model(
-        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
         root: Model, model: Model, doc: Document, comm: Optional[Comm]
     ) -> None:
         msg = dict(msg)
@@ -131,7 +139,7 @@ class Panel(Reactive):
     #----------------------------------------------------------------
 
     def _get_objects(
-        self, model: Model, old_objects: List[Viewable], doc: Document,
+        self, model: Model, old_objects: list[Viewable], doc: Document,
         root: Model, comm: Optional[Comm] = None
     ):
         """
@@ -151,7 +159,7 @@ class Panel(Reactive):
         current_objects = list(self.objects)
         ref = root.ref['id']
         for i, pane in enumerate(self.objects):
-            if pane in old_objects and ref in pane._models:
+            if ref in pane._models:
                 child, _ = pane._models[root.ref['id']]
                 old_models.append(child)
             else:
@@ -210,6 +218,8 @@ class Panel(Reactive):
           ensure sufficient space is available.
         """
         margin = props.get('margin', self.margin)
+        if margin is None:
+            margin = 0
         sizing_mode = props.get('sizing_mode', self.sizing_mode)
         if sizing_mode == 'fixed':
             return {}
@@ -282,7 +292,7 @@ class Panel(Reactive):
         properties = {'sizing_mode': sizing_mode}
         if (sizing_mode.endswith(("_width", "_both")) and
             widths and 'min_width' not in properties):
-            width_op = max if self._direction == 'vertical' else sum
+            width_op = max if self._direction in ('vertical', None) else sum
             min_width = width_op(widths)
             op_widths = [min_width]
             if 'max_width' in properties:
@@ -290,7 +300,7 @@ class Panel(Reactive):
             properties['min_width'] = min(op_widths)
         if (sizing_mode.endswith(("_height", "_both")) and
             heights and 'min_height' not in properties):
-            height_op = max if self._direction == 'horizontal' else sum
+            height_op = max if self._direction in ('horizontal', None) else sum
             min_height = height_op(heights)
             op_heights = [min_height]
             if 'max_height' in properties:
@@ -338,17 +348,16 @@ class ListLike(param.Parameterized):
     objects = param.List(default=[], doc="""
         The list of child objects that make up the layout.""")
 
-    _preprocess_params: ClassVar[List[str]] = ['objects']
+    _preprocess_params: ClassVar[list[str]] = ['objects']
 
-    def __getitem__(self, index: int | slice) -> Viewable | List[Viewable]:
+    def __getitem__(self, index: int | slice) -> Viewable | list[Viewable]:
         return self.objects[index]
 
     def __len__(self) -> int:
         return len(self.objects)
 
     def __iter__(self) -> Iterator[Viewable]:
-        for obj in self.objects:
-            yield obj
+        yield from self.objects
 
     def __iadd__(self, other: Iterable[Any]) -> 'ListLike':
         self.extend(other)
@@ -387,9 +396,8 @@ class ListLike(param.Parameterized):
             if index.start is None and index.stop is None:
                 if not isinstance(panes, list):
                     raise IndexError('Expected a list of objects to '
-                                     'replace the objects in the %s, '
-                                     'got a %s type.' %
-                                     (type(self).__name__, type(panes).__name__))
+                                     f'replace the objects in the {type(self).__name__}, '
+                                     f'got a {type(panes).__name__} type.')
                 expected = len(panes)
                 new_objects = [None]*expected # type: ignore
                 end = expected
@@ -427,9 +435,8 @@ class ListLike(param.Parameterized):
             else:
                 objects = self.objects
         elif 'objects' in params:
-            raise ValueError("A %s's objects should be supplied either "
-                             "as arguments or as a keyword, not both."
-                             % type(self).__name__)
+            raise ValueError(f"A {type(self).__name__}'s objects should be supplied either "
+                             "as arguments or as a keyword, not both.")
         p = dict(self.param.values(), **params)
         del p['objects']
         return type(self)(*objects, **p)
@@ -447,7 +454,7 @@ class ListLike(param.Parameterized):
         new_objects.append(panel(obj))
         self.objects = new_objects
 
-    def clear(self) -> List[Viewable]:
+    def clear(self) -> list[Viewable]:
         """
         Clears the objects on this layout.
 
@@ -539,14 +546,14 @@ class NamedListLike(param.Parameterized):
     objects = param.List(default=[], doc="""
         The list of child objects that make up the layout.""")
 
-    _preprocess_params: ClassVar[List[str]] = ['objects']
+    _preprocess_params: ClassVar[list[str]] = ['objects']
 
-    def __init__(self, *items: List[Any | Tuple[str, Any]], **params: Any):
+    def __init__(self, *items: list[Any | tuple[str, Any]], **params: Any):
         if 'objects' in params:
             if items:
-                raise ValueError('%s objects should be supplied either '
+                raise ValueError(f'{type(self).__name__} objects should be supplied either '
                                  'as positional arguments or as a keyword, '
-                                 'not both.' % type(self).__name__)
+                                 'not both.')
             items = params.pop('objects')
         params['objects'], self._names = self._to_objects_and_names(items)
         super().__init__(**params)
@@ -594,15 +601,14 @@ class NamedListLike(param.Parameterized):
     # Public API
     #----------------------------------------------------------------
 
-    def __getitem__(self, index) -> Viewable | List[Viewable]:
+    def __getitem__(self, index) -> Viewable | list[Viewable]:
         return self.objects[index]
 
     def __len__(self) -> int:
         return len(self.objects)
 
     def __iter__(self) -> Iterator[Viewable]:
-        for obj in self.objects:
-            yield obj
+        yield from self.objects
 
     def __iadd__(self, other: Iterable[Any]) -> 'NamedListLike':
         self.extend(other)
@@ -643,9 +649,8 @@ class NamedListLike(param.Parameterized):
             if index.start is None and index.stop is None:
                 if not isinstance(panes, list):
                     raise IndexError('Expected a list of objects to '
-                                     'replace the objects in the %s, '
-                                     'got a %s type.' %
-                                     (type(self).__name__, type(panes).__name__))
+                                     f'replace the objects in the {type(self).__name__}, '
+                                     f'got a {type(panes).__name__} type.')
                 expected = len(panes)
                 new_objects = [None]*expected # type: ignore
                 self._names = [None]*len(panes)
@@ -785,9 +790,18 @@ class ListPanel(ListLike, Panel):
     An abstract baseclass for Panel objects with list-like children.
     """
 
-    scroll = param.Boolean(default=False, doc="""
-        Whether to add scrollbars if the content overflows the size
-        of the container.""")
+    scroll = param.Selector(
+        default=False,
+        objects=[False, True, "both-auto", "y-auto", "x-auto", "both", "x", "y"],
+        doc="""Whether to add scrollbars if the content overflows the size
+        of the container. If "both-auto", will only add scrollbars if
+        the content overflows in either directions. If "x-auto" or "y-auto",
+        will only add scrollbars if the content overflows in the
+        respective direction. If "both", will always add scrollbars.
+        If "x" or "y", will always add scrollbars in the respective
+        direction. If False, overflowing content will be clipped.
+        If True, will only add scrollbars in the direction of the container,
+        (e.g. Column: vertical, Row: horizontal).""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {'scroll': None}
 
@@ -799,9 +813,9 @@ class ListPanel(ListLike, Panel):
         from ..pane import panel
         if objects:
             if 'objects' in params:
-                raise ValueError("A %s's objects should be supplied either "
+                raise ValueError(f"A {type(self).__name__}'s objects should be supplied either "
                                  "as positional arguments or as a keyword, "
-                                 "not both." % type(self).__name__)
+                                 "not both.")
             params['objects'] = [panel(pane) for pane in objects]
         elif 'objects' in params:
             objects = params['objects']
@@ -816,16 +830,16 @@ class ListPanel(ListLike, Panel):
             if p not in ListPanel.param and self._property_mapping.get(p, p) is not None
         )
 
-    def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        if 'scroll' in params:
-            scroll = params['scroll']
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+        if (scroll := params.get('scroll')):
             css_classes = params.get('css_classes', self.css_classes)
-            if scroll:
-                if self._direction is not None:
-                    css_classes += [f'scrollable-{self._direction}']
-                else:
-                    css_classes += ['scrollable']
-            params['css_classes'] = css_classes
+            if scroll in _SCROLL_MAPPING:
+                scroll_class = _SCROLL_MAPPING[scroll]
+            elif self._direction:
+                scroll_class = f'scrollable-{self._direction}'
+            else:
+                scroll_class = 'scrollable'
+            params['css_classes'] = css_classes + [scroll_class]
         return super()._process_param_change(params)
 
     def _cleanup(self, root: Model | None = None) -> None:
@@ -841,9 +855,18 @@ class NamedListPanel(NamedListLike, Panel):
     active = param.Integer(default=0, bounds=(0, None), doc="""
         Index of the currently displayed objects.""")
 
-    scroll = param.Boolean(default=False, doc="""
-        Whether to add scrollbars if the content overflows the size
-        of the container.""")
+    scroll = param.ObjectSelector(
+        default=False,
+        objects=[False, True, "both-auto", "y-auto", "x-auto", "both", "x", "y"],
+        doc="""Whether to add scrollbars if the content overflows the size
+        of the container. If "both-auto", will only add scrollbars if
+        the content overflows in either directions. If "x-auto" or "y-auto",
+        will only add scrollbars if the content overflows in the
+        respective direction. If "both", will always add scrollbars.
+        If "x" or "y", will always add scrollbars in the respective
+        direction. If False, overflowing content will be clipped.
+        If True, will only add scrollbars in the direction of the container,
+        (e.g. Column: vertical, Row: horizontal).""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {'scroll': None}
 
@@ -851,16 +874,16 @@ class NamedListPanel(NamedListLike, Panel):
 
     __abstract = True
 
-    def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        if 'scroll' in params:
-            scroll = params['scroll']
+    def _process_param_change(self, params: dict[str, Any]) -> dict[str, Any]:
+        if (scroll := params.get('scroll')):
             css_classes = params.get('css_classes', self.css_classes)
-            if scroll:
-                if self._direction is not None:
-                    css_classes += [f'scrollable-{self._direction}']
-                else:
-                    css_classes += ['scrollable']
-            params['css_classes'] = css_classes
+            if scroll in _SCROLL_MAPPING:
+                scroll_class = _SCROLL_MAPPING[scroll]
+            elif self._direction:
+                scroll_class = f'scrollable-{self._direction}'
+            else:
+                scroll_class = 'scrollable'
+            params['css_classes'] = css_classes + [scroll_class]
         return super()._process_param_change(params)
 
     def _cleanup(self, root: Model | None = None) -> None:
@@ -887,7 +910,7 @@ class Row(ListPanel):
     >>> pn.Row(some_widget, some_pane, some_python_object)
     """
 
-    _bokeh_model: ClassVar[Type[Model]] = BkRow
+    _bokeh_model: ClassVar[type[Model]] = BkRow
 
     _direction = 'horizontal'
 
@@ -910,11 +933,6 @@ class Column(ListPanel):
     >>> pn.Column(some_widget, some_pane, some_python_object)
     """
 
-    scroll_position = param.Integer(default=None, doc="""
-        Current scroll position of the Column. Setting this value
-        will update the scroll position of the Column. Setting to
-        0 will scroll to the top.""")
-
     auto_scroll_limit = param.Integer(bounds=(0, None), doc="""
         Max pixel distance from the latest object in the Column to
         activate automatic scrolling upon update. Setting to 0
@@ -925,18 +943,24 @@ class Column(ListPanel):
         display the scroll button. Setting to 0
         disables the scroll button.""")
 
+    scroll_position = param.Integer(default=0, doc="""
+        Current scroll position of the Column. Setting this value
+        will update the scroll position of the Column. Setting to
+        0 will scroll to the top.""")
+
     view_latest = param.Boolean(default=False, doc="""
         Whether to scroll to the latest object on init. If not
         enabled the view will be on the first object.""")
 
-    _bokeh_model: ClassVar[Type[Model]] = PnColumn
+    _bokeh_model: ClassVar[type[Model]] = PnColumn
+
+    _busy__ignore = ['scroll_position']
 
     _direction = 'vertical'
 
     _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/listpanel.css']
 
     @param.depends(
-        "scroll_position",
         "auto_scroll_limit",
         "scroll_button_threshold",
         "view_latest",
@@ -995,7 +1019,7 @@ class WidgetBox(ListPanel):
     ]
 
     @property
-    def _bokeh_model(self) -> Type[Model]: # type: ignore
+    def _bokeh_model(self) -> type[Model]: # type: ignore
         return BkRow if self.horizontal else PnColumn
 
     @property

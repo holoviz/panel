@@ -10,7 +10,7 @@ import zipfile
 
 from abc import abstractmethod
 from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional,
+    IO, TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
 )
 from urllib.request import urlopen
 
@@ -76,17 +76,17 @@ class AbstractVTK(PaneBase):
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         if 'axes' in msg and msg['axes'] is not None:
-            VTKAxes = getattr(sys.modules['panel.models.vtk'], 'VTKAxes')
+            VTKAxes = sys.modules['panel.models.vtk'].VTKAxes
             axes = msg['axes']
             msg['axes'] = VTKAxes(**axes)
         return msg
 
     def _update_model(
-        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
         root: Model, model: Model, doc: Document, comm: Optional[Comm]
     ) -> None:
         if 'axes' in msg and msg['axes'] is not None:
-            VTKAxes = getattr(sys.modules['panel.models.vtk'], 'VTKAxes')
+            VTKAxes = sys.modules['panel.models.vtk'].VTKAxes
             axes = msg['axes']
             if isinstance(axes, dict):
                 msg['axes'] = VTKAxes(**axes)
@@ -326,7 +326,7 @@ class BaseVTKRenderWindow(AbstractVTK):
         with zipfile.ZipFile(filename, mode='w') as zf:
             zf.writestr('index.json', json.dumps(scene))
             for name, data in arrays.items():
-                zf.writestr('data/%s' % name, data, zipfile.ZIP_DEFLATED)
+                zf.writestr(f'data/{name}', data, zipfile.ZIP_DEFLATED)
             zf.writestr('annotations.json', json.dumps(annotations))
         return filename
 
@@ -355,11 +355,9 @@ class BaseVTKRenderWindow(AbstractVTK):
     def _rgb2hex(r, g, b):
         int_type = (int, np.integer)
         if isinstance(r, int_type) and isinstance(g, int_type) is isinstance(b, int_type):
-            return "#{0:02x}{1:02x}{2:02x}".format(r, g, b)
+            return f"#{r:02x}{g:02x}{b:02x}"
         else:
-            return "#{0:02x}{1:02x}{2:02x}".format(
-                int(255 * r), int(255 * g), int(255 * b)
-            )
+            return f"#{int(255 * r):02x}{int(255 * g):02x}{int(255 * b):02x}"
 
 
 class VTKRenderWindow(BaseVTKRenderWindow):
@@ -841,33 +839,35 @@ class VTKJS(AbstractVTK):
         """
         VTKJSPlot = lazy_load('panel.models.vtk', 'VTKJSPlot', isinstance(comm, JupyterComm), root)
         props = self._get_properties(doc)
-        vtkjs = self._get_vtkjs()
-        if vtkjs is not None:
-            props['data'] = base64encode(vtkjs)
+        props['data_url'], props['data'] = self._get_vtkjs()
         model = VTKJSPlot(**props)
         root = root or model
         self._link_props(model, ['camera', 'enable_keybindings', 'orientation_widget'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _get_vtkjs(self):
+    def _get_vtkjs(self, fetch=True):
+        data_path, data_url = None, None
+        if isinstance(self.object, str) and self.object.endswith('.vtkjs'):
+            data_path = data_path
+            if not isfile(self.object):
+                data_url = self.object
         if self._vtkjs is None and self.object is not None:
-            if isinstance(self.object, str) and self.object.endswith('.vtkjs'):
-                if isfile(self.object):
-                    with open(self.object, 'rb') as f:
-                        vtkjs = f.read()
-                else:
-                    data_url = urlopen(self.object)
-                    vtkjs = data_url.read()
+            vtkjs = None
+            if data_url and fetch:
+                vtkjs = urlopen(data_url).read() if fetch else data_url
+            elif data_path:
+                with open(self.object, 'rb') as f:
+                    vtkjs = f.read()
             elif hasattr(self.object, 'read'):
                 vtkjs = self.object.read()
             self._vtkjs = vtkjs
-        return self._vtkjs
+        return data_url, self._vtkjs
 
     def _update(self, ref: str, model: Model) -> None:
         self._vtkjs = None
-        vtkjs = self._get_vtkjs()
-        model.data = base64encode(vtkjs) if vtkjs is not None else vtkjs
+        data_url, vtkjs = self._get_vtkjs()
+        model.update(data_url=data_url, data=vtkjs)
 
     def export_vtkjs(self, filename: str | IO ='vtk_panel.vtkjs'):
         """
@@ -877,8 +877,9 @@ class VTKJS(AbstractVTK):
         ---------
         filename: str | IO
         """
+        _, vtkjs = self._get_vtkjs()
         if hasattr(filename, 'write'):
-            filename.write(self._get_vtkjs())
+            filename.write(vtkjs)
         else:
             with open(filename, 'wb') as f:
-                f.write(self._get_vtkjs())
+                f.write(vtkjs)

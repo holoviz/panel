@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from inspect import Parameter
 from numbers import Integral, Number, Real
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 
 empty = Parameter.empty
 
@@ -38,12 +38,12 @@ class fixed(param.Parameterized):
 
 def _get_min_max_value(
     min: Number, max: Number, value: Optional[Number] = None, step: Optional[Number] = None
-) -> Tuple[Number, Number, Number]:
+) -> tuple[Number, Number, Number]:
     """Return min, max, value given input values with possible None."""
     # Either min and max need to be given, or value needs to be given
     if value is None:
         if min is None or max is None:
-            raise ValueError('unable to infer range, value from: ({0}, {1}, {2})'.format(min, max, value))
+            raise ValueError(f'unable to infer range, value from: ({min}, {max}, {value})')
         diff = max - min
         value = min + (diff / 2)
         # Ensure that value has the same type as diff
@@ -51,7 +51,7 @@ def _get_min_max_value(
             value = min + (diff // 2)
     else:  # value is not None
         if not isinstance(value, Real):
-            raise TypeError('expected a real number, got: %r' % value)
+            raise TypeError(f'expected a real number, got: {value!r}')
         # Infer min/max from value
         if value == 0:
             # This gives (0, 1) of the correct type
@@ -69,7 +69,7 @@ def _get_min_max_value(
         tick = int((value - min) / step)
         value = min + tick * step
     if not min <= value <= max:
-        raise ValueError('value must be between min and max (min={0}, value={1}, max={2})'.format(min, value, max))
+        raise ValueError(f'value must be between min and max (min={min}, value={value}, max={max})')
     return min, max, value
 
 
@@ -163,7 +163,7 @@ class widget(param.ParameterizedFunction):
         elif _matches(o, (Real, Real, Real)):
             step = o[2]
             if step <= 0:
-                raise ValueError("step must be >= 0, not %r" % step)
+                raise ValueError(f"step must be >= 0, not {step!r}")
             min, max, value = _get_min_max_value(o[0], o[1], step=step)
             if all(isinstance(_, Integral) for _ in o) and int_default:
                 cls = IntSlider
@@ -173,7 +173,7 @@ class widget(param.ParameterizedFunction):
         elif _matches(o, (Real, Real, Real, Real)):
             step = o[2]
             if step <= 0:
-                raise ValueError("step must be >= 0, not %r" % step)
+                raise ValueError(f"step must be >= 0, not {step!r}")
             min, max, value = _get_min_max_value(o[0], o[1], value=o[3], step=step)
             if all(isinstance(_, Integral) for _ in o):
                 cls = IntSlider

@@ -1,8 +1,8 @@
-# Developer Guide
+# Setting up a development environment
 
-The Panel library is a project which provides a wide range of data interfaces and an extensible set of plotting backends, which means the development and testing process involves a wide set of libraries.
+The Panel library is a project that provides a wide range of data interfaces and an extensible set of plotting backends, which means the development and testing process involves a broad set of libraries.
 
-This guide describes how to install and configure the development environment either simplified for first time contributors or fully as done by core developers.
+This guide describes how to install and configure development environments.
 
 If you have any problems with the steps here, please reach out in the `dev` channel on [Discord](https://discord.gg/rb6gPXbdAr) or on [Discourse](https://discourse.holoviz.org/).
 
@@ -10,7 +10,7 @@ If you have any problems with the steps here, please reach out in the `dev` chan
 
 ### Basic understanding of how to contribute to Open Source
 
-If this is your first open source contribution, please study one
+If this is your first open-source contribution, please study one
 or more of the below resources.
 
 - [How to Get Started with Contributing to Open Source | Video](https://youtu.be/RGd5cOXpCQw)
@@ -19,53 +19,48 @@ or more of the below resources.
 
 ### Git
 
-The Panel source code is stored in a [Git](https://git-scm.com) source control repository.  The first step to working on Panel is to install Git on to your system.  There are different ways to do this depending on whether, you are using Windows, OSX, or Linux.
+The Panel source code is stored in a [Git](https://git-scm.com) source control repository. The first step to working on Panel is to install Git onto your system. There are different ways to do this, depending on whether you use Windows, Mac, or Linux.
 
 To install Git on any platform, refer to the [Installing Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) section of the [Pro Git Book](https://git-scm.com/book/en/v2).
 
-In order to contribute to Panel you will also need [Github account](https://github.com/join) and knowledge of the [*fork and pull request workflow*](https://docs.github.com/en/get-started/quickstart/contributing-to-projects).
+To contribute to Panel, you will also need [Github account](https://github.com/join) and knowledge of the [_fork and pull request workflow_](https://docs.github.com/en/get-started/quickstart/contributing-to-projects).
 
-### Pip
+### Pixi
 
-First time contributors can get quickly up to speed using `pip` instead of `conda`.
+Developing all aspects of Panel requires a wide range of packages in different environments. To make this more manageable, Pixi manages the developer experience. To install Pixi, follow [this guide](https://pixi.sh/latest/#installation).
 
-### Conda
+#### Glossary
 
-Developing all aspects of Panel requires a wide range of packages that are not easily and quickly available using pip. To make this more manageable, core developers rely heavily on the [conda package manager](https://conda.io/docs/intro.html) for the free [Anaconda](https://anaconda.com/downloads) Python distribution. However, ``conda`` can also install non-Python package dependencies, which helps streamline Panel development greatly. It is *strongly* recommended that any experienced or regular contributor use ``conda``.
+- Tasks: A task is what can be run with `pixi run <task-name>`. Tasks can be anything from installing packages to running tests.
+- Environments: An environment is a set of packages installed in a virtual environment. Each environment has a name; you can run tasks in a specific environment with the `-e` flag. For example, `pixi run -e test-core test-unit` will run the `test-unit` task in the `test-core` environment.
+- Lock-file: A lock-file is a file that contains all the information about the environments.
 
-To install Conda on any platform, see the [Download conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html) section of the `conda documentation`_.
+For more information, see the [Pixi documentation](https://pixi.sh/latest/).
 
-## Cloning the Project
+:::{admonition} Note
+:class: info
 
-The source code for the Panel project is hosted on [GitHub](https://github.com/holoviz/panel).
-
-### Non-core developer
-
-To clone the source repository
-
-- Go to [github.com/holoviz/panel](https://github.com/holoviz/panel)
-- [Fork the repository](https://docs.github.com/en/get-started/quickstart/contributing-to-projects#forking-a-repository)
-- Run
-
-```bash
-git clone https://github.com/<Your UserName Here>/panel.git
-```
-
-### Core developer
-
-Core developers can work directly with the Panel repository. To clone run
-
-```base
-git clone https://github.com/holoviz/panel.git
-```
+The first time you run `pixi`, it will create a `.pixi` directory in the source directory.
+This directory will contain all the files needed for the virtual environments.
+The `.pixi` directory can be large, so it is advised not to put the source directory into a cloud-synced directory.
+:::
 
 ## Installing the Project
 
-The instructions for cloning above created a ``panel`` directory at your file system location. This ``panel`` directory is referred to as the *source checkout* for the remainder of this document. For the remainder of this document we will assume your current working directory is the *source checkout* directory.
+### Cloning the Project
+
+The source code for the Panel project is hosted on [GitHub](https://github.com/holoviz/panel). The first thing you need to do is clone the repository.
+
+1. Go to [github.com/holoviz/panel](https://github.com/holoviz/panel)
+2. [Fork the repository](https://docs.github.com/en/get-started/quickstart/contributing-to-projects#forking-a-repository)
+3. Run in your terminal: `git clone https://github.com/<Your Username Here>/panel`
+
+The instructions for cloning above created a `panel` directory at your file system location.
+This `panel` directory is the _source checkout_ for the remainder of this document, and your current working directory is this directory.
 
 ### Fetch tags from upstream
 
-Make sure to fetch tags from upstream repository before installing
+The version number of the package depends on [`git tags`](https://git-scm.com/book/en/v2/Git-Basics-Tagging), so you need to fetch the tags from the upstream repository:
 
 ```bash
 git remote add upstream https://github.com/holoviz/panel.git
@@ -73,134 +68,147 @@ git fetch --tags upstream
 git push --tags
 ```
 
-### Basic Install with pip
+## Start developing
 
-We recommend this install to first time contributors that
-
-- want to make a simple, quick contribution to notebooks, docs or the Python code
-- can use pip to create and manage [virtual environments](https://realpython.com/python-virtual-environments-a-primer/).
-
-Create a new virtual environment and activate it.
-
-Run
+To start developing, run the following command
 
 ```bash
-pip install -e . jupyterlab pre-commit
-panel bundle --all
-pre-commit install
+pixi install
 ```
 
-We install the [pre-commit](https://pre-commit.com/) package above to avoid pushing and reviewing code with obvious issues.
-
-You can start Jupyter Lab by running
+The first time you run it, it will create a `pixi.lock` file with information for all available environments. This command will take a minute or so to run.
+When this is finished, it is possible to run the following command to download the data Panel tests and examples depend upon.
 
 ```bash
-jupyter lab
+pixi run download-data
 ```
 
-If you start seeing `ImportError` due to missing packages, you can install them manually using
-`pip` or consider if its time to switch to a *full install* with conda.
+All available tasks can be found by running `pixi task list`, the following sections will give a brief introduction to the most common tasks.
 
-### Full Install with conda
+### Editable install
 
-This is the *full install* used by the *core developers*.
-
-#### Create a development environment
-
-Since Panel interfaces with a large range of different libraries the full test suite requires a wide range of dependencies. To make it easier to install and run different parts of the test suite across
-different platforms Panel uses a library called `pyctdev` to make things more consistent and general. To start with `cd` into the panel directory and set up conda using the following commands:
+It can be advantageous to install the Panel in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs):
 
 ```bash
-cd panel
-conda install -c pyviz "pyctdev>0.5.0"
+pixi run install
 ```
 
-Once pyctdev is available and you are in the cloned panel repository you can set up an environment with:
+:::{admonition} Note
+:class: info
+
+Currently, this needs to be run for each environment. So, if you want to install in the `test-ui` environment, you can add `--environment` / `-e` to the command:
 
 ```bash
-doit env_create -c pyviz/label/dev -c conda-forge --name=panel_dev --python=3.9
+pixi run -e test-ui install
 ```
 
-Specify the desired Python version, currently Panel officially supports Python 3.8 or later. Once the environment has been created you can activate it with:
+:::
+
+## Linting
+
+Panel uses [pre-commit](https://pre-commit.com/) to apply linting to Panel code. Linting can be run for all the files with:
 
 ```bash
-conda activate panel_dev
+pixi run lint
 ```
 
-#### Install Panel in editable mode
-
-To perform an editable install of Panel, including all the dependencies required to run the full unit test suite, run the following:
+Linting can also be set up to run automatically with each commit; this is the recommended way because if linting is not passing, the [Continuous Integration](https://en.wikipedia.org/wiki/Continuous_integration) (CI) will also fail.
 
 ```bash
-doit develop_install -c pyviz/label/dev -c conda-forge -c bokeh -o build -o tests -o recommended
+pixi run lint-install
 ```
 
-The above command installs Panel's dependencies using conda, then performs a pip editable install of Panel. If it fails, `nodejs>=14.0.0` may be missing from your environment, fix it with `conda install -c conda-forge nodejs` then rerun above command.
+## Testing
 
-If you also want to run the UI tests you'll need to install pytest-playwright with `conda`:
+To help keep Panel maintainable, all Pull Requests (PR) with code changes should typically be accompanied by relevant tests. While exceptions may be made for specific circumstances, the default assumption should be that a Pull Request without tests will not be merged.
 
-``` bash
-conda install pytest-playwright -c microsoft -c conda-forge
-```
+There are three types of tasks and five environments related to tests.
 
-or with `pip`:
+### Unit tests
 
-``` bash
-pip install pytest-playwright
-```
-
-then run:
-
-``` bash
-playwright install chromium
-```
-
-#### Enable the Jupyter extension
-
-If you are running UI tests or intend to use the Panel Preview feature in Jupyter you must enable the server extension. To enable the classic notebook server extension:
+Unit tests are usually small tests executed with [pytest](https://docs.pytest.org). They can be found in `panel/tests/`.
+Unit tests can be run with the `test-unit` task:
 
 ```bash
-jupyter serverextension enable panel.io.jupyter_server_extension --sys-prefix
+pixi run test-unit
 ```
 
-For Jupyter Server:
+The task is available in the following environments: `test-39`, `test-310`, `test-311`, `test-312`, and `test-core`. Where the first ones have the same environments except for different Python versions, and `test-core` only has a core set of dependencies.
+
+If you haven't set the environment flag in the command, a menu will help you select which one of the environments to use.
+
+### Example tests
+
+Panel's documentation consists mainly of Jupyter Notebooks. The example tests execute all the notebooks and fail if an error is raised. Example tests are possible thanks to [nbval](https://nbval.readthedocs.io/) and can be found in the `examples/` folder.
+Example tests can be run with the following command:
 
 ```bash
-jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
+pixi run test-example
 ```
 
-#### Setting up pre-commit
+This task has the same environments as the unit tests except for `test-core`.
 
-Panel uses [pre-commit](https://pre-commit.com/) to automatically apply linting to Panel code. If you intend to contribute to Panel we recommend you enable it with:
+### UI tests
+
+Panel provides web components that users can interact with through the browser. UI tests allow checking that these components get displayed as expected and that the backend <-> front-end bi-communication works correctly. UI tests are possible thanks to [Playwright](https://playwright.dev/python/).
+The test can be found in the `panel/tests/ui/` folder.
+UI tests can be run with the following task. This task is only available in the `test-ui` environment. The first time you run it, it will download the necessary browser files to run the tests in the Chrome browser.
 
 ```bash
-pre-commit install
+pixi run test-ui
 ```
 
-This will ensure that every time you make a commit linting will automatically be applied.
+## Documentation
 
-#### Developing custom models
+The documentation can be built with the command:
 
-Panel ships with a number of custom Bokeh models, which have both Python and Javascript components. When developing Panel these custom models have to be compiled. This happens automatically with `SETUPTOOLS_ENABLE_FEATURES=legacy-editable pip install -e .` or `python setup.py develop`, however when running actively developing you can rebuild the extension with `panel build panel`. The `build` command is just an alias for `bokeh build`; see
-the [Bokeh developer guide](https://docs.bokeh.org/en/latest/docs/dev_guide/setup.html) for more information about developing bokeh models.
+```bash
+pixi run docs-build
+```
 
-Just like any other Javascript (or Typescript) library Panel defines a `package.json` and `package-lock.json` files. When adding, updating or removing a dependency in the package.json file ensure you commit the changes to the `package-lock.json` after running `npm install`.
+As Panel uses notebooks for much of the documentation, this will take significant time to run (around an hour).
 
-#### Bundling resources
+A development version of Panel can be found [here](https://holoviz-dev.github.io/panel/). You can ask a maintainer if they want to make a dev release for your PR, but there is no guarantee they will say yes.
 
-Panel bundles external resources required for custom models and templates into the `panel/dist` directory. The bundled resources have to be collected whenever they change, so rerun `SETUPTOOLS_ENABLE_FEATURES=legacy-editable pip install -e .` or `python setup.py develop` whenever you change one of the following:
+To be able to run cells interactively you need `pyodide` server, this can be ran with:
 
-* A new model is added with a `__javascript_raw__` declaration or an existing model is updated
-* A new template with a `_resources` declaration is added or an existing template is updated
-* A CSS file in one of template directories (`panel/template/*/`) is added or modified
+```bash
+pixi run docs-server
+```
 
-#### Next Steps
+## Build
+
+Panel have four build tasks. One is for building packages for Pip, Conda, Pyodide, and NPM.
+
+```bash
+pixi run build-pip
+pixi run build-conda
+pixi run build-pyodide
+pixi run build-npm
+```
+
+## Continuous Integration
+
+Every push to the `main` branch or any PR branch on GitHub automatically triggers a test build with [GitHub Actions](https://github.com/features/actions).
+
+You can see the list of all current and previous builds at [this URL](https://github.com/holoviz/panel/actions)
+
+### Etiquette
+
+GitHub Actions provides free build workers for open-source projects. A few considerations will help you be considerate of others needing these limited resources:
+
+- Run the tests locally before opening or pushing to an opened PR.
+
+- Group commits to meaningful chunks of work before pushing to GitHub (i.e., don't push on every commit).
+
+
+## Next Steps
 
 You will likely want to check out the
 
 - [Extensions Guide](extensions.md)
-- [Testing Guide](testing.md).
 - [WASM Guide](wasm.md)
+- [Developing custom models](custom_models.md)
 
 ## Useful Links
 
@@ -217,7 +225,6 @@ You will likely want to check out the
 :maxdepth: 2
 
 extensions
-testing
 wasm
-Developing custom models <Developing_Custom_Models>
+Developing custom models <custom_models>
 ```

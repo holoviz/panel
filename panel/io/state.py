@@ -12,15 +12,14 @@ import sys
 import threading
 import time
 
-from collections import Counter, OrderedDict, defaultdict
+from collections import Counter, defaultdict
 from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import partial, wraps
 from typing import (
-    TYPE_CHECKING, Any, Awaitable, Callable, ClassVar, Coroutine, Dict,
-    Iterator as TIterator, List, Literal, Optional, Tuple, Type, TypeVar,
-    Union,
+    TYPE_CHECKING, Any, Awaitable, Callable, ClassVar, Coroutine,
+    Iterator as TIterator, Literal, Optional, TypeVar, Union,
 )
 from urllib.parse import urljoin
 from weakref import WeakKeyDictionary
@@ -40,8 +39,8 @@ _state_logger = logging.getLogger('panel.state')
 if TYPE_CHECKING:
     from concurrent.futures import Future
 
-    from bokeh.document.models import ImportedStyleSheet
     from bokeh.model import Model
+    from bokeh.models import ImportedStyleSheet
     from bokeh.server.contexts import BokehSessionContext
     from bokeh.server.server import Server
     from IPython.display import DisplayHandle
@@ -108,7 +107,7 @@ class _state(param.Parameterized):
        this will instead reflect an absolute path.""")
 
     session_info = param.Dict(default={'total': 0, 'live': 0,
-                                       'sessions': OrderedDict()}, doc="""
+                                       'sessions': {}}, doc="""
        Tracks information and statistics about user sessions.""")
 
     webdriver = param.Parameter(default=None, doc="""
@@ -134,8 +133,8 @@ class _state(param.Parameterized):
     _admin_context = None
 
     # Jupyter communication
-    _comm_manager: ClassVar[Type[_CommManager]] = _CommManager
-    _jupyter_kernel_context: ClassVar[bool] = False
+    _comm_manager: ClassVar[type[_CommManager]] = _CommManager
+    _jupyter_kernel_context: ClassVar[BokehSessionContext | None] = None
     _kernels = {}
     _ipykernels: ClassVar[WeakKeyDictionary[Document, Any]] = WeakKeyDictionary()
 
@@ -156,38 +155,38 @@ class _state(param.Parameterized):
     _templates: ClassVar[WeakKeyDictionary[Document, BaseTemplate]] = WeakKeyDictionary() # Server templates indexed by document
 
     # An index of all currently active views
-    _views: ClassVar[Dict[str, Tuple[Viewable, Model, Document, Comm | None]]] = {}
+    _views: ClassVar[dict[str, tuple[Viewable, Model, Document, Comm | None]]] = {}
 
     # For templates to keep reference to their main root
-    _fake_roots: ClassVar[List[str]] = []
+    _fake_roots: ClassVar[list[str]] = []
 
     # An index of all currently active servers
-    _servers: ClassVar[Dict[str, Tuple[Server, Viewable | BaseTemplate, List[Document]]]] = {}
-    _threads: ClassVar[Dict[str, StoppableThread]] = {}
-    _server_config: ClassVar[WeakKeyDictionary[Any, Dict[str, Any]]] = WeakKeyDictionary()
+    _servers: ClassVar[dict[str, tuple[Server, Viewable | BaseTemplate, list[Document]]]] = {}
+    _threads: ClassVar[dict[str, StoppableThread]] = {}
+    _server_config: ClassVar[WeakKeyDictionary[Any, dict[str, Any]]] = WeakKeyDictionary()
 
     # Jupyter display handles
-    _handles: ClassVar[Dict[str, [DisplayHandle, List[str]]]] = {}
+    _handles: ClassVar[dict[str, [DisplayHandle, list[str]]]] = {}
 
     # Stacks for hashing
     _stacks = WeakKeyDictionary()
 
     # Dictionary of callbacks to be triggered on app load
-    _onload: ClassVar[Dict[Document, Callable[[], None]]] = WeakKeyDictionary()
-    _on_session_created: ClassVar[List[Callable[[BokehSessionContext], []]]] = []
-    _on_session_created_internal: ClassVar[List[Callable[[BokehSessionContext], []]]] = []
-    _on_session_destroyed: ClassVar[List[Callable[[BokehSessionContext], []]]] = []
+    _onload: ClassVar[dict[Document, Callable[[], None]]] = WeakKeyDictionary()
+    _on_session_created: ClassVar[list[Callable[[BokehSessionContext], []]]] = []
+    _on_session_created_internal: ClassVar[list[Callable[[BokehSessionContext], []]]] = []
+    _on_session_destroyed: ClassVar[list[Callable[[BokehSessionContext], []]]] = []
     _loaded: ClassVar[WeakKeyDictionary[Document, bool]] = WeakKeyDictionary()
 
     # Module that was run during setup
     _setup_module = None
 
     # Scheduled callbacks
-    _scheduled: ClassVar[Dict[str, Tuple[Iterator[int], Callable[[], None]]]] = {}
-    _periodic: ClassVar[WeakKeyDictionary[Document, List[PeriodicCallback]]] = WeakKeyDictionary()
+    _scheduled: ClassVar[dict[str, tuple[Iterator[int], Callable[[], None]]]] = {}
+    _periodic: ClassVar[WeakKeyDictionary[Document, list[PeriodicCallback]]] = WeakKeyDictionary()
 
     # Indicators listening to the busy state
-    _indicators: ClassVar[List[BooleanIndicator]] = []
+    _indicators: ClassVar[list[BooleanIndicator]] = []
 
     # Profilers
     _launching = []
@@ -197,17 +196,22 @@ class _state(param.Parameterized):
     _rest_endpoints = {}
 
     # Style cache
-    _stylesheets: ClassVar[WeakKeyDictionary[Document, Dict[str, ImportedStyleSheet]]] = WeakKeyDictionary()
+    _stylesheets: ClassVar[WeakKeyDictionary[Document, dict[str, ImportedStyleSheet]]] = WeakKeyDictionary()
 
     # Loaded extensions
-    _extensions_: ClassVar[WeakKeyDictionary[Document, List[str]]] = WeakKeyDictionary()
+    _extensions_: ClassVar[WeakKeyDictionary[Document, list[str]]] = WeakKeyDictionary()
 
     # Locks
-    _cache_locks: ClassVar[Dict[str, threading.Lock]] = {'main': threading.Lock()}
+    _cache_locks: ClassVar[dict[str, threading.Lock]] = {'main': threading.Lock()}
 
     # Sessions
     _sessions = {}
     _session_key_funcs = {}
+
+    # Layout editor
+    _cell_outputs = defaultdict(list)
+    _cell_layouts = defaultdict(dict)
+    _session_outputs: ClassVar[WeakKeyDictionary[Document, dict[str, Any]]] = WeakKeyDictionary()
 
     # Override user info
     _oauth_user_overrides = {}
@@ -215,7 +219,7 @@ class _state(param.Parameterized):
 
     def __repr__(self) -> str:
         server_info = []
-        for server, panel, docs in self._servers.values():
+        for server, panel, _docs in self._servers.values():
             server_info.append(
                 "{}:{:d} - {!r}".format(server.address or "localhost", server.port, panel)
             )
@@ -240,14 +244,12 @@ class _state(param.Parameterized):
 
     @property
     def _current_thread(self) -> str | None:
-        thread = threading.current_thread()
-        thread_id = thread.ident if thread else None
-        return thread_id
+        return threading.get_ident()
 
     @property
     def _is_launching(self) -> bool:
         curdoc = self.curdoc
-        if not curdoc or not curdoc.session_context:
+        if not curdoc or not curdoc.session_context or not curdoc.session_context.server_context:
             return False
         return not bool(curdoc.session_context.server_context.sessions)
 
@@ -265,7 +267,21 @@ class _state(param.Parameterized):
             self._thread_id_[self.curdoc] = thread_id
 
     def _unblocked(self, doc: Document) -> bool:
-        return doc is self.curdoc and self._thread_id in (self._current_thread, None)
+        """
+        Indicates whether Document events can be dispatched or have
+        to scheduled on the event loop. Events can only be safely
+        dispatched if:
+
+        1. The Document to be modified is the same one that the server
+           is currently processing.
+        2. We are on the same thread that the Document was created on.
+        3. The application has fully loaded and the Websocket is open.
+        """
+        return (
+            doc is self.curdoc and
+            self._thread_id in (self._current_thread, None) and
+            (not (doc and doc.session_context and doc.session_context.session) or self._loaded.get(doc))
+        )
 
     @param.depends('_busy_counter', watch=True)
     def _update_busy_counter(self):
@@ -338,7 +354,7 @@ class _state(param.Parameterized):
         return stack
 
     def _get_callback(self, endpoint: str):
-        _updating: Dict[int, bool] = {}
+        _updating: dict[int, bool] = {}
         def link(*events):
             event = events[0]
             obj = event.cls if event.obj is None else event.obj
@@ -376,8 +392,7 @@ class _state(param.Parameterized):
 
     def _on_load(self, doc: Optional[Document] = None) -> None:
         doc = doc or self.curdoc
-        callbacks = self._onload.pop(doc, [])
-        if not callbacks:
+        if doc not in self._onload:
             self._loaded[doc] = True
             return
 
@@ -385,13 +400,16 @@ class _state(param.Parameterized):
         from .profile import profile_ctx
         with set_curdoc(doc):
             if (doc and doc in self._launching) or not config.profiler:
-                for cb, threaded in callbacks:
-                    self.execute(cb, schedule='thread' if threaded else False)
+                while doc in self._onload:
+                    for cb, threaded in self._onload.pop(doc):
+                        self.execute(cb, schedule='thread' if threaded else False)
+                self._loaded[doc] = True
                 return
 
             with profile_ctx(config.profiler) as sessions:
-                for cb, threaded in callbacks:
-                    self.execute(cb, schedule='thread' if threaded else False)
+                while doc in self._onload:
+                    for cb, threaded in self._onload.pop(doc):
+                        self.execute(cb, schedule='thread' if threaded else False)
             path = doc.session_context.request.path
             self._profiles[(path+':on_load', config.profiler)] += sessions
             self.param.trigger('_profiles')
@@ -639,18 +657,16 @@ class _state(param.Parameterized):
         """
         Stop all servers and clear them from the current state.
         """
-        for thread in self._threads.values():
-            try:
-                thread.stop()
-            except Exception:
-                pass
-        self._threads = {}
         for server_id in self._servers:
-            try:
-                self._servers[server_id][0].stop()
-            except AssertionError:  # can't stop a server twice
-                pass
-        self._servers = {}
+            if server_id in self._threads:
+                self._threads[server_id].stop()
+            else:
+                try:
+                    self._servers[server_id][0].stop()
+                except AssertionError:  # can't stop a server twice
+                    pass
+        self._servers.clear()
+        self._threads.clear()
 
     def log(self, msg: str, level: str = 'info') -> None:
         """
@@ -680,19 +696,14 @@ class _state(param.Parameterized):
         threaded: bool
           Whether the onload callback can be threaded
         """
-        if self.curdoc is None or self._is_pyodide:
+        if self.curdoc is None or self._is_pyodide or self.loaded:
             if self._thread_pool:
-                future = self._thread_pool.submit(partial(self.execute, callback, schedule=False))
-                future.add_done_callback(self._handle_future_exception)
+                self.execute(callback, schedule='threaded')
             else:
                 self.execute(callback, schedule=False)
             return
         elif self.curdoc not in self._onload:
             self._onload[self.curdoc] = []
-            try:
-                self.curdoc.on_event('document_ready', partial(self._schedule_on_load, self.curdoc))
-            except AttributeError:
-                pass # Document already cleaned up
         self._onload[self.curdoc].append((callback, threaded))
 
     def on_session_created(self, callback: Callable[[BokehSessionContext], None]) -> None:
@@ -722,7 +733,7 @@ class _state(param.Parameterized):
 
     def publish(
         self, endpoint: str, parameterized: param.Parameterized,
-        parameters: Optional[List[str]] = None
+        parameters: Optional[list[str]] = None
     ) -> None:
         """
         Publish parameters on a Parameterized object as a REST API.
@@ -759,6 +770,7 @@ class _state(param.Parameterized):
         """
         self.kill_all_servers()
         self._indicators.clear()
+        self._location = None
         self._locations.clear()
         self._templates.clear()
         self._views.clear()
@@ -964,15 +976,16 @@ class _state(param.Parameterized):
         """
         Returns the Document that is currently being executed.
         """
+        curdoc = self._curdoc.get()
+        if curdoc:
+            return curdoc
         try:
             doc = curdoc_locked()
             pyodide_session = self._is_pyodide and 'pyodide_kernel' not in sys.modules
             if doc and (doc.session_context or pyodide_session):
                 return doc
-        finally:
-            curdoc = self._curdoc.get()
-            if curdoc:
-                return curdoc
+        except Exception:
+            return None
 
     @curdoc.setter
     def curdoc(self, doc: Document) -> None:
@@ -982,14 +995,14 @@ class _state(param.Parameterized):
         self._curdoc.set(doc)
 
     @property
-    def cookies(self) -> Dict[str, str]:
+    def cookies(self) -> dict[str, str]:
         """
         Returns the cookies associated with the request that started the session.
         """
         return self.curdoc.session_context.request.cookies if self.curdoc and self.curdoc.session_context else {}
 
     @property
-    def headers(self) -> Dict[str, str | List[str]]:
+    def headers(self) -> dict[str, str | list[str]]:
         """
         Returns the header associated with the request that started the session.
         """
@@ -1075,7 +1088,7 @@ class _state(param.Parameterized):
             return False
 
     @property
-    def session_args(self) -> Dict[str, List[bytes]]:
+    def session_args(self) -> dict[str, list[bytes]]:
         """
         Returns the request arguments associated with the request that started the session.
         """
@@ -1113,7 +1126,7 @@ class _state(param.Parameterized):
         return decode_signed_value(config.cookie_secret, 'user', user).decode('utf-8')
 
     @property
-    def user_info(self) -> Dict[str, Any] | None:
+    def user_info(self) -> dict[str, Any] | None:
         """
         Returns the OAuth user information if enabled.
         """

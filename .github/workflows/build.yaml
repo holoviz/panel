@@ -2,161 +2,239 @@ name: packages
 on:
   push:
     tags:
-    - 'v[0-9]+.[0-9]+.[0-9]+'
-    - 'v[0-9]+.[0-9]+.[0-9]+a[0-9]+'
-    - 'v[0-9]+.[0-9]+.[0-9]+b[0-9]+'
-    - 'v[0-9]+.[0-9]+.[0-9]+rc[0-9]+'
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+a[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+b[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+rc[0-9]+"
   # Dry-run only
   workflow_dispatch:
   schedule:
-    - cron: '0 19 * * SUN'
+    - cron: "0 19 * * SUN"
+
+defaults:
+  run:
+    shell: bash -el {0}
+
+env:
+  PACKAGE: "panel"
+  PYTHON_VERSION: "3.11"
+  NODE_VERSION: "20"
+  MPLBACKEND: "Agg"
 
 jobs:
-  conda_build:
-    name: Build Conda Packages
-    runs-on: 'ubuntu-latest'
-    defaults:
-      run:
-        shell: bash -l {0}
-    env:
-      CHANS_DEV: "-c pyviz/label/dev -c bokeh/label/dev -c conda-forge"
-      PKG_TEST_PYTHON: "--test-python=py39"
-      PYTHON_VERSION: "3.9"
-      MPLBACKEND: "Agg"
+  waiting_room:
+    name: Waiting Room
+    runs-on: ubuntu-latest
+    needs: [conda_build, pip_install, npm_build, cdn_build]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    environment:
+      name: publish
     steps:
-      - name: remove nodejs
+      - run: echo "All builds have finished, have been approved, and ready to publish"
+
+  pixi_lock:
+    name: Pixi lock
+    runs-on: ubuntu-latest
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi_lock@pixi
+
+  conda_build:
+    name: Build Conda
+    needs: [pixi_lock]
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
+        with:
+          environments: "build"
+          install: false
+          download-data: false
+      - name: conda build
+        run: pixi run -e build build-conda
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: conda
+          path: dist/*tar.bz2
+          if-no-files-found: error
+
+  conda_publish:
+    name: Publish Conda
+    runs-on: ubuntu-latest
+    needs: [conda_build, waiting_room]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: conda
+          path: dist/
+      - name: Set environment variables
         run: |
-          sudo rm /usr/local/bin/node
-          sudo rm /usr/local/bin/npm
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: "100"
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: conda-incubator/setup-miniconda@v2
+          echo "TAG=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+          echo "CONDA_FILE=$(ls dist/*.tar.bz2)" >> $GITHUB_ENV
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           miniconda-version: "latest"
-          python-version: 3.9
-      - uses: actions/setup-node@v2
-        with:
-          node-version: '18'
-      - name: Fetch unshallow
-        run: git fetch --prune --tags --unshallow -f
-      - name: Set output
-        id: vars
-        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: conda setup
         run: |
-          conda config --set always_yes True
-          conda config --append channels pyviz/label/dev
-          conda config --append channels bokeh/label/dev
-          conda install -y conda-build anaconda-client build
-      - name: conda build
+          conda install -y anaconda-client
+      - name: conda dev upload
+        if: contains(env.TAG, 'a') || contains(env.TAG, 'b') || contains(env.TAG, 'rc')
         run: |
-          bash ./scripts/build_conda.sh
-      - name: build pyodide wheels for CDN
+          anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev $CONDA_FILE
+      - name: conda main upload
+        if: (!(contains(env.TAG, 'a') || contains(env.TAG, 'b') || contains(env.TAG, 'rc')))
         run: |
-          python ./scripts/build_pyodide_wheels.py
+          anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev --label=main $CONDA_FILE
+
+  pip_build:
+    name: Build PyPI
+    needs: [pixi_lock]
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
+        with:
+          environments: "build"
+          install: false
+          download-data: false
+      - name: Build package
+        run: pixi run -e build build-pip
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pip
+          path: dist/
+          if-no-files-found: error
+
+  pip_install:
+    name: Install PyPI
+    runs-on: "ubuntu-latest"
+    needs: [pip_build]
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pip
+          path: dist/
+      - name: Install package
+        run: python -m pip install dist/*.whl
+      - name: Test package
+        run: python -c "import $PACKAGE; print($PACKAGE.__version__)"
+
+  pip_publish:
+    name: Publish PyPI
+    runs-on: ubuntu-latest
+    needs: [pip_build, waiting_room]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: pip
+          path: dist/
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: ${{ secrets.PPU }}
+          password: ${{ secrets.PPP }}
+          repository-url: "https://upload.pypi.org/legacy/"
+
+  npm_build:
+    name: Build NPM
+    needs: [pixi_lock]
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
+        with:
+          environments: "build"
+          download-data: false
+      - name: npm build
+        run: |
+          TARBALL=$(pixi run build-npm)
+          echo "TARBALL=$TARBALL" >> $GITHUB_ENV
+      - name: npm publish dry-run
+        run: |
+          cd $PACKAGE
+          npm publish --dry-run $TARBALL
+          cd ..
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: npm
+          if-no-files-found: error
+          path: ./${{ env.PACKAGE }}/${{ env.TARBALL }}
+
+  npm_publish:
+    name: Publish NPM
+    runs-on: "ubuntu-latest"
+    needs: [npm_build, waiting_room]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: npm
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Set environment variables
+        run: |
+          echo "TAG=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+          echo "TARBALL=$(ls *.tgz)" >> $GITHUB_ENV
       - name: npm setup
         run: |
           echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_API_TOKEN }}" > $HOME/.npmrc
           npm whoami
           npm -v
-      - name: npm build
-        run: |
-          SETUPTOOLS_ENABLE_FEATURES="legacy-editable" python -m pip install -ve .
-          cd ./panel
-          npm publish --dry-run
-          cd ..
-      - name: conda dev deploy
-        if: (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
-        run: |
-          VERSION="$(echo "$(ls dist/*.whl)" | cut -d- -f2)"
-          FILE="$CONDA_PREFIX/conda-bld/noarch/panel-$VERSION-py_0.tar.bz2"
-          anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev $FILE
       - name: npm dev deploy
-        if: (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+        if: contains(env.TAG, 'a') || contains(env.TAG, 'b') || contains(env.TAG, 'rc')
         run: |
-          cd ./panel
-          npm publish --tag dev
-          cd ..
-      - name: conda main deploy
-        if: (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
-        run: |
-          VERSION="$(echo "$(ls dist/*.whl)" | cut -d- -f2)"
-          FILE="$CONDA_PREFIX/conda-bld/noarch/panel-$VERSION-py_0.tar.bz2"
-          anaconda --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev --label=main $FILE
+          npm publish --tag dev $TARBALL
       - name: npm main deploy
-        if: (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+        if: (!(contains(env.TAG, 'a') || contains(env.TAG, 'b') || contains(env.TAG, 'rc')))
         run: |
-          cd ./panel
-          npm publish --tag latest
-          cd ..
+          npm publish --tag latest $TARBALL
+
+  cdn_build:
+    name: Build CDN
+    needs: [pixi_lock]
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
+        with:
+          environments: "build"
+          install: false
+          download-data: false
+      - name: build pyodide wheels
+        run: |
+          pixi run build-pyodide --verify-clean
+      - name: build CDN
+        run: |
+          pixi run build-pip
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cdn
+          if-no-files-found: error
+          path: |
+            ./panel/dist/
+            ./panel/package.json
+
+  cdn_publish:
+    name: Publish CDN
+    runs-on: "ubuntu-latest"
+    needs: [cdn_build, waiting_room]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: "1"
+      - uses: actions/download-artifact@v4
+        with:
+          name: cdn
+          path: panel/
       - name: Deploy to cdn.holoviz.org
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: 'us-east-1'
+          AWS_DEFAULT_REGION: "us-east-1"
         run: python scripts/cdn_upload.py
-  pip_build:
-    name: Build PyPI Packages
-    runs-on: 'ubuntu-latest'
-    defaults:
-      run:
-        shell: bash -l {0}
-    env:
-      CHANS_DEV: "-c pyviz/label/dev -c bokeh/label/dev -c conda-forge"
-      PKG_TEST_PYTHON: "--test-python=py39"
-      PYTHON_VERSION: "3.9"
-      CHANS: "-c pyviz"
-      MPLBACKEND: "Agg"
-      PYPI: "https://upload.pypi.org/legacy/"
-    steps:
-      - name: remove nodejs
-        run: |
-          sudo rm /usr/local/bin/node
-          sudo rm /usr/local/bin/npm
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: "100"
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          miniconda-version: "latest"
-      - uses: actions/setup-node@v2
-        with:
-          node-version: '18'
-      - name: Fetch unshallow
-        run: git fetch --prune --tags --unshallow -f
-      - name: conda setup
-        run: |
-          conda config --set always_yes True
-          conda install -c pyviz "pyctdev>=0.5"
-          doit ecosystem_setup
-          doit env_create $CHANS_DEV --python=$PYTHON_VERSION
-      - name: env setup
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          conda install ${{ env.CHANS_DEV }} "pip<21.2.1"
-          doit develop_install $CHANS_DEV -o build
-          pip uninstall -y panel
-          doit pip_on_conda
-      - name: pip build
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=flakes
-      - name: git status
-        run: |
-          git status
-          git diff
-      - name: pip upload
-        if: github.event_name == 'push'
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          doit ecosystem=pip package_upload -u ${{ secrets.PPU }} -p ${{ secrets.PPP }} -r $PYPI

@@ -4,9 +4,7 @@ Layout component to lay out objects in a set of tabs.
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import (
-    TYPE_CHECKING, ClassVar, List, Mapping, Type,
-)
+from typing import TYPE_CHECKING, ClassVar, Mapping
 
 import param
 
@@ -53,9 +51,9 @@ class Tabs(NamedListPanel):
 
     width = param.Integer(default=None, bounds=(0, None))
 
-    _bokeh_model: ClassVar[Type[Model]] = BkTabs
+    _bokeh_model: ClassVar[type[Model]] = BkTabs
 
-    _direction: ClassVar[str | None] = 'vertical'
+    _direction: ClassVar[str | None] = None
 
     _js_transforms: ClassVar[Mapping[str, str]] = {'tabs': """
     var ids = [];
@@ -63,7 +61,7 @@ class Tabs(NamedListPanel):
     var value = ids;
     """}
 
-    _manual_params: ClassVar[List[str]] = ['closable']
+    _manual_params: ClassVar[list[str]] = ['closable']
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'closable': None, 'dynamic': None, 'name': None, 'objects': 'tabs'

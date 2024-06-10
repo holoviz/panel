@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import types
 
-from collections import OrderedDict
 from collections.abc import Iterable, Mapping
 from inspect import (
     Parameter, getcallargs, getfullargspec as check_argspec, signature,
@@ -99,7 +98,7 @@ class interactive(PaneBase):
         widgets = self.widgets_from_abbreviations(new_kwargs)
         if self.manual_update:
             widgets.append(('manual', Button(name=self.manual_name)))
-        self._widgets = OrderedDict(widgets)
+        self._widgets = dict(widgets)
         pane = self.object(**self.kwargs)
         if isinstance(pane, Viewable):
             self._pane = pane
@@ -110,7 +109,7 @@ class interactive(PaneBase):
         self._inner_layout = Row(self._pane)
         widgets = [widget for _, widget in widgets if isinstance(widget, Widget)]
         if 'name' in params:
-            widgets.insert(0, HTML('<h2>%s</h2>' % self.name))
+            widgets.insert(0, HTML(f'<h2>{self.name}</h2>'))
         self.widget_box = Column(*widgets)
         self.layout.objects = [self.widget_box, self._inner_layout]
         self._link_widgets()
@@ -202,7 +201,7 @@ class interactive(PaneBase):
         for parameter in sig.parameters.values():
             for name, value, default in _yield_abbreviations_for_parameter(parameter, kwargs):
                 if value is empty:
-                    raise ValueError('cannot find widget or abbreviation for argument: {!r}'.format(name))
+                    raise ValueError(f'cannot find widget or abbreviation for argument: {name!r}')
                 new_kwargs.append((name, value, default))
         return new_kwargs
 
@@ -218,7 +217,7 @@ class interactive(PaneBase):
                 if widget_obj is None:
                     continue
                 else:
-                    raise TypeError("{!r} is not a ValueWidget".format(widget))
+                    raise TypeError(f"{widget!r} is not a ValueWidget")
             result.append((name, widget_obj))
         return result
 
@@ -233,7 +232,7 @@ class interactive(PaneBase):
         return _InteractFactory(cls, options)
 
 
-class _InteractFactory(object):
+class _InteractFactory:
     """
     Factory for instances of :class:`interactive`.
 
@@ -364,7 +363,7 @@ class _InteractFactory(object):
         opts = dict(self.opts)
         for k in kwds:
             if k not in opts:
-                raise ValueError("invalid option {!r}".format(k))
+                raise ValueError(f"invalid option {k!r}")
             opts[k] = kwds[k]
         return type(self)(self.cls, opts, self.kwargs)
 

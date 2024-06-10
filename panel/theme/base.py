@@ -5,7 +5,7 @@ import os
 import pathlib
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, List, Literal, Tuple, Type,
+    TYPE_CHECKING, Any, ClassVar, Literal,
 )
 
 import param
@@ -15,9 +15,10 @@ from bokeh.themes import Theme as _BkTheme, _dark_minimal, built_in_themes
 
 from ..config import config
 from ..io.resources import (
-    ResourceComponent, component_resource_path, get_dist_path,
+    JS_VERSION, ResourceComponent, component_resource_path, get_dist_path,
     resolve_custom_path,
 )
+from ..io.state import state
 from ..util import relative_to
 
 if TYPE_CHECKING:
@@ -56,7 +57,7 @@ class Theme(param.Parameterized):
        A stylesheet that overrides variables specifically for the
        Theme subclass. In most cases, this is not necessary.""")
 
-    modifiers: ClassVar[Dict[Viewable, Dict[str, Any]]] = {}
+    modifiers: ClassVar[dict[Viewable, dict[str, Any]]] = {}
 
 
 BOKEH_DARK = dict(_dark_minimal.json)
@@ -96,13 +97,13 @@ class Design(param.Parameterized, ResourceComponent):
     theme = param.ClassSelector(class_=Theme, constant=True)
 
     # Defines parameter overrides to apply to each model
-    modifiers: ClassVar[Dict[Viewable, Dict[str, Any]]] = {}
+    modifiers: ClassVar[dict[Viewable, dict[str, Any]]] = {}
 
     # Defines the resources required to render this theme
-    _resources: ClassVar[Dict[str, Dict[str, str]]] = {}
+    _resources: ClassVar[dict[str, dict[str, str]]] = {}
 
     # Declares valid themes for this Design
-    _themes: ClassVar[Dict[str, Type[Theme]]] = {
+    _themes: ClassVar[dict[str, type[Theme]]] = {
         'default': DefaultTheme,
         'dark': DarkTheme
     }
@@ -116,7 +117,7 @@ class Design(param.Parameterized, ResourceComponent):
         super().__init__(theme=theme, **params)
 
     def _reapply(
-        self, viewable: Viewable, root: Model, old_models: List[Model] = None,
+        self, viewable: Viewable, root: Model, old_models: list[Model] = None,
         isolated: bool=True, cache=None, document=None
     ) -> None:
         ref = root.ref['id']
@@ -157,7 +158,7 @@ class Design(param.Parameterized, ResourceComponent):
 
     @classmethod
     @functools.lru_cache
-    def _resolve_modifiers(cls, vtype, theme):
+    def _resolve_modifiers(cls, vtype, theme, is_server=False):
         """
         Iterate over the class hierarchy in reverse order and accumulate
         all modifiers that apply to the objects class and its super classes.
@@ -185,7 +186,9 @@ class Design(param.Parameterized, ResourceComponent):
         from ..io.resources import (
             CDN_DIST, component_resource_path, resolve_custom_path,
         )
-        modifiers, child_modifiers = cls._resolve_modifiers(type(viewable), theme)
+        theme_type = type(theme) if isinstance(theme, Theme) else theme
+        is_server = bool(state.curdoc.session_context) if not state._is_pyodide and state.curdoc else False
+        modifiers, child_modifiers = cls._resolve_modifiers(type(viewable), theme_type, is_server=is_server)
         modifiers = dict(modifiers)
         if 'stylesheets' in modifiers:
             if isolated:
@@ -246,6 +249,8 @@ class Design(param.Parameterized, ResourceComponent):
         # this may end up causing issues.
         from ..io.resources import CDN_DIST, patch_stylesheet
 
+        if mref not in viewable._models:
+            return
         model, _ = viewable._models[mref]
         params = {
             k: v for k, v in modifiers.items() if k != 'children' and
@@ -346,7 +351,10 @@ class Design(param.Parameterized, ResourceComponent):
             theme.apply_to_model(sm)
 
     def resolve_resources(
-        self, cdn: bool | Literal['auto'] = 'auto', include_theme: bool = True
+        self,
+        cdn: bool | Literal['auto'] = 'auto',
+        extras: dict[str, dict[str, str]] | None = None,
+        include_theme: bool = True
     ) -> ResourceTypes:
         """
         Resolves the resources required for this design component.
@@ -357,6 +365,9 @@ class Design(param.Parameterized, ResourceComponent):
             Whether to load resources from CDN or local server. If set
             to 'auto' value will be automatically determine based on
             global settings.
+        extras: dict[str, dict[str, str]] | None
+            Additional resources to add to the bundle. Valid resource
+            types include js, js_modules and css.
         include_theme: bool
             Whether to include theme resources.
 
@@ -364,10 +375,11 @@ class Design(param.Parameterized, ResourceComponent):
         -------
         Dictionary containing JS and CSS resources.
         """
-        resource_types = super().resolve_resources(cdn)
+        resource_types = super().resolve_resources(cdn=cdn, extras=extras)
         if not include_theme:
             return resource_types
         dist_path = get_dist_path(cdn=cdn)
+        version_suffix = f'?v={JS_VERSION}'
         css_files = resource_types['css']
         theme = self.theme
         for attr in ('base_css', 'css'):
@@ -377,7 +389,7 @@ class Design(param.Parameterized, ResourceComponent):
             basename = os.path.basename(css)
             key = 'theme_base' if 'base' in attr else 'theme'
             if relative_to(css, THEME_CSS):
-                css_files[key] = dist_path + f'bundled/theme/{basename}'
+                css_files[key] = dist_path + f'bundled/theme/{basename}{version_suffix}'
             elif resolve_custom_path(theme, css):
                 owner = type(theme).param[attr].owner
                 css_files[key] = component_resource_path(owner, attr, css)
@@ -385,7 +397,7 @@ class Design(param.Parameterized, ResourceComponent):
 
     def params(
         self, viewable: Viewable, doc: Document | None = None
-    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
         """
         Provides parameter values to apply the provided Viewable.
 

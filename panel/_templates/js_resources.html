@@ -25,7 +25,7 @@ configuration in a Resources object.
 
 {%- for name, file in js_module_exports.items() %}
 <script type="module">
-  import {{ name }} from "{{ file }}";
+  import {{ name }} from "{% if not file.startswith('http') %}./{% endif %}{{ file }}";
   window.{{ name }} = {{ name }}
 </script>
 {%- endfor %}

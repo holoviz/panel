@@ -11,8 +11,7 @@ import uuid
 from functools import partial
 from pathlib import Path, PurePath
 from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar, Dict, List, Literal, Optional, Tuple,
-    Type,
+    IO, TYPE_CHECKING, Any, ClassVar, Literal, Optional,
 )
 
 import jinja2
@@ -29,8 +28,9 @@ from ..io.model import add_to_doc
 from ..io.notebook import render_template
 from ..io.notifications import NotificationArea
 from ..io.resources import (
-    BUNDLE_DIR, CDN_DIST, ResourceComponent, _env, component_resource_path,
-    get_dist_path, loading_css, parse_template, resolve_custom_path,
+    BUNDLE_DIR, CDN_DIST, JS_VERSION, ResourceComponent, _env,
+    component_resource_path, get_dist_path, loading_css, parse_template,
+    resolve_custom_path, use_cdn,
 )
 from ..io.save import save
 from ..io.state import curdoc_locked, state
@@ -90,20 +90,20 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                                 constant=True, is_instance=False, instantiate=False)
 
     # Dictionary of property overrides by Viewable type
-    modifiers: ClassVar[Dict[Type[Viewable], Dict[str, Any]]] = {}
+    modifiers: ClassVar[dict[type[Viewable], dict[str, Any]]] = {}
 
     #############
     # Resources #
     #############
 
     # pathlib.Path pointing to local CSS file(s)
-    _css: ClassVar[Path | str | List[Path | str] | None] = None
+    _css: ClassVar[Path | str | list[Path | str] | None] = None
 
     # pathlib.Path pointing to local JS file(s)
-    _js: ClassVar[Path | str | List[Path | str] | None] = None
+    _js: ClassVar[Path | str | list[Path | str] | None] = None
 
     # External resources
-    _resources: ClassVar[Dict[str, Dict[str, str]]] = {
+    _resources: ClassVar[dict[str, dict[str, str]]] = {
         'css': {}, 'js': {}, 'js_modules': {}, 'tarball': {}
     }
 
@@ -116,6 +116,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         config_params = {
             p: v for p, v in params.items() if p in _base_config.param
         }
+        self._render_items: dict[str, tuple[Renderable, list[str]]]  = {}
+        self._render_variables: dict[str, Any] = {}
         super().__init__(**{
             p: v for p, v in params.items() if p not in _base_config.param or p == 'name'
         })
@@ -130,9 +132,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
             self.nb_template = _env.from_string(nb_template)
         else:
             self.nb_template = nb_template or self.template
-        self._render_items: Dict[str, Tuple[Renderable, List[str]]]  = {}
-        self._render_variables: Dict[str, Any] = {}
-        self._documents: List[Document] = []
+        self._documents: list[Document] = []
         self._server = None
         self._layout = self._build_layout()
         self._setup_design()
@@ -142,7 +142,9 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         self._design = self.design(theme=self.theme)
 
     def _update_vars(self, *args) -> None:
-        self._render_variables['template_resources'] = self.resolve_resources()
+        """
+        Updates the render variables before the template is rendered.
+        """
 
     def _build_layout(self) -> Column:
         str_repr = Str(repr(self))
@@ -170,7 +172,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         ])
         return f'{type(self).__name__}{spacer}{objs}'
 
-    def _apply_root(self, name: str, model: Model, tags: List[str]) -> None:
+    def _apply_root(self, name: str, model: Model, tags: list[str]) -> None:
         pass
 
     def _server_destroy(self, session_context: BokehSessionContext):
@@ -210,7 +212,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
 
         # Add all render items to the document
         objs, models = [], []
-        sizing_modes = {}
+        stylesheets, sizing_modes = {}, {}
+        tracked_models = set()
         for name, (obj, tags) in self._render_items.items():
 
             # Render root without pre-processing
@@ -227,6 +230,11 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                 # pre-processor correctly operates on fake root
                 for sub in obj.select(Viewable):
                     submodel = sub._models.get(mref)
+                    for stylesheet in getattr(sub, '_stylesheets', []):
+                        if not stylesheet.endswith('.css'):
+                            continue
+                        sts_name = f'extra_{os.path.basename(stylesheet)}'
+                        stylesheets[sts_name] = stylesheet
                     if submodel is None:
                         continue
                     sub._models[ref] = submodel
@@ -241,7 +249,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                 objs.append(obj)
                 models.append(model)
 
-            add_to_doc(model, document, hold=bool(comm))
+            tracked_models |= add_to_doc(model, document, hold=bool(comm), skip=tracked_models)
             document.on_session_destroyed(obj._server_destroy) # type: ignore
 
         # Here we ensure that the preprocessor is run across all roots
@@ -263,13 +271,15 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
             document.template = self.template
 
         self._update_vars()
+        resources = self.resolve_resources(extras={'css': stylesheets})
+        document._template_variables['template_resources'] = resources
         document._template_variables['sizing_modes'] = sizing_modes
         document._template_variables.update(self._render_variables)
         return document
 
     def _repr_mimebundle_(
         self, include=None, exclude=None
-    ) -> Tuple[Dict[str, str], Dict[str, Dict[str, str]]] | None:
+    ) -> tuple[dict[str, str], dict[str, dict[str, str]]] | None:
         loaded = panel_extension._loaded
         if not loaded and 'holoviews' in sys.modules:
             import holoviews as hv
@@ -301,7 +311,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         client_comm = state._comm_manager.get_client_comm(
             on_msg=partial(self._on_msg, ref, manager),
             on_error=partial(self._on_error, ref),
-            on_stdout=partial(self._on_stdout, ref)
+            on_stdout=partial(self._on_stdout, ref),
+            on_open=lambda _: comm.init()
         )
         manager.client_comm_id = client_comm.id
         doc.add_root(manager)
@@ -316,7 +327,11 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
     # Public API
     #----------------------------------------------------------------
 
-    def resolve_resources(self, cdn: bool | Literal['auto'] = 'auto') -> ResourcesType:
+    def resolve_resources(
+        self,
+        cdn: bool | Literal['auto'] = 'auto',
+        extras: dict[str, dict[str, str]] | None = None
+    ) -> ResourcesType:
         """
         Resolves the resources required for this template component.
 
@@ -326,13 +341,16 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
             Whether to load resources from CDN or local server. If set
             to 'auto' value will be automatically determine based on
             global settings.
+        extras: dict[str, dict[str, str]] | None
+            Additional resources to add to the bundle. Valid resource
+            types include js, js_modules and css.
 
         Returns
         -------
         Dictionary containing JS and CSS resources.
         """
         cls = type(self)
-        resource_types = super().resolve_resources(cdn=cdn)
+        resource_types = super().resolve_resources(cdn=cdn, extras=extras)
         js_files = resource_types['js']
         js_modules = resource_types['js_modules']
         css_files = resource_types['css']
@@ -340,8 +358,11 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
 
         clsname = cls.__name__
         name = clsname.lower()
+        cdn = use_cdn() if cdn == 'auto' else cdn
         dist_path = get_dist_path(cdn=cdn)
+        version_suffix = f'?v={JS_VERSION}'
 
+        css_files['loading'] = f'{dist_path}css/loading.css{version_suffix}'
         raw_css.extend(list(self.config.raw_css) + [loading_css(
             config.loading_spinner, config.loading_color, config.loading_max_height
         )])
@@ -383,7 +404,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
 
             css_file = os.path.basename(css)
             if (BUNDLE_DIR / tmpl_name / css_file).is_file():
-                css_files[f'base_{css_file}'] = dist_path + f'bundled/{tmpl_name}/{css_file}'
+                css_files[f'base_{css_file}'] = f'{dist_path}bundled/{tmpl_name}/{css_file}{version_suffix}'
             elif isurl(css):
                 css_files[f'base_{css_file}'] = css
             elif resolve_custom_path(self, css):
@@ -550,8 +571,11 @@ class TemplateActions(ReactiveHTML):
 
     _template: ClassVar[str] = ""
 
-    _scripts: ClassVar[Dict[str, List[str] | str]] = {
-        'open_modal': ["document.getElementById('pn-Modal').style.display = 'block'"],
+    _scripts: ClassVar[dict[str, list[str] | str]] = {
+        'open_modal': ["""
+          document.getElementById('pn-Modal').style.display = 'block'
+          window.dispatchEvent(new Event('resize'));
+        """],
         'close_modal': ["document.getElementById('pn-Modal').style.display = 'none'"],
     }
 
@@ -670,7 +694,7 @@ class BasicTemplate(BaseTemplate):
         tmpl_string = self._template.read_text(encoding='utf-8')
         try:
             template = _env.get_template(str(self._template.relative_to(Path(__file__).parent)))
-        except jinja2.exceptions.TemplateNotFound:
+        except (jinja2.exceptions.TemplateNotFound, ValueError):
             template = parse_template(tmpl_string)
 
         if 'header' not in params:
@@ -701,14 +725,15 @@ class BasicTemplate(BaseTemplate):
 
         super().__init__(template=template, **params)
         self._js_area = HTML(margin=0, width=0, height=0)
-        if 'embed(roots.js_area)' in tmpl_string:
+        state_roots = '{% block state_roots %}' in tmpl_string
+        if state_roots or 'embed(roots.js_area)' in tmpl_string:
             self._render_items['js_area'] = (self._js_area, [])
-        if 'embed(roots.actions)' in tmpl_string:
+        if state_roots or 'embed(roots.actions)' in tmpl_string:
             self._render_items['actions'] = (self._actions, [])
-        if 'embed(roots.notifications)' in tmpl_string and self.notifications:
+        if (state_roots or 'embed(roots.notifications)' in tmpl_string) and self.notifications:
             self._render_items['notifications'] = (self.notifications, [])
             self._render_variables['notifications'] = True
-        if config.browser_info and 'embed(roots.browser_info)' in tmpl_string and state.browser_info:
+        if config.browser_info and ('embed(roots.browser_info)' in tmpl_string or state_roots) and state.browser_info:
             self._render_items['browser_info'] = (state.browser_info, [])
             self._render_variables['browser_info'] = True
         self._update_busy()
@@ -913,7 +938,7 @@ class Template(BaseTemplate):
 
     def __init__(
         self, template: str | _Template, nb_template: str | _Template | None = None,
-        items: Optional[Dict[str, Any]] = None, **params
+        items: Optional[dict[str, Any]] = None, **params
     ):
         super().__init__(template=template, nb_template=nb_template, items=items, **params)
         items = {} if items is None else items
@@ -924,7 +949,7 @@ class Template(BaseTemplate):
     # Public API
     #----------------------------------------------------------------
 
-    def add_panel(self, name: str, panel: Viewable, tags: List[str] = []) -> None:
+    def add_panel(self, name: str, panel: Viewable, tags: list[str] = []) -> None:
         """
         Add panels to the Template, which may then be referenced by
         the given name using the jinja2 embed macro.
@@ -937,10 +962,10 @@ class Template(BaseTemplate):
           A Panel component to embed in the template.
         """
         if name in self._render_items:
-            raise ValueError('The name %s has already been used for '
+            raise ValueError(f'The name {name} has already been used for '
                              'another panel. Ensure each panel '
                              'has a unique name by which it can be '
-                             'referenced in the template.' % name)
+                             'referenced in the template.')
         self._render_items[name] = (_panel(panel), tags)
         self._layout[0].object = repr(self) # type: ignore
 
@@ -957,8 +982,8 @@ class Template(BaseTemplate):
           Any valid Jinja2 variable type.
         """
         if name in self._render_variables:
-            raise ValueError('The name %s has already been used for '
+            raise ValueError(f'The name {name} has already been used for '
                              'another variable. Ensure each variable '
                              'has a unique name by which it can be '
-                             'referenced in the template.' % name)
+                             'referenced in the template.')
         self._render_variables[name] = value

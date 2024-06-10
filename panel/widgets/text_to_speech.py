@@ -11,9 +11,7 @@ from __future__ import annotations
 
 import uuid
 
-from typing import (
-    TYPE_CHECKING, ClassVar, Mapping, Type,
-)
+from typing import TYPE_CHECKING, ClassVar, Mapping
 
 import param
 
@@ -229,7 +227,7 @@ class TextToSpeech(Utterance, Widget):
         'voices': None, 'volume': None, '_voices': 'voices',
     }
 
-    _widget_type: ClassVar[Type[Model]] = _BkTextToSpeech
+    _widget_type: ClassVar[type[Model]] = _BkTextToSpeech
 
     def _process_param_change(self, msg):
         speak = msg.get('speak') or ('value' in msg and self.auto_speak)

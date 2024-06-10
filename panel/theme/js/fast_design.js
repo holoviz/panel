@@ -91,7 +91,10 @@ class FastDesignProvider {
   }
 
   setLuminance(value) {
-    baseLayerLuminance.withDefault(value)
+    baseLayerLuminance.setValueFor(
+      this.provider,
+      value
+    )
   }
 
   setCornerRadius(value) {

@@ -11,6 +11,7 @@ and become viewable including:
 from __future__ import annotations
 
 import asyncio
+import functools
 import logging
 import os
 import sys
@@ -18,9 +19,8 @@ import threading
 import traceback
 import uuid
 
-from functools import partial
 from typing import (
-    IO, TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
+    IO, TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional,
 )
 
 import param  # type: ignore
@@ -40,13 +40,12 @@ from .io.loading import start_loading_spinner, stop_loading_spinner
 from .io.model import add_to_doc, patch_cds_msg
 from .io.notebook import (
     JupyterCommManagerBinary as JupyterCommManager, ipywidget, render_embed,
-    render_mimebundle, render_model, show_server,
+    render_mimebundle, render_model,
 )
 from .io.save import save
 from .io.state import curdoc_locked, set_curdoc, state
 from .util import escape, param_reprs
 from .util.parameters import get_params_to_inherit
-from .util.warnings import deprecated
 
 if TYPE_CHECKING:
     from bokeh.model import Model
@@ -55,6 +54,10 @@ if TYPE_CHECKING:
 
     from .io.location import Location
     from .io.server import StoppableThread
+    from .theme import Design
+
+
+_tasks = set()
 
 
 class Layoutable(param.Parameterized):
@@ -76,9 +79,6 @@ class Layoutable(param.Parameterized):
         set to ``"auto"``, component's preferred width and height will
         be used to determine the aspect (if not set, no aspect will be
         preserved).""")
-
-    background = param.Parameter(default=None, doc="""
-        Background color of the component.""")
 
     css_classes = param.List(default=[], nested_refs=True, doc="""
         CSS classes to apply to the layout.""")
@@ -403,7 +403,9 @@ class ServableMixin:
             except Exception:
                 target = None
             if target is not None:
-                asyncio.create_task(write(target, self))
+                task = asyncio.create_task(write(target, self))
+                _tasks.add(task)
+                task.add_done_callback(_tasks.discard)
         return self
 
     def show(
@@ -490,10 +492,10 @@ class MimeRenderMixin:
             handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
 
     def _on_stdout(self, ref: str, stdout: Any) -> None:
-        if ref not in state._handles or config.console_output is [None, 'disable']:
+        if ref not in state._handles or config.console_output in [None, 'disable']:
             return
         handle, accumulator = state._handles[ref]
-        formatted = ["%s</br>" % o for o in stdout]
+        formatted = [f"{o}</br>" for o in stdout]
         if config.console_output == 'accumulate':
             accumulator.extend(formatted)
         elif config.console_output == 'replace':
@@ -507,9 +509,10 @@ class MimeRenderMixin:
         ref = model.ref['id']
         manager = CommManager(comm_id=comm.id, plot_id=ref)
         client_comm = state._comm_manager.get_client_comm(
-            on_msg=partial(self._on_msg, ref, manager),
-            on_error=partial(self._on_error, ref),
-            on_stdout=partial(self._on_stdout, ref)
+            on_msg=functools.partial(self._on_msg, ref, manager),
+            on_error=functools.partial(self._on_error, ref),
+            on_stdout=functools.partial(self._on_stdout, ref),
+            on_open=lambda _: comm.init()
         )
         self._comms[ref] = (comm, client_comm)
         manager.client_comm_id = client_comm.id
@@ -689,48 +692,40 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         Whether or not the Viewable is loading. If True a loading spinner
         is shown on top of the Viewable.""")
 
-    _preprocessing_hooks: ClassVar[List[Callable[['Viewable', 'Model'], None]]] = []
+    _preprocessing_hooks: ClassVar[list[Callable[['Viewable', 'Model'], None]]] = []
 
     def __init__(self, **params):
         hooks = params.pop('hooks', [])
         super().__init__(**params)
         self._hooks = hooks
 
-        self._update_loading()
-        self._update_background()
+        if self.loading:
+            self._update_loading()
         self._update_design()
         self._internal_callbacks.extend([
-            self.param.watch(self._update_background, 'background'),
             self.param.watch(self._update_design, 'design'),
             self.param.watch(self._update_loading, 'loading')
         ])
+
+    @staticmethod
+    @functools.cache
+    def _instantiate_design(design: type[Design], theme: str) -> Design:
+        return design(theme=theme)
 
     def _update_design(self, *_):
         from .theme import Design
         from .theme.native import Native
         if isinstance(self.design, Design):
             self._design = self.design
-        elif self.design:
-            self._design = self.design(theme=config.theme)
         else:
-            self._design = Native(theme=config.theme)
+            design = self.design or Native
+            self._design = self._instantiate_design(design, config.theme)
 
     def _update_loading(self, *_) -> None:
         if self.loading:
             start_loading_spinner(self)
         else:
             stop_loading_spinner(self)
-
-    def _update_background(self, *_) -> None:
-        if self.background == self.styles.get("background", None) or self.background is None:
-            return
-
-        # Warning
-        prev = f'{type(self).name}(..., background={self.background!r})'
-        new = f"{type(self).name}(..., styles={{'background': {self.background!r}}})"
-        deprecated("1.4", prev, new)
-
-        self.styles = dict(self.styles, background=self.background)
 
     def _render_model(self, doc: Optional[Document] = None, comm: Optional[Comm] = None) -> 'Model':
         if doc is None:
@@ -856,16 +851,9 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         inherited = get_params_to_inherit(self)
         return type(self)(**dict(inherited, **params))
 
-    def pprint(self) -> None:
-        """
-        Prints a compositional repr of the class.
-        """
-        deprecated('1.4', f'{type(self).__name__}.pprint', 'print')
-        print(self)  # noqa: T201
-
     def select(
         self, selector: Optional[type | Callable[['Viewable'], bool]] = None
-    ) -> List['Viewable']:
+    ) -> list['Viewable']:
         """
         Iterates over the Viewable and any potential children in the
         applying the Selector.
@@ -886,20 +874,6 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             return [self]
         else:
             return []
-
-    def app(self, notebook_url: str = "localhost:8888", port: int = 0) -> 'Server':
-        """
-        Displays a bokeh server app inline in the notebook.
-
-        Arguments
-        ---------
-        notebook_url: str
-          URL to the notebook server
-        port: int (optional, default=0)
-          Allows specifying a specific port
-        """
-        deprecated('1.4', f'{type(self).__name__}.app', 'panel.io.notebook.show_server')
-        return show_server(self, notebook_url, port)
 
     def embed(
         self, max_states: int = 1000, max_opts: int = 3, json: bool = False,
@@ -939,10 +913,10 @@ class Viewable(Renderable, Layoutable, ServableMixin):
     def save(
         self, filename: str | os.PathLike | IO, title: Optional[str] = None,
         resources: Resources | None = None, template: str | Template | None = None,
-        template_variables: Dict[str, Any] = {}, embed: bool = False,
+        template_variables: dict[str, Any] = {}, embed: bool = False,
         max_states: int = 1000, max_opts: int = 3, embed_json: bool = False,
         json_prefix: str='', save_path: str='./', load_path: Optional[str] = None,
-        progress: bool = True, embed_states: Dict[Any, Any] = {},
+        progress: bool = True, embed_states: dict[Any, Any] = {},
         as_png: bool | None = None, **kwargs
     ) -> None:
         """
@@ -1017,6 +991,10 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             title = title or 'Panel Application'
             doc.title = title
 
+        # Set up before any model sets up a session destroy hook
+        doc.on_session_destroyed(state._destroy_session)
+        doc.on_session_destroyed(self._server_destroy) # type: ignore
+
         if self._design:
             wrapper = self._design._wrapper(self)
             if wrapper is self:
@@ -1028,8 +1006,6 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         else:
             model = self.get_root(doc)
 
-        doc.on_session_destroyed(state._destroy_session)
-        doc.on_session_destroyed(self._server_destroy) # type: ignore
         self._documents[doc] = model
         add_to_doc(model, doc)
         if location:

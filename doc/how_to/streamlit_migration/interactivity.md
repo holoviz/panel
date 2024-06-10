@@ -1,26 +1,24 @@
 # Add Interactivity with `pn.bind`
 
-Both Streamlit and Panel are *reactive* frameworks that *react* when you interact with your application. But they work very differently:
+Both Streamlit and Panel are *reactive* frameworks that respond dynamically to user interactions within your application. However, their operational mechanics differ significantly:
 
-In Streamlit
+**In Streamlit**:
 
-- your script is run once when a user visits the page.
-- your script is rerun *top to bottom* on user interactions.
+- The script runs once when a user visits the page.
+- The script reruns from the *top to bottom* upon any user interaction.
 
-In Panel
+**In Panel**:
 
-- your script is run once when a user visits the page.
-- only *specific, bound functions* are rerun on user interactions.
+- The script runs once when a user visits the page.
+- Only *specific, bound functions* are rerun based on user interactions.
 
-With Panels interactivity architecture you will be able develop and maintain larger and more complex apps.
-
----
+Panel's interactivity architecture enables you to develop and maintain larger and more complex apps efficiently.
 
 ## Introduction
 
-Panels `pn.bind` provides the functionality to *bind* functions to widgets. We call the resulting functions *bound functions*.
+Panel's `pn.bind` function allows you to *bind* functions to widgets, creating what we refer to as *bound functions*.
 
-You use `pn.bind` as follows
+To use `pn.bind`, follow these steps:
 
 ```python
 # 1. Define your function(s)
@@ -34,22 +32,22 @@ my_bound_func = pn.bind(my_func, value=slider)
 pn.Column(slider, my_bound_func)
 ```
 
-When you have bound and displayed your functions like above, they will automatically be rerun on user interactions.
+Once you've set up your functions and widgets as described, they will automatically update in response to user interactions.
 
 ## Migration Steps
 
-You should
+Consider the following strategies for effective migration:
 
-- Move your business logic to functions. Business logic can be code to load data, transform data, run calculations, create plots, calculate the mass of the milky way, train models, do inference etc.
-- Add interactivity by using `pn.bind` to bind your functions to widgets.
-  - Use generator functions (`yield`) if you want to update the UI multiple times during the functions execution.
-- Indicate activity using the options described in the [Show Activity Section](activity.md).
+- Transition your core business logic into functions. This includes data loading, transformations, calculations, plot creations, complex computations like galaxy mass estimations, model training, and inference tasks.
+- Enhance interactivity by using `pn.bind` to associate your functions with widgets.
+  - For updates that occur multiple times during function execution, consider using generator functions (`yield`).
+- Use visual feedback to indicate activity, as detailed in the [Show Activity Section](activity.md).
 
 ## Examples
 
 ### Basic Interactivity Example
 
-This example will show you how to migrate code that produces a single result and only updates the UI once the code execution has completed.
+Learn how to adapt your code for a straightforward result update that occurs once the execution completes.
 
 #### Streamlit Basic Interactivity Example
 
@@ -71,7 +69,7 @@ st.pyplot(fig)
 
 ![Streamlit Basic Interactivity Example](https://assets.holoviz.org/panel/gifs/streamlit_interactivity_example.gif)
 
-The entire script is rerun *top to bottom* when you change the `bins` slider.
+In Streamlit, the entire script is rerun from top to bottom when the `bins` slider is adjusted.
 
 #### Panel Basic Interactivity Example
 
@@ -93,16 +91,16 @@ data = np.random.normal(1, 1, size=100)
 bins_input = pn.widgets.IntSlider(value=20, start=10, end=30, step=1, name="Bins")
 bplot = pn.bind(plot, data=data, bins=bins_input)
 
-pn.Column(bins, bplot).servable()
+pn.Column(bins_input, bplot).servable()
 ```
 
 ![Panel Basic Interactivity Example](https://assets.holoviz.org/panel/gifs/panel_interactivity_example.gif)
 
-With Panel only the `plot` function is rerun when you change the `bins` slider. This makes your Panel app update much quicker and more smoothly than the Streamlit app.
+Panel updates more swiftly and smoothly by only rerunning the `plot` function when the `bins` slider is changed.
 
 ### Multiple Updates Example
 
-This example will show you how to migrate code that produces a single result and updates the UI multiple times during the code execution.
+Discover how to handle scenarios where a function needs to update the UI multiple times during its execution.
 
 #### Streamlit Multiple Updates Example
 
@@ -144,18 +142,7 @@ else:
 
 #### Panel Multiple Updates Example
 
-With Panel you will use a *generator function* to update a component multiple times during code execution.
-
-```python
-```
-
-![Panel Multiple Updates Examples](https://assets.holoviz.org/panel/gifs/panel_runner_example.gif)
-
-You will notice that we use the `pn.indicators.LoadingSpinner` to indicate the activity.
-
-#### Panel Multiple Updates Alternative Indicator Example
-
-An alternative to using an *indicator* would be to change the `.disabled` and `.loading` parameters of the `calculation_input` and `run_input`.
+In Panel, utilize a *generator function* to provide incremental updates during the function's execution.
 
 ```python
 import time
@@ -183,7 +170,7 @@ def run_calculation(running, calculation):
         return # This will break the execution
 
     calc = calculation_a if calculation == "A" else calculation_b
-    with run_input.param.set(loading=True):
+    with run_input.param.update(loading=True):
         yield pn.indicators.LoadingSpinner(
             value=True, size=50, name='Running... Please Wait!'
         )
@@ -214,13 +201,72 @@ pn.Column(
 ).servable()
 ```
 
+![Panel Multiple Updates Example](https://assets.holoviz.org/panel/gifs/panel_runner_example.gif)
+
+The use of `pn.indicators.LoadingSpinner` effectively signals ongoing activity during the calculation process.
+
+#### Panel Multiple Updates Alternative Indicator Example
+
+Instead of using a visual indicator, another approach involves modifying the `.disabled` and `.loading` parameters of the `calculation_input` and `run_input` to reflect the current state of the operation dynamically.
+
+```python
+import time
+import random
+
+import panel as pn
+
+pn.extension(template="bootstrap")
+pn.state.template.param.update(site="Panel", title="Calculation Runner")
+
+def notify_choice(calculation):
+    return f"You chose: {calculation}"
+
+def calculation_a():
+    time.sleep(2)
+    return random.randint(0, 100)
+
+def calculation_b():
+    time.sleep(1)
+    return random.randint(0, 100)
+
+def run_calculation(running, calculation):
+    if not running:
+        return "Calculation did not run yet"
+
+    calc = calculation_a if calculation == "A" else calculation_b
+    with run_input.param.update(loading=True), calculation_input.param.update(disabled=True):
+        time_start = time.perf_counter()
+        result = calc()
+        time_end = time.perf_counter()
+        return f"""
+        Done!
+
+        Result: {result}
+
+        The function took {time_end - time_start:1.1f} seconds to complete.
+        """
+
+calculation_input = pn.widgets.RadioBoxGroup(name="Calculation", options=["A", "B"])
+run_input = pn.widgets.Button(
+    name="Press to run calculation",
+    icon="caret-right",
+    button_type="primary",
+    width=250,
+)
+pn.Column(
+    "Which calculation would you like to perform?",
+    calculation_input,
+    pn.bind(notify_choice, calculation_input),
+    run_input,
+    pn.bind(run_calculation, run_input, calculation_input),
+).servable()
+```
+
 ![Panel Multiple Updates Alternative Example](https://assets.holoviz.org/panel/gifs/panel_generator_example.gif)
 
 ### Multiple Results Example
 
-Sometimes you want to output multiple results individually as soon as they are ready.
-
-This is for example the case for Large (AI) Language Models that generates one token after the other.
+In some scenarios, such as with Large (AI) Language Models, you may need to output multiple results sequentially as they become available.
 
 #### Streamlit Multiple Results Example
 
@@ -240,7 +286,7 @@ if not run:
     st.write("The model has not run yet")
 else:
     with st.spinner("Running..."):
-        for i in range(0,10):
+        for i in range(10):
             result = model()
             st.write(f"Result {i}: {result}")
 ```
@@ -249,14 +295,15 @@ else:
 
 #### Panel Multiple Results Example
 
-With Panel you will use a *generator function* to display multiple results from code execution as soon as they are ready.
+Panel utilizes a *generator function* to dynamically display multiple results from a single execution process as they become ready.
 
 ```python
 import random
 import time
+
 import panel as pn
 
-pn.extension(sizing_mode="stretch_width")
+pn.extension(sizing_mode="stretch_width", template="bootstrap")
 
 def model():
     time.sleep(1)
@@ -264,19 +311,23 @@ def model():
 
 def results(running):
     if not running:
-        return "The model has not run yet"
+        yield layout
+        return
 
-    for i in range(0, 10):
+    layout.clear()
+    for i in range(10):
+        layout.append(loading)
+        yield layout
         result = model()
-        yield f"Result {i}: {result}"
+        result = pn.panel(f"Result {i}: {result}")
+        layout[-1] = result
+        yield layout
 
 run_input = pn.widgets.Button(name="Run model")
-output = pn.bind(results, run_input)
+loading = pn.widgets.LoadingSpinner(value=True, size=50, name="Running... Please Wait!")
+layout = pn.Column("Calculation did not run yet")
 
-pn.Column(
-    run_input,
-    pn.panel(output, loading_indicator=True, generator_mode='append'),
-).servable()
+pn.Column(run_input, pn.bind(results, run_input)).servable()
 ```
 
 ![Panel Multiple Results Example](https://assets.holoviz.org/panel/gifs/panel_sync_multi_example.gif)

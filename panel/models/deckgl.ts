@@ -1,5 +1,6 @@
 import {div} from "@bokehjs/core/dom"
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
+import {isNumber} from "@bokehjs/core/util/types"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 
 import {debounce} from  "debounce"
@@ -8,27 +9,28 @@ import {transform_cds_to_records} from "./data"
 import {LayoutDOM, LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 import {makeTooltip} from "./tooltips"
 
-import GL from '@luma.gl/constants';
+import GL from "@luma.gl/constants"
 
 function extractClasses() {
   // Get classes for registration from standalone deck.gl
-  const classesDict: any = {};
-  const deck = (window as any).deck;
-  const classes = Object.keys(deck).filter(x => x.charAt(0) === x.charAt(0).toUpperCase());
+  const classesDict: any = {}
+  const deck = (window as any).deck
+  const classes = Object.keys(deck).filter(x => x.charAt(0) === x.charAt(0).toUpperCase())
   for (const cls of classes) {
-    classesDict[cls] = deck[cls];
+    classesDict[cls] = deck[cls]
   }
-  return classesDict;
+  return classesDict
 }
 
 export class DeckGLPlotView extends LayoutDOMView {
-  model: DeckGLPlot
+  declare model: DeckGLPlot
+
   jsonConverter: any
   deckGL: any
   _connected: any[]
   _layer_map: any
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
     const {data, mapbox_api_key, tooltip, layers, initialViewState, data_sources} = this.model.properties
     this.on_change([mapbox_api_key, tooltip], () => this.render())
@@ -53,76 +55,80 @@ export class DeckGLPlotView extends LayoutDOMView {
   _connect_sources(render: boolean = false): void {
     for (const cds of this.model.data_sources) {
       if (this._connected.indexOf(cds) < 0) {
-        this.connect(cds.properties.data.change, () => this._update_data(true))
+        this.on_change(cds.properties.data, () => this._update_data(true))
         this._connected.push(cds)
       }
     }
     this._update_data(render)
   }
 
-  initialize(): void {
+  override initialize(): void {
     super.initialize()
     if ((window as any).deck.JSONConverter) {
       const {CSVLoader, Tiles3DLoader} = (window as any).loaders;
-      (window as any).loaders.registerLoaders([Tiles3DLoader, CSVLoader]);
+      (window as any).loaders.registerLoaders([Tiles3DLoader, CSVLoader])
       const jsonConverterConfiguration: any = {
         classes: extractClasses(),
         // Will be resolved as `<enum-name>.<enum-value>`
         enumerations: {
           COORDINATE_SYSTEM: (window as any).deck.COORDINATE_SYSTEM,
-          GL
+          GL,
         },
         // Constants that should be resolved with the provided values by JSON converter
         constants: {
-          Tiles3DLoader
-        }
-      };
+          Tiles3DLoader,
+        },
+      }
       this.jsonConverter = new (window as any).deck.JSONConverter({
-        configuration: jsonConverterConfiguration
-      });
+        configuration: jsonConverterConfiguration,
+      })
     }
   }
 
   _update_data(render: boolean = true): void {
-    let n = 0;
+    let n = 0
     for (const layer of this.model.layers) {
-      let cds;
-      n += 1;
+      let cds
+      n += 1
       if ((n-1) in this._layer_map) {
         cds = this.model.data_sources[this._layer_map[n-1]]
-      } else if (typeof layer.data != "number")
+      } else if (!isNumber(layer.data)) {
         continue
-      else {
+      } else {
         this._layer_map[n-1] = layer.data
         cds = this.model.data_sources[layer.data]
       }
-      layer.data = transform_cds_to_records(cds);
+      layer.data = transform_cds_to_records(cds)
     }
-    if (render)
+    if (render) {
       this.updateDeck()
+    }
   }
 
   _on_click_event(event: any): void {
     const click_state: any = {
       coordinate: event.coordinate,
       lngLat: event.coordinate,
-      index: event.index
+      index: event.index,
     }
-    if (event.layer)
+    if (event.layer) {
       click_state.layer = event.layer.id
+    }
     this.model.clickState = click_state
   }
 
   _on_hover_event(event: any): void {
-    if (event.coordinate == null)
+    if (event.coordinate == null) {
       return
+    }
     const hover_state: any = {
       coordinate: event.coordinate,
       lngLat: event.coordinate,
-      index: event.index
+      index: event.index,
     }
-    if (event.layer)
+    if (event.layer) {
       hover_state.layer = event.layer.id
+    }
     this.model.hoverState = hover_state
   }
 
@@ -130,12 +136,13 @@ export class DeckGLPlotView extends LayoutDOMView {
     const view_state = {...event.viewState}
     delete view_state.normalize
     for (const p in view_state) {
-      if (p.startsWith('transition'))
+      if (p.startsWith("transition")) {
         delete view_state[p]
+      }
     }
-    const viewport = new (window as any).deck.WebMercatorViewport(view_state);
-    view_state.nw = viewport.unproject([0, 0]);
-    view_state.se = viewport.unproject([viewport.width, viewport.height]);
+    const viewport = new (window as any).deck.WebMercatorViewport(view_state)
+    view_state.nw = viewport.unproject([0, 0])
+    view_state.se = viewport.unproject([viewport.width, viewport.height])
     this.model.viewState = view_state
   }
 
@@ -144,8 +151,8 @@ export class DeckGLPlotView extends LayoutDOMView {
   }
 
   getData(): any {
-    const view_timeout = this.model.throttle['view'] || 200
-    const hover_timeout = this.model.throttle['hover'] || 100
+    const view_timeout = this.model.throttle.view || 200
+    const hover_timeout = this.model.throttle.hover || 100
     const view_cb = debounce((event: any) => this._on_viewState_event(event), view_timeout, false)
     const hover_cb = debounce((event: any) => this._on_hover_event(event), hover_timeout, false)
     const data = {
@@ -154,7 +161,7 @@ export class DeckGLPlotView extends LayoutDOMView {
       initialViewState: this.model.initialViewState,
       onViewStateChange: view_cb,
       onClick: (event: any) => this._on_click_event(event),
-      onHover: hover_cb
+      onHover: hover_cb,
     }
     return data
   }
@@ -168,32 +175,32 @@ export class DeckGLPlotView extends LayoutDOMView {
     if ((window as any).deck.updateDeck) {
       (window as any).deck.updateDeck(data, this.deckGL)
     } else {
-      const results = this.jsonConverter.convert(data);
-      this.deckGL.setProps(results);
+      const results = this.jsonConverter.convert(data)
+      this.deckGL.setProps(results)
     }
   }
 
-  createDeck({mapboxApiKey, container, jsonInput, tooltip} : any): void {
-    let deckgl;
+  createDeck({mapboxApiKey, container, jsonInput, tooltip}: any): void {
+    let deckgl
     try {
-      const props = this.jsonConverter.convert(jsonInput);
-      const getTooltip = makeTooltip(tooltip, props.layers);
+      const props = this.jsonConverter.convert(jsonInput)
+      const getTooltip = makeTooltip(tooltip, props.layers)
       deckgl = new (window as any).deck.DeckGL({
         ...props,
         map: (window as any).mapboxgl,
         mapboxApiAccessToken: mapboxApiKey,
         container,
         getTooltip,
-	width: '100%',
-	height: '100%'
-      });
+        width: "100%",
+        height: "100%",
+      })
     } catch (err) {
-      console.error(err);
+      console.error(err)
     }
-    return deckgl;
+    return deckgl
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     const container = div({class: "deckgl"})
 
@@ -204,24 +211,24 @@ export class DeckGLPlotView extends LayoutDOMView {
     if ((window as any).deck.createDeck) {
       this.deckGL = (window as any).deck.createDeck({
         mapboxApiKey: MAPBOX_API_KEY,
-        container: container,
+        container,
         jsonInput: data,
-        tooltip
-      });
+        tooltip,
+      })
     } else {
       this.deckGL = this.createDeck({
         mapboxApiKey: MAPBOX_API_KEY,
-        container: container,
+        container,
         jsonInput: data,
-        tooltip
-      });
+        tooltip,
+      })
     }
     this.shadow_el.appendChild(container)
   }
 
-  after_layout(): void {
+  override after_layout(): void {
     super.after_layout()
-    this.deckGL.redraw(true);
+    this.deckGL.redraw(true)
   }
 }
 
@@ -244,25 +251,25 @@ export namespace DeckGLPlot {
 export interface DeckGLPlot extends DeckGLPlot.Attrs { }
 
 export class DeckGLPlot extends LayoutDOM {
-  properties: DeckGLPlot.Props
+  declare properties: DeckGLPlot.Props
 
   constructor(attrs?: Partial<DeckGLPlot.Attrs>) {
     super(attrs)
   }
 
-  static __module__ = "panel.models.deckgl"
+  static override __module__ = "panel.models.deckgl"
 
   static {
-    this.prototype.default_view = DeckGLPlotView;
+    this.prototype.default_view = DeckGLPlotView
 
-    this.define<DeckGLPlot.Props>(({Any, Array, String, Ref}) => ({
+    this.define<DeckGLPlot.Props>(({Any, List, Str, Ref}) => ({
       data:             [ Any                              ],
-      data_sources:     [ Array(Ref(ColumnDataSource)), [] ],
+      data_sources:     [ List(Ref(ColumnDataSource)), [] ],
       clickState:       [ Any,                          {} ],
       hoverState:       [ Any,                          {} ],
       initialViewState: [ Any,                          {} ],
-      layers:           [ Array(Any),                   [] ],
-      mapbox_api_key:   [ String,                       '' ],
+      layers:           [ List(Any),                   [] ],
+      mapbox_api_key:   [ Str,                       "" ],
       throttle:         [ Any,                          {} ],
       tooltip:          [ Any,                        true ],
       viewState:        [ Any,                          {} ],
@@ -270,7 +277,7 @@ export class DeckGLPlot extends LayoutDOM {
 
     this.override<DeckGLPlot.Props>({
       height: 400,
-      width: 600
-    });
+      width: 600,
+    })
   }
 }

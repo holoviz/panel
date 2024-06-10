@@ -181,6 +181,7 @@ def test_tabulator_value_changed(page, df_mixed):
     # Need to trigger the value as the dataframe was modified
     # in place which is not detected.
     widget.param.trigger('value')
+    wait_until(lambda: page.locator('text="AA"') is not None, page)
     changed_cell = page.locator('text="AA"')
     expect(changed_cell).to_have_count(1)
 
@@ -381,6 +382,23 @@ def test_tabulator_formatters_bokeh_string(page, df_mixed):
         "style",
         "font-weight: bold; text-align: center; color: rgb(255, 0, 0);"
     )
+
+
+def test_tabulator_formatters_bokeh_html_multiple_columns(page, df_mixed):
+    htmlfmt = HTMLTemplateFormatter(
+        template='<p class="html-format"><%= str %> <%= bool %></p>'
+    )
+    widget = Tabulator(df_mixed, formatters={'str': htmlfmt})
+
+    serve_component(page, widget)
+
+    # The BooleanFormatter renders with svg icons.
+    cells = page.locator(".tabulator-cell .html-format")
+    expect(cells).to_have_count(len(df_mixed))
+
+    for i, (_, row) in enumerate(df_mixed.iterrows()):
+
+        expect(cells.nth(i)).to_have_text(f"{row['str']} {str(row['bool']).lower()}")
 
 
 def test_tabulator_formatters_bokeh_html(page, df_mixed):
@@ -896,6 +914,80 @@ def test_tabulator_frozen_columns(page, df_mixed):
     assert int_bb == page.locator('text="int"').bounding_box()
 
 
+def test_tabulator_frozen_columns_with_positions(page, df_mixed):
+    widths = 100
+    width = int(((df_mixed.shape[1] + 1) * widths) / 2)
+    frozen_cols = {"float": "left", "int": "right"}
+    widget = Tabulator(df_mixed, frozen_columns=frozen_cols, width=width, widths=widths)
+
+    serve_component(page, widget)
+
+    expected_text = """
+    float
+    index
+    str
+    bool
+    date
+    datetime
+    int
+    3.14
+    idx0
+    A
+    true
+    2019-01-01
+    2019-01-01 10:00:00
+    1
+    6.28
+    idx1
+    B
+    true
+    2020-01-01
+    2020-01-01 12:00:00
+    2
+    9.42
+    idx2
+    C
+    true
+    2020-01-10
+    2020-01-10 13:00:00
+    3
+    -2.45
+    idx3
+    D
+    false
+    2019-01-10
+    2020-01-15 13:00:00
+    4
+    """
+    # Check that the whole table content is on the page, it is not in the
+    # same order as if the table was displayed without frozen columns
+    table = page.locator('.pnx-tabulator.tabulator')
+    expect(table).to_have_text(
+        expected_text,
+        use_inner_text=True
+    )
+
+    float_bb = page.locator('text="float"').bounding_box()
+    int_bb = page.locator('text="int"').bounding_box()
+    str_bb = page.locator('text="str"').bounding_box()
+
+    # Check that the float column is rendered before the int col
+    assert float_bb['x'] < int_bb['x']
+
+    # Check the bool is before int column
+    assert str_bb['x'] < int_bb['x']
+
+    # Scroll to the right, and give it a little extra time
+    page.locator('text="2019-01-01 10:00:00"').scroll_into_view_if_needed()
+
+    # Check that the position of one of the non-frozen columns has indeed moved
+    wait_until(lambda: page.locator('text="str"').bounding_box()['x'] < str_bb['x'], page)
+
+    # Check that the two frozen columns haven't moved after scrolling right
+    assert float_bb == page.locator('text="float"').bounding_box()
+    assert int_bb == page.locator('text="int"').bounding_box()
+
+
 def test_tabulator_frozen_rows(page):
     arr = np.array(['a'] * 10)
 
@@ -1114,11 +1206,7 @@ def test_tabulator_theming(page, df_mixed, df_mixed_as_string, theme):
     theme = _TABULATOR_THEMES_MAPPING.get(theme, theme)
     for response in responses:
         base = response.url.split('/')[-1]
-        if base == f'tabulator_{theme}.min.css':
-            found = True
-            break
-        # default theme
-        elif base == 'tabulator.min.css':
+        if base.startswith(('tabulator.min.css', f'tabulator_{theme}.min.css')):
             found = True
             break
     assert found
@@ -1725,7 +1813,7 @@ def test_tabulator_pagination(page, df_mixed, pagination):
     counts = count_per_page(len(df_mixed), page_size)
     i = 0
     while True:
-        wait_until(lambda: widget.page == i + 1, page)
+        wait_until(lambda: widget.page == i + 1, page)  # noqa: B023
         rows = page.locator('.tabulator-row')
         expect(rows).to_have_count(counts[i])
         assert page.locator(f'[aria-label="Show Page {i+1}"]').count() == 1
@@ -1828,7 +1916,7 @@ def test_tabulator_filter_param(page, df_mixed):
         p.s = filt_val
         df_filtered = df_mixed.loc[df_mixed[filt_col] == filt_val, :]
 
-        wait_until(lambda: widget.current_view.equals(df_filtered), page)
+        wait_until(lambda: widget.current_view.equals(df_filtered), page)  # noqa: B023
 
         # Check the table has the right number of rows
         expect(page.locator('.tabulator-row')).to_have_count(len(df_filtered))
@@ -1857,7 +1945,7 @@ def test_tabulator_filter_bound_function(page, df_mixed):
         w_filter.value = filt_val
         df_filtered = filt_(df_mixed, filt_val)
 
-        wait_until(lambda: widget.current_view.equals(df_filtered), page)
+        wait_until(lambda: widget.current_view.equals(df_filtered), page)  # noqa: B023
 
         # Check the table has the right number of rows
         expect(page.locator('.tabulator-row')).to_have_count(len(df_filtered))
@@ -2159,7 +2247,7 @@ def test_tabulator_patching_no_event(page, df_mixed):
 
 def color_false(val):
     color = 'red' if not val else 'black'
-    return 'color: %s' % color
+    return f'color: {color}'
 
 def highlight_max(s):
     is_max = s == s.max()
@@ -2199,6 +2287,7 @@ def test_tabulator_patching_and_styling(page, df_mixed):
     widget.patch({'int': [(0, 100)]}, as_index=False)
 
     max_int = df_mixed['int'].max()
+    wait_until(lambda: page.locator('.tabulator-cell', has=page.locator(f'text="{max_int}"')) is not None, page)
     max_cell = page.locator('.tabulator-cell', has=page.locator(f'text="{max_int}"'))
     expect(max_cell).to_have_count(1)
     expect(max_cell).to_have_css('background-color', _color_mapping['yellow'])

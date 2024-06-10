@@ -352,4 +352,4 @@ def test_link_with_customcode(document, comm):
     link_customjs = range_slider.js_property_callbacks['change:value'][-1]
     assert link_customjs.args['source'] is range_slider
     assert link_customjs.args['x_range'] is x_range
-    assert link_customjs.code == "try { %s } catch(err) { console.log(err) }" % code
+    assert link_customjs.code == f"try {{ {code} }} catch(err) {{ console.log(err) }}"

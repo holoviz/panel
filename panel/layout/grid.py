@@ -5,10 +5,10 @@ from __future__ import annotations
 
 import math
 
-from collections import OrderedDict, namedtuple
+from collections import namedtuple
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, Tuple,
+    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
 )
 
 import numpy as np
@@ -56,7 +56,7 @@ class GridBox(ListPanel):
 
     _bokeh_model: ClassVar[Model] = BkGridBox
 
-    _linked_properties: ClassVar[Tuple[str,...]] = ()
+    _linked_properties: ClassVar[tuple[str,...]] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'objects': 'children'
@@ -66,7 +66,7 @@ class GridBox(ListPanel):
         'scroll': None, 'objects': None
     }
 
-    _stylesheets: ClassVar[List[str]] = [
+    _stylesheets: ClassVar[list[str]] = [
         f'{CDN_DIST}css/gridbox.css'
     ]
 
@@ -195,7 +195,7 @@ class GridBox(ListPanel):
         return model
 
     def _update_model(
-        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
         root: Model, model: Model, doc: Document, comm: Optional[Comm]
     ) -> None:
         from ..io import state
@@ -271,7 +271,7 @@ class GridSpec(Panel):
 
     _bokeh_model: ClassVar[Model] = BkGridBox
 
-    _linked_properties: ClassVar[Tuple[str]] = ()
+    _linked_properties: ClassVar[tuple[str]] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'objects': 'children', 'mode': None, 'ncols': None, 'nrows': None
@@ -281,13 +281,13 @@ class GridSpec(Panel):
         'objects': None, 'mode': None
     }
 
-    _preprocess_params: ClassVar[List[str]] = ['objects']
+    _preprocess_params: ClassVar[list[str]] = ['objects']
 
-    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/gridspec.css']
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/gridspec.css']
 
     def __init__(self, **params):
         if 'objects' not in params:
-            params['objects'] = OrderedDict()
+            params['objects'] = {}
         super().__init__(**params)
         self._updating = False
         self._update_nrows()
@@ -405,7 +405,7 @@ class GridSpec(Panel):
     @property
     def _object_grid(self):
         grid = np.full((self.nrows, self.ncols), None, dtype=object)
-        for i, ((y0, x0, y1, x1), obj) in enumerate(self.objects.items()):
+        for (y0, x0, y1, x1), obj in self.objects.items():
             l = 0 if x0 is None else x0
             r = self.ncols if x1 is None else x1
             t = 0 if y0 is None else y0
@@ -451,8 +451,7 @@ class GridSpec(Panel):
         return type(self)(**p)
 
     def __iter__(self):
-        for obj in self.objects.values():
-            yield obj
+        yield from self.objects.values()
 
     def __delitem__(self, index):
         if isinstance(index, tuple):
@@ -462,7 +461,7 @@ class GridSpec(Panel):
 
         subgrid = self._object_grid[yidx, xidx]
         if isinstance(subgrid, np.ndarray):
-            deleted = OrderedDict([list(o)[0] for o in subgrid.flatten()])
+            deleted = dict([list(o)[0] for o in subgrid.flatten()])
         else:
             deleted = [list(subgrid)[0][0]]
         for key in deleted:
@@ -477,7 +476,7 @@ class GridSpec(Panel):
 
         subgrid = self._object_grid[yidx, xidx]
         if isinstance(subgrid, np.ndarray):
-            objects = OrderedDict([list(o)[0] for o in subgrid.flatten()])
+            objects = dict([list(o)[0] for o in subgrid.flatten()])
             gspec = self.clone(objects=objects)
             xoff, yoff = gspec._xoffset, gspec._yoffset
             adjusted = []
@@ -488,7 +487,7 @@ class GridSpec(Panel):
                 if x1 is not None: x1 -= xoff
                 if ((y0, x0, y1, x1), obj) not in adjusted:
                     adjusted.append(((y0, x0, y1, x1), obj))
-            gspec.objects = OrderedDict(adjusted)
+            gspec.objects = dict(adjusted)
             width_scale = gspec.ncols/float(self.ncols)
             height_scale = gspec.nrows/float(self.nrows)
             if gspec.width:
@@ -535,7 +534,7 @@ class GridSpec(Panel):
 
         key = (y0, x0, y1, x1)
         overlap = key in self.objects
-        clone = self.clone(objects=OrderedDict(self.objects), mode='override')
+        clone = self.clone(objects=dict(self.objects), mode='override')
         if not overlap:
             clone.objects[key] = panel(obj)
             clone._update_grid_size()
@@ -545,7 +544,7 @@ class GridSpec(Panel):
             grid[t:b, l:r] += 1
 
         overlap_grid = grid > 1
-        new_objects = OrderedDict(self.objects)
+        new_objects = dict(self.objects)
         if overlap_grid.any():
             overlapping = ''
             objects = []

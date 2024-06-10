@@ -233,9 +233,7 @@ def test_interact_replaces_model(document, comm):
     assert new_pane._models[column.ref['id']][0] is new_div
 
     interact_pane._cleanup(column)
-    assert len(interact_pane._internal_callbacks) == 6
-    # Note one of the callbacks is Viewable._set_background
-    # the counter should be reduced when this function is removed.
+    assert len(interact_pane._internal_callbacks) == 5
 
 
 def test_interact_throttled():
@@ -261,8 +259,4 @@ def test_interact_throttled():
 
     for slider, kwargs in slider_dict.items():
         widget = getattr(widgets, slider)(**kwargs)
-        try:
-            interactive(func, x=widget, throttled=throttled)
-            assert True
-        except Exception as e:
-            assert False, e
+        interactive(func, x=widget, throttled=throttled)

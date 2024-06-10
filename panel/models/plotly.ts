@@ -1,51 +1,75 @@
+import {ModelEvent} from "@bokehjs/core/bokeh_events"
+import type {StyleSheetLike} from "@bokehjs/core/dom"
 import {div} from "@bokehjs/core/dom"
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
+import {isPlainObject, isArray} from "@bokehjs/core/util/types"
 import {clone} from "@bokehjs/core/util/object"
 import {is_equal} from "@bokehjs/core/util/eq"
-import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source";
+import type {Attrs} from "@bokehjs/core/types"
+import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 
 import {debounce} from  "debounce"
-import {deepCopy, isPlainObject, get, throttle} from "./util"
+import {deepCopy, get, reshape, throttle} from "./util"
 
 import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 
+import plotly_css from "styles/models/plotly.css"
+
+export class PlotlyEvent extends ModelEvent {
+  constructor(readonly data: any) {
+    super()
+  }
+
+  protected override get event_values(): Attrs {
+    return {model: this.origin, data: this.data}
+  }
+
+  static {
+    this.prototype.event_name = "plotly_event"
+  }
+}
 
 interface PlotlyHTMLElement extends HTMLDivElement {
   _fullLayout: any
-  layout: any;
-  on(event: 'plotly_relayout', callback: (eventData: any) => void): void;
-  on(event: 'plotly_relayouting', callback: (eventData: any) => void): void;
-  on(event: 'plotly_restyle', callback: (eventData: any) => void): void;
-  on(event: 'plotly_click', callback: (eventData: any) => void): void;
-  on(event: 'plotly_hover', callback: (eventData: any) => void): void;
-  on(event: 'plotly_clickannotation', callback: (eventData: any) => void): void;
-  on(event: 'plotly_selected', callback: (eventData: any) => void): void;
-  on(event: 'plotly_deselect', callback: () => void): void;
-  on(event: 'plotly_unhover', callback: () => void): void;
+  _hoverdata: any
+  layout: any
+  on(event: "plotly_relayout", callback: (eventData: any) => void): void
+  on(event: "plotly_relayouting", callback: (eventData: any) => void): void
+  on(event: "plotly_restyle", callback: (eventData: any) => void): void
+  on(event: "plotly_click", callback: (eventData: any) => void): void
+  on(event: "plotly_hover", callback: (eventData: any) => void): void
+  on(event: "plotly_clickannotation", callback: (eventData: any) => void): void
+  on(event: "plotly_selected", callback: (eventData: any) => void): void
+  on(event: "plotly_deselect", callback: () => void): void
+  on(event: "plotly_unhover", callback: () => void): void
 }
 
 function convertUndefined(obj: any): any {
-  Object
-    .entries(obj)
-    .forEach(([key, value]) => {
-      if (!!value && (typeof value === 'object')) {
-        convertUndefined(value);
-      } else if (value === undefined) {
-        obj[key] = null;
-      }
-    });
-  return obj;
+  if (isArray(obj)) {
+    return obj.map(convertUndefined)
+  } else if (isPlainObject(obj)) {
+    Object
+      .entries(obj)
+      .forEach(([key, value]) => {
+        if (isPlainObject(value) || isArray(value)) {
+          convertUndefined(value)
+        } else if (value === undefined) {
+          obj[key] = null
+        }
+      })
+  }
+  return obj
 }
 
 const filterEventData = (gd: any, eventData: any, event: string) => {
   // Ported from dash-core-components/src/components/Graph.react.js
-  let filteredEventData: {[k: string]: any} = Array.isArray(eventData)? []: {};
+  const filteredEventData: {[k: string]: any} = Array.isArray(eventData)? []: {}
 
   if (event === "click" || event === "hover" || event === "selected") {
-    const points = [];
+    const points = []
 
     if (eventData === undefined || eventData === null) {
-      return null;
+      return null
     }
 
     /*
@@ -56,330 +80,362 @@ const filterEventData = (gd: any, eventData: any, event: string) => {
      * also, pull down the `customdata` point from the data array
      * into the event object
      */
-    const data = gd.data;
+    const data = gd.data
 
     for (let i = 0; i < eventData.points.length; i++) {
-      const fullPoint = eventData.points[i];
+      const fullPoint = eventData.points[i]
 
-      let pointData: {[k: string]: any} = {};
-      for (let property in fullPoint) {
-        const val = fullPoint[property];
+      const pointData: {[k: string]: any} = {}
+      for (const property in fullPoint) {
+        const val = fullPoint[property]
         if (fullPoint.hasOwnProperty(property) &&
             !Array.isArray(val) && !isPlainObject(val) &&
             val !== undefined)  {
-          pointData[property] = val;
+          pointData[property] = val
         }
       }
 
       if (fullPoint !== undefined && fullPoint !== null) {
-        if(fullPoint.hasOwnProperty("curveNumber") &&
+        if (fullPoint.hasOwnProperty("curveNumber") &&
            fullPoint.hasOwnProperty("pointNumber") &&
-           data[fullPoint["curveNumber"]].hasOwnProperty("customdata")) {
+           data[fullPoint.curveNumber].hasOwnProperty("customdata")) {
 
-          pointData["customdata"] =
-            data[fullPoint["curveNumber"]].customdata[
-              fullPoint["pointNumber"]
+          pointData.customdata =
+            data[fullPoint.curveNumber].customdata[
+              fullPoint.pointNumber
             ]
         }
 
         // specific to histogram. see https://github.com/plotly/plotly.js/pull/2113/
-        if (fullPoint.hasOwnProperty('pointNumbers')) {
-          pointData["pointNumbers"] = fullPoint.pointNumbers;
+        if (fullPoint.hasOwnProperty("pointNumbers")) {
+          pointData.pointNumbers = fullPoint.pointNumbers
         }
       }
 
-      points[i] = pointData;
+      points[i] = pointData
     }
-    filteredEventData["points"] = points;
-  } else if (event === 'relayout' || event === 'restyle') {
+    filteredEventData.points = points
+  } else if (event === "relayout" || event === "restyle") {
     /*
      * relayout shouldn't include any big objects
      * it will usually just contain the ranges of the axes like
      * "xaxis.range[0]": 0.7715822247381828,
      * "xaxis.range[1]": 3.0095292008680063`
      */
-    for (let property in eventData) {
+    for (const property in eventData) {
       if (eventData.hasOwnProperty(property))  {
-        filteredEventData[property] = eventData[property];
+        filteredEventData[property] = eventData[property]
       }
     }
   }
-  if (eventData.hasOwnProperty('range')) {
-    filteredEventData["range"] = eventData["range"];
+  if (eventData.hasOwnProperty("range")) {
+    filteredEventData.range = eventData.range
   }
-  if (eventData.hasOwnProperty('lassoPoints')) {
-    filteredEventData["lassoPoints"] = eventData["lassoPoints"];
+  if (eventData.hasOwnProperty("lassoPoints")) {
+    filteredEventData.lassoPoints = eventData.lassoPoints
   }
-  return convertUndefined(filteredEventData);
-};
-
+  return convertUndefined(filteredEventData)
+}
 
 const _isHidden = (gd: any) => {
-  var display = window.getComputedStyle(gd).display;
-  return !display || display === 'none';
-};
-
+  const display = window.getComputedStyle(gd).display
+  return !display || display === "none"
+}
 
 export class PlotlyPlotView extends HTMLBoxView {
-  model: PlotlyPlot
+  declare model: PlotlyPlot
+
   _setViewport: Function
   _settingViewport: boolean = false
   _plotInitialized: boolean = false
   _rendered: boolean = false
   _reacting: boolean = false
   _relayouting: boolean = false
+  _hoverdata: any = null
   container: PlotlyHTMLElement
   _watched_sources: string[]
   _end_relayouting = debounce(() => {
     this._relayouting = false
   }, 2000, false)
 
-  connect_signals(): void {
-    super.connect_signals();
-    const {data, data_sources, layout, relayout, restyle} = this.model.properties
+  override connect_signals(): void {
+    super.connect_signals()
+
+    const {
+      data, data_sources, layout, relayout, restyle, viewport_update_policy,
+      viewport_update_throttle, _render_count, frames, viewport,
+    } = this.model.properties
+
     this.on_change([data, data_sources, layout], () => {
       const render_count = this.model._render_count
       setTimeout(() => {
-        if (this.model._render_count === render_count)
-          this.model._render_count += 1;
+        if (this.model._render_count === render_count) {
+          this.model._render_count += 1
+        }
       }, 250)
-    });
-    this.on_change([relayout], () => {
-      if (this.model.relayout == null)
+    })
+    this.on_change(relayout, () => {
+      if (this.model.relayout == null) {
         return
+      }
       (window as any).Plotly.relayout(this.container, this.model.relayout)
       this.model.relayout = null
     })
-    this.on_change([restyle], () => {
-      if (this.model.restyle == null)
+    this.on_change(restyle, () => {
+      if (this.model.restyle == null) {
         return
+      }
       (window as any).Plotly.restyle(this.container, this.model.restyle.data, this.model.restyle.traces)
       this.model.restyle = null
     })
 
-    this.connect(this.model.properties.viewport_update_policy.change, () => {
+    this.on_change(viewport_update_policy, () => {
       this._updateSetViewportFunction()
-    });
-    this.connect(this.model.properties.viewport_update_throttle.change, () => {
+    })
+    this.on_change(viewport_update_throttle, () => {
       this._updateSetViewportFunction()
-    });
-    this.connect(this.model.properties._render_count.change, () => {
+    })
+    this.on_change(_render_count, () => {
       this.plot()
-    });
-    this.connect(this.model.properties.frames.change, () => {
+    })
+    this.on_change(frames, () => {
       this.plot(true)
-    });
-    this.connect(this.model.properties.viewport.change, () => this._updateViewportFromProperty());
+    })
+    this.on_change(viewport, () => {
+      this._updateViewportFromProperty()
+    })
+  }
+
+  override stylesheets(): StyleSheetLike[] {
+    return [...super.stylesheets(), plotly_css]
   }
 
   override remove(): void {
-    (window as any).Plotly.purge(this.container)
+    if (this.container != null) {
+      (window as any).Plotly.purge(this.container)
+    }
     super.remove()
   }
 
-  render(): void {
+  override render(): void {
     super.render()
-    this.container = <PlotlyHTMLElement>div()
+    this.container = div() as PlotlyHTMLElement
     set_size(this.container, this.model)
     this._rendered = false
     this.shadow_el.appendChild(this.container)
     this.watch_stylesheets()
     this.plot().then(() => {
       this._rendered = true
-      if (this.model.relayout != null)
-	(window as any).Plotly.relayout(this.container, this.model.relayout);
-      (window as any).Plotly.Plots.resize(this.container);
+      if (this.model.relayout != null) {
+        (window as any).Plotly.relayout(this.container, this.model.relayout)
+      }
+      (window as any).Plotly.Plots.resize(this.container)
     })
   }
 
-  style_redraw(): void {
-    if (this._rendered)
-      (window as any).Plotly.Plots.resize(this.container);
+  override style_redraw(): void {
+    if (this._rendered && this.container != null) {
+      (window as any).Plotly.Plots.resize(this.container)
+    }
   }
 
-  after_layout(): void {
-    super.after_layout();
-    if (this._rendered)
+  override after_layout(): void {
+    super.after_layout()
+    if (this._rendered && this.container != null) {
       (window as any).Plotly.Plots.resize(this.container)
+    }
   }
 
   _trace_data(): any {
-    const data = [];
-    for (let i = 0; i < this.model.data.length; i++)
+    const data = []
+    for (let i = 0; i < this.model.data.length; i++) {
       data.push(this._get_trace(i, false))
+    }
     return data
   }
 
   _layout_data(): any {
-    const newLayout = deepCopy(this.model.layout);
+    const newLayout = deepCopy(this.model.layout)
     if (this._relayouting) {
-      const {layout} = this.container;
+      const {layout} = this.container
 
       // For each xaxis* and yaxis* property of layout, if the value has a 'range'
       // property then use this in newLayout
       Object.keys(layout).reduce((value: any, key: string) => {
-        if (key.slice(1, 5) === "axis" && 'range' in value) {
-          newLayout[key].range = value.range;
+        if (key.slice(1, 5) === "axis" && "range" in value) {
+          newLayout[key].range = value.range
         }
-      }, {});
+      }, {})
     }
     return newLayout
   }
 
   _install_callbacks(): void {
     //  - plotly_relayout
-    this.container.on('plotly_relayout', (eventData: any) => {
-      if (eventData['_update_from_property'] !== true) {
-	this.model.relayout_data = filterEventData(
-          this.container, eventData, 'relayout');
+    this.container.on("plotly_relayout", (eventData: any) => {
+      if (eventData._update_from_property !== true) {
+        this.model.relayout_data = filterEventData(
+          this.container, eventData, "relayout")
 
-        this._updateViewportProperty();
+        this._updateViewportProperty()
 
-        this._end_relayouting();
+        this._end_relayouting()
       }
-    });
+    })
 
     //  - plotly_relayouting
-    this.container.on('plotly_relayouting', () => {
-      if (this.model.viewport_update_policy !== 'mouseup') {
-        this._relayouting = true;
-        this._updateViewportProperty();
+    this.container.on("plotly_relayouting", () => {
+      if (this.model.viewport_update_policy !== "mouseup") {
+        this._relayouting = true
+        this._updateViewportProperty()
       }
-    });
+    })
 
     //  - plotly_restyle
-    this.container.on('plotly_restyle', (eventData: any) => {
+    this.container.on("plotly_restyle", (eventData: any) => {
       this.model.restyle_data = filterEventData(
-        this.container, eventData, 'restyle');
+        this.container, eventData, "restyle")
 
-      this._updateViewportProperty();
-    });
+      this._updateViewportProperty()
+    })
 
     //  - plotly_click
-    this.container.on('plotly_click', (eventData: any) => {
-      this.model.click_data = filterEventData(
-        this.container, eventData, 'click');
-    });
+    this.container.on("plotly_click", (eventData: any) => {
+      const data = filterEventData(this.container, eventData, "click")
+      this.model.trigger_event(new PlotlyEvent({type: "click", data}))
+    })
 
     //  - plotly_hover
-    this.container.on('plotly_hover', (eventData: any) => {
-      this.model.hover_data = filterEventData(
-        this.container, eventData, 'hover');
-    });
+    this.container.on("plotly_hover", (eventData: any) => {
+      const data = filterEventData(this.container, eventData, "hover")
+      this.model.trigger_event(new PlotlyEvent({type: "hover", data}))
+      // Override hoverdata to ensure click event has context
+      // see https://github.com/holoviz/panel/pull/6753
+      this._hoverdata = this.container._hoverdata = eventData.points
+    })
 
     //  - plotly_selected
-    this.container.on('plotly_selected', (eventData: any) => {
-      this.model.selected_data = filterEventData(
-        this.container, eventData, 'selected');
-    });
+    this.container.on("plotly_selected", (eventData: any) => {
+      const data = filterEventData(this.container, eventData, "selected")
+      this.model.trigger_event(new PlotlyEvent({type: "selected", data}))
+    })
 
     //  - plotly_clickannotation
-    this.container.on('plotly_clickannotation', (eventData: any) => {
-      delete eventData["event"];
-      delete eventData["fullAnnotation"];
-      this.model.clickannotation_data = eventData
-    });
+    this.container.on("plotly_clickannotation", (eventData: any) => {
+      delete eventData.event
+      delete eventData.fullAnnotation
+      this.model.trigger_event(new PlotlyEvent({type: "clickannotation", data: eventData}))
+    })
 
     //  - plotly_deselect
-    this.container.on('plotly_deselect', () => {
-      this.model.selected_data = null;
-    });
+    this.container.on("plotly_deselect", () => {
+      this.model.trigger_event(new PlotlyEvent({type: "selected", data: null}))
+    })
 
     //  - plotly_unhover
-    this.container.on('plotly_unhover', () => {
-      this.model.hover_data = null;
-    });
+    this.container.on("plotly_unhover", () => {
+      // Override hoverdata to ensure click event has context
+      this.container._hoverdata = this._hoverdata
+      this.model.trigger_event(new PlotlyEvent({type: "hover", data: null}))
+      setTimeout(() => {
+        // Remove hoverdata once events have been processed
+        delete this.container._hoverdata
+      }, 0)
+    })
   }
 
   async plot(new_plot: boolean=false): Promise<void> {
-    if (!(window as any).Plotly)
+    if (!(window as any).Plotly) {
       return
+    }
     const data = this._trace_data()
     const newLayout = this._layout_data()
     this._reacting = true
     if (new_plot) {
-      const obj = {data: data, layout: newLayout, config: this.model.config, frames: this.model.frames}
+      const obj = {data, layout: newLayout, config: this.model.config, frames: this.model.frames}
       await (window as any).Plotly.newPlot(this.container, obj)
     } else {
       await (window as any).Plotly.react(this.container, data, newLayout, this.model.config)
-      if (this.model.frames != null)
+      if (this.model.frames != null) {
         await (window as any).Plotly.addFrames(this.container, this.model.frames)
+      }
     }
     this._updateSetViewportFunction()
     this._updateViewportProperty()
-    if (!this._plotInitialized)
+    if (!this._plotInitialized) {
       this._install_callbacks()
-    else if (!_isHidden(this.container))
+    } else if (!_isHidden(this.container)) {
       (window as any).Plotly.Plots.resize(this.container)
+    }
     this._reacting = false
     this._plotInitialized = true
   }
 
   _get_trace(index: number, update: boolean): any {
-    const trace = clone(this.model.data[index]);
-    const cds = this.model.data_sources[index];
+    const trace = clone(this.model.data[index]) as any
+    const cds = this.model.data_sources[index]
     for (const column of cds.columns()) {
-      let array = cds.get_array(column)[0];
+      let array = cds.get_array(column)[0]
       if (array.shape != null && array.shape.length > 1) {
-        const arrays = [];
-        const shape = array.shape;
-        for (let s = 0; s < shape[0]; s++) {
-          arrays.push(array.slice(s*shape[1], (s+1)*shape[1]));
-        }
-        array = arrays;
+        array = reshape(array, array.shape)
       }
-      let prop_path = column.split(".");
-      let prop = prop_path[prop_path.length - 1];
-      let prop_parent = trace;
-      for (let k of prop_path.slice(0, -1)) {
-        prop_parent = (prop_parent[k] as any)
+      const prop_path = column.split(".")
+      const prop = prop_path[prop_path.length - 1]
+      let prop_parent = trace
+      for (const k of prop_path.slice(0, -1)) {
+        prop_parent = (prop_parent[k])
       }
 
       if (update && prop_path.length == 1) {
-        prop_parent[prop] = [array];
+        prop_parent[prop] = [array]
       } else {
-        prop_parent[prop] = array;
+        prop_parent[prop] = array
       }
     }
-    return trace;
+    return trace
   }
 
   _updateViewportFromProperty(): void {
-    if (!(window as any).Plotly || this._settingViewport || this._reacting || !this.model.viewport ) { return }
+    if (!(window as any).Plotly || this._settingViewport || this._reacting || !this.model.viewport) {
+      return
+    }
 
-    const fullLayout = this.container._fullLayout;
+    const fullLayout = this.container._fullLayout
 
     // Call relayout if viewport differs from fullLayout
     Object.keys(this.model.viewport).reduce((value: any, key: string) => {
       if (!is_equal(get(fullLayout, key), value)) {
-        let clonedViewport = deepCopy(this.model.viewport)
-        clonedViewport['_update_from_property'] = true
+        const clonedViewport = deepCopy(this.model.viewport)
+        clonedViewport._update_from_property = true
         this._settingViewport = true;
         (window as any).Plotly.relayout(this.el, clonedViewport).then(() => {
-          this._settingViewport = false;
+          this._settingViewport = false
         })
         return false
       } else {
         return true
       }
-    }, {});
+    }, {})
   }
 
   _updateViewportProperty(): void {
-    const fullLayout = this.container._fullLayout;
-    let viewport: any = {};
+    const fullLayout = this.container._fullLayout
+    const viewport: any = {}
 
     // Get range for all xaxis and yaxis properties
-    for (let prop in fullLayout) {
-      if (!fullLayout.hasOwnProperty(prop))
+    for (const prop in fullLayout) {
+      if (!fullLayout.hasOwnProperty(prop)) {
         continue
-      let maybe_axis = prop.slice(0, 5);
-      if (maybe_axis === 'xaxis' || maybe_axis === 'yaxis')
-        viewport[prop + '.range'] = deepCopy(fullLayout[prop].range)
+      }
+      const maybe_axis = prop.slice(0, 5)
+      if (maybe_axis === "xaxis" || maybe_axis === "yaxis") {
+        viewport[`${prop  }.range`] = deepCopy(fullLayout[prop].range)
+      }
     }
 
-    if (!is_equal(viewport, this.model.viewport))
+    if (!is_equal(viewport, this.model.viewport)) {
       this._setViewport(viewport)
+    }
   }
 
   _updateSetViewportFunction(): void {
@@ -416,10 +472,6 @@ export namespace PlotlyPlot {
     restyle: p.Property<any>
     relayout_data: p.Property<any>
     restyle_data: p.Property<any>
-    click_data: p.Property<any>
-    hover_data: p.Property<any>
-    clickannotation_data: p.Property<any>
-    selected_data: p.Property<any>
     viewport: p.Property<any>
     viewport_update_policy: p.Property<string>
     viewport_update_throttle: p.Property<number>
@@ -430,35 +482,31 @@ export namespace PlotlyPlot {
 export interface PlotlyPlot extends PlotlyPlot.Attrs {}
 
 export class PlotlyPlot extends HTMLBox {
-  properties: PlotlyPlot.Props
+  declare properties: PlotlyPlot.Props
 
   constructor(attrs?: Partial<PlotlyPlot.Attrs>) {
     super(attrs)
   }
 
-  static __module__ = "panel.models.plotly"
+  static override __module__ = "panel.models.plotly"
 
   static {
     this.prototype.default_view = PlotlyPlotView
 
-    this.define<PlotlyPlot.Props>(({Array, Any, Nullable, Number, Ref, String}) => ({
-      data: [ Array(Any), [] ],
+    this.define<PlotlyPlot.Props>(({List, Any, Nullable, Float, Ref, Str}) => ({
+      data: [ List(Any), [] ],
       layout: [ Any, {} ],
       config: [ Any, {} ],
-      frames: [ Nullable(Array(Any)), null ],
-      data_sources: [ Array(Ref(ColumnDataSource)), [] ],
+      frames: [ Nullable(List(Any)), null ],
+      data_sources: [ List(Ref(ColumnDataSource)), [] ],
       relayout: [ Nullable(Any), {} ],
       restyle: [ Nullable(Any), {} ],
       relayout_data: [ Any, {} ],
-      restyle_data: [ Array(Any), [] ],
-      click_data: [ Any, {} ],
-      hover_data: [ Any, {} ],
-      clickannotation_data: [ Any, {} ],
-      selected_data: [ Any, {} ],
+      restyle_data: [ List(Any), [] ],
       viewport: [ Any, {} ],
-      viewport_update_policy: [ String, "mouseup" ],
-      viewport_update_throttle: [ Number, 200 ],
-      _render_count: [ Number, 0 ],
+      viewport_update_policy: [ Str, "mouseup" ],
+      viewport_update_throttle: [ Float, 200 ],
+      _render_count: [ Float, 0 ],
     }))
   }
 }

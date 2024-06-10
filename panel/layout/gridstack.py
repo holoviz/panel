@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections import OrderedDict
-from typing import ClassVar, List, Mapping
+from typing import ClassVar, Mapping
 
 import param
 
@@ -143,7 +142,7 @@ class GridStack(ReactiveHTML, GridSpec):
         'nrows': 'nrows', 'ncols': 'ncols', 'objects': 'objects'
     }
 
-    _stylesheets: ClassVar[List[str]] = [
+    _stylesheets: ClassVar[list[str]] = [
         f'{CDN_DIST}css/gridstack.css'
     ]
 
@@ -163,7 +162,7 @@ class GridStack(ReactiveHTML, GridSpec):
 
     @param.depends('state', watch=True)
     def _update_objects(self):
-        objects = OrderedDict()
+        objects = {}
         object_ids = {str(id(obj)): obj for obj in self}
         for p in self.state:
             objects[(p['y0'], p['x0'], p['y1'], p['x1'])] = object_ids[p['id']]
@@ -183,7 +182,7 @@ class GridStack(ReactiveHTML, GridSpec):
         else:
             height = 0
 
-        for i, ((y0, x0, y1, x1), obj) in enumerate(self.objects.items()):
+        for (y0, x0, y1, x1), obj in self.objects.items():
             x0 = 0 if x0 is None else x0
             x1 = (self.ncols) if x1 is None else x1
             y0 = 0 if y0 is None else y0

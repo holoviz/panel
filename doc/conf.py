@@ -66,7 +66,6 @@ html_theme_options = {
             "icon": "fa-brands fa-discord",
         },
     ],
-    "analytics": {"google_analytics_id": "G-L0C8PGT2LM"},
     "pygment_light_style": "material",
     "pygment_dark_style": "material",
     "header_links_before_dropdown": 5,
@@ -75,22 +74,37 @@ html_theme_options = {
         "panelitelink",
         "page-toc",
     ],
+    "announcement": "Panel 1.4 has just been released! Checkout the <a href='https://panel.holoviz.org/about/releases.html#version-1-4-0'>release notes</a> and support Panel by giving it a 🌟 on <a href='https://github.com/holoviz/panel'>Github</a>.",
 }
 
 extensions += [
     'sphinx.ext.napoleon',
     'nbsite.gallery',
     'sphinx_copybutton',
-    'nbsite.pyodide'
+    'nbsite.pyodide',
+    'nbsite.analytics',
 ]
 napoleon_numpy_docstring = True
 
 myst_enable_extensions = ["colon_fence", "deflist"]
 
 gallery_endpoint = 'panel-gallery-dev' if is_dev else 'panel-gallery'
-gallery_url = f'https://{gallery_endpoint}.pyviz.demo.anaconda.com'
-jlite_url = 'https://pyviz-dev.github.io/panelite-dev' if is_dev else 'https://panelite.holoviz.org'
-pyodide_url = 'https://pyviz-dev.github.io/panel/pyodide' if is_dev else 'https://panel.holoviz.org/pyodide'
+gallery_url = f'https://{gallery_endpoint}.holoviz-demo.anaconda.com'
+jlite_url = 'https://holoviz-dev.github.io/panelite-dev' if is_dev else 'https://panelite.holoviz.org'
+pyodide_url = 'https://holoviz-dev.github.io/panel/pyodide' if is_dev else 'https://panel.holoviz.org/pyodide'
+
+rediraffe_redirects = {
+    # Removal of the developer testing page
+    'developer_guide/testing': 'developer_guide/index',
+    'user_guide/APIs': 'explanation/api/index',
+    'user_guide/Pipelines': 'how_to/pipeline/index',
+    'user_guide/Templates': 'how_to/templates/index',
+    'user_guide/Server_Configuration': 'how_to/server/index',
+}
+
+nbsite_analytics = {
+    'goatcounter_holoviz': True,
+}
 
 nbsite_gallery_conf = {
     'github_org': 'holoviz',
@@ -171,6 +185,10 @@ nbbuild_patterns_to_take_along = ["simple.html", "*.json", "json_*"]
 # Override the Sphinx default title that appends `documentation`
 html_title = f'{project} v{version}'
 
+# Ensure the global version string includes the SHA to ensure the service
+# worker is invalidated on builds between tags
+if is_dev:
+    version = panel.__version__
 
 # Patching GridItemCardDirective to be able to substitute the domain name
 # in the link option.

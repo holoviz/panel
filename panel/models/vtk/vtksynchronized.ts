@@ -1,4 +1,4 @@
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 import {clone} from "@bokehjs/core/util/object"
 
 import {debounce} from  "debounce"
@@ -12,31 +12,32 @@ import {vtkns} from "./util"
 const CONTEXT_NAME = "panel"
 
 export class VTKSynchronizedPlotView extends AbstractVTKView {
-  model: VTKSynchronizedPlot
+  declare model: VTKSynchronizedPlot
+
   protected _synchronizer_context: any
   protected _arrays: any
   public registerArray: CallableFunction
 
-  initialize(): void {
+  override initialize(): void {
     super.initialize()
     this._renderable = false
 
-    // Context initialisation
+    // Context initialization
     this._synchronizer_context = vtkns.SynchronizableRenderWindow.getSynchronizerContext(
-      `${CONTEXT_NAME}-{this.model.id}`
+      `${CONTEXT_NAME}-{this.model.id}`,
     )
   }
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
-    const update = debounce(() => {
+
+    const {arrays, scene, one_time_reset} = this.model.properties
+    this.on_change([arrays, scene], debounce(() => {
       this._vtk_renwin.delete()
       this._vtk_renwin = null
       this.invalidate_render()
-    }, 20)
-    this.connect(this.model.properties.arrays.change, update)
-    this.connect(this.model.properties.scene.change, update)
-    this.connect(this.model.properties.one_time_reset.change, () => {
+    }, 20))
+    this.on_change(one_time_reset, () => {
       this._vtk_renwin.getRenderWindow().clearOneTimeUpdaters()
     })
   }
@@ -71,10 +72,14 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
       this._vtk_renwin
         .getRenderer()
         .getActiveCamera()
-        .onModified(() => this._vtk_render())
+        .onModified(() => this._vtk_render()),
     )
-    if (!this._orientationWidget) this._create_orientation_widget()
-    if (!this._axes) this._set_axes()
+    if (!this._orientationWidget) {
+      this._create_orientation_widget()
+    }
+    if (!this._axes) {
+      this._set_axes()
+    }
     this._vtk_renwin.resize()
     this._vtk_render()
   }
@@ -87,10 +92,11 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
       return Promise.resolve(this.model.arrays[hash])
     })
     const renderer = this._synchronizer_context.getInstance(
-      this.model.scene.dependencies[0].id
+      this.model.scene.dependencies[0].id,
     )
-    if (renderer && !this._vtk_renwin.getRenderer())
+    if (renderer && !this._vtk_renwin.getRenderer()) {
       this._vtk_renwin.getRenderWindow().addRenderer(renderer)
+    }
     return this._vtk_renwin
       .getRenderWindow()
       .synchronize(state).then(onSceneReady)
@@ -111,11 +117,11 @@ export namespace VTKSynchronizedPlot {
 export interface VTKSynchronizedPlot extends VTKSynchronizedPlot.Attrs {}
 
 export class VTKSynchronizedPlot extends AbstractVTKPlot {
-  properties: VTKSynchronizedPlot.Props
+  declare properties: VTKSynchronizedPlot.Props
   outline: any
   outline_actor: any
 
-  static __module__ = "panel.models.vtk"
+  static override __module__ = "panel.models.vtk"
 
   constructor(attrs?: Partial<VTKSynchronizedPlot.Attrs>) {
     super(attrs)
@@ -127,7 +133,7 @@ export class VTKSynchronizedPlot extends AbstractVTKPlot {
     this.outline_actor.setMapper(mapper)
   }
 
-  getActors(ptr_ref?: string): [any] {
+  override getActors(ptr_ref?: string): [any] {
     let actors = this.renderer_el.getRenderer().getActors()
     if (ptr_ref) {
       const context = this.renderer_el.getSynchronizerContext(CONTEXT_NAME)

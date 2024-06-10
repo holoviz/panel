@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 import os
 import platform
@@ -6,7 +7,6 @@ import subprocess
 import sys
 import time
 import uuid
-import warnings
 
 from queue import Empty, Queue
 from threading import Thread
@@ -56,7 +56,7 @@ jb_available = pytest.mark.skipif(jupyter_bokeh is None, reason="requires jupyte
 APP_PATTERN = re.compile(r'Bokeh app running at: http://localhost:(\d+)/')
 ON_POSIX = 'posix' in sys.builtin_module_names
 
-unix_only = pytest.mark.skipif(platform.system() != 'Linux', reason="Only supported on Linux")
+linux_only = pytest.mark.skipif(platform.system() != 'Linux', reason="Only supported on Linux")
 
 from panel.pane.alert import Alert
 from panel.pane.markup import Markdown
@@ -75,12 +75,6 @@ def mpl_figure():
 def check_layoutable_properties(layoutable, model):
     layoutable.styles = {"background": '#fffff0'}
     assert model.styles["background"] == '#fffff0'
-
-    # Is deprecated, but we still support it for now.
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        layoutable.background = '#ffffff'
-    assert model.styles["background"] == '#ffffff'
 
     layoutable.css_classes = ['custom_class']
     if isinstance(layoutable, Alert):
@@ -125,7 +119,7 @@ def check_layoutable_properties(layoutable, model):
 
 def wait_until(fn, page=None, timeout=5000, interval=100):
     """
-    Exercice a test function in a loop until it evaluates to True
+    Exercise a test function in a loop until it evaluates to True
     or times out.
 
     The function can either be a simple lambda that returns True or False:
@@ -192,6 +186,77 @@ def wait_until(fn, page=None, timeout=5000, interval=100):
             time.sleep(interval / 1000)
 
 
+async def async_wait_until(fn, page=None, timeout=5000, interval=100):
+    """
+    Exercise a test function in a loop until it evaluates to True
+    or times out.
+
+    The function can either be a simple lambda that returns True or False:
+    >>> await async_wait_until(lambda: x.values() == ['x'])
+
+    Or a defined function with an assert:
+    >>> async def _()
+    >>>    assert x.values() == ['x']
+    >>> await async_wait_until(_)
+
+    In a Playwright context test, you should pass the page fixture:
+    >>> await async_wait_until(lambda: x.values() == ['x'], page)
+
+    Parameters
+    ----------
+    fn : callable
+        Callback
+    page : playwright.async_api.Page, optional
+        Playwright page
+    timeout : int, optional
+        Total timeout in milliseconds, by default 5000
+    interval : int, optional
+        Waiting interval, by default 100
+
+    Adapted from pytest-qt.
+    """
+    # Hide this function traceback from the pytest output if the test fails
+    __tracebackhide__ = True
+
+    start = time.time()
+
+    def timed_out():
+        elapsed = time.time() - start
+        elapsed_ms = elapsed * 1000
+        return elapsed_ms > timeout
+
+    timeout_msg = f"async_wait_until timed out in {timeout} milliseconds"
+
+    while True:
+        try:
+            result = fn()
+            if asyncio.iscoroutine(result):
+                result = await result
+        except AssertionError as e:
+            if timed_out():
+                raise TimeoutError(timeout_msg) from e
+        else:
+            if result not in (None, True, False):
+                raise ValueError(
+                    "`async_wait_until` callback must return None, True, or "
+                    f"False, returned {result!r}"
+                )
+            # None is returned when the function has an assert
+            if result is None:
+                return
+            # When the function returns True or False
+            if result:
+                return
+            if timed_out():
+                raise TimeoutError(timeout_msg)
+        if page:
+            # Playwright recommends against using time.sleep
+            # https://playwright.dev/python/docs/intro#timesleep-leads-to-outdated-state
+            await page.wait_for_timeout(interval)
+        else:
+            await asyncio.sleep(interval / 1000)
+
+
 def get_ctrl_modifier():
     """
     Get the CTRL modifier on the current platform.
@@ -205,7 +270,7 @@ def get_ctrl_modifier():
 
 
 def serve_and_wait(app, page=None, prefix=None, port=None, **kwargs):
-    server_id = uuid.uuid4().hex
+    server_id = kwargs.pop('server_id', uuid.uuid4().hex)
     serve(app, port=port or 0, threaded=True, show=False, liveness=True, server_id=server_id, prefix=prefix or "", **kwargs)
     wait_until(lambda: server_id in state._servers, page)
     server = state._servers[server_id][0]
@@ -307,7 +372,7 @@ def wait_for_port(stdout):
     nbsr = NBSR(stdout)
     m = None
     output = []
-    for i in range(20):
+    for _ in range(20):
         o = nbsr.readline(0.5)
         if not o:
             continue

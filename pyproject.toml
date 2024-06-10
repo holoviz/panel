@@ -1,17 +1,120 @@
 [build-system]
 requires = [
-    "param >=2.0.0",
-    "pyct >=0.4.4",
-    "setuptools >=42",
-    "bokeh >=3.3.0,<3.4.0",
+    "hatchling",
+    "hatch-vcs",
+    "param >=2.1.0",
+    "bokeh ==3.5.0.dev6",
     "pyviz_comms >=0.7.4",
     "requests",
-    "bleach",
     "packaging",
-    "tqdm >=4.48.0",
-    "markdown",
-    "wheel"
 ]
+build-backend = "hatchling.build"
+
+[project]
+name = "panel"
+dynamic = ["version"]
+description = 'The powerful data exploration & web app framework for Python.'
+readme = "README.md"
+license = { text = "BSD" }
+requires-python = ">=3.10"
+authors = [{ name = "HoloViz developers", email = "developers@holoviz.org" }]
+maintainers = [
+    { name = "HoloViz developers", email = "developers@holoviz.org" },
+]
+classifiers = [
+    "License :: OSI Approved :: BSD License",
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Healthcare Industry",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Legal Industry",
+    "Intended Audience :: Other Audience",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Office/Business",
+    "Topic :: Office/Business :: Financial",
+    "Topic :: Software Development :: Libraries",
+]
+
+dependencies = [
+    'bokeh ==3.5.0.dev6',
+    'param >=2.1.0,<3.0',
+    'pyviz_comms >=2.0.0',
+    'markdown',
+    'markdown-it-py',
+    'linkify-it-py',
+    'mdit-py-plugins',
+    'requests',
+    'bleach',
+    'typing_extensions',
+    'pandas >=1.2',
+    'packaging',
+    'tqdm',  # TODO: Should this be optional?
+]
+
+[project.urls]
+Homepage = "https://panel.holoviz.org"
+Source = "https://github.com/holoviz/panel"
+HoloViz = "https://holoviz.org/"
+
+[project.optional-dependencies]
+recommended = [
+    'jupyterlab',
+    'holoviews >=1.16.0',
+    'matplotlib',
+    'pillow',
+    'plotly',
+]
+standard = [
+    'watchfiles',
+]
+tests = [
+    'psutil' ,
+    'pytest',
+    'pytest-asyncio',
+    'pytest-rerunfailures',
+    'pytest-xdist',
+]
+
+[project.scripts]
+panel = "panel.command:main"
+
+[tool.hatch.version]
+source = "vcs"
+raw-options = { version_scheme = "no-guess-dev" }
+
+[tool.hatch.build.targets.wheel]
+include = ["panel"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"panel/dist" = "panel/dist"
+
+[tool.hatch.build.targets.wheel.shared-data]
+"scripts/jupyter-config/notebook.json" = "etc/jupyter/jupyter_notebook_config.d/panel-client-jupyter.json"
+"scripts/jupyter-config/server.json" = "etc/jupyter/jupyter_server_config.d/panel-client-jupyter.json"
+
+[tool.hatch.build.targets.sdist]
+include = ["panel", "scripts", "examples"]
+
+[tool.hatch.build.targets.sdist.force-include]
+"panel/dist" = "panel/dist"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "panel/_version.py"
+
+[tool.hatch.build.hooks.custom]
+path = 'hatch_build.py'
 
 [tool.ruff]
 exclude = [
@@ -34,19 +137,36 @@ fix = true
 
 [tool.ruff.lint]
 ignore = [
-    "E402",
-    "E712",
-    "E731",
-    "E741",
-    "W605",
+    "E402", # Module level import not at top of file
+    "E712", # Avoid equality comparisons to True; use if {cond}: for truth checks
+    "E731", # Do not assign a lambda expression, use a def
+    "E741", # Ambiguous variable name
+    "W605", # Invalid escape sequence
     "E701", # Multiple statements on one line
+    "B006", # Do not use mutable data structures for argument defaults
+    "B905", # `zip()` without an explicit `strict=` parameter
 ]
 select = [
+    "B",
     "E",
     "F",
     "W",
     "PIE",
     "T20",
+    "RUF006",
+    "UP004",
+    "UP006",
+    "UP020",
+    "UP028",
+    "UP030",
+    "UP031",
+    "UP032",
+    "UP034",
+    "UP036",
+]
+unfixable = [
+    "F401", # Unused imports
+    "F841", # Unused variables
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -54,20 +174,30 @@ select = [
 "panel/compiler.py" = ["T201"]
 "panel/io/convert.py" = ["T201"]
 "panel/pane/vtk/synchronizable_*.py" = ["T201"]
+"scripts/*.py" = ["T201"]
+"hatch_build.py" = ["T201"]
+
+[tool.isort]
+force_grid_wrap = 4
+multi_line_output = 5
+combine_as_imports = true
+lines_between_types = 1
+include_trailing_comma = true
 
 [tool.codespell]
-ignore-words-list = "nd,doubleclick"
-skip = "doc/generate_modules.py,examples/reference/templates/FastGridTemplate.ipynb,panel/eslint.js,panel/package-lock.json,panel/package.json"
+ignore-words-list = "nd,doubleclick,ser"
+skip = "doc/generate_modules.py,examples/reference/templates/FastGridTemplate.ipynb,panel/.eslintrc.js,panel/package-lock.json,panel/package.json"
 write-changes = true
 
 [tool.pytest.ini_options]
-addopts = "-v --pyargs --doctest-ignore-import-errors --color=yes"
+# addopts = "-v --pyargs --doctest-ignore-import-errors --color=yes"
+addopts = "--pyargs --doctest-ignore-import-errors --color=yes"
 norecursedirs = "doc .git dist build _build .ipynb_checkpoints panel/examples"
+asyncio_mode = "auto"
 xfail_strict = true
+minversion = "7"
+log_cli_level = "INFO"
 filterwarnings = [
-    # 2023-11: ChatBox and ChatRow are deprecated
-    "ignore:'pn.widgets.ChatBox' is deprecated and will be removed in version 1.4",
-    "ignore:'pn.widgets.ChatRow' is deprecated and will be removed in version 1.4",
     # 2023-11: `pkg_resources` is deprecated
     "ignore:Deprecated call to `pkg_resources.+?'zope:DeprecationWarning",  # https://github.com/zopefoundation/meta/issues/194
     "ignore: pkg_resources is deprecated as an API:DeprecationWarning:streamz.plugins", # https://github.com/python-streamz/streamz/issues/460
