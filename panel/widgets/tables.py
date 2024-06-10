@@ -1191,6 +1191,7 @@ class Tabulator(BaseTable):
         super().__init__(value=value, **params)
         self._configuration = configuration
         self.param.watch(self._update_children, self._content_params)
+        self.param.watch(self._clear_selection_remote_pagination, self.param.value)
         if click_handler:
             self.on_click(click_handler)
         if edit_handler:
@@ -1596,9 +1597,8 @@ class Tabulator(BaseTable):
         for ref, (model, _) in self._models.items():
             self._apply_update([], {'max_page': max_page}, model, ref)
 
-    @param.depends("value", watch=True)
-    def _clear_selection_remote_pagination(self):
-        if self.pagination == 'remote':
+    def _clear_selection_remote_pagination(self, event):
+        if event.new is not event.old and self.pagination == 'remote':
             self.selection = []
 
     def _update_selected(self, *events: param.parameterized.Event, indices=None):
