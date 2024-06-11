@@ -118,7 +118,7 @@ export class jsTreeView extends LayoutDOMView {
 		obj.children_nodes.push(child_node)
 	      }
 	    }
-	    this.model.trigger_event(new NodeEvent({type: "open", node: convertUndefined(obj)}))
+	    this.model.trigger_event(new NodeEvent({type: "load", node: convertUndefined(obj)}))
             new Promise((resolve) => {
               const loop = () => {
                 const nodes = this.model._new_nodes
@@ -128,7 +128,7 @@ export class jsTreeView extends LayoutDOMView {
 		  for (const new_node of nodes) {
 		    if (new_node.parent === obj.id) {
 		      combined.push(new_node)
-		    } else {
+		    } else if (!new_children.includes(new_node)) {
 		      new_children.push(new_node)
 		    }
 		  }
@@ -214,6 +214,7 @@ export class jsTreeView extends LayoutDOMView {
   }
 
   _listen_for_node_open(data: any): void {
+    this.model.trigger_event(new NodeEvent({type: "open", node: {id: data.node.id}}))
     data.node.children_nodes = []
     let request_load = false
     for (const child of data.node.children) {
@@ -225,8 +226,11 @@ export class jsTreeView extends LayoutDOMView {
     }
     if (request_load) {
       data.instance.load_node(data.node.id, (node: Node) => {
+	const tree = this._jstree.jstree(true)
         for (const new_node of node._new_children) {
-          this._jstree.jstree(true).create_node(new_node.parent, new_node)
+	  const parent = tree.get_node(new_node.parent)
+	  parent.state.loaded = true
+          tree.create_node(new_node.parent, new_node)
         }
         delete node._new_children
       })

@@ -90,8 +90,9 @@ class _TreeBase(Widget):
             nodes += cls._traverse(subnode)
         return nodes
 
-    def _reindex(self):
-        self._index = {}
+    def _reindex(self, reset=True):
+        if reset:
+            self._index = {}
         for node in self._nodes:
             for subnode in self._traverse(node):
                 self._index[subnode['id']] = subnode
@@ -127,10 +128,11 @@ class _TreeBase(Widget):
         return model
 
     def _process_event(self, event: NodeEvent):
-        if event.data['type'] == 'open':
+        etype = event.data['type']
+        if etype == 'load':
             self._add_children_on_node_open(event)
-        elif event.data['type'] == 'close':
-            self._index[event.data["node"]["id"]]["state"]["opened"] = False
+        elif etype in ('open', 'close'):
+            self._index[event.data["node"]["id"]]["state"]["opened"] = etype == 'open'
 
     def _add_children_on_node_open(self, event: NodeEvent, **kwargs):
         opened_node = event.data["node"]
@@ -150,7 +152,7 @@ class _TreeBase(Widget):
             for child in children:
                 if child['id'] in self._index:
                     continue
-                new_nodes.extend(children)
+                new_nodes.append(child)
                 self._index[child['id']] = child
                 parent['children'].append(child)
         self._new_nodes = new_nodes

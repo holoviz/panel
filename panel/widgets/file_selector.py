@@ -493,7 +493,7 @@ class FileTree(BaseFileSelector, _TreeBase):
             "state": {"opened": True, "loaded": True},
             "children": children
         }]
-        self._reindex()
+        self._reindex(reset=False)
         if event:
             self._param_change(event)
 
@@ -540,7 +540,7 @@ class FileTree(BaseFileSelector, _TreeBase):
             removed = []
         for subdir in dirs:
             subdir_p = Path(subdir)
-            load = depth > 0 or self._index.get(subdir, {}).get('state', {}).get("opened")
+            load = bool(depth > 0 or self._index.get(subdir, {}).get('state', {}).get("opened"))
             if load:
                 children, removed_children = self._get_children(
                     subdir_p.name, subdir, depth=depth-1
