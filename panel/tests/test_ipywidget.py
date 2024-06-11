@@ -122,10 +122,10 @@ def test_to_viewer_bases(widget):
 
 
 def test_to_rx(widget):
-    name, age, height = to_rx(widget)
-    assert isinstance(name, param.rx)
-    assert isinstance(age, param.rx)
-    assert isinstance(height, param.rx)
+    age, height, name = to_rx(widget)
+    assert isinstance(name, param.reactive.rx)
+    assert isinstance(age, param.reactive.rx)
+    assert isinstance(height, param.reactive.rx)
 
     assert name.rx.value == widget.name
     assert age.rx.value == widget.age
@@ -150,8 +150,8 @@ def test_to_rx(widget):
 
 def test_to_rx_parameter_list(widget):
     name, age = to_rx(widget, parameters=["name", "age"])
-    assert isinstance(name, param.rx)
-    assert isinstance(age, param.rx)
+    assert isinstance(name, param.reactive.rx)
+    assert isinstance(age, param.reactive.rx)
 
     assert name.rx.value == widget.name
     assert age.rx.value == widget.age

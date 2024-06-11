@@ -21,7 +21,9 @@ else:
         """Mock class"""
 
 
-def to_viewer(widget: HasTraits, parameters: Iterable | None = None, **kwargs) -> Viewer:
+def to_viewer(
+    widget: HasTraits, parameters: Iterable | None = None, **kwargs
+) -> Viewer:
     """Returns a Viewer object with parameters synced to the ipywidget widget parameters
 
     Args:
@@ -35,9 +37,22 @@ def to_viewer(widget: HasTraits, parameters: Iterable | None = None, **kwargs) -
     raise NotImplementedError()
 
 
-def to_rx(
-    widget: HasTraits, parameters: Iterable | None = None
-) -> tuple[param.rx, ...]:
+def sync_rx(element: HasTraits, name: str, target: param.rx):
+    """Syncs the ipywidget element.name to the reactive target.rx.value"""
+    target.rx.value = getattr(element, name)
+
+    def set_value(event, target=target):
+        target.rx.value = event["new"]
+
+    element.observe(set_value, names=name)
+
+    def set_name(value, element=element, name=name):
+        setattr(element, name, value)
+
+    target.rx.watch(set_name)
+
+
+def to_rx(widget: HasTraits, parameters: Iterable | None = None) -> tuple[param.rx]:
     """Returns a tuple of `rx` parameters. Each one synced to a parameter of the ipywidget widget.
 
     Args:
@@ -46,4 +61,12 @@ def to_rx(
             If no parameters are specified all parameters on the widget will be added
             and synced.
     """
-    raise NotImplementedError()
+    if not parameters:
+        parameters = widget.traits()
+
+    rx_values = []
+    for name in parameters:
+        rx = param.rx()
+        sync_rx(widget, name, rx)
+        rx_values.append(rx)
+    return tuple(rx_values)
