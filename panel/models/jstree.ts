@@ -28,6 +28,16 @@ export class NodeEvent extends ModelEvent {
   }
 }
 
+function sync_state(node: any, tree: any) {
+  const node_json = tree.get_node(node.id)
+  if (node_json) {
+    node.state = node_json.state
+  }
+  for (const child of (node.children || [])) {
+    sync_state(child, tree)
+  }
+}
+
 export class jsTreeView extends LayoutDOMView {
   declare model: jsTree
   protected _container: HTMLDivElement
@@ -37,13 +47,19 @@ export class jsTreeView extends LayoutDOMView {
   override connect_signals(): void {
     super.connect_signals()
     const {nodes, value, checkbox, show_icons, show_dots, multiple} = this.model.properties
-    this.on_change(nodes, () => this._jstree.jstree(true).load_node("#", () => {
-      this._jstree.jstree(true).refresh({
-        skip_loading: false,
-        forget_state: true,
+    this.on_change(nodes, () => {
+      const tree = this._jstree.jstree(true)
+      for (const node of this.model.nodes) {
+        sync_state(node, tree)
+      }
+      tree.load_node("#", () => {
+        tree.refresh({
+          skip_loading: false,
+          forget_state: false,
+        })
+        this._update_selection_from_value()
       })
-      this._update_selection_from_value()
-    }))
+    })
     this.on_change(value, () => this._update_selection_from_value())
     this.on_change(checkbox, () => this.setCheckboxes())
     this.on_change(show_icons, () => this._setShowIcons())

@@ -73,11 +73,9 @@ class _TreeBase(Widget):
         id_, label, parent: str = None, children: Optional[list] = None,
         icon: str = None, **kwargs
     ):
-        jsn = dict(id=id_, text=label, **kwargs)
+        jsn = dict(id=id_, text=label, children=children or [], **kwargs)
         if parent:
             jsn["parent"] = parent
-        if children:
-            jsn["children"] = children
         if icon:
             jsn["icon"] = icon
         else:
@@ -137,22 +135,28 @@ class _TreeBase(Widget):
         children_nodes = opened_node["children_nodes"]
         new_nodes = []
         for node in children_nodes:
-            children = self._get_children(
+            children, _ = self._get_children(
                 node["text"],
                 node["id"],
                 **{"children_to_skip": nodes_already_sent, **kwargs}
             )
-            new_nodes.extend(children)
-            for child in children:
-                self._index[child['id']] = child
             parent = self._index[node['id']]
             if 'children' not in parent:
                 parent['children'] = []
-            parent['children'].extend(children)
+            for child in children:
+                if child['id'] in self._index:
+                    continue
+                new_nodes.extend(children)
+                self._index[child['id']] = child
+                parent['children'].append(child)
         self._new_nodes = new_nodes
 
     @abstractmethod
     def _get_children(self, node_name, node_id, **kwargs):
+        """
+        Returns the list of children of a node and any children that
+        were removed from the node.
+        """
         raise NotImplementedError()
 
 

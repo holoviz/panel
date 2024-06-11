@@ -106,6 +106,8 @@ class BaseFileProvider:
 
 class LocalFileProvider(BaseFileProvider):
 
+    sep = os.path.sep
+
     def ls(self, path, file_pattern: str = "[!.]*"):
         if not os.path.isdir(path):
             return [], []
@@ -128,6 +130,8 @@ class LocalFileProvider(BaseFileProvider):
 
 class RemoteFileProvider(BaseFileProvider):
 
+    sep = '/'
+
     def __init__(self, fs: AbstractFileSystem):
         self.fs = fs
 
@@ -135,8 +139,8 @@ class RemoteFileProvider(BaseFileProvider):
         return self.fs.isdir(path)
 
     def ls(self, path: str, file_pattern: str = "[!.]*"):
-        if not path.endswith('/'):
-            path += '/'
+        if not path.endswith(self.sep):
+            path += self.sep
         raw_ls = self.fs.ls(path, detail=True)
         prefix = ''
         if scheme:= urlparse(path).scheme:
@@ -184,7 +188,112 @@ class BaseFileSelector(param.Parameterized):
         return self._provider.fs
 
 
-class FileSelector(BaseFileSelector, CompositeWidget):
+class BaseFileNavigator(BaseFileSelector, CompositeWidget):
+
+    _composite_type: ClassVar[type[ListPanel]] = Column
+
+    def __init__(self, directory: AnyStr | os.PathLike | None = None, **params):
+        super().__init__(directory=directory, **params)
+
+        layout = {p: getattr(self, p) for p in Layoutable.param
+                  if p not in ('name', 'height', 'margin') and getattr(self, p) is not None}
+
+        self._back = Button(
+            name='◀', width=40, height=40, margin=(5, 10, 0, 0), disabled=True,
+            align='end', on_click=self._go_back
+        )
+        self._forward = Button(
+            name='▶', width=40, height=40, margin=(5, 10, 0, 0), disabled=True,
+            align='end', on_click=self._go_forward
+        )
+        self._up = Button(
+            name='⬆', width=40, height=40, margin=(5, 10, 0, 0), disabled=True,
+            align='end', on_click=self._go_up
+        )
+        self._directory = TextInput.from_param(
+            self.param.directory, margin=(5, 10, 0, 0), width_policy='max', height_policy='max'
+        )
+        self._go = Button(
+            name='⬇', disabled=True, width=40, height=40, margin=(5, 5, 0, 0),
+            align='end', on_click=self._update_files
+        )
+        self._reload = Button(
+            name='↻', width=40, height=40, margin=(5, 0, 0, 10), align='end',
+            on_click=self._update_files
+        )
+        self._nav_bar = Row(
+            self._back, self._forward, self._up, self._directory, self._go, self._reload,
+            **dict(layout, width=None, margin=0, width_policy='max')
+        )
+        self._composite[:] = [self._nav_bar, Divider(margin=0), self._selector]
+        self._directory.param.watch(self._dir_change, 'value')
+
+        # Set up state
+        self._stack = []
+        self._cwd = None
+        self._position = -1
+        self._update_files(True)
+
+    @property
+    def _root_directory(self):
+        return self.root_directory or self.directory
+
+    def _dir_change(self, event: param.parameterized.Event):
+        path = fullpath(self.directory)
+        if not path.startswith(self._root_directory):
+            self.directory = self._root_directory
+            return
+        elif path != self.directory:
+            self.directory = path
+        self._go.disabled = path == self._cwd
+
+    def _refresh(self):
+        self._update_files(refresh=True)
+
+    def _go_back(self, event: param.parameterized.Event):
+        self._position -= 1
+        self.directory = self._stack[self._position]
+        self._update_files()
+        self._forward.disabled = False
+        if self._position == 0:
+            self._back.disabled = True
+
+    def _go_forward(self, event: param.parameterized.Event):
+        self._position += 1
+        self.directory = self._stack[self._position]
+        self._update_files()
+
+    def _go_up(self, event: Optional[param.parameterized.Event] = None):
+        path = self._cwd.split(os.path.sep)
+        self.directory = os.path.sep.join(path[:-1]) or os.path.sep
+        self._update_files(True)
+
+    def _update_files(
+        self, event: Optional[param.parameterized.Event] = None, refresh: bool = False
+    ):
+        path = self._provider.normalize(self._directory.value)
+        refresh = refresh or (event and getattr(event, 'obj', None) is self._reload)
+        if refresh:
+            path = self._cwd
+        elif not self._provider.isdir(path):
+            self._selector.options = ['Entered path is not valid']
+            self._selector.disabled = True
+            return
+        elif event is not None and (not self._stack or path != self._stack[-1]):
+            self._stack.append(path)
+            self._position += 1
+
+        self._cwd = path
+        if not refresh:
+            self._go.disabled = True
+        self._up.disabled = path == self._root_directory
+        if self._position == len(self._stack)-1:
+            self._forward.disabled = True
+        if 0 <= self._position and len(self._stack) > 1:
+            self._back.disabled = False
+
+
+class FileSelector(BaseFileNavigator):
     """
     The `FileSelector` widget allows browsing the filesystem on the
     server and selecting one or more files in a directory.
@@ -219,48 +328,23 @@ class FileSelector(BaseFileSelector, CompositeWidget):
         from ..pane import Markdown
         if params.get('width') and params.get('height') and 'sizing_mode' not in params:
             params['sizing_mode'] = None
-        super().__init__(directory=directory, fs=fs, **params)
 
-        # Set up layout
         layout = {p: getattr(self, p) for p in Layoutable.param
                   if p not in ('name', 'height', 'margin') and getattr(self, p) is not None}
         sel_layout = dict(layout, sizing_mode='stretch_width', height=300, margin=0)
         self._selector = CrossSelector(
-            filter_fn=lambda p, f: fnmatch(f, p), size=self.size, **sel_layout
+            filter_fn=lambda p, f: fnmatch(f, p), size=self.param.size, **sel_layout
         )
 
-        self._back = Button(name='◀', width=40, height=40, margin=(5, 10, 0, 0), disabled=True, align='center')
-        self._forward = Button(name='▶', width=40, height=40, margin=(5, 10, 0, 0), disabled=True, align='center')
-        self._up = Button(name='⬆', width=40, height=40, margin=(5, 10, 0, 0), disabled=True, align='center')
-        self._directory = TextInput(value=self.directory, margin=(5, 10, 0, 0), width_policy='max', height_policy='max')
-        self._go = Button(name='⬇', disabled=True, width=40, height=40, margin=(5, 5, 0, 0), align='center')
-        self._reload = Button(name='↻', width=40, height=40, margin=(5, 0, 0, 10), align='center')
-        self._nav_bar = Row(
-            self._back, self._forward, self._up, self._directory, self._go, self._reload,
-            **dict(layout, width=None, margin=0, width_policy='max')
-        )
-        self._composite[:] = [self._nav_bar, Divider(margin=0), self._selector]
+        super().__init__(directory=directory, fs=fs, **params)
+
         style = 'h4 { margin-block-start: 0; margin-block-end: 0;}'
         self._selector._selected.insert(0, Markdown('#### Selected files', margin=0, stylesheets=[style]))
         self._selector._unselected.insert(0, Markdown('#### File Browser', margin=0, stylesheets=[style]))
-        self.link(self._selector, size='size')
-
-        # Set up state
-        self._stack = []
-        self._cwd = None
-        self._position = -1
-        self._update_files(True)
 
         # Set up callback
         self._selector._lists[False].on_double_click(self._select_and_go)
-        self.link(self._directory, directory='value')
         self._selector.param.watch(self._update_value, 'value')
-        self._go.on_click(self._update_files)
-        self._reload.on_click(self._update_files)
-        self._up.on_click(self._go_up)
-        self._back.on_click(self._go_back)
-        self._forward.on_click(self._go_forward)
-        self._directory.param.watch(self._dir_change, 'value')
         self._selector._lists[False].param.watch(self._select, 'value')
         self._selector._lists[False].param.watch(self._filter_denylist, 'options')
         self._periodic = PeriodicCallback(callback=self._refresh, period=self.refresh_period or 0)
@@ -287,51 +371,16 @@ class FileSelector(BaseFileSelector, CompositeWidget):
         elif self._periodic.running:
             self._periodic.stop()
 
-    @property
-    def _root_directory(self):
-        return self.root_directory or self.directory
-
     def _update_value(self, event: param.parameterized.Event):
         value = [v for v in event.new if v != '..' and (not self.only_files or os.path.isfile(v))]
         self._selector.value = value
         self.value = value
 
-    def _dir_change(self, event: param.parameterized.Event):
-        path = fullpath(self._directory.value)
-        if not path.startswith(self._root_directory):
-            self._directory.value = self._root_directory
-            return
-        elif path != self._directory.value:
-            self._directory.value = path
-        self._go.disabled = path == self._cwd
-
-    def _refresh(self):
-        self._update_files(refresh=True)
-
     def _update_files(
         self, event: Optional[param.parameterized.Event] = None, refresh: bool = False
     ):
         path = self._provider.normalize(self._directory.value)
-        refresh = refresh or (event and getattr(event, 'obj', None) is self._reload)
-        if refresh:
-            path = self._cwd
-        elif not self._provider.isdir(path):
-            self._selector.options = ['Entered path is not valid']
-            self._selector.disabled = True
-            return
-        elif event is not None and (not self._stack or path != self._stack[-1]):
-            self._stack.append(path)
-            self._position += 1
-
-        self._cwd = path
-        if not refresh:
-            self._go.disabled = True
-        self._up.disabled = path == self._root_directory
-        if self._position == len(self._stack)-1:
-            self._forward.disabled = True
-        if 0 <= self._position and len(self._stack) > 1:
-            self._back.disabled = False
-
+        super()._update_files(event, refresh)
         selected = self.value
         dirs, files = self._provider.ls(path, self.file_pattern)
         for s in selected:
@@ -389,24 +438,6 @@ class FileSelector(BaseFileSelector, CompositeWidget):
         else:
             self._directory.value = self._cwd
 
-    def _go_back(self, event: param.parameterized.Event):
-        self._position -= 1
-        self._directory.value = self._stack[self._position]
-        self._update_files()
-        self._forward.disabled = False
-        if self._position == 0:
-            self._back.disabled = True
-
-    def _go_forward(self, event: param.parameterized.Event):
-        self._position += 1
-        self._directory.value = self._stack[self._position]
-        self._update_files()
-
-    def _go_up(self, event: Optional[param.parameterized.Event] = None):
-        path = self._cwd.split(os.path.sep)
-        self._directory.value = os.path.sep.join(path[:-1]) or os.path.sep
-        self._update_files(True)
-
 
 class FileTree(BaseFileSelector, _TreeBase):
     """
@@ -424,28 +455,54 @@ class FileTree(BaseFileSelector, _TreeBase):
         'directory': None,
         'file_pattern': None,
         'root_directory': None,
-        'provider': None,
         'only_files': 'cascade',
         'max_depth': None,
         **_TreeBase._rename,
     }
 
-    @param.depends('directory', watch=True, on_init=True)
-    def _set_data_from_directory(self, *event):
+    def __init__(
+        self,
+        directory: AnyStr | os.PathLike | None = None,
+        fs: AbstractFileSystem | None = None,
+        **params,
+    ):
+        self._index = {}
+        super().__init__(directory, fs, **params)
+        self._internal_callbacks.append(
+            self.param.watch(self._set_data_from_directory, 'directory')
+        )
+        self._set_data_from_directory()
+
+    def _set_data_from_directory(self, *events):
+        children, _ = self._get_children(
+            Path(self.directory).name, self.directory, depth=1
+        )
         self._nodes = [{
-            "id": self._provider.normalize(self.directory),
+            "id": self._provider.normalize(self.directory)+self._provider.sep,
             "text": Path(self.directory).name,
             "icon": "jstree-folder",
             "type": "folder",
             "state": {"opened": True},
-            "children": self._get_children(Path(self.directory).name, self.directory, depth=1)
+            "children": children
         }]
         self._reindex()
+        if events:
+            self._param_change(*events)
+
+    def _process_param_change(self, params):
+        if 'directory' in params:
+            params['nodes'] = self._nodes
+            del params['directory']
+        props = super()._process_param_change(params)
+        return props
 
     def _process_property_change(self, msg):
         props = super()._process_property_change(msg)
         if "value" in props and self.only_files:
-            props["value"] = [node_id for node_id in props["value"] if self._index.get(node_id, {}).get("type") == "file"]
+            props["value"] = [
+                node_id for node_id in props["value"]
+                if self._index.get(node_id, {}).get("type") == "file"
+            ]
         return props
 
     def _exceed_max_depth(self, path):
@@ -460,27 +517,45 @@ class FileTree(BaseFileSelector, _TreeBase):
         parent = str(directory)  # TODO(hoxbro): Either the type hint is wrong or this is not needed
         nodes = []
         dirs, files = self._get_paths(directory, children_to_skip=children_to_skip)
+        parent_node = self._index.get(parent)
+        if parent_node:
+            removed = [sn for sn in parent_node['children'] if sn['id'] not in dirs+files]
+            parent_node['children'] = [sn for sn in parent_node['children'] if sn not in removed]
+        else:
+            removed = []
         for subdir in dirs:
             subdir_p = Path(subdir)
             if depth > 0:
-                children = self._get_children(subdir_p.name, subdir, depth=depth - 1)
+                children, removed_children = self._get_children(
+                    subdir_p.name, subdir, depth=depth-1
+                )
+                removed.extend(removed_children)
             else:
-                children = None
-            dir_spec = self._to_json(
-                id_=subdir, label=subdir_p.name, parent=parent,
-                children=children, icon="jstree-folder", type='folder', **kwargs
-            )
+                children, removed_children = [], []
+            if subdir in self._index:
+                dir_spec = self._index[subdir]
+                dir_spec['children'] = [
+                    sn for sn in dir_spec['children']
+                    if sn not in removed_children
+                ]
+            else:
+                dir_spec = self._to_json(
+                    id_=subdir, label=subdir_p.name, parent=parent,
+                    children=children, icon="jstree-folder", type='folder', **kwargs
+                )
             if self._exceed_max_depth(subdir_p):
                 dir_spec["state"] = {"disabled": True}
             nodes.append(dir_spec)
-        nodes.extend(
-            self._to_json(
-                id_=subfile, label=Path(subfile).name, parent=parent,
-                icon="jstree-file", type='file', **kwargs
-            )
-            for subfile in files
-        )
-        return nodes
+        for subfile in files:
+            if subfile in self._index:
+                file_node = self._index[subfile]
+            else:
+                file_node = self._to_json(
+                    id_=subfile, label=Path(subfile).name, parent=parent,
+                    icon="jstree-file", type='file', **kwargs
+                )
+            nodes.append(file_node)
+        return nodes, removed
 
     def _get_paths(self, directory, children_to_skip=()):
         dirs_, files = self._provider.ls(str(directory))
@@ -491,3 +566,30 @@ class FileTree(BaseFileSelector, _TreeBase):
             dirs.append(d)
         files = [f for f in files if f not in children_to_skip]
         return sorted(dirs), sorted(files)
+
+
+class FileTreeSelector(BaseFileNavigator):
+    """
+    The `FileTreeSelector` widget allows browsing the filesystem on the
+    server and selecting one or more files in a directory using a tree
+    based UI.
+
+    Reference: https://panel.holoviz.org/reference/widgets/FileTreeSelector.html
+
+    :Example:
+
+    >>> FileTreeSelector(directory='~', file_pattern='*.png')
+    """
+
+    def __init__(
+        self,
+        directory: AnyStr | os.PathLike | None = None,
+        fs: AbstractFileSystem | None = None,
+        **params,
+    ):
+        layout = {p: getattr(self, p) for p in Layoutable.param
+                  if p not in ('name', 'height', 'margin') and getattr(self, p) is not None}
+        sel_layout = dict(layout, sizing_mode='stretch_width', height=300, margin=0)
+        self._selector = FileTree(directory=directory, fs=fs, **sel_layout)
+        super().__init__(directory=directory, fs=fs, **params)
+        self._selector.directory = self.param.directory
