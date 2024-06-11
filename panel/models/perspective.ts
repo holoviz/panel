@@ -166,7 +166,7 @@ export class PerspectiveView extends HTMLBoxView {
     const container = div({
       class: "pnx-perspective-viewer",
       style: {
-        zIndex: 0,
+        zIndex: "0",
       },
     })
     this._current_plugin = this.model.plugin
