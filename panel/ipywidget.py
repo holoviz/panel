@@ -21,7 +21,7 @@ else:
         """Mock class"""
 
 
-def to_viewer(widget: HasTraits, parameters: Iterable | None = None) -> Viewer:
+def to_viewer(widget: HasTraits, parameters: Iterable | None = None, **kwargs) -> Viewer:
     """Returns a Viewer object with parameters synced to the ipywidget widget parameters
 
     Args:
@@ -29,7 +29,8 @@ def to_viewer(widget: HasTraits, parameters: Iterable | None = None) -> Viewer:
         parameters (Iterable | None): The parameters to add to the Viewer and to sync.
             If no parameters are specified all parameters on the widget will be added
             and synced.
-
+        kwargs: Any kwargs provided will be forwarded to the IPyWidget pane used to display the
+            widget.
     """
     raise NotImplementedError()
 

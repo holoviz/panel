@@ -77,6 +77,11 @@ def test_to_viewer_parameter_list():
     assert viewer.name == widget.name
     assert viewer.age == widget.age
 
+def test_to_viewer_kwargs():
+    widget = ExampleTraitlets(name="A", age=1, height=1.1)
+
+    viewer = to_viewer(widget, parameters=["name", "age"], sizing_mode="stretch_width")
+    assert viewer.sizing_mode=="stretch_width"
 
 def test_to_rx():
     widget = ExampleTraitlets(name="A", age=1, height=1.1)
