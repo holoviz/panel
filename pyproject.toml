@@ -202,6 +202,7 @@ filterwarnings = [
     "ignore:Deprecated call to `pkg_resources.+?'zope:DeprecationWarning",  # https://github.com/zopefoundation/meta/issues/194
     "ignore: pkg_resources is deprecated as an API:DeprecationWarning:streamz.plugins", # https://github.com/python-streamz/streamz/issues/460
     # 2024-06: Adding error to the filterwarnings
-    "ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning",
-    "ignore:distutils Version classes are deprecated:DeprecationWarning:ipywidgets_bokeh.kernel",
+    "ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning", # OK
+    "ignore:distutils Version classes are deprecated:DeprecationWarning:ipywidgets_bokeh.kernel", # OK
+    "ignore:unclosed file <_io.TextIOWrapper name='/dev/null' mode='w':ResourceWarning", # OK
 ]
