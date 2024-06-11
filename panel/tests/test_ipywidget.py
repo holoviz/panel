@@ -7,82 +7,62 @@ The purpose is to enable Panel users to easily use Ipywidgets using familiar API
 import param
 import pytest
 
-from traitlets import (
-    Float, HasTraits, Int, Unicode,
-)
+from ipywidgets import DOMWidget, register
+from traitlets import Float, Int, Unicode
 
-import panel as pn
-
-from panel.ipywidget import to_rx, to_viewer
+from panel.ipywidget import to_parameterized, to_rx
 
 
-class ExampleTraitlets(HasTraits):
-    """Test Traitlets"""
+@register
+class ExampleIpyWidget(DOMWidget):
+    _view_name = Unicode('ExampleIpyWidgetView').tag(sync=True)
+    _view_module = Unicode('example_ipywidget').tag(sync=True)
+    _view_module_version = Unicode('0.1.0').tag(sync=True)
 
     name = Unicode("Default Name").tag(description="A string trait")
     age = Int(0).tag(description="An integer trait")
-    height = Float(0.0).tag(description="A float trait")
+    weight = Float(0.0).tag(description="A float trait")
 
 
 @pytest.fixture
 def widget():
-    return ExampleTraitlets(name="A", age=1, height=1.1)
+    return ExampleIpyWidget(name="A", age=1, weight=1.1)
 
 
-def test_to_viewer(widget):
-    viewer = to_viewer(widget)
+def test_to_parameterized(widget):
+    viewer = to_parameterized(widget)
 
-    assert {"name", "age", "height"} == set(viewer.param.params)
+    assert {"name", "age", "weight"} <= set(viewer.param)
 
     assert viewer.name == widget.name
     assert viewer.age == widget.age
-    assert viewer.height == widget
+    assert viewer.weight == widget.weight
 
 
-def test_to_viewer_is_synced(widget):
-    viewer = to_viewer(widget)
+def test_to_parameterized_is_synced(widget):
+    viewer = to_parameterized(widget)
 
     # widget synced to widget
     widget.name = "B"
     widget.age = 2
-    widget.height = 2.2
+    widget.weight = 2.2
     assert viewer.name == widget.name
     assert viewer.age == widget.age
-    assert viewer.height == widget.height
+    assert viewer.weight == widget.weight
 
     # widget synced to viewer
     viewer.name = "C"
     viewer.age = 3
-    viewer.height = 3.3
+    viewer.weight = 3.3
     assert viewer.name == widget.name
     assert viewer.age == widget.age
-    assert viewer.height == widget.height
+    assert viewer.weight == widget.weight
 
+def test_to_parameterized_parameter_list(widget):
+    viewer = to_parameterized(widget, parameters=["name", "age"])
 
-def test_to_viewer_is_viewer(widget):
-    viewer = to_viewer(widget)
-
-    assert isinstance(viewer, pn.viewable.Viewer)
-    component = viewer.__panel__()
-    assert isinstance(component, pn.pane.IPyWidget)
-    assert component.object == widget
-
-
-def test_to_viewer_is_layoutable(widget):
-    viewer = to_viewer(widget)
-    component = viewer.__panel__()
-
-    assert isinstance(viewer, pn.viewable.Layoutable)
-    assert viewer.sizing_mode == component.sizing_mode == "fixed"
-    viewer.sizing_mode = "stretch_width"
-    assert viewer.sizing_mode == component.sizing_mode
-
-
-def test_to_viewer_parameter_list(widget):
-    viewer = to_viewer(widget, parameters=["name", "age"])
-
-    assert isinstance(viewer, pn.viewable.Viewer)
-    assert {"name", "age"} == set(viewer.param.params)
+    assert {"name", "age"} <= set(viewer.param)
+    assert "weight" not in set(viewer.param)
 
     assert viewer.name == widget.name
     assert viewer.age == widget.age
@@ -99,53 +79,47 @@ def test_to_viewer_parameter_list(widget):
     assert viewer.name == widget.name
     assert viewer.age == widget.age
 
-
-def test_to_viewer_kwargs(widget):
-    viewer = to_viewer(widget, parameters=["name", "age"], sizing_mode="stretch_width")
-    assert viewer.__panel__().sizing_mode == "stretch_width"
-
-
-def test_to_viewer_bases(widget):
+def test_to_parameterized_bases(widget):
 
     class ExampleParameterized(param.Parameterized):
         name = param.String("default", doc="A string parameter")
         age = param.Integer(0, bounds=(0, 10))
         not_trait = param.Parameter(1)
 
-    viewer = to_viewer(widget, bases=ExampleParameterized)
+    viewer = to_parameterized(widget, bases=ExampleParameterized)
     assert isinstance(viewer, ExampleParameterized)
-    assert {"name", "age", "height", "not_trait"} <= set(viewer.param.params)
+    assert {"name", "age", "weight", "not_trait"} <= set(viewer.param)
 
     assert viewer.name == widget.name
     assert viewer.age == widget.age
-    assert viewer.height == widget.height
+    assert viewer.weight == widget.weight
 
 
 def test_to_rx(widget):
-    age, height, name = to_rx(widget)
+    age, weight, name = to_rx(widget, parameters=["age", "weight", "name"])
     assert isinstance(name, param.reactive.rx)
     assert isinstance(age, param.reactive.rx)
-    assert isinstance(height, param.reactive.rx)
+    assert isinstance(weight, param.reactive.rx)
 
     assert name.rx.value == widget.name
     assert age.rx.value == widget.age
-    assert height.rx.value == widget.height
+    assert weight.rx.value == widget.weight
 
     # widget synced to reactive
     widget.name = "B"
     widget.age = 2
-    widget.height = 2.2
+    widget.weight = 2.2
     assert name.rx.value == widget.name
     assert age.rx.value == widget.age
-    assert height.rx.value == widget.height
+    assert weight.rx.value == widget.weight
 
     # reactive synced to viewer
     name.rx.value = "C"
     age.rx.value = 3
-    height.rx.value = 3.3
+    weight.rx.value = 3.3
     assert name.rx.value == widget.name
     assert age.rx.value == widget.age
-    assert height.rx.value == widget.height
+    assert weight.rx.value == widget.weight
 
 
 def test_to_rx_parameter_list(widget):
