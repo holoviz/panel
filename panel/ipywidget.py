@@ -8,7 +8,8 @@ import param
 from param import Parameterized
 from param.reactive import bind
 
-from .viewable import Viewer
+from .pane import IPyWidget
+from .viewable import Layoutable, Viewer
 
 if TYPE_CHECKING:
     try:
@@ -23,15 +24,18 @@ else:
     class HasTraits:  # type: ignore
         """Mock class"""
 
+
 def _is_custom_trait(name):
     if name.startswith("_"):
         return False
-    if name in {'comm', 'tabbable', 'keys', 'log', 'layout'}:
+    if name in {"comm", "tabbable", "keys", "log", "layout"}:
         return False
     return True
 
+
 def _get_parameter_names(widget):
     return [name for name in widget.traits() if _is_custom_trait(name)]
+
 
 class IpyWidgetParameterized(Parameterized):
     _widget = param.Parameter(allow_None=False)
@@ -52,22 +56,27 @@ class IpyWidgetParameterized(Parameterized):
                 setattr(self, parameter, getattr(widget, parameter))
 
                 # Observe widget parameters
-                def _handle_widget_change(change, widget=widget, parameter=parameter):
+                def _handle_widget_change(_, widget=widget, parameter=parameter):
                     setattr(self, parameter, getattr(widget, parameter))
 
                 widget.observe(_handle_widget_change, names=parameter)
 
                 # Bind to self parameters
-                def _handle_observer_change(value, widget=widget, parameter=parameter):
+                def _handle_observer_change(_, widget=widget, parameter=parameter):
                     setattr(widget, parameter, getattr(self, parameter))
 
-                bind(_handle_observer_change, value=self.param[parameter], watch=True)
+                bind(_handle_observer_change, self.param[parameter], watch=True)
+
 
 _ipywidget_classes = {}
 
+
 def to_parameterized(
-    widget: HasTraits, parameters: Iterable | None = None, bases: Parameterized|None=None
-) -> Viewer:
+    widget: HasTraits,
+    parameters: Iterable | None = None,
+    bases: Parameterized | None = None,
+    **kwargs
+) -> Parameterized:
     """Returns a Parameterized object with parameters synced to the ipywidget widget parameters
 
     Args:
@@ -79,19 +88,57 @@ def to_parameterized(
     if not parameters:
         parameters = _get_parameter_names(widget)
     if bases:
-        bases = (bases, IpyWidgetParameterized,)
+        bases = (
+            bases,
+            IpyWidgetParameterized,
+        )
     else:
         bases = (IpyWidgetParameterized,)
     name = type(widget).__name__
     key = (name, tuple(parameters), bases)
     if name in _ipywidget_classes:
-        viewer = _ipywidget_classes[key]
+        parameterized = _ipywidget_classes[key]
     else:
         existing_params = set(IpyWidgetParameterized.param)
-        params = {name: param.Parameterized() for name in parameters if name not in existing_params}
-        viewer = param.parameterized_class(name, params=params, bases=bases)
-    _ipywidget_classes[key] = viewer
-    return viewer(_widget=widget, _parameters=parameters)
+        params = {
+            name: param.Parameterized()
+            for name in parameters
+            if name not in existing_params
+        }
+        parameterized = param.parameterized_class(name, params=params, bases=bases)
+    _ipywidget_classes[key] = parameterized
+    return parameterized(_widget=widget, _parameters=parameters, **kwargs)
+
+
+class IpyWidgetViewer(Layoutable, Viewer):
+
+    def __init__(self, **params):
+        super().__init__(**params)
+
+        widget = self._widget
+        layout_params = {name: self.param[name] for name in Layoutable.param}
+
+        self._layout = IPyWidget(widget, **layout_params)
+
+    def __panel__(self):
+        return self._layout
+
+
+def to_viewer(
+    widget: HasTraits,
+    parameters: Iterable | None = None,
+    bases: Parameterized | None = None,
+    **kwargs,
+) -> Viewer:
+    """Returns a Parameterized object with parameters synced to the ipywidget widget parameters
+
+    Args:
+        widget (HasTraits): The ipywidget to create the Viewer from.
+        parameters (Iterable | None): The parameters to add to the Parameterized and to sync.
+            If no parameters are specified all public parameters on the widget will be added
+            and synced.
+    """
+    return to_parameterized(widget, parameters=parameters, bases=IpyWidgetViewer, **kwargs)
 
 
 def sync_rx(element: HasTraits, name: str, target: param.rx):
