@@ -37,6 +37,23 @@ def _get_parameter_names(widget):
     return [name for name in widget.traits() if _is_custom_trait(name)]
 
 
+def sync_parameterized(
+    widget: HasTraits, parameters: Iterable, parameterized: Parameterized
+):
+    for parameter in parameters:
+        # Observe widget parameters
+        def _handle_widget_change(_, widget=widget, parameter=parameter):
+            setattr(parameterized, parameter, getattr(widget, parameter))
+
+        widget.observe(_handle_widget_change, names=parameter)
+
+        # Bind to parameterized parameters
+        def _handle_observer_change(_, widget=widget, parameter=parameter):
+            setattr(widget, parameter, getattr(parameterized, parameter))
+
+        bind(_handle_observer_change, parameterized.param[parameter], watch=True)
+
+
 class IpyWidgetParameterized(Parameterized):
     _widget = param.Parameter(allow_None=False)
     _parameters = param.List(allow_None=False)
@@ -48,24 +65,14 @@ class IpyWidgetParameterized(Parameterized):
         if not parameters:
             parameters = _get_parameter_names(widget)
 
+        # Add parameters
         with param.edit_constant(self):
             for parameter in parameters:
-                # Add parameters
                 if parameter not in self.param:
                     self.param.add_parameter(parameter, param.Parameter())
                 setattr(self, parameter, getattr(widget, parameter))
 
-                # Observe widget parameters
-                def _handle_widget_change(_, widget=widget, parameter=parameter):
-                    setattr(self, parameter, getattr(widget, parameter))
-
-                widget.observe(_handle_widget_change, names=parameter)
-
-                # Bind to self parameters
-                def _handle_observer_change(_, widget=widget, parameter=parameter):
-                    setattr(widget, parameter, getattr(self, parameter))
-
-                bind(_handle_observer_change, self.param[parameter], watch=True)
+            sync_parameterized(widget, parameters, self)
 
 
 _ipywidget_classes = {}
@@ -75,7 +82,7 @@ def to_parameterized(
     widget: HasTraits,
     parameters: Iterable | None = None,
     bases: Parameterized | None = None,
-    **kwargs
+    **kwargs,
 ) -> Parameterized:
     """Returns a Parameterized object with parameters synced to the ipywidget widget parameters
 
@@ -116,6 +123,8 @@ class IpyWidgetViewer(Layoutable, Viewer):
         super().__init__(**params)
 
         widget = self._widget
+        widget.height = "100%"
+        widget.width = "100%"
         layout_params = {name: self.param[name] for name in Layoutable.param}
 
         self._layout = IPyWidget(widget, **layout_params)
@@ -138,7 +147,9 @@ def to_viewer(
             If no parameters are specified all public parameters on the widget will be added
             and synced.
     """
-    return to_parameterized(widget, parameters=parameters, bases=IpyWidgetViewer, **kwargs)
+    return to_parameterized(
+        widget, parameters=parameters, bases=IpyWidgetViewer, **kwargs
+    )
 
 
 def sync_rx(element: HasTraits, name: str, target: param.rx):
