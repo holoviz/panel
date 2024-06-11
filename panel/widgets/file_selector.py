@@ -181,6 +181,8 @@ class BaseFileSelector(param.Parameterized):
         if 'root_directory' in params:
             root = params['root_directory']
             params['root_directory'] = self._provider.normalize(root)
+        elif directory:
+            params['root_directory'] = params['directory']
         super().__init__(**params)
 
     @property
@@ -227,6 +229,7 @@ class BaseFileNavigator(BaseFileSelector, CompositeWidget):
         )
         self._composite[:] = [self._nav_bar, Divider(margin=0), self._selector]
         self._directory.param.watch(self._dir_change, 'value')
+        self._directory.param.watch(self._update_files, 'enter_pressed')
 
         # Set up state
         self._stack = []
@@ -239,9 +242,9 @@ class BaseFileNavigator(BaseFileSelector, CompositeWidget):
         return self.root_directory or self.directory
 
     def _dir_change(self, event: param.parameterized.Event):
-        path = fullpath(self.directory)
+        path = fullpath(event.new)
         if not path.startswith(self._root_directory):
-            self.directory = self._root_directory
+            self.directory = fullpath(event.old)
             return
         elif path != self.directory:
             self.directory = path
@@ -473,21 +476,26 @@ class FileTree(BaseFileSelector, _TreeBase):
         )
         self._set_data_from_directory()
 
-    def _set_data_from_directory(self, *events):
-        children, _ = self._get_children(
-            Path(self.directory).name, self.directory, depth=1
-        )
+    def _set_data_from_directory(self, event=None):
+        try:
+            children, _ = self._get_children(
+                Path(self.directory).name, self.directory, depth=1
+            )
+        except FileNotFoundError:
+            self.directory = event.old
+            return
+        node_id = self._provider.normalize(self.directory)+self._provider.sep
         self._nodes = [{
-            "id": self._provider.normalize(self.directory)+self._provider.sep,
+            "id": node_id,
             "text": Path(self.directory).name,
             "icon": "jstree-folder",
             "type": "folder",
-            "state": {"opened": True},
+            "state": {"opened": True, "loaded": True},
             "children": children
         }]
         self._reindex()
-        if events:
-            self._param_change(*events)
+        if event:
+            self._param_change(event)
 
     def _process_param_change(self, params):
         if 'directory' in params:
@@ -498,11 +506,18 @@ class FileTree(BaseFileSelector, _TreeBase):
 
     def _process_property_change(self, msg):
         props = super()._process_property_change(msg)
-        if "value" in props and self.only_files:
-            props["value"] = [
-                node_id for node_id in props["value"]
-                if self._index.get(node_id, {}).get("type") == "file"
-            ]
+        if "value" in props:
+            for v in self.value:
+                if v in self._index and v not in props['value']:
+                    self._index[v]["state"]["selected"] = False
+            for v in props["value"]:
+                if v in self._index:
+                    self._index[v]["state"] = dict(self._index[v].get("state", {}), selected=True)
+            if self.only_files:
+                props["value"] = [
+                    node_id for node_id in props["value"]
+                    if self._index.get(node_id, {}).get("type") == "file"
+                ]
         return props
 
     def _exceed_max_depth(self, path):
@@ -525,7 +540,8 @@ class FileTree(BaseFileSelector, _TreeBase):
             removed = []
         for subdir in dirs:
             subdir_p = Path(subdir)
-            if depth > 0:
+            load = depth > 0 or self._index.get(subdir, {}).get('state', {}).get("opened")
+            if load:
                 children, removed_children = self._get_children(
                     subdir_p.name, subdir, depth=depth-1
                 )
@@ -534,14 +550,13 @@ class FileTree(BaseFileSelector, _TreeBase):
                 children, removed_children = [], []
             if subdir in self._index:
                 dir_spec = self._index[subdir]
-                dir_spec['children'] = [
-                    sn for sn in dir_spec['children']
-                    if sn not in removed_children
-                ]
+                dir_spec['children'] = children
+                dir_spec['state'] = {"loaded": load, "opened": dir_spec.get('state', {}).get("opened", False)}
             else:
                 dir_spec = self._to_json(
                     id_=subdir, label=subdir_p.name, parent=parent,
-                    children=children, icon="jstree-folder", type='folder', **kwargs
+                    children=children, icon="jstree-folder", type='folder',
+                    state={"loaded": depth > 0}, **kwargs
                 )
             if self._exceed_max_depth(subdir_p):
                 dir_spec["state"] = {"disabled": True}
@@ -591,5 +606,14 @@ class FileTreeSelector(BaseFileNavigator):
                   if p not in ('name', 'height', 'margin') and getattr(self, p) is not None}
         sel_layout = dict(layout, sizing_mode='stretch_width', height=300, margin=0)
         self._selector = FileTree(directory=directory, fs=fs, **sel_layout)
+        self._selector.param.watch(self._sync_directory, 'directory')
         super().__init__(directory=directory, fs=fs, **params)
-        self._selector.directory = self.param.directory
+
+    def _sync_directory(self, event):
+        self.directory = event.new
+
+    def _update_files(
+        self, event: Optional[param.parameterized.Event] = None, refresh: bool = False
+    ):
+        self._selector.directory = self._provider.normalize(self._directory.value)
+        super()._update_files(event, refresh)

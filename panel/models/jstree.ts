@@ -5,7 +5,7 @@ import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import type {Attrs} from "@bokehjs/core/types"
 import {LayoutDOM, LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 
-import {ID} from "./util"
+import {convertUndefined, ID} from "./util"
 import jstree_css from "styles/models/jstree.css"
 
 type Node = {
@@ -31,10 +31,14 @@ export class NodeEvent extends ModelEvent {
 function sync_state(node: any, tree: any) {
   const node_json = tree.get_node(node.id)
   if (node_json) {
-    node.state = node_json.state
+    node.state = Object.assign({}, node_json.state, (node.state || {}))
+  } else if (!node.state) {
+    node.state = {}
   }
-  for (const child of (node.children || [])) {
-    sync_state(child, tree)
+  if (node.children && node.children.length) {
+    for (const child of (node.children || [])) {
+      sync_state(child, tree)
+    }
   }
 }
 
@@ -106,13 +110,30 @@ export class jsTreeView extends LayoutDOMView {
           if (obj.id == "#") {
             callback(this.model.nodes)
           } else {
-            this.model.trigger_event(new NodeEvent({type: "open", node: obj}))
+	    if (obj.children_nodes === undefined) {
+	      const tree = this._jstree.jstree(true)
+	      obj.children_nodes = []
+	      for (const child of obj.children) {
+		const child_node = tree.get_node(child)
+		obj.children_nodes.push(child_node)
+	      }
+	    }
+	    this.model.trigger_event(new NodeEvent({type: "open", node: convertUndefined(obj)}))
             new Promise((resolve) => {
               const loop = () => {
                 const nodes = this.model._new_nodes
                 if (nodes != null) {
-                  obj.new_nodes = nodes
-                  callback(obj.children_nodes)
+		  const combined = [...obj.children_nodes]
+		  const new_children = []
+		  for (const new_node of nodes) {
+		    if (new_node.parent === obj.id) {
+		      combined.push(new_node)
+		    } else {
+		      new_children.push(new_node)
+		    }
+		  }
+		  obj._new_children = new_children
+                  callback(combined)
                   this.model._new_nodes = null
                   resolve(this.model.nodes)
                 } else {
@@ -150,6 +171,9 @@ export class jsTreeView extends LayoutDOMView {
     this._jstree.on("activate_node.jstree", ({}, data: any) => this.selectNodeFromEditor({}, data))
     this._jstree.on("refresh.jstree", ({}, {}) => this._update_selection_from_value())
     this._jstree.on("before_open.jstree", (_: any, data: any) => this._listen_for_node_open(data))
+    this._jstree.on("after_close.jstree", (_: any, data: any) => {
+      this.model.trigger_event(new NodeEvent({type: "close", node: {id: data.node.id}}))
+    })
   }
 
   selectNodeFromEditor({}, data: any): void {
@@ -201,10 +225,10 @@ export class jsTreeView extends LayoutDOMView {
     }
     if (request_load) {
       data.instance.load_node(data.node.id, (node: Node) => {
-        for (const new_node of node.new_nodes) {
+        for (const new_node of node._new_children) {
           this._jstree.jstree(true).create_node(new_node.parent, new_node)
         }
-        delete node.new_nodes
+        delete node._new_children
       })
     }
   }

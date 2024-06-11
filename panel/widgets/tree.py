@@ -68,12 +68,13 @@ class _TreeBase(Widget):
         "name": None,
     }
 
-    @staticmethod
     def _to_json(
-        id_, label, parent: str = None, children: Optional[list] = None,
-        icon: str = None, **kwargs
+        self, id_, label, parent: str = None, children: Optional[list] = None,
+        icon: str = None, state: dict[str, bool] = {}, **kwargs
     ):
-        jsn = dict(id=id_, text=label, children=children or [], **kwargs)
+        if "selected" not in state:
+            state["selected"] = id_ in self.value
+        jsn = dict(id=id_, text=label, children=children or [], state=state, **kwargs)
         if parent:
             jsn["parent"] = parent
         if icon:
@@ -128,13 +129,16 @@ class _TreeBase(Widget):
     def _process_event(self, event: NodeEvent):
         if event.data['type'] == 'open':
             self._add_children_on_node_open(event)
+        elif event.data['type'] == 'close':
+            self._index[event.data["node"]["id"]]["state"]["opened"] = False
 
     def _add_children_on_node_open(self, event: NodeEvent, **kwargs):
         opened_node = event.data["node"]
+        self._index[opened_node["id"]]["state"]["opened"] = True
         nodes_already_sent = opened_node.get("children_d", [])
         children_nodes = opened_node["children_nodes"]
         new_nodes = []
-        for node in children_nodes:
+        for node in [opened_node]+children_nodes:
             children, _ = self._get_children(
                 node["text"],
                 node["id"],

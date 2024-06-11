@@ -1,4 +1,5 @@
 import {concat} from "@bokehjs/core/util/array"
+import {isArray, isPlainObject} from "@bokehjs/core/util/types"
 
 export const get = (obj: any, path: string, defaultValue: any = undefined) => {
   const travel = (regexp: RegExp) =>
@@ -82,4 +83,22 @@ export function ID() {
   // Convert it to base 36 (numbers + letters), and grab the first 9 characters
   // after the decimal.
   return `_${  Math.random().toString(36).substring(2, 11)}`
+}
+
+
+export function convertUndefined(obj: any): any {
+  if (isArray(obj)) {
+    return obj.map(convertUndefined)
+  } else if (isPlainObject(obj)) {
+    Object
+      .entries(obj)
+      .forEach(([key, value]) => {
+        if (isPlainObject(value) || isArray(value)) {
+          convertUndefined(value)
+        } else if (value === undefined) {
+          obj[key] = null
+        }
+      })
+  }
+  return obj
 }
