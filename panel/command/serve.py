@@ -354,15 +354,9 @@ class Serve(_BkServe):
                 watch(f)
 
         if args.setup:
-            setup_path = args.setup
-            with open(setup_path) as f:
-                setup_source = f.read()
-            nodes = ast.parse(setup_source, os.fspath(setup_path))
-            code = compile(nodes, filename=setup_path, mode='exec', dont_inherit=True)
             module_name = 'panel_setup_module'
             module = ModuleType(module_name)
-            module.__dict__['__file__'] = fullpath(setup_path)
-            exec(code, module.__dict__)
+            module.__dict__['__file__'] = fullpath(args.setup)
             state._setup_module = module
 
         if args.warm or args.autoreload:
