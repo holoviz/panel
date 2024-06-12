@@ -48,6 +48,7 @@ export class jsTreeView extends LayoutDOMView {
   protected _container: HTMLDivElement
   protected _id: any
   protected _jstree: any
+  protected _setting: boolean
 
   override connect_signals(): void {
     super.connect_signals()
@@ -65,7 +66,11 @@ export class jsTreeView extends LayoutDOMView {
         this._update_selection_from_value()
       })
     })
-    this.on_change(checked, () => this._update_selection_from_value())
+    this.on_change(checked, () => {
+      if (!this._setting) {
+	this._update_selection_from_value()
+      }
+    })
     this.on_change(checkbox, () => this.setCheckboxes())
     this.on_change(show_icons, () => this._setShowIcons())
     this.on_change(show_dots, () => this._setShowDots())
@@ -193,7 +198,9 @@ export class jsTreeView extends LayoutDOMView {
   }
 
   selectNodeFromEditor({}, data: any): void {
+    this._setting = true
     this.model.checked = data.instance.get_checked()
+    this._setting = false
   }
 
   _update_selection_from_value(): void {
