@@ -1108,7 +1108,9 @@ class OAuthProvider(BasicAuthProvider):
         state._active_users[user] -= 1
         if not state._active_users[user]:
             del state._active_users[user]
-            if user in state._oauth_user_overrides:
+            # Don't remove the user when it's set to an empty dict in the
+            # overrides, as it means it is being refreshed.
+            if state._oauth_user_overrides.get(user) is not None:
                 del state._oauth_user_overrides[user]
 
     def _schedule_refresh(self, expiry_ts, user, refresh_token, application, request):
