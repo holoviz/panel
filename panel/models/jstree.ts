@@ -32,8 +32,9 @@ function sync_state(node: any, tree: any) {
   const node_json = tree.get_node(node.id)
   if (node_json) {
     node.state = Object.assign({}, node_json.state, (node.state || {}))
+    node.state.loading = false
   } else if (!node.state) {
-    node.state = {}
+    node.state = {loading: false}
   }
   if (node.children && node.children.length) {
     for (const child of (node.children || [])) {
@@ -50,7 +51,7 @@ export class jsTreeView extends LayoutDOMView {
 
   override connect_signals(): void {
     super.connect_signals()
-    const {nodes, value, checkbox, show_icons, show_dots, multiple} = this.model.properties
+    const {nodes, checked, checkbox, show_icons, show_dots, multiple} = this.model.properties
     this.on_change(nodes, () => {
       const tree = this._jstree.jstree(true)
       for (const node of this.model.nodes) {
@@ -64,7 +65,7 @@ export class jsTreeView extends LayoutDOMView {
         this._update_selection_from_value()
       })
     })
-    this.on_change(value, () => this._update_selection_from_value())
+    this.on_change(checked, () => this._update_selection_from_value())
     this.on_change(checkbox, () => this.setCheckboxes())
     this.on_change(show_icons, () => this._setShowIcons())
     this.on_change(show_dots, () => this._setShowDots())
@@ -83,9 +84,8 @@ export class jsTreeView extends LayoutDOMView {
     if (this.model.checkbox && !this.model.plugins.includes("sort")) {
       plugins.push("sort")
     }
-
-    if (!this.model.plugins.includes("types")) {
-      plugins.push("types")
+    if (!this.model.plugins.includes("wholerow")) {
+      plugins.push("wholerow")
     }
     return plugins
   }
@@ -100,39 +100,42 @@ export class jsTreeView extends LayoutDOMView {
     this._container = div({id: this._id, style: "overflow: auto; minHeight: 200px; minWidth: 200px;"})
     this.shadow_el.appendChild(this._container)
     this._jstree = jQuery(this._container).jstree({
+      allow_reselect: true,
       checkbox: {
         three_state: this.model.cascade,
         cascade: this.model.cascade ? "undetermined" : "down+undetermined",
         cascade_to_disabled: false,
+	tie_selection: false,
+        whole_node: false
       },
       core: {
         data: (obj: Node, callback: (nodes: Node[]) => void) => {
           if (obj.id == "#") {
             callback(this.model.nodes)
           } else {
-	    if (obj.children_nodes === undefined) {
-	      const tree = this._jstree.jstree(true)
-	      obj.children_nodes = []
-	      for (const child of obj.children) {
-		const child_node = tree.get_node(child)
-		obj.children_nodes.push(child_node)
-	      }
-	    }
-	    this.model.trigger_event(new NodeEvent({type: "load", node: convertUndefined(obj)}))
+            if (obj.children_nodes === undefined) {
+              const tree = this._jstree.jstree(true)
+              obj.children_nodes = []
+              for (const child of obj.children) {
+                const child_node = tree.get_node(child)
+                obj.children_nodes.push(child_node)
+              }
+            }
+            this.model.trigger_event(new NodeEvent({type: "load", node: convertUndefined(obj)}))
             new Promise((resolve) => {
               const loop = () => {
                 const nodes = this.model._new_nodes
                 if (nodes != null) {
-		  const combined = [...obj.children_nodes]
-		  const new_children = []
-		  for (const new_node of nodes) {
-		    if (new_node.parent === obj.id) {
-		      combined.push(new_node)
-		    } else if (!new_children.includes(new_node)) {
-		      new_children.push(new_node)
-		    }
-		  }
-		  obj._new_children = new_children
+                  const combined = [...obj.children_nodes]
+                  const new_children: any[] = []
+                  for (const new_node of nodes) {
+                    if (new_node.parent === obj.id) {
+                      combined.push(new_node)
+                    } else if (!new_children.includes(new_node)) {
+                      new_children.push(new_node)
+                    }
+                  }
+                  obj._new_children = new_children
                   callback(combined)
                   this.model._new_nodes = null
                   resolve(this.model.nodes)
@@ -168,7 +171,20 @@ export class jsTreeView extends LayoutDOMView {
   }
 
   init_callbacks(): void {
-    this._jstree.on("activate_node.jstree", ({}, data: any) => this.selectNodeFromEditor({}, data))
+    this._jstree.on("dblclick.jstree", (e: MouseEvent) => {
+      let target = e.target
+      while (!(target === null || !(target instanceof Element) || target.className.includes('jstree-node'))) {
+	target = target.parentNode
+      }
+      if (target && (target instanceof Element) && target.className.includes('jstree-node')) {
+	const node = this._jstree.jstree(true).get_node(target)
+	this.model.trigger_event(new NodeEvent({type: "click", subtype: "dblclick", node: {id: node.id}}))
+      }
+    })
+    this._jstree.on("select_node.jstree", ({}, data: any) => {
+      this.model.trigger_event(new NodeEvent({type: "click", subtype: "click", node: {id: data.node.id}}))
+    })
+    this._jstree.on("check_node.jstree uncheck_node.jstree", ({}, data: any) => this.selectNodeFromEditor({}, data))
     this._jstree.on("refresh.jstree", ({}, {}) => this._update_selection_from_value())
     this._jstree.on("before_open.jstree", (_: any, data: any) => this._listen_for_node_open(data))
     this._jstree.on("after_close.jstree", (_: any, data: any) => {
@@ -177,12 +193,12 @@ export class jsTreeView extends LayoutDOMView {
   }
 
   selectNodeFromEditor({}, data: any): void {
-    this.model.value = data.instance.get_selected()
+    this.model.checked = data.instance.get_checked()
   }
 
   _update_selection_from_value(): void {
-    this._jstree.jstree(true).deselect_all(true)
-    this._jstree.jstree(true).select_node(this.model.value, true, true)
+    this._jstree.jstree(true).uncheck_all(true)
+    this._jstree.jstree(true).check_node(this.model.checked, true, true)
   }
 
   _setShowIcons(): void {
@@ -226,10 +242,10 @@ export class jsTreeView extends LayoutDOMView {
     }
     if (request_load) {
       data.instance.load_node(data.node.id, (node: Node) => {
-	const tree = this._jstree.jstree(true)
+        const tree = this._jstree.jstree(true)
         for (const new_node of node._new_children) {
-	  const parent = tree.get_node(new_node.parent)
-	  parent.state.loaded = true
+          const parent = tree.get_node(new_node.parent)
+          parent.state.loaded = true
           tree.create_node(new_node.parent, new_node)
         }
         delete node._new_children
@@ -241,6 +257,7 @@ export class jsTreeView extends LayoutDOMView {
 export namespace jsTree {
   export type Attrs = p.AttrsOf<Props>
   export type Props = LayoutDOM.Props & {
+    checked: p.Property<any>
     plugins: p.Property<any>
     cascade: p.Property<boolean>
     checkbox: p.Property<boolean>
@@ -251,7 +268,6 @@ export namespace jsTree {
     show_dots: p.Property<boolean>
     show_stripes: p.Property<boolean>
     sort: p.Property<boolean>
-    value: p.Property<any>
     _new_nodes: p.Property<any[] | null>
   }
 }
@@ -274,6 +290,7 @@ export class jsTree extends LayoutDOM {
       _new_nodes:    [ Nullable(List(Any)), [] ],
       cascade:       [ Bool,  true ],
       checkbox:      [ Bool,  true ],
+      checked:       [ List(Any), [] ],
       drag_and_drop: [ Bool, false ],
       nodes:         [ List(Any), [] ],
       plugins:       [ List(Any), [] ],
@@ -282,7 +299,6 @@ export class jsTree extends LayoutDOM {
       show_dots:     [ Bool, false ],
       show_stripes:  [ Bool, false ],
       sort:          [ Bool,  true ],
-      value:         [ List(Any), [] ],
     }))
   }
 }

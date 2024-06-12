@@ -7,14 +7,16 @@ from __future__ import annotations
 import logging
 
 from abc import abstractmethod
+from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
+    TYPE_CHECKING, Any, Awaitable, Callable, ClassVar, Mapping, Optional,
 )
 
 import param
 
 from pyviz_comms import JupyterComm
 
+from ..io.state import state
 from ..util import lazy_load
 from .base import Widget
 
@@ -36,7 +38,8 @@ class _TreeBase(Widget):
     checkbox = param.Boolean(default=True, doc="""
         Whether to use checkboxes as selectables""")
 
-    icon_size = param.Integer(default=48)
+    icon_size = param.Integer(default=24, doc="""
+        Size of the icons and text in pixels.""")
 
     select_multiple = param.Boolean(default=True, doc="""
         Whether multiple nodes can be selected or not""")
@@ -66,7 +69,49 @@ class _TreeBase(Widget):
         "icon_size": None,
         "select_multiple": "multiple",
         "name": None,
+        "value": "checked",
     }
+
+    def __init__(self, **params):
+        click_handler = params.pop('on_click', None)
+        self._click__handlers = []
+        super().__init__(**params)
+        if click_handler:
+            self.on_click(click_handler)
+
+    def _on__click(self, event: NodeEvent):
+        """
+        Method called when a node is clicked.
+        """
+
+    def on_click(
+        self, callback: Callable[[param.parameterized.Event], None | Awaitable[None]]
+    ) -> param.parameterized.Watcher:
+        """
+        Register a callback to be executed when the `Button` is clicked.
+
+        The callback is given an `Event` argument declaring the number of clicks
+
+        Example
+        -------
+
+        >>> button = pn.widgets.Button(name='Click me')
+        >>> def handle_click(event):
+        ...    print("I was clicked!")
+        >>> button.on_click(handle_click)
+
+        Arguments
+        ---------
+        callback:
+            The function to run on click events. Must accept a positional `Event` argument. Can
+            be a sync or async function
+
+        Returns
+        -------
+        watcher: param.Parameterized.Watcher
+          A `Watcher` that executes the callback when the button is clicked.
+        """
+        self._click__handlers.append(callback)
 
     def _to_json(
         self, id_, label, parent: str = None, children: Optional[list] = None,
@@ -97,12 +142,6 @@ class _TreeBase(Widget):
             for subnode in self._traverse(node):
                 self._index[subnode['id']] = subnode
 
-    def _get_properties(self, doc: Document) -> dict[str, Any]:
-        props = super()._get_properties(doc)
-        if hasattr(self, '_nodes'):  # TODO: This feels wrong...
-            props['nodes'] = self._nodes
-        return props
-
     def _process_param_change(self, msg: dict[str, Any]) -> dict[str, Any]:
         properties = super()._process_param_change(msg)
         if properties.get("height") and properties["height"] < 100:
@@ -129,6 +168,10 @@ class _TreeBase(Widget):
 
     def _process_event(self, event: NodeEvent):
         etype = event.data['type']
+        if etype == 'click':
+            self._on__click(event)
+            for handler in self._click__handlers:
+                state.execute(partial(handler, event), schedule=False)
         if etype == 'load':
             self._add_children_on_node_open(event)
         elif etype in ('open', 'close'):

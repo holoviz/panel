@@ -33,6 +33,8 @@ from .tree import _TreeBase
 if TYPE_CHECKING:
     from fsspec import AbstractFileSystem
 
+    from ..models.jstree import NodeEvent
+
 
 def _scan_path(path: str, file_pattern='*') -> tuple[list[str], list[str]]:
     """
@@ -162,6 +164,10 @@ class BaseFileSelector(param.Parameterized):
     only_files = param.Boolean(default=False, doc="""
         Whether to only allow selecting files.""")
 
+    refresh_period = param.Integer(default=None, doc="""
+        If set to non-None value indicates how frequently to refresh
+        the directory contents in milliseconds.""")
+
     root_directory = param.String(default=None, doc="""
         If set, overrides directory parameter as the root directory
         beyond which users cannot navigate.""")
@@ -184,6 +190,27 @@ class BaseFileSelector(param.Parameterized):
         elif directory:
             params['root_directory'] = params['directory']
         super().__init__(**params)
+
+        # Set up periodic callback
+        self._periodic = PeriodicCallback(callback=self._refresh, period=self.refresh_period or 0)
+        self.param.watch(self._update_periodic, 'refresh_period')
+        if self.refresh_period:
+            self._periodic.start()
+
+    def _update_periodic(self, event: param.parameterized.Event):
+        if event.new:
+            self._periodic.period = event.new
+            if not self._periodic.running:
+                self._periodic.start()
+        elif self._periodic.running:
+            self._periodic.stop()
+
+    def _refresh(self):
+        self._update_files(refresh=True)
+
+    @property
+    def _root_directory(self):
+        return self.root_directory or self.directory
 
     @property
     def fs(self):
@@ -237,10 +264,6 @@ class BaseFileNavigator(BaseFileSelector, CompositeWidget):
         self._position = -1
         self._update_files(True)
 
-    @property
-    def _root_directory(self):
-        return self.root_directory or self.directory
-
     def _dir_change(self, event: param.parameterized.Event):
         path = fullpath(event.new)
         if not path.startswith(self._root_directory):
@@ -249,9 +272,6 @@ class BaseFileNavigator(BaseFileSelector, CompositeWidget):
         elif path != self.directory:
             self.directory = path
         self._go.disabled = path == self._cwd
-
-    def _refresh(self):
-        self._update_files(refresh=True)
 
     def _go_back(self, event: param.parameterized.Event):
         self._position -= 1
@@ -316,10 +336,6 @@ class FileSelector(BaseFileNavigator):
         The number of options shown at once (note this is the only
         way to control the height of this widget)""")
 
-    refresh_period = param.Integer(default=None, doc="""
-        If set to non-None value indicates how frequently to refresh
-        the directory contents in milliseconds.""")
-
     _composite_type: ClassVar[type[ListPanel]] = Column
 
     def __init__(
@@ -350,10 +366,6 @@ class FileSelector(BaseFileNavigator):
         self._selector.param.watch(self._update_value, 'value')
         self._selector._lists[False].param.watch(self._select, 'value')
         self._selector._lists[False].param.watch(self._filter_denylist, 'options')
-        self._periodic = PeriodicCallback(callback=self._refresh, period=self.refresh_period or 0)
-        self.param.watch(self._update_periodic, 'refresh_period')
-        if self.refresh_period:
-            self._periodic.start()
 
     def _select_and_go(self, event: DoubleClickEvent):
         relpath = event.option.replace('📁', '').replace('⬆ ', '')
@@ -365,14 +377,6 @@ class FileSelector(BaseFileNavigator):
         else:
             self._directory.value = self._cwd
         self._update_files()
-
-    def _update_periodic(self, event: param.parameterized.Event):
-        if event.new:
-            self._periodic.period = event.new
-            if not self._periodic.running:
-                self._periodic.start()
-        elif self._periodic.running:
-            self._periodic.stop()
 
     def _update_value(self, event: param.parameterized.Event):
         value = [v for v in event.new if v != '..' and (not self.only_files or os.path.isfile(v))]
@@ -457,10 +461,11 @@ class FileTree(BaseFileSelector, _TreeBase):
     _rename = {
         'directory': None,
         'file_pattern': None,
+        'refresh_period': None,
         'root_directory': None,
         'only_files': 'cascade',
         'max_depth': None,
-        **_TreeBase._rename,
+        'value': 'checked',
     }
 
     def __init__(
@@ -477,6 +482,10 @@ class FileTree(BaseFileSelector, _TreeBase):
         self._set_data_from_directory()
 
     def _set_data_from_directory(self, event=None):
+        reset = False
+        if event and not (path:= fullpath(event.new)).startswith(self._root_directory):
+            self._root_directory = path
+            reset = True
         try:
             children, _ = self._get_children(
                 Path(self.directory).name, self.directory, depth=1
@@ -493,7 +502,9 @@ class FileTree(BaseFileSelector, _TreeBase):
             "state": {"opened": True, "loaded": True},
             "children": children
         }]
-        self._reindex(reset=False)
+        self._reindex(reset=reset)
+        if reset:
+            self.value = []
         if event:
             self._param_change(event)
 
@@ -502,6 +513,8 @@ class FileTree(BaseFileSelector, _TreeBase):
             params['nodes'] = self._nodes
             del params['directory']
         props = super()._process_param_change(params)
+        if 'value' in props:
+            props['checked'] = props.pop('value')
         return props
 
     def _process_property_change(self, msg):
@@ -602,14 +615,35 @@ class FileTreeSelector(BaseFileNavigator):
         fs: AbstractFileSystem | None = None,
         **params,
     ):
-        layout = {p: getattr(self, p) for p in Layoutable.param
-                  if p not in ('name', 'height', 'margin') and getattr(self, p) is not None}
-        sel_layout = dict(layout, sizing_mode='stretch_width', height=300, margin=0)
-        self._selector = FileTree(directory=directory, fs=fs, **sel_layout)
+        layout = {
+            p: getattr(self, p) for p in Layoutable.param
+            if p not in ('name', 'height', 'margin') and getattr(self, p) is not None
+        }
+        sel_layout = dict(
+            layout, sizing_mode='stretch_width', margin=0,
+            styles={'overflow-y': 'auto'}
+        )
+        if 'height' in params:
+            params['height'] = params['height']-70
+        elif not params.get('sizing_mode', '').endswith(('_both', '_height')):
+            params['height'] = 300
+        self._selector = FileTree(
+            directory=directory, fs=fs, value=params.get('value', []),
+            on_click=self._update_path, **sel_layout
+        )
         self._selector.param.watch(self._sync_directory, 'directory')
         super().__init__(directory=directory, fs=fs, **params)
+        self.link(self._selector, value='value', bidirectional=True)
 
-    def _sync_directory(self, event):
+    def _update_path(self, event: NodeEvent):
+        path = event.data['node']['id']
+        node_info = self._selector._index[path]
+        if node_info['type'] == 'folder':
+            self.directory = path[:-1]
+            if event.data['subtype'] == 'dblclick':
+                self._update_files()
+
+    def _sync_directory(self, event: param.parameterized.Event):
         self.directory = event.new
 
     def _update_files(

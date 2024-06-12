@@ -63,5 +63,5 @@ class jsTree(LayoutDOM):
     _new_nodes = Nullable(List(Any))
 
     # Callback properties
-    value = List(Any)
+    checked = List(Any)
     nodes = List(Any)
