@@ -33,11 +33,11 @@ class MapViewer(param.Parameterized):
         super().__init__(**params)
         print("init MapViewer")
 
-viewer = to_viewer(widget, sizing_mode="stretch_width", height=700, styles={"border": "1px solid black"})
+viewer = to_viewer(widget, height=700, sizing_mode="stretch_width", bases=MapViewer)
 
 
 layout = pn.Column(
-    viewer, # Todo: get viewer height, width and sizing_mode working
+    viewer,
     pn.Row(
         viewer.param.zoom,
         viewer.param.center,

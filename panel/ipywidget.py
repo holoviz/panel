@@ -133,7 +133,7 @@ def to_parameterized(
         }
 
         parameterized = param.parameterized_class(name, params=params, bases=bases)
-        # Todo: Figure out why not all parameters are added
+        # Todo: Figure out why not all parameters are added by param.parameterized_class above
         for parameter in params:
             if parameter not in parameterized.param:
                 parameterized.param.add_parameter(parameter, param.Parameter())
@@ -153,8 +153,16 @@ class IpyWidgetViewer(Layoutable, Viewer):
         super().__init__(**params)
 
         widget = self._widget
-        widget.height = "100%"
-        widget.width = "100%"
+        if hasattr(widget, "layout"):
+            # IpyWidgets don't stretch by default. We change that so that the height and width is
+            # controlled by this component.
+            widget.layout.height = "100%"
+            widget.layout.width = "100%"
+        if not self.width and not self.sizing_mode:
+            # In this case the Viewer will have a width of 0px. This will confuse the user.
+            # Thus we set a width > 0px
+            self.width=300
+
         layout_params = {name: self.param[name] for name in Layoutable.param}
 
         self._layout = IPyWidget(widget, **layout_params)

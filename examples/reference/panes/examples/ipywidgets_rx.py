@@ -46,6 +46,3 @@ pn.template.FastListTemplate(
     main_layout=None,
     accent="teal",
 ).servable()
-
-# Todo: Report error in console when tool clicked to ipywidgets_bokeh and leafmap
-# Todo: Report missing fonts in terminal when app is server to ipywidgets_bokeh and leafmap
