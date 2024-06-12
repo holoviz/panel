@@ -3,7 +3,7 @@ requires = [
     "hatchling",
     "hatch-vcs",
     "param >=2.1.0",
-    "bokeh ==3.5.0.dev6",
+    "bokeh ==3.5.0.dev7",
     "pyviz_comms >=0.7.4",
     "requests",
     "packaging",
