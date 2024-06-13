@@ -12,6 +12,7 @@ from panel.io.resources import (
     resolve_stylesheet, set_resource_mode,
 )
 from panel.io.state import set_curdoc
+from panel.models.tabulator import TABULATOR_VERSION
 from panel.theme.native import Native
 from panel.widgets import Button
 
@@ -84,11 +85,11 @@ def test_resources_model_server(document):
         with set_curdoc(document):
             extension('tabulator')
             assert resources.js_files[:2] == [
-                'static/extensions/panel/bundled/datatabulator/tabulator-tables@5.5.0/dist/js/tabulator.min.js',
+                f'static/extensions/panel/bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js',
                 'static/extensions/panel/bundled/datatabulator/luxon/build/global/luxon.min.js',
             ]
             assert resources.css_files == [
-                f'static/extensions/panel/bundled/datatabulator/tabulator-tables@5.5.0/dist/css/tabulator_simple.min.css?v={JS_VERSION}'
+                f'static/extensions/panel/bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/css/tabulator_simple.min.css?v={JS_VERSION}'
             ]
 
 def test_resources_model_cdn(document):
@@ -97,11 +98,11 @@ def test_resources_model_cdn(document):
         with set_curdoc(document):
             extension('tabulator')
             assert resources.js_files[:2] == [
-                f'{CDN_DIST}bundled/datatabulator/tabulator-tables@5.5.0/dist/js/tabulator.min.js',
+                f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js',
                 f'{CDN_DIST}bundled/datatabulator/luxon/build/global/luxon.min.js',
             ]
             assert resources.css_files == [
-                f'{CDN_DIST}bundled/datatabulator/tabulator-tables@5.5.0/dist/css/tabulator_simple.min.css?v={JS_VERSION}'
+                f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/css/tabulator_simple.min.css?v={JS_VERSION}'
             ]
 
 def test_resources_model_inline(document):
@@ -109,13 +110,14 @@ def test_resources_model_inline(document):
     with set_resource_mode('inline'):
         with set_curdoc(document):
             extension('tabulator')
+            tabulator_jsfile = f'bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
+            luxon_jsfile = 'bundled/datatabulator/luxon/build/global/luxon.min.js'
+            tabulator_cssfile = f'bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/css/tabulator_simple.min.css'
             assert resources.js_raw[-2:] == [
-                (DIST_DIR / 'bundled/datatabulator/tabulator-tables@5.5.0/dist/js/tabulator.min.js').read_text(encoding='utf-8'),
-                (DIST_DIR / 'bundled/datatabulator/luxon/build/global/luxon.min.js').read_text(encoding='utf-8')
+                (DIST_DIR / tabulator_jsfile).read_text(encoding='utf-8'),
+                (DIST_DIR / luxon_jsfile).read_text(encoding='utf-8'),
             ]
-            assert resources.css_raw == [
-                (DIST_DIR / 'bundled/datatabulator/tabulator-tables@5.5.0/dist/css/tabulator_simple.min.css').read_text(encoding='utf-8')
-            ]
+            assert resources.css_raw == [(DIST_DIR / tabulator_cssfile).read_text(encoding='utf-8')]
 
 def test_resources_reactive_html_server(document):
     resources = Resources(mode='server')

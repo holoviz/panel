@@ -538,7 +538,7 @@ def test_datetimepicker_disable_editing(page):
 
     serve_component(page, datetime_picker_widget)
 
-    expect(page.locator('.flatpickr-input')).to_have_attribute('disabled', 'true')
+    expect(page.locator('.flatpickr-input')).to_have_attribute('disabled', '')
 
 
 def test_datetimepicker_visible(page):

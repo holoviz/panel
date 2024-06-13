@@ -260,7 +260,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
     this._apply_styles()
     this._apply_visible()
 
-    this.container = div({style: "display: contents;"})
+    this.container = div({style: {display: "contents"}})
     this.shadow_el.append(this.container)
     this._update()
     this._render_children()

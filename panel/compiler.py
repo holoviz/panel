@@ -348,6 +348,16 @@ def bundle_icons(verbose=False, external=True, download_list=None):
     for icon in glob.glob(str(icon_dir / '*')):
         shutil.copyfile(icon, dest_dir / os.path.basename(icon))
 
+def patch_tabulator():
+    # https://github.com/olifolkerd/tabulator/issues/4421
+    path = BUNDLE_DIR / 'datatabulator' / 'tabulator-tables@6.2.1' / 'dist' / 'js' / 'tabulator.min.js'
+    text = path.read_text()
+    old = '"focus"!==this.options("editTriggerEvent")&&"click"!==this.options("editTriggerEvent")'
+    new = '"click"!==this.options("editTriggerEvent")'
+    assert text.count(old) == 1
+    text = text.replace(old, new)
+    path.write_text(text)
+
 def bundle_resources(verbose=False, external=True):
     download_list = []
     bundle_resource_urls(verbose=verbose, external=external, download_list=download_list)
@@ -363,3 +373,5 @@ def bundle_resources(verbose=False, external=True):
     for future in futures:
         if future:
             future.result()
+
+    patch_tabulator()

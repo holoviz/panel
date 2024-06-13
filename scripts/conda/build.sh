@@ -14,8 +14,18 @@ done
 git diff --exit-code
 python -m build -w .
 
+BK_CHANNEL=$(python -c "
+import bokeh
+from packaging.version import Version
+
+if Version(bokeh.__version__).is_devrelease:
+    print('bokeh/label/dev')
+else:
+    print('bokeh')
+")
+
 VERSION=$(find dist -name "*.whl" -exec basename {} \; | cut -d- -f2)
 export VERSION
-conda build scripts/conda/recipe --no-anaconda-upload --no-verify -c bokeh
+conda build scripts/conda/recipe --no-anaconda-upload --no-verify -c $BK_CHANNEL
 
 mv "$CONDA_PREFIX/conda-bld/noarch/$PACKAGE-$VERSION-py_0.tar.bz2" dist
