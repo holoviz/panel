@@ -49,7 +49,7 @@ class CodeEditor(Widget):
     theme = param.ObjectSelector(default="chrome", objects=list(ace_themes),
                                  doc="Theme of the editor")
 
-    value = param.String(doc="State of the current code in the editor when pressing the <enter> key.")
+    value = param.String(doc="State of the current code in the editor when pressing the <enter> key or loss of focus.")
 
     value_input = param.String(doc="State of the current code updated on every key press.")
 
@@ -65,7 +65,10 @@ class CodeEditor(Widget):
             self.param.watch(self._update_disabled, ['disabled', 'readonly'])
         )
         self.jslink(self, readonly='disabled', bidirectional=True)
-        self.link(self, value="value_input")
+
+    @param.depends("value", watch=True)
+    def _update_value_input(self):
+        self.value_input = self.value
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
