@@ -23,7 +23,7 @@ class TestChatSteps:
 
     def test_validate_steps_with_invalid_step(self):
         chat_steps = ChatSteps()
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             chat_steps.append("Not a ChatStep")
 
     def test_active_state_management(self):

@@ -11,6 +11,11 @@ from .utils import serialize_recursively
 
 class ChatSteps(Column):
 
+    objects = param.List(
+        item_type=ChatStep,
+        doc="The list of ChatStep objects in the ChatSteps."
+    )
+
     step_params = param.Dict(
         default={},
         doc="Parameters to pass to the ChatStep constructor.",
@@ -29,12 +34,6 @@ class ChatSteps(Column):
     _rename = {"step_params": None, "active": None, **Column._rename}
 
     _stylesheets = [f"{CDN_DIST}css/chat_steps.css"]
-
-    @param.depends("objects", watch=True, on_init=True)
-    def _validate_steps(self):
-        for step in self.objects:
-            if not isinstance(step, ChatStep):
-                raise ValueError(f"Expected ChatStep, got {step.__class__.__name__}")
 
     def append_step(self, objects: str | list[str] | None = None, **step_params):
         """
