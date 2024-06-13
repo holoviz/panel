@@ -862,10 +862,28 @@ class TestChatFeedCallback:
         wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "User: Message"
 
+    def test_callback_mix_positional_argument(self, chat_feed):
+        def callback(contents, *args):
+            return f"{args[0]}: {contents}"
+
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "User: Message"
+
     def test_callback_keyword_argument(self, chat_feed):
         def callback(**kwargs):
             assert "instance" in kwargs
             return f"{kwargs['user']}: {kwargs['contents']}"
+
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "User: Message"
+
+    def test_callback_mix_keyword_argument(self, chat_feed):
+        def callback(contents, **kwargs):
+            return f"{kwargs['user']}: {contents}"
 
         chat_feed.callback = callback
         chat_feed.send("Message", respond=True)
