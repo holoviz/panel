@@ -891,9 +891,9 @@ class TestChatFeedCallback:
         assert chat_feed.objects[1].object == "User: Message"
 
     def test_callback_mix_positional_keyword_argument(self, chat_feed):
-        def callback(contents, **kwargs):
-            assert "instance" in kwargs
-            return f"{kwargs['user']}: {contents}"
+        def callback(*args, **kwargs):
+            assert not kwargs
+            return f"{args[1]}: {args[0]}"
 
         chat_feed.callback = callback
         chat_feed.send("Message", respond=True)
