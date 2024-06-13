@@ -49,9 +49,11 @@ class CodeEditor(Widget):
     theme = param.ObjectSelector(default="chrome", objects=list(ace_themes),
                                  doc="Theme of the editor")
 
-    value = param.String(doc="State of the current code in the editor")
+    value = param.String(doc="State of the current code in the editor when pressing the <enter> key.")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {"value": "code", "name": None}
+    value_input = param.String(doc="State of the current code updated on every key press.")
+
+    _rename: ClassVar[Mapping[str, str | None]] = {"value": "code", "value_input": "code_input", "name": None}
 
     def __init__(self, **params):
         if 'readonly' in params:
@@ -63,6 +65,7 @@ class CodeEditor(Widget):
             self.param.watch(self._update_disabled, ['disabled', 'readonly'])
         )
         self.jslink(self, readonly='disabled', bidirectional=True)
+        self.link(self, value="value_input")
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,

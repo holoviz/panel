@@ -50,6 +50,8 @@ class AcePlot(HTMLBox):
 
     code = String(default='')
 
+    code_input = String(default='')
+
     theme = Enum(ace_themes, default='chrome')
 
     filename = Nullable(String())

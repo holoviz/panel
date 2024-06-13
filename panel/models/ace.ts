@@ -68,7 +68,8 @@ export class AcePlotView extends HTMLBoxView {
     this._update_language()
     this._editor.setReadOnly(this.model.readonly)
     this._editor.setShowPrintMargin(this.model.print_margin)
-    this._editor.on("change", () => this._update_code_from_editor())
+    this._editor.on("blur", () => this._update_code_from_editor())
+    this._editor.on("change", () => this._update_code_input_from_editor())
   }
 
   _update_code_from_model(): void {
@@ -84,6 +85,12 @@ export class AcePlotView extends HTMLBoxView {
   _update_code_from_editor(): void {
     if (this._editor.getValue() !=  this.model.code) {
       this.model.code = this._editor.getValue()
+    }
+  }
+
+  _update_code_input_from_editor(): void {
+    if (this._editor.getValue() !=  this.model.code_input) {
+      this.model.code_input = this._editor.getValue()
     }
   }
 
@@ -120,6 +127,7 @@ export namespace AcePlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
     code: p.Property<string>
+    code_input: p.Property<string>
     language: p.Property<string>
     filename: p.Property<string | null>
     theme: p.Property<string>
@@ -145,6 +153,7 @@ export class AcePlot extends HTMLBox {
 
     this.define<AcePlot.Props>(({Any, List, Bool, Str, Nullable}) => ({
       code:         [ Str,       "" ],
+      code_input:   [ Str,       "" ],
       filename:     [ Nullable(Str), null],
       language:     [ Str,       "" ],
       theme:        [ Str, "chrome" ],
