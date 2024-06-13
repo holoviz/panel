@@ -10,8 +10,8 @@ import traceback
 
 from enum import Enum
 from inspect import (
-    isasyncgen, isasyncgenfunction, isawaitable, iscoroutinefunction,
-    isgenerator, isgeneratorfunction,
+    getfullargspec, isasyncgen, isasyncgenfunction, isawaitable,
+    iscoroutinefunction, isgenerator, isgeneratorfunction,
 )
 from io import BytesIO
 from typing import (
@@ -428,7 +428,15 @@ class ChatFeed(ListPanel):
             contents = value.value
         else:
             contents = value
-        return contents, message.user, self
+
+        callback_args = getfullargspec(self.callback).args
+        if len(callback_args) > 3:
+            raise ValueError('Function should have at most 3 arguments')
+        elif len(callback_args) == 0:
+            raise ValueError('Function should have at least one argument')
+
+        input_args = (contents, message.user, self)
+        return input_args[:len(callback_args)]
 
     async def _serialize_response(self, response: Any) -> ChatMessage | None:
         """

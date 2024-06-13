@@ -844,6 +844,59 @@ class TestChatFeedCallback:
         assert feed.objects[-1].object == "helloooo"
         assert chat_feed._placeholder not in chat_feed._chat_log
 
+    def test_callback_one_argument(self, chat_feed):
+        def callback(contents):
+            return contents
+
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "Message"
+
+    def test_callback_two_arguments(self, chat_feed):
+        def callback(contents, user):
+            return f"{user}: {contents}"
+
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "User: Message"
+
+    def test_callback_two_arguments_with_keyword(self, chat_feed):
+        def callback(contents, user=None):
+            return f"{user}: {contents}"
+
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "User: Message"
+
+    def test_callback_three_arguments_with_keyword(self, chat_feed):
+        def callback(contents, user=None, instance=None):
+            return f"{user}: {contents}"
+
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "User: Message"
+
+    def test_callback_two_arguments_yield(self, chat_feed):
+        def callback(contents, user):
+            yield f"{user}: {contents}"
+
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "User: Message"
+
+    def test_callback_two_arguments_async_yield(self, chat_feed):
+        async def callback(contents, user):
+            yield f"{user}: {contents}"
+
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "User: Message"
 
 @pytest.mark.xdist_group("chat")
 class TestChatFeedSerializeForTransformers:
