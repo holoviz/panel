@@ -20,16 +20,21 @@ export class ReactComponentView extends ReactiveESMView {
   }
 
   protected override _render_code(): string {
+    const suffix = this.model.dev ? '?dev': ''
     let render_code = `
 if (rendered && view.model.usesReact) {
   view._changing = true
   const root = createRoot(view.container)
-  root.render(rendered)
+  try {
+    root.render(rendered)
+  } catch(e) {
+    view.render_error(e)
+  }
   view._changing = false
 }`
     let import_code = `
 import * as React from "react"
-import { createRoot } from 'react-dom/client'`
+import { createRoot } from "react-dom/client${suffix}"`
     if (this.model.usesMui) {
       import_code = `
 ${import_code}
@@ -53,41 +58,32 @@ const view = Bokeh.index.find_one_by_id('${this.model.id}')
 
 class Child extends React.Component {
 
-  get views() {
+  get view() {
     const model = this.props.parent.model.data[this.props.name]
     const models = Array.isArray(model) ? model : [model]
-    const views = []
-    for (const submodel of models) {
-      const child = this.props.parent.get_child_view(submodel)
-      if (child) {
-        views.push(child)
-      }
-    }
-    return views
+    return this.props.parent.get_child_view(models[this.props.index])
   }
 
-  get elements() {
-    return this.views.map(view => view.el)
+  get element() {
+    return this.view.el
   }
 
   componentDidMount() {
-    this.views.map((view) => {
-      view.render()
-      view.after_render()
-    })
+    this.view.render()
+    this.view.after_render()
     this.props.parent.on_child_render(this.props.name, (new_views) => {
       this.forceUpdate()
-      this.views.map((view) => {
-        if (new_views.includes(view)) {
-          view.render()
-          view.after_render()
-        }
-      })
+      const view = this.view
+      if (new_views.includes(view)) {
+        view.render()
+        view.after_render()
+        console.log('!!!', this.props.index)
+      }
     })
   }
 
   render() {
-    return React.createElement('div', {className: "child-wrapper", ref: (ref) => ref && this.elements.map(el => ref.appendChild(el))})
+    return React.createElement('div', {className: "child-wrapper", ref: (ref) => ref && ref.appendChild(this.element)})
   }
 }
 
@@ -104,7 +100,38 @@ function react_getter(target, name) {
       return undefined
     }
   } else if (name === "get_child") {
-    return (child) => React.createElement(Child, {parent: target, name: child})
+    return (child) => {
+      const data_model = target.model.data
+      const value = data_model.attributes[child]
+      if (Array.isArray(value)) {
+        const children = []
+        for (let i = 0; i<value.length; i++) {
+          children.push(
+            React.createElement(Child, {parent: target, name: child, index: i, key: child+i})
+          )
+        }
+        const [children_state, set_children] = React.useState(children);
+        target.on_child_render(child, (new_views) => {
+          const value = data_model.attributes[child]
+          if (new_views.length && children_state.length !== value.length) {
+            const children = []
+            for (let i = 0; i<value.length; i++) {
+              let new_child
+              if (i < children_state.length) {
+                new_child = children_state[i]
+              } else {
+                new_child = React.createElement(Child, {parent: target, name: child, index: i, key: child+i})
+              }
+              children.push(new_child)
+            }
+            set_children(children)
+          }
+        })
+        return children_state
+      } else {
+        return React.createElement(Child, {parent: target, name: child, index: 0})
+      }
+    }
   }
   return target.model_getter(target, name)
 }
@@ -114,8 +141,37 @@ const react_proxy = new Proxy(view, {
   set: view.model_setter
 })
 
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    // initialize the error state
+    this.state = { hasError: false };
+  }
+
+  // if an error happened, set the state to true
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error) {
+    console.log(error)
+    this.props.view.render_error(error)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return React.createElement('div')
+    }
+    return React.createElement('div', {}, this.props.children);
+  }
+}
+
 const props = {view, model: react_proxy, data: view.model.data, el: view.container}
 let rendered = React.createElement(view.render_fn, props)
+
+if (view.model.dev) {
+  rendered = React.createElement(ErrorBoundary, {view}, rendered)
+}
 
 ${render_code}`
   }
@@ -154,9 +210,10 @@ export class ReactComponent extends ReactiveESM {
     const react_version = this.react_version
     const imports = this.importmap?.imports
     const scopes = this.importmap?.scopes
+    const suffix = this.dev ? '?dev': ''
     const importMap = {
       imports: {
-        react: `https://esm.sh/react@${react_version}`,
+        react: `https://esm.sh/react@${react_version}${suffix}`,
         "react-dom/": `https://esm.sh/react-dom@${react_version}/`,
         ...imports,
       },

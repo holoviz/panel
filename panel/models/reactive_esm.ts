@@ -91,7 +91,7 @@ export class ReactiveESMView extends HTMLBoxView {
   compiled_module: any = null
   model_proxy: any
   _changing: boolean = false
-  _child_callbacks: Map<string, (new_views: UIElementView[]) => void>
+  _child_callbacks: Map<string, ((new_views: UIElementView[]) => void)[]>
 
   override initialize(): void {
     super.initialize()
@@ -162,6 +162,12 @@ export class ReactiveESMView extends HTMLBoxView {
     return children
   }
 
+  render_error(error: SyntaxError): void {
+    const error_div = div({class: "error"})
+    error_div.innerHTML = formatError(error, this.model.esm)
+    this.container.appendChild(error_div)
+  }
+
   override render(): void {
     this.empty()
     this._update_stylesheets()
@@ -175,9 +181,7 @@ export class ReactiveESMView extends HTMLBoxView {
     this.container = div({style: "display: contents;"})
     this.shadow_el.append(this.container)
     if (this.model.compile_error) {
-      const error = div({class: "error"})
-      error.innerHTML = formatError(this.model.compile_error, this.model.esm)
-      this.container.appendChild(error)
+      this.render_error(this.model.compile_error)
     } else {
       this.render_esm()
     }
@@ -267,9 +271,9 @@ view.model_proxy.watch(() => view.render_esm(), view.accessed_children)`
     }
 
     for (const child of this.model.children) {
-      const callback = this._child_callbacks.get(child)
-      if (callback) {
-        const new_children = new_views.get(child) || []
+      const callbacks = this._child_callbacks.get(child)
+      const new_children = new_views.get(child) || []
+      for (const callback of callbacks) {
         callback(new_children)
       }
     }
@@ -279,7 +283,10 @@ view.model_proxy.watch(() => view.render_esm(), view.accessed_children)`
   }
 
   on_child_render(child: string, callback: (new_views: UIElementView[]) => void): void {
-    this._child_callbacks.set(child, callback)
+    if (!this._child_callbacks.has(child)) {
+      this._child_callbacks.set(child, [])
+    }
+    this._child_callbacks.get(child).push(callback)
   }
 
   remove_on_child_render(child: string): void {
@@ -347,7 +354,7 @@ export class ReactiveESM extends HTMLBox {
     const remaining = []
     for (const [wview, wcb] of this._esm_watchers[prop]) {
       if (wview !== view || wcb !== cb) {
-	remaining.push([wview, cb])
+        remaining.push([wview, cb])
       }
     }
     if (remaining.length) {
