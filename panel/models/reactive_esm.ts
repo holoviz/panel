@@ -357,7 +357,7 @@ export class ReactiveESM extends HTMLBox {
         remaining.push([wview, cb])
       }
     }
-    if (remaining.length) {
+    if (remaining.length > 0) {
       this._esm_watchers[prop] = remaining
     } else {
       delete this._esm_watchers[prop]
@@ -381,7 +381,7 @@ export class ReactiveESM extends HTMLBox {
           remaining.push([wview, cb])
         }
       }
-      if (remaining.length) {
+      if (remaining.length > 0) {
         this._esm_watchers[p] = remaining
       } else {
         delete this._esm_watchers[p]

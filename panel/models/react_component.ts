@@ -20,7 +20,7 @@ export class ReactComponentView extends ReactiveESMView {
   }
 
   protected override _render_code(): string {
-    const suffix = this.model.dev ? '?dev': ''
+    const suffix = this.model.dev ? "?dev": ""
     let render_code = `
 if (rendered && view.model.usesReact) {
   view._changing = true
@@ -210,7 +210,7 @@ export class ReactComponent extends ReactiveESM {
     const react_version = this.react_version
     const imports = this.importmap?.imports
     const scopes = this.importmap?.scopes
-    const suffix = this.dev ? '?dev': ''
+    const suffix = this.dev ? "?dev": ""
     const importMap = {
       imports: {
         react: `https://esm.sh/react@${react_version}${suffix}`,
