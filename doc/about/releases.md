@@ -2,13 +2,32 @@
 
 See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual summary of the major features added in each release.
 
+## Version 1.4.4
+
+Date: 2024-05-31
+
+This release primarily addresses a critical regression in notebook comm channel handling introduced in 1.4.3 and includes a few minor fixes for Tabulator and documentation related issues. Many thanks to @justinwiley for his first contribution to Panel, @twobitunicorn as a returning contributor and the core contributors @maximlt and @philippjfr for their continued work.
+
+### Bug fixes
+
+- Fix notebook CommManager extraction of buffers ([#6880](https://github.com/holoviz/panel/pull/6880))
+- Fix issue when editing timezone-aware datetime column `Tabulator` ([#6879](https://github.com/holoviz/panel/pull/6879))
+- Ensure `Tabulator` does not rebuild children when using `embed_content` with `row_content` ([#6881](https://github.com/holoviz/panel/pull/6881))
+- Ensure `ParamRef`, `ParamFunction` and `ParamMethod` resolve synchronous generators asynchronously ([#6885](https://github.com/holoviz/panel/pull/6885))
+- Ensure periodic callback cleanup does not error on session warmup ([#6886](https://github.com/holoviz/panel/pull/6886))
+
+### Documentation
+
+- Update OAuth documentation to correctly reference auth_code provider ([#6875](https://github.com/holoviz/panel/pull/6875))
+- Fix `CheckBoxGroup` `value` type annotation in reference docs ([#6877](https://github.com/holoviz/panel/pull/6877))
+
 ## Version 1.4.3
 
-Date: 2024-05-21
+Date: 2024-05-23
 
-This patch release is likely the last in the 1.4.x series. The most important fixes in this release are fixes to ensure keyboard shortcuts do not get triggered inside Panel components for for recent versions of JupyterLab, fixes for OAuth token refreshes, and various documentation fixes. The release also includes a small number of enhancements, including improved UX for the `FileSelector`. Many thanks to the many contributors to this release including @jrycw, @Coderambling, @cdeil, and the maintainers @Hoxbro, @MarcSkovMadsen, @ahuang11, @maximlt and @philippjfr.
+This patch release is likely the last in the 1.4.x series. The most important fixes in this release are fixes to ensure keyboard shortcuts do not get triggered inside Panel components for for recent versions of JupyterLab, fixes for OAuth token refreshes, and various documentation fixes. The release also includes a small number of enhancements, including improved UX for the `FileSelector`. Many thanks to the many contributors to this release including @jrycw, @Coderambling, @cdeil, @twobitunicorn, and the maintainers @Hoxbro, @MarcSkovMadsen, @ahuang11, @maximlt and @philippjfr.
 
-## Enhancements
+### Enhancements
 
 - Add CSS on mouse interaction with `Card` ([#6636](https://github.com/holoviz/panel/pull/6636))
 - Make `ChatMessage.reaction_icons` reactive ([#6807](https://github.com/holoviz/panel/pull/6807))
@@ -37,6 +56,7 @@ This patch release is likely the last in the 1.4.x series. The most important fi
 - Add redirects for old documentation pages ([#6833](https://github.com/holoviz/panel/pull/6833))
 - Remove Google Analytics ([#6836](https://github.com/holoviz/panel/pull/6836))
 - Various documentation fixes ([#6829](https://github.com/holoviz/panel/pull/6829))
+- Fix link in gallery index ([#6858](https://github.com/holoviz/panel/pull/6858))
 
 ## Version 1.4.2
 

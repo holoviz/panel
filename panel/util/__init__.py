@@ -4,6 +4,7 @@ Various general utilities used in the panel codebase.
 from __future__ import annotations
 
 import ast
+import asyncio
 import base64
 import datetime as dt
 import json
@@ -44,7 +45,6 @@ log = logging.getLogger('panel.util')
 
 bokeh_version = Version(Version(bokeh.__version__).base_version)
 
-BOKEH_JS_NAT = np.nan
 PARAM_NAME_PATTERN = re.compile(r'^.*\d{5}$')
 
 class LazyHTMLSanitizer:
@@ -485,3 +485,21 @@ def try_datetime64_to_datetime(value):
     if isinstance(value, np.datetime64):
         value = value.astype('datetime64[ms]').astype(datetime)
     return value
+
+
+async def to_async_gen(sync_gen):
+    done = object()
+
+    def safe_next():
+        # Converts StopIteration to a sentinel value to avoid:
+        # TypeError: StopIteration interacts badly with generators and cannot be raised into a Future
+        try:
+            return next(sync_gen)
+        except StopIteration:
+            return done
+
+    while True:
+        value = await asyncio.to_thread(safe_next)
+        if value is done:
+            break
+        yield value
