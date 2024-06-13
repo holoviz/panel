@@ -157,7 +157,7 @@ def bokeh_repr(obj: Model, depth: int = 0, ignored: Optional[Iterable[str]] = No
         if k in ignored:
             continue
         if isinstance(v, Model):
-            v = '%s()' % type(v).__name__
+            v = f'{type(v).__name__}()'
         else:
             v = repr(v)
         if len(v) > 30:
@@ -168,7 +168,7 @@ def bokeh_repr(obj: Model, depth: int = 0, ignored: Optional[Iterable[str]] = No
         r += f'{cls}(children=[\n'
         for child_obj in obj.children: # type: ignore
             r += textwrap.indent(bokeh_repr(child_obj, depth=depth+1) + ',\n', '  ')
-        r += '], %s)' % props_repr
+        r += f'], {props_repr})'
     else:
         r += f'{cls}({props_repr})'
     return r

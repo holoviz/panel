@@ -40,6 +40,8 @@ def launch_jupyterlite():
 
 
 def test_jupyterlite_execution(launch_jupyterlite, page):
+    # INFO: Needs TS changes uploaded to CDN. Relevant when
+    # testing a new version of Bokeh.
     page.goto("http://localhost:8123/index.html")
 
     page.locator('text="Getting_Started.ipynb"').first.dblclick()

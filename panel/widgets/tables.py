@@ -28,7 +28,7 @@ from ..io.resources import CDN_DIST, CSS_URLS
 from ..io.state import state
 from ..reactive import Reactive, ReactiveData
 from ..util import (
-    BOKEH_JS_NAT, clone_model, datetime_as_utctimestamp, isdatetime, lazy_load,
+    clone_model, datetime_as_utctimestamp, isdatetime, lazy_load,
     styler_update, updating,
 )
 from ..util.warnings import warn
@@ -247,7 +247,7 @@ class BaseTable(ReactiveData, Widget):
 
             title = self.titles.get(col, str(col))
             if col in indexes and len(indexes) > 1 and self.hierarchical:
-                title = 'Index: %s' % ' | '.join(indexes)
+                title = 'Index: {}'.format(' | '.join(indexes))
             elif col in self.indexes and col.startswith('level_'):
                 title = ''
             column = TableColumn(field=str(col), title=title,
@@ -847,7 +847,7 @@ class BaseTable(ReactiveData, Widget):
                     if isinstance(value, pd.Timestamp):
                         value = datetime_as_utctimestamp(value)
                     elif value is pd.NaT:
-                        value = BOKEH_JS_NAT
+                        value = np.nan
                     values.append((patch_ind, value))
                 patches[k] = values
             self._patch(patches)
@@ -1484,10 +1484,15 @@ class Tabulator(BaseTable):
     def _update_children(self, *events):
         cleanup, reuse = set(), set()
         page_events = ('page', 'page_size', 'pagination')
+        old_panels = self._child_panels
         for event in events:
             if event.name == 'expanded' and len(events) == 1:
-                cleanup = set(event.old) - set(event.new)
-                reuse = set(event.old) & set(event.new)
+                if self.embed_content:
+                    cleanup = set()
+                    reuse = set(old_panels)
+                else:
+                    cleanup = set(event.old) - set(event.new)
+                    reuse = set(event.old) & set(event.new)
             elif (
               (event.name == 'value' and self._indexes_changed(event.old, event.new)) or
               (event.name in page_events and not self._updating) or
@@ -1495,7 +1500,6 @@ class Tabulator(BaseTable):
             ):
                 self.expanded = []
                 return
-        old_panels = self._child_panels
         self._child_panels = child_panels = self._get_children(
             {i: old_panels[i] for i in reuse}
         )

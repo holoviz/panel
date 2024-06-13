@@ -857,9 +857,9 @@ def get_static_routes(static_dirs):
                              "this is reserved for internal use.")
         path = fullpath(path)
         if not os.path.isdir(path):
-            raise ValueError("Cannot serve non-existent path %s" % path)
+            raise ValueError(f"Cannot serve non-existent path {path}")
         patterns.append(
-            (r"%s/(.*)" % slug, StaticFileHandler, {"path": path})
+            (rf"{slug}/(.*)", StaticFileHandler, {"path": path})
         )
     patterns.append((
         f'/{COMPONENT_PATH}(.*)', ComponentResourceHandler, {}
@@ -1085,7 +1085,7 @@ def get_server(
 
     if liveness:
         liveness_endpoint = 'liveness' if isinstance(liveness, bool) else liveness
-        extra_patterns += [(r"/%s" % liveness_endpoint, LivenessHandler, dict(applications=apps))]
+        extra_patterns += [(rf"/{liveness_endpoint}", LivenessHandler, dict(applications=apps))]
 
     opts = dict(kwargs)
     if loop:

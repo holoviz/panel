@@ -26,6 +26,7 @@ from ..layout import Feed, ListPanel
 from ..layout.card import Card
 from ..layout.spacer import VSpacer
 from ..pane.image import SVG
+from ..util import to_async_gen
 from .icon import ChatReactionIcons
 from .message import ChatMessage
 
@@ -499,23 +500,6 @@ class ChatFeed(ListPanel):
                 return
             await asyncio.sleep(0.1)
 
-    async def _to_async_gen(self, sync_gen):
-        done = object()
-
-        def safe_next():
-            # Converts StopIteration to a sentinel value to avoid:
-            # TypeError: StopIteration interacts badly with generators and cannot be raised into a Future
-            try:
-                return next(sync_gen)
-            except StopIteration:
-                return done
-
-        while True:
-            value = await asyncio.to_thread(safe_next)
-            if value is done:
-                break
-            yield value
-
     async def _handle_callback(self, message, loop: asyncio.BaseEventLoop):
         callback_args, callback_kwargs = self._gather_callback_args(message)
         if iscoroutinefunction(self.callback):
@@ -523,7 +507,7 @@ class ChatFeed(ListPanel):
         elif isasyncgenfunction(self.callback):
             response = self.callback(*callback_args, **callback_kwargs)
         elif isgeneratorfunction(self.callback):
-            response = self._to_async_gen(self.callback(*callback_args, **callback_kwargs))
+            response = to_async_gen(self.callback(*callback_args, **callback_kwargs))
             # printing type(response) -> <class 'async_generator'>
         else:
             response = await asyncio.to_thread(self.callback, *callback_args, **callback_kwargs)

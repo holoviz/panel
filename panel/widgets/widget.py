@@ -51,7 +51,7 @@ def _get_min_max_value(
             value = min + (diff // 2)
     else:  # value is not None
         if not isinstance(value, Real):
-            raise TypeError('expected a real number, got: %r' % value)
+            raise TypeError(f'expected a real number, got: {value!r}')
         # Infer min/max from value
         if value == 0:
             # This gives (0, 1) of the correct type
@@ -163,7 +163,7 @@ class widget(param.ParameterizedFunction):
         elif _matches(o, (Real, Real, Real)):
             step = o[2]
             if step <= 0:
-                raise ValueError("step must be >= 0, not %r" % step)
+                raise ValueError(f"step must be >= 0, not {step!r}")
             min, max, value = _get_min_max_value(o[0], o[1], step=step)
             if all(isinstance(_, Integral) for _ in o) and int_default:
                 cls = IntSlider
@@ -173,7 +173,7 @@ class widget(param.ParameterizedFunction):
         elif _matches(o, (Real, Real, Real, Real)):
             step = o[2]
             if step <= 0:
-                raise ValueError("step must be >= 0, not %r" % step)
+                raise ValueError(f"step must be >= 0, not {step!r}")
             min, max, value = _get_min_max_value(o[0], o[1], value=o[3], step=step)
             if all(isinstance(_, Integral) for _ in o):
                 cls = IntSlider

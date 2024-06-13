@@ -71,9 +71,9 @@ class FlexBox(ListLike, ReactiveHTML):
                 params['sizing_mode'] = 'stretch_height'
         if objects:
             if 'objects' in params:
-                raise ValueError("A %s's objects should be supplied either "
+                raise ValueError(f"A {type(self).__name__}'s objects should be supplied either "
                                  "as positional arguments or as a keyword, "
-                                 "not both." % type(self).__name__)
+                                 "not both.")
             params['objects'] = [panel(pane) for pane in objects]
         elif 'objects' in params:
             objects = params['objects']

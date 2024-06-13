@@ -37,6 +37,12 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
 
 
+def check_holoviews(version):
+    import holoviews as hv
+
+    return Version(Version(hv.__version__).base_version) >= Version(version)
+
+
 class HoloViews(PaneBase):
     """
     `HoloViews` panes render any `HoloViews` object using the
@@ -487,8 +493,6 @@ class HoloViews(PaneBase):
         return pane_type(state, **kwargs)
 
     def _render(self, doc, comm, root):
-        import holoviews as hv
-
         from holoviews import Store, renderer as load_renderer
 
         if self.renderer:
@@ -516,7 +520,7 @@ class HoloViews(PaneBase):
                 renderer = renderer.instance(**params)
 
         kwargs = {'margin': self.margin}
-        if backend == 'bokeh' or Version(str(hv.__version__)) >= Version('1.13.0'):
+        if backend == 'bokeh' or check_holoviews('1.13.0'):
             kwargs['doc'] = doc
             kwargs['root'] = root
             if comm:
@@ -591,7 +595,7 @@ class HoloViews(PaneBase):
             object = object.hmap
 
         if isinstance(object, DynamicMap) and object.unbounded:
-            dims = ', '.join('%r' % dim for dim in object.unbounded)
+            dims = ', '.join(f'{dim!r}' for dim in object.unbounded)
             msg = ('DynamicMap cannot be displayed without explicit indexing '
                    'as {dims} dimension(s) are unbounded. '
                    '\nSet dimensions bounds with the DynamicMap redim.range '
@@ -807,7 +811,8 @@ def find_links(root_view, root_model):
     plots = [(plot, root_plot) for root_plot in root_plots
              for plot in root_plot.traverse(lambda x: x, [is_bokeh_element_plot])]
 
-    potentials = [(LinkCallback.find_link(plot), root_plot)
+    link_kwargs = {'target': True} if check_holoviews('1.19') else {}
+    potentials = [(LinkCallback.find_link(plot, **link_kwargs), root_plot)
                   for plot, root_plot in plots]
 
     source_links = [p for p in potentials if p[0] is not None]
@@ -818,7 +823,7 @@ def find_links(root_view, root_model):
                 # If link has no target don't look further
                 found.append((link, plot, None))
                 continue
-            potentials = [LinkCallback.find_link(plot, link) for plot, inner_root in plots
+            potentials = [LinkCallback.find_link(plot, link, **link_kwargs) for plot, inner_root in plots
                           if inner_root is not root_plot]
             tgt_links = [p for p in potentials if p is not None]
             if tgt_links:
