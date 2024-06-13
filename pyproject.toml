@@ -48,7 +48,7 @@ classifiers = [
 ]
 
 dependencies = [
-    'bokeh ==3.5.0.dev6',
+    'bokeh ==3.5.0.dev7',
     'param >=2.1.0,<3.0',
     'pyviz_comms >=2.0.0',
     'markdown',
