@@ -3,6 +3,9 @@ instead of Traitlets observer pattern.
 
 The purpose is to enable Panel users to easily use Ipywidgets using familiar APIs.
 """
+import pytest
+
+pytest.importorskip("ipywidgets")
 
 import param
 import pytest

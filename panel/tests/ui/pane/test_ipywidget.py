@@ -16,7 +16,7 @@ try:
     import reacton
 except Exception:
     reacton = None
-requires_reacton = pytest.mark.skipif(reacton is None, reason="requires reaction")
+requires_reacton = pytest.mark.skipif(reacton is None, reason="requires reacton")
 
 try:
     import anywidget
