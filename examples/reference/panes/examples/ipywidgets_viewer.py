@@ -6,7 +6,7 @@ from leafmap.toolbar import change_basemap
 
 import panel as pn
 
-from panel.ipywidget import to_viewer
+from panel.ipywidget import create_viewer
 
 pn.extension("ipywidgets")
 
@@ -33,7 +33,7 @@ class MapViewer(param.Parameterized):
         super().__init__(**params)
         print("init MapViewer")
 
-viewer = to_viewer(widget, height=700, sizing_mode="stretch_width", bases=MapViewer)
+viewer = create_viewer(widget, height=700, sizing_mode="stretch_width", bases=MapViewer)
 
 
 layout = pn.Column(

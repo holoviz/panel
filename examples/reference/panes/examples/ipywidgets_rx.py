@@ -5,7 +5,7 @@ from leafmap.toolbar import change_basemap
 
 import panel as pn
 
-from panel.ipywidget import to_rx
+from panel.ipywidget import create_rx
 
 pn.extension("ipywidgets")
 
@@ -25,7 +25,7 @@ widget = Map(  # type: ignore
     data_ctrl=False,
 )
 
-zoom, center = to_rx(widget, "zoom", "center")
+zoom, center = create_rx(widget, "zoom", "center")
 
 layout = pn.Column(
     widget,

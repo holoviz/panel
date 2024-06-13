@@ -14,7 +14,8 @@ from ipywidgets import DOMWidget, register
 from traitlets import Float, Int, Unicode
 
 from panel.ipywidget import (
-    _get_public_and_relevant_trait_names, to_parameterized, to_rx, to_viewer,
+    _get_public_and_relevant_trait_names, create_parameterized, create_rx,
+    create_viewer,
 )
 from panel.pane import IPyWidget
 from panel.viewable import Layoutable, Viewer
@@ -37,12 +38,12 @@ def widget():
     return ExampleIpyWidget(name="A", age=1, weight=1.1)
 
 def test_sync_parameterized_readonly(widget):
-    parameterized = to_parameterized(widget, "read_only")
+    parameterized = create_parameterized(widget, "read_only")
     parameterized.read_only="Some other value"
     assert widget.read_only!="Some other value"
 
 def test_to_parameterized(widget):
-    viewer = to_parameterized(widget)
+    viewer = create_parameterized(widget)
 
     assert {"name", "age", "weight"} <= set(viewer.param)
 
@@ -74,14 +75,14 @@ def _assert_is_synced(viewer, widget):
     assert viewer.weight == widget.weight
 
 def test_to_parameterized_is_synced(widget):
-    viewer = to_parameterized(widget)
+    viewer = create_parameterized(widget)
 
     _assert_is_synced(viewer, widget)
 
 
 
 def test_to_parameterized_parameter_list(widget):
-    viewer = to_parameterized(widget, "name", "age")
+    viewer = create_parameterized(widget, "name", "age")
 
     assert {"name", "age"} <= set(viewer.param)
     assert "weight" not in set(viewer.param)
@@ -109,7 +110,7 @@ def test_to_parameterized_bases(widget):
         age = param.Integer(0, bounds=(0, 10))
         not_trait = param.Parameter(1)
 
-    viewer = to_parameterized(widget, bases=ExampleParameterized)
+    viewer = create_parameterized(widget, bases=ExampleParameterized)
     assert isinstance(viewer, ExampleParameterized)
     assert {"name", "age", "weight", "not_trait", "read_only"} <= set(viewer.param)
 
@@ -117,7 +118,7 @@ def test_to_parameterized_bases(widget):
 
 
 def test_to_viewer(widget):
-    viewer = to_viewer(widget)
+    viewer = create_viewer(widget)
 
     assert isinstance(viewer, Layoutable)
     assert isinstance(viewer, Viewer)
@@ -130,7 +131,7 @@ def test_to_viewer(widget):
 
 
 def test_to_viewer_kwargs(widget):
-    viewer = to_viewer(widget, "name", "age", sizing_mode="stretch_width")
+    viewer = create_viewer(widget, "name", "age", sizing_mode="stretch_width")
     assert viewer.__panel__().sizing_mode == "stretch_width"
 
 def test_to_viewer_bases(widget):
@@ -141,7 +142,7 @@ def test_to_viewer_bases(widget):
         not_trait = param.Parameter(1)
 
 
-    viewer = to_viewer(widget, bases=ExampleParameterized)
+    viewer = create_viewer(widget, bases=ExampleParameterized)
 
     widget.age=3
     assert viewer.age==widget.age==3
@@ -150,7 +151,7 @@ def test_to_viewer_bases(widget):
 
 
 def test_to_rx_all_public_and_relevant(widget):
-    rxs = to_rx(widget)
+    rxs = create_rx(widget)
 
     names = _get_public_and_relevant_trait_names(widget)
     for name, rx in zip(names, rxs):
@@ -158,7 +159,7 @@ def test_to_rx_all_public_and_relevant(widget):
         assert rx.rx.value == getattr(widget, name)
 
 def test_to_rx_all_custom(widget):
-    age, weight, name = to_rx(widget, "age", "weight", "name")
+    age, weight, name = create_rx(widget, "age", "weight", "name")
     assert isinstance(name, param.reactive.rx)
     assert isinstance(age, param.reactive.rx)
     assert isinstance(weight, param.reactive.rx)
@@ -185,7 +186,7 @@ def test_to_rx_all_custom(widget):
 
 
 def test_to_rx_subset(widget):
-    name, age = to_rx(widget, "name", "age")
+    name, age = create_rx(widget, "name", "age")
     assert isinstance(name, param.reactive.rx)
     assert isinstance(age, param.reactive.rx)
 
@@ -205,7 +206,7 @@ def test_to_rx_subset(widget):
     assert age.rx.value == widget.age
 
 def test_to_rx_single(widget):
-    age = to_rx(widget, "age")
+    age = create_rx(widget, "age")
     assert isinstance(age, param.reactive.rx)
 
     assert age.rx.value == widget.age

@@ -1,5 +1,23 @@
-"""Functionality to enable easily interacting with ipywidgets via familiar APIs like pn.bind,
-@pn.depends and pn.rx"""
+"""Functionality to enable easy interaction with Traitlets models and ipywidgets via familiar APIs from Param like watch, bind, depends, and rx.
+
+## Terminology
+
+- **Traitlets**: A library for creating classes (`HasTraits`) with observable attributes (called *traits*).
+- **Param**: A library similar to Traitlets, for creating classes (`Parameterized`) with watchable attributes (called *parameters*).
+- **ipywidgets**: Builds on Traitlets to create interactive widgets for Jupyter notebooks.
+- **widget**: Refers to ipywidgets.
+- **model**: Refers to Traitlets classes that are not ipywidgets.
+
+## Functionality
+
+- `create_parameterized`: Creates a Parameterized object from a model with parameters synced to the model's traits.
+- `create_viewer`: Creates a Viewer object from a widget with parameters synced to the widget's traits and displaying the widget when rendered.
+- `create_rx`: Creates `rx` values from traits of a model, each synced to a trait of the model.
+- `sync_with_parameterized`: Syncs the traits of a model with parameters of a Parameterized object.
+- `sync_with_rx`: Syncs a single trait of a model with an `rx` value.
+
+All synchronization is bidirectional.
+"""
 
 from inspect import isclass
 from typing import TYPE_CHECKING, Any, Iterable
@@ -39,36 +57,31 @@ def _get_public_and_relevant_trait_names(widget):
     return tuple(name for name in widget.traits() if _is_custom_trait(name))
 
 
-def sync_parameterized(widget: HasTraits, parameterized: Parameterized, *parameters):
-    """Syncs the parameters of the widget and the parameters of the parameterized
-
-    Please note we don't sync to a readonly widget parameter. We do sync to a constant
-    parameterized parameter though.
+def sync_with_parameterized(model: HasTraits, parameterized: Parameterized, *parameters):
+    """Syncs the traits of the model with the parameters of the Parameterized object bidirectionally.
 
     Args:
-        widget: The widget to keep synced
-        parameterized: The Parameterized to keep synced
-        parameters: The names of the parameters to keep synced. If none are specified all public and
-            relevant parameters of the widget will be synced.
+        model: The model to synchronize.
+        parameterized: The Parameterized object to synchronize.
+        parameters: The names of the attributes (traits/parameters) to synchronize. If none are
+            specified, all public and relevant traits of the model will be synced.
     """
     if not parameters:
-        parameters = _get_public_and_relevant_trait_names(widget)
+        parameters = _get_public_and_relevant_trait_names(model)
 
     with param.edit_constant(parameterized):
         for parameter in parameters:
-            setattr(parameterized, parameter, getattr(widget, parameter))
+            setattr(parameterized, parameter, getattr(model, parameter))
 
     for parameter in parameters:
-        # Observe widget parameter
-        def _handle_widget_change(_, widget=widget, parameter=parameter):
+        def _handle_widget_change(_, widget=model, parameter=parameter):
             with param.edit_constant(parameterized):
                 setattr(parameterized, parameter, getattr(widget, parameter))
-        widget.observe(_handle_widget_change, names=parameter)
+        model.observe(_handle_widget_change, names=parameter)
 
-        # Bind to parameterized parameter
         read_only = set()
 
-        def _handle_observer_change(_, widget=widget, parameter=parameter, read_only=read_only):
+        def _handle_observer_change(_, widget=model, parameter=parameter, read_only=read_only):
             if parameter not in read_only:
                 try:
                     setattr(widget, parameter, getattr(parameterized, parameter))
@@ -77,23 +90,22 @@ def sync_parameterized(widget: HasTraits, parameterized: Parameterized, *paramet
 
         bind(_handle_observer_change, parameterized.param[parameter], watch=True)
 
-class HasTraitsParameterized(Parameterized):
-    """An abstract base class for creating a Parameterized that wraps a HasTraits"""
+
+class HasTraitsWrapper(Parameterized):
+    """An abstract Parameterized base class for wrapping a HasTraits class."""
 
     _widget = param.Parameter(allow_None=False)
     _parameters = param.Parameter(allow_None=False)
 
     def __init__(self, **params):
         super().__init__(**params)
+        sync_with_parameterized(self._widget, self, *self._parameters)
 
-        sync_parameterized(self._widget, self, *self._parameters)
 
 _ipywidget_classes = {}
 
 
-def _to_tuple(
-    bases: None | Parameterized | Iterable[Parameterized],
-) -> tuple[Parameterized]:
+def _to_tuple(bases: None | Parameterized | Iterable[Parameterized]) -> tuple[Parameterized]:
     if not bases:
         bases = ()
     if isclass(bases) and issubclass(bases, Parameterized):
@@ -101,24 +113,20 @@ def _to_tuple(
     return tuple(item for item in bases)
 
 
-def to_parameterized(
-    widget: HasTraits,
-    *parameters,
-    bases: Iterable[Parameterized] | Parameterized | None = None,
-    **kwargs,
-) -> Parameterized:
-    """Returns a Parameterized object with parameters synced to the ipywidget widget parameters
+def create_parameterized(model: HasTraits, *parameters, bases: Iterable[Parameterized] | Parameterized | None = None, **kwargs) -> Parameterized:
+    """Returns a Parameterized object from a model with parameters synced bidirectionally to the model's traits.
 
     Args:
-        widget: The ipywidget to create the Viewer from.
-        parameters: The parameters to add to the Parameterized and to sync.
-            If no parameters are specified all public parameters on the widget will be added
-            and synced.
+        model: The model to create the Parameterized object from.
+        parameters: The parameters to add to the Parameterized object and to sync.
+            If no parameters are specified, all public and relevant traits on the model will be added and synchronized.
+        bases: Additional base classes to add to the base `IpyWidgetViewer` class.
+        kwargs: Additional keyword arguments to pass to the Parameterized constructor.
     """
     if not parameters:
-        parameters = _get_public_and_relevant_trait_names(widget)
-    bases = _to_tuple(bases) + (HasTraitsParameterized,)
-    name = type(widget).__name__
+        parameters = _get_public_and_relevant_trait_names(model)
+    bases = _to_tuple(bases) + (HasTraitsWrapper,)
+    name = type(model).__name__
     key = (name, parameters, bases)
     if name in _ipywidget_classes:
         parameterized = _ipywidget_classes[key]
@@ -133,19 +141,18 @@ def to_parameterized(
         }
 
         parameterized = param.parameterized_class(name, params=params, bases=bases)
-        # Todo: Figure out why not all parameters are added by param.parameterized_class above
         for parameter in params:
             if parameter not in parameterized.param:
                 parameterized.param.add_parameter(parameter, param.Parameter())
 
     _ipywidget_classes[key] = parameterized
-    instance = parameterized(_widget=widget, _parameters=parameters, **kwargs)
+    instance = parameterized(_widget=model, _parameters=parameters, **kwargs)
 
     return instance
 
 
 class IpyWidgetViewer(Layoutable, Viewer):
-    """An abstract base class for creating a Layoutable Viewer that wraps an ipywidget"""
+    """An abstract base class for creating a Layoutable Viewer that wraps an ipywidget."""
 
     _widget = param.Parameter(allow_None=False)
 
@@ -154,71 +161,66 @@ class IpyWidgetViewer(Layoutable, Viewer):
 
         widget = self._widget
         if hasattr(widget, "layout"):
-            # IpyWidgets don't stretch by default. We change that so that the height and width is
-            # controlled by this component.
             widget.layout.height = "100%"
             widget.layout.width = "100%"
         if not self.width and not self.sizing_mode:
-            # In this case the Viewer will have a width of 0px. This will confuse the user.
-            # Thus we set a width > 0px
-            self.width=300
+            self.width = 300
 
         layout_params = {name: self.param[name] for name in Layoutable.param}
-
         self._layout = IPyWidget(widget, **layout_params)
 
     def __panel__(self):
         return self._layout
 
 
-def to_viewer(
-    widget: Widget,
-    *parameters,
-    bases: Parameterized | None = None,
-    **kwargs,
-) -> Viewer:
-    """Returns a Parameterized object with parameters synced to the ipywidget widget parameters
+def create_viewer(widget: Widget, *parameters, bases: Iterable[Parameterized] | Parameterized | None = None, **kwargs) -> Viewer:
+    """Returns a Viewer object from a widget with parameters synced bidirectionally to the widget's traits and displaying the widget when rendered.
 
     Args:
-        widget: The ipywidget to create the Viewer from.
-        parameters: The parameters to add to the Parameterized and to sync.
-            If no parameters are specified all public parameters on the widget will be added
-            and synced.
+        widget: The widget to create the Viewer from.
+        parameters: The parameters to add to the Viewer and to sync bidirectionally.
+            If no parameters are specified, all public and relevant traits on the widget will be added and synced.
+        bases: Additional base classes to add to the base `IpyWidgetViewer` class.
+        kwargs: Additional keyword arguments to pass to the Parameterized constructor.
     """
     bases = _to_tuple(bases) + (IpyWidgetViewer,)
-
-    return to_parameterized(widget, *parameters, bases=bases, **kwargs)
-
-
-def sync_rx(element: HasTraits, name: str, target: param.rx):
-    """Syncs the element name attribute and the target.rx.value"""
-    target.rx.value = getattr(element, name)
-
-    def set_value(event, target=target):
-        target.rx.value = event["new"]
-
-    element.observe(set_value, names=name)
-
-    def set_name(value, element=element, name=name):
-        setattr(element, name, value)
-
-    target.rx.watch(set_name)
+    return create_parameterized(widget, *parameters, bases=bases, **kwargs)
 
 
-def to_rx(widget: HasTraits, *parameters) -> param.rx | tuple[param.rx]:
-    """Returns a tuple of `rx` parameters. Each one synced to a parameter of the widget.
+def sync_with_rx(model: HasTraits, name: str, rx: param.rx):
+    """Syncs a single trait of a model with an `rx` value.
 
     Args:
-        widget: The widget to create the `rx` parameters from.
-        parameters: The parameter or parameters to create `rx` parameters from and to sync.
-            If a single parameter is specified a single reactive parameter is returned.
-            If no parameters are specified all public and relevant parameters of the widget will be
-            used.
+        model: The model to sync with.
+        name: The name of the trait to sync the `rx` value with.
+        rx: The `rx` value to sync with the trait.
+    """
+    rx.rx.value = getattr(model, name)
+
+    def set_value(event, rx=rx):
+        rx.rx.value = event["new"]
+
+    model.observe(set_value, names=name)
+
+    def set_name(value, element=model, name=name):
+        setattr(element, name, value)
+
+    rx.rx.watch(set_name)
+
+
+def create_rx(model: HasTraits, *names) -> param.rx | tuple[param.rx]:
+    """Returns `rx` values from traits of a model, each synced to a trait of the model bidirectionally.
+
+    Args:
+        model: The model to create the `rx` parameters from.
+        names: The traits to create `rx` values from.
+            If a single parameter is specified, a single reactive parameter is returned.
+            If no names are specified, all public and relevant traits of the model will be used.
     """
     rx_values = []
-    for name in parameters:
+    for name in names:
         rx = param.rx()
-        sync_rx(widget, name, rx)
+        sync_with_rx(model, name, rx)
         rx_values.append(rx)
     if len(rx_values) == 1:
         return rx_values[0]
