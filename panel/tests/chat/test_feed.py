@@ -945,6 +945,27 @@ class TestChatFeedCallback:
         wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "User: Message"
 
+    def test_callback_as_method(self, chat_feed):
+        class Test:
+            def callback(self, contents, user):
+                return f"{user}: {contents}"
+
+        chat_feed.callback = Test().callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "User: Message"
+
+    def test_callback_as_class_method(self, chat_feed):
+        class Test:
+            @classmethod
+            def callback(cls, contents, user):
+                return f"{user}: {contents}"
+
+        chat_feed.callback = Test.callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "User: Message"
+
 @pytest.mark.xdist_group("chat")
 class TestChatFeedSerializeForTransformers:
 

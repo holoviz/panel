@@ -11,7 +11,7 @@ import traceback
 from enum import Enum
 from inspect import (
     getfullargspec, isasyncgen, isasyncgenfunction, isawaitable,
-    iscoroutinefunction, isgenerator, isgeneratorfunction,
+    iscoroutinefunction, isgenerator, isgeneratorfunction, ismethod,
 )
 from io import BytesIO
 from typing import (
@@ -438,6 +438,8 @@ class ChatFeed(ListPanel):
         input_args = tuple(input_kwargs.values())
         callback_arg_spec = getfullargspec(self.callback)
         callback_args = callback_arg_spec.args
+        if ismethod(self.callback):
+            callback_args = callback_args[1:]
         num_args = len(callback_args)
         if callback_arg_spec.varargs:
             return input_args, {}
