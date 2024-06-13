@@ -271,7 +271,7 @@ view.model_proxy.watch(() => view.render_esm(), view.accessed_children)`
     }
 
     for (const child of this.model.children) {
-      const callbacks = this._child_callbacks.get(child)
+      const callbacks = this._child_callbacks.get(child) || []
       const new_children = new_views.get(child) || []
       for (const callback of callbacks) {
         callback(new_children)
@@ -286,7 +286,8 @@ view.model_proxy.watch(() => view.render_esm(), view.accessed_children)`
     if (!this._child_callbacks.has(child)) {
       this._child_callbacks.set(child, [])
     }
-    this._child_callbacks.get(child).push(callback)
+    const callbacks = this._child_callbacks.get(child) || []
+    callbacks.push(callback)
   }
 
   remove_on_child_render(child: string): void {
