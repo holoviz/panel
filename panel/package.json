@@ -8,7 +8,7 @@
     "url": "https://github.com/holoviz/panel.git"
   },
   "dependencies": {
-    "@bokeh/bokehjs": "3.5.0-dev.7",
+    "@bokeh/bokehjs": "3.5.0-dev.8",
     "@luma.gl/constants": "^8.0.3",
     "@types/debounce": "^1.2.0",
     "@types/gl-matrix": "^2.4.5",
