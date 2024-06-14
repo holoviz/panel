@@ -7,6 +7,7 @@ import pathlib
 import textwrap
 
 from collections import defaultdict
+from functools import partial
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Literal, Mapping, Optional,
 )
@@ -17,11 +18,13 @@ from param.parameterized import ParameterizedMetaclass
 
 from .config import config
 from .io.datamodel import construct_data_model
+from .io.notebook import push
 from .io.state import state
 from .models import (
     AnyWidgetComponent as _BkAnyWidgetComponent,
     ReactComponent as _BkReactComponent, ReactiveESM as _BkReactiveESM,
 )
+from .models.esm import ESMEvent
 from .models.reactive_html import DOMEvent
 from .reactive import Reactive, ReactiveCustomBase, ReactiveMetaBase
 from .util.checks import import_available
@@ -385,3 +388,24 @@ class AnyWidgetComponent(ReactComponent):
     """
 
     _bokeh_model = _BkAnyWidgetComponent
+
+    def send(self, msg: dict):
+        """
+        Sends a custom event containing the provided message to the frontend.
+
+        Arguments
+        ---------
+        msg: dict
+        """
+        for ref, (model, _) in self._models.items():
+            if ref not in state._views or ref in state._fake_roots:
+                continue
+            event = ESMEvent(model=model, data=msg)
+            viewable, root, doc, comm = state._views[ref]
+            if comm or state._unblocked(doc) or not doc.session_context:
+                doc.callbacks.send_event(event)
+                if comm and 'embedded' not in root.tags:
+                    push(doc, comm)
+            else:
+                cb = partial(doc.callbacks.send_event, event)
+                doc.add_next_tick_callback(cb)

@@ -77,7 +77,6 @@ class Child extends React.Component {
       if (new_views.includes(view)) {
         view.render()
         view.after_render()
-        console.log('!!!', this.props.index)
       }
     })
   }
@@ -154,7 +153,6 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error) {
-    console.log(error)
     this.props.view.render_error(error)
   }
 

@@ -50,7 +50,7 @@ class AnyWidgetUpdate(AnyWidgetComponent):
     export function render({ model, el }) {
       const h1 = document.createElement('h1')
       h1.textContent = model.get("text")
-      model.on("change:text:, () => {
+      model.on("change:text", () => {
         h1.textContent = model.get("text");
       })
       el.append(h1)
@@ -355,3 +355,25 @@ def test_reload(page, component, before, after):
         example._update_esm()
 
         expect(page.locator('h1')).to_have_text('bar')
+
+
+def test_anywidget_custom_event(page):
+
+    class SendEvent(AnyWidgetComponent):
+
+        _esm = """
+        export function render({model, el}) {
+          const h1 = document.createElement('h1')
+          model.on("msg:custom", (msg) => { h1.innerText = msg.text })
+          el.append(h1)
+        }
+        """
+
+    example = SendEvent()
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_count(1)
+
+    example.send({"type": "foo", "text": "bar"})
+
+    expect(page.locator('h1')).to_have_text("bar")

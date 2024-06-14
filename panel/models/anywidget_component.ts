@@ -1,6 +1,6 @@
 import type * as p from "@bokehjs/core/properties"
 
-import {ReactiveESM} from "./reactive_esm"
+import {ESMEvent, ReactiveESM} from "./reactive_esm"
 import {ReactComponent, ReactComponentView} from "./react_component"
 
 class AnyWidgetModelAdapter {
@@ -47,16 +47,20 @@ class AnyWidgetModelAdapter {
   on(event: string, cb: () => void) {
     if (event.startsWith("change:")) {
       this.model.watch(this.view, event.slice("change:".length), cb)
+    } else if (event === "msg:custom" && this.view) {
+      this.view.on_event(cb)
     } else {
-      console.error("Only change events supported")
+      console.error(`Event of type '${event}' not recognized.`)
     }
   }
 
   off(event: string, cb: () => void) {
     if (event.startsWith("change:")) {
       this.model.unwatch(this.view, event.slice("change:".length), cb)
+    } else if (event === "msg:custom" && this.view) {
+      this.view.remove_on_event(cb)
     } else {
-      console.error("Only change events supported")
+      console.error(`Event of type '${event}' not recognized.`)
     }
   }
 }
@@ -84,16 +88,39 @@ class AnyWidgetAdapter extends AnyWidgetModelAdapter {
       return this.view.get_child_view(child_model)?.el
     }
   }
+
 }
 
 export class AnyWidgetComponentView extends ReactComponentView {
   declare model: AnyWidgetComponent
   adapter: AnyWidgetAdapter
   destroyer: ((props: any) => void) | null
+  _event_handlers: ((event: ESMEvent) => void)[] = []
 
   override initialize(): void {
     super.initialize()
     this.adapter = new AnyWidgetAdapter(this)
+  }
+
+  override connect_signals(): void {
+    super.connect_signals()
+    this.model.on_event(ESMEvent, (event: ESMEvent) => {
+      for (const cb of this._event_handlers) {
+        cb(event.data)
+      }
+    })
+  }
+
+  on_event(callback: (event: ESMEvent) => void): void {
+    this._event_handlers.push(callback)
+  }
+
+  remove_on_event(callback: (event: ESMEvent) => void): boolean {
+    if (this._event_handlers.includes(callback)) {
+      this._event_handlers = this._event_handlers.filter((item) => item !== callback)
+      return true
+    }
+    return false
   }
 
   override remove(): void {

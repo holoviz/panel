@@ -1,9 +1,11 @@
 import {transform} from "sucrase"
 import type {Transform} from "sucrase"
 
+import {ModelEvent, server_event} from "@bokehjs/core/bokeh_events"
 import {div} from "@bokehjs/core/dom"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
+import type {Attrs} from "@bokehjs/core/types"
 import type {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
 import {isArray} from "@bokehjs/core/util/types"
 import type {UIElement, UIElementView} from "@bokehjs/models/ui/ui_element"
@@ -14,6 +16,24 @@ import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 import {convertUndefined, formatError} from "./util"
 
 import error_css from "styles/models/esm.css"
+
+@server_event("esm_event")
+export class ESMEvent extends ModelEvent {
+  constructor(readonly model: ReactiveESM, readonly data: any) {
+    super()
+    this.data = data
+    this.origin = model
+  }
+
+  protected override get event_values(): Attrs {
+    return {model: this.origin, data: this.data}
+  }
+
+  static override from_values(values: object) {
+    const {model, data} = values as {model: ReactiveESM, data: any}
+    return new ESMEvent(model, data)
+  }
+}
 
 export function model_getter(target: ReactiveESMView, name: string) {
   const model = target.model
