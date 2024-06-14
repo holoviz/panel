@@ -27,6 +27,7 @@ from ..layout.card import Card
 from ..layout.spacer import VSpacer
 from ..pane.image import SVG
 from ..util import to_async_gen
+from ..viewable import Children
 from .icon import ChatReactionIcons
 from .message import ChatMessage
 
@@ -126,7 +127,7 @@ class ChatFeed(ListPanel):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    objects = param.List(default=[], doc="""
+    objects = Children(default=[], doc="""
         The list of child objects that make up the layout.""")
 
     help_text = param.String(default="", doc="""

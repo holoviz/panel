@@ -51,7 +51,7 @@ from .util import (
 )
 from .util.checks import import_available
 from .viewable import (
-    Child, Children, Layoutable, Renderable, Viewable,
+    Child, Layoutable, Renderable, Viewable,
 )
 
 if TYPE_CHECKING:
@@ -579,7 +579,7 @@ class Reactive(Syncable, Viewable):
     def __init__(self, refs=None, **params):
         for name, pobj in self.param.objects('existing').items():
             if (name not in self._param__private.explicit_no_refs and
-                not isinstance(pobj, (Child, Children))):
+                not isinstance(pobj, Child)):
                 pobj.allow_refs = True
         if refs is not None:
             self._refs = refs
