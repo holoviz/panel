@@ -88,6 +88,7 @@ def sync_with_parameterized(
             setattr(parameterized, parameter, getattr(model, trait))
 
     for trait, parameter in names.items():
+
         def _handle_trait_change(
             _,
             model=model,
@@ -97,6 +98,7 @@ def sync_with_parameterized(
         ):
             with param.edit_constant(parameterized):
                 setattr(parameterized, parameter, getattr(model, trait))
+
         model.observe(_handle_trait_change, names=trait)
 
         read_only_traits: set[str] = set()
@@ -120,32 +122,37 @@ def sync_with_parameterized(
 class ModelWrapper(Parameterized):
     """An abstract Parameterized base class for wrapping a traitlets HasTraits class."""
 
-    _model = param.Parameter(allow_None=False)
+    model: HasTraits = param.Parameter(allow_None=False, constant=True)
     _names: Iterable[str] | dict[str, str] = ()
 
     def __init__(self, **params):
-        if "_model" not in params and hasattr(self, "_model_class"):
-            params["_model"]=self._model_class()
+        if "model" not in params and hasattr(self, "_model_class"):
+            params["model"] = self._model_class()
 
-        model = params["_model"]
+        model = params["model"]
         names = params.pop("_names", self._names)
         if not names:
             names = _get_public_and_relevant_trait_names(model)
         names = _ensure_dict(names)
         self._names = names
 
-        model = params["_model"]
+        for parameter in names.values():
+            if parameter not in self.param:
+                self.param.add_parameter(parameter, param.Parameter())
+            else:
+                if (
+                    parameter != "name"
+                    and parameter not in params
+                    and parameter in self.param
+                ):
+                    params[parameter] = self.param[parameter].default
+
         for trait, parameter in names.items():
             if parameter in params:
                 setattr(model, trait, params[parameter])
 
-        for parameter in names.values():
-            if parameter not in self.param:
-                self.param.add_parameter(parameter, param.Parameter())
-
         super().__init__(**params)
-
-        sync_with_parameterized(self._model, self, names=self._names)
+        sync_with_parameterized(self.model, self, names=self._names)
 
 
 _cache_of_model_classes: dict[Any, Parameterized] = {}
@@ -198,7 +205,7 @@ def create_parameterized(
         parameterized = param.parameterized_class(name, params=params, bases=bases)
 
     _cache_of_model_classes[key] = parameterized
-    instance = parameterized(_model=model, _names=names, **kwargs)
+    instance = parameterized(model=model, _names=names, **kwargs)
 
     return instance
 
@@ -206,17 +213,23 @@ def create_parameterized(
 class WidgetViewer(Layoutable, Viewer, ModelWrapper):
     """An abstract base class for creating a Layoutable Viewer that wraps an ipywidget Widget."""
 
-    _model = param.Parameter(allow_None=False)
+    model: Widget = param.Parameter(allow_None=False, constant=True)
 
     def __init__(self, **params):
         super().__init__(**params)
 
-        widget = self._model
+        widget = self.model
         if hasattr(widget, "layout"):
             widget.layout.height = "100%"
             widget.layout.width = "100%"
-        if not self.width and not self.sizing_mode:
+        if not self.width and self.sizing_mode not in ["stretch_width", "stretch_both"]:
             self.width = 300
+
+        if not self.height and self.sizing_mode not in [
+            "stretch_height",
+            "stretch_both",
+        ]:
+            self.height = 300
 
         layout_params = {name: self.param[name] for name in Layoutable.param}
         self._layout = IPyWidget(widget, **layout_params)
