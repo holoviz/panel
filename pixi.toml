@@ -18,7 +18,7 @@ lint = ["py311", "lint"]
 
 [dependencies]
 bleach = "*"
-bokeh = "==3.5.0.dev6"
+bokeh = "==3.5.0.dev8"
 linkify-it-py = "*"
 markdown = "*"
 markdown-it-py = "*"
