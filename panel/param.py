@@ -451,7 +451,7 @@ class Param(PaneBase):
 
         value = getattr(self.object, p_name)
         allow_None = p_obj.allow_None or False
-        if isinstance(widget_class, type) and issubclass(widget_class, Widget):
+        if isinstance(widget_class, type) and issubclass(widget_class, WidgetBase):
             allow_None &= widget_class.param.value.allow_None
         if value is not None or allow_None:
             kw['value'] = value
@@ -509,7 +509,7 @@ class Param(PaneBase):
         if isinstance(widget_class, type) and issubclass(widget_class, Button):
             kwargs.pop('value', None)
 
-        if isinstance(widget_class, Widget):
+        if isinstance(widget_class, WidgetBase):
             widget = widget_class
         else:
             widget = widget_class(**kwargs)
