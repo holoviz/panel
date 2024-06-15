@@ -1,6 +1,6 @@
 # Observe ipywidgets
 
-In this how-to guide we show how-to easily enable interaction with ipywidgets via familiar APIs from Param like watch, bind, depends, and rx.
+This how-to guide demonstrates how to easily enable interaction with ipywidgets using familiar APIs from Panel and [Param](https://param.holoviz.org/), such as `watch`, `bind`, `depends`, and `rx`.
 
 ## Overview
 
@@ -13,11 +13,11 @@ The `pn.observers.ipywidget` module provides functions to synchronize the traits
 - **ipywidgets**: Builds on Traitlets to create interactive widgets for Jupyter notebooks.
 - **widget**: Refers to ipywidgets unless otherwise stated.
 - **model**: Refers to Traitlets classes including ipywidgets.
-- **names**: Refers to the names of the traits/ parameters to synchronize. Can be an iterable or dictionary mapping from trait names to parameter names.
+- **names**: Refers to the names of the traits/parameters to synchronize. Can be an iterable or a dictionary mapping from trait names to parameter names.
 
 ### Classes
 
-- **`ModelParameterized`**: An abstract Parameterized base class for wrapping a traitlets HasTraits class or instance.
+- **`ModelParameterized`**: An abstract Parameterized base class for wrapping a Traitlets `HasTraits` class or instance.
 - **`ModelViewer`**: An abstract base class for creating a Layoutable Viewer that wraps an ipywidget Widget class or instance.
 
 ### Functions
@@ -27,9 +27,9 @@ The `pn.observers.ipywidget` module provides functions to synchronize the traits
 - **`sync_with_widget`**: Syncs the named trait of the model with the value of a Panel widget.
 - **`sync_with_rx`**: Syncs a single trait of a model with an `rx` value.
 
-All synchronization is bidirectional. We only synchronize the top-level traits/ parameters and not the nested ones.
+All synchronization is bidirectional. Only top-level traits/parameters are synchronized, not nested ones.
 
-### Synchronize the trait of an ipywidget with a Panel widget
+## How to Synchronize a Trait of an ipywidget with a Panel Widget
 
 Use `sync_with_widget` to synchronize a trait of an ipywidget with a Panel widget.
 
@@ -41,7 +41,7 @@ pn.extension("ipywidgets")
 
 leaflet_map = ipyl.Map()
 
-zoom_widget = pn.widgets.FloatSlider(value=2.0, start=1.0, end=24.0, name="Zoom")
+zoom_widget = pn.widgets.FloatSlider(value=4.0, start=1.0, end=24.0, name="Zoom")
 zoom_control_widget = pn.widgets.Checkbox(name="Show Zoom Control")
 
 pn.observers.ipywidget.sync_with_widget(leaflet_map, zoom_widget, name="zoom")
@@ -49,7 +49,7 @@ pn.observers.ipywidget.sync_with_widget(leaflet_map, zoom_control_widget, name="
 pn.Column(leaflet_map, zoom_widget, zoom_control_widget).servable()
 ```
 
-## Synchronize an ipywidget with a Parameterized object
+## How to Synchronize an ipywidget with a Parameterized Object
 
 Use `sync_with_parameterized` to synchronize a widget with a Parameterized object.
 
@@ -74,9 +74,9 @@ pn.observers.ipywidget.sync_with_parameterized(
 pn.Column(leaflet_map, parameterized.param.zoom, parameterized.param.center).servable()
 ```
 
-The `sync_with_parameterized` function synchronizes the shared traits/ parameters `center` and `zoom` between the `leaflet_map` and `parameterized` objects.
+The `sync_with_parameterized` function synchronizes the shared traits/parameters `center` and `zoom` between the `leaflet_map` and `parameterized` objects.
 
-Use the `names` arguments to specify a subset of traits/ parameters to synchronize:
+To specify a subset of traits/parameters to synchronize, use the `names` argument:
 
 ```python
 pn.observers.ipywidget.sync_with_parameterized(
@@ -84,7 +84,7 @@ pn.observers.ipywidget.sync_with_parameterized(
 )
 ```
 
-The `names` argument may also be a `dict` mapping from trait names to parameter names:
+The `names` argument can also be a dictionary mapping trait names to parameter names:
 
 ```pyodide
 import panel as pn
@@ -106,34 +106,35 @@ pn.observers.ipywidget.sync_with_parameterized(
 pn.Column(leaflet_map, parameterized.param.zoom_level).servable()
 ```
 
-### Create a Viewer from an ipywidget instance
+## How to Create a Viewer from an ipywidget Instance
 
 To create a `Viewer` object from a widget instance, use the `ModelViewer` class:
 
 ```pyodide
 import panel as pn
 import ipyleaflet as ipyl
-import param
 
 pn.extension("ipywidgets")
 
-leaflet_map = ipyl.Map()
+leaflet_map = ipyl.Map(zoom=4)
 
-viewer = pn.observers.ipywidget.ModelViewer(model=leaflet_map)
-pn.Column(viewer, viewer.controls()).servable()
+viewer = pn.observers.ipywidget.ModelViewer(model=leaflet_map, sizing_mode="stretch_both")
+pn.Row(pn.Column(viewer.param, scroll=True), viewer, height=400).servable()
 ```
 
-Use the `names` arguments to specify a subset of traits/ parameters to synchronize:
+Check out the parameters to the left of the map, there you will find all the traits of the `leaflet_map` instance. Try changing some.
+
+To specify a subset of traits/parameters to synchronize, use the `_names` argument:
 
 ```python
-pn.observers.ipywidget.sync_with_parameterized(
-    model=leaflet_map, parameterized=parameterized, names=("center",)
+viewer = pn.observers.ipywidget.ModelViewer(
+    model=leaflet_map, _names=("center",), sizing_mode="stretch_both"
 )
 ```
 
-The `names` argument may also be a `dict` mapping from trait names to parameter names.
+The `names` argument can also be a dictionary mapping trait names to parameter names.
 
-### Create a Viewer from an ipywidget class
+## How to Create a Viewer from an ipywidget Class
 
 To create a `Viewer` class from a widget class, use the `ModelViewer` class:
 
@@ -144,22 +145,20 @@ import param
 
 pn.extension("ipywidgets")
 
-
 class MapViewer(pn.observers.ipywidget.ModelViewer):
     _model_class = ipyl.Map
     _names = ["center", "zoom"]
 
     zoom = param.Number(4, bounds=(0, 24), step=1)
 
-
 viewer = MapViewer(sizing_mode="stretch_both")
 
 pn.Row(pn.Column(viewer.param, scroll=True), viewer, height=400).servable()
 ```
 
-The `_names` is an optional iterable or dict. Its used to specify which traits to synchronize to which parameters to synchronize.
+The `_names` attribute is an optional iterable or dictionary. It specifies which traits to synchronize to which parameters.
 
-### Create a reactive value from the trait of an ipywidget
+## How to Create a Reactive Value from the Trait of an ipywidget
 
 Use `create_rx` to create a reactive value from the trait of an ipywidget.
 
