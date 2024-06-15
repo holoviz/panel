@@ -124,8 +124,8 @@ class ModelWrapper(Parameterized):
     _names: Iterable[str] | dict[str, str] = ()
 
     def __init__(self, **params):
-        if "_model" not in params and hasattr(self.param._model, "class_"):
-            params["_model"]=self.param._model.class_()
+        if "_model" not in params and hasattr(self, "_model_class"):
+            params["_model"]=self._model_class()
 
         model = params["_model"]
         names = params.pop("_names", self._names)
