@@ -51,7 +51,7 @@ pn.Column(leaflet_map, zoom_widget, zoom_control_widget).servable()
 
 ## How to Synchronize an ipywidget with a Parameterized Object
 
-Use `sync_with_parameterized` to synchronize a widget with a Parameterized object.
+Use `sync_with_parameterized` to synchronize an ipywidget with a Parameterized object.
 
 ```pyodide
 import panel as pn
@@ -108,7 +108,7 @@ pn.Column(leaflet_map, parameterized.param.zoom_level).servable()
 
 ## How to Create a Viewer from an ipywidget Instance
 
-To create a `Viewer` object from a widget instance, use the `ModelViewer` class:
+To create a `Viewer` object from a ipywidget instance, use the `ModelViewer` class:
 
 ```pyodide
 import panel as pn
@@ -136,7 +136,7 @@ The `names` argument can also be a dictionary mapping trait names to parameter n
 
 ## How to Create a Viewer from an ipywidget Class
 
-To create a `Viewer` class from a widget class, use the `ModelViewer` class:
+To create a `Viewer` class from an ipywidget class, use the `ModelViewer` class:
 
 ```pyodide
 import panel as pn
