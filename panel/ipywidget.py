@@ -78,7 +78,6 @@ def sync_with_parameterized(
         names: The names of the traits/parameters to synchronize. If none are
             specified, all public and relevant traits of the model will be synced.
     """
-    # Todo: Support specifying names as dictionary mapping from trait to parameter
     if not names:
         names = _get_public_and_relevant_trait_names(model)
     names = _ensure_dict(names)
@@ -183,7 +182,6 @@ def create_parameterized(
         bases: Additional base classes to add to the base `IpyWidgetViewer` class.
         kwargs: Additional keyword arguments to pass to the Parameterized constructor.
     """
-    # Todo: Support specifying names as dictionary mapping from trait to parameter
     if not names:
         names = _get_public_and_relevant_trait_names(model)
     names = _ensure_dict(names)
