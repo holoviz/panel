@@ -8,20 +8,22 @@
 - **widget**: Refers to ipywidgets.
 - **model**: Refers to Traitlets classes including ipywidgets.
 
+## Classes
+
+- `ModelParameterized`: An abstract Parameterized base class for wrapping a traitlets HasTraits class or instance.
+- `ModelViewer`: An abstract base class for creating a Layoutable Viewer that wraps an ipywidget Widget class or instance.
+
 ## Functions
 
-- `create_parameterized`: Creates a Parameterized object from a model with parameters synced to the model's traits.
-- `create_viewer`: Creates a Viewer object from a widget with parameters synced to the widget's traits and displaying the widget when rendered.
+- `create_parameterized`: Creates a `ModelParameterized` object from a model with parameters synced to the model's traits.
+- `create_viewer`: Creates a `ModelViewer` object from a widget with parameters synced to the widget's traits and displaying the widget when rendered.
 - `create_rx`: Creates `rx` values from traits of a model, each synced to a trait of the model.
-- `sync_with_parameterized`: Syncs the traits of a model with parameters of a Parameterized object.
+- `sync_with_parameterized`: Syncs the traits of a model with the parameters of a Parameterized object.
 - `sync_with_rx`: Syncs a single trait of a model with an `rx` value.
 
 All synchronization is bidirectional.
 
-## Classes
 
-- `ModelWrapper`: An abstract Parameterized base class for wrapping a traitlets HasTraits class or instance.
-- `WidgetViewer`: An abstract base class for creating a Layoutable Viewer that wraps an ipywidget Widget class or instance.
 """
 
 # I've tried to implement this in a way that would generalize to similar APIs for other *model* libraries like dataclasses, Pydantic, attrs etc.
@@ -123,7 +125,7 @@ def sync_with_parameterized(
         bind(_handle_parameter_change, parameterized.param[parameter], watch=True)
 
 
-class ModelWrapper(Parameterized):
+class ModelParameterized(Parameterized):
     """An abstract Parameterized base class for wrapping a traitlets HasTraits class or instance."""
 
     model: HasTraits = param.Parameter(allow_None=False, constant=True)
@@ -180,7 +182,7 @@ def create_parameterized(
     names: Iterable[str] | dict[str, str] = (),
     bases: Iterable[Parameterized] | Parameterized | None = None,
     **kwargs,
-) -> Parameterized:
+) -> ModelParameterized:
     """Returns a Parameterized object from a model with names synced bidirectionally to the model's traits.
 
     Args:
@@ -194,7 +196,7 @@ def create_parameterized(
         names = _get_public_and_relevant_trait_names(model)
     names = _ensure_dict(names)
 
-    bases = _to_tuple(bases) + (ModelWrapper,)
+    bases = _to_tuple(bases) + (ModelParameterized,)
     name = type(model).__name__
     key = (name, tuple(names.items()), bases)
     if name in _cache_of_model_classes:
@@ -216,7 +218,7 @@ def create_parameterized(
     return instance
 
 
-class WidgetViewer(Layoutable, Viewer, ModelWrapper):
+class ModelViewer(Layoutable, Viewer, ModelParameterized):
     """An abstract base class for creating a Layoutable Viewer that wraps an ipywidget Widget class or instance."""
 
     model: Widget = param.Parameter(allow_None=False, constant=True)
@@ -249,7 +251,7 @@ def create_viewer(
     names: Iterable[str] | dict[str, str] = (),
     bases: Iterable[Parameterized] | Parameterized | None = None,
     **kwargs,
-) -> Viewer:
+) -> ModelViewer:
     """Returns a Viewer object from a widget with parameters synced bidirectionally to the widget's traits and displaying the widget when rendered.
 
     Args:
@@ -259,7 +261,7 @@ def create_viewer(
         bases: Additional base classes to add to the base `IpyWidgetViewer` class.
         kwargs: Additional keyword arguments to pass to the Parameterized constructor.
     """
-    bases = _to_tuple(bases) + (WidgetViewer,)
+    bases = _to_tuple(bases) + (ModelViewer,)
     return create_parameterized(widget, names, bases=bases, **kwargs)
 
 

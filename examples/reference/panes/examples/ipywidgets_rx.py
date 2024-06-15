@@ -5,7 +5,7 @@ from leafmap.toolbar import change_basemap
 
 import panel as pn
 
-from panel.ipywidget import create_rx
+from panel.observers.ipywidget import create_rx
 
 pn.extension("ipywidgets")
 

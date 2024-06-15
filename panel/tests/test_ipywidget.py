@@ -14,7 +14,7 @@ from ipywidgets import DOMWidget, register
 from traitlets import Float, Int, Unicode
 
 from panel.observers.ipywidget import (
-    ModelWrapper, WidgetViewer, _get_public_and_relevant_trait_names,
+    ModelParameterized, ModelViewer, _get_public_and_relevant_trait_names,
     create_parameterized, create_rx, create_viewer,
 )
 from panel.pane import IPyWidget
@@ -257,7 +257,7 @@ def test_to_rx_single(widget):
 
 
 def test_wrap_model_names_tuple():
-    class ExampleWrapper(ModelWrapper):
+    class ExampleWrapper(ModelParameterized):
         _model_class = ExampleWidget
         _names = ("name", "age")
 
@@ -281,7 +281,7 @@ def test_wrap_model_names_tuple():
 
 
 def test_wrap_model_names_dict():
-    class ExampleWrapper(ModelWrapper):
+    class ExampleWrapper(ModelParameterized):
         _model_class = ExampleWidget
         _names = {"name": "xname", "age": "xage"}
 
@@ -305,7 +305,7 @@ def test_wrap_model_names_dict():
 
 
 def test_widget_viewer_from_class_and_no_names():
-    class ExampleViewer(WidgetViewer):
+    class ExampleViewer(ModelViewer):
         _model_class = ExampleWidget
 
     wrapper = ExampleViewer(age=100)
@@ -329,7 +329,7 @@ def test_widget_viewer_from_class_and_no_names():
 
 
 def test_widget_viewer_from_class_and_list_names():
-    class ExampleViewer(WidgetViewer):
+    class ExampleViewer(ModelViewer):
         _model_class = ExampleWidget
         _names = ["name", "age"]
 
@@ -353,7 +353,7 @@ def test_widget_viewer_from_class_and_list_names():
 
 
 def test_widget_viewer_from_class_and_dict_names():
-    class ExampleViewer(WidgetViewer):
+    class ExampleViewer(ModelViewer):
         _model_class = ExampleWidget
         _names = {"name": "xname", "age": "xage"}
 
@@ -377,7 +377,7 @@ def test_widget_viewer_from_class_and_dict_names():
 
 
 def test_widget_viewer_from_instance():
-    class ExampleWidgetViewer(WidgetViewer):
+    class ExampleWidgetViewer(ModelViewer):
         _model_class = ExampleWidget
 
         name = param.String("default", doc="A string parameter")
@@ -396,7 +396,7 @@ def test_widget_viewer_from_instance():
 
 
 def test_widget_viewer_child_class(widget):
-    class ExampleWidgetViewer(WidgetViewer):
+    class ExampleWidgetViewer(ModelViewer):
         name = param.String("default", doc="A string parameter")
         age = param.Integer(3, bounds=(0, 10))
         not_trait = param.Parameter(-2.0)

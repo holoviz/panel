@@ -6,7 +6,7 @@ from leafmap.toolbar import change_basemap
 
 import panel as pn
 
-from panel.ipywidget import WidgetViewer
+from panel.observers.ipywidget import ModelViewer
 
 pn.extension("ipywidgets")
 
@@ -25,7 +25,7 @@ widget = Map(  # type: ignore
     data_ctrl=False,
 )
 
-class MapViewer(WidgetViewer):
+class MapViewer(ModelViewer):
     zoom = param.Number(default=2, bounds=(0,24), step=1)
     center = param.List([20,0])
 
