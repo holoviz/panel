@@ -285,6 +285,29 @@ def test_wrap_model_dict_names():
     assert wrapper.xname == widget.name
     assert wrapper.xage == widget.age
 
+def test_widget_viewer_from_class_and_no_names():
+    class ExampleViewer(WidgetViewer):
+        _model = param.ClassSelector(class_=ExampleIpyWidget)
+
+    wrapper = ExampleViewer(age=100)
+    assert {'weight', 'age', 'name', 'design', 'tags'}<=set(wrapper.param)
+
+    widget = wrapper._model
+    assert wrapper.name == widget.name == "Default Name"
+    assert wrapper.age == widget.age == 100
+
+    # widget synced to widget
+    widget.name = "B"
+    widget.age = 2
+    assert wrapper.name == widget.name
+    assert wrapper.age == widget.age
+
+    # widget synced to viewer
+    wrapper.name = "C"
+    wrapper.age = 3
+    assert wrapper.name == widget.name
+    assert wrapper.age == widget.age
+
 def test_widget_viewer_from_class_and_list_names():
     class ExampleViewer(WidgetViewer):
         _model = param.ClassSelector(class_=ExampleIpyWidget)
@@ -308,6 +331,9 @@ def test_widget_viewer_from_class_and_list_names():
     assert wrapper.name == widget.name
     assert wrapper.age == widget.age
 
+
+# Todo: Rename _model to model and expose it
+# Todo: Consider using param. from model and names
 
 def test_widget_viewer_from_class_and_dict_names():
     class ExampleViewer(WidgetViewer):
