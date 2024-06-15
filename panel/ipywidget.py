@@ -203,7 +203,7 @@ def create_parameterized(
     return instance
 
 
-class WidgetViewer(Layoutable, Viewer):
+class WidgetViewer(Layoutable, Viewer, ModelWrapper):
     """An abstract base class for creating a Layoutable Viewer that wraps an ipywidget Widget."""
 
     _model = param.Parameter(allow_None=False)

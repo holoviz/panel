@@ -14,8 +14,8 @@ from ipywidgets import DOMWidget, register
 from traitlets import Float, Int, Unicode
 
 from panel.ipywidget import (
-    ModelWrapper, _get_public_and_relevant_trait_names, create_parameterized,
-    create_rx, create_viewer,
+    ModelWrapper, WidgetViewer, _get_public_and_relevant_trait_names,
+    create_parameterized, create_rx, create_viewer,
 )
 from panel.pane import IPyWidget
 from panel.viewable import Layoutable, Viewer
@@ -268,6 +268,53 @@ def test_wrap_model_dict_names():
         _names = param.Parameter({"name": "xname", "age": "xage"})
 
     wrapper = ExampleWrapper(xage=100)
+
+    widget = wrapper._model
+    assert wrapper.xname == widget.name == "Default Name"
+    assert wrapper.xage == widget.age == 100
+
+    # widget synced to widget
+    widget.name = "B"
+    widget.age = 2
+    assert wrapper.xname == widget.name
+    assert wrapper.xage == widget.age
+
+    # widget synced to viewer
+    wrapper.xname = "C"
+    wrapper.xage = 3
+    assert wrapper.xname == widget.name
+    assert wrapper.xage == widget.age
+
+def test_widget_viewer_from_class_and_list_names():
+    class ExampleViewer(WidgetViewer):
+        _model = param.ClassSelector(class_=ExampleIpyWidget)
+        _names = param.Parameter(["name", "age"])
+
+    wrapper = ExampleViewer(age=100)
+
+    widget = wrapper._model
+    assert wrapper.name == widget.name == "Default Name"
+    assert wrapper.age == widget.age == 100
+
+    # widget synced to widget
+    widget.name = "B"
+    widget.age = 2
+    assert wrapper.name == widget.name
+    assert wrapper.age == widget.age
+
+    # widget synced to viewer
+    wrapper.name = "C"
+    wrapper.age = 3
+    assert wrapper.name == widget.name
+    assert wrapper.age == widget.age
+
+
+def test_widget_viewer_from_class_and_dict_names():
+    class ExampleViewer(WidgetViewer):
+        _model = param.ClassSelector(class_=ExampleIpyWidget)
+        _names = param.Parameter({"name": "xname", "age": "xage"})
+
+    wrapper = ExampleViewer(xage=100)
 
     widget = wrapper._model
     assert wrapper.xname == widget.name == "Default Name"
