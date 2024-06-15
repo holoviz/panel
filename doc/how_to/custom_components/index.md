@@ -26,6 +26,30 @@ How to build custom components that are combinations of existing components.
 custom_viewer
 ```
 
+## ESM Components
+
+Build custom components in Javascript using so called ESM components, which allow you to write components that automatically sync parameter state between Python and JS. ESM components can be written in pure JS, using React or using the AnyWidget specification.
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`pencil;2.5em;sd-mr-1 sd-animate-grow50` Custom Widgets
+:link: reactive_esm/custom_widgets
+:link-type: doc
+
+How to create a custom widget using ESM components
+:::
+
+:::{grid-item-card} {octicon}`columns;2.5em;sd-mr-1 sd-animate-grow50` Custom Layouts
+:link: reactive_esm/reactive_esm_layout
+:link-type: doc
+
+How to create a custom layout using ESM components
+:::
+
+::::
+
+
 ## `ReactiveHTML` Components
 
 Build custom components using HTML, CSS and Javascript and without Javascript build tools.
