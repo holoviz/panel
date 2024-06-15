@@ -17,6 +17,11 @@
 - `sync_with_rx`: Syncs a single trait of a model with an `rx` value.
 
 All synchronization is bidirectional.
+
+## Classes
+
+- `ModelWrapper`: An abstract Parameterized base class for wrapping a traitlets HasTraits class or instance.
+- `WidgetViewer`: An abstract base class for creating a Layoutable Viewer that wraps an ipywidget Widget class or instance.
 """
 
 # I've tried to implement this in a way that would generalize to similar APIs for other *model* libraries like dataclasses, Pydantic, attrs etc.
@@ -29,8 +34,8 @@ import param
 from param import Parameterized
 from param.reactive import bind
 
-from .pane import IPyWidget
-from .viewable import Layoutable, Viewer
+from ..pane import IPyWidget
+from ..viewable import Layoutable, Viewer
 
 if TYPE_CHECKING:
     try:
@@ -119,7 +124,7 @@ def sync_with_parameterized(
 
 
 class ModelWrapper(Parameterized):
-    """An abstract Parameterized base class for wrapping a traitlets HasTraits class."""
+    """An abstract Parameterized base class for wrapping a traitlets HasTraits class or instance."""
 
     model: HasTraits = param.Parameter(allow_None=False, constant=True)
     _names: Iterable[str] | dict[str, str] = ()
@@ -148,7 +153,10 @@ class ModelWrapper(Parameterized):
 
         for trait, parameter in names.items():
             if parameter in params:
-                setattr(model, trait, params[parameter])
+                try:
+                    setattr(model, trait, params[parameter])
+                except Exception:
+                    pass
 
         super().__init__(**params)
         sync_with_parameterized(self.model, self, names=self._names)
@@ -209,7 +217,7 @@ def create_parameterized(
 
 
 class WidgetViewer(Layoutable, Viewer, ModelWrapper):
-    """An abstract base class for creating a Layoutable Viewer that wraps an ipywidget Widget."""
+    """An abstract base class for creating a Layoutable Viewer that wraps an ipywidget Widget class or instance."""
 
     model: Widget = param.Parameter(allow_None=False, constant=True)
 
