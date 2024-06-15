@@ -49,6 +49,7 @@ from param import rx
 
 from . import layout  # noqa
 from . import links  # noqa
+from . import observers  # noqa
 from . import pane  # noqa
 from . import param  # noqa
 from . import pipeline  # noqa
@@ -56,7 +57,6 @@ from . import reactive  # noqa
 from . import template  # noqa
 from . import viewable  # noqa
 from . import widgets  # noqa
-from . import wrappers  # noqa
 from .config import __version__, config, panel_extension as extension  # noqa
 from .depends import bind, depends  # noqa
 from .interact import interact  # noqa

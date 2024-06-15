@@ -9,17 +9,16 @@ import pytest
 pytest.importorskip("ipywidgets")
 
 import param
-import pytest
 
 from ipywidgets import DOMWidget, register
 from traitlets import Float, Int, Unicode
 
-from panel.pane import IPyWidget
-from panel.viewable import Layoutable, Viewer
-from panel.wrappers.ipywidget import (
+from panel.observers.ipywidget import (
     ModelWrapper, WidgetViewer, _get_public_and_relevant_trait_names,
     create_parameterized, create_rx, create_viewer,
 )
+from panel.pane import IPyWidget
+from panel.viewable import Layoutable, Viewer
 
 
 @register
