@@ -14,8 +14,8 @@ from ipywidgets import DOMWidget, register
 from traitlets import Float, Int, Unicode
 
 from panel.ipywidget import (
-    _get_public_and_relevant_trait_names, create_parameterized, create_rx,
-    create_viewer,
+    ModelWrapper, _get_public_and_relevant_trait_names, create_parameterized,
+    create_rx, create_viewer,
 )
 from panel.pane import IPyWidget
 from panel.viewable import Layoutable, Viewer
@@ -38,7 +38,7 @@ def widget():
     return ExampleIpyWidget(name="A", age=1, weight=1.1)
 
 def test_sync_parameterized_readonly(widget):
-    parameterized = create_parameterized(widget, "read_only")
+    parameterized = create_parameterized(widget, names=("read_only",))
     parameterized.read_only="Some other value"
     assert widget.read_only!="Some other value"
 
@@ -82,7 +82,7 @@ def test_to_parameterized_is_synced(widget):
 
 
 def test_to_parameterized_parameter_list(widget):
-    viewer = create_parameterized(widget, "name", "age")
+    viewer = create_parameterized(widget, names=("name", "age"))
 
     assert {"name", "age"} <= set(viewer.param)
     assert "weight" not in set(viewer.param)
@@ -101,7 +101,6 @@ def test_to_parameterized_parameter_list(widget):
     viewer.age = 3
     assert viewer.name == widget.name
     assert viewer.age == widget.age
-
 
 def test_to_parameterized_bases(widget):
 
@@ -129,9 +128,29 @@ def test_to_viewer(widget):
     viewer.sizing_mode = "stretch_width"
     assert viewer.sizing_mode == component.sizing_mode
 
+def test_create_viewer_names_mapping(widget):
+    viewer = create_parameterized(widget, names={"name": "xname", "age": "xage"})
+
+    assert {"xname", "xage"} <= set(viewer.param)
+    assert "weight" not in set(viewer.param)
+
+    assert viewer.xname == widget.name
+    assert viewer.xage == widget.age
+
+    # widget synced to widget
+    widget.name = "B"
+    widget.age = 2
+    assert viewer.xname == widget.name
+    assert viewer.xage == widget.age
+
+    # widget synced to viewer
+    viewer.xname = "C"
+    viewer.xage = 3
+    assert viewer.xname == widget.name
+    assert viewer.xage == widget.age
 
 def test_to_viewer_kwargs(widget):
-    viewer = create_viewer(widget, "name", "age", sizing_mode="stretch_width")
+    viewer = create_viewer(widget, names=("name", "age"), sizing_mode="stretch_width")
     assert viewer.__panel__().sizing_mode == "stretch_width"
 
 def test_to_viewer_bases(widget):
@@ -218,3 +237,50 @@ def test_to_rx_single(widget):
     # reactive synced to viewer
     age.rx.value = 3
     assert age.rx.value == widget.age
+
+def test_wrap_model_list_names():
+    class ExampleWrapper(ModelWrapper):
+        _model = param.ClassSelector(class_=ExampleIpyWidget)
+        _names = param.Parameter(["name", "age"])
+
+    wrapper = ExampleWrapper(age=100)
+
+    widget = wrapper._model
+    assert wrapper.name == widget.name == "Default Name"
+    assert wrapper.age == widget.age == 100
+
+    # widget synced to widget
+    widget.name = "B"
+    widget.age = 2
+    assert wrapper.name == widget.name
+    assert wrapper.age == widget.age
+
+    # widget synced to viewer
+    wrapper.name = "C"
+    wrapper.age = 3
+    assert wrapper.name == widget.name
+    assert wrapper.age == widget.age
+
+
+def test_wrap_model_dict_names():
+    class ExampleWrapper(ModelWrapper):
+        _model = param.ClassSelector(class_=ExampleIpyWidget)
+        _names = param.Parameter({"name": "xname", "age": "xage"})
+
+    wrapper = ExampleWrapper(xage=100)
+
+    widget = wrapper._model
+    assert wrapper.xname == widget.name == "Default Name"
+    assert wrapper.xage == widget.age == 100
+
+    # widget synced to widget
+    widget.name = "B"
+    widget.age = 2
+    assert wrapper.xname == widget.name
+    assert wrapper.xage == widget.age
+
+    # widget synced to viewer
+    wrapper.xname = "C"
+    wrapper.xage = 3
+    assert wrapper.xname == widget.name
+    assert wrapper.xage == widget.age

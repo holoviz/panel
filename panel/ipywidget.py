@@ -8,7 +8,7 @@
 - **widget**: Refers to ipywidgets.
 - **model**: Refers to Traitlets classes including ipywidgets.
 
-## Functionality
+## Functions
 
 - `create_parameterized`: Creates a Parameterized object from a model with parameters synced to the model's traits.
 - `create_viewer`: Creates a Viewer object from a widget with parameters synced to the widget's traits and displaying the widget when rendered.
@@ -18,9 +18,8 @@
 
 All synchronization is bidirectional.
 """
-# I've tried to implement this in a way that would extend to similar APIs for other *model* libraries like dataclasses, Pydantic, attrs etc.
-# Todo: Replace widget usage with model usage
-# Todo: Supporting specifying names as dicionatry mapping from trait to parameter
+
+# I've tried to implement this in a way that would generalize to similar APIs for other *model* libraries like dataclasses, Pydantic, attrs etc.
 
 from inspect import isclass
 from typing import TYPE_CHECKING, Any, Iterable
@@ -60,7 +59,17 @@ def _get_public_and_relevant_trait_names(widget):
     return tuple(name for name in widget.traits() if _is_custom_trait(name))
 
 
-def sync_with_parameterized(model: HasTraits, parameterized: Parameterized, *names):
+def _ensure_dict(names: Iterable[str] | dict[str, str] = ()) -> dict[str, str]:
+    if isinstance(names, dict):
+        return names
+    return dict(zip(names, names))
+
+
+def sync_with_parameterized(
+    model: HasTraits,
+    parameterized: Parameterized,
+    names: Iterable[str] | dict[str, str] = (),
+):
     """Syncs the traits of the model with the parameters of the Parameterized object bidirectionally.
 
     Args:
@@ -72,44 +81,79 @@ def sync_with_parameterized(model: HasTraits, parameterized: Parameterized, *nam
     # Todo: Support specifying names as dictionary mapping from trait to parameter
     if not names:
         names = _get_public_and_relevant_trait_names(model)
+    names = _ensure_dict(names)
 
     with param.edit_constant(parameterized):
-        for name in names:
-            setattr(parameterized, name, getattr(model, name))
+        for trait, parameter in names.items():
+            setattr(parameterized, parameter, getattr(model, trait))
 
-    for name in names:
-        def _handle_trait_change(_, model=model, parameterized=parameterized, parameter=name):
+    for trait, parameter in names.items():
+        def _handle_trait_change(
+            _,
+            model=model,
+            trait=trait,
+            parameterized=parameterized,
+            parameter=parameter,
+        ):
             with param.edit_constant(parameterized):
-                setattr(parameterized, parameter, getattr(model, parameter))
-        model.observe(_handle_trait_change, names=name)
+                setattr(parameterized, parameter, getattr(model, trait))
+        model.observe(_handle_trait_change, names=trait)
 
-        read_only_traits = set()
+        read_only_traits: set[str] = set()
 
-        def _handle_parameter_change(_, model=model, attribute=name, read_only_traits=read_only_traits):
-            if attribute not in read_only_traits:
+        def _handle_parameter_change(
+            _,
+            model=model,
+            trait=trait,
+            parameter=parameter,
+            read_only_traits=read_only_traits,
+        ):
+            if trait not in read_only_traits:
                 try:
-                    setattr(model, attribute, getattr(parameterized, attribute))
+                    setattr(model, trait, getattr(parameterized, parameter))
                 except Exception:
-                    read_only_traits.add(attribute)
+                    read_only_traits.add(trait)
 
-        bind(_handle_parameter_change, parameterized.param[name], watch=True)
+        bind(_handle_parameter_change, parameterized.param[parameter], watch=True)
 
 
 class ModelWrapper(Parameterized):
-    """An abstract Parameterized base class for wrapping a HasTraits class."""
+    """An abstract Parameterized base class for wrapping a traitlets HasTraits class."""
 
     _model = param.Parameter(allow_None=False)
-    _names = param.Parameter(allow_None=False)
+    _names = param.Parameter(default=(), allow_None=False)
 
     def __init__(self, **params):
+        if "_model" not in params and hasattr(self.param._model, "class_"):
+            params["_model"]=self.param._model.class_()
+
+        model = params["_model"]
+        names = params.get("_names", self.param._names.default)
+        if not names:
+            names = _get_public_and_relevant_trait_names(model)
+        names = _ensure_dict(names)
+        params["_names"] = names
+
+        model = params["_model"]
+        for trait, parameter in names.items():
+            if parameter in params:
+                setattr(model, trait, params[parameter])
+
+        for parameter in names.values():
+            if parameter not in self.param:
+                self.param.add_parameter(parameter, param.Parameter())
+
         super().__init__(**params)
-        sync_with_parameterized(self._model, self, *self._names)
+
+        sync_with_parameterized(self._model, self, names=self._names)
 
 
-_cache_of_model_classes = {}
+_cache_of_model_classes: dict[Any, Parameterized] = {}
 
 
-def _to_tuple(bases: None | Parameterized | Iterable[Parameterized]) -> tuple[Parameterized]:
+def _to_tuple(
+    bases: None | Parameterized | Iterable[Parameterized],
+) -> tuple[Parameterized]:
     if not bases:
         bases = ()
     if isclass(bases) and issubclass(bases, Parameterized):
@@ -117,7 +161,12 @@ def _to_tuple(bases: None | Parameterized | Iterable[Parameterized]) -> tuple[Pa
     return tuple(item for item in bases)
 
 
-def create_parameterized(model: HasTraits, *names, bases: Iterable[Parameterized] | Parameterized | None = None, **kwargs) -> Parameterized:
+def create_parameterized(
+    model: HasTraits,
+    names: Iterable[str] | dict[str, str] = (),
+    bases: Iterable[Parameterized] | Parameterized | None = None,
+    **kwargs,
+) -> Parameterized:
     """Returns a Parameterized object from a model with names synced bidirectionally to the model's traits.
 
     Args:
@@ -130,9 +179,11 @@ def create_parameterized(model: HasTraits, *names, bases: Iterable[Parameterized
     # Todo: Support specifying names as dictionary mapping from trait to parameter
     if not names:
         names = _get_public_and_relevant_trait_names(model)
+    names = _ensure_dict(names)
+
     bases = _to_tuple(bases) + (ModelWrapper,)
     name = type(model).__name__
-    key = (name, names, bases)
+    key = (name, tuple(names.items()), bases)
     if name in _cache_of_model_classes:
         parameterized = _cache_of_model_classes[key]
     else:
@@ -141,14 +192,10 @@ def create_parameterized(model: HasTraits, *names, bases: Iterable[Parameterized
             existing_params += tuple(base.param)
         params = {
             name: param.Parameterized()
-            for name in names
+            for name in names.values()
             if name not in existing_params
         }
-
         parameterized = param.parameterized_class(name, params=params, bases=bases)
-        for parameter in params:
-            if parameter not in parameterized.param:
-                parameterized.param.add_parameter(parameter, param.Parameter())
 
     _cache_of_model_classes[key] = parameterized
     instance = parameterized(_model=model, _names=names, **kwargs)
@@ -178,7 +225,12 @@ class WidgetViewer(Layoutable, Viewer):
         return self._layout
 
 
-def create_viewer(widget: Widget, *names, bases: Iterable[Parameterized] | Parameterized | None = None, **kwargs) -> Viewer:
+def create_viewer(
+    widget: Widget,
+    names: Iterable[str] | dict[str, str] = (),
+    bases: Iterable[Parameterized] | Parameterized | None = None,
+    **kwargs,
+) -> Viewer:
     """Returns a Viewer object from a widget with parameters synced bidirectionally to the widget's traits and displaying the widget when rendered.
 
     Args:
@@ -189,7 +241,7 @@ def create_viewer(widget: Widget, *names, bases: Iterable[Parameterized] | Param
         kwargs: Additional keyword arguments to pass to the Parameterized constructor.
     """
     bases = _to_tuple(bases) + (WidgetViewer,)
-    return create_parameterized(widget, *names, bases=bases, **kwargs)
+    return create_parameterized(widget, names, bases=bases, **kwargs)
 
 
 def sync_with_rx(model: HasTraits, name: str, rx: param.rx):
