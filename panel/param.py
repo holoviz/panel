@@ -63,7 +63,7 @@ from .widgets import (
     DateRangeSlider, DatetimeInput, DatetimeRangeSlider, DiscreteSlider,
     FileInput, FileSelector, FloatInput, FloatSlider, IntInput, IntSlider,
     LiteralInput, MultiSelect, RangeSlider, Select, StaticText, Tabulator,
-    TextInput, Toggle, Widget,
+    TextInput, Toggle, Widget, WidgetBase,
 )
 from .widgets.button import _ButtonBase
 
@@ -358,7 +358,7 @@ class Param(PaneBase):
 
     def _link_subobjects(self):
         for pname, widget in self._widgets.items():
-            widgets = [widget] if isinstance(widget, Widget) else widget
+            widgets = [widget] if isinstance(widget, WidgetBase) else widget
             if not any(is_parameterized(getattr(w, 'value', None)) or
                        any(is_parameterized(o) for o in getattr(w, 'options', []))
                        for w in widgets):

@@ -24,7 +24,7 @@ from .layout import Column, Panel, Row
 from .pane import HTML, PaneBase, panel
 from .pane.base import ReplacementPane
 from .viewable import Viewable
-from .widgets import Button, Widget
+from .widgets import Button, WidgetBase
 from .widgets.widget import fixed, widget
 
 if TYPE_CHECKING:
@@ -107,7 +107,7 @@ class interactive(PaneBase):
             self._pane = panel(pane, name=self.name)
             self._internal = True
         self._inner_layout = Row(self._pane)
-        widgets = [widget for _, widget in widgets if isinstance(widget, Widget)]
+        widgets = [widget for _, widget in widgets if isinstance(widget, WidgetBase)]
         if 'name' in params:
             widgets.insert(0, HTML(f'<h2>{self.name}</h2>'))
         self.widget_box = Column(*widgets)
@@ -213,7 +213,7 @@ class interactive(PaneBase):
                 widget_obj = abbrev
             else:
                 widget_obj = widget(abbrev, name=name, default=default)
-            if not (isinstance(widget_obj, Widget) or isinstance(widget_obj, fixed)):
+            if not (isinstance(widget_obj, WidgetBase) or isinstance(widget_obj, fixed)):
                 if widget_obj is None:
                     continue
                 else:

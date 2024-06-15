@@ -583,7 +583,7 @@ class HoloViews(PaneBase):
 
         from ..widgets import (
             DatetimeInput, DiscreteSlider, FloatSlider, IntSlider, Select,
-            Widget,
+            WidgetBase,
         )
 
         if widget_types is None:
@@ -641,7 +641,7 @@ class HoloViews(PaneBase):
                 nframes *= len(vals)
             elif dim.name in widget_types:
                 widget = widget_types[dim.name]
-                if isinstance(widget, Widget):
+                if isinstance(widget, WidgetBase):
                     widget.param.update(**kwargs)
                     if not widget.name:
                         widget.name = dim.label
@@ -650,7 +650,7 @@ class HoloViews(PaneBase):
                 elif isinstance(widget, dict):
                     widget_type = widget.get('type', widget_type)
                     widget_kwargs = dict(widget)
-                elif isinstance(widget, type) and issubclass(widget, Widget):
+                elif isinstance(widget, type) and issubclass(widget, WidgetBase):
                     widget_type = widget
                 else:
                     raise ValueError('Explicit widget definitions expected '

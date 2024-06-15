@@ -15,13 +15,15 @@ import panel as pn
 import param
 
 from panel.custom import JSComponent
+from panel.widgets import WidgetBase
 
 pn.extension()
 
-class ImageButton(JSComponent):
+class ImageButton(JSComponent, WidgetBase):
 
     clicks = param.Integer(default=0)
     image = param.String()
+    value = param.Event()
 
     _esm = """
 export function render({ model }) {
@@ -61,8 +63,12 @@ export function render({ model }) {
 }
 """]
 
+    @param.depends('clicks')
+    def _trigger_value(self):
+       self.param.trigger('value')
+
 button = ImageButton(
-    image="https://raw.githubusercontent.com/holoviz/holoviz/25ac96dbc09f789612eb8e03a5deb36c5cd74393/examples/assets/panel.png",
+    image="https://panel.holoviz.org/_static/logo_stacked.png",
     styles={"border": "2px solid lightgray"},
     width=400, height=200
 )
@@ -78,18 +84,20 @@ import panel as pn
 import param
 
 from panel.custom import ReactComponent
+from panel.widgets import WidgetBase
 
 pn.extension()
 
-class ImageButton(ReactComponent):
+class ImageButton(ReactComponent, WidgetBase):
 
     clicks = param.Integer(default=0)
     image = param.String()
+    value = param.Event()
 
     _esm = """
 export function render({ model }) {
     const [clicks, setClicks] = model.useState("clicks");
-    const [image, setImage] = model.useState("image");
+    const [image] = model.useState("image");
 
     return (
     <button onClick={e => setClicks(clicks+1)} class="pn-container center-content">
@@ -117,12 +125,16 @@ export function render({ model }) {
 }
 """]
 
+    @param.depends('clicks')
+    def _trigger_value(self):
+       self.param.trigger('value')
+
 button = ImageButton(
-    image="https://raw.githubusercontent.com/holoviz/holoviz/25ac96dbc09f789612eb8e03a5deb36c5cd74393/examples/assets/panel.png",
+    image="https://panel.holoviz.org/_static/logo_stacked.png",
     styles={"border": "2px solid lightgray"},
     width=400, height=200
 )
-pn.Column(button, button.param.clicks,).servable()
+pn.Column(button, button.param.clicks).servable()
 ```
 
 ::::
@@ -137,10 +149,11 @@ from panel.custom import AnyWidgetComponent
 
 pn.extension()
 
-class ImageButton(AnyWidgetComponent):
+class ImageButton(AnyWidgetComponent, WidgetBase):
 
     clicks = param.Integer(default=0)
     image = param.String()
+    value = param.Event()
 
     _esm = """
 function render({ model, el }) {
@@ -182,12 +195,17 @@ export default { render }
 }
 """]
 
+    @param.depends('clicks')
+    def _trigger_value(self):
+       self.param.trigger('value')
+
 button = ImageButton(
-    image="https://raw.githubusercontent.com/holoviz/holoviz/25ac96dbc09f789612eb8e03a5deb36c5cd74393/examples/assets/panel.png",
+    image="https://panel.holoviz.org/_static/logo_stacked.png",
     styles={"border": "2px solid lightgray"},
     width=400, height=200
 )
-pn.Column(button, button.param.clicks,).servable()
+
+pn.Column(button, button.param.clicks).servable()
 ```
 
 :::::
@@ -198,17 +216,18 @@ The `ImageButton` now works as any other widget. Lets try the `.from_param` meth
 
 ```{pyodide}
 class MyClass(param.Parameterized):
-    value = param.Event()
 
     clicks = param.Integer(default=0)
+
+    value = param.Event()
 
     @param.depends("value", watch=True)
     def _handle_value(self):
         if self.value:
-            self.clicks+=1
+            self.clicks += 1
 
-my_instance=MyClass()
-button2=ImageButton.from_param(my_instance.param.value)
+my_instance = MyClass()
+button2 = ImageButton.from_param(my_instance.param.value)
 pn.Column(button2, my_instance.param.clicks).servable()
 ```
 
