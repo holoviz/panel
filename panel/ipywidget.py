@@ -121,18 +121,18 @@ class ModelWrapper(Parameterized):
     """An abstract Parameterized base class for wrapping a traitlets HasTraits class."""
 
     _model = param.Parameter(allow_None=False)
-    _names = param.Parameter(default=(), allow_None=False)
+    _names: Iterable[str] | dict[str, str] = ()
 
     def __init__(self, **params):
         if "_model" not in params and hasattr(self.param._model, "class_"):
             params["_model"]=self.param._model.class_()
 
         model = params["_model"]
-        names = params.get("_names", self.param._names.default)
+        names = params.pop("_names", self._names)
         if not names:
             names = _get_public_and_relevant_trait_names(model)
         names = _ensure_dict(names)
-        params["_names"] = names
+        self._names = names
 
         model = params["_model"]
         for trait, parameter in names.items():

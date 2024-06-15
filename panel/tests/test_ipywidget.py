@@ -238,10 +238,10 @@ def test_to_rx_single(widget):
     age.rx.value = 3
     assert age.rx.value == widget.age
 
-def test_wrap_model_list_names():
+def test_wrap_model_tuple_names():
     class ExampleWrapper(ModelWrapper):
         _model = param.ClassSelector(class_=ExampleIpyWidget)
-        _names = param.Parameter(["name", "age"])
+        _names = ("name", "age")
 
     wrapper = ExampleWrapper(age=100)
 
@@ -265,7 +265,7 @@ def test_wrap_model_list_names():
 def test_wrap_model_dict_names():
     class ExampleWrapper(ModelWrapper):
         _model = param.ClassSelector(class_=ExampleIpyWidget)
-        _names = param.Parameter({"name": "xname", "age": "xage"})
+        _names = {"name": "xname", "age": "xage"}
 
     wrapper = ExampleWrapper(xage=100)
 
@@ -311,7 +311,7 @@ def test_widget_viewer_from_class_and_no_names():
 def test_widget_viewer_from_class_and_list_names():
     class ExampleViewer(WidgetViewer):
         _model = param.ClassSelector(class_=ExampleIpyWidget)
-        _names = param.Parameter(["name", "age"])
+        _names = ["name", "age"]
 
     wrapper = ExampleViewer(age=100)
 
@@ -338,7 +338,7 @@ def test_widget_viewer_from_class_and_list_names():
 def test_widget_viewer_from_class_and_dict_names():
     class ExampleViewer(WidgetViewer):
         _model = param.ClassSelector(class_=ExampleIpyWidget)
-        _names = param.Parameter({"name": "xname", "age": "xage"})
+        _names = {"name": "xname", "age": "xage"}
 
     wrapper = ExampleViewer(xage=100)
 
