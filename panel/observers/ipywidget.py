@@ -15,15 +15,12 @@
 
 ## Functions
 
-- `create_parameterized`: Creates a `ModelParameterized` object from a model with parameters synced to the model's traits.
-- `create_viewer`: Creates a `ModelViewer` object from a widget with parameters synced to the widget's traits and displaying the widget when rendered.
 - `create_rx`: Creates `rx` values from traits of a model, each synced to a trait of the model.
+- `sync_with_widget`: Syncs the named trait of the model with the value of a Panel widget.
 - `sync_with_parameterized`: Syncs the traits of a model with the parameters of a Parameterized object.
 - `sync_with_rx`: Syncs a single trait of a model with an `rx` value.
 
-All synchronization is bidirectional.
-
-
+All synchronization is bidirectional. We only synchronize the top-level traits/ parameters and not the nested ones.
 """
 
 # I've tried to implement this in a way that would generalize to similar APIs for other *model* libraries like dataclasses, Pydantic, attrs etc.
@@ -38,6 +35,7 @@ from param.reactive import bind
 
 from ..pane import IPyWidget
 from ..viewable import Layoutable, Viewer
+from ..widgets import Widget as PanelWidget
 
 if TYPE_CHECKING:
     try:
@@ -71,6 +69,14 @@ def _ensure_dict(names: Iterable[str] | dict[str, str] = ()) -> dict[str, str]:
         return names
     return dict(zip(names, names))
 
+def _ensure_exists(model, parameterized, names: dict[str, str])->dict[str,str]:
+    return {trait: parameter for trait, parameter in names.items() if trait in model.traits() and parameter in parameterized.param}
+
+def _clean_names(model, parameterized, names: Iterable[str] | dict[str, str])->dict[str,str]:
+    if not names:
+        names = _get_public_and_relevant_trait_names(model)
+    names = _ensure_dict(names)
+    return _ensure_exists(model, parameterized, names)
 
 def sync_with_parameterized(
     model: HasTraits,
@@ -83,17 +89,47 @@ def sync_with_parameterized(
         model: The model to synchronize.
         parameterized: The Parameterized object to synchronize.
         names: The names of the traits/parameters to synchronize. If none are
-            specified, all public and relevant traits of the model will be synced.
-    """
-    if not names:
-        names = _get_public_and_relevant_trait_names(model)
-    names = _ensure_dict(names)
+            specified, all public and relevant traits of the model will be synced. If a dict is
+            specified it maps from trait names to parameter names.
 
-    with param.edit_constant(parameterized):
-        for trait, parameter in names.items():
-            setattr(parameterized, parameter, getattr(model, trait))
+    Example:
+
+    ```python
+    import panel as pn
+    import ipyleaflet as ipyl
+    import param
+
+    pn.extension("ipywidgets")
+
+    leaflet_map = ipyl.Map()
+
+    class Map(param.Parameterized):
+        center = param.List(default=[52.204793, 360.121558])
+        zoom = param.Number(default=4, bounds=(0, 24), step=1)
+
+    parameterized = Map()
+
+    pn.observers.ipywidget.sync_with_parameterized(
+        model=leaflet_map, parameterized=parameterized
+    )
+    pn.Column(leaflet_map, parameterized.param.zoom, parameterized.param.center).servable()
+    ```
+
+    """
+    names = _clean_names(model, parameterized, names)
 
     for trait, parameter in names.items():
+        model_trait = getattr(model, trait)
+        parameterized_value = getattr(parameterized, parameter)
+        if parameter!="name" and parameterized_value is not None:
+            try:
+                setattr(model, trait, parameterized_value)
+            except Exception:
+                with param.edit_constant(parameterized):
+                    setattr(parameterized, parameter, model_trait)
+        else:
+            with param.edit_constant(parameterized):
+                setattr(parameterized, parameter, model_trait)
 
         def _handle_trait_change(
             _,
@@ -124,6 +160,37 @@ def sync_with_parameterized(
 
         bind(_handle_parameter_change, parameterized.param[parameter], watch=True)
 
+def sync_with_widget(
+    model: HasTraits,
+    widget: PanelWidget,
+    name: str="value",
+):
+    """Syncs the named trait of the model with value parameter of the widget.
+
+    Args:
+        model: The traitlets or ipywidgets model to synchronize.
+        widget: The Panel widget to synchronize.
+        name: The name of the trait to synchronize. Default is 'value'.
+
+    Example:
+
+    ```python
+    import panel as pn
+    import ipyleaflet as ipyl
+
+    pn.extension("ipywidgets")
+
+    leaflet_map = ipyl.Map()
+
+    zoom_widget = pn.widgets.FloatSlider(value=2.0, start=1.0, end=24.0, name="Zoom")
+    zoom_control_widget = pn.widgets.Checkbox(name="Show Zoom Control")
+
+    pn.observers.ipywidget.sync_with_widget(leaflet_map, zoom_widget, name="zoom")
+    pn.observers.ipywidget.sync_with_widget(leaflet_map, zoom_control_widget, name="zoom_control")
+    pn.Column(leaflet_map, zoom_widget, zoom_control_widget).servable()
+    ```
+    """
+    sync_with_parameterized(model, widget, names={name: "value"})
 
 class ModelParameterized(Parameterized):
     """An abstract Parameterized base class for wrapping a traitlets HasTraits class or instance."""
@@ -145,20 +212,6 @@ class ModelParameterized(Parameterized):
         for parameter in names.values():
             if parameter not in self.param:
                 self.param.add_parameter(parameter, param.Parameter())
-            else:
-                if (
-                    parameter != "name"
-                    and parameter not in params
-                    and parameter in self.param
-                ):
-                    params[parameter] = self.param[parameter].default
-
-        for trait, parameter in names.items():
-            if parameter in params:
-                try:
-                    setattr(model, trait, params[parameter])
-                except Exception:
-                    pass
 
         super().__init__(**params)
         sync_with_parameterized(self.model, self, names=self._names)
@@ -219,7 +272,56 @@ def create_parameterized(
 
 
 class ModelViewer(Layoutable, Viewer, ModelParameterized):
-    """An abstract base class for creating a Layoutable Viewer that wraps an ipywidget Widget class or instance."""
+    """An abstract base class for creating a Layoutable Viewer that wraps an ipywidget Widget class or instance.
+
+    Args:
+        model: An ipywidget instance to display.
+        _names: An optional iterable or dictionary of traits/parameters to synchronize. If none are
+            specified, all public and relevant traits of the model will be synced. If a dict is
+            specified it maps from trait names to parameter names.
+        params: Other arguments including model arguments and arguments for layout and styling of the Viewer.
+
+    Examples:
+
+    To wrap a widget instance:
+
+    ```python
+    import panel as pn
+    import ipyleaflet as ipyl
+
+    pn.extension("ipywidgets")
+
+    leaflet_map = ipyl.Map()
+
+    viewer = pn.observers.ipywidget.ModelViewer(
+        model=leaflet_map, sizing_mode="stretch_both"
+    )
+    pn.Row(pn.Column(viewer.param, scroll=True), viewer, height=400).servable()
+    ```
+
+    To wrap a widget class:
+
+    ```python
+    import panel as pn
+    import ipyleaflet as ipyl
+    import param
+
+    pn.extension("ipywidgets")
+
+
+    class MapViewer(pn.observers.ipywidget.ModelViewer):
+        _model_class = ipyl.Map
+        _names = ["center", "zoom"]
+
+        zoom = param.Number(4, bounds=(0, 24), step=1)
+
+    viewer = MapViewer(sizing_mode="stretch_both")
+
+    pn.Row(pn.Column(viewer.param, scroll=True), viewer, height=400).servable()
+    ```
+
+    The `_names` is optional and can be used to specify which traits/ parameters to synchronize.
+    """
 
     model: Widget = param.Parameter(allow_None=False, constant=True)
 
@@ -294,6 +396,27 @@ def create_rx(model: HasTraits, *names) -> param.rx | tuple[param.rx]:
         names: The traits to create `rx` values from.
             If a single parameter is specified, a single reactive parameter is returned.
             If no names are specified, all public and relevant traits of the model will be used.
+
+    Example:
+
+    ```python
+    import panel as pn
+    import ipyleaflet as ipyl
+
+    pn.extension("ipywidgets")
+
+    leaflet_map = ipyl.Map(zoom=4)
+    zoom, zoom_control = pn.observers.ipywidget.create_rx(
+        leaflet_map, "zoom", "zoom_control"
+    )
+
+    pn.Column(
+        leaflet_map,
+        zoom.rx.pipe(
+            lambda x: f"**Value**: {x}, **Zoom Control**: " + zoom_control.rx.pipe(str)
+        ),
+    ).servable()
+    ```
     """
     rx_values = []
     for name in names:

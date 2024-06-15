@@ -15,7 +15,7 @@ from traitlets import Float, Int, Unicode
 
 from panel.observers.ipywidget import (
     ModelParameterized, ModelViewer, _get_public_and_relevant_trait_names,
-    create_parameterized, create_rx, create_viewer,
+    create_parameterized, create_rx, create_viewer, sync_with_parameterized,
 )
 from panel.pane import IPyWidget
 from panel.viewable import Layoutable, Viewer
@@ -409,3 +409,18 @@ def test_widget_viewer_child_class(widget):
     assert viewer.weight == widget.weight == 1.1
 
     _assert_is_synced(viewer, widget)
+
+def test_dont_sync_non_shared_parameter(widget):
+    class ExampleWidgetViewer(param.Parameterized):
+        name = param.String("default", doc="A string parameter")
+        age = param.Integer(3, bounds=(0, 10))
+
+    parameterized = ExampleWidgetViewer()
+    sync_with_parameterized(model=widget, parameterized=parameterized)
+
+def test_dont_sync_non_shared_trait(widget):
+    class ExampleWidgetViewer(param.Parameterized):
+        wealth = param.Integer(3, bounds=(0, 10))
+
+    parameterized = ExampleWidgetViewer()
+    sync_with_parameterized(model=widget, parameterized=parameterized, names=["wealth"])
