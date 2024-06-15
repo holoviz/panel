@@ -196,6 +196,7 @@ class ModelParameterized(Parameterized):
     """An abstract Parameterized base class for wrapping a traitlets HasTraits class or instance."""
 
     model: HasTraits = param.Parameter(allow_None=False, constant=True)
+    # Todo: consider renaming to names or model_names because it will be used publicly
     _names: Iterable[str] | dict[str, str] = ()
 
     def __init__(self, **params):
