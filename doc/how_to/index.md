@@ -107,6 +107,13 @@ How to link the parameters of Panel components in Python and Javascript.
 How to interact with ipywidgets via familiar APIs like watch, bind, depends, and rx.
 :::
 
+:::{grid-item-card} {octicon}`paper-airplane;2.5em;sd-mr-1 sd-animate-grow50` Interact with Pydantic models
+:link: dataclass/pydantic
+:link-type: doc
+
+How to interact with Pydantic Models via familiar APIs like watch, bind, depends, and rx.
+:::
+
 ::::
 
 

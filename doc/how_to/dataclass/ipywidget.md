@@ -1,6 +1,6 @@
 # Interact with ipywidgets
 
-This how-to guide demonstrates how to easily enable interaction with ipywidgets using familiar APIs from Panel and [Param](https://param.holoviz.org/), such as `watch`, `bind`, `depends`, and `rx`.
+This how-to guide demonstrates how to easily enable interaction with [ipywidgets](https://ipywidgets.readthedocs.io/en/stable/) using familiar APIs from Panel and [Param](https://param.holoviz.org/), such as `watch`, `bind`, `depends`, and `rx`.
 
 ## Overview
 
@@ -10,8 +10,8 @@ The `pn.dataclass` module provides functions to synchronize the traits of an ipy
 
 - **Traitlets**: A library for creating dataclass like models (`HasTraits`) with observable fields (called *traits*).
 - **ipywidgets**: A library for creating interactive widgets for notebooks. Its base class `Widget` derives from `HasTraits`.
-- **widget**: Refers to ipywidgets unless otherwise stated.
-- **model**: Refers to Traitlets classes including ipywidgets.
+- **widget**: Refers to ipywidgets `Widget` classes or instances unless otherwise stated.
+- **model**: Refers to Traitlets `HasTraits` and ipywidgets `Widget` classes or instances.
 - **names**: Refers to the names of the traits/parameters to synchronize. Can be an iterable or a dictionary mapping from trait names to parameter names.
 
 ### Classes
@@ -23,16 +23,16 @@ The `pn.dataclass` module provides functions to synchronize the traits of an ipy
 
 - **`create_rx`**: Creates `rx` values from traits of a model, each synced to a trait of the model.
 - **`sync_with_parameterized`**: Syncs the traits of a model with the parameters of a Parameterized object.
-- **`sync_with_widget`**: Syncs the named trait of the model with the value of a Panel widget.
+- **`sync_with_widget`**: Syncs a trait of the model with the value of a Panel widget.
 - **`sync_with_rx`**: Syncs a single trait of a model with an `rx` value.
 
 All synchronization is bidirectional. Only top-level traits/parameters are synchronized, not nested ones.
 
-## How to Synchronize a Trait of an ipywidget with a Panel Widget
+## Synchronize a Trait of an ipywidget with a Panel Widget
 
 Use `sync_with_widget` to synchronize a trait of an ipywidget with the `value` parameter of a Panel widget.
 
-```pyodide
+```{pyodide}
 import panel as pn
 import ipyleaflet as ipyl
 
@@ -48,11 +48,11 @@ pn.dataclass.sync_with_widget(leaflet_map, zoom_control_widget, name="zoom_contr
 pn.Column(leaflet_map, zoom_widget, zoom_control_widget).servable()
 ```
 
-## How to Synchronize an ipywidget with a Parameterized Object
+## Synchronize an ipywidget with a Parameterized Object
 
 Use `sync_with_parameterized` to synchronize an ipywidget with a Parameterized object.
 
-```pyodide
+```{pyodide}
 import panel as pn
 import ipyleaflet as ipyl
 import param
@@ -85,7 +85,7 @@ pn.dataclass.sync_with_parameterized(
 
 The `names` argument can also be a dictionary mapping trait names to parameter names:
 
-```pyodide
+```{pyodide}
 import panel as pn
 import ipyleaflet as ipyl
 import param
@@ -105,11 +105,11 @@ pn.dataclass.sync_with_parameterized(
 pn.Column(leaflet_map, parameterized.param.zoom_level).servable()
 ```
 
-## How to Create a Viewer from an ipywidget Instance
+## Create a Viewer from an ipywidget Instance
 
 To create a `Viewer` object from a ipywidget instance, use the `ModelViewer` class:
 
-```pyodide
+```{pyodide}
 import panel as pn
 import ipyleaflet as ipyl
 
@@ -133,11 +133,11 @@ viewer = pn.dataclass.ModelViewer(
 
 The `names` argument can also be a dictionary mapping trait names to parameter names.
 
-## How to Create a Viewer from an ipywidget Class
+## Create a Viewer from an ipywidget Class
 
 To create a `Viewer` class from an ipywidget class, use the `ModelViewer` class:
 
-```pyodide
+```{pyodide}
 import panel as pn
 import ipyleaflet as ipyl
 import param
@@ -157,11 +157,11 @@ pn.Row(pn.Column(viewer.param, scroll=True), viewer, height=400).servable()
 
 The `_model_names` attribute is an optional iterable or dictionary. It specifies which traits to synchronize to which parameters.
 
-## How to Create a Reactive Value from the Trait of an ipywidget
+## Create a Reactive Value from the Trait of an ipywidget
 
 Use `create_rx` to create a reactive value from the trait of an ipywidget.
 
-```pyodide
+```{pyodide}
 import panel as pn
 import ipyleaflet as ipyl
 
