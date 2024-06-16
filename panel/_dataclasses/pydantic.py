@@ -36,6 +36,9 @@ class PydanticUtils(ModelUtils):
         handle_change,
     ):
         # We don't know if this is possible
+        # Maybe solution can be found in
+        # https://github.com/pydantic/pydantic/discussions/7127 or
+        # https://psygnal.readthedocs.io/en/latest/API/model/
         pass
 
     @classmethod
