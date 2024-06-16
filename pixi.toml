@@ -3,6 +3,9 @@ name = "panel"
 channels = ["pyviz/label/dev", "bokeh/label/dev", "conda-forge"]
 platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 
+[activation.env]
+PYTHONIOENCODING = "utf-8"
+
 [tasks]
 install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
 
@@ -141,6 +144,11 @@ depends_on = ["_install-ui"]
 # =============================================
 # =================== DOCS ====================
 # =============================================
+[feature.doc.activation.env]
+MPLBACKEND = "Agg"
+MOZ_HEADLESS = "1"
+PANEL_IPYWIDGET = "1"
+
 [feature.doc.dependencies]
 nbsite = ">=0.8.4"
 lxml = "*"
