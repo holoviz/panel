@@ -266,7 +266,7 @@ def test_to_rx_single(widget):
 def test_wrap_model_names_tuple():
     class ExampleWrapper(ModelParameterized):
         _model_class = ExampleWidget
-        _names = ("name", "age")
+        _model_names = ("name", "age")
 
     wrapper = ExampleWrapper(age=100)
 
@@ -290,7 +290,7 @@ def test_wrap_model_names_tuple():
 def test_wrap_model_names_dict():
     class ExampleWrapper(ModelParameterized):
         _model_class = ExampleWidget
-        _names = {"name": "xname", "age": "xage"}
+        _model_names = {"name": "xname", "age": "xage"}
 
     wrapper = ExampleWrapper(xage=100)
 
@@ -338,7 +338,7 @@ def test_widget_viewer_from_class_and_no_names():
 def test_widget_viewer_from_class_and_list_names():
     class ExampleViewer(ModelViewer):
         _model_class = ExampleWidget
-        _names = ["name", "age"]
+        _model_names = ["name", "age"]
 
     wrapper = ExampleViewer(age=100)
 
@@ -362,7 +362,7 @@ def test_widget_viewer_from_class_and_list_names():
 def test_widget_viewer_from_class_and_dict_names():
     class ExampleViewer(ModelViewer):
         _model_class = ExampleWidget
-        _names = {"name": "xname", "age": "xage"}
+        _model_names = {"name": "xname", "age": "xage"}
 
     wrapper = ExampleViewer(xage=100)
 

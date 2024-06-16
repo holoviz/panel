@@ -197,25 +197,25 @@ class ModelParameterized(Parameterized):
 
     model: HasTraits = param.Parameter(allow_None=False, constant=True)
     # Todo: consider renaming to names or model_names because it will be used publicly
-    _names: Iterable[str] | dict[str, str] = ()
+    _model_names: Iterable[str] | dict[str, str] = ()
 
     def __init__(self, **params):
         if "model" not in params and hasattr(self, "_model_class"):
             params["model"] = self._model_class()
 
         model = params["model"]
-        names = params.pop("_names", self._names)
+        names = params.pop("names", self._model_names)
         if not names:
             names = _get_public_and_relevant_trait_names(model)
         names = _ensure_dict(names)
-        self._names = names
+        self._model_names = names
 
         for parameter in names.values():
             if parameter not in self.param:
                 self.param.add_parameter(parameter, param.Parameter())
 
         super().__init__(**params)
-        sync_with_parameterized(self.model, self, names=self._names)
+        sync_with_parameterized(self.model, self, names=names)
 
 
 _cache_of_model_classes: dict[Any, Parameterized] = {}
@@ -267,7 +267,7 @@ def create_parameterized(
         parameterized = param.parameterized_class(name, params=params, bases=bases)
 
     _cache_of_model_classes[key] = parameterized
-    instance = parameterized(model=model, _names=names, **kwargs)
+    instance = parameterized(model=model, names=names, **kwargs)
 
     return instance
 
@@ -277,7 +277,7 @@ class ModelViewer(Layoutable, Viewer, ModelParameterized):
 
     Args:
         model: An ipywidget instance to display.
-        _names: An optional iterable or dictionary of traits/parameters to synchronize. If none are
+        names: An optional iterable or dictionary of traits/parameters to synchronize. If none are
             specified, all public and relevant traits of the model will be synced. If a dict is
             specified it maps from trait names to parameter names.
         params: Other arguments including model arguments and arguments for layout and styling of the Viewer.
@@ -312,7 +312,7 @@ class ModelViewer(Layoutable, Viewer, ModelParameterized):
 
     class MapViewer(pn.dataclass.ModelViewer):
         _model_class = ipyl.Map
-        _names = ["center", "zoom"]
+        _model_names = ["center", "zoom"]
 
         zoom = param.Number(4, bounds=(0, 24), step=1)
 
@@ -321,7 +321,7 @@ class ModelViewer(Layoutable, Viewer, ModelParameterized):
     pn.Row(pn.Column(viewer.param, scroll=True), viewer, height=400).servable()
     ```
 
-    The `_names` is optional and can be used to specify which traits/ parameters to synchronize.
+    The `_model_names` is optional and can be used to specify which traits/ parameters to synchronize.
     """
 
     model: Widget = param.Parameter(allow_None=False, constant=True)

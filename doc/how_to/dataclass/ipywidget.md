@@ -123,11 +123,11 @@ pn.Row(pn.Column(viewer.param, scroll=True), viewer, height=400).servable()
 
 Check out the parameters to the left of the map, there you will find all the traits of the `leaflet_map` instance. Try changing some.
 
-To specify a subset of traits/parameters to synchronize, use the `_names` argument:
+To specify a subset of traits/parameters to synchronize, use the `names` argument:
 
 ```python
 viewer = pn.dataclass.ModelViewer(
-    model=leaflet_map, _names=("center",), sizing_mode="stretch_both"
+    model=leaflet_map, names=("center",), sizing_mode="stretch_both"
 )
 ```
 
@@ -146,7 +146,7 @@ pn.extension("ipywidgets")
 
 class MapViewer(pn.dataclass.ModelViewer):
     _model_class = ipyl.Map
-    _names = ["center", "zoom"]
+    _model_names = ["center", "zoom"]
 
     zoom = param.Number(4, bounds=(0, 24), step=1)
 
@@ -155,7 +155,7 @@ viewer = MapViewer(sizing_mode="stretch_both")
 pn.Row(pn.Column(viewer.param, scroll=True), viewer, height=400).servable()
 ```
 
-The `_names` attribute is an optional iterable or dictionary. It specifies which traits to synchronize to which parameters.
+The `_model_names` attribute is an optional iterable or dictionary. It specifies which traits to synchronize to which parameters.
 
 ## How to Create a Reactive Value from the Trait of an ipywidget
 
