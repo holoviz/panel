@@ -47,9 +47,9 @@ https://panel.holoviz.org/getting_started/index.html
 """
 from param import rx
 
+from . import dataclass  # noqa
 from . import layout  # noqa
 from . import links  # noqa
-from . import observers  # noqa
 from . import pane  # noqa
 from . import param  # noqa
 from . import pipeline  # noqa

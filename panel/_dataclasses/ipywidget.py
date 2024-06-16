@@ -23,7 +23,7 @@
 All synchronization is bidirectional. We only synchronize the top-level traits/ parameters and not the nested ones.
 """
 
-# I've tried to implement this in a way that would generalize to similar APIs for other *model* libraries like dataclasses, Pydantic, attrs etc.
+# I've tried to implement this in a way that would generalize to similar APIs for other *dataclass like* libraries like dataclasses, Pydantic, attrs etc.
 
 from inspect import isclass
 from typing import TYPE_CHECKING, Any, Iterable
@@ -109,7 +109,7 @@ def sync_with_parameterized(
 
     parameterized = Map()
 
-    pn.observers.ipywidget.sync_with_parameterized(
+    pn.dataclass.sync_with_parameterized(
         model=leaflet_map, parameterized=parameterized
     )
     pn.Column(leaflet_map, parameterized.param.zoom, parameterized.param.center).servable()
@@ -185,8 +185,8 @@ def sync_with_widget(
     zoom_widget = pn.widgets.FloatSlider(value=2.0, start=1.0, end=24.0, name="Zoom")
     zoom_control_widget = pn.widgets.Checkbox(name="Show Zoom Control")
 
-    pn.observers.ipywidget.sync_with_widget(leaflet_map, zoom_widget, name="zoom")
-    pn.observers.ipywidget.sync_with_widget(leaflet_map, zoom_control_widget, name="zoom_control")
+    pn.dataclass.sync_with_widget(leaflet_map, zoom_widget, name="zoom")
+    pn.dataclass.sync_with_widget(leaflet_map, zoom_control_widget, name="zoom_control")
     pn.Column(leaflet_map, zoom_widget, zoom_control_widget).servable()
     ```
     """
@@ -294,7 +294,7 @@ class ModelViewer(Layoutable, Viewer, ModelParameterized):
 
     leaflet_map = ipyl.Map()
 
-    viewer = pn.observers.ipywidget.ModelViewer(
+    viewer = pn.dataclass.ModelViewer(
         model=leaflet_map, sizing_mode="stretch_both"
     )
     pn.Row(pn.Column(viewer.param, scroll=True), viewer, height=400).servable()
@@ -310,7 +310,7 @@ class ModelViewer(Layoutable, Viewer, ModelParameterized):
     pn.extension("ipywidgets")
 
 
-    class MapViewer(pn.observers.ipywidget.ModelViewer):
+    class MapViewer(pn.dataclass.ModelViewer):
         _model_class = ipyl.Map
         _names = ["center", "zoom"]
 
@@ -407,7 +407,7 @@ def create_rx(model: HasTraits, *names) -> param.rx | tuple[param.rx]:
     pn.extension("ipywidgets")
 
     leaflet_map = ipyl.Map(zoom=4)
-    zoom, zoom_control = pn.observers.ipywidget.create_rx(
+    zoom, zoom_control = pn.dataclass.create_rx(
         leaflet_map, "zoom", "zoom_control"
     )
 

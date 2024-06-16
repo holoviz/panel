@@ -1,16 +1,15 @@
-# Observe ipywidgets
+# Interact with ipywidgets
 
 This how-to guide demonstrates how to easily enable interaction with ipywidgets using familiar APIs from Panel and [Param](https://param.holoviz.org/), such as `watch`, `bind`, `depends`, and `rx`.
 
 ## Overview
 
-The `pn.observers.ipywidget` module provides functions to synchronize the traits of an ipywidget with a Parameterized object, a Panel widget, or an `rx` value. It also provides a `ModelViewer` class for creating a Layoutable Viewer that wraps an ipywidget Widget class or instance.
+The `pn.dataclass` module provides functions to synchronize the traits of an ipywidget with a Parameterized object, a Panel widget, or an `rx` value. It also provides a `ModelViewer` class for creating a Layoutable Viewer that wraps an ipywidget Widget class or instance.
 
 ### Terminology
 
-- **Traitlets**: A library for creating classes (`HasTraits`) with observable attributes (called *traits*).
-- **Param**: A library similar to Traitlets, for creating classes (`Parameterized`) with watchable attributes (called *parameters*).
-- **ipywidgets**: Builds on Traitlets to create interactive widgets for Jupyter notebooks.
+- **Traitlets**: A library for creating dataclass like models (`HasTraits`) with observable fields (called *traits*).
+- **ipywidgets**: A library for creating interactive widgets for notebooks. Its base class `Widget` derives from `HasTraits`.
 - **widget**: Refers to ipywidgets unless otherwise stated.
 - **model**: Refers to Traitlets classes including ipywidgets.
 - **names**: Refers to the names of the traits/parameters to synchronize. Can be an iterable or a dictionary mapping from trait names to parameter names.
@@ -31,7 +30,7 @@ All synchronization is bidirectional. Only top-level traits/parameters are synch
 
 ## How to Synchronize a Trait of an ipywidget with a Panel Widget
 
-Use `sync_with_widget` to synchronize a trait of an ipywidget with a Panel widget.
+Use `sync_with_widget` to synchronize a trait of an ipywidget with the `value` parameter of a Panel widget.
 
 ```pyodide
 import panel as pn
@@ -44,8 +43,8 @@ leaflet_map = ipyl.Map()
 zoom_widget = pn.widgets.FloatSlider(value=4.0, start=1.0, end=24.0, name="Zoom")
 zoom_control_widget = pn.widgets.Checkbox(name="Show Zoom Control")
 
-pn.observers.ipywidget.sync_with_widget(leaflet_map, zoom_widget, name="zoom")
-pn.observers.ipywidget.sync_with_widget(leaflet_map, zoom_control_widget, name="zoom_control")
+pn.dataclass.sync_with_widget(leaflet_map, zoom_widget, name="zoom")
+pn.dataclass.sync_with_widget(leaflet_map, zoom_control_widget, name="zoom_control")
 pn.Column(leaflet_map, zoom_widget, zoom_control_widget).servable()
 ```
 
@@ -68,7 +67,7 @@ class Map(param.Parameterized):
 
 parameterized = Map()
 
-pn.observers.ipywidget.sync_with_parameterized(
+pn.dataclass.sync_with_parameterized(
     model=leaflet_map, parameterized=parameterized
 )
 pn.Column(leaflet_map, parameterized.param.zoom, parameterized.param.center).servable()
@@ -79,7 +78,7 @@ The `sync_with_parameterized` function synchronizes the shared traits/parameters
 To specify a subset of traits/parameters to synchronize, use the `names` argument:
 
 ```python
-pn.observers.ipywidget.sync_with_parameterized(
+pn.dataclass.sync_with_parameterized(
     model=leaflet_map, parameterized=parameterized, names=("center",)
 )
 ```
@@ -100,7 +99,7 @@ class Map(param.Parameterized):
 
 parameterized = Map()
 
-pn.observers.ipywidget.sync_with_parameterized(
+pn.dataclass.sync_with_parameterized(
     model=leaflet_map, parameterized=parameterized, names={"zoom": "zoom_level"}
 )
 pn.Column(leaflet_map, parameterized.param.zoom_level).servable()
@@ -118,7 +117,7 @@ pn.extension("ipywidgets")
 
 leaflet_map = ipyl.Map(zoom=4)
 
-viewer = pn.observers.ipywidget.ModelViewer(model=leaflet_map, sizing_mode="stretch_both")
+viewer = pn.dataclass.ModelViewer(model=leaflet_map, sizing_mode="stretch_both")
 pn.Row(pn.Column(viewer.param, scroll=True), viewer, height=400).servable()
 ```
 
@@ -127,7 +126,7 @@ Check out the parameters to the left of the map, there you will find all the tra
 To specify a subset of traits/parameters to synchronize, use the `_names` argument:
 
 ```python
-viewer = pn.observers.ipywidget.ModelViewer(
+viewer = pn.dataclass.ModelViewer(
     model=leaflet_map, _names=("center",), sizing_mode="stretch_both"
 )
 ```
@@ -145,7 +144,7 @@ import param
 
 pn.extension("ipywidgets")
 
-class MapViewer(pn.observers.ipywidget.ModelViewer):
+class MapViewer(pn.dataclass.ModelViewer):
     _model_class = ipyl.Map
     _names = ["center", "zoom"]
 
@@ -169,7 +168,7 @@ import ipyleaflet as ipyl
 pn.extension("ipywidgets")
 
 leaflet_map = ipyl.Map(zoom=4)
-zoom, zoom_control = pn.observers.ipywidget.create_rx(
+zoom, zoom_control = pn.dataclass.create_rx(
     leaflet_map, "zoom", "zoom_control"
 )
 

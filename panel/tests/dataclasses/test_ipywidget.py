@@ -13,9 +13,11 @@ import param
 from ipywidgets import DOMWidget, register
 from traitlets import Float, Int, Unicode
 
-from panel.observers.ipywidget import (
-    ModelParameterized, ModelViewer, _get_public_and_relevant_trait_names,
-    create_parameterized, create_rx, create_viewer, sync_with_parameterized,
+from panel._dataclasses.ipywidget import (
+    _get_public_and_relevant_trait_names, create_parameterized, create_viewer,
+)
+from panel.dataclass import (
+    ModelParameterized, ModelViewer, create_rx, sync_with_parameterized,
 )
 from panel.pane import IPyWidget
 from panel.viewable import Layoutable, Viewer
@@ -37,6 +39,7 @@ class ExampleWidget(DOMWidget):
 def widget():
     return ExampleWidget(name="A", age=1, weight=1.1)
 
+
 def _assert_is_synced(viewer, widget):
     # widget synced to viewer
     widget.name = "B"
@@ -55,6 +58,7 @@ def _assert_is_synced(viewer, widget):
     assert viewer.age == widget.age
     assert viewer.weight == widget.weight
 
+
 def test_create_parameterized(widget):
     viewer = create_parameterized(widget)
 
@@ -63,6 +67,7 @@ def test_create_parameterized(widget):
     assert viewer.name == widget.name
     assert viewer.age == widget.age
     assert viewer.weight == widget.weight
+
 
 def test_create_parameterized_readonly(widget):
     parameterized = create_parameterized(widget, names=("read_only",))
@@ -129,6 +134,7 @@ def test_create_parameterized_bases(widget):
     assert viewer.name == widget.name
     assert viewer.age == widget.age
 
+
 def test_create_parameterized_names_dict(widget):
     viewer = create_parameterized(widget, names={"name": "xname", "age": "xage"})
 
@@ -162,6 +168,7 @@ def test_create_viewer(widget):
 
     viewer.sizing_mode = "stretch_width"
     assert viewer.sizing_mode == component.sizing_mode
+
 
 def test_create_viewer_names_and_kwargs(widget):
     viewer = create_viewer(widget, names=("name", "age"), sizing_mode="stretch_width")
@@ -410,6 +417,7 @@ def test_widget_viewer_child_class(widget):
 
     _assert_is_synced(viewer, widget)
 
+
 def test_dont_sync_non_shared_parameter(widget):
     class ExampleWidgetViewer(param.Parameterized):
         name = param.String("default", doc="A string parameter")
@@ -417,6 +425,7 @@ def test_dont_sync_non_shared_parameter(widget):
 
     parameterized = ExampleWidgetViewer()
     sync_with_parameterized(model=widget, parameterized=parameterized)
+
 
 def test_dont_sync_non_shared_trait(widget):
     class ExampleWidgetViewer(param.Parameterized):
