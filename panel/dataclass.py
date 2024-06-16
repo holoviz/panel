@@ -32,7 +32,7 @@ In the future dataclasses, attrs or other dataclass like libraries may be suppor
 | Library | Sync Parameterized -> Model | Sync Model -> Parameterized | `create_rx` | `sync_with_parameterized` | `sync_with_widget` | `sync_with_rx` | `ModelParameterized` | `ModelViewer` |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | ipywidgets | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Pydantic   | ✅ | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Pydantic   | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Traitlets  | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 
 """ # noqa: E501
