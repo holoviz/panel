@@ -4,6 +4,7 @@ channels = ["pyviz/label/dev", "bokeh/label/dev", "conda-forge"]
 platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 
 [activation.env]
+MPLBACKEND = "Agg"
 PYTHONIOENCODING = "utf-8"
 
 [tasks]
@@ -145,7 +146,6 @@ depends_on = ["_install-ui"]
 # =================== DOCS ====================
 # =============================================
 [feature.doc.activation.env]
-MPLBACKEND = "Agg"
 MOZ_HEADLESS = "1"
 PANEL_IPYWIDGET = "1"
 

@@ -19,7 +19,6 @@ env:
   PACKAGE: "panel"
   PYTHON_VERSION: "3.11"
   NODE_VERSION: "20"
-  MPLBACKEND: "Agg"
 
 jobs:
   waiting_room:
