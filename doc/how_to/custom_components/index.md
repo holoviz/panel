@@ -49,6 +49,14 @@ How to create a custom layout using ESM components
 
 ::::
 
+```{toctree}
+:titlesonly:
+:hidden:
+:maxdepth: 2
+
+reactive_esm/custom_widgets
+reactive_esm/reactive_esm_layout
+```
 
 ## `ReactiveHTML` Components
 
