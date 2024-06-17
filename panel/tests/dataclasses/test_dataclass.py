@@ -1,6 +1,7 @@
-"""We test that we can work with dataclass like class and instances via familiar APIs like watch, bind, depends and rx"
 """
-
+Tests for utilities that allow us to wrap dataclass like class and
+instances via familiar APIs like watch, bind, depends and rx."
+"""
 import param
 import pytest
 
@@ -14,6 +15,7 @@ from panel.dataclass import (
 from panel.viewable import Layoutable, Viewer
 
 PydanticUtils._is_testing =True
+
 
 def get_traitlets_example_model():
     from ipywidgets import DOMWidget, register
@@ -30,6 +32,7 @@ def get_traitlets_example_model():
         weight = Float(0.0).tag(description="A float trait")
         read_only = Unicode("A Value", read_only=True)
     return TraitletsExampleModel
+
 
 def get_pydantic_example_model():
     from pydantic import BaseModel
@@ -499,7 +502,7 @@ def test_model_parameterized_parameters_added_to_instance_not_class(model):
     )
 
     parameterized_one = ModelParameterized(
-        model=model, names=("center",)
+        model=model, names=("age",)
     )
 
-    assert set(parameterized_one.param)<set(parameterized_all.param)
+    assert set(parameterized_one.param) < set(parameterized_all.param)

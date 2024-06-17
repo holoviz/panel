@@ -53,7 +53,7 @@ class PydanticUtils(ModelUtils):
 
         parameters = [
             parameter
-            for name, parameter in self.param.params().items()
+            for name, parameter in self.param.objects().items()
             if name not in layout_params
         ]
         parameters = []

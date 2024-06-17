@@ -1,19 +1,32 @@
-"""Shared base classes and utilities for working with dataclasses like models including ipywidgets and Pydantic."""
-
-from typing import Iterable
+"""
+Shared base classes and utilities for working with dataclasses like
+models including ipywidgets and Pydantic.
+"""
+from inspect import isclass
+from typing import Any, Iterable
 
 import param
 
 from param import Parameterized, bind
 
 
-class NotimplementedError(Exception):
-    pass
+def _to_tuple(
+    bases: None | Parameterized | Iterable[Parameterized],
+) -> tuple[Parameterized]:
+    if not bases:
+        bases = ()
+    if isclass(bases) and issubclass(bases, Parameterized):
+        bases = (bases,)
+    return tuple(bases)
+
 
 class ModelUtils:
     """An abstract base class"""
     can_observe_field: bool = False
+
     supports_constant_fields = True
+
+    _model_cache: dict[Any, Parameterized] = {}
 
     @classmethod
     def get_public_and_relevant_field_names(cls, model) -> tuple[str]:
@@ -52,7 +65,7 @@ class ModelUtils:
 
     @classmethod
     def get_field_names(cls, model) -> Iterable[str]:
-        raise NotimplementedError()
+        raise NotImplementedError()
 
     @classmethod
     def is_relevant_field_name(cls, name: str):
@@ -77,7 +90,40 @@ class ModelUtils:
         field: str,
         handle_change,
     ):
-        raise NotimplementedError()
+        raise NotImplementedError()
+
+    @classmethod
+    def create_parameterized(
+        cls,
+        model,
+        names,
+        bases,
+    ):
+        if not names:
+            names = cls.get_public_and_relevant_field_names(model)
+        names = cls.ensure_dict(names)
+
+        bases = _to_tuple(bases)
+        if not any(issubclass(base, Parameterized) for base in bases):
+            bases += (Parameterized,)
+        name = type(model).__name__
+        key = (name, tuple(names.items()), bases)
+        if name in cls._model_cache:
+            parameterized = cls._model_cache[key]
+        else:
+            existing_params = ()
+            for base in bases:
+                if issubclass(base, Parameterized):
+                    existing_params += tuple(base.param)
+            params = {
+                name: param.Parameter()
+                for name in names.values()
+                if name not in existing_params
+            }
+            parameterized = param.parameterized_class(name, params=params, bases=bases)
+            parameterized._model__initialized = True
+            cls._model_cache[key] = parameterized
+        return parameterized
 
     @classmethod
     def sync_with_parameterized(
@@ -132,7 +178,7 @@ class ModelUtils:
 
     @classmethod
     def get_layout(cls, model, self, layout_params):
-        raise NotimplementedError()
+        raise NotImplementedError()
 
     @classmethod
     def adjust_sizing(cls, self):

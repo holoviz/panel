@@ -11,7 +11,7 @@ In the future dataclasses, attrs or other dataclass like libraries may be suppor
 ## Terminology
 
 - **Param**: A library for creating dataclass like models (`Parameterized`) with watchable attributes (called *parameters*).
-- **model**: A child class of one of the libraries listed above.
+- **model**: A subclass of one of the libraries listed above.
 - **fields**: The attributes of the model class or instance. Derives from `dataclass.field()`.
 - **names**: The names of the model attributes/ Parameterized parameters.
 
@@ -36,14 +36,13 @@ In the future dataclasses, attrs or other dataclass like libraries may be suppor
 | Traitlets  | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 
 """ # noqa: E501
-from inspect import isclass
-from typing import Any, Iterable
+from typing import Iterable
 
 import param
 
 from param import Parameterized
 
-from ._dataclasses.base import ModelUtils
+from ._dataclasses.base import ModelUtils, _to_tuple
 from ._dataclasses.ipywidget import HasTraits, TraitletsUtils
 from ._dataclasses.pydantic import BaseModel, PydanticUtils
 from .viewable import Layoutable, Viewer
@@ -128,12 +127,31 @@ def sync_with_widget(
     """
     sync_with_parameterized(model, widget, names={name: "value"})
 
+
 class ModelParameterized(Parameterized):
-    """An abstract Parameterized base class for wrapping a traitlets HasTraits class or instance."""
+    """
+    An abstract Parameterized base class for wrapping a traitlets HasTraits class or instance.
+    """
 
     model: DataClassLike = param.Parameter(allow_None=False, constant=True)
+
     # Todo: consider renaming to names or model_names because it will be used publicly
     _model_names: Iterable[str] | dict[str, str] = ()
+
+    # Whether the model parameters have been created
+    _model__initialized = False
+
+    def __new__(cls, **params):
+        if cls._model__initialized:
+            return super().__new__(cls)
+        if "model" not in params and hasattr(cls, "_model_class"):
+            model = cls._model_class()
+        else:
+            model = params["model"]
+        names = params.pop("names", cls._model_names)
+        utils = _get_utils(model)
+        parameterized = utils.create_parameterized(model, names=names, bases=(cls,))
+        return super().__new__(parameterized)
 
     def __init__(self, **params):
         if "model" not in params and hasattr(self, "_model_class"):
@@ -146,64 +164,43 @@ class ModelParameterized(Parameterized):
             names = utils.get_public_and_relevant_field_names(model)
         names = utils.ensure_dict(names)
         self._model_names = names
-        for parameter in names.values():
-            if parameter not in self.param:
-                self.param.add_parameter(parameter, param.Parameter())
-
         super().__init__(**params)
         utils.sync_with_parameterized(self.model, self, names=names)
 
-_cache_of_model_classes: dict[Any, Parameterized] = {}
-
-
-def _to_tuple(
-    bases: None | Parameterized | Iterable[Parameterized],
-) -> tuple[Parameterized]:
-    if not bases:
-        bases = ()
-    if isclass(bases) and issubclass(bases, Parameterized):
-        bases = (bases,)
-    return tuple(item for item in bases)
-
 
 def create_parameterized(
-    model: HasTraits,
+    model: DataClassLike,
     names: Iterable[str] | dict[str, str] = (),
     bases: Iterable[Parameterized] | Parameterized | None = None,
     **kwargs,
 ) -> Parameterized:
-    """Returns a Parameterized object from a model with names synced bidirectionally to the model's traits.
-
-    Args:
-        model: The model to create the Parameterized object from.
-        names: The names of the parameters to add to the Parameterized object and to sync.
-            If no names are specified, all public and relevant traits on the model will be added and synchronized.
-        bases: Additional base classes to add to the base `IpyWidgetViewer` class.
-        kwargs: Additional keyword arguments to pass to the Parameterized constructor.
     """
-    if not names:
-        names = _get_utils(model).get_public_and_relevant_field_names(model)
-    names = _get_utils(model).ensure_dict(names)
+    Returns a Parameterized instance from a model with names synced
+    bidirectionally to the model's traits.
 
-    bases = _to_tuple(bases) + (ModelParameterized,)
-    name = type(model).__name__
-    key = (name, tuple(names.items()), bases)
-    if name in _cache_of_model_classes:
-        parameterized = _cache_of_model_classes[key]
-    else:
-        existing_params = ()
-        for base in bases:
-            existing_params += tuple(base.param)
-        params = {
-            name: param.Parameterized()
-            for name in names.values()
-            if name not in existing_params
-        }
-        parameterized = param.parameterized_class(name, params=params, bases=bases)
+    Arguments
+    ---------
+    model: DataClassLike
+        The model to create the Viewer from.
+    names: Iterable[str] | dict[str, str]
+        The names of the parameters to add to the Viewer and to sync bidirectionally.
+        If no names are specified, all public and relevant traits on the widget will be added and synced.
+    bases: tuple[type]
+        Additional base classes to add to the base `ModelViewer` class.
+    kwargs: dict[str, Any]
+        Additional keyword arguments to pass to the Parameterized constructor.
 
-    _cache_of_model_classes[key] = parameterized
+    Returns
+    -------
+    The Parameterized instance created from the supplied model.
+    """
+    bases = _to_tuple(bases)
+    if not any(issubclass(base, ModelParameterized) for base in bases):
+        bases += (ModelParameterized,)
+    parameterized = _get_utils(model).create_parameterized(
+        model=model, names=names, bases=bases
+    )
     instance = parameterized(model=model, names=names, **kwargs)
-
     return instance
 
 
@@ -259,7 +256,7 @@ class ModelViewer(Layoutable, Viewer, ModelParameterized):
     The `_model_names` is optional and can be used to specify which traits/ parameters to synchronize.
     """
 
-    model: Widget = param.Parameter(allow_None=False, constant=True)
+    model: DataClassLike = param.Parameter(allow_None=False, constant=True)
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -276,31 +273,48 @@ class ModelViewer(Layoutable, Viewer, ModelParameterized):
 
 
 def create_viewer(
-    widget: Widget,
+    widget: DataClassLike,
     names: Iterable[str] | dict[str, str] = (),
     bases: Iterable[Parameterized] | Parameterized | None = None,
     **kwargs,
 ) -> ModelViewer:
-    """Returns a Viewer object from a widget with parameters synced bidirectionally to the widget's traits and displaying the widget when rendered.
+    """
+    Returns a Viewer object from a widget with parameters synced
+    bidirectionally to the widget's traits and displaying the widget
+    when rendered.
 
-    Args:
-        widget: The widget to create the Viewer from.
-        names: The names of the parameters to add to the Viewer and to sync bidirectionally.
-            If no names are specified, all public and relevant traits on the widget will be added and synced.
-        bases: Additional base classes to add to the base `IpyWidgetViewer` class.
-        kwargs: Additional keyword arguments to pass to the Parameterized constructor.
+    Arguments
+    ---------
+    widget: DataClassLike
+        The widget to create the Viewer from.
+    names: Iterable[str] | dict[str, str]
+        The names of the parameters to add to the Viewer and to sync bidirectionally.
+        If no names are specified, all public and relevant traits on the widget will be added and synced.
+    bases: tuple[type]
+        Additional base classes to add to the base `ModelViewer` class.
+    kwargs: dict[str, Any]
+        Additional keyword arguments to pass to the Parameterized constructor.
+
+    Returns
+    -------
+    A ModelViewer instance wrapping the supplied model.
     """
     bases = _to_tuple(bases) + (ModelViewer,)
     return create_parameterized(widget, names, bases=bases, **kwargs)
 
 
 def sync_with_rx(model: HasTraits, name: str, rx: param.rx):
-    """Syncs a single trait of a model with an `rx` value.
+    """
+    Syncs a single trait of a model with an `rx` value.
 
-    Args:
-        model: The model to sync with.
-        name: The name of the trait to sync the `rx` value with.
-        rx: The `rx` value to sync with the trait.
+    Arguments
+    ---------
+    model: HasTraits | pydantic.Model
+        The model to sync with.
+    name: str
+        The name of the trait to sync the `rx` value with.
+    rx: param.rx
+        The `rx` value to sync with the trait.
     """
     rx.rx.value = getattr(model, name)
 
@@ -316,15 +330,25 @@ def sync_with_rx(model: HasTraits, name: str, rx: param.rx):
 
 
 def create_rx(model: HasTraits, *names) -> param.rx | tuple[param.rx]:
-    """Returns `rx` values from traits of a model, each synced to a trait of the model bidirectionally.
+    """
+    Returns `rx` values from traits of a model, each synced to a trait of the model bidirectionally.
 
-    Args:
-        model: The model to create the `rx` parameters from.
-        names: The traits to create `rx` values from.
-            If a single parameter is specified, a single reactive parameter is returned.
-            If no names are specified, all public and relevant traits of the model will be used.
+    Arguments
+    ---------
+    model: HasTraits | pydantic.BaseModel
+        The model to create the `rx` parameters from.
+    names: Iterable[str]
+        The traits to create `rx` values from.
+        If a single parameter is specified, a single reactive parameter is returned.
+        If no names are specified, all public and relevant traits of the model will be used.
 
-    Example:
+    Returns
+    -------
+    One or more `rx` objects corresponding to the traits or fields of
+    the object.
+
+    Example
+    -------
 
     ```python
     import panel as pn
@@ -339,8 +363,8 @@ def create_rx(model: HasTraits, *names) -> param.rx | tuple[param.rx]:
 
     pn.Column(
         leaflet_map,
-        zoom.rx.pipe(
-            lambda x: f"**Value**: {x}, **Zoom Control**: " + zoom_control.rx.pipe(str)
+        pn.rx("**Value**: {zoom}, **Zoom Control**: {zoom_control}").format(
+           zoom=zoom, zoom_control=zoom_control
         ),
     ).servable()
     ```
@@ -354,4 +378,8 @@ def create_rx(model: HasTraits, *names) -> param.rx | tuple[param.rx]:
         return rx_values[0]
     return tuple(rx_values)
 
-__all__=["create_rx", "sync_with_parameterized", "sync_with_widget", "sync_with_rx", "ModelParameterized", "ModelViewer"]
+
+__all__ = [
+    "create_rx", "sync_with_parameterized", "sync_with_widget",
+    "sync_with_rx", "ModelParameterized", "ModelViewer"
+]
