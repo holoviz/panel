@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING, ClassVar
 import param
 
 from .layout import Column, Panel, Row
-from .pane import HTML, PaneBase, panel
+from .pane import HTML, Pane, panel
 from .pane.base import ReplacementPane
 from .viewable import Viewable
 from .widgets import Button, WidgetBase
@@ -61,7 +61,7 @@ def _yield_abbreviations_for_parameter(parameter, kwargs):
             yield k, v, empty
 
 
-class interactive(PaneBase):
+class interactive(Pane):
 
     default_layout = param.ClassSelector(default=Column, class_=(Panel),
                                          is_instance=False)

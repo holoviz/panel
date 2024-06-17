@@ -50,7 +50,7 @@ from .layout import (
     Column, HSpacer, Panel, Row, Spacer, Tabs, WidgetBox,
 )
 from .pane import DataFrame as DataFramePane
-from .pane.base import PaneBase, ReplacementPane
+from .pane.base import Pane, ReplacementPane
 from .reactive import Reactive
 from .util import (
     abbreviated_repr, flatten, full_groupby, fullpath, is_parameterized,
@@ -127,7 +127,7 @@ def set_values(*parameterizeds, **param_values):
             parameterized.param.update(**old_values)
 
 
-class Param(PaneBase):
+class Param(Pane):
     """
     Param panes render a Parameterized class to a set of widgets which
     are linked to the parameter values on the class.
@@ -1096,7 +1096,7 @@ class ParamFunction(ParamRef):
         return eval_function_with_deps(ref)
 
 
-class ReactiveExpr(PaneBase):
+class ReactiveExpr(Pane):
     """
     ReactiveExpr generates a UI for param.rx objects by rendering the
     widgets and outputs.

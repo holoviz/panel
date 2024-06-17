@@ -27,7 +27,7 @@ from ..layout import (
 )
 from ..viewable import Layoutable, Viewable
 from ..widgets import Player
-from .base import PaneBase, RerenderError, panel
+from .base import Pane, RerenderError, panel
 from .plot import Bokeh, Matplotlib
 from .plotly import Plotly
 
@@ -43,7 +43,7 @@ def check_holoviews(version):
     return Version(Version(hv.__version__).base_version) >= Version(version)
 
 
-class HoloViews(PaneBase):
+class HoloViews(Pane):
     """
     `HoloViews` panes render any `HoloViews` object using the
     currently selected backend ('bokeh' (default), 'matplotlib' or 'plotly').
@@ -118,7 +118,7 @@ class HoloViews(PaneBase):
         'right_bottom': (Row, 'end', False)
     }
 
-    _panes: ClassVar[Mapping[str, type[PaneBase]]] = {
+    _panes: ClassVar[Mapping[str, type[Pane]]] = {
         'bokeh': Bokeh, 'matplotlib': Matplotlib, 'plotly': Plotly
     }
 
@@ -568,7 +568,7 @@ class HoloViews(PaneBase):
         return Link(self, target, properties=links, code=code, args=args,
                     bidirectional=bidirectional)
 
-    jslink.__doc__ = PaneBase.jslink.__doc__
+    jslink.__doc__ = Pane.jslink.__doc__
 
     @classmethod
     def widgets_from_dimensions(cls, object, widget_types=None, widgets_type='individual', direction='vertical'):
@@ -698,7 +698,7 @@ class HoloViews(PaneBase):
         return widgets, dim_values
 
 
-class Interactive(PaneBase):
+class Interactive(Pane):
 
     object = param.Parameter(default=None, allow_refs=False, doc="""
         The object being wrapped, which will be converted to a
