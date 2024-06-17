@@ -8,6 +8,14 @@ We will assume you have an *intermediate skill level* corresponding to the what 
 
 ## Extend Panel
 
-- **[Develop Custom Components](custom_components.md)**: Use `JSComponent` to build advanced components utilizing  modern JavaScript and CSS technologies.
+- **[Develop Custom Components](./custom_components.md)**: Use `JSComponent` to build advanced components utilizing  modern JavaScript and CSS technologies.
 - **Develop Custom Bokeh models**:
 - **Customizing Panel for your brand**:
+
+```{toctree}
+:titlesonly:
+:hidden:
+:maxdepth: 2
+
+custom_components
+```
