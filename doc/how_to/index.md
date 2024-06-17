@@ -121,6 +121,20 @@ How to access and manipulate state related to the user session, HTTP request and
 
 ::::
 
+## Extending Panel
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`code-square;2.5em;sd-mr-1 sd-animate-grow50` Create Custom Components
+:link: custom_components/index
+:link-type: doc
+
+How to create custom components including widgets, layouts and panes using pure-Python, JS or React.
+:::
+
+::::
+
 ## Test and debug
 
 ::::{grid} 1 2 2 3
