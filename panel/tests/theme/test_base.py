@@ -1,19 +1,11 @@
 import pathlib
 
-import pytest
-
 from bokeh.models import ImportedStyleSheet
 
 from panel.io.resources import CDN_DIST
-from panel.io.state import state
 from panel.theme.base import BOKEH_DARK, Design, Inherit
 from panel.viewable import Viewable
 from panel.widgets import FloatSlider, IntSlider, TextInput
-
-
-@pytest.fixture(autouse=True)
-def _clear_state():
-    state._stylesheets.clear()
 
 
 class DesignTest(Design):
@@ -47,7 +39,11 @@ def test_design_params():
     assert s1.url == f'{CDN_DIST}bundled/theme/default.css'
     assert isinstance(s2, ImportedStyleSheet)
     assert s2.url == 'foo.css'
-    assert s3 == '.bk-input {\n  color: red;\n}\n'
+    # DEBUG
+    try:
+        assert s3 == '.bk-input {\n  color: red;\n}\n'
+    except AssertionError:
+        raise AssertionError(s3.url)  # noqa
 
     assert params.get('styles') == {'color': 'green'}
 
@@ -78,7 +74,11 @@ def test_design_params_inherited():
     assert s1.url == f'{CDN_DIST}bundled/theme/default.css'
     assert isinstance(s2, ImportedStyleSheet)
     assert s2.url == 'foo.css'
-    assert s3 == '.bk-input {\n  color: red;\n}\n'
+    # DEBUG
+    try:
+        assert s3 == '.bk-input {\n  color: red;\n}\n'
+    except AssertionError:
+        raise AssertionError(s3.url)  # noqa
 
     assert params.get('styles') == {'color': 'red'}
 
@@ -128,7 +128,11 @@ def test_design_apply(document, comm):
     assert s3.url.endswith('/dist/bundled/theme/default.css')
     assert isinstance(s4, ImportedStyleSheet)
     assert s4.url.endswith('foo.css')
-    assert s5 == '.bk-input {\n  color: red;\n}\n'
+    # DEBUG
+    try:
+        assert s5 == '.bk-input {\n  color: red;\n}\n'
+    except AssertionError:
+        raise AssertionError(s5.url)  # noqa
     assert model.styles == {'color': 'green'}
 
 def test_design_apply_not_isolated(document, comm):
