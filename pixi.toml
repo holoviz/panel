@@ -111,6 +111,7 @@ numba = "*"
 reacton = "*"
 scipy = "*"
 textual = "*"
+pydantic = "*"
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-ui environment
 test-unit = 'pytest panel/tests -n logical --dist loadgroup'
