@@ -4,7 +4,6 @@ set -euxo pipefail
 
 PACKAGE="panel"
 
-git diff --exit-code
 python -m build -w .
 
 VERSION=$(python -c "import $PACKAGE; print($PACKAGE._version.__version__)")
