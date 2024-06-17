@@ -6,14 +6,14 @@ Panel components and APIs primarily build on [Param](https://param.holoviz.org/)
 :gutter: 1 1 1 2
 
 :::{grid-item-card} {octicon}`paper-airplane;2.5em;sd-mr-1 sd-animate-grow50` Interact with ipywidgets
-:link: ipy
+:link: ipywidget
 :link-type: doc
 
 How to interact with ipywidgets via familiar APIs like watch, bind, depends, and rx.
 :::
 
 :::{grid-item-card} {octicon}`paper-airplane;2.5em;sd-mr-1 sd-animate-grow50` Interact with Pydantic models
-:link: dataclass/pydantic
+:link: pydantic
 :link-type: doc
 
 How to interact with Pydantic Models via familiar APIs like watch, bind, depends, and rx.
@@ -26,6 +26,6 @@ How to interact with Pydantic Models via familiar APIs like watch, bind, depends
 :hidden:
 :maxdepth: 2
 
-ipywidgets
+ipywidget
 pydantic
 ```
