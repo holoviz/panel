@@ -1,6 +1,10 @@
-"""Functionality to enable easy interaction with dataclass like instances or classes via familiar APIs from Param like watch, bind, depends, and rx.
+"""
+Functionality to enable easy interaction with dataclass like instances
+or classes via familiar APIs from Param like watch, bind, depends, and
+rx.
 
-## Libraries Supported
+Libraries Supported
+-------------------
 
 - **ipywidgets**: A library for creating interactive widgets for notebooks. Its base class `Widget` derives from traitlets `HasTraitlets`.
 - **Pydantic**: A library for creating dataclass like models with very fast validation and serialization.
@@ -15,19 +19,22 @@ In the future dataclasses, attrs or other dataclass like libraries may be suppor
 - **fields**: The attributes of the model class or instance. Derives from `dataclass.field()`.
 - **names**: The names of the model attributes/ Parameterized parameters.
 
-## Classes
+Classes
+-------
 
 - `ModelParameterized`: An abstract Parameterized base class for observing a model class or instance.
 - `ModelViewer`: An abstract Layoutable Viewer base class for observing a model class or instance.
 
-## Functions
+Functions
+---------
 
 - `create_rx`: Creates `rx` values from fields of a model.
 - `sync_with_parameterized`: Syncs the fields of a model with the parameters of a Parameterized object.
 - `sync_with_widget`: Syncs an iterable or dictionary of named fields of a model with the named parameters of a Parameterized object.
 - `sync_with_rx`: Syncs a single field of a model with an `rx` value.
 
-## Support
+Support
+-------
 
 | Library | Sync Parameterized -> Model | Sync Model -> Parameterized | `create_rx` | `sync_with_parameterized` | `sync_with_widget` | `sync_with_rx` | `ModelParameterized` | `ModelViewer` |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -60,16 +67,23 @@ def sync_with_parameterized(
     parameterized: Parameterized,
     names: Iterable[str] | dict[str, str] = (),
 ):
-    """Syncs the fields of the model with the parameters of the Parameterized object.
+    """
+    Syncs the fields of the model with the parameters of the Parameterized object.
 
-    Args:
-        model: The model to synchronize.
-        parameterized: The Parameterized object to synchronize.
-        names: The names of the fields/parameters to synchronize. If none are
-            specified, all public and relevant fields of the model will be synced. If a dict is
-            specified it maps from field names to parameter names.
+    Arguments
+    ---------
+    model: DataClassLike
+        The model to synchronize.
+    parameterized: param.Parameterized
+        The Parameterized object to synchronize.
+    names: Iterable[str] | dict[str, str]
+        The names of the fields/parameters to synchronize. If none are
+        specified, all public and relevant fields of the model will be
+        synced. If a dict is specified it maps from field names to
+        parameter names.
 
-    Example:
+    Example
+    -------
 
     ```python
     import panel as pn
@@ -100,14 +114,20 @@ def sync_with_widget(
     widget: Widget,
     name: str="value",
 ):
-    """Syncs the named field of the model with value parameter of the widget.
+    """
+    Syncs the named field of the model with value parameter of the widget.
 
-    Args:
-        model: The model to synchronize.
-        widget: The Panel widget to synchronize.
-        name: The name of the field to synchronize. Default is 'value'.
+    Argsuments
+    -----------
+    model: DataClassLike
+        The model to synchronize.
+    widget: panel.widgets.Widget
+        The Panel widget to synchronize.
+    name: str
+        The name of the field to synchronize. Default is 'value'.
 
-    Example:
+    Example
+    -------
 
     ```python
     import panel as pn
@@ -205,16 +225,12 @@ def create_parameterized(
 
 
 class ModelViewer(Layoutable, Viewer, ModelParameterized):
-    """An abstract base class for creating a Layoutable Viewer that wraps dataclass like class or instance.
+    """
+    An abstract base class for creating a Layoutable Viewer that wraps
+    a dataclass model such as an IPyWidget or Pydantic Model.
 
-    Args:
-        model: A dataclass like instance to display.
-        names: An optional iterable or dictionary of fields/parameters to synchronize. If none are
-            specified, all public and relevant fields of the model will be synced. If a dict is
-            specified it maps from field names to parameter names.
-        params: Other arguments including model arguments and arguments for layout and styling of the Viewer.
-
-    Examples:
+    Examples
+    --------
 
     To wrap an ipywidgets instance:
 
