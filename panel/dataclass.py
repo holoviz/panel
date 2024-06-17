@@ -130,7 +130,7 @@ def sync_with_widget(
 
 class ModelParameterized(Parameterized):
     """
-    An abstract Parameterized base class for wrapping a traitlets HasTraits class or instance.
+    An abstract Parameterized base class for wrapping a dataclass like class or instance.
     """
 
     model: DataClassLike = param.Parameter(allow_None=False, constant=True)
@@ -176,15 +176,15 @@ def create_parameterized(
 ) -> Parameterized:
     """
     Returns a Parameterized instance from a model with names synced
-    bidirectionally to the model's traits.
+    to the model's fields.
 
     Arguments
     ---------
     model: DataClassLike
         The model to create the Viewer from.
     names: Iterable[str] | dict[str, str]
-        The names of the parameters to add to the Viewer and to sync bidirectionally.
-        If no names are specified, all public and relevant traits on the widget will be added and synced.
+        The names of the parameters to add to the Viewer and to sync.
+        If no names are specified, all public and relevant fields on the model will be added and synced.
     bases: tuple[type]
         Additional base classes to add to the base `ModelViewer` class.
     kwargs: dict[str, Any]
@@ -205,18 +205,18 @@ def create_parameterized(
 
 
 class ModelViewer(Layoutable, Viewer, ModelParameterized):
-    """An abstract base class for creating a Layoutable Viewer that wraps an ipywidget Widget class or instance.
+    """An abstract base class for creating a Layoutable Viewer that wraps dataclass like class or instance.
 
     Args:
-        model: An ipywidget instance to display.
-        names: An optional iterable or dictionary of traits/parameters to synchronize. If none are
-            specified, all public and relevant traits of the model will be synced. If a dict is
-            specified it maps from trait names to parameter names.
+        model: A dataclass like instance to display.
+        names: An optional iterable or dictionary of fields/parameters to synchronize. If none are
+            specified, all public and relevant fields of the model will be synced. If a dict is
+            specified it maps from field names to parameter names.
         params: Other arguments including model arguments and arguments for layout and styling of the Viewer.
 
     Examples:
 
-    To wrap a widget instance:
+    To wrap an ipywidgets instance:
 
     ```python
     import panel as pn
@@ -232,7 +232,7 @@ class ModelViewer(Layoutable, Viewer, ModelParameterized):
     pn.Row(pn.Column(viewer.param, scroll=True), viewer, height=400).servable()
     ```
 
-    To wrap a widget class:
+    To wrap an ipywidgets class:
 
     ```python
     import panel as pn
@@ -253,7 +253,7 @@ class ModelViewer(Layoutable, Viewer, ModelParameterized):
     pn.Row(pn.Column(viewer.param, scroll=True), viewer, height=400).servable()
     ```
 
-    The `_model_names` is optional and can be used to specify which traits/ parameters to synchronize.
+    The `_model_names` is optional and can be used to specify which fields/ parameters to synchronize.
     """
 
     model: DataClassLike = param.Parameter(allow_None=False, constant=True)
@@ -273,23 +273,23 @@ class ModelViewer(Layoutable, Viewer, ModelParameterized):
 
 
 def create_viewer(
-    widget: DataClassLike,
+    model: DataClassLike,
     names: Iterable[str] | dict[str, str] = (),
     bases: Iterable[Parameterized] | Parameterized | None = None,
     **kwargs,
 ) -> ModelViewer:
     """
-    Returns a Viewer object from a widget with parameters synced
-    bidirectionally to the widget's traits and displaying the widget
+    Returns a Viewer object from a model with parameters synced
+    bidirectionally to the model's fields and displaying the model
     when rendered.
 
     Arguments
     ---------
-    widget: DataClassLike
-        The widget to create the Viewer from.
+    model: DataClassLike
+        The model to create the Viewer from.
     names: Iterable[str] | dict[str, str]
         The names of the parameters to add to the Viewer and to sync bidirectionally.
-        If no names are specified, all public and relevant traits on the widget will be added and synced.
+        If no names are specified, all public and relevant fields on the model will be added and synced.
     bases: tuple[type]
         Additional base classes to add to the base `ModelViewer` class.
     kwargs: dict[str, Any]
@@ -300,21 +300,21 @@ def create_viewer(
     A ModelViewer instance wrapping the supplied model.
     """
     bases = _to_tuple(bases) + (ModelViewer,)
-    return create_parameterized(widget, names, bases=bases, **kwargs)
+    return create_parameterized(model, names, bases=bases, **kwargs)
 
 
 def sync_with_rx(model: HasTraits, name: str, rx: param.rx):
     """
-    Syncs a single trait of a model with an `rx` value.
+    Syncs a single field of a model with an `rx` value.
 
     Arguments
     ---------
     model: HasTraits | pydantic.Model
         The model to sync with.
     name: str
-        The name of the trait to sync the `rx` value with.
+        The name of the field to sync the `rx` value with.
     rx: param.rx
-        The `rx` value to sync with the trait.
+        The `rx` value to sync with the field.
     """
     rx.rx.value = getattr(model, name)
 
@@ -331,21 +331,20 @@ def sync_with_rx(model: HasTraits, name: str, rx: param.rx):
 
 def create_rx(model: HasTraits, *names) -> param.rx | tuple[param.rx]:
     """
-    Returns `rx` values from traits of a model, each synced to a trait of the model bidirectionally.
+    Returns `rx` values from fields of a model, each synced to a field of the model bidirectionally.
 
     Arguments
     ---------
     model: HasTraits | pydantic.BaseModel
         The model to create the `rx` parameters from.
     names: Iterable[str]
-        The traits to create `rx` values from.
+        The fields to create `rx` values from.
         If a single parameter is specified, a single reactive parameter is returned.
-        If no names are specified, all public and relevant traits of the model will be used.
+        If no names are specified, all public and relevant fields of the model will be used.
 
     Returns
     -------
-    One or more `rx` objects corresponding to the traits or fields of
-    the object.
+    One or more `rx` objects corresponding to the fields of the object.
 
     Example
     -------
