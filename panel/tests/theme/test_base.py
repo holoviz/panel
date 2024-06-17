@@ -169,8 +169,11 @@ def test_design_apply_inherited(document, comm):
     assert s3.url.endswith('/dist/bundled/theme/default.css')
     assert isinstance(s4, ImportedStyleSheet)
     assert s4.url.endswith('foo.css')
-    assert s5 == '.bk-input {\n  color: red;\n}\n'
-
+    # DEBUG
+    try:
+        assert s5 == '.bk-input {\n  color: red;\n}\n'
+    except AssertionError:
+        raise AssertionError(s5.url)  # noqa
     assert model.styles == {'color': 'red'}
 
 def test_design_apply_url_inherited(document, comm):
@@ -228,7 +231,11 @@ def test_design_apply_with_dark_theme_not_isolated(document, comm):
     assert s2.url.endswith('/dist/css/loading.css')
     assert isinstance(s3, ImportedStyleSheet)
     assert s3.url.endswith('foo.css')
-    assert s4 == '.bk-input {\n  color: red;\n}\n'
+    # DEBUG
+    try:
+        assert s4 == '.bk-input {\n  color: red;\n}\n'
+    except AssertionError:
+        raise AssertionError(s4.url)  # noqa
 
     assert document.theme._json == BOKEH_DARK
 
