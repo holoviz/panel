@@ -7,7 +7,7 @@ from typing import Any, Iterable
 
 import param
 
-from param import Parameterized, bind
+from param import Parameterized
 
 
 def _to_tuple(
@@ -133,10 +133,16 @@ class ModelUtils:
         names: Iterable[str] | dict[str, str] = (),
     ):
         names = cls.clean_names(model, parameterized, names)
+        parameters = []
+        mapping = {}
 
         for field, parameter in names.items():
+            if parameter not in mapping:
+                mapping[parameter] = []
+            mapping[parameter].append(field)
             model_field = getattr(model, field)
             parameterized_value = getattr(parameterized, parameter)
+            parameters.append(parameter)
             if parameter != "name" and parameterized_value is not None:
                 try:
                     setattr(model, field, parameterized_value)
@@ -158,23 +164,17 @@ class ModelUtils:
                     setattr(parameterized, parameter, getattr(model, field))
             cls.observe_field(model, field, _handle_field_change)
 
-            read_only_fields: set[str] = set()
-
-            def _handle_parameter_change(
-                _,
-                model=model,
-                field=field,
-                parameter=parameter,
-                read_only_fields=read_only_fields,
-            ):
-                if field not in read_only_fields:
+        def _handle_parameter_change(*events, read_only_fields: set[str] = set()):
+            for e in events:
+                fields = mapping[e.name]
+                for field in fields:
+                    if field in read_only_fields:
+                        continue
                     try:
-                        setattr(model, field, getattr(parameterized, parameter))
+                        setattr(model, field, e.new)
                     except Exception:
                         read_only_fields.add(field)
-
-
-            bind(_handle_parameter_change, parameterized.param[parameter], watch=True)
+        parameterized.param._watch(_handle_parameter_change, parameters, precedence=-1)
 
     @classmethod
     def get_layout(cls, model, self, layout_params):
