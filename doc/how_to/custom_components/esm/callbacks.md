@@ -46,7 +46,7 @@ This example shows you how to create a `Slideshow` component that uses a Javascr
 import param
 import panel as pn
 
-from panel.esm import JSComponent
+from panel.custom import JSComponent
 
 pn.extension()
 
