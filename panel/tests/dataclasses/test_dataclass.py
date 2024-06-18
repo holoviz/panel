@@ -119,7 +119,8 @@ def test_to_parameterized_readonly(model, supports_constant_fields):
         pytest.skip(f"Constant fields not supported for {type(model)}")
 
     parameterized = to_parameterized(model, names=("read_only",))
-    parameterized.read_only = "Some other value"
+    with param.edit_constant(parameterized):
+        parameterized.read_only = "Some other value"
     assert model.read_only != "Some other value"
 
 
@@ -150,7 +151,8 @@ def test_to_parameterized_names_tuple(model, can_observe_field):
         assert parameterized.age == model.age
 
     # parameterized synced to model
-    parameterized.name = "C"
+    with param.edit_constant(parameterized):
+        parameterized.name = "C"
     parameterized.age = 3
     assert parameterized.name == model.name
     assert parameterized.age == model.age
@@ -339,7 +341,8 @@ def test_wrap_model_names_tuple(model_class, can_observe_field):
         assert parameterized.age == widget.age
 
     # sync: parameterized -> model
-    parameterized.name = "C"
+    with param.edit_constant(parameterized):
+        parameterized.name = "C"
     parameterized.age = 3
     assert parameterized.name == widget.name
     assert parameterized.age == widget.age
@@ -389,7 +392,8 @@ def test_widget_viewer_from_class_and_no_names(model_class, can_observe_field):
         assert parameterized.age == widget.age
 
     # widget synced to viewer
-    parameterized.name = "C"
+    with param.edit_constant(parameterized):
+        parameterized.name = "C"
     parameterized.age = 3
     assert parameterized.name == widget.name
     assert parameterized.age == widget.age
@@ -414,7 +418,8 @@ def test_widget_viewer_from_class_and_list_names(model_class, can_observe_field)
         assert parameterized.age == widget.age
 
     # widget synced to viewer
-    parameterized.name = "C"
+    with param.edit_constant(parameterized):
+        parameterized.name = "C"
     parameterized.age = 3
     assert parameterized.name == widget.name
     assert parameterized.age == widget.age

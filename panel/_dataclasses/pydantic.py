@@ -1,6 +1,5 @@
 import json
 
-from asyncio import sleep
 from typing import TYPE_CHECKING, Any, Iterable
 
 from param.reactive import bind
@@ -18,11 +17,10 @@ else:
 
 
 class PydanticUtils(ModelUtils):
-    can_observe_field = False
-    supports_constant_fields = False
 
-    # Todo: Fix issue and remove this hack
-    _is_testing = False
+    can_observe_field = False
+
+    supports_constant_fields = False
 
     @classmethod
     def get_field_names(cls, model: BaseModel) -> Iterable[str]:
@@ -43,20 +41,15 @@ class PydanticUtils(ModelUtils):
 
     @classmethod
     def get_layout(cls, model, self, layout_params):
-        # Todo: Find proper solution to update the layout after the model is updated
-        # Hack: For some reason the model is updated after the UI is rendered
-        # We might setup a callback to update the layout below after the model is updated
-        async def view_model(*args, model=model):
-            if not cls._is_testing:
-                await sleep(0.250)
-            return json.loads(model.json())
+        exclude = list(layout_params)
+        def view_model(*args):
+            if hasattr(model, 'model_dump'):
+                return model.model_dump(exclude=exclude)
+            else:
+                return json.loads(model.json(exclude=exclude))
 
         parameters = [
-            parameter
-            for name, parameter in self.param.objects().items()
+            parameter for name, parameter in self.param.objects().items()
             if name not in layout_params
         ]
-        parameters = []
-        iview = bind(view_model, *parameters)
-
-        return JSON(iview, depth=2, **layout_params)
+        return JSON(bind(view_model, *parameters), depth=2, **layout_params)

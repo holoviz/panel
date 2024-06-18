@@ -27,7 +27,10 @@ All synchronization is bidirectional. We only synchronize the top-level traits/ 
 
 from typing import TYPE_CHECKING, Any, Iterable
 
+import param
+
 from ..pane.ipywidget import IPyWidget
+from ..util import classproperty
 from .base import ModelUtils
 
 if TYPE_CHECKING:
@@ -44,11 +47,13 @@ else:
     HasTraits = Any
     Widget = Any
 
+
 class TraitletsUtils(ModelUtils):
+
     can_observe_field = True
 
     @classmethod
-    def get_field_names(cls, model: HasTraits)->Iterable[str]:
+    def get_field_names(cls, model: HasTraits) -> Iterable[str]:
         return model.traits()
 
     @classmethod
@@ -60,6 +65,41 @@ class TraitletsUtils(ModelUtils):
     ):
         # We don't know if this is possible
         model.observe(handle_change, names=field)
+
+    @classproperty
+    def parameter_map(cls):
+        import traitlets
+        return {
+            traitlets.Bool: param.Boolean,
+            traitlets.Bytes: param.Bytes,
+            traitlets.Callable: param.Callable,
+            traitlets.Dict: param.Dict,
+            traitlets.Enum: param.Selector,
+            traitlets.Float: param.Number,
+            traitlets.Int: param.Integer,
+            traitlets.List: param.List,
+            traitlets.Tuple: param.Tuple,
+            traitlets.Unicode: param.String,
+        }
+
+    @classmethod
+    def create_parameter(
+        cls,
+        model,
+        field,
+    ) -> param.Parameter:
+        trait_type = model.__class__
+        trait = getattr(trait_type, field)
+        ptype = cls.parameter_map.get(trait, param.Parameter)
+        extras = {}
+        if ptype is param.Selector:
+            extras = {'objects': trait.values}
+        return ptype(
+            allow_None=trait.allow_none,
+            constant=trait.read_only,
+            doc=trait.help,
+            **extras
+        )
 
     @classmethod
     def is_relevant_field_name(cls, name: str):

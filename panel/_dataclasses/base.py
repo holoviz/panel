@@ -102,7 +102,6 @@ class ModelUtils:
         if not names:
             names = cls.get_public_and_relevant_field_names(model)
         names = cls.ensure_dict(names)
-
         bases = _to_tuple(bases)
         if not any(issubclass(base, Parameterized) for base in bases):
             bases += (Parameterized,)
@@ -116,14 +115,22 @@ class ModelUtils:
                 if issubclass(base, Parameterized):
                     existing_params += tuple(base.param)
             params = {
-                name: param.Parameter()
-                for name in names.values()
+                name: cls.create_parameter(model, field)
+                for field, name in names.items()
                 if name not in existing_params
             }
             parameterized = param.parameterized_class(name, params=params, bases=bases)
             parameterized._model__initialized = True
             cls._model_cache[key] = parameterized
         return parameterized
+
+    @classmethod
+    def create_parameter(
+        cls,
+        model,
+        field,
+    ) -> param.Parameter:
+        return param.Parameter()
 
     @classmethod
     def sync_with_parameterized(
@@ -140,18 +147,19 @@ class ModelUtils:
             if parameter not in mapping:
                 mapping[parameter] = []
             mapping[parameter].append(field)
-            model_field = getattr(model, field)
-            parameterized_value = getattr(parameterized, parameter)
             parameters.append(parameter)
-            if parameter != "name" and parameterized_value is not None:
+
+            field_value = getattr(model, field)
+            parameter_value = getattr(parameterized, parameter)
+            if parameter_value is not None and parameter != 'name':
                 try:
-                    setattr(model, field, parameterized_value)
+                    setattr(model, field, parameter_value)
                 except Exception:
                     with param.edit_constant(parameterized):
-                        setattr(parameterized, parameter, model_field)
+                        setattr(parameterized, parameter, field_value)
             else:
                 with param.edit_constant(parameterized):
-                    setattr(parameterized, parameter, model_field)
+                    setattr(parameterized, parameter, field_value)
 
             def _handle_field_change(
             _,
