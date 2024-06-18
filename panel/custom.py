@@ -26,11 +26,15 @@ from .models import (
 )
 from .models.esm import ESMEvent
 from .models.reactive_html import DOMEvent
-from .reactive import Reactive, ReactiveCustomBase, ReactiveMetaBase
+from .pane.base import PaneBase  # noqa
+from .reactive import (  # noqa
+    Reactive, ReactiveCustomBase, ReactiveHTML, ReactiveMetaBase,
+)
 from .util.checks import import_available
 from .viewable import (  # noqa
     Child, Children, Layoutable, Viewable, is_viewable_param,
 )
+from .widgets.base import WidgetBase  # noqa
 
 if TYPE_CHECKING:
     from bokeh.document import Document
