@@ -423,6 +423,15 @@ def py_file():
         os.unlink(tf.name)
 
 @pytest.fixture
+def js_file():
+    tf = tempfile.NamedTemporaryFile(mode='w', suffix='.js', delete=False)
+    try:
+        yield tf
+    finally:
+        tf.close()
+        os.unlink(tf.name)
+
+@pytest.fixture
 def py_files():
     tf = tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False)
     tf2 = tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=os.path.split(tf.name)[0], delete=False)

@@ -1,5 +1,4 @@
 import pathlib
-import tempfile
 
 import param
 import pytest
@@ -334,27 +333,25 @@ export function render() {
     (JSComponent, JS_CODE_BEFORE, JS_CODE_AFTER),
     (ReactChildren, REACT_CODE_BEFORE, REACT_CODE_AFTER),
 ])
-def test_reload(page, component, before, after):
-    with tempfile.NamedTemporaryFile(suffix='.js', mode='w', encoding='utf-8') as tmp:
+def test_reload(page, js_file, component, before, after):
+    js_file.file.write(before)
+    js_file.file.flush()
+    js_file.file.seek(0)
 
-        tmp.file.write(before)
-        tmp.file.flush()
-        tmp.file.seek(0)
+    class CustomReload(component):
+        _esm = pathlib.Path(js_file.name)
 
-        class CustomReload(component):
-            _esm = pathlib.Path(tmp.name)
+    example = CustomReload()
+    serve_component(page, example)
 
-        example = CustomReload()
-        serve_component(page, example)
+    expect(page.locator('h1')).to_have_text('foo')
 
-        expect(page.locator('h1')).to_have_text('foo')
+    js_file.file.write(after)
+    js_file.file.flush()
+    js_file.file.seek(0)
+    example._update_esm()
 
-        tmp.file.write(after)
-        tmp.file.flush()
-        tmp.file.seek(0)
-        example._update_esm()
-
-        expect(page.locator('h1')).to_have_text('bar')
+    expect(page.locator('h1')).to_have_text('bar')
 
 
 def test_anywidget_custom_event(page):
