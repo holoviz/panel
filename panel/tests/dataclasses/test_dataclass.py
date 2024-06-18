@@ -9,8 +9,8 @@ import panel as pn
 
 from panel._dataclasses.pydantic import PydanticUtils
 from panel.dataclass import (
-    ModelParameterized, ModelViewer, _get_utils, create_parameterized,
-    create_rx, create_viewer, sync_with_parameterized,
+    ModelParameterized, ModelViewer, _get_utils, sync_with_parameterized,
+    to_parameterized, to_rx, to_viewer,
 )
 from panel.viewable import Layoutable, Viewer
 
@@ -104,8 +104,8 @@ def test_sync_with_parameterized(model, can_observe_field):
 
     _assert_is_synced(parameterized, model, can_observe_field)
 
-def test_create_parameterized(model):
-    viewer = create_parameterized(model)
+def test_to_parameterized(model):
+    viewer = to_parameterized(model)
 
     assert {"name", "age", "weight"} <= set(viewer.param)
 
@@ -114,17 +114,17 @@ def test_create_parameterized(model):
     assert viewer.weight == model.weight
 
 
-def test_create_parameterized_readonly(model, supports_constant_fields):
+def test_to_parameterized_readonly(model, supports_constant_fields):
     if not supports_constant_fields:
         pytest.skip(f"Constant fields not supported for {type(model)}")
 
-    parameterized = create_parameterized(model, names=("read_only",))
+    parameterized = to_parameterized(model, names=("read_only",))
     parameterized.read_only = "Some other value"
     assert model.read_only != "Some other value"
 
 
-def test_create_parameterized_is_synced(model, can_observe_field):
-    viewer = create_parameterized(model)
+def test_to_parameterized_is_synced(model, can_observe_field):
+    viewer = to_parameterized(model)
 
     assert viewer.name == model.name == "A"
     assert viewer.age == model.age == 1
@@ -133,8 +133,8 @@ def test_create_parameterized_is_synced(model, can_observe_field):
     _assert_is_synced(viewer, model, can_observe_field)
 
 
-def test_create_parameterized_names_tuple(model, can_observe_field):
-    parameterized = create_parameterized(model, names=("name", "age"))
+def test_to_parameterized_names_tuple(model, can_observe_field):
+    parameterized = to_parameterized(model, names=("name", "age"))
 
     assert {"name", "age"} <= set(parameterized.param)
     assert "weight" not in set(parameterized.param)
@@ -156,13 +156,13 @@ def test_create_parameterized_names_tuple(model, can_observe_field):
     assert parameterized.age == model.age
 
 
-def test_create_parameterized_bases(model, can_observe_field):
+def test_to_parameterized_bases(model, can_observe_field):
     class ExampleParameterized(param.Parameterized):
         name = param.String("default", doc="A string parameter")
         age = param.Integer(0, bounds=(0, 10))
         not_trait = param.Parameter(1)
 
-    parameterized = create_parameterized(model, bases=ExampleParameterized)
+    parameterized = to_parameterized(model, bases=ExampleParameterized)
     assert isinstance(parameterized, ExampleParameterized)
     assert {"name", "age", "weight", "not_trait", "read_only"} <= set(parameterized.param)
 
@@ -185,8 +185,8 @@ def test_create_parameterized_bases(model, can_observe_field):
     assert parameterized.age == model.age
 
 
-def test_create_parameterized_names_dict(model, can_observe_field):
-    parameterized = create_parameterized(model, names={"name": "xname", "age": "xage"})
+def test_to_parameterized_names_dict(model, can_observe_field):
+    parameterized = to_parameterized(model, names={"name": "xname", "age": "xage"})
 
     assert {"xname", "xage"} <= set(parameterized.param)
     assert "weight" not in set(parameterized.param)
@@ -208,8 +208,8 @@ def test_create_parameterized_names_dict(model, can_observe_field):
     assert parameterized.xage == model.age
 
 
-def test_create_viewer(model):
-    viewer = create_viewer(model)
+def test_to_viewer(model):
+    viewer = to_viewer(model)
 
     assert isinstance(viewer, Layoutable)
     assert isinstance(viewer, Viewer)
@@ -224,19 +224,19 @@ def test_create_viewer(model):
     assert viewer.sizing_mode == component.sizing_mode
 
 
-def test_create_viewer_names_and_kwargs(model):
-    viewer = create_viewer(model, names=("name", "age"), sizing_mode="stretch_width")
+def test_to_viewer_names_and_kwargs(model):
+    viewer = to_viewer(model, names=("name", "age"), sizing_mode="stretch_width")
     assert viewer.__panel__().sizing_mode == "stretch_width"
 
 
-def test_create_viewer_bases(model, can_observe_field):
+def test_to_viewer_bases(model, can_observe_field):
 
     class ExampleParameterized(param.Parameterized):
         name = param.String("default", doc="A string parameter")
         age = param.Integer(0, bounds=(0, 10))
         not_trait = param.Parameter(1)
 
-    viewer = create_viewer(model, bases=ExampleParameterized)
+    viewer = to_viewer(model, bases=ExampleParameterized)
 
     assert viewer.name == model.name == "A"
     assert viewer.age == model.age == 0
@@ -246,7 +246,7 @@ def test_create_viewer_bases(model, can_observe_field):
 
 
 def test_to_rx_all_public_and_relevant(model):
-    rxs = create_rx(model)
+    rxs = to_rx(model)
 
     names = _get_utils(model).get_public_and_relevant_field_names(model)
     for name, rx in zip(names, rxs):
@@ -255,7 +255,7 @@ def test_to_rx_all_public_and_relevant(model):
 
 
 def test_to_rx_all_custom(model, can_observe_field):
-    age, weight, name = create_rx(model, "age", "weight", "name")
+    age, weight, name = to_rx(model, "age", "weight", "name")
     assert isinstance(name, param.reactive.rx)
     assert isinstance(age, param.reactive.rx)
     assert isinstance(weight, param.reactive.rx)
@@ -283,7 +283,7 @@ def test_to_rx_all_custom(model, can_observe_field):
 
 
 def test_to_rx_subset(model, can_observe_field):
-    name, age = create_rx(model, "name", "age")
+    name, age = to_rx(model, "name", "age")
     assert isinstance(name, param.reactive.rx)
     assert isinstance(age, param.reactive.rx)
 
@@ -305,7 +305,7 @@ def test_to_rx_subset(model, can_observe_field):
 
 
 def test_to_rx_single(model, can_observe_field):
-    age = create_rx(model, "age")
+    age = to_rx(model, "age")
     assert isinstance(age, param.reactive.rx)
 
     assert age.rx.value == model.age

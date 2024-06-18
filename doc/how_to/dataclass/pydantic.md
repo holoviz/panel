@@ -19,7 +19,7 @@ The `pn.dataclass` module provides functions to synchronize the fields of Pydant
 
 ### Functions
 
-- **`create_rx`**: Can create `rx` values from fields of a model, synced to the fields of the model.
+- **`to_rx`**: Can create `rx` values from fields of a model, synced to the fields of the model.
 - **`sync_with_parameterized`**: Syncs the fields of a model with the parameters of a Parameterized object.
 - **`sync_with_widget`**: Syncs a field of the model with the value of a Panel widget.
 - **`sync_with_rx`**: Syncs a field of a model with an `rx` value.
@@ -224,7 +224,7 @@ The `_model_names` attribute is an optional iterable or dictionary. It specifies
 
 ## Create a Reactive Value from the Field of a model
 
-Use `create_rx` to create a reactive value from the field of a model.
+Use `to_rx` to create a reactive value from the field of a model.
 
 ```{pyodide}
 import panel as pn
@@ -241,7 +241,7 @@ class DeliveryModel(BaseModel):
 
 model = DeliveryModel()
 
-timestamp, dimensions = pn.dataclass.create_rx(model, "timestamp", "dimensions")
+timestamp, dimensions = pn.dataclass.to_rx(model, "timestamp", "dimensions")
 
 timestamp_input = pn.widgets.DatetimeInput(name="Timestamp", value=model.timestamp)
 

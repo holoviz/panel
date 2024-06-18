@@ -28,7 +28,7 @@ Classes
 Functions
 ---------
 
-- `create_rx`: Creates `rx` values from fields of a model.
+- `to_rx`: Creates `rx` values from fields of a model.
 - `sync_with_parameterized`: Syncs the fields of a model with the parameters of a Parameterized object.
 - `sync_with_widget`: Syncs an iterable or dictionary of named fields of a model with the named parameters of a Parameterized object.
 - `sync_with_rx`: Syncs a single field of a model with an `rx` value.
@@ -36,7 +36,7 @@ Functions
 Support
 -------
 
-| Library | Sync Parameterized -> Model | Sync Model -> Parameterized | `create_rx` | `sync_with_parameterized` | `sync_with_widget` | `sync_with_rx` | `ModelParameterized` | `ModelViewer` |
+| Library | Sync Parameterized -> Model | Sync Model -> Parameterized | `to_rx` | `sync_with_parameterized` | `sync_with_widget` | `sync_with_rx` | `ModelParameterized` | `ModelViewer` |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | ipywidgets | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Pydantic   | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -188,7 +188,7 @@ class ModelParameterized(Parameterized):
         utils.sync_with_parameterized(self.model, self, names=names)
 
 
-def create_parameterized(
+def to_parameterized(
     model: DataClassLike,
     names: Iterable[str] | dict[str, str] = (),
     bases: Iterable[Parameterized] | Parameterized | None = None,
@@ -288,7 +288,7 @@ class ModelViewer(Layoutable, Viewer, ModelParameterized):
         return self._layout
 
 
-def create_viewer(
+def to_viewer(
     model: DataClassLike,
     names: Iterable[str] | dict[str, str] = (),
     bases: Iterable[Parameterized] | Parameterized | None = None,
@@ -316,7 +316,7 @@ def create_viewer(
     A ModelViewer instance wrapping the supplied model.
     """
     bases = _to_tuple(bases) + (ModelViewer,)
-    return create_parameterized(model, names, bases=bases, **kwargs)
+    return to_parameterized(model, names, bases=bases, **kwargs)
 
 
 def sync_with_rx(model: HasTraits, name: str, rx: param.rx):
@@ -345,7 +345,7 @@ def sync_with_rx(model: HasTraits, name: str, rx: param.rx):
     rx.rx.watch(set_name)
 
 
-def create_rx(model: HasTraits, *names) -> param.rx | tuple[param.rx]:
+def to_rx(model: HasTraits, *names) -> param.rx | tuple[param.rx]:
     """
     Returns `rx` values from fields of a model, each synced to a field of the model bidirectionally.
 
@@ -372,7 +372,7 @@ def create_rx(model: HasTraits, *names) -> param.rx | tuple[param.rx]:
     pn.extension("ipywidgets")
 
     leaflet_map = ipyl.Map(zoom=4)
-    zoom, zoom_control = pn.dataclass.create_rx(
+    zoom, zoom_control = pn.dataclass.to_rx(
         leaflet_map, "zoom", "zoom_control"
     )
 
@@ -395,6 +395,12 @@ def create_rx(model: HasTraits, *names) -> param.rx | tuple[param.rx]:
 
 
 __all__ = [
-    "create_rx", "sync_with_parameterized", "sync_with_widget",
-    "sync_with_rx", "ModelParameterized", "ModelViewer"
+    "ModelParameterized",
+    "ModelViewer",
+    "to_parameterized",
+    "to_rx",
+    "to_viewer",
+    "sync_with_parameterized",
+    "sync_with_rx",
+    "sync_with_widget",
 ]

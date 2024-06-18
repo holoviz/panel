@@ -21,7 +21,7 @@ The `pn.dataclass` module provides functions to synchronize the traits of an ipy
 
 ### Functions
 
-- **`create_rx`**: Creates `rx` values from traits of a model, each synced to a trait of the model.
+- **`to_rx`**: Creates `rx` values from traits of a model, each synced to a trait of the model.
 - **`sync_with_parameterized`**: Syncs the traits of a model with the parameters of a Parameterized object.
 - **`sync_with_widget`**: Syncs a trait of the model with the value of a Panel widget.
 - **`sync_with_rx`**: Syncs a single trait of a model with an `rx` value.
@@ -159,7 +159,7 @@ The `_model_names` attribute is an optional iterable or dictionary. It specifies
 
 ## Create a Reactive Value from the Trait of an ipywidget
 
-Use `create_rx` to create a reactive value from the trait of an ipywidget.
+Use `to_rx` to create a reactive value from the trait of an ipywidget.
 
 ```{pyodide}
 import panel as pn
@@ -168,7 +168,7 @@ import ipyleaflet as ipyl
 pn.extension("ipywidgets")
 
 leaflet_map = ipyl.Map(zoom=4)
-zoom, zoom_control = pn.dataclass.create_rx(
+zoom, zoom_control = pn.dataclass.to_rx(
     leaflet_map, "zoom", "zoom_control"
 )
 
