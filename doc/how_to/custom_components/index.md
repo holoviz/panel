@@ -18,33 +18,25 @@ How to build custom components that are combinations of existing components.
 
 ::::
 
-```{toctree}
-:titlesonly:
-:hidden:
-:maxdepth: 2
-
-custom_viewer
-```
-
-## ESM Components
-
-Build custom components in Javascript using so called ESM components, which allow you to write components that automatically sync parameter state between Python and JS. ESM components can be written in pure JS, using React or using the AnyWidget specification.
+### Examples
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`pencil;2.5em;sd-mr-1 sd-animate-grow50` Custom Widgets
-:link: reactive_esm/custom_widgets
+:::{grid-item-card} Build a Plot Viewer
+:img-top: https://assets.holoviz.org/panel/how_to/custom_components/plot_viewer.png
+:link: examples/plot_viewer
 :link-type: doc
 
-How to create a custom widget using ESM components
+Build a custom component wrapping a bokeh plot and some widgets using the `Viewer` pattern.
 :::
 
-:::{grid-item-card} {octicon}`columns;2.5em;sd-mr-1 sd-animate-grow50` Custom Layouts
-:link: reactive_esm/reactive_esm_layout
+:::{grid-item-card} Build a Table Viewer
+:img-top: https://assets.holoviz.org/panel/how_to/custom_components/table_viewer.png
+:link: examples/table_viewer
 :link-type: doc
 
-How to create a custom layout using ESM components
+Build a custom component wrapping a table and some widgets using the `Viewer` pattern.
 :::
 
 ::::
@@ -54,8 +46,65 @@ How to create a custom layout using ESM components
 :hidden:
 :maxdepth: 2
 
-reactive_esm/custom_widgets
-reactive_esm/reactive_esm_layout
+custom_viewer
+examples/plot_viewer
+examples/table_viewer
+```
+
+## ESM Components
+
+Build custom components in Javascript using so called ESM components, which allow you to write components that automatically sync parameter state between Python and JS. ESM components can be written in pure JS, using React or using the AnyWidget specification.
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`pencil;2.5em;sd-mr-1 sd-animate-grow50` Add callbacks to ESM components
+:link: esm/callbacks
+:link-type: doc
+
+How to add both JS and Python based callbacks to ESM components.
+:::
+
+:::{grid-item-card} {octicon}`pencil;2.5em;sd-mr-1 sd-animate-grow50` Create Custom Widgets
+:link: esm/custom_widgets
+:link-type: doc
+
+How to create a custom widget using ESM components
+:::
+
+:::{grid-item-card} {octicon}`columns;2.5em;sd-mr-1 sd-animate-grow50` Create Custom Layouts
+:link: esm/custom_layout
+:link-type: doc
+
+How to create a custom layout using ESM components
+:::
+
+::::
+
+### Examples
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} Build a Canvas component
+:img-top: https://assets.holoviz.org/panel/how_to/custom_components/canvas_draw.png
+:link: examples/esm_canvas
+:link-type: doc
+
+Build a custom component to draw on an HTML canvas based on `ReactiveHTML`.
+:::
+
+::::
+
+```{toctree}
+:titlesonly:
+:hidden:
+:maxdepth: 2
+
+esm/callbacks
+esm/custom_widgets
+esm/custom_layout
+examples/esm_canvas
 ```
 
 ## `ReactiveHTML` Components
@@ -116,40 +165,10 @@ How to create components using `ReactiveHTML` and a DataFrame parameter
 
 ::::
 
-```{toctree}
-:titlesonly:
-:hidden:
-:maxdepth: 2
-
-reactive_html/reactive_html_layout
-reactive_html/reactive_html_styling
-reactive_html/reactive_html_panes
-reactive_html/reactive_html_indicators
-reactive_html/reactive_html_callbacks
-reactive_html/reactive_html_widgets
-reactive_html/reactive_html_dataframe
-```
-
-## Examples
+### Examples
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
-
-:::{grid-item-card} Build a Plot Viewer
-:img-top: https://assets.holoviz.org/panel/how_to/custom_components/plot_viewer.png
-:link: examples/plot_viewer
-:link-type: doc
-
-Build a custom component wrapping a bokeh plot and some widgets using the `Viewer` pattern.
-:::
-
-:::{grid-item-card} Build a Table Viewer
-:img-top: https://assets.holoviz.org/panel/how_to/custom_components/table_viewer.png
-:link: examples/table_viewer
-:link-type: doc
-
-Build a custom component wrapping a table and some widgets using the `Viewer` pattern.
-:::
 
 :::{grid-item-card} Build a Canvas component
 :img-top: https://assets.holoviz.org/panel/how_to/custom_components/canvas_draw.png
@@ -190,8 +209,13 @@ Build custom component wrapping a Vue.js app using `ReactiveHTML`.
 :hidden:
 :maxdepth: 2
 
-examples/plot_viewer
-examples/table_viewer
+reactive_html/reactive_html_layout
+reactive_html/reactive_html_styling
+reactive_html/reactive_html_panes
+reactive_html/reactive_html_indicators
+reactive_html/reactive_html_callbacks
+reactive_html/reactive_html_widgets
+reactive_html/reactive_html_dataframe
 examples/canvas_draw
 examples/leaflet
 examples/material_ui
