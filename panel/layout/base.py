@@ -6,7 +6,8 @@ from __future__ import annotations
 
 from collections import defaultdict, namedtuple
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Iterable, Iterator, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, Generator, Iterable, Iterator, Mapping,
+    Optional,
 )
 
 import param
@@ -348,6 +349,20 @@ class ListLike(param.Parameterized):
 
     _preprocess_params: ClassVar[list[str]] = ['objects']
 
+    def __init__(self, *objects: Any, **params: Any):
+        if objects:
+            if 'objects' in params:
+                raise ValueError(
+                    f"A {type(self).__name__}'s objects should be supplied either "
+                    "as positional arguments or as a keyword, not both."
+                )
+            params['objects'] = list(objects)
+        elif 'objects' in params:
+            objects = params['objects']
+            if not (resolve_ref(objects) or iscoroutinefunction(objects) or isinstance(objects, Generator)):
+                params['objects'] = list(objects)
+        super().__init__(**params)
+
     def __getitem__(self, index: int | slice) -> Viewable | list[Viewable]:
         return self.objects[index]
 
@@ -545,9 +560,10 @@ class NamedListLike(param.Parameterized):
     def __init__(self, *items: list[Any | tuple[str, Any]], **params: Any):
         if 'objects' in params:
             if items:
-                raise ValueError(f'{type(self).__name__} objects should be supplied either '
-                                 'as positional arguments or as a keyword, '
-                                 'not both.')
+                raise ValueError(
+                    f'{type(self).__name__} objects should be supplied either '
+                    'as positional arguments or as a keyword, not both.'
+                )
             items = params.pop('objects')
         params['objects'], self._names = self._to_objects_and_names(items)
         super().__init__(**params)
@@ -802,20 +818,6 @@ class ListPanel(ListLike, Panel):
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'scroll': None}
 
     __abstract = True
-
-    def __init__(self, *objects: Any, **params: Any):
-        from ..pane import panel
-        if objects:
-            if 'objects' in params:
-                raise ValueError(f"A {type(self).__name__}'s objects should be supplied either "
-                                 "as positional arguments or as a keyword, "
-                                 "not both.")
-            params['objects'] = [panel(pane) for pane in objects]
-        elif 'objects' in params:
-            objects = params['objects']
-            if not resolve_ref(objects) or iscoroutinefunction(objects):
-                params['objects'] = [panel(pane) for pane in objects]
-        super(Panel, self).__init__(**params)
 
     @property
     def _linked_properties(self):
