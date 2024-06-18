@@ -12,7 +12,8 @@ Libraries Supported
 
 In the future dataclasses, attrs or other dataclass like libraries may be supported.
 
-## Terminology
+Terminology
+------------
 
 - **Param**: A library for creating dataclass like models (`Parameterized`) with watchable attributes (called *parameters*).
 - **model**: A subclass of one of the libraries listed above.
@@ -29,6 +30,8 @@ Functions
 ---------
 
 - `to_rx`: Creates `rx` values from fields of a model.
+- `to_parameterized`: Creates a Parameterized instance that mirrors the fields on a model.
+- `to_viewer`: Creates a Viewer instance that mirrors the fields on a model and displays the object.
 - `sync_with_parameterized`: Syncs the fields of a model with the parameters of a Parameterized object.
 - `sync_with_widget`: Syncs an iterable or dictionary of named fields of a model with the named parameters of a Parameterized object.
 - `sync_with_rx`: Syncs a single field of a model with an `rx` value.
@@ -61,6 +64,110 @@ def _get_utils(model: DataClassLike)->type[ModelUtils]:
     if hasattr(model, "model_fields"):
         return PydanticUtils
     return TraitletsUtils
+
+
+class ModelParameterized(Parameterized):
+    """
+    An abstract Parameterized base class for wrapping a dataclass like class or instance.
+    """
+
+    model: DataClassLike = param.Parameter(allow_None=False, constant=True)
+
+    # Todo: consider renaming to names or model_names because it will be used publicly
+    _model_names: Iterable[str] | dict[str, str] = ()
+
+    # Whether the model parameters have been created
+    _model__initialized = False
+
+    def __new__(cls, **params):
+        if cls._model__initialized:
+            return super().__new__(cls)
+        if "model" not in params and hasattr(cls, "_model_class"):
+            model = cls._model_class()
+        else:
+            model = params["model"]
+        names = params.pop("names", cls._model_names)
+        utils = _get_utils(model)
+        parameterized = utils.create_parameterized(model, names=names, bases=(cls,))
+        return super().__new__(parameterized)
+
+    def __init__(self, **params):
+        if "model" not in params and hasattr(self, "_model_class"):
+            params["model"] = self._model_class()
+
+        model = params["model"]
+        names = params.pop("names", self._model_names)
+        utils = _get_utils(model)
+        if not names:
+            names = utils.get_public_and_relevant_field_names(model)
+        names = utils.ensure_dict(names)
+        self._model_names = names
+        super().__init__(**params)
+        utils.sync_with_parameterized(self.model, self, names=names)
+
+
+class ModelViewer(Layoutable, Viewer, ModelParameterized):
+    """
+    An abstract base class for creating a Layoutable Viewer that wraps
+    a dataclass model such as an IPyWidget or Pydantic Model.
+
+    Examples
+    --------
+
+    To wrap an ipywidgets instance:
+
+    ```python
+    import panel as pn
+    import ipyleaflet as ipyl
+
+    pn.extension("ipywidgets")
+
+    leaflet_map = ipyl.Map()
+
+    viewer = pn.dataclass.ModelViewer(
+        model=leaflet_map, sizing_mode="stretch_both"
+    )
+    pn.Row(pn.Column(viewer.param, scroll=True), viewer, height=400).servable()
+    ```
+
+    To wrap an ipywidgets class:
+
+    ```python
+    import panel as pn
+    import ipyleaflet as ipyl
+    import param
+
+    pn.extension("ipywidgets")
+
+    class MapViewer(pn.dataclass.ModelViewer):
+        _model_class = ipyl.Map
+        _model_names = ["center", "zoom"]
+
+        zoom = param.Number(4, bounds=(0, 24), step=1)
+
+    viewer = MapViewer(sizing_mode="stretch_both")
+
+    pn.Row(pn.Column(viewer.param, scroll=True), viewer, height=400).servable()
+    ```
+
+    The `_model_names` is optional and can be used to specify which fields/ parameters to synchronize.
+    """
+
+    model: DataClassLike = param.Parameter(allow_None=False, constant=True)
+
+    def __init__(self, **params):
+        super().__init__(**params)
+
+        layout_params = {name: self.param[name] for name in Layoutable.param}
+        model = self.model
+        utils = _get_utils(self.model)
+
+        self._layout = utils.get_layout(model, self, layout_params)
+        utils.adjust_sizing(self)
+
+    def __panel__(self):
+        return self._layout
+
 
 def sync_with_parameterized(
     model: DataClassLike,
@@ -109,6 +216,7 @@ def sync_with_parameterized(
     """
     _get_utils(model).sync_with_parameterized(model, parameterized, names)
 
+
 def sync_with_widget(
     model: DataClassLike,
     widget: Widget,
@@ -148,46 +256,6 @@ def sync_with_widget(
     sync_with_parameterized(model, widget, names={name: "value"})
 
 
-class ModelParameterized(Parameterized):
-    """
-    An abstract Parameterized base class for wrapping a dataclass like class or instance.
-    """
-
-    model: DataClassLike = param.Parameter(allow_None=False, constant=True)
-
-    # Todo: consider renaming to names or model_names because it will be used publicly
-    _model_names: Iterable[str] | dict[str, str] = ()
-
-    # Whether the model parameters have been created
-    _model__initialized = False
-
-    def __new__(cls, **params):
-        if cls._model__initialized:
-            return super().__new__(cls)
-        if "model" not in params and hasattr(cls, "_model_class"):
-            model = cls._model_class()
-        else:
-            model = params["model"]
-        names = params.pop("names", cls._model_names)
-        utils = _get_utils(model)
-        parameterized = utils.create_parameterized(model, names=names, bases=(cls,))
-        return super().__new__(parameterized)
-
-    def __init__(self, **params):
-        if "model" not in params and hasattr(self, "_model_class"):
-            params["model"] = self._model_class()
-
-        model = params["model"]
-        names = params.pop("names", self._model_names)
-        utils = _get_utils(model)
-        if not names:
-            names = utils.get_public_and_relevant_field_names(model)
-        names = utils.ensure_dict(names)
-        self._model_names = names
-        super().__init__(**params)
-        utils.sync_with_parameterized(self.model, self, names=names)
-
-
 def to_parameterized(
     model: DataClassLike,
     names: Iterable[str] | dict[str, str] = (),
@@ -222,70 +290,6 @@ def to_parameterized(
     )
     instance = parameterized(model=model, names=names, **kwargs)
     return instance
-
-
-class ModelViewer(Layoutable, Viewer, ModelParameterized):
-    """
-    An abstract base class for creating a Layoutable Viewer that wraps
-    a dataclass model such as an IPyWidget or Pydantic Model.
-
-    Examples
-    --------
-
-    To wrap an ipywidgets instance:
-
-    ```python
-    import panel as pn
-    import ipyleaflet as ipyl
-
-    pn.extension("ipywidgets")
-
-    leaflet_map = ipyl.Map()
-
-    viewer = pn.dataclass.ModelViewer(
-        model=leaflet_map, sizing_mode="stretch_both"
-    )
-    pn.Row(pn.Column(viewer.param, scroll=True), viewer, height=400).servable()
-    ```
-
-    To wrap an ipywidgets class:
-
-    ```python
-    import panel as pn
-    import ipyleaflet as ipyl
-    import param
-
-    pn.extension("ipywidgets")
-
-
-    class MapViewer(pn.dataclass.ModelViewer):
-        _model_class = ipyl.Map
-        _model_names = ["center", "zoom"]
-
-        zoom = param.Number(4, bounds=(0, 24), step=1)
-
-    viewer = MapViewer(sizing_mode="stretch_both")
-
-    pn.Row(pn.Column(viewer.param, scroll=True), viewer, height=400).servable()
-    ```
-
-    The `_model_names` is optional and can be used to specify which fields/ parameters to synchronize.
-    """
-
-    model: DataClassLike = param.Parameter(allow_None=False, constant=True)
-
-    def __init__(self, **params):
-        super().__init__(**params)
-
-        layout_params = {name: self.param[name] for name in Layoutable.param}
-        model = self.model
-        utils = _get_utils(self.model)
-
-        self._layout = utils.get_layout(model, self, layout_params)
-        utils.adjust_sizing(self)
-
-    def __panel__(self):
-        return self._layout
 
 
 def to_viewer(
@@ -397,10 +401,10 @@ def to_rx(model: HasTraits, *names) -> param.rx | tuple[param.rx]:
 __all__ = [
     "ModelParameterized",
     "ModelViewer",
-    "to_parameterized",
-    "to_rx",
-    "to_viewer",
     "sync_with_parameterized",
     "sync_with_rx",
     "sync_with_widget",
+    "to_parameterized",
+    "to_rx",
+    "to_viewer",
 ]
