@@ -1,6 +1,6 @@
 {
   "name": "@holoviz/panel",
-  "version": "1.4.5-a.1",
+  "version": "1.4.5-a.2",
   "description": "The powerful data exploration & web app framework for Python.",
   "license": "BSD-3-Clause",
   "repository": {
