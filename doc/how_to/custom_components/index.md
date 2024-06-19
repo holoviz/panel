@@ -79,6 +79,13 @@ How to create a custom widget using ESM components
 How to create a custom layout using ESM components
 :::
 
+:::{grid-item-card} {octicon}`table;2.5em;sd-mr-1 sd-animate-grow50` Render a `DataFrame`
+:link: esm/dataframe
+:link-type: doc
+
+How to create `JSComponent`s and `ReactComponent`s that render data in a DataFrame.
+:::
+
 ::::
 
 ### Examples
