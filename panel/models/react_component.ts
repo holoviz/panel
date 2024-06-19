@@ -20,7 +20,6 @@ export class ReactComponentView extends ReactiveESMView {
   }
 
   protected override _render_code(): string {
-    const suffix = this.model.dev ? "?dev": ""
     let render_code = `
 if (rendered && view.model.usesReact) {
   view._changing = true
@@ -34,7 +33,7 @@ if (rendered && view.model.usesReact) {
 }`
     let import_code = `
 import * as React from "react"
-import { createRoot } from "react-dom/client${suffix}"`
+import { createRoot } from "react-dom/client"`
     if (this.model.usesMui) {
       import_code = `
 ${import_code}
@@ -208,11 +207,13 @@ export class ReactComponent extends ReactiveESM {
     const react_version = this.react_version
     const imports = this.importmap?.imports
     const scopes = this.importmap?.scopes
-    const suffix = this.dev ? "?dev": ""
+    const pkg_suffix = this.dev ? "?dev": ""
+    const path_suffix = this.dev ? "&dev": ""
     const importMap = {
       imports: {
-        react: `https://esm.sh/react@${react_version}${suffix}`,
-        "react-dom/": `https://esm.sh/react-dom@${react_version}/`,
+        react: `https://esm.sh/react@${react_version}${pkg_suffix}`,
+        "react/": `https://esm.sh/react@${react_version}${path_suffix}/`,
+	"react-dom/": `https://esm.sh/react-dom@${react_version}&deps=react@${react_version},react-dom@${react_version}${path_suffix}/`,
         ...imports,
       },
       scopes: scopes || {},
@@ -220,8 +221,8 @@ export class ReactComponent extends ReactiveESM {
     if (this.usesMui) {
       importMap.imports = {
         ...importMap.imports,
-        "@emotion/cache": "https://esm.sh/@emotion/cache",
-        "@emotion/react": "https://esm.sh/@emotion/react",
+        "@emotion/cache": `https://esm.sh/@emotion/cache`,
+        "@emotion/react": `https://esm.sh/@emotion/react?external=react${path_suffix}`,
       }
     }
     // @ts-ignore
@@ -245,7 +246,7 @@ ${compiled}`
     this.prototype.default_view = ReactComponentView
 
     this.define<ReactComponent.Props>(({String}) => ({
-      react_version: [ String,    "18.2.0" ],
+      react_version: [ String,    "18.3.1" ],
     }))
   }
 }

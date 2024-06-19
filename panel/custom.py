@@ -364,7 +364,7 @@ class ReactComponent(ReactiveESM):
 
     _bokeh_model = _BkReactComponent
 
-    _react_version = '18.2.0'
+    _react_version = '18.3.1'
 
     def _init_params(self) -> dict[str, Any]:
         params = super()._init_params()
@@ -374,9 +374,14 @@ class ReactComponent(ReactiveESM):
     def _process_importmap(self):
         imports = self._importmap.get('imports', {})
         imports_with_deps = {}
+        dev_suffix = '&dev' if config.autoreload else ''
+        suffix = f'deps=react@{self._react_version},react-dom@{self._react_version}&external=react{dev_suffix}'
         for k, v in imports.items():
-            if '?' not in v and not v.endswith('/'):
-                v += f'?deps=react@{self._react_version},react-dom@{self._react_version}'
+            if '?' not in v and 'esm.sh' in v:
+                if v.endswith('/'):
+                    v = f'{v[:-1]}&{suffix}/'
+                else:
+                    v = f'{v}?{suffix}'
             imports_with_deps[k] = v
         return {
             'imports': imports_with_deps,
