@@ -5,6 +5,7 @@ platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 
 [tasks]
 install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
+bump-version = 'python scripts/bump_version.py'
 
 [environments]
 test-310 = ["py310", "test-core", "test", "example", "test-example", "test-unit-task"]
