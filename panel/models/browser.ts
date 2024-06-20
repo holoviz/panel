@@ -24,6 +24,15 @@ export class BrowserInfoView extends View {
     if (timezone_offset != null) {
       this.model.timezone_offset = timezone_offset
     }
+    try {
+      var canvas = document.createElement('canvas');
+      this.model.webgl = !!(
+        window.WebGLRenderingContext &&
+          (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))
+      );
+    } catch (e) {
+      this.model.webgl
+    }
     this._has_finished = true
     this.notify_finished()
   }
@@ -38,6 +47,7 @@ export namespace BrowserInfo {
     timezone: p.Property<string | null>
     timezone_offset: p.Property<number | null>
     webdriver: p.Property<boolean | null>
+    webgl: p.Property<boolean | null>
   }
 }
 
@@ -56,12 +66,13 @@ export class BrowserInfo extends Model {
     this.prototype.default_view = BrowserInfoView
 
     this.define<BrowserInfo.Props>(({Bool, Nullable, Float, Str}) => ({
-      dark_mode:          [ Nullable(Bool), null ],
-      device_pixel_ratio: [ Nullable(Float),  null ],
-      language:           [ Nullable(Str),  null ],
-      timezone:           [ Nullable(Str),  null ],
-      timezone_offset:    [ Nullable(Float),  null ],
-      webdriver:          [ Nullable(Bool), null ],
+      dark_mode:          [ Nullable(Bool),  null ],
+      device_pixel_ratio: [ Nullable(Float), null ],
+      language:           [ Nullable(Str),   null ],
+      timezone:           [ Nullable(Str),   null ],
+      timezone_offset:    [ Nullable(Float), null ],
+      webdriver:          [ Nullable(Bool),  null ],
+      webgl:              [ Nullable(Bool),  null ],
     }))
   }
 }
