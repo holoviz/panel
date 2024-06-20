@@ -111,6 +111,7 @@ Build a custom component to draw on an HTML canvas based on `ReactiveHTML`.
 esm/callbacks
 esm/custom_widgets
 esm/custom_layout
+esm/dataframe
 examples/esm_canvas
 ```
 

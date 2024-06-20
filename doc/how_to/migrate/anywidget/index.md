@@ -50,8 +50,8 @@ Their methods are also different reflecting differences between Traitlets and Pa
 | AnyWidget | Panel/ Bokeh |
 | --------- | ----- |
 | `model.get('some_value')` | `data.some_value`|
-| `model.save('some_value', 1)`<br>`model.save_changes()` | `data.some_value=1`|
-| `model.on("change:some_value", () => {...})` | `data.watch(() => {...}), 'some_value')` |
+| `model.save('some_value', 1)`<br>`model.save_changes()` | `data.some_value = 1`|
+| `model.on("change:some_value", () => {...})` | `data.on('change: some_value', () => {...}))` |
 
 ### Convert React Code
 
@@ -114,17 +114,17 @@ class CounterButton(JSComponent):
     value = param.Integer()
 
     _esm = """
-    export function render({ data }) {
-        let count = () => data.value;
-        let btn = document.createElement("button");
-        btn.innerHTML = `count is ${count()}`;
-        btn.addEventListener("click", () => {
-            data.value += 1
-        });
-        data.watch(() => {
-            btn.innerHTML = `count is ${data.value}`;
-          }, 'value')
-        return btn
+    export function render({ model }) {
+      let count = () => model.value;
+      let btn = document.createElement("button");
+      btn.innerHTML = `count is ${count()}`;
+      btn.addEventListener("click", () => {
+          model.value += 1
+      });
+      data.on('change:value', () => {
+        btn.innerHTML = `count is ${model.value}`;
+      })
+      return btn
     }
     """
 
@@ -159,17 +159,13 @@ class CounterButton(ReactComponent):
     value = param.Integer()
 
     _esm = """
-    function App(props) {
-        const [value, setValue] = props.state.value;
-        return (
-            <button onClick={e => setValue(value+1)}>
-            count is {value}
-            </button>
-        );
-    }
-
-    export function render({state}) {
-        return <App state={state}/>;
+    export function render({ model }) {
+      const [value, setValue] = model.useState("value");
+      return (
+        <button onClick={e => setValue(value+1)}>
+          count is {value}
+        </button>
+      );
     }
     """
 
