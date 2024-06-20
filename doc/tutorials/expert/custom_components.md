@@ -137,26 +137,26 @@ function drawImageData(canvas, pixelData) {
 
 function addClickListener(canvas, data) {
   canvas.addEventListener("click", () => {
-      chime({
-          gain: data.gain,
-          duration: data.duration,
-      });
-      if (data.animate) {
-          canvas.style.animation = "none";
-          setTimeout(() => {
-              canvas.style.animation = "ipymario-bounce 0.2s";
-          }, 10);
-      }
+    chime({
+      gain: data.gain,
+      duration: data.duration,
+    });
+    if (data.animate) {
+      canvas.style.animation = "none";
+      setTimeout(() => {
+        canvas.style.animation = "ipymario-bounce 0.2s";
+      }, 10);
+    }
   });
 }
 
 function addResizeWatcher(canvas, data) {
-  data.watch(() => {
-      let size = () => `${data.size}px`;
-      canvas.style.width = size();
-      canvas.style.height = size();
-      console.log("resized");
-  }, 'size');
+  data.on('size', () => {
+    let size = () => `${data.size}px`;
+    canvas.style.width = size();
+    canvas.style.height = size();
+    console.log("resized");
+  });
 }
 
 export function render({ data, el }) {

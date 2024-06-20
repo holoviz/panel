@@ -56,11 +56,37 @@ You may specify a path to a file as a string instead of a PurePath. The path sho
 
 The `_esm` attribute must export the `render` function. It accepts the following parameters:
 
-- **`model`**: Represents the Parameters of the component and provides methods to `.watch` for changes, render child components using `.get_child`, create React `.useState` hooks and `.send_event` back to Python.
+- **`model`**: Represents the Parameters of the component and provides methods to add (and remove) event listeners using `.on` and `.off`, render child React components using `.get_child`, get a state hook for a parameter value using `.useState` and to `.send_event` back to Python.
 - **`view`**: The Bokeh view.
 - **`el`**: The HTML element that the component will be rendered into.
 
 Any React component returned from the `render` function will be appended to the HTML element (`el`) of the component.
+
+### State Hooks
+
+The recommended approach to build components that depend on parameters in Python is to create [`useState` hooks](https://react.dev/reference/react/useState) by calling `model.useState('<parameter>')`. The `model.useState` method returns an array with exactly two values:
+
+1. The current state. During the first render, it will match the initialState you have passed.
+2. The set function that lets you update the state to a different value and trigger a re-render.
+
+Using the state value in your React component will automatically re-render the component when it is updated.
+
+### Callbacks
+
+The `model.on` and `model.off` methods allow registering event handlers inside the render function. This includes the ability to listen to parameter changes and register lifecycle hooks.
+
+#### Change Events
+
+The following signatures are valid when listening to change events:
+
+- `.on('<parameter>', callback)`: Allows registering an event handler for a single parameter.
+- `.on(['<parameter>', ...], callback)`: Allows adding an event handler for multiple parameters at once.
+- `.on('change:<parameter>', callback)`: The `change:` prefix allows disambiguating change events from lifecycle hooks should a parameter name and lifecycle hook overlap.
+
+#### Lifecycle Hooks
+
+- `after_layout`: Called once after the component is fully laid out.
+- `remove`: Called when the component view is being removed from the DOM.
 
 ## Usage
 

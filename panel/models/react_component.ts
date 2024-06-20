@@ -19,6 +19,10 @@ export class ReactComponentView extends ReactiveESMView {
     super.render_esm()
   }
 
+  override after_rendered(): void {
+    this._rendered = true
+  }
+
   protected override _render_code(): string {
     let render_code = `
 if (rendered && view.model.usesReact) {
@@ -30,6 +34,7 @@ if (rendered && view.model.usesReact) {
     view.render_error(e)
   }
   view._changing = false
+  view.after_rendered()
 }`
     let import_code = `
 import * as React from "react"
@@ -91,7 +96,7 @@ function react_getter(target, name) {
       const data_model = target.model.data
       if (Reflect.has(data_model, prop)) {
         const [value, setValue] = React.useState(data_model.attributes[prop]);
-        react_proxy.watch(() => setValue(data_model.attributes[prop]), prop)
+        react_proxy.on(prop, () => setValue(data_model.attributes[prop]))
         React.useEffect(() => data_model.setv({[prop]: value}), [value])
         return [value, setValue]
       }
@@ -213,7 +218,7 @@ export class ReactComponent extends ReactiveESM {
       imports: {
         react: `https://esm.sh/react@${react_version}${pkg_suffix}`,
         "react/": `https://esm.sh/react@${react_version}${path_suffix}/`,
-	"react-dom/": `https://esm.sh/react-dom@${react_version}&deps=react@${react_version},react-dom@${react_version}${path_suffix}/`,
+        "react-dom/": `https://esm.sh/react-dom@${react_version}&deps=react@${react_version},react-dom@${react_version}${path_suffix}/`,
         ...imports,
       },
       scopes: scopes || {},

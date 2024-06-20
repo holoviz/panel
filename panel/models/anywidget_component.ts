@@ -1,6 +1,6 @@
 import type * as p from "@bokehjs/core/properties"
 
-import {ESMEvent, ReactiveESM} from "./reactive_esm"
+import {ReactiveESM} from "./reactive_esm"
 import {ReactComponent, ReactComponentView} from "./react_component"
 
 class AnyWidgetModelAdapter {
@@ -95,32 +95,10 @@ export class AnyWidgetComponentView extends ReactComponentView {
   declare model: AnyWidgetComponent
   adapter: AnyWidgetAdapter
   destroyer: ((props: any) => void) | null
-  _event_handlers: ((event: ESMEvent) => void)[] = []
 
   override initialize(): void {
     super.initialize()
     this.adapter = new AnyWidgetAdapter(this)
-  }
-
-  override connect_signals(): void {
-    super.connect_signals()
-    this.model.on_event(ESMEvent, (event: ESMEvent) => {
-      for (const cb of this._event_handlers) {
-        cb(event.data)
-      }
-    })
-  }
-
-  on_event(callback: (event: ESMEvent) => void): void {
-    this._event_handlers.push(callback)
-  }
-
-  remove_on_event(callback: (event: ESMEvent) => void): boolean {
-    if (this._event_handlers.includes(callback)) {
-      this._event_handlers = this._event_handlers.filter((item) => item !== callback)
-      return true
-    }
-    return false
   }
 
   override remove(): void {
@@ -136,8 +114,12 @@ const view = Bokeh.index.find_one_by_id('${this.model.id}')
 
 let props = {view, model: view.adapter, data: view.model.data, el: view.container}
 
-view.destroyer = view.render_fn(props) || null
-view.render_children()`
+view.destroyer = view.render_fn(props) || null`
+  }
+
+  override after_rendered(): void {
+    this.render_children()
+    this._rendered = true
   }
 }
 

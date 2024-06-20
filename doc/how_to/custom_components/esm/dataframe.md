@@ -39,7 +39,7 @@ class GridJS(JSComponent):
       const config = get_config(model)
       console.log(config)
       const grid = new gridjs.Grid(config).render(el)
-      model.watch(() => grid.updateConfig(get_config(model)).forceRender(), 'object')
+      model.on('object', () => grid.updateConfig(get_config(model)).forceRender())
     }
     """
 

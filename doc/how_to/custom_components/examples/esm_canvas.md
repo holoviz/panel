@@ -43,10 +43,10 @@ export function render({model, el}){
     })
 
     // Update styles
-    model.watch(() => {
+    model.on(['color', 'line_width'], () => {
       ctx.lineWidth = model.line_width;
       ctx.strokeStyle = model.color;
-    }, ['color', 'line_width'])
+    })
 
     // Create clear button
     const clearButton = document.createElement('button');

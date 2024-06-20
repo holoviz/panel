@@ -23,9 +23,9 @@ class Slideshow(JSComponent):
       const img = document.createElement('img')
       img.src = `https://picsum.photos/800/300?image=${model.index}`
       img.addEventListener('click', (event) => model.send_event('click', event))
-      model.watch(() => {
+      model.on('index', () => {
         img.src = `https://picsum.photos/800/300?image=${model.index}`
-      }, 'index')
+      })
       return img
     }
     """
@@ -58,13 +58,10 @@ class JSSlideshow(JSComponent):
     export function render({ model }) {
       const img = document.createElement('img')
       img.src = `https://picsum.photos/800/300?image=${model.index}`
-      img.addEventListener('click', (event) => {
-        model.index += 1
+      img.addEventListener('click', (event) => { model.index += 1 })
+      model.on('index', () => {
         img.src = `https://picsum.photos/800/300?image=${model.index}`
       })
-      model.watch(() => {
-
-      }, 'index')
       return img
     }
     """

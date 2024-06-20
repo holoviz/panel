@@ -59,19 +59,55 @@ export function model_getter(target: ReactiveESMView, name: string) {
       const serialized = convertUndefined(serializeEvent(event))
       model.trigger_event(new DOMEvent(name, serialized))
     }
-
-  } else if (name === "unwatch") {
-    return (callback: any, prop: string | string[]) => {
+  } else if (name === "off") {
+    return (prop: string | string[], callback: any) => {
       const props = isArray(prop) ? prop : [prop]
-      for (const p of props) {
-        model.unwatch(target, p, callback)
+      for (let p of props) {
+        if (p.startsWith("change:")) {
+          p = p.slice("change:".length)
+        }
+        if (p in model.attributes || p in model.data.attributes) {
+          model.unwatch(target, p, callback)
+          continue
+        } else if (p === "msg:custom") {
+          target.remove_on_event(callback)
+          continue
+        }
+        if (p.startsWith("lifecycle:")) {
+          p = p.slice("lifecycle:".length)
+        }
+        if (target._lifecycle_handlers.has(p)) {
+          const handlers = target._lifecycle_handlers.get(p)
+          if (handlers && handlers.includes(callback)) {
+            target._lifecycle_handlers.set(p, handlers.filter(v => v !== callback))
+          }
+          continue
+        }
+        console.warn(`Could not unregister callback for event type '${p}'`)
       }
     }
-  } else if (name === "watch") {
-    return (callback: any, prop: string | string[]) => {
+  } else if (name === "on") {
+    return (prop: string | string[], callback: any) => {
       const props = isArray(prop) ? prop : [prop]
-      for (const p of props) {
-        model.watch(target, p, callback)
+      for (let p of props) {
+        if (p.startsWith("change:")) {
+          p = p.slice("change:".length)
+        }
+        if (p in model.attributes || p in model.data.attributes) {
+          model.watch(target, p, callback)
+          continue
+        } else if (p === "msg:custom") {
+          target.on_event(callback)
+          continue
+        }
+        if (p.startsWith("lifecycle:")) {
+          p = p.slice("lifecycle:".length)
+        }
+        if (target._lifecycle_handlers.has(p)) {
+          (target._lifecycle_handlers.get(p) || []).push(callback)
+          continue
+        }
+        console.warn(`Could not register callback for event type '${p}'`)
       }
     }
   } else if (Reflect.has(model.data, name)) {
@@ -112,6 +148,13 @@ export class ReactiveESMView extends HTMLBoxView {
   model_proxy: any
   _changing: boolean = false
   _child_callbacks: Map<string, ((new_views: UIElementView[]) => void)[]>
+  _event_handlers: ((event: ESMEvent) => void)[] = []
+  _lifecycle_handlers: Map<string, (() => void)[]> =  new Map([
+    ["after_layout", []],
+    ["after_render", []],
+    ["destroy", []]
+  ])
+  _rendered: boolean = false
 
   override initialize(): void {
     super.initialize()
@@ -145,12 +188,29 @@ export class ReactiveESMView extends HTMLBoxView {
     this.on_change(child_props, () => {
       this.update_children()
     })
+    this.model.on_event(ESMEvent, (event: ESMEvent) => {
+      for (const cb of this._event_handlers) {
+        cb(event.data)
+      }
+    })
   }
 
   override disconnect_signals(): void {
     super.disconnect_signals()
     this._child_callbacks = new Map()
     this.model.disconnect_watchers(this)
+  }
+
+  on_event(callback: (event: ESMEvent) => void): void {
+    this._event_handlers.push(callback)
+  }
+
+  remove_on_event(callback: (event: ESMEvent) => void): boolean {
+    if (this._event_handlers.includes(callback)) {
+      this._event_handlers = this._event_handlers.filter((item) => item !== callback)
+      return true
+    }
+    return false
   }
 
   get_child_view(model: UIElement): UIElementView | undefined {
@@ -197,8 +257,10 @@ export class ReactiveESMView extends HTMLBoxView {
 
     this._child_callbacks = new Map()
 
+    this._rendered = false
     set_size(this.el, this.model)
-    this.container = div({style: "display: contents;"})
+    this.container = div()
+    set_size(this.container, this.model, false)
     this.shadow_el.append(this.container)
     if (this.model.compile_error) {
       this.render_error(this.model.compile_error)
@@ -215,12 +277,18 @@ const output = view.render_fn({
   view: view, model: view.model_proxy, data: view.model.data, el: view.container
 })
 
-if (output instanceof Element) {
-  view.container.replaceChildren(output)
-}
+Promise.resolve(output).then((out) => {
+  if (out instanceof Element) {
+    view.container.replaceChildren(out)
+  }
+  view.after_rendered()
+})`
+  }
 
-view.render_children()
-view.model_proxy.watch(() => view.render_esm(), view.accessed_children)`
+  after_rendered(): void {
+    this.render_children()
+    this.model_proxy.on(this.accessed_children, () => this.render_esm())
+    this._rendered = true
   }
 
   render_esm(): void {
@@ -228,13 +296,20 @@ view.model_proxy.watch(() => view.render_esm(), view.accessed_children)`
       return
     }
     this.accessed_properties = []
+    for (const lf of this._lifecycle_handlers.keys()) {
+      (this._lifecycle_handlers.get(lf) || []).splice(0)
+    }
     this.model.disconnect_watchers(this)
     const code = this._render_code()
     const render_url = URL.createObjectURL(
       new Blob([code], {type: "text/javascript"}),
     )
     // @ts-ignore
-    importShim(render_url)
+    importShim(render_url).then(() => {
+      for (const cb of (this._lifecycle_handlers.get('after_render') || [])) {
+        cb()
+      }
+    })
   }
 
   render_children() {
@@ -251,6 +326,22 @@ view.model_proxy.watch(() => view.render_esm(), view.accessed_children)`
           view.render()
           view.after_render()
         }
+      }
+    }
+  }
+
+  override remove(): void {
+    super.remove()
+    for (const cb of (this._lifecycle_handlers.get('remove') || [])) {
+      cb()
+    }
+  }
+
+  override after_layout(): void {
+    super.after_layout()
+    if (this._rendered) {
+      for (const cb of (this._lifecycle_handlers.get('after_layout') || [])) {
+	cb()
       }
     }
   }

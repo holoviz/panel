@@ -23,9 +23,9 @@ class JSUpdate(JSComponent):
     export function render({ model }) {
       const h1 = document.createElement('h1')
       h1.textContent = model.text
-      model.watch(() => {
+      model.on('text', () => {
         h1.textContent = model.text;
-      }, 'text')
+      })
       return h1
     }
     """
@@ -85,10 +85,10 @@ class JSUnwatch(JSComponent):
       }
       const cb2 = () => {
         h2.textContent = model.text;
-        model.unwatch(cb2, 'text')
+        model.off('text', cb2)
       }
-      model.watch(cb, 'text')
-      model.watch(cb2, 'text')
+      model.on('text', cb)
+      model.on('text', cb2)
       el.append(h1, h2)
     }
     """

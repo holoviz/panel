@@ -21,9 +21,9 @@ class CounterButton(JSComponent):
       btn.addEventListener("click", () => {
         model.value += 1
       });
-      model.watch(() => {
+      model.on('value', () => {
         btn.innerHTML = `count is ${model.value}`;
-      }, 'value')
+      })
       return btn
     }
     """
@@ -32,13 +32,11 @@ CounterButton().servable()
 ```
 
 :::{note}
-
 `JSComponent` was introduced in June 2024 as a successor to `ReactiveHTML`.
 
 `JSComponent` bears similarities to [`AnyWidget`](https://anywidget.dev/), but it is specifically optimized for use with Panel.
 
 If you are looking to create custom components using Python and Panel component only, check out [`Viewer`](Viewer.md).
-
 :::
 
 ## API
@@ -55,24 +53,33 @@ You may specify a path to a file as a string instead of a PurePath. The path sho
 
 :::
 
-#### `render` Function
+### `render` Function
 
 The `_esm` attribute must export the `render` function. It accepts the following parameters:
 
-- **`model`**: Represents the Parameters of the component and provides methods to `.watch` for changes, render child elements using `.get_child`, and `.send_event` back to Python.
+- **`model`**: Represents the Parameters of the component and provides methods to add (and remove) event listeners using `.on` and `.off`, render child elements using `.get_child`, and to `.send_event` back to Python.
 - **`view`**: The Bokeh view.
 - **`el`**: The HTML element that the component will be rendered into.
 
-Any HTML element returned from the `render` function will be appended to the HTML element (`el`) of the component but you may also manually append to and manipulate the `el`.
+Any HTML element returned from the `render` function will be appended to the HTML element (`el`) of the component but you may also manually append to and manipulate the `el` directly.
 
-The `render` function will be rerun when any rendered child is replaced.
+### Callbacks
 
-#### Other Lifecycle Methods
+The `model.on` and `model.off` methods allow registering event handlers inside the render function. This includes the ability to listen to parameter changes and register lifecycle hooks.
 
-DUMMY CONTENT. PLEASE HELP ME DESCRIBE THIS.
+#### Change Events
 
-- `initialize`: Runs once per widget instance at model initialization, facilitating setup for event handlers or state.
-- `teardown`: Cleans up resources or processes when a widget instance is being removed.
+The following signatures are valid when listening to change events:
+
+- `.on('<parameter>', callback)`: Allows registering an event handler for a single parameter.
+- `.on(['<parameter>', ...], callback)`: Allows adding an event handler for multiple parameters at once.
+- `.on('change:<parameter>', callback)`: The `change:` prefix allows disambiguating change events from lifecycle hooks should a parameter name and lifecycle hook overlap.
+
+#### Lifecycle Hooks
+
+- `after_layout`: Called once after the component laid out.
+- `after_render`: Called after the component has been rendered.
+- `remove`: Called when the component view is being removed from the DOM.
 
 ## Usage
 
@@ -114,9 +121,9 @@ class StyledCounterButton(JSComponent):
       btn.addEventListener("click", () => {
         model.value += 1
       });
-      model.watch(() => {
+      model.on('value', () => {
         btn.innerHTML = `count is ${model.value}`;
-      }, 'value')
+      })
       return btn
     }
     """
@@ -226,7 +233,7 @@ class ConfettiButton(JSComponent):
 ConfettiButton().servable()
 ```
 
-Use the `_import_map` attribute for more concise module references.
+Use the `_importmap` attribute for more concise module references.
 
 ```pyodide
 import panel as pn
@@ -250,7 +257,7 @@ class ConfettiButton(JSComponent):
       btn.innerHTML = `Click Me`;
       btn.addEventListener("click", () => {
         confetti()
-	  });
+      });
       return btn
     }
     """
@@ -295,9 +302,9 @@ export function render({ model }) {
   btn.addEventListener("click", () => {
     model.value += 1;
   });
-  model.watch(() => {
+  model.on('value', () => {
     btn.innerHTML = `count is ${model.value}`;
-  }, 'value');
+  });
   return btn;
 }
 ```
