@@ -152,7 +152,7 @@ export class ReactiveESMView extends HTMLBoxView {
   _lifecycle_handlers: Map<string, (() => void)[]> =  new Map([
     ["after_layout", []],
     ["after_render", []],
-    ["destroy", []]
+    ["remove", []]
   ])
   _rendered: boolean = false
 
@@ -306,7 +306,7 @@ Promise.resolve(output).then((out) => {
     )
     // @ts-ignore
     importShim(render_url).then(() => {
-      for (const cb of (this._lifecycle_handlers.get('after_render') || [])) {
+      for (const cb of (this._lifecycle_handlers.get("after_render") || [])) {
         cb()
       }
     })
@@ -332,7 +332,7 @@ Promise.resolve(output).then((out) => {
 
   override remove(): void {
     super.remove()
-    for (const cb of (this._lifecycle_handlers.get('remove') || [])) {
+    for (const cb of (this._lifecycle_handlers.get("remove") || [])) {
       cb()
     }
   }
@@ -340,7 +340,7 @@ Promise.resolve(output).then((out) => {
   override after_layout(): void {
     super.after_layout()
     if (this._rendered) {
-      for (const cb of (this._lifecycle_handlers.get('after_layout') || [])) {
+      for (const cb of (this._lifecycle_handlers.get("after_layout") || [])) {
 	cb()
       }
     }
