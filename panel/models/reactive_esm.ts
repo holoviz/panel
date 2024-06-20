@@ -152,7 +152,7 @@ export class ReactiveESMView extends HTMLBoxView {
   _lifecycle_handlers: Map<string, (() => void)[]> =  new Map([
     ["after_layout", []],
     ["after_render", []],
-    ["remove", []]
+    ["remove", []],
   ])
   _rendered: boolean = false
 
@@ -341,7 +341,7 @@ Promise.resolve(output).then((out) => {
     super.after_layout()
     if (this._rendered) {
       for (const cb of (this._lifecycle_handlers.get("after_layout") || [])) {
-	cb()
+        cb()
       }
     }
   }

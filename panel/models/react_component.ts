@@ -226,7 +226,7 @@ export class ReactComponent extends ReactiveESM {
     if (this.usesMui) {
       importMap.imports = {
         ...importMap.imports,
-        "@emotion/cache": `https://esm.sh/@emotion/cache`,
+        "@emotion/cache": "https://esm.sh/@emotion/cache",
         "@emotion/react": `https://esm.sh/@emotion/react?external=react${path_suffix}`,
       }
     }
