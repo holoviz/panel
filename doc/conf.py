@@ -117,12 +117,14 @@ nbsite_gallery_conf = {
     'galleries': {
         'reference': {
             'title': 'Component Gallery',
+            'extensions': ['*.ipynb', '*.py', '*.md'],
             'sections': [
                 'panes',
                 'widgets',
                 'layouts',
                 # 3 most important by expected usage. Rest alphabetically
                 'chat',
+                'custom_components',
                 'global',
                 'indicators',
                 'templates',

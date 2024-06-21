@@ -9,7 +9,6 @@
   },
   "dependencies": {
     "@bokeh/bokehjs": "3.5.0-dev.8",
-    "@luma.gl/constants": "^8.0.3",
     "@types/debounce": "^1.2.0",
     "@types/gl-matrix": "^2.4.5",
     "ace-code": "^1.24.1",
@@ -17,7 +16,8 @@
     "gl-matrix": "^3.1.0",
     "htm": "^3.1.1",
     "json-formatter-js": "^2.2.1",
-    "preact": "^10.13.0"
+    "preact": "^10.22.0",
+    "sucrase": "^3.30.0"
   },
   "devDependencies": {
     "@stylistic/eslint-plugin": "^1.6.3",
