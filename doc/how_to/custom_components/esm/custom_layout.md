@@ -6,9 +6,9 @@ In this guide we will show you how to build custom, reusable layouts using `View
 
 You can layout a single `object` as follows.
 
-:::::{tab-set}
+::::{tab-set}
 
-::::{tab-item} `Viewer`
+:::{tab-item} `Viewer`
 
 ```{pyodide}
 import panel as pn
@@ -60,9 +60,9 @@ py_layout = SingleObjectLayout(
 py_layout.servable()
 ```
 
-::::
+:::
 
-::::{tab-item} `JSComponent`
+:::{tab-item} `JSComponent`
 
 ```{pyodide}
 import panel as pn
@@ -105,9 +105,9 @@ js_layout = SingleObjectLayout(
 js_layout.servable()
 ```
 
-::::
+:::
 
-::::{tab-item} `ReactComponent`
+:::{tab-item} `ReactComponent`
 
 ```{pyodide}
 import panel as pn
@@ -149,15 +149,15 @@ react_layout = SingleObjectLayout(
 react_layout.servable()
 ```
 
-::::
+:::
 
-:::::
+::::
 
 Lets verify the layout will automatically update when the `object` is changed.
 
-:::::{tab-set}
+::::{tab-set}
 
-::::{tab-item} `Viewer`
+:::{tab-item} `Viewer`
 
 ```{pyodide}
 html = pn.pane.Markdown("A **markdown** pane!", name="Markdown")
@@ -178,9 +178,9 @@ def update(value):
 radio_button_group.servable()
 ```
 
-::::
+:::
 
-::::{tab-item} `JSComponent`
+:::{tab-item} `JSComponent`
 
 ```{pyodide}
 html = pn.pane.Markdown("A **markdown** pane!", name="Markdown")
@@ -201,9 +201,9 @@ def update(value):
 radio_button_group.servable()
 ```
 
-::::
+:::
 
-::::{tab-item} `ReactComponent`
+:::{tab-item} `ReactComponent`
 
 ```{pyodide}
 html = pn.pane.Markdown("A **markdown** pane!", name="Markdown")
@@ -224,17 +224,17 @@ def update(value):
 radio_button_group.servable()
 ```
 
-::::
+:::
 
-:::::
+::::
 
 ## Layout a List of Objects
 
 A Panel `Column` or `Row` works as a list of objects. It is *list-like*. In this section will show you how to create your own *list-like* layout using Panels `NamedListLike` class.
 
-:::::{tab-set}
+::::{tab-set}
 
-::::{tab-item} `Viewer`
+:::{tab-item} `Viewer`
 
 ```{pyodide}
 import panel as pn
@@ -285,9 +285,9 @@ ListLikeLayout(
 
 You must list `NamedListLike, Layoutable, Viewer` in exactly that order when you define the class! Other combinations might not work.
 
-::::
+:::
 
-::::{tab-item} `JSComponent`
+:::{tab-item} `JSComponent`
 
 ```{pyodide}
 import panel as pn
@@ -337,9 +337,9 @@ ListLikeLayout(
 You must list `NamedListLike, JSComponent` in exactly that order when you define the class! The other
 way around `JSComponent, NamedListLike` will not work.
 
-::::
+:::
 
-::::{tab-item} `ReactComponent`
+:::{tab-item} `ReactComponent`
 
 ```{pyodide}
 import panel as pn
@@ -371,12 +371,12 @@ Example(
 ).servable()
 ```
 
+:::
+
 ::::
 
-You must list `NamedListLike, ReactComponent` in exactly that order when you define the class! The other
-way around `ReactComponent, NamedListLike` will not work.
+:::{note}
+You must list `ListLike, ReactComponent` in exactly that order when you define the class! The other way around `ReactComponent, ListLike` will not work.
+:::
 
-:::::
-
-You can now use `[...]` indexing and the `.append`, `.insert`, `pop`, ... methods that you would
-expect.
+You can now use `[...]` indexing and the `.append`, `.insert`, `pop`, ... methods that you would expect.

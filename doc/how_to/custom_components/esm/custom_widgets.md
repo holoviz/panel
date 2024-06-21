@@ -6,9 +6,9 @@ In this guide we will show you how to efficiently implement custom widgets using
 
 This example we will show you to create an `ImageButton`.
 
-:::::{tab-set}
+::::{tab-set}
 
-::::{tab-item} `JSComponent`
+:::{tab-item} `JSComponent`
 
 ```{pyodide}
 import panel as pn
@@ -75,9 +75,9 @@ button = ImageButton(
 pn.Column(button, button.param.clicks,).servable()
 ```
 
-::::
+:::
 
-::::{tab-item} `ReactComponent`
+:::{tab-item} `ReactComponent`
 
 ```pyodide
 import panel as pn
@@ -137,9 +137,9 @@ button = ImageButton(
 pn.Column(button, button.param.clicks).servable()
 ```
 
-::::
+:::
 
-::::{tab-item} `AnyWidgetComponent`
+:::{tab-item} `AnyWidgetComponent`
 
 ```{pyodide}
 import panel as pn
@@ -208,7 +208,9 @@ button = ImageButton(
 pn.Column(button, button.param.clicks).servable()
 ```
 
-:::::
+:::
+
+::::
 
 If you don't want the *button* styling, you can change the `<button>` tag to a `<div>` tag.
 
