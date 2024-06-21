@@ -10,6 +10,7 @@ from playwright.sync_api import expect
 from panel.custom import (
     AnyWidgetComponent, Child, Children, JSComponent, ReactComponent,
 )
+from panel.layout import Row
 from panel.tests.util import serve_component, wait_until
 
 pytestmark = pytest.mark.ui
@@ -374,3 +375,112 @@ def test_anywidget_custom_event(page):
     example.send({"type": "foo", "text": "bar"})
 
     expect(page.locator('h1')).to_have_text("bar")
+
+
+class JSLifecycleAfterRender(JSComponent):
+
+    _esm = """
+    export function render({ model }) {
+      const h1 = document.createElement('h1')
+      model.on('after_render', () => { h1.textContent = 'rendered' })
+      return h1
+    }"""
+
+
+class ReactLifecycleAfterRender(ReactComponent):
+
+    _esm = """
+    import {useState} from "react"
+
+    export function render({ model }) {
+      const [text, setText] = useState("")
+      model.on('after_render', () => { setText('rendered') })
+      return <h1>{text}</h1>
+    }"""
+
+
+@pytest.mark.parametrize('component', [JSLifecycleAfterRender, ReactLifecycleAfterRender])
+def test_after_render_lifecycle_hooks(page, component):
+    example = component()
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_count(1)
+
+    expect(page.locator('h1')).to_have_text("rendered")
+
+
+class JSLifecycleAfterResize(JSComponent):
+
+    _esm = """
+    export function render({ model }) {
+      const h1 = document.createElement('h1')
+      h1.textContent = "0"
+      let count = 0
+      model.on('after_resize', () => { count += 1; h1.textContent = `${count}`; })
+      return h1
+    }"""
+
+class ReactLifecycleAfterResize(ReactComponent):
+
+    _esm = """
+    import {useState} from "react"
+
+    export function render({ model }) {
+      const [count, setCount] = useState(0)
+      model.on('after_resize', () => { setCount(count+1); })
+      return <h1>{count}</h1>
+    }"""
+
+
+@pytest.mark.parametrize('component', [JSLifecycleAfterResize, ReactLifecycleAfterResize])
+def test_after_resize_lifecycle_hooks(page, component):
+    example = component(sizing_mode='stretch_width')
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_count(1)
+
+    expect(page.locator('h1')).to_have_text("1")
+
+    page.set_viewport_size({ "width": 50, "height": 300})
+
+    expect(page.locator('h1')).to_have_text("2")
+
+
+class JSLifecycleRemove(JSComponent):
+
+    _esm = """
+    export function render({ model }) {
+      const h1 = document.createElement('h1')
+      h1.textContent = 'Hello'
+      model.on('remove', () => { console.warn('Removed') })
+      return h1
+    }"""
+
+class ReactLifecycleRemove(ReactComponent):
+
+    _esm = """
+    import {useState} from "react"
+
+    export function render({ model }) {
+      const [count, setCount] = useState(0)
+      model.on('remove', () => { console.warn('Removed') })
+      return <h1>Hello</h1>
+    }"""
+
+
+@pytest.mark.parametrize('component', [JSLifecycleRemove, ReactLifecycleRemove])
+def test_remove_lifecycle_hooks(page, component):
+    example = Row(component(sizing_mode='stretch_width'))
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_count(1)
+
+    expect(page.locator('h1')).to_have_text("Hello")
+
+    with page.expect_console_message() as msg_info:
+        example.clear()
+
+    wait_until(lambda: msg_info.value.args[0].json_value() == "Removed", page)

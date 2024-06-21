@@ -20,6 +20,10 @@ export class ReactComponentView extends ReactiveESMView {
   }
 
   override after_rendered(): void {
+    const handlers = (this._lifecycle_handlers.get("after_render") || [])
+    for (const cb of handlers) {
+      cb()
+    }
     this._rendered = true
   }
 
@@ -168,12 +172,23 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-const props = {view, model: react_proxy, data: view.model.data, el: view.container}
-let rendered = React.createElement(view.render_fn, props)
+class Component extends React.Component {
 
-if (view.model.dev) {
-  rendered = React.createElement(ErrorBoundary, {view}, rendered)
+  componentDidMount() {
+    this.props.view.after_rendered()
+  }
+
+  render() {
+    let rendered = React.createElement(this.props.view.render_fn, this.props)
+    if (this.props.view.model.dev) {
+       rendered = React.createElement(ErrorBoundary, {view}, rendered)
+    }
+    return rendered
+  }
 }
+
+const props = {view, model: react_proxy, data: view.model.data, el: view.container}
+let rendered = React.createElement(Component, props)
 
 ${render_code}`
   }

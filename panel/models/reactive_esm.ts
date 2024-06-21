@@ -150,8 +150,8 @@ export class ReactiveESMView extends HTMLBoxView {
   _child_callbacks: Map<string, ((new_views: UIElementView[]) => void)[]>
   _event_handlers: ((event: ESMEvent) => void)[] = []
   _lifecycle_handlers: Map<string, (() => void)[]> =  new Map([
-    ["after_layout", []],
     ["after_render", []],
+    ["after_resize", []],
     ["remove", []],
   ])
   _rendered: boolean = false
@@ -286,6 +286,10 @@ Promise.resolve(output).then((out) => {
   }
 
   after_rendered(): void {
+    const handlers = (this._lifecycle_handlers.get("after_render") || [])
+    for (const cb of handlers) {
+      cb()
+    }
     this.render_children()
     this.model_proxy.on(this.accessed_children, () => this.render_esm())
     this._rendered = true
@@ -305,11 +309,7 @@ Promise.resolve(output).then((out) => {
       new Blob([code], {type: "text/javascript"}),
     )
     // @ts-ignore
-    importShim(render_url).then(() => {
-      for (const cb of (this._lifecycle_handlers.get("after_render") || [])) {
-        cb()
-      }
-    })
+    importShim(render_url)
   }
 
   render_children() {
@@ -337,10 +337,10 @@ Promise.resolve(output).then((out) => {
     }
   }
 
-  override after_layout(): void {
-    super.after_layout()
-    if (this._rendered) {
-      for (const cb of (this._lifecycle_handlers.get("after_layout") || [])) {
+  override after_resize(): void {
+    super.after_resize()
+    if (this._rendered && !this._changing) {
+      for (const cb of (this._lifecycle_handlers.get("after_resize") || [])) {
         cb()
       }
     }

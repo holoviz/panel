@@ -77,8 +77,8 @@ The following signatures are valid when listening to change events:
 
 #### Lifecycle Hooks
 
-- `after_layout`: Called once after the component laid out.
-- `after_render`: Called after the component has been rendered.
+- `after_render`: Called once after the component has been fully rendered.
+- `after_resize`: Called after the component has been resized.
 - `remove`: Called when the component view is being removed from the DOM.
 
 ## Usage
