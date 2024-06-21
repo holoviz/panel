@@ -93,12 +93,28 @@ How to create `JSComponent`s and `ReactComponent`s that render data in a DataFra
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} Build a Canvas component
+:::{grid-item-card} Canvas `JSComponent`
 :img-top: https://assets.holoviz.org/panel/how_to/custom_components/canvas_draw.png
 :link: examples/esm_canvas
 :link-type: doc
 
-Build a custom component to draw on an HTML canvas based on `ReactiveHTML`.
+Build a custom component to draw on an HTML canvas based on `JSComponent`.
+:::
+
+:::{grid-item-card} Leaflet.js `JSComponent`
+:img-top: https://assets.holoviz.org/panel/how_to/custom_components/leaflet.png
+:link: examples/esm_leaflet
+:link-type: doc
+
+Build a custom component wrapping leaflet.js using `JSComponent`.
+:::
+
+:::{grid-item-card} Material UI `ReactComponent`
+:img-top: https://assets.holoviz.org/panel/how_to/custom_components/material_ui.png
+:link: examples/esm_material_ui
+:link-type: doc
+
+Build custom components wrapping Material UI using `ReactComponent`.
 :::
 
 ::::
@@ -113,6 +129,9 @@ esm/custom_widgets
 esm/custom_layout
 esm/dataframe
 examples/esm_canvas
+examples/esm_leaflet
+examples/esm_material_ui
+
 ```
 
 ## `ReactiveHTML` Components
