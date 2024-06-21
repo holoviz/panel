@@ -17,7 +17,7 @@ from ..io.resources import CDN_DIST
 from ..layout import Row, Tabs
 from ..pane.image import ImageBase
 from ..viewable import Viewable
-from ..widgets.base import Widget
+from ..widgets.base import WidgetBase
 from ..widgets.button import Button
 from ..widgets.input import FileInput, TextInput
 from .feed import CallbackState, ChatFeed
@@ -110,7 +110,7 @@ class ChatInterface(ChatFeed):
     user = param.String(default="User", doc="""
         Name of the ChatInterface user.""")
 
-    widgets = param.ClassSelector(class_=(Widget, list), allow_refs=False, doc="""
+    widgets = param.ClassSelector(class_=(WidgetBase, list), allow_refs=False, doc="""
         Widgets to use for the input. If not provided, defaults to
         `[TextInput]`.""")
 
@@ -251,7 +251,7 @@ class ChatInterface(ChatFeed):
             )
 
         widgets = self.widgets
-        if isinstance(self.widgets, Widget):
+        if isinstance(self.widgets, WidgetBase):
             widgets = [self.widgets]
 
         self._widgets = {}
@@ -539,7 +539,7 @@ class ChatInterface(ChatFeed):
             self._reset_button_data()
 
     @property
-    def active_widget(self) -> Widget:
+    def active_widget(self) -> WidgetBase:
         """
         The currently active widget.
 
