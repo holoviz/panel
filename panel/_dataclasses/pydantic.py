@@ -1,3 +1,4 @@
+import datetime as dt
 import json
 
 from typing import TYPE_CHECKING, Any, Iterable
@@ -14,6 +15,12 @@ if TYPE_CHECKING:
         BaseModel = Any
 else:
     BaseModel = Any
+
+
+def default_serializer(obj):
+    if isinstance(obj, (dt.datetime, dt.date)):
+        return obj.isoformat()
+    raise TypeError()
 
 
 class PydanticUtils(ModelUtils):
@@ -41,15 +48,15 @@ class PydanticUtils(ModelUtils):
 
     @classmethod
     def get_layout(cls, model, self, layout_params):
-        exclude = list(layout_params)
         def view_model(*args):
             if hasattr(model, 'model_dump'):
-                return model.model_dump(exclude=exclude)
+                return model.model_dump()
             else:
-                return json.loads(model.json(exclude=exclude))
+                return json.loads(model.json())
 
-        parameters = [
-            parameter for name, parameter in self.param.objects().items()
-            if name not in layout_params
-        ]
-        return JSON(bind(view_model, *parameters), depth=2, **layout_params)
+        return JSON(
+            bind(view_model, *self.param.objects().values()),
+            default=default_serializer,
+            depth=2,
+            **layout_params
+        )
