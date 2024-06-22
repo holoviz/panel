@@ -396,7 +396,7 @@ def base_version(version: str) -> str:
     Return the version passed as input if no match is found with the pattern.
     """
     # look at the start for e.g. 0.13.0, 0.13.0rc1, 0.13.0a19, 0.13.0b10
-    pattern = r"([\d]+\.[\d]+\.[\d]+(?:a|rc|b)?[\d]*)"
+    pattern = r"([\d]+\.[\d]+\.[\d]+(?:\.?(?:a|rc|b|dev)[\d]*)?)"
     match = re.match(pattern, version)
     if match:
         return match.group()
