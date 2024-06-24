@@ -25,13 +25,13 @@ export class BrowserInfoView extends View {
       this.model.timezone_offset = timezone_offset
     }
     try {
-      var canvas = document.createElement('canvas');
+      var canvas = document.createElement("canvas");
       this.model.webgl = !!(
         window.WebGLRenderingContext &&
-          (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))
+          (canvas.getContext("webgl") || canvas.getContext("experimental-webgl"))
       );
     } catch (e) {
-      this.model.webgl
+      this.model.webgl = false
     }
     this._has_finished = true
     this.notify_finished()
