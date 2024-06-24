@@ -11,10 +11,11 @@ from panel.widgets import (
     LoadingSpinner, Terminal, TextInput, ToggleGroup, Tqdm, Widget,
 )
 from panel.widgets.tables import BaseTable
+from panel.widgets.tree import Tree
 
 excluded = (
     BaseTable, CompositeWidget, Dial, FileDownload, LinearGauge,
-    LoadingSpinner, ToggleGroup, Terminal, Tqdm, FileTree,
+    LoadingSpinner, ToggleGroup, Terminal, Tqdm, FileTree, Tree
 )
 
 all_widgets = [
