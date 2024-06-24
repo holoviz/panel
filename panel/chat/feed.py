@@ -10,8 +10,8 @@ import traceback
 
 from enum import Enum
 from inspect import (
-    isasyncgen, isasyncgenfunction, isawaitable, iscoroutinefunction,
-    isgenerator, isgeneratorfunction,
+    getfullargspec, isasyncgen, isasyncgenfunction, isawaitable,
+    iscoroutinefunction, isgenerator, isgeneratorfunction, ismethod,
 )
 from io import BytesIO
 from typing import (
@@ -430,7 +430,31 @@ class ChatFeed(ListPanel):
             contents = value.value
         else:
             contents = value
-        return contents, message.user, self
+
+        input_kwargs = {
+            "contents": contents,
+            "user": message.user,
+            "instance": self
+        }
+        input_args = tuple(input_kwargs.values())
+        callback_arg_spec = getfullargspec(self.callback)
+        callback_args = callback_arg_spec.args
+        if ismethod(self.callback):
+            callback_args = callback_args[1:]
+        num_args = len(callback_args)
+        if callback_arg_spec.varargs:
+            return input_args, {}
+        elif callback_arg_spec.varkw:
+            args_keys = list(input_kwargs)[:num_args]
+            for arg_key in args_keys:
+                input_kwargs.pop(arg_key)
+            return input_args[:num_args], input_kwargs
+        elif len(callback_args) <= 3:
+            return input_args[:num_args], {}
+        elif len(callback_args) > 3:
+            raise ValueError("Function should have at most 3 arguments")
+        elif len(callback_args) == 0:
+            raise ValueError("Function should have at least one argument")
 
     async def _serialize_response(self, response: Any) -> ChatMessage | None:
         """
@@ -480,16 +504,16 @@ class ChatFeed(ListPanel):
             await asyncio.sleep(0.1)
 
     async def _handle_callback(self, message, loop: asyncio.BaseEventLoop):
-        callback_args = self._gather_callback_args(message)
+        callback_args, callback_kwargs = self._gather_callback_args(message)
         if iscoroutinefunction(self.callback):
-            response = await self.callback(*callback_args)
+            response = await self.callback(*callback_args, **callback_kwargs)
         elif isasyncgenfunction(self.callback):
-            response = self.callback(*callback_args)
+            response = self.callback(*callback_args, **callback_kwargs)
         elif isgeneratorfunction(self.callback):
-            response = to_async_gen(self.callback(*callback_args))
+            response = to_async_gen(self.callback(*callback_args, **callback_kwargs))
             # printing type(response) -> <class 'async_generator'>
         else:
-            response = await asyncio.to_thread(self.callback, *callback_args)
+            response = await asyncio.to_thread(self.callback, *callback_args, **callback_kwargs)
         await self._serialize_response(response)
         return response
 
