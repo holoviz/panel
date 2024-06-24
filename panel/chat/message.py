@@ -23,7 +23,7 @@ import param
 from ..io.resources import CDN_DIST, get_dist_path
 from ..io.state import state
 from ..layout import Column, Row
-from ..pane.base import PaneBase, ReplacementPane, panel as _panel
+from ..pane.base import Pane, ReplacementPane, panel as _panel
 from ..pane.image import (
     PDF, FileBase, Image, ImageBase,
 )
@@ -132,7 +132,7 @@ class _FileInputMessage:
     mime_type: str
 
 
-class ChatMessage(PaneBase):
+class ChatMessage(Pane):
     """
     A widget for displaying chat messages with support for various content types.
 

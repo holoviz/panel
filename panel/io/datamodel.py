@@ -6,10 +6,11 @@ import bokeh
 import bokeh.core.properties as bp
 import param as pm
 
-from bokeh.model import DataModel
+from bokeh.model import DataModel, Model
 from bokeh.models import ColumnDataSource
 
 from ..reactive import Syncable
+from ..viewable import Child, Children, Viewable
 from .document import unlocked
 from .notebook import push
 from .state import state
@@ -65,21 +66,34 @@ def color_param_to_ppt(p, kwargs):
 
 
 def list_param_to_ppt(p, kwargs):
-    if isinstance(p.item_type, type) and issubclass(p.item_type, pm.Parameterized):
+    item_type = bp.Any
+    if not isinstance(p.item_type, type):
+        pass
+    elif issubclass(p.item_type, Viewable):
+        item_type = bp.Instance(Model)
+    elif issubclass(p.item_type, pm.Parameterized):
         return bp.List(bp.Instance(DataModel)), [(ParameterizedList, lambda ps: [create_linked_datamodel(p) for p in ps])]
-    return bp.List(bp.Any, **kwargs)
+    return bp.List(item_type, **kwargs)
 
+def class_selector_to_model(p, kwargs):
+    if isinstance(p.class_, type) and issubclass(p.class_, Viewable):
+        return bp.Nullable(bp.Instance(Model), **kwargs)
+    elif isinstance(p.class_, type) and issubclass(p.class_, pm.Parameterized):
+        return (bp.Instance(DataModel, **kwargs), [(Parameterized, create_linked_datamodel)])
+    else:
+        return bp.Any(**kwargs)
+
+def bytes_param(p, kwargs):
+    kwargs.pop('default')
+    return bp.Bytes(**kwargs)
 
 PARAM_MAPPING = {
     pm.Array: lambda p, kwargs: bp.Array(bp.Any, **kwargs),
     pm.Boolean: lambda p, kwargs: bp.Bool(**kwargs),
+    pm.Bytes: lambda p, kwargs: bytes_param(p, kwargs),
     pm.CalendarDate: lambda p, kwargs: bp.Date(**kwargs),
     pm.CalendarDateRange: lambda p, kwargs: bp.Tuple(bp.Date, bp.Date, **kwargs),
-    pm.ClassSelector: lambda p, kwargs: (
-        (bp.Instance(DataModel, **kwargs), [(Parameterized, create_linked_datamodel)])
-        if isinstance(p.class_, type) and issubclass(p.class_, pm.Parameterized) else
-        bp.Any(**kwargs)
-    ),
+    pm.ClassSelector: class_selector_to_model,
     pm.Color: color_param_to_ppt,
     pm.DataFrame: lambda p, kwargs: (
         bp.ColumnData(bp.Any, bp.Seq(bp.Any), **kwargs),
@@ -96,8 +110,9 @@ PARAM_MAPPING = {
     pm.Range: lambda p, kwargs: bp.Tuple(bp.Float, bp.Float, **kwargs),
     pm.String: lambda p, kwargs: bp.String(**kwargs),
     pm.Tuple: lambda p, kwargs: bp.Tuple(*(bp.Any for p in range(p.length)), **kwargs),
+    Child: lambda p, kwargs: bp.Nullable(bp.Instance(Model), **kwargs),
+    Children: lambda p, kwargs: bp.List(bp.Instance(Model), **kwargs),
 }
-
 
 
 def construct_data_model(parameterized, name=None, ignore=[], types={}):

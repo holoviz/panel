@@ -444,7 +444,7 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   redraw(columns: boolean = true, rows: boolean = true): void {
-    if (this._building) {
+    if (this._building || this.tabulator != null) {
       return
     }
     if (columns && (this.tabulator.columnManager.element != null)) {

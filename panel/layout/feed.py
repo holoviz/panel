@@ -149,12 +149,9 @@ class Feed(Column):
         self, model: Model, old_objects: list[Viewable], doc: Document,
         root: Model, comm: Optional[Comm] = None
     ):
-        from ..pane.base import RerenderError, panel
+        from ..pane.base import RerenderError
         new_models, old_models = [], []
         self._last_synced = self._synced_range
-
-        for i, pane in enumerate(self.objects):
-            self.objects[i] = panel(pane)
 
         for obj in old_objects:
             if obj not in self.objects:

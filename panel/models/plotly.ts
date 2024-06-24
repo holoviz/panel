@@ -9,9 +9,9 @@ import type {Attrs} from "@bokehjs/core/types"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 
 import {debounce} from  "debounce"
-import {convertUndefined, deepCopy, get, reshape, throttle} from "./util"
 
 import {HTMLBox, HTMLBoxView, set_size} from "./layout"
+import {convertUndefined, deepCopy, get, reshape, throttle} from "./util"
 
 import plotly_css from "styles/models/plotly.css"
 

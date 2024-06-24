@@ -32,7 +32,7 @@ How to use Panel widgets in 4 simple steps
 For more detail see the Getting Started Guide
 https://panel.holoviz.org/getting_started/index.html
 """
-from .base import CompositeWidget, Widget  # noqa
+from .base import CompositeWidget, Widget, WidgetBase  # noqa
 from .button import Button, MenuButton, Toggle  # noqa
 from .codeeditor import CodeEditor  # noqa
 from .debugger import Debugger  # noqa

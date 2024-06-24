@@ -248,7 +248,7 @@ class Terminal(Widget):
     nrows = param.Integer(readonly=True, doc="""
         The number of rows in the terminal.""")
 
-    value = param.String(label="Input", readonly=True, doc="""
+    value = param.String(default="", label="Input", readonly=True, doc="""
         User input received from the Terminal. Sent one character at the time.""")
 
     write_to_console = param.Boolean(default=False, doc="""

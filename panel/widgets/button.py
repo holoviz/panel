@@ -329,7 +329,9 @@ class MenuButton(_ButtonBase, _ClickButton, IconMixin):
 
     _event: ClassVar[str] = 'menu_item_click'
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'label', 'items': 'menu', 'clicked': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'name': 'label', 'items': 'menu', 'clicked': None, 'value': None
+    }
 
     _widget_type: ClassVar[type[Model]] = _BkDropdown
 
