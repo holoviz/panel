@@ -505,6 +505,8 @@ class HoloViews(PaneBase):
                 Store.current_backend = loaded_backend
             backend = self.backend or Store.current_backend
             renderer = Store.renderers[backend]
+        if state.browser_info and 'webgl' in renderer.param:
+            renderer.webgl = state.browser_info.webgl
         mode = 'server' if comm is None else 'default'
         if backend == 'bokeh':
             params = {}
