@@ -85,7 +85,6 @@ export function ID() {
   return `_${  Math.random().toString(36).substring(2, 11)}`
 }
 
-
 export function convertUndefined(obj: any): any {
   if (isArray(obj)) {
     return obj.map(convertUndefined)

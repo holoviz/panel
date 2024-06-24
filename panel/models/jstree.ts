@@ -68,7 +68,7 @@ export class jsTreeView extends LayoutDOMView {
     })
     this.on_change(checked, () => {
       if (!this._setting) {
-	this._update_selection_from_value()
+        this._update_selection_from_value()
       }
     })
     this.on_change(checkbox, () => this.setCheckboxes())
@@ -110,8 +110,8 @@ export class jsTreeView extends LayoutDOMView {
         three_state: this.model.cascade,
         cascade: this.model.cascade ? "undetermined" : "down+undetermined",
         cascade_to_disabled: false,
-	tie_selection: false,
-        whole_node: false
+        tie_selection: false,
+        whole_node: false,
       },
       core: {
         data: (obj: Node, callback: (nodes: Node[]) => void) => {
@@ -178,12 +178,12 @@ export class jsTreeView extends LayoutDOMView {
   init_callbacks(): void {
     this._jstree.on("dblclick.jstree", (e: MouseEvent) => {
       let target = e.target
-      while (!(target === null || !(target instanceof Element) || target.className.includes('jstree-node'))) {
-	target = target.parentNode
+      while (!(target === null || !(target instanceof Element) || target.className.includes("jstree-node"))) {
+        target = target.parentNode
       }
-      if (target && (target instanceof Element) && target.className.includes('jstree-node')) {
-	const node = this._jstree.jstree(true).get_node(target)
-	this.model.trigger_event(new NodeEvent({type: "click", subtype: "dblclick", node: {id: node.id}}))
+      if (target && (target instanceof Element) && target.className.includes("jstree-node")) {
+        const node = this._jstree.jstree(true).get_node(target)
+        this.model.trigger_event(new NodeEvent({type: "click", subtype: "dblclick", node: {id: node.id}}))
       }
     })
     this._jstree.on("select_node.jstree", ({}, data: any) => {
