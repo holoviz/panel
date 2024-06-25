@@ -21,7 +21,7 @@ function extractClasses() {
   }
   const carto = (window as any).CartoLibrary
   console.log(carto)
-  const layers = Object.keys(carto.CARTO_LAYERS).filter(x => x.endsWith('Layer'))
+  const layers = Object.keys(carto.CARTO_LAYERS).filter(x => x.endsWith("Layer"))
   for (const layer of layers) {
     classesDict[layer] = carto.CARTO_LAYERS[layer]
   }
@@ -30,7 +30,7 @@ function extractClasses() {
 
 function extractFunctions() {
   const carto = (window as any).CartoLibrary
-  const sources = Object.keys(carto.CARTO_SOURCES).filter(x => x.toLowerCase().endsWith('source'))
+  const sources = Object.keys(carto.CARTO_SOURCES).filter(x => x.toLowerCase().endsWith("source"))
   const functionDict: any = {}
   for (const src of sources) {
     functionDict[src] = carto.CARTO_SOURCES[src]
@@ -187,8 +187,8 @@ export class DeckGLPlotView extends LayoutDOMView {
 
   _sync_viewstate(event: any): void {
     if (this._map) {
-      const {longitude, latitude, ...rest} = event.viewState;
-      this._map.jumpTo({center: [longitude, latitude], ...rest});
+      const {longitude, latitude, ...rest} = event.viewState
+      this._map.jumpTo({center: [longitude, latitude], ...rest})
     }
     this._view_cb(event)
   }
@@ -212,18 +212,18 @@ export class DeckGLPlotView extends LayoutDOMView {
     try {
       let configuration
       if (this.model.configuration) {
-        configuration = eval('(' + this.model.configuration + ')')
+        configuration = eval("(" + this.model.configuration + ")")
       } else {
         configuration = null
       }
       this.jsonConverter.mergeConfiguration(configuration)
       const props = this.jsonConverter.convert(jsonInput)
       const getTooltip = makeTooltip(tooltip, props.layers)
-      if (props.mapStyle && props.mapStyle.includes('carto')) {
+      if (props.mapStyle && props.mapStyle.includes("carto")) {
         this._map = new (window as any).maplibregl.Map({
           container,
           style: props.mapStyle,
-          interactive: false
+          interactive: false,
         })
         props.controller = true
         props.map = null
