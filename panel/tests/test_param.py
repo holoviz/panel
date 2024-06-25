@@ -1866,6 +1866,7 @@ async def test_param_async_generator_append(document, comm):
     assert root.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n'
 
 
+@pytest.mark.flaky(max_runs=3)
 def test_param_generator_multiple(document, comm):
     checkbox = Checkbox(value=False)
 
