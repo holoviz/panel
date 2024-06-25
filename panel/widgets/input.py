@@ -27,6 +27,8 @@ from bokeh.models.widgets import (
 from pyviz_comms import JupyterComm
 
 from ..config import config
+from ..io.notebook import push
+from ..io.state import state
 from ..layout import Column, Panel
 from ..models import (
     DatetimePicker as _bkDatetimePicker, TextAreaInput as _bkTextAreaInput,
@@ -303,9 +305,20 @@ class FileInput(Widget):
             else:
                 fn.write(val)
 
-    def clear_input(self):
-        with param.edit_constant(self):
-            self._clear_input += 1
+    def clear(self):
+        """
+        Clear the file(s) in the FileInput widget
+        """
+        for ref, (model, _) in self._models.items():
+            if ref not in state._views or ref in state._fake_roots:
+                continue
+            _viewable, root, doc, comm = state._views[ref]
+            if comm or state._unblocked(doc) or not doc.session_context:
+                model.clear()
+                if comm and 'embedded' not in root.tags:
+                    push(doc, comm)
+            else:
+                doc.add_next_tick_callback(model.clear)
 
 
 class FileDropper(Widget):
