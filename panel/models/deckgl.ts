@@ -212,7 +212,7 @@ export class DeckGLPlotView extends LayoutDOMView {
     try {
       let configuration
       if (this.model.configuration) {
-        configuration = eval("(" + this.model.configuration + ")")
+        configuration = eval(`(${  this.model.configuration  })`)
       } else {
         configuration = null
       }
