@@ -195,7 +195,7 @@ class Feed(Column):
         n_visible = self.visible_range[-1] - self.visible_range[0]
         with edit_readonly(self):
             # plus one to center on the last object
-            self.visible_range = (max(n - n_visible + 1, 0), n)
+            self.visible_range = (min(max(n - n_visible + 1, 0), n), n)
 
         with param.discard_events(self):
             # reset the buffers and loaded objects
