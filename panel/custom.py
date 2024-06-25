@@ -7,7 +7,6 @@ import pathlib
 import textwrap
 
 from collections import defaultdict
-from functools import partial
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Literal, Mapping, Optional,
 )
@@ -18,7 +17,6 @@ from param.parameterized import ParameterizedMetaclass
 
 from .config import config
 from .io.datamodel import construct_data_model
-from .io.notebook import push
 from .io.state import state
 from .models import (
     AnyWidgetComponent as _BkAnyWidgetComponent,
@@ -406,15 +404,4 @@ class AnyWidgetComponent(ReactComponent):
         ---------
         msg: dict
         """
-        for ref, (model, _) in self._models.items():
-            if ref not in state._views or ref in state._fake_roots:
-                continue
-            event = ESMEvent(model=model, data=msg)
-            viewable, root, doc, comm = state._views[ref]
-            if comm or state._unblocked(doc) or not doc.session_context:
-                doc.callbacks.send_event(event)
-                if comm and 'embedded' not in root.tags:
-                    push(doc, comm)
-            else:
-                cb = partial(doc.callbacks.send_event, event)
-                doc.add_next_tick_callback(cb)
+        self._send_event(ESMEvent, data=msg)

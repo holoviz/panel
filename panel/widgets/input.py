@@ -24,6 +24,7 @@ from bokeh.models.widgets import (
     PasswordInput as _BkPasswordInput, Spinner as _BkSpinner,
     Switch as _BkSwitch,
 )
+from bokeh.models.widgets.inputs import ClearInput
 from pyviz_comms import JupyterComm
 
 from ..config import config
@@ -203,6 +204,20 @@ class FileInput(Widget):
         An HTML string describing the function of this component
         rendered as a tooltip icon.""")
 
+    directory = param.Boolean(default=False, doc="""
+        Whether to allow selection of directories instead of files.
+        The filename will be relative paths to the uploaded directory.
+
+        .. note::
+            When a directory is uploaded it will give add a confirmation pop up.
+            The confirmation pop up cannot be disabled, as this is a security feature
+            in the browser.
+
+        .. note::
+            The `accept` parameter only works with file extension.
+            When using `accept` with `directory`, the number of files
+            reported will be the total amount of files, not the filtered.""")
+
     filename = param.ClassSelector(
         default=None, class_=(str, list), is_instance=True, doc="""
         Name of the uploaded file(s).""")
@@ -246,9 +261,13 @@ class FileInput(Widget):
         msg = super()._process_property_change(msg)
         if 'value' in msg:
             if isinstance(msg['value'], str):
-                msg['value'] = b64decode(msg['value'])
+                msg['value'] = b64decode(msg['value']) if msg['value'] else None
             else:
                 msg['value'] = [b64decode(content) for content in msg['value']]
+        if 'filename' in msg and len(msg['filename']) == 0:
+            msg['filename'] = None
+        if 'mime_type' in msg and len(msg['mime_type']) == 0:
+            msg['mime_type'] = None
         return msg
 
     def save(self, filename):
@@ -284,6 +303,12 @@ class FileInput(Widget):
                     f.write(val)
             else:
                 fn.write(val)
+
+    def clear(self):
+        """
+        Clear the file(s) in the FileInput widget
+        """
+        self._send_event(ClearInput)
 
 
 class FileDropper(Widget):
