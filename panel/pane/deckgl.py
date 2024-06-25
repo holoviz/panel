@@ -223,22 +223,25 @@ class DeckGL(ModelPane):
         deck_widget = data.pop('deck_widget', None)
 
         if isinstance(self.tooltips, dict) or deck_widget is None:
-            tooltip = self.tooltips
+            if '_tooltip' in data:
+                tooltip = data['_tooltip']
+            else:
+                tooltip = self.tooltips
         else:
             tooltip = deck_widget.tooltip
 
         if self.configuration:
             configuration = self.configuration
         elif deck_widget:
-            configuration = deck_widget.configuration
+            configuration = deck_widget.configuration or ""
         else:
             import pydeck as pdk
-            configuration = pdk.settings.configuration
+            configuration = pdk.settings.configuration or ""
 
         data = {k: v for k, v in recurse_data(data).items() if v is not None}
 
         if "initialViewState" in data:
-            data["initialViewState"]={
+            data["initialViewState"] = {
                 k:v for k, v in data["initialViewState"].items() if v is not None
             }
 
