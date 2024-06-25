@@ -24,7 +24,7 @@ from ..io import remove_root, state
 from ..io.notebook import push
 from ..util import escape
 from ..viewable import Layoutable
-from .base import PaneBase
+from .base import Pane
 from .image import (
     PDF, PNG, SVG, Image,
 )
@@ -59,7 +59,7 @@ def _wrap_callback(cb, wrapped, doc, comm, callbacks):
     doc.hold(hold)
 
 
-class Bokeh(PaneBase):
+class Bokeh(Pane):
     """
     The Bokeh pane allows displaying any displayable Bokeh model inside a
     Panel app.

@@ -9,7 +9,7 @@ import param
 from ..io.state import state
 from ..viewable import Viewable
 from ..widgets import Terminal
-from .base import PaneBase
+from .base import Pane
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
 
 
-class Textual(PaneBase):
+class Textual(Pane):
     """
     The `Textual` pane provides a wrapper around a Textual App component,
     rendering it inside a Terminal and running it on the existing Panel

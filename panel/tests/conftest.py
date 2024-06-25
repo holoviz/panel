@@ -32,6 +32,7 @@ from panel.io.reload import (
 )
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
+from panel.theme import Design
 
 CUSTOM_MARKS = ('ui', 'jupyter', 'subprocess', 'docs')
 
@@ -400,6 +401,8 @@ def server_cleanup():
 @pytest.fixture(autouse=True)
 def cache_cleanup():
     state.clear_caches()
+    Design._resolve_modifiers.cache_clear()
+    state._stylesheets.clear()
 
 @pytest.fixture
 def autoreload():
@@ -416,6 +419,15 @@ def autoreload():
 @pytest.fixture
 def py_file():
     tf = tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False)
+    try:
+        yield tf
+    finally:
+        tf.close()
+        os.unlink(tf.name)
+
+@pytest.fixture
+def js_file():
+    tf = tempfile.NamedTemporaryFile(mode='w', suffix='.js', delete=False)
     try:
         yield tf
     finally:

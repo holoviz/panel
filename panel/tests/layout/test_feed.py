@@ -10,4 +10,4 @@ def test_feed_init(document, comm):
 def test_feed_set_objects(document, comm):
     feed = Feed(height=100)
     feed.objects = list(range(1000))
-    assert feed.objects == list(range(1000))
+    assert [o.object for o in feed.objects] == list(range(1000))

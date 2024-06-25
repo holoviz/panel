@@ -13,7 +13,7 @@ from pyviz_comms import JupyterComm
 
 from ..config import config
 from ..models import IPyWidget as _BkIPyWidget
-from .base import PaneBase
+from .base import Pane
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
 
 
-class IPyWidget(PaneBase):
+class IPyWidget(Pane):
     """
     The IPyWidget pane renders any ipywidgets model both in the notebook and
     in a deployed server.

@@ -98,9 +98,12 @@ class Application(BkApplication):
         '''
         request_data = super().process_request(request)
         user = request.cookies.get('user')
-        if user:
+        if user and config.cookie_secret:
             from tornado.web import decode_signed_value
-            user = decode_signed_value(config.cookie_secret, 'user', user.value).decode('utf-8')
+            try:
+                user = decode_signed_value(config.cookie_secret, 'user', user.value).decode('utf-8')
+            except Exception:
+                user = user.value
             if user in state._oauth_user_overrides:
                 user_data = json.dumps(state._oauth_user_overrides[user])
                 if state.encryption:

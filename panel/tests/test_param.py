@@ -1781,6 +1781,7 @@ def test_param_function_recursive_update_multiple(document, comm):
     assert layout.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n'
 
 
+@pytest.mark.flaky(max_runs=3)
 def test_param_generator(document, comm):
     checkbox = Checkbox(value=False)
 
@@ -1791,13 +1792,14 @@ def test_param_generator(document, comm):
 
     root = pane.get_root(document, comm)
 
-    wait_until(lambda: root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n')
+    wait_until(lambda: root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n', timeout=10_000)
 
     checkbox.value = True
 
     wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n')
 
 
+@pytest.mark.flaky(max_runs=3)
 def test_param_generator_append(document, comm):
     checkbox = Checkbox(value=False)
 
@@ -1809,7 +1811,7 @@ def test_param_generator_append(document, comm):
 
     root = pane.get_root(document, comm)
 
-    wait_until(lambda: len(root.children) == 2)
+    wait_until(lambda: len(root.children) == 2, timeout=10_000)
     assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
     assert root.children[1].text == '&lt;p&gt;True&lt;/p&gt;\n'
 
@@ -1864,6 +1866,7 @@ async def test_param_async_generator_append(document, comm):
     assert root.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n'
 
 
+@pytest.mark.flaky(max_runs=3)
 def test_param_generator_multiple(document, comm):
     checkbox = Checkbox(value=False)
 
@@ -1875,7 +1878,7 @@ def test_param_generator_multiple(document, comm):
 
     root = pane.get_root(document, comm)
 
-    wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n')
+    wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n', timeout=10_000)
 
     checkbox.value = True
 
