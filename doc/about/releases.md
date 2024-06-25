@@ -2,6 +2,95 @@
 
 See [the HoloViz blog](https://blog.holoviz.org/#category=panel) for a visual summary of the major features added in each release.
 
+## Version 1.4.4
+
+Date: 2024-05-31
+
+This release primarily addresses a critical regression in notebook comm channel handling introduced in 1.4.3 and includes a few minor fixes for Tabulator and documentation related issues. Many thanks to @justinwiley for his first contribution to Panel, @twobitunicorn as a returning contributor and the core contributors @maximlt and @philippjfr for their continued work.
+
+### Bug fixes
+
+- Fix notebook CommManager extraction of buffers ([#6880](https://github.com/holoviz/panel/pull/6880))
+- Fix issue when editing timezone-aware datetime column `Tabulator` ([#6879](https://github.com/holoviz/panel/pull/6879))
+- Ensure `Tabulator` does not rebuild children when using `embed_content` with `row_content` ([#6881](https://github.com/holoviz/panel/pull/6881))
+- Ensure `ParamRef`, `ParamFunction` and `ParamMethod` resolve synchronous generators asynchronously ([#6885](https://github.com/holoviz/panel/pull/6885))
+- Ensure periodic callback cleanup does not error on session warmup ([#6886](https://github.com/holoviz/panel/pull/6886))
+
+### Documentation
+
+- Update OAuth documentation to correctly reference auth_code provider ([#6875](https://github.com/holoviz/panel/pull/6875))
+- Fix `CheckBoxGroup` `value` type annotation in reference docs ([#6877](https://github.com/holoviz/panel/pull/6877))
+
+## Version 1.4.3
+
+Date: 2024-05-23
+
+This patch release is likely the last in the 1.4.x series. The most important fixes in this release are fixes to ensure keyboard shortcuts do not get triggered inside Panel components for for recent versions of JupyterLab, fixes for OAuth token refreshes, and various documentation fixes. The release also includes a small number of enhancements, including improved UX for the `FileSelector`. Many thanks to the many contributors to this release including @jrycw, @Coderambling, @cdeil, @twobitunicorn, and the maintainers @Hoxbro, @MarcSkovMadsen, @ahuang11, @maximlt and @philippjfr.
+
+### Enhancements
+
+- Add CSS on mouse interaction with `Card` ([#6636](https://github.com/holoviz/panel/pull/6636))
+- Make `ChatMessage.reaction_icons` reactive ([#6807](https://github.com/holoviz/panel/pull/6807))
+- Allow external library to define additional socket handler ([#6820](https://github.com/holoviz/panel/pull/6820))
+- Allow navigating `FileSelector` with double click ([#6843](https://github.com/holoviz/panel/pull/6843))
+
+### Bug fixes
+
+- Ensure reference is resolved when passing options to `from_param` ([#6762](https://github.com/holoviz/panel/pull/6762))
+- Ensure token refresh is always scheduled ([#6802](https://github.com/holoviz/panel/pull/6802))
+- Fix small memory leak when caching `Design` modifiers ([#4978](https://github.com/holoviz/panel/pull/4978))
+- Ensure refreshed tokens can be accessed across processes ([#6817](https://github.com/holoviz/panel/pull/6817))
+- Ensure binary buffers are correctly extracted in notebook `CommManager` ([#6818](https://github.com/holoviz/panel/pull/6818))
+- Make `Tabulator` resize handling more robust ([#6821](https://github.com/holoviz/panel/pull/6821))
+- Fix links in `panel convert` index ([#6828](https://github.com/holoviz/panel/pull/6828))
+- Suppress keyboard shortcuts in notebook output ([#6825](https://github.com/holoviz/panel/pull/6825))
+- Ensure we don't error out when `FastDesignProvider` is undefined ([#6832](https://github.com/holoviz/panel/pull/6832))
+- Ensure model changes are applied while session is starting ([#6835](https://github.com/holoviz/panel/pull/6835))
+
+### Documentation
+
+- Refactor the `hvplot.interactive` tutorial utilizing `pn.rx` ([#6700](https://github.com/holoviz/panel/pull/6700))
+- Update styling after upgrade to latest pydata-sphinx-theme ([#6823](https://github.com/holoviz/panel/pull/6823))
+- Fix bug in Reset Jupyterlite script ([#6834](https://github.com/holoviz/panel/pull/6834))
+- Fix gallery deployment URL ([#6831](https://github.com/holoviz/panel/pull/6831))
+- Add redirects for old documentation pages ([#6833](https://github.com/holoviz/panel/pull/6833))
+- Remove Google Analytics ([#6836](https://github.com/holoviz/panel/pull/6836))
+- Various documentation fixes ([#6829](https://github.com/holoviz/panel/pull/6829))
+- Fix link in gallery index ([#6858](https://github.com/holoviz/panel/pull/6858))
+
+## Version 1.4.2
+
+Date: 2024-04-23
+
+This micro-release fixes a number of smaller regressions and bugs including parsing of notebooks. Many thanks to our new contributor @bkreider, our returning contributors, @jrycw and @ea42gh, and our dedicated team of maintainers including @ahuang11, @MarcSkovMadsen and @philippjfr.
+
+### Enhancements
+
+- Allow toggling CTRL+Enter vs Enter to send `ChatAreaInput` ([#6592](https://github.com/holoviz/panel/pull/6592))
+- Allow adding JS callbacks in `ChatInterface.button_properties` ([#6706](https://github.com/holoviz/panel/pull/6706))
+
+### Bug fixes
+
+- Fix regression in parsing notebooks served as apps ([#6736](https://github.com/holoviz/panel/pull/6736))
+- Do not include placeholder in `ChatInterface.serialize` and properly replace placeholder for streams ([#6734](https://github.com/holoviz/panel/pull/6734))
+- Remove `Perspective.toggle_config` which was erroneously reintroduced in 1.4.1 ([#6721](https://github.com/holoviz/panel/pull/6721))
+- Fix dynamically setting `ChatMessage` `footer_objects`/`header_objects` ([#6705](https://github.com/holoviz/panel/pull/6705))
+- Allow `Location.sync` of DataFrame parameters ([#6745](https://github.com/holoviz/panel/pull/6745))
+- Fix and improve Plotly event handling ([#6753](https://github.com/holoviz/panel/pull/6753))
+- Fix issue when converting templated apps to Pyodide/PyScript ([#6756](https://github.com/holoviz/panel/pull/6756))
+- Fix styling of loading indicator in Fast design ([#6761](https://github.com/holoviz/panel/pull/6761))
+- Ensure `VTK` nan, above and below colors are serialized ([#6763](https://github.com/holoviz/panel/pull/6763))
+- Fix issues with `Perspective` theme and persist config when switching plugins ([#6764](https://github.com/holoviz/panel/pull/6764))
+- Do not restore unmodified parameters in `config.set` triggering undesirable side-effects ([#6772 ([#6771](https://github.com/holoviz/panel/pull/6772))
+- Make autoreload module cleanup more robust ([#6771](https://github.com/holoviz/panel/pull/6771))
+- Ensure that cache `.clear()` clears the correct function  ([#6771](https://github.com/holoviz/panel/pull/6781))
+
+### Documentation
+
+- Various fixes and cleanup of documentation ([#6704](https://github.com/holoviz/panel/pull/6704), [#6707](https://github.com/holoviz/panel/pull/6707), [#6710](https://github.com/holoviz/panel/pull/6710), [#6755](https://github.com/holoviz/panel/pull/6755),)
+- Document how display full html document in iframe ([#6740](https://github.com/holoviz/panel/pull/6740))
+- Improve Plotly reference documentation ([#6751](https://github.com/holoviz/panel/pull/6751), [#6760](https://github.com/holoviz/panel/pull/6760))
+
 ## Version 1.4.1
 
 Date: 2024-04-05

@@ -59,7 +59,7 @@ def parse_vars(items):
     """
     Parse a series of key-value pairs and return a dictionary
     """
-    return dict((parse_var(item) for item in items))
+    return dict(parse_var(item) for item in items)
 
 
 class AdminApplicationContext(ApplicationContext):
@@ -343,7 +343,7 @@ class Serve(_BkServe):
             pattern = REST_PROVIDERS[args.rest_provider](files, args.rest_endpoint)
             patterns.extend(pattern)
         elif args.rest_provider is not None:
-            raise ValueError("rest-provider %r not recognized." % args.rest_provider)
+            raise ValueError(f"rest-provider {args.rest_provider!r} not recognized.")
 
         config.autoreload = args.autoreload
         config.global_loading_spinner = args.global_loading_spinner
@@ -379,7 +379,7 @@ class Serve(_BkServe):
         if args.liveness:
             argvs = {f: args.args for f in files}
             applications = build_single_handler_applications(files, argvs)
-            patterns += [(r"/%s" % args.liveness_endpoint, LivenessHandler, dict(applications=applications))]
+            patterns += [(rf"/{args.liveness_endpoint}", LivenessHandler, dict(applications=applications))]
 
         config.profiler = args.profiler
         if args.admin:

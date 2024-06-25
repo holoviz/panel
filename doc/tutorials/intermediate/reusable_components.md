@@ -194,6 +194,55 @@ DataExplorer(data=df).servable()
 
 :::
 
+## Allow References
+
+We can make our components much more flexible if we allow their parameters to take *references*. We can do this by setting `allow_refs=True` on the parameters.
+
+References can be
+
+- Parameters
+- Widgets (`.value`)
+- Bound functions (`pn.bind` or `@pn.depends`)
+- Reactive Expressions (`.rx`)
+- Sync and async generators (`yield`)
+
+Lets take a simple example where use a widget as an argument instead of a string.
+
+```{pyodide}
+import param
+
+import panel as pn
+
+from panel.viewable import Viewer
+
+pn.extension()
+
+map_iframe = """
+<iframe width="100%" height="100%" src="https://maps.google.com/maps?q={country}&z=6&output=embed"
+frameborder="0" scrolling="no" marginheight="0" marginwidth="0"></iframe>
+"""
+
+
+class GoogleMapViewer(Viewer):
+    country = param.String(allow_refs=True)
+
+    def __init__(self, **params):
+        super().__init__(**params)
+
+        map_iframe_rx = pn.rx(map_iframe).format(country=self.param.country)
+        self._layout = pn.pane.HTML(map_iframe_rx)
+
+    def __panel__(self):
+        return self._layout
+
+
+country = pn.widgets.Select(options=["Germany", "Nigeria", "Thailand"], name="Country")
+view = GoogleMapViewer(name="Google Map viewer", country=country)
+pn.Column(country, view).servable()
+```
+
+If you want to learn more about references try using other types of references as input to the `GoogleMapViewer`.
+
 ## Recap
 
 We have learned how to structure our components to make them easily reusable and avoid callback hell.
@@ -201,6 +250,10 @@ We have learned how to structure our components to make them easily reusable and
 We should now be able to write reusable `Parameterized` and `Viewer` classes that encapsulate multiple components.
 
 ## Resources
+
+### Reference Guide
+
+- [`Viewer`](../../reference/custom_components/Viewer.md)
 
 ### How-To
 

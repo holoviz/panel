@@ -10,7 +10,7 @@ import sys
 from collections import defaultdict
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional, Tuple, Type,
+    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
 )
 
 import param
@@ -27,7 +27,7 @@ from ..layout import (
 )
 from ..viewable import Layoutable, Viewable
 from ..widgets import Player
-from .base import PaneBase, RerenderError, panel
+from .base import Pane, RerenderError, panel
 from .plot import Bokeh, Matplotlib
 from .plotly import Plotly
 
@@ -37,7 +37,13 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
 
 
-class HoloViews(PaneBase):
+def check_holoviews(version):
+    import holoviews as hv
+
+    return Version(Version(hv.__version__).base_version) >= Version(version)
+
+
+class HoloViews(Pane):
     """
     `HoloViews` panes render any `HoloViews` object using the
     currently selected backend ('bokeh' (default), 'matplotlib' or 'plotly').
@@ -112,7 +118,7 @@ class HoloViews(PaneBase):
         'right_bottom': (Row, 'end', False)
     }
 
-    _panes: ClassVar[Mapping[str, Type[PaneBase]]] = {
+    _panes: ClassVar[Mapping[str, type[Pane]]] = {
         'bokeh': Bokeh, 'matplotlib': Matplotlib, 'plotly': Plotly
     }
 
@@ -487,8 +493,6 @@ class HoloViews(PaneBase):
         return pane_type(state, **kwargs)
 
     def _render(self, doc, comm, root):
-        import holoviews as hv
-
         from holoviews import Store, renderer as load_renderer
 
         if self.renderer:
@@ -516,7 +520,7 @@ class HoloViews(PaneBase):
                 renderer = renderer.instance(**params)
 
         kwargs = {'margin': self.margin}
-        if backend == 'bokeh' or Version(str(hv.__version__)) >= Version('1.13.0'):
+        if backend == 'bokeh' or check_holoviews('1.13.0'):
             kwargs['doc'] = doc
             kwargs['root'] = root
             if comm:
@@ -564,7 +568,7 @@ class HoloViews(PaneBase):
         return Link(self, target, properties=links, code=code, args=args,
                     bidirectional=bidirectional)
 
-    jslink.__doc__ = PaneBase.jslink.__doc__
+    jslink.__doc__ = Pane.jslink.__doc__
 
     @classmethod
     def widgets_from_dimensions(cls, object, widget_types=None, widgets_type='individual', direction='vertical'):
@@ -579,7 +583,7 @@ class HoloViews(PaneBase):
 
         from ..widgets import (
             DatetimeInput, DiscreteSlider, FloatSlider, IntSlider, Select,
-            Widget,
+            WidgetBase,
         )
 
         if widget_types is None:
@@ -591,7 +595,7 @@ class HoloViews(PaneBase):
             object = object.hmap
 
         if isinstance(object, DynamicMap) and object.unbounded:
-            dims = ', '.join('%r' % dim for dim in object.unbounded)
+            dims = ', '.join(f'{dim!r}' for dim in object.unbounded)
             msg = ('DynamicMap cannot be displayed without explicit indexing '
                    'as {dims} dimension(s) are unbounded. '
                    '\nSet dimensions bounds with the DynamicMap redim.range '
@@ -637,7 +641,7 @@ class HoloViews(PaneBase):
                 nframes *= len(vals)
             elif dim.name in widget_types:
                 widget = widget_types[dim.name]
-                if isinstance(widget, Widget):
+                if isinstance(widget, WidgetBase):
                     widget.param.update(**kwargs)
                     if not widget.name:
                         widget.name = dim.label
@@ -646,13 +650,12 @@ class HoloViews(PaneBase):
                 elif isinstance(widget, dict):
                     widget_type = widget.get('type', widget_type)
                     widget_kwargs = dict(widget)
-                elif isinstance(widget, type) and issubclass(widget, Widget):
+                elif isinstance(widget, type) and issubclass(widget, WidgetBase):
                     widget_type = widget
                 else:
                     raise ValueError('Explicit widget definitions expected '
-                                     'to be a widget instance or type, %s '
-                                     'dimension widget declared as %s.' %
-                                     (dim, widget))
+                                     f'to be a widget instance or type, {dim} '
+                                     f'dimension widget declared as {widget}.')
             widget_kwargs.update(kwargs)
 
             if vals:
@@ -695,14 +698,14 @@ class HoloViews(PaneBase):
         return widgets, dim_values
 
 
-class Interactive(PaneBase):
+class Interactive(Pane):
 
     object = param.Parameter(default=None, allow_refs=False, doc="""
         The object being wrapped, which will be converted to a
         Bokeh model.""")
 
     priority: ClassVar[float | bool | None] = None
-    _ignored_refs: ClassVar[Tuple[str, ...]] = ('object',)
+    _ignored_refs: ClassVar[tuple[str, ...]] = ('object',)
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
@@ -808,7 +811,8 @@ def find_links(root_view, root_model):
     plots = [(plot, root_plot) for root_plot in root_plots
              for plot in root_plot.traverse(lambda x: x, [is_bokeh_element_plot])]
 
-    potentials = [(LinkCallback.find_link(plot), root_plot)
+    link_kwargs = {'target': True} if check_holoviews('1.19') else {}
+    potentials = [(LinkCallback.find_link(plot, **link_kwargs), root_plot)
                   for plot, root_plot in plots]
 
     source_links = [p for p in potentials if p[0] is not None]
@@ -819,7 +823,7 @@ def find_links(root_view, root_model):
                 # If link has no target don't look further
                 found.append((link, plot, None))
                 continue
-            potentials = [LinkCallback.find_link(plot, link) for plot, inner_root in plots
+            potentials = [LinkCallback.find_link(plot, link, **link_kwargs) for plot, inner_root in plots
                           if inner_root is not root_plot]
             tgt_links = [p for p in potentials if p is not None]
             if tgt_links:

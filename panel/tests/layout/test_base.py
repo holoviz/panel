@@ -21,7 +21,7 @@ all_panels = [w for w in param.concrete_descendents(ListPanel).values()
 def test_layout_signature(panel):
     from inspect import signature
     parameters = signature(panel).parameters
-    assert len(parameters) == 2, 'Found following parameters %r on %s' % (parameters, panel)
+    assert len(parameters) == 2, f'Found following parameters {parameters!r} on {panel}'
     assert 'objects' in parameters
 
 
@@ -135,7 +135,7 @@ def test_layout_repr(panel):
     layout = panel(div1, div2)
 
     name = panel.__name__
-    assert repr(layout) == '%s\n    [0] Bokeh(Div)\n    [1] Bokeh(Div)' % name
+    assert repr(layout) == f'{name}\n    [0] Bokeh(Div)\n    [1] Bokeh(Div)'
 
 
 @pytest.mark.parametrize('panel', [Card, Column, Row])

@@ -181,6 +181,7 @@ def test_tabulator_value_changed(page, df_mixed):
     # Need to trigger the value as the dataframe was modified
     # in place which is not detected.
     widget.param.trigger('value')
+    wait_until(lambda: page.locator('text="AA"') is not None, page)
     changed_cell = page.locator('text="AA"')
     expect(changed_cell).to_have_count(1)
 
@@ -2246,7 +2247,7 @@ def test_tabulator_patching_no_event(page, df_mixed):
 
 def color_false(val):
     color = 'red' if not val else 'black'
-    return 'color: %s' % color
+    return f'color: {color}'
 
 def highlight_max(s):
     is_max = s == s.max()
@@ -2286,6 +2287,7 @@ def test_tabulator_patching_and_styling(page, df_mixed):
     widget.patch({'int': [(0, 100)]}, as_index=False)
 
     max_int = df_mixed['int'].max()
+    wait_until(lambda: page.locator('.tabulator-cell', has=page.locator(f'text="{max_int}"')) is not None, page)
     max_cell = page.locator('.tabulator-cell', has=page.locator(f'text="{max_int}"'))
     expect(max_cell).to_have_count(1)
     expect(max_cell).to_have_css('background-color', _color_mapping['yellow'])

@@ -30,7 +30,7 @@ For more detail see the Getting Started Guide
 https://panel.holoviz.org/getting_started/index.html
 """
 from .alert import Alert  # noqa
-from .base import PaneBase, panel  # noqa
+from .base import Pane, PaneBase, panel  # noqa
 from .deckgl import DeckGL  # noqa
 from .echarts import ECharts  # noqa
 from .equation import LaTeX  # noqa
@@ -44,6 +44,7 @@ from .markup import (  # noqa
 )
 from .media import Audio, Video  # noqa
 from .perspective import Perspective  # noqa
+from .placeholder import Placeholder  # noqa
 from .plot import (  # noqa
     YT, Bokeh, Matplotlib, RGGPlot,
 )
@@ -54,7 +55,7 @@ from .vega import Vega  # noqa
 from .vizzu import Vizzu  # noqa
 from .vtk import VTK, VTKVolume  # noqa
 
-from ..param import (  # noqa, isort: skip
+from ..param import (  # noqa  # isort: skip
     ParamFunction, ParamMethod, ParamRef, ReactiveExpr,
 )
 
@@ -77,6 +78,7 @@ __all__ = (
     "LaTeX",
     "Markdown",
     "Matplotlib",
+    "Pane",
     "PaneBase",
     "ParamFunction",
     "ParamMethod",
@@ -84,6 +86,7 @@ __all__ = (
     "panel",
     "PDF",
     "Perspective",
+    "Placeholder",
     "Plotly",
     "PNG",
     "ReactiveExpr",

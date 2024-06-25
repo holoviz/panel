@@ -10,7 +10,6 @@ import shutil
 
 from test.notebooks_with_panelite_issues import NOTEBOOK_ISSUES
 
-import bokeh.sampledata
 import nbformat
 
 HERE = pathlib.Path(__file__).parent
@@ -198,38 +197,7 @@ def copy_assets():
         dirs_exist_ok=True
     )
 
-def download_sample_data():
-    """
-    Download larger data sets for various Bokeh examples.
-    """
-    from bokeh.util.sampledata import _download_file
-
-    data_dir = LITE_FILES / 'assets' / 'sampledata'
-    data_dir.mkdir(parents=True, exist_ok=True)
-
-    s3 = 'http://sampledata.bokeh.org'
-    files = json.loads((pathlib.Path(bokeh.util.sampledata.__file__).parent / 'sampledata.json').read_text())
-
-    for filename, md5 in files:
-        real_name, ext = os.path.splitext(filename)
-        if ext == '.zip':
-            if not os.path.splitext(real_name)[1]:
-                real_name += ".csv"
-        else:
-            real_name += ext
-        real_path = data_dir / real_name
-
-        if real_path.is_file():
-            local_md5 = hashlib.md5(open(real_path,'rb').read()).hexdigest()
-            if local_md5 == md5:
-                print(f"Skipping {filename!r} (checksum match)")
-                continue
-            else:
-                print(f"Re-fetching {filename!r} (checksum mismatch)")
-        _download_file(s3, filename, data_dir, progress=False)
-
 if __name__=="__main__":
     convert_docs()
     copy_examples()
     copy_assets()
-    download_sample_data()

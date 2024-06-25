@@ -10,7 +10,7 @@ from playwright.sync_api import expect
 
 from panel.tests.util import wait_until
 
-pytestmark = [pytest.mark.jupyter, pytest.mark.ui]
+pytestmark = pytest.mark.jupyter
 
 
 

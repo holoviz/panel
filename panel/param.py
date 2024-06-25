@@ -18,8 +18,7 @@ from collections.abc import Callable
 from contextlib import contextmanager
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Generator, List, Mapping, Optional, Tuple,
-    Type,
+    TYPE_CHECKING, Any, ClassVar, Generator, Mapping, Optional,
 )
 
 import param
@@ -51,11 +50,11 @@ from .layout import (
     Column, HSpacer, Panel, Row, Spacer, Tabs, WidgetBox,
 )
 from .pane import DataFrame as DataFramePane
-from .pane.base import PaneBase, ReplacementPane
+from .pane.base import Pane, ReplacementPane
 from .reactive import Reactive
 from .util import (
     abbreviated_repr, flatten, full_groupby, fullpath, is_parameterized,
-    param_name, recursive_parameterized,
+    param_name, recursive_parameterized, to_async_gen,
 )
 from .util.checks import is_dataframe, is_mpl_axes, is_series
 from .viewable import Layoutable, Viewable
@@ -64,7 +63,7 @@ from .widgets import (
     DateRangeSlider, DatetimeInput, DatetimeRangeSlider, DiscreteSlider,
     FileInput, FileSelector, FloatInput, FloatSlider, IntInput, IntSlider,
     LiteralInput, MultiSelect, RangeSlider, Select, StaticText, Tabulator,
-    TextInput, Toggle, Widget,
+    TextInput, Toggle, Widget, WidgetBase,
 )
 from .widgets.button import _ButtonBase
 
@@ -74,7 +73,7 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
 
 
-def SingleFileSelector(pobj: param.Parameter) -> Type[Widget]:
+def SingleFileSelector(pobj: param.Parameter) -> type[Widget]:
     """
     Determines whether to use a TextInput or Select widget for FileSelector
     """
@@ -84,7 +83,7 @@ def SingleFileSelector(pobj: param.Parameter) -> Type[Widget]:
         return TextInput
 
 
-def LiteralInputTyped(pobj: param.Parameter) -> Type[Widget]:
+def LiteralInputTyped(pobj: param.Parameter) -> type[Widget]:
     if isinstance(pobj, param.Tuple):
         return type(str('TupleInput'), (LiteralInput,), {'type': tuple})
     elif isinstance(pobj, param.Number):
@@ -96,7 +95,7 @@ def LiteralInputTyped(pobj: param.Parameter) -> Type[Widget]:
     return LiteralInput
 
 
-def DataFrameWidget(pobj: param.DataFrame) -> Type[Widget]:
+def DataFrameWidget(pobj: param.DataFrame) -> type[Widget]:
     if 'panel.models.tabulator' in sys.modules:
         return Tabulator
     else:
@@ -128,7 +127,7 @@ def set_values(*parameterizeds, **param_values):
             parameterized.param.update(**old_values)
 
 
-class Param(PaneBase):
+class Param(Pane):
     """
     Param panes render a Parameterized class to a set of widgets which
     are linked to the parameter values on the class.
@@ -228,11 +227,11 @@ class Param(PaneBase):
     if hasattr(param, 'Event'):
         mapping[param.Event] = Button
 
-    _ignored_refs: ClassVar[Tuple[str,...]] = ('object',)
+    _ignored_refs: ClassVar[tuple[str,...]] = ('object',)
 
-    _linkable_properties: ClassVar[Tuple[str,...]] = ()
+    _linkable_properties: ClassVar[tuple[str,...]] = ()
 
-    _rerender_params: ClassVar[List[str]] = []
+    _rerender_params: ClassVar[list[str]] = []
 
     _unpack: ClassVar[bool] = True
 
@@ -271,8 +270,7 @@ class Param(PaneBase):
             self.layout = self._expand_layout = layout(self._widget_box, **kwargs)
         else:
             raise ValueError('expand_layout expected to be a panel.layout.Panel'
-                             'type or instance, found %s type.' %
-                             type(layout).__name__)
+                             f'type or instance, found {type(layout).__name__} type.')
         self.param.watch(self._update_widgets, [
             'object', 'parameters', 'name', 'display_threshold', 'expand_button',
             'expand', 'expand_layout', 'widgets', 'show_labels', 'show_name',
@@ -292,10 +290,10 @@ class Param(PaneBase):
             elif p == 'object' or (p == 'name' and v.startswith((obj_cls, cls))): continue
             elif p == 'parameters' and v == parameters: continue
             try:
-                params.append('%s=%s' % (p, abbreviated_repr(v)))
+                params.append(f'{p}={abbreviated_repr(v)}')
             except RuntimeError:
-                params.append('%s=%s' % (p, '...'))
-        obj = 'None' if self.object is None else '%s' % type(self.object).__name__
+                params.append('{}={}'.format(p, '...'))
+        obj = 'None' if self.object is None else f'{type(self.object).__name__}'
         template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
         return template.format(cls=cls, params=', '.join(params), obj=obj)
 
@@ -360,7 +358,7 @@ class Param(PaneBase):
 
     def _link_subobjects(self):
         for pname, widget in self._widgets.items():
-            widgets = [widget] if isinstance(widget, Widget) else widget
+            widgets = [widget] if isinstance(widget, WidgetBase) else widget
             if not any(is_parameterized(getattr(w, 'value', None)) or
                        any(is_parameterized(o) for o in getattr(w, 'options', []))
                        for w in widgets):
@@ -453,7 +451,7 @@ class Param(PaneBase):
 
         value = getattr(self.object, p_name)
         allow_None = p_obj.allow_None or False
-        if isinstance(widget_class, type) and issubclass(widget_class, Widget):
+        if isinstance(widget_class, type) and issubclass(widget_class, WidgetBase):
             allow_None &= widget_class.param.value.allow_None
         if value is not None or allow_None:
             kw['value'] = value
@@ -511,7 +509,7 @@ class Param(PaneBase):
         if isinstance(widget_class, type) and issubclass(widget_class, Button):
             kwargs.pop('value', None)
 
-        if isinstance(widget_class, Widget):
+        if isinstance(widget_class, WidgetBase):
             widget = widget_class
         else:
             widget = widget_class(**kwargs)
@@ -633,7 +631,7 @@ class Param(PaneBase):
             watchers.append(self.object.param.watch(link, p_name, 'step'))
         watchers.append(self.object.param.watch(link, p_name))
 
-        options = kwargs.get('options', [])
+        options = resolve_value(kwargs.get('options', []), recursive=False)
         if isinstance(options, dict):
             options = options.values()
         if ((is_parameterized(value) or any(is_parameterized(o) for o in options))
@@ -708,7 +706,7 @@ class Param(PaneBase):
         if self.expand_layout is Tabs:
             widgets = []
         elif self.show_name:
-            widgets = [('_title', StaticText(value='<b>{0}</b>'.format(self.name)))]
+            widgets = [('_title', StaticText(value=f'<b>{self.name}</b>'))]
         else:
             widgets = []
         widgets += [(pname, self.widget(pname)) for pname in self._ordered_params]
@@ -889,19 +887,11 @@ class ParamRef(ReplacementPane):
                         param.DEBUG, 'Skip event was raised, skipping update.'
                     )
                     return
+            if isinstance(new_object, Generator):
+                new_object = to_async_gen(new_object)
             if inspect.isawaitable(new_object) or isinstance(new_object, types.AsyncGeneratorType):
                 param.parameterized.async_executor(partial(self._eval_async, new_object))
                 return
-            elif isinstance(new_object, Generator):
-                append_mode = self.generator_mode == 'append'
-                if append_mode:
-                    self._inner_layout[:] = []
-                for new_obj in new_object:
-                    if append_mode:
-                        self._inner_layout.append(new_obj)
-                        self._pane = self._inner_layout[-1]
-                    else:
-                        self._update_inner(new_obj)
             else:
                 self._update_inner(new_object)
         finally:
@@ -1106,7 +1096,7 @@ class ParamFunction(ParamRef):
         return eval_function_with_deps(ref)
 
 
-class ReactiveExpr(PaneBase):
+class ReactiveExpr(Pane):
     """
     ReactiveExpr generates a UI for param.rx objects by rendering the
     widgets and outputs.
@@ -1315,7 +1305,7 @@ class JSONInit(param.Parameterized):
                 with open(fullpath(fname), 'r') as f:
                     spec = json.load(f)
             except Exception:
-                warnobj.warning('Could not load JSON file %r' % spec)
+                warnobj.warning(f'Could not load JSON file {spec!r}')
         else:
             spec = json.loads(env_var)
 

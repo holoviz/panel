@@ -2,7 +2,7 @@
 The icon module provides a low-level API for rendering chat related icons.
 """
 
-from typing import ClassVar, List
+from typing import ClassVar
 
 import param
 
@@ -45,9 +45,9 @@ class ChatReactionIcons(CompositeWidget):
         A key-value pair of reaction values and their corresponding tabler icon names
         found on https://tabler-icons.io.""")
 
-    value = param.List(doc="The active reactions.")
+    value = param.List(default=[], doc="The active reactions.")
 
-    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_reaction_icons.css"]
+    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_reaction_icons.css"]
 
     _composite_type = Column
 
@@ -125,4 +125,4 @@ class ChatCopyIcon(ReactiveHTML):
         setTimeout(() => data.fill = "none", 50);
     """}
 
-    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_copy_icon.css"]
+    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_copy_icon.css"]

@@ -1,0 +1,195 @@
+[project]
+name = "panel"
+channels = ["pyviz/label/dev", "bokeh/label/dev", "conda-forge"]
+platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
+
+[activation.env]
+MPLBACKEND = "Agg"
+PYTHONIOENCODING = "utf-8"
+
+[tasks]
+install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
+
+[environments]
+test-310 = ["py310", "test-core", "test", "example", "test-example", "test-unit-task"]
+test-311 = ["py311", "test-core", "test", "example", "test-example", "test-unit-task"]
+test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-task"]
+test-ui = ["py312", "test-core", "test", "test-ui"]
+test-core = ["py312", "test-core", "test-unit-task"]
+docs = ["py311", "example", "doc"]
+build = ["py311", "build"]
+lint = ["py311", "lint"]
+
+[dependencies]
+bleach = "*"
+bokeh = "==3.5.0rc1"
+linkify-it-py = "*"
+markdown = "*"
+markdown-it-py = "*"
+mdit-py-plugins = "*"
+nodejs = "*"
+packaging = "*"
+pandas = ">=1.2"
+param = ">=2.1.0,<3.0"
+pip = "*"
+pyviz_comms = ">=2.0.0"
+requests = "*"
+tqdm = ">=4.48.0"
+typing_extensions = "*"
+# Recommended
+holoviews = ">=1.16.0"
+jupyterlab = "*"
+matplotlib-base = "*"
+pillow = "*"
+plotly = ">=4.0"
+# Standard
+watchfiles = "*"
+bokeh_sampledata = "*"
+
+[feature.py310.dependencies]
+python = "3.10.*"
+
+[feature.py311.dependencies]
+python = "3.11.*"
+
+[feature.py312.dependencies]
+python = "3.12.*"
+
+[feature.example.dependencies]
+aiohttp = "*"
+altair = "*"
+croniter = "*"
+dask-expr = "*"
+datashader = "*"
+fastparquet = "*"
+folium = "*"
+graphviz = "*"
+hvplot = "*"
+ipyleaflet = "*"
+ipympl = "*"
+ipyvolume = "*"
+ipyvuetify = "*"
+ipywidgets = "*"
+ipywidgets_bokeh = "*"
+jupyter_bokeh = ">=3.0.7"
+networkx = ">=2.5"
+pydeck = "*"
+pyecharts = "*"
+pygraphviz = "*"
+pyinstrument = ">=4.0"
+python-graphviz = "*"
+pyvista = "*"
+reacton = "*"
+scikit-image = "*"
+scikit-learn = "*"
+seaborn = "*"
+streamz = "*"
+textual = "*"
+tqdm = ">=4.48.0"
+vega_datasets = "*"
+vtk = "*"
+xarray = "*"
+xgboost = "*"
+
+# =============================================
+# =================== TESTS ===================
+# =============================================
+[feature.test-core.dependencies]
+psutil = "*"
+pytest = "*"
+pytest-asyncio = "*"
+pytest-cov = "*"
+pytest-github-actions-annotate-failures = "*"
+pytest-rerunfailures = "*"
+pytest-xdist = "*"
+
+[feature.test.dependencies]
+altair = "*"
+anywidget = "*"
+diskcache = "*"
+folium = "*"
+ipympl = "*"
+ipyvuetify = "*"
+ipywidgets_bokeh = "*"
+numba = "*"
+reacton = "*"
+scipy = "*"
+textual = "*"
+
+[feature.test-unit-task.tasks] # So it is not showing up in the test-ui environment
+test-unit = 'pytest panel/tests -n logical --dist loadgroup'
+test-subprocess = 'pytest panel/tests --subprocess'
+
+[feature.test-example.tasks]
+test-docs = 'pytest panel/tests --docs'
+test-example = 'pytest -n logical --dist loadscope --nbval-lax examples'
+
+[feature.test-example.dependencies]
+nbval = "*"
+
+[feature.test-ui]
+channels = ["pyviz/label/dev", "bokeh", "microsoft", "conda-forge"]
+
+[feature.test-ui.dependencies]
+playwright = { version = "*", channel = "microsoft" }
+pytest-playwright = "*"
+jupyter_server = "*"
+
+[feature.test-ui.tasks]
+_install-ui = 'playwright install chromium'
+
+[feature.test-ui.tasks.test-ui]
+cmd = 'pytest panel/tests/ui --ui --browser chromium -n logical --dist loadgroup --reruns 3 --reruns-delay 10'
+depends_on = ["_install-ui"]
+
+# =============================================
+# =================== DOCS ====================
+# =============================================
+[feature.doc.activation.env]
+MOZ_HEADLESS = "1"
+PANEL_IPYWIDGET = "1"
+
+[feature.doc.dependencies]
+lxml = "*"
+nbsite = ">=0.8.4"
+selenium = "*"
+
+[feature.doc.tasks]
+_docs-refmanual = 'python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests'
+_docs-convert-gallery = 'python scripts/gallery/convert_gallery.py'
+_docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name panel'
+_docs-copy-panel-dist = 'cp -r ./panel/dist ./builtdocs/panel_dist'
+_docs-pyodide = 'panel convert examples/gallery/*.ipynb doc/how_to/*/examples/*.md --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index --requirements doc/pyodide_dependencies.json'
+docs-server = 'python -m http.server 5500 --directory ./builtdocs'
+
+[feature.doc.tasks.docs-build]
+depends_on = [
+    '_docs-refmanual',
+    '_docs-convert-gallery',
+    '_docs-generate',
+    '_docs-copy-panel-dist',
+    '_docs-pyodide',
+]
+
+# =============================================
+# ================== BUILD ====================
+# =============================================
+[feature.build.dependencies]
+python-build = "*"
+conda-build = "*"
+
+[feature.build.tasks]
+build-conda = 'bash scripts/conda/build.sh'
+build-pip = 'python -m build .'
+build-pyodide = 'python scripts/build_pyodide_wheels.py'
+build-npm = { cmd = "npm pack .", cwd = "panel" }
+
+# =============================================
+# =================== LINT ====================
+# =============================================
+[feature.lint.dependencies]
+pre-commit = "*"
+
+[feature.lint.tasks]
+lint = 'pre-commit run --all-files'
+lint-install = 'pre-commit install'

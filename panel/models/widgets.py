@@ -6,16 +6,25 @@ from bokeh.core.properties import (
     Any, Bool, Either, Enum, Float, Instance, Int, List, Nullable, Override,
     String, Tuple,
 )
+from bokeh.events import ModelEvent
 from bokeh.models.ui import Tooltip
 from bokeh.models.ui.icons import Icon
 from bokeh.models.widgets import (
     Button as bkButton, CheckboxButtonGroup as bkCheckboxButtonGroup,
-    FileInput as bkFileInput, InputWidget,
-    RadioButtonGroup as bkRadioButtonGroup, Select,
-    TextAreaInput as BkTextAreaInput, Widget,
+    InputWidget, MultiSelect, RadioButtonGroup as bkRadioButtonGroup, Select,
+    TextAreaInput as bkTextAreaInput, TextInput as bkTextInput, Widget,
 )
 
 from .layout import HTMLBox
+
+
+class DoubleClickEvent(ModelEvent):
+
+    event_name = 'dblclick_event'
+
+    def __init__(self, model, option=None):
+        self.option = option
+        super().__init__(model=model)
 
 
 class Player(Widget):
@@ -194,6 +203,11 @@ class CustomSelect(Select):
     size = Int(default=1)
 
 
+class CustomMultiSelect(MultiSelect):
+    """
+    MultiSelect widget which allows capturing double tap events.
+    """
+
 class TooltipIcon(Widget):
     description = Instance(
         Tooltip,
@@ -202,7 +216,7 @@ class TooltipIcon(Widget):
     )
 
 
-class TextAreaInput(BkTextAreaInput):
+class TextAreaInput(bkTextAreaInput):
 
     auto_grow = Bool(
         default=False,
@@ -255,11 +269,18 @@ class RadioButtonGroup(bkRadioButtonGroup):
     hovered over the Button, default is 500ms.
     """)
 
-class FileInput(bkFileInput):
-    directory = Bool(False, help="""
-    Whether to allow selection of directories.
-    """)
 
-    _clear_input = Int(0, help="""
-    A private property to clear the file input.
-    """)
+class EnterEvent(ModelEvent):
+
+    event_name = 'enter-pressed'
+
+    def __init__(self, model, value_input):
+        self.value_input = value_input
+        super().__init__(model=model)
+
+    def __repr__(self):
+        return (
+            f'{type(self).__name__}(value_input={self.value_input})'
+        )
+
+class TextInput(bkTextInput): ...

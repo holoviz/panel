@@ -165,6 +165,8 @@ def capture_code_cell(cell):
     parses = False
     while not parses:
         try:
+            if not cell_out.strip():
+                raise SyntaxError
             ast.parse(cell_out)
             parses = True
         except SyntaxError:
@@ -185,7 +187,7 @@ def capture_code_cell(cell):
         return code
 
     # Remove code comments
-    if '#' in cell_out:
+    if '#' in cell_out and not cell_out.count('\n'):
         try:
             # To not remove "#000000"
             cell_tmp = cell_out[:cell_out.index('#')].rstrip()
@@ -224,7 +226,10 @@ def autoreload_handle_exception(handler, module, e):
 
     # Clean up module
     del sys.modules[module.__name__]
-    state.curdoc.modules._modules.remove(module)
+    try:
+        state.curdoc.modules._modules.remove(module)
+    except ValueError:
+        pass
 
     # Serve error
     e_msg = str(e).replace('\033[1m', '<b>').replace('\033[0m', '</b>')
@@ -253,7 +258,7 @@ def run_app(handler, module, doc, post_run=None):
 
         # script is supposed to edit the doc not replace it
         if newdoc is not doc:
-            raise RuntimeError("%s at '%s' replaced the output document" % (handler._origin, handler._runner.path))
+            raise RuntimeError(f"{handler._origin} at '{handler._runner.path}' replaced the output document")
 
     try:
         state._launching.append(doc)

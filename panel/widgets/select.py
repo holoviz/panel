@@ -7,9 +7,10 @@ from __future__ import annotations
 import itertools
 import re
 
+from functools import partial
 from types import FunctionType
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Type,
+    TYPE_CHECKING, Any, Awaitable, Callable, ClassVar, Mapping, Optional,
 )
 
 import numpy as np
@@ -19,13 +20,15 @@ from bokeh.models import PaletteSelect
 from bokeh.models.widgets import (
     AutocompleteInput as _BkAutocompleteInput,
     CheckboxGroup as _BkCheckboxGroup, MultiChoice as _BkMultiChoice,
-    MultiSelect as _BkMultiSelect, RadioGroup as _BkRadioBoxGroup,
+    RadioGroup as _BkRadioBoxGroup,
 )
 
 from ..io.resources import CDN_DIST
+from ..io.state import state
 from ..layout.base import Column, ListPanel, NamedListPanel
 from ..models import (
-    CheckboxButtonGroup as _BkCheckboxButtonGroup, CustomSelect,
+    CheckboxButtonGroup as _BkCheckboxButtonGroup,
+    CustomMultiSelect as _BkMultiSelect, CustomSelect,
     RadioButtonGroup as _BkRadioButtonGroup, SingleSelect as _BkSingleSelect,
 )
 from ..util import PARAM_NAME_PATTERN, indexOf, isIn
@@ -35,7 +38,11 @@ from .button import Button, _ButtonBase
 from .input import TextAreaInput, TextInput
 
 if TYPE_CHECKING:
+    from bokeh.document import Document
     from bokeh.model import Model
+    from pyviz_comms import Comm
+
+    from ..models.widgets import DoubleClickEvent
 
 
 class SelectBase(Widget):
@@ -137,8 +144,7 @@ class SingleSelectBase(SelectBase):
             values = self.values
         elif any(v not in self.values for v in values):
             raise ValueError("Supplied embed states were not found "
-                             "in the %s widgets values list." %
-                             type(self).__name__)
+                             f"in the {type(self).__name__} widgets values list.")
         return (self, self._models[root.ref['id']][0], values,
                 lambda x: x.value, 'value', 'cb_obj.value')
 
@@ -190,7 +196,7 @@ class Select(SingleSelectBase):
         'size': None, 'groups': None
     }
 
-    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/select.css']
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/select.css']
 
     @property
     def _widget_type(self):
@@ -257,7 +263,7 @@ class Select(SingleSelectBase):
                 ' `groups` parameter, use `options` instead.'
             )
 
-    def _process_param_change(self, msg: Dict[str, Any]) -> Dict[str, Any]:
+    def _process_param_change(self, msg: dict[str, Any]) -> dict[str, Any]:
         groups_provided = 'groups' in msg
         msg = super()._process_param_change(msg)
         if groups_provided or 'options' in msg and self.groups:
@@ -684,7 +690,7 @@ class ColorMap(SingleSelectBase):
 
     _rename = {'options': 'items', 'value_name': None}
 
-    _widget_type: ClassVar[Type[Model]] = PaletteSelect
+    _widget_type: ClassVar[type[Model]] = PaletteSelect
 
     @param.depends('value_name', watch=True, on_init=True)
     def _sync_value_name(self):
@@ -781,9 +787,53 @@ class MultiSelect(_MultiSelectBase):
         The number of items displayed at once (i.e. determines the
         widget height).""")
 
-    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/select.css']
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/select.css']
 
-    _widget_type: ClassVar[Type[Model]] = _BkMultiSelect
+    _widget_type: ClassVar[type[Model]] = _BkMultiSelect
+
+    def __init__(self, **params):
+        click_handler = params.pop('on_double_click', None)
+        super().__init__(**params)
+        self._dbl__click_handlers = [click_handler] if click_handler else []
+
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
+        model = super()._get_model(doc, root, parent, comm)
+        self._register_events('dblclick_event', model=model, doc=doc, comm=comm)
+        return model
+
+    def _process_event(self, event: DoubleClickEvent) -> None:
+        if event.option in self.labels:
+            event.option = self._items[event.option]
+            for handler in self._dbl__click_handlers:
+                state.execute(partial(handler, event))
+
+    def on_double_click(
+        self, callback: Callable[[param.parameterized.Event], None | Awaitable[None]]
+    ) -> param.parameterized.Watcher:
+        """
+        Register a callback to be executed when a `MultiSelect` option is double-clicked.
+
+        The callback is given an `DoubleClickEvent` argument
+
+        Example
+        -------
+
+        >>> select = pn.widgets.MultiSelect(options=["A", "B", "C"])
+        >>> def handle_click(event):
+        ...    print(f"Option {event.option} was double clicked.")
+        >>> select.on_double_click(handle_click)
+
+        Arguments
+        ---------
+        callback:
+            The function to run on click events. Must accept a positional `Event` argument. Can
+            be a sync or async function
+        """
+        self._dbl__click_handlers.append(callback)
+
 
 
 class MultiChoice(_MultiSelectBase):
@@ -831,7 +881,7 @@ class MultiChoice(_MultiSelectBase):
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
-    _widget_type: ClassVar[Type[Model]] = _BkMultiChoice
+    _widget_type: ClassVar[type[Model]] = _BkMultiChoice
 
 
 class AutocompleteInput(Widget):
@@ -896,7 +946,7 @@ class AutocompleteInput(Widget):
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'options': 'completions'}
 
-    _widget_type: ClassVar[Type[Model]] = _BkAutocompleteInput
+    _widget_type: ClassVar[type[Model]] = _BkAutocompleteInput
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
@@ -954,8 +1004,7 @@ class _RadioGroupBase(SingleSelectBase):
             values = self.values
         elif any(v not in self.values for v in values):
             raise ValueError("Supplied embed states were not found in "
-                             "the %s widgets values list." %
-                             type(self).__name__)
+                             f"the {type(self).__name__} widgets values list.")
         return (self, self._models[root.ref['id']][0], values,
                 lambda x: x.active, 'active', 'cb_obj.active')
 
@@ -992,7 +1041,7 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase, TooltipMixin):
 
     _supports_embed: ClassVar[bool] = True
 
-    _widget_type: ClassVar[Type[Model]] = _BkRadioButtonGroup
+    _widget_type: ClassVar[type[Model]] = _BkRadioButtonGroup
 
 
 
@@ -1020,7 +1069,7 @@ class RadioBoxGroup(_RadioGroupBase):
 
     _supports_embed: ClassVar[bool] = True
 
-    _widget_type: ClassVar[Type[Model]] = _BkRadioBoxGroup
+    _widget_type: ClassVar[type[Model]] = _BkRadioBoxGroup
 
 
 
@@ -1092,7 +1141,7 @@ class CheckButtonGroup(_CheckGroupBase, _ButtonBase, TooltipMixin):
         'description': None
     }
 
-    _widget_type: ClassVar[Type[Model]] = _BkCheckboxButtonGroup
+    _widget_type: ClassVar[type[Model]] = _BkCheckboxButtonGroup
 
 
 class CheckBoxGroup(_CheckGroupBase):
@@ -1118,7 +1167,7 @@ class CheckBoxGroup(_CheckGroupBase):
         Whether the items be arrange vertically (``False``) or
         horizontally in-line (``True``).""")
 
-    _widget_type: ClassVar[Type[Model]] = _BkCheckboxGroup
+    _widget_type: ClassVar[type[Model]] = _BkCheckboxGroup
 
 
 
@@ -1146,11 +1195,9 @@ class ToggleGroup(SingleSelectBase):
     def __new__(cls, widget_type='button', behavior='check', **params):
 
         if widget_type not in ToggleGroup._widgets_type:
-            raise ValueError('widget_type {} is not valid. Valid options are {}'
-                             .format(widget_type, ToggleGroup._widgets_type))
+            raise ValueError(f'widget_type {widget_type} is not valid. Valid options are {ToggleGroup._widgets_type}')
         if behavior not in ToggleGroup._behaviors:
-            raise ValueError('behavior {} is not valid. Valid options are {}'
-                             .format(widget_type, ToggleGroup._behaviors))
+            raise ValueError(f'behavior {widget_type} is not valid. Valid options are {ToggleGroup._behaviors}')
 
         if behavior == 'check':
             if widget_type == 'button':
@@ -1160,7 +1207,7 @@ class ToggleGroup(SingleSelectBase):
         else:
             if isinstance(params.get('value'), list):
                 raise ValueError('Radio buttons require a single value, '
-                                 'found: %s' % params['value'])
+                                 'found: {}'.format(params['value']))
             if widget_type == 'button':
                 return RadioButtonGroup(**params)
             else:

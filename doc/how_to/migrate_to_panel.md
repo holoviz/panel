@@ -10,5 +10,6 @@
 :hidden:
 :maxdepth: 1
 
+Migrate from AnyWidget<migration/anywidget/index>
 Migrate from Streamlit<streamlit_migration/index>
 ```

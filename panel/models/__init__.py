@@ -4,9 +4,9 @@ functionality that is provided in bokeh by default. The models are
 defined as pairs of Python classes and TypeScript models defined in .ts
 files.
 """
-
 from .browser import BrowserInfo  # noqa
 from .datetime_picker import DatetimePicker  # noqa
+from .esm import AnyWidgetComponent, ReactComponent, ReactiveESM  # noqa
 from .feed import Feed  # noqa
 from .icon import ButtonIcon, ToggleIcon, _ClickableIcon  # noqa
 from .ipywidget import IPyWidget  # noqa
@@ -17,7 +17,7 @@ from .reactive_html import ReactiveHTML  # noqa
 from .state import State  # noqa
 from .trend import TrendIndicator  # noqa
 from .widgets import (  # noqa
-    Audio, Button, CheckboxButtonGroup, CustomSelect, FileDownload, FileInput,
-    Player, Progress, RadioButtonGroup, SingleSelect, TextAreaInput,
-    TooltipIcon, Video, VideoStream,
+    Audio, Button, CheckboxButtonGroup, CustomMultiSelect, CustomSelect,
+    FileDownload, Player, Progress, RadioButtonGroup, SingleSelect,
+    TextAreaInput, TextInput, TooltipIcon, Video, VideoStream,
 )

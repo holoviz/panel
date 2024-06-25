@@ -10,8 +10,7 @@ import json
 from base64 import b64decode
 from datetime import date, datetime
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Iterable, Mapping, Optional, Tuple,
-    Type,
+    TYPE_CHECKING, Any, ClassVar, Iterable, Mapping, Optional,
 )
 
 import numpy as np
@@ -23,16 +22,17 @@ from bokeh.models.widgets import (
     DatePicker as _BkDatePicker, DateRangePicker as _BkDateRangePicker,
     Div as _BkDiv, NumericInput as _BkNumericInput,
     PasswordInput as _BkPasswordInput, Spinner as _BkSpinner,
-    Switch as _BkSwitch, TextInput as _BkTextInput,
+    Switch as _BkSwitch,
 )
+from pyviz_comms import JupyterComm
 
 from ..config import config
 from ..layout import Column, Panel
 from ..models import (
-    DatetimePicker as _bkDatetimePicker, FileInput as _BkFileInput,
-    TextAreaInput as _bkTextAreaInput,
+    DatetimePicker as _bkDatetimePicker, TextAreaInput as _bkTextAreaInput,
+    TextInput as _BkTextInput,
 )
-from ..util import param_reprs, try_datetime64_to_datetime
+from ..util import lazy_load, param_reprs, try_datetime64_to_datetime
 from .base import CompositeWidget, Widget
 
 if TYPE_CHECKING:
@@ -40,19 +40,11 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
+    from ..models.file_dropper import DeleteEvent, UploadEvent
     from ..viewable import Viewable
 
 
-class TextInput(Widget):
-    """
-    The `TextInput` widget allows entering any string using a text input box.
-
-    Reference: https://panel.holoviz.org/reference/widgets/TextInput.html
-
-    :Example:
-
-    >>> TextInput(name='Name', placeholder='Enter your name here ...')
-    """
+class _TextInputBase(Widget):
 
     description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
@@ -72,8 +64,6 @@ class TextInput(Widget):
     width = param.Integer(default=300, allow_None=True, doc="""
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
-
-    _widget_type: ClassVar[Type[Model]] = _BkTextInput
 
     @classmethod
     def from_param(cls, parameter: param.Parameter, onkeyup=False, **params) -> Viewable:
@@ -98,7 +88,41 @@ class TextInput(Widget):
         return super().from_param(parameter, **params)
 
 
-class PasswordInput(TextInput):
+class TextInput(_TextInputBase):
+
+    """
+    The `TextInput` widget allows entering any string using a text input box.
+
+    Reference: https://panel.holoviz.org/reference/widgets/TextInput.html
+
+    :Example:
+
+    >>> TextInput(name='Name', placeholder='Enter your name here ...')
+    """
+
+    enter_pressed = param.Event(doc="""
+        Event when the enter key has been pressed.""")
+
+    _widget_type: ClassVar[type[Model]] = _BkTextInput
+
+    _rename = {'enter_pressed': None}
+
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
+        model = super()._get_model(doc, root, parent, comm)
+        self._register_events('enter-pressed', model=model, doc=doc, comm=comm)
+        return model
+
+    def _process_event(self, event) -> None:
+        if event.event_name == 'enter-pressed':
+            self.value = event.value_input
+            self.value_input = event.value_input
+            self.enter_pressed = True
+
+
+class PasswordInput(_TextInputBase):
     """
     The `PasswordInput` allows entering any string using an obfuscated text
     input box.
@@ -112,10 +136,10 @@ class PasswordInput(TextInput):
     ... )
     """
 
-    _widget_type: ClassVar[Type[Model]] = _BkPasswordInput
+    _widget_type: ClassVar[type[Model]] = _BkPasswordInput
 
 
-class TextAreaInput(TextInput):
+class TextAreaInput(_TextInputBase):
     """
     The `TextAreaInput` allows entering any multiline string using a text input
     box.
@@ -150,7 +174,7 @@ class TextAreaInput(TextInput):
         and if so in which dimensions: `width`, `height`, or `both`.
         Can only be set during initialization.""")
 
-    _widget_type: ClassVar[Type[Model]] = _bkTextAreaInput
+    _widget_type: ClassVar[type[Model]] = _bkTextAreaInput
 
 
 class FileInput(Widget):
@@ -171,23 +195,32 @@ class FileInput(Widget):
     >>> FileInput(accept='.png,.jpeg', multiple=True)
     """
 
-    accept = param.String(default=None)
+    accept = param.String(default=None, doc="""
+        A comma separated string of all extension types that should
+        be supported.""")
 
     description = param.String(default=None, doc="""
-        An HTML string describing the function of this component.""")
+        An HTML string describing the function of this component
+        rendered as a tooltip icon.""")
 
     directory = param.Boolean(default=False, doc="""
         Selecting directories instead of files. Can report wrong numbers when used with accept""")
 
     filename = param.ClassSelector(
-        default=None, class_=(str, list), is_instance=True)
+        default=None, class_=(str, list), is_instance=True, doc="""
+        Name of the uploaded file(s).""")
 
     mime_type = param.ClassSelector(
-        default=None, class_=(str, list), is_instance=True)
+        default=None, class_=(str, list), is_instance=True, doc="""
+        Mimetype of the uploaded file(s).""")
 
-    multiple = param.Boolean(default=False)
+    multiple = param.Boolean(default=False, doc="""
+        Whether to allow uploading multiple files. If enabled value
+        parameter will return a list.""")
 
-    value = param.Parameter(default=None)
+    value = param.Parameter(default=None, doc="""
+        The uploaded file(s) stored as a single bytes object if
+        multiple is False or a list of bytes otherwise.""")
 
     _clear_input = param.Integer(default=0, constant=True)
 
@@ -199,7 +232,7 @@ class FileInput(Widget):
         'value': "'data:' + source.mime_type + ';base64,' + value"
     }
 
-    _widget_type: ClassVar[Type[Model]] = _BkFileInput
+    _widget_type: ClassVar[type[Model]] = _BkFileInput
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
@@ -266,6 +299,111 @@ class FileInput(Widget):
             self._clear_input += 1
 
 
+class FileDropper(Widget):
+    """
+    The `FileDropper` allows the user to upload one or more files to the server.
+
+    It is similar to the `FileInput` widget but additionally adds support
+    for chunked uploads, making it possible to upload large files. The
+    UI also supports previews for image files. Unlike `FileInput` the
+    uploaded files are stored as dictionary of bytes object indexed
+    by the filename.
+
+    Reference: https://panel.holoviz.org/reference/widgets/FileDropper.html
+
+    :Example:
+
+    >>> FileDropper(accepted_filetypes=['image/*'], multiple=True)
+    """
+
+    accepted_filetypes = param.List(default=[], doc="""
+        List of accepted file types. Can be mime types, file extensions
+        or wild cards.For instance ['image/*'] will accept all images.
+        ['.png', 'image/jpeg'] will only accepts PNGs and JPEGs.""")
+
+    chunk_size = param.Integer(default=10_000_000, doc="""
+        Size in bytes per chunk transferred across the WebSocket.""")
+
+    layout = param.Selector(
+        default=None, objects=["circle", "compact", "integrated"], doc="""
+        Compact mode will remove padding, integrated mode is used to render
+        FilePond as part of a bigger element. Circle mode adjusts the item
+        position offsets so buttons and progress indicators don't fall outside
+        of the circular shape.""")
+
+    max_file_size = param.String(default=None, doc="""
+        Maximum size of a file as a string with units given in KB or MB,
+        e.g. 5MB or 750KB.""")
+
+    max_files = param.Integer(default=None, doc="""
+        Maximum number of files that can be uploaded if multiple=True.""")
+
+    max_total_file_size = param.String(default=None, doc="""
+        Maximum size of all uploaded files, as a string with units given
+        in KB or MB, e.g. 5MB or 750KB.""")
+
+    mime_type = param.Dict(default={}, doc="""
+        A dictionary containing the mimetypes for each of the uploaded
+        files indexed by their filename.""")
+
+    multiple = param.Boolean(default=False, doc="""
+        Whether to allow uploading multiple files.""")
+
+    value = param.Dict(default={}, doc="""
+        A dictionary containing the uploaded file(s) as bytes or string
+        objects indexed by the filename. Files that have a text/* mimetype
+        will automatically be decoded as utf-8.""")
+
+    width = param.Integer(default=300, allow_None=True, doc="""
+      Width of this component. If sizing_mode is set to stretch
+      or scale mode this will merely be used as a suggestion.""")
+
+    _rename = {'value': None}
+
+    def __init__(self, **params):
+        super().__init__(**params)
+        self._file_buffer = {}
+
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
+        self._widget_type = lazy_load(
+            'panel.models.file_dropper', 'FileDropper', isinstance(comm, JupyterComm), root
+        )
+        model = super()._get_model(doc, root, parent, comm)
+        self._register_events('delete_event', 'upload_event', model=model, doc=doc, comm=comm)
+        return model
+
+    def _process_event(self, event: DeleteEvent | UploadEvent):
+        data = event.data
+        name = data['name']
+        if event.event_name == 'delete_event':
+            if name in self.mime_type:
+                del self.mime_type[name]
+            if name in self.value:
+                del self.value[name]
+            self.param.trigger('mime_type', 'value')
+            return
+
+        if data['chunk'] == 1:
+            self._file_buffer[name] = []
+        self._file_buffer[name].append(data['data'])
+        if data['chunk'] != data['total_chunks']:
+            return
+
+        buffers = self._file_buffer.pop(name)
+        file_buffer = b''.join(buffers)
+        if data['type'].startswith('text/'):
+            try:
+                file_buffer = file_buffer.decode('utf-8')
+            except UnicodeDecodeError:
+                pass
+        self.value[name] = file_buffer
+        self.mime_type[name] = data['type']
+        self.param.trigger('mime_type', 'value')
+
+
 class StaticText(Widget):
     """
     The `StaticText` widget displays a text value, but does not allow editing
@@ -293,7 +431,7 @@ class StaticText(Widget):
         'value': 'value.split(": ")[1]'
     }
 
-    _widget_type: ClassVar[Type[Model]] = _BkDiv
+    _widget_type: ClassVar[type[Model]] = _BkDiv
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
@@ -348,7 +486,7 @@ class DatePicker(Widget):
         'start': 'min_date', 'end': 'max_date'
     }
 
-    _widget_type: ClassVar[Type[Model]] = _BkDatePicker
+    _widget_type: ClassVar[type[Model]] = _BkDatePicker
 
     def __init__(self, **params):
         # Since options is the standard for other widgets,
@@ -419,7 +557,7 @@ class DateRangePicker(Widget):
         'start': 'min_date', 'end': 'max_date'
     }
 
-    _widget_type: ClassVar[Type[Model]] = _BkDateRangePicker
+    _widget_type: ClassVar[type[Model]] = _BkDateRangePicker
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -501,7 +639,7 @@ class _DatetimePickerBase(Widget):
         'start': 'min_date', 'end': 'max_date', 'as_numpy_datetime64': None,
     }
 
-    _widget_type: ClassVar[Type[Model]] = _bkDatetimePicker
+    _widget_type: ClassVar[type[Model]] = _bkDatetimePicker
 
     __abstract = True
 
@@ -665,7 +803,7 @@ class ColorPicker(Widget):
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
-    _widget_type: ClassVar[Type[Model]] = _BkColorPicker
+    _widget_type: ClassVar[type[Model]] = _BkColorPicker
 
     _rename: ClassVar[Mapping[str, str | None]] = {'value': 'color'}
 
@@ -692,7 +830,7 @@ class _NumericInputBase(Widget):
 
     _rename: ClassVar[Mapping[str, str | None]] = {'start': 'low', 'end': 'high'}
 
-    _widget_type: ClassVar[Type[Model]] = _BkNumericInput
+    _widget_type: ClassVar[type[Model]] = _BkNumericInput
 
     __abstract = True
 
@@ -747,7 +885,7 @@ class _SpinnerBase(_NumericInputBase):
 
     _rename: ClassVar[Mapping[str, str | None]] = {'value_throttled': None}
 
-    _widget_type: ClassVar[Type[Model]] = _BkSpinner
+    _widget_type: ClassVar[type[Model]] = _BkSpinner
 
     __abstract = True
 
@@ -765,11 +903,11 @@ class _SpinnerBase(_NumericInputBase):
                                         params=', '.join(param_reprs(self, ['value_throttled'])))
 
     @property
-    def _linked_properties(self) -> Tuple[str]:
+    def _linked_properties(self) -> tuple[str]:
         return super()._linked_properties + ('value_throttled',)
 
     def _update_model(
-        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
         root: Model, model: Model, doc: Document, comm: Optional[Comm]
     ) -> None:
         if 'value_throttled' in msg:
@@ -924,7 +1062,7 @@ class LiteralInput(Widget):
         'value': """JSON.stringify(value).replace(/,/g, ",").replace(/:/g, ": ")"""
     }
 
-    _widget_type: ClassVar[Type[Model]] = _BkTextInput
+    _widget_type: ClassVar[type[Model]] = _BkTextInput
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -939,9 +1077,8 @@ class LiteralInput(Widget):
             if event:
                 self.value = event.old
             types = repr(self.type) if isinstance(self.type, tuple) else self.type.__name__
-            raise ValueError('LiteralInput expected %s type but value %s '
-                             'is of type %s.' %
-                             (types, new, type(new).__name__))
+            raise ValueError(f'LiteralInput expected {types} type but value {new} '
+                             f'is of type {type(new).__name__}.')
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
@@ -1119,9 +1256,8 @@ class DatetimeInput(LiteralInput):
             end = datetime.strftime(self.end, self.format)
             if event:
                 self.value = event.old
-            raise ValueError('DatetimeInput value must be between {start} and {end}, '
-                             'supplied value is {value}'.format(start=start, end=end,
-                                                                value=value))
+            raise ValueError(f'DatetimeInput value must be between {start} and {end}, '
+                             f'supplied value is {value}')
 
     def _process_property_change(self, msg):
         msg = Widget._process_property_change(self, msg)
@@ -1184,7 +1320,7 @@ class DatetimeRangeInput(CompositeWidget):
     format = param.String(default='%Y-%m-%d %H:%M:%S', doc="""
         Datetime format used for parsing and formatting the datetime.""")
 
-    _composite_type: ClassVar[Type[Panel]] = Column
+    _composite_type: ClassVar[type[Panel]] = Column
 
     def __init__(self, **params):
         self._text = StaticText(margin=(5, 0, 0, 0), styles={'white-space': 'nowrap'})
@@ -1270,7 +1406,7 @@ class Checkbox(_BooleanWidget):
     >>> Checkbox(name='Works with the tools you know and love', value=True)
     """
 
-    _widget_type: ClassVar[Type[Model]] = _BkCheckbox
+    _widget_type: ClassVar[type[Model]] = _BkCheckbox
 
 
 class Switch(_BooleanWidget):
@@ -1291,4 +1427,4 @@ class Switch(_BooleanWidget):
         'name': None, 'value': 'active'
     }
 
-    _widget_type: ClassVar[Type[Model]] = _BkSwitch
+    _widget_type: ClassVar[type[Model]] = _BkSwitch

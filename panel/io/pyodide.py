@@ -2,17 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import functools
-import hashlib
 import io
 import json
 import os
-import pathlib
 import sys
 import uuid
 
-from typing import (
-    Any, Callable, List, Tuple,
-)
+from typing import Any, Callable
 
 import bokeh
 import js
@@ -31,9 +27,6 @@ from bokeh.events import DocumentReady
 from bokeh.io.doc import set_curdoc
 from bokeh.model import Model
 from bokeh.settings import settings as bk_settings
-from bokeh.util.sampledata import (
-    __file__ as _bk_util_dir, _download_file, external_data_dir, splitext,
-)
 from js import JSON, XMLHttpRequest
 
 from ..config import config
@@ -137,7 +130,7 @@ def async_execute(func: Any):
 
 param.parameterized.async_executor = async_execute
 
-def _doc_json(doc: Document, root_els=None) -> Tuple[str, str, str]:
+def _doc_json(doc: Document, root_els=None) -> tuple[str, str, str]:
     """
     Serializes a Bokeh Document into JSON representations of the entire
     Document, the individual render_items and the ids of DOM nodes to
@@ -169,7 +162,7 @@ def _doc_json(doc: Document, root_els=None) -> Tuple[str, str, str]:
         })
     return json.dumps(docs_json), json.dumps(render_items_json), json.dumps(root_ids)
 
-def _model_json(model: Model, target: str) -> Tuple[Document, str]:
+def _model_json(model: Model, target: str) -> tuple[Document, str]:
     """
     Renders a Bokeh Model to JSON representation given a particular
     DOM target and returns the Document and the serialized JSON string.
@@ -239,7 +232,7 @@ def _serialize_buffers(obj, buffers={}):
             return obj.to_base64()
     return obj
 
-def _process_document_events(doc: Document, events: List[Any]):
+def _process_document_events(doc: Document, events: list[Any]):
     serializer = Serializer(references=doc.models.synced_references)
     patch_json = PatchJson(events=serializer.encode(events))
     doc.models.flush_synced()
@@ -387,33 +380,6 @@ def _get_pyscript_target():
     elif not _IN_WORKER:
         raise ValueError("Could not determine target node to write to.")
 
-def _download_sampledata(progress: bool = False) -> None:
-    """
-    Download bokeh sampledata
-    """
-    data_dir = external_data_dir(create=True)
-    s3 = 'https://sampledata.bokeh.org'
-    with open(pathlib.Path(_bk_util_dir).parent / "sampledata.json") as f:
-        files = json.load(f)
-    for filename, md5 in files:
-        real_name, ext = splitext(filename)
-        if ext == '.zip':
-            if not splitext(real_name)[1]:
-                real_name += ".csv"
-        else:
-            real_name += ext
-        real_path = data_dir / real_name
-        if real_path.exists():
-            with open(real_path, "rb") as file:
-                data = file.read()
-            local_md5 = hashlib.md5(data).hexdigest()
-            if local_md5 == md5:
-                continue
-        _download_file(s3, filename, data_dir, progress=progress)
-
-bokeh.sampledata.download = _download_sampledata
-bokeh.util.sampledata.download = _download_sampledata
-
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
@@ -533,7 +499,7 @@ def sync_location():
             k: v for k, v in loc_data.items() if k in state.location.param
         })
 
-async def write_doc(doc: Document | None = None) -> Tuple[str, str, str]:
+async def write_doc(doc: Document | None = None) -> tuple[str, str, str]:
     """
     Renders the contents of the Document into an existing template.
     Note that this assumes that the HTML file this function runs in

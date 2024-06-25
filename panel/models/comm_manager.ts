@@ -4,7 +4,10 @@ import {View} from "@bokehjs/core/view"
 import {Model} from "@bokehjs/model"
 import {Message} from "@bokehjs/protocol/message"
 import {Receiver} from "@bokehjs/protocol/receiver"
+import {Buffer} from "@bokehjs/core/serialization/buffer"
 import type {Patch, DocumentChangedEvent} from "@bokehjs/document"
+import {isArray, isPlainObject} from "@bokehjs/core/util/types"
+import {keys} from "@bokehjs/core/util/object"
 
 export const comm_settings: any = {
   debounce: true,
@@ -101,28 +104,29 @@ export class CommManager extends Model {
     }
   }
 
-  protected _extract_buffers(value: any, buffers: ArrayBuffer[]): any {
-    let extracted: any
-    if (value instanceof Array) {
-      extracted = []
+  protected _extract_buffers(value: unknown, buffers: ArrayBuffer[]): any {
+    if (isArray(value)) {
       for (const val of value) {
-        extracted.push(this._extract_buffers(val, buffers))
+        this._extract_buffers(val, buffers)
       }
-    } else if (value instanceof Object) {
-      extracted = {}
-      for (const key in value) {
-        if (key === "buffer" && value[key] instanceof ArrayBuffer) {
-          const id = Object.keys(buffers).length
-          extracted = {id}
-          buffers.push(value[key])
-          break
+    } else if (value instanceof Map) {
+      for (const key of value.keys()) {
+        const v = value.get(key)
+        this._extract_buffers(v, buffers)
+      }
+    } else if (value instanceof Buffer) {
+      const {buffer} = value
+      const id = buffers.length
+      buffers.push(buffer)
+      return {id}
+    } else if (isPlainObject(value)) {
+      for (const key of keys(value)) {
+        const replaced = this._extract_buffers(value[key], buffers)
+        if (replaced != null) {
+          value[key] = replaced
         }
-        extracted[key] = this._extract_buffers(value[key], buffers)
       }
-    } else {
-      extracted = value
     }
-    return extracted
   }
 
   process_events() {
@@ -133,7 +137,7 @@ export class CommManager extends Model {
     this._event_buffer = []
     const message = {...Message.create("PATCH-DOC", {}, patch)}
     const buffers: ArrayBuffer[] = []
-    message.content = this._extract_buffers(message.content, buffers)
+    this._extract_buffers(message.content, buffers)
     this._client_comm.send(message, {}, buffers)
     for (const view of this.ns.shared_views.get(this.plot_id)) {
       if (view !== this && view.document != null) {

@@ -200,7 +200,7 @@ export function data2VTKImageData(data: VolumeType): any {
   const dataArray = vtkns.DataArray.newInstance({
     name: "scalars",
     numberOfComponents: 1,
-    values: new ARRAY_TYPES[data.dtype as DType](utf8ToAB(atob(data.buffer))),
+    values: new ARRAY_TYPES[data.dtype](utf8ToAB(atob(data.buffer))),
   })
   source.getPointData().setScalars(dataArray)
   return source

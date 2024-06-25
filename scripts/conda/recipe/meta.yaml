@@ -1,0 +1,49 @@
+{% set pyproject = load_file_data('../../../pyproject.toml', from_recipe_dir=True) %}
+{% set project = pyproject['project'] %}
+
+package:
+  name: {{ project["name"] }}
+  version: {{ VERSION }}
+
+source:
+  url: ../../../dist/{{ project["name"] }}-{{ VERSION }}-py3-none-any.whl
+
+build:
+  noarch: python
+  script: {{ PYTHON }} -m pip install --no-deps -vv {{ project["name"] }}-{{ VERSION }}-py3-none-any.whl
+  entry_points:
+    {% for group,epoints in project.get("entry_points",{}).items() %}
+    {% for entry_point in epoints %}
+    - {{ entry_point }}
+    {% endfor %}
+    {% endfor %}
+
+requirements:
+  build:
+    - python {{ project['requires-python'] }}
+    {% for dep in pyproject['build-system']['requires'] %}
+    - {{ dep }}
+    {% endfor %}
+  run:
+    - python {{ project['requires-python'] }}
+    {% for dep in project.get('dependencies', []) %}
+    - {{ dep }}
+    {% endfor %}
+
+test:
+  imports:
+    - panel
+    - panel.io
+  requires:
+    - pip
+    - pytest-asyncio
+    - pytest-xdist
+  commands:
+    - pip check
+    - panel --help
+    - pytest --pyargs panel.tests -n logical --dist loadgroup
+
+about:
+  home: {{ project['urls']['Homepage'] }}
+  summary: {{ project['description'] }}
+  license: {{ project['license']['text'] }}

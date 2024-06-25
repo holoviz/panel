@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import ClassVar, List
+from typing import ClassVar
 
 import param
 
@@ -186,7 +186,7 @@ class FloatPanel(ListLike, ReactiveHTML):
         }
     }
 
-    _stylesheets: ClassVar[List[str]] = [
+    _stylesheets: ClassVar[list[str]] = [
         f'{CDN_DIST}css/floatpanel.css'
     ]
 
