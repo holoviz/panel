@@ -89,7 +89,7 @@ export class DeckGLPlotView extends LayoutDOMView {
       (window as any).loaders.registerLoaders([Tiles3DLoader, CSVLoader])
       const jsonConverterConfiguration: any = {
         classes: extractClasses(),
-	functions: extractFunctions(),
+        functions: extractFunctions(),
         // Will be resolved as `<enum-name>.<enum-value>`
         enumerations: {
           COORDINATE_SYSTEM: (window as any).deck.COORDINATE_SYSTEM,
@@ -212,32 +212,32 @@ export class DeckGLPlotView extends LayoutDOMView {
     try {
       let configuration
       if (this.model.configuration) {
-	configuration = eval('(' + this.model.configuration + ')')
+        configuration = eval('(' + this.model.configuration + ')')
       } else {
-	configuration = null
+        configuration = null
       }
       this.jsonConverter.mergeConfiguration(configuration)
       const props = this.jsonConverter.convert(jsonInput)
       const getTooltip = makeTooltip(tooltip, props.layers)
       if (props.mapStyle && props.mapStyle.includes('carto')) {
-	this._map = new (window as any).maplibregl.Map({
-	  container,
-	  style: props.mapStyle,
-	  interactive: false
-	})
-	props.controller = true
-	props.map = null
-	delete props.mapStyle
+        this._map = new (window as any).maplibregl.Map({
+          container,
+          style: props.mapStyle,
+          interactive: false
+        })
+        props.controller = true
+        props.map = null
+        delete props.mapStyle
       } else {
-	props.map = (window as any).mapboxgl
+        props.map = (window as any).mapboxgl
         props.mapboxApiAccessToken = mapboxApiKey
       }
       deckgl = new (window as any).deck.DeckGL({
         ...props,
         container,
         getTooltip,
-	height: "100%",
-	width: "100%",
+        height: "100%",
+        width: "100%",
       })
     } catch (err) {
       console.error(err)
