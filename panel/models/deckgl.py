@@ -33,7 +33,7 @@ class DeckGLPlot(HTMLBox):
         return bundled_files(cls, 'css')
 
     __javascript_raw__ = [
-        f"{config.npm_cdn}/h3-js@3.7.2/dist/h3-js.umd.js",
+        f"{config.npm_cdn}/h3-js@4.1.0/dist/h3-js.umd.js",
         f"{config.npm_cdn}/deck.gl@9.0.20/dist.min.js",
         f"{config.npm_cdn}/@deck.gl/json@9.0.20/dist.min.js",
         f"{config.npm_cdn}/@loaders.gl/csv@4.2.2/dist/dist.min.js",
@@ -57,7 +57,7 @@ class DeckGLPlot(HTMLBox):
 
     __js_require__ = {
         'paths': {
-            "h3": f"{config.npm_cdn}/h3-js@3.7.2/dist/h3-js.umd",
+            "h3": f"{config.npm_cdn}/h3-js@4.1.0/dist/h3-js.umd",
             "deck-gl": f"{config.npm_cdn}/deck.gl@9.0.20/dist.min",
             "deck-json": f"{config.npm_cdn}/@deck.gl/json@9.0.20/dist.min",
             "loader-csv": f"{config.npm_cdn}/@loaders.gl/csv@4.2.2/dist/dist.min",
