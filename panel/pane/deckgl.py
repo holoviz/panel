@@ -105,7 +105,7 @@ class DeckGL(ModelPane):
 
     tooltips = param.ClassSelector(default=True, class_=(bool, dict), doc="""
         Whether to enable tooltips""")
-    
+
     configuration = param.String(default="", doc="""
         Custom configuration dictionary as json string""")
 
@@ -207,7 +207,7 @@ class DeckGL(ModelPane):
         if cls._pydeck_encoders_are_added or 'pydeck' not in sys.modules:
             return
 
-        from pydeck.types import String, Function
+        from pydeck.types import Function, String
         def pydeck_string_encoder(obj, serializer):
             return obj.value
         def pydeck_function_encoder(obj, serializer):
@@ -215,22 +215,26 @@ class DeckGL(ModelPane):
 
         Serializer._encoders[String] = pydeck_string_encoder
         Serializer._encoders[Function] = pydeck_function_encoder
+        cls._pydeck_encoders_are_added = True
 
     def _transform_deck_object(self, obj):
         data = dict(obj.__dict__)
         mapbox_api_key = data.pop('mapbox_key', "") or self.mapbox_api_key
         deck_widget = data.pop('deck_widget', None)
-        
+
         if isinstance(self.tooltips, dict) or deck_widget is None:
             tooltip = self.tooltips
         else:
             tooltip = deck_widget.tooltip
-        
-        if self.configuration or deck_widget is None:
+
+        if self.configuration:
             configuration = self.configuration
-        else:
+        elif deck_widget:
             configuration = deck_widget.configuration
-        
+        else:
+            import pydeck as pdk
+            configuration = pdk.settings.configuration
+
         data = {k: v for k, v in recurse_data(data).items() if v is not None}
 
         if "initialViewState" in data:
@@ -244,7 +248,9 @@ class DeckGL(ModelPane):
 
     def _transform_object(self, obj) -> dict[str, Any]:
         if self.object is None:
-            data, mapbox_api_key, tooltip = {}, self.mapbox_api_key, self.tooltips
+            data, mapbox_api_key, tooltip, configuration = (
+                {}, self.mapbox_api_key, self.tooltips, self.configuration
+            )
         elif isinstance(self.object, (str, dict)):
             if isinstance(self.object, str):
                 data = json.loads(self.object)
@@ -253,6 +259,7 @@ class DeckGL(ModelPane):
                 data['layers'] = [dict(layer) for layer in data.get('layers', [])]
             mapbox_api_key = self.mapbox_api_key
             tooltip = self.tooltips
+            configuration = self.configuration
         else:
             data, tooltip, configuration, mapbox_api_key = self._transform_deck_object(self.object)
 

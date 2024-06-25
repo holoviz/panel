@@ -7,6 +7,7 @@ import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 import {debounce} from  "debounce"
 
 import {transform_cds_to_records} from "./data"
+import {set_size} from "./layout"
 import {GL} from "./lumagl"
 import {makeTooltip} from "./tooltips"
 
@@ -18,7 +19,23 @@ function extractClasses() {
   for (const cls of classes) {
     classesDict[cls] = deck[cls]
   }
+  const carto = (window as any).CartoLibrary
+  console.log(carto)
+  const layers = Object.keys(carto.CARTO_LAYERS).filter(x => x.endsWith('Layer'))
+  for (const layer of layers) {
+    classesDict[layer] = carto.CARTO_LAYERS[layer]
+  }
   return classesDict
+}
+
+function extractFunctions() {
+  const carto = (window as any).CartoLibrary
+  const sources = Object.keys(carto.CARTO_SOURCES).filter(x => x.toLowerCase().endsWith('source'))
+  const functionDict: any = {}
+  for (const src of sources) {
+    functionDict[src] = carto.CARTO_SOURCES[src]
+  }
+  return functionDict
 }
 
 export class DeckGLPlotView extends LayoutDOMView {
@@ -27,7 +44,9 @@ export class DeckGLPlotView extends LayoutDOMView {
   jsonConverter: any
   deckGL: any
   _connected: any[]
+  _map: any
   _layer_map: any
+  _view_cb: any
 
   override connect_signals(): void {
     super.connect_signals()
@@ -63,11 +82,14 @@ export class DeckGLPlotView extends LayoutDOMView {
 
   override initialize(): void {
     super.initialize()
+    const view_timeout = this.model.throttle.view || 200
+    this._view_cb = debounce((event: any) => this._on_viewState_event(event), view_timeout, false)
     if ((window as any).deck.JSONConverter) {
       const {CSVLoader, Tiles3DLoader} = (window as any).loaders;
       (window as any).loaders.registerLoaders([Tiles3DLoader, CSVLoader])
       const jsonConverterConfiguration: any = {
         classes: extractClasses(),
+	functions: extractFunctions(),
         // Will be resolved as `<enum-name>.<enum-value>`
         enumerations: {
           COORDINATE_SYSTEM: (window as any).deck.COORDINATE_SYSTEM,
@@ -150,19 +172,25 @@ export class DeckGLPlotView extends LayoutDOMView {
   }
 
   getData(): any {
-    const view_timeout = this.model.throttle.view || 200
     const hover_timeout = this.model.throttle.hover || 100
-    const view_cb = debounce((event: any) => this._on_viewState_event(event), view_timeout, false)
     const hover_cb = debounce((event: any) => this._on_hover_event(event), hover_timeout, false)
     const data = {
       ...this.model.data,
       layers: this.model.layers,
       initialViewState: this.model.initialViewState,
-      onViewStateChange: view_cb,
+      onViewStateChange: (event: any) => this._sync_viewstate(event),
       onClick: (event: any) => this._on_click_event(event),
       onHover: hover_cb,
     }
     return data
+  }
+
+  _sync_viewstate(event: any): void {
+    if (this._map) {
+      const {longitude, latitude, ...rest} = event.viewState;
+      this._map.jumpTo({center: [longitude, latitude], ...rest});
+    }
+    this._view_cb(event)
   }
 
   updateDeck(): void {
@@ -182,20 +210,34 @@ export class DeckGLPlotView extends LayoutDOMView {
   createDeck({mapboxApiKey, container, jsonInput, tooltip}: any): void {
     let deckgl
     try {
-      const configuration = eval('(' + this.model.configuration + ')')
-      console.log(configuration)
+      let configuration
+      if (this.model.configuration) {
+	configuration = eval('(' + this.model.configuration + ')')
+      } else {
+	configuration = null
+      }
       this.jsonConverter.mergeConfiguration(configuration)
       const props = this.jsonConverter.convert(jsonInput)
-      console.log(props)
       const getTooltip = makeTooltip(tooltip, props.layers)
+      if (props.mapStyle && props.mapStyle.includes('carto')) {
+	this._map = new (window as any).maplibregl.Map({
+	  container,
+	  style: props.mapStyle,
+	  interactive: false
+	})
+	props.controller = true
+	props.map = null
+	delete props.mapStyle
+      } else {
+	props.map = (window as any).mapboxgl
+        props.mapboxApiAccessToken = mapboxApiKey
+      }
       deckgl = new (window as any).deck.DeckGL({
         ...props,
-        map: (window as any).mapboxgl,
-        mapboxApiAccessToken: mapboxApiKey,
         container,
         getTooltip,
-        width: "100%",
-        height: "100%",
+	height: "100%",
+	width: "100%",
       })
     } catch (err) {
       console.error(err)
@@ -206,11 +248,10 @@ export class DeckGLPlotView extends LayoutDOMView {
   override render(): void {
     super.render()
     const container = div({class: "deckgl"})
-
+    set_size(container, this.model, false)
     const MAPBOX_API_KEY = this.model.mapbox_api_key
     const tooltip = this.model.tooltip
     const data = this.getData()
-
     if ((window as any).deck.createDeck) {
       this.deckGL = (window as any).deck.createDeck({
         mapboxApiKey: MAPBOX_API_KEY,
@@ -232,6 +273,9 @@ export class DeckGLPlotView extends LayoutDOMView {
   override after_layout(): void {
     super.after_layout()
     this.deckGL.redraw(true)
+    if (this._map) {
+      this._map.resize()
+    }
   }
 }
 
