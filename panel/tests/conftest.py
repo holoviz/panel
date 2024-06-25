@@ -402,6 +402,7 @@ def server_cleanup():
 def cache_cleanup():
     state.clear_caches()
     Design._resolve_modifiers.cache_clear()
+    state._stylesheets.clear()
 
 @pytest.fixture
 def autoreload():
