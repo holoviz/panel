@@ -38,14 +38,14 @@ def test_pydeck_pane_deck(document, comm):
         expected['tooltip'] = True
     assert model.data == expected
     assert model.mapbox_api_key == deck.mapbox_key
-    assert model.tooltip == deck.deck_widget.tooltip
+    assert model.tooltip == deck._tooltip
 
     # Replace Pane.object
     new_deck = pydeck.Deck(tooltip=False)
     pane.object = new_deck
 
     assert pane._models[model.ref["id"]][0] is model
-    assert model.tooltip == new_deck.deck_widget.tooltip
+    assert model.tooltip == new_deck._tooltip
 
     # Cleanup
     pane._cleanup(model)
