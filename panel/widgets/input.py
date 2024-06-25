@@ -20,7 +20,7 @@ from bokeh.models.formatters import TickFormatter
 from bokeh.models.widgets import (
     Checkbox as _BkCheckbox, ColorPicker as _BkColorPicker,
     DatePicker as _BkDatePicker, DateRangePicker as _BkDateRangePicker,
-    Div as _BkDiv, NumericInput as _BkNumericInput,
+    Div as _BkDiv, FileInput as _BkFileInput, NumericInput as _BkNumericInput,
     PasswordInput as _BkPasswordInput, Spinner as _BkSpinner,
     Switch as _BkSwitch,
 )
@@ -204,7 +204,18 @@ class FileInput(Widget):
         rendered as a tooltip icon.""")
 
     directory = param.Boolean(default=False, doc="""
-        Selecting directories instead of files. Can report wrong numbers when used with accept""")
+        Whether to allow selection of directories instead of files.
+        The filename will be relative paths to the uploaded directory.
+
+        .. note::
+            When a directory is uploaded it will give add a confirmation pop up.
+            The confirmation pop up cannot be disabled, as this is a security feature
+            in the browser.
+
+        .. note::
+            The `accept` parameter only works with file extension.
+            When using `accept` with `directory`, the number of files
+            reported will be the total amount of files, not the filtered.""")
 
     filename = param.ClassSelector(
         default=None, class_=(str, list), is_instance=True, doc="""
@@ -221,8 +232,6 @@ class FileInput(Widget):
     value = param.Parameter(default=None, doc="""
         The uploaded file(s) stored as a single bytes object if
         multiple is False or a list of bytes otherwise.""")
-
-    _clear_input = param.Integer(default=0, constant=True)
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'filename': None, 'name': None
