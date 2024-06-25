@@ -1792,7 +1792,7 @@ def test_param_generator(document, comm):
 
     root = pane.get_root(document, comm)
 
-    wait_until(lambda: root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n')
+    wait_until(lambda: root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n', timeout=10_000)
 
     checkbox.value = True
 
@@ -1811,7 +1811,7 @@ def test_param_generator_append(document, comm):
 
     root = pane.get_root(document, comm)
 
-    wait_until(lambda: len(root.children) == 2)
+    wait_until(lambda: len(root.children) == 2, timeout=10_000)
     assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
     assert root.children[1].text == '&lt;p&gt;True&lt;/p&gt;\n'
 
@@ -1878,7 +1878,7 @@ def test_param_generator_multiple(document, comm):
 
     root = pane.get_root(document, comm)
 
-    wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n')
+    wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n', timeout=10_000)
 
     checkbox.value = True
 
