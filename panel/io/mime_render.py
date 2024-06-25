@@ -17,34 +17,19 @@ import ast
 import base64
 import copy
 import io
-import pathlib
-import pkgutil
 import sys
 import traceback
 
 from contextlib import redirect_stderr, redirect_stdout
 from html import escape
 from textwrap import dedent
-from typing import Any, Dict, List
-
-import markdown
+from typing import Any
 
 #---------------------------------------------------------------------
 # Import API
 #---------------------------------------------------------------------
 
-def _stdlibs():
-    if sys.version_info[:2] >= (3, 10):
-        return sys.stdlib_module_names
-    env_dir = str(pathlib.Path(sys.executable).parent.parent)
-    modules = list(sys.builtin_module_names)
-    for m in pkgutil.iter_modules():
-        mpath = getattr(m.module_finder, 'path', '')
-        if mpath.startswith(env_dir) and 'site-packages' not in mpath:
-            modules.append(m.name)
-    return modules
-
-_STDLIBS = _stdlibs()
+_STDLIBS = sys.stdlib_module_names
 _PACKAGE_MAP = {
     'sklearn': 'scikit-learn',
     'transformers_js': 'transformers-js-py',
@@ -52,7 +37,7 @@ _PACKAGE_MAP = {
 _IGNORED_PKGS = ['js', 'pyodide']
 _PANDAS_AUTODETECT = ['bokeh.sampledata', 'as_frame']
 
-def find_requirements(code: str) -> List[str]:
+def find_requirements(code: str) -> list[str]:
     """
     Finds the packages required in a string of code.
 
@@ -138,7 +123,7 @@ def _display(*objs, **kwargs):
 
 def exec_with_return(
     code: str,
-    global_context: Dict[str, Any] = None,
+    global_context: dict[str, Any] = None,
     stdout: Any = None,
     stderr: Any = None
 ) -> Any:
@@ -221,13 +206,14 @@ def render_svg(value, meta, mime):
 
 def render_image(value, meta, mime):
     data = f"data:{mime};charset=utf-8;base64,{value}"
-    attrs = " ".join(['{k}="{v}"' for k, v in meta.items()])
+    attrs = " ".join([f'{k}="{v}"' for k, v in meta.items()])
     return f'<img src="{data}" {attrs}</img>', 'text/html'
 
 def render_javascript(value, meta, mime):
     return f'<script>{value}</script>', 'text/html'
 
 def render_markdown(value, meta, mime):
+    import markdown
     return (markdown.markdown(
         value, extensions=["extra", "smarty", "codehilite"], output_format='html5'
     ), 'text/html')

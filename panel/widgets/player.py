@@ -3,9 +3,7 @@ Defines Player widgets which offer media-player like controls.
 """
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING, ClassVar, Mapping, Type,
-)
+from typing import TYPE_CHECKING, ClassVar, Mapping
 
 import param
 
@@ -47,7 +45,7 @@ class PlayerBase(Widget):
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
 
-    _widget_type: ClassVar[Type[Model]] = _BkPlayer
+    _widget_type: ClassVar[type[Model]] = _BkPlayer
 
     __abstract = True
 

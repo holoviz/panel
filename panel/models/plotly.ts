@@ -1,20 +1,37 @@
+import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
 import {div} from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
 import {isPlainObject} from "@bokehjs/core/util/types"
 import {clone} from "@bokehjs/core/util/object"
 import {is_equal} from "@bokehjs/core/util/eq"
+import type {Attrs} from "@bokehjs/core/types"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 
 import {debounce} from  "debounce"
-import {deepCopy, get, reshape, throttle} from "./util"
 
 import {HTMLBox, HTMLBoxView, set_size} from "./layout"
+import {convertUndefined, deepCopy, get, reshape, throttle} from "./util"
 
 import plotly_css from "styles/models/plotly.css"
 
+export class PlotlyEvent extends ModelEvent {
+  constructor(readonly data: any) {
+    super()
+  }
+
+  protected override get event_values(): Attrs {
+    return {model: this.origin, data: this.data}
+  }
+
+  static {
+    this.prototype.event_name = "plotly_event"
+  }
+}
+
 interface PlotlyHTMLElement extends HTMLDivElement {
   _fullLayout: any
+  _hoverdata: any
   layout: any
   on(event: "plotly_relayout", callback: (eventData: any) => void): void
   on(event: "plotly_relayouting", callback: (eventData: any) => void): void
@@ -25,19 +42,6 @@ interface PlotlyHTMLElement extends HTMLDivElement {
   on(event: "plotly_selected", callback: (eventData: any) => void): void
   on(event: "plotly_deselect", callback: () => void): void
   on(event: "plotly_unhover", callback: () => void): void
-}
-
-function convertUndefined(obj: any): any {
-  Object
-    .entries(obj)
-    .forEach(([key, value]) => {
-      if (isPlainObject(value)) {
-        convertUndefined(value)
-      } else if (value === undefined) {
-        obj[key] = null
-      }
-    })
-  return obj
 }
 
 const filterEventData = (gd: any, eventData: any, event: string) => {
@@ -130,6 +134,7 @@ export class PlotlyPlotView extends HTMLBoxView {
   _rendered: boolean = false
   _reacting: boolean = false
   _relayouting: boolean = false
+  _hoverdata: any = null
   container: PlotlyHTMLElement
   _watched_sources: string[]
   _end_relayouting = debounce(() => {
@@ -279,37 +284,46 @@ export class PlotlyPlotView extends HTMLBoxView {
 
     //  - plotly_click
     this.container.on("plotly_click", (eventData: any) => {
-      this.model.click_data = filterEventData(
-        this.container, eventData, "click")
+      const data = filterEventData(this.container, eventData, "click")
+      this.model.trigger_event(new PlotlyEvent({type: "click", data}))
     })
 
     //  - plotly_hover
     this.container.on("plotly_hover", (eventData: any) => {
-      this.model.hover_data = filterEventData(
-        this.container, eventData, "hover")
+      const data = filterEventData(this.container, eventData, "hover")
+      this.model.trigger_event(new PlotlyEvent({type: "hover", data}))
+      // Override hoverdata to ensure click event has context
+      // see https://github.com/holoviz/panel/pull/6753
+      this._hoverdata = this.container._hoverdata = eventData.points
     })
 
     //  - plotly_selected
     this.container.on("plotly_selected", (eventData: any) => {
-      this.model.selected_data = filterEventData(
-        this.container, eventData, "selected")
+      const data = filterEventData(this.container, eventData, "selected")
+      this.model.trigger_event(new PlotlyEvent({type: "selected", data}))
     })
 
     //  - plotly_clickannotation
     this.container.on("plotly_clickannotation", (eventData: any) => {
       delete eventData.event
       delete eventData.fullAnnotation
-      this.model.clickannotation_data = eventData
+      this.model.trigger_event(new PlotlyEvent({type: "clickannotation", data: eventData}))
     })
 
     //  - plotly_deselect
     this.container.on("plotly_deselect", () => {
-      this.model.selected_data = null
+      this.model.trigger_event(new PlotlyEvent({type: "selected", data: null}))
     })
 
     //  - plotly_unhover
     this.container.on("plotly_unhover", () => {
-      this.model.hover_data = null
+      // Override hoverdata to ensure click event has context
+      this.container._hoverdata = this._hoverdata
+      this.model.trigger_event(new PlotlyEvent({type: "hover", data: null}))
+      setTimeout(() => {
+        // Remove hoverdata once events have been processed
+        delete this.container._hoverdata
+      }, 0)
     })
   }
 
@@ -441,10 +455,6 @@ export namespace PlotlyPlot {
     restyle: p.Property<any>
     relayout_data: p.Property<any>
     restyle_data: p.Property<any>
-    click_data: p.Property<any>
-    hover_data: p.Property<any>
-    clickannotation_data: p.Property<any>
-    selected_data: p.Property<any>
     viewport: p.Property<any>
     viewport_update_policy: p.Property<string>
     viewport_update_throttle: p.Property<number>
@@ -476,10 +486,6 @@ export class PlotlyPlot extends HTMLBox {
       restyle: [ Nullable(Any), {} ],
       relayout_data: [ Any, {} ],
       restyle_data: [ List(Any), [] ],
-      click_data: [ Any, {} ],
-      hover_data: [ Any, {} ],
-      clickannotation_data: [ Any, {} ],
-      selected_data: [ Any, {} ],
       viewport: [ Any, {} ],
       viewport_update_policy: [ Str, "mouseup" ],
       viewport_update_throttle: [ Float, 200 ],

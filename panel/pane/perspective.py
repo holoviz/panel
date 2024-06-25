@@ -6,7 +6,7 @@ import sys
 from enum import Enum
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Callable, ClassVar, List, Mapping, Optional, Type,
+    TYPE_CHECKING, Callable, ClassVar, Mapping, Optional,
 )
 
 import numpy as np
@@ -156,7 +156,7 @@ def deconstruct_pandas(data, kwargs=None):
         new_names = list(data.index.names)
         for j, val in enumerate(data.index.names):
             if val is None:
-                new_names[j] = "index" if i == 0 else "index-{}".format(i)
+                new_names[j] = "index" if i == 0 else f"index-{i}"
                 i += 1
                 # kwargs['group_by'].append(str(new_names[j]))
             else:
@@ -201,7 +201,7 @@ def deconstruct_pandas(data, kwargs=None):
         new_names = list(data.index.names)
         for j, val in enumerate(data.index.names):
             if val is None:
-                new_names[j] = "index" if i == 0 else "index-{}".format(i)
+                new_names[j] = "index" if i == 0 else f"index-{i}"
                 i += 1
                 if push_row_pivot:
                     kwargs["group_by"].append(str(new_names[j]))
@@ -314,9 +314,6 @@ class Perspective(ModelPane, ReactiveData):
     settings = param.Boolean(default=True, doc="""
       Whether to show the settings menu.""")
 
-    toggle_config = param.Boolean(default=True, doc="""
-      Whether to show the config menu.""")
-
     theme = param.ObjectSelector(default='pro', objects=THEMES, doc="""
       The style of the PerspectiveViewer. For example pro-dark""")
 
@@ -325,9 +322,9 @@ class Perspective(ModelPane, ReactiveData):
 
     priority: ClassVar[float | bool | None] = None
 
-    _bokeh_model: ClassVar[Type[Model] | None] = None
+    _bokeh_model: ClassVar[type[Model] | None] = None
 
-    _data_params: ClassVar[List[str]] = ['object']
+    _data_params: ClassVar[list[str]] = ['object']
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'selection': None
@@ -382,10 +379,6 @@ class Perspective(ModelPane, ReactiveData):
         if 'theme' in props and 'material' in props['theme']:
             props['theme'] = props['theme'].replace('material', 'pro')
         del props['object']
-        if props.get('toggle_config'):
-            props['height'] = self.height or 300
-        else:
-            props['height'] = self.height or 150
         if source is None:
             source = ColumnDataSource(data=self._data)
         else:
@@ -427,6 +420,7 @@ class Perspective(ModelPane, ReactiveData):
 
     def _get_theme(self, theme, resources=None):
         from ..models.perspective import THEME_URL
+        theme = theme.replace('material', 'pro')
         theme_url = f'{THEME_URL}{theme}.css'
         if self._bokeh_model is not None:
             self._bokeh_model.__css_raw__ = self._bokeh_model.__css_raw__[:5] + [theme_url]
@@ -445,6 +439,10 @@ class Perspective(ModelPane, ReactiveData):
         for p in ('columns', 'group_by', 'split_by'):
             if props.get(p):
                 props[p] = [None if col is None else str(col) for col in props[p]]
+        if props.get('settings'):
+            props['height'] = self.height or 300
+        else:
+            props['height'] = self.height or 150
         if props.get('sort'):
             props['sort'] = [[str(col), *args] for col, *args in props['sort']]
         if props.get('filters'):

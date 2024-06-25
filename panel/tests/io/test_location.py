@@ -1,3 +1,4 @@
+import pandas as pd
 import param
 import pytest
 
@@ -25,6 +26,8 @@ class SyncParameterized(param.Parameterized):
     integer = param.Integer(default=None)
 
     string = param.String(default=None)
+
+    dataframe = param.DataFrame(default=None)
 
 
 def test_location_update_query(location):
@@ -164,3 +167,24 @@ def test_server_location_populate_from_request():
 
 def test_iframe_srcdoc_location():
     Location(pathname="srcdoc")
+
+@pytest.fixture
+def dataframe():
+    return pd.DataFrame({"x": [1]})
+
+def test_location_sync_from_dataframe(location, dataframe):
+    p = SyncParameterized(dataframe=dataframe)
+    location.sync(p)
+    assert location.search == "?dataframe=%5B%7B%22x%22%3A+1%7D%5D"
+
+def test_location_sync_to_dataframe(location, dataframe):
+    p = SyncParameterized()
+    location.search = "?dataframe=%5B%7B%22x%22%3A+1%7D%5D"
+    location.sync(p)
+    pd.testing.assert_frame_equal(p.dataframe, dataframe)
+
+def test_location_sync_to_dataframe_with_initial_value(location, dataframe):
+    p = SyncParameterized(dataframe=pd.DataFrame({"y": [2]}))
+    location.search = "?dataframe=%5B%7B%22x%22%3A+1%7D%5D"
+    location.sync(p)
+    pd.testing.assert_frame_equal(p.dataframe, dataframe)

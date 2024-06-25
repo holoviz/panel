@@ -1,15 +1,14 @@
 import {div} from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
 import {isNumber} from "@bokehjs/core/util/types"
+import {LayoutDOM, LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 
 import {debounce} from  "debounce"
 
 import {transform_cds_to_records} from "./data"
-import {LayoutDOM, LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
+import {GL} from "./lumagl"
 import {makeTooltip} from "./tooltips"
-
-import GL from "@luma.gl/constants"
 
 function extractClasses() {
   // Get classes for registration from standalone deck.gl

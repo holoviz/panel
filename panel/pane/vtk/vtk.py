@@ -10,7 +10,7 @@ import zipfile
 
 from abc import abstractmethod
 from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional,
+    IO, TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
 )
 from urllib.request import urlopen
 
@@ -23,7 +23,7 @@ from pyviz_comms import JupyterComm
 
 from ...param import ParamMethod
 from ...util import isfile, lazy_load
-from ..base import PaneBase
+from ..base import Pane
 from ..plot import Bokeh
 from .enums import PRESET_CMAPS
 
@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 base64encode = lambda x: base64.b64encode(x).decode('utf-8')
 
 
-class AbstractVTK(PaneBase):
+class AbstractVTK(Pane):
 
     axes = param.Dict(default={}, nested_refs=True, doc="""
         Parameters of the axes to construct in the 3d view.
@@ -82,7 +82,7 @@ class AbstractVTK(PaneBase):
         return msg
 
     def _update_model(
-        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
         root: Model, model: Model, doc: Document, comm: Optional[Comm]
     ) -> None:
         if 'axes' in msg and msg['axes'] is not None:
@@ -326,7 +326,7 @@ class BaseVTKRenderWindow(AbstractVTK):
         with zipfile.ZipFile(filename, mode='w') as zf:
             zf.writestr('index.json', json.dumps(scene))
             for name, data in arrays.items():
-                zf.writestr('data/%s' % name, data, zipfile.ZIP_DEFLATED)
+                zf.writestr(f'data/{name}', data, zipfile.ZIP_DEFLATED)
             zf.writestr('annotations.json', json.dumps(annotations))
         return filename
 
@@ -355,11 +355,9 @@ class BaseVTKRenderWindow(AbstractVTK):
     def _rgb2hex(r, g, b):
         int_type = (int, np.integer)
         if isinstance(r, int_type) and isinstance(g, int_type) is isinstance(b, int_type):
-            return "#{0:02x}{1:02x}{2:02x}".format(r, g, b)
+            return f"#{r:02x}{g:02x}{b:02x}"
         else:
-            return "#{0:02x}{1:02x}{2:02x}".format(
-                int(255 * r), int(255 * g), int(255 * b)
-            )
+            return f"#{int(255 * r):02x}{int(255 * g):02x}{int(255 * b):02x}"
 
 
 class VTKRenderWindow(BaseVTKRenderWindow):

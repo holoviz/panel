@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional, Type,
+    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
 )
 
 import param
@@ -45,7 +45,12 @@ class ChatAreaInput(_PnTextAreaInput):
 
     disabled_enter = param.Boolean(
         default=False,
-        doc="If True, the enter key will not submit the message (clear the value).",
+        doc="If True, disables sending the message by pressing the `enter_sends` key.",
+    )
+
+    enter_sends = param.Boolean(
+        default=True,
+        doc="If True, pressing the Enter key sends the message, if False it is sent by pressing the Ctrl+Enter.",
     )
 
     rows = param.Integer(default=1, doc="""
@@ -67,14 +72,14 @@ class ChatAreaInput(_PnTextAreaInput):
         Can only be set during initialization.""",
     )
 
-    _widget_type: ClassVar[Type[Model]] = _bkChatAreaInput
+    _widget_type: ClassVar[type[Model]] = _bkChatAreaInput
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         "value": None,
         **_PnTextAreaInput._rename,
     }
 
-    def _get_properties(self, doc: Document) -> Dict[str, Any]:
+    def _get_properties(self, doc: Document) -> dict[str, Any]:
         props = super()._get_properties(doc)
         props.update({"value_input": self.value, "value": self.value})
         return props

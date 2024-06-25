@@ -17,11 +17,11 @@ import os
 import sys
 import threading
 import traceback
+import typing
 import uuid
 
 from typing import (
-    IO, TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
-    Type,
+    IO, TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional,
 )
 
 import param  # type: ignore
@@ -30,6 +30,8 @@ from bokeh.core.serialization import DeserializationError
 from bokeh.document import Document
 from bokeh.resources import Resources
 from jinja2 import Template
+from param import Undefined
+from param.parameterized import instance_descriptor
 from pyviz_comms import Comm  # type: ignore
 
 from ._param import Align, Aspect, Margin
@@ -496,7 +498,7 @@ class MimeRenderMixin:
         if ref not in state._handles or config.console_output in [None, 'disable']:
             return
         handle, accumulator = state._handles[ref]
-        formatted = ["%s</br>" % o for o in stdout]
+        formatted = [f"{o}</br>" for o in stdout]
         if config.console_output == 'accumulate':
             accumulator.extend(formatted)
         elif config.console_output == 'replace':
@@ -693,7 +695,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         Whether or not the Viewable is loading. If True a loading spinner
         is shown on top of the Viewable.""")
 
-    _preprocessing_hooks: ClassVar[List[Callable[['Viewable', 'Model'], None]]] = []
+    _preprocessing_hooks: ClassVar[list[Callable[['Viewable', 'Model'], None]]] = []
 
     def __init__(self, **params):
         hooks = params.pop('hooks', [])
@@ -710,7 +712,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
     @staticmethod
     @functools.cache
-    def _instantiate_design(design: Type[Design], theme: str) -> Design:
+    def _instantiate_design(design: type[Design], theme: str) -> Design:
         return design(theme=theme)
 
     def _update_design(self, *_):
@@ -854,7 +856,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
     def select(
         self, selector: Optional[type | Callable[['Viewable'], bool]] = None
-    ) -> List['Viewable']:
+    ) -> list['Viewable']:
         """
         Iterates over the Viewable and any potential children in the
         applying the Selector.
@@ -914,10 +916,10 @@ class Viewable(Renderable, Layoutable, ServableMixin):
     def save(
         self, filename: str | os.PathLike | IO, title: Optional[str] = None,
         resources: Resources | None = None, template: str | Template | None = None,
-        template_variables: Dict[str, Any] = {}, embed: bool = False,
+        template_variables: dict[str, Any] = {}, embed: bool = False,
         max_states: int = 1000, max_opts: int = 3, embed_json: bool = False,
         json_prefix: str='', save_path: str='./', load_path: Optional[str] = None,
-        progress: bool = True, embed_states: Dict[Any, Any] = {},
+        progress: bool = True, embed_states: dict[Any, Any] = {},
         as_png: bool | None = None, **kwargs
     ) -> None:
         """
@@ -1069,6 +1071,130 @@ class Viewer(param.Parameterized):
 
     def _repr_mimebundle_(self, include=None, exclude=None):
         return self._create_view()._repr_mimebundle_(include, exclude)
+
+
+class Child(param.ClassSelector):
+    """
+    A Parameter type that holds a single `Viewable` object.
+
+    Given a non-`Viewable` object it will automatically promote it to a `Viewable`
+    by calling the `pn.panel` utility.
+    """
+
+    @typing.overload
+    def __init__(
+        self,
+        default=None, *, is_instance=True, allow_None=False, doc=None,
+        label=None, precedence=None, instantiate=True, constant=False,
+        readonly=False, pickle_default_value=True, per_instance=True,
+        allow_refs=False, nested_refs=False
+    ):
+        ...
+
+    def __init__(self, /, default=Undefined, class_=Viewable, **params):
+        if isinstance(class_, type) and not issubclass(class_, Viewable):
+            raise TypeError(
+                f"Child.class_ must be an instance of Viewable, not {type(class_)}."
+            )
+        elif isinstance(class_, tuple) and not all(issubclass(it, Viewable) for it in class_):
+            invalid = ' or '.join([str(type(it)) for it in class_ if issubclass(it, Viewable)])
+            raise TypeError(
+                f"Child.class_ must be an instance of Viewable, not {invalid}."
+            )
+        super().__init__(default=self._transform_value(default), class_=class_, **params)
+
+    def _transform_value(self, val):
+        if not isinstance(val, Viewable) and val not in (None, Undefined):
+            from .pane import panel
+            val = panel(val)
+        return val
+
+    @instance_descriptor
+    def __set__(self, obj, val):
+        super().__set__(obj, self._transform_value(val))
+
+
+class Children(param.List):
+    """
+    A Parameter type that defines a list of ``Viewable`` objects. Given
+    a non-Viewable object it will automatically promote it to a ``Viewable``
+    by calling the ``panel`` utility.
+    """
+
+    @typing.overload
+    def __init__(
+        self,
+        default=[], *, instantiate=True, bounds=(0, None),
+        allow_None=False, doc=None, label=None, precedence=None,
+        constant=False, readonly=False, pickle_default_value=True, per_instance=True,
+        allow_refs=False, nested_refs=False
+    ):
+        ...
+
+    def __init__(
+        self, /, default=Undefined, instantiate=Undefined, bounds=Undefined,
+        item_type=Viewable, **params
+    ):
+        if isinstance(item_type, type) and not issubclass(item_type, Viewable):
+            raise TypeError(
+                f"Children.item_type must be an instance of Viewable, not {type(item_type)}."
+            )
+        elif isinstance(item_type, tuple) and not all(issubclass(it, Viewable) for it in item_type):
+            invalid = ' or '.join([str(type(it)) for it in item_type if issubclass(it, Viewable)])
+            raise TypeError(
+                f"Children.item_type must be an instance of Viewable, not {invalid}."
+            )
+        elif 'item_type' in params:
+            raise ValueError("Children does not support item_type, use item_type instead.")
+        super().__init__(
+            default=self._transform_value(default), instantiate=instantiate,
+            item_type=item_type, **params
+        )
+
+    def _transform_value(self, val):
+        if isinstance(val, list) and val:
+            from .pane import panel
+            val[:] = [
+                v if isinstance(v, Viewable) else panel(v)
+                for v in val
+            ]
+        return val
+
+    @instance_descriptor
+    def __set__(self, obj, val):
+        super().__set__(obj, self._transform_value(val))
+
+
+
+def is_viewable_param(parameter: param.Parameter) -> bool:
+    """
+    Detects whether the Parameter uniquely identifies a Viewable
+    type.
+
+    Arguments
+    ---------
+    parameter: param.Parameter
+
+    Returns
+    -------
+    Whether the Parameter specieis a Parameter type
+    """
+    p = parameter
+    if (
+        isinstance(p, (Child, Children)) or
+        (isinstance(p, param.ClassSelector) and p.class_ and (
+            (isinstance(p.class_, tuple) and
+             all(issubclass(cls, Viewable) for cls in p.class_)) or
+            issubclass(p.class_, Viewable)
+        )) or
+        (isinstance(p, param.List) and p.item_type and (
+            (isinstance(p.item_type, tuple) and
+             all(issubclass(cls, Viewable) for cls in p.item_type)) or
+            issubclass(p.item_type, Viewable)
+        ))
+    ):
+        return True
+    return False
 
 
 __all__ = (

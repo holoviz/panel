@@ -25,14 +25,16 @@ from pyviz_comms import (
     JupyterCommManager as _JupyterCommManager, extension as _pyviz_extension,
 )
 
+from .__version import __version__
 from .io.logging import panel_log_handler
 from .io.state import state
 from .util import param_watchers
 
-__version__ = str(param.version.Version(
-    fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
-
-_LOCAL_DEV_VERSION = any(v in __version__ for v in ('post', 'dirty')) and not state._is_pyodide
+_LOCAL_DEV_VERSION = (
+    any(v in __version__ for v in ('post', 'dirty'))
+    and not state._is_pyodide
+    and 'PANEL_DOC_BUILD' not in os.environ
+)
 
 #---------------------------------------------------------------------
 # Public API
@@ -375,7 +377,9 @@ class _config(_base_config):
         try:
             yield
         finally:
-            self.param.update(**dict(values))
+            new = self.param.values()
+            restore = {k: v for k, v in values if v is not new.get(k)}
+            self.param.update(**restore)
             for k, v in overrides:
                 setattr(self, k+'_', v)
 
@@ -659,6 +663,7 @@ class panel_extension(_pyviz_extension):
         'codeeditor': 'panel.models.ace',
         'deckgl': 'panel.models.deckgl',
         'echarts': 'panel.models.echarts',
+        'filedropper': 'panel.models.file_dropper',
         'ipywidgets': 'panel.io.ipywidget',
         'jsoneditor': 'panel.models.jsoneditor',
         'katex': 'panel.models.katex',
@@ -679,11 +684,12 @@ class panel_extension(_pyviz_extension):
     _globals = {
         'deckgl': ['deck'],
         'echarts': ['echarts'],
+        'filedropper': ['FilePond'],
         'floatpanel': ['jsPanel'],
         'gridstack': ['GridStack'],
         'katex': ['katex'],
         'mathjax': ['MathJax'],
-        'perspective': ['perspective'],
+        'perspective': ["customElements.get('perspective-viewer')"],
         'plotly': ['Plotly'],
         'tabulator': ['Tabulator'],
         'terminal': ['Terminal', 'xtermjs'],
@@ -742,8 +748,8 @@ class panel_extension(_pyviz_extension):
                     state._extensions.append(arg)
                 ReactiveHTMLMetaclass._loaded_extensions.add(arg)
             else:
-                self.param.warning('%s extension not recognized and '
-                                   'will be skipped.' % arg)
+                self.param.warning(f'{arg} extension not recognized and '
+                                   'will be skipped.')
 
         for k, v in params.items():
             if k == 'design' and isinstance(v, str):
@@ -763,9 +769,8 @@ class panel_extension(_pyviz_extension):
                 setattr(config, k, designs[v])
             elif k in ('css_files', 'raw_css', 'global_css'):
                 if not isinstance(v, list):
-                    raise ValueError('%s should be supplied as a list, '
-                                     'not as a %s type.' %
-                                     (k, type(v).__name__))
+                    raise ValueError(f'{k} should be supplied as a list, '
+                                     f'not as a {type(v).__name__} type.')
                 existing = getattr(config, k)
                 existing.extend([new for new in v if new not in existing])
             elif k == 'js_files':

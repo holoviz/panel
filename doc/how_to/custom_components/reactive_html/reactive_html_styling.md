@@ -11,12 +11,13 @@ an HTML and CSS starting point that you can fine tune.
 ```{pyodide}
 import param
 import panel as pn
-from panel.reactive import ReactiveHTML
+
+from panel.custom import Child, ReactiveHTML
 
 pn.extension()
 
 class SensorLayout(ReactiveHTML):
-    object = param.Parameter(allow_refs=False)
+    object = Child(allow_refs=False)
 
     _template = """
     <div class="pn-container styled-container">

@@ -11,6 +11,9 @@ import shutil
 import tarfile
 import zipfile
 
+from concurrent.futures import ThreadPoolExecutor
+from functools import cache, partial
+
 import param
 import requests
 
@@ -25,11 +28,42 @@ from .theme import Design
 BASE_DIR = pathlib.Path(__file__).parent
 BUNDLE_DIR = pathlib.Path(__file__).parent / 'dist' / 'bundled'
 
+
+@cache
+def _session():
+    try:
+        import platformdirs
+
+        from cachecontrol import CacheControl
+        from cachecontrol.caches import SeparateBodyFileCache
+        cache_dir = platformdirs.user_cache_path() / 'holoviz' / 'panel.compiler'
+
+        return CacheControl(requests.Session(), cache=SeparateBodyFileCache(cache_dir))
+    except ImportError:
+        return requests.Session()
+
+
+def _download(url):
+    try:
+        response, error = _session().get(url, timeout=10), None
+    except Exception:
+        try:
+            response, error = _session().get(url, verify=False, timeout=10), None
+        except Exception as e:
+            response, error = None, e
+    return response, error
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
 
-def write_bundled_files(name, files, explicit_dir=None, ext=None):
+def write_bundled_files(name, files, explicit_dir=None, ext=None, download_list=None):
+    if download_list is None:
+        _write_bundled_files(name, files, explicit_dir=explicit_dir, ext=ext)
+    else:
+        download_list.append(partial(_write_bundled_files, name, files, explicit_dir=explicit_dir, ext=ext))
+
+def _write_bundled_files(name, files, explicit_dir=None, ext=None):
     model_name = name.split('.')[-1].lower()
     for bundle_file in files:
         if not bundle_file.startswith('http'):
@@ -39,23 +73,14 @@ def write_bundled_files(name, files, explicit_dir=None, ext=None):
             continue
 
         bundle_file = bundle_file.split('?')[0]
-        try:
-            response = requests.get(bundle_file)
-        except Exception:
-            try:
-                response = requests.get(bundle_file, verify=False)
-            except Exception as e:
-                raise ConnectionError(
-                    f"Failed to fetch {name} dependency: {bundle_file}. Errored with {e}."
-                ) from e
-        try:
-            map_file = f'{bundle_file}.map'
-            map_response = requests.get(map_file)
-        except Exception:
-            try:
-                map_response = requests.get(map_file, verify=False)
-            except Exception:
-                map_response = None
+        response, error = _download(bundle_file)
+        if error:
+            msg =  f"Failed to fetch {name} dependency: {bundle_file}. Errored with {error}."
+            raise ConnectionError(msg) from error
+
+        map_file = f'{bundle_file}.map'
+        map_response, _ = _download(map_file)
+
         if bundle_file.startswith(config.npm_cdn):
             bundle_path = os.path.join(*bundle_file.replace(config.npm_cdn, '').split('/'))
         else:
@@ -77,12 +102,18 @@ def write_bundled_files(name, files, explicit_dir=None, ext=None):
             with open(f'{filename}.map', 'w', encoding="utf-8") as f:
                 f.write(map_response.content.decode('utf-8'))
 
-def write_bundled_tarball(tarball, name=None, module=False):
+def write_bundled_tarball(tarball, name=None, module=False, download_list=None):
+    if download_list is None:
+        _write_bundled_tarball(tarball, name=name, module=module)
+    else:
+        download_list.append(partial(_write_bundled_tarball, tarball, name=name, module=module))
+
+def _write_bundled_tarball(tarball, name=None, module=False):
     model_name = name.split('.')[-1].lower() if name else ''
-    try:
-        response = requests.get(tarball['tar'])
-    except Exception:
-        response = requests.get(tarball['tar'], verify=False)
+    response, error = _download(tarball['tar'])
+    if error:
+        raise error
+
     f = io.BytesIO()
     f.write(response.content)
     f.seek(0)
@@ -117,11 +148,17 @@ def write_bundled_tarball(tarball, name=None, module=False):
                 f.write(content)
     tar_obj.close()
 
-def write_bundled_zip(name, resource):
-    try:
-        response = requests.get(resource['zip'])
-    except Exception:
-        response = requests.get(resource['zip'], verify=False)
+def write_bundled_zip(name, resource, download_list=None):
+    if download_list is None:
+        _write_bundled_zip(name, resource)
+    else:
+        download_list.append(partial(_write_bundled_zip, name, resource))
+
+def _write_bundled_zip(name, resource):
+    response, error = _download(resource['zip'])
+    if error:
+        raise error
+
     f = io.BytesIO()
     f.write(response.content)
     f.seek(0)
@@ -144,28 +181,28 @@ def write_bundled_zip(name, resource):
                 f.write(fdata.decode('utf-8'))
     zip_obj.close()
 
-def write_component_resources(name, component):
-    write_bundled_files(name, list(component._resources.get('css', {}).values()), BUNDLE_DIR, 'css')
-    write_bundled_files(name, list(component._resources.get('js', {}).values()), BUNDLE_DIR, 'js')
+def write_component_resources(name, component, download_list=None):
+    write_bundled_files(name, list(component._resources.get('css', {}).values()), BUNDLE_DIR, 'css', download_list=download_list)
+    write_bundled_files(name, list(component._resources.get('js', {}).values()), BUNDLE_DIR, 'js', download_list=download_list)
     js_modules = []
     for tar_name, js_module in component._resources.get('js_modules', {}).items():
         if tar_name not in component._resources.get('tarball', {}):
             js_modules.append(js_module)
-    write_bundled_files(name, js_modules, 'js', ext='mjs')
+    write_bundled_files(name, js_modules, 'js', ext='mjs', download_list=download_list)
     for tarball in component._resources.get('tarball', {}).values():
-        write_bundled_tarball(tarball)
+        write_bundled_tarball(tarball, download_list=download_list)
 
-def bundle_resource_urls(verbose=False, external=True):
+def bundle_resource_urls(verbose=False, external=True, download_list=None):
     # Collect shared resources
     for name, resource in RESOURCE_URLS.items():
         if verbose:
             print(f'Bundling shared resource {name}.')
         if 'zip' in resource:
-            write_bundled_zip(name, resource)
+            write_bundled_zip(name, resource, download_list=download_list)
         elif 'tar' in resource:
-            write_bundled_tarball(resource, name=name)
+            write_bundled_tarball(resource, name=name, download_list=download_list)
 
-def bundle_templates(verbose=False, external=True):
+def bundle_templates(verbose=False, external=True, download_list=None):
     # Bundle Template resources
     for name, template in param.concrete_descendents(BasicTemplate).items():
         if verbose:
@@ -173,7 +210,7 @@ def bundle_templates(verbose=False, external=True):
 
         # Bundle Template._resources
         if template._resources.get('bundle', True) and external:
-            write_component_resources(name, template)
+            write_component_resources(name, template, download_list=download_list)
 
         # Bundle CSS files in template dir
         template_dir = pathlib.Path(inspect.getfile(template)).parent
@@ -213,8 +250,7 @@ def bundle_templates(verbose=False, external=True):
             tmpl_dest_dir = BUNDLE_DIR / tmpl_name
             shutil.copyfile(js, tmpl_dest_dir / os.path.basename(js))
 
-
-def bundle_themes(verbose=False, external=True):
+def bundle_themes(verbose=False, external=True, download_list=None):
     # Bundle design stylesheets
     for name, design in param.concrete_descendents(Design).items():
         if verbose:
@@ -222,15 +258,14 @@ def bundle_themes(verbose=False, external=True):
 
         # Bundle Design._resources
         if design._resources.get('bundle', True) and external:
-            write_component_resources(name, design)
+            write_component_resources(name, design, download_list=download_list)
 
     theme_bundle_dir = BUNDLE_DIR / 'theme'
     theme_bundle_dir.mkdir(parents=True, exist_ok=True)
     for design_css in glob.glob(str(BASE_DIR / 'theme' / 'css' / '*.css')):
         shutil.copyfile(design_css, theme_bundle_dir / os.path.basename(design_css))
 
-
-def bundle_models(verbose=False, external=True):
+def bundle_models(verbose=False, external=True, download_list=None):
     for imp in panel_extension._imports.values():
         if imp.startswith('panel.models'):
             __import__(imp)
@@ -293,19 +328,19 @@ def bundle_models(verbose=False, external=True):
         if verbose:
             print(f'Bundling {name} model JS resources')
         if isinstance(jsfiles, dict):
-            write_bundled_tarball(jsfiles, name=name)
+            write_bundled_tarball(jsfiles, name=name, download_list=download_list)
         else:
-            write_bundled_files(name, jsfiles)
+            write_bundled_files(name, jsfiles, download_list=download_list)
 
     for name, cssfiles in css_files.items():
         if verbose:
             print(f'Bundling {name} model CSS resources')
-        write_bundled_files(name, cssfiles)
+        write_bundled_files(name, cssfiles, download_list=download_list)
 
     for name, res_files in resource_files.items():
-        write_bundled_files(name, res_files)
+        write_bundled_files(name, res_files, download_list=download_list)
 
-def bundle_icons(verbose=False, external=True):
+def bundle_icons(verbose=False, external=True, download_list=None):
     # Bundle icons & images
     dest_dir = BUNDLE_DIR / 'images'
     dest_dir.mkdir(parents=True, exist_ok=True)
@@ -313,9 +348,30 @@ def bundle_icons(verbose=False, external=True):
     for icon in glob.glob(str(icon_dir / '*')):
         shutil.copyfile(icon, dest_dir / os.path.basename(icon))
 
+def patch_tabulator():
+    # https://github.com/olifolkerd/tabulator/issues/4421
+    path = BUNDLE_DIR / 'datatabulator' / 'tabulator-tables@6.2.1' / 'dist' / 'js' / 'tabulator.min.js'
+    text = path.read_text()
+    old = '"focus"!==this.options("editTriggerEvent")&&"click"!==this.options("editTriggerEvent")'
+    new = '"click"!==this.options("editTriggerEvent")'
+    assert text.count(old) == 1
+    text = text.replace(old, new)
+    path.write_text(text)
+
 def bundle_resources(verbose=False, external=True):
-    bundle_resource_urls(verbose=verbose, external=external)
-    bundle_models(verbose=verbose, external=external)
-    bundle_templates(verbose=verbose, external=external)
-    bundle_themes(verbose=verbose, external=external)
-    bundle_icons(verbose=verbose, external=external)
+    download_list = []
+    bundle_resource_urls(verbose=verbose, external=external, download_list=download_list)
+    bundle_models(verbose=verbose, external=external, download_list=download_list)
+    bundle_templates(verbose=verbose, external=external, download_list=download_list)
+    bundle_themes(verbose=verbose, external=external, download_list=download_list)
+    bundle_icons(verbose=verbose, external=external, download_list=download_list)
+
+    with ThreadPoolExecutor() as executor:
+        futures = executor.map(lambda x: x(), download_list)
+
+    # Check for exceptions
+    for future in futures:
+        if future:
+            future.result()
+
+    patch_tabulator()

@@ -159,7 +159,7 @@ class Indicators(View):
         return pn.FlexBox(
             pn.indicators.Number(
                 value=self.data_store.total_capacity / 1e6,
-                name="Total Capacity (TW)",
+                name="Total Capacity (GW)",
                 format="{value:,.2f}",
                 **style
             ),
@@ -172,12 +172,6 @@ class Indicators(View):
             pn.indicators.Number(
                 value=self.data_store.avg_capacity,
                 name="Avg. Capacity (kW)",
-                format="{value:,.2f}",
-                **style
-            ),
-            pn.indicators.Number(
-                value=self.data_store.avg_rotor_diameter,
-                name="Avg. Rotor Diameter (m)",
                 format="{value:,.2f}",
                 **style
             ),

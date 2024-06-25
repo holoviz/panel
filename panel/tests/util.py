@@ -119,7 +119,7 @@ def check_layoutable_properties(layoutable, model):
 
 def wait_until(fn, page=None, timeout=5000, interval=100):
     """
-    Exercice a test function in a loop until it evaluates to True
+    Exercise a test function in a loop until it evaluates to True
     or times out.
 
     The function can either be a simple lambda that returns True or False:

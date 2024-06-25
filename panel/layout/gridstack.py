@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import ClassVar, List, Mapping
+from typing import ClassVar, Mapping
 
 import param
 
@@ -142,7 +142,7 @@ class GridStack(ReactiveHTML, GridSpec):
         'nrows': 'nrows', 'ncols': 'ncols', 'objects': 'objects'
     }
 
-    _stylesheets: ClassVar[List[str]] = [
+    _stylesheets: ClassVar[list[str]] = [
         f'{CDN_DIST}css/gridstack.css'
     ]
 

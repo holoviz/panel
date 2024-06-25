@@ -4,7 +4,7 @@ import time
 class MaxRetriesExceeded(Exception):
      """Raised if the maximum number of retries has been exceeded"""
 
-class Retrier(object):
+class Retrier:
 
     def __init__(self, retries=3, delay=0):
          self.max_retries = retries

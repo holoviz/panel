@@ -93,6 +93,7 @@ Now that you've got the basics down, it's time to put your skills to the test:
 - **[Build an Animation](build_animation.md)**
 - **[Build an Image Classifier](build_image_classifier.md)**
 - **[Build a Monitoring Dashboard](build_monitoring_dashboard.md)**
+- **[Build a Crossfiltering Dashboard](build_crossfilter_dashboard.md)**
 - **[Build a Streaming Dashboard](build_streaming_dashboard.md)**
 - **[Build a Chat Bot](build_chatbot.md)**
 - **[Build a Todo App](build_todo.md)**
@@ -139,6 +140,7 @@ build_report
 build_animation
 build_image_classifier
 build_monitoring_dashboard
+build_crossfilter_dashboard
 build_streaming_dashboard
 build_chatbot
 build_todo

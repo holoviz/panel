@@ -3,6 +3,7 @@
 {% block header_end %}
 {% if editable %}
 <div id="header-indicators">
+  <div id="grid-undo" class="header-icon disabled-button" title="Undo the last action"></div>
   <div id="grid-reset" class="header-icon" title="Reset the Layout"></div>
   {% if local_save %}
   <div id="grid-save" class="header-icon disabled-button" title="Save the Layout to Local Storage"></div>
@@ -170,7 +171,21 @@
     dragEnabled: {{ editable|json }},
     dragHandle: '.muuri-handle.drag',
     layout: {fillGaps: true}
-  });
+  }).on('dragInit', function () {
+    undo_stack.push({action: "drag", items: grid.getItems()})
+  }).on('dragEnd', function () {
+    const last_event = undo_stack.pop()
+    if (last_event.action == "move") {
+      undo_stack.push(last_event)
+    }
+  }).on('move', function () {
+    const last_event = undo_stack.pop()
+    if (last_event.action === "drag") {
+      const event = {...last_event, action: "move"}
+      undo_stack.push(event)
+      document.getElementById('grid-undo').classList.remove('disabled-button')
+    }
+  })
   for (const spec of layout) {
     const el = document.querySelector(`[data-id="${spec.id}"]`);
     if (el && spec.width && spec.height) {
@@ -196,6 +211,28 @@
 
   // Set up reset, hide and resize actions
   {% if editable %}
+    const undo_stack = []
+  const undo_button = document.getElementById("grid-undo")
+  undo_button.addEventListener("click", function() {
+    const action = undo_stack.pop()
+    if (!action) {
+      return
+    }
+    if (undo_stack.length === 0) {
+      undo_button.classList.add('disabled-button')
+    }
+    switch(action.action) {
+      case "hide":
+        grid.show([action.item], {instant: true});
+      case "resize":
+        resize_item(action.item.getElement(), action.width, action.height, false);
+        grid.refreshItems()
+        grid.layout()
+      case "move":
+        grid.sort(action.items)
+    }
+  })
+
   const reset_button = document.getElementById("grid-reset")
   reset_button.addEventListener("click", function() {
     if (window.localStorage) {
@@ -209,7 +246,10 @@
 
   for (const handle of document.querySelectorAll('.muuri-handle.delete')) {
     handle.addEventListener("click", (event) => {
-      grid.hide([grid.getItem(event.target.parentElement)], {instant: true});
+      const item = grid.getItem(event.target.parentElement);
+      grid.hide([item], {instant: true});
+      undo_stack.push({action: "hide", item: item})
+      undo_button.classList.remove('disabled-button')
       {% if local_save %}
       document.getElementById('grid-save').classList.remove('disabled-button')
       {% endif %}
@@ -243,6 +283,24 @@
     // resize from all edges and corners
     edges: { right: '.muuri-handle.resize', bottom: '.muuri-handle.resize' },
     listeners: {
+      start (event) {
+        const el = event.target
+        const item = grid.getItem(el);
+        let height = el.style.height.slice(null, -2);
+        if (!height) {
+          const {top} = item.getMargin();
+          height = item.getHeight()-top;
+        } else {
+          height = parseFloat(height);
+        }
+        let width;
+        if (el.style.width.length) {
+          width = parseFloat(el.style.width.split('(')[1].split('%')[0]);
+        } else {
+          width = 100;
+        }
+        undo_stack.push({action: "resize", item, width, height})
+      },
       move (event) {
         const item = grid.getItem(event.target);
         const {top, bottom} = item.getMargin();
@@ -253,12 +311,14 @@
         resize_item(event.target, width, height, false);
         grid.refreshItems()
         grid.layout()
+        window.dispatchEvent(new Event('resize'));
       },
       end (event) {
         event.target.style.removeProperty('z-index')
         grid.refreshItems()
         grid.layout()
         window.dispatchEvent(new Event('resize'));
+        undo_button.classList.remove('disabled-button')
         {% if local_save %}
         save_button.classList.remove('disabled-button')
         {% endif %}
@@ -276,13 +336,14 @@
             const target = {range: 25}
             const grid_bbox = grid.getElement().getBoundingClientRect()
             for (const item of grid.getItems()) {
-              if (item === interaction.element) {
+              if ((item.getElement() === interaction.element) && item.isVisible()) {
                 continue
               }
               const {top, left} = item.getPosition();
               const margin = item.getMargin()
               const bottom = (top + item.getHeight()) + margin.top + margin.bottom;
               const right = (left + item.getWidth()) + margin.left + margin.right;
+
               if (Math.abs(right - x) < target.range) {
                 target.x = right + margin.right
               }

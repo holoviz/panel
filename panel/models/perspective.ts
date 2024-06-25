@@ -67,7 +67,9 @@ export class PerspectiveView extends HTMLBoxView {
   _updating: boolean = false
   _config_listener: any = null
   _current_config: any = null
+  _current_plugin: string | null = null
   _loaded: boolean = false
+  _plugin_configs: any = new Map()
 
   override connect_signals(): void {
     super.connect_signals()
@@ -77,7 +79,7 @@ export class PerspectiveView extends HTMLBoxView {
     this.connect(this.model.source.patching, () => this.patch())
 
     const {
-      schema, toggle_config, columns, expressions, split_by, group_by,
+      schema, columns, expressions, split_by, group_by,
       aggregates, filters, sort, plugin, selectable, editable, theme,
       title, settings,
     } = this.model.properties
@@ -97,9 +99,6 @@ export class PerspectiveView extends HTMLBoxView {
         this.table.update(this.data)
         this.perspective_element.load(this.table)
       })
-    })
-    this.on_change(toggle_config, () => {
-      this.perspective_element.toggleConfig()
     })
     this.on_change(columns, not_updating(() => {
       this.perspective_element.restore({columns: this.model.columns})
@@ -129,7 +128,7 @@ export class PerspectiveView extends HTMLBoxView {
       this.perspective_element.restore({sort: this.model.sort})
     }))
     this.on_change(plugin, not_updating(() => {
-      this.perspective_element.restore({plugin: PLUGINS[this.model.plugin]})
+      this.perspective_element.restore({plugin: PLUGINS[this.model.plugin], ...settings})
     }))
     this.on_change(selectable, not_updating(() => {
       this.perspective_element.restore({plugin_config: {...this._current_config, selectable: this.model.selectable}})
@@ -151,7 +150,9 @@ export class PerspectiveView extends HTMLBoxView {
   }
 
   override remove(): void {
-    this.perspective_element.delete(() => this.worker.terminate())
+    if (this.perspective_element) {
+      this.perspective_element.delete(() => this.worker.terminate())
+    }
     super.remove()
   }
 
@@ -165,15 +166,18 @@ export class PerspectiveView extends HTMLBoxView {
     const container = div({
       class: "pnx-perspective-viewer",
       style: {
-        zIndex: 0,
+        zIndex: "0",
       },
     })
+    this._current_plugin = this.model.plugin
     container.innerHTML = "<perspective-viewer style='height:100%; width:100%;'></perspective-viewer>"
     this.perspective_element = container.children[0]
-    this.perspective_element.resetThemes([...Object.values(THEMES)]).catch(() => {})
-    if (this.model.toggle_config) {
-      this.perspective_element.toggleConfig()
-    }
+
+    const themesArray = Object.values(THEMES)
+    const filteredThemes = themesArray.filter(t => t !== this.model.theme)
+    const orderedThemes = [this.model.theme, ...filteredThemes]
+    this.perspective_element.resetThemes(orderedThemes).catch(() => {})
+
     set_size(container, this.model)
     this.shadow_el.appendChild(container)
 
@@ -221,7 +225,20 @@ export class PerspectiveView extends HTMLBoxView {
       return true
     }
     this.perspective_element.save().then((config: any) => {
+      if (config.plugin !== this._current_plugin) {
+        this._plugin_configs.set(this._current_plugin, {
+          columns: this._current_config.columns,
+          columns_config: this._current_config.columns_config,
+          plugin_config: this._current_config.plugin_config,
+        })
+        if (this._plugin_configs.has(config.plugin)) {
+          const overrides = this._plugin_configs.get(config.plugin)
+          this.perspective_element.restore(overrides)
+          config = {...config, ...overrides}
+        }
+      }
       this._current_config = config
+      this._current_plugin = config.plugin
       const props: any =  {}
       for (let option in config) {
         let value = config[option]
@@ -295,7 +312,6 @@ export namespace Perspective {
     plugin: p.Property<any>
     plugin_config: p.Property<any>
     selectable: p.Property<boolean | null>
-    toggle_config: p.Property<boolean>
     schema: p.Property<any>
     settings: p.Property<boolean>
     sort: p.Property<any[] | null>
@@ -333,7 +349,6 @@ export class Perspective extends HTMLBox {
       selectable:       [ Bool,                      true ],
       settings:         [ Bool,                      true ],
       schema:           [ Any,                         {} ],
-      toggle_config:    [ Bool,                      true ],
       sort:             [ Nullable(List(List(Str))), null ],
       source:           [ Ref(ColumnDataSource)           ],
       theme:            [ Str,                      "pro" ],

@@ -552,7 +552,7 @@ In a notebook dependencies for this component will not be loaded unless the user
 
 [Bootstrap](https://getbootstrap.com/) is one of the most popular design frameworks. **We recommend not using [Bootstrap](https://getbootstrap.com/) with Panel**.
 
-You can use its CSS to style your components, but n our experience its javascript does not work well with Panel. It simply cannot select and update HTML elements inside the *shadowroot* of `ReactiveHTML` components.
+You can use its CSS to style your components, but in our experience its javascript does not work well with Panel. It simply cannot select and update HTML elements inside the *shadowroot* of `ReactiveHTML` components.
 
 ### Web Components
 

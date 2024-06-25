@@ -14,8 +14,7 @@ from io import BytesIO
 from tempfile import NamedTemporaryFile
 from textwrap import indent
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Dict, Iterable, List, Optional,
-    Union,
+    TYPE_CHECKING, Any, Callable, ClassVar, Iterable, Optional, Union,
 )
 from zoneinfo import ZoneInfo
 
@@ -24,7 +23,7 @@ import param
 from ..io.resources import CDN_DIST, get_dist_path
 from ..io.state import state
 from ..layout import Column, Row
-from ..pane.base import PaneBase, ReplacementPane, panel as _panel
+from ..pane.base import Pane, ReplacementPane, panel as _panel
 from ..pane.image import (
     PDF, FileBase, Image, ImageBase,
 )
@@ -43,7 +42,7 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
 
 Avatar = Union[str, BytesIO, bytes, ImageBase]
-AvatarDict = Dict[str, Avatar]
+AvatarDict = dict[str, Avatar]
 
 USER_LOGO = "🧑"
 ASSISTANT_LOGO = "🤖"
@@ -133,7 +132,7 @@ class _FileInputMessage:
     mime_type: str
 
 
-class ChatMessage(PaneBase):
+class ChatMessage(Pane):
     """
     A widget for displaying chat messages with support for various content types.
 
@@ -230,7 +229,7 @@ class ChatMessage(PaneBase):
     user = param.Parameter(default="User", doc="""
         Name of the user who sent the message.""")
 
-    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_message.css"]
+    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_message.css"]
 
     # Declares whether Pane supports updates to the Bokeh model
     _updates: ClassVar[bool] = True
@@ -247,21 +246,16 @@ class ChatMessage(PaneBase):
             elif state.browser_info and state.browser_info.timezone:
                 tz = ZoneInfo(state.browser_info.timezone)
             params["timestamp"] = datetime.datetime.now(tz=tz)
+
         reaction_icons = params.get("reaction_icons", {"favorite": "heart"})
         if isinstance(reaction_icons, dict):
-            params["reaction_icons"] = ChatReactionIcons(
-                options=reaction_icons, width=15, height=15,
-                value=params.get('reactions', []),
-            )
+            params["reaction_icons"] = ChatReactionIcons(options=reaction_icons)
         self._internal = True
         super().__init__(object=object, **params)
         self.chat_copy_icon = ChatCopyIcon(
             visible=False, width=15, height=15, css_classes=["copy-icon"],
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
         )
-        self.reaction_icons.stylesheets = self._stylesheets + self.param.stylesheets.rx()
-        self.reaction_icons.link(self, value="reactions", bidirectional=True)
-        self.reaction_icons.visible = self.param.show_reaction_icons
         if not self.avatar:
             self._update_avatar()
         self._build_layout()
@@ -288,23 +282,26 @@ class ChatMessage(PaneBase):
         self._update_chat_copy_icon()
         self._center_row = Row(
             self._object_panel,
-            self.reaction_icons,
+            self._render_reaction_icons(),
             css_classes=["center"],
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
             sizing_mode=None
         )
         self.param.watch(self._update_object_pane, "object")
+        self.param.watch(self._update_reaction_icons, "reaction_icons")
 
         self._user_html = HTML(
             self.param.user, height=20, css_classes=["name"],
             visible=self.param.show_user, stylesheets=self._stylesheets,
         )
 
+        header_objects = (
+            [self._user_html] +
+            self.param.header_objects.rx() +
+            [self.chat_copy_icon, self._activity_dot]
+        )
         header_row = Row(
-            self._user_html,
-            *self.param.header_objects.rx(),
-            self.chat_copy_icon,
-            self._activity_dot,
+            objects=header_objects,
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
             sizing_mode="stretch_width",
             css_classes=["header"]
@@ -317,11 +314,10 @@ class ChatMessage(PaneBase):
         )
 
         footer_col = Column(
-            *self.param.footer_objects.rx(),
-            self._timestamp_html,
+            objects=self.param.footer_objects.rx() + [self._timestamp_html],
             stylesheets=self._stylesheets + self.param.stylesheets.rx(),
             sizing_mode="stretch_width",
-            css_classes=["footer"]
+            css_classes=["footer"],
         )
 
         self._right_col = right_col = Column(
@@ -410,7 +406,7 @@ class ChatMessage(PaneBase):
         return self.serialize()
 
     @property
-    def _synced_params(self) -> List[str]:
+    def _synced_params(self) -> list[str]:
         return []
 
     def _get_model(
@@ -630,6 +626,21 @@ class ChatMessage(PaneBase):
             del params['name']
             self._left_col[0].param.update(**params)
 
+    def _render_reaction_icons(self):
+        reaction_icons = self.reaction_icons
+        reaction_icons.param.update(
+            width=15,
+            height=15,
+            value=self.param.reactions,
+            stylesheets=self._stylesheets + self.param.stylesheets.rx(),
+            visible=self.param.show_reaction_icons
+        )
+        reaction_icons.link(self, value="reactions", bidirectional=True)
+        return reaction_icons
+
+    def _update_reaction_icons(self, _):
+        self._center_row[1] = self._render_reaction_icons()
+
     def _update(self, ref, old_models):
         """
         Internals will be updated inplace.
@@ -758,7 +769,7 @@ class ChatMessage(PaneBase):
 
     def select(
         self, selector: Optional[type | Callable[[Viewable], bool]] = None
-    ) -> List[Viewable]:
+    ) -> list[Viewable]:
         return super().select(selector) + self._composite.select(selector)
 
     def serialize(

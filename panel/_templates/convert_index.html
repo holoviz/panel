@@ -183,9 +183,9 @@
   <body>
     <section class="header">
       <div class="header-content">
-        <div>
+        <a href="https://panel.holoviz.org">
           <img id="panel-logo" src="{{ PANEL_CDN }}images/logo_horizontal.png"/>
-        </div>
+        </a>
         <div class="title-area">
           <span id="title">{{ title|default('Panel Applications', true)  }}</span>
           <span id="subtitle">Running {{ items | length }} apps</span>
@@ -200,7 +200,7 @@
       <ul class="cards-grid">
       {% for item_label, item in items.items() %}
         <li class="card">
-          <a class="card-link" href=".{{ item }}" id="{{ item }}">
+          <a class="card-link" href="{{ item }}" id="{{ item }}">
             <div class="gallery-item">
               <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
                 <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
