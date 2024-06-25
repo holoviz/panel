@@ -80,9 +80,9 @@ def get_plots():
         active_tools=["box_select"],
     )
 
-    return (plot_by_year + plot_by_manufacturer).cols(1)
+    return (plot_by_year + plot_by_manufacturer).opts(shared_axes=False).cols(1)
 
-crossfilter_plots = hv.link_selections(get_plots())
+crossfilter_plots = hv.link_selections(get_plots()).opts(shared_axes=False)
 
 pn.template.FastListTemplate(
     title="Windturbine Dashboard with Crossfiltering",
@@ -207,7 +207,7 @@ The `hv.Bars` method creates bar charts, which are then customized with options 
 The crossfiltering capability is enabled by linking the selections across the two plots. This means that interacting with one plot (e.g., selecting a range of years) will dynamically filter the data in the other plot to match the selection criteria.
 
 ```python
-crossfilter_plots = hv.link_selections(get_plots())
+crossfilter_plots = hv.link_selections(get_plots()).opts(shared_axes=False)
 ```
 
 The `hv.link_selections` function wraps our layout of plots, enabling interactive filtering across them. This crossfilter mechanism is what makes our dashboard powerful for data exploration.
