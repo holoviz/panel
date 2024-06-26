@@ -732,18 +732,24 @@ class ChatFeed(ListPanel):
             ]
             step_params["objects"] = objects
         step = ChatStep(**step_params)
+        steps_column = None
         if append:
-            for message in reversed(self._chat_log.objects):
-                obj = message.object
-                if isinstance(obj, Column) and all(isinstance(o, ChatStep) for o in obj):
-                    steps = obj
-                    break
-            else:
-                raise ValueError("No active steps found to append the step to.")
-            steps.append(step)
+            last = self._chat_log[-1] if self._chat_log else None
+            if isinstance(last.object, Column) and (
+                    all(isinstance(o, ChatStep) for o in last.object) or
+                    last.object.css_classes == 'chat-steps'
+            ) and (user is None or last.user == user):
+                steps_column = last.object
+        if steps_column is None:
+            steps_column = Column(
+                step, css_classes=["chat-steps"], styles={
+                    'max-width': 'calc(100% - 30px)',
+                    'padding-block': '0px'
+                }
+            )
+            self.stream(steps_column, user=user, avatar=avatar)
         else:
-            steps = Column(step, css_classes=["chat-steps"])
-            self.stream(steps, user=user, avatar=avatar)
+            steps_column.append(step)
         return step
 
     def respond(self):
