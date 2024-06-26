@@ -135,9 +135,11 @@ class _FileInputMessage:
 
 class ChatMessage(Pane):
     """
-    A widget for displaying chat messages with support for various content types.
+    Renders another component as a chat message with an associated user
+    and avatar with support for various content types.
 
     This widget provides a structured view of chat messages, including features like:
+
     - Displaying user avatars, which can be text, emoji, or images.
     - Showing the user's name.
     - Displaying the message timestamp in a customizable format.

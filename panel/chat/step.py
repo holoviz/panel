@@ -24,53 +24,54 @@ DEFAULT_STATUS_BADGES = {
 
 
 class ChatStep(Card):
-    collapsed = param.Boolean(
-        default=False,
-        doc="Whether the contents of the Card are collapsed.")
+    """
+    A component that makes it easy to provide status updates and the
+    ability to stream updates to both the output(s) and the title.
 
-    collapsed_on_success = param.Boolean(
-        default=True,
-        doc="Whether to collapse the card on completion.")
+    Reference: https://panel.holoviz.org/reference/chat/ChatStep.html
+
+    :Example:
+
+    >>> ChatStep("Hello world!", title="Running calculation...', status="running")
+    """
+
+    collapsed = param.Boolean(default=False, doc="""
+        Whether the contents of the Card are collapsed.""")
+
+    collapsed_on_success = param.Boolean(default=True, doc="""
+        Whether to collapse the card on completion.""")
 
     success_title = param.String(default=None, doc="""
         Title to display when status is success.""")
 
-    default_badges = param.Dict(
-        default=DEFAULT_STATUS_BADGES, doc="""
+    default_badges = param.Dict(default=DEFAULT_STATUS_BADGES, doc="""
         Mapping from status to default status badge; keys must be one of
         'pending', 'running', 'success', 'failed'.
         """)
 
-    default_title = param.String(
-        default="",
-        doc="The default title to display if the other title params are unset.")
+    default_title = param.String(default="", doc="""
+        The default title to display if the other title params are unset.""")
 
-    failed_title = param.String(
-        default=None,
-        doc="Title to display when status is failed.")
+    failed_title = param.String(default=None, doc="""
+        Title to display when status is failed.""")
 
     header = param.Parameter(doc="""
         A Panel component to display in the header bar of the Card.
         Will override the given title if defined.""", readonly=True)
 
-    margin = param.Parameter(
-        default=(5, 5, 5, 10), doc="""
+    margin = param.Parameter(default=(5, 5, 5, 10), doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    pending_title = param.String(
-        default=None,
-        doc="Title to display when status is pending."
-    )
+    pending_title = param.String(default=None, doc="""
+        Title to display when status is pending.""")
 
-    running_title = param.String(
-        default=None,
-        doc="Title to display when status is running."
-    )
+    running_title = param.String(default=None, doc="""
+        Title to display when status is running.""")
 
-    status = param.Selector(
-        default="pending", objects=["pending", "running", "success", "failed"])
+    status = param.Selector(default="pending", objects=[
+        "pending", "running", "success", "failed"])
 
     title = param.String(default="", constant=True, doc="""
         The title of the chat step. Will redirect to default_title on init.
@@ -224,7 +225,8 @@ class ChatStep(Card):
             The updated message pane.
         """
         if (
-            len(self.objects) == 0 or not isinstance(self.objects[-1], HTMLBasePane) or isinstance(self.objects[-1], ImageBase)):
+            len(self.objects) == 0 or not isinstance(self.objects[-1], HTMLBasePane) or isinstance(self.objects[-1], ImageBase)
+        ):
             message = Markdown(token, css_classes=["step-message"])
             self.append(message)
         else:
