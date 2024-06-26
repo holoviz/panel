@@ -208,7 +208,7 @@ class TestChatFeed:
         assert isinstance(steps[0], ChatStep)
 
         # existing
-        with chat_feed.add_step("New Object", title="New Title", append=True) as step:
+        with chat_feed.add_step("New Object", title="New Title") as step:
             assert isinstance(step, ChatStep)
             assert step.title == "New Title"
             assert step.objects[0].object == "New Object"
@@ -217,7 +217,7 @@ class TestChatFeed:
         assert isinstance(steps[1], ChatStep)
 
         # actual component
-        with chat_feed.add_step("Newest Object", title="Newest Title", append=True) as step:
+        with chat_feed.add_step("Newest Object", title="Newest Title") as step:
             assert isinstance(step, ChatStep)
             assert step.title == "Newest Title"
             assert step.objects[0].object == "Newest Object"
@@ -225,6 +225,70 @@ class TestChatFeed:
         assert isinstance(steps[0], ChatStep)
         assert isinstance(steps[1], ChatStep)
         assert isinstance(steps[2], ChatStep)
+
+    def test_add_step_new_user(self, chat_feed):
+        with chat_feed.add_step("Object", title="Title", user="A") as step:
+            assert isinstance(step, ChatStep)
+            assert step.title == "Title"
+            assert step.objects[0].object == "Object"
+
+        with chat_feed.add_step("Object 2", title="Title 2", user="B") as step:
+            assert isinstance(step, ChatStep)
+            assert step.title == "Title 2"
+            assert step.objects[0].object == "Object 2"
+
+        assert len(chat_feed) == 2
+        message1 = chat_feed.objects[0]
+        assert isinstance(message1, ChatMessage)
+        assert message1.user == "A"
+        steps1 = message1.object
+        assert isinstance(steps1, Column)
+        assert len(steps1) == 1
+        assert isinstance(steps1[0], ChatStep)
+        assert len(steps1[0].objects) == 1
+        assert steps1[0].objects[0].object == "Object"
+
+        message2 = chat_feed.objects[1]
+        assert isinstance(message2, ChatMessage)
+        assert message2.user == "B"
+        steps2 = message2.object
+        assert isinstance(steps2, Column)
+        assert len(steps2) == 1
+        assert isinstance(steps2[0], ChatStep)
+        assert len(steps2[0].objects) == 1
+        assert steps2[0].objects[0].object == "Object 2"
+
+    def test_add_step_explict_not_append(self, chat_feed):
+        with chat_feed.add_step("Object", title="Title") as step:
+            assert isinstance(step, ChatStep)
+            assert step.title == "Title"
+            assert step.objects[0].object == "Object"
+
+        with chat_feed.add_step("Object 2", title="Title 2", append=False) as step:
+            assert isinstance(step, ChatStep)
+            assert step.title == "Title 2"
+            assert step.objects[0].object == "Object 2"
+
+        assert len(chat_feed) == 2
+        message1 = chat_feed.objects[0]
+        assert isinstance(message1, ChatMessage)
+        assert message1.user == "User"
+        steps1 = message1.object
+        assert isinstance(steps1, Column)
+        assert len(steps1) == 1
+        assert isinstance(steps1[0], ChatStep)
+        assert len(steps1[0].objects) == 1
+        assert steps1[0].objects[0].object == "Object"
+
+        message2 = chat_feed.objects[1]
+        assert isinstance(message2, ChatMessage)
+        assert message2.user == "User"
+        steps2 = message2.object
+        assert isinstance(steps2, Column)
+        assert len(steps2) == 1
+        assert isinstance(steps2[0], ChatStep)
+        assert len(steps2[0].objects) == 1
+        assert steps2[0].objects[0].object == "Object 2"
 
     def test_stream_with_user_avatar(self, chat_feed):
         user = "Bob"
