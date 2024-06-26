@@ -22,16 +22,16 @@ import param
 
 from .._param import Margin
 from ..io.resources import CDN_DIST
-from ..layout import Feed, ListPanel
+from ..layout import Column, Feed, ListPanel
 from ..layout.card import Card
 from ..layout.spacer import VSpacer
 from ..pane.image import SVG
+from ..pane.markup import Markdown
 from ..util import to_async_gen
 from ..viewable import Children
 from .icon import ChatReactionIcons
 from .message import ChatMessage
 from .step import ChatStep
-from .steps import ChatSteps
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -62,9 +62,10 @@ class StopCallback(Exception):
 
 class ChatFeed(ListPanel):
     """
-    A widget to display a list of `ChatMessage` objects and interact with them.
+    A ChatFeed holds a list of `ChatMessage` objects and provides convenient APIs.
+    to interact with them.
 
-    This widget provides methods to:
+    This includes methods to:
     - Send (append) messages to the chat log.
     - Stream tokens to the latest `ChatMessage` in the chat log.
     - Execute callbacks when a user sends a message.
@@ -695,7 +696,7 @@ class ChatFeed(ListPanel):
     def append_step(
         self,
         objects: str | list[str] | None = None,
-        steps: Literal["new", "append"] | ChatSteps = "new",
+        append: bool = False,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
         **step_params
@@ -707,11 +708,8 @@ class ChatFeed(ListPanel):
         ---------
         objects : str | list(str) | None
             The objects to stream to the step.
-        steps : ChatSteps | None
-            The ChatSteps component to attach the step to.
-            If "new", creates a new ChatSteps component and streams it to the chat.
-            If "append", appends the step to the latest active ChatSteps component in the chat.
-            Else, pass the ChatSteps component directly.
+        append : bool
+            Whether to append to existing steps or create new steps.
         user : str | None
             The user to stream as; overrides the message's user if provided.
             Will default to the user parameter. Only applicable if steps is "new".
@@ -721,20 +719,32 @@ class ChatFeed(ListPanel):
         step_params : dict
             Parameters to pass to the ChatStep.
         """
-        if steps == "new":
-            steps = ChatSteps()
-            self.stream(steps, user=user, avatar=avatar)
-        elif steps == "append":
+        if objects is not None:
+            if not isinstance(objects, list):
+                objects = [objects]
+            objects = [
+                (
+                    Markdown(obj, css_classes=["step-message"])
+                    if isinstance(obj, str)
+                    else obj
+                )
+                for obj in objects
+            ]
+            step_params["objects"] = objects
+        step = ChatStep(**step_params)
+        if append:
             for message in reversed(self._chat_log.objects):
                 obj = message.object
-                if isinstance(obj, ChatSteps) and obj.active:
+                if isinstance(obj, Column) and all(isinstance(o, ChatStep) for o in obj):
                     steps = obj
                     break
             else:
-                raise ValueError("No active ChatSteps component found to append the step to.")
-        elif not isinstance(steps, ChatSteps):
-            raise ValueError(f"The steps argument must be 'new', 'append', or a ChatSteps type, but got {steps}.")
-        return steps.append_step(objects, **step_params)
+                raise ValueError("No active steps found to append the step to.")
+            steps.append(step)
+        else:
+            steps = Column(step, css_classes=["chat-steps"])
+            self.stream(steps, user=user, avatar=avatar)
+        return step
 
     def respond(self):
         """

@@ -7,7 +7,6 @@ from panel.chat.feed import ChatFeed
 from panel.chat.icon import ChatReactionIcons
 from panel.chat.message import DEFAULT_AVATARS, ChatMessage
 from panel.chat.step import ChatStep
-from panel.chat.steps import ChatSteps
 from panel.chat.utils import avatar_lookup
 from panel.layout import Column, Row
 from panel.pane.image import Image
@@ -203,13 +202,13 @@ class TestChatFeed:
         assert isinstance(message, ChatMessage)
 
         steps = message.object
-        assert isinstance(steps, ChatSteps)
+        assert isinstance(steps, Column)
 
         assert len(steps) == 1
         assert isinstance(steps[0], ChatStep)
 
         # existing
-        with chat_feed.append_step("New Object", title="New Title", steps="append") as step:
+        with chat_feed.append_step("New Object", title="New Title", append=True) as step:
             assert isinstance(step, ChatStep)
             assert step.title == "New Title"
             assert step.objects[0].object == "New Object"
@@ -218,7 +217,7 @@ class TestChatFeed:
         assert isinstance(steps[1], ChatStep)
 
         # actual component
-        with chat_feed.append_step("Newest Object", title="Newest Title", steps=steps) as step:
+        with chat_feed.append_step("Newest Object", title="Newest Title", append=True) as step:
             assert isinstance(step, ChatStep)
             assert step.title == "Newest Title"
             assert step.objects[0].object == "Newest Object"

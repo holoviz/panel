@@ -114,6 +114,7 @@ class ChatStep(Card):
                 self._title_pane,
                 stylesheets=self._stylesheets + self.param.stylesheets.rx(),
                 css_classes=["step-header"],
+                margin=(5, 0)
             )
 
     def __enter__(self):
