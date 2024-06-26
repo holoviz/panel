@@ -693,20 +693,21 @@ class ChatFeed(ListPanel):
         self.param.trigger("_post_hook_trigger")
         return message
 
-    def append_step(
+    def add_step(
         self,
-        objects: str | list[str] | None = None,
-        append: bool = False,
+        step: str | list[str] | ChatStep | None = None,
+        append: bool = True,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
         **step_params
     ) -> ChatStep:
         """
-        Appends a step to a ChatSteps component.
+        Adds a ChatStep component either by appending it to an existing
+        ChatMessage or creating a new ChatMessage.
 
         Arguments
         ---------
-        objects : str | list(str) | None
+        step : str | list(str) | ChatStep | None
             The objects to stream to the step.
         append : bool
             Whether to append to existing steps or create new steps.
@@ -719,23 +720,24 @@ class ChatFeed(ListPanel):
         step_params : dict
             Parameters to pass to the ChatStep.
         """
-        if objects is not None:
-            if not isinstance(objects, list):
-                objects = [objects]
-            objects = [
+        if not isinstance(step, ChatStep):
+            if step is None:
+                step = []
+            elif not isinstance(step, list):
+                step = [step]
+            step_params["objects"] = [
                 (
                     Markdown(obj, css_classes=["step-message"])
                     if isinstance(obj, str)
                     else obj
                 )
-                for obj in objects
+                for obj in step
             ]
-            step_params["objects"] = objects
-        step = ChatStep(**step_params)
+            step = ChatStep(**step_params)
         steps_column = None
         if append:
             last = self._chat_log[-1] if self._chat_log else None
-            if isinstance(last.object, Column) and (
+            if last is not None and isinstance(last.object, Column) and (
                     all(isinstance(o, ChatStep) for o in last.object) or
                     last.object.css_classes == 'chat-steps'
             ) and (user is None or last.user == user):

@@ -190,9 +190,9 @@ class TestChatFeed:
         assert chat_feed.objects[1] is new_entry
         assert chat_feed.objects[1].object == "New message"
 
-    def test_append_step(self, chat_feed):
+    def test_add_step(self, chat_feed):
         # new
-        with chat_feed.append_step("Object", title="Title") as step:
+        with chat_feed.add_step("Object", title="Title") as step:
             assert isinstance(step, ChatStep)
             assert step.title == "Title"
             assert step.objects[0].object == "Object"
@@ -208,7 +208,7 @@ class TestChatFeed:
         assert isinstance(steps[0], ChatStep)
 
         # existing
-        with chat_feed.append_step("New Object", title="New Title", append=True) as step:
+        with chat_feed.add_step("New Object", title="New Title", append=True) as step:
             assert isinstance(step, ChatStep)
             assert step.title == "New Title"
             assert step.objects[0].object == "New Object"
@@ -217,7 +217,7 @@ class TestChatFeed:
         assert isinstance(steps[1], ChatStep)
 
         # actual component
-        with chat_feed.append_step("Newest Object", title="Newest Title", append=True) as step:
+        with chat_feed.add_step("Newest Object", title="Newest Title", append=True) as step:
             assert isinstance(step, ChatStep)
             assert step.title == "Newest Title"
             assert step.objects[0].object == "Newest Object"
