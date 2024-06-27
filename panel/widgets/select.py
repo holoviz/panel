@@ -101,11 +101,13 @@ class SingleSelectBase(SelectBase):
                 unicode_values = self.unicode_values if unique else labels
                 msg['value'] = unicode_values[indexOf(val, values)]
             elif values:
-                self.value = None if self._allows_none else self.values[0]
-                del msg['value']
+                self.value = self.param['value'].default if self._allows_none else self.values[0]
+                if not self._allows_none:
+                    del msg['value']
             else:
-                self.value = None
-                msg['value'] = ''
+                self.value = self.param['value'].default
+                if self._allows_none:
+                    msg['value'] = self.value
 
         option_prop = self._property_mapping.get('options', 'options')
         is_list = isinstance(self.param['value'], param.List)
@@ -121,9 +123,9 @@ class SingleSelectBase(SelectBase):
             val = self.value
             if values:
                 if not isIn(val, values):
-                    self.value = values[0]
+                    self.value = self.param['value'].default if self._allows_none else values[0]
             else:
-                self.value = None
+                self.value = self.param['value'].default
         return msg
 
     @property

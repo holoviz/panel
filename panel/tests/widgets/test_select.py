@@ -167,7 +167,7 @@ def test_select_change_groups(document, comm):
 
     select.groups = {}
     assert select.value is None
-    assert widget.value == ''
+    assert widget.value is None
 
 
 def test_select_groups_error_with_options():
@@ -196,12 +196,12 @@ def test_select_change_options(widget, document, comm):
     widget = select.get_root(document, comm=comm)
 
     select.options = {'A': 'a'}
-    assert select.value == opts['A']
-    assert widget.value == (str(opts['A']) if select._allows_values else 'A')
+    assert select.value == ('' if select._allows_none else opts['A'])
+    assert widget.value == (str(opts['A']) if select._allows_values else '')
 
     select.options = {}
-    assert select.value is None
-    assert widget.value == ''
+    assert select.value is select.param['value'].default
+    assert widget.value == select.param['value'].default
 
 @pytest.mark.parametrize('widget', [AutocompleteInput, Select])
 def test_select_non_hashable_options(widget, document, comm):
@@ -216,8 +216,8 @@ def test_select_non_hashable_options(widget, document, comm):
 
     opts.pop('A')
     select.options = opts
-    assert select.value is opts['1']
-    assert widget.value == (str(opts['1']) if select._allows_values else '1')
+    assert select.value is ('' if select._allows_none else opts['1'])
+    assert widget.value == (str(opts['1']) if select._allows_values else '')
 
 def test_select_mutables(document, comm):
     opts = {'A': [1,2,3], 'B': [2,4,6], 'C': dict(a=1,b=2)}
