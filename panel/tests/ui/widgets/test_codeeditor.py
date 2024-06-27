@@ -20,11 +20,12 @@ def test_code_editor(page):
 
     page.keyboard.press("Enter")
     page.keyboard.type('print("Hello Panel!")')
-    expect(page.locator(".ace_content")).to_have_text("print('Hello World!')\nprint(\"Hello Panel!\")")
+
+    expect(page.locator(".ace_content")).to_have_text("print('Hello World!')\nprint(\"Hello Panel!\")", use_inner_text=True)
     wait_until(lambda: editor.value_input == "print('Hello World!')\nprint(\"Hello Panel!\")")
     assert editor.value == "print('Hello World!')"
 
-    # page click outside the editor
+    # page click outside the editor; sync the value
     page.locator("body").click()
     assert editor.value_input == "print('Hello World!')\nprint(\"Hello Panel!\")"
     wait_until(lambda: editor.value == "print('Hello World!')\nprint(\"Hello Panel!\")")
