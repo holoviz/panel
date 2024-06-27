@@ -204,5 +204,6 @@ filterwarnings = [
     # 2024-06: Adding error to the filterwarnings
     "ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning", # OK
     "ignore:distutils Version classes are deprecated:DeprecationWarning:ipywidgets_bokeh.kernel", # OK
-    "ignore:unclosed file <_io.TextIOWrapper name='/dev/null' mode='w':ResourceWarning", # OK
+    "ignore:unclosed file <_io.TextIOWrapper name='/dev/null' mode='w':ResourceWarning", # OK (Unix)
+    "ignore:unclosed file <_io.TextIOWrapper name='nul' mode='w':ResourceWarning", # OK (Windows)
 ]
