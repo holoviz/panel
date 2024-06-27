@@ -1,19 +1,11 @@
 import pathlib
 
-import pytest
-
 from bokeh.models import ImportedStyleSheet
 
 from panel.io.resources import CDN_DIST
-from panel.io.state import state
 from panel.theme.base import BOKEH_DARK, Design, Inherit
 from panel.viewable import Viewable
 from panel.widgets import FloatSlider, IntSlider, TextInput
-
-
-@pytest.fixture(autouse=True)
-def _clear_state():
-    state._stylesheets.clear()
 
 
 class DesignTest(Design):

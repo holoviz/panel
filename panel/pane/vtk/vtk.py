@@ -23,7 +23,7 @@ from pyviz_comms import JupyterComm
 
 from ...param import ParamMethod
 from ...util import isfile, lazy_load
-from ..base import PaneBase
+from ..base import Pane
 from ..plot import Bokeh
 from .enums import PRESET_CMAPS
 
@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 base64encode = lambda x: base64.b64encode(x).decode('utf-8')
 
 
-class AbstractVTK(PaneBase):
+class AbstractVTK(Pane):
 
     axes = param.Dict(default={}, nested_refs=True, doc="""
         Parameters of the axes to construct in the 3d view.

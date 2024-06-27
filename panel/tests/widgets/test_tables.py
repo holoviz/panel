@@ -2284,3 +2284,15 @@ def test_bokeh_formatter_column_with_no_textalign_but_text_align_set(document, c
 
     model = table.get_root(document, comm)
     assert model.configuration['columns'][1]['hozAlign'] == 'center'
+
+
+def test_selection_cleared_remote_pagination_new_values(document, comm):
+    df = pd.DataFrame(range(200))
+    table = Tabulator(df, page_size=50, pagination="remote", selectable="checkbox")
+    table.selection = [1, 2, 3]
+
+    table.value = df
+    assert table.selection == [1, 2, 3]
+
+    table.value = df.copy()
+    assert table.selection == []

@@ -8,6 +8,7 @@
   --pst-color-secondary-bg: #d9ebf0; /* Announcement banner */
   --pst-color-secondary-highlight: var(--holoviz-main-color);
   --pst-color-secondary: var(--holoviz-main-color);
+  --pst-violet-600: var(--holoviz-main-color); /* back to top hover */
   --sd-color-card-border-hover: var(--holoviz-main-color);
 }
 

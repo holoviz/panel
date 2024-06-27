@@ -50,7 +50,7 @@ from .layout import (
     Column, HSpacer, Panel, Row, Spacer, Tabs, WidgetBox,
 )
 from .pane import DataFrame as DataFramePane
-from .pane.base import PaneBase, ReplacementPane
+from .pane.base import Pane, ReplacementPane
 from .reactive import Reactive
 from .util import (
     abbreviated_repr, flatten, full_groupby, fullpath, is_parameterized,
@@ -63,7 +63,7 @@ from .widgets import (
     DateRangeSlider, DatetimeInput, DatetimeRangeSlider, DiscreteSlider,
     FileInput, FileSelector, FloatInput, FloatSlider, IntInput, IntSlider,
     LiteralInput, MultiSelect, RangeSlider, Select, StaticText, Tabulator,
-    TextInput, Toggle, Widget,
+    TextInput, Toggle, Widget, WidgetBase,
 )
 from .widgets.button import _ButtonBase
 
@@ -127,7 +127,7 @@ def set_values(*parameterizeds, **param_values):
             parameterized.param.update(**old_values)
 
 
-class Param(PaneBase):
+class Param(Pane):
     """
     Param panes render a Parameterized class to a set of widgets which
     are linked to the parameter values on the class.
@@ -358,7 +358,7 @@ class Param(PaneBase):
 
     def _link_subobjects(self):
         for pname, widget in self._widgets.items():
-            widgets = [widget] if isinstance(widget, Widget) else widget
+            widgets = [widget] if isinstance(widget, WidgetBase) else widget
             if not any(is_parameterized(getattr(w, 'value', None)) or
                        any(is_parameterized(o) for o in getattr(w, 'options', []))
                        for w in widgets):
@@ -451,7 +451,7 @@ class Param(PaneBase):
 
         value = getattr(self.object, p_name)
         allow_None = p_obj.allow_None or False
-        if isinstance(widget_class, type) and issubclass(widget_class, Widget):
+        if isinstance(widget_class, type) and issubclass(widget_class, WidgetBase):
             allow_None &= widget_class.param.value.allow_None
         if value is not None or allow_None:
             kw['value'] = value
@@ -509,7 +509,7 @@ class Param(PaneBase):
         if isinstance(widget_class, type) and issubclass(widget_class, Button):
             kwargs.pop('value', None)
 
-        if isinstance(widget_class, Widget):
+        if isinstance(widget_class, WidgetBase):
             widget = widget_class
         else:
             widget = widget_class(**kwargs)
@@ -1096,7 +1096,7 @@ class ParamFunction(ParamRef):
         return eval_function_with_deps(ref)
 
 
-class ReactiveExpr(PaneBase):
+class ReactiveExpr(Pane):
     """
     ReactiveExpr generates a UI for param.rx objects by rendering the
     widgets and outputs.
