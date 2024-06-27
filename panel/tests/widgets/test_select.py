@@ -5,19 +5,20 @@ from panel.layout import GridBox, Row
 from panel.pane import panel
 from panel.tests.util import mpl_available
 from panel.widgets import (
-    ColorMap, CrossSelector, DiscreteSlider, MultiChoice, MultiSelect,
-    NestedSelect, Select, ToggleGroup,
+    AutocompleteInput, ColorMap, CrossSelector, DiscreteSlider, MultiChoice,
+    MultiSelect, NestedSelect, Select, ToggleGroup,
 )
 
 
-def test_select_list_constructor():
-    select = Select(options=['A', 1], value=1)
+@pytest.mark.parametrize('widget', [AutocompleteInput, Select])
+def test_list_constructor(widget):
+    select = widget(options=['A', 1], value=1)
     assert select.options == ['A', 1]
 
-
-def test_select_float_option_with_equality():
+@pytest.mark.parametrize('widget', [AutocompleteInput, Select])
+def test_select_float_option_with_equality(widget):
     opts = {'A': 3.14, '1': 2.0}
-    select = Select(options=opts, value=3.14, name='Select')
+    select = widget(options=opts, value=3.14, name='Select')
     assert select.value == 3.14
 
     select.value = 2
@@ -26,10 +27,10 @@ def test_select_float_option_with_equality():
     select.value = 3.14
     assert select.value == 3.14
 
-
-def test_select_text_option_with_equality():
+@pytest.mark.parametrize('widget', [AutocompleteInput, Select])
+def test_select_text_option_with_equality(widget):
     opts = {'A': 'ABC', '1': 'DEF'}
-    select = Select(options=opts, value='DEF', name='Select')
+    select = widget(options=opts, value='DEF', name='Select')
     assert select.value == 'DEF'
 
     select.value = 'ABC'
@@ -37,7 +38,6 @@ def test_select_text_option_with_equality():
 
     select.value = 'DEF'
     assert select.value == 'DEF'
-
 
 def test_select(document, comm):
     opts = {'A': 'a', '1': 1}
@@ -60,13 +60,54 @@ def test_select(document, comm):
     select.value = opts['A']
     assert widget.value == str(opts['A'])
 
+def test_autocomplete(document, comm):
+    opts = {'A': 'a', '1': 1}
+    select = AutocompleteInput(options=opts, value=opts['1'], name='Autocomplete')
 
-def test_select_parameterized_option_labels():
+    widget = select.get_root(document, comm=comm)
+
+    assert isinstance(widget, select._widget_type)
+    assert widget.title == 'Autocomplete'
+    assert widget.value == str(opts['1'])
+    assert widget.completions == list(opts)
+
+    select._process_events({'value': 'A'})
+    assert select.value == 'a'
+
+    widget.value = '1'
+    select.value = opts['1']
+    assert select.value == opts['1']
+
+    select.value = opts['A']
+    assert widget.value == 'A'
+
+def test_autocomplete_unrestricted(document, comm):
+    opts = {'A': 'a', '1': 1}
+    select = AutocompleteInput(options=opts, value=opts['1'], name='Autocomplete', restrict=False)
+
+    widget = select.get_root(document, comm=comm)
+
+    assert isinstance(widget, select._widget_type)
+    assert widget.title == 'Autocomplete'
+    assert widget.value == str(opts['1'])
+    assert widget.completions == list(opts)
+
+    select._process_events({'value': str(opts['A'])})
+    assert select.value == opts['A']
+
+    select._process_events({'value': 'foo'})
+    assert select.value == 'foo'
+
+    select.value = 'bar'
+    assert widget.value == 'bar'
+
+@pytest.mark.parametrize('widget', [AutocompleteInput, Select])
+def test_select_parameterized_option_labels(widget):
     c1 = panel("Value1", name="V1")
     c2 = panel("Value2")
     c3 = panel("Value3", name="V3")
 
-    select = Select(options=[c1, c2, c3], value=c1)
+    select = widget(options=[c1, c2, c3], value=c1)
     assert select.labels == ['V1', 'Markdown(str)', 'V3']
 
 
@@ -147,37 +188,36 @@ def test_select_groups_error_with_options():
     with pytest.raises(ValueError):
         select.options = opts
 
-
-def test_select_change_options(document, comm):
+@pytest.mark.parametrize('widget', [AutocompleteInput, Select])
+def test_select_change_options(widget, document, comm):
     opts = {'A': 'a', '1': 1}
-    select = Select(options=opts, value=opts['1'], name='Select')
+    select = widget(options=opts, value=opts['1'], name='Select')
 
     widget = select.get_root(document, comm=comm)
 
     select.options = {'A': 'a'}
     assert select.value == opts['A']
-    assert widget.value == str(opts['A'])
+    assert widget.value == (str(opts['A']) if select._allows_values else 'A')
 
     select.options = {}
     assert select.value is None
     assert widget.value == ''
 
-
-def test_select_non_hashable_options(document, comm):
+@pytest.mark.parametrize('widget', [AutocompleteInput, Select])
+def test_select_non_hashable_options(widget, document, comm):
     opts = {'A': np.array([1, 2, 3]), '1': np.array([3, 4, 5])}
-    select = Select(options=opts, value=opts['1'], name='Select')
+    select = widget(options=opts, value=opts['1'], name='Select')
 
     widget = select.get_root(document, comm=comm)
 
     select.value = opts['A']
     assert select.value is opts['A']
-    assert widget.value == str(opts['A'])
+    assert widget.value == (str(opts['A']) if select._allows_values else 'A')
 
     opts.pop('A')
     select.options = opts
     assert select.value is opts['1']
-    assert widget.value == str(opts['1'])
-
+    assert widget.value == (str(opts['1']) if select._allows_values else '1')
 
 def test_select_mutables(document, comm):
     opts = {'A': [1,2,3], 'B': [2,4,6], 'C': dict(a=1,b=2)}
@@ -200,7 +240,6 @@ def test_select_mutables(document, comm):
 
     select.value = opts['A']
     assert widget.value == str(opts['A'])
-
 
 def test_select_change_options_on_watch(document, comm):
     select = Select(options={'A': 'A', '1': 1, 'C': object},

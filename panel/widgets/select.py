@@ -77,6 +77,10 @@ class SingleSelectBase(SelectBase):
 
     value = param.Parameter(default=None)
 
+    _allows_values: ClassVar[bool] = True
+
+    _allows_none: ClassVar[bool] = False
+
     _supports_embed: ClassVar[bool] = True
 
     __abstract = True
@@ -84,33 +88,36 @@ class SingleSelectBase(SelectBase):
     def __init__(self, **params):
         super().__init__(**params)
         values = self.values
-        if self.value is None and None not in values and values:
+        if self.value is None and None not in values and values and not self._allows_none:
             self.value = values[0]
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         labels, values = self.labels, self.values
-        unique = len(set(self.unicode_values)) == len(labels)
+        unique = len(set(self.unicode_values)) == len(labels) and self._allows_values
         if 'value' in msg:
             val = msg['value']
             if isIn(val, values):
                 unicode_values = self.unicode_values if unique else labels
                 msg['value'] = unicode_values[indexOf(val, values)]
             elif values:
-                self.value = self.values[0]
+                self.value = None if self._allows_none else self.values[0]
+                del msg['value']
             else:
                 self.value = None
                 msg['value'] = ''
 
-        if 'options' in msg:
+        option_prop = self._property_mapping.get('options', 'options')
+        is_list = isinstance(self.param['value'], param.List)
+        if option_prop in msg and not is_list:
             if isinstance(self.options, dict):
-                if unique:
+                if unique and self._allows_values:
                     options = [(v, l) for l,v in zip(labels, self.unicode_values)]
                 else:
                     options = labels
-                msg['options'] = options
+                msg[option_prop] = options
             else:
-                msg['options'] = self.unicode_values
+                msg[option_prop] = self.unicode_values
             val = self.value
             if values:
                 if not isIn(val, values):
@@ -884,9 +891,9 @@ class MultiChoice(_MultiSelectBase):
     _widget_type: ClassVar[type[Model]] = _BkMultiChoice
 
 
-class AutocompleteInput(Widget):
+class AutocompleteInput(SingleSelectBase):
     """
-    The `MultiChoice` widget allows selecting multiple values from a list of
+    The `AutocompleteInput` widget allows selecting multiple values from a list of
     `options`.
 
     It falls into the broad category of multi-value, option-selection widgets
@@ -913,10 +920,6 @@ class AutocompleteInput(Widget):
         The number of characters a user must type before
         completions are presented.""")
 
-    options = param.List(default=[], doc="""
-        A list of completion strings. This will be used to guide the
-        user upon typing the beginning of a desired value.""")
-
     placeholder = param.String(default='', doc="""
         Placeholder for empty input field.""")
 
@@ -931,7 +934,7 @@ class AutocompleteInput(Widget):
         completion string. Using `"includes"` means that the user's text can
         match any substring of a completion string.""")
 
-    value = param.String(default='', allow_None=True, doc="""
+    value = param.Parameter(default='', allow_None=True, doc="""
       Initial or entered text value updated when <enter> key is pressed.""")
 
     value_input = param.String(default='', allow_None=True, doc="""
@@ -944,16 +947,30 @@ class AutocompleteInput(Widget):
     description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
 
+    _allows_values: ClassVar[bool] = False
+
+    _allows_none: ClassVar[bool] = True
+
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'options': 'completions'}
 
     _widget_type: ClassVar[type[Model]] = _BkAutocompleteInput
 
+    def _process_property_change(self, msg):
+        if not self.restrict and 'value' in msg:
+            try:
+                return super()._process_property_change(msg)
+            except Exception:
+                return Widget._process_property_change(self, msg)
+        return super()._process_property_change(msg)
+
     def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        if 'completions' in msg:
-            if self.restrict and not isIn(self.value, msg['completions']):
-                msg['value'] = self.value = ''
-        return msg
+        if 'value' in msg and not self.restrict and not isIn(msg['value'], self.values):
+            with param.parameterized.discard_events(self):
+                props = super()._process_param_change(msg)
+                self.value = props['value'] = msg['value']
+        else:
+            props = super()._process_param_change(msg)
+        return props
 
 
 class _RadioGroupBase(SingleSelectBase):
@@ -1193,7 +1210,6 @@ class ToggleGroup(SingleSelectBase):
     _behaviors = ['check', 'radio']
 
     def __new__(cls, widget_type='button', behavior='check', **params):
-
         if widget_type not in ToggleGroup._widgets_type:
             raise ValueError(f'widget_type {widget_type} is not valid. Valid options are {ToggleGroup._widgets_type}')
         if behavior not in ToggleGroup._behaviors:
