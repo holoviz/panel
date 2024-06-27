@@ -20,10 +20,7 @@ def test_code_editor(page):
 
     page.keyboard.press("Enter")
     page.keyboard.type('print("Hello Panel!")')
-    wait_until(
-        lambda: page.locator(".ace_content").inner_text()
-        == "print('Hello World!')\nprint(\"Hello Panel!\")"
-    )
+    expect(page.locator(".ace_content")).to_have_text("print('Hello World!')\nprint(\"Hello Panel!\")")
     wait_until(lambda: editor.value_input == "print('Hello World!')\nprint(\"Hello Panel!\")")
     assert editor.value == "print('Hello World!')"
 
