@@ -10,16 +10,19 @@ You can layout a single object as follows.
 import panel as pn
 import param
 
+from panel.custom import Child, ReactiveHTML
+
 pn.extension()
 
-class LayoutSingleObject(pn.reactive.ReactiveHTML):
-    object = param.Parameter(allow_refs=False)
+class LayoutSingleObject(ReactiveHTML):
+
+    object = Child(allow_refs=False)
 
     _template = """
     <div>
-        <h1>Temperature</h1>
-        <h2>A measurement from the sensor</h2>
-        <div id="object">${object}</div>
+      <h1>Temperature</h1>
+      <h2>A measurement from the sensor</h2>
+      <div id="object">${object}</div>
     </div>
 """
 
@@ -39,18 +42,11 @@ LayoutSingleObject(
 ```
 
 :::{note}
-
-Please note
-
 - We define the HTML layout in the `_template` attribute.
 - We can refer to the parameter `object` in the `_template` via the *template parameter* `${object}`.
-  - We must give the `div` element holding the `${object}` an `id`. If we do not, then an exception
-  will be raised. The `id` can be any value, for example `id="my-object"`.
-- We call our *object* parameter `object` to be consistent with our built in layouts. But the
-parameter can be called anything. For example `value`, `dial` or `temperature`.
-- We add the `border` in the `styles` parameter so that we can better see how the `_template` layes
-out inside the `ReactiveHTML` component. This can be very useful for development.
-
+  - We must give the `div` element holding the `${object}` an `id`. If we do not, then an exception will be raised. The `id` can be any value, for example `id="my-object"`.
+- We call our *object* parameter `object` to be consistent with our built in layouts. But the parameter can be called anything. For example `value`, `dial` or `temperature`.
+- We add the `border` in the `styles` parameter so that we can better see how the `_template` layes out inside the `ReactiveHTML` component. This can be very useful for development.
 :::
 
 ## Layout multiple parameters
@@ -59,11 +55,13 @@ out inside the `ReactiveHTML` component. This can be very useful for development
 import panel as pn
 import param
 
+from panel.custom import Child, ReactiveHTML
+
 pn.extension()
 
-class LayoutMultipleValues(pn.reactive.ReactiveHTML):
-    object1 = param.Parameter(allow_refs=False)
-    object2 = param.Parameter(allow_refs=False)
+class LayoutMultipleValues(ReactiveHTML):
+    object1 = Child()
+    object2 = Child()
 
     _template = """
     <div>
@@ -84,9 +82,7 @@ layout.servable()
 You might notice that the values of `object1` and `object2` looks like they have been
 rendered as markdown! That is correct.
 
-Before inserting the value of a parameter in the
-`_template`, Panel transforms the value using `pn.panel`. And for a string value `pn.panel` returns
-a `Markdown` pane.
+Before inserting the value of a parameter in the `_template`, Panel transforms the value using `pn.panel`. And for a string value `pn.panel` returns a `Markdown` pane.
 
 Let's verify this.
 
@@ -106,32 +102,33 @@ LayoutMultipleValues(
 
 ## Layout as literal `str` values
 
-If you want to show the *literal* `str` value of your parameter instead of the `pn.panel` return
-value you can configure that via the `_child_config` attribute.
+If you want to show the *literal* `str` value of your parameter instead of the `pn.panel` return value you can configure that via the `_child_config` attribute.
 
 ```{pyodide}
 import panel as pn
 import param
 
+from panel.custom import ReactiveHTML
+
 pn.extension()
 
-class LayoutLiteralValues(pn.reactive.ReactiveHTML):
-    object1 = param.Parameter()
-    object2 = param.Parameter()
+class LayoutLiteralValues(ReactiveHTML):
+    object1 = param.String()
+    object2 = param.String()
 
     _child_config = {"object1": "literal", "object2": "literal"}
 
     _template = """
     <style>
-    .pn-container {height: 100%;width: 100%;}
+      .pn-container {height: 100%;width: 100%;}
     </style>
     <div class="pn-container">
-        <h1>Object 1</h1>
-        <div id="object1">${object1}</div>
-        <h1>Object 2</h1>
-        <div id="object2">${object2}</div>
+      <h1>Object 1</h1>
+      <div id="object1">${object1}</div>
+      <h1>Object 2</h1>
+      <div id="object2">${object2}</div>
     </div>
-"""
+    """
 
 layout = LayoutLiteralValues(
     object1="This is the **value** of `object1`", object2="This is the **value** of `object2`",
@@ -154,10 +151,13 @@ If you want to want to layout a dynamic `List` of objects you can use a *for loo
 import panel as pn
 import param
 
+from panel.custom import Children, ReactiveHTML
+
 pn.extension()
 
-class LayoutOfList(pn.reactive.ReactiveHTML):
-    objects = param.List()
+class LayoutOfList(ReactiveHTML):
+
+    objects = Children()
 
     _template = """
     <div id="container" class="pn-container">
@@ -170,11 +170,10 @@ class LayoutOfList(pn.reactive.ReactiveHTML):
 """
 
 LayoutOfList(objects=[
-            "I **love** beat boxing",
-            "https://upload.wikimedia.org/wikipedia/commons/d/d3/Beatboxset1_pepouni.ogg",
-            "Yes I do!"],
-        styles={"border": "2px solid lightgray"},
-).servable()
+    "I **love** beat boxing",
+    "https://upload.wikimedia.org/wikipedia/commons/d/d3/Beatboxset1_pepouni.ogg",
+    "Yes I do!"
+], styles={"border": "2px solid lightgray"}).servable()
 ```
 
 The component will trigger a rerendering if you update the `List` value.
@@ -196,25 +195,27 @@ You can optionally
 
 ## Create a list like layout
 
-If you want to create a *list like* layout similar to `Column` and `Row`, you can
-combine `NamedListLike` and `ReactiveHTML`.
+If you want to create a *list like* layout similar to `Column` and `Row`, you can combine `ListLike` and `ReactiveHTML`.
 
 ```{pyodide}
 import panel as pn
 import param
 
+from panel.custom import ReactiveHTML
+from panel.layout.base import ListLike
+
 pn.extension()
 
-class ListLikeLayout(pn.layout.base.NamedListLike, pn.reactive.ReactiveHTML):
+class ListLikeLayout(ListLike, ReactiveHTML):
     objects = param.List()
 
     _template = """
     <div id="container" class="pn-container">
-        {% for object in objects %}
-            <h1>Object {{ loop.index0 }}</h1>
-            <div id="object">${object}</div>
-            <hr/>
-        {% endfor %}
+      {% for object in objects %}
+        <h1>Object {{ loop.index0 }}</h1>
+        <div id="object">${object}</div>
+        <hr/>
+      {% endfor %}
     </div>
 """
 
@@ -232,7 +233,7 @@ expect.
 
 :::{note}
 
-You must list `NamedListLike, ReactiveHTML` in exactly that order when you define the class! The other
+You must list `ListLike, ReactiveHTML` in exactly that order when you define the class! The other
 way around `ReactiveHTML, NamedListLike` will not work.
 
 ::::
@@ -245,37 +246,35 @@ If you want to layout a dictionary, you can use a for loop on the `.items()`.
 import panel as pn
 import param
 
+from panel.custom import ReactiveHTML
+
 pn.extension()
 
-class LayoutOfDict(pn.reactive.ReactiveHTML):
+class LayoutOfDict(ReactiveHTML):
     object = param.Dict()
 
     _template = """
     <div id="container" class="pn-container">
-         {% for key, value in object.items() %}
-            <h1>{{ loop.index0 }}. {{ key }}</h1>
-            <div id="value">${value}</div>
-            <hr/>
-        {% endfor %}
+    {% for key, value in object.items() %}
+      <h1>{{ loop.index0 }}. {{ key }}</h1>
+      <div id="value">${value}</div>
+      <hr/>
+    {% endfor %}
     </div>
-"""
+    """
 
 LayoutOfDict(object={
     "Intro":  "I **love** beat boxing",
     "Example": "https://upload.wikimedia.org/wikipedia/commons/d/d3/Beatboxset1_pepouni.ogg",
     "*Outro*": "Yes I do!"
-},
-    styles={"border": "2px solid lightgray"},
-).servable()
+}, styles={"border": "2px solid lightgray"}).servable()
 ```
 
 :::{note}
 
 Please note
 
-- We can insert the `key` as a literal value only using `{{ key }}`. Inserting it as a template
-variable `${key}` will not work.
-- We must not give the HTML element containing `{{ key }}` an `id`. If we do, an exception will be
-raised.
+- We can insert the `key` as a literal value only using `{{ key }}`. Inserting it as a template variable `${key}` will not work.
+- We must not give the HTML element containing `{{ key }}` an `id`. If we do, an exception will be raised.
 
 :::

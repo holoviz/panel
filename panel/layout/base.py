@@ -6,7 +6,8 @@ from __future__ import annotations
 
 from collections import defaultdict, namedtuple
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Iterable, Iterator, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, Generator, Iterable, Iterator, Mapping,
+    Optional,
 )
 
 import param
@@ -21,6 +22,7 @@ from ..io.state import state
 from ..models import Column as PnColumn
 from ..reactive import Reactive
 from ..util import param_name, param_reprs, param_watchers
+from ..viewable import Children
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -81,7 +83,7 @@ class Panel(Reactive):
             template = '{cls}({params}){spacer}{objs}'
         return template.format(
             cls=cls, params=', '.join(params),
-            objs=('%s' % spacer).join(objs), spacer=spacer)
+            objs=str(spacer).join(objs), spacer=spacer)
 
     #----------------------------------------------------------------
     # Callback API
@@ -146,11 +148,8 @@ class Panel(Reactive):
         Returns new child models for the layout while reusing unchanged
         models and cleaning up any dropped objects.
         """
-        from ..pane.base import RerenderError, panel
+        from ..pane.base import RerenderError
         new_models, old_models = [], []
-        for i, pane in enumerate(self.objects):
-            pane = panel(pane)
-            self.objects[i] = pane
 
         for obj in old_objects:
             if obj not in self.objects:
@@ -345,10 +344,24 @@ class Panel(Reactive):
 
 class ListLike(param.Parameterized):
 
-    objects = param.List(default=[], doc="""
+    objects = Children(default=[], doc="""
         The list of child objects that make up the layout.""")
 
     _preprocess_params: ClassVar[list[str]] = ['objects']
+
+    def __init__(self, *objects: Any, **params: Any):
+        if objects:
+            if 'objects' in params:
+                raise ValueError(
+                    f"A {type(self).__name__}'s objects should be supplied either "
+                    "as positional arguments or as a keyword, not both."
+                )
+            params['objects'] = list(objects)
+        elif 'objects' in params:
+            objects = params['objects']
+            if not (resolve_ref(objects) or iscoroutinefunction(objects) or isinstance(objects, Generator)):
+                params['objects'] = list(objects)
+        super().__init__(**params)
 
     def __getitem__(self, index: int | slice) -> Viewable | list[Viewable]:
         return self.objects[index]
@@ -381,7 +394,6 @@ class ListLike(param.Parameterized):
         return obj in self.objects
 
     def __setitem__(self, index: int | slice, panes: Iterable[Any]) -> None:
-        from ..pane import panel
         new_objects = list(self)
         if not isinstance(index, slice):
             start, end = index, index+1
@@ -412,7 +424,7 @@ class ListLike(param.Parameterized):
                                  'on the %s to match the supplied slice.' %
                                  (expected, type(self).__name__))
         for i, pane in zip(range(start, end), panes):
-            new_objects[i] = panel(pane)
+            new_objects[i] = pane
 
         self.objects = new_objects
 
@@ -435,9 +447,8 @@ class ListLike(param.Parameterized):
             else:
                 objects = self.objects
         elif 'objects' in params:
-            raise ValueError("A %s's objects should be supplied either "
-                             "as arguments or as a keyword, not both."
-                             % type(self).__name__)
+            raise ValueError(f"A {type(self).__name__}'s objects should be supplied either "
+                             "as arguments or as a keyword, not both.")
         p = dict(self.param.values(), **params)
         del p['objects']
         return type(self)(*objects, **p)
@@ -450,9 +461,8 @@ class ListLike(param.Parameterized):
         ---------
         obj (object): Panel component to add to the layout.
         """
-        from ..pane import panel
         new_objects = list(self)
-        new_objects.append(panel(obj))
+        new_objects.append(obj)
         self.objects = new_objects
 
     def clear(self) -> list[Viewable]:
@@ -475,9 +485,8 @@ class ListLike(param.Parameterized):
         ---------
         objects (list): List of panel components to add to the layout.
         """
-        from ..pane import panel
         new_objects = list(self)
-        new_objects.extend(list(map(panel, objects)))
+        new_objects.extend(objects)
         self.objects = new_objects
 
     def index(self, object) -> int:
@@ -503,9 +512,8 @@ class ListLike(param.Parameterized):
         index (int): Index at which to insert the object.
         object (object): Panel components to insert in the layout.
         """
-        from ..pane import panel
         new_objects = list(self)
-        new_objects.insert(index, panel(obj))
+        new_objects.insert(index, obj)
         self.objects = new_objects
 
     def pop(self, index: int) -> Viewable:
@@ -544,7 +552,7 @@ class ListLike(param.Parameterized):
 
 class NamedListLike(param.Parameterized):
 
-    objects = param.List(default=[], doc="""
+    objects = Children(default=[], doc="""
         The list of child objects that make up the layout.""")
 
     _preprocess_params: ClassVar[list[str]] = ['objects']
@@ -552,9 +560,10 @@ class NamedListLike(param.Parameterized):
     def __init__(self, *items: list[Any | tuple[str, Any]], **params: Any):
         if 'objects' in params:
             if items:
-                raise ValueError('%s objects should be supplied either '
-                                 'as positional arguments or as a keyword, '
-                                 'not both.' % type(self).__name__)
+                raise ValueError(
+                    f'{type(self).__name__} objects should be supplied either '
+                    'as positional arguments or as a keyword, not both.'
+                )
             items = params.pop('objects')
         params['objects'], self._names = self._to_objects_and_names(items)
         super().__init__(**params)
@@ -809,20 +818,6 @@ class ListPanel(ListLike, Panel):
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'scroll': None}
 
     __abstract = True
-
-    def __init__(self, *objects: Any, **params: Any):
-        from ..pane import panel
-        if objects:
-            if 'objects' in params:
-                raise ValueError("A %s's objects should be supplied either "
-                                 "as positional arguments or as a keyword, "
-                                 "not both." % type(self).__name__)
-            params['objects'] = [panel(pane) for pane in objects]
-        elif 'objects' in params:
-            objects = params['objects']
-            if not resolve_ref(objects) or iscoroutinefunction(objects):
-                params['objects'] = [panel(pane) for pane in objects]
-        super(Panel, self).__init__(**params)
 
     @property
     def _linked_properties(self):

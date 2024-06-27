@@ -2247,7 +2247,7 @@ def test_tabulator_patching_no_event(page, df_mixed):
 
 def color_false(val):
     color = 'red' if not val else 'black'
-    return 'color: %s' % color
+    return f'color: {color}'
 
 def highlight_max(s):
     is_max = s == s.max()

@@ -21,10 +21,10 @@ from typing import TYPE_CHECKING, ClassVar
 import param
 
 from .layout import Column, Panel, Row
-from .pane import HTML, PaneBase, panel
+from .pane import HTML, Pane, panel
 from .pane.base import ReplacementPane
 from .viewable import Viewable
-from .widgets import Button, Widget
+from .widgets import Button, WidgetBase
 from .widgets.widget import fixed, widget
 
 if TYPE_CHECKING:
@@ -61,7 +61,7 @@ def _yield_abbreviations_for_parameter(parameter, kwargs):
             yield k, v, empty
 
 
-class interactive(PaneBase):
+class interactive(Pane):
 
     default_layout = param.ClassSelector(default=Column, class_=(Panel),
                                          is_instance=False)
@@ -107,9 +107,9 @@ class interactive(PaneBase):
             self._pane = panel(pane, name=self.name)
             self._internal = True
         self._inner_layout = Row(self._pane)
-        widgets = [widget for _, widget in widgets if isinstance(widget, Widget)]
+        widgets = [widget for _, widget in widgets if isinstance(widget, WidgetBase)]
         if 'name' in params:
-            widgets.insert(0, HTML('<h2>%s</h2>' % self.name))
+            widgets.insert(0, HTML(f'<h2>{self.name}</h2>'))
         self.widget_box = Column(*widgets)
         self.layout.objects = [self.widget_box, self._inner_layout]
         self._link_widgets()
@@ -213,7 +213,7 @@ class interactive(PaneBase):
                 widget_obj = abbrev
             else:
                 widget_obj = widget(abbrev, name=name, default=default)
-            if not (isinstance(widget_obj, Widget) or isinstance(widget_obj, fixed)):
+            if not (isinstance(widget_obj, WidgetBase) or isinstance(widget_obj, fixed)):
                 if widget_obj is None:
                     continue
                 else:

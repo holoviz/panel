@@ -24,6 +24,8 @@ from bokeh.models.widgets import (
     PasswordInput as _BkPasswordInput, Spinner as _BkSpinner,
     Switch as _BkSwitch,
 )
+from bokeh.models.widgets.inputs import ClearInput
+from pyviz_comms import JupyterComm
 
 from ..config import config
 from ..layout import Column, Panel
@@ -31,7 +33,7 @@ from ..models import (
     DatetimePicker as _bkDatetimePicker, TextAreaInput as _bkTextAreaInput,
     TextInput as _BkTextInput,
 )
-from ..util import param_reprs, try_datetime64_to_datetime
+from ..util import lazy_load, param_reprs, try_datetime64_to_datetime
 from .base import CompositeWidget, Widget
 
 if TYPE_CHECKING:
@@ -39,6 +41,7 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
+    from ..models.file_dropper import DeleteEvent, UploadEvent
     from ..viewable import Viewable
 
 
@@ -193,20 +196,43 @@ class FileInput(Widget):
     >>> FileInput(accept='.png,.jpeg', multiple=True)
     """
 
-    accept = param.String(default=None)
+    accept = param.String(default=None, doc="""
+        A comma separated string of all extension types that should
+        be supported.""")
 
     description = param.String(default=None, doc="""
-        An HTML string describing the function of this component.""")
+        An HTML string describing the function of this component
+        rendered as a tooltip icon.""")
+
+    directory = param.Boolean(default=False, doc="""
+        Whether to allow selection of directories instead of files.
+        The filename will be relative paths to the uploaded directory.
+
+        .. note::
+            When a directory is uploaded it will give add a confirmation pop up.
+            The confirmation pop up cannot be disabled, as this is a security feature
+            in the browser.
+
+        .. note::
+            The `accept` parameter only works with file extension.
+            When using `accept` with `directory`, the number of files
+            reported will be the total amount of files, not the filtered.""")
 
     filename = param.ClassSelector(
-        default=None, class_=(str, list), is_instance=True)
+        default=None, class_=(str, list), is_instance=True, doc="""
+        Name of the uploaded file(s).""")
 
     mime_type = param.ClassSelector(
-        default=None, class_=(str, list), is_instance=True)
+        default=None, class_=(str, list), is_instance=True, doc="""
+        Mimetype of the uploaded file(s).""")
 
-    multiple = param.Boolean(default=False)
+    multiple = param.Boolean(default=False, doc="""
+        Whether to allow uploading multiple files. If enabled value
+        parameter will return a list.""")
 
-    value = param.Parameter(default=None)
+    value = param.Parameter(default=None, doc="""
+        The uploaded file(s) stored as a single bytes object if
+        multiple is False or a list of bytes otherwise.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'filename': None, 'name': None
@@ -235,9 +261,13 @@ class FileInput(Widget):
         msg = super()._process_property_change(msg)
         if 'value' in msg:
             if isinstance(msg['value'], str):
-                msg['value'] = b64decode(msg['value'])
+                msg['value'] = b64decode(msg['value']) if msg['value'] else None
             else:
                 msg['value'] = [b64decode(content) for content in msg['value']]
+        if 'filename' in msg and len(msg['filename']) == 0:
+            msg['filename'] = None
+        if 'mime_type' in msg and len(msg['mime_type']) == 0:
+            msg['mime_type'] = None
         return msg
 
     def save(self, filename):
@@ -273,6 +303,117 @@ class FileInput(Widget):
                     f.write(val)
             else:
                 fn.write(val)
+
+    def clear(self):
+        """
+        Clear the file(s) in the FileInput widget
+        """
+        self._send_event(ClearInput)
+
+
+class FileDropper(Widget):
+    """
+    The `FileDropper` allows the user to upload one or more files to the server.
+
+    It is similar to the `FileInput` widget but additionally adds support
+    for chunked uploads, making it possible to upload large files. The
+    UI also supports previews for image files. Unlike `FileInput` the
+    uploaded files are stored as dictionary of bytes object indexed
+    by the filename.
+
+    Reference: https://panel.holoviz.org/reference/widgets/FileDropper.html
+
+    :Example:
+
+    >>> FileDropper(accepted_filetypes=['image/*'], multiple=True)
+    """
+
+    accepted_filetypes = param.List(default=[], doc="""
+        List of accepted file types. Can be mime types, file extensions
+        or wild cards.For instance ['image/*'] will accept all images.
+        ['.png', 'image/jpeg'] will only accepts PNGs and JPEGs.""")
+
+    chunk_size = param.Integer(default=10_000_000, doc="""
+        Size in bytes per chunk transferred across the WebSocket.""")
+
+    layout = param.Selector(
+        default=None, objects=["circle", "compact", "integrated"], doc="""
+        Compact mode will remove padding, integrated mode is used to render
+        FilePond as part of a bigger element. Circle mode adjusts the item
+        position offsets so buttons and progress indicators don't fall outside
+        of the circular shape.""")
+
+    max_file_size = param.String(default=None, doc="""
+        Maximum size of a file as a string with units given in KB or MB,
+        e.g. 5MB or 750KB.""")
+
+    max_files = param.Integer(default=None, doc="""
+        Maximum number of files that can be uploaded if multiple=True.""")
+
+    max_total_file_size = param.String(default=None, doc="""
+        Maximum size of all uploaded files, as a string with units given
+        in KB or MB, e.g. 5MB or 750KB.""")
+
+    mime_type = param.Dict(default={}, doc="""
+        A dictionary containing the mimetypes for each of the uploaded
+        files indexed by their filename.""")
+
+    multiple = param.Boolean(default=False, doc="""
+        Whether to allow uploading multiple files.""")
+
+    value = param.Dict(default={}, doc="""
+        A dictionary containing the uploaded file(s) as bytes or string
+        objects indexed by the filename. Files that have a text/* mimetype
+        will automatically be decoded as utf-8.""")
+
+    width = param.Integer(default=300, allow_None=True, doc="""
+      Width of this component. If sizing_mode is set to stretch
+      or scale mode this will merely be used as a suggestion.""")
+
+    _rename = {'value': None}
+
+    def __init__(self, **params):
+        super().__init__(**params)
+        self._file_buffer = {}
+
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
+        self._widget_type = lazy_load(
+            'panel.models.file_dropper', 'FileDropper', isinstance(comm, JupyterComm), root
+        )
+        model = super()._get_model(doc, root, parent, comm)
+        self._register_events('delete_event', 'upload_event', model=model, doc=doc, comm=comm)
+        return model
+
+    def _process_event(self, event: DeleteEvent | UploadEvent):
+        data = event.data
+        name = data['name']
+        if event.event_name == 'delete_event':
+            if name in self.mime_type:
+                del self.mime_type[name]
+            if name in self.value:
+                del self.value[name]
+            self.param.trigger('mime_type', 'value')
+            return
+
+        if data['chunk'] == 1:
+            self._file_buffer[name] = []
+        self._file_buffer[name].append(data['data'])
+        if data['chunk'] != data['total_chunks']:
+            return
+
+        buffers = self._file_buffer.pop(name)
+        file_buffer = b''.join(buffers)
+        if data['type'].startswith('text/'):
+            try:
+                file_buffer = file_buffer.decode('utf-8')
+            except UnicodeDecodeError:
+                pass
+        self.value[name] = file_buffer
+        self.mime_type[name] = data['type']
+        self.param.trigger('mime_type', 'value')
 
 
 class StaticText(Widget):

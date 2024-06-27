@@ -147,7 +147,7 @@ function group_data(records: any[], columns: any[], indexes: string[], aggregato
 }
 
 const timestampSorter = function(a: any, b: any, _aRow: any, _bRow: any, _column: any, _dir: any, _params: any) {
-  // Bokeh serializes datetime objects as UNIX timestamps.
+  // Bokeh/Panel serializes datetime objects as UNIX timestamps (in milliseconds).
 
   //a, b - the two values being compared
   //aRow, bRow - the row components for the values being compared (useful if you need to access additional fields in the row data for the sort)
@@ -163,14 +163,12 @@ const timestampSorter = function(a: any, b: any, _aRow: any, _bRow: any, _column
 
   const opts = {zone: new (window as any).luxon.IANAZone("UTC")}
 
-  // NaN values are serialized to -9223372036854776 by Bokeh
-
-  if (String(a) == "-9223372036854776") {
+  if (Number.isNaN(a)) {
     a = (window as any).luxon.DateTime.fromISO("invalid")
   } else {
     a = (window as any).luxon.DateTime.fromMillis(a, opts)
   }
-  if (String(b) == "-9223372036854776") {
+  if (Number.isNaN(b)) {
     b = (window as any).luxon.DateTime.fromISO("invalid")
   } else {
     b = (window as any).luxon.DateTime.fromMillis(b, opts)
@@ -446,7 +444,7 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   redraw(columns: boolean = true, rows: boolean = true): void {
-    if (this._building) {
+    if (this._building || this.tabulator != null) {
       return
     }
     if (columns && (this.tabulator.columnManager.element != null)) {
@@ -499,8 +497,8 @@ export class DataTabulatorView extends HTMLBoxView {
     }
     super.render()
     this._initializing = true
-    const container = div({style: "display: contents;"})
-    const el = div({style: "width: 100%; height: 100%; visibility: hidden;"})
+    const container = div({style: {display: "contents"}})
+    const el = div({style: {width: "100%", height: "100%", visibility: "hidden"}})
     this.container = el
     this.setCSSClasses(el)
     container.appendChild(el)
@@ -539,7 +537,7 @@ export class DataTabulatorView extends HTMLBoxView {
     this.tabulator.on("tableBuilt", () => this.tableBuilt())
 
     // Rendering callbacks
-    this.tabulator.on("selectableCheck", (row: any) => {
+    this.tabulator.on("selectableRowsCheck", (row: any) => {
       const selectable = this.model.selectable_rows
       return (selectable == null) || selectable.includes(row._row.data._index)
     })
@@ -654,13 +652,13 @@ export class DataTabulatorView extends HTMLBoxView {
 
   getConfiguration(): any {
     // Only use selectable mode if explicitly requested otherwise manually handle selections
-    const selectable = this.model.select_mode === "toggle" ? true : NaN
+    const selectableRows = this.model.select_mode === "toggle" ? true : NaN
     const configuration = {
       ...this.model.configuration,
       index: "_index",
       nestedFieldSeparator: false,
       movableColumns: false,
-      selectable,
+      selectableRows,
       columns: this.getColumns(),
       initialSort: this.sorters,
       layout: this.getLayout(),
@@ -736,7 +734,7 @@ export class DataTabulatorView extends HTMLBoxView {
     const style = getComputedStyle(this.tabulator.element.children[1].children[0])
     const bg = style.backgroundColor
     const neg_margin = rowEl.style.paddingLeft ? `-${rowEl.style.paddingLeft}` : "0"
-    const viewEl = div({style: `background-color: ${bg}; margin-left:${neg_margin}; max-width: 100%; overflow-x: hidden;`})
+    const viewEl = div({style: {background_color: bg, margin_left: neg_margin, max_width: "100%", overflow_x: "hidden"}})
     viewEl.appendChild(view.el)
     rowEl.appendChild(viewEl)
     if (!view.has_finished()) {

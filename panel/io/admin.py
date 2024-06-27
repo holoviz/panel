@@ -257,7 +257,7 @@ def get_timeline(doc=None):
         else:
             msg = new.getMessage()
             line_color = 'black'
-            if msg.startswith('Session %s logged' % sid):
+            if msg.startswith(f'Session {sid} logged'):
                 etype = 'logging'
                 line_color = EVENT_TYPES.get(etype)
             elif msg.startswith(LOG_SESSION_DESTROYED % sid):

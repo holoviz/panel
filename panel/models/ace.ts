@@ -49,7 +49,7 @@ export class AcePlotView extends HTMLBoxView {
       style: {
         width: "100%",
         height: "100%",
-        zIndex: 0,
+        zIndex: "0",
       },
     })
     this.shadow_el.append(this._container)

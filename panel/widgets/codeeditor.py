@@ -49,7 +49,7 @@ class CodeEditor(Widget):
     theme = param.ObjectSelector(default="chrome", objects=list(ace_themes),
                                  doc="Theme of the editor")
 
-    value = param.String(doc="""
+    value = param.String(default="", doc="""
         State of the current code in the editor upon loss of focus, i.e. clicking outside the editor.""")
 
     value_input = param.String(doc="State of the current code updated on every key press.")

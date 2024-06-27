@@ -1,14 +1,16 @@
 [project]
 name = "panel"
-channels = ["pyviz/label/dev", "bokeh", "conda-forge"]
+channels = ["pyviz/label/dev", "bokeh/label/dev", "conda-forge"]
 platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 
+[activation.env]
+MPLBACKEND = "Agg"
+PYTHONIOENCODING = "utf-8"
+
 [tasks]
-download-data = 'bokeh sampledata'
 install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
 
 [environments]
-test-39 = ["py39", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-310 = ["py310", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-311 = ["py311", "test-core", "test", "example", "test-example", "test-unit-task"]
 test-312 = ["py312", "test-core", "test", "example", "test-example", "test-unit-task"]
@@ -20,12 +22,12 @@ lint = ["py311", "lint"]
 
 [dependencies]
 bleach = "*"
-bokeh = ">=3.4.0,<3.5.0"
+bokeh = "==3.5.0rc1"
 linkify-it-py = "*"
 markdown = "*"
 markdown-it-py = "*"
 mdit-py-plugins = "*"
-nodejs = "20.9.*" # 20.12.2 breaks bokeh build on Windows: https://github.com/bokeh/bokeh/pull/13851
+nodejs = "*"
 packaging = "*"
 pandas = ">=1.2"
 param = ">=2.1.0,<3.0"
@@ -37,14 +39,12 @@ typing_extensions = "*"
 # Recommended
 holoviews = ">=1.16.0"
 jupyterlab = "*"
-matplotlib = "*"
+matplotlib-base = "*"
 pillow = "*"
 plotly = ">=4.0"
 # Standard
 watchfiles = "*"
-
-[feature.py39.dependencies]
-python = "3.9.*"
+bokeh_sampledata = "*"
 
 [feature.py310.dependencies]
 python = "3.10.*"
@@ -131,7 +131,7 @@ nbval = "*"
 channels = ["pyviz/label/dev", "bokeh", "microsoft", "conda-forge"]
 
 [feature.test-ui.dependencies]
-playwright = "*"
+playwright = { version = "*", channel = "microsoft" }
 pytest-playwright = "*"
 jupyter_server = "*"
 
@@ -145,9 +145,14 @@ depends_on = ["_install-ui"]
 # =============================================
 # =================== DOCS ====================
 # =============================================
+[feature.doc.activation.env]
+MOZ_HEADLESS = "1"
+PANEL_IPYWIDGET = "1"
+
 [feature.doc.dependencies]
-nbsite = ">=0.8.4"
 lxml = "*"
+nbsite = ">=0.8.4"
+selenium = "*"
 
 [feature.doc.tasks]
 _docs-refmanual = 'python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests'

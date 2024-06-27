@@ -79,7 +79,7 @@ def main(args=None):
 
     if len(sys.argv) == 1:
         all_commands = sorted([c.name for c in bokeh_commands])
-        die("ERROR: Must specify subcommand, one of: %s" % nice_join(all_commands))
+        die(f"ERROR: Must specify subcommand, one of: {nice_join(all_commands)}")
 
     if sys.argv[1] in ('--help', '-h'):
         args = parser.parse_args(sys.argv[1:])

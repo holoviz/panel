@@ -41,8 +41,10 @@ class TestChatMessage:
         assert isinstance(user_pane, HTML)
         assert user_pane.object == "User"
 
-        assert header_row[1] == "Header Test"
-        assert header_row[2] == "Header 2"
+        assert isinstance(header_row[1], Markdown)
+        assert header_row[1].object == "Header Test"
+        assert isinstance(header_row[2], Markdown)
+        assert header_row[2].object == "Header 2"
 
         center_row = columns[1][1]
         assert isinstance(center_row, Row)
@@ -57,8 +59,10 @@ class TestChatMessage:
         footer_col = columns[1][2]
         assert isinstance(footer_col, Column)
 
-        assert footer_col[0] == "Footer Test"
-        assert footer_col[1] == "Footer 2"
+        assert isinstance(footer_col[0], Markdown)
+        assert footer_col[0].object == "Footer Test"
+        assert isinstance(footer_col[1], Markdown)
+        assert footer_col[1].object == "Footer 2"
 
         timestamp_pane = footer_col[2]
         assert isinstance(timestamp_pane, HTML)

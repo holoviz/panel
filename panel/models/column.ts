@@ -1,6 +1,14 @@
-import {Column as BkColumn, ColumnView as BkColumnView} from "@bokehjs/models/layouts/column"
-import * as DOM from "@bokehjs/core/dom"
+import {ModelEvent} from "@bokehjs/core/bokeh_events"
+import {div} from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
+import type {EventCallback} from "@bokehjs/model"
+import {Column as BkColumn, ColumnView as BkColumnView} from "@bokehjs/models/layouts/column"
+
+export class ScrollButtonClick extends ModelEvent {
+  static {
+    this.prototype.event_name = "scroll_button_click"
+  }
+}
 
 export class ColumnView extends BkColumnView {
   declare model: Column
@@ -62,7 +70,7 @@ export class ColumnView extends BkColumnView {
 
   override render(): void {
     super.render()
-    this.scroll_down_button_el = DOM.createElement("div", {class: "scroll-button"})
+    this.scroll_down_button_el = div({class: "scroll-button"})
     this.shadow_el.appendChild(this.scroll_down_button_el)
     this.el.addEventListener("scroll", () => {
       this.record_scroll_position()
@@ -70,6 +78,7 @@ export class ColumnView extends BkColumnView {
     })
     this.scroll_down_button_el.addEventListener("click", () => {
       this.scroll_to_latest()
+      this.model.trigger_event(new ScrollButtonClick())
     })
   }
 
@@ -117,5 +126,9 @@ export class Column extends BkColumn {
       scroll_button_threshold: [Int, 0],
       view_latest: [Bool, false],
     }))
+  }
+
+  on_click(callback: EventCallback<ScrollButtonClick>): void {
+    this.on_event(ScrollButtonClick, callback)
   }
 }
