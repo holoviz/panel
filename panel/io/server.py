@@ -351,7 +351,10 @@ class Server(BokehServer):
             async def stop_autoreload():
                 self._autoreload_stop_event.set()
                 await self._autoreload_task
-            self._loop.asyncio_loop.run_until_complete(stop_autoreload())
+            try:
+                self._loop.asyncio_loop.run_until_complete(stop_autoreload())
+            except RuntimeError:
+                pass # Ignore if the event loop is still running
         super().stop(wait=wait)
         if state._admin_context:
             state._admin_context.run_unload_hook()
