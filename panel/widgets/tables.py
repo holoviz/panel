@@ -712,7 +712,10 @@ class BaseTable(ReactiveData, Widget):
             if reset_index:
                 stream_value = stream_value.reset_index(drop=True)
                 stream_value.index += value_index_start
-            combined = pd.concat([self.value, stream_value])
+            if self.value.empty:
+                combined = stream_value
+            else:
+                combined = pd.concat([self.value, stream_value])
             if rollover is not None:
                 combined = combined.iloc[-rollover:]
             with param.discard_events(self):
