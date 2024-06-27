@@ -50,7 +50,8 @@ class CodeEditor(Widget):
                                  doc="Theme of the editor")
 
     value = param.String(default="", doc="""
-        State of the current code in the editor upon loss of focus, i.e. clicking outside the editor.""")
+        State of the current code in the editor upon loss of focus,
+        i.e. clicking outside the editor, or pressing <Ctrl+Enter> or <Cmd+Enter>.""")
 
     value_input = param.String(doc="State of the current code updated on every key press.")
 

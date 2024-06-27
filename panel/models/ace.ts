@@ -70,6 +70,13 @@ export class AcePlotView extends HTMLBoxView {
     this._editor.setShowPrintMargin(this.model.print_margin)
     this._editor.on("blur", () => this._update_code_from_editor())
     this._editor.on("change", () => this._update_code_input_from_editor())
+    this._editor.commands.addCommand({
+      name: "updateCodeFromEditor",
+      bindKey: { win: "Ctrl-Enter", mac: "Command-Enter"},
+      exec: () => {
+          this._update_code_from_editor();
+      }
+    });
   }
 
   _update_code_from_model(): void {
