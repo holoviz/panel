@@ -15,6 +15,7 @@ from ipykernel.kernelbase import Kernel
 from ipywidgets import Widget
 from ipywidgets._version import __protocol_version__
 from ipywidgets.widgets.widget import _remove_buffers
+from packaging.version import Version
 
 # Stop ipywidgets_bokeh from patching the kernel
 ipykernel.kernelbase.Kernel._instance = ''
@@ -81,8 +82,10 @@ def _on_widget_constructed(widget, doc=None):
         'metadata': {
             'version': __protocol_version__
         },
-        'kernel': kernel
+        'kernel': kernel,
     }
+    if Version(ipykernel.__version__) >= Version('6.22.0'):
+        args['show_warning'] = False
     if widget._model_id is not None:
         args['comm_id'] = widget._model_id
     try:
@@ -132,8 +135,9 @@ class MessageSentEventPatched(MessageSentEvent):
 class PanelSessionWebsocket(SessionWebsocket):
 
     def __init__(self, *args, **kwargs):
-        session.Session.__init__(self, *args, **kwargs)
+        self.parent = kwargs.pop('parent', None)
         self._document = kwargs.pop('document', None)
+        session.Session.__init__(self, **kwargs)
         self._queue = []
         self._document.on_message("ipywidgets_bokeh", self.receive)
 
