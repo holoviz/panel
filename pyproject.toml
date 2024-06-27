@@ -206,4 +206,5 @@ filterwarnings = [
     "ignore:distutils Version classes are deprecated:DeprecationWarning:ipywidgets_bokeh.kernel", # OK
     "ignore:unclosed file <_io.TextIOWrapper name='/dev/null' mode='w':ResourceWarning", # OK (Unix)
     "ignore:unclosed file <_io.TextIOWrapper name='nul' mode='w':ResourceWarning", # OK (Windows)
+    "ignore:Deprecated in traitlets 4.1, use the instance .metadata dictionary directly", # OK (ipywidgets internal)
 ]
