@@ -51,7 +51,7 @@ from .util import (
 )
 from .util.checks import import_available
 from .viewable import (
-    Child, Layoutable, Renderable, Viewable,
+    Child, Children, Layoutable, Renderable, Viewable,
 )
 
 if TYPE_CHECKING:
@@ -1740,7 +1740,11 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
                 params[children_param] = children = panel(child_value)
             child_param = cls.param[children_param]
             try:
-                child_param._validate(children)
+                if children_param not in self._param__private.explicit_no_refs:
+                    children = resolve_value(children)
+                if not ((isinstance(child_param, Children) and isinstance(children, list)) or
+                        (isinstance(child_param, Child))):
+                    child_param._validate(children)
             except Exception as e:
                 raise RuntimeError(
                     f"{cls.__name__}._template declares {children_param!r} "
