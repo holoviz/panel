@@ -822,22 +822,23 @@ def test_tabulator_sorters_unnamed_index(document, comm):
     table = Tabulator(df)
 
     table.sorters = [{'field': 'index', 'sorter': 'number', 'dir': 'desc'}]
+    res = table.current_view
+    exp = df.sort_index(ascending=False)
+    exp.columns = exp.columns.astype(object)
 
-    pd.testing.assert_frame_equal(
-        table.current_view,
-        df.sort_index(ascending=False)
-    )
+    pd.testing.assert_frame_equal(res, exp)
 
 def test_tabulator_sorters_int_name_column(document, comm):
     df = pd.DataFrame(np.random.rand(10, 4))
+    assert df.columns.dtype == np.int64
     table = Tabulator(df)
 
     table.sorters = [{'field': '0', 'dir': 'desc'}]
+    res = table.current_view
+    exp = df.sort_values([0], ascending=False)
+    exp.columns = exp.columns.astype(object)
 
-    pd.testing.assert_frame_equal(
-        table.current_view,
-        df.sort_values([0], ascending=False)
-    )
+    pd.testing.assert_frame_equal(res, exp)
 
 
 def test_tabulator_stream_series(document, comm):

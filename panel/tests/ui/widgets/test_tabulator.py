@@ -2402,7 +2402,7 @@ def test_tabulator_sorters_set_after_init(page, df_mixed):
     widget.sorters = [{'field': 'int', 'dir': 'desc'}]
 
     sheader = page.locator('[aria-sort="descending"]:visible')
-    expect(sheader).to_have_count(1)
+    wait_until(lambda: expect(sheader).to_have_count(1), page)
     assert sheader.get_attribute('tabulator-field') == 'int'
 
     expected_df_sorted = df_mixed.sort_values('int', ascending=False)
