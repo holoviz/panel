@@ -371,6 +371,7 @@ class BaseTable(ReactiveData, Widget):
 
         # Temporarily add _index_ column because Tabulator uses internal _index
         # as additional sorter to break ties
+        df = df.copy()
         df['_index_'] = np.arange(len(df)).astype(str)
         fields.append('_index_')
         ascending.append(True)
@@ -398,9 +399,7 @@ class BaseTable(ReactiveData, Widget):
 
         # Revert temporary changes to DataFrames
         if rename:
-            df.index.name = None
             df_sorted.index.name = None
-        df.drop(columns=['_index_'], inplace=True)
         df_sorted.drop(columns=['_index_'], inplace=True)
         return df_sorted
 

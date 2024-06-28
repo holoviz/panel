@@ -2873,7 +2873,7 @@ def test_tabulator_edit_event_integrations(page, sorter, python_filter, header_f
         expected_current_view = expected_current_view.query(f'{python_filter_col} == @python_filter_val')
     if header_filter == 'header_filter':
         expected_current_view = expected_current_view.query(f'{header_filter_col} == @header_filter_val')
-    assert widget.current_view.equals(expected_current_view)
+    pd.testing.assert_frame_equal(widget.current_view, expected_current_view)
 
 
 @pytest.mark.parametrize('sorter', ['sorter', 'no_sorter'])
