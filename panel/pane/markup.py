@@ -458,7 +458,6 @@ class Markdown(HTMLBasePane):
         return super()._process_param_change(params)
 
 
-
 class JSON(HTMLBasePane):
     """
     The `JSON` pane allows rendering arbitrary JSON strings, dicts and other
@@ -473,6 +472,10 @@ class JSON(HTMLBasePane):
 
     depth = param.Integer(default=1, bounds=(-1, None), doc="""
         Depth to which the JSON tree will be expanded on initialization.""")
+
+    default = param.Callable(default=None, doc="""
+        Default serialization fallback function that should return a
+        serializable version of an object or raise a TypeError.""")
 
     encoder = param.ClassSelector(class_=json.JSONEncoder, is_instance=False, doc="""
         Custom JSONEncoder class used to serialize objects to JSON string.""")
@@ -490,7 +493,7 @@ class JSON(HTMLBasePane):
     _bokeh_model: ClassVar[Model] = _BkJSON
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        "object": "text", "encoder": None, "style": "styles"
+        "object": "text", "encoder": None, "style": "styles", "default": None
     }
 
     _rerender_params: ClassVar[list[str]] = [
@@ -505,7 +508,11 @@ class JSON(HTMLBasePane):
     def applies(cls, obj: Any, **params) -> float | bool | None:
         if isinstance(obj, (list, dict)):
             try:
-                json.dumps(obj, cls=params.get('encoder', cls.encoder))
+                json.dumps(
+                    obj,
+                    cls=params.get('encoder', cls.encoder),
+                    default=params.get('default', cls.default)
+                )
             except Exception:
                 return False
             else:
@@ -520,7 +527,11 @@ class JSON(HTMLBasePane):
             data = json.loads(obj)
         except Exception:
             data = obj
-        text = json.dumps(data or {}, cls=self.encoder)
+        text = json.dumps(
+            data,
+            cls=self.encoder,
+            default=self.default
+        )
         return dict(object=text)
 
     def _process_property_change(self, properties: dict[str, Any]) -> dict[str, Any]:
