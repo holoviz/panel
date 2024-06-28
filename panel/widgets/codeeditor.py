@@ -50,10 +50,14 @@ class CodeEditor(Widget):
                                  doc="Theme of the editor")
 
     value = param.String(default="", doc="""
-        State of the current code in the editor upon loss of focus,
+        State of the current code in the editor if `on_keyup`. Otherwise, only upon loss of focus,
         i.e. clicking outside the editor, or pressing <Ctrl+Enter> or <Cmd+Enter>.""")
 
-    value_input = param.String(doc="State of the current code updated on every key press.")
+    value_input = param.String(default="", doc="""
+        State of the current code updated on every key press. Identical to `value` if `on_keyup`.""")
+
+    on_keyup = param.Boolean(default=True, doc="""
+        Whether to update the value on every key press or only upon loss of focus / hotkeys.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {"value": "code", "value_input": "code_input", "name": None}
 

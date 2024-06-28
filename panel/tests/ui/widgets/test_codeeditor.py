@@ -12,9 +12,37 @@ from panel.widgets import CodeEditor
 pytestmark = pytest.mark.ui
 
 
-def test_code_editor(page):
+def test_code_editor_on_keyup(page):
 
-    editor = CodeEditor(value="print('Hello World!')")
+    editor = CodeEditor(value="print('Hello World!')", on_keyup=True)
+    serve_component(page, editor)
+    ace_input = page.locator(".ace_content")
+    expect(ace_input).to_have_count(1)
+    ace_input.click()
+
+    page.keyboard.press("Enter")
+    page.keyboard.type('print("Hello Panel!")')
+
+    expect(page.locator(".ace_content")).to_have_text("print('Hello World!')\nprint(\"Hello Panel!\")", use_inner_text=True)
+    wait_until(lambda: editor.value_input == "print('Hello World!')\nprint(\"Hello Panel!\")")
+    assert editor.value == "print('Hello World!')\nprint(\"Hello Panel!\")"
+
+    # clear the editor
+    editor.value = ""
+    expect(page.locator(".ace_content")).to_have_text("", use_inner_text=True)
+    assert editor.value == ""
+    assert editor.value_input == ""
+
+    # enter Hello UI
+    ace_input.click()
+    page.keyboard.type('print("Hello UI!")')
+    expect(page.locator(".ace_content")).to_have_text("print(\"Hello UI!\")", use_inner_text=True)
+    assert editor.value == "print(\"Hello UI!\")"
+
+
+def test_code_editor_not_on_keyup(page):
+
+    editor = CodeEditor(value="print('Hello World!')", on_keyup=False)
     serve_component(page, editor)
     ace_input = page.locator(".ace_content")
     expect(ace_input).to_have_count(1)
