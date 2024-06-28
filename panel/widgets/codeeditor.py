@@ -40,6 +40,9 @@ class CodeEditor(Widget):
 
     language = param.String(default='text', doc="Language of the editor")
 
+    on_keyup = param.Boolean(default=True, doc="""
+        Whether to update the value on every key press or only upon loss of focus / hotkeys.""")
+
     print_margin = param.Boolean(default=False, doc="""
         Whether to show the a print margin.""")
 
@@ -55,9 +58,6 @@ class CodeEditor(Widget):
 
     value_input = param.String(default="", doc="""
         State of the current code updated on every key press. Identical to `value` if `on_keyup`.""")
-
-    on_keyup = param.Boolean(default=True, doc="""
-        Whether to update the value on every key press or only upon loss of focus / hotkeys.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {"value": "code", "value_input": "code_input", "name": None}
 
