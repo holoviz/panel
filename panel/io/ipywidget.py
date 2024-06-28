@@ -10,12 +10,11 @@ import param
 from bokeh.document.events import MessageSentEvent
 from bokeh.document.json import Literal, MessageSent, TypedDict
 from bokeh.util.serialization import make_id
-from ipykernel.comm import Comm, CommManager
+from ipykernel.comm import CommManager
 from ipykernel.kernelbase import Kernel
 from ipywidgets import Widget
 from ipywidgets._version import __protocol_version__
 from ipywidgets.widgets.widget import _remove_buffers
-from packaging.version import Version
 
 # Stop ipywidgets_bokeh from patching the kernel
 ipykernel.kernelbase.Kernel._instance = ''
@@ -30,6 +29,11 @@ from traitlets import Any
 from ..config import __version__
 from ..util import classproperty
 from .state import set_curdoc, state
+
+try:
+    from ipykernel.comm.comm import BaseComm as _IPyComm
+except Exception:
+    from ipykernel.comm.comm import Comm as _IPyComm
 
 try:
     # Support for ipywidgets>=8.0.5
@@ -82,14 +86,12 @@ def _on_widget_constructed(widget, doc=None):
         'metadata': {
             'version': __protocol_version__
         },
-        'kernel': kernel,
     }
-    if Version(ipykernel.__version__) >= Version('6.22.0'):
-        args['show_warning'] = False
     if widget._model_id is not None:
         args['comm_id'] = widget._model_id
     try:
-        widget.comm = Comm(**args)
+        widget.comm = _IPyComm(**args)
+        widget.comm.kernel = kernel
     except Exception as e:
         if 'PANEL_IPYWIDGET' not in os.environ:
             raise e
