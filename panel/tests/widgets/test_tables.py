@@ -819,6 +819,7 @@ def test_tabulator_empty_table(document, comm):
 
 def test_tabulator_sorters_unnamed_index(document, comm):
     df = pd.DataFrame(np.random.rand(10, 4))
+    assert df.columns.dtype == np.int64
     table = Tabulator(df)
 
     table.sorters = [{'field': 'index', 'sorter': 'number', 'dir': 'desc'}]
@@ -827,6 +828,7 @@ def test_tabulator_sorters_unnamed_index(document, comm):
     exp.columns = exp.columns.astype(object)
 
     pd.testing.assert_frame_equal(res, exp)
+    assert df.columns.dtype == np.int64
 
 def test_tabulator_sorters_int_name_column(document, comm):
     df = pd.DataFrame(np.random.rand(10, 4))
@@ -839,6 +841,7 @@ def test_tabulator_sorters_int_name_column(document, comm):
     exp.columns = exp.columns.astype(object)
 
     pd.testing.assert_frame_equal(res, exp)
+    assert df.columns.dtype == np.int64
 
 
 def test_tabulator_stream_series(document, comm):
