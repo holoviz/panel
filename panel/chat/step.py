@@ -126,7 +126,9 @@ class ChatStep(Card):
         if exc_type is not None:
             if self.failed_title is None:
                 # convert to str to wrap repr in apostrophes
-                self._failed_title = f"Error: {str(exc_value)!r}"
+                self._failed_title = f"Error: {exc_type.__name__!r}"
+                exc_msg = f"{exc_value}" if len(self.objects) == 0 else f"\n{exc_value}"
+                self.stream(exc_msg)
             self.status = "failed"
             raise exc_value
         self.status = "success"
