@@ -51,7 +51,7 @@ from .util import (
 )
 from .util.checks import import_available
 from .viewable import (
-    Child, Layoutable, Renderable, Viewable,
+    Child, Children, Layoutable, Renderable, Viewable,
 )
 
 if TYPE_CHECKING:
@@ -1706,6 +1706,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
 
     def __init__(self, **params):
         from .pane import panel
+        cls = type(self)
         for children_param in self._parser.children.values():
             mode = self._child_config.get(children_param, 'model')
             if children_param not in params or mode != 'model':
@@ -1726,7 +1727,23 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
                     children[key] = panel(pane)
                 params[children_param] = children
             else:
-                params[children_param] = panel(child_value)
+                params[children_param] = children = panel(child_value)
+            child_param = cls.param[children_param]
+            try:
+                if children_param not in self._param__private.explicit_no_refs:
+                    children = resolve_value(children)
+                if not ((isinstance(child_param, Children) and isinstance(children, list)) or
+                        (isinstance(child_param, Child))):
+                    child_param._validate(children)
+            except Exception as e:
+                raise RuntimeError(
+                    f"{cls.__name__}._template declares {children_param!r} "
+                    "parameter as a child, however the parameter is of type "
+                    f"{type(child_param).__name__}. Either ensure that the parameter "
+                    "can accept a Panel component, use literal template using the "
+                    "Jinja2 templating syntax (i.e. {{ <param> }}) or declare the "
+                    "child as a literal in the _child_config."
+                ) from e
         super().__init__(**params)
         self._attrs = {}
         self._panes = {}

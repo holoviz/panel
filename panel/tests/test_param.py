@@ -1566,10 +1566,7 @@ def test_set_widget_autocompleteinput(document, comm):
 
     autocompleteinput = model.children[1]
     assert isinstance(autocompleteinput, BkAutocompleteInput)
-    if Version(param.__version__) > Version('2.0.0a2'):
-        assert autocompleteinput.completions == ['a', 'b', '']
-    else:
-        assert autocompleteinput.completions == ['a', 'b']
+    assert autocompleteinput.completions == ['a', 'b', '']
     assert autocompleteinput.value == ''
     assert autocompleteinput.disabled == False
 
