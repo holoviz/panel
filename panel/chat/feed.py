@@ -38,6 +38,7 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
+from typing import BinaryIO
 
 PLACEHOLDER_SVG = """
     <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-loader-3" width="35" height="35" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -106,6 +107,12 @@ class ChatFeed(ListPanel):
 
     callback_user = param.String(default="Assistant", doc="""
         The default user name to use for the message provided by the callback.""")
+
+    callback_avatar = param.ClassSelector(class_=(str, BinaryIO), doc="""
+        The default avatar to use for the entry provided by the callback.
+        Takes precedence over ChatEntry.default_avatars if set; else, if None,
+        defaults to the avatar set in ChatEntry.default_avatars if matching key exists.
+        Otherwise defaults to the first character of the callback_user.""")
 
     card_params = param.Dict(default={}, doc="""
         Params to pass to Card, like `header`, `header_background`, `header_color`, etc.""")
@@ -393,7 +400,8 @@ class ChatFeed(ListPanel):
             raise StopCallback("Callback was stopped.")
 
         user = self.callback_user
-        avatar = None
+        avatar = self.callback_avatar
+
         if isinstance(value, dict):
             user = value.get("user", user)
             avatar = value.get("avatar")
