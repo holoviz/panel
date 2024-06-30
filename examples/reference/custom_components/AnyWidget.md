@@ -2,7 +2,7 @@
 
 Panel's `AnyWidgetComponent` class simplifies the creation of custom Panel components using the [`AnyWidget`](https://anywidget.dev/) JavaScript API.
 
-```pyodide
+```{pyodide}
 import panel as pn
 import param
 
@@ -70,7 +70,7 @@ For more detail, see [`AnyWidget`](https://anywidget.dev/).
 
 Include CSS within the `_stylesheets` attribute to style the component. The CSS is injected directly into the component's HTML.
 
-```pyodide
+```{pyodide}
 import panel as pn
 import param
 
@@ -121,7 +121,7 @@ StyledCounterButton().servable()
 
 JavaScript dependencies can be directly imported via URLs, such as those from [`esm.sh`](https://esm.sh/).
 
-```pyodide
+```{pyodide}
 import panel as pn
 from panel.custom import AnyWidgetComponent
 

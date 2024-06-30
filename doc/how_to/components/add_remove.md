@@ -167,7 +167,7 @@ gridspec
 
 Here is the complete code for this subsection in case you want to easily copy it:
 
-``` {pyodide}
+```{pyodide}
 import panel as pn
 pn.extension() # for notebook
 

@@ -79,7 +79,7 @@ pn.Column(button, button.param.clicks,).servable()
 
 :::{tab-item} `ReactComponent`
 
-```pyodide
+```{pyodide}
 import panel as pn
 import param
 
