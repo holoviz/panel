@@ -2,7 +2,7 @@
 
 `ReactComponent` simplifies the creation of custom Panel components by allowing you to write standard [React](https://react.dev/) code without the need to pre-compile or requiring a deep understanding of Javascript build tooling.
 
-```pyodide
+```{pyodide}
 import panel as pn
 import param
 
@@ -95,7 +95,7 @@ The following signatures are valid when listening to change events:
 
 Include CSS within the `_stylesheets` attribute to style the component. The CSS is injected directly into the component's HTML.
 
-```pyodide
+```{pyodide}
 import panel as pn
 import param
 
@@ -140,7 +140,7 @@ CounterButton().servable()
 
 Events from JavaScript can be sent to Python using the `model.send_event` method. Define a handler in Python to manage these events. A *handler* is a method on the form `_handle_<name-of-event>(self, event)`:
 
-```pyodide
+```{pyodide}
 import panel as pn
 import param
 
@@ -173,7 +173,7 @@ pn.Column(
 
 You can also define and send your own custom events:
 
-```pyodide
+```{pyodide}
 import datetime
 
 import panel as pn
@@ -218,7 +218,7 @@ pn.Column(
 
 JavaScript dependencies can be directly imported via URLs, such as those from [`esm.sh`](https://esm.sh/).
 
-```pyodide
+```{pyodide}
 import panel as pn
 
 from panel.custom import ReactComponent
@@ -244,7 +244,7 @@ ConfettiButton().servable()
 
 Use the `_importmap` attribute for more concise module references.
 
-```pyodide
+```{pyodide}
 import panel as pn
 
 from panel.custom import ReactComponent
@@ -342,7 +342,7 @@ You can display Panel components (`Viewable`s) by defining a `Child` parameter.
 
 Lets start with the simplest example
 
-```pyodide
+```{pyodide}
 import panel as pn
 
 from panel.custom import Child, ReactComponent
@@ -362,13 +362,13 @@ Example(child=pn.panel("A **Markdown** pane!")).servable()
 
 If you provide a non-`Viewable` child it will automatically be converted to a `Viewable` by `pn.panel`:
 
-```pyodide
+```{pyodide}
 Example(child="A **Markdown** pane!").servable()
 ```
 
 If you want to allow a certain type of Panel components only you can specify the specific type in the `class_` argument.
 
-```pyodide
+```{pyodide}
 import panel as pn
 
 from panel.custom import Child, ReactComponent
@@ -388,7 +388,7 @@ Example(child=pn.panel("A **Markdown** pane!")).servable()
 
 The `class_` argument also supports a tuple of types:
 
-```pyodide
+```{pyodide}
 import panel as pn
 
 from panel.custom import Child, ReactComponent
@@ -410,7 +410,7 @@ Example(child=pn.panel("A **Markdown** pane!")).servable()
 
 You can also display a `List` of `Viewable` objects using the `Children` parameter type:
 
-```pyodide
+```{pyodide}
 import panel as pn
 
 from panel.custom import Children, ReactComponent
@@ -441,7 +441,7 @@ You can change the `item_type` to a specific subtype of `Viewable` or a tuple of
 
 The global namespace also contains a `React` object that provides access to React hooks. Here is an example of a simple counter button using the `useState` hook:
 
-```pyodide
+```{pyodide}
 import panel as pn
 
 from panel.custom import ReactComponent
