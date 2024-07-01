@@ -17,7 +17,7 @@ repos:
         exclude: \.min\.js$
       - id: trailing-whitespace
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.10
+    rev: v0.5.0
     hooks:
       - id: ruff
         files: panel/
@@ -45,12 +45,12 @@ repos:
         entry: prettier --write --ignore-unknown --no-error-on-unmatched-pattern
         types_or: [css]
   - repo: https://github.com/shssoichiro/oxipng
-    rev: v8.0.0
+    rev: v9.1.1
     hooks:
       - id: oxipng
         stages: [manual]
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v9.5.0
+    rev: v9.6.0
     hooks:
       - id: eslint
         args: ['-c', 'panel/.eslintrc.js', 'panel/*.ts', 'panel/models/**/*.ts', '--fix']
