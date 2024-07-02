@@ -1,10 +1,13 @@
 import os
 
+from importlib.util import find_spec
+
 import pytest
-import s3fs
 
 from panel.models.widgets import DoubleClickEvent
 from panel.widgets import FileSelector, FileTree
+
+S3FS_UNAVAILABLE = find_spec('s3fs') is None
 
 
 @pytest.fixture
@@ -208,7 +211,10 @@ def test_filetree_local(test_dir):
     assert node['children'][1]['text'] == 'subdir2'
 
 
+@pytest.mark.skipif(S3FS_UNAVAILABLE, reason='s3fs not available')
 def test_filetree_s3(test_dir):
+    import s3fs
+
     fs = s3fs.S3FileSystem(anon=True)
     url = 's3://datasets.holoviz.org'
 
