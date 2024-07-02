@@ -382,8 +382,8 @@ def test_server_schedule_at_callable():
         state.cache['at'].append(dt.datetime.now())
 
     scheduled = [
-        dt.datetime.utcnow() + dt.timedelta(seconds=1.57),
-        dt.datetime.utcnow() + dt.timedelta(seconds=1.86)
+        dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=1.57),
+        dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=1.86)
     ]
     siter = iter(scheduled)
 

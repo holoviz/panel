@@ -791,7 +791,7 @@ def test_tabulator_styling(document, comm):
     def high_red(value):
         return 'color: red' if value > 2 else 'color: black'
 
-    table.style.applymap(high_red, subset=['A'])
+    table.style.map(high_red, subset=['A'])
 
     model = table.get_root(document, comm)
 
@@ -819,25 +819,29 @@ def test_tabulator_empty_table(document, comm):
 
 def test_tabulator_sorters_unnamed_index(document, comm):
     df = pd.DataFrame(np.random.rand(10, 4))
+    assert df.columns.dtype == np.int64
     table = Tabulator(df)
 
     table.sorters = [{'field': 'index', 'sorter': 'number', 'dir': 'desc'}]
+    res = table.current_view
+    exp = df.sort_index(ascending=False)
+    exp.columns = exp.columns.astype(object)
 
-    pd.testing.assert_frame_equal(
-        table.current_view,
-        df.sort_index(ascending=False)
-    )
+    pd.testing.assert_frame_equal(res, exp)
+    assert df.columns.dtype == np.int64
 
 def test_tabulator_sorters_int_name_column(document, comm):
     df = pd.DataFrame(np.random.rand(10, 4))
+    assert df.columns.dtype == np.int64
     table = Tabulator(df)
 
     table.sorters = [{'field': '0', 'dir': 'desc'}]
+    res = table.current_view
+    exp = df.sort_values([0], ascending=False)
+    exp.columns = exp.columns.astype(object)
 
-    pd.testing.assert_frame_equal(
-        table.current_view,
-        df.sort_values([0], ascending=False)
-    )
+    pd.testing.assert_frame_equal(res, exp)
+    assert df.columns.dtype == np.int64
 
 
 def test_tabulator_stream_series(document, comm):

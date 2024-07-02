@@ -12,7 +12,6 @@ import socket
 import tempfile
 import time
 import unittest
-import warnings
 
 from contextlib import contextmanager
 from subprocess import PIPE, Popen
@@ -43,9 +42,7 @@ JUPYTER_TIMEOUT = 15 # s
 JUPYTER_PROCESS = None
 
 try:
-    with warnings.catch_warnings():
-        warnings.filterwarnings("error", category=DeprecationWarning)
-        asyncio.get_event_loop()
+    asyncio.get_event_loop()
 except (RuntimeError, DeprecationWarning):
     asyncio.set_event_loop(asyncio.new_event_loop())
 

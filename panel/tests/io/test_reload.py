@@ -12,9 +12,10 @@ from panel.tests.util import async_wait_until
 
 
 def test_record_modules_not_stdlib():
+    old_modules = _modules.copy()
     with record_modules():
-        import audioop  # noqa
-    assert ((_modules == set()) or (_modules == set(['audioop'])))
+        import dis  # noqa
+    assert _modules == old_modules
     _modules.clear()
 
 def test_check_file():

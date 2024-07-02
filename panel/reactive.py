@@ -1270,9 +1270,6 @@ class ReactiveData(SyncableData):
 
     __abstract = True
 
-    def __init__(self, **params):
-        super().__init__(**params)
-
     def _update_selection(self, indices: list[int]) -> None:
         self.selection = indices
 
@@ -1284,21 +1281,14 @@ class ReactiveData(SyncableData):
         if dtype.kind == 'M':
             if values.dtype.kind in 'if':
                 if getattr(dtype, 'tz', None):
-                    # dtype has a timezone
-                    if dtype.tz == dt.timezone.utc:
-                        # Milliseconds to nanoseconds, to datetime64.
-                        converted = (values * 1e6).astype('datetime64[ns]')
-                    else:
-                        import pandas as pd
+                    import pandas as pd
 
-                        # Using pandas to convert from milliseconds
-                        # timezone-aware, to UTC nanoseconds, to datetime64.
-                        converted = (
-                            pd.Series(pd.to_datetime(values, unit="ms"))
-                            .dt.tz_localize(dtype.tz)
-                            .dt.tz_convert('utc')
-                            .dt.tz_localize(None)
-                        )
+                    # Using pandas to convert from milliseconds
+                    # timezone-aware, to UTC nanoseconds, to datetime64.
+                    converted = (
+                        pd.Series(pd.to_datetime(values, unit="ms"))
+                        .dt.tz_localize(dtype.tz)
+                    )
                 else:
                     # Timestamps converted from milliseconds to nanoseconds,
                     # to datetime.
