@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Panel Lite Editor</title>
+    <script src="./panel-lite-editor.js"></script>
+</head>
+<body>
+    <img src="https://panel.holoviz.org/_static/logo_horizontal_light_theme.png" style="height:50px"></img></br>
+	<span>Code Editor</span><br/>
+    <textarea id="code-editor" style="height:200px;width:800px"></textarea><br/>
+	<button onclick="buildApp()" style="background: blue;color:white;height:50px">RUN - Code</button>
+    <button onclick="configureAndBuildApp(welcomeExample)" style="height:50px">RUN - Welcome</button>
+    <button onclick="configureAndBuildApp(buttonExample)" style="height:50px">RUN - Button</button>
+    <button onclick="configureAndBuildApp(matplotlibExample)" style="height:50px">RUN - Matplotlib</button>
+    <button onclick="configureAndBuildApp(perspectiveExample)" style="height:50px">RUN - Perspective</button>
+    <button onclick="configureAndBuildApp(plotlyExample)" style="height:50px">RUN - Plotly</button>
+    <button onclick="configureAndBuildApp(fastTemplateExample)" style="height:50px">RUN - Fast Template</button>
+    <br/>
+    <span>Iframe</span><br/>
+    <iframe id="app-container" src="./iframe.html" style="height:400px;width:800px"></iframe><br/>
+    <button onclick="reloadIframe()">Reload Iframe</button>
+    <script>
+        configureCodeEditor()
+    </script>
+</body>
+</html>
