@@ -377,8 +377,11 @@ def parse_timedelta(time_str: str) -> dt.timedelta | None:
 
 
 def fullpath(path: AnyStr | os.PathLike) -> AnyStr | os.PathLike:
-    """Expanduser and then abspath for a given path
     """
+    Expanduser and then abspath for a given path
+    """
+    if '://' in path:
+        return path
     return os.path.abspath(os.path.expanduser(path))
 
 
