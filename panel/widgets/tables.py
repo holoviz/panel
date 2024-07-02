@@ -369,9 +369,11 @@ class BaseTable(ReactiveData, Widget):
         fields = [self._renamed_cols.get(s['field'], s['field']) for s in self.sorters]
         ascending = [s['dir'] == 'asc' for s in self.sorters]
 
+        # Making a copy of the DataFrame because it could be a view of the original
+        # dataframe. There could be a better place to do this.
+        df = df.copy()
         # Temporarily add _index_ column because Tabulator uses internal _index
         # as additional sorter to break ties
-        df = df.copy()
         df['_index_'] = np.arange(len(df)).astype(str)
         fields.append('_index_')
         ascending.append(True)
