@@ -1,9 +1,10 @@
 import os
 
 import pytest
+import s3fs
 
 from panel.models.widgets import DoubleClickEvent
-from panel.widgets import FileSelector
+from panel.widgets import FileSelector, FileTree
 
 
 @pytest.fixture
@@ -191,3 +192,35 @@ def test_file_selector_multiple_across_dirs(test_dir):
     }
     assert selector._selector._lists[False].options == ['⬆ ..', 'b']
     assert selector.value == [os.path.join(test_dir, 'subdir1', 'a')]
+
+
+def test_filetree_local(test_dir):
+    tree = FileTree(directory=test_dir)
+    assert len(tree._nodes) == 1
+    node = tree._nodes[0]
+    assert os.path.abspath(node['id']) == os.path.abspath(test_dir)
+    assert node['text'] == 'test_dir'
+    assert node['icon'] == 'jstree-folder'
+    assert node['type'] == 'folder'
+    assert node['state']['opened']
+    assert len(node['children']) == 2
+    assert node['children'][0]['text'] == 'subdir1'
+    assert node['children'][1]['text'] == 'subdir2'
+
+
+def test_filetree_s3(test_dir):
+    fs = s3fs.S3FileSystem(anon=True)
+    url = 's3://datasets.holoviz.org'
+
+    tree = FileTree(directory=url, fs=fs)
+    assert len(tree._nodes) == 1
+    node = tree._nodes[0]
+    assert os.path.abspath(node['id']) == os.path.abspath(url)
+    assert node['text'] == 'datasets.holoviz.org'
+    assert node['icon'] == 'jstree-folder'
+    assert node['type'] == 'folder'
+    assert node['state']['opened']
+
+    names = map(os.path.basename, fs.ls(url))
+    for child, name in zip(node['children'], names, strict=True):
+        assert child["text"] == name
