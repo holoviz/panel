@@ -117,6 +117,10 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
             return self._DEFAULT_SCOPES
         return [scope for scope in os.environ['PANEL_OAUTH_SCOPE'].split(',')]
 
+    @property
+    def _OAUTH_LOGOUT_URL(self):
+        return None
+
     async def get_authenticated_user(self, redirect_uri, client_id, state,
                                      client_secret=None, code=None):
         """
@@ -497,6 +501,21 @@ class GenericLoginHandler(OAuthLoginHandler):
         return config.oauth_extra_params.get('AUTHORIZE_URL', os.environ.get('PANEL_OAUTH_AUTHORIZE_URL'))
 
     @property
+    def _OAUTH_LOGOUT_URL(self):
+        id_token = (self.get_secure_cookie('id_token', max_age_days=config.oauth_expiry) or b'').decode('utf8', 'replace')
+        id_token = state._decrypt_cookie(id_token)
+        if config.oauth_redirect_uri:
+            redirect_uri = config.oauth_redirect_uri
+        else:
+            redirect_uri = f"{self.request.protocol}://{self.request.host}{self._login_endpoint}"
+        return config.oauth_extra_params.get('logout_url', os.environ.get('PANEL_OAUTH_LOGOUT_URL')).format(
+            id_token_hint=id_token,
+            post_logout_redirect_uri=redirect_uri,
+            redirect_uri=redirect_uri,
+            client_id=config.oauth_key,
+        )
+
+    @property
     def _OAUTH_USER_URL(self):
         return config.oauth_extra_params.get('USER_URL', os.environ.get('PANEL_OAUTH_USER_URL'))
 
@@ -689,6 +708,7 @@ class AzureAdLoginHandler(OAuthLoginHandler):
 
     _OAUTH_ACCESS_TOKEN_URL_ = 'https://login.microsoftonline.com/{tenant}/oauth2/token'
     _OAUTH_AUTHORIZE_URL_ = 'https://login.microsoftonline.com/{tenant}/oauth2/authorize'
+    _OAUTH_logout_URL_ = 'https://login.microsoftonline.com/{tenant}/oauth2/logout'
     _OAUTH_USER_URL_ = ''
 
     _USER_KEY = 'unique_name'
@@ -752,6 +772,8 @@ class OktaLoginHandler(OAuthLoginHandler):
     _OAUTH_ACCESS_TOKEN_URL__ = 'https://{0}/oauth2/v1/token'
     _OAUTH_AUTHORIZE_URL_ = 'https://{0}/oauth2/{1}/v1/authorize'
     _OAUTH_AUTHORIZE_URL__ = 'https://{0}/oauth2/v1/authorize'
+    _OAUTH_LOGOUT_URL_ = 'https://{0}/oauth2/{1}/v1/logout?id_token_hint={2}&post_logout_redirect_uri={3}'
+    _OAUTH_LOGOUT_URL__ = 'https://{0}/oauth2/v1/logout?id_token_hint={2}&post_logout_redirect_uri={3}'
     _OAUTH_USER_URL_ = 'https://{0}/oauth2/{1}/v1/userinfo?access_token='
     _OAUTH_USER_URL__ = 'https://{0}/oauth2/v1/userinfo?access_token='
 
@@ -774,6 +796,23 @@ class OktaLoginHandler(OAuthLoginHandler):
             return self._OAUTH_AUTHORIZE_URL_.format(url, server)
         else:
             return self._OAUTH_AUTHORIZE_URL__.format(url)
+
+    @property
+    def _OAUTH_LOGOUT_URL(self):
+        id_token = (self.get_secure_cookie('id_token', max_age_days=config.oauth_expiry) or b'').decode('utf8', 'replace')
+        if id_token is None:
+            return None
+        id_token = state._decrypt_cookie(id_token)
+        url = config.oauth_extra_params.get('url', 'okta.com')
+        server = config.oauth_extra_params.get('server', 'default')
+        if config.oauth_redirect_uri:
+            redirect_uri = config.oauth_redirect_uri
+        else:
+            redirect_uri = f"{self.request.protocol}://{self.request.host}{self._login_endpoint}"
+        if server:
+            return self._OAUTH_LOGOUT_URL_.format(url, server, id_token, redirect_uri)
+        else:
+            return self._OAUTH_LOGOUT_URL__.format(url, id_token, redirect_uri)
 
     @property
     def _OAUTH_USER_URL(self):
@@ -862,7 +901,18 @@ class LogoutHandler(tornado.web.RequestHandler):
 
     _logout_template = LOGOUT_TEMPLATE
 
+    _login_handler = None
+
     def get(self):
+        # Logout URL may need cookies to generate so we have to run it before clearing cookies
+        if self._login_handler:
+            handler = self._login_handler(self.application, self.request)
+            try:
+                signout_url = handler._OAUTH_LOGOUT_URL
+            except Exception:
+                signout_url = None
+        else:
+            signout_url = None
         self.clear_cookie("user")
         self.clear_cookie("id_token")
         self.clear_cookie("access_token")
@@ -871,7 +921,8 @@ class LogoutHandler(tornado.web.RequestHandler):
         self.clear_cookie(STATE_COOKIE_NAME)
         html = self._logout_template.render(
             PANEL_CDN=CDN_DIST,
-            LOGIN_ENDPOINT=self._login_endpoint
+            LOGIN_ENDPOINT=self._login_endpoint,
+            SIGNOUT_ENDPOINT=signout_url
         )
         self.write(html)
 
@@ -1088,6 +1139,12 @@ class OAuthProvider(BasicAuthProvider):
             handler._error_template = self._error_template
         handler._login_template = self._login_template
         handler._login_endpoint = self._login_endpoint
+        return handler
+
+    @property
+    def logout_handler(self):
+        handler = super().logout_handler
+        handler._login_handler = self.login_handler
         return handler
 
     def _remove_user(self, session_context):
