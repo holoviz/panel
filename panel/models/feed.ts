@@ -2,14 +2,6 @@ import {Column, ColumnView} from "./column"
 import type * as p from "@bokehjs/core/properties"
 import {build_views} from "@bokehjs/core/build_views"
 import type {UIElementView} from "@bokehjs/models/ui/ui_element"
-import {ModelEvent} from "@bokehjs/core/bokeh_events"
-import type {EventCallback} from "@bokehjs/model"
-
-export class ScrollButtonClick extends ModelEvent {
-  static {
-    this.prototype.event_name = "scroll_button_click"
-  }
-}
 
 export class FeedView extends ColumnView {
   declare model: Feed
@@ -89,21 +81,13 @@ export class FeedView extends ColumnView {
     return created
   }
 
-  override scroll_to_latest(emit_event: boolean = true): void {
-    if (emit_event) {
-      this.model.trigger_event(new ScrollButtonClick())
-    }
-    super.scroll_to_latest()
-  }
-
   override trigger_auto_scroll(): void {
     const limit = this.model.auto_scroll_limit
     const within_limit = this.distance_from_latest <= limit
     if (limit == 0 || !within_limit) {
       return
     }
-
-    this.scroll_to_latest(false)
+    this.scroll_to_latest()
   }
 }
 
@@ -131,9 +115,5 @@ export class Feed extends Column {
     this.define<Feed.Props>(({List, Str}) => ({
       visible_children: [List(Str), []],
     }))
-  }
-
-  on_click(callback: EventCallback<ScrollButtonClick>): void {
-    this.on_event(ScrollButtonClick, callback)
   }
 }

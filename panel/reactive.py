@@ -51,7 +51,7 @@ from .util import (
 )
 from .util.checks import import_available
 from .viewable import (
-    Child, Layoutable, Renderable, Viewable,
+    Child, Children, Layoutable, Renderable, Viewable,
 )
 
 if TYPE_CHECKING:
@@ -59,7 +59,7 @@ if TYPE_CHECKING:
 
     from bokeh.document import Document
     from bokeh.events import Event
-    from bokeh.model import Model
+    from bokeh.model import Model, ModelEvent
     from bokeh.models.sources import DataDict, Patches
     from pyviz_comms import Comm
 
@@ -873,6 +873,33 @@ class Reactive(Syncable, Viewable):
             assert_target_syncable(self, target, mapping)
         return Link(self, target, properties=links, code=code, args=args,
                     bidirectional=bidirectional)
+
+    def _send_event(self, Event: ModelEvent, **event_kwargs):
+        """
+        Send an event to the frontend
+
+        Arguments
+        ----------
+        Event: Bokeh.Event
+            The event to send to the frontend
+        event_kwargs: dict
+            Additional keyword arguments to pass to the event
+            This will create the following event:
+            Event(model=model, **event_kwargs)
+
+        """
+        for ref, (model, _) in self._models.items():
+            if ref not in state._views or ref in state._fake_roots:
+                continue
+            event = Event(model=model, **event_kwargs)
+            _viewable, root, doc, comm = state._views[ref]
+            if comm or state._unblocked(doc) or not doc.session_context:
+                doc.callbacks.send_event(event)
+                if comm and 'embedded' not in root.tags:
+                    push(doc, comm)
+            else:
+                cb = partial(doc.callbacks.send_event, event)
+                doc.add_next_tick_callback(cb)
 
 
 TData = Union['pd.DataFrame', 'DataDict']
@@ -1689,6 +1716,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
 
     def __init__(self, **params):
         from .pane import panel
+        cls = type(self)
         for children_param in self._parser.children.values():
             mode = self._child_config.get(children_param, 'model')
             if children_param not in params or mode != 'model':
@@ -1709,7 +1737,23 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
                     children[key] = panel(pane)
                 params[children_param] = children
             else:
-                params[children_param] = panel(child_value)
+                params[children_param] = children = panel(child_value)
+            child_param = cls.param[children_param]
+            try:
+                if children_param not in self._param__private.explicit_no_refs:
+                    children = resolve_value(children)
+                if not ((isinstance(child_param, Children) and isinstance(children, list)) or
+                        (isinstance(child_param, Child))):
+                    child_param._validate(children)
+            except Exception as e:
+                raise RuntimeError(
+                    f"{cls.__name__}._template declares {children_param!r} "
+                    "parameter as a child, however the parameter is of type "
+                    f"{type(child_param).__name__}. Either ensure that the parameter "
+                    "can accept a Panel component, use literal template using the "
+                    "Jinja2 templating syntax (i.e. {{ <param> }}) or declare the "
+                    "child as a literal in the _child_config."
+                ) from e
         super().__init__(**params)
         self._attrs = {}
         self._panes = {}
