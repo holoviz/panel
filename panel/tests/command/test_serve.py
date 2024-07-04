@@ -5,11 +5,11 @@ import pytest
 import requests
 
 from panel.tests.util import (
-    run_panel_serve, unix_only, wait_for_port, write_file,
+    linux_only, run_panel_serve, wait_for_port, write_file,
 )
 
 
-@unix_only
+@linux_only
 def test_autoreload_app(py_file):
     app = "import panel as pn; pn.Row('# Example').servable(title='A')"
     app2 = "import panel as pn; pn.Row('# Example 2').servable(title='B')"
@@ -29,7 +29,31 @@ def test_autoreload_app(py_file):
         assert r2.status_code == 200
         assert "<title>B</title>" in r2.content.decode('utf-8')
 
-@unix_only
+@linux_only
+def test_serve_admin(py_file):
+    app = "import panel as pn; pn.Row('# Example').servable(title='A')"
+    write_file(app, py_file.file)
+
+    with run_panel_serve(["--port", "0", '--admin', py_file.name]) as p:
+        port = wait_for_port(p.stdout)
+        r = requests.get(f"http://localhost:{port}/admin")
+        assert r.status_code == 200
+        assert "Admin" in r.content.decode('utf-8')
+
+@linux_only
+def test_serve_admin_custom_endpoint(py_file):
+    app = "import panel as pn; pn.Row('# Example').servable(title='A')"
+    write_file(app, py_file.file)
+
+    with run_panel_serve(["--port", "0", '--admin', '--admin-endpoint', 'foo', py_file.name]) as p:
+        port = wait_for_port(p.stdout)
+        r = requests.get(f"http://localhost:{port}/foo")
+        assert r.status_code == 200
+        assert "Admin" in r.content.decode('utf-8')
+        r2 = requests.get(f"http://localhost:{port}/admin")
+        assert r2.status_code == 404
+
+@linux_only
 @pytest.mark.parametrize('relative', [True, False])
 def test_custom_html_index(relative, html_file):
     index = '<html><body>Foo</body></html>'
@@ -69,7 +93,7 @@ pn.Row('# Example').servable()
 ```
 """
 
-@unix_only
+@linux_only
 def test_serve_markdown():
     md = tempfile.NamedTemporaryFile(mode='w', suffix='.md')
     write_file(md_app, md.file)

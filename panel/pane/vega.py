@@ -40,7 +40,7 @@ def ds_as_cds(dataset):
 
 _containers = ['hconcat', 'vconcat', 'layer']
 
-SCHEMA_REGEX = re.compile('^v(\d+)\.\d+\.\d+.json')
+SCHEMA_REGEX = re.compile(r'^v(\d+)\.\d+\.\d+.json')
 
 def _isin(obj, attr):
     if isinstance(obj, dict):
@@ -52,6 +52,8 @@ def _get_type(spec, version):
     if version >= 5:
         if isinstance(spec, dict):
             return spec.get('select', {}).get('type', 'interval')
+        elif isinstance(spec.select, dict):
+            return spec.select.get('type', 'interval')
         else:
             return getattr(spec.select, 'type', 'interval')
     else:
@@ -60,10 +62,10 @@ def _get_type(spec, version):
         else:
             return getattr(spec, 'type', 'interval')
 
-def _get_dimensions(spec):
+def _get_dimensions(spec, props):
     dimensions = {}
-    responsive_height = spec.get('height') == 'container'
-    responsive_width = spec.get('width') == 'container'
+    responsive_height = spec.get('height') == 'container' and props.get('height') is None
+    responsive_width = spec.get('width') == 'container' and props.get('width') is None
     if responsive_height and responsive_width:
         dimensions['sizing_mode'] = 'stretch_both'
     elif responsive_width:
@@ -189,7 +191,7 @@ class Vega(ModelPane):
 
     def _update_selections(self, *args):
         params = {
-            e: param.Dict() if stype == 'interval' else param.List()
+            e: param.Dict(allow_refs=False) if stype == 'interval' else param.List(allow_refs=False)
             for e, stype in self._selections.items()
         }
         if self.selection and (set(self.selection.param) - {'name'}) == set(params):
@@ -262,7 +264,17 @@ class Vega(ModelPane):
         data = props['data']
         if data is not None:
             sources = self._get_sources(data, sources)
-        dimensions = _get_dimensions(data)
+        if self.sizing_mode:
+            if 'both' in self.sizing_mode:
+                if 'width' in data:
+                    data['width'] = 'container'
+                if 'height' in data:
+                    data['height'] = 'container'
+            elif 'width' in self.sizing_mode and 'width' in data:
+                data['width'] = 'container'
+            elif 'height' in self.sizing_mode and 'height' in data:
+                data['height'] = 'container'
+        dimensions = _get_dimensions(data, props) if data else {}
         props['data'] = data
         props['data_sources'] = sources
         props['events'] = list(self._selections)

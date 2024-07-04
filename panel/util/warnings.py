@@ -40,15 +40,17 @@ def find_stack_level() -> int:
 
     frame = inspect.currentframe()
     stacklevel = 0
-    while frame:
-        fname = inspect.getfile(frame)
-        if (
-            fname.startswith(pkg_dir) or fname.startswith(param_dir)
-        ) and not fname.startswith(test_dir):
-            frame = frame.f_back
-            stacklevel += 1
-        else:
-            break
+    try:
+        while frame:
+            fname = inspect.getfile(frame)
+            if fname.startswith((pkg_dir, param_dir)) and not fname.startswith(test_dir):
+                frame = frame.f_back
+                stacklevel += 1
+            else:
+                break
+    finally:
+        # See: https://docs.python.org/3/library/inspect.html#inspect.Traceback
+        del frame
 
     return stacklevel
 
@@ -62,12 +64,13 @@ def deprecated(
 
     import panel as pn
 
-    current_version = Version(Version(pn.__version__).base_version)
+    current_version = Version(pn.__version__)
+    base_version = Version(current_version.base_version)
 
     if isinstance(remove_version, str):
         remove_version = Version(remove_version)
 
-    if remove_version < current_version:
+    if remove_version <= base_version and not (current_version.is_prerelease and current_version.pre[0] != 'rc'):
         # This error is mainly for developers to remove the deprecated.
         raise ValueError(
             f"{old!r} should have been removed in {remove_version}, current version {current_version}."

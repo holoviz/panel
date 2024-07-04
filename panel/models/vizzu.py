@@ -2,7 +2,7 @@
 Defines custom VizzuChart bokeh model to render Vizzu charts.
 """
 from bokeh.core.properties import (
-    Any, Dict, Instance, Int, List, String,
+    Any, Bool, Dict, Instance, Int, List, String,
 )
 from bokeh.events import ModelEvent
 from bokeh.models import LayoutDOM
@@ -23,14 +23,14 @@ class VizzuEvent(ModelEvent):
 
 class VizzuChart(LayoutDOM):
     """
-    A Bokeh model that wraps around an Vizzu chart and renders it
+    A Bokeh model that wraps around a Vizzu chart and renders it
     inside a Bokeh.
     """
 
     __javascript_module_exports__ = ['Vizzu']
 
     __javascript_modules__ = [
-        f"{config.npm_cdn}/vizzu@0.7.1/dist/vizzu.min.js"
+        f"{config.npm_cdn}/vizzu@0.9.3/dist/vizzu.min.js"
     ]
 
     @classproperty
@@ -49,8 +49,8 @@ class VizzuChart(LayoutDOM):
     Local data source to use when rendering glyphs on the plot.
     """)
 
-    config = Dict(String, Any)
-
     duration = Int(500)
 
     style = Dict(String, Any)
+
+    tooltip = Bool()

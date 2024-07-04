@@ -1,5 +1,3 @@
-from collections import OrderedDict
-
 from bokeh.core.properties import (
     Any, Dict, Int, String,
 )
@@ -45,10 +43,10 @@ class Terminal(HTMLBox):
         }
 
     __js_require__ = {
-        'paths': OrderedDict([
-            ("xtermjs", XTERM_JS[:-3]),
-            ("xtermjsweblinks", XTERM_LINKS_JS[:-3]),
-        ]),
+        'paths': {
+            "xtermjs": XTERM_JS[:-3],
+            "xtermjsweblinks": XTERM_LINKS_JS[:-3],
+        },
         'exports': {
             "xtermjs": "xtermjs",
             "xtermjsweblinks": "WebLinksAddon",

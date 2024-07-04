@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from datetime import date, datetime
 
 import pytest
@@ -9,9 +8,9 @@ from bokeh.models import (
 
 from panel import config
 from panel.widgets import (
-    DateRangeSlider, DateSlider, DiscreteSlider, EditableFloatSlider,
-    EditableIntSlider, EditableRangeSlider, FloatSlider, IntSlider,
-    RangeSlider, StaticText,
+    DateRangeSlider, DateSlider, DatetimeRangeSlider, DiscreteSlider,
+    EditableFloatSlider, EditableIntSlider, EditableRangeSlider, FloatSlider,
+    IntSlider, RangeSlider, StaticText,
 )
 
 
@@ -174,11 +173,11 @@ def test_date_range_slider(document, comm):
     widget.value = ((datetime(2018, 9, 3)-epoch).total_seconds()*1000,
                     (datetime(2018, 9, 6)-epoch).total_seconds()*1000)
     date_slider._process_events({'value': widget.value})
-    assert date_slider.value == (datetime(2018, 9, 3), datetime(2018, 9, 6))
+    assert date_slider.value == (date(2018, 9, 3), date(2018, 9, 6))
     value_throttled = ((datetime(2018, 9, 3)-epoch).total_seconds()*1000,
                     (datetime(2018, 9, 6)-epoch).total_seconds()*1000)
     date_slider._process_events({'value_throttled': value_throttled})
-    assert date_slider.value == (datetime(2018, 9, 3), datetime(2018, 9, 6))
+    assert date_slider.value == (date(2018, 9, 3), date(2018, 9, 6))
 
     date_slider.value = (datetime(2018, 9, 4), datetime(2018, 9, 6))
     assert widget.value == (1536019200000, 1536192000000)
@@ -194,9 +193,48 @@ def test_date_range_slider(document, comm):
         date_slider._process_events(
             {'value_throttled': epoch_times(datetime(2021, 2, 15), datetime(2021, 5, 15))}
         )
-        assert date_slider.value == (datetime(2021, 2, 15), datetime(2021, 5, 15))
+        assert date_slider.value == (date(2021, 2, 15), date(2021, 5, 15))
 
         date_slider.value = (datetime(2021, 2, 12), datetime(2021, 5, 12))
+        assert widget.value == (1613088000000, 1620777600000)
+
+
+def test_datetime_range_slider(document, comm):
+    datetime_slider = DatetimeRangeSlider(name='DatetimeRangeSlider',
+                                  value=(datetime(2018, 9, 2), datetime(2018, 9, 4)),
+                                  start=datetime(2018, 9, 1), end=datetime(2018, 9, 10))
+    widget = datetime_slider.get_root(document, comm=comm)
+    assert isinstance(widget, datetime_slider._widget_type)
+    assert widget.title == 'DatetimeRangeSlider'
+    assert widget.value == (1535846400000, 1536019200000)
+    assert widget.start == 1535760000000
+    assert widget.end == 1536537600000
+    epoch = datetime(1970, 1, 1)
+    widget.value = ((datetime(2018, 9, 3)-epoch).total_seconds()*1000,
+                    (datetime(2018, 9, 6)-epoch).total_seconds()*1000)
+    datetime_slider._process_events({'value': widget.value})
+    assert datetime_slider.value == (datetime(2018, 9, 3), datetime(2018, 9, 6))
+    value_throttled = ((datetime(2018, 9, 3)-epoch).total_seconds()*1000,
+                    (datetime(2018, 9, 6)-epoch).total_seconds()*1000)
+    datetime_slider._process_events({'value_throttled': value_throttled})
+    assert datetime_slider.value == (datetime(2018, 9, 3), datetime(2018, 9, 6))
+
+    datetime_slider.value = (datetime(2018, 9, 4), datetime(2018, 9, 6))
+    assert widget.value == (1536019200000, 1536192000000)
+    # Testing throttled mode
+    epoch_time = lambda dt: (dt - epoch).total_seconds() * 1000
+    epoch_times = lambda *dts: tuple(map(epoch_time, dts))
+    with config.set(throttled=True):
+        datetime_slider._process_events(
+            {'value': epoch_times(datetime(2021, 2, 15), datetime(2021, 5, 15))}
+        )
+        assert datetime_slider.value == (datetime(2018, 9, 4), datetime(2018, 9, 6))  # no change
+        datetime_slider._process_events(
+            {'value_throttled': epoch_times(datetime(2021, 2, 15), datetime(2021, 5, 15))}
+        )
+        assert datetime_slider.value == (datetime(2021, 2, 15), datetime(2021, 5, 15))
+
+        datetime_slider.value = (datetime(2021, 2, 12), datetime(2021, 5, 12))
         assert widget.value == (1613088000000, 1620777600000)
 
 
@@ -330,7 +368,7 @@ def test_discrete_slider_disabled(document, comm):
 
 
 def test_discrete_date_slider(document, comm):
-    dates = OrderedDict([('2016-01-0%d' % i, datetime(2016, 1, i)) for i in range(1, 4)])
+    dates = {'2016-01-0%d' % i: datetime(2016, 1, i) for i in range(1, 4)}
     discrete_slider = DiscreteSlider(name='DiscreteSlider', value=dates['2016-01-02'],
                                      options=dates)
 
@@ -369,7 +407,7 @@ def test_discrete_date_slider(document, comm):
 
 
 def test_discrete_slider_options_dict(document, comm):
-    options = OrderedDict([('0.1', 0.1), ('1', 1), ('10', 10), ('100', 100)])
+    options = {'0.1': 0.1, '1': 1, '10': 10, '100': 100}
     discrete_slider = DiscreteSlider(name='DiscreteSlider', value=1,
                                      options=options)
 
@@ -403,7 +441,6 @@ def test_discrete_slider_options_dict(document, comm):
 
         discrete_slider.value = options['1']
         assert widget.value == 1
-
 
 @pytest.mark.parametrize(
     'editableslider,start,end,step,val1,val2,val3,diff1',
@@ -476,6 +513,16 @@ def test_editable_slider(document, comm,
     assert slider._slider.end == slider.fixed_end == slider_widget.end
     slider.fixed_end = None
 
+def test_editable_slider_disabled():
+    slider = EditableFloatSlider(disabled=True)
+
+    assert slider._slider.disabled
+    assert slider._value_edit.disabled
+
+    slider.disabled = False
+
+    assert not slider._slider.disabled
+    assert not slider._value_edit.disabled
 
 @pytest.mark.parametrize(
     'editableslider,start,end,step,val1,val2,val3,diff1',
@@ -545,6 +592,18 @@ def test_editable_rangeslider(document, comm,
     assert slider._slider.end == slider.fixed_end == slider_widget.end
     slider.fixed_end = None
 
+def test_editable_range_slider_disabled():
+    slider = EditableRangeSlider(disabled=True)
+
+    assert slider._slider.disabled
+    assert slider._start_edit.disabled
+    assert slider._end_edit.disabled
+
+    slider.disabled = False
+
+    assert not slider._slider.disabled
+    assert not slider._start_edit.disabled
+    assert not slider._end_edit.disabled
 
 @pytest.mark.parametrize(
     "editableslider",

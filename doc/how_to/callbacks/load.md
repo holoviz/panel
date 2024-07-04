@@ -1,41 +1,124 @@
-# Defer Callbacks Until Load
+# Defer Long Running Tasks to Improve the User Experience
 
-This guide addresses how to set up callbacks to defer a task until the application is loaded.
+This guide addresses how to defer and orchestrate long running background tasks with `pn.state.onload`. You can use this to improve the user experience of your app.
 
 ---
 
-Using the `onload` callback, we can trigger execution when a session is first initialized in a server context. An example of when this could be a helpful strategy is when we have to fetch something from some database, like the options that will go into a selection widget. Since this operation might take some time, we can quickly render something on the screen for the user to look at while the `onload` callback is continuing to fetch the options in the background.
+## Motivation
 
-Let us for example define a minimal example inside a function which we could pass to `pn.serve` (this emulates what happens when we call `panel serve` on the command line). In this example, we will create a widget without populating its options, then we will add an `onload` callback, which will set the options once the initial page is loaded.
+When a user opens your app, the app is *loaded* as follows
 
-```{pyodide}
+- the app file is executed
+- the app template is sent to the user and rendered
+- a web socket connection is opened to enable fast, bi-directional communication as your interact with the app.
+
+Thus any long running code executed before the app is loaded will increase the the waiting time before your users see your apps template. **If the waiting time is more than 2-5 seconds your users might get confused and even leave the application behind**.
+
+Here is an example of an app that takes +5 seconds to load.
+
+```python
 import time
 import panel as pn
 
-pn.extension()
+pn.extension(template="bootstrap")
 
-def app():
-    widget = pn.widgets.Select()
+layout = pn.pane.Markdown()
 
-    def on_load():
-        time.sleep(2) # Emulate some long running process
-        widget.options = ['A', 'B', 'C']
+def some_long_running_task():
+    time.sleep(5) # Some long running task
+    layout.object = "# Wow. That took some time. Are you still here?"
 
-    pn.state.onload(on_load)
+some_long_running_task()
 
-    return widget
-
-# pn.serve(app) # launches the app
+layout.servable()
 ```
 
-Alternatively, we may also use the `defer_load` argument to wait to evaluate a function until the page is loaded. In a situation where page loading takes some time, a placeholder and the global `config.loading_spinner` will be displayed.
+![panel-longrunning-task-example](https://assets.holoviz.org/panel/gifs/long_load.gif)
 
-```{pyodide}
+Now lets learn how to defer long running tasks to after the application has loaded.
 
-def render_on_load():
-    return pn.widgets.Select(options=['A', 'B', 'C'])
+## Defer a Task
 
-pn.Row(pn.panel(render_on_load, defer_load=True))
+```python
+import time
+import panel as pn
+
+pn.extension(template="bootstrap")
+
+layout = pn.pane.Markdown("# Loading...")
+
+def some_long_running_task():
+    time.sleep(5) # Some long running task
+    layout.object = "# Done"
+
+pn.state.onload(some_long_running_task)
+
+layout.servable()
 ```
 
-## Related Resources
+![panel-onload-example](https://assets.holoviz.org/panel/gifs/onload_callback.gif)
+
+Note that `pn.state.onload` accepts both *sync* and *async* functions and also accepts a `threaded` argument, which, when combined with [enabling `config.nthreads`](../concurrency/threading.md) will run the callbacks concurrently on separate threads.
+
+This example could also be implemented using a *bound and displayed function*. We recommend using that method together with `defer_load` when possible. See the [Defer Bound and Displayed Functions Guide](defer_load.md).
+
+## Defer and Orchestrate Dependent Tasks
+
+Sometimes you have multiple tasks that depend on each other and you need to *orchestrate* them. To handle those scenarios you use `pn.state.onload` to defer background tasks and `pn.bind` to trigger *bound and displayed* functions when the the background tasks have finished.
+
+Lets take an example where we
+
+- load a shared dataset.
+- display the dataset in a Table
+- transform the dataset and display it as a plot
+
+```python
+import time
+import panel as pn
+import pandas as pd
+import param
+import hvplot.pandas
+
+pn.extension(sizing_mode="stretch_width", template="bootstrap", theme="dark")
+
+class AppState(param.Parameterized):
+    data = param.DataFrame()
+
+    def update(self):
+        time.sleep(2)
+        state.data = pd.DataFrame({"x": [1, 2, 3, 4], "y": [1, 3, 2, 4]})
+
+def loading_indicator(label):
+    return pn.indicators.LoadingSpinner(
+        value=True, name=label, size=25, align="center"
+    )
+
+def short_running_task():
+    return "# I'm shown on load"
+
+def table(data):
+    if data is None:
+        return loading_indicator("Loading data")
+
+    return pn.pane.DataFrame(data)
+
+def plot(data):
+    if data is None:
+        yield loading_indicator("Waiting for data")
+        return
+
+    yield loading_indicator("Transforming data")
+    time.sleep(2)  # Some long running transformation
+    yield data.hvplot()
+
+state = AppState()
+pn.state.onload(state.update)
+
+pn.Column(
+    short_running_task,
+    pn.bind(table, data=state.param.data),
+    pn.bind(plot, data=state.param.data),
+).servable()
+```
+
+![panel-onload-dependent-tasks-example](https://assets.holoviz.org/panel/gifs/onload_dependent.gif)

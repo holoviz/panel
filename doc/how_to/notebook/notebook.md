@@ -6,6 +6,15 @@ This guide addresses how to display output in Jupyter and non-Jupyter based note
 
 Once you have installed Panel it should automatically set up class Jupyter notebook and JupyterLab extensions for rendering Panel output and configuring communication channels to ensure the rendered output syncs bi-directionally with the Python process.
 
+## Run Panel in another notebook kernel
+
+You generally have two ways to install JupyterLab/Jupyter Notebook:
+
+1. directly in your working environment that contains all the dependencies you need to run your project
+2. in another environment, maybe a central environment or an environment dedicated to Jupyter, in which case when you run a notebook you should pick the kernel of your project environment
+
+When in the second setup, you need to ensure that `pyviz_comms` is explicitly installed in the same environment as JupyterLab/Jupyter Notebook (with `conda install pyviz_comms` or `pip install pyviz-comms`) for bi-directional communication to be fully working.
+
 ## Loading the extension
 
 The first step when working in a notebook environment should always be to load the `panel.extension`:

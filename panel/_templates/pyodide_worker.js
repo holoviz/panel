@@ -74,7 +74,8 @@ self.onmessage = async (event) => {
   } else if (msg.type === 'patch') {
     self.pyodide.globals.set('patch', msg.patch)
     self.pyodide.runPythonAsync(`
-    state.curdoc.apply_json_patch(patch.to_py(), setter='js')
+    from panel.io.pyodide import _convert_json_patch
+    state.curdoc.apply_json_patch(_convert_json_patch(patch), setter='js')
     `)
     self.postMessage({type: 'idle'})
   } else if (msg.type === 'location') {

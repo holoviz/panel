@@ -5,10 +5,10 @@ from __future__ import annotations
 
 import math
 
-from collections import OrderedDict, namedtuple
+from collections import namedtuple
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, Tuple,
+    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
 )
 
 import numpy as np
@@ -16,6 +16,7 @@ import param
 
 from bokeh.models import FlexBox as BkFlexBox, GridBox as BkGridBox
 
+from ..io.document import freeze_doc
 from ..io.model import hold
 from ..io.resources import CDN_DIST
 from .base import (
@@ -55,7 +56,7 @@ class GridBox(ListPanel):
 
     _bokeh_model: ClassVar[Model] = BkGridBox
 
-    _linked_properties: ClassVar[Tuple[str]] = ()
+    _linked_properties: ClassVar[tuple[str,...]] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'objects': 'children'
@@ -65,7 +66,7 @@ class GridBox(ListPanel):
         'scroll': None, 'objects': None
     }
 
-    _stylesheets: ClassVar[List[str]] = [
+    _stylesheets: ClassVar[list[str]] = [
         f'{CDN_DIST}css/gridbox.css'
     ]
 
@@ -183,7 +184,7 @@ class GridBox(ListPanel):
         model = self._bokeh_model()
         root = root or model
         self._models[root.ref['id']] = (model, parent)
-        objects = self._get_objects(model, [], doc, root, comm)
+        objects, _ = self._get_objects(model, [], doc, root, comm)
         children = self._get_children(objects, self.nrows, self.ncols)
         css_classes = self._compute_css_classes(children)
         properties = {k: v for k, v in self._get_properties(doc).items() if k not in ('ncols', 'nrows')}
@@ -194,38 +195,67 @@ class GridBox(ListPanel):
         return model
 
     def _update_model(
-        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
         root: Model, model: Model, doc: Document, comm: Optional[Comm]
     ) -> None:
         from ..io import state
 
         msg = dict(msg)
         preprocess = any(self._rename.get(k, k) in self._preprocess_params for k in msg)
-        if self._rename['objects'] in msg or 'ncols' in msg or 'nrows' in msg:
+        update_children = self._rename['objects'] in msg
+        if update_children or 'ncols' in msg or 'nrows' in msg:
             if 'objects' in events:
                 old = events['objects'].old
             else:
                 old = self.objects
-            objects = self._get_objects(model, old, doc, root, comm)
+            objects, old_models = self._get_objects(model, old, doc, root, comm)
             children = self._get_children(objects, self.nrows, self.ncols)
             msg[self._rename['objects']] = children
+        else:
+            old_models = None
 
         with hold(doc):
             msg = {k: v for k, v in msg.items() if k not in ('nrows', 'ncols')}
             update = Panel._batch_update
             Panel._batch_update = True
             try:
-                super(Panel, self)._update_model(events, msg, root, model, doc, comm)
-                if update:
-                    return
-                ref = root.ref['id']
-                if ref in state._views and preprocess:
-                    state._views[ref][0]._preprocess(root)
+                with freeze_doc(doc, model, msg, force=update_children):
+                    super(Panel, self)._update_model(events, msg, root, model, doc, comm)
+                    if update:
+                        return
+                    ref = root.ref['id']
+                    if ref in state._views and preprocess:
+                        state._views[ref][0]._preprocess(root, self, old_models)
             finally:
                 Panel._batch_update = update
 
 
 class GridSpec(Panel):
+    """
+    The `GridSpec` is an *array like* layout that allows arranging multiple Panel
+    objects in a grid using a simple API to assign objects to individual grid cells or
+    to a grid span.
+
+    Other layout containers function like lists, but a GridSpec has an API similar
+    to a 2D array, making it possible to use 2D assignment to populate, index, and slice
+    the grid.
+
+    See `GridStack` for a similar layout that allows the user to resize and drag the
+    cells.
+
+    Reference: https://panel.holoviz.org/reference/layouts/GridSpec.html
+
+    :Example:
+
+    >>> import panel as pn
+    >>> gspec = pn.GridSpec(width=800, height=600)
+    >>> gspec[:,   0  ] = pn.Spacer(styles=dict(background='red'))
+    >>> gspec[0,   1:3] = pn.Spacer(styles=dict(background='green'))
+    >>> gspec[1,   2:4] = pn.Spacer(styles=dict(background='orange'))
+    >>> gspec[2,   1:4] = pn.Spacer(styles=dict(background='blue'))
+    >>> gspec[0:1, 3:4] = pn.Spacer(styles=dict(background='purple'))
+    >>> gspec
+    """
 
     objects = param.Dict(default={}, doc="""
         The dictionary of child objects that make up the grid.""")
@@ -241,7 +271,7 @@ class GridSpec(Panel):
 
     _bokeh_model: ClassVar[Model] = BkGridBox
 
-    _linked_properties: ClassVar[Tuple[str]] = ()
+    _linked_properties: ClassVar[tuple[str]] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'objects': 'children', 'mode': None, 'ncols': None, 'nrows': None
@@ -251,13 +281,13 @@ class GridSpec(Panel):
         'objects': None, 'mode': None
     }
 
-    _preprocess_params: ClassVar[List[str]] = ['objects']
+    _preprocess_params: ClassVar[list[str]] = ['objects']
 
-    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/gridspec.css']
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/gridspec.css']
 
     def __init__(self, **params):
         if 'objects' not in params:
-            params['objects'] = OrderedDict()
+            params['objects'] = {}
         super().__init__(**params)
         self._updating = False
         self._update_nrows()
@@ -315,7 +345,7 @@ class GridSpec(Panel):
             if old not in current_objects:
                 old._cleanup(root)
 
-        children = []
+        children, old_children = [], []
         for i, ((y0, x0, y1, x1), obj) in enumerate(self.objects.items()):
             x0 = 0 if x0 is None else x0
             x1 = (self.ncols) if x1 is None else x1
@@ -341,10 +371,14 @@ class GridSpec(Panel):
 
             if obj in old_objects:
                 child, _ = obj._models[root.ref['id']]
+                old_children.append(child)
             else:
                 try:
                     child = obj._get_model(doc, root, model, comm)
-                except RerenderError:
+                except RerenderError as e:
+                    if e.layout is not None and e.layout is not self:
+                        raise e
+                    e.layout = None
                     return self._get_objects(model, current_objects[:i], doc, root, comm)
 
             if isinstance(child, BkFlexBox) and len(child.children) == 1:
@@ -352,7 +386,7 @@ class GridSpec(Panel):
             else:
                 child.update(**properties)
             children.append((child, r, c, h, w))
-        return children
+        return children, old_children
 
     def _compute_sizing_mode(self, children, props):
         children = [child for (child, _, _, _, _) in children]
@@ -371,7 +405,7 @@ class GridSpec(Panel):
     @property
     def _object_grid(self):
         grid = np.full((self.nrows, self.ncols), None, dtype=object)
-        for i, ((y0, x0, y1, x1), obj) in enumerate(self.objects.items()):
+        for (y0, x0, y1, x1), obj in self.objects.items():
             l = 0 if x0 is None else x0
             r = self.ncols if x1 is None else x1
             t = 0 if y0 is None else y0
@@ -417,8 +451,7 @@ class GridSpec(Panel):
         return type(self)(**p)
 
     def __iter__(self):
-        for obj in self.objects.values():
-            yield obj
+        yield from self.objects.values()
 
     def __delitem__(self, index):
         if isinstance(index, tuple):
@@ -428,7 +461,7 @@ class GridSpec(Panel):
 
         subgrid = self._object_grid[yidx, xidx]
         if isinstance(subgrid, np.ndarray):
-            deleted = OrderedDict([list(o)[0] for o in subgrid.flatten()])
+            deleted = dict([list(o)[0] for o in subgrid.flatten()])
         else:
             deleted = [list(subgrid)[0][0]]
         for key in deleted:
@@ -443,7 +476,7 @@ class GridSpec(Panel):
 
         subgrid = self._object_grid[yidx, xidx]
         if isinstance(subgrid, np.ndarray):
-            objects = OrderedDict([list(o)[0] for o in subgrid.flatten()])
+            objects = dict([list(o)[0] for o in subgrid.flatten()])
             gspec = self.clone(objects=objects)
             xoff, yoff = gspec._xoffset, gspec._yoffset
             adjusted = []
@@ -454,7 +487,7 @@ class GridSpec(Panel):
                 if x1 is not None: x1 -= xoff
                 if ((y0, x0, y1, x1), obj) not in adjusted:
                     adjusted.append(((y0, x0, y1, x1), obj))
-            gspec.objects = OrderedDict(adjusted)
+            gspec.objects = dict(adjusted)
             width_scale = gspec.ncols/float(self.ncols)
             height_scale = gspec.nrows/float(self.nrows)
             if gspec.width:
@@ -501,7 +534,7 @@ class GridSpec(Panel):
 
         key = (y0, x0, y1, x1)
         overlap = key in self.objects
-        clone = self.clone(objects=OrderedDict(self.objects), mode='override')
+        clone = self.clone(objects=dict(self.objects), mode='override')
         if not overlap:
             clone.objects[key] = panel(obj)
             clone._update_grid_size()
@@ -511,7 +544,7 @@ class GridSpec(Panel):
             grid[t:b, l:r] += 1
 
         overlap_grid = grid > 1
-        new_objects = OrderedDict(self.objects)
+        new_objects = dict(self.objects)
         if overlap_grid.any():
             overlapping = ''
             objects = []

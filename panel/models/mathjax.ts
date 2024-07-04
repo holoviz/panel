@@ -1,9 +1,16 @@
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 import {Markup} from "@bokehjs/models/widgets/markup"
 import {PanelMarkupView} from "./layout"
 
 export class MathJaxView extends PanelMarkupView {
-  model: MathJax
+  declare model: MathJax
+
+  override connect_signals(): void {
+    super.connect_signals()
+
+    const {text} = this.model.properties
+    this.on_change(text, () => this.render())
+  }
 
   override render(): void {
     super.render()
@@ -21,13 +28,13 @@ export namespace MathJax {
 export interface MathJax extends MathJax.Attrs {}
 
 export class MathJax extends Markup {
-  properties: MathJax.Props
+  declare properties: MathJax.Props
 
   constructor(attrs?: Partial<MathJax.Attrs>) {
     super(attrs)
   }
 
-  static __module__ = "panel.models.mathjax"
+  static override __module__ = "panel.models.mathjax"
 
   static {
     this.prototype.default_view = MathJaxView

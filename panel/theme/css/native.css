@@ -25,7 +25,7 @@
     var(
       --vscode-notebook-cellEditorBackground,
       var(
-        --jp-layout-color1,
+        --jp-cell-editor-background,
         var(--pst-color-surface, var(--panel-surface-color))
       )
     )
@@ -47,10 +47,14 @@
 
 .bk-description > .bk-icon {
   background-color: var(--background-text-color);
-  opacity: 0.7;
+  opacity: 0.4;
 }
 
 /* Input widgets */
+
+textarea.bk-input {
+  padding: 0.5em var(--padding-horizontal);
+}
 
 .bk-input {
   background-color: var(--background-color);

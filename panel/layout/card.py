@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, Callable, ClassVar, List, Mapping, Type,
+    TYPE_CHECKING, Callable, ClassVar, Mapping,
 )
 
 import param
 
-from ..io.resources import CDN_DIST
 from ..models import Card as BkCard
-from .base import Column, ListPanel, Row
+from .base import Column, Row
 
 if TYPE_CHECKING:
     from bokeh.model import Model
@@ -69,15 +68,11 @@ class Card(Column):
         A title to be displayed in the Card header, will be overridden
         by the header if defined.""")
 
-    _bokeh_model: ClassVar[Type[Model]] = BkCard
+    _bokeh_model: ClassVar[type[Model]] = BkCard
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'title': None, 'header': None, 'title_css_classes': None
     }
-
-    _stylesheets: ClassVar[List[str]] = [
-        f'{CDN_DIST}css/card.css'
-    ]
 
     def __init__(self, *objects, **params):
         self._header_layout = Row(css_classes=['card-header-row'], sizing_mode='stretch_width')
@@ -88,21 +83,12 @@ class Card(Column):
 
     def select(
         self, selector: type | Callable[[Viewable], bool] | None = None
-    ) -> List[Viewable]:
+    ) -> list[Viewable]:
         return self._header_layout.select(selector) + super().select(selector)
 
     def _cleanup(self, root: Model | None = None) -> None:
         super()._cleanup(root)
         self._header_layout._cleanup(root)
-
-    def _process_param_change(self, params):
-        scroll = params.pop('scroll', None)
-        css_classes = self.css_classes or []
-        if scroll:
-            params['css_classes'] = css_classes + ['scrollable']
-        elif scroll == False:
-            params['css_classes'] = css_classes
-        return super(ListPanel, self)._process_param_change(params)
 
     def _update_header(self, *events):
         from ..pane import HTML, panel
@@ -110,8 +96,10 @@ class Card(Column):
             params = {
                 'object': f'<h3>{self.title}</h3>' if self.title else "&#8203;",
                 'css_classes': self.title_css_classes,
-                'margin': (5, 0)
+                'margin': (5, 0),
             }
+            if self.header_color:
+                params['styles'] = {'color': self.header_color}
             if self._header is not None:
                 self._header.param.update(**params)
                 return
@@ -124,12 +112,13 @@ class Card(Column):
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
         ref = root.ref['id']
+        models, old_models = super()._get_objects(model, old_objects, doc, root, comm)
         if ref in self._header_layout._models:
             header = self._header_layout._models[ref][0]
+            old_models.append(header)
         else:
             header = self._header_layout._get_model(doc, root, model, comm)
-        objects = super()._get_objects(model, old_objects, doc, root, comm)
-        return [header]+objects
+        return [header]+models, old_models
 
     def _compute_sizing_mode(self, children, props):
         return super()._compute_sizing_mode(children[1:], props)

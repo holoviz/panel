@@ -1,35 +1,23 @@
 :root[data-theme='light'],
 :root[data-theme='dark'] {
-  --pst-color-primary: #0072b5;
-  --pst-color-link: #0072b5;
-  --pst-color-inline-code: #0072b5;
-  --sd-color-card-border-hover: #0072b5;
+  --holoviz-main-color: #0072b5;
+  --pst-color-inline-code: var(--holoviz-main-color);
+  --pst-color-link-hover: var(--holoviz-main-color);
+  --pst-color-link: var(--holoviz-main-color);
+  --pst-color-primary: var(--holoviz-main-color);
+  --pst-color-secondary-bg: #d9ebf0; /* Announcement banner */
+  --pst-color-secondary-highlight: var(--holoviz-main-color);
+  --pst-color-secondary: var(--holoviz-main-color);
+  --pst-violet-600: var(--holoviz-main-color); /* back to top hover */
+  --sd-color-card-border-hover: var(--holoviz-main-color);
 }
 
-html[data-theme='dark'] .bd-content div.cell_output .text_html {
-  background-color: var(--pst-color-background);
-  color: var(--pst-color-text-base);
+/* Fix breadcrumb overlap https://github.com/holoviz/panel/issues/5199 */
+.header-article__inner .header-article-item {
+  height: unset;
 }
 
-/* Align navbar item in center */
-.navbar-header-items__center {
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* Ensure content fills full space */
-.bd-main .bd-content .bd-article-container {
-  max-width: unset;
-}
-
-/* Hide primary sidenav bottom section to avoid extra scroll */
-.sidebar-primary-items__end.sidebar-primary__section {
-  display: none;
-}
-
-.nav-link {
-  white-space: nowrap;
-}
+/* Homepage Showcase */
 
 .showcase-table {
   border-spacing: 15px;
@@ -40,71 +28,7 @@ html[data-theme='dark'] .bd-content div.cell_output .text_html {
   vertical-align: top;
 }
 
-.cell_output {
-  padding-left: 0;
-}
-
-html[data-theme='dark'] .bd-content div.cell_output .text_html,
-html[data-theme='light'] .bd-content div.cell_output .text_html {
-  padding: 0;
-}
-
-@media (max-width: 960px) {
-  .homepage-logo {
-    display: none;
-  }
-}
-
-@media (min-width: 1400px) {
-  .bd-sidebar {
-    max-width: 300px;
-  }
-
-  .bd-main .bd-content .bd-article-container .bd-article {
-    padding-left: 0.5rem;
-    padding-top: 0.5rem;
-  }
-
-  .bd-page-width {
-    max-width: 100%;
-  }
-}
-
-@media (min-width: 1600px) {
-  .bd-page-width {
-    max-width: 85%;
-  }
-}
-
-@media (min-width: 1800px) {
-  .bd-page-width {
-    max-width: 80%;
-  }
-}
-
-#scroller-right {
-  max-width: 14%;
-}
-
-@media (max-width: 1400px) {
-  #scroller-right {
-    position: relative;
-    right: unset;
-    top: unset;
-    max-width: 100%;
-    transform: unset;
-  }
-}
-.theme-switch-button {
-  font-size: unset;
-}
-
-div.highlight button.copybtn.o-tooltip--left:after {
-  background-color: #263235;
-  border: 1px solid gray;
-  border-radius: 4px;
-  padding: 5px;
-}
+/* Homepage sponsors */
 
 .sd-card-body.sponsor-logo {
   flex-grow: unset;
@@ -116,35 +40,7 @@ div.highlight button.copybtn.o-tooltip--left:after {
   object-fit: contain;
 }
 
-button.toggle-button {
-  display: none;
-}
-
-.toggle-hidden:not(.admonition) {
-  height: 0;
-}
-
-.tag_hide-input {
-  margin-bottom: 0 !important;
-}
-
-details.hide.above-input {
-  display: none;
-}
-
-.toggle-hidden + .cell_output {
-  margin-top: 0 !important;
-}
-
-dl.field-list {
-  display: none;
-}
-
-/* Improve styling */
-
-div.cell div.cell_input {
-  border: none;
-}
+/* Tweaks for code cell rendering */
 
 .highlight {
   border-radius: 4px;
@@ -164,6 +60,13 @@ pre[id^='codecell'] {
   padding: 1.5em;
 }
 
+div.highlight button.copybtn.o-tooltip--left:after {
+  background-color: #263235;
+  border: 1px solid gray;
+  border-radius: 4px;
+  padding: 5px;
+}
+
 button.copybtn {
   background-color: #263238;
 }
@@ -181,6 +84,6 @@ button.copybtn:hover {
   background: none;
 }
 
-ul.current.nav.bd-sidenav {
-  padding: 0;
+video {
+  max-width: 100%;
 }

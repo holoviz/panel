@@ -56,6 +56,28 @@ pn.Row(slider, select, pn.pane.Markdown(iobject))
 
 This approach is preferred over rendering reactive functions directly because it is more efficient and updates only the specific *Parameters* that are being changed.
 
+If you want to update multiple *Parameters* at the same time you can pass a reactive function (or **Parameter**) as the `refs` keyword argument. The function (or **Parameter**) must return a dictionary of parameters to update, e.g. let's say you wanted to write a function that returns both
+
+
+```{pyodide}
+slider = pn.widgets.IntSlider(value=5, start=1, end=10, name='Number')
+select = pn.widgets.RadioButtonGroup(value="⭐", options=["⭐", "🐘"], name='String', align='center')
+size = pn.widgets.IntSlider(value=12, start=6, end=24, name='Size')
+
+def refs(string, number, size):
+    return {
+        'object': string * number,
+        'styles': {'font-size': f'{size}pt'}
+    }
+
+irefs = pn.bind(refs, select, slider, size)
+
+pn.Row(slider, size, select, pn.pane.Markdown(refs=irefs))
+```
+
+In this way we can update both the current `object` and the `styles` **Parameter** of the `Markdown` pane simultaneously.
+
 ## Related Resources
 
+- Learn [how to use generators with `bind`](./bind_generator)
 - Understand [Param](../../explanation/dependencies/param.md)

@@ -10,12 +10,12 @@ from ..base import FastBaseTemplate
 
 class FastListTemplate(FastBaseTemplate):
     """
-    The `FastListTemplate` is a list based Template with a header, sidebar and main area. It is
-    based on the fast.design style and works well in both default (light) and dark mode.
+    The `FastListTemplate` is a list based Template with a header, sidebar, main and modal area.
+    It is based on the fast.design style and works well in both default (light) and dark mode.
 
     Reference: https://panel.holoviz.org/reference/templates/FastListTemplate.html
 
-    Example:
+    :Example:
 
     >>> pn.template.FastListTemplate(
     ...     site="Panel", title="FastListTemplate", accent="#A01346",

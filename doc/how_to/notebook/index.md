@@ -19,6 +19,13 @@ How to display output in Jupyter and non-Jupyter based notebook environments.
 How to use the Preview functionality in JupyterLab to rapidly develop applications.
 :::
 
+:::{grid-item-card} {octicon}`grabber;2.5em;sd-mr-1 sd-animate-grow50` Publish a Notebook as a Dashboard using the Layout Builder
+:link: layout_builder
+:link-type: doc
+
+How to use the layout builder in JupyterLab to build a dashboard using a drag-and-drop interface.
+:::
+
 :::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1 sd-animate-grow50` Develop in other notebook environments
 :link: other_nb
 :link-type: doc
@@ -34,6 +41,7 @@ How to develop apps in Google Colab, VSCode notebook, nteract, and other noteboo
 :maxdepth: 2
 
 notebook
-jupyterlab
+jupyterlabpreview
+layout_builder
 other_nb
 ```

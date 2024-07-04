@@ -5,13 +5,15 @@ inside the Jupyter notebook.
 from __future__ import annotations
 
 import json
+import os
 import sys
 import uuid
+import warnings
 
-from collections import OrderedDict
 from contextlib import contextmanager
+from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Optional, Tuple,
+    TYPE_CHECKING, Any, Iterator, Literal, Optional,
 )
 
 import bokeh
@@ -29,6 +31,9 @@ from bokeh.models import Model
 from bokeh.resources import CDN, INLINE
 from bokeh.settings import _Unset, settings
 from bokeh.util.serialization import make_id
+from param.display import (
+    register_display_accessor, unregister_display_accessor,
+)
 from pyviz_comms import (
     PYVIZ_PROXY, Comm, JupyterCommJS,
     JupyterCommManager as _JupyterCommManager, nb_mime_js,
@@ -51,6 +56,7 @@ if TYPE_CHECKING:
     from ..widgets.base import Widget
     from .location import Location
 
+
 #---------------------------------------------------------------------
 # Private API
 #---------------------------------------------------------------------
@@ -59,19 +65,40 @@ LOAD_MIME: str = 'application/vnd.holoviews_load.v0+json'
 EXEC_MIME: str = 'application/vnd.holoviews_exec.v0+json'
 HTML_MIME: str = 'text/html'
 
-def _jupyter_server_extension_paths() -> List[Dict[str, str]]:
+def _jupyter_server_extension_paths() -> list[dict[str, str]]:
     return [{"module": "panel.io.jupyter_server_extension"}]
 
-def push(doc: 'Document', comm: 'Comm', binary: bool = True) -> None:
+def push(doc: Document, comm: Comm, binary: bool = True, msg: any = None) -> None:
     """
     Pushes events stored on the document across the provided comm.
     """
-    msg = diff(doc, binary=binary)
+    if msg is None:
+        msg = diff(doc, binary=binary)
     if msg is None:
         return
+    elif not comm._comm:
+        try:
+            from tornado.ioloop import IOLoop
+            IOLoop.current().call_later(0.1, partial(push, doc, comm, binary, msg=msg))
+        except Exception:
+            warnings.warn(
+                'Attempted to send message over Jupyter Comm but it was not '
+                'yet open and also could not be rescheduled to a later time. '
+                'The update will not be sent.', UserWarning, stacklevel=0
+            )
+    else:
+        send(comm, msg)
+
+def send(comm: Comm, msg: any):
+    """
+    Sends a bokeh message across a pyviz_comms.Comm.
+    """
+    # WARNING: CommManager model assumes that either JSON content OR a buffer
+    #          is sent. Therefore we must NEVER(!!!) send both at once.
     comm.send(msg.header_json)
     comm.send(msg.metadata_json)
     comm.send(msg.content_json)
+
     for buffer in msg.buffers:
         header = json.dumps(buffer.ref)
         payload = buffer.to_bytes()
@@ -140,7 +167,7 @@ def html_for_render_items(docs_json, render_items, template=None, template_varia
 
 def render_template(
     document: 'Document', comm: Optional['Comm'] = None, manager: Optional['CommManager'] = None
-) -> Tuple[Dict[str, str], Dict[str, Dict[str, str]]]:
+) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
     ref = document.roots[0].ref['id']
     (docs_json, render_items) = standalone_docs_json_and_render_items(document, suppress_callback_warning=True)
 
@@ -148,7 +175,7 @@ def render_template(
     # the custom template may not reference it
     if manager:
         item = render_items[0]
-        item.roots._roots = OrderedDict(list(item.roots._roots.items())[:-1])
+        item.roots._roots = dict(list(item.roots._roots.items())[:-1])
 
     html = html_for_render_items(
         docs_json, render_items, template=document.template,
@@ -158,7 +185,7 @@ def render_template(
 
 def render_model(
     model: 'Model', comm: Optional['Comm'] = None, resources: str = 'cdn'
-) -> Tuple[Dict[str, str], Dict[str, Dict[str, str]]]:
+) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
     if not isinstance(model, Model):
         raise ValueError("notebook_content expects a single Model instance")
     from ..config import panel_extension as pnext
@@ -176,7 +203,10 @@ def render_model(
     render_json = render_item.to_json()
     requirements = [pnext._globals[ext] for ext in pnext._loaded_extensions
                     if ext in pnext._globals]
+
     ipywidget = 'ipywidgets_bokeh' in sys.modules
+    if not state._is_pyodide:
+        ipywidget &= "PANEL_IPYWIDGET" in os.environ
 
     script = DOC_NB_JS.render(
         docs_json=serialize_json(docs_json),
@@ -185,11 +215,23 @@ def render_model(
         ipywidget=ipywidget
     )
     bokeh_script, bokeh_div = script, div
-    html = "<div id='{id}'>{html}</div>".format(id=target, html=bokeh_div)
+    html = f"<div id='{target}'>{bokeh_div}</div>"
 
     data = {'text/html': html, 'application/javascript': bokeh_script}
     return ({'text/html': mimebundle_to_html(data), EXEC_MIME: ''},
             {EXEC_MIME: {'id': target}})
+
+
+def mime_renderer(obj):
+    """
+    Generates a function that will render the supplied object as a
+    mimebundle, e.g. to monkey-patch a _repr_mimebundle_ method onto
+    an existing object.
+    """
+    from ..pane import panel
+    def _repr_mimebundle_(include=None, exclude=None):
+        return panel(obj)._repr_mimebundle_(include, exclude)
+    return _repr_mimebundle_
 
 
 def render_mimebundle(
@@ -197,11 +239,18 @@ def render_mimebundle(
     manager: Optional['CommManager'] = None,
     location: Optional['Location'] = None,
     resources: str = 'cdn'
-) -> Tuple[Dict[str, str], Dict[str, Dict[str, str]]]:
+) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
     """
     Displays bokeh output inside a notebook using the PyViz display
     and comms machinery.
     """
+    # WARNING: Patches the client comm created by some external library
+    #          e.g. HoloViews, with an on_open handler that will initialize
+    #          the server comm.
+    if manager and manager.client_comm_id in _JupyterCommManager._comms:
+        client_comm = _JupyterCommManager._comms[manager.client_comm_id]
+        if not client_comm._on_open:
+            client_comm._on_open = lambda _: comm.init()
     if not isinstance(model, Model):
         raise ValueError('Can only render bokeh LayoutDOM models')
     add_to_doc(model, doc, True)
@@ -213,7 +262,7 @@ def render_mimebundle(
     return render_model(model, comm, resources)
 
 
-def mimebundle_to_html(bundle: Dict[str, Any]) -> str:
+def mimebundle_to_html(bundle: dict[str, Any]) -> str:
     """
     Converts a MIME bundle into HTML.
     """
@@ -224,7 +273,7 @@ def mimebundle_to_html(bundle: Dict[str, Any]) -> str:
     html = data.get('text/html', '')
     if 'application/javascript' in data:
         js = data['application/javascript']
-        html += '\n<script type="application/javascript">{js}</script>'.format(js=js)
+        html += f'\n<script type="application/javascript">{js}</script>'
     return html
 
 
@@ -255,6 +304,9 @@ def require_components():
 
     skip_import = {}
     for model in js_requires:
+        if not isinstance(model, dict) and issubclass(model, ReactiveHTML) and not model._loaded():
+            continue
+
         if hasattr(model, '__js_skip__'):
             skip_import.update(model.__js_skip__)
 
@@ -376,6 +428,9 @@ def load_notebook(
         else:
             settings.resources.unset_value()
 
+    CSS = (PANEL_DIR / '_templates' / 'jupyter.css').read_text(encoding='utf-8')
+    shim = '<script type="esms-options">{"shimMode": true}</script>'
+    publish_display_data(data={'text/html': f'{shim}<style>{CSS}</style>'})
     publish_display_data({
         'application/javascript': bokeh_js,
         LOAD_MIME: bokeh_js,
@@ -383,10 +438,8 @@ def load_notebook(
     bokeh.io.notebook.curstate().output_notebook()
 
     # Publish comm manager
-    CSS = (PANEL_DIR / '_templates' / 'jupyter.css').read_text(encoding='utf-8')
     JS = '\n'.join([PYVIZ_PROXY, _JupyterCommManager.js_manager, nb_mime_js])
     publish_display_data(data={LOAD_MIME: JS, 'application/javascript': JS})
-    publish_display_data(data={'text/html': f'<style>{CSS}</style>'})
 
 
 def show_server(panel: Any, notebook_url: str, port: int = 0) -> 'Server':
@@ -440,7 +493,7 @@ def show_server(panel: Any, notebook_url: str, port: int = 0) -> 'Server':
 def render_embed(
     panel, max_states: int = 1000, max_opts: int = 3, json: bool = False,
     json_prefix: str = '', save_path: str = './', load_path: Optional[str] = None,
-    progress: bool = True, states: Dict[Widget, List[Any]] = {}
+    progress: bool = True, states: dict[Widget, list[Any]] = {}
 ) -> None:
     """
     Renders a static version of a panel in a notebook by evaluating
@@ -529,3 +582,14 @@ def ipywidget(obj: Any, doc=None, **kwargs: Any):
                 current[:] = [new_model]
         widget.observe(view_count_changed, '_view_count')
     return widget
+
+
+try:
+    unregister_display_accessor('_ipython_display_')
+except KeyError:
+    pass
+
+try:
+    register_display_accessor('_repr_mimebundle_', mime_renderer)
+except Exception:
+    pass

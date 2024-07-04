@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, Callable, ClassVar, List, Mapping,
+    TYPE_CHECKING, Callable, ClassVar, Mapping,
 )
 
 import param
@@ -37,7 +37,7 @@ class Accordion(NamedListPanel):
     >>> pn.Accordion(some_pane_with_a_name, ("Plot", some_plot))
     """
 
-    active_header_background = param.String(default='#ccc', doc="""
+    active_header_background = param.String(default='#ddd', doc="""
         Color for currently active headers.""")
 
     active = param.List(default=[], doc="""
@@ -78,6 +78,7 @@ class Accordion(NamedListPanel):
 
     def __init__(self, *objects, **params):
         super().__init__(*objects, **params)
+        self._panels = {}
         self._updating_active = False
         self.param.watch(self._update_active, ['active'])
         self.param.watch(self._update_cards, self._synced_properties)
@@ -92,7 +93,7 @@ class Accordion(NamedListPanel):
         models and cleaning up any dropped objects.
         """
         from panel.pane.base import RerenderError, panel
-        new_models = []
+        new_models, old_models = [], []
         if len(self._names) != len(self):
             raise ValueError(
                 'Accordion names do not match objects, ensure that the '
@@ -104,8 +105,9 @@ class Accordion(NamedListPanel):
             self.objects[i] = pane
 
         for obj in old_objects:
-            if obj not in self.objects:
+            if obj not in self.objects and id(obj) in self._panels:
                 self._panels[id(obj)]._cleanup(root)
+                del self._panels[id(obj)]
 
         params = {
             k: v for k, v in self.param.values().items()
@@ -116,27 +118,33 @@ class Accordion(NamedListPanel):
         current_objects = list(self)
         self._updating_active = True
         for i, (name, pane) in enumerate(zip(self._names, self)):
-            params.update(self._apply_style(i))
+            child_params = dict(params, title=name)
+            child_params.update(self._apply_style(i))
             if id(pane) in self._panels:
                 card = self._panels[id(pane)]
-                card.param.update(**params)
+                card.param.update(**child_params)
             else:
                 card = Card(
-                    pane, title=name, css_classes=['accordion'],
+                    pane,
+                    css_classes=['accordion'],
                     header_css_classes=['accordion-header'],
-                    **params
+                    **child_params
                 )
                 card.param.watch(self._set_active, ['collapsed'])
                 self._panels[id(pane)] = card
             if ref in card._models:
                 panel = card._models[ref][0]
+                old_models.append(panel)
             else:
                 try:
                     panel = card._get_model(doc, root, model, comm)
                     if self.toggle:
                         cb = CustomJS(args={'accordion': model}, code=self._toggle)
                         panel.js_on_change('collapsed', cb)
-                except RerenderError:
+                except RerenderError as e:
+                    if e.layout is not None and e.layout is not self:
+                        raise e
+                    e.layout = None
                     return self._get_objects(
                         model, current_objects[:i], doc, root, comm
                     )
@@ -146,7 +154,7 @@ class Accordion(NamedListPanel):
         self._set_active()
         self._update_cards()
         self._update_active()
-        return new_models
+        return new_models, old_models
 
     def _compute_sizing_mode(self, children, props):
         children = [subchild for child in children for subchild in child.children[1:]]
@@ -210,7 +218,7 @@ class Accordion(NamedListPanel):
 
     def select(
         self, selector: type | Callable[[Viewable], bool] | None = None
-    ) -> List[Viewable]:
+    ) -> list[Viewable]:
         selected = Reactive.select(self, selector)
         if self._panels:
             for card in self._panels.values():

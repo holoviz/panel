@@ -6,8 +6,10 @@ from pathlib import Path
 
 import pytest
 
+from requests.exceptions import MissingSchema
+
 from panel.pane import (
-    GIF, ICO, JPG, PDF, PNG, SVG,
+    GIF, ICO, JPG, PDF, PNG, SVG, WebP,
 )
 from panel.pane.markup import escape
 
@@ -15,7 +17,7 @@ JPG_FILE = 'https://assets.holoviz.org/panel/samples/jpg_sample.jpg'
 JPEG_FILE = 'https://assets.holoviz.org/panel/samples/jpeg_sample.jpeg'
 PNG_FILE = 'https://assets.holoviz.org/panel/samples/png_sample.png'
 SVG_FILE = 'https://assets.holoviz.org/panel/samples/svg_sample.svg'
-
+WEBP_FILE = 'https://assets.holoviz.org/panel/samples/webp_sample.webp'
 
 def test_jpeg_applies():
     assert JPG.applies(JPEG_FILE)
@@ -67,14 +69,17 @@ twopixel = dict(\
           b'AAAAAAAAAAAAAAAAFBv/EABkRAAEFAAAAAAAAAAAAAAAAAAEAAjFxsf/aAAwDAQ' + \
           b'ACEQMRAD8AA0qs5HvTHQcJdsChioXSbOr/2Q==',
     ico = b'AAABAAEAAgEAAAEAIAA0AAAAFgAAACgAAAACAAAAAgAAAAEAIAAAAAAACAAAAHQ' + \
-          b'SAAB0EgAAAAAAAAAAAAD//////////wAAAAA=')
+          b'SAAB0EgAAAAAAAAAAAAD//////////wAAAAA=',
+    webp= b'UklGRkIAAABXRUJQVlA4WAoAAAAQAAAAAQAAAAAAQUxQSAMAAAAAAAAAVlA4IBg' + \
+          b'AAAAwAQCdASoCAAEAAUAmJaQAA3AA/v02aAA='
+          )
 
 
-def test_imgshape():
-    for t in [PNG, JPG, GIF, ICO]:
-        w,h = t._imgshape(b64decode(twopixel[t.name.lower()]))
-        assert w == 2
-        assert h == 1
+@pytest.mark.parametrize('t', [PNG, JPG, GIF, ICO, WebP], ids=lambda t: t.name.lower())
+def test_imgshape(t):
+    w, h = t._imgshape(b64decode(twopixel[t.name.lower()]))
+    assert w == 2
+    assert h == 1
 
 def test_load_from_byteio():
     """Testing a loading a image from a ByteIo"""
@@ -149,6 +154,16 @@ def test_pdf_no_embed(document, comm):
     model = pdf_pane.get_root(document, comm)
 
     assert model.text.startswith(f"&lt;embed src=&quot;{url}")
+
+def test_pdf_local_file(document, comm):
+    path = Path(__file__).parent.parent / "test_data" / "sample.pdf"
+    pdf_pane = PDF(object=path)
+    try:
+        model = pdf_pane.get_root(document, comm)
+    except MissingSchema:
+        return # ignore issues with local paths
+    assert model.text.startswith("&lt;embed src=&quot;data:application/pdf;base64,JVBER")
+    assert model.text.endswith("==#page=1&quot; width=&#x27;100%&#x27; height=&#x27;100%&#x27; type=&quot;application/pdf&quot;&gt;")
 
 def test_png_native_size(document, comm):
     png = PNG(PNG_FILE, embed=False)
@@ -299,3 +314,9 @@ def test_svg_stretch_both(embed, document, comm):
     model = svg.get_root(document, comm)
     assert 'width: 100%' in model.text
     assert 'height: 100%' in model.text
+
+def test_image_caption(document, comm):
+    png = PNG(PNG_FILE, caption='Some Caption')
+    model = png.get_root(document, comm)
+    assert 'Some Caption' in model.text
+    assert 'figcaption' in model.text

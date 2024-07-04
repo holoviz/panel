@@ -98,7 +98,7 @@ def build_tranquilize_application(files):
 
             source = NotebookHandler(filename)
         else:
-            raise UnsupportedFileType('{} is not a script (.py) or notebook (.ipynb)'.format(filename))
+            raise UnsupportedFileType(f'{filename} is not a script (.py) or notebook (.ipynb)')
         functions.extend(source.tranquilized_functions)
     return make_app(functions, 'Panel REST API', prefix='rest/')
 
@@ -122,7 +122,7 @@ def tranquilizer_rest_provider(files, endpoint):
     """
     app = build_tranquilize_application(files)
     tr = WSGIContainer(app)
-    return [(r"^/%s/.*" % endpoint, web.FallbackHandler, dict(fallback=tr))]
+    return [(rf"^/{endpoint}/.*", web.FallbackHandler, dict(fallback=tr))]
 
 
 def param_rest_provider(files, endpoint):
@@ -152,7 +152,7 @@ def param_rest_provider(files, endpoint):
             try:
                 import nbconvert  # noqa
             except ImportError:
-                raise ImportError("Please install nbconvert to serve Jupyter Notebooks.")
+                raise ImportError("Please install nbconvert to serve Jupyter Notebooks.") from None
             from nbconvert import ScriptExporter
             exporter = ScriptExporter()
             source, _ = exporter.from_filename(filename)
@@ -165,11 +165,11 @@ def param_rest_provider(files, endpoint):
                 except Exception:
                     param.main.param.warning("Could not run app notebook on REST server startup.")
         else:
-            raise ValueError('{} is not a script (.py) or notebook (.ipynb)'.format(filename))
+            raise ValueError(f'{filename} is not a script (.py) or notebook (.ipynb)')
 
     if endpoint and not endpoint.endswith('/'):
         endpoint += '/'
-    return [((r"^/%s.*" % endpoint if endpoint else r"^.*"), ParamHandler, dict(root=endpoint))]
+    return [((rf"^/{endpoint}.*" if endpoint else r"^.*"), ParamHandler, dict(root=endpoint))]
 
 
 REST_PROVIDERS = {

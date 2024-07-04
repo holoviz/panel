@@ -55,7 +55,7 @@ class TerminalSubprocess(param.Parameterized):
 
     _period = param.Integer(default=50, doc="Period length of _periodic_callback")
 
-    _terminal = param.Parameter(constant=True, doc="""
+    _terminal = param.Parameter(constant=True, allow_refs=False, doc="""
         The Terminal to which the subprocess is connected.""")
 
     _timeout_sec = param.Integer(default=0)
@@ -110,9 +110,9 @@ class TerminalSubprocess(param.Parameterized):
             # that it finished.
             try:
                 result = subprocess.run(args, **kwargs)
-                print(str(result))
+                print(str(result))  # noqa: T201
             except FileNotFoundError as e:
-                print(str(e) + "\nCompletedProcess('FileNotFoundError')")
+                print(str(e) + "\nCompletedProcess('FileNotFoundError')")  # noqa: T201
         else:
             # this is the PARENT process fork.
             self._child_pid = child_pid
@@ -248,7 +248,7 @@ class Terminal(Widget):
     nrows = param.Integer(readonly=True, doc="""
         The number of rows in the terminal.""")
 
-    value = param.String(label="Input", readonly=True, doc="""
+    value = param.String(default="", label="Input", readonly=True, doc="""
         User input received from the Terminal. Sent one character at the time.""")
 
     write_to_console = param.Boolean(default=False, doc="""

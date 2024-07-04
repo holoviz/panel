@@ -3,7 +3,7 @@ Spacer components to add horizontal or vertical space to a layout.
 """
 from __future__ import annotations
 
-from typing import ClassVar, List
+from typing import ClassVar
 
 import param
 
@@ -65,7 +65,7 @@ class VSpacer(Spacer):
 
 class HSpacer(Spacer):
     """
-    The `HSpacer` layout provides responsive vertical spacing.
+    The `HSpacer` layout provides responsive horizontal spacing.
 
     Using this component we can space objects equidistantly in a layout and
     allow the empty space to shrink when the browser is resized.
@@ -105,7 +105,7 @@ class Divider(Reactive):
 
     _bokeh_model = BkDiv
 
-    _stylesheets: ClassVar[List[str]] = [
+    _stylesheets: ClassVar[list[str]] = [
         f'{CDN_DIST}css/divider.css'
     ]
 

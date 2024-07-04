@@ -13,12 +13,12 @@ class QuillInput(HTMLBox):
     """
 
     __css_raw__ = [
-        'https://cdn.quilljs.com/1.3.6/quill.bubble.css',
-        'https://cdn.quilljs.com/1.3.6/quill.snow.css'
+        'https://cdn.quilljs.com/1.3.7/quill.bubble.css',
+        'https://cdn.quilljs.com/1.3.7/quill.snow.css'
     ]
 
     __javascript_raw__ = [
-        'https://cdn.quilljs.com/1.3.6/quill.js',
+        'https://cdn.quilljs.com/1.3.7/quill.js',
     ]
 
     @classproperty
@@ -35,7 +35,7 @@ class QuillInput(HTMLBox):
 
     __js_require__ = {
         'paths': {
-            'Quill': 'https://cdn.quilljs.com/1.3.6/quill',
+            'Quill': 'https://cdn.quilljs.com/1.3.7/quill',
         },
         'exports': {
             'Quill': 'Quill'

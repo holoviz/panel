@@ -1,10 +1,10 @@
 # Add interactivity to a function
 
-This guide addresses how to make your functions interactive by binding widgets to them. This is done with the use of `pn.bind`, which binds a function or method to the value of a widget.
+This guide addresses how to make your functions interactive by binding widgets to them. This is done with the use of `pn.bind`, which allows binding the value of a widget to a function or method.
 
 ---
 
-The recommended approach to adding interactivity to your applications is by writing reactive functions or method. To discover how to write one of these first, we need a function.
+The recommended approach to adding interactivity to your applications is by writing reactive functions or methods. To discover how to write one of these first, we need a function.
 
 Let's start by creating a function. The function takes an argument `number` and will return a string of stars equal to the number:
 
@@ -43,5 +43,6 @@ Internally the layout will create a so called `ParamFunction` component to wrap 
 
 ## Related Resources
 
-- Learn [how to use interactive functions to update components](./bind_component)
+- Learn [how to use reactive functions to update components](./bind_component)
+- Learn [how to use reactive generators to generate interactive components ](./bind_generator)
 - Understand [Param](../../explanation/dependencies/param.md)

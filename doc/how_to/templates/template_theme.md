@@ -70,7 +70,7 @@ Now, we can activate this app on the command line:
 panel serve app.py --show --autoreload
 ```
 
-<img src="../../_static/template_mat_dark.png" alt="dark themed panel app">
+<img src="../../_static/images/template_mat_dark.png" alt="dark themed panel app">
 
 ## Related Resources
 

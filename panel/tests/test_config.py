@@ -4,7 +4,8 @@ Tests pn.config variables
 import pytest
 
 from panel import config, state
-from panel.pane import HTML
+from panel.pane import HTML, panel
+from panel.param import ParamFunction
 from panel.tests.conftest import set_env_var
 
 
@@ -39,6 +40,19 @@ def test_session_override():
     state.curdoc = None
     assert config.sizing_mode is None
 
+@pytest.mark.usefixtures("with_curdoc")
+def test_defer_load():
+    try:
+        defer_load_old = config.defer_load
+        config.defer_load = True
+
+        def test():
+            return 1
+
+        assert ParamFunction.applies(test)
+        assert isinstance(panel(test), ParamFunction)
+    finally:
+        config.defer_load = defer_load_old
 
 def test_console_output_replace_stdout(document, comm, get_display_handle):
     pane = HTML()
@@ -91,14 +105,14 @@ def test_console_output_replace_error(document, comm, get_display_handle):
         handle = get_display_handle(model)
 
         try:
-            1/0
+            1/0  # noqa: B018
         except Exception as e:
             pane._on_error(model.ref['id'], e)
         assert 'text/html' in handle
         assert 'ZeroDivisionError' in handle['text/html']
 
         try:
-            1 + '2'
+            1 + '2'  # noqa: B018
         except Exception as e:
             pane._on_error(model.ref['id'], e)
         assert 'text/html' in handle
@@ -115,14 +129,14 @@ def test_console_output_accumulate_error(document, comm, get_display_handle):
     handle = get_display_handle(model)
 
     try:
-        1/0
+        1/0  # noqa: B018
     except Exception as e:
         pane._on_error(model.ref['id'], e)
     assert 'text/html' in handle
     assert 'ZeroDivisionError' in handle['text/html']
 
     try:
-        1 + '2'
+        1 + '2' # noqa: B018
     except Exception as e:
         pane._on_error(model.ref['id'], e)
     assert 'text/html' in handle
@@ -140,7 +154,7 @@ def test_console_output_disable_error(document, comm, get_display_handle):
         handle = get_display_handle(model)
 
         try:
-            1/0
+            1/0  # noqa: B018
         except Exception as e:
             pane._on_error(model.ref['id'], e)
         assert handle == {}

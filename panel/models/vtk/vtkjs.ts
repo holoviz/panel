@@ -1,25 +1,26 @@
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 
 import {AbstractVTKView, AbstractVTKPlot} from "./vtklayout"
 import {vtkns} from "./util"
 
 export class VTKJSPlotView extends AbstractVTKView {
-  model: VTKJSPlot
+  declare model: VTKJSPlot
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.data.change, () => {
+    const {data} = this.model.properties
+    this.on_change(data, () => {
       this.invalidate_render()
     })
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     this._create_orientation_widget()
     this._set_axes()
   }
 
-  invalidate_render(): void {
+  override invalidate_render(): void {
     this._vtk_renwin = null
     super.invalidate_render()
   }
@@ -32,49 +33,62 @@ export class VTKJSPlotView extends AbstractVTKView {
   }
 
   plot(): void {
-    if (this.model.data == null) {
+    if (this.model.data == null && this.model.data_url == null) {
       this._vtk_renwin.getRenderWindow().render()
       return
     }
-    const dataAccessHelper = vtkns.DataAccessHelper.get("zip", {
-      zipContent: atob(this.model.data as string),
-      callback: (_zip: unknown) => {
-        const sceneImporter = vtkns.HttpSceneLoader.newInstance({
-          renderer: this._vtk_renwin.getRenderer(),
-          dataAccessHelper,
-        })
-        const fn = (window as any).vtk.macro.debounce(
-          () => {
-            setTimeout(() => {
-              if (this._axes == null && this.model.axes) this._set_axes()
-              this._set_camera_state()
-              this._get_camera_state()
-	      this._vtk_renwin.getRenderWindow().render()
-            }, 100)
-	  }, 100
-        )
-        sceneImporter.setUrl("index.json")
-        sceneImporter.onReady(fn)
-      },
+    let bytes_promise: any
+    if (this.model.data_url) {
+      bytes_promise = vtkns.DataAccessHelper.get("http").fetchBinary(this.model.data_url)
+    } else {
+      bytes_promise = async () => { this.model.data }
+    }
+    bytes_promise.then((zipContent: ArrayBuffer) => {
+      const dataAccessHelper = vtkns.DataAccessHelper.get("zip", {
+        zipContent,
+        callback: (_zip: unknown) => {
+          const sceneImporter = vtkns.HttpSceneLoader.newInstance({
+            renderer: this._vtk_renwin.getRenderer(),
+            dataAccessHelper,
+          })
+          const fn = (window as any).vtk.macro.debounce(
+            () => {
+              setTimeout(() => {
+                if (this._axes == null && this.model.axes) {
+                  this._set_axes()
+                }
+                this._set_camera_state()
+                this._get_camera_state()
+                this._vtk_renwin.getRenderWindow().render()
+              }, 100)
+            }, 100,
+          )
+          sceneImporter.setUrl("index.json")
+          sceneImporter.onReady(fn)
+        },
+      })
     })
   }
 }
 
 export namespace VTKJSPlot {
   export type Attrs = p.AttrsOf<Props>
-  export type Props = AbstractVTKPlot.Props
+  export type Props = AbstractVTKPlot.Props & {
+    data_url: p.Property<string | null>
+  }
 }
 
 export interface VTKJSPlot extends VTKJSPlot.Attrs {}
 
 export class VTKJSPlot extends AbstractVTKPlot {
-  properties: VTKJSPlot.Props
+  declare properties: VTKJSPlot.Props
 
   static {
     this.prototype.default_view = VTKJSPlotView
 
-    this.define<VTKJSPlot.Props>(({Boolean, Nullable, String}) => ({
-      data:               [ Nullable(String)  ],
+    this.define<VTKJSPlot.Props>(({Boolean, Bytes, Nullable, String}) => ({
+      data:               [ Nullable(Bytes),   null ],
+      data_url:           [ Nullable(String), null ],
       enable_keybindings: [ Boolean, false    ],
     }))
   }

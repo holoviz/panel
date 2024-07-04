@@ -1,6 +1,6 @@
 {
   "name": "@holoviz/panel",
-  "version": "1.0.2-a.1",
+  "version": "1.5.0-a.7",
   "description": "The powerful data exploration & web app framework for Python.",
   "license": "BSD-3-Clause",
   "repository": {
@@ -8,21 +8,30 @@
     "url": "https://github.com/holoviz/panel.git"
   },
   "dependencies": {
-    "@bokeh/bokehjs": "~3.1.1",
-    "@luma.gl/constants": "^8.0.3",
+    "@bokeh/bokehjs": "3.5.0-rc.1",
     "@types/debounce": "^1.2.0",
     "@types/gl-matrix": "^2.4.5",
+    "ace-code": "^1.24.1",
     "debounce": "^1.2.0",
     "gl-matrix": "^3.1.0",
     "htm": "^3.1.1",
     "json-formatter-js": "^2.2.1",
-    "preact": "^10.13.0"
+    "preact": "^10.22.0",
+    "sucrase": "^3.30.0"
   },
   "devDependencies": {
+    "@stylistic/eslint-plugin": "^1.6.3",
+    "@typescript-eslint/eslint-plugin": "^7.2.0",
+    "@typescript-eslint/parser": "^7.2.0",
+    "acorn": "^8.11.3",
+    "eslint": "^8.57.0",
     "flatpickr": "^4.6.9"
   },
   "files": [
     "dist/**/*.{js,js.map,d.ts,json,css,whl}"
   ],
-  "main": "dist/panel.min.js"
+  "main": "dist/panel.min.js",
+  "scripts": {
+    "lint": "npx eslint -c .eslintrc.js './*.ts' './models/**/*.ts'"
+  }
 }

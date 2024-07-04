@@ -8,7 +8,7 @@ This guide is heavily inspired by [Web Development with Python and Vue.js Compon
 
 [Vue components](https://vuejs.org/v2/guide/components.html) are self-contained elements that can render HTML/CSS, store data within Javascript variables, and much more. Once defined, they are callable as HTML tags. For example, within existing HTML a Vue component can be rendered like below:
 
-![Vue Component](../../../_static/vue_bootstrap_component.png)
+![Vue Component](../../../_static/images/vue_bootstrap_component.png)
 
 Here, the Vue component tags `<v-component></v-component>` are responsible for rendering a part of the frontend that takes user input.
 

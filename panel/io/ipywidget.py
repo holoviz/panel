@@ -14,6 +14,7 @@ from ipykernel.comm import Comm, CommManager
 from ipykernel.kernelbase import Kernel
 from ipywidgets import Widget
 from ipywidgets._version import __protocol_version__
+from ipywidgets.widgets.widget import _remove_buffers
 
 # Stop ipywidgets_bokeh from patching the kernel
 ipykernel.kernelbase.Kernel._instance = ''
@@ -69,11 +70,19 @@ def _on_widget_constructed(widget, doc=None):
         (not (comm and isinstance(widget.comm, comm.DummyComm)) and
          isinstance(widget.comm.kernel, PanelKernel))):
         return
-    args = dict(
-        kernel=kernel,
-        target_name='jupyter.widget', data={}, buffers=[],
-        metadata={'version': __protocol_version__}
-    )
+    wstate, buffer_paths, buffers = _remove_buffers(widget.get_state())
+    args = {
+        'target_name': 'jupyter.widget',
+        'data': {
+            'state': wstate,
+            'buffer_paths': buffer_paths
+        },
+        'buffers': buffers,
+        'metadata': {
+            'version': __protocol_version__
+        },
+        'kernel': kernel
+    }
     if widget._model_id is not None:
         args['comm_id'] = widget._model_id
     try:
@@ -82,6 +91,7 @@ def _on_widget_constructed(widget, doc=None):
         if 'PANEL_IPYWIDGET' not in os.environ:
             raise e
     kernel.register_widget(widget)
+
 
 # Patch font-awesome CSS onto ipywidgets_bokeh IPyWidget
 IPyWidget.__css__ = [
@@ -203,7 +213,6 @@ class PanelKernel(Kernel):
     def register_widget(self, widget):
         comm = widget.comm
         comm.kernel = self
-        comm.open()
         self.comm_manager.register_comm(comm)
 
     def _wrap_handler(self, msg_type, handler):

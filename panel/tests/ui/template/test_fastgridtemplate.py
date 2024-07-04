@@ -1,28 +1,25 @@
-import time
-
 import pytest
+
+pytest.importorskip("playwright")
+
+from playwright.sync_api import expect
+
+from panel.pane import Markdown
+from panel.template import FastGridTemplate
+from panel.tests.util import serve_component
 
 pytestmark = pytest.mark.ui
 
-from panel.io.server import serve
-from panel.pane import Markdown
-from panel.template import FastGridTemplate
 
-
-def test_fast_grid_template_no_console_errors(page, port):
+def test_fast_grid_template_no_console_errors(page):
     tmpl = FastGridTemplate()
     md = Markdown('Initial')
 
     tmpl.main[0:3, 0:3] = md
 
-    serve(tmpl, port=port, threaded=True, show=False)
+    msgs, _ = serve_component(page, tmpl)
 
-    time.sleep(0.2)
-
-    msgs = []
-    page.on("console", lambda msg: msgs.append(msg))
-
-    page.goto(f"http://localhost:{port}", timeout=40_000)
+    expect(page.locator(".markdown").locator("div")).to_have_text('Initial\n')
 
     expected = ['maxWidth', 'maxHeight']
     assert [
@@ -30,19 +27,14 @@ def test_fast_grid_template_no_console_errors(page, port):
     ] == []
 
 
-def test_fast_grid_template_updates(page, port):
+def test_fast_grid_template_updates(page):
     tmpl = FastGridTemplate()
     md = Markdown('Initial')
 
     tmpl.main[0:3, 0:3] = md
 
-    serve(tmpl, port=port, threaded=True, show=False)
+    serve_component(page, tmpl)
 
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}", timeout=40_000)
-
-    assert page.locator(".markdown").locator("div").text_content() == 'Initial\n'
+    expect(page.locator(".markdown").locator("div")).to_have_text('Initial\n')
     md.object = 'Updated'
-    time.sleep(0.1)
-    assert page.locator(".markdown").locator("div").text_content() == 'Updated\n'
+    expect(page.locator(".markdown").locator("div")).to_have_text('Updated\n')

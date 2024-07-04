@@ -6,12 +6,12 @@ Following FastAPI's [Tutorial - User Guide](https://fastapi.tiangolo.com/tutoria
 
 ## Configuration
 
-Before we start adding a bokeh app to our FastApi server we have to set up some of the basic plumbing. In the `examples/apps/fastApi` folder we will add some basic configurations.
+Before we start adding a bokeh app to our FastAPI server we have to set up some of the basic plumbing. In the `examples/apps/fastApi` folder we will add some basic configurations.
 
 You'll need to create a file called `examples/apps/fastApi/main.py`.
 
 In `main.py` you'll need to import the following( which should all be already available from the above conda installs):
-i
+
 ```python
 import panel as pn
 from bokeh.embed import server_document
@@ -30,7 +30,7 @@ app = FastAPI()
 templates = Jinja2Templates(directory="examples/apps/fastApi/templates")
 ```
 
-We will now need to create our first rout via an async function and point it to the path of our server:
+We will now need to create our first route via an async function and point it to the path of our server:
 
 ```python
 @app.get("/")
@@ -55,7 +55,7 @@ Now add the following to `base.html`. This is a minimal version but feel free to
 </html>
 ```
 
-Return back to your `examples/apps/fastApi/main.py` file. We will use pn.serve() to start the bokeh server (Which Panel is built on). Configure it to whatever port and address you want, for our example we will use port 5000 and address 127.0.0.1. show=False will make it so the bokeh server is spun up but not shown yet. The allow_websocket_origin will list of hosts that can connect to the websocket, for us this is fastApi so we will use (127.0.0.1:8000). The `createApp` function call in this example is how we call our panel app. This is not set up yet but will be in the next section.
+Return back to your `examples/apps/fastApi/main.py` file. We will use pn.serve() to start the bokeh server (Which Panel is built on). Configure it to whatever port and address you want, for our example we will use port 5000 and address 127.0.0.1. show=False will make it so the bokeh server is spun up but not shown yet. The allow_websocket_origin will list of hosts that can connect to the websocket, for us this is FastAPI so we will use (127.0.0.1:8000). The `createApp` function call in this example is how we call our panel app. This is not set up yet but will be in the next section.
 
 ```python
 pn.serve({'/app': createApp},
@@ -188,15 +188,15 @@ Go to that address and your app should be there running!
 ## Multiple apps
 
 
-This is the most basic configuration for a bokeh server. It is of course possible to add multiple apps in the same way and then registering them with FastApi in the way described in the [configuration](#configuration) section above. To see a multi-app fastApi server have a look at ``examples/apps/fastApi_multi_apps`` and launch it with `uvicorn main:app --reload` as before.
+This is the most basic configuration for a bokeh server. It is of course possible to add multiple apps in the same way and then registering them with FastAPI in the way described in the [configuration](#configuration) section above. To see a multi-app FastAPI server have a look at ``examples/apps/fastApi_multi_apps`` and launch it with `uvicorn main:app --reload` as before.
 
 To run multiple apps you will need to do the following:
-1. Create a new directory in your and a new file with your panel app (ex. `sinewave2.py`).
-2. Create another pn_app file in your new directory (ex. `pn_app2.py`) That might look something like this:
+1. Create a new directory in your and a new file with your panel app (ex. `sinewave.py`).
+2. Create another pn_app file in your new directory (ex. `pn_app.py`) That might look something like this:
 ```
 import panel as pn
 
-from .sinewave import SineWave2
+from .sinewave import SineWave
 
 def createApp2():
     sw = SineWave()
@@ -214,7 +214,7 @@ fastApi
 │   │   pn_app.py
 │   │
 └───sliders2
-│   │   sinewave2.py
+│   │   sinewave.py
 │   │   pn_app.py
 │
 └───templates
@@ -258,7 +258,7 @@ fastApi
 │   │   pn_app.py
 │   │
 └───sliders2
-│   │   sinewave2.py
+│   │   sinewave.py
 │   │   pn_app.py
 │
 └───templates

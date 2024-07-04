@@ -9,6 +9,7 @@ import importlib
 import inspect
 import os
 import sys
+import warnings
 
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
@@ -24,20 +25,22 @@ from pyviz_comms import (
     JupyterCommManager as _JupyterCommManager, extension as _pyviz_extension,
 )
 
+from .__version import __version__
 from .io.logging import panel_log_handler
 from .io.state import state
+from .util import param_watchers
 
-__version__ = str(param.version.Version(
-    fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
-
-_LOCAL_DEV_VERSION = any(v in __version__ for v in ('post', 'dirty')) and not state._is_pyodide
+_LOCAL_DEV_VERSION = (
+    any(v in __version__ for v in ('post', 'dirty'))
+    and not state._is_pyodide
+    and 'PANEL_DOC_BUILD' not in os.environ
+)
 
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
-
 
 def validate_config(config, parameter, value):
     """
@@ -108,7 +111,11 @@ class _config(_base_config):
         is enabled. The callback is given the user information returned
         by the configured Auth provider and should return True or False
         depending on whether the user is authorized to access the
-        application.""")
+        application. The callback may also contain a second parameter,
+        which is the requested path the user is making. If the user
+        is authenticated and has explicit access to the path, then
+        the callback should return True otherwise it should return
+        False.""")
 
     auth_template = param.Path(default=None, doc="""
         A jinja2 template rendered when the authorize_callback determines
@@ -129,6 +136,10 @@ class _config(_base_config):
 
     design = param.ClassSelector(class_=None, is_instance=False, doc="""
         The design system to use to style components.""")
+
+    disconnect_notification = param.String(doc="""
+        The notification to display to the user when the connection
+        to the server is dropped.""")
 
     exception_handler = param.Callable(default=None, doc="""
         General exception handler for events.""")
@@ -167,6 +178,10 @@ class _config(_base_config):
         'pyinstrument', 'snakeviz', 'memray'], doc="""
         The profiler engine to enable.""")
 
+    ready_notification = param.String(doc="""
+        The notification to display when the application is ready and
+        fully loaded.""")
+
     reuse_sessions = param.Boolean(default=False, doc="""
         Whether to reuse a session for the initial request to speed up
         the initial page render. Note that if the initial page differs
@@ -202,7 +217,9 @@ class _config(_base_config):
     throttled = param.Boolean(default=False, doc="""
         If sliders and inputs should be throttled until release of mouse.""")
 
-    _admin = param.Boolean(default=False, doc="Whether the admin panel was enabled.")
+    _admin = param.Boolean(default=False, doc="Whether the admin panel is enabled.")
+
+    _admin_endpoint = param.String(default=None, doc="Name to use for the admin endpoint.")
 
     _admin_log_level = param.Selector(
         default='DEBUG', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
@@ -244,17 +261,18 @@ class _config(_base_config):
     _npm_cdn = param.Selector(default='https://cdn.jsdelivr.net/npm',
         objects=['https://unpkg.com', 'https://cdn.jsdelivr.net/npm'],  doc="""
         The CDN to load NPM packages from if resources are served from
-        CDN. Allows switching between https://unpkg.com and
-        https://cdn.jsdelivr.net/npm for most resources.""")
+        CDN. Allows switching between [https://unpkg.com](https://unpkg.com) and
+        [https://cdn.jsdelivr.net/npm](https://cdn.jsdelivr.net/npm) for most resources.""")
 
     _nthreads = param.Integer(default=None, doc="""
         When set to a non-None value a thread pool will be started.
         Whenever an event arrives from the frontend it will be
         dispatched to the thread pool to be processed.""")
 
-    _basic_auth = param.ObjectSelector(
-        default=None, allow_None=True, objects=[], doc="""
-        Use Basic authentication.""")
+    _basic_auth = param.ClassSelector(default=None, class_=(dict, str), allow_None=True, doc="""
+        Password, dictionary with a mapping from username to password
+        or filepath containing JSON to use with the basic auth
+        provider.""")
 
     _oauth_provider = param.ObjectSelector(
         default=None, allow_None=True, objects=[], doc="""
@@ -281,6 +299,16 @@ class _config(_base_config):
     _oauth_extra_params = param.Dict(default={}, doc="""
         Additional parameters required for OAuth provider.""")
 
+    _oauth_guest_endpoints = param.List(default=None, doc="""
+        List of endpoints that can be accessed as a guest without authenticating.""")
+
+    _oauth_optional = param.Boolean(default=False, doc="""
+        Whether the user will be forced to go through login flow or if
+        they can access all applications as a guest.""")
+
+    _oauth_refresh_tokens = param.Boolean(default=False, doc="""
+        Whether to automatically refresh access tokens in the background.""")
+
     _inline = param.Boolean(default=_LOCAL_DEV_VERSION, allow_None=True, doc="""
         Whether to inline JS and CSS resources. If disabled, resources
         are loaded from CDN if one is available.""")
@@ -289,13 +317,14 @@ class _config(_base_config):
         The theme to apply to components.""")
 
     # Global parameters that are shared across all sessions
-    _globals = [
+    _globals = {
         'admin_plugins', 'autoreload', 'comms', 'cookie_secret',
         'nthreads', 'oauth_provider', 'oauth_expiry', 'oauth_key',
         'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
         'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
-        'layout_compatibility'
-    ]
+        'layout_compatibility', 'oauth_refresh_tokens', 'oauth_guest_endpoints',
+        'oauth_optional', 'admin'
+    }
 
     _truthy = ['True', 'true', '1', True, 1]
 
@@ -304,8 +333,8 @@ class _config(_base_config):
     def __init__(self, **params):
         super().__init__(**params)
         self._validating = False
-        for p in self.param:
-            if p.startswith('_') and p[1:] not in self._globals:
+        for p in self._parameter_set:
+            if p.startswith('_') and p[1:] not in _config._globals:
                 setattr(self, p+'_', None)
         if self.log_level:
             panel_log_handler.setLevel(self.log_level)
@@ -323,7 +352,7 @@ class _config(_base_config):
         state._thread_pool = ThreadPoolExecutor(max_workers=threads)
 
     @param.depends('notifications', watch=True)
-    def _enable_notifications(self):
+    def _setup_notifications(self):
         from .io.notifications import NotificationArea
         from .reactive import ReactiveHTMLMetaclass
         if self.notifications and 'notifications' not in ReactiveHTMLMetaclass._loaded_extensions:
@@ -331,40 +360,60 @@ class _config(_base_config):
         if not state.curdoc:
             state._notification = NotificationArea()
 
+    @param.depends('disconnect_notification', 'ready_notification', watch=True)
+    def _enable_notifications(self):
+        if self.disconnect_notification or self.ready_notification:
+            self.notifications = True
+
     @contextmanager
     def set(self, **kwargs):
         values = [(k, v) for k, v in self.param.values().items() if k != 'name']
         overrides = [
-            (k, getattr(self, k+'_')) for k in self.param
-            if k.startswith('_') and k[1:] not in self._globals
+            (k, getattr(self, k+'_')) for k in _config._parameter_set
+            if k.startswith('_') and k[1:] not in _config._globals
         ]
         for k, v in kwargs.items():
             setattr(self, k, v)
         try:
             yield
         finally:
-            self.param.update(**dict(values))
+            new = self.param.values()
+            restore = {k: v for k, v in values if v is not new.get(k)}
+            self.param.update(**restore)
             for k, v in overrides:
                 setattr(self, k+'_', v)
 
     def __setattr__(self, attr, value):
         from .io.state import state
-        if not getattr(self, 'initialized', False) or (attr.startswith('_') and attr.endswith('_')) or attr == '_validating':
+
+        # _param__private added in Param 2
+        if hasattr(self, '_param__private'):
+            init = getattr(self._param__private, 'initialized', False)
+        else:
+            init = getattr(self, 'initialized', False)
+        if not init or (attr.startswith('_') and attr.endswith('_')) or attr == '_validating':
             return super().__setattr__(attr, value)
         value = getattr(self, f'_{attr}_hook', lambda x: x)(value)
-        if attr in self._globals:
+        if (
+            attr in _config._globals
+            or (attr.startswith("_") and attr[1:] in _config._globals)
+            or self.param._TRIGGER
+        ):
             super().__setattr__(attr if attr in self.param else f'_{attr}', value)
         elif state.curdoc is not None:
-            if attr in self.param:
+            if attr in _config._parameter_set:
                 validate_config(self, attr, value)
-            elif f'_{attr}' in self.param:
+            elif f'_{attr}' in _config._parameter_set:
                 validate_config(self, f'_{attr}', value)
             else:
                 raise AttributeError(f'{attr!r} is not a valid config parameter.')
             if state.curdoc not in self._session_config:
                 self._session_config[state.curdoc] = {}
             self._session_config[state.curdoc][attr] = value
-        elif f'_{attr}' in self.param and hasattr(self, f'_{attr}_'):
+            watchers = param_watchers(self).get(attr, {}).get('value', [])
+            for w in watchers:
+                w.fn()
+        elif f'_{attr}' in _config._parameter_set and hasattr(self, f'_{attr}_'):
             validate_config(self, f'_{attr}', value)
             super().__setattr__(f'_{attr}_', value)
         else:
@@ -386,13 +435,11 @@ class _config(_base_config):
         ensure that even on first access mutable parameters do not
         end up being modified.
         """
+        if attr in ('_param__private', '_globals', '_parameter_set', '__class__', 'param'):
+            return super().__getattribute__(attr)
+
         from .io.state import state
-        init = super().__getattribute__('initialized')
-        global_params = super().__getattribute__('_globals')
-        if init and not attr.startswith('__'):
-            params = super().__getattribute__('param')
-        else:
-            params = []
+
         session_config = super().__getattribute__('_session_config')
         curdoc = state.curdoc
         if curdoc and curdoc not in session_config:
@@ -401,11 +448,11 @@ class _config(_base_config):
             curdoc and attr not in session_config[curdoc]):
             new_obj = copy.copy(super().__getattribute__(attr))
             setattr(self, attr, new_obj)
-        if attr in global_params or attr == 'theme':
+        if attr in _config._globals or attr == 'theme':
             return super().__getattribute__(attr)
         elif curdoc and curdoc in session_config and attr in session_config[curdoc]:
             return session_config[curdoc][attr]
-        elif f'_{attr}' in params and getattr(self, f'_{attr}_') is not None:
+        elif f'_{attr}' in _config._parameter_set and getattr(self, f'_{attr}_') is not None:
             return super().__getattribute__(f'_{attr}_')
         return super().__getattribute__(attr)
 
@@ -420,6 +467,14 @@ class _config(_base_config):
     @property
     def _doc_build(self):
         return os.environ.get('PANEL_DOC_BUILD')
+
+    @property
+    def admin(self):
+        return self._admin
+
+    @property
+    def admin_endpoint(self):
+        return os.environ.get('PANEL_ADMIN_ENDPOINT', self._admin_endpoint)
 
     @property
     def admin_log_level(self):
@@ -514,6 +569,13 @@ class _config(_base_config):
         return os.environ.get('PANEL_OAUTH_JWT_USER', self._oauth_jwt_user)
 
     @property
+    def oauth_refresh_tokens(self):
+        refresh = os.environ.get('PANEL_OAUTH_REFRESH_TOKENS', self._oauth_refresh_tokens)
+        if isinstance(refresh, bool):
+            return refresh
+        return refresh.lower() in ('1', 'true')
+
+    @property
     def oauth_encryption_key(self):
         return os.environ.get('PANEL_OAUTH_ENCRYPTION', self._oauth_encryption_key)
 
@@ -523,6 +585,20 @@ class _config(_base_config):
             return ast.literal_eval(os.environ['PANEL_OAUTH_EXTRA_PARAMS'])
         else:
             return self._oauth_extra_params
+
+    @property
+    def oauth_guest_endpoints(self):
+        if 'PANEL_OAUTH_GUEST_ENDPOINTS' in os.environ:
+            return ast.literal_eval(os.environ['PANEL_OAUTH_GUEST_ENDPOINTS'])
+        else:
+            return self._oauth_guest_endpoints
+
+    @property
+    def oauth_optional(self):
+        optional = os.environ.get('PANEL_OAUTH_OPTIONAL', self._oauth_optional)
+        if isinstance(optional, bool):
+            return optional
+        return optional.lower() in ('1', 'true')
 
     @property
     def theme(self):
@@ -542,10 +618,9 @@ if hasattr(_config.param, 'objects'):
     _params = _config.param.objects()
 else:
     _params = _config.param.params()
-
+_config._parameter_set = set(_params)
 config = _config(**{k: None if p.allow_None else getattr(_config, k)
                     for k, p in _params.items() if k != 'name'})
-
 
 class panel_extension(_pyviz_extension):
     """
@@ -558,7 +633,14 @@ class panel_extension(_pyviz_extension):
     - Update the global configuration `pn.config`
     (keyword arguments).
 
-    Reference: https://github.com/holoviz/panel/issues/3404
+    Parameters
+    ----------
+    *args : list[str]
+        Positional arguments listing the extension to load. For example "plotly",
+        "tabulator".
+    **params : dict[str,Any]
+        Keyword arguments to be set on the `pn.config` element. See
+        https://panel.holoviz.org/api/config.html
 
     :Example:
 
@@ -581,6 +663,7 @@ class panel_extension(_pyviz_extension):
         'codeeditor': 'panel.models.ace',
         'deckgl': 'panel.models.deckgl',
         'echarts': 'panel.models.echarts',
+        'filedropper': 'panel.models.file_dropper',
         'ipywidgets': 'panel.io.ipywidget',
         'jsoneditor': 'panel.models.jsoneditor',
         'katex': 'panel.models.katex',
@@ -601,10 +684,12 @@ class panel_extension(_pyviz_extension):
     _globals = {
         'deckgl': ['deck'],
         'echarts': ['echarts'],
+        'filedropper': ['FilePond'],
         'floatpanel': ['jsPanel'],
         'gridstack': ['GridStack'],
         'katex': ['katex'],
         'mathjax': ['MathJax'],
+        'perspective': ["customElements.get('perspective-viewer')"],
         'plotly': ['Plotly'],
         'tabulator': ['Tabulator'],
         'terminal': ['Terminal', 'xtermjs'],
@@ -625,11 +710,16 @@ class panel_extension(_pyviz_extension):
         newly_loaded = [arg for arg in args if arg not in panel_extension._loaded_extensions]
         if state.curdoc and state.curdoc not in state._extensions_:
             state._extensions_[state.curdoc] = []
-        if params.get('notifications') and 'notifications' not in args:
+        if params.get('ready_notification') or params.get('disconnect_notification'):
+            params['notifications'] = True
+        if params.get('notifications', config.notifications) and 'notifications' not in args:
             args += ('notifications',)
         for arg in args:
             if arg == 'notifications' and 'notifications' not in params:
                 params['notifications'] = True
+            if arg == 'ipywidgets':
+                from .io.resources import CSS_URLS
+                params['css_files'] = params.get('css_files', []) + [CSS_URLS['font-awesome']]
             if arg in self._imports:
                 try:
                     if (arg == 'ipywidgets' and get_ipython() and # noqa (get_ipython)
@@ -658,8 +748,8 @@ class panel_extension(_pyviz_extension):
                     state._extensions.append(arg)
                 ReactiveHTMLMetaclass._loaded_extensions.add(arg)
             else:
-                self.param.warning('%s extension not recognized and '
-                                   'will be skipped.' % arg)
+                self.param.warning(f'{arg} extension not recognized and '
+                                   'will be skipped.')
 
         for k, v in params.items():
             if k == 'design' and isinstance(v, str):
@@ -679,9 +769,8 @@ class panel_extension(_pyviz_extension):
                 setattr(config, k, designs[v])
             elif k in ('css_files', 'raw_css', 'global_css'):
                 if not isinstance(v, list):
-                    raise ValueError('%s should be supplied as a list, '
-                                     'not as a %s type.' %
-                                     (k, type(v).__name__))
+                    raise ValueError(f'{k} should be supplied as a list, '
+                                     f'not as a {type(v).__name__} type.')
                 existing = getattr(config, k)
                 existing.extend([new for new in v if new not in existing])
             elif k == 'js_files':
@@ -711,12 +800,12 @@ class panel_extension(_pyviz_extension):
                 backend = hv.Store.current_backend
             else:
                 backend = 'bokeh'
-            if hasattr(hv.Store, 'set_current_backend'):
+            if not loaded or (loaded and backend != hv.Store.current_backend) and hasattr(hv.Store, 'set_current_backend'):
                 hv.Store.set_current_backend(backend)
             else:
                 hv.Store.current_backend = backend
 
-        if config.load_entry_points:
+        if not loaded and config.load_entry_points:
             self._load_entry_points()
 
         # Abort if IPython not found
@@ -742,7 +831,7 @@ class panel_extension(_pyviz_extension):
             # In embedded mode the ipywidgets_bokeh model must be loaded
             __import__(self._imports['ipywidgets'])
 
-        nb_loaded = getattr(self, '_repeat_execution_in_cell', False)
+        nb_loaded = published = getattr(self, '_repeat_execution_in_cell', False)
         if 'holoviews' in sys.modules:
             if getattr(hv.extension, '_loaded', False):
                 nb_loaded = True
@@ -760,13 +849,18 @@ class panel_extension(_pyviz_extension):
                 config.inline, reloading=nb_loaded
             )
 
-        if not nb_loaded and config.browser_info and state.browser_info:
+        if not published:
+            self._display_globals()
+
+    @staticmethod
+    def _display_globals():
+        if config.browser_info and state.browser_info:
             doc = Document()
             comm = state._comm_manager.get_server_comm()
             model = state.browser_info._render_model(doc, comm)
             bundle, meta = state.browser_info._render_mimebundle(model, doc, comm)
             display(bundle, metadata=meta, raw=True)  # noqa
-        if not nb_loaded and config.notifications:
+        if config.notifications:
             display(state.notifications)  # noqa
 
     def _detect_comms(self, params):
@@ -781,15 +875,32 @@ class panel_extension(_pyviz_extension):
             return
 
         # Try to detect environment so that we can enable comms
-        try:
-            import google.colab  # noqa
-            config.comms = "colab"
+        if "google.colab" in sys.modules:
+            try:
+                import jupyter_bokeh  # noqa
+                config.comms = "colab"
+            except Exception:
+                warnings.warn(
+                    'Using Panel interactively in Colab notebooks requires '
+                    'the jupyter_bokeh package to be installed. '
+                    'Install it with:\n\n    !pip install jupyter_bokeh'
+                    '\n\nand try again.', stacklevel=5
+                )
             return
-        except ImportError:
-            pass
 
-        if "VSCODE_PID" in os.environ:
-            config.comms = "vscode"
+        if "VSCODE_CWD" in os.environ or "VSCODE_PID" in os.environ:
+            try:
+                import jupyter_bokeh  # noqa
+                config.comms = "vscode"
+            except Exception:
+                warnings.warn(
+                    'Using Panel interactively in VSCode notebooks requires '
+                    'the jupyter_bokeh package to be installed. '
+                    'You can install it with:\n\n   pip install jupyter_bokeh'
+                    '\n\nor:\n    conda install jupyter_bokeh\n\nand try again.',
+                    stacklevel=5
+                )
+            self._ignore_bokeh_warnings()
             return
 
     def _apply_signatures(self):
@@ -811,9 +922,9 @@ class panel_extension(_pyviz_extension):
             parameters = sig_params[:-1]
 
             processed_kws, keyword_groups = set(), []
-            for cls in reversed(cls.mro()):
+            for scls in reversed(cls.mro()):
                 keyword_group = []
-                for (k, v) in sorted(cls.__dict__.items()):
+                for (k, v) in sorted(scls.__dict__.items()):
                     if (isinstance(v, param.Parameter) and k not in processed_kws
                         and not v.readonly):
                         keyword_group.append(k)
@@ -841,6 +952,11 @@ class panel_extension(_pyviz_extension):
         """
         from .entry_points import load_entry_points
         load_entry_points('panel.extension')
+
+    def _ignore_bokeh_warnings(self):
+        from bokeh.util.warnings import BokehUserWarning
+        warnings.filterwarnings("ignore", category=BokehUserWarning, message="reference already known")
+
 
 #---------------------------------------------------------------------
 # Private API

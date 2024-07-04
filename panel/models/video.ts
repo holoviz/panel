@@ -1,102 +1,134 @@
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
+import type {StyleSheetLike} from "@bokehjs/core/dom"
+import {px} from "@bokehjs/core/dom"
 
 import {HTMLBox, HTMLBoxView} from "./layout"
+import video_css from "styles/models/video.css"
 
 export class VideoView extends HTMLBoxView {
-  model: Video
-  protected videoEl: HTMLVideoElement
-  protected dialogEl: HTMLElement
-  private _blocked: boolean
-  private _time: any
-  private _setting: boolean
+  declare model: Video
 
-  initialize(): void {
+  protected video_el: HTMLVideoElement
+
+  private _time: number
+  private _blocked: boolean = false
+  private _setting: boolean = false
+
+  override initialize(): void {
     super.initialize()
-    this._blocked = false
-    this._setting = false
     this._time = Date.now()
   }
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.loop.change, () => this.set_loop())
-    this.connect(this.model.properties.paused.change, () => this.set_paused())
-    this.connect(this.model.properties.muted.change, () => this.set_muted())
-    this.connect(this.model.properties.autoplay.change, () => this.set_autoplay())
-    this.connect(this.model.properties.time.change, () => this.set_time())
-    this.connect(this.model.properties.value.change, () => this.set_value())
-    this.connect(this.model.properties.volume.change, () => this.set_volume())
+
+    const {loop, paused, muted, autoplay, time, value, volume} = this.model.properties
+    this.on_change(loop, () => this.set_loop())
+    this.on_change(paused, () => this.set_paused())
+    this.on_change(muted, () => this.set_muted())
+    this.on_change(autoplay, () => this.set_autoplay())
+    this.on_change(time, () => this.set_time())
+    this.on_change(value, () => this.set_value())
+    this.on_change(volume, () => this.set_volume())
   }
 
-  render(): void {
+  override stylesheets(): StyleSheetLike[] {
+    return [...super.stylesheets(), video_css]
+  }
+
+  override render(): void {
     super.render()
-    this.videoEl = document.createElement('video')
-    if (!this.model.sizing_mode || this.model.sizing_mode === 'fixed') {
-      if (this.model.height)
-        this.videoEl.height = this.model.height;
-      if (this.model.width)
-        this.videoEl.width = this.model.width;
+
+    this.video_el = document.createElement("video")
+    const container_el = document.createElement("div")
+    container_el.className = "pn-video-container"
+    container_el.style.height = "100%"
+    container_el.style.width = "100%"
+
+    const {sizing_mode} = this.model
+    if (sizing_mode == null || sizing_mode === "fixed") {
+      const {width, height} = this.model
+      if (width != null) {
+        this.video_el.width = width
+      }
+      if (height != null) {
+        this.video_el.height = height
+      }
     }
-    this.videoEl.style.objectFit = 'fill'
-    this.videoEl.style.minWidth = '100%';
-    this.videoEl.style.minHeight = '100%';
-    this.videoEl.controls = true
-    this.videoEl.src = this.model.value
-    this.videoEl.currentTime = this.model.time
-    this.videoEl.loop = this.model.loop
-    this.videoEl.muted = this.model.muted
-    this.videoEl.autoplay = this.model.autoplay
-    if (this.model.volume != null)
-      this.videoEl.volume = this.model.volume/100
-    else
-      this.model.volume = this.videoEl.volume*100
-    this.videoEl.onpause = () => this.model.paused = true
-    this.videoEl.onplay = () => this.model.paused = false
-    this.videoEl.ontimeupdate = () => this.update_time(this)
-    this.videoEl.onvolumechange = () => this.update_volume(this)
-    this.shadow_el.appendChild(this.videoEl)
-    if (!this.model.paused)
-      this.videoEl.play()
+    const {max_width, max_height} = this.model
+    if (max_width != null) {
+      this.video_el.style.maxWidth = px(max_width)
+    }
+    if (max_height != null) {
+      this.video_el.style.maxHeight = px(max_height)
+    }
+
+    this.video_el.controls = true
+    this.video_el.src = this.model.value
+    this.video_el.currentTime = this.model.time
+    this.video_el.loop = this.model.loop
+    this.video_el.muted = this.model.muted
+    this.video_el.autoplay = this.model.autoplay
+    if (this.model.volume != null) {
+      this.video_el.volume = this.model.volume/100
+    } else {
+      this.model.volume = this.video_el.volume*100
+    }
+    this.video_el.onpause = () => this.model.paused = true
+    this.video_el.onplay = () => this.model.paused = false
+    this.video_el.ontimeupdate = () => this.update_time()
+    this.video_el.onvolumechange = () => this.update_volume()
+
+    container_el.append(this.video_el)
+    this.shadow_el.append(container_el)
+
+    if (!this.model.paused) {
+      void this.video_el.play()
+    }
   }
 
-  update_time(view: VideoView): void {
-    if (view._setting) {
-      view._setting = false
+  update_time(): void {
+    if (this._setting) {
+      this._setting = false
       return
     }
-    if ((Date.now() - view._time) < view.model.throttle)
+    if ((Date.now() - this._time) < this.model.throttle) {
       return
-    view._blocked = true
-    view.model.time = view.videoEl.currentTime
-    view._time = Date.now()
+    }
+    this._blocked = true
+    this.model.time = this.video_el.currentTime
+    this._time = Date.now()
   }
 
-  update_volume(view: VideoView): void {
-    if (view._setting) {
-      view._setting = false
+  update_volume(): void {
+    if (this._setting) {
+      this._setting = false
       return
     }
-    view._blocked = true
-    view.model.volume = view.videoEl.volume*100
+    this._blocked = true
+    this.model.volume = this.video_el.volume*100
   }
 
   set_loop(): void {
-    this.videoEl.loop = this.model.loop
+    this.video_el.loop = this.model.loop
   }
 
   set_muted(): void {
-    this.videoEl.muted = this.model.muted
+    this.video_el.muted = this.model.muted
   }
 
   set_autoplay(): void {
-    this.videoEl.autoplay = this.model.autoplay
+    this.video_el.autoplay = this.model.autoplay
   }
 
   set_paused(): void {
-    if (!this.videoEl.paused && this.model.paused)
-      this.videoEl.pause()
-    if (this.videoEl.paused && !this.model.paused)
-      this.videoEl.play()
+    const {paused} = this.model
+    if (!this.video_el.paused && paused) {
+      this.video_el.pause()
+    }
+    if (this.video_el.paused && !paused) {
+      void this.video_el.play()
+    }
   }
 
   set_volume(): void {
@@ -104,9 +136,11 @@ export class VideoView extends HTMLBoxView {
       this._blocked = false
       return
     }
-    this._setting = true;
-    if (this.model.volume != null)
-      this.videoEl.volume = (this.model.volume as number)/100
+    this._setting = true
+    const {volume} = this.model
+    if (volume != null) {
+      this.video_el.volume = volume/100
+    }
   }
 
   set_time(): void {
@@ -114,12 +148,12 @@ export class VideoView extends HTMLBoxView {
       this._blocked = false
       return
     }
-    this._setting = true;
-    this.videoEl.currentTime = this.model.time
+    this._setting = true
+    this.video_el.currentTime = this.model.time
   }
 
   set_value(): void {
-    this.videoEl.src = this.model.value
+    this.video_el.src = this.model.value
   }
 }
 
@@ -132,7 +166,7 @@ export namespace Video {
     autoplay: p.Property<boolean>
     time: p.Property<number>
     throttle: p.Property<number>
-    value: p.Property<any>
+    value: p.Property<string>
     volume: p.Property<number | null>
   }
 }
@@ -140,25 +174,25 @@ export namespace Video {
 export interface Video extends Video.Attrs {}
 
 export class Video extends HTMLBox {
-  properties: Video.Props
+  declare properties: Video.Props
 
   constructor(attrs?: Partial<Video.Attrs>) {
     super(attrs)
   }
 
-  static __module__ = "panel.models.widgets"
+  static override __module__ = "panel.models.widgets"
 
   static {
     this.prototype.default_view = VideoView
 
-    this.define<Video.Props>(({Any, Boolean, Int, Number, Nullable}) => ({
-      loop:     [ Boolean, false ],
-      paused:   [ Boolean,  true ],
-      muted:    [ Boolean, false ],
-      autoplay: [ Boolean, false ],
-      time:     [ Number,      0 ],
-      throttle: [ Int,       250 ],
-      value:    [ Any,        '' ],
+    this.define<Video.Props>(({Bool, Int, Float, Str, Nullable}) => ({
+      loop:     [ Bool, false ],
+      paused:   [ Bool, true ],
+      muted:    [ Bool, false ],
+      autoplay: [ Bool, false ],
+      time:     [ Float, 0 ],
+      throttle: [ Int, 250 ],
+      value:    [ Str, "" ],
       volume:   [ Nullable(Int), null ],
     }))
   }

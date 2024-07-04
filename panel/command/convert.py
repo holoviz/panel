@@ -31,6 +31,11 @@ class Convert(Subcommand):
             help    = "The format to convert to, one of 'pyodide' (default), 'pyodide-worker' or 'pyscript'",
             default = 'pyodide'
         )),
+        ('--compiled', dict(
+            default = False,
+            action  = 'store_false',
+            help    = "Whether to use the compiled and faster version of Pyodide."
+        )),
         ('--out', dict(
             action  = 'store',
             type    = str,
@@ -77,7 +82,7 @@ class Convert(Subcommand):
         )),
     )
 
-    _targets = ('pyscript', 'pyodide', 'pyodide-worker')
+    _targets = ('pyscript', 'pyodide', 'pyodide-worker', 'pyscript-worker')
 
     def invoke(self, args: argparse.Namespace) -> None:
         runtime = args.to.lower()
@@ -109,10 +114,11 @@ class Convert(Subcommand):
                     files, dest_path=args.out, runtime=runtime, requirements=requirements,
                     prerender=not args.skip_embed, build_index=index, build_pwa=args.pwa,
                     title=args.title, max_workers=args.num_procs,
-                    http_patch=not args.disable_http_patch, verbose=True
+                    http_patch=not args.disable_http_patch, compiled=args.compiled,
+                    verbose=True
                 )
             except KeyboardInterrupt:
-                print("Aborted while building docs.")
+                print("Aborted while building docs.")  # noqa: T201
                 break
             built = True
             prev_hashes = hashes

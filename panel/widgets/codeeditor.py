@@ -13,7 +13,6 @@ from pyviz_comms import JupyterComm
 
 from ..models.enums import ace_themes
 from ..util import lazy_load
-from ..util.warnings import deprecated
 from .base import Widget
 
 if TYPE_CHECKING:
@@ -50,7 +49,7 @@ class CodeEditor(Widget):
     theme = param.ObjectSelector(default="chrome", objects=list(ace_themes),
                                  doc="Theme of the editor")
 
-    value = param.String(doc="State of the current code in the editor")
+    value = param.String(default="", doc="State of the current code in the editor")
 
     _rename: ClassVar[Mapping[str, str | None]] = {"value": "code", "name": None}
 
@@ -82,9 +81,3 @@ class CodeEditor(Widget):
                 self.readonly = event.new
             elif event.name == 'readonly':
                 self.disabled = event.new
-
-
-class Ace(CodeEditor):
-    def __init__(self, **params):
-        deprecated("1.1", "Ace", "CodeEditor")
-        super().__init__(**params)

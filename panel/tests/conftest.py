@@ -1,6 +1,7 @@
 """
 A module containing testing utilities and fixtures.
 """
+import asyncio
 import atexit
 import os
 import pathlib
@@ -11,6 +12,7 @@ import socket
 import tempfile
 import time
 import unittest
+import warnings
 
 from contextlib import contextmanager
 from subprocess import PIPE, Popen
@@ -20,20 +22,32 @@ import pytest
 
 from bokeh.client import pull_session
 from bokeh.document import Document
+from bokeh.io.doc import curdoc, set_curdoc as set_bkdoc
 from pyviz_comms import Comm
 
 from panel import config, serve
 from panel.config import panel_extension
+from panel.io.reload import (
+    _local_modules, _modules, _watched_files, async_file_watcher, watch,
+)
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
+from panel.theme import Design
 
-CUSTOM_MARKS = ('ui', 'jupyter')
+CUSTOM_MARKS = ('ui', 'jupyter', 'subprocess', 'docs')
 
 config.apply_signatures = False
 
 JUPYTER_PORT = 8887
 JUPYTER_TIMEOUT = 15 # s
 JUPYTER_PROCESS = None
+
+try:
+    with warnings.catch_warnings():
+        warnings.filterwarnings("error", category=DeprecationWarning)
+        asyncio.get_event_loop()
+except (RuntimeError, DeprecationWarning):
+    asyncio.set_event_loop(asyncio.new_event_loop())
 
 def port_open(port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -42,11 +56,12 @@ def port_open(port):
     sock.close()
     return is_open
 
+
 def get_default_port():
-    # to get a different starting port per worker for pytest-xdist
+    worker_count = int(os.environ.get("PYTEST_XDIST_WORKER_COUNT", "1"))
     worker_id = os.environ.get("PYTEST_XDIST_WORKER", "0")
-    n = int(re.sub(r"\D", "", worker_id))
-    return 6000 + n * 30
+    worker_idx = int(re.sub(r"\D", "", worker_id))
+    return 9001 + (worker_idx * worker_count * 10)
 
 def start_jupyter():
     global JUPYTER_PORT, JUPYTER_PROCESS
@@ -81,7 +96,7 @@ def jupyter_preview(request):
 atexit.register(cleanup_jupyter)
 optional_markers = {
     "ui": {
-        "help": "<Command line help text for flag1...>",
+        "help": "Runs UI related tests",
         "marker-descr": "UI test marker",
         "skip-reason": "Test only runs with the --ui option."
     },
@@ -89,6 +104,11 @@ optional_markers = {
         "help": "Runs Jupyter related tests",
         "marker-descr": "Jupyter test marker",
         "skip-reason": "Test only runs with the --jupyter option."
+    },
+    "subprocess": {
+        "help": "Runs tests that fork the process",
+        "marker-descr": "Subprocess test marker",
+        "skip-reason": "Test only runs with the --subprocess option."
     },
     "docs": {
         "help": "Runs docs specific tests",
@@ -100,7 +120,7 @@ optional_markers = {
 
 def pytest_addoption(parser):
     for marker, info in optional_markers.items():
-        parser.addoption("--{}".format(marker), action="store_true",
+        parser.addoption(f"--{marker}", action="store_true",
                          default=False, help=info['help'])
 
 
@@ -108,34 +128,26 @@ def pytest_configure(config):
     for marker, info in optional_markers.items():
         config.addinivalue_line("markers",
                                 "{}: {}".format(marker, info['marker-descr']))
-    if getattr(config.option, 'jupyter') and not port_open(JUPYTER_PORT):
+    if config.option.jupyter and not port_open(JUPYTER_PORT):
         start_jupyter()
 
 
 def pytest_collection_modifyitems(config, items):
-    markers, skipped, selected = [], [], []
-    for marker, info in optional_markers.items():
-        if not config.getoption("--{}".format(marker)):
-            skip_test = pytest.mark.skip(
-                reason=info['skip-reason'].format(marker)
-            )
-            for item in items:
-                if marker in item.keywords:
-                    item.add_marker(skip_test)
+    skipped, selected = [], []
+    markers = [m for m in optional_markers if config.getoption(f"--{m}")]
+    empty = not markers
+    for item in items:
+        if empty and any(m in item.keywords for m in optional_markers):
+            skipped.append(item)
+        elif empty:
+            selected.append(item)
+        elif not empty and any(m in item.keywords for m in markers):
+            selected.append(item)
         else:
-            markers.append(marker)
-            for item in items:
-                if marker in item.keywords:
-                    selected.append(item)
-                else:
-                    skipped.append(item)
-    skip_test = pytest.mark.skip(
-        reason=f"test not one of {', '.join(markers)}"
-    )
-    for item in skipped:
-        if item in selected:
-            continue
-        item.add_marker(skip_test)
+            skipped.append(item)
+
+    config.hook.pytest_deselected(items=skipped)
+    items[:] = selected
 
 
 @pytest.fixture
@@ -150,7 +162,6 @@ PORT = [get_default_port()]
 def document():
     return Document()
 
-
 @pytest.fixture
 def server_document():
     doc = Document()
@@ -158,16 +169,58 @@ def server_document():
     doc._session_context = lambda: session_context
     with set_curdoc(doc):
         yield doc
+    doc._session_context = None
+
+@pytest.fixture
+def bokeh_curdoc():
+    old_doc = curdoc()
+    doc = Document()
+    session_context = unittest.mock.Mock()
+    doc._session_context = lambda: session_context
+    set_bkdoc(doc)
+    try:
+        yield doc
+    finally:
+        set_bkdoc(old_doc)
 
 @pytest.fixture
 def comm():
     return Comm()
 
+@pytest.fixture
+def stop_event():
+    event = asyncio.Event()
+    try:
+        yield event
+    finally:
+        event.set()
+
+@pytest.fixture
+async def watch_files():
+    tasks = []
+    stop_event = asyncio.Event()
+    def watch_files(*files):
+        watch(*files)
+        tasks.append(asyncio.create_task(async_file_watcher(stop_event)))
+    try:
+        yield watch_files
+    finally:
+        if tasks:
+            try:
+                stop_event.set()
+                await tasks[0]
+            except FileNotFoundError:
+                # Watched files may be deleted before autoreloader
+                # is shut down, therefore we catch the error on deletion.
+                pass
 
 @pytest.fixture
 def port():
-    PORT[0] += 1
-    return PORT[0]
+    worker_id = os.environ.get("PYTEST_XDIST_WORKER", "0")
+    worker_count = int(os.environ.get("PYTEST_XDIST_WORKER_COUNT", "1"))
+    new_port = PORT[0] + int(re.sub(r"\D", "", worker_id))
+    PORT[0] += worker_count
+    return new_port
 
 
 @pytest.fixture
@@ -204,6 +257,16 @@ def get_display_handle():
 
 
 @pytest.fixture
+def hv_plotly():
+    import holoviews as hv
+    hv.renderer('plotly')
+    prev_backend = hv.Store.current_backend
+    hv.Store.current_backend = 'plotly'
+    yield
+    hv.Store.current_backend = prev_backend
+
+
+@pytest.fixture
 def hv_mpl():
     import holoviews as hv
     hv.renderer('matplotlib')
@@ -232,7 +295,7 @@ def html_server_session():
     server = serve(html, port=port, show=False, start=False)
     session = pull_session(
         session_id='Test',
-        url="http://localhost:{:d}/".format(server.port),
+        url=f"http://localhost:{server.port:d}/",
         io_loop=server.io_loop
     )
     yield html, server, session, port
@@ -249,7 +312,7 @@ def markdown_server_session():
     server = serve(html, port=port, show=False, start=False)
     session = pull_session(
         session_id='Test',
-        url="http://localhost:{:d}/".format(server.port),
+        url=f"http://localhost:{server.port:d}/",
         io_loop=server.io_loop
     )
     yield html, server, session, port
@@ -331,18 +394,57 @@ def server_cleanup():
         yield
     finally:
         state.reset()
+        _watched_files.clear()
+        _modules.clear()
+        _local_modules.clear()
 
 @pytest.fixture(autouse=True)
 def cache_cleanup():
     state.clear_caches()
+    Design._resolve_modifiers.cache_clear()
+    state._stylesheets.clear()
+
+@pytest.fixture
+def autoreload():
+    config.autoreload = True
+    def watch(files):
+        if isinstance(files, (str, os.PathLike)):
+            files = [files]
+        _watched_files.update({str(f) for f in files})
+    try:
+        yield watch
+    finally:
+        config.autoreload = False
 
 @pytest.fixture
 def py_file():
-    tf = tempfile.NamedTemporaryFile(mode='w', suffix='.py')
+    tf = tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False)
     try:
         yield tf
     finally:
         tf.close()
+        os.unlink(tf.name)
+
+@pytest.fixture
+def js_file():
+    tf = tempfile.NamedTemporaryFile(mode='w', suffix='.js', delete=False)
+    try:
+        yield tf
+    finally:
+        tf.close()
+        os.unlink(tf.name)
+
+@pytest.fixture
+def py_files():
+    tf = tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False)
+    tf2 = tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=os.path.split(tf.name)[0], delete=False)
+    try:
+        yield tf, tf2
+    finally:
+        tf.close()
+        tf2.close()
+        os.unlink(tf.name)
+        os.unlink(tf2.name)
 
 @pytest.fixture
 def html_file():
@@ -380,3 +482,17 @@ def change_test_dir(request):
     os.chdir(request.fspath.dirname)
     yield
     os.chdir(request.config.invocation_dir)
+
+@pytest.fixture
+def exception_handler_accumulator():
+    exceptions = []
+
+    def eh(exception):
+        exceptions.append(exception)
+
+    old_eh = config.exception_handler
+    config.exception_handler = eh
+    try:
+        yield exceptions
+    finally:
+        config.exception_handler = old_eh

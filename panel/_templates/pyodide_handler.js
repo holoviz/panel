@@ -2,8 +2,10 @@ const pyodideWorker = new Worker("./{{ name }}.js");
 pyodideWorker.busy = false
 pyodideWorker.queue = []
 
+let patching = 0
+
 function send_change(jsdoc, event) {
-  if (event.setter_id != null && event.setter_id == 'py') {
+  if ((event.setter_id != null && event.setter_id == 'py') || (patching > 0)) {
     return
   } else if (pyodideWorker.busy && event.model && event.attr) {
     let events = []
@@ -28,7 +30,7 @@ pyodideWorker.onmessage = async (event) => {
   const loading_msgs = document.getElementsByClassName('pn-loading-msg')
   if (msg.type === 'idle') {
     if (pyodideWorker.queue.length) {
-      const patch = pyodideWorker.jsdoc.create_json_patch_string(pyodideWorker.queue)
+      const patch = pyodideWorker.jsdoc.create_json_patch(pyodideWorker.queue)
       pyodideWorker.busy = true
       pyodideWorker.queue = []
       pyodideWorker.postMessage({type: 'patch', patch: patch})
@@ -82,6 +84,11 @@ pyodideWorker.onmessage = async (event) => {
     pyodideWorker.postMessage({'type': 'rendered'})
     pyodideWorker.postMessage({'type': 'location', location: JSON.stringify(window.location)})
   } else if (msg.type === 'patch') {
-    pyodideWorker.jsdoc.apply_json_patch(msg.patch, msg.buffers, setter_id='py')
+    try {
+      patching += 1
+      pyodideWorker.jsdoc.apply_json_patch(msg.patch, msg.buffers)
+    } finally {
+      patching -= 1
+    }
   }
 };

@@ -4,10 +4,11 @@ Various general utilities used in the panel codebase.
 from __future__ import annotations
 
 import ast
+import asyncio
 import base64
 import datetime as dt
-import inspect
 import json
+import logging
 import numbers
 import os
 import pathlib
@@ -17,12 +18,11 @@ import urllib.parse as urlparse
 
 from collections import OrderedDict, defaultdict
 from collections.abc import MutableMapping, MutableSequence
-from contextlib import contextmanager
 from datetime import datetime
 from functools import partial
 from html import escape  # noqa
 from importlib import import_module
-from typing import Any, AnyStr, Iterator
+from typing import Any, AnyStr
 
 import bokeh
 import numpy as np
@@ -36,14 +36,34 @@ from .checks import (  # noqa
     datetime_types, is_dataframe, is_holoviews, is_number, is_parameterized,
     is_series, isdatetime, isfile, isIn, isurl,
 )
+from .parameters import (  # noqa
+    edit_readonly, extract_dependencies, get_method_owner, param_watchers,
+    recursive_parameterized,
+)
 
-bokeh_version = Version(bokeh.__version__)
+log = logging.getLogger('panel.util')
 
-# Bokeh serializes NaT as this value
-# Discussion on why https://github.com/bokeh/bokeh/pull/10449/files#r479988469
-BOKEH_JS_NAT = -9223372036854776.0
+bokeh_version = Version(Version(bokeh.__version__).base_version)
 
 PARAM_NAME_PATTERN = re.compile(r'^.*\d{5}$')
+
+class LazyHTMLSanitizer:
+    """
+    Wraps bleach.sanitizer.Cleaner lazily importing it on the first
+    call to the clean method.
+    """
+
+    def __init__(self, **kwargs):
+        self._cleaner = None
+        self._kwargs = kwargs
+
+    def clean(self, text):
+        if self._cleaner is None:
+            import bleach
+            self._cleaner = bleach.sanitizer.Cleaner(**self._kwargs)
+        return self._cleaner.clean(text)
+
+HTML_SANITIZER = LazyHTMLSanitizer(strip=True)
 
 
 def hashable(x):
@@ -68,7 +88,7 @@ def indexOf(obj, objs):
                 return i
         except Exception:
             pass
-    raise ValueError('%s not in list' % obj)
+    raise ValueError(f'{obj} not in list')
 
 
 def param_name(name: str) -> str:
@@ -77,19 +97,6 @@ def param_name(name: str) -> str:
     """
     match = re.findall(r'\D+(\d{5,})', name)
     return name[:name.index(match[0])] if match else name
-
-
-def recursive_parameterized(parameterized: param.Parameterized, objects=None) -> list[param.Parameterized]:
-    """
-    Recursively searches a Parameterized object for other Parmeterized
-    objects.
-    """
-    objects = [] if objects is None else objects
-    objects.append(parameterized)
-    for p in parameterized.param.values().values():
-        if isinstance(p, param.Parameterized) and not any(p is o for o in objects):
-            recursive_parameterized(p, objects)
-    return objects
 
 
 def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
@@ -168,42 +175,6 @@ def full_groupby(l, key=lambda x: x):
     return d.items()
 
 
-def get_method_owner(meth):
-    """
-    Returns the instance owning the supplied instancemethod or
-    the class owning the supplied classmethod.
-    """
-    if inspect.ismethod(meth):
-        return meth.__self__
-
-
-def extract_dependencies(function):
-    """
-    Extract references from a method or function that declares the references.
-    """
-    subparameters = list(function._dinfo['dependencies'])+list(function._dinfo['kw'].values())
-    params = []
-    for p in subparameters:
-        if isinstance(p, str):
-            owner = get_method_owner(function)
-            *subps, p = p.split('.')
-            for subp in subps:
-                owner = getattr(owner, subp, None)
-                if owner is None:
-                    raise ValueError('Cannot depend on undefined sub-parameter {p!r}.')
-            if p in owner.param:
-                pobj = owner.param[p]
-                if pobj not in params:
-                    params.append(pobj)
-            else:
-                for sp in extract_dependencies(getattr(owner, p)):
-                    if sp not in params:
-                        params.append(sp)
-        elif p not in params:
-            params.append(p)
-    return params
-
-
 def value_as_datetime(value):
     """
     Retrieve the value tuple as a tuple of datetime objects.
@@ -240,11 +211,17 @@ def parse_query(query: str) -> dict[str, Any]:
             parsed_query[k] = int(v)
         elif is_number(v):
             parsed_query[k] = float(v)
-        elif v.startswith('[') or v.startswith('{'):
+        elif v.startswith(('[', '{')):
             try:
                 parsed_query[k] = json.loads(v)
             except Exception:
-                parsed_query[k] = ast.literal_eval(v)
+                try:
+                    parsed_query[k] = ast.literal_eval(v)
+                except Exception:
+                    log.warning(
+                        f'Could not parse value {v!r} of query parameter {k}. '
+                        'Parameter will be ignored.'
+                    )
         elif v.lower() in ("true", "false"):
             parsed_query[k] = v.lower() == "true"
         else:
@@ -272,6 +249,18 @@ def base64url_decode(input):
     return base64.urlsafe_b64decode(input)
 
 
+def decode_token(token: str, signed: bool = True) -> dict[str, Any]:
+    """
+    Decodes a signed or unsigned JWT token.
+    """
+    if signed and "." in token:
+        signing_input, _ = token.encode('utf-8').rsplit(b".", 1)
+        _, payload_segment = signing_input.split(b".", 1)
+    else:
+        payload_segment = token
+    return json.loads(base64url_decode(payload_segment).decode('utf-8'))
+
+
 class classproperty:
 
     def __init__(self, f):
@@ -289,42 +278,6 @@ def url_path(url: str) -> str:
     return '/'.join('/'.join(subpaths).split('/')[1:])
 
 
-# This functionality should be contributed to param
-# See https://github.com/holoviz/param/issues/379
-@contextmanager
-def edit_readonly(parameterized: param.Parameterized) -> Iterator:
-    """
-    Temporarily set parameters on Parameterized object to readonly=False
-    to allow editing them.
-    """
-    params = parameterized.param.objects("existing").values()
-    readonlys = [p.readonly for p in params]
-    constants = [p.constant for p in params]
-    for p in params:
-        p.readonly = False
-        p.constant = False
-    try:
-        yield
-    except Exception:
-        raise
-    finally:
-        for (p, readonly) in zip(params, readonlys):
-            p.readonly = readonly
-        for (p, constant) in zip(params, constants):
-            p.constant = constant
-
-
-def eval_function(function):
-    args, kwargs = (), {}
-    if hasattr(function, '_dinfo'):
-        arg_deps = function._dinfo['dependencies']
-        kw_deps = function._dinfo.get('kw', {})
-        if kw_deps or any(isinstance(d, param.Parameter) for d in arg_deps):
-            args = (getattr(dep.owner, dep.name) for dep in arg_deps)
-            kwargs = {n: getattr(dep.owner, dep.name) for n, dep in kw_deps.items()}
-    return function(*args, **kwargs)
-
-
 def lazy_load(module, model, notebook=False, root=None, ext=None):
     from ..config import panel_extension as extension
     from ..io.state import state
@@ -332,12 +285,13 @@ def lazy_load(module, model, notebook=False, root=None, ext=None):
         module: ext for ext, module in extension._imports.items()
     }
     ext = ext or module.split('.')[-1]
-    loaded = not state._extensions or external_modules[module] in state._extensions
+    ext_name = external_modules[module]
+    loaded_extensions = state._extensions
+    loaded = loaded_extensions is None or ext_name in loaded_extensions
     if module in sys.modules and loaded:
         model_cls = getattr(sys.modules[module], model)
         if f'{model_cls.__module__}.{model}' not in Model.model_class_reverse_map:
             _default_resolver.add(model_cls)
-
         return model_cls
 
     if notebook:
@@ -347,11 +301,26 @@ def lazy_load(module, model, notebook=False, root=None, ext=None):
             'ensure you load it as part of the extension using:'
             f'\n\npn.extension(\'{ext}\')\n'
         )
+    elif not loaded and state._is_launching:
+        # If we are still launching the application it is not too late
+        # to automatically load the extension and therefore ensure it
+        # is included in the resources added to the served page
+        param.main.param.warning(
+            f'pn.extension was initialized but {ext!r} extension was not '
+            'loaded. Since the application is still launching the extension '
+            'was loaded automatically but we strongly recommend you load '
+            'the extension explicitly with the following argument(s):'
+            f'\n\npn.extension({ext!r})\n'
+        )
+        if loaded_extensions is None:
+            state._extensions_[state.curdoc] = [ext_name]
+        else:
+            loaded_extensions.append(ext_name)
     elif not loaded:
         param.main.param.warning(
-            f'pn.extension was initialized but {ext!r} extension was not'
+            f'pn.extension was initialized but {ext!r} extension was not '
             'loaded. In order for the required resources to be initialized '
-            'ensure the extension using is loaded with the extension:'
+            'ensure the extension is loaded with the following argument(s):'
             f'\n\npn.extension({ext!r})\n'
         )
     elif root is not None and root.ref['id'] in state._views:
@@ -441,3 +410,96 @@ def relative_to(path, other_path):
         return True
     except Exception:
         return False
+
+
+def flatten(line):
+    """
+    Flatten an arbitrarily nested sequence.
+
+    Inspired by: pd.core.common.flatten
+
+    Parameters
+    ----------
+    line : sequence
+        The sequence to flatten
+
+    Notes
+    -----
+    This only flattens list, tuple, and dict sequences.
+
+    Returns
+    -------
+    flattened : generator
+    """
+    for element in line:
+        if any(isinstance(element, tp) for tp in (list, tuple, dict)):
+            yield from flatten(element)
+        else:
+            yield element
+
+
+def styler_update(styler, new_df):
+    """
+    Updates the todo items on a pandas Styler object to apply to a new
+    DataFrame.
+
+    Arguments
+    ---------
+    styler: pandas.io.formats.style.Styler
+      Styler objects
+    new_df: pd.DataFrame
+      New DataFrame to update the styler to do items
+
+    Returns
+    -------
+    todos: list
+    """
+    todos = []
+    for todo in styler._todo:
+        if not isinstance(todo, tuple):
+            todos.append(todo)
+            continue
+        ops = []
+        for op in todo:
+            if not isinstance(op, tuple):
+                ops.append(op)
+                continue
+            op_fn = str(op[0])
+            if ('_background_gradient' in op_fn or '_bar' in op_fn) and op[1] in (0, 1):
+                if isinstance(op[2], list):
+                    applies = op[2]
+                else:
+                    applies = np.array([
+                        new_df[col].dtype.kind in 'uif' for col in new_df.columns
+                    ])
+                    if len(op[2]) == len(applies):
+                        applies = np.logical_and(applies, op[2])
+                op = (op[0], op[1], applies)
+            ops.append(op)
+        todo = tuple(ops)
+        todos.append(todo)
+    return todos
+
+
+def try_datetime64_to_datetime(value):
+    if isinstance(value, np.datetime64):
+        value = value.astype('datetime64[ms]').astype(datetime)
+    return value
+
+
+async def to_async_gen(sync_gen):
+    done = object()
+
+    def safe_next():
+        # Converts StopIteration to a sentinel value to avoid:
+        # TypeError: StopIteration interacts badly with generators and cannot be raised into a Future
+        try:
+            return next(sync_gen)
+        except StopIteration:
+            return done
+
+    while True:
+        value = await asyncio.to_thread(safe_next)
+        if value is done:
+            break
+        yield value

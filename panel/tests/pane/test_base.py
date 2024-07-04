@@ -3,6 +3,7 @@ import pytest
 
 import panel as pn
 
+from panel.chat import ChatMessage
 from panel.config import config
 from panel.interact import interactive
 from panel.io.loading import LOADING_INDICATOR_CSS_CLASS
@@ -12,12 +13,16 @@ from panel.pane import (
     Bokeh, HoloViews, Interactive, IPyWidget, Markdown, PaneBase, RGGPlot,
     Vega,
 )
-from panel.param import Param, ParamMethod
+from panel.param import (
+    Param, ParamFunction, ParamMethod, ParamRef, ReactiveExpr,
+)
 from panel.tests.util import check_layoutable_properties
+from panel.util import param_watchers
 
 SKIP_PANES = (
-    Bokeh, HoloViews, Interactive, IPyWidget, Param, ParamMethod, RGGPlot,
-    Vega, interactive
+    Bokeh, ChatMessage, HoloViews, Interactive, IPyWidget, Param,
+    ParamFunction, ParamMethod, ParamRef, RGGPlot, ReactiveExpr, Vega,
+    interactive
 )
 
 all_panes = [w for w in param.concrete_descendents(PaneBase).values()
@@ -70,7 +75,7 @@ def test_pane_loading_param(pane, document, comm):
 
     p.loading = True
 
-    css_classes = [LOADING_INDICATOR_CSS_CLASS, config.loading_spinner]
+    css_classes = [LOADING_INDICATOR_CSS_CLASS, f'pn-{config.loading_spinner}']
     assert all(cls in model.css_classes for cls in css_classes)
 
     p.loading = False
@@ -85,7 +90,7 @@ def test_pane_untracked_watchers(pane, document, comm):
     except ImportError:
         pytest.skip("Dependent library could not be imported.")
     watchers = [
-        w for pwatchers in p._param_watchers.values()
+        w for pwatchers in param_watchers(p).values()
         for awatchers in pwatchers.values() for w in awatchers
     ]
     assert len([wfn for wfn in watchers if wfn not in p._internal_callbacks and not hasattr(wfn.fn, '_watcher_name')]) == 0
@@ -96,6 +101,13 @@ def test_pane_clone(pane):
         p = pane()
     except ImportError:
         pytest.skip("Dependent library could not be imported.")
+    clone = p.clone()
+
+    assert ([(k, v) for k, v in sorted(p.param.values().items()) if k not in ('name', '_pane')] ==
+            [(k, v) for k, v in sorted(clone.param.values().items()) if k not in ('name', '_pane')])
+
+def test_pane_with_non_defaults_clone():
+    p = Markdown("Hello World", sizing_mode="stretch_width")
     clone = p.clone()
 
     assert ([(k, v) for k, v in sorted(p.param.values().items()) if k not in ('name', '_pane')] ==
