@@ -478,7 +478,7 @@ class TestChatFeed:
         assert chat_feed.objects[0].user == "System"
         assert chat_feed.objects[0].avatar == "👨"
 
-    def test_default_avatars_superseded_by_callback_avatar(self, chat_feed):
+    def test_default_avatars_lookup(self, chat_feed):
         def callback(contents, user, instance):
             yield "Message back"
 
@@ -494,6 +494,18 @@ class TestChatFeed:
             default_avatars=DEFAULT_AVATARS
         )
 
+    def test_default_avatars_superseded_by_callback_avatar(self, chat_feed):
+        def callback(contents, user, instance):
+            yield "Message back"
+
+        chat_feed.callback = callback
+        chat_feed.callback_user = "System"
+        chat_feed.callback_avatar = "S"
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].user == "System"
+        assert chat_feed.objects[1].avatar == "S"
+
     def test_default_avatars_message_params(self, chat_feed):
         chat_feed.message_params["default_avatars"] = {"test1": "1"}
         assert chat_feed.send(value="", user="test1").avatar == "1"
@@ -503,6 +515,17 @@ class TestChatFeed:
 
     def test_no_recursion_error(self, chat_feed):
         chat_feed.send("Some time ago, there was a recursion error like this")
+
+    @pytest.mark.parametrize("callback_avatar", [None, "👨", Image("https://panel.holoviz.org/_static/logo_horizontal.png")])
+    def test_callback_avatar(self, chat_feed, callback_avatar):
+        def callback(contents, user, instance):
+            yield "Message back"
+
+        chat_feed.callback_avatar = callback_avatar
+        chat_feed.callback = callback
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].avatar == callback_avatar or "🤖"
 
     @pytest.mark.asyncio
     async def test_chained_response(self, chat_feed):
