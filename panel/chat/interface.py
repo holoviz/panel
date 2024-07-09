@@ -710,7 +710,7 @@ class ChatInterface(ChatFeed):
         -------
         The message that was updated.
         """
-        if not isinstance(value, ChatMessage):
+        if not isinstance(value, ChatMessage) and not message:
             # ChatMessage cannot set user or avatar when explicitly streaming
             # so only set to the default when not a ChatMessage
             user = user or self.user
