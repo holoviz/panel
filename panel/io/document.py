@@ -496,7 +496,13 @@ def freeze_doc(doc: Document, model: HasProps, properties: dict[str, Any], force
             visit_immediate_value_references(getattr(model, key, None), mark_dirty)
             visit_immediate_value_references(value, mark_dirty)
     if dirty_count:
-        doc.models._push_freeze()
+        try:
+            doc.models._push_freeze()
+        except Exception:
+            pass
     yield
     if dirty_count:
-        doc.models._pop_freeze()
+        try:
+            doc.models._pop_freeze()
+        except Exception:
+            pass
