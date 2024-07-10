@@ -910,6 +910,7 @@ class ChatFeed(ListPanel):
             The number of messages to serialize at most, starting from the last message.
         **serialize_kwargs
             Additional keyword arguments to use for the specified format.
+
             - format="transformers"
               role_names : dict(str, str | list(str)) | None
                   A dictionary mapping the role to the ChatMessage's user name.
@@ -930,8 +931,11 @@ class ChatFeed(ListPanel):
         else:
             exclude_users = [user.lower() for user in exclude_users]
 
+        objects = self._chat_log.objects
+        if limit is not None:
+            objects = objects[-limit:]
         messages = [
-            message for message in self._chat_log.objects[-limit:]
+            message for message in objects
             if message.user.lower() not in exclude_users
             and message is not self._placeholder
         ]

@@ -1224,7 +1224,6 @@ class TestChatFeedSerializeForTransformers:
             {"role": "assistant", "content": "I'm a bot"},
         ]
 
-
 @pytest.mark.xdist_group("chat")
 class TestChatFeedSerializeBase:
 
