@@ -407,10 +407,8 @@ def test_vtkvol_serialization_coherence(document, comm):
     vd_f = p_f._get_volume_data()
     vd_id = p_id._get_volume_data()
     data_decoded = np.frombuffer(base64.b64decode(vd_c["buffer"]), dtype=vd_c["dtype"]).reshape(vd_c["dims"], order="F")
-    assert np.alltrue(data_decoded==data_matrix)
+    assert (data_decoded==data_matrix).all()
     assert vd_id == vd_c == vd_f
-
-
 
     p_c_ds = VTKVolume(data_matrix_c, origin=origin, spacing=spacing, max_data_size=0.1)
     p_f_ds = VTKVolume(data_matrix_f, origin=origin, spacing=spacing, max_data_size=0.1)
