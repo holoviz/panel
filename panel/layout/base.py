@@ -18,7 +18,6 @@ from param.parameterized import iscoroutinefunction, resolve_ref
 from ..io.document import freeze_doc
 from ..io.model import hold
 from ..io.resources import CDN_DIST
-from ..io.state import state
 from ..models import Column as PnColumn
 from ..reactive import Reactive
 from ..util import param_name, param_reprs, param_watchers
@@ -839,8 +838,6 @@ class ListPanel(ListLike, Panel):
         return super()._process_param_change(params)
 
     def _cleanup(self, root: Model | None = None) -> None:
-        if root is not None and root.ref['id'] in state._fake_roots:
-            state._fake_roots.remove(root.ref['id'])
         super()._cleanup(root)
         for p in self.objects:
             p._cleanup(root)
@@ -883,8 +880,6 @@ class NamedListPanel(NamedListLike, Panel):
         return super()._process_param_change(params)
 
     def _cleanup(self, root: Model | None = None) -> None:
-        if root is not None and root.ref['id'] in state._fake_roots:
-            state._fake_roots.remove(root.ref['id'])
         super()._cleanup(root)
         for p in self.objects:
             p._cleanup(root)
