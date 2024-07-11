@@ -185,4 +185,8 @@ def serialize_recursively(
     if prefix_with_viewable_label and isinstance(obj, Viewable):
         label = get_obj_label(obj)
         string = f"{label}={string!r}"
+
+    if not isinstance(string, str):
+        string = str(string)
+
     return string
