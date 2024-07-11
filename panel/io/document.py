@@ -485,7 +485,9 @@ def freeze_doc(doc: Document, model: HasProps, properties: dict[str, Any], force
     Freezes the document model references if any of the properties
     are themselves a model.
     """
-    if force:
+    if not hasattr(doc, '_roots'):
+        dirty_count = 0
+    elif force:
         dirty_count = 1
     else:
         dirty_count = 0
@@ -496,13 +498,7 @@ def freeze_doc(doc: Document, model: HasProps, properties: dict[str, Any], force
             visit_immediate_value_references(getattr(model, key, None), mark_dirty)
             visit_immediate_value_references(value, mark_dirty)
     if dirty_count:
-        try:
-            doc.models._push_freeze()
-        except Exception:
-            pass
+        doc.models._push_freeze()
     yield
     if dirty_count:
-        try:
-            doc.models._pop_freeze()
-        except Exception:
-            pass
+        doc.models._pop_freeze()
