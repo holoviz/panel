@@ -1253,7 +1253,7 @@ class TestChatFeedSerializeForTransformers:
                 return "something"
 
         chat_feed.send(Test())
-        assert chat_feed.serialize() == "something"
+        assert chat_feed.serialize() == {"role": "user", "assistant": "something"}
 
 
 @pytest.mark.xdist_group("chat")
