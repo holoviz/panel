@@ -885,6 +885,7 @@ class ChatFeed(ListPanel):
         filter_by: Callable | None = None,
         format: Literal["transformers"] = "transformers",
         custom_serializer: Callable | None = None,
+        limit: int | None = None,
         **serialize_kwargs
     ):
         """
@@ -905,6 +906,8 @@ class ChatFeed(ListPanel):
             A custom function to format the ChatMessage's object. The function must
             accept one positional argument, the ChatMessage object, and return a string.
             If not provided, uses the serialize method on ChatMessage.
+        limit : int
+            The number of messages to serialize at most, starting from the last message.
         **serialize_kwargs
             Additional keyword arguments to use for the specified format.
 
@@ -928,8 +931,11 @@ class ChatFeed(ListPanel):
         else:
             exclude_users = [user.lower() for user in exclude_users]
 
+        objects = self._chat_log.objects
+        if limit is not None:
+            objects = objects[-limit:]
         messages = [
-            message for message in self._chat_log.objects
+            message for message in objects
             if message.user.lower() not in exclude_users
             and message is not self._placeholder
         ]

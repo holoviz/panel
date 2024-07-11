@@ -1215,6 +1215,15 @@ class TestChatFeedSerializeForTransformers:
             {"role": "assistant", "content": "Hi User!"}
         ]
 
+    def test_serialize_limit(self):
+        chat_feed = ChatFeed()
+        chat_feed.send("I'm a user", user="user")
+        chat_feed.send("I'm the assistant", user="assistant")
+        chat_feed.send("I'm a bot", user="bot")
+        assert chat_feed.serialize(limit=1) == [
+            {"role": "assistant", "content": "I'm a bot"},
+        ]
+
 @pytest.mark.xdist_group("chat")
 class TestChatFeedSerializeBase:
 
