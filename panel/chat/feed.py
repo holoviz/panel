@@ -25,7 +25,7 @@ from ..io.resources import CDN_DIST
 from ..layout import Column, Feed, ListPanel
 from ..layout.card import Card
 from ..layout.spacer import VSpacer
-from ..pane.image import SVG
+from ..pane.image import SVG, ImageBase
 from ..pane.markup import Markdown
 from ..util import to_async_gen
 from ..viewable import Children
@@ -106,6 +106,12 @@ class ChatFeed(ListPanel):
 
     callback_user = param.String(default="Assistant", doc="""
         The default user name to use for the message provided by the callback.""")
+
+    callback_avatar = param.ClassSelector(class_=(str, BytesIO, bytes, ImageBase), doc="""
+        The default avatar to use for the entry provided by the callback.
+        Takes precedence over `ChatMessage.default_avatars` if set; else, if None,
+        defaults to the avatar set in `ChatMessage.default_avatars` if matching key exists.
+        Otherwise defaults to the first character of the `callback_user`.""")
 
     card_params = param.Dict(default={}, doc="""
         Params to pass to Card, like `header`, `header_background`, `header_color`, etc.""")
@@ -393,10 +399,10 @@ class ChatFeed(ListPanel):
             raise StopCallback("Callback was stopped.")
 
         user = self.callback_user
-        avatar = None
+        avatar = self.callback_avatar
         if isinstance(value, dict):
             user = value.get("user", user)
-            avatar = value.get("avatar")
+            avatar = value.get("avatar", avatar)
 
         if message is not None:
             # ChatMessage is already created; updating existing ChatMessage
