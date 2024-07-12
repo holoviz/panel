@@ -1250,11 +1250,11 @@ class TestChatFeedSerializeForTransformers:
     def test_serialize_class(self, chat_feed):
         class Test():
 
-            def __str__(self):
-                return "something"
+            def __repr__(self):
+                return "Test()"
 
         chat_feed.send(Test())
-        assert chat_feed.serialize() == [{"role": "user", "content": "something"}]
+        assert chat_feed.serialize() == [{"role": "user", "content": "Test()"}]
 
 
 @pytest.mark.xdist_group("chat")

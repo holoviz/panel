@@ -342,7 +342,7 @@ class ChatMessage(Pane):
         """
         Serialize the message object to a string.
         """
-        return self.serialize()
+        return str(self.serialize())
 
     @property
     def _synced_params(self) -> list[str]:
