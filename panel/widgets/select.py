@@ -79,13 +79,17 @@ class SingleSelectBase(SelectBase):
 
     value = param.Parameter(default=None)
 
-    value_label = param.String(readonly=True)
+    value_label = param.String(allow_None=True, readonly=True)
 
     _allows_values: ClassVar[bool] = True
 
     _allows_none: ClassVar[bool] = False
 
     _supports_embed: ClassVar[bool] = True
+
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'value_label': None,
+    }
 
     __abstract = True
 
@@ -97,11 +101,13 @@ class SingleSelectBase(SelectBase):
 
     @param.depends('value', watch=True, on_init=True)
     def _update_value_label(self):
-        idx = indexOf(self.value, self.values)
-        if idx is None:
-            return
+        try:
+            idx = indexOf(self.value, self.values)
+            label = self.labels[idx]
+        except ValueError:
+            label = None
         with edit_readonly(self):
-            self.value_label = self.labels[idx]
+            self.value_label = label
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
