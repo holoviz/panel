@@ -19,6 +19,7 @@ from bokeh.models import FlexBox as BkFlexBox, GridBox as BkGridBox
 from ..io.document import freeze_doc
 from ..io.model import hold
 from ..io.resources import CDN_DIST
+from ..viewable import ChildDict
 from .base import (
     ListPanel, Panel, _col, _row,
 )
@@ -257,7 +258,7 @@ class GridSpec(Panel):
     >>> gspec
     """
 
-    objects = param.Dict(default={}, doc="""
+    objects = ChildDict(default={}, doc="""
         The dictionary of child objects that make up the grid.""")
 
     mode = param.ObjectSelector(default='warn', objects=['warn', 'error', 'override'], doc="""
@@ -503,7 +504,6 @@ class GridSpec(Panel):
             return list(subgrid)[0][1]
 
     def __setitem__(self, index, obj):
-        from ..pane.base import panel
         if not isinstance(index, tuple):
             raise IndexError('Must supply a 2D index for GridSpec assignment.')
 
@@ -536,7 +536,7 @@ class GridSpec(Panel):
         overlap = key in self.objects
         clone = self.clone(objects=dict(self.objects), mode='override')
         if not overlap:
-            clone.objects[key] = panel(obj)
+            clone.objects[key] = obj
             clone._update_grid_size()
             grid = clone.grid
         else:
@@ -576,5 +576,5 @@ class GridSpec(Panel):
                     del new_objects[dkey]
                 except KeyError:
                     continue
-        new_objects[key] = panel(obj)
+        new_objects[key] = obj
         self.objects = new_objects
