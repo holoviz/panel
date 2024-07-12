@@ -213,14 +213,6 @@ Build a custom component to draw on an HTML canvas based on `ReactiveHTML`.
 Build a custom component wrapping leaflet.js using `ReactiveHTML`.
 :::
 
-:::{grid-item-card} Wrap Material UI
-:img-top: https://assets.holoviz.org/panel/how_to/custom_components/material_ui.png
-:link: examples/material_ui
-:link-type: doc
-
-Build custom components wrapping material UI using `ReactiveHTML`.
-:::
-
 :::{grid-item-card} Wrap a Vue.js component
 :img-top: https://assets.holoviz.org/panel/how_to/custom_components/vue.png
 :link: examples/vue
@@ -245,6 +237,5 @@ reactive_html/reactive_html_widgets
 reactive_html/reactive_html_dataframe
 examples/canvas_draw
 examples/leaflet
-examples/material_ui
 examples/vue
 ```
