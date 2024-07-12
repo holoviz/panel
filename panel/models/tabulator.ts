@@ -602,6 +602,21 @@ export class DataTabulatorView extends HTMLBoxView {
     this.setStyles()
 
     if (this.model.pagination) {
+      if (this.model.page_size == null) {
+	const table = this.shadow_el.querySelector('.tabulator-table')
+	const holder = this.shadow_el.querySelector('.tabulator-tableholder')
+	console.log(table.clientHeight)
+	let height = 0
+	let page_size = null
+	for (let i = 0; i<table.children.length; i++) {
+	  height += table.children[i].clientHeight
+	  if (height > holder.clientHeight) {
+	    page_size = i+1
+	    break
+	  }
+	}
+	this.model.page_size = page_size
+      }
       this.setMaxPage()
       this.tabulator.setPage(this.model.page)
     }
@@ -664,7 +679,7 @@ export class DataTabulatorView extends HTMLBoxView {
       layout: this.getLayout(),
       pagination: this.model.pagination != null,
       paginationMode: this.model.pagination,
-      paginationSize: this.model.page_size,
+      paginationSize: this.model.page_size || 20,
       paginationInitialPage: 1,
       groupBy: this.groupBy,
       rowFormatter: (row: any) => this._render_row(row),
@@ -1342,7 +1357,7 @@ export namespace DataTabulator {
     layout: p.Property<typeof TableLayout["__type__"]>
     max_page: p.Property<number>
     page: p.Property<number>
-    page_size: p.Property<number>
+    page_size: p.Property<number | null>
     pagination: p.Property<string | null>
     select_mode: p.Property<any>
     selectable_rows: p.Property<number[] | null>
@@ -1388,7 +1403,7 @@ export class DataTabulator extends HTMLBox {
       max_page:       [ Float,                   0 ],
       pagination:     [ Nullable(Str),      null ],
       page:           [ Float,                   0 ],
-      page_size:      [ Float,                   0 ],
+      page_size:      [ Nullable(Float),       null ],
       select_mode:    [ Any,                   true ],
       selectable_rows: [ Nullable(List(Float)), null ],
       source:         [ Ref(ColumnDataSource)       ],
