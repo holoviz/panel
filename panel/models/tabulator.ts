@@ -603,19 +603,29 @@ export class DataTabulatorView extends HTMLBoxView {
 
     if (this.model.pagination) {
       if (this.model.page_size == null) {
-	const table = this.shadow_el.querySelector('.tabulator-table')
-	const holder = this.shadow_el.querySelector('.tabulator-tableholder')
-	console.log(table.clientHeight)
-	let height = 0
-	let page_size = null
-	for (let i = 0; i<table.children.length; i++) {
-	  height += table.children[i].clientHeight
-	  if (height > holder.clientHeight) {
-	    page_size = i+1
-	    break
-	  }
-	}
-	this.model.page_size = page_size
+        const table = this.shadow_el.querySelector('.tabulator-table')
+        const holder = this.shadow_el.querySelector('.tabulator-tableholder')
+        if (table != null && holder != null) {
+          const table_height = holder.clientHeight
+          let height = 0
+          let page_size = null
+          const heights = []
+          for (let i = 0; i<table.children.length; i++) {
+            const row_height = table.children[i].clientHeight
+            heights.push(row_height)
+            height += row_height
+            if (height > table_height) {
+              page_size = i
+              break
+            }
+          }
+          if (height < table_height) {
+	    page_size = table.children.length
+            const remaining = table_height - height
+            page_size += Math.floor(remaining / Math.min(...heights))
+          }
+          this.model.page_size = page_size
+        }
       }
       this.setMaxPage()
       this.tabulator.setPage(this.model.page)
