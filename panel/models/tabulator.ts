@@ -603,8 +603,8 @@ export class DataTabulatorView extends HTMLBoxView {
 
     if (this.model.pagination) {
       if (this.model.page_size == null) {
-        const table = this.shadow_el.querySelector('.tabulator-table')
-        const holder = this.shadow_el.querySelector('.tabulator-tableholder')
+        const table = this.shadow_el.querySelector(".tabulator-table")
+        const holder = this.shadow_el.querySelector(".tabulator-tableholder")
         if (table != null && holder != null) {
           const table_height = holder.clientHeight
           let height = 0
