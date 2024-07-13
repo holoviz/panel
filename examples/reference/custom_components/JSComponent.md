@@ -2,7 +2,7 @@
 
 `JSComponent` simplifies the creation of custom Panel components using JavaScript.
 
-```pyodide
+```{pyodide}
 import panel as pn
 import param
 
@@ -87,7 +87,7 @@ The following signatures are valid when listening to change events:
 
 Include CSS within the `_stylesheets` attribute to style the component. The CSS is injected directly into the component's HTML.
 
-```pyodide
+```{pyodide}
 import panel as pn
 import param
 
@@ -135,7 +135,7 @@ StyledCounterButton().servable()
 
 Events from JavaScript can be sent to Python using the `model.send_event` method. Define a *handler* in Python to manage these events. A *handler* is a method on the form `_handle_<name-of-event>(self, event)`:
 
-```pyodide
+```{pyodide}
 import panel as pn
 import param
 
@@ -167,7 +167,7 @@ pn.Column(
 
 You can also define and send your own custom events:
 
-```pyodide
+```{pyodide}
 import datetime
 
 import panel as pn
@@ -209,7 +209,7 @@ pn.Column(
 
 JavaScript dependencies can be directly imported via URLs, such as those from [`esm.sh`](https://esm.sh/).
 
-```pyodide
+```{pyodide}
 import panel as pn
 from panel.custom import JSComponent
 
@@ -235,7 +235,7 @@ ConfettiButton().servable()
 
 Use the `_importmap` attribute for more concise module references.
 
-```pyodide
+```{pyodide}
 import panel as pn
 
 from panel.custom import JSComponent
@@ -337,7 +337,7 @@ You can display Panel components (`Viewable`s) by defining a `Child` parameter.
 
 Lets start with the simplest example:
 
-```pyodide
+```{pyodide}
 import panel as pn
 
 from panel.custom import Child, JSComponent
@@ -358,13 +358,13 @@ Example(child=pn.panel("A **Markdown** pane!")).servable()
 
 If you provide a non-`Viewable` child it will automatically be converted to a `Viewable` by `pn.panel`:
 
-```pyodide
+```{pyodide}
 Example(child="A **Markdown** pane!").servable()
 ```
 
 If you want to allow a certain type of Panel components only you can specify the specific type in the `class_` argument.
 
-```pyodide
+```{pyodide}
 import panel as pn
 
 from panel.custom import Child, JSComponent
@@ -385,7 +385,7 @@ Example(child=pn.panel("A **Markdown** pane!")).servable()
 
 The `class_` argument also supports a tuple of types:
 
-```pyodide
+```{pyodide}
 import panel as pn
 
 from panel.custom import Child, JSComponent
@@ -408,7 +408,7 @@ Example(child=pn.panel("A **Markdown** pane!")).servable()
 
 You can also display a `List` of `Viewable` objects using the `Children` parameter type:
 
-```pyodide
+```{pyodide}
 import panel as pn
 
 from panel.custom import Children, JSComponent

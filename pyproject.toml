@@ -3,7 +3,7 @@ requires = [
     "hatchling",
     "hatch-vcs",
     "param >=2.1.0",
-    "bokeh ==3.5.0.dev8",
+    "bokeh ==3.5.0rc1",
     "pyviz_comms >=0.7.4",
     "requests",
     "packaging",
@@ -25,7 +25,6 @@ classifiers = [
     "License :: OSI Approved :: BSD License",
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -48,7 +47,7 @@ classifiers = [
 ]
 
 dependencies = [
-    'bokeh ==3.5.0.dev8',
+    'bokeh ==3.5.0rc1',
     'param >=2.1.0,<3.0',
     'pyviz_comms >=2.0.0',
     'markdown',

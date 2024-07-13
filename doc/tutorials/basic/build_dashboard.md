@@ -100,7 +100,7 @@ fig = (
 ).hvplot.bar(
     title="Capacity Change",
     rot=90,
-    ylabel="Capacity (MW)",
+    ylabel="Capacity (GW)",
     xlabel="Year",
     xlim=(min_year, max_year),
     color=ACCENT,
@@ -116,7 +116,7 @@ indicators = pn.FlexBox(
     ),
     pn.indicators.Number(
         value=total_capacity / 1e6,
-        name="Total Capacity (TW)",
+        name="Total Capacity (GW)",
         format="{value:,.1f}",
         styles=styles,
     ),
@@ -258,7 +258,7 @@ fig = (
 ).hvplot.bar(
     title="Capacity Change",
     rot=90,
-    ylabel="Capacity (MW)",
+    ylabel="Capacity (GW)",
     xlabel="Year",
     xlim=(min_year, max_year),
     color=ACCENT,

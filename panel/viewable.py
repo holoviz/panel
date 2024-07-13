@@ -1121,16 +1121,6 @@ class Children(param.List):
     by calling the ``panel`` utility.
     """
 
-    @typing.overload
-    def __init__(
-        self,
-        default=[], *, instantiate=True, bounds=(0, None),
-        allow_None=False, doc=None, label=None, precedence=None,
-        constant=False, readonly=False, pickle_default_value=True, per_instance=True,
-        allow_refs=False, nested_refs=False
-    ):
-        ...
-
     def __init__(
         self, /, default=Undefined, instantiate=Undefined, bounds=Undefined,
         item_type=Viewable, **params
@@ -1158,6 +1148,30 @@ class Children(param.List):
                 v if isinstance(v, Viewable) else panel(v)
                 for v in val
             ]
+        return val
+
+    @instance_descriptor
+    def __set__(self, obj, val):
+        super().__set__(obj, self._transform_value(val))
+
+
+class ChildDict(param.Dict):
+
+    def __init__(
+        self, /, default=Undefined, instantiate=Undefined, **params
+    ):
+        default = self._transform_value(default)
+        super().__init__(
+            default=default, instantiate=instantiate, **params
+        )
+
+    def _transform_value(self, val):
+        if isinstance(val, dict) and val:
+            from .pane import panel
+            val.update({
+                k: v if isinstance(v, Viewable) else panel(v)
+                for k, v in val.items()
+            })
         return val
 
     @instance_descriptor

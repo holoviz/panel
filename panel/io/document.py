@@ -485,7 +485,9 @@ def freeze_doc(doc: Document, model: HasProps, properties: dict[str, Any], force
     Freezes the document model references if any of the properties
     are themselves a model.
     """
-    if force:
+    if not hasattr(doc, '_roots'):
+        dirty_count = 0
+    elif force:
         dirty_count = 1
     else:
         dirty_count = 0

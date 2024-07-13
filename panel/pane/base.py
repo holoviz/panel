@@ -348,6 +348,22 @@ class Pane(PaneBase, Reactive):
             return
 
         new_model = self._get_model(doc, root, parent, comm)
+
+        # Ensure we also update any fake root referencing the object
+        from ..io import state
+        ref = root.ref['id']
+        fake_view = fake_ref = fake_root = None
+        if ref in state._views:
+            view = state._views[ref][0]
+            for fake_ref in state._fake_roots:
+                if fake_ref not in state._views:
+                    continue
+                fake_view, fake_root = state._views[fake_ref][:2]
+        if fake_ref in self._models:
+            self._models[fake_ref] = (new_model, self._models[fake_ref][1])
+        if hasattr(self, '_plots') and fake_ref in self._plots:
+            self._plots[fake_ref] = self._plots[ref]
+
         try:
             if isinstance(parent, _BkGridBox):
                 indexes = [
@@ -397,10 +413,11 @@ class Pane(PaneBase, Reactive):
                 )
             ))
 
-        from ..io import state
-        ref = root.ref['id']
-        if ref in state._views:
-            state._views[ref][0]._preprocess(root)
+        # If there is a fake root we run pre-processors on it
+        if fake_view is not None and view in fake_view:
+            fake_view._preprocess(fake_root, self)
+        else:
+            view._preprocess(root, self)
 
     def _update_pane(self, *events) -> None:
         for ref, (_, parent) in self._models.items():
