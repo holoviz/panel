@@ -181,7 +181,7 @@ indicators = pn.FlexBox(wind_speed_view, power_output_view)
 indicators
 ```
 
-We create [`Number`](../../reference/indicators/Number.ipynb) indicators to display the wind speed and power output. The [`FlexBox`](../../reference/layouts/FlexBox.ipynb) layout will arrange the indicators horizontally or vertically depending on the screen size.
+We create [`Number`](../../reference/indicators/Number.md) indicators to display the wind speed and power output. The [`FlexBox`](../../reference/layouts/FlexBox.md) layout will arrange the indicators horizontally or vertically depending on the screen size.
 
 ::::{tab-set}
 
@@ -221,7 +221,7 @@ pn.template.FastListTemplate(
 
 ::::
 
-Finally, we construct the dashboard using the [`FastListTemplate`](../../reference/templates/FastListTemplate.ipynb). We set the accent color, theme, and enable automatic refreshing every 2 seconds.
+Finally, we construct the dashboard using the [`FastListTemplate`](../../reference/templates/FastListTemplate.md). We set the accent color, theme, and enable automatic refreshing every 2 seconds.
 
 :::{note}
 In the example, we use a `meta_refresh` rate of 2 for illustration purposes. For real use cases, we recommend `meta_refresh` rates of 15 or above. For lower refresh rates we would be using a [*Periodic Callback*](../../how_to/callbacks/periodic.md) or [*generators*](../../how_to/interactivity/bind_generators.md) in combination with a `meta_refresh` rate of 900 or above.
@@ -261,6 +261,6 @@ It should resemble
 
 ## Recap
 
-In this tutorial, we have built a basic monitoring dashboard that *refreshes* the entire page periodically. We have used  `pn.panel`, the [`Number`](../../reference/indicators/Number.ipynb) *indicator* and the [`FastListTemplate`](../../reference/templates/FastListTemplate.ipynb).
+In this tutorial, we have built a basic monitoring dashboard that *refreshes* the entire page periodically. We have used  `pn.panel`, the [`Number`](../../reference/indicators/Number.md) *indicator* and the [`FastListTemplate`](../../reference/templates/FastListTemplate.md).
 
-We used the `meta_refresh` argument of the [FastListTemplate](../../reference/templates/FastListTemplate.ipynb) to automatically *refresh* the dashboard periodically.
+We used the `meta_refresh` argument of the [FastListTemplate](../../reference/templates/FastListTemplate.md) to automatically *refresh* the dashboard periodically.

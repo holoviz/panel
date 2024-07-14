@@ -16,7 +16,7 @@ As you follow along with the code examples below, feel free to execute them dire
 
 ## Layout in a Column
 
-Let's start by arranging objects vertically using the [Column](../../reference/layouts/Column.ipynb) layout.
+Let's start by arranging objects vertically using the [Column](../../reference/layouts/Column.md) layout.
 
 Run the code below:
 
@@ -50,11 +50,11 @@ The `Column` layout organizes the elements `"# Wind Speed"`, `data`, and `button
 We add `.servable()` to display the `Column` component in a server app. It's not necessary for displaying it in a notebook.
 :::
 
-Click [this link](../../reference/layouts/Column.ipynb) to access the `Column` *reference guide* and familiarize yourself with its functionality.
+Click [this link](../../reference/layouts/Column.md) to access the `Column` *reference guide* and familiarize yourself with its functionality.
 
 ## Layout in a Row
 
-Next, let's arrange objects horizontally using the [`Row`](../../reference/layouts/Row.ipynb) layout.
+Next, let's arrange objects horizontally using the [`Row`](../../reference/layouts/Row.md) layout.
 
 Run the code below:
 
