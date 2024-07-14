@@ -201,7 +201,7 @@ export class FileDownloadView extends InputWidgetView {
   }
 
   _update_label(): void {
-    const label = document.createTextNode(this.model.label);
+    const label = document.createTextNode(this.model.label)
     this.anchor_el.appendChild(label)
   }
 
