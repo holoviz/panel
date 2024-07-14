@@ -220,7 +220,7 @@ In the example we use a `asyncio.to_thread` this should work great if your block
 
 ## Recommended Reading
 
-We do recommend you study the explanation document about [reactivity in Panel](../../explanation/api/reactivity.md) and the [`ReactiveExpr` reference guide](../../reference/panes/ReactiveExpr.ipynb) to learn more about displaying reactive expressions in Panel.
+We do recommend you study the explanation document about [reactivity in Panel](../../explanation/api/reactivity.md) and the [`ReactiveExpr` reference guide](../../reference/panes/ReactiveExpr.md) to learn more about displaying reactive expressions in Panel.
 
 ## Recap
 
@@ -238,7 +238,7 @@ Now, let your imagination run wild and craft dynamic, engaging Panel application
 
 ### Reference Guides
 
-[`ReactiveExpr` reference guide](../../reference/panes/ReactiveExpr.ipynb)
+[`ReactiveExpr` reference guide](../../reference/panes/ReactiveExpr.md)
 
 ### How-to
 

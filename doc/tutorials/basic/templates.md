@@ -9,7 +9,7 @@ Templates offer a streamlined approach to app layout and design, providing:
 
 ## Crafting a Hello World App
 
-Let's start by creating a basic app using the [`FastListTemplate`](../../reference/templates/FastListTemplate.ipynb). Copy the following code into a file named `app.py`:
+Let's start by creating a basic app using the [`FastListTemplate`](../../reference/templates/FastListTemplate.md). Copy the following code into a file named `app.py`:
 
 ```python
 import panel as pn
@@ -40,11 +40,11 @@ In the code snippet:
 - `title` sets an optional title for the top header.
 - `sidebar` and `main` designate content areas for the sidebar and main section, respectively.
 
-For additional configuration options, refer to the [`FastListTemplate` reference guide](../../reference/templates/FastListTemplate.ipynb).
+For additional configuration options, refer to the [`FastListTemplate` reference guide](../../reference/templates/FastListTemplate.md).
 :::
 
 :::{tip}
-Panel offers a rich assortment of built-in templates, including a versatile [`Slides`](../../reference/templates/Slides.ipynb) template.
+Panel offers a rich assortment of built-in templates, including a versatile [`Slides`](../../reference/templates/Slides.md) template.
 :::
 
 Take a moment to explore the [Templates Section](https://panel.holoviz.org/reference/index.html#templates) in the [Component Gallery](../../reference/index.md), then return here.
@@ -157,7 +157,7 @@ In the code:
 - `accent` sets the primary or accent color for the template, allowing quick branding of the app.
 - `main_layout` specifies a layout to wrap each object in the main list. Choose from `"card"` (default) or `None`.
 
-Note that `accent` and `main_layout` are exclusive to Fast templates like [FastListTemplate](../../reference/templates/FastListTemplate.ipynb) and [FastGridTemplate](../../reference/templates/FastGridTemplate.ipynb).
+Note that `accent` and `main_layout` are exclusive to Fast templates like [FastListTemplate](../../reference/templates/FastListTemplate.md) and [FastGridTemplate](../../reference/templates/FastGridTemplate.md).
 :::
 
 ## Recap
