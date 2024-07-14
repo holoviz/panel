@@ -774,3 +774,19 @@ def test_editable_fixed_nosoftbounds_fixed_end(editableslider):
     slider = editableslider(fixed_end=fixed_end, end=end, step=step)
     assert slider.start == end - step
     assert slider.end == end
+
+@pytest.mark.parametrize(
+    "slider_class,start,end,value",[
+        (FloatSlider, 0, 10, 11),
+        (IntSlider, 0, 10, 11),
+        (EditableFloatSlider, 0,10,11),
+        (EditableIntSlider, 0, 10, 11),
+    ]
+)
+def test_cannot_set_continous_value_outside_bounds(slider_class, start, end, value):
+    with pytest.raises(ValueError):
+        slider_class(value=value, start=start, end=end)
+
+    slider = slider_class(start=start, end=end)
+    with pytest.raises(ValueError):
+        slider.value=value

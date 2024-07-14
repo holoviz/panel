@@ -105,6 +105,11 @@ class _SliderBase(Widget):
 
 
 class ContinuousSlider(_SliderBase):
+    """The ContinuousSlider is an abstract base class for a slider widget with value, start, end
+    and step parameters.
+
+    It allows selecting a continuous value within a set of bounds using a slider.
+    """
 
     format = param.ClassSelector(class_=(str, TickFormatter,), doc="""
         A custom format string or Bokeh TickFormatter.""")
@@ -116,7 +121,11 @@ class ContinuousSlider(_SliderBase):
     def __init__(self, **params):
         if 'value' not in params:
             params['value'] = params.get('start', self.start)
+
         super().__init__(**params)
+
+        self._validate_value()
+        self.param.watch(self._validate_value, ['value', 'start', 'end'])
 
     def _get_embed_state(self, root, values=None, max_opts=3):
         ref = root.ref['id']
@@ -165,6 +174,9 @@ class ContinuousSlider(_SliderBase):
 
         return (dw, w_model, values, lambda x: x.value, 'value', 'cb_obj.value')
 
+    def _validate_value(self, *args):
+        if self.value and not self.start <= self.value <= self.end:
+            raise ValueError(f'Value {self.value} not in bounds {self.start} to {self.end}.')
 
 class FloatSlider(ContinuousSlider):
     """
