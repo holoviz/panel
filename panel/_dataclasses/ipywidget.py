@@ -90,7 +90,7 @@ class TraitletsUtils(ModelUtils):
     ) -> param.Parameter:
         trait_type = model.__class__
         trait = getattr(trait_type, field)
-        ptype = cls.parameter_map.get(trait, param.Parameter)
+        ptype = cls.parameter_map.get(type(trait), param.Parameter)
         extras = {}
         if ptype is param.Selector:
             extras = {'objects': trait.values}

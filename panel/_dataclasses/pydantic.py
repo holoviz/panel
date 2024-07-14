@@ -3,9 +3,12 @@ import json
 
 from typing import TYPE_CHECKING, Any, Iterable
 
+import param
+
 from param.reactive import bind
 
 from ..pane.markup import JSON
+from ..util import classproperty
 from .base import ModelUtils
 
 if TYPE_CHECKING:
@@ -15,7 +18,6 @@ if TYPE_CHECKING:
         BaseModel = Any
 else:
     BaseModel = Any
-
 
 def default_serializer(obj):
     if isinstance(obj, (dt.datetime, dt.date)):
@@ -45,6 +47,23 @@ class PydanticUtils(ModelUtils):
         # https://github.com/pydantic/pydantic/discussions/7127 or
         # https://psygnal.readthedocs.io/en/latest/API/model/
         pass
+
+    @classproperty
+    def parameter_map(cls):
+        return {
+            bool: param.Boolean,
+            int: param.Integer,
+            float: param.Number,
+            str: param.String,
+            list: param.List,
+            tuple: param.Tuple,
+            dict: param.Dict,
+        }
+    @classmethod
+    def create_parameter(cls, model, field: str)->param.Parameter:
+        field_type = model.__annotations__[field]
+        ptype = cls.parameter_map.get(field_type, param.Parameter)
+        return ptype()
 
     @classmethod
     def get_layout(cls, model, self, layout_params):

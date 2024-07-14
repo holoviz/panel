@@ -73,10 +73,8 @@ class ModelParameterized(Parameterized):
 
     model: DataClassLike = param.Parameter(allow_None=False, constant=True)
 
-    # Todo: consider renaming to names or model_names because it will be used publicly
     _model_names: Iterable[str] | dict[str, str] = ()
 
-    # Whether the model parameters have been created
     _model__initialized = False
 
     def __new__(cls, **params):

@@ -19,7 +19,9 @@ PydanticUtils._is_testing =True
 
 def get_traitlets_example_model():
     from ipywidgets import DOMWidget, register
-    from traitlets import Float, Int, Unicode
+    from traitlets import (
+        Bool, Dict, Float, Int, List, Tuple, Unicode,
+    )
 
     @register
     class TraitletsExampleModel(DOMWidget):
@@ -31,6 +33,11 @@ def get_traitlets_example_model():
         age = Int(0).tag(description="An integer trait")
         weight = Float(0.0).tag(description="A float trait")
         read_only = Unicode("A Value", read_only=True)
+        bool_field = Bool(False)
+        list_field = List([1, 2, 3])
+        tuple_field = Tuple((1, 2, 3))
+        dict_field = Dict({"a": 1, "b": 2})
+
     return TraitletsExampleModel
 
 
@@ -42,6 +49,11 @@ def get_pydantic_example_model():
         age: int = 0
         weight: float = 0.0
         read_only: str = "A Value" # Cannot make constant
+        bool_field: bool = False
+        list_field: list = [1, 2, 3]
+        tuple_field: tuple = (1, 2, 3)
+        dict_field: dict = {"a": 1, "b": 2}
+
     return PydanticExampleModel
 
 
@@ -511,3 +523,18 @@ def test_model_parameterized_parameters_added_to_instance_not_class(model):
     )
 
     assert set(parameterized_one.param) < set(parameterized_all.param)
+
+def test_can_create_correct_parameter_type(model_class):
+    class ExampleParameterized(ModelParameterized):
+        _model_class = model_class
+
+    parameterized = ExampleParameterized()
+
+    assert isinstance(parameterized, param.Parameterized)
+    assert isinstance(parameterized.param.name, param.String)
+    assert isinstance(parameterized.param.age, param.Integer)
+    assert isinstance(parameterized.param.weight, param.Number)
+    assert isinstance(parameterized.param.bool_field, param.Boolean)
+    assert isinstance(parameterized.param.list_field, param.List)
+    assert isinstance(parameterized.param.tuple_field, param.Tuple)
+    assert isinstance(parameterized.param.dict_field, param.Dict)
