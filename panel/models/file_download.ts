@@ -9,7 +9,7 @@ import {Icon} from "@bokehjs/models/ui/icons/icon"
 
 import buttons_css, * as buttons from "@bokehjs/styles/buttons.css"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
-import {prepend, nbsp, text, button, input} from "@bokehjs/core/dom"
+import {nbsp, text, button, input} from "@bokehjs/core/dom"
 
 function dataURItoBlob(dataURI: string) {
   // convert base64 to raw binary data held in a string
@@ -97,7 +97,8 @@ export class FileDownloadView extends InputWidgetView {
     })
     if (this.icon_view != null) {
       const separator = this.model.label != "" ? nbsp() : text("")
-      prepend(this.button_el, this.icon_view.el, separator)
+      this.anchor_el.appendChild(this.icon_view.el)
+      this.anchor_el.appendChild(separator)
       this.icon_view.render()
     }
     this._update_button_style()
@@ -200,7 +201,8 @@ export class FileDownloadView extends InputWidgetView {
   }
 
   _update_label(): void {
-    this.anchor_el.textContent = this.model.label
+    const label = document.createTextNode(this.model.label);
+    this.anchor_el.appendChild(label)
   }
 
   _update_button_style(): void {
