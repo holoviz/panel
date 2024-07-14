@@ -151,6 +151,7 @@ class ModelUtils:
 
             field_value = getattr(model, field)
             parameter_value = getattr(parameterized, parameter)
+
             if parameter_value is not None and parameter != 'name':
                 try:
                     setattr(model, field, parameter_value)

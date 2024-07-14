@@ -95,6 +95,7 @@ class TraitletsUtils(ModelUtils):
         if ptype is param.Selector:
             extras = {'objects': trait.values}
         return ptype(
+            default=getattr(model, field),
             allow_None=trait.allow_none,
             constant=trait.read_only,
             doc=trait.help,

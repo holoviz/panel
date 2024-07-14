@@ -63,7 +63,9 @@ class PydanticUtils(ModelUtils):
     def create_parameter(cls, model, field: str)->param.Parameter:
         field_type = model.__annotations__[field]
         ptype = cls.parameter_map.get(field_type, param.Parameter)
-        return ptype()
+        return ptype(
+            default=getattr(model, field),
+        )
 
     @classmethod
     def get_layout(cls, model, self, layout_params):
