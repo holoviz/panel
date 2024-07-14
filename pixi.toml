@@ -153,6 +153,7 @@ PANEL_IPYWIDGET = "1"
 [feature.doc.dependencies]
 lxml = "*"
 nbsite = ">=0.8.4"
+pydantic = "*"
 selenium = "*"
 
 [feature.doc.tasks]

@@ -58,8 +58,6 @@ pn.Column(
 ).servable()
 ```
 
-Todo: Fix order of updates. The JSON pane updates before the model is updated.
-
 ## Synchronize a model with a Parameterized Object
 
 Use `sync_with_parameterized` to synchronize a model with a Parameterized object.

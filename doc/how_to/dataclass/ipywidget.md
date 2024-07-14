@@ -4,7 +4,7 @@ This how-to guide demonstrates how to easily enable interaction with [ipywidgets
 
 ## Overview
 
-The `pn.dataclass` module provides functions to synchronize the traits of an ipywidget with a Parameterized object, a Panel widget, or an `rx` value. It also provides a `ModelViewer` class for creating a Layoutable Viewer that wraps an ipywidget Widget class or instance.
+The `pn.dataclass` module provides functions to synchronize the *traits* of an ipywidget with a Parameterized object, a Panel widget, or an `rx` value. It also provides a `ModelViewer` class for creating a Layoutable Viewer that wraps an ipywidget Widget class or instance.
 
 ### Terminology
 
@@ -28,7 +28,7 @@ The `pn.dataclass` module provides functions to synchronize the traits of an ipy
 
 All synchronization is bidirectional. Only top-level traits/parameters are synchronized, not nested ones.
 
-## Synchronize a Trait of an ipywidget with a Panel Widget
+## Synchronize Traits of an ipywidget with Panel Widgets
 
 Use `sync_with_widget` to synchronize a trait of an ipywidget with the `value` parameter of a Panel widget.
 
@@ -157,9 +157,9 @@ pn.Row(pn.Column(viewer.param, scroll=True), viewer, height=400).servable()
 
 The `_model_names` attribute is an optional iterable or dictionary. It specifies which traits to synchronize to which parameters.
 
-## Create a Reactive Value from the Trait of an ipywidget
+## Create Reactive Values from the Traits of an ipywidget
 
-Use `to_rx` to create a reactive value from the trait of an ipywidget.
+Use `to_rx` to create reactive values from the traits of an ipywidget.
 
 ```{pyodide}
 import panel as pn
