@@ -254,3 +254,48 @@ pn.Row(
     timestamp_input, timestamp,
     height=400).servable()
 ```
+
+## Create a Form from a Pydantic Model
+
+Use the `ModelForm` class to create a form to collect user input.
+
+```python
+import panel as pn
+
+from pydantic import BaseModel
+
+pn.extension()
+
+class ExampleModel(BaseModel):
+    some_text: str
+    some_number: int
+    some_boolean: bool
+
+form = pn.dataclass.ModelForm(
+    model_class=ExampleModel, button_kwargs=dict(name="Run"), show_name=False, sort=True
+)
+
+pn.Column(form, pn.pane.JSON(form.value_as_dict)).servable()
+```
+
+If you want to update the model automatically without having to click the button then hide the
+button by setting `visible=False`.
+
+```python
+import panel as pn
+
+from pydantic import BaseModel
+
+pn.extension()
+
+class ExampleModel(BaseModel):
+    some_text: str
+    some_number: int
+    some_boolean: bool
+
+form = pn.dataclass.ModelForm(
+    model_class=ExampleModel, button_kwargs=dict(visible=False), show_name=False, sort=True
+)
+
+pn.Column(form, pn.pane.JSON(form.value_as_dict)).servable()
+```

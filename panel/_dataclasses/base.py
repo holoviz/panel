@@ -193,6 +193,11 @@ class ModelUtils:
     def adjust_sizing(cls, self):
         pass
 
+    @classmethod
+    def get_required_defaults(cls, model_class):
+        """Returns the default values of the fields that are required"""
+        raise NotImplementedError()
+
 class VariableLengthTuple(param.Parameter):
     """
     A non-fixed length Tuple parameter

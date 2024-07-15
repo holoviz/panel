@@ -69,21 +69,25 @@ class PydanticUtils(ModelUtils):
             str: param.String,
             tuple: VariableLengthTuple,
         }
+
     @classmethod
     def create_parameter(cls, model, field: str)->param.Parameter:
-        field_type = model.__annotations__[field]
-        extras={}
+        field_info = model.model_fields[field]
+        field_type = field_info.annotation
+        kwargs={"doc": field_info.description}
 
         if hasattr(field_type, '__origin__'):
             ptype = cls.parameter_map.get(field_type.__origin__, param.Parameter)
             if ptype is param.Selector and hasattr(field_type, '__args__'):
-                extras = {'objects': list(field_type.__args__)}
+                kwargs["objects"] = list(field_type.__args__)
         else:
             ptype = cls.parameter_map.get(field_type, param.Parameter)
 
+        if hasattr(model, field):
+            kwargs['default'] = getattr(model, field)
+
         return ptype(
-            default=getattr(model, field),
-            **extras
+            **kwargs
         )
 
     @classmethod
@@ -100,3 +104,7 @@ class PydanticUtils(ModelUtils):
             depth=2,
             **layout_params
         )
+
+    @classmethod
+    def get_required_defaults(cls, model_class):
+        return {field: cls.create_parameter(model_class, field).default for field, info in model_class.model_fields.items() if info.is_required()}

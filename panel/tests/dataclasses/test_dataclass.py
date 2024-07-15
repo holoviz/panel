@@ -12,8 +12,8 @@ import panel as pn
 from panel._dataclasses.base import VariableLengthTuple
 from panel._dataclasses.pydantic import PydanticUtils
 from panel.dataclass import (
-    ModelParameterized, ModelViewer, _get_utils, sync_with_parameterized,
-    to_parameterized, to_rx, to_viewer,
+    ModelForm, ModelParameterized, ModelViewer, _get_utils,
+    sync_with_parameterized, to_parameterized, to_rx, to_viewer,
 )
 from panel.viewable import Layoutable, Viewer
 
@@ -135,12 +135,24 @@ def test_to_parameterized(model):
     assert viewer.age == model.age
     assert viewer.weight == model.weight
 
+@pytest.mark.xfail(reason="For now instantiating Pydantic Model without required values is not supported")
+def test_to_parameterized_no_defaults():
+    from pydantic import BaseModel
+    class ExampleModel(BaseModel):
+        some_text: str
+        some_number: int
+
+    class ExampleModelParameterized(ModelParameterized):
+        _model_class = ExampleModel
+
+    ExampleModelParameterized()
 
 def test_to_parameterized_readonly(model, supports_constant_fields):
     if not supports_constant_fields:
         pytest.skip(f"Constant fields not supported for {type(model)}")
 
     parameterized = to_parameterized(model, names=("read_only",))
+    assert parameterized.param.read_only.constant
     with param.edit_constant(parameterized):
         parameterized.read_only = "Some other value"
     assert model.read_only != "Some other value"
@@ -554,3 +566,26 @@ def test_can_create_correct_parameter_type(model_class):
 
     # Can we set a tuple of another length?
     parameterized.tuple_field = (1,2,3,4)
+
+def test_model_form(model_class):
+    model = ModelForm(model_class=model_class, button_kwargs=dict(name="Run"), show_name=False, sort=True)
+
+    assert model._model
+    assert model._parameterized
+    assert model._submit_button
+    assert model._param_pane
+    assert model.__panel__()
+
+    assert not model.value
+
+    # Updates on submit only
+    model._parameterized.age=100
+    assert not model.value
+    model._submit_button.clicks += 1
+    assert model.value
+    assert model.value.age == 100
+
+    # Updates on parameter change
+    model._submit_button.visible=False
+    model._parameterized.age=101
+    assert model.value.age == 101

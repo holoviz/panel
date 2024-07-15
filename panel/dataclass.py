@@ -45,7 +45,8 @@ Support
 | Pydantic   | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Traitlets  | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 
-""" # noqa: E501
+"""  # noqa: E501
+
 from typing import Iterable
 
 import param
@@ -55,12 +56,15 @@ from param import Parameterized
 from ._dataclasses.base import ModelUtils, _to_tuple
 from ._dataclasses.ipywidget import HasTraits, TraitletsUtils
 from ._dataclasses.pydantic import BaseModel, PydanticUtils
+from .layout import Column
+from .param import Param
 from .viewable import Layoutable, Viewer
-from .widgets import Widget
+from .widgets import Button, Widget
 
 DataClassLike = HasTraits | BaseModel
 
-def _get_utils(model: DataClassLike)->type[ModelUtils]:
+
+def _get_utils(model: DataClassLike) -> type[ModelUtils]:
     if hasattr(model, "model_fields"):
         return PydanticUtils
     return TraitletsUtils
@@ -218,7 +222,7 @@ def sync_with_parameterized(
 def sync_with_widget(
     model: DataClassLike,
     widget: Widget,
-    name: str="value",
+    name: str = "value",
 ):
     """
     Syncs the named field of the model with value parameter of the widget.
@@ -287,6 +291,10 @@ def to_parameterized(
         model=model, names=names, bases=bases
     )
     instance = parameterized(model=model, names=names, **kwargs)
+
+    # Hack: For some unknown reason the instance parameters are not set correctly
+    for name in parameterized.param:
+        instance.param[name].constant = parameterized.param[name].constant
     return instance
 
 
@@ -396,9 +404,104 @@ def to_rx(model: HasTraits, *names) -> param.rx | tuple[param.rx]:
     return tuple(rx_values)
 
 
+class ModelForm(Viewer):
+    """The ModelForm creates a form for a dataclass like model.
+
+    The form is a Columnar layout consisting of a Param pane and a submit button.
+
+    When you click the submit button the value of the form is updated to the current value of the model.
+
+    If you set `visible=False` on the submit button, the value will be updated whenever a parameter changes.
+
+    Args:
+        model_class: The class to create the form from.
+        button_kwargs: An optional dictionary of keyword arguments to pass to the Button constructor.
+        param_kwargs: Optional keyword arguments to pass to the Param constructor.
+
+    Example:
+
+    ```python
+    class ExampleModel(BaseModel):
+        some_text: str
+        some_number: int
+        some_boolean: bool
+
+    form = ModelForm(model_class=ExampleModel, button_kwargs=dict(name="Run"), show_name=False, sort=True)
+    ```
+    """
+
+    value = param.Parameter(allow_None=True)
+
+    def __init__(self, model_class, button_kwargs: dict | None = None, **param_kwargs):
+        super().__init__()
+
+        utils = self._utils = _get_utils(model_class)
+
+        self._model_class = model_class
+        self._fields = [
+            field
+            for field in utils.get_field_names(model_class)
+            if utils.is_relevant_field_name(field)
+        ]
+
+        default_parameters = self._fields
+        default_values = utils.get_required_defaults(model_class)
+
+        model = model_class(**default_values)
+        model = self._model = model_class(**default_values)
+
+        parameters = param_kwargs["parameters"] = param_kwargs.get(
+            "parameters", default_parameters
+        )
+        parameterized = self._parameterized = to_parameterized(model)
+        parameterized.param.watch(self._update_value_on_parameter_change, parameters)
+
+        submit_button_kwargs = {
+            "name": "Submit",
+            "button_type": "primary",
+            "visible": True,
+            "on_click": self._update_value,
+        }
+        submit_button_kwargs.update(button_kwargs)
+
+        self._submit_button = Button(**submit_button_kwargs)
+        self._param_pane = Param(parameterized, **param_kwargs)
+
+        self._layout = Column(
+            self._param_pane,
+            self._submit_button,
+        )
+
+    def _update_value(self, *args):
+        values = {
+            field: value
+            for field, value in self._parameterized.param.values().items()
+            if (
+                field in self._param_pane.parameters
+                and not self._parameterized.param[field].constant
+            )
+        }
+        self.value = self._model_class(**values)
+
+    def _update_value_on_parameter_change(self, *args):
+        if not self._submit_button.visible:
+            self._update_value()
+
+    def __panel__(self):
+        return self._layout
+
+    @param.depends("value")
+    def value_as_dict(self) -> dict:
+        "Returns the value as a dictionary. Can be used to easily display the value in a JSON pane."
+        if not self.value:
+            return {}
+        return self.value.dict()
+
+
 __all__ = [
     "ModelParameterized",
     "ModelViewer",
+    "ModelForm",
     "sync_with_parameterized",
     "sync_with_rx",
     "sync_with_widget",

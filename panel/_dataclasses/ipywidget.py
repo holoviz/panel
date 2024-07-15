@@ -54,7 +54,11 @@ class TraitletsUtils(ModelUtils):
 
     @classmethod
     def get_field_names(cls, model: HasTraits) -> Iterable[str]:
-        return model.traits()
+        try:
+            return model.traits()
+        except TypeError:
+            return (trait for trait in model._traits if not trait.startswith("_"))
+
 
     @classmethod
     def observe_field(
@@ -126,3 +130,9 @@ class TraitletsUtils(ModelUtils):
             "stretch_both",
         ]:
             parameterized.height = 300
+
+
+    @classmethod
+    def get_required_defaults(cls, model_class):
+        """Returns the default values of the fields that are required"""
+        return {}
