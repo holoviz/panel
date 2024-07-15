@@ -1,6 +1,7 @@
 from tornado import web
 
 from .document import _cleanup_doc
+from .session import generate_session
 
 
 class LivenessHandler(web.RequestHandler):
@@ -19,8 +20,8 @@ class LivenessHandler(web.RequestHandler):
 
         app = self.applications[endpoint]
         try:
-            doc = app.create_document()
-            _cleanup_doc(doc)
+            session = generate_session(app)
+            _cleanup_doc(session.document)
             self.write({endpoint: True})
         except Exception as e:
             raise web.HTTPError(
