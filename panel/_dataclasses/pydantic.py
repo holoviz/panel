@@ -1,7 +1,10 @@
 import datetime as dt
 import json
 
-from typing import TYPE_CHECKING, Any, Iterable
+from collections.abc import Callable
+from typing import (
+    TYPE_CHECKING, Any, Iterable, Literal,
+)
 
 import param
 
@@ -19,10 +22,14 @@ if TYPE_CHECKING:
 else:
     BaseModel = Any
 
-def default_serializer(obj):
+def _default_serializer(obj):
     if isinstance(obj, (dt.datetime, dt.date)):
         return obj.isoformat()
-    raise TypeError()
+    if isinstance(obj, bytes):
+        return obj.decode(encoding='utf-8')
+    if isinstance(obj, Callable):
+        return str(obj)
+    raise TypeError(f"Cannot serialize {obj!r} (type {type(obj)})")
 
 
 class PydanticUtils(ModelUtils):
@@ -52,19 +59,31 @@ class PydanticUtils(ModelUtils):
     def parameter_map(cls):
         return {
             bool: param.Boolean,
-            int: param.Integer,
-            float: param.Number,
-            str: param.String,
-            list: param.List,
-            tuple: param.Tuple,
+            bytes: param.Bytes,
+            Callable: param.Callable,
             dict: param.Dict,
+            Literal: param.Selector,
+            float: param.Number,
+            int: param.Integer,
+            list: param.List,
+            str: param.String,
+            tuple: param.Tuple,
         }
     @classmethod
     def create_parameter(cls, model, field: str)->param.Parameter:
         field_type = model.__annotations__[field]
-        ptype = cls.parameter_map.get(field_type, param.Parameter)
+        extras={}
+
+        if hasattr(field_type, '__origin__'):
+            ptype = cls.parameter_map.get(field_type.__origin__, param.Parameter)
+            if ptype is param.Selector and hasattr(field_type, '__args__'):
+                extras = {'objects': list(field_type.__args__)}
+        else:
+            ptype = cls.parameter_map.get(field_type, param.Parameter)
+
         return ptype(
             default=getattr(model, field),
+            **extras
         )
 
     @classmethod
@@ -77,7 +96,7 @@ class PydanticUtils(ModelUtils):
 
         return JSON(
             bind(view_model, *self.param.objects().values()),
-            default=default_serializer,
+            default=_default_serializer,
             depth=2,
             **layout_params
         )

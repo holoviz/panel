@@ -2,6 +2,8 @@
 Tests for utilities that allow us to wrap dataclass like class and
 instances via familiar APIs like watch, bind, depends and rx."
 """
+from typing import Callable, Literal
+
 import param
 import pytest
 
@@ -16,27 +18,28 @@ from panel.viewable import Layoutable, Viewer
 
 PydanticUtils._is_testing =True
 
-
 def get_traitlets_example_model():
+    import traitlets
+
     from ipywidgets import DOMWidget, register
-    from traitlets import (
-        Bool, Dict, Float, Int, List, Tuple, Unicode,
-    )
 
     @register
     class TraitletsExampleModel(DOMWidget):
-        _view_name = Unicode("ExampleIpyWidgetView").tag(sync=True)
-        _view_module = Unicode("example_ipywidget").tag(sync=True)
-        _view_module_version = Unicode("0.1.0").tag(sync=True)
+        _view_name = traitlets.Unicode("ExampleIpyWidgetView").tag(sync=True)
+        _view_module = traitlets.Unicode("example_ipywidget").tag(sync=True)
+        _view_module_version = traitlets.Unicode("0.1.0").tag(sync=True)
 
-        name = Unicode("Default Name").tag(description="A string trait")
-        age = Int(0).tag(description="An integer trait")
-        weight = Float(0.0).tag(description="A float trait")
-        read_only = Unicode("A Value", read_only=True)
-        bool_field = Bool(False)
-        list_field = List([1, 2, 3])
-        tuple_field = Tuple((1, 2, 3))
-        dict_field = Dict({"a": 1, "b": 2})
+        name = traitlets.Unicode("Default Name").tag(description="A string trait")
+        age = traitlets.Int(0).tag(description="An integer trait")
+        weight = traitlets.Float(0.0).tag(description="A float trait")
+        read_only = traitlets.Unicode("A Value", read_only=True)
+        bool_field = traitlets.Bool(False)
+        bytes_field = traitlets.Bytes(b"abc")
+        callable_field = traitlets.Callable(str)
+        dict_field = traitlets.Dict({"a": 1, "b": 2})
+        literal_field = traitlets.Enum(["a", "b", "c"], default_value="a")
+        list_field = traitlets.List([1, 2, 3])
+        tuple_field = traitlets.Tuple((1, 2, 3))
 
     return TraitletsExampleModel
 
@@ -44,15 +47,21 @@ def get_traitlets_example_model():
 def get_pydantic_example_model():
     from pydantic import BaseModel
 
+
+
     class PydanticExampleModel(BaseModel):
         name: str = "Default Name"
         age: int = 0
         weight: float = 0.0
         read_only: str = "A Value" # Cannot make constant
         bool_field: bool = False
+        bytes_field: bytes = b"abc"
+        callable_field: Callable = str
+        dict_field: dict = {"a": 1, "b": 2}
+        literal_field: Literal['a','b','c'] = 'a'
         list_field: list = [1, 2, 3]
         tuple_field: tuple = (1, 2, 3)
-        dict_field: dict = {"a": 1, "b": 2}
+
 
     return PydanticExampleModel
 
@@ -538,3 +547,6 @@ def test_can_create_correct_parameter_type(model_class):
     assert isinstance(parameterized.param.list_field, param.List)
     assert isinstance(parameterized.param.tuple_field, param.Tuple)
     assert isinstance(parameterized.param.dict_field, param.Dict)
+    assert isinstance(parameterized.param.bytes_field, param.Bytes)
+    assert isinstance(parameterized.param.callable_field, param.Callable)
+    assert isinstance(parameterized.param.literal_field, param.Selector)
