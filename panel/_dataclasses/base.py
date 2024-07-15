@@ -192,3 +192,38 @@ class ModelUtils:
     @classmethod
     def adjust_sizing(cls, self):
         pass
+
+class VariableLengthTuple(param.Parameter):
+    """
+    A non-fixed length Tuple parameter
+
+    See https://github.com/holoviz/param/issues/955
+    """
+
+    def __init__(self, default=None, allow_None=True, **params):
+        super().__init__(default=default, allow_None=allow_None, **params)
+        self._validate(default)
+
+    def _validate_value(self, val, allow_None):
+        if val is None and allow_None:
+            return
+        if not isinstance(val, tuple):
+            raise ValueError(
+                f'VariableLengthTuple parameter {self.name!r} only takes '
+                f'tuple values, not values of not {type(val)!r}.'
+            )
+
+    def _validate(self, val):
+        self._validate_value(val, self.allow_None)
+
+    @classmethod
+    def serialize(cls, value):
+        if value is None:
+            return 'null'
+        return list(value) if isinstance(value, tuple) else value
+
+    @classmethod
+    def deserialize(cls, value):
+        if value == 'null':
+            return None
+        return tuple(value) if isinstance(value, list) else value

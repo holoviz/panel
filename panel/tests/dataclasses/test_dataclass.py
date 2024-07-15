@@ -9,6 +9,7 @@ import pytest
 
 import panel as pn
 
+from panel._dataclasses.base import VariableLengthTuple
 from panel._dataclasses.pydantic import PydanticUtils
 from panel.dataclass import (
     ModelParameterized, ModelViewer, _get_utils, sync_with_parameterized,
@@ -545,8 +546,11 @@ def test_can_create_correct_parameter_type(model_class):
     assert isinstance(parameterized.param.weight, param.Number)
     assert isinstance(parameterized.param.bool_field, param.Boolean)
     assert isinstance(parameterized.param.list_field, param.List)
-    assert isinstance(parameterized.param.tuple_field, param.Tuple)
+    assert isinstance(parameterized.param.tuple_field, VariableLengthTuple)
     assert isinstance(parameterized.param.dict_field, param.Dict)
     assert isinstance(parameterized.param.bytes_field, param.Bytes)
     assert isinstance(parameterized.param.callable_field, param.Callable)
     assert isinstance(parameterized.param.literal_field, param.Selector)
+
+    # Can we set a tuple of another length?
+    parameterized.tuple_field = (1,2,3,4)

@@ -31,7 +31,7 @@ import param
 
 from ..pane.ipywidget import IPyWidget
 from ..util import classproperty
-from .base import ModelUtils
+from .base import ModelUtils, VariableLengthTuple
 
 if TYPE_CHECKING:
     try:
@@ -78,7 +78,7 @@ class TraitletsUtils(ModelUtils):
             traitlets.Float: param.Number,
             traitlets.Int: param.Integer,
             traitlets.List: param.List,
-            traitlets.Tuple: param.Tuple,
+            traitlets.Tuple: VariableLengthTuple,
             traitlets.Unicode: param.String,
         }
 

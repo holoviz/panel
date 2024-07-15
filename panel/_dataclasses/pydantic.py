@@ -12,7 +12,7 @@ from param.reactive import bind
 
 from ..pane.markup import JSON
 from ..util import classproperty
-from .base import ModelUtils
+from .base import ModelUtils, VariableLengthTuple
 
 if TYPE_CHECKING:
     try:
@@ -67,7 +67,7 @@ class PydanticUtils(ModelUtils):
             int: param.Integer,
             list: param.List,
             str: param.String,
-            tuple: param.Tuple,
+            tuple: VariableLengthTuple,
         }
     @classmethod
     def create_parameter(cls, model, field: str)->param.Parameter:
