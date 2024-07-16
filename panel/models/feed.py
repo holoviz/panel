@@ -10,11 +10,12 @@ class ScrollLatestEvent(ModelEvent):
 
     event_name = 'scroll_latest_event'
 
-    def __init__(self, model):
+    def __init__(self, model, rerender=False):
         super().__init__(model=model)
+        self.rerender = rerender
 
     def event_values(self) -> dict[str, Any]:
-        return dict(super().event_values())
+        return dict(super().event_values(), rerender=self.rerender)
 
 
 class ScrollButtonClick(ModelEvent):

@@ -8,18 +8,19 @@ import {ColumnView as BkColumnView} from "@bokehjs/models/layouts/column"
 
 @server_event("scroll_latest_event")
 export class ScrollLatestEvent extends ModelEvent {
-  constructor(readonly model: Feed) {
+  constructor(readonly model: Feed, readonly rerender: boolean) {
     super()
     this.origin = model
+    this.rerender = rerender
   }
 
   protected override get event_values(): Attrs {
-    return {model: this.origin}
+    return {model: this.origin, rerender: this.rerender}
   }
 
   static override from_values(values: object) {
-    const {model} = values as {model: Feed}
-    return new ScrollLatestEvent(model)
+    const {model, rerender} = values as {model: Feed, rerender: boolean}
+    return new ScrollLatestEvent(model, rerender)
   }
 }
 
@@ -27,7 +28,7 @@ export class FeedView extends ColumnView {
   declare model: Feed
   _intersection_observer: IntersectionObserver
   _last_visible: UIElementView | null
-  _lock: any = null
+  _rendered: boolean = false
   _sync: boolean
 
   override initialize(): void {
@@ -67,8 +68,11 @@ export class FeedView extends ColumnView {
 
   override connect_signals(): void {
     super.connect_signals()
-    this.model.on_event(ScrollLatestEvent, () => {
+    this.model.on_event(ScrollLatestEvent, (event: ScrollLatestEvent) => {
       this.scroll_to_latest()
+      if (event.rerender) {
+	this._rendered = false
+      }
     })
   }
 
@@ -117,8 +121,13 @@ export class FeedView extends ColumnView {
     return created
   }
 
-  override trigger_auto_scroll(): void {
+
+  override render(): void {
+    this._rendered = false
+    super.render()
   }
+
+  override trigger_auto_scroll(): void {}
 
   override after_render(): void {
     BkColumnView.prototype.after_render.call(this)
@@ -126,7 +135,11 @@ export class FeedView extends ColumnView {
       if (this.model.scroll_position) {
         this.scroll_to_position()
       }
+      if (this.model.view_latest && !this._rendered) {
+        this.scroll_to_latest()
+      }
       this.toggle_scroll_button()
+      this._rendered = true
     })
   }
 }
