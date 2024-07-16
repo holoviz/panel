@@ -1,6 +1,6 @@
 [project]
 name = "panel"
-channels = ["pyviz/label/dev", "bokeh/label/dev", "conda-forge"]
+channels = ["pyviz/label/dev", "bokeh", "conda-forge"]
 platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 
 [activation.env]
