@@ -67,8 +67,6 @@ def test_feed_view_scroll_to_latest(page):
     feed.scroll_to_latest()
 
     wait_until(lambda: int(page.locator('pre').last.inner_text() or 0) > 0.9 * ITEMS, page)
-    import time
-    time.sleep(5)
 
 def test_feed_view_scroll_button(page):
     feed = Feed(*list(range(ITEMS)), height=250, scroll_button_threshold=50)

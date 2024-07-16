@@ -208,7 +208,7 @@ class Feed(Column):
         """
         Scrolls the Feed to the latest entry.
         """
-        rerender = self.visible_range and self.visible_range[-1] < len(self.objects)
+        rerender = self._last_synced and self._last_synced[-1] < len(self.objects)
         if rerender:
             self._process_event()
         self._send_event(ScrollLatestEvent, rerender=rerender)
