@@ -438,18 +438,14 @@ class ModelForm(Viewer):
         utils = self._utils = _get_utils(model_class)
 
         self._model_class = model_class
-        self._fields = [
+
+        model = self._model = utils.get_instance(model_class)
+
+        default_parameters = [
             field
             for field in utils.get_field_names(model_class)
             if utils.is_relevant_field_name(field)
         ]
-
-        default_parameters = self._fields
-        default_values = utils.get_required_defaults(model_class)
-
-        model = model_class(**default_values)
-        model = self._model = model_class(**default_values)
-
         parameters = param_kwargs["parameters"] = param_kwargs.get(
             "parameters", default_parameters
         )

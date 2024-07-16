@@ -198,6 +198,17 @@ class ModelUtils:
         """Returns the default values of the fields that are required"""
         raise NotImplementedError()
 
+    @classmethod
+    def get_instance(cls, model_instance_or_class):
+        if not isinstance(model_instance_or_class, type):
+            return model_instance_or_class
+
+        model_class = model_instance_or_class
+        default_values = cls.get_required_defaults(model_class)
+
+        return model_class(**default_values)
+
+
 class VariableLengthTuple(param.Parameter):
     """
     A non-fixed length Tuple parameter
