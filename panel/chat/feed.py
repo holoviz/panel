@@ -758,6 +758,7 @@ class ChatFeed(ListPanel):
             self.stream(steps_column, user=user, avatar=avatar)
         else:
             steps_column.append(step)
+            self._chat_log.scroll_to_latest()
         return step
 
     def respond(self):
