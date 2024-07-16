@@ -129,8 +129,25 @@ def set_values(*parameterizeds, **param_values):
 
 class Param(PaneBase):
     """
-    Param panes render a Parameterized class to a set of widgets which
-    are linked to the parameter values on the class.
+    Param panes render a Parameterized class into a set of interactive widgets
+    that are dynamically linked to the parameter values of the class.
+
+    Reference: https://panel.holoviz.org/reference/panes/Param.html
+
+    Example:
+
+    >>> import param
+    >>> import panel as pn
+    >>> pn.extension()
+
+    >>> class App(param.Parameterized):
+    >>>     some_text = param.String(default="Hello")
+    >>>     some_float = param.Number(default=1, bounds=(0, 10), step=0.1)
+    >>>     some_boolean = param.Boolean(default=True)
+
+    >>> app = App()
+
+    >>> pn.Param(app, parameters=["some_text", "some_float"], show_name=False).servable()
     """
 
     display_threshold = param.Number(default=0, precedence=-10, doc="""
