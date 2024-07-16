@@ -65,7 +65,7 @@ export class FeedView extends ColumnView {
       const after_offset = last?.el.offsetTop || 0
       const offset = (after_offset-before_offset)
       if (offset > 0) {
-	this.el.scrollTo({top: scroll_top + offset, behavior: "instant"})
+        this.el.scrollTo({top: scroll_top + offset, behavior: "instant"})
       }
     })
   }
