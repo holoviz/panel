@@ -2,7 +2,6 @@ import {Column, ColumnView} from "./column"
 import type * as p from "@bokehjs/core/properties"
 import {build_views} from "@bokehjs/core/build_views"
 import type {UIElementView} from "@bokehjs/models/ui/ui_element"
-import {ColumnView as BkColumnView} from "@bokehjs/models/layouts/column"
 
 export class FeedView extends ColumnView {
   declare model: Feed
