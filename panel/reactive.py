@@ -213,7 +213,7 @@ class Syncable(Renderable):
             wrapped = []
             for stylesheet in stylesheets:
                 if isinstance(stylesheet, str) and stylesheet.split('?')[0].endswith('.css'):
-                    cache = state._stylesheets.get(state.curdoc, {})
+                    cache = (state._stylesheets if state.curdoc else {}).get(state.curdoc, {})
                     if stylesheet in cache:
                         stylesheet = cache[stylesheet]
                     else:
