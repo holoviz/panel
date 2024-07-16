@@ -38,7 +38,7 @@ requests = "*"
 tqdm = ">=4.48.0"
 typing_extensions = "*"
 # Recommended
-holoviews = ">=1.18.0"
+holoviews = ">=1.16.0"
 jupyterlab = "*"
 matplotlib-base = "*"
 pillow = "*"
