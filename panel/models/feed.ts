@@ -5,9 +5,9 @@ import type {UIElementView} from "@bokehjs/models/ui/ui_element"
 
 export class FeedView extends ColumnView {
   declare model: Feed
-
   _intersection_observer: IntersectionObserver
   _last_visible: UIElementView | null
+  _lock: any = null
   _sync: boolean
 
   override initialize(): void {
@@ -54,10 +54,19 @@ export class FeedView extends ColumnView {
   }
 
   override async update_children(): Promise<void> {
+    const last = this._last_visible
+    const scroll_top = this.el.scrollTop
+    const before_offset = last?.el.offsetTop || 0
     this._sync = false
     await super.update_children()
     this._sync = true
-    this._last_visible?.el.scrollIntoView(true)
+    requestAnimationFrame(() => {
+      const after_offset = last?.el.offsetTop || 0
+      const offset = (after_offset-before_offset)
+      if (offset > 0) {
+        this.el.scrollTo({top: scroll_top + offset, behavior: "instant"})
+      }
+    })
   }
 
   override async build_child_views(): Promise<UIElementView[]> {
