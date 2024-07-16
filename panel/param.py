@@ -129,12 +129,12 @@ def set_values(*parameterizeds, **param_values):
 
 class Param(Pane):
     """
-    Param panes render a Parameterized class to a set of widgets which
-    are linked to the parameter values on the class.
+    Param panes render a Parameterized class into a set of interactive widgets
+    that are dynamically linked to the parameter values of the class.
 
     Reference: https://panel.holoviz.org/reference/panes/Param.html
 
-    :Example:
+    Example:
 
     >>> import param
     >>> import panel as pn
