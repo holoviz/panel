@@ -123,7 +123,7 @@ def _cleanup_doc(doc, destroy=True):
             pane._documents = {}
             pane._internal_callbacks = {}
         else:
-            views[ref] = (pane, root, doc, comm)
+            views[ref] = (pane, root, vdoc, comm)
     state._views = views
 
     # When reusing sessions we must clean up the Panel state but we
