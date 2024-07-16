@@ -121,15 +121,18 @@ class Design(param.Parameterized, ResourceComponent):
         isolated: bool=True, cache=None, document=None
     ) -> None:
         ref = root.ref['id']
+        seen = set()
         for o in viewable.select():
             if o.design and not isolated:
                 continue
             elif not o.design and not isolated:
                 o._design = self
 
-            if old_models and ref in o._models:
-                if o._models[ref][0] in old_models:
+            if ref in o._models:
+                model = o._models[ref][0]
+                if (old_models and model in old_models) or model in seen:
                     continue
+                seen.add(model)
             self._apply_modifiers(o, ref, self.theme, isolated, cache, document)
 
     def _apply_hooks(self, viewable: Viewable, root: Model, changed: Viewable, old_models=None) -> None:
@@ -285,8 +288,8 @@ class Design(param.Parameterized, ResourceComponent):
                 del props['stylesheets']
             else:
                 props['stylesheets'] = stylesheets
-
-        model.update(**props)
+        if props:
+            model.update(**props)
         if hasattr(viewable, '_synced_properties') and 'objects' in viewable._property_mapping:
             obj_key = viewable._property_mapping['objects']
             child_props = {

@@ -220,7 +220,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         tracked_models = set()
         for name, (obj, tags) in self._render_items.items():
             # Render root without pre-processing
-            model = obj.get_root(document, comm, preprocess=False)
+            with config.set(design=self.design):
+                model = obj.get_root(document, comm, preprocess=False)
             model.name = name
             model.tags = model.tags + [tag for tag in tags if tag not in model.tags]
             mref = model.ref['id']
