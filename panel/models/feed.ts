@@ -71,7 +71,7 @@ export class FeedView extends ColumnView {
     this.model.on_event(ScrollLatestEvent, (event: ScrollLatestEvent) => {
       this.scroll_to_latest()
       if (event.rerender) {
-	this._rendered = false
+        this._rendered = false
       }
     })
   }
@@ -120,7 +120,6 @@ export class FeedView extends ColumnView {
 
     return created
   }
-
 
   override render(): void {
     this._rendered = false
