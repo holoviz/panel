@@ -1,7 +1,27 @@
 import {Column, ColumnView} from "./column"
+import {ModelEvent, server_event} from "@bokehjs/core/bokeh_events"
 import type * as p from "@bokehjs/core/properties"
+import type {Attrs} from "@bokehjs/core/types"
 import {build_views} from "@bokehjs/core/build_views"
 import type {UIElementView} from "@bokehjs/models/ui/ui_element"
+import {ColumnView as BkColumnView} from "@bokehjs/models/layouts/column"
+
+@server_event("scroll_latest_event")
+export class ScrollLatestEvent extends ModelEvent {
+  constructor(readonly model: Feed) {
+    super()
+    this.origin = model
+  }
+
+  protected override get event_values(): Attrs {
+    return {model: this.origin}
+  }
+
+  static override from_values(values: object) {
+    const {model} = values as {model: Feed}
+    return new ScrollLatestEvent(model)
+  }
+}
 
 export class FeedView extends ColumnView {
   declare model: Feed
@@ -42,6 +62,13 @@ export class FeedView extends ColumnView {
     }, {
       root: this.el,
       threshold: 0.01,
+    })
+  }
+
+  override connect_signals(): void {
+    super.connect_signals()
+    this.model.on_event(ScrollLatestEvent, () => {
+      this.scroll_to_latest()
     })
   }
 
@@ -91,12 +118,16 @@ export class FeedView extends ColumnView {
   }
 
   override trigger_auto_scroll(): void {
-    const limit = this.model.auto_scroll_limit
-    const within_limit = this.distance_from_latest <= limit
-    if (limit == 0 || !within_limit) {
-      return
-    }
-    this.scroll_to_latest()
+  }
+
+  override after_render(): void {
+    BkColumnView.prototype.after_render.call(this)
+    requestAnimationFrame(() => {
+      if (this.model.scroll_position) {
+        this.scroll_to_position()
+      }
+      this.toggle_scroll_button()
+    })
   }
 }
 
