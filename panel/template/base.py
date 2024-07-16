@@ -209,7 +209,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         # Initialize fake root. This is needed to ensure preprocessors
         # which assume that all models are owned by a single root can
         # link objects across multiple roots in a template.
-        col = Column(design=self.design)
+        col = Column()
         preprocess_root = col.get_root(document, comm, preprocess=False)
         col._hooks.append(self._design._apply_hooks)
         ref = preprocess_root.ref['id']
