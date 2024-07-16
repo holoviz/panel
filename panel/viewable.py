@@ -299,7 +299,6 @@ class Layoutable(param.Parameterized):
         super().__init__(**params)
 
 
-
 class ServableMixin:
     """
     Mixin to define methods shared by objects which can served.
@@ -382,6 +381,9 @@ class ServableMixin:
                 assert template is not None
                 if template.title == template.param.title.default and title:
                     template.title = title
+                for obj in self.select():
+                    if not obj.design:
+                        obj.design = template.design
                 if area == 'main':
                     template.main.append(self)
                 elif area == 'sidebar':
