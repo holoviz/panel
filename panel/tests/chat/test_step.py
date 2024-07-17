@@ -93,3 +93,12 @@ class TestChatStep:
         assert step.status == "failed", "Status should be 'failed' after an exception"
         assert step.title == "Error: 'RuntimeError'", "Title should update to 'Error: 'RuntimeError'' on failure again"
         assert step.objects[0].object == "Testing\nSecond Testing", "Error message should be streamed to the message pane"
+
+    def test_stream_none(self):
+        step = ChatStep()
+        step.stream(None)
+        assert len(step) == 1
+        assert step[0].object == ""
+        step.stream("abc")
+        assert len(step) == 1
+        assert step[0].object == "abc"

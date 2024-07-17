@@ -210,7 +210,7 @@ class ChatStep(Card):
             original = getattr(self, f"{status}_title") or ""
             setattr(self, f"{status}_title", original + token)
 
-    def stream(self, token: str, replace: bool = False):
+    def stream(self, token: str | None, replace: bool = False):
         """
         Stream a token to the last available string-like object.
 
@@ -226,6 +226,9 @@ class ChatStep(Card):
         Viewable
             The updated message pane.
         """
+        if token is None:
+            token = ""
+
         if (
             len(self.objects) == 0 or not isinstance(self.objects[-1], HTMLBasePane) or isinstance(self.objects[-1], ImageBase)
         ):
