@@ -48,10 +48,10 @@ try:
         if _IN_PYSCRIPT_WORKER:
             from pyscript import window
             js.window = window
-        _IN_WORKER = True
+        _IN_WORKER = False
     except Exception:
         _IN_PYSCRIPT_WORKER = False
-        _IN_WORKER = False
+        _IN_WORKER = True
 except Exception:
     try:
         # Initial version of PyScript Next Worker support did not patch js.document
