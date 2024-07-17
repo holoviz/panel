@@ -34,6 +34,7 @@ else:
 
 _worker_id = os.environ.get("PYTEST_XDIST_WORKER", "0")
 HTTP_PORT = 50000 + int(re.sub(r"\D", "", _worker_id))
+RUNTIMES = ['pyodide', 'pyscript', 'pyodide-worker', 'pyscript-worker']
 
 button_app = """
 import panel as pn
@@ -174,7 +175,7 @@ def test_pyodide_test_error_handling_worker(http_serve, page):
     expect(page.locator('.pn-loading-msg')).to_have_text('RuntimeError: This app is broken', timeout=TIMEOUT)
 
 
-@pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
+@pytest.mark.parametrize('runtime', RUNTIMES)
 def test_pyodide_test_convert_button_app(http_serve, page, runtime):
     msgs = wait_for_app(http_serve, button_app, page, runtime)
 
@@ -187,7 +188,7 @@ def test_pyodide_test_convert_button_app(http_serve, page, runtime):
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 
-@pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
+@pytest.mark.parametrize('runtime', RUNTIMES)
 def test_pyodide_test_convert_template_button_app(http_serve, page, runtime):
     msgs = wait_for_app(http_serve, button_app, page, runtime)
 
@@ -200,7 +201,7 @@ def test_pyodide_test_convert_template_button_app(http_serve, page, runtime):
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 
-@pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
+@pytest.mark.parametrize('runtime', RUNTIMES)
 def test_pyodide_test_convert_slider_app(http_serve, page, runtime):
     msgs = wait_for_app(http_serve, slider_app, page, runtime)
 
@@ -214,7 +215,7 @@ def test_pyodide_test_convert_slider_app(http_serve, page, runtime):
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 
-@pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
+@pytest.mark.parametrize('runtime', RUNTIMES)
 def test_pyodide_test_convert_custom_config(http_serve, page, runtime):
     wait_for_app(http_serve, config_app, page, runtime)
 
