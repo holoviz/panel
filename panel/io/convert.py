@@ -351,7 +351,6 @@ def script_to_html(
             ).read_text(encoding='utf-8').replace(
                 f'../assets/{svg_name}', f'data:image/svg+xml;base64,{svg_b64}'
             )
-            print(loading_base)
             loading_style = f'<style type="text/css">\n{loading_base}\n</style>'
         else:
             loading_style = f'<link rel="stylesheet" href="{CDN_DIST}css/loading.css" type="text/css" />'
