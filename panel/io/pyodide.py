@@ -59,9 +59,10 @@ except Exception:
             from pyscript import document, window
             js.document = document
             js.window = window
+        _IN_WORKER = False
     except Exception:
         _IN_PYSCRIPT_WORKER = False
-    _IN_WORKER = True
+        _IN_WORKER = True
 
 # Ensure we don't try to load MPL WASM backend in worker
 if _IN_WORKER:
