@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import concurrent.futures
 import dataclasses
 import json
@@ -42,8 +43,9 @@ BOKEH_VERSION = base_version(bokeh.__version__)
 PY_VERSION = base_version(__version__)
 PYODIDE_VERSION = 'v0.25.0'
 PYSCRIPT_VERSION = '2024.2.1'
-PANEL_LOCAL_WHL = DIST_DIR / 'wheels' / f'panel-{__version__.replace("-dirty", "")}-py3-none-any.whl'
-BOKEH_LOCAL_WHL = DIST_DIR / 'wheels' / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl'
+WHL_PATH = DIST_DIR / 'wheels'
+PANEL_LOCAL_WHL = WHL_PATH / f'panel-{__version__.replace("-dirty", "")}-py3-none-any.whl'
+BOKEH_LOCAL_WHL = WHL_PATH / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PANEL_CDN_WHL = f'{CDN_DIST}wheels/panel-{PY_VERSION}-py3-none-any.whl'
 BOKEH_CDN_WHL = f'{CDN_ROOT}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PYODIDE_URL = f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/full/pyodide.js'
@@ -342,7 +344,14 @@ def script_to_html(
     if template in (BASE_TEMPLATE, FILE):
         # Add loading.css if not served from Panel template
         if inline:
-            loading_base = (DIST_DIR / "css" / "loading.css").read_text(encoding='utf-8')
+            svg_name = f'{config.loading_spinner}_spinner.svg'
+            svg_b64 = base64.b64encode((DIST_DIR / 'assets' / svg_name).read_bytes()).decode('utf-8')
+            loading_base = (
+                DIST_DIR / "css" / "loading.css"
+            ).read_text(encoding='utf-8').replace(
+                f'../assets/{svg_name}', f'data:image/svg+xml;base64,{svg_b64}'
+            )
+            print(loading_base)
             loading_style = f'<style type="text/css">\n{loading_base}\n</style>'
         else:
             loading_style = f'<link rel="stylesheet" href="{CDN_DIST}css/loading.css" type="text/css" />'
