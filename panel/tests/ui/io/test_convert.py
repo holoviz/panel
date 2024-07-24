@@ -185,8 +185,6 @@ def test_pyodide_test_convert_button_app(http_serve, page, runtime):
 
     expect(page.locator('pre:not([class])')).to_have_text('1')
 
-    import pdb
-    pdb.set_trace()
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 
