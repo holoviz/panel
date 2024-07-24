@@ -739,6 +739,8 @@ class ChatFeed(ListPanel):
                 )
                 for obj in step
             ]
+            if "context_exception" not in step_params:
+                step_params["context_exception"] = self.callback_exception
             step = ChatStep(**step_params)
         steps_column = None
         if append:
