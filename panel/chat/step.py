@@ -78,7 +78,7 @@ class ChatStep(Card):
         After, it cannot be set directly; instead use the *_title params.""")
 
     context_exception = param.ObjectSelector(
-        default="summary", objects=["raise", "summary", "verbose", "ignore"], doc="""
+        default="verbose", objects=["raise", "summary", "verbose", "ignore"], doc="""
         How to handle exceptions raised upon exiting the context manager.
         If "raise", the exception will be raised.
         If "summary", a summary will be sent to the chat feed.
