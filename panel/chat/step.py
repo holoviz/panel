@@ -47,8 +47,8 @@ class ChatStep(Card):
         default="raise", objects=["raise", "summary", "verbose", "ignore"], doc="""
         How to handle exceptions raised upon exiting the context manager.
         If "raise", the exception will be raised.
-        If "summary", a summary will be sent to the chat feed.
-        If "verbose", the full traceback will be sent to the chat feed.
+        If "summary", a summary will be sent to the chat step.
+        If "verbose", the full traceback will be sent to the chat step.
         If "ignore", the exception will be ignored.
         """)
 
