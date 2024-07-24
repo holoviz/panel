@@ -7,6 +7,7 @@ import type * as p from "@bokehjs/core/properties"
 import type {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 import {TableColumn} from "@bokehjs/models/widgets/tables"
+import type {UIElementView} from "@bokehjs/models/ui/ui_element"
 import type {Attrs} from "@bokehjs/core/types"
 
 import {debounce} from "debounce"
@@ -705,12 +706,20 @@ export class DataTabulatorView extends HTMLBoxView {
 
   renderChildren(): void {
     new Promise(async (resolve: any) => {
-      await this.build_child_views()
-      resolve(null)
-    }).then(() => {
+      const new_children = await this.build_child_views()
+      resolve(new_children)
+    }).then((new_children) => {
       for (const r of this.model.expanded) {
         const row = this.tabulator.getRow(r)
-        this._render_row(row, false)
+	const index = row._row?.data._index
+	if (this.model.children.get(index) == null) {
+	  continue
+	}
+	const model = this.model.children.get(index)
+	const view = model == null ? null : this._child_views.get(model)
+	if ((view != null) && (new_children as UIElementView[]).includes(view)) {
+          this._render_row(row, false)
+	}
       }
       this._update_children()
       if (this.tabulator.rowManager.renderer != null) {
