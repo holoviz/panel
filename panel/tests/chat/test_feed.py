@@ -586,6 +586,20 @@ class TestChatFeedCallback:
         assert chat_feed.objects[1].object == "Message"
         assert not chat_feed.objects[-1].show_activity_dot
 
+    @pytest.mark.parametrize("key", ["value", "object"])
+    def test_generator_dict(self, chat_feed, key):
+        def echo(contents, user, instance):
+            message = ""
+            for char in contents:
+                message += char
+                yield {key: message}
+
+        chat_feed.callback = echo
+        chat_feed.send("Message", respond=True)
+        wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "Message"
+        assert chat_feed.objects[-1].object == "Message"
+
     @pytest.mark.asyncio
     async def test_async_generator(self, chat_feed):
         async def async_gen(contents):
@@ -604,6 +618,25 @@ class TestChatFeedCallback:
         await async_wait_until(lambda: len(chat_feed.objects) == 2)
         assert chat_feed.objects[1].object == "Message"
         assert not chat_feed.objects[-1].show_activity_dot
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("key", ["value", "object"])
+    async def test_async_generator_dict(self, chat_feed, key):
+        async def async_gen(contents):
+            for char in contents:
+                yield char
+
+        async def echo(contents, user, instance):
+            message = ""
+            async for char in async_gen(contents):
+                message += char
+                yield {key: message}
+
+        chat_feed.callback = echo
+        chat_feed.send("Message", respond=True)
+        await async_wait_until(lambda: len(chat_feed.objects) == 2)
+        assert chat_feed.objects[1].object == "Message"
+        assert chat_feed.objects[-1].object == "Message"
 
     def test_placeholder_text_params(self, chat_feed):
         def echo(contents, user, instance):

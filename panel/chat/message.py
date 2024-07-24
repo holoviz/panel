@@ -756,6 +756,11 @@ class ChatMessage(PaneBase):
                 updates["user"] = user
             if avatar:
                 updates["avatar"] = avatar
+            if "value" in updates and "object" in updates:
+                raise ValueError(
+                    "Cannot set both 'value' and 'object' in the update dict."
+                )
+            updates["object"] = updates.pop("value", updates.get("object"))
         elif isinstance(value, ChatMessage):
             if user is not None or avatar is not None:
                 raise ValueError(
