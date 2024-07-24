@@ -77,6 +77,15 @@ class ChatStep(Card):
         The title of the chat step. Will redirect to default_title on init.
         After, it cannot be set directly; instead use the *_title params.""")
 
+    context_exception = param.ObjectSelector(
+        default="summary", objects=["raise", "summary", "verbose", "ignore"], doc="""
+        How to handle exceptions raised upon exiting the context manager.
+        If "raise", the exception will be raised.
+        If "summary", a summary will be sent to the chat feed.
+        If "verbose", the full traceback will be sent to the chat feed.
+        If "ignore", the exception will be ignored.
+        """)
+
     _rename: ClassVar[Mapping[str, str | None]] = {
         "collapsed_on_success": None,
         "default_badges": None,
@@ -123,14 +132,24 @@ class ChatStep(Card):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if exc_type is not None:
+        if exc_type is not None and self.context_exception != "ignore":
             if self.failed_title is None:
                 # convert to str to wrap repr in apostrophes
                 self._failed_title = f"Error: {exc_type.__name__!r}"
-                exc_msg = f"{exc_value}" if len(self.objects) == 0 else f"\n{exc_value}"
+                if self.context_exception == "summary":
+                    exc_msg = f"{exc_value}"
+                elif self.context_exception == "verbose":
+                    exc_msg = f"{exc_value}\n{traceback}"
+                else:
+                    exc_msg = None
+
+                if len(self.objects) == 1:
+                    exc_msg = f"\n{exc_msg}"
                 self.stream(exc_msg)
+
             self.status = "failed"
-            raise exc_value
+            if self.context_exception == "raise":
+                raise exc_value
         self.status = "success"
 
     @param.depends("status", "default_badges", watch=True)
