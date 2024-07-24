@@ -711,15 +711,15 @@ export class DataTabulatorView extends HTMLBoxView {
     }).then((new_children) => {
       for (const r of this.model.expanded) {
         const row = this.tabulator.getRow(r)
-	const index = row._row?.data._index
-	if (this.model.children.get(index) == null) {
-	  continue
-	}
-	const model = this.model.children.get(index)
-	const view = model == null ? null : this._child_views.get(model)
-	if ((view != null) && (new_children as UIElementView[]).includes(view)) {
+        const index = row._row?.data._index
+        if (this.model.children.get(index) == null) {
+          continue
+        }
+        const model = this.model.children.get(index)
+        const view = model == null ? null : this._child_views.get(model)
+        if ((view != null) && (new_children as UIElementView[]).includes(view)) {
           this._render_row(row, false)
-	}
+        }
       }
       this._update_children()
       if (this.tabulator.rowManager.renderer != null) {
