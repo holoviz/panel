@@ -44,7 +44,7 @@ class ChatStep(Card):
         Whether to collapse the card on completion.""")
 
     context_exception = param.ObjectSelector(
-        default="verbose", objects=["raise", "summary", "verbose", "ignore"], doc="""
+        default="raise", objects=["raise", "summary", "verbose", "ignore"], doc="""
         How to handle exceptions raised upon exiting the context manager.
         If "raise", the exception will be raised.
         If "summary", a summary will be sent to the chat feed.
