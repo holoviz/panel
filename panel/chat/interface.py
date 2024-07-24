@@ -681,6 +681,7 @@ class ChatInterface(ChatFeed):
         avatar: str | bytes | BytesIO | None = None,
         message: ChatMessage | None = None,
         replace: bool = False,
+        **message_params
     ) -> ChatMessage | None:
         """
         Streams a token and updates the provided message, if provided.
@@ -715,4 +716,4 @@ class ChatInterface(ChatFeed):
             # so only set to the default when not a ChatMessage
             user = user or self.user
             avatar = avatar or self.avatar
-        return super().stream(value, user=user, avatar=avatar, message=message, replace=replace)
+        return super().stream(value, user=user, avatar=avatar, message=message, replace=replace, **message_params)
