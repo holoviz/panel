@@ -705,6 +705,7 @@ class ChatFeed(ListPanel):
         append: bool = True,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
+        steps_column: Column | None = None,
         **step_params
     ) -> ChatStep:
         """
@@ -723,6 +724,9 @@ class ChatFeed(ListPanel):
         avatar : str | bytes | BytesIO | None
             The avatar to use; overrides the message's avatar if provided.
             Will default to the avatar parameter. Only applicable if steps is "new".
+        steps_column : Column | None
+            An existing Column of steps to stream to, if None is provided
+            it will default to the last Column of steps or create a new one.
         step_params : dict
             Parameters to pass to the ChatStep.
         """
@@ -740,7 +744,6 @@ class ChatFeed(ListPanel):
                 for obj in step
             ]
             step = ChatStep(**step_params)
-        steps_column = None
         if append:
             last = self._chat_log[-1] if self._chat_log else None
             if last is not None and isinstance(last.object, Column) and (
