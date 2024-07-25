@@ -290,6 +290,13 @@ class TestChatFeed:
         assert len(steps2[0].objects) == 1
         assert steps2[0].objects[0].object == "Object 2"
 
+    def test_add_step_inherits_callback_exception(self, chat_feed):
+        chat_feed.callback_exception = "verbose"
+        with chat_feed.add_step("Object", title="Title") as step:
+            assert step.callback_exception == "verbose"
+            raise ValueError("Testing")
+        assert "Traceback" in step.objects[0].object
+
     def test_stream_with_user_avatar(self, chat_feed):
         user = "Bob"
         avatar = "👨"
