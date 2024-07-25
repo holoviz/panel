@@ -53,10 +53,9 @@ try:
         if _IN_PYSCRIPT_WORKER:
             from pyscript import window
             js.window = window
-        _IN_WORKER = True
     except Exception:
         _IN_PYSCRIPT_WORKER = False
-        _IN_WORKER = False
+    _IN_WORKER = False
 except Exception:
     try:
         # Initial version of PyScript Next Worker support did not patch js.document
@@ -65,9 +64,10 @@ except Exception:
             from pyscript import document, window
             js.document = document
             js.window = window
+        _IN_WORKER = False
     except Exception:
         _IN_PYSCRIPT_WORKER = False
-    _IN_WORKER = True
+        _IN_WORKER = True
 
 # Ensure we don't try to load MPL WASM backend in worker
 if _IN_WORKER:
