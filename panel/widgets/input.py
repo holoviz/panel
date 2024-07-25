@@ -8,7 +8,7 @@ import ast
 import json
 
 from base64 import b64decode
-from datetime import date, datetime
+from datetime import date, datetime, time as dt_time
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Iterable, Mapping, Optional,
 )
@@ -22,7 +22,7 @@ from bokeh.models.widgets import (
     DatePicker as _BkDatePicker, DateRangePicker as _BkDateRangePicker,
     Div as _BkDiv, FileInput as _BkFileInput, NumericInput as _BkNumericInput,
     PasswordInput as _BkPasswordInput, Spinner as _BkSpinner,
-    Switch as _BkSwitch,
+    Switch as _BkSwitch, TimePicker as _BkTimePicker,
 )
 from bokeh.models.widgets.inputs import ClearInput
 from pyviz_comms import JupyterComm
@@ -791,6 +791,52 @@ class DatetimeRangePicker(_DatetimePickerBase):
             value = ""
 
         return value
+
+
+class TimePicker(Widget):
+    """
+    The `TimePicker` allows selecting a `time` value using a text box
+    and a time-picking utility.
+
+    Reference: https://panel.holoviz.org/reference/widgets/TimePicker.html
+
+    :Example:
+
+    >>> TimePicker(
+    ...     value="12:59:31", start="09:00:00", end="18:00:00", name="Time"
+    ... )
+    """
+
+    value = param.ClassSelector(default=None, class_=(dt_time, str), doc="""
+        The current value""")
+
+    start = param.ClassSelector(default=None, class_=(dt_time, str), doc="""
+        Inclusive lower bound of the allowed time selection""")
+
+    end = param.ClassSelector(default=None, class_=(dt_time, str), doc="""
+        Inclusive upper bound of the allowed time selection""")
+
+    format = param.String(default='H:i', doc="""
+        Formatting specification for the display of the picked date.
+
+        +---+------------------------------------+------------+
+        | H | Hours (24 hours)                   | 00 to 23   |
+        | h | Hours                              | 1 to 12    |
+        | G | Hours, 2 digits with leading zeros | 1 to 12    |
+        | i | Minutes                            | 00 to 59   |
+        | S | Seconds, 2 digits                  | 00 to 59   |
+        | s | Seconds                            | 0, 1 to 59 |
+        | K | AM/PM                              | AM or PM   |
+        +---+------------------------------------+------------+
+
+        See also https://flatpickr.js.org/formatting/#date-formatting-tokens.
+    """)
+
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'start': 'min_time', 'end': 'max_time', 'format': 'time_format'
+    }
+
+    _widget_type: ClassVar[type[Model]] = _BkTimePicker
 
 
 class ColorPicker(Widget):

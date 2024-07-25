@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, time as dt_time
 from pathlib import Path
 
 import numpy as np
@@ -10,7 +10,7 @@ from panel import config
 from panel.widgets import (
     ArrayInput, Checkbox, DatePicker, DateRangePicker, DatetimeInput,
     DatetimePicker, DatetimeRangeInput, DatetimeRangePicker, FileInput,
-    FloatInput, IntInput, LiteralInput, StaticText, TextInput,
+    FloatInput, IntInput, LiteralInput, StaticText, TextInput, TimePicker,
 )
 
 
@@ -183,6 +183,22 @@ def test_datetime_range_picker(document, comm):
     # Check end value
     with pytest.raises(ValueError):
         datetime_range_picker._process_events({'value': '2018-09-10 00:00:01'})
+
+
+def test_time_picker(document, comm):
+    time_picker = TimePicker(name='Time Picker', value=dt_time(hour=18), format='H:i K')
+    assert time_picker.value == dt_time(hour=18)
+    assert time_picker.format == 'H:i K'
+    assert time_picker.start is None
+    assert time_picker.end is None
+
+
+def test_time_picker_str(document, comm):
+    time_picker = TimePicker(name='Time Picker', value="08:28", start='00:00', end='12:00')
+    assert time_picker.value == "08:28"
+    assert time_picker.format == 'H:i'
+    assert time_picker.start == "00:00"
+    assert time_picker.end == "12:00"
 
 
 def test_file_input(document, comm):
