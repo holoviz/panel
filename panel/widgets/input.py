@@ -793,7 +793,41 @@ class DatetimeRangePicker(_DatetimePickerBase):
         return value
 
 
-class TimePicker(Widget):
+class _TimeCommon(Widget):
+
+    hour_increment = param.Integer(default=1, doc="""
+    Defines the granularity of hour value increments in the UI.
+    """)
+
+    minute_increment = param.Integer(default=1, doc="""
+    Defines the granularity of minute value increments in the UI.
+    """)
+
+    second_increment = param.Integer(default=1, doc="""
+    Defines the granularity of second value increments in the UI.
+    """)
+
+    seconds = param.Boolean(default=False, doc="""
+    Allows to select seconds. By default only hours and minutes are
+    selectable, and AM/PM depending on the `clock` option.
+    """)
+
+    military_time = param.Boolean(default=True, doc="""
+        Whether to display time in 24 hour format.
+    """)
+
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'military_time': 'clock'
+    }
+
+    __abstract = True
+
+    def _process_param_change(self, msg):
+        msg["clock"] = "24h" if msg.pop('military_time', None) else "12h"
+        return super()._process_param_change(msg)
+
+
+class TimePicker(_TimeCommon):
     """
     The `TimePicker` allows selecting a `time` value using a text box
     and a time-picking utility.
