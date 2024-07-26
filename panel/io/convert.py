@@ -41,8 +41,8 @@ WORKER_HANDLER_TEMPLATE  = _pn_env.get_template('pyodide_handler.js')
 PANEL_ROOT = pathlib.Path(__file__).parent.parent
 BOKEH_VERSION = base_version(bokeh.__version__)
 PY_VERSION = base_version(__version__)
-PYODIDE_VERSION = 'v0.25.0'
-PYSCRIPT_VERSION = '2024.2.1'
+PYODIDE_VERSION = 'v0.26.1'
+PYSCRIPT_VERSION = '2024.7.1'
 WHL_PATH = DIST_DIR / 'wheels'
 PANEL_LOCAL_WHL = WHL_PATH / f'panel-{__version__.replace("-dirty", "")}-py3-none-any.whl'
 BOKEH_LOCAL_WHL = WHL_PATH / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl'
@@ -290,12 +290,12 @@ def script_to_html(
             css_resources = [PYSCRIPT_CSS, PYSCRIPT_CSS_OVERRIDES]
         elif not css_resources:
             css_resources = []
-        pyconfig = json.dumps({'packages': reqs, 'plugins': ["!error"]})
+        pyconfig = json.dumps({'packages': reqs})
         if 'worker' in runtime:
             plot_script = f'<script type="py" async worker config=\'{pyconfig}\' src="{app_name}.py"></script>'
             web_worker = code
         else:
-            plot_script = f'<py-script config=\'{pyconfig}\'>{code}</py-script>'
+            plot_script = f'<script type=\'py\' config=\'{pyconfig}\'>{code}</script>'
     else:
         if css_resources == 'auto':
             css_resources = []
