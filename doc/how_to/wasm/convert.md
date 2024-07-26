@@ -27,6 +27,7 @@ The ``panel convert`` command has the following options:
 
 This example will demonstrate how to *convert* and *serve* a basic data app locally.
 
+- install the dependencies `pip install panel scikit-learn xgboost`.
 - Create a `script.py` file with the following content
 
 ```python

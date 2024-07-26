@@ -41,7 +41,7 @@ WORKER_HANDLER_TEMPLATE  = _pn_env.get_template('pyodide_handler.js')
 PANEL_ROOT = pathlib.Path(__file__).parent.parent
 BOKEH_VERSION = base_version(bokeh.__version__)
 PY_VERSION = base_version(__version__)
-PYODIDE_VERSION = 'v0.26.1'
+PYODIDE_VERSION = 'v0.25.0'
 PYSCRIPT_VERSION = '2024.7.1'
 WHL_PATH = DIST_DIR / 'wheels'
 PANEL_LOCAL_WHL = WHL_PATH / f'panel-{__version__.replace("-dirty", "")}-py3-none-any.whl'
@@ -272,7 +272,6 @@ def script_to_html(
     reqs = base_reqs + [
         req for req in requirements if req not in ('panel', 'bokeh')
     ]
-    print(reqs)
     for name, min_version in MINIMUM_VERSIONS.items():
         if any(name in req for req in reqs):
             reqs = [f'{name}>={min_version}' if name in req else req for req in reqs]
