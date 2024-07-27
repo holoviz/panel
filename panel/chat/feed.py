@@ -764,6 +764,7 @@ class ChatFeed(ListPanel):
             ) and (user is None or last.user == user):
                 steps_layout = last.object
         if steps_layout is None:
+            layout_params = layout_params or {}
             input_layout_params = dict(
                 min_width=100,
                 styles={
@@ -780,7 +781,6 @@ class ChatFeed(ListPanel):
                 title = layout_params.pop("title", None)
                 input_layout_params["header"] = HTML(
                     title or "🪜 Steps",
-                    margin=0,
                     css_classes=["card-title"],
                     stylesheets=[f"{CDN_DIST}css/chat_steps.css"]
                 )
