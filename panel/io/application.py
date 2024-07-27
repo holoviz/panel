@@ -136,7 +136,7 @@ def build_single_handler_application(path, argv=None):
     else:
         raise ValueError(f"Path for Bokeh server application does not exist: {path}")
 
-    if handler.failed:
+    if handler.failed and not config.autoreload:
         raise RuntimeError(f"Error loading {path}:\n\n{handler.error}\n{handler.error_detail} ")
 
     application = Application(handler)
