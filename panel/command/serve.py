@@ -3,6 +3,7 @@ Subclasses the bokeh serve commandline handler to extend it in various
 ways.
 """
 
+import argparse
 import ast
 import base64
 import logging
@@ -279,10 +280,14 @@ class Serve(_BkServe):
                 applications['/'] = applications[f'/{index}']
         return super().customize_applications(args, applications)
 
-    def warm_applications(self, applications, reuse_sessions):
+    def warm_applications(self, applications, reuse_sessions, error=True):
         from ..io.session import generate_session
         for path, app in applications.items():
-            session = generate_session(app)
+            try:
+                session = generate_session(app)
+            except Exception as e:
+                if error:
+                    raise e
             with set_curdoc(session.document):
                 if config.session_key_func:
                     reuse_sessions = False
@@ -345,7 +350,6 @@ class Serve(_BkServe):
         elif args.rest_provider is not None:
             raise ValueError(f"rest-provider {args.rest_provider!r} not recognized.")
 
-        config.autoreload = args.autoreload
         config.global_loading_spinner = args.global_loading_spinner
         config.reuse_sessions = args.reuse_sessions
 
@@ -371,7 +375,7 @@ class Serve(_BkServe):
             if args.autoreload:
                 with record_modules(list(applications.values())):
                     self.warm_applications(
-                        applications, args.reuse_sessions
+                        applications, args.reuse_sessions, error=False
                     )
             else:
                 self.warm_applications(applications, args.reuse_sessions)
@@ -638,7 +642,10 @@ class Serve(_BkServe):
 
         return kwargs
 
-    def invoke(self, args):
+    def invoke(self, args: argparse.Namespace):
+        # Autoreload must be enabled before the application(s) are executed
+        # to avoid erroring out
+        config.autoreload = args.autoreload
         # Empty layout are valid and the Bokeh warning is silenced as usually
         # not relevant to Panel users.
         silence(EMPTY_LAYOUT, True)
