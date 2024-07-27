@@ -89,7 +89,7 @@ A basic, single file pyscript example looks like
   </head>
   <body>
     <div id="simple_app"></div>
-    <script type="py" config='{"packages": ["https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/bokeh-{{BOKEH_VERSION}}-py3-none-any.whl", "https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/panel-{{PANEL_VERSION}}-py3-none-any.whl"]}'>
+    <script type="py" config='{"packages": ["https://cdn.holoviz.org/panel/wheels/bokeh-{{BOKEH_VERSION}}-py3-none-any.whl", "https://cdn.holoviz.org/panel/wheels/panel-{{PANEL_VERSION}}-py3-none-any.whl"]}'>
       import panel as pn
 
       pn.extension(sizing_mode="stretch_width")
