@@ -707,7 +707,7 @@ class ChatFeed(ListPanel):
         avatar: str | bytes | BytesIO | None = None,
         steps_layout: Column | Card | None = None,
         default_layout: Literal["column", "card"] = "card",
-        layout_kwargs: dict | None = None,
+        layout_params: dict | None = None,
         **step_params
     ) -> ChatStep:
         """
@@ -733,7 +733,7 @@ class ChatFeed(ListPanel):
             The default layout to use if steps_layout is None.
             'column' will create a new Column layout.
             'card' will create a new Card layout.
-        layout_kwargs : dict | None
+        layout_params : dict | None
             Additional parameters to pass to the layout.
         step_params : dict
             Parameters to pass to the ChatStep.
@@ -764,7 +764,7 @@ class ChatFeed(ListPanel):
             ) and (user is None or last.user == user):
                 steps_layout = last.object
         if steps_layout is None:
-            input_layout_kwargs = dict(
+            input_layout_params = dict(
                 min_width=100,
                 styles={
                     "margin-inline": "10px",
@@ -776,9 +776,10 @@ class ChatFeed(ListPanel):
                 layout = Column
             elif default_layout == "card":
                 layout = Card
-                input_layout_kwargs["header_css_classes"] = ["card-header"]
-                input_layout_kwargs["header"] = HTML(
-                    "🪜 Steps",
+                input_layout_params["header_css_classes"] = ["card-header"]
+                title = layout_params.pop("title", None)
+                input_layout_params["header"] = HTML(
+                    title or "🪜 Steps",
                     margin=0,
                     css_classes=["card-title"],
                     stylesheets=[f"{CDN_DIST}css/chat_steps.css"]
@@ -788,9 +789,9 @@ class ChatFeed(ListPanel):
                     f"Invalid default_layout {default_layout!r}; "
                     f"expected 'column' or 'card'."
                 )
-            if layout_kwargs:
-                input_layout_kwargs.update(layout_kwargs)
-            steps_layout = layout(step, **input_layout_kwargs)
+            if layout_params:
+                input_layout_params.update(layout_params)
+            steps_layout = layout(step, **input_layout_params)
             self.stream(steps_layout, user=user, avatar=avatar)
         else:
             steps_layout.append(step)
