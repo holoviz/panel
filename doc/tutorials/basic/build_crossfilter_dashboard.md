@@ -80,7 +80,7 @@ def get_plots():
         active_tools=["box_select"],
     )
 
-    return (plot_by_year + plot_by_manufacturer).opts(shared_axes=False).cols(1)
+    return (plot_by_year + plot_by_manufacturer).cols(1)
 
 crossfilter_plots = hv.link_selections(get_plots()).opts(shared_axes=False)
 
@@ -198,7 +198,7 @@ def get_plots():
         active_tools=["box_select"],
     )
 
-    return (plot_by_year + plot_by_manufacturer).opts(shared_axes=False).cols(1)
+    return (plot_by_year + plot_by_manufacturer).cols(1)
 ```
 
 The `hv.Bars` method creates bar charts, which are then customized with options (`opts`) for responsiveness, rotation of the x-axis labels, formatting of the y-axis values, and color styling.
