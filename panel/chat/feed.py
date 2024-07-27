@@ -26,7 +26,7 @@ from ..layout import Column, Feed, ListPanel
 from ..layout.card import Card
 from ..layout.spacer import VSpacer
 from ..pane.image import SVG, ImageBase
-from ..pane.markup import Markdown
+from ..pane.markup import HTML, Markdown
 from ..util import to_async_gen
 from ..viewable import Children
 from .icon import ChatReactionIcons
@@ -705,7 +705,9 @@ class ChatFeed(ListPanel):
         append: bool = True,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
-        steps_column: Column | None = None,
+        steps_layout: Column | Card | None = None,
+        default_layout: Literal["column", "card"] = "card",
+        layout_kwargs: dict | None = None,
         **step_params
     ) -> ChatStep:
         """
@@ -724,9 +726,15 @@ class ChatFeed(ListPanel):
         avatar : str | bytes | BytesIO | None
             The avatar to use; overrides the message's avatar if provided.
             Will default to the avatar parameter. Only applicable if steps is "new".
-        steps_column : Column | None
+        steps_layout : Column | None
             An existing Column of steps to stream to, if None is provided
             it will default to the last Column of steps or create a new one.
+        default_layout : str
+            The default layout to use if steps_layout is None.
+            'column' will create a new Column layout.
+            'card' will create a new Card layout.
+        layout_kwargs : dict | None
+            Additional parameters to pass to the layout.
         step_params : dict
             Parameters to pass to the ChatStep.
         """
@@ -735,6 +743,8 @@ class ChatFeed(ListPanel):
                 step = []
             elif not isinstance(step, list):
                 step = [step]
+            if "margin" not in step_params:
+                step_params["margin"] = (5, 1)
             step_params["objects"] = [
                 (
                     Markdown(obj, css_classes=["step-message"])
@@ -752,17 +762,38 @@ class ChatFeed(ListPanel):
                     all(isinstance(o, ChatStep) for o in last.object) or
                     last.object.css_classes == 'chat-steps'
             ) and (user is None or last.user == user):
-                steps_column = last.object
-        if steps_column is None:
-            steps_column = Column(
-                step, css_classes=["chat-steps"], styles={
-                    'max-width': 'calc(100% - 30px)',
-                    'padding-block': '0px'
-                }
+                steps_layout = last.object
+        if steps_layout is None:
+            input_layout_kwargs = dict(
+                min_width=100,
+                styles={
+                    "margin-inline": "10px",
+                },
+                css_classes=["chat-steps"],
+                stylesheets=[f"{CDN_DIST}css/chat_steps.css"]
             )
-            self.stream(steps_column, user=user, avatar=avatar)
+            if default_layout == "column":
+                layout = Column
+            elif default_layout == "card":
+                layout = Card
+                input_layout_kwargs["header_css_classes"] = ["card-header"]
+                input_layout_kwargs["header"] = HTML(
+                    "🪜 Steps",
+                    margin=0,
+                    css_classes=["card-title"],
+                    stylesheets=[f"{CDN_DIST}css/chat_steps.css"]
+                )
+            else:
+                raise ValueError(
+                    f"Invalid default_layout {default_layout!r}; "
+                    f"expected 'column' or 'card'."
+                )
+            if layout_kwargs:
+                input_layout_kwargs.update(layout_kwargs)
+            steps_layout = layout(step, **input_layout_kwargs)
+            self.stream(steps_layout, user=user, avatar=avatar)
         else:
-            steps_column.append(step)
+            steps_layout.append(step)
             self._chat_log.scroll_to_latest()
         return step
 
