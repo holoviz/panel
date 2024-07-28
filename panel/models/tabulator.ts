@@ -590,7 +590,7 @@ export class DataTabulatorView extends HTMLBoxView {
       }
       if (this.model.pagination !== "remote") {
         this._updating_sort = true
-        this.model.sorters = sorts
+        this.model.sorters = sorts.reverse()
         this._updating_sort = false
       }
     })
