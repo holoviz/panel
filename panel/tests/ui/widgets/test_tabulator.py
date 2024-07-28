@@ -3019,6 +3019,23 @@ def test_tabulator_selection_header_filter_changed(page):
     expected_selected = df.iloc[selection, :]
     assert widget.selected_dataframe.equals(expected_selected)
 
+def test_tabulator_sorter_not_reversed_after_init(page):
+    df = pd.DataFrame({
+        'col1': [1, 2, 3, 4],
+        'col2': [1, 4, 3, 2],
+    })
+
+    sorters = [
+        {'field': 'col1', 'dir': 'desc'},
+        {'field': 'col2', 'dir': 'asc'}
+    ]
+    table = Tabulator(df, sorters=sorters)
+
+    serve_component(page, table)
+
+    expect(page.locator('.pnx-tabulator.tabulator')).to_have_count(1)
+    page.wait_for_timeout(300)
+    assert table.sorters == sorters
 
 def test_tabulator_loading_no_horizontal_rescroll(page, df_mixed):
     widths = 100
