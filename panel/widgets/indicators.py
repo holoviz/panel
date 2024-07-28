@@ -517,7 +517,7 @@ class Gauge(ValueIndicator):
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         vmin, vmax = msg.pop('bounds', self.bounds)
-        msg['data'] = {
+        msg['data'] = data = {
             'tooltip': {
                 'formatter': msg.pop('tooltip_format', self.tooltip_format)
             },
@@ -543,6 +543,13 @@ class Gauge(ValueIndicator):
                 }
             }]
         }
+        sm = self.sizing_mode
+        if 'stretch' in sm:
+            data['responsive'] = True
+            if 'width' in msg and ('both' in sm or 'width' in sm):
+                del msg['width']
+            if 'height' in msg  and ('both' in sm or 'height' in sm):
+                del msg['height']
         colors = msg.pop('colors', self.colors)
         if colors:
             msg['data']['series'][0]['axisLine']['lineStyle']['color'] = colors
