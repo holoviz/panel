@@ -84,8 +84,8 @@ def class_selector_to_model(p, kwargs):
         return bp.Any(**kwargs)
 
 def bytes_param(p, kwargs):
-    kwargs.pop('default')
-    return bp.Bytes(**kwargs)
+    kwargs['default'] = None
+    return bp.Nullable(bp.Bytes, **kwargs)
 
 PARAM_MAPPING = {
     pm.Array: lambda p, kwargs: bp.Array(bp.Any, **kwargs),
