@@ -2399,6 +2399,8 @@ def test_tabulator_sorters_set_after_init(page, df_mixed):
 
     serve_component(page, widget)
 
+    expect(page.locator('.pnx-tabulator.tabulator')).to_have_count(1)
+
     widget.sorters = [{'field': 'int', 'dir': 'desc'}]
 
     sheader = page.locator('[aria-sort="descending"]:visible')
