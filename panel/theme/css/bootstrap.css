@@ -149,6 +149,14 @@ button.accordion-header {
   border-radius: 0;
 }
 
+.card-button {
+  line-height: 0.9em;
+}
+
+.card-title {
+  margin-bottom: 5px;
+}
+
 :host(.card-title) h1 {
   font-size: 2em;
 }
