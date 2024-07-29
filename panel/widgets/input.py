@@ -460,8 +460,9 @@ class StaticText(Widget):
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         if 'text' in msg:
-            value = msg.pop('text')
-            text = escape("" if value is None else str(value))
+            text = msg.pop('text')
+            if not isinstance(text, str):
+                text = escape("" if text is None else str(text))
             partial = self._format.replace('{value}', '').format(title=self.name)
             if self.name:
                 text = self._format.format(title=self.name, value=text.replace(partial, ''))
