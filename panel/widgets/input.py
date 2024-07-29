@@ -445,6 +445,10 @@ class StaticText(Widget):
 
     _widget_type: ClassVar[type[Model]] = _BkDiv
 
+    @property
+    def _linked_properties(self) -> tuple[str]:
+        return ()
+
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         if 'text' in msg:
