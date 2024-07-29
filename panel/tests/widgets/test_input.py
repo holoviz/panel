@@ -228,7 +228,6 @@ def test_literal_input(document, comm):
     with pytest.raises(ValueError):
         literal.value = []
 
-
 def test_static_text(document, comm):
 
     text = StaticText(value='ABC', name='Text:')
@@ -243,6 +242,31 @@ def test_static_text(document, comm):
 
     text.value = '<b>Text:</b>: ABC'
     assert widget.text == '<b>Text:</b>: ABC'
+
+def test_static_text_no_sync(document, comm):
+    text = StaticText(value='ABC', name='Text:')
+
+    widget = text.get_root(document, comm=comm)
+
+    widget.text = 'CBA'
+    assert text.value == 'ABC'
+
+def test_static_text_empty(document, comm):
+
+    text = StaticText(name='Text:')
+
+    widget = text.get_root(document, comm=comm)
+
+    assert widget.text == '<b>Text:</b>: '
+
+def test_static_text_repr(document, comm):
+
+    text = StaticText(value=StaticText, name='Text:')
+
+    widget = text.get_root(document, comm=comm)
+
+    assert widget.text == '<b>Text:</b>: &lt;class &#x27;panel.widgets.input.StaticText&#x27;&gt;'
+
 
 
 def test_text_input(document, comm):
