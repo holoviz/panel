@@ -337,6 +337,13 @@ class ChatFeed(ListPanel):
             **self.placeholder_params
         )
 
+    @param.depends("loading", watch=True, on_init=True)
+    def _show_placeholder(self):
+        if self.loading:
+            self.append(self._placeholder)
+        else:
+            self._replace_placeholder(None)
+
     def _replace_placeholder(self, message: ChatMessage | None = None) -> None:
         """
         Replace the placeholder from the chat log with the message
@@ -348,6 +355,8 @@ class ChatFeed(ListPanel):
                 self.append(message)
 
             try:
+                if self.loading:
+                    return
                 self.remove(self._placeholder)
             except ValueError:
                 pass
