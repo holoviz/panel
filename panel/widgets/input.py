@@ -33,7 +33,9 @@ from ..models import (
     DatetimePicker as _bkDatetimePicker, TextAreaInput as _bkTextAreaInput,
     TextInput as _BkTextInput,
 )
-from ..util import lazy_load, param_reprs, try_datetime64_to_datetime
+from ..util import (
+    escape, lazy_load, param_reprs, try_datetime64_to_datetime,
+)
 from .base import CompositeWidget, Widget
 
 if TYPE_CHECKING:
@@ -429,7 +431,7 @@ class StaticText(Widget):
     """
 
     value = param.Parameter(default=None, doc="""
-        The current value""")
+        The current value to be displayed.""")
 
     _format: ClassVar[str] = '<b>{title}</b>: {value}'
 
@@ -449,10 +451,17 @@ class StaticText(Widget):
     def _linked_properties(self) -> tuple[str]:
         return ()
 
+    def _init_params(self) -> dict[str, Any]:
+        return {
+            k: v for k, v in self.param.values().items()
+            if k in self._synced_params and (v is not None or k == 'value')
+        }
+
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         if 'text' in msg:
-            text = str(msg.pop('text'))
+            value = msg.pop('text')
+            text = escape("" if value is None else str(value))
             partial = self._format.replace('{value}', '').format(title=self.name)
             if self.name:
                 text = self._format.format(title=self.name, value=text.replace(partial, ''))
