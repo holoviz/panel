@@ -2,7 +2,7 @@
 
 ## Version 1.4.5
 
-Date: 2024-07-25
+Date: 2024-07-29
 
 This release addresses includes a wide range of bug fixes and some minor enhancements primarily aimed at performance. Many thanks to @CodeRambling as a returning contributor, and the core developer team including @Hoxbro, @MarcSkovMadsen, @maximlt and @philippjfr for contributing to this release.
 
@@ -10,7 +10,8 @@ This release addresses includes a wide range of bug fixes and some minor enhance
 
 - Ensure `Design` is applied globally when using global templates ([#6992](https://github.com/holoviz/panel/pull/6992))
 - Do not re-render all children when expanding Tabulator row ([#7008](https://github.com/holoviz/panel/pull/7008))
-- Allow providing `DataFrame` as part of vega(-lite) spec ([#6979](https://github.com/holoviz/panel/pull/6979))
+- Allow providing `DataFrame` as part of vega(-lite) spec ([#6979](https://github.com/holoviz/panel/pull/6979), [#7024](https://github.com/holoviz/panel/pull/7024))
+- Make autoreload robust to syntax errors and empty apps ([#7028](https://github.com/holoviz/panel/pull/7028))
 
 ### Bug fixes
 
@@ -25,6 +26,11 @@ This release addresses includes a wide range of bug fixes and some minor enhance
 - Fix `FileDownload` icon alignment ([#6981](https://github.com/holoviz/panel/pull/6981))
 - Ensure redraw does not error out if `Tabulator` is undefined ([#6930](https://github.com/holoviz/panel/pull/6930))
 - Guard auth against user being removed ([#6908](https://github.com/holoviz/panel/pull/6908))
+- Fix empty `Vega` pane with `sizing_mode` exception ([#7020](https://github.com/holoviz/panel/pull/7020))
+- Ensure `Gauge` is responsively sized ([#7034](https://github.com/holoviz/panel/pull/7034))
+- Ensure `Tabulator` sorters are correctly synced ([#7036](https://github.com/holoviz/panel/pull/7036))
+- Improve font-size and alignment in Bootstrap Card header ([#7037](https://github.com/holoviz/panel/pull/7037))
+- Do not sync `StaticText.value` with the frontend ([#7038](https://github.com/holoviz/panel/pull/7038))
 
 ### Documentation
 
@@ -33,6 +39,8 @@ This release addresses includes a wide range of bug fixes and some minor enhance
 - Improve `Param` pane docstring ([#6989](https://github.com/holoviz/panel/pull/6989))
 - Fix streamz reference notebook ([#6980](https://github.com/holoviz/panel/pull/6980))
 - Document that `Image` pane is a wrapper around PNG, JPEG, PDF etc. panes ([#7004](https://github.com/holoviz/panel/pull/7004))
+- Fix missing scrollbar in Fast template docs ([#7026](https://github.com/holoviz/panel/pull/7026)
+- Improve server video tutorial ([#7027](https://github.com/holoviz/panel/pull/#7027))
 
 ## Version 1.4.4
 
