@@ -217,7 +217,7 @@ c.s = 'new string'
 
 ## Panel and Param
 
-Panel knows how to map *Parameters* to widgets, and so it can easily generate a set of widgets from *Parameterized* class that control its *Parameters* and trigger any dependent callbacks:
+Panel knows how to map *Parameters* to widgets, and so it can easily generate a set of widgets from a *Parameterized* class that control its *Parameters* and trigger any dependent callbacks:
 
 ```{pyodide}
 class D(param.Parameterized):

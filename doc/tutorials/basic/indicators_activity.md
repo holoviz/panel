@@ -210,7 +210,7 @@ pn.Column(button, plot, pn.Row(plot2, plot3), sizing_mode="stretch_width").serva
 
 ## Loading Indicators
 
-Panel provides a selection of loading indicators, such as the [`LoadingSpinner`](../../reference/indicators/LoadingSpinner.ipynb) and [`Progress`](../../reference/indicators/Progress.ipynb) indicator.
+Panel provides a selection of loading indicators, such as the [`LoadingSpinner`](../../reference/indicators/LoadingSpinner.md) and [`Progress`](../../reference/indicators/Progress.md) indicator.
 
 Run the code below
 
@@ -395,7 +395,7 @@ Try changing `pn.state.notifications.info` to `pn.state.notifications.warning`. 
 
 Try changing `duration=3000` to `duration=0`. Then click the `Button`. What happens?
 
-See the [Notifications](../../reference/global/Notifications.ipynb) reference guide for more detail.
+See the [Notifications](../../reference/global/Notifications.md) reference guide for more detail.
 
 ## Recap
 
@@ -417,4 +417,4 @@ We've explored how to show activity with indicators, much like the rotating blad
 
 ### Reference Guides
 
-- [Notifications](../../reference/global/Notifications.ipynb)
+- [Notifications](../../reference/global/Notifications.md)

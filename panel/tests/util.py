@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import http.server
 import os
 import platform
 import re
@@ -8,6 +9,7 @@ import sys
 import time
 import uuid
 
+from functools import partial
 from queue import Empty, Queue
 from threading import Thread
 
@@ -394,3 +396,63 @@ def write_file(content, file_obj):
     file_obj.flush()
     os.fsync(file_obj)
     file_obj.seek(0)
+
+
+def http_serve_directory(directory=".", port=0):
+    """Spawns an http.server.HTTPServer in a separate thread on the given port.
+    The server serves files from the given *directory*. The port listening on
+    will automatically be picked by the operating system to avoid race
+    conditions when trying to bind to an open port that turns out not to be
+    free after all. The hostname is always "localhost".
+
+    Arguments
+    ----------
+    directory : str, optional
+        The directory to server files from. Defaults to the current directory.
+    port : int, optional
+        Port to serve on, defaults to zero which assigns a random port.
+
+    Returns
+    -------
+    http.server.HTTPServer
+        The HTTP server which is serving files from a separate thread.
+        It is not super necessary but you might want to call shutdown() on the
+        returned HTTP server object. This will stop the infinite request loop
+        running in the thread which in turn will then exit. The reason why this
+        is only optional is that the thread in which the server runs is a daemon
+        thread which will be terminated when the main thread ends.
+        By calling shutdown() you'll get a cleaner shutdown because the socket
+        is properly closed.
+    str
+        The address of the server as a string, e.g. "http://localhost:1234".
+    """
+    hostname = "localhost"
+    directory = os.path.abspath(directory)
+    handler = partial(_SimpleRequestHandler, directory=directory)
+    httpd = http.server.HTTPServer((hostname, port), handler, False)
+    # Block only for 0.5 seconds max
+    httpd.timeout = 0.5
+    httpd.server_bind()
+
+    address = "http://%s:%d" % (httpd.server_name, httpd.server_port)
+
+    httpd.server_activate()
+
+    def serve_forever(httpd):
+        with httpd:
+            httpd.serve_forever()
+
+    thread = Thread(target=serve_forever, args=(httpd, ))
+    thread.setDaemon(True)
+    thread.start()
+
+    return httpd, address
+
+class _SimpleRequestHandler(http.server.SimpleHTTPRequestHandler):
+    """Same as SimpleHTTPRequestHandler with adjusted logging."""
+
+    def end_headers(self):
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Cross-Origin-Opener-Policy', 'same-origin')
+        self.send_header('Cross-Origin-Embedder-Policy', 'credentialless')
+        http.server.SimpleHTTPRequestHandler.end_headers(self)

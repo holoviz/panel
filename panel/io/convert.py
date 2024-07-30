@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import concurrent.futures
 import dataclasses
 import json
@@ -42,8 +43,9 @@ BOKEH_VERSION = base_version(bokeh.__version__)
 PY_VERSION = base_version(__version__)
 PYODIDE_VERSION = 'v0.25.0'
 PYSCRIPT_VERSION = '2024.2.1'
-PANEL_LOCAL_WHL = DIST_DIR / 'wheels' / f'panel-{__version__.replace("-dirty", "")}-py3-none-any.whl'
-BOKEH_LOCAL_WHL = DIST_DIR / 'wheels' / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl'
+WHL_PATH = DIST_DIR / 'wheels'
+PANEL_LOCAL_WHL = WHL_PATH / f'panel-{__version__.replace("-dirty", "")}-py3-none-any.whl'
+BOKEH_LOCAL_WHL = WHL_PATH / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PANEL_CDN_WHL = f'{CDN_DIST}wheels/panel-{PY_VERSION}-py3-none-any.whl'
 BOKEH_CDN_WHL = f'{CDN_ROOT}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PYODIDE_URL = f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/full/pyodide.js'
@@ -53,6 +55,7 @@ PYSCRIPT_CSS_OVERRIDES = f'<link rel="stylsheet" href="{CDN_DIST}css/pyscript.cs
 PYSCRIPT_JS = f'<script type="module" src="https://pyscript.net/releases/{PYSCRIPT_VERSION}/core.js"></script>'
 PYODIDE_JS = f'<script src="{PYODIDE_URL}"></script>'
 PYODIDE_PYC_JS = f'<script src="{PYODIDE_PYC_URL}"></script>'
+LOCAL_PREFIX = './'
 
 MINIMUM_VERSIONS = {}
 
@@ -178,6 +181,7 @@ def script_to_html(
     runtime: Runtimes = 'pyodide',
     prerender: bool = True,
     panel_version: Literal['auto', 'local'] | str = 'auto',
+    local_prefix: str = LOCAL_PREFIX,
     manifest: str | None = None,
     http_patch: bool = True,
     inline: bool = False,
@@ -203,6 +207,8 @@ def script_to_html(
         Whether to pre-render the components so the page loads.
     panel_version: 'auto' | str
         The panel release version to use in the exported HTML.
+    local_prefix: str
+        Prefix for the path to serve local wheel files from.
     http_patch: bool
         Whether to patch the HTTP request stack with the pyodide-http library
         to allow urllib3 and requests to work.
@@ -251,20 +257,22 @@ def script_to_html(
 
     # Environment
     if panel_version == 'local':
-        panel_req = './' + str(PANEL_LOCAL_WHL.as_posix()).split('/')[-1]
-        bokeh_req = './' + str(BOKEH_LOCAL_WHL.as_posix()).split('/')[-1]
+        panel_req = local_prefix + str(PANEL_LOCAL_WHL.as_posix()).split('/')[-1]
+        bokeh_req = local_prefix + str(BOKEH_LOCAL_WHL.as_posix()).split('/')[-1]
     elif panel_version == 'auto':
         panel_req = PANEL_CDN_WHL
         bokeh_req = BOKEH_CDN_WHL
     else:
         panel_req = f'panel=={panel_version}'
         bokeh_req = f'bokeh=={BOKEH_VERSION}'
+
     base_reqs = [bokeh_req, panel_req]
     if http_patch:
         base_reqs.append('pyodide-http==0.2.1')
     reqs = base_reqs + [
         req for req in requirements if req not in ('panel', 'bokeh')
     ]
+    print(reqs)
     for name, min_version in MINIMUM_VERSIONS.items():
         if any(name in req for req in reqs):
             reqs = [f'{name}>={min_version}' if name in req else req for req in reqs]
@@ -342,7 +350,13 @@ def script_to_html(
     if template in (BASE_TEMPLATE, FILE):
         # Add loading.css if not served from Panel template
         if inline:
-            loading_base = (DIST_DIR / "css" / "loading.css").read_text(encoding='utf-8')
+            svg_name = f'{config.loading_spinner}_spinner.svg'
+            svg_b64 = base64.b64encode((DIST_DIR / 'assets' / svg_name).read_bytes()).decode('utf-8')
+            loading_base = (
+                DIST_DIR / "css" / "loading.css"
+            ).read_text(encoding='utf-8').replace(
+                f'../assets/{svg_name}', f'data:image/svg+xml;base64,{svg_b64}'
+            )
             loading_style = f'<style type="text/css">\n{loading_base}\n</style>'
         else:
             loading_style = f'<link rel="stylesheet" href="{CDN_DIST}css/loading.css" type="text/css" />'
@@ -399,6 +413,7 @@ def convert_app(
     prerender: bool = True,
     manifest: str | None = None,
     panel_version: Literal['auto', 'local'] | str = 'auto',
+    local_prefix: str = LOCAL_PREFIX,
     http_patch: bool = True,
     inline: bool = False,
     compiled: bool = False,
@@ -415,7 +430,7 @@ def convert_app(
                 app, requirements=requirements, runtime=runtime,
                 prerender=prerender, manifest=manifest,
                 panel_version=panel_version, http_patch=http_patch,
-                inline=inline, compiled=compiled
+                inline=inline, compiled=compiled, local_prefix=local_prefix
             )
     except KeyboardInterrupt:
         return
@@ -484,6 +499,7 @@ def convert_apps(
     pwa_config: dict[Any, Any] = {},
     max_workers: int = 4,
     panel_version: Literal['auto', 'local'] | str = 'auto',
+    local_prefix: str = LOCAL_PREFIX,
     http_patch: bool = True,
     inline: bool = False,
     compiled: bool = False,
@@ -523,6 +539,8 @@ def convert_apps(
         The maximum number of parallel workers
     panel_version: 'auto' | 'local'] | str
 '       The panel version to include.
+    local_prefix: str
+        Prefix for the path to serve local wheel files from.
     http_patch: bool
         Whether to patch the HTTP request stack with the pyodide-http library
         to allow urllib3 and requests to work.
@@ -556,7 +574,8 @@ def convert_apps(
         'requirements': app_requirements, 'runtime': runtime,
         'prerender': prerender, 'manifest': manifest,
         'panel_version': panel_version, 'http_patch': http_patch,
-        'inline': inline, 'verbose': verbose, 'compiled': compiled
+        'inline': inline, 'verbose': verbose, 'compiled': compiled,
+        'local_prefix': local_prefix
     }
 
     if state._is_pyodide:

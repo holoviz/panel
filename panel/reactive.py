@@ -213,7 +213,11 @@ class Syncable(Renderable):
             wrapped = []
             for stylesheet in stylesheets:
                 if isinstance(stylesheet, str) and stylesheet.split('?')[0].endswith('.css'):
-                    stylesheet = ImportedStyleSheet(url=stylesheet)
+                    cache = (state._stylesheets if state.curdoc else {}).get(state.curdoc, {})
+                    if stylesheet in cache:
+                        stylesheet = cache[stylesheet]
+                    else:
+                        cache[stylesheet] = stylesheet = ImportedStyleSheet(url=stylesheet)
                 wrapped.append(stylesheet)
             properties['stylesheets'] = wrapped
         return properties
@@ -894,7 +898,8 @@ class Reactive(Syncable, Viewable):
             event = Event(model=model, **event_kwargs)
             _viewable, root, doc, comm = state._views[ref]
             if comm or state._unblocked(doc) or not doc.session_context:
-                doc.callbacks.send_event(event)
+                with unlocked():
+                    doc.callbacks.send_event(event)
                 if comm and 'embedded' not in root.tags:
                     push(doc, comm)
             else:

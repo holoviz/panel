@@ -12,6 +12,7 @@ export class ScrollButtonClick extends ModelEvent {
 
 export class ColumnView extends BkColumnView {
   declare model: Column
+  _updating: boolean = false
 
   scroll_down_button_el: HTMLElement
 
@@ -30,6 +31,9 @@ export class ColumnView extends BkColumnView {
   }
 
   scroll_to_position(): void {
+    if (this._updating) {
+      return
+    }
     requestAnimationFrame(() => {
       this.el.scrollTo({top: this.model.scroll_position, behavior: "instant"})
     })
@@ -56,7 +60,9 @@ export class ColumnView extends BkColumnView {
   }
 
   record_scroll_position(): void {
+    this._updating = true
     this.model.scroll_position = Math.round(this.el.scrollTop)
+    this._updating = false
   }
 
   toggle_scroll_button(): void {

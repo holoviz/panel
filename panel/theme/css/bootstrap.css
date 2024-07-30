@@ -149,6 +149,38 @@ button.accordion-header {
   border-radius: 0;
 }
 
+.card-button {
+  line-height: 0.9em;
+}
+
+.card-title {
+  margin-bottom: 5px;
+}
+
+:host(.card-title) h1 {
+  font-size: 2em;
+}
+
+:host(.card-title) h2 {
+  font-size: 1.5em;
+}
+
+:host(.card-title) h3 {
+  font-size: 1.17em;
+}
+
+:host(.card-title) h4 {
+  font-size: 1em;
+}
+
+:host(.card-title) h5 {
+  font-size: 0.83em;
+}
+
+:host(.card-title) h6 {
+  font-size: 0.67em;
+}
+
 :host(.card-title) h1,
 :host(.card-title) h2,
 :host(.card-title) h3,

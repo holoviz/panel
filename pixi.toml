@@ -1,6 +1,6 @@
 [project]
 name = "panel"
-channels = ["pyviz/label/dev", "bokeh/label/dev", "conda-forge"]
+channels = ["pyviz/label/dev", "bokeh", "conda-forge"]
 platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 
 [activation.env]
@@ -22,12 +22,13 @@ lint = ["py311", "lint"]
 
 [dependencies]
 bleach = "*"
-bokeh = "==3.5.0rc1"
+bokeh = ">=3.5.0,<3.6.0"
 linkify-it-py = "*"
 markdown = "*"
 markdown-it-py = "*"
 mdit-py-plugins = "*"
-nodejs = "*"
+nodejs = ">=18"
+numpy = "<2.0" # Temporary pin until panel release with support for bokeh 3.5.0 is available
 packaging = "*"
 pandas = ">=1.2"
 param = ">=2.1.0,<3.0"
@@ -73,7 +74,7 @@ ipywidgets = "*"
 ipywidgets_bokeh = "*"
 jupyter_bokeh = ">=3.0.7"
 networkx = ">=2.5"
-pydeck = "*"
+pydeck = ">=0.8"
 pyecharts = "*"
 pygraphviz = "*"
 pyinstrument = ">=4.0"
@@ -134,6 +135,7 @@ channels = ["pyviz/label/dev", "bokeh", "microsoft", "conda-forge"]
 playwright = { version = "*", channel = "microsoft" }
 pytest-playwright = "*"
 jupyter_server = "*"
+packaging = "*"
 
 [feature.test-ui.tasks]
 _install-ui = 'playwright install chromium'

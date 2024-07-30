@@ -73,7 +73,7 @@ class PanelExecutor(WSHandler):
 
     _tasks = set()
 
-    def __init__(self, path, token, root_url):
+    def __init__(self, path, token, root_url, resources='server'):
         self.path = path
         self.token = token
         self.root_url = root_url
@@ -87,8 +87,10 @@ class PanelExecutor(WSHandler):
         self.write_lock = tornado.locks.Lock()
         self._context = None
 
+        resources = os.environ.get('BOKEH_RESOURCES', resources)
+        root_url = self.root_url if resources == 'server' else None
         self.resources = Resources(
-            mode=os.environ.get('BOKEH_RESOURCES', 'server'), root_url=self.root_url,
+            mode=resources, root_url=root_url,
             path_versioner=StaticHandler.append_version, absolute=True
         )
         self._set_state()

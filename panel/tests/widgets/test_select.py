@@ -980,7 +980,7 @@ def test_toggle_group_radio(document, comm):
 
         widget.active = 2
         select._process_events({'active': 2})
-        assert select.value == object
+        assert select.value is object
 
         select.value = 'A'
         assert widget.active == 0

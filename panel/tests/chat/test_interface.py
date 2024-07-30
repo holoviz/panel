@@ -458,6 +458,12 @@ class TestChatInterface:
         await asyncio.sleep(0.2)  # give a little time for enabling
         assert not chat_interface.disabled
 
+    def test_prevent_stream_override_message_user_avatar(self, chat_interface):
+        msg = chat_interface.send("Hello", user="Welcoming User", avatar="👋")
+        chat_interface.stream("New Hello", message=msg)
+        assert msg.user == "Welcoming User"
+        assert msg.avatar == "👋"
+
 class TestChatInterfaceWidgetsSizingMode:
     def test_none(self):
         chat_interface = ChatInterface()
