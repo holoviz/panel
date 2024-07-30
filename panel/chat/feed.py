@@ -727,7 +727,7 @@ class ChatFeed(ListPanel):
             The avatar to use; overrides the message's avatar if provided.
             Will default to the avatar parameter. Only applicable if steps is "new".
         steps_layout : Column | None
-            An existing Column of steps to stream to, if None is provided
+            An existing layout of steps to stream to, if None is provided
             it will default to the last Column of steps or create a new one.
         default_layout : str
             The default layout to use if steps_layout is None.
