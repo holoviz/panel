@@ -645,7 +645,9 @@ class ChatInterface(ChatFeed):
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
         respond: bool = True,
+        **message_params
     ) -> ChatMessage | None:
+
         """
         Sends a value and creates a new message in the chat log.
 
@@ -663,6 +665,8 @@ class ChatInterface(ChatFeed):
             Will default to the avatar parameter.
         respond : bool
             Whether to execute the callback.
+        message_params : dict
+            Additional parameters to pass to the ChatMessage.
 
         Returns
         -------
@@ -673,7 +677,7 @@ class ChatInterface(ChatFeed):
                 user = self.user
             if avatar is None:
                 avatar = self.avatar
-        return super().send(value, user=user, avatar=avatar, respond=respond)
+        return super().send(value, user=user, avatar=avatar, respond=respond, **message_params)
 
     def stream(
         self,
@@ -707,6 +711,8 @@ class ChatInterface(ChatFeed):
             The message to update.
         replace : bool
             Whether to replace the existing text when streaming a string or dict.
+        message_params : dict
+            Additional parameters to pass to the ChatMessage.
 
         Returns
         -------
