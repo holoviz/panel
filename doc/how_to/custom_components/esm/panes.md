@@ -21,20 +21,24 @@ import { Chart } from "https://esm.sh/chart.js/auto"
 let chart = null;
 
 function createChart(canvasEl, model) {
+    removeChart();
+    chart = new Chart(canvasEl.getContext('2d'), model.object);
+}
+
+function removeChart() {
     if (chart) {
         chart.destroy();
     }
-    chart = new Chart(canvasEl.getContext('2d'), model.object);
 }
 
 export function render({ model }) {
     const canvasEl = document.createElement('canvas');
     // The chart will not render before after the layout has been created
-    requestAnimationFrame(() => createChart(canvasEl, model));
+    model.on('after_render', () => createChart(canvasEl, model))
 
     const updateChart = () => createChart(canvasEl, model);
     model.on('object', updateChart);
-
+    model.on('remove', removeChart);
     return canvasEl;
 }
 """
@@ -70,7 +74,7 @@ chart = ChartJSComponent(
 pn.Column(chart_type, chart).servable()
 ```
 
-Note the use of the `requestAnimationFrame` to postpone the rendering of the chart. If not used then Chart.js will not render. Dealing with layout issues like this sometimes requires a bit of iteration. If you get stuck, share your question and minimum, reproducible code example on [Discourse](https://discourse.holoviz.org/).
+Note the use of the `model.on('after_render', ...)` to postpone the rendering of the chart to after the rendering of the element. Dealing with layout issues like this sometimes requires a bit of iteration. If you get stuck, share your question and minimum, reproducible code example on [Discourse](https://discourse.holoviz.org/).
 
 ## Creating a Cytoscape Pane
 
@@ -113,32 +117,47 @@ class Cytoscape(JSComponent):
 import { default as cytoscape} from "https://esm.sh/cytoscape"
 let cy = null;
 
-export function render({ model, el }) {
+function removeCy() {
     if (cy) { cy.destroy() }
+}
 
-    cy = cytoscape({
-        container: el,
-        layout: {name: model.layout},
-        elements: model.object,
-        zoom: model.zoom,
-        pan: model.pan
+export function render({ model }) {
+    removeCy();
+
+    const div = document.createElement('div');
+    div.style.width = "100%";
+    div.style.height = "100%";
+    // Cytoscape raises warning of position is static
+    div.style.position = "relative";
+
+    model.on('after_render', () => {
+        cy = cytoscape({
+            container: div,
+            layout: {name: model.layout},
+            elements: model.object,
+            zoom: model.zoom,
+            pan: model.pan
+        })
+        cy.style().resetToDefault().append(model.style).update()
+        cy.on('select unselect', function (evt) {
+            model.selected_nodes = cy.elements('node:selected').map(el => el.id())
+            model.selected_edges = cy.elements('edge:selected').map(el => el.id())
+        });
+
+        model.on('object', () => {cy.json({elements: model.object});cy.resize().fit()})
+        model.on('layout', () => {cy.layout({name: model.layout}).run()})
+        model.on('zoom', () => {cy.zoom(model.zoom)})
+        model.on('pan', () => {cy.pan(model.pan)})
+        model.on('style', () => {cy.style().resetToDefault().append(model.style).update()})
+
+        window.addEventListener('resize', function(event){
+            cy.center();
+            cy.resize().fit();
+        });
+        model.on('remove', removeCy)
     })
-    cy.on('select unselect', function (evt) {
-        model.selected_nodes = cy.elements('node:selected').map(el => el.id())
-        model.selected_edges = cy.elements('edge:selected').map(el => el.id())
-    });
-    cy.style().resetToDefault().append(model.style).update()
 
-    model.on('object', () => {cy.json({elements: model.object});cy.resize().fit()})
-    model.on('layout', () => {cy.layout({name: model.layout}).run()})
-    model.on('zoom', () => {cy.zoom(model.zoom)})
-    model.on('pan', () => {cy.pan(model.pan)})
-    model.on('style', () => {cy.style().resetToDefault().append(model.style).update()})
-
-    window.addEventListener('resize', function(event){
-        cy.center();
-        cy.resize().fit();
-    });
+    return div
 }
 """
 
@@ -174,5 +193,3 @@ pn.Row(
     graph,
 ).servable()
 ```
-
-Please notice that we `center` and `resize` the graph on `window` `resize`.

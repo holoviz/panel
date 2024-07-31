@@ -81,13 +81,16 @@ The following signatures are valid when listening to change events:
 
 - `.on('<parameter>', callback)`: Allows registering an event handler for a single parameter.
 - `.on(['<parameter>', ...], callback)`: Allows adding an event handler for multiple parameters at once.
-- `.on('change:<parameter>', callback)`: The `change:` prefix allows disambiguating change events from lifecycle hooks should a parameter name and lifecycle hook overlap.
+
+The `change:` prefix allows disambiguating change events from lifecycle hooks should a parameter name and lifecycle hook overlap.
 
 #### Lifecycle Hooks
 
-- `after_render`: Called once after the component has been fully rendered.
-- `after_resize`: Called after the component has been resized.
-- `remove`: Called when the component view is being removed from the DOM.
+- `.on('after_render', callback)`: Called once after the component has been fully rendered.
+- `.on('after_resize', callback)`: Called after the component has been resized. Please note you might find that `window.addEventListener('resize', callback)` provides a smoother resizing.
+- `.on('remove', callback)`: Called when the component view is being removed from the DOM.
+
+The `lifecycle:` prefix allows disambiguating lifecycle hooks from change events should a parameter name and lifecycle hook overlap.
 
 ## Usage
 
