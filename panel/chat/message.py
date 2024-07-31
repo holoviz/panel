@@ -179,7 +179,7 @@ class ChatMessage(Pane):
     header_objects = param.List(doc="""
         A list of objects to display in the row of the header of the message.""")
 
-    max_width = param.Integer(default=1200, bounds=(0, None))
+    max_width = param.Integer(default=1200, bounds=(0, None), allow_None=True)
 
     object = param.Parameter(allow_refs=False, doc="""
         The message contents. Can be any Python object that panel can display.""")
