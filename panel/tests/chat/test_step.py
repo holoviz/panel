@@ -128,8 +128,12 @@ class TestChatStep:
         assert len(step) == 1
         assert step[0].object == "abc"
 
+    def test_header_inherits_width(self):
+        step = ChatStep(width=100)
+        assert step.header.width == 100
+
     @pytest.mark.parametrize("width_key", ["max_width", "min_width"])
-    def test_header_inherits_width(self, width_key):
+    def test_header_inherits_stretch_width(self, width_key):
         step = ChatStep(**{width_key: 100}, sizing_mode="stretch_width")
         assert getattr(step.header, width_key) == 100
         assert step.header.sizing_mode == "stretch_width"
