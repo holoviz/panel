@@ -3388,6 +3388,29 @@ def test_tabulator_update_hidden_columns(page):
     ), page)
 
 
+def test_tabulator_remote_pagination_auto_page_size_grow(page, df_mixed):
+    nrows, ncols = df_mixed.shape
+    widget = Tabulator(df_mixed, pagination='remote', initial_page_size=1, height=200)
+
+    serve_component(page, widget)
+
+    expect(page.locator('.tabulator-table')).to_have_count(1)
+
+    wait_until(lambda: widget.page_size == 4, page)
+
+
+def test_tabulator_remote_pagination_auto_page_size_shrink(page, df_mixed):
+    nrows, ncols = df_mixed.shape
+    widget = Tabulator(df_mixed, pagination='remote', initial_page_size=10, height=150)
+
+    serve_component(page, widget)
+
+    expect(page.locator('.tabulator-table')).to_have_count(1)
+
+    wait_until(lambda: widget.page_size == 3, page)
+
+
+
 class Test_RemotePagination:
 
     @pytest.fixture(autouse=True)
