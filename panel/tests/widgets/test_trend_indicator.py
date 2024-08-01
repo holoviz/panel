@@ -8,26 +8,30 @@ from panel.widgets import IntSlider, Trend
 
 
 def test_constructor():
-    return Trend(title="Test")
+    Trend(name="Test")
 
 
-def test_trend_auto_value():
+def manualtest_constructor():
+    return Trend(name="Test")
+
+
+def test_trend_auto_value(document, comm):
     data = {"x": [1, 2, 3, 4, 5], "y": [3800, 3700, 3800, 3900, 4000]}
 
     trend = Trend(data=data)
 
-    model = trend.get_root()
+    model = trend.get_root(document, comm)
 
     assert model.value == 4000
     assert model.value_change == ((4000/3900) - 1)
 
 
-def test_trend_auto_value_stream():
+def test_trend_auto_value_stream(document, comm):
     data = {"x": [1, 2, 3, 4, 5], "y": [3800, 3700, 3800, 3900, 4000]}
 
     trend = Trend(data=data)
 
-    model = trend.get_root()
+    model = trend.get_root(document, comm)
 
     trend.stream({'x': [6], 'y': [4100]}, rollover=5)
 
@@ -37,11 +41,11 @@ def test_trend_auto_value_stream():
     assert model.source.data['x'][-1] == 6
 
 
-def test_app():
+def manualtest_app():
     data = {"x": [1, 2, 3, 4, 5], "y": [3800, 3700, 3800, 3900, 4000]}
 
     trend = Trend(
-        title="Panel Users",
+        name="Panel Users",
         value=4000,
         value_change=0.51,
         data=data,
@@ -84,8 +88,7 @@ def test_app():
         HTML(
             "<h1>Panel - Streaming to TrendIndicator<h1>",
             sizing_mode="stretch_width",
-            background="black",
-            style={"color": "white", "padding": "15px"},
+            styles={"color": "white", "padding": "15px", "background": "black"},
         ),
         Row(WidgetBox(settings_panel), trend, sizing_mode="stretch_both"),
         sizing_mode="stretch_both",
@@ -94,5 +97,5 @@ def test_app():
     return app
 
 
-if __name__.startswith("bokeh"):
-    test_app().servable()
+if state.served:
+    manualtest_app().servable()

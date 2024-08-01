@@ -9,34 +9,39 @@ And now DeckGL provides Python bindings. See
 - [PyDeck Repo](https://github.com/uber/deck.gl/tree/master/bindings/pydeck)
 """
 
-from collections import OrderedDict
-
 from bokeh.core.properties import (
     Any, Bool, Dict, Either, Instance, Int, List, Override, String,
 )
-from bokeh.models import ColumnDataSource, HTMLBox
+from bokeh.models import ColumnDataSource
 
+from ..config import config
 from ..io.resources import bundled_files
 from ..util import classproperty
+from .layout import HTMLBox
 
 
 class DeckGLPlot(HTMLBox):
     """A Bokeh model that wraps around a DeckGL plot and renders it inside a HTMLBox"""
 
-    __css_raw__ = ["https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.css"]
+    __css_raw__ = [
+        "https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css",
+        f"{config.npm_cdn}/maplibre-gl@4.4.1/dist/maplibre-gl.css"
+    ]
 
     @classproperty
     def __css__(cls):
         return bundled_files(cls, 'css')
 
     __javascript_raw__ = [
-        "https://unpkg.com/h3-js@3.7.2/dist/h3-js.umd.js",
-        "https://cdn.jsdelivr.net/npm/deck.gl@8.6.7/dist.min.js",
-        "https://cdn.jsdelivr.net/npm/@deck.gl/json@8.6.7/dist.min.js",
-        "https://cdn.jsdelivr.net/npm/@loaders.gl/csv@3.1.7/dist/dist.min.js",
-        "https://cdn.jsdelivr.net/npm/@loaders.gl/json@3.1.7/dist/dist.min.js",
-        "https://cdn.jsdelivr.net/npm/@loaders.gl/3d-tiles@3.1.7/dist/dist.min.js",
-        "https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.js",
+        f"{config.npm_cdn}/h3-js@4.1.0/dist/h3-js.umd.js",
+        f"{config.npm_cdn}/deck.gl@9.0.20/dist.min.js",
+        f"{config.npm_cdn}/@deck.gl/json@9.0.20/dist.min.js",
+        f"{config.npm_cdn}/@loaders.gl/csv@4.2.2/dist/dist.min.js",
+        f"{config.npm_cdn}/@loaders.gl/json@4.2.2/dist/dist.min.js",
+        f"{config.npm_cdn}/@loaders.gl/3d-tiles@4.2.2/dist/dist.min.js",
+        "https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js",
+        f"{config.npm_cdn}/maplibre-gl/dist/maplibre-gl.js",
+        f"{config.npm_cdn}/@deck.gl/carto@^9.0.20/dist.min.js"
     ]
 
     @classproperty
@@ -47,19 +52,20 @@ class DeckGLPlot(HTMLBox):
     def __js_skip__(cls):
         return {
             'deck': cls.__javascript__[:-1],
-            'mapboxgl': cls.__javascript__[-1:]
+            'mapboxgl': cls.__javascript__[-1:],
         }
 
     __js_require__ = {
-        'paths': OrderedDict([
-            ("h3", "https://unpkg.com/h3-js@3.7.2/dist/h3-js.umd"),
-            ("deck-gl", "https://cdn.jsdelivr.net/npm/deck.gl@8.6.7/dist.min"),
-            ("deck-json", "https://cdn.jsdelivr.net/npm/@deck.gl/json@8.6.7/dist.min"),
-            ("loader-csv", "https://cdn.jsdelivr.net/npm/@loaders.gl/csv@3.1.7/dist/dist.min"),
-            ("loader-json", "https://cdn.jsdelivr.net/npm/@loaders.gl/json@3.1.7/dist/dist.min"),
-            ("loader-tiles", "https://cdn.jsdelivr.net/npm/@loaders.gl/3d-tiles@3.1.7/dist/dist.min"),
-            ("mapbox-gl", 'https://cdn.jsdelivr.net/npm/mapbox-gl@2.6.1/dist/mapbox-gl.min'),
-        ]),
+        'paths': {
+            "h3": f"{config.npm_cdn}/h3-js@4.1.0/dist/h3-js.umd",
+            "deck-gl": f"{config.npm_cdn}/deck.gl@9.0.20/dist.min",
+            "deck-json": f"{config.npm_cdn}/@deck.gl/json@9.0.20/dist.min",
+            "loader-csv": f"{config.npm_cdn}/@loaders.gl/csv@4.2.2/dist/dist.min",
+            "loader-json": f"{config.npm_cdn}/@loaders.gl/json@4.2.2/dist/dist.min",
+            "loader-tiles": f"{config.npm_cdn}/@loaders.gl/3d-tiles@4.2.2/dist/dist.min",
+            "mapbox-gl": "https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl",
+            "carto": f"{config.npm_cdn}/@deck.gl/carto@^9.0.20/dist.min",
+    },
         'exports': {"deck-gl": "deck", "mapbox-gl": "mapboxgl", "h3": "h3"},
         'shim': {
             'deck-json': {'deps': ["deck-gl"]},
@@ -78,6 +84,8 @@ class DeckGLPlot(HTMLBox):
     mapbox_api_key = String()
 
     tooltip = Either(Bool, Dict(Any, Any), default=True)
+
+    configuration = String()
 
     clickState = Dict(String, Any)
 

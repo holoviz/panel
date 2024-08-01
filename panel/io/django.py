@@ -1,7 +1,10 @@
 from contextlib import contextmanager
 from urllib.parse import urljoin, urlparse
 
-from bokeh.server.django.consumers import AutoloadJsConsumer, DocConsumer
+try:
+    from bokeh_django.consumers import AutoloadJsConsumer, DocConsumer
+except Exception:
+    from bokeh.server.django.consumers import AutoloadJsConsumer, DocConsumer
 
 from ..util import edit_readonly
 from .resources import Resources
@@ -58,12 +61,15 @@ async def autoload_handle(self, body):
         absolute_url = self.get_argument("bokeh-absolute-url", default=None)
 
         if absolute_url:
-            server_url = '{uri.scheme}://{uri.netloc}/'.format(uri=urlparse(absolute_url))
+            server_url = f'{urlparse(absolute_url).scheme}://{urlparse(absolute_url).netloc}/'
         else:
             server_url = None
 
+        absolute = server_url not in absolute_url
         resources = self.resources(server_url)
-        js = autoload_js_script(session.document, resources, session.token, element_id, app_path, absolute_url)
+        js = autoload_js_script(
+            session.document, resources, session.token, element_id, app_path, absolute_url, absolute=absolute
+        )
 
     headers = [
         (b"Access-Control-Allow-Headers", b"*"),

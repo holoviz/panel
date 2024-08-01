@@ -1,0 +1,80 @@
+:host,
+:root {
+  --bokeh-base-font: Roboto, sans-serif, Verdana;
+  --mdc-theme-surface: var(
+    --design-surface-color,
+    var(
+      --vscode-notebook-cellEditorBackground,
+      var(
+        --jp-cell-editor-background,
+        var(--pst-color-surface, var(--panel-surface-color))
+      )
+    )
+  );
+  --mdc-theme-primary: var(
+    --design-primary-color,
+    var(--jp-brand-color0, var(--panel-primary-color))
+  );
+  --mdc-theme-primary-lightened: color-mix(
+    in srgb,
+    var(--mdc-theme-primary) 30%,
+    transparent
+  );
+  --mdc-theme-on-primary: var(
+    --design-primary-text-color,
+    var(--jp-ui-font-color0, var(--panel-on-primary-color))
+  );
+  --mdc-theme-secondary: var(
+    --design-secondary-color,
+    var(--panel-secondary-color)
+  );
+  --mdc-theme-secondary-lightened: color-mix(
+    in srgb,
+    var(--mdc-theme-secondary) 80%,
+    transparent
+  );
+  --mdc-theme-on-secondary: var(
+    --design-secondary-text-color,
+    var(--panel-on-secondary-color)
+  );
+  --mdc-theme-background: var(
+    --design-background-color,
+    var(
+      --vscode-notebook-editorBackground,
+      var(
+        --jp-layout-color0,
+        var(--pst-color-background, var(--panel-background-color))
+      )
+    )
+  );
+  --mdc-theme-on-background: var(
+    --design-background-text-color,
+    var(
+      --vscode-editor-foreground,
+      var(
+        --jp-widgets-label-color,
+        var(--pst-color-text-base, var(--panel-on-background-color))
+      )
+    )
+  );
+  --mdc-theme-on-surface: var(
+    --design-surface-text-color,
+    var(
+      --vscode-editor-foreground,
+      var(
+        --jp-ui-font-color2,
+        var(--pst-color-text-base, var(--panel-on-surface-color))
+      )
+    )
+  );
+  --mdc-theme-text-primary-on-background: color-mix(
+    in srgb,
+    var(--mdc-theme-on-primary) 87%,
+    transparent
+  );
+  --mdc-typography--font-family: var(--bokeh-base-font);
+  --mdc-shape-small: 4px;
+  --mdc-shape-medium: 4px;
+  --mdc-shape-large: 0px;
+  color: var(--mdc-theme-on-background);
+}

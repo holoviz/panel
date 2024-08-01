@@ -1,41 +1,43 @@
 """
 GoldenTemplate based on the golden-layout library.
 """
+from __future__ import annotations
+
 import pathlib
+
+from typing import TYPE_CHECKING, Literal
 
 import param
 
+from ...config import config
 from ...io.resources import JS_URLS
-from ...layout import Card
 from ..base import BasicTemplate
-from ..theme import DarkTheme, DefaultTheme
+
+if TYPE_CHECKING:
+    from ...io.resources import ResourcesType
 
 
 class GoldenTemplate(BasicTemplate):
     """
     GoldenTemplate is built on top of golden-layout library.
     """
-    sidebar_width = param.Integer(20, doc="""
-        The width of the sidebar in percent. Default is 20.""")
+
+    sidebar_width = param.Integer(default=20, constant=True, doc="""
+        The width of the sidebar in percent.""")
 
     _css = pathlib.Path(__file__).parent / 'golden.css'
 
     _template = pathlib.Path(__file__).parent / 'golden.html'
 
-    _modifiers = {
-        Card: {
-            'children': {'margin': (10, 10)},
-            'button_css_classes': ['golden-card-button']
-        },
-    }
-
     _resources = {
         'css': {
-            'goldenlayout': "https://cdn.jsdelivr.net/npm/golden-layout@1.5.9/src/css/goldenlayout-base.css",
+            'goldenlayout': f"{config.npm_cdn}/golden-layout@1.5.9/src/css/goldenlayout-base.css",
+            'golden-theme-dark': f"{config.npm_cdn}/golden-layout@1.5.9/src/css/goldenlayout-dark-theme.css",
+            'golden-theme-light': f"{config.npm_cdn}/golden-layout@1.5.9/src/css/goldenlayout-light-theme.css"
         },
         'js': {
             'jquery': JS_URLS['jQuery'],
-            'goldenlayout': 'https://cdn.jsdelivr.net/npm/golden-layout@1.5.9/dist/goldenlayout.min.js'
+            'goldenlayout': f"{config.npm_cdn}/golden-layout@1.5.9/dist/goldenlayout.min.js"
         }
     }
 
@@ -43,16 +45,12 @@ class GoldenTemplate(BasicTemplate):
         if 'main' in tags:
             model.margin = (10, 15, 10, 10)
 
-
-class GoldenDefaultTheme(DefaultTheme):
-
-    css = param.Filename(default=pathlib.Path(__file__).parent / 'default.css')
-
-    _template = GoldenTemplate
-
-
-class GoldenDarkTheme(DarkTheme):
-
-    css = param.Filename(default=pathlib.Path(__file__).parent / 'dark.css')
-
-    _template = GoldenTemplate
+    def resolve_resources(
+        self,
+        cdn: bool | Literal['auto'] = 'auto',
+        extras: dict[str, dict[str, str]] | None = None
+    ) -> ResourcesType:
+        resources = super().resolve_resources(cdn=cdn, extras=extras)
+        del_theme = 'dark' if self._design.theme._name =='default' else 'light'
+        del resources['css'][f'golden-theme-{del_theme}']
+        return resources

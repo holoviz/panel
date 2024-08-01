@@ -1,7 +1,10 @@
+import pandas as pd
 import param
 import pytest
 
 from panel.io.location import Location
+from panel.io.state import state
+from panel.tests.util import serve_and_request, wait_until
 from panel.util import edit_readonly
 
 
@@ -24,6 +27,8 @@ class SyncParameterized(param.Parameterized):
 
     string = param.String(default=None)
 
+    dataframe = param.DataFrame(default=None)
+
 
 def test_location_update_query(location):
     location.update_query(a=1)
@@ -37,12 +42,14 @@ def test_location_sync_query_init(location):
     assert location.search == "?integer=1&string=abc"
     location.unsync(p)
     assert location._synced == []
+    assert location.search == ""
 
 def test_location_unsync(location):
     p = SyncParameterized(integer=1, string='abc')
     location.sync(p)
     assert location.search == "?integer=1&string=abc"
     location.unsync(p)
+    assert location.search == ""
     location.update_query(integer=2, string='def')
     assert p.integer == 1
     assert p.string == "abc"
@@ -55,6 +62,7 @@ def test_location_unsync_partial(location):
     location.sync(p)
     assert location.search == "?integer=1&string=abc"
     location.unsync(p, ['string'])
+    assert location.search == "?integer=1"
     location.update_query(integer=2, string='def')
     assert p.integer == 2
     assert p.string == "abc"
@@ -75,6 +83,7 @@ def test_location_sync_query_init_rename(location):
     assert location.search == "?int=1&str=abc"
     location.unsync(p)
     assert location._synced == []
+    assert location.search == ""
 
 def test_location_sync_query(location):
     p = SyncParameterized()
@@ -83,6 +92,7 @@ def test_location_sync_query(location):
     assert location.search == "?integer=2"
     location.unsync(p)
     assert location._synced == []
+    assert location.search == ""
 
 def test_location_sync_param_init(location):
     p = SyncParameterized()
@@ -92,6 +102,7 @@ def test_location_sync_param_init(location):
     assert p.string == "abc"
     location.unsync(p)
     assert location._synced == []
+    assert location.search == ""
 
 def test_location_sync_on_error(location):
     p = SyncParameterized(string='abc')
@@ -103,6 +114,7 @@ def test_location_sync_on_error(location):
     assert changes == [{'integer': 'a'}]
     location.unsync(p)
     assert location._synced == []
+    assert location.search == ""
 
 def test_location_sync_param_init_partial(location):
     p = SyncParameterized()
@@ -112,6 +124,7 @@ def test_location_sync_param_init_partial(location):
     assert p.string is None
     location.unsync(p)
     assert location._synced == []
+    assert location.search == "?string=abc"
 
 def test_location_sync_param_init_rename(location):
     p = SyncParameterized()
@@ -121,6 +134,7 @@ def test_location_sync_param_init_rename(location):
     assert p.string == 'abc'
     location.unsync(p)
     assert location._synced == []
+    assert location.search == ""
 
 def test_location_sync_param_update(location):
     p = SyncParameterized()
@@ -130,3 +144,47 @@ def test_location_sync_param_update(location):
     assert p.string == "abc"
     location.unsync(p)
     assert location._synced == []
+    assert location.search == ""
+
+def test_server_location_populate_from_request():
+    locs = []
+
+    def app():
+        loc = state.location
+        locs.append(loc)
+        return '# Location Test'
+
+    request = serve_and_request(app, suffix='?foo=1')
+
+    wait_until(lambda: len(locs) == 1)
+
+    loc = locs[0]
+    assert loc.href == request.url
+    assert loc.protocol == 'http:'
+    assert loc.hostname == 'localhost'
+    assert loc.pathname == '/'
+    assert loc.search == '?foo=1'
+
+def test_iframe_srcdoc_location():
+    Location(pathname="srcdoc")
+
+@pytest.fixture
+def dataframe():
+    return pd.DataFrame({"x": [1]})
+
+def test_location_sync_from_dataframe(location, dataframe):
+    p = SyncParameterized(dataframe=dataframe)
+    location.sync(p)
+    assert location.search == "?dataframe=%5B%7B%22x%22%3A+1%7D%5D"
+
+def test_location_sync_to_dataframe(location, dataframe):
+    p = SyncParameterized()
+    location.search = "?dataframe=%5B%7B%22x%22%3A+1%7D%5D"
+    location.sync(p)
+    pd.testing.assert_frame_equal(p.dataframe, dataframe)
+
+def test_location_sync_to_dataframe_with_initial_value(location, dataframe):
+    p = SyncParameterized(dataframe=pd.DataFrame({"y": [2]}))
+    location.search = "?dataframe=%5B%7B%22x%22%3A+1%7D%5D"
+    location.sync(p)
+    pd.testing.assert_frame_equal(p.dataframe, dataframe)

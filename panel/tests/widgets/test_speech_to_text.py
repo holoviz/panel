@@ -120,7 +120,7 @@ def test_can_create_result_from_list():
     assert actual[0].alternatives[0].transcript == "and why"
 
 
-def test_get_advanced_app():
+def manualtest_get_advanced_app():
     src = "#JSGF V1.0; grammar colors; public <color> = aqua | azure | beige | bisque | black | blue | brown | chocolate | coral | crimson | cyan | fuchsia | ghostwhite | gold | goldenrod | gray | green | indigo | ivory | khaki | lavender | lime | linen | magenta | maroon | moccasin | navy | olive | orange | orchid | peru | pink | plum | purple | red | salmon | sienna | silver | snow | tan | teal | thistle | tomato | turquoise | violet | white | yellow ;" # noqa
     speech_to_text = SpeechToText(button_type="success", continuous=True)
 
@@ -163,8 +163,7 @@ def test_get_advanced_app():
     app = pn.Column(
         pn.pane.HTML(
             "<h1>Speech to Text <img style='float:right;height:40px;width:164px;margin-right:40px' src='https://panel.holoviz.org/_static/logo_horizontal.png'></h1>", # noqa
-            background="black",
-            style={"color": "white", "margin-left": "20px"},
+            styles={"color": "white", "margin-left": "20px", "background": "black"},
             margin=(0, 0, 15, 0),
         ),
         speech_to_text,
@@ -182,7 +181,7 @@ def test_get_advanced_app():
     return app
 
 
-def test_get_color_app():
+def manualtest_get_color_app():
     speech_to_text_color = SpeechToText(button_type="light", continuous=True)
 
     colors = [
@@ -260,10 +259,10 @@ def test_get_color_app():
     def update_result_panel(results_last):
         results_last = results_last.lower()
         if results_last in colors:
-            app.background = results_last
+            app.styles = dict(background=results_last)
             result_panel.object = "Result received: " + results_last
         else:
-            app.background = "white"
+            app.styles = dict(background="white")
             result_panel.object = "Result received: " + results_last + " (Not recognized)"
 
     app[:] = [
@@ -275,7 +274,6 @@ def test_get_color_app():
     return app
 
 
-if __name__.startswith("bokeh"):
+if pn.state.served:
     pn.extension(sizing_mode="stretch_width")
-    # test_get_advanced_app().servable()
-    test_get_color_app().servable()
+    manualtest_get_color_app().servable()

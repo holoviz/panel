@@ -4,15 +4,13 @@ Layout component to lay out objects in a set of tabs.
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import (
-    TYPE_CHECKING, ClassVar, List, Mapping, Type,
-)
+from typing import TYPE_CHECKING, ClassVar, Mapping
 
 import param
 
-from bokeh.models import Panel as BkPanel, Spacer as BkSpacer
+from bokeh.models import Spacer as BkSpacer, TabPanel as BkTabPanel
 
-from ..models import Tabs as BkTabs
+from ..models.tabs import Tabs as BkTabs
 from ..viewable import Layoutable
 from .base import NamedListPanel
 
@@ -53,7 +51,9 @@ class Tabs(NamedListPanel):
 
     width = param.Integer(default=None, bounds=(0, None))
 
-    _bokeh_model: ClassVar[Type[Model]] = BkTabs
+    _bokeh_model: ClassVar[type[Model]] = BkTabs
+
+    _direction: ClassVar[str | None] = None
 
     _js_transforms: ClassVar[Mapping[str, str]] = {'tabs': """
     var ids = [];
@@ -61,12 +61,10 @@ class Tabs(NamedListPanel):
     var value = ids;
     """}
 
-    _linked_props: ClassVar[List[str]] = ['active', 'tabs']
-
-    _manual_params: ClassVar[List[str]] = ['closable']
+    _manual_params: ClassVar[list[str]] = ['closable']
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': None, 'objects': 'tabs', 'dynamic': None
+        'closable': None, 'dynamic': None, 'name': None, 'objects': 'tabs'
     }
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
@@ -76,11 +74,12 @@ class Tabs(NamedListPanel):
     def __init__(self, *objects, **params):
         super().__init__(*objects, **params)
         self._rendered = defaultdict(dict)
-        self.param.active.bounds = (0, len(self)-1)
+        self.param.active.bounds = (-1, len(self)-1)
         self.param.watch(self._update_active, ['dynamic', 'active'])
 
     def _update_names(self, event):
-        self.param.active.bounds = (0, len(event.new)-1)
+        # No active tabs will have a value of -1
+        self.param.active.bounds = (-1, len(event.new)-1)
         super()._update_names(event)
 
     def _cleanup(self, root: Model | None = None) -> None:
@@ -139,6 +138,10 @@ class Tabs(NamedListPanel):
                 self.param.trigger('objects')
                 return
 
+    def _compute_sizing_mode(self, children, props):
+        children = [child.child for child in children]
+        return super()._compute_sizing_mode(children, props)
+
     #----------------------------------------------------------------
     # Model API
     #----------------------------------------------------------------
@@ -155,7 +158,7 @@ class Tabs(NamedListPanel):
         models and cleaning up any dropped objects.
         """
         from ..pane.base import RerenderError, panel
-        new_models = []
+        new_models, old_models = [], []
         if len(self._names) != len(self):
             raise ValueError('Tab names do not match objects, ensure '
                              'that the Tabs.objects are not modified '
@@ -195,18 +198,23 @@ class Tabs(NamedListPanel):
 
             if prev_hidden and not hidden and pref in rendered:
                 child = rendered[pref]
+                old_models.append(child)
             elif hidden:
                 child = BkSpacer(**{k: v for k, v in pane.param.values().items()
-                                    if k in Layoutable.param and v is not None})
+                                    if k in Layoutable.param and v is not None and
+                                    k not in ('name', 'design')})
                 child.tags = ['hidden']
             else:
                 try:
                     rendered[pref] = child = pane._get_model(doc, root, model, comm)
-                except RerenderError:
+                except RerenderError as e:
+                    if e.layout is not None and e.layout is not self:
+                        raise e
+                    e.layout = None
                     return self._get_objects(model, current_objects[:i], doc, root, comm)
 
-            panel = panels[pref] = BkPanel(
+            panel = panels[pref] = BkTabPanel(
                 title=name, name=pane.name, child=child, closable=self.closable
             )
             new_models.append(panel)
-        return new_models
+        return new_models, old_models

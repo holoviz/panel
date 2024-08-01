@@ -1,330 +1,206 @@
-{% extends base %}
+{% extends "base/base.html" %}
 
-{% block preamble %}
-{% if app_favicon %}<link rel="icon" href="{{ app_favicon }}" type="{{ favicon_type }}">{% endif %}
-{% if meta_name %}<meta name="name" content="{{ meta_name }}">{% endif %}
-{% if meta_description %}<meta name="description" content="{{ meta_description }}">{% endif %}
-{% if meta_keywords %}<meta name="keywords" content="{{ meta_keywords }}">{% endif %}
-{% if meta_author %}<meta name="author" content="{{ meta_author }}">{% endif %}
-{% if meta_refresh %}<meta http-equiv="refresh" content="{{ meta_refresh }}">{% endif %}
-{% if meta_viewport %}<meta name="viewport" content="{{ meta_viewport }}">{% endif %}
-{% if base_url and base_target %}<base href="{{ base_url }}" target="{{ base_target }}">{% endif %}
-{% endblock %}
-
-{% block postamble %}
-<!-- Template CSS -->
-{% for css in template_resources['css'].values() %}
-<link rel="stylesheet" href="{{ css }}">
-{% endfor %}
-{% for src in template_resources['extra_css'] %}
-<link rel="stylesheet"  href="{{ src }}">
-{% endfor %}
-{% for raw_css in template_resources['raw_css'] %}
-<style type="text/css">
-{{ raw_css }}
-</style>
-{% endfor %}
-{% if style.font_url %}
-<link rel="stylesheet" type="text/css" href="{{ style.font_url }}" />
-{% endif %}
-
+{% block custom_css %}
 <style>
   :root {
+    --background-color: {{ style.background_color }};
     --body-font: {{ style.font }};
+    --corner-radius: {{ style.corner_radius }};
+    --header-background: {{ style.header_background }};
+    --header-color: {{ style.header_color }};
+    --sidebar-width: {{ sidebar_width }}px;
   }
   body {
     color: {{ style.color }};
-    background-color: {{ style.background_color }};
+    background-color: var(--background-color);
     font-family: var(--body-font);
   }
   #header a {
     color: currentColor;
   }
   #header-design-provider {
-    --neutral-foreground-rest: {{ style.header_color }};
+    --neutral-fill-hover: var(--header-background);
+    --neutral-fill-rest: var(--header-background);
+    --neutral-foreground-rest: var(--header-color);
+    --design-background-text-color: var(--header-color);
+    --design-background-color: var(--header-background);
+    background: var(--header-background);
+    color: var(--header-color);
   }
   #sidebar {
-    width: {{ sidebar_width }}px;
+    min-width: var(--sidebar-width);
+    max-width: var(--sidebar-width);
+    {% if not main_layout %}
+    background-color: var(--panel-surface-color);
+    {% endif %}
   }
-  {% if style.shadow %}
-  #header {
-      box-shadow: 2px 2px 10px silver;
-  }
-  #sidebar {
-      box-shadow: 2px 2px 10px silver;
-  }
-  {% endif %}
 </style>
+{% endblock %}
 
-<!-- Template JS -->
-{% for src in template_resources['js'].values() %}
-<script src="{{ src }}"></script>
-{% endfor %}
-{% for src in template_resources['js_modules'].values() %}
-<script src="{{ src }}" type="module"></script>
-{% endfor %}
-
+{% block custom_js %}
 <!-- Fast Script -->
-<script type="module">
-  import { parseColorHexRGB } from "{{ template_resources['js_modules']['fast-colors'] }}";
-  import {
-    createColorPalette,
-    accentFillActiveBehavior,
-    accentFillHoverBehavior,
-    accentFillRestBehavior,
-    accentForegroundActiveBehavior,
-    accentForegroundCutRestBehavior,
-    accentForegroundFocusBehavior,
-    accentForegroundHoverBehavior,
-    accentForegroundRestBehavior,
-    neutralDividerRestBehavior,
-    neutralFillHoverBehavior,
-    neutralFillInputActiveBehavior,
-    neutralFillInputHoverBehavior,
-    neutralFillInputRestBehavior,
-    neutralFillRestBehavior,
-    neutralFillStealthActiveBehavior,
-    neutralFillStealthHoverBehavior,
-    neutralFillStealthRestBehavior,
-    neutralFocusBehavior,
-    neutralFocusInnerAccentBehavior,
-    neutralForegroundActiveBehavior,
-    neutralForegroundHoverBehavior,
-    neutralLayerFloatingBehavior,
-    neutralOutlineActiveBehavior,
-    neutralOutlineHoverBehavior,
-    neutralOutlineRestBehavior
-  } from "{{ template_resources['js_modules']['fast'] }}";
-
-  function standardize_color(str){
-    var ctx = document.createElement('canvas').getContext('2d');
-    ctx.fillStyle = str;
-    return ctx.fillStyle;
-  }
-
-  function setAccentColor(color, selector){
-      color = standardize_color(color);
-      const accent = color;
-      const palette = createColorPalette(parseColorHexRGB(accent));
-      const provider = document.querySelector(selector);
-      provider.accentBaseColor = accent;
-      provider.accentPalette = palette;
-  }
-  setAccentColor("{{ style.accent_base_color }}", "#body-design-provider");
-  setAccentColor("{{ style.header_accent_base_color }}", "#header-design-provider");
-
-  function setNeutralColor(color, selector){
-      color = standardize_color(color);
-      const palette = createColorPalette(parseColorHexRGB(color));
-      const provider = document.querySelector(selector);
-
-      provider.neutralPalette = palette;
-  }
-  setNeutralColor("{{ style.header_neutral_color }}", "#header-design-provider");
-  setNeutralColor("{{ style.neutral_color }}", "#body-design-provider");
-
-  function setBackgroundColor(color, selector){
-    color = standardize_color(color);
-    const provider = document.querySelector(selector);
-    provider.backgroundColor=color;
-  }
-  setBackgroundColor("{{ style.header_background }}", "#header-design-provider");
-  setBackgroundColor("{{ style.background_color }}", "#body-design-provider");
-
-  document.querySelector("#body-design-provider").cornerRadius={{ style.corner_radius }};
-
-  function registerCSSCustomProperties(selector)  {
-    const provider = document.querySelector(selector);
-    provider.registerCSSCustomProperty(accentFillActiveBehavior)
-    provider.registerCSSCustomProperty(neutralFillRestBehavior)
-    provider.registerCSSCustomProperty(accentFillHoverBehavior)
-    provider.registerCSSCustomProperty(accentFillRestBehavior)
-    provider.registerCSSCustomProperty(accentForegroundActiveBehavior)
-    provider.registerCSSCustomProperty(accentForegroundCutRestBehavior)
-    provider.registerCSSCustomProperty(accentForegroundFocusBehavior)
-    provider.registerCSSCustomProperty(accentForegroundHoverBehavior)
-    provider.registerCSSCustomProperty(accentForegroundRestBehavior)
-    provider.registerCSSCustomProperty(neutralDividerRestBehavior)
-    provider.registerCSSCustomProperty(neutralFillHoverBehavior)
-    provider.registerCSSCustomProperty(neutralFillInputActiveBehavior)
-    provider.registerCSSCustomProperty(neutralFillInputHoverBehavior)
-    provider.registerCSSCustomProperty(neutralFillInputRestBehavior)
-    provider.registerCSSCustomProperty(neutralFillRestBehavior)
-    provider.registerCSSCustomProperty(neutralFillStealthActiveBehavior)
-    provider.registerCSSCustomProperty(neutralFillStealthHoverBehavior)
-    provider.registerCSSCustomProperty(neutralFillStealthRestBehavior)
-    provider.registerCSSCustomProperty(neutralFocusBehavior)
-    provider.registerCSSCustomProperty(neutralFocusInnerAccentBehavior)
-    provider.registerCSSCustomProperty(neutralForegroundActiveBehavior)
-    provider.registerCSSCustomProperty(neutralForegroundHoverBehavior)
-    provider.registerCSSCustomProperty(neutralLayerFloatingBehavior)
-    provider.registerCSSCustomProperty(neutralOutlineActiveBehavior)
-    provider.registerCSSCustomProperty(neutralOutlineHoverBehavior)
-    provider.registerCSSCustomProperty(neutralOutlineRestBehavior)
-  }
-  registerCSSCustomProperties("#header-design-provider")
-  registerCSSCustomProperties("#body-design-provider")
-
-  class FastDesignProvider {
-    setAccentColor(value, element){
-      setAccentColor(value, element);
-    }
-    setNeutralColor(value, element){
-      setNeutralColor(value, element);
-    }
-    setBackgroundColor(value, element){
-      setBackgroundColor(value, element)
-    }
-  }
-  window.fastDesignProvider = new FastDesignProvider()
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', (event) => {
+  const header_design = new window.fastDesignProvider("#header-design-provider");
+  const body_design = window.bodyDesign = new window.fastDesignProvider("#body-design-provider");
+  body_design.setLuminance({{ style.luminance }});
+  body_design.setAccentColor("{{ style.accent_base_color }}")
+  body_design.setNeutralColor("{{ style.neutral_color }}");
+  header_design.setLuminance("{{ style.header_luminance }}");
+  header_design.setAccentColor("{{ style.header_accent_base_color }}");
+  header_design.setNeutralColor("{{ style.header_neutral_color }}");
+});
 </script>
 {% endblock %}
 
 <!-- goes in body -->
 {% block contents %}
-<fast-design-system-provider id="body-design-provider" use-defaults accent-foreground-cut-rest="#FFFFFF"
-  {% if style.background_color and style.background_color.startswith("#") %}background-color="{{ style.background_color }}"{% endif %}
-  {% if style.accent_base_color and style.accent_base_color.startswith("#") %}accent-base-color="{{ style.accent_base_color }}"{% endif %}
-  >
+<fast-design-system-provider id="body-design-provider" use-defaults>
   <div id="container">
-  <fast-design-system-provider id="header-design-provider"
-  {% if style.header_background and style.header_background.startswith('#') %}background-color="{{ style.header_background }}"{% endif %}
-  >
-  <nav id="header">
-    {% if nav or sidebar_footer %}
-    <span onclick="closeNav()" id="sidebar-button">
-      <div class="pn-bar"></div>
-      <div class="pn-bar"></div>
-      <div class="pn-bar"></div>
-	  </span>
-    <fast-tooltip anchor="sidebar-button" position="right">
-      Toggle the Sidebar
-    </fast-tooltip>
-    {% endif %}
-    <div class="app-header">
-      {% if app_logo %}<a class="navbar-brand app-logo" href="{{ site_url }}"><img src="{{ app_logo }}" class="app-logo"></a>{% endif %}
-      {% if site_title %}<a class="title" href="{{ site_url }}" >&nbsp;{{ site_title }}</a>{% endif %}
-      {% if site_title and app_title%}<span class="title">&nbsp;-</span>{% endif %}
-      {% if app_title %}<a class="title" href="" >{{ app_title }}</a>{% endif %}
-    </div>
-    <div id="header-items">
-    {% for doc in docs %}
-    {% for root in doc.roots %}
-    {% if "header" in root.tags %}
-    {{ embed(root) | indent(8) }}
-    {% endif %}
-    {% endfor %}
-    {% endfor %}
-  </div>
-  {% if theme_toggle %}
-  <div class="pn-toggle-theme">
-    <fast-switch id="theme-switch" style="float: right;" onChange="toggleLightDarkTheme('{{ theme }}')" {% if theme=='default' %}checked{% endif %}>
-      <span slot="checked-message">
-        <svg class="theme-toggle-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
-      </span>
-      <span slot="unchecked-message">
-        <svg class="theme-toggle-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M10 2c-1.82 0-3.53.5-5 1.35C7.99 5.08 10 8.3 10 12s-2.01 6.92-5 8.65C6.47 21.5 8.18 22 10 22c5.52 0 10-4.48 10-10S15.52 2 10 2z"/></svg>
-      </span>
-    </fast-switch>
-    <fast-tooltip anchor="theme-switch" position="bottom">
-      Toggle the Theme
-    </fast-tooltip>
-  </div>
-  {% endif %}
+    <fast-design-system-provider id="header-design-provider">
+      <nav id="header" {{ 'class="shadow"' if style.shadow else '' }} >
+	{% if nav or sidebar_footer %}
+	<span onclick="{{ 'openNav()' if collapsed_sidebar else 'closeNav()' }}" id="sidebar-button">
+	  <div class="pn-bar"></div>
+	  <div class="pn-bar"></div>
+	  <div class="pn-bar"></div>
+	</span>
+	<fast-tooltip anchor="sidebar-button" position="right">
+	  Toggle the Sidebar
+	</fast-tooltip>
+	{% endif %}
+	<div class="app-header">
+	  {% if app_logo %}
+	  <a class="navbar-brand app-logo" href="{{ site_url }}">
+	    <img src="{{ app_logo }}" class="app-logo">
+	  </a>
+	  {% endif %}
+	  {% if site_title %}
+	  <a class="title" href="{{ site_url }}" >&nbsp;{{ site_title }}</a>
+	  {% endif %}
+	  {% if site_title and app_title%}
+	  <span class="title">-</span>
+	  {% endif %}
+	  {% if app_title %}
+	  <a class="title" href="" >{{ app_title }}</a>
+	  {% endif %}
+	</div>
+	<div id="header-items">
+	  {% for doc in docs %}
+	  {% for root in doc.roots %}
+	  {% if "header" in root.tags %}
+	  {{ embed(root) | indent(8) }}
+	  {% endif %}
+	  {% endfor %}
+	  {% endfor %}
+	</div>
+	{% if theme_toggle %}
+	<div class="pn-toggle-theme">
+	  <fast-switch id="theme-switch" style="float: right;" onChange="toggleLightDarkTheme('{{ theme }}')" {% if theme=='default' %}checked{% endif %}>
+	    <span slot="checked-message">
+              <svg class="theme-toggle-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
+	    </span>
+	    <span slot="unchecked-message">
+              <svg class="theme-toggle-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M10 2c-1.82 0-3.53.5-5 1.35C7.99 5.08 10 8.3 10 12s-2.01 6.92-5 8.65C6.47 21.5 8.18 22 10 22c5.52 0 10-4.48 10-10S15.52 2 10 2z"/></svg>
+	    </span>
+	  </fast-switch>
+	  <fast-tooltip anchor="theme-switch" position="bottom">
+	    Toggle the Theme
+	  </fast-tooltip>
+	</div>
+	{% endif %}
 	{% if busy %}
 	<div class="pn-busy-container" id="busy-container">
 	  {{ embed(roots.busy_indicator) | indent(6) }}
 	</div>
-  <fast-tooltip anchor="busy-container" position="left">
-    Busy Indicator
-  </fast-tooltip>
+	<fast-tooltip anchor="busy-container" position="left">
+	  Busy Indicator
+	</fast-tooltip>
 	{% endif %}
+      </nav>
+    </fast-design-system-provider>
 
-  </nav>
-  </fast-design-system-provider>
-
-  <div class="row" id="content">
-    {% if nav or sidebar_footer %}
-    <div class="sidenav" id="sidebar">
-      <ul class="nav flex-column">
-      {% if nav %}
-      {% for doc in docs %}
-	    {% for root in doc.roots %}
-	    {% if "nav" in root.tags %}
-        {{ embed(root) | indent(8) }}
-	    {% endif %}
-	    {% endfor %}
-      {% endfor %}
-      {% endif %}
-      {% if sidebar_footer %}
-      {{ sidebar_footer }}
-      {% endif %}
-      </ul>
-    </div>
-    {% endif %}
-
-    <div class="main" id="main"
-    {% if nav or sidebar_footer %}
-    style="margin-left: {{ sidebar_width + 30 }}px;"
-    {% else %}
-    style="margin-left: 0px;"
-    {% endif %}
-    >
-      {% if main_max_width %}
-      <div style="margin-left: auto; margin-right: auto; max-width: {{ main_max_width }}">
-      {% endif %}
-      {% for doc in docs %}
-      {% for root in doc.roots %}
-      {% if "main" in root.tags %}
-      <div class="card-margin">
-      {% if main_layout %}<fast-card class="pn-wrapper">{% else %}<div class="pn-wrapper">{% endif %}
-        <span class="fullscreen-button" onclick="toggleFullScreen(this)">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 18"><path d="M4.5 11H3v4h4v-1.5H4.5V11zM3 7h1.5V4.5H7V3H3v4zm10.5 6.5H11V15h4v-4h-1.5v2.5zM11 3v1.5h2.5V7H15V3h-4z"/></svg>
-        </span>
-        {{ embed(root) | indent(4) }}
-      {% if main_layout %}</fast-card>{% else %}</div>{% endif %}
-      </div>
-      {% endif %}
-      {% endfor %}
-      {% endfor %}
-      {% if main_max_width %}
+    <div class="row" id="content">
+      {% if nav or sidebar_footer %}
+      <div class="sidenav {{'hidden' if collapsed_sidebar else ''}}" id="sidebar">
+	<ul class="nav flex-column">
+	  {% if nav %}
+	  {% for doc in docs %}
+	  {% for root in doc.roots %}
+	  {% if "nav" in root.tags %}
+	  {{ embed(root) | indent(8) }}
+	  {% endif %}
+	  {% endfor %}
+	  {% endfor %}
+	  {% endif %}
+	  {% if sidebar_footer %}
+	  {{ sidebar_footer }}
+	  {% endif %}
+	</ul>
       </div>
       {% endif %}
 
-      <fast-dialog id="pn-Modal" hidden style="--dialog-width: 80%; --dialog-height: auto; --background-color: var(--neutral-layer-floating);">
+      <div class="main" id="main">
+	{% if main_max_width %}
+	<div class="main-margin" style="max-width: {{ main_max_width }};">
+	{% endif %}
+	{% for doc in docs %}
+	{% for root in doc.roots %}
+	{% if "main" in root.tags %}
+        <div class="card-margin {{ sizing_modes[root.id] }}">
+	  {% if main_layout %}
+	  <fast-card class="pn-wrapper">
+	  {% else %}
+	  <div class="pn-wrapper">
+	  {% endif %}
+	    <span class="fullscreen-button" onclick="toggleFullScreen(this)">
+	      <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 18">
+		<path d="M4.5 11H3v4h4v-1.5H4.5V11zM3 7h1.5V4.5H7V3H3v4zm10.5 6.5H11V15h4v-4h-1.5v2.5zM11 3v1.5h2.5V7H15V3h-4z"/>
+	      </svg>
+	    </span>
+	    {{ embed(root) | indent(4) }}
+	  {% if main_layout %}
+	  </fast-card>
+	  {% else %}
+	  </div>
+	  {% endif %}
+	</div>
+	{% endif %}
+	{% endfor %}
+	{% endfor %}
+	{% if main_max_width %}
+	</div>
+	{% endif %}
+      </div>
+      <fast-dialog id="pn-Modal" hidden>
         <fast-button class="pn-modal-close" id="pn-closeModal">&times;</fast-button>
-	<div>
-        {% for doc in docs %}
-        {% for root in doc.roots %}
-        {% if "modal" in root.tags %}
-        {{ embed(root) | indent(10) }}
-        {% endif %}
-        {% endfor %}
-        {% endfor %}
+        <div class="pn-modal-content">
+          {% for doc in docs %}
+          {% for root in doc.roots %}
+          {% if "modal" in root.tags %}
+          {{ embed(root) | indent(10) }}
+          {% endif %}
+          {% endfor %}
+          {% endfor %}
 	</div>
       </fast-dialog>
+    </div>
   </div>
-  </div>
-</div>
 </fast-design-system-provider>
-<script>
+
+<script type="text/javascript">
   {{ js }}
 </script>
-<script>
+
+<script type="text/javascript">
   function openNav() {
-    document.getElementById("sidebar").style.left = 0;
-    document.getElementById("main").style.marginLeft = "{{ sidebar_width + 30 }}px";
+    document.getElementById("sidebar").classList.remove("hidden");
     document.getElementById("sidebar-button").onclick = closeNav;
-    var interval = setInterval(function () { window.dispatchEvent(new Event('resize')); }, 10);
-    setTimeout(function () { clearInterval(interval) }, 210)
   }
 
   function closeNav() {
-    document.getElementById("sidebar").style.left = "-{{ sidebar_width + 30 }}px";
-    document.getElementById("main").style.marginLeft = 0;
+    document.getElementById("sidebar").classList.add("hidden");
     document.getElementById("sidebar-button").onclick = openNav;
-    var interval = setInterval(function () { window.dispatchEvent(new Event('resize')); }, 10);
-    setTimeout(function () { clearInterval(interval) }, 210)
   }
 
   var modal = document.getElementById("pn-Modal");
@@ -341,11 +217,8 @@
   }
 </script>
 
-{{ embed(roots.js_area) }}
-{{ embed(roots.actions) }}
-{{ embed(roots.location) }}
-{% if notifications %}
-{{ embed(roots.notifications) }}
-{% endif %}
+{% block state_roots %}
+{{ super() }}
+{% endblock %}
 
 {% endblock %}

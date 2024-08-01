@@ -2,187 +2,258 @@ name: tests
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     branches:
-    - '*'
+      - "*"
   workflow_dispatch:
+    inputs:
+      target:
+        description: "How much of the test suite to run"
+        type: choice
+        default: default
+        options:
+          - default
+          - full
+          - downstream
+      cache:
+        description: "Use cache"
+        type: boolean
+        default: true
   schedule:
-    - cron: '0 19 * * SUN'
+    - cron: "0 19 * * SUN"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash -el {0}
+
+env:
+  DISPLAY: ":99.0"
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  COV: "--cov=./panel --cov-report=xml --cov-append"
 
 jobs:
   pre_commit:
-    name: Run pre-commit hooks
-    runs-on: 'ubuntu-latest'
+    name: Run pre-commit
+    needs: [setup]
+    runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v2
+      - uses: holoviz-dev/holoviz_tasks/pre-commit@v0
+      - uses: pre-commit/action@v3.0.1
+        if: needs.setup.outputs.img_change == 'true'
         with:
-          fetch-depth: "1"
-      - name: set PY
-        run: echo "PY=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
-      - uses: actions/cache@v1
+          extra_args: -a --hook-stage manual oxipng || true --
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        if: needs.setup.outputs.img_change == 'true'
         with:
-          path: ~/.cache/pre-commit
-          key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
-      - name: pre-commit
-        uses: pre-commit/action@v2.0.3
-  test_suite:
-    name: Unit tests on ${{ matrix.os }} with Python ${{ matrix.python-version }}
-    needs: [pre_commit]
+          commit_message: "Optimize PNG images (lossless)"
+          file_pattern: "*.png"
+
+  setup:
+    name: Setup workflow
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      code_change: ${{ steps.filter.outputs.code }}
+      doc_change: ${{ steps.filter.outputs.doc }}
+      img_change: ${{ steps.filter.outputs.img }}
+      matrix: ${{ env.MATRIX }}
+    steps:
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request'
+      - name: Check for code changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'panel/**'
+              - 'examples/**'
+              - 'pixi.toml'
+              - 'pyproject.toml'
+              - '.github/workflows/test.yaml'
+            doc:
+              - 'doc/getting_started/**'
+              - 'doc/how_to/**'
+              - 'scripts/**'
+              - 'lite/**'
+            img:
+              - '**/*.png'
+      - name: Set matrix option
+        run: |
+          if [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then
+            OPTION=${{ github.event.inputs.target }}
+          elif [[ '${{ github.event_name }}' == 'schedule' ]]; then
+            OPTION="full"
+          elif [[ '${{ github.event_name }}' == 'push' && '${{ github.ref_type }}' == 'tag' ]]; then
+            OPTION="full"
+          else
+            OPTION="default"
+          fi
+          echo "MATRIX_OPTION=$OPTION" >> $GITHUB_ENV
+      - name: Set test matrix with 'default' option
+        if: env.MATRIX_OPTION == 'default'
+        run: |
+          MATRIX=$(jq -nsc '{
+              "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
+              "environment": ["test-310", "test-312"]
+          }')
+          echo "MATRIX=$MATRIX" >> $GITHUB_ENV
+      - name: Set test matrix with 'full' option
+        if: env.MATRIX_OPTION == 'full'
+        run: |
+          MATRIX=$(jq -nsc '{
+              "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
+              "environment": ["test-310", "test-311", "test-312"]
+          }')
+          echo "MATRIX=$MATRIX" >> $GITHUB_ENV
+      - name: Set test matrix with 'downstream' option
+        if: env.MATRIX_OPTION == 'downstream'
+        run: |
+          MATRIX=$(jq -nsc '{
+              "os": ["ubuntu-latest"],
+              "environment": ["test-312"]
+          }')
+          echo "MATRIX=$MATRIX" >> $GITHUB_ENV
+
+  pixi_lock:
+    name: Pixi lock
+    runs-on: ubuntu-latest
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi_lock@pixi
+        with:
+          cache: ${{ github.event.inputs.cache == 'true' || github.event.inputs.cache == '' }}
+
+  unit_test_suite:
+    name: unit:${{ matrix.environment }}:${{ matrix.os }}
+    needs: [pre_commit, setup, pixi_lock]
     runs-on: ${{ matrix.os }}
+    if: needs.setup.outputs.code_change == 'true'
     strategy:
       fail-fast: false
-      matrix:
-        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-        python-version: [3.7, 3.8, 3.9]
-        exclude:
-          - os: windows-latest
-            python-version: 3.8
-    timeout-minutes: 60
-    defaults:
-      run:
-        shell: bash -l {0}
-    env:
-      DESC: "Python ${{ matrix.python-version }} tests"
-      PYTHON_VERSION: ${{ matrix.python-version }}
-      DISPLAY: ":99.0"
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # Without this env var `doit env_create ...` uses by default
-      # the `pyviz` channel, except that we don't want to configure
-      # it as one of the sources.
-      PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
+      matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
+    timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v2
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         with:
-          fetch-depth: "100"
-      - uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          miniconda-version: "latest"
-          channel-priority: strict
-          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
-      - name: Fetch unshallow
-        run: git fetch --prune --tags --unshallow
-      - name: conda setup
+          environments: ${{ matrix.environment }}
+          opengl: true
+      - name: Test unit
         run: |
-          conda install "pyctdev>=0.5"
-          conda install "nodejs=15.3.0"
-          doit env_create --python=${{ matrix.python-version }}
-      - name: nix_opengl
+          pixi run -e ${{ matrix.environment }} test-unit $COV
+      - name: Test subprocess
         if: contains(matrix.os, 'ubuntu')
         run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          sudo apt-get install libglu1-mesa
-          conda install mesalib
-          /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x24
-          sleep 3
-      - name: doit develop_install
+          pixi run -e ${{ matrix.environment }} test-subprocess $COV
+      - name: Test docs
         run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          conda install "pip<21.2.1" "toml"
-          conda list
-          doit develop_install -o examples -o recommended -o tests -o build
-          pip install pyecharts idom
-          bokeh sampledata
-          echo "-----"
-          git describe
-      - name: windows_opengl
-        if: contains(matrix.os, 'windows')
+          pixi run -e ${{ matrix.environment }} test-docs $COV
+      - name: Test Examples
         run: |
-          git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
-          powershell gl-ci-helpers/appveyor/install_opengl.ps1
-      - name: doit env_capture
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          doit env_capture
-      - name: doit test_unit
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          doit test_unit
-      - name: test examples
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          doit test_examples
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+          pixi run -e ${{ matrix.environment }} test-example
+      - uses: codecov/codecov-action@v4
         with:
-          files: ./coverage.xml
-          flags: unitexamples-tests
-          fail_ci_if_error: false # optional (default = false)
+          token: ${{ secrets.CODECOV_TOKEN }}
+
   ui_test_suite:
-    name: UI tests on ${{ matrix.os }} with Python 3.9
-    needs: [pre_commit]
+    name: ui:${{ matrix.environment }}:${{ matrix.os }}
+    needs: [pre_commit, setup, pixi_lock]
     runs-on: ${{ matrix.os }}
+    if: needs.setup.outputs.code_change == 'true' || needs.setup.outputs.doc_change == 'true'
     strategy:
       fail-fast: false
       matrix:
-        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-    timeout-minutes: 60
-    defaults:
-      run:
-        shell: bash -l {0}
+        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        environment: ["test-ui"]
+    timeout-minutes: 120
     env:
-      DESC: "Python ${{ matrix.python-version }} tests"
-      PYTHON_VERSION: ${{ matrix.python-version }}
-      DISPLAY: ":99.0"
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # Without this env var `doit env_create ...` uses by default
-      # the `pyviz` channel, except that we don't want to configure
-      # it as one of the sources.
-      PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
+      PANEL_LOG_LEVEL: info
+      OAUTH_COOKIE_SECRET: ${{ secrets.OAUTH_COOKIE_SECRET }}
+      OAUTH_ENCRYPTION_KEY: ${{ secrets.OAUTH_ENCRYPTION_KEY }}
+      AUTH0_PORT: "5701"
+      AUTH0_OAUTH_KEY: ${{ secrets.AUTH0_OAUTH_KEY }}
+      AUTH0_OAUTH_SECRET: ${{ secrets.AUTH0_OAUTH_SECRET }}
+      AUTH0_OAUTH_EXTRA_PARAMS: ${{ secrets.AUTH0_OAUTH_EXTRA_PARAMS }}
+      AUTH0_OAUTH_USER: ${{ secrets.AUTH0_OAUTH_USER }}
+      AUTH0_OAUTH_PASSWORD: ${{ secrets.AUTH0_OAUTH_PASSWORD }}
+      AZURE_PORT: "5702"
+      AZURE_OAUTH_KEY: ${{ secrets.AZURE_OAUTH_KEY }}
+      AZURE_OAUTH_SECRET: ${{ secrets.AZURE_OAUTH_SECRET }}
+      AZURE_OAUTH_USER: ${{ secrets.AZURE_OAUTH_USER }}
+      AZURE_OAUTH_PASSWORD: ${{ secrets.AZURE_OAUTH_PASSWORD }}
+      OKTA_PORT: "5703"
+      OKTA_OAUTH_KEY: ${{ secrets.OKTA_OAUTH_KEY }}
+      OKTA_OAUTH_SECRET: ${{ secrets.OKTA_OAUTH_SECRET }}
+      OKTA_OAUTH_EXTRA_PARAMS: ${{ secrets.OKTA_OAUTH_EXTRA_PARAMS }}
+      OKTA_OAUTH_USER: ${{ secrets.OKTA_OAUTH_USER }}
+      OKTA_OAUTH_PASSWORD: ${{ secrets.OKTA_OAUTH_PASSWORD }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         with:
-          fetch-depth: "100"
-      - uses: actions/setup-python@v2
+          environments: ${{ matrix.environment }}
+        id: install
+      - name: Build pyodide wheels
+        run: pixi run -e test-ui "python ./scripts/build_pyodide_wheels.py"
+      - name: Launch JupyterLab
+        shell: pixi run -e test-ui bash -el {0}
+        run: |
+          jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
+          (jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887 > /tmp/jupyterlab_server.log 2>&1) &
+      - name: Build JupyterLite
+        shell: pixi run -e test-ui bash -el {0}
+        run: |
+          # TODO: Make this a pixi feature/environment
+          python -m pip install -r ./lite/requirements.txt
+          python ./scripts/build_pyodide_wheels.py lite/pypi
+          python ./scripts/panelite/generate_panelite_content.py
+          jupyter lite build --lite-dir lite --output-dir lite/dist
+      - name: Wait for JupyterLab
+        uses: ifaxity/wait-on-action@v1.2.1
         with:
-          python-version: ${{ matrix.python-version }}
-      - uses: conda-incubator/setup-miniconda@v2
+          resource: http-get://localhost:8887/lab
+          timeout: 180000
+      - name: Test UI
+        run: |
+          # Create a .uicoveragerc file to set the concurrency library to greenlet
+          # https://github.com/microsoft/playwright-python/issues/313
+          echo "[run]\nconcurrency = greenlet" > .uicoveragerc
+          FAIL="--screenshot only-on-failure --full-page-screenshot --output ui_screenshots --tracing retain-on-failure"
+          pixi run -e ${{ matrix.environment }} test-ui --jupyter $COV --cov-config=.uicoveragerc $FAIL
+      - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          miniconda-version: "latest"
-          channel-priority: strict
-          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
-      - name: Fetch unshallow
-        run: git fetch --prune --tags --unshallow
-      - name: conda setup
+          name: ui_screenshots_${{ runner.os }}
+          path: ./ui_screenshots
+          if-no-files-found: ignore
+      - name: Stop JupyterLab
+        if: always()
+        shell: pixi run -e test-ui bash -el {0}
         run: |
-          conda install "pyctdev>=0.5" "nodejs=15.3.0"
-          doit env_create --python=3.9
-      - name: doit develop_install
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          conda install "pip<21.2.1" "toml"
-          conda list
-          doit develop_install -o recommended -o tests -o build
-          pip install playwright pytest-playwright
-          echo "-----"
-          git describe
-      - name: doit env_capture
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          doit env_capture
-      - name: doit init_playwright
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          playwright install chromium
-      - name: doit test_ui
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          doit test_ui
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+          jupyter lab stop 8887 || true
+      - uses: codecov/codecov-action@v4
         with:
-          files: ./coverage.xml
-          flags: ui-tests
-          fail_ci_if_error: false # optional (default = false)
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  core_test_suite:
+    name: core:${{ matrix.environment }}:${{ matrix.os }}
+    needs: [pre_commit, setup, pixi_lock]
+    runs-on: ${{ matrix.os }}
+    if: needs.setup.outputs.code_change == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest"]
+        environment: ["test-core"]
+    timeout-minutes: 120
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
+        with:
+          environments: ${{ matrix.environment }}
+      - name: Test Unit
+        run: |
+          pixi run -e ${{ matrix.environment }} test-unit

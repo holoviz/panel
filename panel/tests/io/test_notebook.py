@@ -5,9 +5,9 @@ from ..util import jb_available
 
 
 @jb_available
-def test_ipywidget():
+def test_ipywidget(document):
     pane = Str('A')
-    widget = ipywidget(pane)
+    widget = ipywidget(pane, doc=document)
 
     assert widget._view_count == 0
     assert len(pane._models) == 1

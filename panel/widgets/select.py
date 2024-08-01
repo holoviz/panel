@@ -7,30 +7,42 @@ from __future__ import annotations
 import itertools
 import re
 
-from collections import OrderedDict
+from functools import partial
+from types import FunctionType
 from typing import (
-    TYPE_CHECKING, ClassVar, Mapping, Type,
+    TYPE_CHECKING, Any, Awaitable, Callable, ClassVar, Mapping, Optional,
 )
 
+import numpy as np
 import param
 
+from bokeh.models import PaletteSelect
 from bokeh.models.widgets import (
     AutocompleteInput as _BkAutocompleteInput,
-    CheckboxButtonGroup as _BkCheckboxButtonGroup,
     CheckboxGroup as _BkCheckboxGroup, MultiChoice as _BkMultiChoice,
-    MultiSelect as _BkMultiSelect, RadioButtonGroup as _BkRadioButtonGroup,
     RadioGroup as _BkRadioBoxGroup,
 )
 
-from ..layout import Column, VSpacer
-from ..models import CustomSelect, SingleSelect as _BkSingleSelect
-from ..util import indexOf, isIn
+from ..io.resources import CDN_DIST
+from ..io.state import state
+from ..layout.base import Column, ListPanel, NamedListPanel
+from ..models import (
+    CheckboxButtonGroup as _BkCheckboxButtonGroup,
+    CustomMultiSelect as _BkMultiSelect, CustomSelect,
+    RadioButtonGroup as _BkRadioButtonGroup, SingleSelect as _BkSingleSelect,
+)
+from ..util import PARAM_NAME_PATTERN, indexOf, isIn
+from ._mixin import TooltipMixin
 from .base import CompositeWidget, Widget
 from .button import Button, _ButtonBase
 from .input import TextAreaInput, TextInput
 
 if TYPE_CHECKING:
+    from bokeh.document import Document
     from bokeh.model import Model
+    from pyviz_comms import Comm
+
+    from ..models.widgets import DoubleClickEvent
 
 
 class SelectBase(Widget):
@@ -41,7 +53,13 @@ class SelectBase(Widget):
 
     @property
     def labels(self):
-        return [str(o) for o in self.options]
+        labels = []
+        for o in self.options:
+            if isinstance(o, param.Parameterized) and not PARAM_NAME_PATTERN.match(o.name):
+                labels.append(o.name)
+            else:
+                labels.append(str(o))
+        return labels
 
     @property
     def values(self):
@@ -52,13 +70,16 @@ class SelectBase(Widget):
 
     @property
     def _items(self):
-        return OrderedDict(zip(self.labels, self.values))
-
+        return dict(zip(self.labels, self.values))
 
 
 class SingleSelectBase(SelectBase):
 
     value = param.Parameter(default=None)
+
+    _allows_values: ClassVar[bool] = True
+
+    _allows_none: ClassVar[bool] = False
 
     _supports_embed: ClassVar[bool] = True
 
@@ -67,39 +88,44 @@ class SingleSelectBase(SelectBase):
     def __init__(self, **params):
         super().__init__(**params)
         values = self.values
-        if self.value is None and None not in values and values:
+        if self.value is None and None not in values and values and not self._allows_none:
             self.value = values[0]
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         labels, values = self.labels, self.values
-        unique = len(set(self.unicode_values)) == len(labels)
+        unique = len(set(self.unicode_values)) == len(labels) and self._allows_values
         if 'value' in msg:
             val = msg['value']
             if isIn(val, values):
                 unicode_values = self.unicode_values if unique else labels
                 msg['value'] = unicode_values[indexOf(val, values)]
             elif values:
-                self.value = self.values[0]
+                self.value = self.param['value'].default if self._allows_none else self.values[0]
+                if not self._allows_none:
+                    del msg['value']
             else:
-                self.value = None
-                msg['value'] = ''
+                self.value = self.param['value'].default
+                if self._allows_none:
+                    msg['value'] = self.value
 
-        if 'options' in msg:
+        option_prop = self._property_mapping.get('options', 'options')
+        is_list = isinstance(self.param['value'], param.List)
+        if option_prop in msg and not is_list:
             if isinstance(self.options, dict):
-                if unique:
+                if unique and self._allows_values:
                     options = [(v, l) for l,v in zip(labels, self.unicode_values)]
                 else:
                     options = labels
-                msg['options'] = options
+                msg[option_prop] = options
             else:
-                msg['options'] = self.unicode_values
+                msg[option_prop] = self.unicode_values
             val = self.value
             if values:
                 if not isIn(val, values):
-                    self.value = values[0]
+                    self.value = self.param['value'].default if self._allows_none else values[0]
             else:
-                self.value = None
+                self.value = self.param['value'].default
         return msg
 
     @property
@@ -127,8 +153,7 @@ class SingleSelectBase(SelectBase):
             values = self.values
         elif any(v not in self.values for v in values):
             raise ValueError("Supplied embed states were not found "
-                             "in the %s widgets values list." %
-                             type(self).__name__)
+                             f"in the {type(self).__name__} widgets values list.")
         return (self, self._models[root.ref['id']][0], values,
                 lambda x: x.value, 'value', 'cb_obj.value')
 
@@ -149,12 +174,15 @@ class Select(SingleSelectBase):
     >>> Select(name='Study', options=['Biology', 'Chemistry', 'Physics'])
     """
 
-    disabled_options = param.List(default=[], doc="""
+    description = param.String(default=None, doc="""
+        An HTML string describing the function of this component.""")
+
+    disabled_options = param.List(default=[], nested_refs=True, doc="""
         Optional list of ``options`` that are disabled, i.e. unusable and
         un-clickable. If ``options`` is a dictionary the list items must be
         dictionary values.""")
 
-    groups = param.Dict(default=None, doc="""
+    groups = param.Dict(default=None, nested_refs=True, doc="""
         Dictionary whose keys are used to visually group the options
         and whose values are either a list or a dictionary of options
         to select from. Mutually exclusive with ``options``  and valid only
@@ -165,9 +193,19 @@ class Select(SingleSelectBase):
         If set to 1 displays options as dropdown otherwise displays
         scrollable area.""")
 
+    width = param.Integer(default=300, allow_None=True, doc="""
+      Width of this component. If sizing_mode is set to stretch
+      or scale mode this will merely be used as a suggestion.""")
+
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'groups': None,
+    }
+
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'size': None, 'groups': None
     }
+
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/select.css']
 
     @property
     def _widget_type(self):
@@ -177,7 +215,7 @@ class Select(SingleSelectBase):
         super().__init__(**params)
         if self.size == 1:
             self.param.size.constant = True
-        self._callbacks.extend([
+        self._internal_callbacks.extend([
             self.param.watch(
                 self._validate_options_groups,
                 ['options', 'groups']
@@ -222,7 +260,6 @@ class Select(SingleSelectBase):
                 'as it is one of the disabled options.'
             )
 
-
     def _validate_options_groups(self, *events):
         if self.options and self.groups:
             raise ValueError(
@@ -235,12 +272,11 @@ class Select(SingleSelectBase):
                 ' `groups` parameter, use `options` instead.'
             )
 
-    def _process_param_change(self, msg):
+    def _process_param_change(self, msg: dict[str, Any]) -> dict[str, Any]:
+        groups_provided = 'groups' in msg
         msg = super()._process_param_change(msg)
-        if msg.get('size') == 1:
-            msg.pop('size')
-        groups = msg.pop('groups', None)
-        if groups is not None:
+        if groups_provided or 'options' in msg and self.groups:
+            groups = self.groups
             if (all(isinstance(values, dict) for values in groups.values()) is False
                and  all(isinstance(values, list) for values in groups.values()) is False):
                 raise ValueError(
@@ -298,11 +334,421 @@ class Select(SingleSelectBase):
                 return list(itertools.chain(*self.groups.values()))
 
 
+class NestedSelect(CompositeWidget):
+    """
+    The `NestedSelect` widget is composed of multiple widgets, where subsequent select options
+    depend on the parent's value.
+
+    Reference: https://panel.holoviz.org/reference/widgets/NestedSelect.html
+
+    :Example:
+
+    >>> NestedSelect(
+    ...     options={
+    ...         "gfs": {"tmp": [1000, 500], "pcp": [1000]},
+    ...         "name": {"tmp": [1000, 925, 850, 700, 500], "pcp": [1000]},
+    ...     },
+    ...     levels=["model", "var", "level"],
+    ... )
+    """
+
+    value = param.Dict(doc="""
+        The value from all the Select widgets; the keys are the levels names.
+        If no levels names are specified, the keys are the levels indices.""")
+
+    options = param.ClassSelector(class_=(dict, FunctionType), doc="""
+        The options to select from. The options may be nested dictionaries, lists,
+        or callables that return those types. If callables are used, the callables
+        must accept `level` and `value` keyword arguments, where `level` is the
+        level that updated and `value` is a dictionary of the current values, containing keys
+        up to the level that was updated.""")
+
+    layout = param.Parameter(default=Column, doc="""
+        The layout type of the widgets. If a dictionary, a "type" key can be provided,
+        to specify the layout type of the widgets, and any additional keyword arguments
+        will be used to instantiate the layout.""")
+
+    levels = param.List(doc="""
+        Either a list of strings or a list of dictionaries. If a list of strings, the strings
+        are used as the names of the levels. If a list of dictionaries, each dictionary may
+        have a "name" key, which is used as the name of the level, a "type" key, which
+        is used as the type of widget, and any corresponding widget keyword arguments.
+        Must be specified if options is callable.""")
+
+    disabled = param.Boolean(default=False, doc="""
+        Whether the widget is disabled.""")
+
+    _widgets = param.List(doc="The nested select widgets.")
+
+    _max_depth = param.Integer(doc="The number of levels of the nested select widgets.")
+
+    _levels = param.List(doc="""
+        The internal rep of levels to prevent overwriting user provided levels.""")
+
+    def __init__(self, **params):
+        super().__init__(**params)
+        self._update_widgets()
+
+    def _gather_values_from_widgets(self, up_to_i=None):
+        """
+        Gather values from all the select widgets to update the class' value.
+        """
+        values = {}
+        for i, select in enumerate(self._widgets):
+            if up_to_i is not None and i >= up_to_i:
+                break
+            level = self._levels[i]
+            if isinstance(level, dict):
+                name = level.get("name", i)
+            else:
+                name = level
+            values[name] = select.value if select.options else None
+
+        return values
+
+    def _uses_callable(self, d):
+        """
+        Check if the nested options has a callable.
+        """
+        if callable(d):
+            return True
+
+        if isinstance(d, dict):
+            for value in d.values():
+                if callable(value):
+                    return True
+                elif isinstance(value, dict):
+                    return self._uses_callable(value)
+        return False
+
+    def _find_max_depth(self, d, depth=1):
+        if d is None or len(d) == 0:
+            return 0
+        elif not isinstance(d, dict):
+            return depth
+
+        max_depth = depth
+        for value in d.values():
+            if isinstance(value, dict):
+                max_depth = max(max_depth, self._find_max_depth(value, depth + 1))
+            # dict means it's a level, so it's not the last level
+            # list means it's a leaf, so it's the last level
+            if isinstance(value, list) and len(value) == 0 and max_depth > 0:
+                max_depth -= 1
+        return max_depth
+
+    def _resolve_callable_options(self, i, options) -> dict | list:
+        level = self.levels[i]
+        value = self._gather_values_from_widgets(up_to_i=i)
+        options = options(level=level, value=value)
+        return options
+
+    @param.depends("options", "layout", "levels", watch=True)
+    def _update_widgets(self):
+        """
+        When options is changed, reflect changes on the select widgets.
+        """
+        if self._uses_callable(self.options):
+            if not self.levels:
+                raise ValueError("levels must be specified if options is callable")
+            self._max_depth = len(self.levels)
+        else:
+            self._max_depth = self._find_max_depth(self.options) + 1
+
+        if not self.levels:
+            self._levels = [i for i in range(self._max_depth)]
+        elif len(self.levels) != self._max_depth:
+            raise ValueError(f"levels must be of length {self._max_depth}")
+        else:
+            self._levels = self.levels
+
+        self._widgets = []
+
+        # use [] as default because it's the last level if options is None
+        options = (self.options or [])
+        if isinstance(self.options, dict):
+            options = self.options.copy()
+
+        for i in range(self._max_depth):
+            if callable(options):
+                options = self._resolve_callable_options(i, options)
+
+            value = self._init_widget(i, options)
+            if isinstance(options, dict) and len(options) > 0 and value is not None:
+                options = options[value]
+            elif i < self._max_depth - 1 and not isinstance(options, dict):
+                raise ValueError(
+                    f"The level, {self.levels[i]!r} is not the last nested level, "
+                    f"so it must be a dict, but got {options!r}, which is a "
+                    f"{type(options).__name__}"
+                )
+
+        if isinstance(self.layout, dict):
+            layout_type = self.layout.pop("type", Column)
+            layout_kwargs = self.layout.copy()
+        elif issubclass(self.layout, (ListPanel, NamedListPanel)):
+            layout_type = self.layout
+            layout_kwargs = {}
+        else:
+            raise ValueError(
+                f"The layout must be a subclass of ListLike or dict, got {self.layout!r}."
+            )
+
+        self._composite = layout_type(*self._widgets, **layout_kwargs)
+        if self.options is not None:
+            self.value = self._gather_values_from_widgets()
+
+    def _extract_level_metadata(self, i):
+        """
+        Extract the widget type and keyword arguments from the level metadata.
+        """
+        level = self._levels[i]
+        if isinstance(level, int):
+            return Select, {}
+        elif isinstance(level, str):
+            return Select, {"name": level}
+        widget_type = level.get("type", Select)
+        widget_kwargs = {k: v for k, v in level.items() if k != "type"}
+        return widget_type, widget_kwargs
+
+    def _lookup_value(self, i, options, values, name=None, error=False):
+        """
+        Look up the value of the select widget at index i or by name.
+        """
+        options_iterable = isinstance(options, (list, dict))
+        if values is None or (options_iterable and len(options) == 0):
+            value = None
+        elif name is None:
+            # get by index
+            value = list(values.values())[i] if i < len(values) else None
+        elif isinstance(self._levels[0], int):
+            # get by levels keys, which are enumerations
+            value = values.get(i)
+        else:
+            # get by levels keys, which are strings
+            value = values.get(name)
+
+        if options_iterable and options and value not in options:
+            if value is not None and error:
+                raise ValueError(
+                    f"Failed to set value {value!r} for level {name!r}, "
+                    f"must be one of {options!r}."
+                )
+            else:
+                value = options[0]
+        return value
+
+    def _init_widget(self, i, options):
+        """
+        Helper method to initialize a select widget.
+        """
+        if isinstance(options, dict):
+            options = list(options.keys())
+        elif not isinstance(options, (list, dict)) and not callable(options):
+            raise ValueError(
+                f"options must be a dict, list, or callable that returns those types, "
+                f"got {options!r}, which is a {type(options).__name__}"
+            )
+
+        widget_type, widget_kwargs = self._extract_level_metadata(i)
+        value = self._lookup_value(i, options, self.value, error=False)
+        widget_kwargs["options"] = options
+        widget_kwargs["value"] = value
+        if "visible" not in widget_kwargs:
+            # first select widget always visible
+            widget_kwargs["visible"] = i == 0 or callable(options) or len(options) > 0
+        widget = widget_type(**widget_kwargs)
+        self.link(widget, disabled="disabled")
+        widget.param.watch(self._update_widget_options_interactively, "value")
+        self._widgets.append(widget)
+        return value
+
+    def _update_widget_options_interactively(self, event):
+        """
+        When a select widget's value is changed, update to the latest options.
+        """
+        if self.options is None:
+            return
+
+        # little optimization to avoid looping through all the
+        # widgets and updating their value
+        for start_i, select in enumerate(self._widgets):  # noqa: B007
+            if select is event.obj:
+                break
+
+        options = self.options if callable(self.options) else self.options.copy()
+
+        # batch watch to prevent continuously triggering
+        # this function when updating the select widgets
+        with param.parameterized.batch_call_watchers(self):
+            for i, select in enumerate(self._widgets[:-1]):
+                if select.value is None:
+                    options = {}
+                    visible = False
+                elif options:
+                    if isinstance(options, dict):
+                        if select.value in options:
+                            options = options[select.value]
+                        else:
+                            options = options[list(options.keys())[0]]
+                    visible = bool(options)
+
+                if i < start_i:
+                    # If the select widget is before the one
+                    # that triggered the event,
+                    # then we don't need to update it;
+                    # we just need to subset options.
+                    continue
+
+                next_select = self._widgets[i + 1]
+                if callable(options):
+                    options = self._resolve_callable_options(i + 1, options)
+                    next_options = list(options)
+                elif isinstance(options, dict):
+                    next_options = list(options.keys())
+                elif isinstance(options, list):
+                    next_options = options
+                else:
+                    raise NotImplementedError(
+                        "options must be a dict, list, or callable that returns those types."
+                    )
+
+                next_select.param.update(
+                    options=next_options,
+                    visible=visible
+                )
+            self.value = self._gather_values_from_widgets()
+
+    @param.depends("value", watch=True)
+    def _update_options_programmatically(self):
+        """
+        When value is passed, update to the latest options.
+        """
+        if self.options is None:
+            return
+
+        # must define these or else it gets mutated in the loop
+        options = self.options if callable(self.options) else self.options.copy()
+        set_values = self.value.copy()
+        original_values = self._gather_values_from_widgets()
+
+        if set_values == original_values:
+            return
+
+        with param.parameterized.batch_call_watchers(self):
+            try:
+                for i in range(self._max_depth):
+                    curr_select = self._widgets[i]
+                    if callable(options):
+                        options = self._resolve_callable_options(i, options)
+                        curr_options = list(options)
+                    elif isinstance(options, dict):
+                        curr_options = list(options.keys())
+                    else:
+                        curr_options = options
+                    curr_value = self._lookup_value(
+                        i, curr_options, set_values,
+                        name=curr_select.name, error=True
+                    )
+
+                    with param.discard_events(self):
+                        curr_select.param.update(
+                            options=curr_options,
+                            value=curr_value,
+                            visible=callable(curr_options) or len(curr_options) > 0
+                        )
+                    if curr_value is None:
+                        break
+                    if i < self._max_depth - 1:
+                        options = options[curr_value]
+            except Exception:
+                # revert to original values if there is an error
+                # so it's not in a limbo state
+                self.value = original_values
+                raise
+
+
+class ColorMap(SingleSelectBase):
+    """
+    The `ColorMap` widget allows selecting a value from a dictionary of
+    `options` each containing a colormap specified as a list of colors
+    or a matplotlib colormap.
+
+    Reference: https://panel.holoviz.org/reference/widgets/ColorMap.html
+
+    :Example:
+
+    >>> ColorMap(name='Reds', options={'Reds': ['white', 'red'], 'Blues': ['#ffffff', '#0000ff']})
+    """
+
+    options = param.Dict(default={}, doc="""
+        Dictionary of colormaps""")
+
+    ncols = param.Integer(default=1, doc="""
+        Number of columns of swatches to display.""")
+
+    swatch_height = param.Integer(default=20, doc="""
+        Height of the color swatches.""")
+
+    swatch_width = param.Integer(default=100, doc="""
+        Width of the color swatches.""")
+
+    value = param.Parameter(default=None, doc="The selected colormap.")
+
+    value_name = param.String(default=None, doc="Name of the selected colormap.")
+
+    _rename = {'options': 'items', 'value_name': None}
+
+    _widget_type: ClassVar[type[Model]] = PaletteSelect
+
+    @param.depends('value_name', watch=True, on_init=True)
+    def _sync_value_name(self):
+        if self.value_name and self.value_name in self.options:
+            self.value = self.options[self.value_name]
+
+    @param.depends('value', watch=True, on_init=True)
+    def _sync_value(self):
+        if self.value:
+            idx = indexOf(self.value, self.values)
+            self.value_name = self.labels[idx]
+
+    def _process_param_change(self, params):
+        if 'options' in params:
+            options = []
+            for name, cmap in params.pop('options').items():
+                if 'matplotlib' in getattr(cmap, '__module__', ''):
+                    N = getattr(cmap, 'N', 10)
+                    samples = np.linspace(0, 1, N)
+                    rgba_tmpl = 'rgba({0}, {1}, {2}, {3:.3g})'
+                    cmap = [
+                        rgba_tmpl.format(*(rgba[:3]*255).astype(int), rgba[-1])
+                        for rgba in cmap(samples)
+                    ]
+                options.append((name, cmap))
+            params['options'] = options
+        if 'value' in params and not isinstance(params['value'], (str, type(None))):
+            idx = indexOf(params['value'], self.values)
+            params['value'] = self.labels[idx]
+        return {
+            self._property_mapping.get(p, p): v for p, v in params.items()
+            if self._property_mapping.get(p, False) is not None
+        }
+
+
 class _MultiSelectBase(SingleSelectBase):
 
     value = param.List(default=[])
 
+    width = param.Integer(default=300, allow_None=True, doc="""
+      Width of this component. If sizing_mode is set to stretch
+      or scale mode this will merely be used as a suggestion.""")
+
+    description = param.String(default=None, doc="""
+        An HTML string describing the function of this component.""")
+
     _supports_embed: ClassVar[bool] = False
+
+    __abstract = True
 
     def _process_param_change(self, msg):
         msg = super(SingleSelectBase, self)._process_param_change(msg)
@@ -350,7 +796,53 @@ class MultiSelect(_MultiSelectBase):
         The number of items displayed at once (i.e. determines the
         widget height).""")
 
-    _widget_type: ClassVar[Type[Model]] = _BkMultiSelect
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/select.css']
+
+    _widget_type: ClassVar[type[Model]] = _BkMultiSelect
+
+    def __init__(self, **params):
+        click_handler = params.pop('on_double_click', None)
+        super().__init__(**params)
+        self._dbl__click_handlers = [click_handler] if click_handler else []
+
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
+        model = super()._get_model(doc, root, parent, comm)
+        self._register_events('dblclick_event', model=model, doc=doc, comm=comm)
+        return model
+
+    def _process_event(self, event: DoubleClickEvent) -> None:
+        if event.option in self.labels:
+            event.option = self._items[event.option]
+            for handler in self._dbl__click_handlers:
+                state.execute(partial(handler, event))
+
+    def on_double_click(
+        self, callback: Callable[[param.parameterized.Event], None | Awaitable[None]]
+    ) -> param.parameterized.Watcher:
+        """
+        Register a callback to be executed when a `MultiSelect` option is double-clicked.
+
+        The callback is given an `DoubleClickEvent` argument
+
+        Example
+        -------
+
+        >>> select = pn.widgets.MultiSelect(options=["A", "B", "C"])
+        >>> def handle_click(event):
+        ...    print(f"Option {event.option} was double clicked.")
+        >>> select.on_double_click(handle_click)
+
+        Arguments
+        ---------
+        callback:
+            The function to run on click events. Must accept a positional `Event` argument. Can
+            be a sync or async function
+        """
+        self._dbl__click_handlers.append(callback)
+
 
 
 class MultiChoice(_MultiSelectBase):
@@ -394,12 +886,16 @@ class MultiChoice(_MultiSelectBase):
     solid = param.Boolean(default=True, doc="""
         Whether to display widget with solid or light style.""")
 
-    _widget_type: ClassVar[Type[Model]] = _BkMultiChoice
+    width = param.Integer(default=300, allow_None=True, doc="""
+      Width of this component. If sizing_mode is set to stretch
+      or scale mode this will merely be used as a suggestion.""")
+
+    _widget_type: ClassVar[type[Model]] = _BkMultiChoice
 
 
-class AutocompleteInput(Widget):
+class AutocompleteInput(SingleSelectBase):
     """
-    The `MultiChoice` widget allows selecting multiple values from a list of
+    The `AutocompleteInput` widget allows selecting multiple values from a list of
     `options`.
 
     It falls into the broad category of multi-value, option-selection widgets
@@ -426,10 +922,6 @@ class AutocompleteInput(Widget):
         The number of characters a user must type before
         completions are presented.""")
 
-    options = param.List(default=[], doc="""
-        A list of completion strings. This will be used to guide the
-        user upon typing the beginning of a desired value.""")
-
     placeholder = param.String(default='', doc="""
         Placeholder for empty input field.""")
 
@@ -437,29 +929,59 @@ class AutocompleteInput(Widget):
         Set to False in order to allow users to enter text that is not
         present in the list of completion strings.""")
 
-    value = param.String(default='', allow_None=True, doc="""
+    search_strategy = param.Selector(default='starts_with',
+        objects=['starts_with', 'includes'], doc="""
+        Define how to search the list of completion strings. The default option
+        `"starts_with"` means that the user's text must match the start of a
+        completion string. Using `"includes"` means that the user's text can
+        match any substring of a completion string.""")
+
+    value = param.Parameter(default='', allow_None=True, doc="""
       Initial or entered text value updated when <enter> key is pressed.""")
 
     value_input = param.String(default='', allow_None=True, doc="""
       Initial or entered text value updated on every key press.""")
 
+    width = param.Integer(default=300, allow_None=True, doc="""
+      Width of this component. If sizing_mode is set to stretch
+      or scale mode this will merely be used as a suggestion.""")
+
+    description = param.String(default=None, doc="""
+        An HTML string describing the function of this component.""")
+
+    _allows_values: ClassVar[bool] = False
+
+    _allows_none: ClassVar[bool] = True
+
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'options': 'completions'}
 
-    _widget_type: ClassVar[Type[Model]] = _BkAutocompleteInput
+    _widget_type: ClassVar[type[Model]] = _BkAutocompleteInput
+
+    def _process_property_change(self, msg):
+        if not self.restrict and 'value' in msg:
+            try:
+                return super()._process_property_change(msg)
+            except Exception:
+                return Widget._process_property_change(self, msg)
+        return super()._process_property_change(msg)
 
     def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        if 'completions' in msg:
-            if self.restrict and not isIn(self.value, msg['completions']):
-                msg['value'] = self.value = ''
-        return msg
+        if 'value' in msg and not self.restrict and not isIn(msg['value'], self.values):
+            with param.parameterized.discard_events(self):
+                props = super()._process_param_change(msg)
+                self.value = props['value'] = msg['value']
+        else:
+            props = super()._process_param_change(msg)
+        return props
 
 
 class _RadioGroupBase(SingleSelectBase):
 
     _supports_embed = False
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'options': 'labels', 'value': 'active'}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'name': None, 'options': 'labels', 'value': 'active'
+    }
 
     _source_transforms = {'value': "source.labels[value]"}
 
@@ -501,14 +1023,13 @@ class _RadioGroupBase(SingleSelectBase):
             values = self.values
         elif any(v not in self.values for v in values):
             raise ValueError("Supplied embed states were not found in "
-                             "the %s widgets values list." %
-                             type(self).__name__)
+                             f"the {type(self).__name__} widgets values list.")
         return (self, self._models[root.ref['id']][0], values,
                 lambda x: x.active, 'active', 'cb_obj.active')
 
 
 
-class RadioButtonGroup(_RadioGroupBase, _ButtonBase):
+class RadioButtonGroup(_RadioGroupBase, _ButtonBase, TooltipMixin):
     """
     The `RadioButtonGroup` widget allows selecting from a list or dictionary
     of values using a set of toggle buttons.
@@ -531,9 +1052,15 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase):
         objects=['horizontal', 'vertical'], doc="""
         Button group orientation, either 'horizontal' (default) or 'vertical'.""")
 
+    _rename: ClassVar[Mapping[str, str | None]] = {**_RadioGroupBase._rename, **TooltipMixin._rename}
+
+    _source_transforms = {
+        'value': "source.labels[value]", 'button_style': None, 'description': None
+    }
+
     _supports_embed: ClassVar[bool] = True
 
-    _widget_type: ClassVar[Type[Model]] = _BkRadioButtonGroup
+    _widget_type: ClassVar[type[Model]] = _BkRadioButtonGroup
 
 
 
@@ -561,7 +1088,7 @@ class RadioBoxGroup(_RadioGroupBase):
 
     _supports_embed: ClassVar[bool] = True
 
-    _widget_type: ClassVar[Type[Model]] = _BkRadioBoxGroup
+    _widget_type: ClassVar[type[Model]] = _BkRadioBoxGroup
 
 
 
@@ -603,7 +1130,7 @@ class _CheckGroupBase(SingleSelectBase):
 
 
 
-class CheckButtonGroup(_CheckGroupBase, _ButtonBase):
+class CheckButtonGroup(_CheckGroupBase, _ButtonBase, TooltipMixin):
     """
     The `CheckButtonGroup` widget allows selecting between a list of options
     by toggling the corresponding buttons.
@@ -626,7 +1153,14 @@ class CheckButtonGroup(_CheckGroupBase, _ButtonBase):
         objects=['horizontal', 'vertical'], doc="""
         Button group orientation, either 'horizontal' (default) or 'vertical'.""")
 
-    _widget_type: ClassVar[Type[Model]] = _BkCheckboxButtonGroup
+    _rename: ClassVar[Mapping[str, str | None]] = {**_CheckGroupBase._rename, **TooltipMixin._rename}
+
+    _source_transforms = {
+        'value': "value.map((index) => source.labels[index])", 'button_style': None,
+        'description': None
+    }
+
+    _widget_type: ClassVar[type[Model]] = _BkCheckboxButtonGroup
 
 
 class CheckBoxGroup(_CheckGroupBase):
@@ -652,7 +1186,7 @@ class CheckBoxGroup(_CheckGroupBase):
         Whether the items be arrange vertically (``False``) or
         horizontally in-line (``True``).""")
 
-    _widget_type: ClassVar[Type[Model]] = _BkCheckboxGroup
+    _widget_type: ClassVar[type[Model]] = _BkCheckboxGroup
 
 
 
@@ -678,13 +1212,10 @@ class ToggleGroup(SingleSelectBase):
     _behaviors = ['check', 'radio']
 
     def __new__(cls, widget_type='button', behavior='check', **params):
-
         if widget_type not in ToggleGroup._widgets_type:
-            raise ValueError('widget_type {} is not valid. Valid options are {}'
-                             .format(widget_type, ToggleGroup._widgets_type))
+            raise ValueError(f'widget_type {widget_type} is not valid. Valid options are {ToggleGroup._widgets_type}')
         if behavior not in ToggleGroup._behaviors:
-            raise ValueError('behavior {} is not valid. Valid options are {}'
-                             .format(widget_type, ToggleGroup._behaviors))
+            raise ValueError(f'behavior {widget_type} is not valid. Valid options are {ToggleGroup._behaviors}')
 
         if behavior == 'check':
             if widget_type == 'button':
@@ -694,7 +1225,7 @@ class ToggleGroup(SingleSelectBase):
         else:
             if isinstance(params.get('value'), list):
                 raise ValueError('Radio buttons require a single value, '
-                                 'found: %s' % params['value'])
+                                 'found: {}'.format(params['value']))
             if widget_type == 'button':
                 return RadioButtonGroup(**params)
             else:
@@ -745,10 +1276,14 @@ class CrossSelector(CompositeWidget, MultiSelect):
         # Compute selected and unselected values
 
         labels, values = self.labels, self.values
-        selected = [labels[indexOf(v, values)] for v in params.get('value', [])
-                    if isIn(v, values)]
+        selected = [
+            labels[indexOf(v, values)] for v in params.get('value', [])
+            if isIn(v, values)
+        ]
         unselected = [k for k in labels if k not in selected]
-        layout = dict(sizing_mode='stretch_both', background=self.background, margin=0)
+        layout = dict(
+            sizing_mode='stretch_both', margin=0
+        )
         self._lists = {
             False: MultiSelect(options=unselected, size=self.size, **layout),
             True: MultiSelect(options=selected, size=self.size, **layout)
@@ -757,21 +1292,27 @@ class CrossSelector(CompositeWidget, MultiSelect):
         self._lists[True].param.watch(self._update_selection, 'value')
 
         # Define buttons
-        self._buttons = {False: Button(name='<<', width=50),
-                         True: Button(name='>>', width=50)}
+        self._buttons = {
+            False: Button(name='\u276e\u276e', width=50),
+            True: Button(name='\u276f\u276f', width=50)
+        }
 
         self._buttons[False].param.watch(self._apply_selection, 'clicks')
         self._buttons[True].param.watch(self._apply_selection, 'clicks')
 
         # Define search
         self._search = {
-            False: TextInput(placeholder='Filter available options',
-                             margin=(0, 0, 10, 0), width_policy='max'),
-            True: TextInput(placeholder='Filter selected options',
-                            margin=(0, 0, 10, 0), width_policy='max')
+            False: TextInput(
+                placeholder='Filter available options',
+                margin=(0, 0, 10, 0), width_policy='max'
+            ),
+            True: TextInput(
+                placeholder='Filter selected options',
+                margin=(0, 0, 10, 0), width_policy='max'
+            )
         }
-        self._search[False].param.watch(self._filter_options, 'value')
-        self._search[True].param.watch(self._filter_options, 'value')
+        self._search[False].param.watch(self._filter_options, 'value_input')
+        self._search[True].param.watch(self._filter_options, 'value_input')
 
         self._placeholder = TextAreaInput(
             placeholder=("To select an item highlight it on the left "
@@ -783,16 +1324,25 @@ class CrossSelector(CompositeWidget, MultiSelect):
         # Define Layout
         self._unselected = Column(self._search[False], self._lists[False], **layout)
         self._selected = Column(self._search[True], right, **layout)
-        buttons = Column(self._buttons[True], self._buttons[False], margin=(0, 5))
+        buttons = Column(self._buttons[True], self._buttons[False], margin=(0, 5), align='center')
 
         self._composite[:] = [
-            self._unselected, Column(VSpacer(), buttons, VSpacer()), self._selected
+            self._unselected, buttons, self._selected
         ]
 
         self._selections = {False: [], True: []}
         self._query = {False: '', True: ''}
 
         self._update_disabled()
+        self._update_width()
+
+    @param.depends('width', watch=True)
+    def _update_width(self):
+        width = int(self.width // 2. - 50)
+        self._search[False].width = width
+        self._search[True].width = width
+        self._lists[False].width = width
+        self._lists[True].width = width
 
     @param.depends('size', watch=True)
     def _update_size(self):
@@ -874,12 +1424,12 @@ class CrossSelector(CompositeWidget, MultiSelect):
         """
         selected = event.obj is self._buttons[True]
 
-        new = OrderedDict([(k, self._items[k]) for k in self._selections[not selected]])
+        new = {k: self._items[k] for k in self._selections[not selected]}
         old = self._lists[selected].options
         other = self._lists[not selected].options
 
-        merged = OrderedDict([(k, k) for k in list(old)+list(new)])
-        leftovers = OrderedDict([(k, k) for k in other if k not in new])
+        merged = {k: k for k in list(old)+list(new)}
+        leftovers = {k: k for k in other if k not in new}
         self._lists[selected].options = merged if merged else {}
         self._lists[not selected].options = leftovers if leftovers else {}
         if len(self._lists[True].options):

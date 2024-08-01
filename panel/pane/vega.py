@@ -1,21 +1,21 @@
 from __future__ import annotations
 
+import re
 import sys
 
-from functools import partial
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
 )
 
 import numpy as np
+import pandas as pd
 import param
 
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
 from ..util import lazy_load
-from ..viewable import Layoutable
-from .base import PaneBase
+from .base import ModelPane
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -27,6 +27,8 @@ def ds_as_cds(dataset):
     """
     Converts Vega dataset into Bokeh ColumnDataSource data
     """
+    if isinstance(dataset, pd.DataFrame):
+        return {k: dataset[k].values for k in dataset.columns}
     if len(dataset) == 0:
         return {}
     # create a list of unique keys from all items as some items may not include optional fields
@@ -41,37 +43,91 @@ def ds_as_cds(dataset):
 
 _containers = ['hconcat', 'vconcat', 'layer']
 
+SCHEMA_REGEX = re.compile(r'^v(\d+)\.\d+\.\d+.json')
+
 def _isin(obj, attr):
     if isinstance(obj, dict):
         return attr in obj
     else:
         return hasattr(obj, attr)
 
-def _get_type(spec):
-    if isinstance(spec, dict):
-        return spec.get('type', 'interval')
+def _get_type(spec, version):
+    if version >= 5:
+        if isinstance(spec, dict):
+            return spec.get('select', {}).get('type', 'interval')
+        elif isinstance(spec.select, dict):
+            return spec.select.get('type', 'interval')
+        else:
+            return getattr(spec.select, 'type', 'interval')
     else:
-        return getattr(spec, 'type', 'interval')
+        if isinstance(spec, dict):
+            return spec.get('type', 'interval')
+        else:
+            return getattr(spec, 'type', 'interval')
 
+def _get_dimensions(spec, props):
+    dimensions = {}
+    responsive_height = spec.get('height') == 'container' and props.get('height') is None
+    responsive_width = spec.get('width') == 'container' and props.get('width') is None
+    if responsive_height and responsive_width:
+        dimensions['sizing_mode'] = 'stretch_both'
+    elif responsive_width:
+        dimensions['sizing_mode'] = 'stretch_width'
+    elif responsive_height:
+        dimensions['sizing_mode'] = 'stretch_height'
+    return dimensions
 
-def _get_selections(obj):
+def _get_schema_version(obj, default_version: int = 5) -> int:
+    if Vega.is_altair(obj):
+        schema = obj.to_dict().get('$schema', '')
+    else:
+        schema = obj.get('$schema', '')
+    version = schema.split('/')[-1]
+    match = SCHEMA_REGEX.fullmatch(version)
+    if match is None or not match.groups():
+        return default_version
+    return int(match.groups()[0])
+
+def _get_selections(obj, version=None):
+    if obj is None:
+        return {}
+    elif version is None:
+        version = _get_schema_version(obj)
+    key = 'params' if version >= 5 else 'selection'
     selections = {}
-    if _isin(obj, 'selection'):
+    if _isin(obj, key):
+        params = obj[key]
+        if version >= 5 and isinstance(params, list):
+            params = {
+                p.name if hasattr(p, 'name') else p['name']: p for p in params
+                if getattr(p, 'param_type', None) == 'selection' or _isin(p, 'select')
+            }
         try:
             selections.update({
-                name: _get_type(spec)
-                for name, spec in obj['selection'].items()
+                name: _get_type(spec, version) for name, spec in params.items()
             })
         except (AttributeError, TypeError):
             pass
     for c in _containers:
         if _isin(obj, c):
             for subobj in obj[c]:
-                selections.update(_get_selections(subobj))
+                selections.update(_get_selections(subobj, version=version))
     return selections
 
+def _to_json(obj):
+    if isinstance(obj, dict):
+        json = dict(obj)
+        if 'data' in json:
+            data = json['data']
+            if isinstance(data, dict):
+                json['data'] = dict(data)
+            elif isinstance(data, list):
+                json['data'] = [dict(d) for d in data]
+        return json
+    return obj.to_dict()
 
-class Vega(PaneBase):
+
+class Vega(ModelPane):
     """
     The Vega pane renders Vega-lite based plots (including those from Altair)
     inside a panel.
@@ -97,11 +153,6 @@ class Vega(PaneBase):
         Declares the debounce time in milliseconds either for all
         events or if a dictionary is provided for individual events.""")
 
-    margin = param.Parameter(default=(5, 5, 30, 5), doc="""
-        Allows to create additional space around the component. May
-        be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
-
     selection = param.ClassSelector(class_=param.Parameterized, doc="""
         The Selection object reflects any selections available on the
         supplied vega plot into Python.""")
@@ -115,7 +166,8 @@ class Vega(PaneBase):
 
     priority: ClassVar[float | bool | None] = 0.8
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'selection': None, 'debounce': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'selection': None, 'debounce': None, 'object': 'data'}
 
     _updates: ClassVar[bool] = True
 
@@ -142,9 +194,12 @@ class Vega(PaneBase):
 
     def _update_selections(self, *args):
         params = {
-            e: param.Dict() if stype == 'interval' else param.List()
+            e: param.Dict(allow_refs=False) if stype == 'interval' else param.List(allow_refs=False)
             for e, stype in self._selections.items()
         }
+        if self.selection and (set(self.selection.param) - {'name'}) == set(params):
+            self.selection.param.update({p: None for p in params})
+            return
         self.selection = type('Selection', (param.Parameterized,), params)()
 
     @classmethod
@@ -160,20 +215,8 @@ class Vega(PaneBase):
             return True
         return cls.is_altair(obj)
 
-    @classmethod
-    def _to_json(cls, obj):
-        if isinstance(obj, dict):
-            json = dict(obj)
-            if 'data' in json:
-                data = json['data']
-                if isinstance(data, dict):
-                    json['data'] = dict(data)
-                elif isinstance(data, list):
-                    json['data'] = [dict(d) for d in data]
-            return json
-        return obj.to_dict()
-
-    def _get_sources(self, json, sources):
+    def _get_sources(self, json, sources=None):
+        sources = {} if sources is None else dict(sources)
         datasets = json.get('datasets', {})
         for name in list(datasets):
             if name in sources or isinstance(datasets[name], dict):
@@ -197,46 +240,13 @@ class Vega(PaneBase):
         data = json.get('data', {})
         if isinstance(data, dict):
             data = data.pop('values', {})
-            if data:
+            if data is not None and not (isinstance(data, dict) and not data):
                 sources['data'] = ColumnDataSource(data=ds_as_cds(data))
         elif isinstance(data, list):
             for d in data:
                 if 'values' in d:
                     sources[d['name']] = ColumnDataSource(data=ds_as_cds(d.pop('values')))
-
-    @classmethod
-    def _get_dimensions(cls, json, props):
-        if json is None:
-            return
-
-        if 'config' in json and 'view' in json['config']:
-            size_config = json['config']['view']
-        else:
-            size_config = json
-
-        view = {}
-        for w in ('width', 'continuousWidth'):
-            if w in size_config:
-                view['width'] = size_config[w]
-        for h in ('height', 'continuousHeight'):
-            if h in size_config:
-                view['height'] = size_config[h]
-
-        for p in ('width', 'height'):
-            if p not in view or isinstance(view[p], str):
-                continue
-            if props.get(p) is None or p in view and props.get(p) < view[p]:
-                v = view[p]
-                props[p] = v+22 if isinstance(v, int) else v
-
-        responsive_height = json.get('height') == 'container'
-        responsive_width = json.get('width') == 'container'
-        if responsive_height and responsive_width:
-            props['sizing_mode'] = 'stretch_both'
-        elif responsive_width:
-            props['sizing_mode'] = 'stretch_width'
-        elif responsive_height:
-            props['sizing_mode'] = 'stretch_height'
+        return sources
 
     def _process_event(self, event):
         name = event.data['type']
@@ -246,42 +256,46 @@ class Vega(PaneBase):
             value = list(value)
         self.selection.param.update(**{name: value})
 
+    def _process_param_change(self, params):
+        props = super()._process_param_change(params)
+        if 'data' in props and props['data'] is not None:
+            props['data'] = _to_json(props['data'])
+        return props
+
+    def _get_properties(self, doc, sources={}):
+        props = super()._get_properties(doc)
+        data = props['data']
+        if data is not None:
+            sources = self._get_sources(data, sources)
+        if self.sizing_mode and data:
+            if 'both' in self.sizing_mode:
+                if 'width' in data:
+                    data['width'] = 'container'
+                if 'height' in data:
+                    data['height'] = 'container'
+            elif 'width' in self.sizing_mode and 'width' in data:
+                data['width'] = 'container'
+            elif 'height' in self.sizing_mode and 'height' in data:
+                data['height'] = 'container'
+        dimensions = _get_dimensions(data, props) if data else {}
+        props['data'] = data
+        props['data_sources'] = sources
+        props['events'] = list(self._selections)
+        props['throttle'] = self._throttle
+        props.update(dimensions)
+        return props
+
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        VegaPlot = lazy_load('panel.models.vega', 'VegaPlot', isinstance(comm, JupyterComm), root)
-        sources = {}
-        if self.object is None:
-            json = None
-        else:
-            json = self._to_json(self.object)
-            self._get_sources(json, sources)
-        props = self._process_param_change(self._init_params())
-        self._get_dimensions(json, props)
-        model = VegaPlot(
-            data=json, data_sources=sources, events=list(self._selections),
-            throttle=self._throttle, **props
+        self._bokeh_model = lazy_load(
+            'panel.models.vega', 'VegaPlot', isinstance(comm, JupyterComm), root
         )
-        if comm:
-            model.on_event('vega_event', self._comm_event)
-        else:
-            model.on_event('vega_event', partial(self._server_event, doc))
-        if root is None:
-            root = model
-        self._models[root.ref['id']] = (model, parent)
+        model = super()._get_model(doc, root, parent, comm)
+        self._register_events('vega_event', model=model, doc=doc, comm=comm)
         return model
 
     def _update(self, ref: str, model: Model) -> None:
-        if self.object is None:
-            json = None
-        else:
-            json = self._to_json(self.object)
-            self._get_sources(json, model.data_sources)
-        props = {p : getattr(self, p) for p in list(Layoutable.param)
-                 if getattr(self, p) is not None}
-        props['throttle'] = self._throttle
-        props['events'] = list(self._selections)
-        self._get_dimensions(json, props)
-        props['data'] = json
+        props = self._get_properties(model.document, sources=dict(model.data_sources))
         model.update(**props)

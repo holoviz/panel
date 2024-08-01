@@ -1,27 +1,28 @@
-import * as p from "@bokehjs/core/properties"
-import { HTMLBox, HTMLBoxView } from "@bokehjs/models/layouts/html_box"
+import type * as p from "@bokehjs/core/properties"
+import {HTMLBox, HTMLBoxView} from "./layout"
 
 function toVoicesList(voices: SpeechSynthesisVoice[]) {
-  var voicesList = [];
-  for (let voice of voices) {
-    var item = {
+  const voicesList = []
+  for (const voice of voices) {
+    const item = {
       default: voice.default,
       lang: voice.lang,
       local_service: voice.localService,
       name: voice.name,
       voice_uri: voice.voiceURI,
-    };
-    voicesList.push(item);
+    }
+    voicesList.push(item)
   }
-  return voicesList;
+  return voicesList
 }
 
 export class TextToSpeechView extends HTMLBoxView {
-  model: TextToSpeech
+  declare model: TextToSpeech
+
   voices: SpeechSynthesisVoice[]
   _callback: any
 
-  initialize(): void {
+  override initialize(): void {
     super.initialize()
 
     this.model.paused = speechSynthesis.paused
@@ -30,66 +31,71 @@ export class TextToSpeechView extends HTMLBoxView {
 
     // Hack: Keeps speeking for longer texts
     // https://stackoverflow.com/questions/21947730/chrome-speech-synthesis-with-longer-texts
-    this._callback = window.setInterval(function(){
-      if (!speechSynthesis.paused && speechSynthesis.speaking){
-        window.speechSynthesis.resume();
+    this._callback = window.setInterval(function() {
+      if (!speechSynthesis.paused && speechSynthesis.speaking) {
+        window.speechSynthesis.resume()
       }
     }, 10000)
 
     const populateVoiceList = () => {
-      if(typeof speechSynthesis === 'undefined')
+      if (typeof speechSynthesis === "undefined") {
         return
+      }
 
       // According to https://talkrapp.com/speechSynthesis.html not all voices are available
       // The article includes code for ios to handle this. Might be useful.
-      this.voices = speechSynthesis.getVoices();
-      if (!this.voices)
+      this.voices = speechSynthesis.getVoices()
+      if (!this.voices) {
         return
+      }
 
-      this.model.voices = toVoicesList(this.voices);
+      this.model.voices = toVoicesList(this.voices)
     }
-    populateVoiceList();
-    if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined)
+    populateVoiceList()
+    if (typeof speechSynthesis !== "undefined" && speechSynthesis.onvoiceschanged !== undefined) {
       speechSynthesis.onvoiceschanged = populateVoiceList
+    }
   }
 
-
-  remove(): void {
-    if (this._callback != null)
+  override remove(): void {
+    if (this._callback != null) {
       clearInterval(this._callback)
+    }
     speechSynthesis.cancel()
     super.remove()
   }
 
-  connect_signals(): void {
+  override connect_signals(): void {
     super.connect_signals()
 
-    this.connect(this.model.properties.speak.change, () => {
+    const {speak, pause, resume, cancel} = this.model.properties
+    this.on_change(speak, () => {
       this.speak()
     })
-    this.connect(this.model.properties.pause.change, () => {
+    this.on_change(pause, () => {
       this.model.pause = false
-      speechSynthesis.pause();
+      speechSynthesis.pause()
     })
-    this.connect(this.model.properties.resume.change, () => {
+    this.on_change(resume, () => {
       this.model.resume = false
       speechSynthesis.resume()
     })
-    this.connect(this.model.properties.cancel.change, () => {
+    this.on_change(cancel, () => {
       this.model.cancel = false
       speechSynthesis.cancel()
     })
   }
 
   speak(): void {
-    let utterance = new SpeechSynthesisUtterance(this.model.speak.text)
+    const utterance = new SpeechSynthesisUtterance(this.model.speak.text)
     utterance.pitch = this.model.speak.pitch
     utterance.volume = this.model.speak.volume
     utterance.rate = this.model.speak.rate
     if (this.model.voices) {
-      for (let voice of this.voices) {
-        if (voice.name === this.model.speak.voice)
+      for (const voice of this.voices) {
+        if (voice.name === this.model.speak.voice) {
           utterance.voice = voice
+        }
       }
     }
 
@@ -114,14 +120,16 @@ export class TextToSpeechView extends HTMLBoxView {
     this.model.pending = speechSynthesis.pending
   }
 
-  render(): void {
+  override render(): void {
     super.render()
     // Hack: This will make sure voices are assigned when
     // Bokeh/ Panel is served first time with --show option.
-    if (!this.model.voices)
+    if (!this.model.voices) {
       this.model.voices = toVoicesList(this.voices)
-    if (this.model.speak != null && this.model.speak.text)
+    }
+    if (this.model.speak != null && this.model.speak.text) {
       this.speak()
+    }
   }
 }
 
@@ -142,25 +150,25 @@ export namespace TextToSpeech {
 export interface TextToSpeech extends TextToSpeech.Attrs {}
 
 export class TextToSpeech extends HTMLBox {
-  properties: TextToSpeech.Props
+  declare properties: TextToSpeech.Props
 
   constructor(attrs?: Partial<TextToSpeech.Attrs>) {
     super(attrs)
   }
 
-  static __module__ = "panel.models.text_to_speech"
+  static override __module__ = "panel.models.text_to_speech"
 
-  static init_TextToSpeech(): void {
+  static {
     this.prototype.default_view = TextToSpeechView
 
-    this.define<TextToSpeech.Props>(({Any, Array, Boolean}) => ({
-      paused:   [ Boolean,    false ],
-      pending:  [ Boolean,    false ],
-      speaking: [ Boolean,    false ],
-      voices:   [ Array(Any),    [] ],
-      cancel:   [ Boolean,    false ],
-      pause:    [ Boolean,    false ],
-      resume:   [ Boolean,    false ],
+    this.define<TextToSpeech.Props>(({Any, List, Bool}) => ({
+      paused:   [ Bool,    false ],
+      pending:  [ Bool,    false ],
+      speaking: [ Bool,    false ],
+      voices:   [ List(Any),    [] ],
+      cancel:   [ Bool,    false ],
+      pause:    [ Bool,    false ],
+      resume:   [ Bool,    false ],
       speak:    [ Any,        {}    ],
     }))
   }

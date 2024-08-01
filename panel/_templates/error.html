@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>{{ title|default("Panel Error", true) }}</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kumbh+Sans:wght@600&display=swap" rel="stylesheet">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="{{base_url|default("", true) }}static/extensions/panel/images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{base_url|default("", true) }}static/extensions/panel/images/favicon.ico">
+    <link rel="manifest" href="{{ base_url|default("", true) }}static/extensions/panel/images/site.webmanifest">
+    <style>
+      body {
+	display: flex;
+	flex-direction: column;
+        font-family: "Kumbh Sans", "Segoe UI", Arial, Helvetica, sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+        line-height: normal;
+        height: 100vh;
+        margin: 0px;
+        overflow: hidden;
+	padding: 0;
+      }
+      .header {
+        box-shadow: 0 .125rem .25rem 0 gray;
+        z-index: 1;
+      }
+      .header-content {
+        display: flex;
+        flex-direction: row;
+        padding: 1.5rem;
+      }
+      #panel-logo {
+	padding-right: 2em;
+        width: 300px;
+      }
+      .error-area {
+        color: black;
+        display: flex;
+        flex-direction: column;
+        margin: auto 0 auto auto;
+      }
+      #error-type {
+        font-size: 1.8em;
+        font-weight: bold;
+      }
+      #error {
+        font-size: 1.2em;
+	text-align: right;
+      }
+      .content {
+        align-items: center;
+        background-color: #f2f2f2;
+        display: flex;
+        flex-grow: 1;
+        justify-content: center;
+      }
+      .error-message {
+        max-width: 80%;
+        padding-bottom: 10%;
+      }
+      {% block extra_style %}{% endblock %}
+    </style>
+  </head>
+  <body>
+    <section class="header">
+      <div class="header-content">
+        <div>
+          <img id="panel-logo" src="{{ base_url | default("", true) }}static/extensions/panel/images/logo_horizontal.png"/>
+	</div>
+	<div class="error-area">
+          <span id="error-type">{{ error_type|default("Error", true) }}</span>
+	  <span id="error">{{ error }}</span>
+	</div>
+      </div>
+    </section>
+    <div class="content">
+      <section class="error-message">
+      {% block content %}
+      <h3>{{ error_msg }}</h3>
+      {% endblock %}
+      </section>
+    </div>
+  </body>
+</html>

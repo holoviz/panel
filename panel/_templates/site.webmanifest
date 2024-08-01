@@ -1,0 +1,32 @@
+{
+  "name": "{{ name }}",
+  "short_name": "{{ name }}",
+  "start_url": "{{ path }}",
+  "icons": [
+    {
+      "src": "images/icon-vector.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512"
+    },
+    {
+      "src": "images/icon-32x32.png",
+      "type": "image/png",
+      "sizes": "32x32"
+    },
+    {
+      "src": "images/icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "images/icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "display": "{{ display|default('standalone', true) }}",
+  "scope": "/",
+  "background_color": "{{ background_color|default('#fdfdfd', true) }}",
+  "theme_color": "{{ background_color|default('#0072B5', true) }}",
+  "orientation": "{{ orientation|default('any', true) }}"
+}

@@ -21,5 +21,5 @@ panel_logger.propagate = False
 panel_log_handler = logging.StreamHandler()
 panel_log_handler.setStream(sys.stdout)
 panel_logger.addHandler(panel_log_handler)
-formatter = logging.Formatter()
+formatter = logging.Formatter(fmt=LOG_FORMAT)
 panel_log_handler.setFormatter(formatter)

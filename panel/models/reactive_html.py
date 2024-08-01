@@ -8,7 +8,9 @@ import bokeh.core.properties as bp
 
 from bokeh.events import ModelEvent
 from bokeh.model import DataModel
-from bokeh.models import HTMLBox, LayoutDOM
+from bokeh.models import LayoutDOM
+
+from .layout import HTMLBox
 
 endfor = '{%-? endfor -?%}'
 list_iter_re = r'{%-? for (\s*[A-Za-z_]\w*\s*) in (\s*[A-Za-z_]\w*\s*) -?%}'
@@ -27,10 +29,12 @@ class ReactiveHTMLParser(HTMLParser):
         self.nodes = []
         self.looped = []
         self._template_re = re.compile(r'\$\{[^}]+\}')
+        self._literal_re = re.compile(r'\{\{[^}]+\}\}')
         self._current_node = None
         self._node_stack = []
         self._open_for = False
         self.loop_map = {}
+        self.loop_var_map = defaultdict(list)
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
@@ -95,10 +99,23 @@ class ReactiveHTMLParser(HTMLParser):
             return
 
         dom_id = self._current_node
-        matches = [
-            '%s}]}' % match if match.endswith('.index0 }') else match
-            for match in self._template_re.findall(data)
-        ]
+        matches = []
+        for match in self._template_re.findall(data):
+            var = match[2:-1].strip()
+            if match[2:-1] not in self.loop_var_map[var]:
+                self.loop_var_map[var].append(match[2:-1])
+            if var.endswith('.index0'):
+                matches.append('${%s }}]}' % var)  # noqa: UP031
+            else:
+                matches.append('${%s}' % var)  # noqa: UP031
+
+        literal_matches = []
+        for match in self._literal_re.findall(data):
+            match = match[2:-2].strip()
+            if match.endswith('.index0'):
+                literal_matches.append('{{%s }}]}' % match)  # noqa: UP031
+            else:
+                literal_matches.append('{{ %s }}' % match)  # noqa: UP031
 
         # Detect templating for loops
         list_loop = re.findall(list_iter_re, data)
@@ -111,23 +128,42 @@ class ReactiveHTMLParser(HTMLParser):
             loop = [loop for loop in (list_loop, values_loop, items_loop) if loop][0]
             var, obj = loop[0]
             if var in self.cls.param:
-                raise ValueError(f'Loop variable {var} clashes with parameter name. '
-                                 'Ensure loop variables have a unique name. Relevant '
-                                 f'template section:\n\n{data}')
+                raise ValueError(
+                    f'Loop variable {var} clashes with parameter name. '
+                    'Ensure loop variables have a unique name. Relevant '
+                    f'template section:\n\n{data}'
+                )
             self.loop_map[var] = obj
 
         open_for = re.search(r'{%-? for', data)
         end_for = re.search(endfor, data)
         if open_for:
+            if self._current_node is None:
+                node = self._node_stack[-1][0]
+                raise ValueError(
+                    'Loops may only be used inside a DOM node with an assigned ID. '
+                    f'The following loop could not be expanded because the <{node}> node '
+                    f'did not have an assigned id:\n\n    {data.strip()}'
+                )
             self._open_for = True
         if end_for and (not nloops or end_for.start() > open_for.start()):
             self._open_for = False
+
+        if self._current_node and literal_matches:
+            if len(literal_matches) == 1:
+                literal_match = literal_matches[0][2:-2].strip()
+            else:
+                literal_match = None
+
+            if literal_match and (literal_match in self.loop_map) and self._open_for:
+                literal_match = self.loop_map[literal_match]
+                self.looped.append((dom_id, literal_match))
 
         if not (self._current_node and matches):
             return
 
         if len(matches) == 1:
-            match = matches[0][2:-1]
+            match = matches[0][2:-1].strip()
         else:
             for match in matches:
                 mode = self.cls._child_config.get(match, 'model')
@@ -136,10 +172,11 @@ class ReactiveHTMLParser(HTMLParser):
             match = None
 
         # Handle looped variables
-        if match and (match in self.loop_map or '[' in match) and self._open_for:
-            if match in self.loop_map:
-                matches[matches.index('${%s}' % match)] = '${%s}' % self.loop_map[match]
-                match = self.loop_map[match]
+        if match and (match.strip() in self.loop_map or '[' in match) and self._open_for:
+            if match.strip() in self.loop_map:
+                loop_match = self.loop_map[match.strip()]
+                matches[matches.index(f'${{{match}}}')] = f'${{{loop_match}}}'
+                match = loop_match
             elif '[' in match:
                 match, _ = match.split('[')
             dom_id = dom_id.replace('-{{ loop.index0 }}', '')
@@ -171,7 +208,6 @@ def find_attrs(html):
     return p.attrs
 
 
-
 class DOMEvent(ModelEvent):
 
     event_name = 'dom_event'
@@ -193,6 +229,8 @@ class ReactiveHTML(HTMLBox):
     data = bp.Instance(DataModel)
 
     events = bp.Dict(bp.String, bp.Dict(bp.String, bp.Bool))
+
+    event_params = bp.List(bp.String)
 
     html = bp.String()
 

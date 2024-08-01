@@ -1,15 +1,15 @@
-import os
+from __future__ import annotations
+
 import sys
 import traceback as tb
 
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
+from typing import ClassVar
 
 import param
 
-from .layout import (
-    Column, HSpacer, Row, VSpacer,
-)
-from .pane import HoloViews, Markdown, Pane
+from .layout import Column, Row
+from .pane import HoloViews, Markdown
 from .param import Param
 from .util import param_reprs
 from .viewable import Viewer
@@ -150,11 +150,11 @@ class Pipeline(Viewer):
         Whether parameters should be inherited between pipeline
         stages.""")
 
-    next_parameter = param.String(default=None, doc="""
+    next_parameter = param.String(default=None, allow_refs=False, doc="""
         Parameter name to watch to switch between different branching
         stages""")
 
-    ready_parameter = param.String(default=None, doc="""
+    ready_parameter = param.String(default=None, allow_refs=False, doc="""
         Parameter name to watch to check whether a stage is ready.""")
 
     show_header = param.Boolean(default=True, doc="""
@@ -165,17 +165,19 @@ class Pipeline(Viewer):
 
     previous = param.Action(default=lambda x: x.param.trigger('previous'))
 
+    _ignored_refs: ClassVar[tuple[str, ...]] = ('next_parameter', 'ready_parameter')
+
     def __init__(self, stages=[], graph={}, **params):
         try:
             import holoviews as hv
         except Exception:
-            raise ImportError('Pipeline requires holoviews to be installed')
+            raise ImportError('Pipeline requires holoviews to be installed') from None
 
         super().__init__(**params)
 
         # Initialize internal state
         self._stage = None
-        self._stages = OrderedDict()
+        self._stages = {}
         self._states = {}
         self._state = None
         self._linear = True
@@ -206,12 +208,6 @@ class Pipeline(Viewer):
             sizing_mode='stretch_width'
         )
         self.network.object = self._make_progress()
-        spinner = Pane(os.path.join(os.path.dirname(__file__), 'assets', 'spinner.gif'))
-        self._spinner_layout = Row(
-            HSpacer(),
-            Column(VSpacer(), spinner, VSpacer()),
-            HSpacer()
-        )
         self.stage = Row()
         self.layout = Column(self.header, self.stage, sizing_mode='stretch_width')
 
@@ -230,7 +226,7 @@ class Pipeline(Viewer):
 
     def _validate(self, stage):
         if any(stage is s for n, (s, kw) in self._stages.items()):
-            raise ValueError('Stage %s is already in pipeline' % stage)
+            raise ValueError(f'Stage {stage} is already in pipeline')
         elif not ((isinstance(stage, type) and issubclass(stage, param.Parameterized))
                   or isinstance(stage, param.Parameterized)):
             raise ValueError('Pipeline stages must be Parameterized classes or instances.')
@@ -405,14 +401,14 @@ class Pipeline(Viewer):
             traceback = msg or "Undefined error, enable debug mode."
         button = Button(name='Error', button_type='danger', width=100,
                         align='center', margin=(0, 0, 0, 5))
-        button.js_on_click(code="alert(`{tb}`)".format(tb=traceback))
+        button.js_on_click(code=f"alert(`{traceback}`)")
         return button
 
     @param.depends('next', watch=True)
     def _next(self):
         prev_state, prev_stage = self._state, self._stage
         self._stage = self._next_stage
-        self.stage[0] = self._spinner_layout
+        self.stage.loading = True
         try:
             self.stage[0] = self._init_stage()
         except Exception as e:
@@ -436,6 +432,7 @@ class Pipeline(Viewer):
                 self._next()
         finally:
             self._update_progress()
+            self.stage.loading = False
 
     @param.depends('previous', watch=True)
     def _previous(self):
@@ -553,7 +550,7 @@ class Pipeline(Viewer):
         self._validate(stage)
         for k in kwargs:
             if k not in self.param:
-                raise ValueError("Keyword argument %s is not a valid parameter. " % k)
+                raise ValueError(f"Keyword argument {k} is not a valid parameter.")
 
         if not self._linear and self._graph:
             raise RuntimeError("Cannot add stage after graph has been defined.")
@@ -612,8 +609,7 @@ class Pipeline(Viewer):
 
         root = get_root(graph)
         if not is_traversable(root, graph, stages):
-            raise ValueError('Graph is not fully traversable from stage: %s.'
-                             % root)
+            raise ValueError(f'Graph is not fully traversable from stage: {root}.')
 
         reinit = root is not self._stage
         self._stage = root

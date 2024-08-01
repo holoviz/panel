@@ -1,24 +1,20 @@
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 import {Markup} from "@bokehjs/models/widgets/markup"
 import {PanelMarkupView} from "./layout"
 
 export class MathJaxView extends PanelMarkupView {
-  model: MathJax
-  private _hub: any
+  declare model: MathJax
 
-  initialize(): void {
-    super.initialize()
-    this._hub = (window as any).MathJax.Hub;
-    this._hub.Config({
-      tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
-    });
+  override connect_signals(): void {
+    super.connect_signals()
+
+    const {text} = this.model.properties
+    this.on_change(text, () => this.render())
   }
 
-  render(): void {
-    super.render();
-    if (!this._hub) { return }
-    this.markup_el.innerHTML = this.model.text;
-    this._hub.Queue(["Typeset", this._hub, this.markup_el]);
+  override render(): void {
+    super.render()
+    this.container.innerHTML = this.has_math_disabled() ? this.model.text : this.process_tex(this.model.text)
   }
 }
 
@@ -32,15 +28,15 @@ export namespace MathJax {
 export interface MathJax extends MathJax.Attrs {}
 
 export class MathJax extends Markup {
-  properties: MathJax.Props
+  declare properties: MathJax.Props
 
   constructor(attrs?: Partial<MathJax.Attrs>) {
     super(attrs)
   }
 
-  static __module__ = "panel.models.mathjax"
+  static override __module__ = "panel.models.mathjax"
 
-  static init_MathJax(): void {
+  static {
     this.prototype.default_view = MathJaxView
   }
 }

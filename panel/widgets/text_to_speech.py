@@ -11,9 +11,7 @@ from __future__ import annotations
 
 import uuid
 
-from typing import (
-    TYPE_CHECKING, ClassVar, Mapping, Type,
-)
+from typing import TYPE_CHECKING, ClassVar, Mapping
 
 import param
 
@@ -224,19 +222,12 @@ class TextToSpeech(Utterance, Widget):
     _voices = param.List()
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        "auto_speak": None,
-        "lang": None,
-        "pitch": None,
-        "rate": None,
-        "speak": None,
-        "value": None,
-        "voice": None,
-        "voices": None,
-        "volume": None,
-        "_voices": "voices",
+        'auto_speak': None, 'lang': None, 'name': None, 'pitch': None,
+        'rate': None, 'speak': None, 'value': None, 'voice': None,
+        'voices': None, 'volume': None, '_voices': 'voices',
     }
 
-    _widget_type: ClassVar[Type[Model]] = _BkTextToSpeech
+    _widget_type: ClassVar[type[Model]] = _BkTextToSpeech
 
     def _process_param_change(self, msg):
         speak = msg.get('speak') or ('value' in msg and self.auto_speak)
@@ -245,7 +236,7 @@ class TextToSpeech(Utterance, Widget):
             msg['speak'] = self.to_dict()
         return msg
 
-    @param.depends("_voices", watch=True)
+    @param.depends('_voices', watch=True)
     def _update_voices(self):
         voices = []
         for _voice in self._voices:  # pylint: disable=not-an-iterable
@@ -257,7 +248,7 @@ class TextToSpeech(Utterance, Widget):
     def __repr__(self, depth=None):
         # We need to do this because otherwise a error is raised when used in notebook
         # due to infinite recursion
-        return f"TextToSpeech(name={self.name})"
+        return f'TextToSpeech(name={self.name!r})'
 
     def __str__(self):
-        return f"TextToSpeech(name={self.name})"
+        return f'TextToSpeech(name={self.name!r})'

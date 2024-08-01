@@ -1,118 +1,89 @@
-:root[data-theme="light"] {
-    --pst-color-primary: rgb(47, 47, 47);
-    --pst-color-link: rgb(0, 170, 65);
+:root[data-theme='light'],
+:root[data-theme='dark'] {
+  --holoviz-main-color: #0072b5;
+  --pst-color-inline-code: var(--holoviz-main-color);
+  --pst-color-link-hover: var(--holoviz-main-color);
+  --pst-color-link: var(--holoviz-main-color);
+  --pst-color-primary: var(--holoviz-main-color);
+  --pst-color-secondary-bg: #d9ebf0; /* Announcement banner */
+  --pst-color-secondary-highlight: var(--holoviz-main-color);
+  --pst-color-secondary: var(--holoviz-main-color);
+  --pst-violet-600: var(--holoviz-main-color); /* back to top hover */
+  --sd-color-card-border-hover: var(--holoviz-main-color);
 }
 
-.nav-link {
-    white-space: nowrap;
+/* Fix breadcrumb overlap https://github.com/holoviz/panel/issues/5199 */
+.header-article__inner .header-article-item {
+  height: unset;
 }
+
+/* Homepage Showcase */
 
 .showcase-table {
-    border-spacing: 15px
+  border-spacing: 15px;
 }
 
 .showcase-table td {
-    border: 0px;
-    vertical-align: top;
+  border: 0px;
+  vertical-align: top;
 }
 
-.pl-md-5, .px-md-5 {
-    padding-left: 1rem !important;
+/* Homepage sponsors */
+
+.sd-card-body.sponsor-logo {
+  flex-grow: unset;
+  margin: auto;
 }
 
-.pt-md-5, .py-md-5 {
-    padding-top: 1rem !important;
+.sponsor-logo img {
+  min-height: 80px;
+  object-fit: contain;
 }
 
-.cell_output {
-    padding-left: 0;
-}
-
-@media (min-width: 1200px) {
-    .container, .container-lg, .container-md, .container-sm, .container-xl {
-	max-width: 1600px;
-    }
-}
-
-#scroller-right {
-    max-width: 14%;
-}
-
-@media (max-width: 1400px) {
-    #scroller-right {
-	position: relative;
-	right: unset;
-	top: unset;
-	max-width: 100%;
-	transform: unset;
-    }
-}
-
-#navbar-icon-links i.fa-github-square:before {
-    color: white;
-}
-
-.fa-discourse:before {
-    color: white;
-}
-
-button.toggle-button {
-    display: none;
-}
-
-.toggle-hidden:not(.admonition) {
-    height: 0;
-}
-
-.tag_hide-input {
-    margin-bottom: 0 !important;
-}
-
-.toggle-hidden + .cell_output {
-    margin-top: 0 !important;
-}
-
-/* Improve styling */
-
-div.cell div.cell_input {
-    border: none;
-}
+/* Tweaks for code cell rendering */
 
 .highlight {
-    border-radius: 4px;
+  border-radius: 4px;
 }
 
-html[data-theme="light"] .highlight {
-    background-color: #263238;
-    color: #f8f8f2;
+html[data-theme='light'] .highlight {
+  background-color: #263238;
+  color: #f8f8f2;
 }
 
 pre[id^='codecell'] {
-    background-color: unset;
-    border: none;
-    border-radius: 0.5em;
-    color: #f8f8f2;
-    box-shadow: none;
-    padding: 1.5em;
+  background-color: unset;
+  border: none;
+  border-radius: 0.5em;
+  color: #f8f8f2;
+  box-shadow: none;
+  padding: 1.5em;
+}
+
+div.highlight button.copybtn.o-tooltip--left:after {
+  background-color: #263235;
+  border: 1px solid gray;
+  border-radius: 4px;
+  padding: 5px;
 }
 
 button.copybtn {
-    background-color: #263238;
+  background-color: #263238;
 }
 
 button.copybtn:hover {
-    background-color: #263238;
-    color: #f8f8f2;
+  background-color: #263238;
+  color: #f8f8f2;
 }
 
 .highlight button.copybtn:hover {
-    background: none
+  background: none;
 }
 
 .o-tooltip--left:after {
-    background: none;
+  background: none;
 }
 
-ul.current.nav.bd-sidenav {
-    padding: 0;
+video {
+  max-width: 100%;
 }

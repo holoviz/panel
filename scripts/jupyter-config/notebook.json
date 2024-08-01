@@ -1,0 +1,7 @@
+{
+  "NotebookApp": {
+    "nbserver_extensions": {
+      "panel.io.jupyter_server_extension": true
+    }
+  }
+}

@@ -1,26 +1,24 @@
-import * as p from "@bokehjs/core/properties"
+import type * as p from "@bokehjs/core/properties"
 import {View} from "@bokehjs/core/view"
 import {copy} from "@bokehjs/core/util/array"
 import {Model} from "@bokehjs/model"
 import {Receiver} from "@bokehjs/protocol/receiver"
+import type {Patch} from "@bokehjs/document"
 
 function get_json(file: string, callback: any): void {
-  var xobj = new XMLHttpRequest();
-  xobj.overrideMimeType("application/json");
-  xobj.open('GET', file, true);
-  xobj.onreadystatechange = function () {
+  const xobj = new XMLHttpRequest()
+  xobj.overrideMimeType("application/json")
+  xobj.open("GET", file, true)
+  xobj.onreadystatechange = function() {
     if (xobj.readyState == 4 && xobj.status == 200) {
-      callback(xobj.responseText);
+      callback(xobj.responseText)
     }
-  };
-  xobj.send(null);
+  }
+  xobj.send(null)
 }
 
 export class StateView extends View {
-  model: State
-
-  renderTo(): void {
-  }
+  declare model: State
 }
 
 export namespace State {
@@ -37,7 +35,7 @@ export namespace State {
 export interface State extends State.Attrs {}
 
 export class State extends Model {
-  properties: State.Props
+  declare properties: State.Props
   _receiver: Receiver
   _cache: {[key: string]: string}
 
@@ -52,30 +50,39 @@ export class State extends Model {
     this._receiver.consume(state.metadata)
     this._receiver.consume(state.content)
     if (this._receiver.message && this.document) {
-      this.document.apply_json_patch(this._receiver.message.content)
+      this.document.apply_json_patch(this._receiver.message.content as Patch)
     }
   }
 
   _receive_json(result: string, path: string): void {
     const state = JSON.parse(result)
     this._cache[path] = state
-	let current: any = this.state
+    let current: any = this.state
     for (const i of this.values) {
-      current = current[i]
+      if (current instanceof Map) {
+        current = current.get(i)
+      } else {
+        current = current[i]
+      }
     }
-    if (current === path)
+    if (current === path) {
       this.apply_state(state)
-	else if (this._cache[current])
+    } else if (this._cache[current]) {
       this.apply_state(this._cache[current])
+    }
   }
 
   set_state(widget: any, value: any): void {
-    let values: any[] = copy(this.values)
+    const values: any[] = copy(this.values)
     const index: any = this.widgets[widget.id]
     values[index] = value
     let state: any = this.state
     for (const i of values) {
-      state = state[i]
+      if (state instanceof Map) {
+        state = state.get(i)
+      } else {
+        state = state[i]
+      }
     }
     this.values = values
     if (this.json) {
@@ -89,13 +96,13 @@ export class State extends Model {
     }
   }
 
-  static __module__ = "panel.models.state"
+  static override __module__ = "panel.models.state"
 
-  static init_State(): void {
+  static {
     this.prototype.default_view = StateView
 
-    this.define<State.Props>(({Any, Boolean}) => ({
-      json:    [ Boolean, false ],
+    this.define<State.Props>(({Any, Bool}) => ({
+      json:    [ Bool, false ],
       state:   [ Any,        {} ],
       widgets: [ Any,        {} ],
       values:  [ Any,        [] ],

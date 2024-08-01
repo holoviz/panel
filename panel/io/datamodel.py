@@ -1,14 +1,19 @@
 import weakref
 
+from functools import partial
+
 import bokeh
 import bokeh.core.properties as bp
 import param as pm
 
-from bokeh.model import DataModel
+from bokeh.model import DataModel, Model
 from bokeh.models import ColumnDataSource
 
 from ..reactive import Syncable
-from .notebook import push_on_root
+from ..viewable import Child, Children, Viewable
+from .document import unlocked
+from .notebook import push
+from .state import state
 
 
 class Parameterized(bokeh.core.property.bases.Property):
@@ -61,21 +66,34 @@ def color_param_to_ppt(p, kwargs):
 
 
 def list_param_to_ppt(p, kwargs):
-    if isinstance(p.item_type, type) and issubclass(p.item_type, pm.Parameterized):
+    item_type = bp.Any
+    if not isinstance(p.item_type, type):
+        pass
+    elif issubclass(p.item_type, Viewable):
+        item_type = bp.Instance(Model)
+    elif issubclass(p.item_type, pm.Parameterized):
         return bp.List(bp.Instance(DataModel)), [(ParameterizedList, lambda ps: [create_linked_datamodel(p) for p in ps])]
-    return bp.List(bp.Any, **kwargs)
+    return bp.List(item_type, **kwargs)
 
+def class_selector_to_model(p, kwargs):
+    if isinstance(p.class_, type) and issubclass(p.class_, Viewable):
+        return bp.Nullable(bp.Instance(Model), **kwargs)
+    elif isinstance(p.class_, type) and issubclass(p.class_, pm.Parameterized):
+        return (bp.Instance(DataModel, **kwargs), [(Parameterized, create_linked_datamodel)])
+    else:
+        return bp.Any(**kwargs)
+
+def bytes_param(p, kwargs):
+    kwargs['default'] = None
+    return bp.Nullable(bp.Bytes, **kwargs)
 
 PARAM_MAPPING = {
     pm.Array: lambda p, kwargs: bp.Array(bp.Any, **kwargs),
     pm.Boolean: lambda p, kwargs: bp.Bool(**kwargs),
+    pm.Bytes: lambda p, kwargs: bytes_param(p, kwargs),
     pm.CalendarDate: lambda p, kwargs: bp.Date(**kwargs),
     pm.CalendarDateRange: lambda p, kwargs: bp.Tuple(bp.Date, bp.Date, **kwargs),
-    pm.ClassSelector: lambda p, kwargs: (
-        (bp.Instance(DataModel, **kwargs), [(Parameterized, create_linked_datamodel)])
-        if isinstance(p.class_, type) and issubclass(p.class_, pm.Parameterized) else
-        bp.Any(**kwargs)
-    ),
+    pm.ClassSelector: class_selector_to_model,
     pm.Color: color_param_to_ppt,
     pm.DataFrame: lambda p, kwargs: (
         bp.ColumnData(bp.Any, bp.Seq(bp.Any), **kwargs),
@@ -92,8 +110,9 @@ PARAM_MAPPING = {
     pm.Range: lambda p, kwargs: bp.Tuple(bp.Float, bp.Float, **kwargs),
     pm.String: lambda p, kwargs: bp.String(**kwargs),
     pm.Tuple: lambda p, kwargs: bp.Tuple(*(bp.Any for p in range(p.length)), **kwargs),
+    Child: lambda p, kwargs: bp.Nullable(bp.Instance(Model), **kwargs),
+    Children: lambda p, kwargs: bp.List(bp.Instance(Model), **kwargs),
 }
-
 
 
 def construct_data_model(parameterized, name=None, ignore=[], types={}):
@@ -192,13 +211,30 @@ def create_linked_datamodel(obj, root=None):
         }
         try:
             _changing.extend(list(update))
-            model.update(**update)
+
             tags = [tag for tag in model.tags if tag.startswith('__ref:')]
             if root:
-                push_on_root(root.ref['id'])
+                ref = root.ref['id']
             elif tags:
                 ref = tags[0].split('__ref:')[-1]
-                push_on_root(ref)
+            else:
+                ref = None
+
+            if ref and ref in state._views:
+                _, root_model, doc, comm = state._views[ref]
+                if comm or state._unblocked(doc):
+                    with unlocked():
+                        model.update(**update)
+                    if comm and 'embedded' not in root_model.tags:
+                        push(doc, comm)
+                else:
+                    cb = partial(model.update, **update)
+                    if doc.session_context:
+                        doc.add_next_tick_callback(cb)
+                    else:
+                        cb()
+            else:
+                model.update(**update)
         finally:
             for attr in update:
                 _changing.remove(attr)

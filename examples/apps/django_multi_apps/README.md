@@ -22,4 +22,4 @@ python manage.py runserver
 
 and then visit http://localhost:8000 in your browser. For detail on
 how to configure a bokeh app see the user guide in
-/examples/user_guide/Django_Apps.ipynb or visit it [on the website](https://panel.holoviz.org/user_guide/Django_Apps.html).
+/examples/user_guide/Django_Apps.ipynb or visit it [on the website](https://panel.holoviz.org/how_to/integrations/Django.html).

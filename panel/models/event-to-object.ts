@@ -23,33 +23,38 @@ SOFTWARE.
 */
 
 export function serializeEvent(event: any): any {
-  const data: any = {};
+  const data: any = {}
 
-  if (event.type in eventTransforms) {
-    Object.assign(data, eventTransforms[event.type](event));
+  // support for CustomEvents: the whole `detail` object is serialized
+  if (event.detail !== undefined) {
+    Object.assign(data, {detail: JSON.parse(JSON.stringify(event.detail))})
   }
 
-  data.target = serializeDomElement(event.target);
+  if (event.type in eventTransforms) {
+    Object.assign(data, eventTransforms[event.type](event))
+  }
+
+  data.target = serializeDomElement(event.target)
   data.currentTarget =
     event.target === event.currentTarget
       ? data.target
-      : serializeDomElement(event.currentTarget);
-  data.relatedTarget = serializeDomElement(event.relatedTarget);
+      : serializeDomElement(event.currentTarget)
+  data.relatedTarget = serializeDomElement(event.relatedTarget)
 
-  return data;
+  return data
 }
 
 function serializeDomElement(element: Element): any {
-  let elementData: any = null;
+  let elementData: any = null
   if (element) {
-    elementData = defaultElementTransform(element);
+    elementData = defaultElementTransform(element)
     if (element.tagName in elementTransforms) {
       elementTransforms[element.tagName].forEach((trans: any) =>
-        Object.assign(elementData, trans(element))
-      );
+        Object.assign(elementData, trans(element)),
+      )
     }
   }
-  return elementData;
+  return elementData
 }
 
 const elementTransformCategories: any = {
@@ -59,24 +64,28 @@ const elementTransformCategories: any = {
   hasCurrentTime: (element: any) => ({
     currentTime: element.currentTime,
   }),
-  hasFiles: (element: any) => {
-    if (element?.type === "file") {
+  hasFiles: (element: HTMLInputElement) => {
+    if (element.type === "file") {
       return {
-        files: Array.from(element.files).map((file: File) => ({
+        files: [...element.files ?? []].map((file) => ({
           lastModified: file.lastModified,
           name: file.name,
           size: file.size,
           type: file.type,
         })),
-      };
+      }
     } else {
-      return {};
+      return {}
     }
   },
-};
+}
 
 function defaultElementTransform(element: Element) {
-  return { boundingClientRect: {...element.getBoundingClientRect()} };
+  try {
+    return {boundingClientRect: {...element.getBoundingClientRect()}}
+  } catch {
+    return {}
+  }
 }
 
 const elementTagCategories: any = {
@@ -93,17 +102,17 @@ const elementTagCategories: any = {
   ],
   hasCurrentTime: ["AUDIO", "VIDEO"],
   hasFiles: ["INPUT"],
-};
+}
 
-const elementTransforms: any = {};
+const elementTransforms: any = {}
 
 Object.keys(elementTagCategories).forEach((category) => {
   elementTagCategories[category].forEach((type: any) => {
     const transforms =
-      elementTransforms[type] || (elementTransforms[type] = []);
-    transforms.push(elementTransformCategories[category]);
-  });
-});
+      elementTransforms[type] || (elementTransforms[type] = [])
+    transforms.push(elementTransformCategories[category])
+  })
+})
 
 class EventTransformCategories {
 
@@ -168,7 +177,7 @@ class EventTransformCategories {
 
   selection(): any {
     return {
-      selectedText: (window as any).getSelection().toString()
+      selectedText: (window as any).getSelection().toString(),
     }
   };
 
@@ -255,14 +264,14 @@ const eventTypeCategories: any = {
   wheel: ["wheel"],
   animation: ["animationstart", "animationend", "animationiteration"],
   transition: ["transitionend"],
-};
+}
 
-const eventTransforms: any = {};
+const eventTransforms: any = {}
 
-const eventTransformCategories: any = new EventTransformCategories();
+const eventTransformCategories: any = new EventTransformCategories()
 
 Object.keys(eventTypeCategories).forEach((category) => {
   eventTypeCategories[category].forEach((type: any) => {
-    eventTransforms[type] = eventTransformCategories[category];
-  });
-});
+    eventTransforms[type] = eventTransformCategories[category]
+  })
+})

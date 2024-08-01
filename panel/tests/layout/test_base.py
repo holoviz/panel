@@ -3,16 +3,17 @@ import pytest
 
 from bokeh.models import Column as BkColumn, Div, Row as BkRow
 
+from panel.chat import ChatInterface
 from panel.layout import (
-    Accordion, Card, Column, Row, Spacer, Tabs, WidgetBox,
+    Accordion, Card, Column, FlexBox, Row, Spacer, Tabs, WidgetBox,
 )
 from panel.layout.base import ListPanel, NamedListPanel
-from panel.pane import Bokeh
+from panel.pane import Bokeh, Markdown
 from panel.param import Param
 from panel.tests.util import check_layoutable_properties
-from panel.widgets import Debugger
+from panel.widgets import Debugger, MultiSelect
 
-excluded = (NamedListPanel, Debugger)
+excluded = (NamedListPanel, Debugger, ChatInterface)
 all_panels = [w for w in param.concrete_descendents(ListPanel).values()
                if not w.__name__.startswith('_') and not issubclass(w, excluded)]
 
@@ -20,7 +21,7 @@ all_panels = [w for w in param.concrete_descendents(ListPanel).values()
 def test_layout_signature(panel):
     from inspect import signature
     parameters = signature(panel).parameters
-    assert len(parameters) == 2, 'Found following parameters %r on %s' % (parameters, panel)
+    assert len(parameters) == 2, f'Found following parameters {parameters!r} on {panel}'
     assert 'objects' in parameters
 
 
@@ -134,7 +135,7 @@ def test_layout_repr(panel):
     layout = panel(div1, div2)
 
     name = panel.__name__
-    assert repr(layout) == '%s\n    [0] Bokeh(Div)\n    [1] Bokeh(Div)' % name
+    assert repr(layout) == f'{name}\n    [0] Bokeh(Div)\n    [1] Bokeh(Div)'
 
 
 @pytest.mark.parametrize('panel', [Card, Column, Row])
@@ -480,3 +481,167 @@ def test_layout_with_param_setitem(document, comm):
     model = test._layout.get_root(document, comm=comm)
     test.select = 1
     assert model.children[1].text == '&lt;pre&gt;1&lt;/pre&gt;'
+
+@pytest.mark.parametrize('panel', [Card, Column, Tabs, Accordion])
+@pytest.mark.parametrize('sizing_mode', ['stretch_width', 'stretch_height', 'stretch_both'])
+def test_expand_sizing_mode_to_match_child(panel, sizing_mode, document, comm):
+    div1 = Div()
+    div2 = Div(sizing_mode=sizing_mode)
+    layout = panel(div1, div2)
+
+    model = layout.get_root(document, comm)
+
+    assert model.sizing_mode == sizing_mode
+
+def test_expand_row_sizing_mode_stretch_both(document, comm):
+    div1 = Div(sizing_mode='stretch_both')
+    div2 = Div(sizing_mode='stretch_both')
+    layout = Row(div1, div2)
+
+    model = layout.get_root(document, comm)
+
+    assert model.sizing_mode == 'stretch_both'
+
+@pytest.mark.parametrize('panel', [Accordion, Card, Column, Row, Tabs])
+def test_expand_both_axes(panel, document, comm):
+    div1 = Div(sizing_mode='stretch_width')
+    div2 = Div(sizing_mode='stretch_height')
+    layout = panel(div1, div2)
+
+    model = layout.get_root(document, comm)
+
+    assert model.sizing_mode == 'stretch_both'
+
+def test_expand_row_both_axes(document, comm):
+    div1 = Div(sizing_mode='stretch_both')
+    div2 = Div(sizing_mode='stretch_both')
+    layout = Row(div1, div2)
+
+    model = layout.get_root(document, comm)
+
+    assert model.sizing_mode == 'stretch_both'
+
+@pytest.mark.parametrize('panel', [Card, Column, Tabs, Accordion])
+def test_expand_only_non_fixed_axis_width(panel, document, comm):
+    div1 = Div(sizing_mode='stretch_width')
+    div2 = Div(sizing_mode='stretch_height')
+    layout = panel(div1, div2, width=500)
+
+    model = layout.get_root(document, comm)
+
+    assert model.sizing_mode == 'stretch_height'
+
+def test_not_expand_row_only_non_fixed_axis_width(document, comm):
+    div1 = Div(sizing_mode='stretch_width')
+    div2 = Div(sizing_mode='stretch_height')
+    layout = Row(div1, div2, width=500)
+
+    model = layout.get_root(document, comm)
+
+    assert model.sizing_mode == 'stretch_height'
+
+def test_expand_row_all_only_non_fixed_axis_width(document, comm):
+    div1 = Div(sizing_mode='stretch_height')
+    div2 = Div(sizing_mode='stretch_height')
+    layout = Row(div1, div2, width=500)
+
+    model = layout.get_root(document, comm)
+
+    assert model.sizing_mode == 'stretch_height'
+
+@pytest.mark.parametrize('panel', [Card, Column, Row, Tabs, Accordion])
+def test_expand_only_non_fixed_axis_height(panel, document, comm):
+    div1 = Div(sizing_mode='stretch_width')
+    div2 = Div(sizing_mode='stretch_height')
+    layout = panel(div1, div2, height=500)
+
+    model = layout.get_root(document, comm)
+
+    assert model.sizing_mode == 'stretch_width'
+
+@pytest.mark.parametrize('panel', [Card, Column, Row, Tabs, Accordion])
+def test_no_expand_fixed(panel, document, comm):
+    div1 = Div(sizing_mode='stretch_width')
+    div2 = Div(sizing_mode='stretch_height')
+    layout = panel(div1, div2, height=500, width=500)
+
+    model = layout.get_root(document, comm)
+
+    assert model.sizing_mode == 'fixed'
+
+@pytest.mark.parametrize('scroll_param', ["auto_scroll_limit", "scroll", "scroll_button_threshold", "view_latest"])
+def test_column_scroll_params_sets_scroll(scroll_param, document, comm):
+    if scroll_param not in ["auto_scroll_limit", "scroll_button_threshold"]:
+        params = {scroll_param: True}
+    else:
+        params = {scroll_param: 1}
+    col = Column(**params)
+    assert getattr(col, scroll_param)
+    assert col.scroll
+
+@pytest.mark.parametrize('layout', [Row, Column, FlexBox])
+def test_pass_objects_ref(document, comm, layout):
+    multi_select = MultiSelect(options=['foo', 'bar', 'baz'], value=['bar', 'baz'])
+    col = layout(objects=multi_select)
+    col.get_root(document, comm=comm)
+
+    assert len(col.objects) == 2
+    md1, md2 = col.objects
+    assert isinstance(md1, Markdown)
+    assert md1.object == 'bar'
+    assert isinstance(md2, Markdown)
+    assert md2.object == 'baz'
+
+    multi_select.value = ['foo']
+
+    assert len(col.objects) == 1
+    md3 = col.objects[0]
+    assert isinstance(md3, Markdown)
+    assert md3.object == 'foo'
+
+@pytest.mark.parametrize('dim', ["width", "height"])
+def test_compute_sizing_mode_stretch_margin_none(dim, document, comm):
+    md = Markdown(**{dim: 100})
+    col = Column(md, margin=None, sizing_mode=f'stretch_{dim}')
+
+    root = col.get_root(document, comm=comm)
+
+    new_props = col._compute_sizing_mode(root.children, {'margin': None})
+
+    assert new_props == {f'min_{dim}': 100, 'sizing_mode': f'stretch_{dim}'}
+
+@pytest.mark.parametrize('dim', ["width", "height"])
+def test_compute_sizing_mode_stretch_margin_int(dim, document, comm):
+    margin = 10
+    md = Markdown(**{dim: 100})
+    col = Column(md, margin=margin, sizing_mode=f'stretch_{dim}')
+
+    root = col.get_root(document, comm=comm)
+
+    new_props = col._compute_sizing_mode(root.children, {'margin': margin})
+
+    assert new_props == {f'min_{dim}': 120, 'sizing_mode': f'stretch_{dim}'}
+
+@pytest.mark.parametrize('dim', ["width", "height"])
+def test_compute_sizing_mode_stretch_margin_two_tuple(dim, document, comm):
+    margin = (0, 10) if dim == 'width' else (10, 0)
+    md = Markdown(**{dim: 100})
+    col = Column(md, margin=margin, sizing_mode=f'stretch_{dim}')
+
+    root = col.get_root(document, comm=comm)
+
+    new_props = col._compute_sizing_mode(root.children, {'margin': margin})
+
+    assert new_props == {f'min_{dim}': 120, 'sizing_mode': f'stretch_{dim}'}
+
+@pytest.mark.parametrize('dim', ["width", "height"])
+def test_compute_sizing_mode_stretch_margin_four_tuple(dim, document, comm):
+    margin = (0, 10, 0, 5) if dim == 'width' else (10, 0, 5, 0)
+    md = Markdown(**{dim: 100})
+    col = Column(md, margin=margin, sizing_mode=f'stretch_{dim}')
+
+    root = col.get_root(document, comm=comm)
+
+    new_props = col._compute_sizing_mode(root.children, {'margin': margin})
+
+    assert new_props == {f'min_{dim}': 115, 'sizing_mode': f'stretch_{dim}'}

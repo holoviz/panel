@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>{{ title|default('Panel Applications', true) }}</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kumbh+Sans:wght@600&display=swap" rel="stylesheet">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ PANEL_CDN }}images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ PANEL_CDN }}images/favicon.ico">
+    <link rel="manifest" href="{{ manifest|default('https://panel.holoviz.org/_static/icons/site.webmanifest', true) }}">
+    <style>
+      body {
+        display: flex;
+        flex-direction: column;
+        font-family: "Kumbh Sans", "Segoe UI", Arial, Helvetica, sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+        line-height: normal;
+        height: 100vh;
+        margin: 0px;
+        overflow: hidden;
+        padding: 0;
+      }
+      .header {
+        box-shadow: 0 .125rem .25rem 0 gray;
+        z-index: 1;
+      }
+      .header-content {
+        display: flex;
+        flex-direction: row;
+        padding: 1.5rem;
+      }
+      #panel-logo {
+        padding-right: 2em;
+        width: 300px;
+      }
+      .gallery-item {
+        border: 0.1px solid gray;
+	box-shadow: rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
+        cursor: pointer;
+        text-align: center;
+      }
+      .gallery-item:hover {
+        border: 0.1px solid black;
+	box-shadow: rgba(20, 20, 50, 0.25) 0px 9px 18px -2px, rgba(0, 0, 0, 0.3) 0px 6px 10px -3px;
+      }
+      #search-input {
+	border: 0.1px solid black;
+	box-shadow: rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
+	height: 3em;
+        margin: 1.5rem 2rem 0 2rem;
+	padding-left: 1em;
+        width: calc(100% - 6em);
+      }
+      #search-input:focus-visible {
+        border: 0.1px solid black;
+	box-shadow: rgba(20, 20, 50, 0.25) 0px 12px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
+	outline: none;
+      }
+      .main {
+	background-color: #f2f2f2;
+	flex-grow: 1;
+	overflow-x: hidden;
+	overflow-y: auto;
+      }
+      .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+        grid-gap: 2rem;
+        list-style: none;
+      }
+      /* Presentational styles */
+      .card {
+	background-color: white;
+        padding: 0px;
+      }
+      .cards-grid {
+        margin: 2rem;
+        padding: 0px;
+      }
+      .avatar {
+        vertical-align: middle;
+        float: right;
+        width: 30px;
+        height: 30px;
+        margin-top: 5px;
+        border-radius: 50%;
+      }
+      .card-action svg {
+        vertical-align: middle;
+        float: right;
+        height: 20px;
+        color: white;
+        margin-top: 10px;
+        margin-right: 10px;
+      }
+      .card-image {
+        height: 175px;
+        width: 100%;
+        margin-top: 25px;
+      }
+      object {
+        height: 175px;
+        max-width: calc(100% - 50px);
+        margin-top: 25px;
+        border-radius: 5px;
+      }
+      .card-content {
+        padding: 10px 10px 10px;
+      }
+      .card-text {
+        height: 100px;
+      }
+      .card-header {
+        height: 2em;
+        text-align: center;
+      }
+      .card-link {
+        text-decoration: none;
+        color: black;
+      }
+      .title-area {
+        display: flex;
+        flex-direction: column;
+        margin: auto 0 auto auto;
+      }
+      #title {
+        font-size: 1.8em;
+        font-weight: bold;
+      }
+      #subtitle {
+        font-size: 1.2em;
+	text-align: right;
+      }
+    </style>
+    {% if manifest %}
+    <script type="text/javascript">
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./serviceWorker.js');
+      }
+    </script>
+    {% endif %}
+    <script type="text/javascript">
+      function setParamsFromSearch(text){
+        const params = new URLSearchParams(location.search);
+        if (text === "") {
+            params.delete("search")
+        } else {
+            params.set('search', text);
+        }
+        window.history.replaceState({}, '', `${location.pathname}?${params}`);
+      }
+      function hideCards(text) {
+        text = text.toLowerCase();
+        const cards = document.getElementsByTagName("li")
+        for (const card of cards) {
+	  const label = card.children[0].children[0].children[1]
+          if (text === "" || label.innerHTML.toLowerCase().includes(text)) {
+            card.style.display = ""
+          } else {
+            card.style.display = "none"
+          }
+        }
+        setParamsFromSearch(text)
+      }
+      function setSearchFromParams() {
+        const params = new URLSearchParams(window.location.search)
+        if (params.has('search')){
+          const search = params.get('search')
+          const searchEl = document.getElementById("search-input")
+          searchEl.value = search
+          hideCards(search)
+        }
+      }
+      setSearchFromParams()
+    </script>
+  </head>
+  <body>
+    <section class="header">
+      <div class="header-content">
+        <a href="https://panel.holoviz.org">
+          <img id="panel-logo" src="{{ PANEL_CDN }}images/logo_horizontal.png"/>
+        </a>
+        <div class="title-area">
+          <span id="title">{{ title|default('Panel Applications', true)  }}</span>
+          <span id="subtitle">Running {{ items | length }} apps</span>
+        </div>
+      </div>
+    </section>
+    <div class="main">
+    <section class="search">
+      <input id="search-input" placeholder="Search applications..." onInput="hideCards(event.target.value)"></input>
+    </section>
+    <section id="cards">
+      <ul class="cards-grid">
+      {% for item_label, item in items.items() %}
+        <li class="card">
+          <a class="card-link" href="{{ item }}" id="{{ item }}">
+            <div class="gallery-item">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">{{ item_label }}</h2>
+              </div>
+            </div>
+          </a>
+        </li>
+      {% endfor %}
+      </ul>
+    </section>
+    </div>
+  </body>
+</html>

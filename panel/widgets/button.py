@@ -4,20 +4,20 @@ events or merely toggling between on-off states.
 """
 from __future__ import annotations
 
-from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
-    Type,
+    TYPE_CHECKING, Any, Awaitable, Callable, ClassVar, Mapping, Optional,
 )
 
 import param
 
 from bokeh.events import ButtonClick, MenuItemClick
-from bokeh.models import (
-    Button as _BkButton, Dropdown as _BkDropdown, Toggle as _BkToggle,
-)
+from bokeh.models import Dropdown as _BkDropdown, Toggle as _BkToggle
+from bokeh.models.ui import SVGIcon, TablerIcon
 
+from ..io.resources import CDN_DIST
 from ..links import Callback
+from ..models.widgets import Button as _BkButton
+from ._mixin import TooltipMixin
 from .base import Widget
 
 if TYPE_CHECKING:
@@ -28,8 +28,8 @@ if TYPE_CHECKING:
     from ..links import JSLinkTarget, Link
 
 
-BUTTON_TYPES: List[str] = ['default', 'primary', 'success', 'warning', 'danger','light']
-
+BUTTON_TYPES: list[str] = ['default', 'primary', 'success', 'warning', 'danger', 'light']
+BUTTON_STYLES: list[str] = ['solid', 'outline']
 
 class _ButtonBase(Widget):
 
@@ -38,12 +38,57 @@ class _ButtonBase(Widget):
         (blue), 'success' (green), 'info' (yellow), 'light' (light),
         or 'danger' (red).""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'label'}
+    button_style = param.ObjectSelector(default='solid', objects=BUTTON_STYLES, doc="""
+        A button style to switch between 'solid', 'outline'.""")
+
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'label', 'button_style': None}
+
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {'button_style': None}
+
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/button.css']
 
     __abstract = True
 
+    def _process_param_change(self, params):
+        if 'button_style' in params or 'css_classes' in params:
+            params['css_classes'] = [
+                params.pop('button_style', self.button_style)
+            ] + params.get('css_classes', self.css_classes)
+        return super()._process_param_change(params)
 
-class _ClickButton(_ButtonBase):
+
+class IconMixin(Widget):
+
+    icon = param.String(default=None, doc="""
+        An icon to render to the left of the button label. Either an SVG or an
+        icon name which is loaded from https://tabler-icons.io.""")
+
+    icon_size = param.String(default='1em', doc="""
+        Size of the icon as a string, e.g. 12px or 1em.""")
+
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'icon_size': None, '_icon': 'icon', 'icon': None
+    }
+
+    __abstract = True
+
+    def __init__(self, **params) -> None:
+        self._rename = dict(self._rename, **IconMixin._rename)
+        super().__init__(**params)
+
+    def _process_param_change(self, params):
+        icon_size = params.pop('icon_size', self.icon_size)
+        if params.get('icon') is not None:
+            icon = params['icon']
+            if icon.lstrip().startswith('<svg'):
+                icon_model = SVGIcon(svg=icon, size=icon_size)
+            else:
+                icon_model = TablerIcon(icon_name=icon, size=icon_size)
+            params['_icon'] = icon_model
+        return super()._process_param_change(params)
+
+
+class _ClickButton(Widget):
 
     __abstract = True
 
@@ -54,13 +99,10 @@ class _ClickButton(_ButtonBase):
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
         model = super()._get_model(doc, root, parent, comm)
-        if comm:
-            model.on_event(self._event, self._comm_event)
-        else:
-            model.on_event(self._event, partial(self._server_event, doc))
+        self._register_events(self._event, model=model, doc=doc, comm=comm)
         return model
 
-    def js_on_click(self, args: Dict[str, Any] = {}, code: str = "") -> Callback:
+    def js_on_click(self, args: dict[str, Any] = {}, code: str = "") -> Callback:
         """
         Allows defining a JS callback to be triggered when the button
         is clicked.
@@ -80,7 +122,7 @@ class _ClickButton(_ButtonBase):
         from ..links import Callback
         return Callback(self, code={'event:'+self._event: code}, args=args)
 
-    def jscallback(self, args: Dict[str, Any] = {}, **callbacks: str) -> Callback:
+    def jscallback(self, args: dict[str, Any] = {}, **callbacks: str) -> Callback:
         """
         Allows defining a Javascript (JS) callback to be triggered when a property
         changes on the source object. The keyword arguments define the
@@ -109,7 +151,7 @@ class _ClickButton(_ButtonBase):
         return Callback(self, code=callbacks, args=args)
 
 
-class Button(_ClickButton):
+class Button(_ButtonBase, _ClickButton, IconMixin, TooltipMixin):
     """
     The `Button` widget allows triggering events when the button is
     clicked.
@@ -124,7 +166,7 @@ class Button(_ClickButton):
 
     :Example:
 
-    >>> pn.widgets.Button(name='Click me', button_type='primary')
+    >>> pn.widgets.Button(name='Click me', icon='caret-right', button_type='primary')
     """
 
     clicks = param.Integer(default=0, doc="""
@@ -133,21 +175,33 @@ class Button(_ClickButton):
     value = param.Event(doc="""
         Toggles from False to True while the event is being processed.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'clicks': None, 'name': 'label', 'value': None}
-
-    _target_transforms: ClassVar[Mapping[str, str | None]] = {
-        'event:button_click': None, 'value': None
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        **TooltipMixin._rename, 'clicks': None, 'name': 'label', 'value': None,
     }
 
-    _widget_type: ClassVar[Type[Model]] = _BkButton
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'button_style': None, 'description': None
+    }
+
+    _target_transforms: ClassVar[Mapping[str, str | None]] = {
+        'event:button_click': None, 'value': None,
+    }
+
+    _widget_type: ClassVar[type[Model]] = _BkButton
+
+    def __init__(self, **params):
+        click_handler = params.pop('on_click', None)
+        super().__init__(**params)
+        if click_handler:
+            self.on_click(click_handler)
 
     @property
-    def _linkable_params(self) -> List[str]:
+    def _linkable_params(self) -> list[str]:
         return super()._linkable_params + ['value']
 
     def jslink(
-        self, target: JSLinkTarget, code: Optional[Dict[str, str]] = None,
-        args: Optional[Dict[str, Any]] = None, bidirectional: bool = False,
+        self, target: JSLinkTarget, code: Optional[dict[str, str]] = None,
+        args: Optional[dict[str, Any]] = None, bidirectional: bool = False,
         **links: str
     ) -> Link:
         """
@@ -183,22 +237,31 @@ class Button(_ClickButton):
         links = {'event:'+self._event if p == 'value' else p: v for p, v in links.items()}
         return super().jslink(target, code, args, bidirectional, **links)
 
-    def _process_event(self, event: param.parameterized.Event) -> None:
+    def _process_event(self, event: ButtonClick) -> None:
         self.param.trigger('value')
         self.clicks += 1
 
     def on_click(
-        self, callback: Callable[[param.parameterized.Event], None]
+        self, callback: Callable[[param.parameterized.Event], None | Awaitable[None]]
     ) -> param.parameterized.Watcher:
         """
         Register a callback to be executed when the `Button` is clicked.
 
         The callback is given an `Event` argument declaring the number of clicks
 
+        Example
+        -------
+
+        >>> button = pn.widgets.Button(name='Click me')
+        >>> def handle_click(event):
+        ...    print("I was clicked!")
+        >>> button.on_click(handle_click)
+
         Arguments
         ---------
-        callback: (Callable[[param.parameterized.Event], None])
-            The function to run on click events. Must accept a positional `Event` argument
+        callback:
+            The function to run on click events. Must accept a positional `Event` argument. Can
+            be a sync or async function
 
         Returns
         -------
@@ -208,7 +271,7 @@ class Button(_ClickButton):
         return self.param.watch(callback, 'clicks', onlychanged=False)
 
 
-class Toggle(_ButtonBase):
+class Toggle(_ButtonBase, IconMixin):
     """The `Toggle` widget allows toggling a single condition between `True`/`False` states.
 
     This widget is interchangeable with the `Checkbox` widget.
@@ -223,18 +286,20 @@ class Toggle(_ButtonBase):
     value = param.Boolean(default=False, doc="""
         Whether the button is currently toggled.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'value': 'active', 'name': 'label'}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'value': 'active', 'name': 'label',
+    }
 
     _supports_embed: ClassVar[bool] = True
 
-    _widget_type: ClassVar[Type[Model]] = _BkToggle
+    _widget_type: ClassVar[type[Model]] = _BkToggle
 
     def _get_embed_state(self, root, values=None, max_opts=3):
         return (self, self._models[root.ref['id']][0], [False, True],
                 lambda x: x.active, 'active', 'cb_obj.active')
 
 
-class MenuButton(_ClickButton):
+class MenuButton(_ButtonBase, _ClickButton, IconMixin):
     """
     The `MenuButton` widget allows specifying a list of menu items to
     select from triggering events when the button is clicked.
@@ -264,11 +329,27 @@ class MenuButton(_ClickButton):
 
     _event: ClassVar[str] = 'menu_item_click'
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'label', 'items': 'menu', 'clicked': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'name': 'label', 'items': 'menu', 'clicked': None, 'value': None
+    }
 
-    _widget_type: ClassVar[Type[Model]] = _BkDropdown
+    _widget_type: ClassVar[type[Model]] = _BkDropdown
 
-    def _process_event(self, event):
+    def __init__(self, **params):
+        click_handler = params.pop('on_click', None)
+        super().__init__(**params)
+        if click_handler:
+            self.on_click(click_handler)
+
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
+        model = super()._get_model(doc, root, parent, comm)
+        self._register_events('button_click', model=model, doc=doc, comm=comm)
+        return model
+
+    def _process_event(self, event: ButtonClick | MenuItemClick):
         if isinstance(event, MenuItemClick):
             item = event.item
         elif isinstance(event, ButtonClick):

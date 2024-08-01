@@ -13,7 +13,6 @@ import signal
 import subprocess
 import sys
 
-from functools import partial
 from typing import ClassVar, Mapping
 
 import param
@@ -45,21 +44,21 @@ class TerminalSubprocess(param.Parameterized):
     running = param.Boolean(default=False, constant=True, doc="""
         Whether or not the subprocess is running.""")
 
-    _child_pid = param.Integer(0, doc="Child process id")
+    _child_pid = param.Integer(default=0, doc="Child process id")
 
-    _fd = param.Integer(0, doc="Child file descriptor.")
+    _fd = param.Integer(default=0, doc="Child file descriptor.")
 
-    _max_read_bytes = param.Integer(1024 * 20)
+    _max_read_bytes = param.Integer(default=1024 * 20)
 
     _periodic_callback = param.ClassSelector(class_=PeriodicCallback, doc="""
         Watches the subprocess for output""")
 
-    _period = param.Integer(50, doc="Period length of _periodic_callback")
+    _period = param.Integer(default=50, doc="Period length of _periodic_callback")
 
-    _terminal = param.Parameter(constant=True, doc="""
+    _terminal = param.Parameter(constant=True, allow_refs=False, doc="""
         The Terminal to which the subprocess is connected.""")
 
-    _timeout_sec = param.Integer(0)
+    _timeout_sec = param.Integer(default=0)
 
     _watcher = param.Parameter(doc="Watches the subprocess for user input")
 
@@ -111,9 +110,9 @@ class TerminalSubprocess(param.Parameterized):
             # that it finished.
             try:
                 result = subprocess.run(args, **kwargs)
-                print(str(result))
+                print(str(result))  # noqa: T201
             except FileNotFoundError as e:
-                print(str(e) + "\nCompletedProcess('FileNotFoundError')")
+                print(str(e) + "\nCompletedProcess('FileNotFoundError')")  # noqa: T201
         else:
             # this is the PARENT process fork.
             self._child_pid = child_pid
@@ -136,13 +135,16 @@ class TerminalSubprocess(param.Parameterized):
 
     @param.depends('_terminal.ncols', '_terminal.nrows', watch=True)
     def _set_winsize(self):
-        if self._fd is None:
+        if self._fd is None or not self._terminal.nrows or not self._terminal.ncols:
             return
         import fcntl
         import struct
         import termios
         winsize = struct.pack("HHHH", self._terminal.nrows, self._terminal.ncols, 0, 0)
-        fcntl.ioctl(self._fd, termios.TIOCSWINSZ, winsize)
+        try:
+            fcntl.ioctl(self._fd, termios.TIOCSWINSZ, winsize)
+        except OSError:
+            pass
 
     def _kill(self, *events):
         child_pid = self._child_pid
@@ -246,7 +248,7 @@ class Terminal(Widget):
     nrows = param.Integer(readonly=True, doc="""
         The number of rows in the terminal.""")
 
-    value = param.String(label="Input", readonly=True, doc="""
+    value = param.String(default="", label="Input", readonly=True, doc="""
         User input received from the Terminal. Sent one character at the time.""")
 
     write_to_console = param.Boolean(default=False, doc="""
@@ -257,15 +259,12 @@ class Terminal(Widget):
     _output = param.String(default="")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        "clear": None,
-        "output": None,
-        "_output": "output",
-        "write_to_console": None,
-        "value": None
+        'clear': None, 'name': None, 'output': None, '_output': 'output',
+        'value': None, 'write_to_console': None,
     }
 
     def __init__(self, output=None, **params):
-        params['_output'] = output = output or ""
+        params['_output'] = output = output or ''
         params['clear'] = self._clear
         super().__init__(output=output, **params)
         self._subprocess = None
@@ -275,13 +274,13 @@ class Terminal(Widget):
         if isinstance(__s, str):
             cleaned = __s
         elif isinstance(__s, bytes):
-            cleaned = __s.decode("utf8")
+            cleaned = __s.decode('utf8')
         else:
             cleaned = str(__s)
 
         if self._output == cleaned:
             # Hack to support writing the same string multiple times in a row
-            self._output = ""
+            self._output = ''
 
         self._output = cleaned
         self.output += cleaned
@@ -294,32 +293,29 @@ class Terminal(Widget):
             )
         model = super()._get_model(doc, root, parent, comm)
         model.output = self.output
-        if comm:
-            model.on_event('keystroke', self._comm_event)
-        else:
-            model.on_event('keystroke', partial(self._server_event, doc))
+        self._register_events('keystroke', model=model, doc=doc, comm=comm)
         return model
 
     def _process_event(self, event):
         with edit_readonly(self):
             self.value = event.key
             with param.discard_events(self):
-                self.value = ""
+                self.value = ''
 
     def _clear(self, *events):
         """
         Clears all output on the terminal.
         """
-        self.output = ""
+        self.output = ''
         self._clears += 1
 
-    @param.depends("_output", watch=True)
+    @param.depends('_output', watch=True)
     def _write(self):
         if self.write_to_console:
             sys.__stdout__.write(self._output)
 
     def __repr__(self, depth=None):
-        return f"Terminal(id={id(self)})"
+        return f'Terminal(id={id(self)})'
 
     @property
     def subprocess(self):

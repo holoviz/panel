@@ -2,11 +2,9 @@
 Panel panes renders the Python objects you know and love ❤️
 ===========================================================
 
-Panes may render anything including plots, text,
-images, equations etc.
+Panes may render anything including plots, text, images, equations etc.
 
-For example Panel contains Bokeh, HoloViews,
-Matplotlib and Plotly panes.
+For example Panel contains Bokeh, HoloViews, Matplotlib and Plotly panes.
 
 Check out the Panel gallery of panes
 https://panel.holoviz.org/reference/index.html#panes for inspiration.
@@ -37,23 +35,29 @@ from .deckgl import DeckGL  # noqa
 from .echarts import ECharts  # noqa
 from .equation import LaTeX  # noqa
 from .holoviews import HoloViews, Interactive  # noqa
-from .idom import IDOM  # noqa0
 from .image import (  # noqa
-    GIF, ICO, JPG, PDF, PNG, SVG,
+    GIF, ICO, JPG, PDF, PNG, SVG, Image, WebP,
 )
-from .ipywidget import IPyWidget  # noqa
+from .ipywidget import IPyLeaflet, IPyWidget, Reacton  # noqa
 from .markup import (  # noqa
     HTML, JSON, DataFrame, Markdown, Str,
 )
 from .media import Audio, Video  # noqa
 from .perspective import Perspective  # noqa
+from .placeholder import Placeholder  # noqa
 from .plot import (  # noqa
     YT, Bokeh, Matplotlib, RGGPlot,
 )
 from .plotly import Plotly  # noqa
 from .streamz import Streamz  # noqa
+from .textual import Textual  # noqa
 from .vega import Vega  # noqa
+from .vizzu import Vizzu  # noqa
 from .vtk import VTK, VTKVolume  # noqa
+
+from ..param import (  # noqa  # isort: skip
+    ParamFunction, ParamMethod, ParamRef, ReactiveExpr,
+)
 
 __all__ = (
     "Alert",
@@ -66,9 +70,9 @@ __all__ = (
     "HoloViews",
     "HTML",
     "ICO",
-    "IDOM",
     "Interactive",
     "IPyWidget",
+    "IPyLeaflet",
     "JPG",
     "JSON",
     "LaTeX",
@@ -76,17 +80,25 @@ __all__ = (
     "Matplotlib",
     "Pane",
     "PaneBase",
+    "ParamFunction",
+    "ParamMethod",
+    "ParamRef",
     "panel",
     "PDF",
     "Perspective",
+    "Placeholder",
     "Plotly",
     "PNG",
+    "ReactiveExpr",
+    "Reacton",
     "RGGPlot",
     "Str",
     "Streamz",
     "SVG",
+    "Textual",
     "Vega",
     "Video",
+    "Vizzu",
     "VTK",
     "VTKVolume",
     "YT"

@@ -10,8 +10,8 @@ except Exception:
 
 altair_available = pytest.mark.skipif(alt is None, reason="requires altair")
 
-
 import numpy as np
+import pandas as pd
 
 import panel as pn
 
@@ -21,6 +21,7 @@ from panel.pane import PaneBase, Vega
 blank_schema = {'$schema': ''}
 
 vega4_config = {'view': {'continuousHeight': 300, 'continuousWidth': 400}}
+vega5_config = {'view': {'continuousHeight': 300, 'continuousWidth': 300}}
 
 vega_example = {
     'config': {
@@ -36,6 +37,74 @@ vega_example = {
     'encoding': {'x': {'type': 'ordinal', 'field': 'x'},
                  'y': {'type': 'quantitative', 'field': 'y'}},
     '$schema': 'https://vega.github.io/schema/vega-lite/v3.2.1.json'
+}
+
+vega_df_example = {
+    'config': {
+        'mark': {'tooltip': None},
+        'view': {'height': 300, 'width': 400}
+    },
+    'data': {'values': pd.DataFrame({'x': ['A', 'B', 'C', 'D', 'E'], 'y': [5, 3, 6, 7, 2]})},
+    'mark': 'bar',
+    'encoding': {'x': {'type': 'ordinal', 'field': 'x'},
+                 'y': {'type': 'quantitative', 'field': 'y'}},
+    '$schema': 'https://vega.github.io/schema/vega-lite/v3.2.1.json'
+}
+
+vega4_selection_example = {
+    'config': {'view': {'continuousWidth': 300, 'continuousHeight': 300}},
+    'data': {'url': 'https://raw.githubusercontent.com/vega/vega/master/docs/data/penguins.json'},
+    'mark': {'type': 'point'},
+    'encoding': {
+        'color': {
+            'condition': {
+                'selection': 'brush',
+                'field': 'Species',
+                'type': 'nominal'
+            },
+            'value': 'lightgray'},
+        'x': {
+            'field': 'Beak Length (mm)',
+            'scale': {'zero': False},
+            'type': 'quantitative'
+        },
+        'y': {
+            'field': 'Beak Depth (mm)',
+            'scale': {'zero': False},
+            'type': 'quantitative'}
+    },
+    'height': 250,
+    'selection': {'brush': {'type': 'interval'}},
+    'width': 250,
+    '$schema': 'https://vega.github.io/schema/vega-lite/v4.17.0.json'
+}
+
+vega5_selection_example = {
+    'config': {'view': {'continuousWidth': 300, 'continuousHeight': 300}},
+    'data': {'url': 'https://raw.githubusercontent.com/vega/vega/master/docs/data/penguins.json'},
+    'mark': {'type': 'point'},
+    'encoding': {
+        'color': {
+            'condition': {
+                'param': 'brush',
+                'field': 'Species',
+                'type': 'nominal'
+            },
+            'value': 'lightgray'},
+        'x': {
+            'field': 'Beak Length (mm)',
+            'scale': {'zero': False},
+            'type': 'quantitative'
+        },
+        'y': {
+            'field': 'Beak Depth (mm)',
+            'scale': {'zero': False},
+            'type': 'quantitative'}
+    },
+    'height': 250,
+    'params': [{'name': 'brush', 'select': {'type': 'interval'}}],
+    'width': 250,
+    '$schema': 'https://vega.github.io/schema/vega-lite/v5.6.1.json'
 }
 
 vega_inline_example = {
@@ -138,8 +207,9 @@ def test_get_vega_pane_type_from_dict():
     assert PaneBase.get_pane_type(vega_example) is Vega
 
 
-def test_vega_pane(document, comm):
-    pane = pn.panel(vega_example)
+@pytest.mark.parametrize('example', [vega_example, vega_df_example])
+def test_vega_pane(document, comm, example):
+    pane = pn.panel(example)
 
     # Create pane
     model = pane.get_root(document, comm=comm)
@@ -155,7 +225,7 @@ def test_vega_pane(document, comm):
     point_example = dict(vega_example, mark='point')
     point_example['data']['values'][0]['x'] = 'C'
     pane.object = point_example
-    point_example['data'].pop('values')
+    point_example = dict(point_example, data={})
     assert model.data == point_example
     cds_data = model.data_sources['data'].data
     assert np.array_equal(cds_data['x'], np.array(['C', 'B', 'C', 'D', 'E']))
@@ -190,6 +260,14 @@ def test_vega_pane_inline(document, comm):
     assert pane._models == {}
 
 
+def test_vega_lite_4_selection_spec(document, comm):
+    vega = Vega(vega4_selection_example)
+    assert vega._selections == {'brush': 'interval'}
+
+def test_vega_lite_5_selection_spec(document, comm):
+    vega = Vega(vega5_selection_example)
+    assert vega._selections == {'brush': 'interval'}
+
 def altair_example():
     import altair as alt
     data = alt.Data(values=[{'x': 'A', 'y': 5},
@@ -203,22 +281,23 @@ def altair_example():
     )
     return chart
 
-
 @altair_available
 def test_get_vega_pane_type_from_altair():
     assert PaneBase.get_pane_type(altair_example()) is Vega
 
-
 @altair_available
 def test_altair_pane(document, comm):
-    pane = pn.panel(altair_example())
+    pane = Vega(altair_example())
 
     # Create pane
     model = pane.get_root(document, comm=comm)
     assert isinstance(model, VegaPlot)
 
     expected = dict(vega_example, data={})
-    if altair_version >= Version('4.0.0'):
+    if altair_version >= Version('5.0.0rc1'):
+        expected['mark'] = {'type': 'bar'}
+        expected['config'] = vega5_config
+    elif altair_version >= Version('4.0.0'):
         expected['config'] = vega4_config
     assert dict(model.data, **blank_schema) == dict(expected, **blank_schema)
 
@@ -230,8 +309,11 @@ def test_altair_pane(document, comm):
     chart.mark = 'point'
     chart.data.values[0]['x'] = 'C'
     pane.object = chart
-    point_example = dict(vega_example, mark='point')
-    if altair_version >= Version('4.0.0'):
+    point_example = dict(vega_example, data={},  mark='point')
+    if altair_version >= Version('5.0.0rc1'):
+        point_example['mark'] = {'type': 'point'}
+        point_example['config'] = vega5_config
+    elif altair_version >= Version('4.0.0'):
         point_example['config'] = vega4_config
     assert dict(model.data, **blank_schema) == dict(point_example, **blank_schema)
     cds_data = model.data_sources['data'].data
@@ -240,3 +322,7 @@ def test_altair_pane(document, comm):
 
     pane._cleanup(model)
     assert pane._models == {}
+
+def test_vega_can_instantiate_empty_with_sizing_mode(document, comm):
+    pane = Vega(sizing_mode="stretch_width")
+    pane.get_root(document, comm=comm)

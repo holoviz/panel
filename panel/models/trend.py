@@ -3,9 +3,11 @@ A Bokeh model indicating trends.
 """
 from bokeh.core.properties import Float, Instance, String
 from bokeh.models import (
-    BasicTickFormatter, HTMLBox, NumeralTickFormatter, TickFormatter,
+    BasicTickFormatter, NumeralTickFormatter, TickFormatter,
 )
 from bokeh.models.sources import ColumnDataSource
+
+from .layout import HTMLBox
 
 
 class TrendIndicator(HTMLBox):

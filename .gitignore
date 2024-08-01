@@ -111,15 +111,55 @@ ENV/
 doc/**/*.rst
 doc/**/*.ipynb
 doc/**/*.json
-# this dir contains the whole website and should not be checked in on master
+!doc/_static/json/*.json
+jupyter_execute
+# this dir contains the whole website and should not be checked in on main
 builtdocs/
 .doit.db
+lite/files/*/
+.jupyterlite.doit.db
+
+# jetbrains settings
+.idea/
 
 # vscode settings
 .vscode/
 .vscode/panel.code-workspace
 discover/
 
-node_modules/*
+node_modules
+.bokeh
 /tmp
 .devcontainer/*
+pyodide/
+script.*
+doc/_build/*
+doc/gallery/*
+doc/reference/*
+
+!/panel/dist
+/panel/dist/*
+!/panel/dist/css
+!/panel/dist/css/*.css
+/panel/dist/css/models/
+.venv2/
+.npm/*
+.local/*
+.jupyter-server-log.txt
+.bash_history
+.bash_logout
+.bashrc
+.profile
+.config/code-server/*
+.conda/*
+.jupyter/*
+app_panel.py
+app_streamlit.py
+
+# pixi
+.pixi
+pixi.lock
+panel/_version.py
+.uicoveragerc
+mario_button.*
+counter_button.*

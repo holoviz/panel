@@ -5,15 +5,16 @@ from panel.io import block_comm
 from panel.layout import Row
 from panel.links import CallbackGenerator
 from panel.tests.util import check_layoutable_properties
+from panel.util import param_watchers
 from panel.widgets import (
-    CompositeWidget, Dial, FileDownload, FloatSlider, LinearGauge, Terminal,
-    TextInput, ToggleGroup, Tqdm, Widget,
+    CompositeWidget, Dial, FileDownload, FloatSlider, LinearGauge,
+    LoadingSpinner, Terminal, TextInput, ToggleGroup, Tqdm, Widget,
 )
 from panel.widgets.tables import BaseTable
 
 excluded = (
     BaseTable, CompositeWidget, Dial, FileDownload, LinearGauge,
-    ToggleGroup, Terminal, Tqdm
+    LoadingSpinner, ToggleGroup, Terminal, Tqdm
 )
 
 all_widgets = [
@@ -25,18 +26,32 @@ all_widgets = [
 def test_widget_signature(widget):
     from inspect import signature
     parameters = signature(widget).parameters
+    if getattr(getattr(widget, '_param__private', object), 'signature', None):
+        pytest.skip('Signature already set by Param')
     assert len(parameters) == 1
 
+@pytest.mark.parametrize('widget', all_widgets)
+def test_widget_untracked_watchers(widget, document, comm):
+    # Ensures internal code correctly detects
+    try:
+        widg = widget()
+    except ImportError:
+        pytest.skip("Dependent library could not be imported.")
+    watchers = [
+        w for pwatchers in param_watchers(widg).values()
+        for awatchers in pwatchers.values() for w in awatchers
+    ]
+    assert len([wfn for wfn in watchers if wfn not in widg._internal_callbacks and not hasattr(wfn.fn, '_watcher_name')]) == 0
 
 @pytest.mark.parametrize('widget', all_widgets)
-def test_widget_linkable_params(widget):
+def test_widget_linkable_params(widget, document, comm):
     w = widget()
     controls = w.controls(jslink=True)
     layout = Row(w, controls)
 
     try:
         CallbackGenerator.error = True
-        layout.get_root()
+        layout.get_root(document, comm)
     finally:
         CallbackGenerator.error = False
 

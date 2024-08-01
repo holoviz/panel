@@ -1,29 +1,9 @@
-{% extends base %}
+{% extends "base/base.html" %}
 
 {% block preamble %}
-{% if app_favicon %}<link rel="icon" href="{{ app_favicon }}" type="{{favicon_type}}">{% endif %}
-{% if meta_name %}<meta name="name" content="{{ meta_name }}">{% endif %}
-{% if meta_description %}<meta name="description" content="{{ meta_description }}">{% endif %}
-{% if meta_keywords %}<meta name="keywords" content="{{ meta_keywords }}">{% endif %}
-{% if meta_author %}<meta name="author" content="{{ meta_author }}">{% endif %}
-{% if meta_refresh %}<meta http-equiv="refresh" content="{{ meta_refresh }}">{% endif %}
-{% if meta_viewport %}<meta name="viewport" content="{{ meta_viewport }}">{% endif %}
-{% if base_url and base_target %}<base href="{{ base_url }}" target="{{ base_target }}">{% endif %}
+{% block metadata %}
+{{ super() }}
 {% endblock %}
-
-{% block postamble %}
-<!-- Template CSS -->
-{% for css in template_resources['css'].values() %}
-<link rel="stylesheet" href="{{ css }}">
-{% endfor %}
-{% for src in template_resources['extra_css'] %}
-<link rel="stylesheet"  href="{{ src }}">
-{% endfor %}
-{% for raw_css in template_resources['raw_css'] %}
-<style type="text/css">
-{{ raw_css }}
-</style>
-{% endfor %}
 
 <!-- Template JS -->
 {% for src in template_resources['js'].values() %}
@@ -32,29 +12,52 @@
 {% for src in template_resources['js_modules'].values() %}
 <script src="{{ src }}" type="module"></script>
 {% endfor %}
+{% endblock %}
+
+{% block postamble %}
+<!-- Template CSS -->
+{% for css in template_resources['css'].values() %}
+<link rel="stylesheet" href="{{ css }}">
+{% endfor %}
+{% for raw_css in template_resources['raw_css'] %}
+<style type="text/css">
+{{ raw_css }}
+</style>
+{% endfor %}
 
 <style>
-#sidebar {
-  width: {{ sidebar_width }}px;
-}
+  :root {
+    --header-background: {{ header_background or "var(--design-primary-color, var(--panel-primary-color))" }};
+    --header-color: {{ header_color or "var(--design-primary-text-color, var(--panel-on-primary-color))" }};
+    --sidebar-width: {{ sidebar_width }}px;
+  }
+  #header {
+    --design-background-text-color: var(--header-color);
+    --design-background-color: var(--header-background);
+    background-color: var(--header-background);
+    color: var(--header-color);
+  }
+  #sidebar {
+    min-width: var(--sidebar-width);
+  }
 </style>
 {% endblock %}
 
 <!-- goes in body -->
 {% block contents %}
-<div class="" id="container">
-  <nav class="" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }} !important;{% endif %}" id="header">
+<div id="container">
+  <nav id="header">
     {% if nav %}
-    <span style="font-size:30px;cursor:pointer" onclick="closeNav()" id="sidebar-button">
-	  <div class="pn-bar"></div>
-	  <div class="pn-bar"></div>
-	  <div class="pn-bar"></div>
-	</span>
+    <span style="font-size:30px; cursor:pointer" onclick="{{ 'openNav()' if collapsed_sidebar else 'closeNav()' }}" id="sidebar-button">
+      <div class="pn-bar"></div>
+      <div class="pn-bar"></div>
+      <div class="pn-bar"></div>
+    </span>
     {% endif %}
     <div class="app-header">
       {% if app_logo %}<a class="navbar-brand app-logo" href="{{ site_url }}"><img src="{{ app_logo }}" class="app-logo"></a>{% endif %}
       {% if site_title %}<a class="title" href="{{ site_url }}" >&nbsp;{{ site_title }}</a>{% endif %}
-      {% if site_title and app_title%}<span class="title">&nbsp;-</span>{% endif %}
+      {% if site_title and app_title%}<span class="title">-</span>{% endif %}
       {% if app_title %}<a class="title" href="" >&nbsp;{{ app_title }}</a>{% endif %}
     </div>
     <div id="header-items">
@@ -66,71 +69,66 @@
     {% endfor %}
     {% endfor %}
     </div>
-
     {% if saveLayout %}
     <button id="layout-reset">Reset Layout</button>
     {% endif %}
-
-	{% if busy %}
-	<div class="pn-busy-container">
-	  {{ embed(roots.busy_indicator) | indent(6) }}
-	</div>
-	{% endif %}
-
+    {% if busy %}
+    <div class="pn-busy-container">
+    {{ embed(roots.busy_indicator) | indent(6) }}
+    </div>
+    {% endif %}
   </nav>
 
   <div class="row" id="content">
     {% if nav %}
-    <div class="sidenav" id="sidebar">
+    <div class="sidenav {{'hidden' if collapsed_sidebar else ''}}" id="sidebar">
       <ul class="nav flex-column">
       {% for doc in docs %}
-	    {% for root in doc.roots %}
-	    {% if "nav" in root.tags %}
+      {% for root in doc.roots %}
+      {% if "nav" in root.tags %}
         {{ embed(root) | indent(8) }}
-	    {% endif %}
-	    {% endfor %}
-	    {% endfor %}
+      {% endif %}
+      {% endfor %}
+      {% endfor %}
       </ul>
     </div>
     {% endif %}
 
-    <div class="main" id="main"{% if nav %} style="margin-left: {{ sidebar_width }}px;"{% endif %}>
+    <div class="main" id="main">
       {% if main_max_width %}
-      <div style="margin-left: auto; margin-right: auto;max-width: {{main_max_width}}">
+      <div style="margin-left: auto; margin-right: auto; max-width: {{main_max_width}}">
       {% endif %}
         <div id="responsive-grid"></div>
-
-        <div id="pn-Modal" class="pn-modal header-adjust">
-          <div class="pn-modal-content">
-            <span class="pn-modalclose" id="pn-closeModal">&times;</span>
-            {% for doc in docs %}
-            {% for root in doc.roots %}
-            {% if "modal" in root.tags %}
-            {{ embed(root) | indent(10) }}
-            {% endif %}
-            {% endfor %}
-            {% endfor %}
-          </div>
-        {% if main_max_width %}
-          </div>
-        {% endif %}
-	  </div>
-	</div>
+          <div id="pn-Modal" class="pn-modal header-adjust">
+            <div class="pn-modal-content">
+              <span class="pn-modalclose" id="pn-closeModal">&times;</span>
+              {% for doc in docs %}
+              {% for root in doc.roots %}
+              {% if "modal" in root.tags %}
+              {{ embed(root) | indent(10) }}
+              {% endif %}
+              {% endfor %}
+              {% endfor %}
+            </div>
+        </div>
+      {% if main_max_width %}
+      </div>
+      {% endif %}
+    </div>
   </div>
 </div>
 
 <script>
   function openNav() {
-    document.getElementById("sidebar").style.left = 0;
-    document.getElementById("main").style.marginLeft = "{{ sidebar_width + 30 }}px";
+    document.getElementById("sidebar").classList.remove("hidden");
+    window.dispatchEvent(new Event("resize"))
     document.getElementById("sidebar-button").onclick = closeNav;
     var interval = setInterval(function () { window.dispatchEvent(new Event('resize')); }, 10);
     setTimeout(function () { clearInterval(interval) }, 210)
   }
 
   function closeNav() {
-    document.getElementById("sidebar").style.left = "-{{ sidebar_width + 30 }}px";
-    document.getElementById("main").style.marginLeft = 0;
+    document.getElementById("sidebar").classList.add("hidden");
     document.getElementById("sidebar-button").onclick = openNav;
     var interval = setInterval(function () { window.dispatchEvent(new Event('resize')); }, 10);
     setTimeout(function () { clearInterval(interval) }, 210)
@@ -151,129 +149,117 @@
 </script>
 
 <script type="text/babel">
- const divStyle = {borderRadius: '5px'};
+  const divStyle = {borderRadius: '5px'};
+  const ResponsiveGridLayout = ReactGridLayout.WidthProvider(ReactGridLayout.Responsive);
+  {% if saveLayout %}
+  const originalLayout = getFromLS("layouts") || {{ layouts }};
+  {% else %}
+  const originalLayout = {{ layouts }};
+  {% endif %}
 
- const ResponsiveGridLayout = ReactGridLayout.WidthProvider(ReactGridLayout.Responsive);
- {% if saveLayout %}
- const originalLayout = getFromLS("layouts") || {{ layouts }};
- {% else %}
- const originalLayout = {{ layouts }};
- {% endif %}
+  function getFromLS(key) {
+    let ls = {};
+    if (window.localStorage) {
+      try {
+        ls = JSON.parse(window.localStorage.getItem(window.location.origin + window.location.pathname)) || {};
+      } catch (e) {
+        /*Ignore*/
+      }
+    }
+    return ls[key];
+  }
 
- function resize_layout(obj, old_, new_, p, e, element) {
-     window.dispatchEvent(new Event("resize"))
- }
+  function saveToLS(key, value) {
+    if (window.localStorage) {
+      window.localStorage.setItem(
+        window.location.origin + window.location.pathname,
+        JSON.stringify({
+          [key]: value
+        })
+      );
+    }
+  }
 
- function resize_layout_stop(obj, old_, new_, p, e, element) {
-     setTimeout(function(){
-         window.dispatchEvent(new Event("resize"))
-     }, 50);
- }
+  function resize_layout(obj, old_, new_, p, e, element) {
+    window.dispatchEvent(new Event("resize"))
+  }
 
- function getFromLS(key) {
-     let ls = {};
-     if (window.localStorage) {
-         try {
-             ls = JSON.parse(window.localStorage.getItem(window.location.href)) || {};
-         } catch (e) {
-             /*Ignore*/
-         }
-     }
-     return ls[key];
- }
+  function resize_layout_stop(obj, old_, new_, p, e, element) {
+    setTimeout(function(){
+      window.dispatchEvent(new Event("resize"))
+    }, 50);
+  }
 
- function saveToLS(key, value) {
-     if (window.localStorage) {
+  class ResponsiveGrid extends React.PureComponent {
 
-         window.localStorage.setItem(
-             window.location.href,
-             JSON.stringify({
-                 [key]: value
-             })
-         );
-     }
- }
+    static defaultProps = {
+      onLayoutChange: function() {}
+    }
 
- class ResponsiveGrid extends React.PureComponent
- {
-     static defaultProps = {
-         onLayoutChange: function() {}
-     }
-
-     constructor(props)
-     {
-         super(props);
-         this.state = {
-             layouts: JSON.parse(JSON.stringify(originalLayout))
-         };
-
-         {% if saveLayout %}
-         this.resetLayout = this.resetLayout.bind(this)
-         document.getElementById('layout-reset').onclick = this.resetLayout
-         {% endif %}
-     }
+    constructor(props) {
+      super(props);
+      this.state = {
+	layouts: JSON.parse(JSON.stringify(originalLayout))
+      };
+      {% if saveLayout %}
+      this.resetLayout = this.resetLayout.bind(this)
+      document.getElementById('layout-reset').onclick = this.resetLayout
+      {% endif %}
+    }
 
     resetLayout() {
-         this.setState({
-             layouts: {{ layouts }}
-         });
-         window.dispatchEvent(new Event("resize"))
-     }
+      this.setState({
+	layouts: {{ layouts }}
+      });
+    }
 
-     onLayoutChange(layout, layouts)
-     {
-         saveToLS("layouts", layouts);
-         this.setState({ layouts });
-     }
+    onLayoutChange(layout, layouts) {
+      saveToLS("layouts", layouts);
+      this.setState({ layouts });
+    }
 
-     render()
-     {
+    render() {
       return (
-             <ResponsiveGridLayout
-		         className={"layout"}
-                 cols={ {{cols}} }
-                 breakpoints={ {{breakpoints}} }
-                 draggableHandle={".drag-handle"}
-                 onResize={resize_layout}
-                 onResizeStop={resize_layout_stop}
-		         draggableCancel={".bk-root"}
-                 rowHeight={ {{rowHeight}} }
-                 layouts={this.state.layouts}
-                 {% if compact == "both" %}
-                 compactType={"horizontal"}
-                 {% elif compact == "horizontal" %}
-                 verticalCompact={false}
-                 compactType={"horizontal"}
-                 {% elif compact is none %}
-                 verticalCompact={false}
-                 {% endif %}
-                 preventCollision={ {{preventCollision and 'true' or 'false'}} }
-                 {%if saveLayout %}
-                 onLayoutChange={(layout, layouts) => this.onLayoutChange(layout, layouts)}
-                 {% endif %}
-             >
-                 {% set count = [] %}
-                 {% for doc in docs %}{% for root in doc.roots %}{% if "main" in root.tags %}
-                 <div key="{{count|length + 1 }}" style={divStyle} >
-			         <span className="drag-handle"></span>
-                     {{ embed(root) | indent(4) | replace("class", "className") }}
-                 </div>
-                 {% set __ = count.append(1) %}
-                 {% endif %}{% endfor %}{% endfor %}
-             </ResponsiveGridLayout>
-         );
-     }
- }
- ReactDOM.render(<ResponsiveGrid />, document.getElementById('responsive-grid'))
-
-
+        <ResponsiveGridLayout
+	   className={"layout"}
+           cols={ {{cols}} }
+           breakpoints={ {{breakpoints}} }
+           draggableHandle={".drag-handle"}
+	   draggableCancel={".bk-root"}
+	   onResize={resize_layout}
+           onResizeStop={resize_layout_stop}
+           rowHeight={ {{rowHeight}} }
+           layouts={this.state.layouts}
+           {% if compact == "both" %}
+           compactType={"horizontal"}
+           {% elif compact == "horizontal" %}
+           verticalCompact={false}
+           compactType={"horizontal"}
+           {% elif compact is none %}
+           verticalCompact={false}
+           {% endif %}
+           preventCollision={ {{preventCollision and 'true' or 'false'}} }
+           {% if saveLayout %}
+           onLayoutChange={(layout, layouts) => this.onLayoutChange(layout, layouts)}
+           {% endif %}
+         >
+         {% set count = [] %}
+         {% for doc in docs %}{% for root in doc.roots %}{% if "main" in root.tags %}
+           <div key="{{count|length + 1 }}" style={divStyle} >
+             <span className="drag-handle"></span>
+	     {{ embed(root) | indent(4) | replace("class", "className") | replace('style="display: contents;"', 'style={{display: "contents"}}') }}
+           </div>
+         {% set __ = count.append(1) %}
+         {% endif %}{% endfor %}{% endfor %}
+         </ResponsiveGridLayout>
+      );
+    }
+  }
+  ReactDOM.render(<ResponsiveGrid />, document.getElementById('responsive-grid'));
 </script>
 
-{{ embed(roots.js_area) }}
-{{ embed(roots.actions) }}
-{{ embed(roots.location) }}
-{% if notifications %}
-{{ embed(roots.notifications) }}
-{% endif %}
+{% block state_roots %}
+{{ super() }}
+{% endblock %}
 
 {% endblock %}

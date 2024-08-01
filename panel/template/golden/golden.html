@@ -1,52 +1,33 @@
-{% extends base %}
+{% extends "base/base.html" %}
 
-<!-- goes in body -->
-{% block preamble %}
-{% if app_favicon %}<link rel="icon" href="{{ app_favicon }}" type="{{favicon_type}}">{% endif %}
-{% if meta_name %}<meta name="name" content="{{ meta_name }}">{% endif %}
-{% if meta_description %}<meta name="description" content="{{ meta_description }}">{% endif %}
-{% if meta_keywords %}<meta name="keywords" content="{{ meta_keywords }}">{% endif %}
-{% if meta_author %}<meta name="author" content="{{ meta_author }}">{% endif %}
-{% if meta_refresh %}<meta http-equiv="refresh" content="{{ meta_refresh }}">{% endif %}
-{% if meta_viewport %}<meta name="viewport" content="{{ meta_viewport }}">{% endif %}
-{% if base_url and base_target %}<base href="{{ base_url }}" target="{{ base_target }}">{% endif %}
-{% endblock %}
-
-{% block postamble %}
-<!-- Template CSS -->
-{% for css in template_resources['css'].values() %}
-<link rel="stylesheet" href="{{ css }}">
-{% endfor %}
-{% for src in template_resources['extra_css'] %}
-<link rel="stylesheet"  href="{{ src }}">
-{% endfor %}
-{% for raw_css in template_resources['raw_css'] %}
-<style type="text/css">
-{{ raw_css }}
+{% block custom_css %}
+<style>
+  :root {
+    --header-background: {{ header_background or "var(--design-primary-color, var(--panel-primary-color))" }};
+    --header-color: {{ header_color or "var(--design-primary-text-color, var(--panel-on-primary-color))" }};
+    --sidebar-width: {{ sidebar_width }}px;
+  }
+  #header {
+    --design-background-text-color: var(--header-color);
+    --design-background-color: var(--header-background);
+    background-color: var(--header-background);
+    color: var(--header-color);
+  }
 </style>
-{% endfor %}
-
-<!-- Template JS -->
-{% for src in template_resources['js'].values() %}
-<script src="{{ src }}"></script>
-{% endfor %}
-{% for src in template_resources['js_modules'].values() %}
-<script src="{{ src }}" type="module"></script>
-{% endfor %}
 {% endblock %}
 
 <!-- goes in body -->
 {% block contents %}
-<header class="app-bar" id="header" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }} !important;{% endif %}">
+<header class="app-bar" id="header">
   <div style="display: contents;">
     <div class="app-header">
       {% if app_logo %}<a href="{{ site_url }}"><img src="{{ app_logo }}" class="app-logo"></a>{% endif %}
       {% if site_title %}<a class="title" href="{{ site_url }}" >{{ site_title }}</a>{% endif %}
-      {% if site_title and app_title%}<span class="title">&nbsp;-&nbsp;</span>{% endif %}
-      {% if app_title %}<a class="title" href="" >{{ app_title }}</a>{% endif %}
+      {% if site_title and app_title%}<span class="title">-</span>{% endif %}
+      {% if app_title %}<a class="title" href="">{{ app_title }}</a>{% endif %}
     </div>
-	<section class="header-contents">
-	  {% for doc in docs %}
+    <section class="header-contents">
+      {% for doc in docs %}
       {% for root in doc.roots %}
       {% if "header" in root.tags %}
       {{ embed(root) }}
@@ -54,31 +35,31 @@
       {% endfor %}
       {% endfor %}
     </section>
-	{% if busy %}
-	<div class="pn-busy-container">
-	  {{ embed(roots.busy_indicator) | indent(6) }}
-	</div>
-	{% endif %}
+    {% if busy %}
+    <div class="pn-busy-container">
+      {{ embed(roots.busy_indicator) | indent(6) }}
+    </div>
+    {% endif %}
   </div>
 </header>
 
 <div class="main-area header-adjust" id="main">
   <main class="main-content" id="main-content"></main>
   <div id="pn-Modal" class="pn-modal header-adjust">
-	<div class="pn-modal-content">
-	  <span class="pn-modalclose" id="pn-closeModal">&times;</span>
-	  {% for doc in docs %}
-	  {% for root in doc.roots %}
-	  {% if "modal" in root.tags %}
-	  {{ embed(root) | indent(6) }}
-	  {% endif %}
-	  {% endfor %}
-	  {% endfor %}
-	</div>
+    <div class="pn-modal-content">
+      <span class="pn-modalclose" id="pn-closeModal">&times;</span>
+      {% for doc in docs %}
+      {% for root in doc.roots %}
+      {% if "modal" in root.tags %}
+      {{ embed(root) | indent(6) }}
+      {% endif %}
+      {% endfor %}
+      {% endfor %}
+    </div>
   </div>
 </div>
 
-<script>
+<script type="text/javascript">
   var config = {
     content: [
       {
@@ -131,6 +112,7 @@
     window.dispatchEvent(new Event("resize"))
     resizing = false;
   }
+
   myLayout.registerComponent('view', function( container, componentState ) {
     const {width, css_classes} = componentState
     if (width) {
@@ -144,14 +126,6 @@
     container.on("resize", resize_dispatcher)
   })
 
-  // Absolute hackery to get GoldenLayout to initialize even though
-  // document is not ready. Without this bokeh will complain that
-  // DOM nodes to render roots into are not initialized in time.
-  Object.defineProperty(document, 'readyState', {
-    get() { return readyState },
-    set(value) { return readyState = value },
-  });
-  document.readyState = 'complete'
 
   myLayout.init()
   window.addEventListener('resize', (event) => {
@@ -174,11 +148,8 @@
   }
 </script>
 
-{{ embed(roots.js_area) }}
-{{ embed(roots.actions) }}
-{{ embed(roots.location) }}
-{% if notifications %}
-{{ embed(roots.notifications) }}
-{% endif %}
+{% block state_roots %}
+{{ super() }}
+{% endblock %}
 
 {% endblock %}

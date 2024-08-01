@@ -1,11 +1,15 @@
 """
 Spacer components to add horizontal or vertical space to a layout.
 """
+from __future__ import annotations
+
+from typing import ClassVar
 
 import param
 
 from bokeh.models import Div as BkDiv, Spacer as BkSpacer
 
+from ..io.resources import CDN_DIST
 from ..reactive import Reactive
 
 
@@ -17,7 +21,7 @@ class Spacer(Reactive):
     Like all other components spacers support both absolute and responsive
     sizing modes.
 
-    Reference: https://panel.holoviz.org/user_guide/Customization.html#spacers
+    How-to: https://panel.holoviz.org/how_to/layout/spacing.html#spacer-components
 
     :Example:
 
@@ -31,8 +35,7 @@ class Spacer(Reactive):
     _bokeh_model = BkSpacer
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        properties = self._process_param_change(self._init_params())
-        model = self._bokeh_model(**properties)
+        model = self._bokeh_model(**self._get_properties(doc))
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)
@@ -62,12 +65,12 @@ class VSpacer(Spacer):
 
 class HSpacer(Spacer):
     """
-    The `HSpacer` layout provides responsive vertical spacing.
+    The `HSpacer` layout provides responsive horizontal spacing.
 
     Using this component we can space objects equidistantly in a layout and
     allow the empty space to shrink when the browser is resized.
 
-    Reference: https://panel.holoviz.org/user_guide/Customization.html#spacers
+    How-to: https://panel.holoviz.org/how_to/layout/spacing.html#spacer-components
 
     :Example:
 
@@ -102,10 +105,13 @@ class Divider(Reactive):
 
     _bokeh_model = BkDiv
 
+    _stylesheets: ClassVar[list[str]] = [
+        f'{CDN_DIST}css/divider.css'
+    ]
+
     def _get_model(self, doc, root=None, parent=None, comm=None):
         properties = self._process_param_change(self._init_params())
-        properties['style'] = {'width': '100%', 'height': '100%'}
-        model = self._bokeh_model(text='<hr style="margin: 0px">', **properties)
+        model = self._bokeh_model(text='<hr>', **properties)
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)

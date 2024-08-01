@@ -1,11 +1,14 @@
 body {
   display: flex;
   height: 100vh;
-  font-family: "Lato", sans-serif;
+  font-family: 'Lato', sans-serif;
   margin: 0px;
 }
 
-body, .main-area, .main-content, .lm_goldenlayout {
+body,
+.main-area,
+.main-content,
+.lm_goldenlayout {
   overflow: hidden;
 }
 
@@ -35,16 +38,8 @@ body, .main-area, .main-content, .lm_goldenlayout {
 }
 
 #sidebar {
-  background-color:rgb(34, 34, 34);
+  background-color: rgb(34, 34, 34);
   color: white;
-}
-
-#header .bk.bk-btn-default {
-  color: black;
-}
-
-#header .bk.bk-menu {
-  color: black;
 }
 
 .sidebar-contents {
@@ -67,8 +62,8 @@ img.app-logo {
   padding-right: 10px;
   font-size: 28px;
   height: 30px;
-  padding-top:9px;
-  padding-bottom:9px;
+  padding-top: 9px;
+  padding-bottom: 9px;
   max-width: inherit;
 }
 
@@ -97,25 +92,12 @@ p.bk.golden-card-button {
   display: none;
 }
 
-.bk.card {
-  background-color: white;
-}
-
-.bk.card-title {
-  font-size: 1.5em;
-  font-weight: bold;
-}
-
-.bk.card-button {
-  display: none;
-}
-
-.bk-canvas {
-  padding-right: 2px !important;
-}
-
 .lm_content {
-  overflow-y: scroll !important;
+  background-color: var(
+    --design-background-color,
+    var(--panel-background-color)
+  );
+  overflow-y: auto !important;
 }
 
 .lm_item_container {
@@ -133,10 +115,11 @@ p.bk.golden-card-button {
   display: none;
   top: 0;
   left: 0;
+  z-index: 1;
 }
 
 .pn-modal-content {
-  background-color: #fefefe;
+  background-color: var(--design-surface-color, var(--panel-surface-color));
   margin: auto;
   margin-top: 25px;
   margin-bottom: 25px;

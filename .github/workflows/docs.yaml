@@ -3,129 +3,89 @@ name: docs
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+a[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+b[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+rc[0-9]+'
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+a[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+b[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+rc[0-9]+"
   workflow_dispatch:
     inputs:
       target:
-        description: 'Site to build and deploy'
+        description: "Site to build and deploy"
         type: choice
         options:
-        - dev
-        - main
-        - dryrun
+          - dev
+          - main
+          - dryrun
         required: true
         default: dryrun
   schedule:
-    - cron: '0 19 * * SUN'
+    - cron: "0 19 * * SUN"
+
+defaults:
+  run:
+    shell: bash -el {0}
+
+env:
+  DISPLAY: ":99.0"
 
 jobs:
-  build_docs:
-    name: Documentation
-    runs-on: 'ubuntu-latest'
-    timeout-minutes: 120
-    defaults:
-      run:
-        shell: bash -l {0}
-    env:
-      DESC: "Documentation build"
-      MPLBACKEND: "Agg"
-      MOZ_HEADLESS: 1
-      DISPLAY: ":99.0"
-      PANEL_IPYWIDGET: 1
+  pixi_lock:
+    name: Pixi lock
+    runs-on: ubuntu-latest
     steps:
-      - name: remove nodejs
-        run: |
-          sudo rm /usr/local/bin/node
-          sudo rm /usr/local/bin/npm
-      - uses: actions/checkout@v2
+      - uses: holoviz-dev/holoviz_tasks/pixi_lock@pixi
+
+  docs_build:
+    name: Build Documentation
+    needs: [pixi_lock]
+    runs-on: "macos-latest"
+    timeout-minutes: 180
+    outputs:
+      tag: ${{ steps.vars.outputs.tag }}
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi_install@pixi
         with:
-          fetch-depth: "100"
-      - uses: conda-incubator/setup-miniconda@v2
+          environments: docs
+          opengl: true
+      - name: Build documentation
+        run: pixi run -e docs docs-build
+      - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          mamba-version: "*"
-          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
-          miniconda-version: "latest"
-      - name: Fetch unshallow
-        run: git fetch --prune --tags --unshallow -f
-      - name: Set and echo git ref
+          name: docs
+          if-no-files-found: error
+          path: builtdocs
+      - name: Set output
         id: vars
-        run: |
-          echo "Deploying from ref ${GITHUB_REF#refs/*/}"
-          echo ::set-output name=tag::${GITHUB_REF#refs/*/}
-      - name: conda setup
-        run: |
-          conda config --prepend channels bokeh/label/dev
-          conda create -n test-environment python=3.8 pyctdev
-      - uses: actions/setup-node@v2
+        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+
+  docs_publish:
+    name: Publish Documentation
+    runs-on: "ubuntu-latest"
+    needs: [docs_build]
+    steps:
+      - uses: actions/download-artifact@v4
         with:
-          node-version: '15'
-      - name: doit develop_install and other installs
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          conda install "pip<21.2.1"
-          conda list
-          doit develop_install -o doc -o examples
-          pip install pyecharts idom==0.24 "pydata_sphinx_theme==0.9.0"
-      - name: temporarily pin jinja2
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          conda install "jinja2<=3.0.3"
-      - name: doit env_capture
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          doit env_capture
-      - name: opengl
-        run: |
-          sudo apt-get install libglu1-mesa
-          conda install mesalib
-          /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x24
-          sleep 3
-      - name: bokeh sampledata
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          bokeh sampledata
-      - name: generate rst
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          nbsite generate-rst --org holoviz --project-name panel
-      - name: refmanual
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests
-      - name: build docs
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          nbsite build --what=html --output=builtdocs --org holoviz --project-name panel
-          cp -r ./panel/dist ./builtdocs/panel_dist
-      - name: git status and git diff
-        run: |
-          git status
-          git diff
+          name: docs
+          path: builtdocs/
+      - name: Set output
+        id: vars
+        run: echo "tag=${{ needs.docs_build.outputs.tag }}" >> $GITHUB_OUTPUT
       - name: Deploy dev
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         if: |
           (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
           (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         with:
           personal_token: ${{ secrets.ACCESS_TOKEN }}
-          external_repository: pyviz-dev/panel
+          external_repository: holoviz-dev/panel
           publish_dir: ./builtdocs
           force_orphan: true
       - name: Deploy main
         if: |
           (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
           (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./builtdocs

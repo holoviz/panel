@@ -7,22 +7,23 @@ import json
 import urllib.parse as urlparse
 
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
+    TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional,
 )
 
 import param
 
 from ..models.location import Location as _BkLocation
 from ..reactive import Syncable
-from ..util import parse_query
-from .document import init_doc
+from ..util import edit_readonly, parse_query
+from .cache import is_equal
+from .document import create_doc_if_none_exists
 from .state import state
 
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
+    from bokeh.server.contexts import BokehSessionContext
     from pyviz_comms import Comm
-
 
 class Location(Syncable):
     """
@@ -37,7 +38,7 @@ class Location(Syncable):
     hostname = param.String(readonly=True, doc="""
         hostname in window.location e.g. 'panel.holoviz.org'""")
 
-    pathname = param.String(regex=r"^$|[\/].*$", doc="""
+    pathname = param.String(regex=r"^$|[\/]|srcdoc$", doc="""
         pathname in window.location e.g. '/user_guide/Interact.html'""")
 
     protocol = param.String(readonly=True, doc="""
@@ -60,6 +61,47 @@ class Location(Syncable):
     # Mapping from parameter name to bokeh model property name
     _rename: ClassVar[Mapping[str, str | None]] = {"name": None}
 
+    @classmethod
+    def from_request(cls, request):
+        try:
+            from bokeh.server.contexts import _RequestProxy
+            if not isinstance(request, _RequestProxy) or request._request is None:
+                return cls()
+        except ImportError:
+            return cls()
+
+        params = {}
+        href = ''
+        if request.protocol:
+            params['protocol'] = href = f'{request.protocol}:'
+        if request.host:
+            href += f'//{request.host}'
+            if ':' in request.host:
+                params['hostname'], params['port'] = request.host.split(':')
+            else:
+                params['hostname'] = request.host
+        if request.uri:
+            search = hash = None
+            href += request.uri
+            if '?' in request.uri and '#' in request.uri:
+                params['pathname'], query = request.uri.split('?')
+                search, hash = query.split('#')
+            elif '?' in request.uri:
+                params['pathname'], search = request.uri.split('?')
+            elif '#' in request.uri:
+                params['pathname'], hash = request.uri.split('#')
+            else:
+                params['pathname'] = request.uri
+            if search:
+                params['search'] = f'?{search}'
+            if hash:
+                params['hash'] = f'#{hash}'
+        params['href'] = href
+        loc = cls()
+        with edit_readonly(loc):
+            loc.param.update(params)
+        return loc
+
     def __init__(self, **params):
         super().__init__(**params)
         self._synced = []
@@ -72,22 +114,28 @@ class Location(Syncable):
     ) -> 'Model':
         model = _BkLocation(**self._process_param_change(self._init_params()))
         root = root or model
-        values = self.param.values()
-        properties = list(self._process_param_change(values))
         self._models[root.ref['id']] = (model, parent)
-        self._link_props(model, properties, doc, root, comm)
+        self._link_props(model, self._linked_properties, doc, root, comm)
         return model
 
     def get_root(
         self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
         preprocess: bool = True
     ) -> 'Model':
-        doc = init_doc(doc)
+        doc = create_doc_if_none_exists(doc)
         root = self._get_model(doc, comm=comm)
         ref = root.ref['id']
         state._views[ref] = (self, root, doc, comm)
         self._documents[doc] = root
         return root
+
+    def _server_destroy(self, session_context: BokehSessionContext) -> None:
+        for p, ps, _, _ in self._synced:
+            try:
+                self.unsync(p, ps)
+            except Exception:
+                pass
+        super()._server_destroy(session_context)
 
     def _cleanup(self, root: Model | None = None) -> None:
         if root:
@@ -116,9 +164,10 @@ class Location(Syncable):
                 except Exception:
                     pass
                 try:
-                    equal = v == getattr(p, pname)
+                    equal = is_equal(v, getattr(p, pname))
                 except Exception:
                     equal = False
+
                 if not equal:
                     mapped[pname] = v
             try:
@@ -128,7 +177,7 @@ class Location(Syncable):
                     on_error(mapped)
 
     def _update_query(
-        self, *events: param.parameterized.Event, query: Optional[Dict[str, Any]] = None
+        self, *events: param.parameterized.Event, query: Optional[dict[str, Any]] = None
     ) -> None:
         if self._syncing:
             return
@@ -152,7 +201,7 @@ class Location(Syncable):
             self._syncing = False
 
     @property
-    def query_params(self) -> Dict[str, Any]:
+    def query_params(self) -> dict[str, Any]:
         return parse_query(self.search)
 
     def update_query(self, **kwargs: Mapping[str, Any]) -> None:
@@ -161,8 +210,8 @@ class Location(Syncable):
         self.search = '?' + urlparse.urlencode(query)
 
     def sync(
-        self, parameterized: param.Parameterized, parameters: Optional[List[str] | Dict[str, str]] = None,
-        on_error: Optional[Callable[[Dict[str, Any]], None]] = None
+        self, parameterized: param.Parameterized, parameters: Optional[list[str] | dict[str, str]] = None,
+        on_error: Optional[Callable[[dict[str, Any]], None]] = None
     ) -> None:
         """
         Syncs the parameters of a Parameterized object with the query
@@ -176,7 +225,7 @@ class Location(Syncable):
         parameters (list or dict):
           A list or dictionary specifying parameters to sync.
           If a dictionary is supplied it should define a mapping from
-          the Parameterized's parameteres to the names of the query
+          the Parameterized's parameters to the names of the query
           parameters.
         on_error: (callable):
           Callback when syncing Parameterized with URL parameters
@@ -203,7 +252,7 @@ class Location(Syncable):
             query[name] = v
         self._update_query(query=query)
 
-    def unsync(self, parameterized: param.Parameterized, parameters: Optional[List[str]] = None) -> None:
+    def unsync(self, parameterized: param.Parameterized, parameters: Optional[list[str]] = None) -> None:
         """
         Unsyncs the parameters of the Parameterized with the query
         params in the URL. If no parameters are supplied all
@@ -221,15 +270,20 @@ class Location(Syncable):
             ptype = type(parameterized)
             raise ValueError(f"Cannot unsync {ptype} object since it "
                              "was never synced in the first place.")
-        synced = []
+        synced, unsynced = [], []
         for p, params, watcher, on_error in self._synced:
-            if parameterized is p:
-                parameterized.param.unwatch(watcher)
-                if parameters is not None:
-                    new_params = {p: q for p, q in params.items()
-                                  if p not in parameters}
-                    new_watcher = parameterized.param.watch(watcher.fn, list(new_params))
-                    synced.append((p, new_params, new_watcher, on_error))
-            else:
+            if parameterized is not p:
                 synced.append((p, params, watcher, on_error))
+                continue
+            parameterized.param.unwatch(watcher)
+            if parameters is None:
+                unsynced.extend(list(params.values()))
+            else:
+                unsynced.extend([q for p, q in params.items() if p in parameters])
+                new_params = {p: q for p, q in params.items()
+                              if p not in parameters}
+                new_watcher = parameterized.param.watch(watcher.fn, list(new_params))
+                synced.append((p, new_params, new_watcher, on_error))
         self._synced = synced
+        query = {k: v for k, v in self.query_params.items() if k not in unsynced}
+        self.search = '?' + urlparse.urlencode(query) if query else ''

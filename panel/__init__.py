@@ -45,45 +45,58 @@ https://blog.holoviz.org/panel_0.12.0.html#JupyterLab-previews
 To learn more about Panel check out
 https://panel.holoviz.org/getting_started/index.html
 """
+from param import rx
+
 from . import layout  # noqa
 from . import links  # noqa
 from . import pane  # noqa
 from . import param  # noqa
 from . import pipeline  # noqa
 from . import reactive  # noqa
+from . import template  # noqa
 from . import viewable  # noqa
 from . import widgets  # noqa
 from .config import __version__, config, panel_extension as extension  # noqa
 from .depends import bind, depends  # noqa
 from .interact import interact  # noqa
 from .io import (  # noqa
-    _jupyter_server_extension_paths, ipywidget, serve, state,
+    _jupyter_server_extension_paths, cache, ipywidget, serve, state,
 )
 from .layout import (  # noqa
-    Accordion, Card, Column, FlexBox, GridBox, GridSpec, Row, Spacer, Tabs,
-    WidgetBox,
+    Accordion, Card, Column, Feed, FlexBox, FloatPanel, GridBox, GridSpec,
+    GridStack, HSpacer, Row, Spacer, Swipe, Tabs, VSpacer, WidgetBox,
 )
-from .pane import Pane, panel  # noqa
-from .param import Param  # noqa
+from .pane import panel  # noqa
+from .param import Param, ReactiveExpr  # noqa
 from .template import Template  # noqa
 from .widgets import indicators, widget  # noqa
+
+from . import chat  # isort:skip noqa has to be after widgets
 
 __all__ = (
     "__version__",
     "Accordion",
     "Card",
+    "chat",
     "Column",
+    "Feed",
     "FlexBox",
+    "FloatPanel",
     "GridBox",
     "GridSpec",
-    "Pane", # deprecated
+    "GridStack",
+    "HSpacer",
     "Param",
+    "ReactiveExpr",
     "Row",
     "Spacer",
+    "Swipe",
     "Tabs",
     "Template",
+    "VSpacer",
     "WidgetBox",
     "bind",
+    "cache",
     "config",
     "depends",
     "extension",
@@ -96,9 +109,10 @@ __all__ = (
     "panel",
     "param",
     "pipeline",
-    "reactive",
+    "rx",
     "serve",
     "state",
+    "template",
     "viewable",
     "widgets",
     "widget"

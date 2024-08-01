@@ -9,32 +9,41 @@ from bokeh.core.properties import (
 )
 from bokeh.events import ModelEvent
 from bokeh.models import ColumnDataSource, LayoutDOM
-from bokeh.models.layouts import HTMLBox
 from bokeh.models.widgets.tables import TableColumn
 
+from ..config import config
 from ..io.resources import bundled_files
 from ..util import classproperty
+from .layout import HTMLBox
 
-JS_SRC = "https://unpkg.com/tabulator-tables@4.9.3/dist/js/tabulator.js"
-MOMENT_SRC = "https://cdn.jsdelivr.net/npm/luxon/build/global/luxon.min.js"
+TABULATOR_VERSION = "6.2.1"
 
-THEME_PATH = "tabulator-tables@4.9.3/dist/css/"
-THEME_URL = f"https://unpkg.com/{THEME_PATH}"
-PANEL_CDN = f'https://cdn.jsdelivr.net/npm/@holoviz/panel/dist/bundled/{THEME_PATH}'
+JS_SRC = f"{config.npm_cdn}/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js"
+MOMENT_SRC = f"{config.npm_cdn}/luxon/build/global/luxon.min.js"
+
+THEME_PATH = f"tabulator-tables@{TABULATOR_VERSION}/dist/css/"
+THEME_URL = f"{config.npm_cdn}/{THEME_PATH}"
 TABULATOR_THEMES = [
     'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
-    'bootstrap4', 'materialize', 'bulma', 'semantic-ui', 'fast'
+    'bootstrap4', 'bootstrap4', 'bootstrap5', 'materialize', 'bulma',
+    'semantic-ui'
 ]
+# Theme names were renamed in Tabulator 5.0.
+_TABULATOR_THEMES_MAPPING = {
+    'bootstrap': 'bootstrap3',
+    'semantic-ui': 'semanticui',
+}
 
 class TableEditEvent(ModelEvent):
 
     event_name = 'table-edit'
 
-    def __init__(self, model, column, row, value=None, old=None):
+    def __init__(self, model, column, row, pre=False, value=None, old=None):
         self.column = column
         self.row = row
         self.value = value
         self.old = old
+        self.pre = pre
         super().__init__(model=model)
 
     def __repr__(self):
@@ -42,6 +51,35 @@ class TableEditEvent(ModelEvent):
             f'{type(self).__name__}(column={self.column}, row={self.row}, '
             f'value={self.value}, old={self.old})'
         )
+
+class SelectionEvent(ModelEvent):
+
+    event_name = 'selection-change'
+
+    def __init__(self, model, indices, selected, flush):
+        """ Selection Event
+
+        Parameters
+        ----------
+        model : ModelEvent
+            An event send when a selection is changed on the frontend.
+        indices : list[int]
+            A list of changed indices selected/deselected rows.
+        selected : bool
+            If true the rows were selected, if false they were deselected.
+        flush : bool
+            Whether the current selection should be emptied before adding the new indices.
+        """
+        self.indices = indices
+        self.selected = selected
+        self.flush = flush
+        super().__init__(model=model)
+
+    def __repr__(self):
+        return (
+            f'{type(self).__name__}(indices={self.indices}, selected={self.selected}, flush={self.flush})'
+        )
+
 
 class CellClickEvent(ModelEvent):
 
@@ -59,29 +97,15 @@ class CellClickEvent(ModelEvent):
             f'value={self.value})'
         )
 
-def _get_theme_url(url, theme):
-    if 'bootstrap' in theme:
-        url += 'bootstrap/'
-    elif 'materialize' in theme:
-        url += 'materialize/'
-    elif 'semantic-ui' in theme:
-        url += 'semantic-ui/'
-    elif 'bulma' in theme:
-        url += 'bulma/'
-    elif 'fast' in theme:
-        if url.startswith(THEME_URL):
-            url = url.replace(THEME_URL, PANEL_CDN)
-        url += 'fast/'
-    return url
 
 CSS_URLS = []
 for theme in TABULATOR_THEMES:
-    _url = _get_theme_url(THEME_URL, theme)
     if theme == 'default':
-        _url += 'tabulator.min.css'
+        _theme_file = 'tabulator.min.css'
     else:
-        _url += f'tabulator_{theme}.min.css'
-    CSS_URLS.append(_url)
+        theme = _TABULATOR_THEMES_MAPPING.get(theme, theme)
+        _theme_file = f'tabulator_{theme}.min.css'
+    CSS_URLS.append(f'{THEME_URL}{_theme_file}')
 
 
 class DataTabulator(HTMLBox):
@@ -125,7 +149,7 @@ class DataTabulator(HTMLBox):
 
     source = Instance(ColumnDataSource)
 
-    styles = Dict(String, Either(String, Dict(Int, Dict(Int, List(Either(String, Tuple(String, String)))))))
+    cell_styles = Dict(String, Either(String, Dict(Int, Dict(Int, List(Either(String, Tuple(String, String)))))))
 
     pagination = Nullable(String)
 
@@ -141,9 +165,7 @@ class DataTabulator(HTMLBox):
 
     selectable_rows = Nullable(List(Int))
 
-    theme = Enum(*TABULATOR_THEMES, default="simple")
-
-    theme_url = String(default=THEME_URL)
+    theme_classes = List(String)
 
     __css_raw__ = CSS_URLS
 

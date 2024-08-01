@@ -1,11 +1,12 @@
 import pytest
 
 from bokeh.models import (
-    Div, Panel as BkPanel, Spacer as BkSpacer, Tabs as BkTabs,
+    Div, Spacer as BkSpacer, TabPanel as BkPanel, Tabs as BkTabs,
 )
 
+import panel as pn
+
 from panel.layout import Tabs
-from panel.pane import Pane
 
 
 @pytest.fixture
@@ -58,8 +59,8 @@ def test_tabs_constructor(document, comm):
 
 def test_tabs_implicit_constructor(document, comm):
     div1, div2 = Div(), Div()
-    p1 = Pane(div1, name='Div1')
-    p2 = Pane(div2, name='Div2')
+    p1 = pn.panel(div1, name='Div1')
+    p2 = pn.panel(div2, name='Div2')
     tabs = Tabs(p1, p2)
 
     model = tabs.get_root(document, comm=comm)
@@ -77,8 +78,8 @@ def test_tabs_implicit_constructor(document, comm):
 
 def test_tabs_constructor_with_named_objects(document, comm):
     div1, div2 = Div(), Div()
-    p1 = Pane(div1, name='Div1')
-    p2 = Pane(div2, name='Div2')
+    p1 = pn.panel(div1, name='Div1')
+    p2 = pn.panel(div2, name='Div2')
     tabs = Tabs(('Tab1', p1), ('Tab2', p2))
 
     model = tabs.get_root(document, comm=comm)
@@ -185,14 +186,14 @@ def test_tabs_radd_list(document, comm):
 
 def test_tabs_set_panes(document, comm):
     div1, div2 = Div(), Div()
-    p1 = Pane(div1, name='Div1')
-    p2 = Pane(div2, name='Div2')
+    p1 = pn.panel(div1, name='Div1')
+    p2 = pn.panel(div2, name='Div2')
     tabs = Tabs(p1, p2)
 
     model = tabs.get_root(document, comm=comm)
 
     div3 = Div()
-    p3 = Pane(div3, name='Div3')
+    p3 = pn.panel(div3, name='Div3')
     tabs.objects = [p1, p2, p3]
 
     assert isinstance(model, BkTabs)
@@ -210,8 +211,8 @@ def test_tabs_set_panes(document, comm):
 
 def test_tabs_reverse(document, comm):
     div1, div2 = Div(), Div()
-    p1 = Pane(div1, name='Div1')
-    p2 = Pane(div2, name='Div2')
+    p1 = pn.panel(div1, name='Div1')
+    p2 = pn.panel(div2, name='Div2')
     tabs = Tabs(p1, p2)
 
     model = tabs.get_root(document, comm=comm)
@@ -303,7 +304,7 @@ def test_tabs_append_uses_object_name(document, comm, tabs):
     tab1_before, tab2_before = model.tabs
 
     div3 = Div()
-    p3 = Pane(div3, name='Div3')
+    p3 = pn.panel(div3, name='Div3')
     tabs.append(p3)
 
     tab1, tab2, tab3 = model.tabs
@@ -334,7 +335,7 @@ def test_tabs_append_with_tuple_and_named_contents(document, comm, tabs):
     tab1_before, tab2_before = model.tabs
 
     div3 = Div()
-    p3 = Pane(div3, name='Div3')
+    p3 = pn.panel(div3, name='Div3')
     tabs.append(('Tab3', p3))
 
     tab1, tab2, tab3 = model.tabs
@@ -381,7 +382,7 @@ def test_tabs_extend_uses_object_name(document, comm, tabs):
     tab1_before, tab2_before = model.tabs
 
     div3, div4 = Div(), Div()
-    p3, p4 = Pane(div3, name='Div3'), Pane(div4, name='Div4')
+    p3, p4 = pn.panel(div3, name='Div3'), pn.panel(div4, name='Div4')
     tabs.extend([p4, p3])
 
     tab1, tab2, tab3, tab4 = model.tabs
@@ -416,7 +417,7 @@ def test_tabs_extend_with_tuple_and_named_contents(document, comm, tabs):
     tab1_before, tab2_before = model.tabs
 
     div3, div4 = Div(), Div()
-    p3, p4 = Pane(div3, name='Div3'), Pane(div4, name='Div4')
+    p3, p4 = pn.panel(div3, name='Div3'), pn.panel(div4, name='Div4')
     tabs.extend([('Tab4', p4), ('Tab3', p3)])
 
     tab1, tab2, tab3, tab4 = model.tabs
@@ -450,7 +451,7 @@ def test_tabs_insert_uses_object_name(document, comm, tabs):
     tab1_before, tab2_before = model.tabs
 
     div3 = Div()
-    p3 = Pane(div3, name='Div3')
+    p3 = pn.panel(div3, name='Div3')
     tabs.insert(1, p3)
 
     tab1, tab2, tab3 = model.tabs
@@ -480,7 +481,7 @@ def test_tabs_insert_with_tuple_and_named_contents(document, comm, tabs):
     tab1_before, tab2_before = model.tabs
 
     div3 = Div()
-    p3 = Pane(div3, name='Div3')
+    p3 = pn.panel(div3, name='Div3')
     tabs.insert(1, ('Tab3', p3))
     tab1, tab2, tab3 = model.tabs
 
@@ -513,7 +514,7 @@ def test_tabs_setitem(document, comm):
 def test_tabs_clone():
     div1 = Div()
     div2 = Div()
-    tabs = Tabs(Pane(div1), Pane(div2))
+    tabs = Tabs(pn.panel(div1), pn.panel(div2))
     clone = tabs.clone()
 
     assert ([(k, v) for k, v in tabs.param.values().items() if k != 'name'] ==

@@ -229,11 +229,11 @@ def test_interact_replaces_model(document, comm):
     assert new_pane is not pane
     new_div = column.children[1].children[0]
     assert isinstance(new_div, BkHTML)
-    assert new_div.text.endswith('&lt;p&gt;ABC&lt;/p&gt;')
+    assert new_div.text.endswith('&lt;p&gt;ABC&lt;/p&gt;\n')
     assert new_pane._models[column.ref['id']][0] is new_div
 
     interact_pane._cleanup(column)
-    assert len(interact_pane._callbacks) == 3
+    assert len(interact_pane._internal_callbacks) == 5
 
 
 def test_interact_throttled():
@@ -259,8 +259,4 @@ def test_interact_throttled():
 
     for slider, kwargs in slider_dict.items():
         widget = getattr(widgets, slider)(**kwargs)
-        try:
-            interactive(func, x=widget, throttled=throttled)
-            assert True
-        except Exception as e:
-            assert False, e
+        interactive(func, x=widget, throttled=throttled)

@@ -1,22 +1,13 @@
 import param
 import pytest
 
-from packaging.version import Version
+hv = pytest.importorskip('holoviews')
 
 from panel.layout import Column, Row
 from panel.pane import HoloViews
 from panel.param import ParamMethod
 from panel.pipeline import Pipeline, find_route
 from panel.widgets import Button, Select
-
-if Version(param.__version__) < Version('1.8.2'):
-    pytestmark = pytest.mark.skip("skipping if param version < 1.8.2", allow_module_level=True)
-
-try:
-    import holoviews as hv
-except Exception:
-    pytestmark = pytest.mark.skip('Pipeline requires HoloViews.')
-
 
 
 class Stage1(param.Parameterized):
@@ -35,7 +26,7 @@ class Stage1(param.Parameterized):
 
     @param.depends('a', 'b')
     def view(self):
-        return '%s * %s = %s' % (self.a, self.b, self.output())
+        return f'{self.a} * {self.b} = {self.output()}'
 
     def panel(self):
         return Row(self.param, self.view)
@@ -49,7 +40,7 @@ class Stage2(param.Parameterized):
 
     @param.depends('c', 'exp')
     def view(self):
-        return '%s^%s=%.3f' % (self.c, self.exp, self.c**self.exp)
+        return f'{self.c}^{self.exp}={self.c**self.exp:.3f}'
 
     def panel(self):
         return Row(self.param, self.view)
@@ -63,7 +54,7 @@ class Stage2b(param.Parameterized):
 
     @param.depends('c', 'root')
     def view(self):
-        return '%s^-%s=%.3f' % (self.c, self.root, self.c**(-self.root))
+        return f'{self.c}^-{self.root}={self.c**(-self.root):.3f}'
 
     def panel(self):
         return Row(self.param, self.view)

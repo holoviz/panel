@@ -4,11 +4,11 @@ Defines custom AcePlot bokeh model to render Ace editor.
 from bokeh.core.properties import (
     Any, Bool, Dict, Enum, List, Nullable, Override, String,
 )
-from bokeh.models import HTMLBox
 
 from ..io.resources import bundled_files
 from ..util import classproperty
 from .enums import ace_themes
+from .layout import HTMLBox
 
 
 class AcePlot(HTMLBox):
@@ -27,7 +27,7 @@ class AcePlot(HTMLBox):
         'tar': 'https://registry.npmjs.org/ace-builds/-/ace-builds-1.4.11.tgz',
         'src': 'package/src-min/',
         'dest': 'ajax/libs/1.4.11',
-        'exclude': ['snippets']
+        'exclude': ['*snippets/*']
     }
 
     @classproperty
@@ -48,13 +48,13 @@ class AcePlot(HTMLBox):
         }
     }
 
-    code = String()
+    code = String(default='')
 
     theme = Enum(ace_themes, default='chrome')
 
     filename = Nullable(String())
 
-    language = String()
+    language = String(default='')
 
     annotations = List(Dict(String, Any), default=[])
 

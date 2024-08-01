@@ -2,14 +2,17 @@
 Commandline interface to Panel
 """
 import argparse
+import os
 import sys
 
 from bokeh.__main__ import main as bokeh_entry_point
 from bokeh.command.subcommands.serve import Serve as BkServe
 from bokeh.command.util import die
-from bokeh.util.string import nice_join
+from bokeh.util.strings import nice_join
 
 from .. import __version__
+from .bundle import Bundle
+from .convert import Convert
 from .oauth_secret import OAuthSecret
 from .serve import Serve
 
@@ -24,6 +27,9 @@ def transform_cmds(argv):
         '--anaconda-project-port': '--port',
         '--anaconda-project-address': '--address'
     }
+    if 'PANEL_AE5_CDN' in os.environ:
+        # Override AE5 default
+        os.environ['BOKEH_RESOURCES'] = 'cdn'
     transformed = []
     skip = False
     for arg in argv:
@@ -43,15 +49,9 @@ def transform_cmds(argv):
 
 
 def main(args=None):
-    """Merges commands offered by pyct and bokeh and provides help for both"""
+    """Mirrors bokeh CLI and adds additional Panel specific commands """
     from bokeh.command.subcommands import all as bokeh_commands
-    bokeh_commands = bokeh_commands + [OAuthSecret]
-
-    try:
-        import pyct.cmd
-        pyct_commands = ['copy-examples', 'examples']
-    except Exception:
-        pass
+    bokeh_commands = bokeh_commands + [OAuthSecret, Convert, Bundle]
 
     parser = argparse.ArgumentParser(
         prog="panel", epilog="See '<command> --help' to read about a specific subcommand."
@@ -61,22 +61,25 @@ def main(args=None):
 
     subs = parser.add_subparsers(help="Sub-commands")
 
-    for cmd in pyct_commands:
-        cmd = cmd.replace('-', '_')
-        fn = getattr(pyct.cmd, cmd)
-        subs.add_parser(cmd, help=fn.__doc__)
-
     for cls in bokeh_commands:
         if cls is BkServe:
             subparser = subs.add_parser(Serve.name, help=Serve.help)
             subcommand = Serve(parser=subparser)
             subparser.set_defaults(invoke=subcommand.invoke)
+        elif cls is Convert:
+            subparser = subs.add_parser(Convert.name, help=Convert.help)
+            subcommand = Convert(parser=subparser)
+            subparser.set_defaults(invoke=subcommand.invoke)
+        elif cls is Bundle:
+            subparser = subs.add_parser(Bundle.name, help=Bundle.help)
+            subcommand = Bundle(parser=subparser)
+            subparser.set_defaults(invoke=subcommand.invoke)
         else:
             subs.add_parser(cls.name, help=cls.help)
 
     if len(sys.argv) == 1:
-        all_commands = sorted([c.name for c in bokeh_commands] + pyct_commands)
-        die("ERROR: Must specify subcommand, one of: %s" % nice_join(all_commands))
+        all_commands = sorted([c.name for c in bokeh_commands])
+        die(f"ERROR: Must specify subcommand, one of: {nice_join(all_commands)}")
 
     if sys.argv[1] in ('--help', '-h'):
         args = parser.parse_args(sys.argv[1:])
@@ -93,16 +96,14 @@ def main(args=None):
                 die("ERROR: " + str(e))
         elif sys.argv[1] == 'oauth-secret':
             ret = OAuthSecret(parser).invoke(args)
+        elif sys.argv[1] == 'convert':
+            args = parser.parse_args(sys.argv[1:])
+            ret = Convert(parser).invoke(args)
+        elif sys.argv[1] == 'bundle':
+            args = parser.parse_args(sys.argv[1:])
+            ret = Bundle(parser).invoke(args)
         else:
             ret = bokeh_entry_point()
-    elif sys.argv[1] in pyct_commands:
-        try:
-            import pyct.cmd
-        except ImportError:
-            print("install pyct to enable this command (e.g. `conda install -c pyviz pyct` or `pip install pyct[cmd]`)")
-            sys.exit(1)
-        pyct.cmd.substitute_main('panel', cmds=pyct_commands, args=args)
-        sys.exit()
     else:
         parser.parse_args(sys.argv[1:])
         sys.exit(1)

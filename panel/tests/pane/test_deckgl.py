@@ -8,8 +8,10 @@ except Exception:
 
 pydeck_available = pytest.mark.skipif(pydeck is None, reason="requires pydeck")
 
+from bokeh.core.serialization import Serializer
+
 from panel.models.deckgl import DeckGLPlot
-from panel.pane import DeckGL, Pane, PaneBase
+from panel.pane import DeckGL, PaneBase, panel
 
 
 @pydeck_available
@@ -21,26 +23,29 @@ def test_get_pydeck_pane_type_from_deck():
 @pydeck_available
 def test_pydeck_pane_deck(document, comm):
     deck = pydeck.Deck(tooltip=True, api_keys={'mapbox': 'ABC'})
-    pane = Pane(deck)
+    pane = panel(deck)
 
     # Create pane
     model = pane.get_root(document, comm=comm)
     assert isinstance(model, DeckGLPlot)
     assert pane._models[model.ref["id"]][0] is model
-    assert model.data == {
+    expected = {
         'mapProvider': 'carto',
         'mapStyle': 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
         'views': [{'@@type': 'MapView', 'controller': True}]
     }
+    if 'tooltip' in model.data: # Handle pydeck 0.8.0b4
+        expected['tooltip'] = True
+    assert model.data == expected
     assert model.mapbox_api_key == deck.mapbox_key
-    assert model.tooltip == deck.deck_widget.tooltip
+    assert model.tooltip == deck._tooltip
 
     # Replace Pane.object
     new_deck = pydeck.Deck(tooltip=False)
     pane.object = new_deck
 
     assert pane._models[model.ref["id"]][0] is model
-    assert model.tooltip == new_deck.deck_widget.tooltip
+    assert model.tooltip == new_deck._tooltip
 
     # Cleanup
     pane._cleanup(model)
@@ -156,3 +161,56 @@ def test_deckgl_insert_layer(document, comm):
     assert cds1.data['b'] is b_vals
     assert np.array_equal(cds2.data['b'], np.array([3, 9]))
     assert np.array_equal(cds2.data['c'], np.array([1, 3]))
+
+@pydeck_available
+def test_pydeck_mapbox_api_key_issue_5790(document, comm):
+    deck_wo_key = pydeck.Deck()
+    pane_w_key = DeckGL(deck_wo_key, mapbox_api_key="ABC")
+
+    model = pane_w_key.get_root(document, comm=comm)
+    assert model.mapbox_api_key == "ABC"
+
+@pydeck_available
+def test_pydeck_no_min_max_zoom_issue_5790(document, comm):
+    state_w_no_min_max_zoom = {
+        "latitude": 37.7749,
+        "longitude": -122.4194,
+        "zoom": 10,
+        "bearing": 0,
+        "pitch": 0,
+    }
+    view_state = pydeck.ViewState(**state_w_no_min_max_zoom)
+    deck = pydeck.Deck(initial_view_state=view_state)
+    pane = DeckGL(deck)
+
+    model = pane.get_root(document, comm=comm)
+    assert model.initialViewState == state_w_no_min_max_zoom
+
+@pydeck_available
+def test_pydeck_type_string_can_be_serialized_issue_5790(document, comm):
+    serializer = Serializer(references=document.models.synced_references)
+    data = [
+                {
+                    "name": "24th St. Mission (24TH)",
+                    "code": "24",
+                    "address": "2800 Mission Street, San Francisco CA 94110",
+                    "entries": 12817,
+                    "exits": 12529,
+                    # "coordinates": [-122.418466, 37.752254]
+                }
+    ]
+
+
+    layer = pydeck.Layer(
+        "TextLayer",
+        data,
+        get_text_anchor=pydeck.types.String("middle"),
+        get_alignment_baseline=pydeck.types.String("center"),
+        size_units = pydeck.types.String("meters")   # <--- The key addition to switch to meters as the units.
+    )
+    deck = pydeck.Deck(layers=[layer])
+    pane = DeckGL(deck)
+
+    model = pane.get_root(document, comm=comm)
+    serializer.serialize(model)
+    assert Serializer._encoders.pop(pydeck.types.String)

@@ -5,20 +5,17 @@ use of Fast components.
 """
 import pathlib
 
-import param
-
 from ..base import FastBaseTemplate
-from ..theme import FastDarkTheme, FastDefaultTheme
 
 
 class FastListTemplate(FastBaseTemplate):
     """
-    The `FastListTemplate` is a list based Template with a header, sidebar and main area. It is
-    based on the fast.design style and works well in both default (light) and dark mode.
+    The `FastListTemplate` is a list based Template with a header, sidebar, main and modal area.
+    It is based on the fast.design style and works well in both default (light) and dark mode.
 
     Reference: https://panel.holoviz.org/reference/templates/FastListTemplate.html
 
-    Example:
+    :Example:
 
     >>> pn.template.FastListTemplate(
     ...     site="Panel", title="FastListTemplate", accent="#A01346",
@@ -48,20 +45,3 @@ class FastListTemplate(FastBaseTemplate):
     ]
 
     _template = pathlib.Path(__file__).parent / "fast_list_template.html"
-
-
-
-class FastListDefaultTheme(FastDefaultTheme):
-    """The Default Theme of the FastListTemplate"""
-
-    css = param.Filename(default=pathlib.Path(__file__).parent / "default.css")
-
-    _template = FastListTemplate
-
-
-class FastListDarkTheme(FastDarkTheme):
-    """The Dark Theme of the FastListTemplate"""
-
-    css = param.Filename(default=pathlib.Path(__file__).parent / "dark.css")
-
-    _template = FastListTemplate

@@ -46,9 +46,11 @@ class TextEditor(Widget):
 
     placeholder = param.String(doc="Placeholder output when the editor is empty.")
 
-    value = param.String(doc="State of the current text in the editor")
+    value = param.String(default="", doc="State of the current text in the editor")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {"value": "text"}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'name': 'name', 'value': 'text'
+    }
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
@@ -56,6 +58,7 @@ class TextEditor(Widget):
     ) -> Model:
         if self._widget_type is None:
             self._widget_type = lazy_load(
-                'panel.models.quill', 'QuillInput', isinstance(comm, JupyterComm), root
+                'panel.models.quill', 'QuillInput', isinstance(comm, JupyterComm),
+                root, ext='texteditor'
             )
         return super()._get_model(doc, root, parent, comm)

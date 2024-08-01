@@ -4,27 +4,40 @@ file types.
 """
 from __future__ import annotations
 
+import asyncio
 import base64
+import struct
 
 from io import BytesIO
 from pathlib import PurePath
 from typing import (
-    Any, ClassVar, List, Mapping,
+    TYPE_CHECKING, Any, ClassVar, Mapping,
 )
 
 import param
 
+from ..models import PDF as _BkPDF
 from ..util import isfile, isurl
-from .markup import DivPaneBase, escape
+from .markup import HTMLBasePane, escape
 
+if TYPE_CHECKING:
+    from bokeh.model import Model
 
-class FileBase(DivPaneBase):
+_tasks = set()
 
-    embed = param.Boolean(default=True, doc="""
+class FileBase(HTMLBasePane):
+
+    embed = param.Boolean(default=False, doc="""
         Whether to embed the file as base64.""")
 
-    _rerender_params: ClassVar[List[str]] = [
-        'embed', 'object', 'style', 'width', 'height'
+    filetype: ClassVar[str]
+
+    _extensions: ClassVar[None | tuple[str, ...]] = None
+
+    _rename: ClassVar[Mapping[str, str | None]] = {'embed': None}
+
+    _rerender_params: ClassVar[list[str]] = [
+        'embed', 'object', 'styles', 'width', 'height'
     ]
 
     __abstract = True
@@ -36,24 +49,27 @@ class FileBase(DivPaneBase):
 
     def _type_error(self, object):
         if isinstance(object, str):
-            raise ValueError("%s pane cannot parse string that is not a filename "
-                             "or URL." % type(self).__name__)
+            raise ValueError(
+                f"{type(self).__name__} pane cannot parse string that "
+                f"is not a filename or URL ({object!r})."
+            )
         super()._type_error(object)
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
-        filetype = cls.filetype
-        if hasattr(obj, '_repr_{}_'.format(filetype)):
-            return True
+        filetype = cls.filetype.split('+')[0]
+        exts = cls._extensions or (filetype,)
+        if hasattr(obj, f'_repr_{filetype}_'):
+            return 0.15
         if isinstance(obj, PurePath):
             obj = str(obj.absolute())
         if isinstance(obj, str):
-            if isfile(obj) and obj.endswith('.'+filetype):
+            if isurl(obj, exts):
                 return True
-            if isurl(obj, [cls.filetype]):
+            elif any(obj.lower().endswith(f'.{ext}') for ext in exts):
                 return True
             elif isurl(obj, None):
-                return 0
+                return 0.0
         elif isinstance(obj, bytes):
             try:
                 cls._imgshape(obj)
@@ -64,22 +80,44 @@ class FileBase(DivPaneBase):
             return True
         return False
 
-    def _data(self):
-        if hasattr(self.object, '_repr_{}_'.format(self.filetype)):
-            return getattr(self.object, '_repr_' + self.filetype + '_')()
-        if isinstance(self.object, str):
-            if isfile(self.object):
-                with open(self.object, 'rb') as f:
+    def _b64(self, data: str | bytes) -> str:
+        if not isinstance(data, bytes):
+            data = data.encode('utf-8')
+        b64 = base64.b64encode(data).decode("utf-8")
+        return f"data:image/{self.filetype};base64,{b64}"
+
+    def _data(self, obj: Any) -> bytes | None:
+        filetype = self.filetype.split('+')[0]
+        if hasattr(obj, f'_repr_{filetype}_'):
+            return getattr(obj, f'_repr_{filetype}_')()
+        elif isinstance(obj, (str, PurePath)):
+            if isfile(obj):
+                with open(obj, 'rb') as f:
                     return f.read()
-        elif isinstance(self.object, bytes):
-            return self.object
-        if hasattr(self.object, 'read'):
-            if hasattr(self.object, 'seek'):
-                self.object.seek(0)
-            return self.object.read()
-        if isurl(self.object, None):
+        elif isinstance(obj, bytes):
+            return obj
+        elif hasattr(obj, 'read'):
+            if hasattr(obj, 'seek'):
+                obj.seek(0)
+            return obj.read()
+        elif not isurl(obj, None):
+            return None
+
+        from ..io.state import state
+        if state._is_pyodide:
+            from ..io.pyodide import _IN_WORKER, fetch_binary
+            if _IN_WORKER:
+                return fetch_binary(obj).read()
+            else:
+                from pyodide.http import pyfetch
+                async def replace_content():
+                    self.object = await (await pyfetch(obj)).bytes()
+                task = asyncio.create_task(replace_content())
+                _tasks.add(task)
+                task.add_done_callback(_tasks.discard)
+        else:
             import requests
-            r = requests.request(url=self.object, method='GET')
+            r = requests.request(url=obj, method='GET')
             return r.content
 
 
@@ -101,15 +139,24 @@ class ImageBase(FileBase):
         alt text to add to the image tag. The alt text is shown when a
         user cannot load or display the image.""")
 
+    caption = param.String(default=None, doc="""
+        Optional caption for the image.""")
+
+    fixed_aspect = param.Boolean(default=True, doc="""
+        Whether the aspect ratio of the image should be forced to be
+        equal.""")
+
     link_url = param.String(default=None, doc="""
         A link URL to make the image clickable and link to some other
         website.""")
 
-    filetype: ClassVar[str] = 'None'
-
-    _rerender_params: ClassVar[List[str]] = [
-        'alt_text', 'link_url', 'embed', 'object', 'style', 'width', 'height'
+    _rerender_params: ClassVar[list[str]] = [
+        'alt_text', 'caption', 'link_url', 'embed', 'object', 'styles', 'width', 'height'
     ]
+
+    _rename: ClassVar[Mapping[str, str | None ]] = {
+        'alt_text': None, 'fixed_aspect': None, 'link_url': None, 'caption': None,
+    }
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
         'object': """'<img src="' + value + '"></img>'"""
@@ -117,22 +164,53 @@ class ImageBase(FileBase):
 
     __abstract = True
 
-    def _b64(self):
-        data = self._data()
-        if not isinstance(data, bytes):
-            data = data.encode('utf-8')
-        b64 = base64.b64encode(data).decode("utf-8")
-        return "data:image/"+self.filetype+f";base64,{b64}"
-
-    def _imgshape(self, data):
+    @classmethod
+    def _imgshape(cls, data):
         """Calculate and return image width,height"""
         raise NotImplementedError
 
-    def _get_properties(self):
-        p = super()._get_properties()
-        if self.object is None:
-            return dict(p, text='<img></img>')
-        data = self._data()
+    def _format_html(
+        self, src: str, width: str | None = None, height: str | None = None
+    ):
+        alt = f'alt={self.alt_text!r}' if self.alt_text else ''
+        width = f' width: {width};' if width else ''
+        height = f' height: {height};' if height else ''
+        object_fit = "contain" if self.fixed_aspect else "fill"
+        html = f'<img src="{src}" {alt} style="max-width: 100%; max-height: 100%; object-fit: {object_fit};{width}{height}"></img>'
+        if self.link_url:
+            html = f'<a href="{self.link_url}" target="_blank">{html}</a>'
+        if self.caption:
+            html = f'<figure>{html}<figcaption>{self.caption}</figcaption></figure>'
+        return escape(html)
+
+    def _img_dims(self, width, height):
+        smode = self.sizing_mode
+        if smode in ['fixed', None]:
+            w, h = (
+                (f'{width}px' if width else 'auto'),
+                (f'{height}px' if height else 'auto')
+            )
+        elif smode == 'stretch_both' and not self.fixed_aspect:
+            w, h = '100%', '100%'
+        elif smode == 'stretch_width' and not self.fixed_aspect:
+            w, h = '100%', (f'{height}px' if height else 'auto')
+        elif smode == 'stretch_height' and not self.fixed_aspect:
+            w, h = (f'{width}px' if width else 'auto'), '100%'
+        elif smode in ('scale_height', 'stretch_height'):
+            w, h = 'auto', '100%'
+        else:
+            w, h = '100%', 'auto'
+        return w, h
+
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
+        if self.embed or (isfile(obj) or not isinstance(obj, (str, PurePath))):
+            data = self._data(obj)
+        else:
+            w, h = self._img_dims(self.width, self.height)
+            return dict(object=self._format_html(obj, w, h))
+
+        if data is None:
+            return dict(object='<img></img>')
         if not isinstance(data, bytes):
             data = base64.b64decode(data)
         width, height = self._imgshape(data)
@@ -145,34 +223,53 @@ class ImageBase(FileBase):
         elif self.height is not None:
             width = int((self.height/height)*width)
             height = self.height
-        if not self.embed:
-            src = self.object
-        else:
-            b64 = base64.b64encode(data).decode("utf-8")
-            src = "data:image/"+self.filetype+";base64,{b64}".format(b64=b64)
 
-        smode = self.sizing_mode
-        if smode in ['fixed', None]:
-            w, h = '%spx' % width, '%spx' % height
-        elif smode == 'stretch_both':
-            w, h = '100%', '100%'
-        elif smode == 'stretch_width':
-            w, h = '%spx' % width, '100%'
-        elif smode == 'stretch_height':
-            w, h = '100%', '%spx' % height
-        elif smode == 'scale_height':
-            w, h = 'auto', '100%'
-        else:
-            w, h = '100%', 'auto'
+        src = self._b64(data)
 
-        html = '<img src="{src}" width="{width}" height="{height}" alt="{alt}"></img>'.format(
-            src=src, width=w, height=h, alt=self.alt_text or '')
+        w, h = self._img_dims(width, height)
+        html = self._format_html(src, w, h)
+        return dict(width=width, height=height, object=html)
 
-        if self.link_url:
-            html = '<a href="{url}" target="_blank">{html}</a>'.format(
-                url=self.link_url, html=html)
 
-        return dict(p, width=width, height=height, text=escape(html))
+class Image(ImageBase):
+    """
+    The `Image` pane embeds any known image format in a panel if
+    provided a local path, bytes or remote image link.
+
+    :Example:
+
+    >>> Image(
+    ...     'https://panel.holoviz.org/_static/logo_horizontal.png',
+    ...     alt_text='The Panel Logo',
+    ...     link_url='https://panel.holoviz.org/index.html',
+    ...     width=500
+    ... )
+    """
+
+    @classmethod
+    def applies(cls, obj: Any) -> float | bool | None:
+        precedences = []
+        for img_cls in param.concrete_descendents(ImageBase).values():
+            if img_cls is Image:
+                continue
+            applies = img_cls.applies(obj)
+            if isinstance(applies, bool) and applies:
+                return applies
+            elif isinstance(applies, (float, int)):
+                precedences.append(applies)
+        if precedences:
+            return sorted(precedences)[-1]
+        return False
+
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
+        params = {
+            k: v for k, v in self.param.values().items()
+            if k not in ('name', 'object')
+        }
+        for img_cls in param.concrete_descendents(ImageBase).values():
+            if img_cls is not Image and img_cls.applies(obj):
+                return img_cls(obj, **params)._transform_object(obj)
+        return {'object': '<img></img>'}
 
 
 class PNG(ImageBase):
@@ -255,8 +352,9 @@ class ICO(ImageBase):
 
 class JPG(ImageBase):
     """
-    The `JPG` pane embeds a .jpg or .jpeg image file in a panel if provided a
-    local path, or will link to a remote image if provided a URL.
+    The `JPG` pane embeds a .jpg or .jpeg image file in a panel if
+    provided a local path, or will link to a remote image if provided
+    a URL.
 
     Reference: https://panel.holoviz.org/reference/panes/JPG.html
 
@@ -270,7 +368,9 @@ class JPG(ImageBase):
     ... )
     """
 
-    filetype: ClassVar[str] = 'jpg'
+    filetype: ClassVar[str] = 'jpeg'
+
+    _extensions: ClassVar[tuple[str, ...]] = ('jpeg', 'jpg')
 
     @classmethod
     def _imgshape(cls, data):
@@ -308,13 +408,15 @@ class SVG(ImageBase):
     ... )
     """
 
-    encode = param.Boolean(default=False, doc="""
+    encode = param.Boolean(default=True, doc="""
         Whether to enable base64 encoding of the SVG, base64 encoded
         SVGs do not support links.""")
 
-    filetype: ClassVar[str] = 'svg'
+    filetype: ClassVar[str] = 'svg+xml'
 
-    _rerender_params: ClassVar[List[str]] = ImageBase._rerender_params + ['encode']
+    _rename: ClassVar[Mapping[str, str | None]] = {'encode': None}
+
+    _rerender_params: ClassVar[list[str]] = ImageBase._rerender_params + ['encode']
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
@@ -323,44 +425,37 @@ class SVG(ImageBase):
 
     def _type_error(self, object):
         if isinstance(object, str):
-            raise ValueError("%s pane cannot parse string that is not a filename, "
-                             "URL or a SVG XML contents." % type(self).__name__)
+            raise ValueError(f"{type(self).__name__} pane cannot parse string that is not a filename, "
+                             "URL or a SVG XML contents.")
         super()._type_error(object)
 
-    def _data(self):
-        if (isinstance(self.object, str) and
-            self.object.lstrip().startswith('<svg')):
-            return self.object
-        return super()._data()
-
-    def _b64(self):
-        data = self._data()
-        if not isinstance(data, bytes):
-            data = data.encode('utf-8')
-        b64 = base64.b64encode(data).decode("utf-8")
-        return f"data:image/svg+xml;base64,{b64}"
+    def _data(self, obj):
+        if (isinstance(obj, str) and obj.lstrip().startswith('<svg')):
+            return obj
+        return super()._data(obj)
 
     def _imgshape(self, data):
         return (self.width, self.height)
 
-    def _get_properties(self):
-        p = super(ImageBase, self)._get_properties()
-        if self.object is None:
-            return dict(p, text='<img></img>')
-        data = self._data()
-        width, height = self._imgshape(data)
-        if not isinstance(data, bytes):
-            data = data.encode('utf-8')
-
-        if self.encode:
-            b64 = base64.b64encode(data).decode("utf-8")
-            src = "data:image/svg+xml;base64,{b64}".format(b64=b64)
-            html = "<img src='{src}' width={width} height={height}></img>".format(
-                src=src, width=width, height=height
-            )
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
+        width, height = self.width, self.height
+        w, h = self._img_dims(width, height)
+        if self.embed or (isfile(obj) or (isinstance(obj, str) and obj.lstrip().startswith('<svg'))
+                          or not isinstance(obj, (str, PurePath))):
+            data = self._data(obj)
         else:
-            html = data.decode("utf-8")
-        return dict(p, width=width, height=height, text=escape(html))
+            return dict(object=self._format_html(obj, w, h))
+
+        if data is None:
+            return dict(object='<img></img>')
+        if self.encode:
+            ws = f' width: {w};' if w else ''
+            hs = f' height: {h};' if h else ''
+            object_fit = "contain" if self.fixed_aspect else "fill"
+            data = f'<img src="{self._b64(data)}" style="max-width: 100%; max-height: 100%; object-fit: {object_fit};{ws}{hs}"></img>'
+        if isinstance(data, bytes):
+            data = data.decode('utf-8')
+        return dict(width=width, height=height, text=escape(data))
 
 
 class PDF(FileBase):
@@ -378,20 +473,78 @@ class PDF(FileBase):
     ... )
     """
 
+    start_page = param.Integer(default=1, doc="""
+        Start page of the pdf, by default the first page.""")
+
     filetype: ClassVar[str] = 'pdf'
 
-    def _get_properties(self):
-        p = super()._get_properties()
-        if self.object is None:
-            return dict(p, text='<embed></embed>')
-        if self.embed:
-            data = self._data()
+    _bokeh_model: ClassVar[Model] = _BkPDF
+
+    _rename: ClassVar[Mapping[str, str | None]] = {'embed': 'embed'}
+
+    _rerender_params: ClassVar[list[str]] = FileBase._rerender_params + ['start_page']
+
+    def _transform_object(self, obj: Any) -> dict[str, Any]:
+        if obj is None:
+            return dict(object='<embed></embed>')
+        elif self.embed or not isurl(obj):
+            # This is handled by the Typescript Bokeh model to be able to render large PDF files (>2MB).
+            data = self._data(obj)
             if not isinstance(data, bytes):
                 data = data.encode('utf-8')
-            base64_pdf = base64.b64encode(data).decode("utf-8")
-            src = f"data:application/pdf;base64,{base64_pdf}"
-        else:
-            src = self.object
+            b64 = base64.b64encode(data).decode("utf-8")
+            if self.embed:
+                return dict(text=b64)
+            obj = f'data:application/pdf;base64,{b64}'
+
         w, h = self.width or '100%', self.height or '100%'
-        html = f'<embed src="{src}" width={w!r} height={h!r} type="application/pdf">'
-        return dict(p, text=escape(html))
+        page = f'#page={self.start_page}' if getattr(self, 'start_page', None) else ''
+        html = f'<embed src="{obj}{page}" width={w!r} height={h!r} type="application/pdf">'
+        return dict(text=escape(html))
+
+class WebP(ImageBase):
+    """
+    The `WebP` pane embeds a .webp image file in a panel if
+    provided a local path, or will link to a remote image if provided
+    a URL.
+
+    Reference: https://panel.holoviz.org/reference/panes/WebP.html
+
+    :Example:
+
+    >>> WebP(
+    ...     'https://assets.holoviz.org/panel/samples/webp_sample.webp',
+    ...     alt_text='A nice tree',
+    ...     link_url='https://en.wikipedia.org/wiki/WebP',
+    ...     width=500,
+    ...     caption='A nice tree'
+    ... )
+    """
+
+    filetype: ClassVar[str] = 'webp'
+
+    _extensions: ClassVar[tuple[str, ...]] = ('webp',)
+
+    @classmethod
+    def _imgshape(cls, data):
+        with BytesIO(data) as b:
+            b.read(12)  # Skip RIFF header
+            chunk_header = b.read(4).decode('utf-8')
+            if chunk_header[:3] != 'VP8':
+                raise ValueError("Invalid WebP file")
+            wptype = chunk_header[3]
+            b.read(4)
+            if wptype == 'X':
+                b.read(4)
+                w = int.from_bytes(b.read(3), 'little') + 1
+                h = int.from_bytes(b.read(3), 'little') + 1
+            elif wptype == 'L':
+                b.read(1)
+                bits = struct.unpack("<I", b.read(4))[0]
+                w = (bits & 0x3FFF) + 1
+                h = ((bits >> 14) & 0x3FFF) + 1
+            elif wptype == ' ':
+                b.read(6)
+                w = int.from_bytes(b.read(2), 'little') + 1
+                h = int.from_bytes(b.read(2), 'little') + 1
+        return int(w), int(h)

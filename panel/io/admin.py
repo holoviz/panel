@@ -14,14 +14,16 @@ import param
 from bokeh.models import HoverTool
 from bokeh.plotting import ColumnDataSource, figure
 
-from ..config import config
+from ..config import config, panel_extension as extension
+from ..depends import bind
 from ..layout import (
     Accordion, Column, FlexBox, Row, Tabs,
 )
-from ..models import terminal  # noqa
 from ..pane import HTML, Bokeh
 from ..template import FastListTemplate
-from ..widgets import MultiSelect, Terminal, TextInput
+from ..widgets import (
+    Button, MultiSelect, Tabulator, TextInput,
+)
 from ..widgets.indicators import Trend
 from .logging import (
     LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING,
@@ -32,11 +34,7 @@ from .profile import profiling_tabs
 from .server import set_curdoc
 from .state import state
 
-try:
-    import psutil
-    process = psutil.Process(os.getpid())
-except Exception:
-    process = None
+PROCESSES = {}
 
 log_sessions = []
 
@@ -49,11 +47,7 @@ class LogFilter(logging.Filter):
         if session_id in log_sessions:
             return False
         elif session_id not in session_filter.options:
-            session_filter.options = session_filter.options + [session_id]
-        if session_filter.value and session_id not in session_filter.value:
-            return False
-        if name_filter.value and name_filter.value not in record.name:
-            return False
+            session_filter.options = [session_id] + session_filter.options
         return True
 
 
@@ -75,11 +69,58 @@ class LogDataHandler(logging.StreamHandler):
         self._data.param.trigger('data')
 
 
+class _LogTabulator(Tabulator):
+
+    _update_defaults = {
+        "theme": "midnight",
+        "layout": "fit_data_stretch",
+        "show_index": False,
+        "sorters": [{'field': 'datetime', 'dir': 'dsc'}],
+        "disabled": True,
+        "pagination": "local",
+        "page_size": 18,
+    }
+
+    def __init__(self, **params):
+        params["value"] = self._create_frame()
+        params = {**self._update_defaults, **params}
+        super().__init__(**params)
+
+    @staticmethod
+    def _create_frame(data=None):
+        columns=["datetime", "level", "app", "session", "message"]
+        if data is None:
+            return pd.DataFrame(columns=columns)
+        else:
+            return pd.Series(data, index=columns)
+
+    def write(self, log):
+        # Example of a log message:
+        # '2022-07-13 14:38:04,803 INFO: panel.io.server - Session 140255299576448 launching\n'
+        try:
+            s = log.strip().split(" ")
+            datetime = f"{s[0]} {s[1]}"
+            level = s[2][:-1]
+            app = s[3]
+            session = int(s[6])
+            message = " ".join(s[7:])
+            df = self._create_frame([datetime, level, app, session, message])
+
+            self.stream(df, follow=False)
+        except Exception:
+            pass
+
+
 # Set up logging
+session_filter = MultiSelect(name='Filter by session', options=[])
+message_filter = TextInput(name='Filter by message')
+level_filter = MultiSelect(name="Filter by level", options=["DEBUG", "INFO", "WARNING", "ERROR"])
+app_filter = TextInput(name='Filter by app')
+
 data = Data()
 log_data_handler = LogDataHandler(data)
 log_handler = logging.StreamHandler()
-log_handler.setLevel('DEBUG')
+log_handler.setLevel(config.admin_log_level)
 panel_logger.addHandler(log_handler)
 panel_logger.addHandler(log_data_handler)
 
@@ -88,11 +129,36 @@ log_handler.addFilter(log_filter)
 log_data_handler.addFilter(log_filter)
 formatter = logging.Formatter('%(asctime)s %(levelname)s: %(name)s - %(message)s')
 log_handler.setFormatter(formatter)
-log_terminal = Terminal(sizing_mode='stretch_both', min_height=400)
+log_terminal = _LogTabulator(sizing_mode='stretch_both', min_height=400)
 log_handler.setStream(log_terminal)
 
-session_filter = MultiSelect(name='Filter by session', options=[])
-name_filter = TextInput(name='Filter by component')
+def _textinput_filter(df, pattern, column):
+    if not pattern or df.empty:
+        return df
+    return df[df[column].str.contains(pattern)].copy()
+
+log_terminal.add_filter(level_filter, 'level')
+log_terminal.add_filter(bind(_textinput_filter, pattern=app_filter, column='app'))
+log_terminal.add_filter(session_filter, 'session')
+log_terminal.add_filter(bind(_textinput_filter, pattern=message_filter, column='message'))
+
+
+def _clear_log_filters(*events):
+    level_filter.value = []
+    app_filter.value = ""
+    session_filter.value = []
+    message_filter.value = ""
+
+
+reset_filter = Button(name="Clear filters")
+reset_filter.on_click(_clear_log_filters)
+
+
+download_filename, download_button = log_terminal.download_menu(
+    text_kwargs={'name': 'Enter filename for logfile', 'value': 'log.csv'},
+    button_kwargs={'name': 'Download logfile'}
+)
+
 
 EVENT_TYPES = {
     'initializing': 'MediumSeaGreen',
@@ -191,7 +257,7 @@ def get_timeline(doc=None):
         else:
             msg = new.getMessage()
             line_color = 'black'
-            if msg.startswith('Session %s logged' % sid):
+            if msg.startswith(f'Session {sid} logged'):
                 etype = 'logging'
                 line_color = EVENT_TYPES.get(etype)
             elif msg.startswith(LOG_SESSION_DESTROYED % sid):
@@ -220,7 +286,10 @@ def get_timeline(doc=None):
             push_notebook(bk_pane)
 
     for record in log_data_handler._data.data:
-        update_cds(record)
+        try:
+            update_cds(record)
+        except Exception:
+            pass
 
     def schedule_cds_update(event):
         new = event.new[-1]
@@ -251,29 +320,35 @@ def get_version_info():
     Param: {param.__version__}</br>
     </code>""", width=300, height=300, margin=(0, 5))
 
+def get_process():
+    import psutil
+    if os.getpid() in PROCESSES:
+        process = PROCESSES[os.getpid()]
+    else:
+        PROCESSES[os.getpid()] = process = psutil.Process(os.getpid())
+    return process
+
 def get_mem():
-    return pd.DataFrame([(time.time(), process.memory_info().rss/1024/1024)], columns=['time', 'memory'])
+    return pd.DataFrame([(time.time(), get_process().memory_info().rss/1024/1024)], columns=['time', 'memory'])
 
 def get_cpu():
-    return pd.DataFrame([(time.time(), process.cpu_percent())], columns=['time', 'cpu'])
+    return pd.DataFrame([(time.time(), get_process().cpu_percent())], columns=['time', 'cpu'])
 
 def get_process_info():
     memory = Trend(
         data=get_mem(), plot_x='time', plot_y='memory', plot_type='step',
-        title='Memory Usage (MB)', width=300, height=300
+        name='Memory Usage (MB)', width=300, height=300
     )
     cpu = Trend(
         data=get_cpu(), plot_x='time', plot_y='cpu', plot_type='step',
-        title='CPU Usage (%)', width=300, height=300
+        name='CPU Usage (%)', width=300, height=300
     )
-    def update_memory(): memory.stream(get_mem())
-    def update_cpu(): cpu.stream(get_cpu())
-    mem_cb = state.add_periodic_callback(update_memory, period=1000, start=False)
-    cpu_cb = state.add_periodic_callback(update_cpu, period=1000, start=False)
-    mem_cb.log = False
-    cpu_cb.log = False
-    mem_cb.start()
-    cpu_cb.start()
+    def update_stats():
+        memory.stream(get_mem())
+        cpu.stream(get_cpu())
+    stats_cb = state.add_periodic_callback(update_stats, period=1000, start=False)
+    stats_cb.log = False
+    stats_cb.start()
     return memory, cpu
 
 def get_session_data():
@@ -310,19 +385,19 @@ def get_session_info(doc=None):
     df = get_session_data()
     total = Trend(
         data=df[['time', 'total']], plot_x='time', plot_y='total', plot_type='step',
-        title='Total Sessions', width=300, height=300
+        name='Total Sessions', width=300, height=300
     )
     active = Trend(
         data=df[['time', 'live']], plot_x='time', plot_y='live', plot_type='step',
-        title='Active Sessions', width=300, height=300
+        name='Active Sessions', width=300, height=300
     )
     render = Trend(
         data=df[['time', 'render']], plot_x='time', plot_y='render', plot_type='step',
-        title='Avg. Time to Render (s)', width=300, height=300
+        name='Avg. Time to Render (s)', width=300, height=300
     )
     duration = Trend(
         data=df[['time', 'duration']], plot_x='time', plot_y='duration', plot_type='step',
-        title='Avg. Session Duration (s)', width=300, height=300
+        name='Avg. Session Duration (s)', width=300, height=300
     )
     # Set up callbacks
     def update_session_info(event):
@@ -339,19 +414,32 @@ def get_session_info(doc=None):
 def get_overview(doc=None):
     layout = FlexBox(*get_session_info(doc), margin=0, sizing_mode='stretch_width')
     info = get_version_info()
-    if process is None:
+    try:
+        import psutil  # noqa
+    except Exception:
         layout.append(info)
         return layout
-    layout.extend([*get_process_info(), info])
-    return layout
+    else:
+        layout.extend([*get_process_info(), info])
+        return layout
 
 
 def log_component():
+    # Without this tabulator is empty after reload of website
+    log_terminal.param.trigger("value")
+
     return Column(
         Accordion(
-            ('Filters', Row(
+            ('Filters & Download', Row(
+                level_filter,
+                app_filter,
                 session_filter,
-                name_filter,
+                message_filter,
+                Column(
+                    download_filename,
+                    download_button,
+                    reset_filter,
+                ),
                 sizing_mode='stretch_width'
             )),
             active=[],
@@ -363,14 +451,14 @@ def log_component():
         sizing_mode='stretch_both'
     )
 
-
-def admin_panel(doc):
-    # Add and remove admin panel app from log sessions list
+def admin_template(doc):
+    extension('tabulator', 'terminal')
     log_sessions.append(id(doc))
     def _remove_log_session(session_context):
         log_sessions.remove(id(doc))
     doc.on_session_destroyed(_remove_log_session)
 
+    # Add and remove admin panel app from log sessions list
     # Set up admin panel
     template = FastListTemplate(title='Admin Panel', theme='dark')
     tabs = Tabs(
@@ -391,6 +479,10 @@ def admin_panel(doc):
         (name, plugin()) for name, plugin in config.admin_plugins
     ])
     template.main.append(tabs)
+    return template
+
+def admin_panel(doc):
     with set_curdoc(doc):
+        template = admin_template(doc)
         template.server_doc(doc)
     return doc

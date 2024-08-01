@@ -10,7 +10,7 @@ import zipfile
 
 from abc import abstractmethod
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional,
+    IO, TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
 )
 from urllib.request import urlopen
 
@@ -21,8 +21,10 @@ from bokeh.models import LinearColorMapper
 from bokeh.util.serialization import make_globally_unique_id
 from pyviz_comms import JupyterComm
 
+from ...param import ParamMethod
 from ...util import isfile, lazy_load
-from ..base import Pane, PaneBase
+from ..base import Pane
+from ..plot import Bokeh
 from .enums import PRESET_CMAPS
 
 if TYPE_CHECKING:
@@ -33,9 +35,9 @@ if TYPE_CHECKING:
 base64encode = lambda x: base64.b64encode(x).decode('utf-8')
 
 
-class AbstractVTK(PaneBase):
+class AbstractVTK(Pane):
 
-    axes = param.Dict(default={}, doc="""
+    axes = param.Dict(default={}, nested_refs=True, doc="""
         Parameters of the axes to construct in the 3d view.
 
         Must contain at least ``xticker``, ``yticker`` and ``zticker``.
@@ -46,7 +48,7 @@ class AbstractVTK(PaneBase):
               axis' ticks.
           - ``labels`` (array of strings) - optional.
               Label displayed respectively to the `ticks` positions.
-              If `labels` are not defined they are infered from the
+              If `labels` are not defined they are inferred from the
               `ticks` array.
           - ``digits``: number of decimal digits when `ticks` are converted to `labels`.
           - ``fontsize``: size in pts of the ticks labels.
@@ -58,10 +60,10 @@ class AbstractVTK(PaneBase):
                 Defines the axes lines opacity.
     """)
 
-    camera = param.Dict(doc="""
+    camera = param.Dict(nested_refs=True, doc="""
       State of the rendered VTK camera.""")
 
-    color_mappers = param.List(doc="""
+    color_mappers = param.List(nested_refs=True, doc="""
       Color mapper of the actor in the scene""")
 
     orientation_widget = param.Boolean(default=False, doc="""
@@ -74,17 +76,17 @@ class AbstractVTK(PaneBase):
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         if 'axes' in msg and msg['axes'] is not None:
-            VTKAxes = getattr(sys.modules['panel.models.vtk'], 'VTKAxes')
+            VTKAxes = sys.modules['panel.models.vtk'].VTKAxes
             axes = msg['axes']
             msg['axes'] = VTKAxes(**axes)
         return msg
 
     def _update_model(
-        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
         root: Model, model: Model, doc: Document, comm: Optional[Comm]
     ) -> None:
         if 'axes' in msg and msg['axes'] is not None:
-            VTKAxes = getattr(sys.modules['panel.models.vtk'], 'VTKAxes')
+            VTKAxes = sys.modules['panel.models.vtk'].VTKAxes
             axes = msg['axes']
             if isinstance(axes, dict):
                 msg['axes'] = VTKAxes(**axes)
@@ -308,10 +310,11 @@ class BaseVTKRenderWindow(AbstractVTK):
 
     def construct_colorbars(self, infer=True):
         if infer:
-            color_mappers = self.get_color_mappers(infer)
-            return Pane(self._construct_colorbars(color_mappers))
+            color_mappers = self.get_color_mappers(infer=True)
+            model = self._construct_colorbars(color_mappers)
+            return Bokeh(model)
         else:
-            return Pane(self._construct_colorbars)
+            return ParamMethod(self._construct_colorbars)
 
     def export_scene(self, filename='vtk_scene', all_data_arrays=False):
         if '.' not in filename:
@@ -323,7 +326,7 @@ class BaseVTKRenderWindow(AbstractVTK):
         with zipfile.ZipFile(filename, mode='w') as zf:
             zf.writestr('index.json', json.dumps(scene))
             for name, data in arrays.items():
-                zf.writestr('data/%s' % name, data, zipfile.ZIP_DEFLATED)
+                zf.writestr(f'data/{name}', data, zipfile.ZIP_DEFLATED)
             zf.writestr('annotations.json', json.dumps(annotations))
         return filename
 
@@ -341,9 +344,10 @@ class BaseVTKRenderWindow(AbstractVTK):
         ren_win.Render()
         scene = rws.serializeInstance(None, ren_win, context.getReferenceId(ren_win), context, 0)
         scene['properties']['numberOfLayers'] = 2 #On js side the second layer is for the orientation widget
-        arrays = {name: context.getCachedDataArray(name, binary=binary, compression=compression)
-                    for name in context.dataArrayCache.keys()
-                    if name not in exclude_arrays}
+        arrays = {
+            name: context.getCachedDataArray(name, binary=True, compression=False)
+            for name in context.dataArrayCache.keys() if name not in exclude_arrays
+        }
         annotations = context.getAnnotations()
         return scene, arrays, annotations
 
@@ -351,11 +355,9 @@ class BaseVTKRenderWindow(AbstractVTK):
     def _rgb2hex(r, g, b):
         int_type = (int, np.integer)
         if isinstance(r, int_type) and isinstance(g, int_type) is isinstance(b, int_type):
-            return "#{0:02x}{1:02x}{2:02x}".format(r, g, b)
+            return f"#{r:02x}{g:02x}{b:02x}"
         else:
-            return "#{0:02x}{1:02x}{2:02x}".format(
-                int(255 * r), int(255 * g), int(255 * b)
-            )
+            return f"#{int(255 * r):02x}{int(255 * g):02x}{int(255 * b):02x}"
 
 
 class VTKRenderWindow(BaseVTKRenderWindow):
@@ -386,16 +388,14 @@ class VTKRenderWindow(BaseVTKRenderWindow):
         VTKSynchronizedPlot = lazy_load(
             'panel.models.vtk', 'VTKSynchronizedPlot', isinstance(comm, JupyterComm), root
         )
-        props = self._process_param_change(self._init_params())
+        props = self._get_properties(doc)
         if self.object is not None:
             props.update(scene=self._scene, arrays=self._arrays, color_mappers=self.color_mappers)
         model = VTKSynchronizedPlot(**props)
-
-        if root is None:
-            root = model
-        self._link_props(model,
-                         ['enable_keybindings', 'orientation_widget'],
-                         doc, root, comm)
+        root = root or model
+        self._link_props(
+            model, ['enable_keybindings', 'orientation_widget'], doc, root, comm
+        )
         self._models[root.ref['id']] = (model, parent)
         return model
 
@@ -457,16 +457,12 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
         )
         scene, arrays, annotations = self._serialize_ren_win(self.object, context)
         self._update_color_mappers()
-        props = self._process_param_change(self._init_params())
+        props = self._get_properties(doc)
         props.update(scene=scene, arrays=arrays, annotations=annotations, color_mappers=self.color_mappers)
         model = VTKSynchronizedPlot(**props)
-
-        if root is None:
-            root = model
-        self._link_props(model,
-                         ['camera', 'color_mappers', 'enable_keybindings', 'one_time_reset',
-                          'orientation_widget'],
-                         doc, root, comm)
+        root = root or model
+        linked = ['camera', 'color_mappers', 'enable_keybindings', 'one_time_reset', 'orientation_widget']
+        self._link_props(model, linked, doc, root, comm)
         self._contexts[model.id] =  context
         self._models[root.ref['id']] = (model, parent)
         return model
@@ -517,12 +513,13 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
             'physicalTranslation',
             'physicalScale',
             'physicalViewUp',
-            'physicalViewNorth'
+            'physicalViewNorth',
+            'remoteId',
         ]
         if self.camera is not None:
             for k, v in self.camera.items():
                 if k not in exclude_properties:
-                    if type(v) is list:
+                    if isinstance(v, list):
                         getattr(new_camera, 'Set' + k[0].capitalize() + k[1:])(*v)
                     else:
                         getattr(new_camera, 'Set' + k[0].capitalize() + k[1:])(v)
@@ -567,7 +564,7 @@ class VTKVolume(AbstractVTK):
         light direction and the object surface normal.""")
 
     display_volume = param.Boolean(default=True, doc="""
-        If set to True, the 3D respresentation of the volume is
+        If set to True, the 3D representation of the volume is
         displayed using ray casting.""")
 
     display_slices = param.Boolean(default=False, doc="""
@@ -591,7 +588,7 @@ class VTKVolume(AbstractVTK):
     mapper = param.Dict(doc="Lookup Table in format {low, high, palette}")
 
     max_data_size = param.Number(default=(256 ** 3) * 2 / 1e6, doc="""
-        Maximum data size transfert allowed without subsampling""")
+        Maximum data size transfer allowed without subsampling""")
 
     nan_opacity = param.Number(default=1., bounds=(0., 1.), doc="""
         Opacity applied to nan values in slices""")
@@ -603,7 +600,7 @@ class VTKVolume(AbstractVTK):
         The value must be specified as an hexadecimal color string.""")
 
     rescale = param.Boolean(default=False, doc="""
-        If set to True the colormap is rescaled beween min and max
+        If set to True the colormap is rescaled between min and max
         value of the non-transparent pixel, otherwise  the full range
         of the pixel values are used.""")
 
@@ -732,19 +729,21 @@ class VTKVolume(AbstractVTK):
     @classmethod
     def register_serializer(cls, class_type, serializer):
         """
-        Register a seriliazer for a given type of class.
+        Register a serializer for a given type of class.
         A serializer is a function which take an instance of `class_type`
         (like a vtk.vtkImageData) as input and return a numpy array of the data
         """
         cls._serializers.update({class_type:serializer})
 
     def _volume_from_array(self, sub_array):
-        return dict(buffer=base64encode(sub_array.ravel(order='F')),
-                    dims=sub_array.shape,
-                    spacing=self._sub_spacing,
-                    origin=self.origin,
-                    data_range=(np.nanmin(sub_array), np.nanmax(sub_array)),
-                    dtype=sub_array.dtype.name)
+        return dict(
+            buffer=base64encode(sub_array.ravel(order='F')),
+            dims=sub_array.shape,
+            spacing=self._sub_spacing,
+            origin=self.origin,
+            data_range=(np.nanmin(sub_array), np.nanmax(sub_array)),
+            dtype=sub_array.dtype.name
+        )
 
     def _get_volume_data(self):
         if self.object is None:
@@ -822,7 +821,6 @@ class VTKJS(AbstractVTK):
 
     _updates = True
 
-
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
         self._vtkjs = None
@@ -840,36 +838,48 @@ class VTKJS(AbstractVTK):
         Should return the bokeh model to be rendered.
         """
         VTKJSPlot = lazy_load('panel.models.vtk', 'VTKJSPlot', isinstance(comm, JupyterComm), root)
-        props = self._process_param_change(self._init_params())
-        vtkjs = self._get_vtkjs()
-        if vtkjs is not None:
-            props['data'] = base64encode(vtkjs)
+        props = self._get_properties(doc)
+        props['data_url'], props['data'] = self._get_vtkjs()
         model = VTKJSPlot(**props)
-        if root is None:
-            root = model
+        root = root or model
         self._link_props(model, ['camera', 'enable_keybindings', 'orientation_widget'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _get_vtkjs(self):
+    def _get_vtkjs(self, fetch=True):
+        data_path, data_url = None, None
+        if isinstance(self.object, str) and self.object.endswith('.vtkjs'):
+            data_path = data_path
+            if not isfile(self.object):
+                data_url = self.object
         if self._vtkjs is None and self.object is not None:
-            if isinstance(self.object, str) and self.object.endswith('.vtkjs'):
-                if isfile(self.object):
-                    with open(self.object, 'rb') as f:
-                        vtkjs = f.read()
-                else:
-                    data_url = urlopen(self.object)
-                    vtkjs = data_url.read()
+            vtkjs = None
+            if data_url and fetch:
+                vtkjs = urlopen(data_url).read() if fetch else data_url
+            elif data_path:
+                with open(self.object, 'rb') as f:
+                    vtkjs = f.read()
             elif hasattr(self.object, 'read'):
                 vtkjs = self.object.read()
             self._vtkjs = vtkjs
-        return self._vtkjs
+        return data_url, self._vtkjs
 
     def _update(self, ref: str, model: Model) -> None:
         self._vtkjs = None
-        vtkjs = self._get_vtkjs()
-        model.data = base64encode(vtkjs) if vtkjs is not None else vtkjs
+        data_url, vtkjs = self._get_vtkjs()
+        model.update(data_url=data_url, data=vtkjs)
 
-    def export_vtkjs(self, filename='vtk_panel.vtkjs'):
-        with open(filename, 'wb') as f:
-            f.write(self._get_vtkjs())
+    def export_vtkjs(self, filename: str | IO ='vtk_panel.vtkjs'):
+        """
+        Exports current VTK data to .vtkjs file.
+
+        Arguments
+        ---------
+        filename: str | IO
+        """
+        _, vtkjs = self._get_vtkjs()
+        if hasattr(filename, 'write'):
+            filename.write(vtkjs)
+        else:
+            with open(filename, 'wb') as f:
+                f.write(vtkjs)

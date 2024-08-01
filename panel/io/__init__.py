@@ -4,8 +4,11 @@ model state, and rendering panel objects.
 """
 import sys
 
+from .cache import cache  # noqa
 from .callbacks import PeriodicCallback  # noqa
-from .document import init_doc, unlocked, with_lock  # noqa
+from .document import (  # noqa
+    hold, immediate_dispatch, init_doc, unlocked, with_lock,
+)
 from .embed import embed_state  # noqa
 from .logging import panel_logger  # noqa
 from .model import add_to_doc, diff, remove_root  # noqa
@@ -30,8 +33,10 @@ else:
 __all__ = (
     "PeriodicCallback",
     "Resources",
+    "hold",
+    "immediate_dispatch",
     "ipywidget",
-    "panel_logger"
+    "panel_logger",
     "profile",
     "push",
     "push_notebook",

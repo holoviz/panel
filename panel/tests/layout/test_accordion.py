@@ -2,9 +2,10 @@ import pytest
 
 from bokeh.models import Column as BkColumn, Div
 
+import panel as pn
+
 from panel.layout import Accordion
 from panel.models import Card
-from panel.pane import Pane
 
 
 @pytest.fixture
@@ -49,16 +50,16 @@ def test_accordion_constructor(document, comm):
     assert all(isinstance(c, Card) for c in model.children)
     card1, card2 = model.children
 
-    assert card1.children[0].children[0].text == 'Div1'
+    assert card1.children[0].children[0].text == '&lt;h3&gt;Div1&lt;/h3&gt;'
     assert card1.children[1] is div1
-    assert card2.children[0].children[0].text == 'Div2'
+    assert card2.children[0].children[0].text == '&lt;h3&gt;Div2&lt;/h3&gt;'
     assert card2.children[1] is div2
 
 
 def test_accordion_implicit_constructor(document, comm):
     div1, div2 = Div(), Div()
-    p1 = Pane(div1, name='Div1')
-    p2 = Pane(div2, name='Div2')
+    p1 = pn.panel(div1, name='Div1')
+    p2 = pn.panel(div2, name='Div2')
     accordion = Accordion(p1, p2)
 
     model = accordion.get_root(document, comm=comm)
@@ -68,16 +69,18 @@ def test_accordion_implicit_constructor(document, comm):
     assert all(isinstance(c, Card) for c in model.children)
     card1, card2 = model.children
 
-    assert card1.children[0].children[0].text == p1.name == 'Div1'
+    assert p1.name == 'Div1'
+    assert card1.children[0].children[0].text == '&lt;h3&gt;Div1&lt;/h3&gt;'
     assert card1.children[1] is div1
-    assert card2.children[0].children[0].text == p2.name == 'Div2'
+    assert p2.name == 'Div2'
+    assert card2.children[0].children[0].text == '&lt;h3&gt;Div2&lt;/h3&gt;'
     assert card2.children[1] is div2
 
 
 def test_accordion_constructor_with_named_objects(document, comm):
     div1, div2 = Div(), Div()
-    p1 = Pane(div1, name='Div1')
-    p2 = Pane(div2, name='Div2')
+    p1 = pn.panel(div1, name='Div1')
+    p2 = pn.panel(div2, name='Div2')
     accordion = Accordion(('Tab1', p1), ('Tab2', p2))
 
     model = accordion.get_root(document, comm=comm)
@@ -87,9 +90,9 @@ def test_accordion_constructor_with_named_objects(document, comm):
     assert all(isinstance(c, Card) for c in model.children)
     card1, card2 = model.children
 
-    assert card1.children[0].children[0].text == 'Tab1'
+    assert card1.children[0].children[0].text == '&lt;h3&gt;Tab1&lt;/h3&gt;'
     assert card1.children[1] is div1
-    assert card2.children[0].children[0].text == 'Tab2'
+    assert card2.children[0].children[0].text == '&lt;h3&gt;Tab2&lt;/h3&gt;'
     assert card2.children[1] is div2
 
 
@@ -102,6 +105,13 @@ def test_accordion_cleanup_panels(document, comm, accordion):
     accordion._cleanup(model)
     assert model.ref['id'] not in card1._models
     assert model.ref['id'] not in card2._models
+
+
+def test_accordion_setitem__panels_udated(document, comm, accordion):
+    accordion.get_root(document, comm=comm)
+    accordion[:] = [('Card1', '1'), ('Card2', '2'), ('Card3', '3')]
+
+    assert len(accordion._panels) == 3
 
 
 def test_accordion_active(document, comm, accordion):

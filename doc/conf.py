@@ -1,4 +1,6 @@
+import json
 import os
+import pathlib
 
 import param
 
@@ -15,127 +17,163 @@ description = 'High-level dashboarding for python visualization libraries'
 
 import panel
 
+from panel.io.convert import (
+    BOKEH_VERSION, MINIMUM_VERSIONS, PY_VERSION, PYODIDE_VERSION,
+    PYSCRIPT_VERSION,
+)
+from panel.io.resources import CDN_DIST
+
+PANEL_ROOT = pathlib.Path(panel.__file__).parent
+
 version = release = base_version(panel.__version__)
+js_version = json.loads((PANEL_ROOT / 'package.json').read_text())['version']
+
+is_dev = any(ext in version for ext in ('a', 'b', 'rc'))
 
 # For the interactivity warning box created by nbsite to point to the right
-# git tag instead of the default i.e. master.
+# git tag instead of the default i.e. main.
 os.environ['BRANCH'] = f"v{release}"
 
 html_static_path += ['_static']
 
-html_css_files = [
-    'nbsite.css',
+html_css_files += [
     'css/custom.css',
-    'css/dataframe.css',
 ]
 
 html_theme = "pydata_sphinx_theme"
-html_logo = "_static/logo_horizontal.png"
-html_favicon = "_static/favicon.ico"
+html_favicon = "_static/icons/favicon.ico"
+
+current_release = panel.__version__  # Current release version variable
+
+announcement_text = f"Panel {current_release} has just been released! Check out the <a href='https://panel.holoviz.org/about/releases.html'>release notes</a> and support Panel by giving it a 🌟 on <a href='https://github.com/holoviz/panel'>Github</a>."
 
 
 html_theme_options = {
+    "logo": {
+        "image_light": "_static/logo_horizontal_light_theme.png",
+        "image_dark": "_static/logo_horizontal_dark_theme.png",
+    },
     "github_url": "https://github.com/holoviz/panel",
     "icon_links": [
         {
             "name": "Twitter",
             "url": "https://twitter.com/Panel_Org",
-            "icon": "fab fa-twitter-square",
+            "icon": "fa-brands fa-twitter-square",
         },
         {
             "name": "Discourse",
             "url": "https://discourse.holoviz.org/c/panel/5",
-            "icon": "fab fa-discourse",
+            "icon": "fa-brands fa-discourse",
+        },
+        {
+            "name": "Discord",
+            "url": "https://discord.gg/UXdtYyGVQX",
+            "icon": "fa-brands fa-discord",
         },
     ],
-    "footer_items": [
-        "copyright",
-        "last-updated",
-    ],
-    "navbar_end": ["navbar-icon-links"],
-    "google_analytics_id": "UA-154795830-2",
     "pygment_light_style": "material",
-    "pygment_dark_style": "material"
+    "pygment_dark_style": "material",
+    "header_links_before_dropdown": 5,
+    'secondary_sidebar_items': [
+        "github-stars-button",
+        "panelitelink",
+        "page-toc",
+    ],
+    "announcement": announcement_text,
 }
 
 extensions += [
     'sphinx.ext.napoleon',
     'nbsite.gallery',
     'sphinx_copybutton',
+    'nbsite.pyodide',
+    'nbsite.analytics',
 ]
 napoleon_numpy_docstring = True
 
-myst_enable_extensions = ["colon_fence"]
+myst_enable_extensions = ["colon_fence", "deflist"]
+
+gallery_endpoint = 'panel-gallery-dev' if is_dev else 'panel-gallery'
+gallery_url = f'https://{gallery_endpoint}.holoviz-demo.anaconda.com'
+jlite_url = 'https://holoviz-dev.github.io/panelite-dev' if is_dev else 'https://panelite.holoviz.org'
+pyodide_url = 'https://holoviz-dev.github.io/panel/pyodide' if is_dev else 'https://panel.holoviz.org/pyodide'
+
+rediraffe_redirects = {
+    # Removal of the developer testing page
+    'developer_guide/testing': 'developer_guide/index',
+    'user_guide/APIs': 'explanation/api/index',
+    'user_guide/Pipelines': 'how_to/pipeline/index',
+    'user_guide/Templates': 'how_to/templates/index',
+    'user_guide/Server_Configuration': 'how_to/server/index',
+}
+
+nbsite_analytics = {
+    'goatcounter_holoviz': True,
+}
 
 nbsite_gallery_conf = {
     'github_org': 'holoviz',
     'github_project': 'panel',
     'galleries': {
-        'gallery': {
-            'title': 'Gallery',
-            'sections': [
-                {'path': 'demos',
-                 'title': 'Demos',
-                 'description': 'A set of sophisticated apps built to demonstrate the features of Panel.'},
-                {'path': 'simple',
-                 'title': 'Simple Apps',
-                 'description': 'Simple example apps meant to provide a quick introduction to Panel.'},
-                {'path': 'apis',
-                 'title': 'APIs',
-                 'description': ('Examples meant to demonstrate the usage of different Panel APIs '
-                                 'such as interact and reactive functions.')},
-                {'path': 'layout',
-                 'title': 'Layouts',
-                 'description': 'How to leverage Panel layout components to achieve complex layouts.'},
-                {'path': 'dynamic',
-                 'title': 'Dynamic UIs',
-                 'description': ('Examples demonstrating how to build dynamic UIs with components that '
-                                 'are added or removed interactively.')},
-                {'path': 'param',
-                 'title': 'Param based apps',
-                 'description': 'Using the Param library to express UIs independently of Panel.'},
-                {'path': 'streaming',
-                 'title': 'Streaming',
-                 'description': ('Streaming data to a visual component.')},
-                {'path': 'components',
-                 'title': 'Custom components',
-                 'description': "Components created using Panel's ReactiveHTML class."},
-                {'path': 'links',
-                 'title': 'Linking',
-                 'description': ('Using Javascript based links to define interactivity without '
-                                 'without requiring a live kernel.')},
-                {'path': 'styles',
-                 'title': 'Styling & Theming',
-                 'description': "Examples demonstrating how to style and theme different components."},
-                {'path': 'external',
-                 'title': 'External libraries',
-                 'description': 'Wrapping external libraries with Panel.'}
-            ]
-        },
         'reference': {
-            'title': 'Reference Gallery',
+            'title': 'Component Gallery',
+            'extensions': ['*.ipynb', '*.py', '*.md'],
             'sections': [
                 'panes',
+                'widgets',
                 'layouts',
-                'templates',
+                # 3 most important by expected usage. Rest alphabetically
+                'chat',
+                'custom_components',
                 'global',
                 'indicators',
-                'widgets',
+                'templates',
             ],
             'titles': {
                 'Vega': 'Altair & Vega',
                 'DeckGL': 'PyDeck & Deck.gl',
                 'ECharts': 'PyEcharts & ECharts',
-                'IPyWidget': 'ipywidgets'
+                'IPyWidget': 'ipywidgets',
+                'PanelCallbackHandler': 'LangChain CallbackHandler',
             },
+            'as_pyodide': True,
             'normalize_titles': False
         }
     },
-    'thumbnail_url': 'https://assets.holoviews.org/panel/thumbnails',
-    'deployment_url': 'https://panel-gallery.pyviz.demo.anaconda.com/'
+    'thumbnail_url': 'https://assets.holoviz.org/panel/thumbnails',
+    'deployment_url': gallery_url,
+    'jupyterlite_url': jlite_url,
 }
 
-templates_path = [
+if panel.__version__ != version and (PANEL_ROOT / 'dist' / 'wheels').is_dir():
+    py_version = panel.__version__.replace("-dirty", "")
+    panel_req = f'./wheels/panel-{py_version}-py3-none-any.whl'
+    bokeh_req = f'./wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
+else:
+    panel_req = f'{CDN_DIST}wheels/panel-{PY_VERSION}-py3-none-any.whl'
+    bokeh_req = f'{CDN_DIST}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
+
+def get_requirements():
+    with open('pyodide_dependencies.json') as deps:
+        dependencies = json.load(deps)
+    requirements = {}
+    for src, deps in dependencies.items():
+        if deps is None:
+            continue
+        src = src.replace('.ipynb', '').replace('.md', '')
+        for name, min_version in MINIMUM_VERSIONS.items():
+            if any(name in req for req in deps):
+                deps = [f'{name}>={min_version}' if name in req else req for req in deps]
+        requirements[src] = deps
+    return requirements
+
+nbsite_pyodide_conf = {
+    'PYODIDE_URL': f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/full/pyodide.js',
+    'requirements': [bokeh_req, panel_req, 'pyodide-http'],
+    'requires': get_requirements()
+}
+
+templates_path += [
     '_templates'
 ]
 
@@ -143,10 +181,83 @@ html_context.update({
     "last_release": f"v{release}",
     "github_user": "holoviz",
     "github_repo": "panel",
-    "default_mode": "light"
+    "default_mode": "light",
+    "panelite_endpoint": jlite_url,
+    "gallery_url": gallery_url,
+    "pyodide_url": pyodide_url
 })
 
 nbbuild_patterns_to_take_along = ["simple.html", "*.json", "json_*"]
 
 # Override the Sphinx default title that appends `documentation`
 html_title = f'{project} v{version}'
+
+# Ensure the global version string includes the SHA to ensure the service
+# worker is invalidated on builds between tags
+if is_dev:
+    version = panel.__version__
+
+# Patching GridItemCardDirective to be able to substitute the domain name
+# in the link option.
+from sphinx_design.cards import CardDirective
+from sphinx_design.grids import GridItemCardDirective
+
+orig_grid_run = GridItemCardDirective.run
+
+def patched_grid_run(self):
+    app = self.state.document.settings.env.app
+    existing_link = self.options.get('link')
+    domain = getattr(app.config, 'grid_item_link_domain', None)
+    if self.has_content:
+        self.content.replace('|gallery-endpoint|', domain)
+    if existing_link and domain:
+        new_link = existing_link.replace('|gallery-endpoint|', domain)
+        self.options['link'] = new_link
+    return list(orig_grid_run(self))
+
+GridItemCardDirective.run = patched_grid_run
+
+orig_card_run = CardDirective.run
+
+def patched_card_run(self):
+    app = self.state.document.settings.env.app
+    existing_link = self.options.get('link')
+    domain = getattr(app.config, 'grid_item_link_domain', None)
+    if existing_link and domain:
+        new_link = existing_link.replace('|gallery-endpoint|', domain)
+        self.options['link'] = new_link
+    return orig_card_run(self)
+
+CardDirective.run = patched_card_run
+
+def _get_pyodide_version():
+    if PYODIDE_VERSION.startswith("v"):
+        return PYODIDE_VERSION[1:]
+    raise NotImplementedError(F"{PYODIDE_VERSION=} is not valid")
+
+def update_versions(app, docname, source):
+    # Inspired by: https://stackoverflow.com/questions/8821511
+    version_replace = {
+       "{{PANEL_VERSION}}" : PY_VERSION,
+       "{{BOKEH_VERSION}}" : BOKEH_VERSION,
+       "{{PYSCRIPT_VERSION}}" : PYSCRIPT_VERSION,
+       "{{PYODIDE_VERSION}}" : _get_pyodide_version(),
+    }
+
+    for old, new in version_replace.items():
+        source[0] = source[0].replace(old, new)
+
+
+def setup(app) -> None:
+    try:
+        from nbsite.paramdoc import param_formatter, param_skip
+        app.connect('autodoc-process-docstring', param_formatter)
+        app.connect('autodoc-skip-member', param_skip)
+    except ImportError:
+        print('no param_formatter (no param?)')
+
+    app.connect('source-read', update_versions)
+    nbbuild.setup(app)
+    app.add_config_value('grid_item_link_domain', '', 'html')
+
+grid_item_link_domain = gallery_endpoint

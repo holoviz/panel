@@ -7,7 +7,7 @@ import io
 import os
 
 from typing import (
-    IO, TYPE_CHECKING, Any, Dict, Iterable, List, Optional,
+    IO, TYPE_CHECKING, Any, Iterable, Optional,
 )
 
 import bokeh
@@ -26,7 +26,7 @@ from ..config import config
 from .embed import embed_state
 from .model import add_to_doc
 from .resources import (
-    BASE_TEMPLATE, DEFAULT_TITLE, Bundle, Resources, bundle_resources,
+    BASE_TEMPLATE, CDN_DIST, DEFAULT_TITLE, Resources, bundle_resources,
     set_resource_mode,
 )
 from .state import state
@@ -140,9 +140,9 @@ def _title_from_models(models: Iterable[Model], title: str) -> str:
     return DEFAULT_TITLE
 
 def file_html(
-    models: Model | Document | List[Model], resources: Resources | None,
+    models: Model | Document | list[Model], resources: Resources | None,
     title: Optional[str] = None, template: Template | str = BASE_TEMPLATE,
-    template_variables: Dict[str, Any] = {}, theme: ThemeLike = None,
+    template_variables: dict[str, Any] = {}, theme: ThemeLike = None,
     _always_new: bool = False
 ):
     models_seq = []
@@ -153,13 +153,14 @@ def file_html(
     else:
         models_seq = models
 
+    template_variables['dist_url'] = CDN_DIST
+
     with OutputDocumentFor(models_seq, apply_theme=theme, always_new=_always_new):
         (docs_json, render_items) = standalone_docs_json_and_render_items(
             models_seq, suppress_callback_warning=True
         )
         title = _title_from_models(models_seq, title)
         bundle = bundle_resources(models_seq, resources)
-        bundle = Bundle.from_bokeh(bundle)
         return html_page_for_render_items(
             bundle, docs_json, render_items, title=title, template=template,
             template_variables=template_variables
@@ -172,7 +173,7 @@ def file_html(
 def save(
     panel: Viewable, filename: str | os.PathLike | IO, title: Optional[str]=None,
     resources: BkResources | None = None, template: Template | str | None = None,
-    template_variables: Dict[str, Any] = None, embed: bool = False,
+    template_variables: dict[str, Any] = None, embed: bool = False,
     max_states: int = 1000, max_opts: int = 3, embed_json: bool = False,
     json_prefix: str = '', save_path: str = './', load_path: Optional[str] = None,
     progress: bool = True, embed_states={}, as_png=None,
@@ -242,8 +243,8 @@ def save(
             resources = INLINE
             mode = 'inline'
         else:
-            raise ValueError("Resources %r not recognized, specify one "
-                             "of 'CDN' or 'INLINE'." % resources)
+            raise ValueError(f"Resources {resources!r} not recognized, specify one "
+                             "of 'CDN' or 'INLINE'.")
     elif isinstance(resources, BkResources):
         mode = resources.mode
 
@@ -292,5 +293,5 @@ def save(
             html = html.encode('utf-8')
         filename.write(html)
     else:
-        with io.open(filename, mode="w", encoding="utf-8") as f:
+        with open(filename, mode="w", encoding="utf-8") as f:
             f.write(html)

@@ -5,6 +5,7 @@ bokeh model.
 from __future__ import annotations
 
 import json
+import sys
 
 from collections import defaultdict
 from typing import (
@@ -14,12 +15,12 @@ from typing import (
 import numpy as np
 import param
 
+from bokeh.core.serialization import Serializer
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
 from ..util import is_dataframe, lazy_load
-from ..viewable import Layoutable
-from .base import PaneBase
+from .base import ModelPane
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -80,7 +81,7 @@ def recurse_data(data):
     return data
 
 
-class DeckGL(PaneBase):
+class DeckGL(ModelPane):
     """
     The `DeckGL` pane renders the Deck.gl
     JSON specification as well as PyDeck plots inside a panel.
@@ -105,6 +106,9 @@ class DeckGL(PaneBase):
     tooltips = param.ClassSelector(default=True, class_=(bool, dict), doc="""
         Whether to enable tooltips""")
 
+    configuration = param.String(default="", doc="""
+        Custom configuration dictionary as json string""")
+
     click_state = param.Dict(default={}, doc="""
         Contains the last click event on the DeckGL plot.""")
 
@@ -123,50 +127,26 @@ class DeckGL(PaneBase):
         'view_state': 'viewState', 'tooltips': 'tooltip'
     }
 
+    _pydeck_encoders_are_added: ClassVar[bool] = False
+
     _updates: ClassVar[bool] = True
 
     priority: ClassVar[float | bool | None] = None
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
-        if (hasattr(obj, "to_json") and hasattr(obj, "mapbox_key")
-            and hasattr(obj, "deck_widget")):
+        if cls.is_pydeck(obj):
             return 0.8
         elif isinstance(obj, (dict, str)):
             return 0
         return False
 
-    def _get_properties(self, layout: bool = True):
-        if self.object is None:
-            data, mapbox_api_key, tooltip = {}, self.mapbox_api_key, self.tooltips
-        elif isinstance(self.object, (str, dict)):
-            if isinstance(self.object, str):
-                data = json.loads(self.object)
-            else:
-                data = dict(self.object)
-                data['layers'] = [dict(layer) for layer in data.get('layers', [])]
-            mapbox_api_key = self.mapbox_api_key
-            tooltip = self.tooltips
-        else:
-            data = dict(self.object.__dict__)
-            mapbox_api_key = data.pop('mapbox_key', self.mapbox_api_key)
-            deck_widget = data.pop('deck_widget', None)
-            tooltip = self.tooltips if isinstance(self.tooltips, dict) else deck_widget.tooltip
-            data = {k: v for k, v in recurse_data(data).items() if v is not None}
-
-        # Delete undefined width and height
-        for view in data.get('views', []):
-            if view.get('width', False) is None:
-                view.pop('width')
-            if view.get('height', False) is None:
-                view.pop('height')
-
-        if layout:
-            properties = {p: getattr(self, p) for p in Layoutable.param
-                          if getattr(self, p) is not None}
-        else:
-            properties = {}
-        return data, dict(properties, tooltip=tooltip, mapbox_api_key=mapbox_api_key or "")
+    @classmethod
+    def is_pydeck(cls, obj):
+        if 'pydeck' in sys.modules:
+            import pydeck
+            return isinstance(obj, pydeck.bindings.deck.Deck)
+        return False
 
     @classmethod
     def _process_data(cls, data):
@@ -222,14 +202,88 @@ class DeckGL(PaneBase):
                 sources.append(cds)
             layer['data'] = sources.index(cds)
 
+    @classmethod
+    def _add_pydeck_encoders(cls):
+        if cls._pydeck_encoders_are_added or 'pydeck' not in sys.modules:
+            return
+
+        from pydeck.types import Function, String
+        def pydeck_string_encoder(obj, serializer):
+            return obj.value
+        def pydeck_function_encoder(obj, serializer):
+            return obj.serialize()
+
+        Serializer._encoders[String] = pydeck_string_encoder
+        Serializer._encoders[Function] = pydeck_function_encoder
+        cls._pydeck_encoders_are_added = True
+
+    def _transform_deck_object(self, obj):
+        data = dict(obj.__dict__)
+        mapbox_api_key = data.pop('mapbox_key', "") or self.mapbox_api_key
+        deck_widget = data.pop('deck_widget', None)
+
+        if isinstance(self.tooltips, dict) or deck_widget is None:
+            if '_tooltip' in data:
+                tooltip = data['_tooltip']
+            else:
+                tooltip = self.tooltips
+        else:
+            tooltip = deck_widget.tooltip
+
+        if self.configuration:
+            configuration = self.configuration
+        elif deck_widget:
+            configuration = deck_widget.configuration or ""
+        else:
+            import pydeck as pdk
+            configuration = pdk.settings.configuration or ""
+
+        data = {k: v for k, v in recurse_data(data).items() if v is not None}
+
+        if "initialViewState" in data:
+            data["initialViewState"] = {
+                k:v for k, v in data["initialViewState"].items() if v is not None
+            }
+
+        self._add_pydeck_encoders()
+
+        return data, tooltip, configuration, mapbox_api_key
+
+    def _transform_object(self, obj) -> dict[str, Any]:
+        if self.object is None:
+            data, mapbox_api_key, tooltip, configuration = (
+                {}, self.mapbox_api_key, self.tooltips, self.configuration
+            )
+        elif isinstance(self.object, (str, dict)):
+            if isinstance(self.object, str):
+                data = json.loads(self.object)
+            else:
+                data = dict(self.object)
+                data['layers'] = [dict(layer) for layer in data.get('layers', [])]
+            mapbox_api_key = self.mapbox_api_key
+            tooltip = self.tooltips
+            configuration = self.configuration
+        else:
+            data, tooltip, configuration, mapbox_api_key = self._transform_deck_object(self.object)
+
+        # Delete undefined width and height
+        for view in data.get('views', []):
+            if view.get('width', False) is None:
+                view.pop('width')
+            if view.get('height', False) is None:
+                view.pop('height')
+
+        return dict(data=data, tooltip=tooltip, configuration=configuration, mapbox_api_key=mapbox_api_key or "")
+
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        DeckGLPlot = lazy_load(
+        self._bokeh_model = DeckGLPlot = lazy_load(
             'panel.models.deckgl', 'DeckGLPlot', isinstance(comm, JupyterComm), root
         )
-        data, properties = self._get_properties()
+        properties = self._get_properties(doc)
+        data = properties.pop('data')
         properties['data_sources'] = sources = []
         self._update_sources(data, sources)
         properties['layers'] = data.pop('layers', [])
@@ -241,7 +295,8 @@ class DeckGL(PaneBase):
         return model
 
     def _update(self, ref: str, model: Model) -> None:
-        data, properties = self._get_properties(layout=False)
+        properties = self._get_properties(model.document)
+        data = properties.pop('data')
         self._update_sources(data, model.data_sources)
         properties['data'] = data
         properties['layers'] = data.pop('layers', [])
