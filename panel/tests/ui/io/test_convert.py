@@ -118,7 +118,8 @@ def http_serve():
     temp_dir = tempfile.TemporaryDirectory()
     temp_path = pathlib.Path(temp_dir.name)
 
-    (temp_path / 'test.html').write_text('<html><body>Test</body></html>')
+    test_file = (temp_path / 'test.html')
+    test_file.write_text('<html><body>Test</body></html>')
 
     try:
         shutil.copy(PANEL_LOCAL_WHL, temp_path / PANEL_LOCAL_WHL.name)
@@ -131,7 +132,6 @@ def http_serve():
 
     httpd, _ = http_serve_directory(str(temp_path), port=HTTP_PORT)
 
-
     time.sleep(1)
 
     def write(app):
@@ -141,9 +141,11 @@ def http_serve():
             f.write(app)
         return app_path
 
-    yield write
-
-    httpd.shutdown()
+    try:
+        yield write
+    finally:
+        httpd.shutdown()
+        test_file.cleanup()
 
 
 def wait_for_app(http_serve, app, page, runtime, wait=True, **kwargs):
