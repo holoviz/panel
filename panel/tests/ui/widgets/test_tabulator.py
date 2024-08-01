@@ -2264,7 +2264,7 @@ def test_tabulator_styling_init(page, df_mixed):
     df_styled = (
         df_mixed.style
         .apply(highlight_max, subset=['int'])
-        .applymap(color_false, subset=['bool'])
+        .map(color_false, subset=['bool'])
     )
     widget = Tabulator(df_styled)
 
@@ -2404,7 +2404,7 @@ def test_tabulator_sorters_set_after_init(page, df_mixed):
     widget.sorters = [{'field': 'int', 'dir': 'desc'}]
 
     sheader = page.locator('[aria-sort="descending"]:visible')
-    expect(sheader).to_have_count(1)
+    wait_until(lambda: expect(sheader).to_have_count(1), page)
     assert sheader.get_attribute('tabulator-field') == 'int'
 
     expected_df_sorted = df_mixed.sort_values('int', ascending=False)
@@ -2875,7 +2875,7 @@ def test_tabulator_edit_event_integrations(page, sorter, python_filter, header_f
         expected_current_view = expected_current_view.query(f'{python_filter_col} == @python_filter_val')
     if header_filter == 'header_filter':
         expected_current_view = expected_current_view.query(f'{header_filter_col} == @header_filter_val')
-    assert widget.current_view.equals(expected_current_view)
+    pd.testing.assert_frame_equal(widget.current_view, expected_current_view)
 
 
 @pytest.mark.parametrize('sorter', ['sorter', 'no_sorter'])

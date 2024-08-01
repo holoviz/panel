@@ -180,13 +180,13 @@ def value_as_datetime(value):
     Retrieve the value tuple as a tuple of datetime objects.
     """
     if isinstance(value, numbers.Number):
-        value = datetime.utcfromtimestamp(value / 1000)
+        value = datetime.fromtimestamp(value / 1000, tz=dt.timezone.utc).replace(tzinfo=None)
     return value
 
 
 def value_as_date(value):
     if isinstance(value, numbers.Number):
-        value = datetime.utcfromtimestamp(value / 1000).date()
+        value = datetime.fromtimestamp(value / 1000, tz=dt.timezone.utc).replace(tzinfo=None).date()
     elif isinstance(value, datetime):
         value = value.date()
     return value
